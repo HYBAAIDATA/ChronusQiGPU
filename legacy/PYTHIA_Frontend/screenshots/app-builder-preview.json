@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "PYTHIA",
+      "hasCanvas": false,
+      "bodyTextLen": 1879,
+      "bodyTextHash": "f641c8386c1d5e3fa870201a9de02add402a03beb045c187cdae40f8614056be",
+      "bodyTextPrefix": "PYTHIA ALGEBRAIC OPERATOR Operations Console Algebra Intelligenc",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "PYTHIA",
+      "hasCanvas": false,
+      "bodyTextLen": 1837,
+      "bodyTextHash": "406d0be948e587bdb4ea801c122b45d797e5f0f0ea3f4e160ddff61293b810e2",
+      "bodyTextPrefix": "PYTHIA IDLE HYBA · PYTHIA The operator console that refuses to l",
+      "horizontalOverflow": true,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}

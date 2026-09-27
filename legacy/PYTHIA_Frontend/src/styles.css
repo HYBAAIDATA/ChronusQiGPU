@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", "Times New Roman", ui-serif, Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --color-background: #0b0b0c;
+  --color-foreground: #eeeae2;
+  --color-card: #141416;
+  --color-card-foreground: #eeeae2;
+  --color-popover: #18181b;
+  --color-popover-foreground: #eeeae2;
+  --color-primary: #eeeae2;
+  --color-primary-foreground: #0b0b0c;
+  --color-secondary: #1c1c1f;
+  --color-secondary-foreground: #eeeae2;
+  --color-muted: #1c1c1f;
+  --color-muted-foreground: #9c9890;
+  --color-accent: #c8ccd4;
+  --color-accent-foreground: #0b0b0c;
+  --color-destructive: #c17a72;
+  --color-destructive-foreground: #eeeae2;
+  --color-border: rgb(238 234 226 / 0.1);
+  --color-input: rgb(238 234 226 / 0.12);
+  --color-ring: #c8ccd4;
+  --color-live: #7d9a86;
+  --color-warn: #c4a574;
+  --color-theoretical: #8a8a92;
+  --color-paper: #eeeae2;
+  --color-ink: #0b0b0c;
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius: 12px;
+
+  --shadow-border: 0 0 0 1px rgb(255 255 255 / 0.08);
+  --shadow-border-hover: 0 0 0 1px rgb(255 255 255 / 0.14);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: var(--color-background);
+    color: var(--color-foreground);
+  }
+
+  body {
+    min-height: 100dvh;
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background: rgb(200 204 212 / 0.28);
+    color: var(--color-foreground);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

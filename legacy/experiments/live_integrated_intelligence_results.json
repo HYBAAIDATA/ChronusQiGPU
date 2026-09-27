@@ -1,0 +1,443 @@
+{
+  "n_cycles": 12,
+  "transcript": [
+    {
+      "cycle": 1,
+      "toe_raw": 0.732,
+      "toe_calibrated": 0.6392,
+      "global_calibrated": 0.5263,
+      "subsystem_weights": {
+        "toe": 0.3333,
+        "meta_evolution": 0.3333,
+        "pythia_learning": 0.3333
+      },
+      "brier_scores": {
+        "toe": 0.25,
+        "meta_evolution": 0.25,
+        "pythia_learning": 0.25
+      },
+      "pythia_emergence": 0.0,
+      "germ_line": 1,
+      "meta_delta_phi": 0.4397,
+      "phase_transition": true,
+      "discovered_primitive": "discovered:46322892",
+      "curriculum_capabilities": [
+        "tomography",
+        "trajectory"
+      ],
+      "semantic_concepts": 67,
+      "new_concepts_this_cycle": 12,
+      "mining_success": true,
+      "winner_nonce": 0
+    },
+    {
+      "cycle": 2,
+      "toe_raw": 0.8435,
+      "toe_calibrated": 0.7661,
+      "global_calibrated": 0.7124,
+      "subsystem_weights": {
+        "toe": 0.353,
+        "meta_evolution": 0.268,
+        "pythia_learning": 0.3789
+      },
+      "brier_scores": {
+        "toe": 0.3359,
+        "meta_evolution": 0.4443,
+        "pythia_learning": 0.3125
+      },
+      "pythia_emergence": 0.5,
+      "germ_line": 2,
+      "meta_delta_phi": 0.442,
+      "phase_transition": true,
+      "discovered_primitive": "discovered:365372df",
+      "curriculum_capabilities": [
+        "tomography",
+        "trajectory",
+        "causality"
+      ],
+      "semantic_concepts": 71,
+      "new_concepts_this_cycle": 4,
+      "mining_success": true,
+      "winner_nonce": 0
+    },
+    {
+      "cycle": 3,
+      "toe_raw": 0.8697,
+      "toe_calibrated": 0.8018,
+      "global_calibrated": 0.6726,
+      "subsystem_weights": {
+        "toe": 0.329,
+        "meta_evolution": 0.241,
+        "pythia_learning": 0.43
+      },
+      "brier_scores": {
+        "toe": 0.3528,
+        "meta_evolution": 0.484,
+        "pythia_learning": 0.2685
+      },
+      "pythia_emergence": 0.6667,
+      "germ_line": 3,
+      "meta_delta_phi": 0.0068,
+      "phase_transition": false,
+      "discovered_primitive": null,
+      "curriculum_capabilities": [
+        "tomography",
+        "trajectory",
+        "causality",
+        "counterfactual"
+      ],
+      "semantic_concepts": 74,
+      "new_concepts_this_cycle": 3,
+      "mining_success": true,
+      "winner_nonce": 0
+    },
+    {
+      "cycle": 4,
+      "toe_raw": 0.865,
+      "toe_calibrated": 0.7887,
+      "global_calibrated": 0.6307,
+      "subsystem_weights": {
+        "toe": 0.3329,
+        "meta_evolution": 0.239,
+        "pythia_learning": 0.4281
+      },
+      "brier_scores": {
+        "toe": 0.3604,
+        "meta_evolution": 0.5046,
+        "pythia_learning": 0.2789
+      },
+      "pythia_emergence": 0.5806,
+      "germ_line": 4,
+      "meta_delta_phi": 0.0002,
+      "phase_transition": false,
+      "discovered_primitive": null,
+      "curriculum_capabilities": [
+        "tomography",
+        "trajectory",
+        "causality",
+        "counterfactual"
+      ],
+      "semantic_concepts": 77,
+      "new_concepts_this_cycle": 3,
+      "mining_success": true,
+      "winner_nonce": 0
+    },
+    {
+      "cycle": 5,
+      "toe_raw": 0.8876,
+      "toe_calibrated": 0.813,
+      "global_calibrated": 0.6719,
+      "subsystem_weights": {
+        "toe": 0.3143,
+        "meta_evolution": 0.256,
+        "pythia_learning": 0.4298
+      },
+      "brier_scores": {
+        "toe": 0.3684,
+        "meta_evolution": 0.4537,
+        "pythia_learning": 0.2677
+      },
+      "pythia_emergence": 0.6709,
+      "germ_line": 5,
+      "meta_delta_phi": 0.0002,
+      "phase_transition": false,
+      "discovered_primitive": null,
+      "curriculum_capabilities": [
+        "tomography",
+        "trajectory",
+        "causality",
+        "counterfactual"
+      ],
+      "semantic_concepts": 80,
+      "new_concepts_this_cycle": 3,
+      "mining_success": true,
+      "winner_nonce": 0
+    },
+    {
+      "cycle": 6,
+      "toe_raw": 0.4957,
+      "toe_calibrated": 0.5849,
+      "global_calibrated": 0.6222,
+      "subsystem_weights": {
+        "toe": 0.3191,
+        "meta_evolution": 0.2659,
+        "pythia_learning": 0.415
+      },
+      "brier_scores": {
+        "toe": 0.3486,
+        "meta_evolution": 0.4197,
+        "pythia_learning": 0.2667
+      },
+      "pythia_emergence": 0.7292,
+      "germ_line": 6,
+      "meta_delta_phi": 0.0001,
+      "phase_transition": false,
+      "discovered_primitive": null,
+      "curriculum_capabilities": [
+        "tomography",
+        "trajectory",
+        "causality",
+        "counterfactual"
+      ],
+      "semantic_concepts": 83,
+      "new_concepts_this_cycle": 3,
+      "mining_success": true,
+      "winner_nonce": 0
+    },
+    {
+      "cycle": 7,
+      "toe_raw": 0.9044,
+      "toe_calibrated": 0.8351,
+      "global_calibrated": 0.7143,
+      "subsystem_weights": {
+        "toe": 0.3103,
+        "meta_evolution": 0.2812,
+        "pythia_learning": 0.4085
+      },
+      "brier_scores": {
+        "toe": 0.3579,
+        "meta_evolution": 0.3955,
+        "pythia_learning": 0.2704
+      },
+      "pythia_emergence": 0.7699,
+      "germ_line": 7,
+      "meta_delta_phi": 0.0002,
+      "phase_transition": false,
+      "discovered_primitive": null,
+      "curriculum_capabilities": [
+        "tomography",
+        "trajectory",
+        "causality",
+        "counterfactual"
+      ],
+      "semantic_concepts": 83,
+      "new_concepts_this_cycle": 0,
+      "mining_success": true,
+      "winner_nonce": 0
+    },
+    {
+      "cycle": 8,
+      "toe_raw": 0.9235,
+      "toe_calibrated": 0.8501,
+      "global_calibrated": 0.7266,
+      "subsystem_weights": {
+        "toe": 0.3036,
+        "meta_evolution": 0.2953,
+        "pythia_learning": 0.4011
+      },
+      "brier_scores": {
+        "toe": 0.3668,
+        "meta_evolution": 0.3773,
+        "pythia_learning": 0.2761
+      },
+      "pythia_emergence": 0.8,
+      "germ_line": 8,
+      "meta_delta_phi": 0.0,
+      "phase_transition": false,
+      "discovered_primitive": null,
+      "curriculum_capabilities": [
+        "tomography",
+        "trajectory",
+        "causality",
+        "counterfactual"
+      ],
+      "semantic_concepts": 83,
+      "new_concepts_this_cycle": 0,
+      "mining_success": true,
+      "winner_nonce": 0
+    },
+    {
+      "cycle": 9,
+      "toe_raw": 0.699,
+      "toe_calibrated": 0.7182,
+      "global_calibrated": 0.6927,
+      "subsystem_weights": {
+        "toe": 0.3079,
+        "meta_evolution": 0.3038,
+        "pythia_learning": 0.3884
+      },
+      "brier_scores": {
+        "toe": 0.3583,
+        "meta_evolution": 0.3631,
+        "pythia_learning": 0.2827
+      },
+      "pythia_emergence": 0.8231,
+      "germ_line": 9,
+      "meta_delta_phi": 0.0002,
+      "phase_transition": false,
+      "discovered_primitive": null,
+      "curriculum_capabilities": [
+        "tomography",
+        "trajectory",
+        "causality",
+        "counterfactual"
+      ],
+      "semantic_concepts": 83,
+      "new_concepts_this_cycle": 0,
+      "mining_success": true,
+      "winner_nonce": 0
+    },
+    {
+      "cycle": 10,
+      "toe_raw": 0.6894,
+      "toe_calibrated": 0.7146,
+      "global_calibrated": 0.6956,
+      "subsystem_weights": {
+        "toe": 0.312,
+        "meta_evolution": 0.3113,
+        "pythia_learning": 0.3768
+      },
+      "brier_scores": {
+        "toe": 0.351,
+        "meta_evolution": 0.3518,
+        "pythia_learning": 0.2896
+      },
+      "pythia_emergence": 0.8415,
+      "germ_line": 10,
+      "meta_delta_phi": 0.0001,
+      "phase_transition": false,
+      "discovered_primitive": null,
+      "curriculum_capabilities": [
+        "tomography",
+        "trajectory",
+        "causality",
+        "counterfactual"
+      ],
+      "semantic_concepts": 83,
+      "new_concepts_this_cycle": 0,
+      "mining_success": true,
+      "winner_nonce": 0
+    },
+    {
+      "cycle": 11,
+      "toe_raw": 0.741,
+      "toe_calibrated": 0.7474,
+      "global_calibrated": 0.7087,
+      "subsystem_weights": {
+        "toe": 0.3144,
+        "meta_evolution": 0.3185,
+        "pythia_learning": 0.3671
+      },
+      "brier_scores": {
+        "toe": 0.3471,
+        "meta_evolution": 0.3426,
+        "pythia_learning": 0.2964
+      },
+      "pythia_emergence": 0.8564,
+      "germ_line": 11,
+      "meta_delta_phi": 0.0002,
+      "phase_transition": false,
+      "discovered_primitive": null,
+      "curriculum_capabilities": [
+        "tomography",
+        "trajectory",
+        "causality",
+        "counterfactual"
+      ],
+      "semantic_concepts": 83,
+      "new_concepts_this_cycle": 0,
+      "mining_success": true,
+      "winner_nonce": 0
+    },
+    {
+      "cycle": 12,
+      "toe_raw": 0.4935,
+      "toe_calibrated": 0.6003,
+      "global_calibrated": 0.6637,
+      "subsystem_weights": {
+        "toe": 0.3196,
+        "meta_evolution": 0.3235,
+        "pythia_learning": 0.3569
+      },
+      "brier_scores": {
+        "toe": 0.339,
+        "meta_evolution": 0.3349,
+        "pythia_learning": 0.303
+      },
+      "pythia_emergence": 0.8687,
+      "germ_line": 12,
+      "meta_delta_phi": 0.0001,
+      "phase_transition": false,
+      "discovered_primitive": null,
+      "curriculum_capabilities": [
+        "tomography",
+        "trajectory",
+        "causality",
+        "counterfactual"
+      ],
+      "semantic_concepts": 83,
+      "new_concepts_this_cycle": 0,
+      "mining_success": true,
+      "winner_nonce": 0
+    }
+  ],
+  "coupling_evidence": {
+    "wire1_toe_to_meta": {
+      "description": "TOE confidence shapes meta-evolution mutation rate",
+      "toe_confidence_first_to_last": [
+        0.732,
+        0.4935
+      ],
+      "meta_mutation_rate": 1.0
+    },
+    "wire2_meta_to_memory": {
+      "description": "Discovered primitives written to semantic memory",
+      "semantic_concepts_first_to_last": [
+        67,
+        83
+      ],
+      "n_primitives_discovered": 2,
+      "new_concepts_total": 0
+    },
+    "wire3_memory_to_toe": {
+      "description": "Curriculum gates TOE capabilities",
+      "capabilities_first": [
+        "tomography",
+        "trajectory"
+      ],
+      "capabilities_last": [
+        "tomography",
+        "trajectory",
+        "causality",
+        "counterfactual"
+      ]
+    },
+    "wire4_pythia_to_meta": {
+      "description": "Germ-line memories bias primitive weights",
+      "germ_line_first_to_last": [
+        1,
+        12
+      ],
+      "n_primitives": 7
+    },
+    "wire5_pythia_to_toe": {
+      "description": "Emergence signal calibrates TOE confidence",
+      "toe_raw_vs_calibrated_last": [
+        0.4935,
+        0.6003
+      ],
+      "emergence_last": 0.8687
+    },
+    "wire6_meta_to_pythia": {
+      "description": "Phase transitions feed back as learning rewards",
+      "total_phase_transitions": 2
+    },
+    "metacognition": {
+      "description": "Brier-score self-model tracks calibration",
+      "brier_scores_final": {
+        "toe": 0.339,
+        "meta_evolution": 0.3349,
+        "pythia_learning": 0.303
+      },
+      "subsystem_weights_final": {
+        "toe": 0.3196,
+        "meta_evolution": 0.3235,
+        "pythia_learning": 0.3569
+      },
+      "global_calibrated_first_to_last": [
+        0.5263,
+        0.6637
+      ]
+    }
+  }
+}

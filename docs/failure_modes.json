@@ -1,0 +1,57 @@
+{
+  "modes": [
+    {
+      "mode": "float_leak_in_gap_kernel",
+      "owner": "precision_sentinel",
+      "test": "tests/test_operating_model.py::test_mode_float_leak_in_gap_kernel"
+    },
+    {
+      "mode": "hmac_key_reuse",
+      "owner": "security_verifier",
+      "test": "tests/test_operating_model.py::test_mode_hmac_key_reuse"
+    },
+    {
+      "mode": "replay_across_cycle_boundary",
+      "owner": "security_verifier",
+      "test": "tests/test_operating_model.py::test_mode_replay_across_cycle_boundary"
+    },
+    {
+      "mode": "integer_overflow_at_L20",
+      "owner": "math_verifier",
+      "test": "tests/test_operating_model.py::test_mode_integer_overflow_at_L20"
+    },
+    {
+      "mode": "nondeterministic_dict_iteration",
+      "owner": "precision_sentinel",
+      "test": "tests/test_operating_model.py::test_mode_nondeterministic_dict_iteration"
+    },
+    {
+      "mode": "retarget_thrash_hardware",
+      "owner": "auditor",
+      "test": "tests/test_operating_model.py::test_mode_retarget_thrash_hardware"
+    },
+    {
+      "mode": "goal_stack_starvation",
+      "owner": "auditor",
+      "test": "tests/test_operating_model.py::test_mode_goal_stack_starvation"
+    },
+    {
+      "mode": "folded_ratio_lies",
+      "owner": "precision_sentinel",
+      "test": "tests/test_operating_model.py::test_mode_folded_ratio_lies"
+    },
+    {
+      "mode": "non_cptp_measurement_path",
+      "owner": "quantum_checker",
+      "test": "tests/test_operating_model.py::test_mode_non_cptp_measurement_path"
+    },
+    {
+      "mode": "pin_violated_somewhere",
+      "owner": "pin_verifier",
+      "test": "tests/test_operating_model.py::test_mode_pin_violated_somewhere"
+    }
+  ],
+  "each_has_a_test": true,
+  "each_has_an_owner_truth_agent": true,
+  "theorem_proven": false
+}

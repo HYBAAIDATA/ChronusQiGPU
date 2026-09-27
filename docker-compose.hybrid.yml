@@ -1,0 +1,42 @@
+# Hybrid solver-fleet packaging (EHS T10).
+# Standalone stack — run alongside or instead of the operator service:
+#
+#   docker compose -f docker-compose.hybrid.yml run --rm hybrid-fleet
+#   docker compose -f docker-compose.hybrid.yml run --rm hybrid-fleet \
+#       --n 128 --headers /app/corpus/headers.txt
+#
+# GPU arm: PoCL provides a real CPU OpenCL device in-container; pass a
+# discrete device through with HYBA_OPENCL_DEVICES=/dev/dri (compose maps
+# the listed nodes when they exist on the host).
+# ASIC arm: fail-closed. ASICSolver reports ASICNotPresent unless a real
+# device node is mapped via MLA1517_UIO_DEVICE.
+services:
+  hybrid-fleet:
+    build:
+      context: .
+      dockerfile: Dockerfile.hybrid
+    container_name: pythia-hybrid-fleet
+    environment:
+      HYBA_REQUIRE_HYBA: "${HYBA_REQUIRE_HYBA:-1}"
+      HYBA_BACKEND: "${HYBA_BACKEND:-opencl}"
+      HYBA_REPORTS_DIR: /app/reports
+      # ASIC channels are opt-in; all unset => ASICSolver reports
+      # "no ASIC channel configured" and the coordinator runs GPU-only.
+      HYBRID_ASIC_ENDPOINT: "${HYBRID_ASIC_ENDPOINT:-}"
+      HYBRID_ASIC_SERIAL: "${HYBRID_ASIC_SERIAL:-}"
+      HYBRID_ASIC_PCIE: "${HYBRID_ASIC_PCIE:-}"
+    devices:
+      - "${MLA1517_UIO_DEVICE:-/dev/uio0}:/dev/uio0"
+    volumes:
+      - hybrid_reports:/app/reports
+      # Optional real header corpus: mount a directory with headers.txt.
+      - "${HYBA_HEADER_CORPUS_DIR:-./corpus}:/app/corpus:ro"
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "2"
+
+volumes:
+  hybrid_reports:
+    driver: local

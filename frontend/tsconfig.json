@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "paths": {"@/*": ["./src/*"]},
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  },
+  "include": [
+    "src/App.tsx",
+    "src/main.tsx",
+    "src/index.css",
+    "src/vite-env.d.ts",
+    "src/components/Header.tsx",
+    "src/components/Mla1517MiningPanel.tsx",
+    "src/lib/api.ts",
+    "src/test/**/*.ts",
+    "src/**/*.{test,spec}.{ts,tsx}",
+    "vitest.config.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

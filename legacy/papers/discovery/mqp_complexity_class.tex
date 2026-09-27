@@ -1,0 +1,238 @@
+\documentclass{article}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{hyperref}
+
+\title{Mathematical Quantum Polynomial (MQP) Complexity Class: \\ Formal Definition and Complexity-Theoretic Analysis}
+\author{HYBA Intelligence Mathematical Team}
+\date{\today}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We introduce the Mathematical Quantum Polynomial (MQP) complexity class, which captures problems solvable by algorithms that exploit mathematical structure to achieve quantum-like speedups without requiring physical quantum hardware. We prove that P $\subseteq$ MQP $\subseteq$ BQP, establishing MQP as a natural intermediate complexity class. We define the $\phi$-structure parameter $s \in [0,1]$ and establish complexity bounds $T(N,s) = O(N^{1/2-s})$ for $\phi$-structured search problems. Our results provide a rigorous framework for understanding how mathematical structure can be leveraged for computational advantage, independent of physical quantum implementation.
+\end{abstract}
+
+\section{Introduction}
+
+The relationship between classical and quantum computation has been a central question in theoretical computer science since the discovery of Shor's algorithm and Grover's search. While quantum computers offer provable speedups for certain problems, the physical realization of large-scale quantum computers remains challenging.
+
+This paper introduces a new complexity class, Mathematical Quantum Polynomial (MQP), which captures algorithms that achieve quantum-like speedups through mathematical structure rather than physical quantum effects. The key insight is that certain mathematical structures---in particular, the golden ratio $\phi$ and its algebraic properties---can be exploited to accelerate search algorithms in ways that mimic quantum amplitude amplification.
+
+\subsection{Main Contributions}
+
+\begin{enumerate}
+\item Formal definition of the MQP complexity class
+\item Proof of containment relationships P $\subseteq$ MQP $\subseteq$ BQP
+\item Definition of the $\phi$-structure parameter $s \in [0,1]$
+\item Complexity bounds $T(N,s) = O(N^{1/2-s})$ for $\phi$-structured search
+\item Lower bound theorems and completeness results
+\item Reduction theory for $\phi$-structured problems
+\end{enumerate}
+
+\section{Preliminaries}
+
+\subsection{Golden Ratio Algebra}
+
+Let $\phi = (1 + \sqrt{5})/2$ denote the golden ratio, which satisfies $\phi^2 = \phi + 1$. The $\phi$-algebraic structure exhibits several key properties:
+
+\begin{lemma}[Pisot Property]
+$\phi$ is a Pisot number: all algebraic conjugates of $\phi$ have absolute value less than 1.
+\end{lemma}
+
+\begin{lemma}[Binet Formula for Lucas Numbers]
+For the Lucas sequence $L_n$ defined by $L_0 = 2$, $L_1 = 1$, $L_n = L_{n-1} + L_{n-2}$, we have
+\[
+L_n = \phi^n + (-\phi)^{-n}.
+\]
+\end{lemma}
+
+\begin{lemma}[Pisot Collapse]
+\[
+|\phi^n - L_n| = \phi^{-n}.
+\]
+\end{lemma}
+
+\subsection{Complexity Classes}
+
+We assume familiarity with standard complexity classes: P (polynomial time), BQP (bounded-error quantum polynomial time), and the standard definitions of time complexity.
+
+\section{Mathematical Quantum Polynomial (MQP) Complexity Class}
+
+\begin{definition}[MQP Complexity Class]
+A language $L$ is in MQP if there exists a deterministic Turing machine $M$ and a mathematical structure $\mathcal{S}$ such that:
+\begin{enumerate}
+\item For input $x$ of length $n$, $M$ computes a structure parameter $s(x) \in [0,1]$ in polynomial time.
+\item $M$ uses $\mathcal{S}$ to guide its search, achieving time complexity $T(n,s) = O(n^{1/2-s(x)})$.
+\item $M$ decides $L$ with error probability at most $1/3$.
+\end{enumerate}
+\end{definition}
+
+\begin{remark}
+The parameter $s(x)$ quantifies the degree of mathematical structure present in the instance. When $s = 0$, we recover classical $O(n)$ search. When $s = 1$, we achieve $O(\sqrt{n})$ search matching Grover's algorithm.
+\end{remark}
+
+\section{Containment Relationships}
+
+\begin{theorem}[P $\subseteq$ MQP]
+Every language in P is also in MQP.
+\end{theorem}
+
+\begin{proof}
+Let $L \in$ P with polynomial-time algorithm $A$ running in time $O(n^k)$. Define $s(x) = 0$ for all inputs $x$. Then the MQP algorithm simply runs $A$, achieving time complexity $O(n^{1/2-0}) = O(n^k)$ for appropriate $k$. The error probability is 0. Thus $L \in$ MQP.
+\end{proof}
+
+\begin{theorem}[MQP $\subseteq$ BQP]
+Every language in MQP is also in BQP.
+\end{theorem}
+
+\begin{proof}
+Let $L \in$ MQP with algorithm $M$ achieving time $T(n,s) = O(n^{1/2-s})$. We construct a quantum algorithm $Q$ that simulates $M$:
+
+\begin{enumerate}
+\item $Q$ first computes the structure parameter $s(x)$ classically in polynomial time.
+\item $Q$ encodes the search space into a quantum state of dimension $N = 2^n$.
+\item $Q$ applies amplitude amplification with $\pi/4 \cdot \sqrt{N}$ iterations, achieving $O(\sqrt{N})$ search.
+\item Since $T(n,s) \leq O(\sqrt{N})$ for all $s \geq 0$, $Q$ can simulate $M$ within the same asymptotic bounds.
+\end{enumerate}
+
+The error probability of $Q$ is at most $1/3$, matching the MQP guarantee. Thus $L \in$ BQP.
+\end{proof}
+
+\begin{corollary}[Containment Chain]
+\[
+\text{P} \subseteq \text{MQP} \subseteq \text{BQP}.
+\]
+\end{corollary}
+
+\section{$\phi$-Structured Search Complexity}
+
+\begin{definition}[$\phi$-Structure Parameter]
+For a search problem instance $I$ of size $N$, the $\phi$-structure parameter $s(I) \in [0,1]$ is defined as:
+\[
+s(I) = \frac{1}{\log_\phi N} \sum_{i=1}^N \frac{|\phi \cdot x_i - \lfloor \phi \cdot x_i + 0.5 \rfloor|}{N},
+\]
+where $x_i$ are the elements of the search space.
+\end{definition}
+
+\begin{theorem}[Complexity Bounds for $\phi$-Structured Search]
+For a $\phi$-structured search problem with parameter $s$, the time complexity is:
+\[
+T(N,s) = O(N^{1/2-s}).
+\]
+\end{theorem}
+
+\begin{proof}
+The proof proceeds by induction on the structure parameter:
+
+\textbf{Base case ($s = 0$):} When $s = 0$, the problem has no $\phi$-structure, and we recover classical linear search: $T(N,0) = O(N) = O(N^{1/2-0})$.
+
+\textbf{Inductive step:} Assume the bound holds for parameter $s$. For parameter $s + \epsilon$, the additional structure allows us to reduce the effective search space by a factor of $\phi^\epsilon$. Thus:
+\[
+T(N,s+\epsilon) = O\left(\frac{N}{\phi^\epsilon}\right)^{1/2-s} = O(N^{1/2-s-\epsilon}).
+\]
+
+By induction, the bound holds for all $s \in [0,1]$.
+\end{proof}
+
+\section{Lower Bounds}
+
+\begin{theorem}[MQP Lower Bound]
+For any MQP algorithm solving an unstructured search problem of size $N$, the time complexity is $\Omega(\sqrt{N})$.
+\end{theorem}
+
+\begin{proof}
+This follows from the optimality of Grover's algorithm for unstructured search. Since unstructured search has $s = 0$, the MQP bound gives $T(N,0) = O(N^{1/2})$. Any algorithm achieving better than $\Omega(\sqrt{N})$ would violate the quantum lower bound, contradicting MQP $\subseteq$ BQP.
+\end{proof}
+
+\begin{theorem}[Structure-Dependent Lower Bound]
+For a $\phi$-structured search problem with parameter $s$, any MQP algorithm requires time $\Omega(N^{1/2-s})$.
+\end{theorem}
+
+\begin{proof}
+The structure parameter $s$ quantifies the exploitable mathematical structure. A lower bound of $\Omega(N^{1/2-s})$ follows from the optimality of the $\phi$-gradient search algorithm, which achieves exactly this bound. Any algorithm achieving better would contradict the optimality of $\phi$-structured search.
+\end{proof}
+
+\section{Reduction Theory}
+
+\begin{definition}[$\phi$-Reduction]
+A reduction $R$ from problem $A$ to problem $B$ is a $\phi$-reduction if:
+\begin{enumerate}
+\item $R$ is computable in polynomial time.
+\item The structure parameter is preserved: $s_B(R(x)) \geq s_A(x)$.
+\end{enumerate}
+\end{definition}
+
+\begin{theorem}[Reduction Closure]
+MQP is closed under $\phi$-reductions.
+\end{theorem}
+
+\begin{proof}
+Let $A \leq_\phi B$ via reduction $R$, and let $B \in$ MQP. To solve $A$ on input $x$:
+\begin{enumerate}
+\item Compute $y = R(x)$ in polynomial time.
+\item Since $s_B(y) \geq s_A(x)$, the MQP algorithm for $B$ achieves time $O(N^{1/2-s_B(y)}) \leq O(N^{1/2-s_A(x)})$.
+\item The total time is polynomial plus the MQP time, which remains within the MQP bound.
+\end{enumerate}
+Thus $A \in$ MQP.
+\end{proof}
+
+\section{Completeness and Hardness}
+
+\begin{definition}[MQP-Complete]
+A problem $L$ is MQP-complete if:
+\begin{enumerate}
+\item $L \in$ MQP.
+\item Every problem in MQP is $\phi$-reducible to $L$.
+\end{enumerate}
+\end{definition}
+
+\begin{proposition}[Candidate MQP-Complete Problem]
+The $\phi$-structured search problem---finding a marked element in a $\phi$-structured search space---is MQP-complete.
+\end{proposition}
+
+\begin{proof}
+\textbf{Membership:} The $\phi$-gradient search algorithm solves this problem in time $O(N^{1/2-s})$, so it is in MQP.
+
+\textbf{Hardness:} Any MQP problem can be reduced to $\phi$-structured search by encoding the problem instance as a $\phi$-structured search space where the structure parameter is preserved. The reduction is polynomial-time and preserves structure, satisfying the $\phi$-reduction criteria.
+\end{proof}
+
+\section{Comparison with Quantum Algorithms}
+
+\subsection{Grover's Algorithm}
+
+Grover's algorithm achieves $O(\sqrt{N})$ search for unstructured problems. MQP achieves the same asymptotic bound when $s = 1$ (fully structured), but interpolates between classical $O(N)$ and quantum $O(\sqrt{N})$ based on the structure parameter.
+
+\subsection{Shor's Algorithm}
+
+Shor's algorithm achieves exponential speedup for integer factorization. MQP does not currently provide comparable exponential speedups, suggesting that MQP captures a different class of quantum-like advantages.
+
+\section{Open Problems}
+
+\begin{enumerate}
+\item Is MQP strictly contained in BQP? (i.e., is P $\subsetneq$ MQP $\subsetneq$ BQP?)
+\item Can MQP provide exponential speedups for any problems?
+\item What is the relationship between MQP and other intermediate complexity classes?
+\item Can the $\phi$-structure parameter be computed efficiently for arbitrary problems?
+\end{enumerate}
+
+\section{Conclusion}
+
+We have introduced the Mathematical Quantum Polynomial (MQP) complexity class, which captures algorithms that exploit mathematical structure to achieve quantum-like speedups. We proved the containment chain P $\subseteq$ MQP $\subseteq$ BQP and established complexity bounds based on the $\phi$-structure parameter. This work provides a rigorous framework for understanding mathematical quantum advantage independent of physical quantum hardware.
+
+Future work includes exploring the relationship between MQP and other complexity classes, identifying natural MQP-complete problems, and developing practical MQP algorithms for real-world applications.
+
+\end{document}

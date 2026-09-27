@@ -1,0 +1,19 @@
+# NVIDIA CUDA override — strictly-defined GPU reservations.
+# Usage: GPU_BACKEND=cuda docker compose -f docker-compose.yml -f docker-compose.cuda.yml up -d
+#
+# Replaces the OpenCL /dev/dri passthrough with the NVIDIA driver device
+# reservation. The container gets direct metal access via the NVIDIA
+# Container Toolkit; HYBA_BACKEND=cuda selects the CUDA path in-code.
+services:
+  pythia:
+    environment:
+      - HYBA_BACKEND=cuda
+    devices: !reset []
+    group_add: !reset []
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: ${EUCLID_CUDA_GPU_COUNT:-all}
+              capabilities: [gpu, compute]

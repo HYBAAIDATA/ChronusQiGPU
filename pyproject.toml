@@ -1,0 +1,94 @@
+[project]
+name = "pythia-mla1517"
+version = "0.1.0"
+description = "PYTHIA operational mining backend with the canonical MLA1517 execution path."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.12"
+authors = [{ name = "PYTHIA Contributors" }]
+keywords = ["mining", "stratum", "opencl", "mla1517", "verification"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+dependencies = [
+    "numpy>=1.26,<3",
+    "pyyaml>=6.0,<7",
+]
+
+[project.scripts]
+pythia = "main:main"
+pythia-api = "control_api:main"
+pythia-mine = "mining_runtime:main"
+
+[project.optional-dependencies]
+hardware = [
+    "pyopencl>=2024.1",
+]
+ml = [
+    "nltk>=3.8",
+    "scikit-learn>=1.3",
+    "xgboost>=1.7",
+    "lightgbm>=4.0",
+    # millennium.millennium_reasoning_service imports fastapi at module load.
+    "fastapi>=0.110",
+]
+dev = [
+    "pytest>=7.4,<10",
+    "pytest-asyncio>=0.24,<3",
+    "hypothesis>=6.0,<7",
+    "black>=24.0,<27",
+    "flake8>=7.0,<8",
+]
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "mla1517_platform_v3.4/python", "aethel" = "aethel", "kellogg" = "kellogg", "toe" = "toe", "python_backend" = "python_backend", "lucas" = "lucas", "millennium" = "millennium"}
+packages = ["lucas", "millennium", "mla1517", "mla1517.mining", "aethel", "kellogg", "toe", "toe.intelligences", "toe.unified", "python_backend", "python_backend.pythia_mining", "python_backend.mathematical_foundation", "python_backend.hyba", "python_backend.hyba.runtime"]
+py-modules = [
+    "control_api",
+    "coordinator",
+    "euclid_core",
+    "extended_algebra",
+    "headless_miner",
+    "main",
+    "manifold_pool_coordinator",
+    "mining_runtime",
+    "worker_lifecycle",
+    "runtime_config",
+    "turing_core",
+    "pythia_turing_math",
+    "startup_contract",
+    "system_fabric",
+    "reference_test",
+    "run_conformance",
+    "run_cpp_host_overlay",
+    "salamander_control",
+    "salamander_engine",
+    "telemetry_daemon",
+]
+
+[tool.setuptools.package-data]
+aethel = ["py.typed", "*.md"]
+kellogg = ["py.typed"]
+toe = ["py.typed", "default_propagators.json"]
+millennium = ["*.ts", "rtl/*.sv", "docs/*.md"]
+python_backend = ["*.csv"]
+
+[tool.pytest.ini_options]
+testpaths = ["mla1517_platform_v3.4/python", "tests"]
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+exclude = '''
+/(\n    \\.git\n  | \\.pytest_cache\n  | __pycache__\n  | node_modules\n  | dist\n  | models\n  | logs\n  | legacy\n  | \\.venv\n  | venv\n)/
+'''

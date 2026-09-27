@@ -1,0 +1,68 @@
+groups:
+  - name: euclid_core_invariants
+    rules:
+      # CRITICAL: Any floating-point or algebraic invariant breach in core paths
+      - alert: EuclidExactMathViolation
+        expr: sum(increase(euclid_exact_math_violations_total[5m])) > 0
+        for: 0m
+        labels:
+          severity: critical
+          tier: sovereign_math
+        annotations:
+          summary: "CRITICAL: Exact-Math invariant violated in core algebraic path"
+          description: "Runtime AssertExact fired. Zero floating-point rule breached on worker {{ $labels.worker }}. Immediate execution halt required."
+
+      # CRITICAL: Audit state hash divergence (BLAKE2b mismatch)
+      - alert: EuclidAuditHashMismatch
+        expr: sum(increase(euclid_audit_hash_mismatch_total[5m])) > 0
+        for: 0m
+        labels:
+          severity: critical
+          tier: sovereign_audit
+        annotations:
+          summary: "Audit state hash mismatch detected"
+          description: "Exact Q[√5] state serialization hash does not match computed ledger record. Mathematical provenance integrity failure."
+
+      # HIGH: Pool RTT exceeding Tier 3 circuit breaker SLA (>250ms)
+      - alert: EuclidStratumRTTExceeded
+        expr: histogram_quantile(0.95, sum by (le, worker) (rate(euclid_stratum_rtt_ms_bucket[5m]))) > 250
+        for: 1m
+        labels:
+          severity: high
+          tier: network_sla
+        annotations:
+          summary: "Stratum RTT exceeds 250ms critical threshold"
+          description: 'Worker {{ $labels.worker }} P95 RTT is {{ $value | printf "%.2f" }}ms. Stale share probability exceeds 0.0417%. Circuit breaker failover armed.'
+
+      # CRITICAL: Stratum disconnect
+      - alert: EuclidStratumDisconnected
+        expr: euclid_stratum_connected == 0
+        for: 30s
+        labels:
+          severity: critical
+          tier: network_sla
+        annotations:
+          summary: "Stratum socket disconnected"
+          description: "Worker {{ $labels.worker }} lost TCP connection to mining pool. Automated reconnect sequence in progress."
+
+      # HIGH: Stale shares backlog accumulating
+      - alert: EuclidStaleSharesAccumulating
+        expr: sum by (worker) (euclid_shares_stale) > 5
+        for: 2m
+        labels:
+          severity: high
+          tier: settlement
+        annotations:
+          summary: "Unresolved share submissions backlog > 5"
+          description: "Worker {{ $labels.worker }} has {{ $value }} shares older than 5 minutes without pool ACK."
+
+      # WARNING: Mempool snapshot stale
+      - alert: EuclidMempoolSnapshotStale
+        expr: (time() - euclid_mempool_snapshot_timestamp_seconds) > 60
+        for: 1m
+        labels:
+          severity: warning
+          tier: block_assembler
+        annotations:
+          summary: "Mempool snapshot is older than 60 seconds"
+          description: "Background mempool refresher has not updated candidate transactions. Knapsack assembly operating on stale mempool state."

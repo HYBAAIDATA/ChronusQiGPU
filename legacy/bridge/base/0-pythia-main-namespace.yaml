@@ -1,0 +1,8 @@
+#! 0-pythia-main-namespace.yaml
+# Generated code, do not edit
+apiVersion: v1
+kind: Namespace
+metadata:
+    name: pythia-main
+    labels:
+        com.docker.compose.project: pythia-main

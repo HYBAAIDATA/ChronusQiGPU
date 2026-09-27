@@ -1,0 +1,15 @@
+{
+  "bank_annual_savings": 45000000,
+  "baseline": "majority class on Iris-setosa versus the other two species",
+  "baseline_accuracy": 0.6666666666666666,
+  "catalog_definitions": 1063,
+  "dataset": "UCI Iris",
+  "dataset_rows": 150,
+  "exact_linear_accuracy": 0.9933333333333333,
+  "high_annual_savings": 145000000,
+  "live_vendor_endpoints": 0,
+  "low_annual_savings": 58000000,
+  "platform": "Windows-2022Server-10.0.20348-SP0",
+  "python": "3.12.10",
+  "seed": 1517
+}

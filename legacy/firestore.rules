@@ -1,0 +1,115 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidMiningSession(data) {
+      return data.keys().hasAll([
+        'sessionId', 'poolId', 'workerName', 'difficulty',
+        'sharesAccepted', 'sharesRejected', 'status', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().size() == 9 &&
+      data.sessionId is string && data.sessionId.size() <= 64 &&
+      data.poolId is string && data.poolId.size() <= 64 &&
+      data.workerName is string && data.workerName.size() <= 128 &&
+      data.difficulty is string && data.difficulty.size() <= 32 &&
+      data.sharesAccepted is number && data.sharesAccepted >= 0 &&
+      data.sharesRejected is number && data.sharesRejected >= 0 &&
+      (data.status == 'active' || data.status == 'closed' || data.status == 'errored') &&
+      data.createdAt is string && data.createdAt.size() <= 64 &&
+      data.updatedAt is string && data.updatedAt.size() <= 64;
+    }
+
+    function isValidSubmittedShare(data, parentSessionId) {
+      return data.keys().hasAll([
+        'shareId', 'sessionId', 'jobId', 'nonceHex', 'headerHash', 'status', 'createdAt'
+      ]) &&
+      data.keys().size() == 7 &&
+      data.shareId is string && data.shareId.size() <= 64 &&
+      data.sessionId == parentSessionId &&
+      data.jobId is string && data.jobId.size() <= 64 &&
+      data.nonceHex is string && data.nonceHex.size() <= 8 &&
+      data.headerHash is string && data.headerHash.size() <= 64 &&
+      (data.status == 'accepted' || data.status == 'rejected') &&
+      data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    function isValidAuditReport(data) {
+      return data.keys().hasAll([
+        'auditRunId', 'passCount', 'totalCount', 'allPassed', 'durationMs', 'timestamp'
+      ]) &&
+      data.keys().size() == 6 &&
+      data.auditRunId is string && data.auditRunId.size() <= 64 &&
+      data.passCount is number && data.passCount >= 0 &&
+      data.totalCount is number && data.totalCount >= 0 &&
+      data.allPassed is bool &&
+      data.durationMs is number && data.durationMs >= 0 &&
+      data.timestamp is string && data.timestamp.size() <= 64;
+    }
+
+    // Collection: mining_sessions (authenticated clients only)
+    match /mining_sessions/{sessionId} {
+      allow get: if request.auth != null && isValidId(sessionId);
+      allow list: if request.auth != null;
+      allow create: if request.auth != null &&
+                       isValidId(sessionId) &&
+                       incoming().sessionId == sessionId &&
+                       isValidMiningSession(incoming());
+      allow update: if request.auth != null &&
+                       isValidId(sessionId) &&
+                       isValidMiningSession(incoming()) &&
+                       incoming().sessionId == existing().sessionId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'sharesAccepted', 'sharesRejected', 'difficulty', 'status', 'updatedAt'
+                       ]);
+      allow delete: if false;
+
+      // Subcollection: shares under mining_sessions
+      match /shares/{shareId} {
+        allow get: if request.auth != null &&
+                      isValidId(sessionId) && isValidId(shareId);
+        allow list: if request.auth != null && isValidId(sessionId);
+        allow create: if request.auth != null &&
+                         isValidId(sessionId) &&
+                         isValidId(shareId) &&
+                         incoming().shareId == shareId &&
+                         incoming().sessionId == sessionId &&
+                         exists(/databases/$(database)/documents/mining_sessions/$(sessionId)) &&
+                         isValidSubmittedShare(incoming(), sessionId);
+        allow update, delete: if false;
+      }
+    }
+
+    // Collection: test (for connectivity testing)
+    match /test/{docId} {
+      allow read: if true;
+    }
+
+    // Collection: audit_reports (public/anonymous client audit run logs)
+    match /audit_reports/{auditRunId} {
+      allow get, list: if true;
+      allow create: if isValidId(auditRunId) &&
+                       incoming().auditRunId == auditRunId &&
+                       isValidAuditReport(incoming());
+      allow update, delete: if false;
+    }
+  }
+}

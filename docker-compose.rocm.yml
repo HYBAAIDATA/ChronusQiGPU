@@ -1,0 +1,27 @@
+# ROCm / AMD + HPE Cray overlay — vendor ICD + device passthrough.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.override.yml
+#   -f docker-compose.rocm.yml up -d
+# Probe: docker compose -f docker-compose.yml -f docker-compose.override.yml
+#   -f docker-compose.rocm.yml --profile probe run --rm igpu-probe
+# HYBA_REQUIRE_HYBA=1 default: no HYBA-alias device -> unavailable, no swap.
+services:
+  pythia:
+    devices:
+      - "/dev/kfd:/dev/kfd"
+      - "/dev/dri:/dev/dri"
+    group_add:
+      - "video"
+      - "render"
+
+  igpu-probe:
+    build: .
+    profiles:
+      - "probe"
+    devices:
+      - "/dev/kfd:/dev/kfd"
+      - "/dev/dri:/dev/dri"
+    group_add:
+      - "video"
+      - "render"
+    command: ["clinfo"]
+    restart: "no"

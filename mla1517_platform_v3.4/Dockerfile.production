@@ -1,0 +1,12 @@
+FROM python:3.13-slim
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PYTHONPATH=/app/python
+WORKDIR /app
+COPY pyproject.toml .
+COPY python ./python
+RUN useradd --create-home --uid 10001 mla \
+    && mkdir -p /var/lib/mla1517 \
+    && chown -R mla:mla /app /var/lib/mla1517
+USER mla
+ENV MLA1517_DB=/var/lib/mla1517/prime.db
+HEALTHCHECK --interval=30s --timeout=5s CMD python -c "from mla1517 import fib, lucas; assert fib(15)==610 and lucas(15)==1364"
+ENTRYPOINT ["python", "-m", "mla1517"]

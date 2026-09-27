@@ -1,0 +1,3 @@
+# Fixture data is verified by checksum/content digest in tests/ — EOL
+# translation on Windows checkouts corrupts the recorded measurements.
+tests/fixtures/** -text

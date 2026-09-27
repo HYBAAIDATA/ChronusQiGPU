@@ -1,0 +1,10 @@
+# Copy to config.toml and set pool credentials.
+# Braiins / ViaBTC / local test pool.
+
+[pool]
+host = "127.0.0.1"
+port = 3333
+worker = "pythia.worker"
+password = "x"
+
+window = 4096

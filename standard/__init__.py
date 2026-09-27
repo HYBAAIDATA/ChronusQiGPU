@@ -1,0 +1,1 @@
+from standard.certificate import generate_certificate

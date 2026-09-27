@@ -1,0 +1,42 @@
+# Live measured-mining overlay: real pool jobs, real SHA-256d grind,
+# measured hashrate artifact — all inside Docker.
+#
+#   docker compose -f docker-compose.live-mine.yml up --build --abort-on-container-exit
+#
+# Runs mining/live_mine.py (the measurement instrument) against the
+# configured pools inside the container. Real TCP connect + authorize,
+# real mining.notify jobs, real header80 rebuild, physical grind on the
+# OpenCL device enumerated via /dev/dxg (WSL2) — telemetry records the
+# actual backend/device, including honest CPU fallback.
+#
+# Credentials come from .env (gitignored). HYBA_REQUIRE_HYBA + the alias
+# list in .env govern the device identity gate — on this host "intel" is
+# an allowed alias; on the MLA1517 deployment the mla1517/hyba aliases
+# apply unchanged.
+#
+# Artifacts land in ./artifacts/ on the host. Submission stays fail-closed:
+# live_mine only submits when --submit is passed AND the armed env triple
+# is set — this overlay does not pass --submit.
+services:
+  pythia-live-mine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    init: true
+    restart: "no"
+    working_dir: /app
+    devices:
+      - "/dev/dxg:/dev/dxg"
+    env_file:
+      - .env
+    environment:
+      LD_LIBRARY_PATH: /usr/lib/wsl/lib
+      PYTHIA_POOL: ${PYTHIA_POOL:-both}
+      LIVE_MINE_SECONDS: ${LIVE_MINE_SECONDS:-60}
+    volumes:
+      - "/usr/lib/wsl:/usr/lib/wsl:ro"
+      - "./artifacts:/app/artifacts"
+    command:
+      - "sh"
+      - "-c"
+      - "python3 -m mining.live_mine --pool $${PYTHIA_POOL} --seconds $${LIVE_MINE_SECONDS} --out /app/artifacts/live_mine_docker.json"

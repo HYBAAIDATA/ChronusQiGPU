@@ -1,0 +1,46 @@
+node_modules/
+build/
+dist/
+dist-public/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.idea/
+.vscode/
+*.tsbuildinfo
+artifacts/
+.coverage
+.pytest_cache/
+# Host shim build artifacts (compiled from host/mla1517_mmio_win32.c /
+# host/mla1517_mmio.c during setup — not source)
+*.dll
+*.lib
+*.pdb
+*.so
+data/
+PYTHIA-main/
+full_prompt.md
+# Windows reserved-name artifact (created by `> nul` redirects under MSYS)
+nul
+# sweep/audit run artifacts and scratch inspectors
+sweep_*.txt
+audit_npm.json
+pytest_full.txt
+scripts/_inspect.py
+*.zip
+.kilo/
+# release packaging output (archives, manifests, checksums)
+mla1517_platform_v3.4/results/
+
+# PredictiveEngine trained-model artifacts (toe.engine persists here)
+models/
+
+# scratch build/output dir
+.tmp_build/

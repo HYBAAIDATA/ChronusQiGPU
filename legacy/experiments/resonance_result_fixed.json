@@ -1,0 +1,833 @@
+{
+  "device": "Intel(R) UHD Graphics 620",
+  "backend": "opencl:gpu",
+  "window": 4000000,
+  "target_div": 1024,
+  "expected_hits_per_header": 3906.2,
+  "headers": 10,
+  "total_hits": 39128,
+  "captured_job_ids": [
+    "00",
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "07",
+    "08",
+    "09",
+    "0a"
+  ],
+  "missing_job_ids": [
+    "06"
+  ],
+  "null_model": "hit stream positions ~ Uniform(0,1); mean 0.5",
+  "pooled": {
+    "11d": {
+      "n_hits": 39128,
+      "mean_norm_pos": 0.4972946385772337,
+      "median_norm_pos": 0.497939125,
+      "first_norm_pos": 1.475e-05,
+      "ks_vs_uniform": 0.006043299529748525,
+      "mean_se": 0.0014593704629610993,
+      "ks_pvalue": 0.1143434462599934
+    },
+    "m32": {
+      "n_hits": 39128,
+      "mean_norm_pos": 0.5001621902282254,
+      "median_norm_pos": 0.5015265,
+      "first_norm_pos": 7.25e-06,
+      "ks_vs_uniform": 0.0024229752095685786,
+      "mean_se": 0.0014593704629610993,
+      "ks_pvalue": 0.9755294496988273
+    },
+    "linear": {
+      "n_hits": 39128,
+      "mean_norm_pos": 0.500162172018759,
+      "median_norm_pos": 0.5015278750000001,
+      "first_norm_pos": 5e-07,
+      "ks_vs_uniform": 0.0024159752095685993,
+      "mean_se": 0.0014593704629610993,
+      "ks_pvalue": 0.9762107217936344
+    }
+  },
+  "face_affinity_pooled": {
+    "top8_hit_share_mean": 0.25097746684948213,
+    "top8_hit_share_se": 0.0017937359593431046,
+    "top8_expected_share": 0.25,
+    "spearman_mean": 0.04677419354838709,
+    "spearman_se": 0.03601213683842411,
+    "null_model": "hits uniform across faces; top8 share 0.25; rho ~ 0"
+  },
+  "per_header": [
+    {
+      "job_id": "00",
+      "n_hits": 4029,
+      "arms": {
+        "11d": {
+          "n_hits": 4029,
+          "mean_norm_pos": 0.4953921441424671,
+          "median_norm_pos": 0.494261,
+          "first_norm_pos": 0.00015275,
+          "ks_vs_uniform": 0.011971243981136803,
+          "enumerate_seconds": 2.59,
+          "permutation_verified": true
+        },
+        "m32": {
+          "n_hits": 4029,
+          "mean_norm_pos": 0.5028439734425416,
+          "median_norm_pos": 0.4987705,
+          "first_norm_pos": 2.675e-05,
+          "ks_vs_uniform": 0.011505318379250451,
+          "enumerate_seconds": 10.352,
+          "permutation_verified": true
+        },
+        "linear": {
+          "n_hits": 4029,
+          "mean_norm_pos": 0.5028439562546537,
+          "median_norm_pos": 0.49876925,
+          "first_norm_pos": 2.625e-05,
+          "ks_vs_uniform": 0.011504818379250437,
+          "enumerate_seconds": 3.955,
+          "permutation_verified": true
+        }
+      },
+      "face_affinity": {
+        "hits_per_face_affinity_order": [
+          124,
+          115,
+          122,
+          121,
+          115,
+          132,
+          132,
+          119,
+          137,
+          135,
+          137,
+          115,
+          132,
+          137,
+          124,
+          126,
+          143,
+          140,
+          128,
+          117,
+          144,
+          130,
+          142,
+          108,
+          120,
+          125,
+          111,
+          121,
+          137,
+          116,
+          103,
+          121
+        ],
+        "top8_hit_share": 0.24323653512037727,
+        "top8_expected_share": 0.25,
+        "spearman_rank_vs_density": 0.11730205278592375,
+        "null_model": "hits uniform across near-equal face shards"
+      }
+    },
+    {
+      "job_id": "01",
+      "n_hits": 3992,
+      "arms": {
+        "11d": {
+          "n_hits": 3992,
+          "mean_norm_pos": 0.5001520117735471,
+          "median_norm_pos": 0.501999375,
+          "first_norm_pos": 0.0001875,
+          "ks_vs_uniform": 0.009479466933867697,
+          "enumerate_seconds": 1.631,
+          "permutation_verified": true
+        },
+        "m32": {
+          "n_hits": 3992,
+          "mean_norm_pos": 0.49804244445140283,
+          "median_norm_pos": 0.494940125,
+          "first_norm_pos": 0.0001535,
+          "ks_vs_uniform": 0.010136728957915841,
+          "enumerate_seconds": 9.841,
+          "permutation_verified": true
+        },
+        "linear": {
+          "n_hits": 3992,
+          "mean_norm_pos": 0.4980424283567134,
+          "median_norm_pos": 0.49494175,
+          "first_norm_pos": 0.00015475,
+          "ks_vs_uniform": 0.0101372289579158,
+          "enumerate_seconds": 2.801,
+          "permutation_verified": true
+        }
+      },
+      "face_affinity": {
+        "hits_per_face_affinity_order": [
+          127,
+          122,
+          101,
+          136,
+          124,
+          112,
+          123,
+          116,
+          143,
+          128,
+          131,
+          112,
+          127,
+          117,
+          142,
+          126,
+          105,
+          127,
+          126,
+          131,
+          143,
+          127,
+          141,
+          109,
+          127,
+          121,
+          119,
+          122,
+          115,
+          124,
+          142,
+          126
+        ],
+        "top8_hit_share": 0.2407314629258517,
+        "top8_expected_share": 0.25,
+        "spearman_rank_vs_density": -0.07991202346041056,
+        "null_model": "hits uniform across near-equal face shards"
+      }
+    },
+    {
+      "job_id": "02",
+      "n_hits": 3818,
+      "arms": {
+        "11d": {
+          "n_hits": 3818,
+          "mean_norm_pos": 0.4899745722236773,
+          "median_norm_pos": 0.48884,
+          "first_norm_pos": 0.00022975,
+          "ks_vs_uniform": 0.024617224594028264,
+          "enumerate_seconds": 1.649,
+          "permutation_verified": true
+        },
+        "m32": {
+          "n_hits": 3818,
+          "mean_norm_pos": 0.501893341016239,
+          "median_norm_pos": 0.504397875,
+          "first_norm_pos": 7.75e-06,
+          "ks_vs_uniform": 0.008285444473546344,
+          "enumerate_seconds": 8.208,
+          "permutation_verified": true
+        },
+        "linear": {
+          "n_hits": 3818,
+          "mean_norm_pos": 0.5018932720010477,
+          "median_norm_pos": 0.5043975,
+          "first_norm_pos": 5e-07,
+          "ks_vs_uniform": 0.00828794447354636,
+          "enumerate_seconds": 3.719,
+          "permutation_verified": true
+        }
+      },
+      "face_affinity": {
+        "hits_per_face_affinity_order": [
+          113,
+          122,
+          111,
+          125,
+          108,
+          125,
+          140,
+          124,
+          124,
+          111,
+          104,
+          118,
+          119,
+          130,
+          135,
+          120,
+          119,
+          121,
+          113,
+          114,
+          132,
+          131,
+          108,
+          105,
+          121,
+          115,
+          117,
+          104,
+          131,
+          122,
+          113,
+          123
+        ],
+        "top8_hit_share": 0.2535358826610791,
+        "top8_expected_share": 0.25,
+        "spearman_rank_vs_density": 0.07148093841642228,
+        "null_model": "hits uniform across near-equal face shards"
+      }
+    },
+    {
+      "job_id": "03",
+      "n_hits": 3995,
+      "arms": {
+        "11d": {
+          "n_hits": 3995,
+          "mean_norm_pos": 0.4985238142052566,
+          "median_norm_pos": 0.49299475,
+          "first_norm_pos": 1.475e-05,
+          "ks_vs_uniform": 0.016198714956195237,
+          "enumerate_seconds": 1.455,
+          "permutation_verified": true
+        },
+        "m32": {
+          "n_hits": 3995,
+          "mean_norm_pos": 0.5029986179599499,
+          "median_norm_pos": 0.505663,
+          "first_norm_pos": 7.25e-06,
+          "ks_vs_uniform": 0.010244275657071311,
+          "enumerate_seconds": 7.487,
+          "permutation_verified": true
+        },
+        "linear": {
+          "n_hits": 3995,
+          "mean_norm_pos": 0.5029986161451815,
+          "median_norm_pos": 0.5056585,
+          "first_norm_pos": 6.5e-06,
+          "ks_vs_uniform": 0.010237025657071297,
+          "enumerate_seconds": 4.254,
+          "permutation_verified": true
+        }
+      },
+      "face_affinity": {
+        "hits_per_face_affinity_order": [
+          130,
+          139,
+          135,
+          119,
+          120,
+          121,
+          123,
+          105,
+          124,
+          142,
+          123,
+          129,
+          117,
+          127,
+          106,
+          128,
+          135,
+          134,
+          127,
+          121,
+          126,
+          126,
+          126,
+          122,
+          120,
+          144,
+          99,
+          129,
+          131,
+          122,
+          126,
+          119
+        ],
+        "top8_hit_share": 0.24831038798498123,
+        "top8_expected_share": 0.25,
+        "spearman_rank_vs_density": 0.07661290322580644,
+        "null_model": "hits uniform across near-equal face shards"
+      }
+    },
+    {
+      "job_id": "04",
+      "n_hits": 3881,
+      "arms": {
+        "11d": {
+          "n_hits": 3881,
+          "mean_norm_pos": 0.49646034836382374,
+          "median_norm_pos": 0.4972755,
+          "first_norm_pos": 0.00034775,
+          "ks_vs_uniform": 0.014459584385467572,
+          "enumerate_seconds": 1.633,
+          "permutation_verified": true
+        },
+        "m32": {
+          "n_hits": 3881,
+          "mean_norm_pos": 0.4984110718886885,
+          "median_norm_pos": 0.494937,
+          "first_norm_pos": 7.4e-05,
+          "ks_vs_uniform": 0.015130235957227511,
+          "enumerate_seconds": 7.234,
+          "permutation_verified": true
+        },
+        "linear": {
+          "n_hits": 3881,
+          "mean_norm_pos": 0.4984110971399124,
+          "median_norm_pos": 0.4949395,
+          "first_norm_pos": 7.925e-05,
+          "ks_vs_uniform": 0.015129735957227497,
+          "enumerate_seconds": 3.88,
+          "permutation_verified": true
+        }
+      },
+      "face_affinity": {
+        "hits_per_face_affinity_order": [
+          122,
+          128,
+          122,
+          142,
+          120,
+          112,
+          129,
+          127,
+          103,
+          114,
+          126,
+          125,
+          160,
+          93,
+          113,
+          137,
+          123,
+          123,
+          120,
+          118,
+          116,
+          114,
+          125,
+          129,
+          121,
+          116,
+          102,
+          109,
+          123,
+          125,
+          115,
+          129
+        ],
+        "top8_hit_share": 0.2581808812161814,
+        "top8_expected_share": 0.25,
+        "spearman_rank_vs_density": 0.14882697947214074,
+        "null_model": "hits uniform across near-equal face shards"
+      }
+    },
+    {
+      "job_id": "05",
+      "n_hits": 3863,
+      "arms": {
+        "11d": {
+          "n_hits": 3863,
+          "mean_norm_pos": 0.5034586599792906,
+          "median_norm_pos": 0.51279825,
+          "first_norm_pos": 5.875e-05,
+          "ks_vs_uniform": 0.014164963111571338,
+          "enumerate_seconds": 1.678,
+          "permutation_verified": true
+        },
+        "m32": {
+          "n_hits": 3863,
+          "mean_norm_pos": 0.50090530856847,
+          "median_norm_pos": 0.50471425,
+          "first_norm_pos": 0.0002685,
+          "ks_vs_uniform": 0.009847147359565045,
+          "enumerate_seconds": 7.426,
+          "permutation_verified": true
+        },
+        "linear": {
+          "n_hits": 3863,
+          "mean_norm_pos": 0.5009053257830701,
+          "median_norm_pos": 0.5047195,
+          "first_norm_pos": 0.000271,
+          "ks_vs_uniform": 0.009846647359565086,
+          "enumerate_seconds": 3.007,
+          "permutation_verified": true
+        }
+      },
+      "face_affinity": {
+        "hits_per_face_affinity_order": [
+          117,
+          113,
+          148,
+          123,
+          136,
+          117,
+          120,
+          112,
+          142,
+          126,
+          118,
+          129,
+          137,
+          94,
+          131,
+          111,
+          116,
+          117,
+          126,
+          109,
+          99,
+          110,
+          137,
+          129,
+          122,
+          122,
+          139,
+          114,
+          111,
+          110,
+          113,
+          115
+        ],
+        "top8_hit_share": 0.25524203986538957,
+        "top8_expected_share": 0.25,
+        "spearman_rank_vs_density": 0.27712609970674484,
+        "null_model": "hits uniform across near-equal face shards"
+      }
+    },
+    {
+      "job_id": "07",
+      "n_hits": 3903,
+      "arms": {
+        "11d": {
+          "n_hits": 3903,
+          "mean_norm_pos": 0.4910239367153471,
+          "median_norm_pos": 0.4920165,
+          "first_norm_pos": 5.125e-05,
+          "ks_vs_uniform": 0.02336736849859089,
+          "enumerate_seconds": 1.771,
+          "permutation_verified": true
+        },
+        "m32": {
+          "n_hits": 3903,
+          "mean_norm_pos": 0.5028719000128107,
+          "median_norm_pos": 0.5101505,
+          "first_norm_pos": 0.00032925,
+          "ks_vs_uniform": 0.011068880028183403,
+          "enumerate_seconds": 8.403,
+          "permutation_verified": true
+        },
+        "linear": {
+          "n_hits": 3903,
+          "mean_norm_pos": 0.5028719398539584,
+          "median_norm_pos": 0.51014975,
+          "first_norm_pos": 0.00032975,
+          "ks_vs_uniform": 0.011069380028183473,
+          "enumerate_seconds": 3.713,
+          "permutation_verified": true
+        }
+      },
+      "face_affinity": {
+        "hits_per_face_affinity_order": [
+          129,
+          119,
+          100,
+          119,
+          129,
+          124,
+          124,
+          128,
+          133,
+          114,
+          118,
+          110,
+          117,
+          139,
+          114,
+          121,
+          127,
+          113,
+          125,
+          122,
+          117,
+          106,
+          121,
+          129,
+          130,
+          126,
+          133,
+          147,
+          130,
+          117,
+          110,
+          112
+        ],
+        "top8_hit_share": 0.2490392006149116,
+        "top8_expected_share": 0.25,
+        "spearman_rank_vs_density": -0.022360703812316713,
+        "null_model": "hits uniform across near-equal face shards"
+      }
+    },
+    {
+      "job_id": "08",
+      "n_hits": 3805,
+      "arms": {
+        "11d": {
+          "n_hits": 3805,
+          "mean_norm_pos": 0.49543684704336394,
+          "median_norm_pos": 0.49299075,
+          "first_norm_pos": 0.0005675,
+          "ks_vs_uniform": 0.014967518068331132,
+          "enumerate_seconds": 1.462,
+          "permutation_verified": true
+        },
+        "m32": {
+          "n_hits": 3805,
+          "mean_norm_pos": 0.4958957967805519,
+          "median_norm_pos": 0.4951805,
+          "first_norm_pos": 0.00022625,
+          "ks_vs_uniform": 0.011869237516425754,
+          "enumerate_seconds": 7.728,
+          "permutation_verified": true
+        },
+        "linear": {
+          "n_hits": 3805,
+          "mean_norm_pos": 0.49589573554533506,
+          "median_norm_pos": 0.495183,
+          "first_norm_pos": 0.0002315,
+          "ks_vs_uniform": 0.011868737516425754,
+          "enumerate_seconds": 3.974,
+          "permutation_verified": true
+        }
+      },
+      "face_affinity": {
+        "hits_per_face_affinity_order": [
+          124,
+          129,
+          115,
+          120,
+          113,
+          121,
+          125,
+          111,
+          129,
+          111,
+          113,
+          112,
+          123,
+          107,
+          113,
+          129,
+          112,
+          131,
+          101,
+          128,
+          132,
+          114,
+          123,
+          116,
+          98,
+          133,
+          99,
+          131,
+          131,
+          113,
+          140,
+          108
+        ],
+        "top8_hit_share": 0.25177398160315373,
+        "top8_expected_share": 0.25,
+        "spearman_rank_vs_density": -0.06268328445747799,
+        "null_model": "hits uniform across near-equal face shards"
+      }
+    },
+    {
+      "job_id": "09",
+      "n_hits": 4025,
+      "arms": {
+        "11d": {
+          "n_hits": 4025,
+          "mean_norm_pos": 0.4992686413664596,
+          "median_norm_pos": 0.505675,
+          "first_norm_pos": 0.00020125,
+          "ks_vs_uniform": 0.01035857142857144,
+          "enumerate_seconds": 1.881,
+          "permutation_verified": true
+        },
+        "m32": {
+          "n_hits": 4025,
+          "mean_norm_pos": 0.49487742763975157,
+          "median_norm_pos": 0.49395275,
+          "first_norm_pos": 0.00025375,
+          "ks_vs_uniform": 0.011240268633540329,
+          "enumerate_seconds": 8.937,
+          "permutation_verified": true
+        },
+        "linear": {
+          "n_hits": 4025,
+          "mean_norm_pos": 0.4948774147826087,
+          "median_norm_pos": 0.493953,
+          "first_norm_pos": 0.000253,
+          "ks_vs_uniform": 0.011240768633540288,
+          "enumerate_seconds": 4.35,
+          "permutation_verified": true
+        }
+      },
+      "face_affinity": {
+        "hits_per_face_affinity_order": [
+          113,
+          113,
+          119,
+          134,
+          132,
+          137,
+          139,
+          146,
+          125,
+          112,
+          136,
+          131,
+          127,
+          126,
+          111,
+          120,
+          129,
+          113,
+          121,
+          124,
+          143,
+          126,
+          122,
+          122,
+          122,
+          116,
+          116,
+          130,
+          129,
+          136,
+          133,
+          122
+        ],
+        "top8_hit_share": 0.25664596273291923,
+        "top8_expected_share": 0.25,
+        "spearman_rank_vs_density": 0.005131964809384164,
+        "null_model": "hits uniform across near-equal face shards"
+      }
+    },
+    {
+      "job_id": "0a",
+      "n_hits": 3817,
+      "arms": {
+        "11d": {
+          "n_hits": 3817,
+          "mean_norm_pos": 0.5031422475766308,
+          "median_norm_pos": 0.5000885,
+          "first_norm_pos": 7.875e-05,
+          "ks_vs_uniform": 0.01168726244432805,
+          "enumerate_seconds": 1.987,
+          "permutation_verified": true
+        },
+        "m32": {
+          "n_hits": 3817,
+          "mean_norm_pos": 0.5029314544144616,
+          "median_norm_pos": 0.50364,
+          "first_norm_pos": 0.000415,
+          "ks_vs_uniform": 0.010700409549384338,
+          "enumerate_seconds": 10.149,
+          "permutation_verified": true
+        },
+        "linear": {
+          "n_hits": 3817,
+          "mean_norm_pos": 0.5029313644223212,
+          "median_norm_pos": 0.50364,
+          "first_norm_pos": 0.0004105,
+          "ks_vs_uniform": 0.010700409549384338,
+          "enumerate_seconds": 3.691,
+          "permutation_verified": true
+        }
+      },
+      "face_affinity": {
+        "hits_per_face_affinity_order": [
+          121,
+          126,
+          120,
+          103,
+          139,
+          113,
+          131,
+          113,
+          115,
+          130,
+          99,
+          115,
+          119,
+          118,
+          113,
+          124,
+          110,
+          107,
+          120,
+          136,
+          125,
+          115,
+          111,
+          132,
+          124,
+          102,
+          132,
+          113,
+          122,
+          127,
+          117,
+          125
+        ],
+        "top8_hit_share": 0.2530783337699764,
+        "top8_expected_share": 0.25,
+        "spearman_rank_vs_density": -0.06378299120234603,
+        "null_model": "hits uniform across near-equal face shards"
+      }
+    }
+  ],
+  "truth_class": "measured_hardware",
+  "method_notes": [
+    "headers are stratum job templates (coinbase/merkle-derived), not bare chain headers",
+    "m32 and linear arms are near-degenerate at this window (same shard stride; they are not independent instruments)",
+    "stream-position measures face_id-order enumeration; affinity rank ordering enters only via the face-affinity instrument",
+    "hit sets are identical across arms by construction \u2014 the permutation_verified flags are the measured coverage assertion"
+  ],
+  "decision": {
+    "rule": "SIGNAL iff |mean_pos - 0.5| > 3*SE or |top8_share - 0.25| > 3*SE",
+    "signal_detected": false,
+    "action_if_signal": "ordering earns production-default candidacy",
+    "action_if_null": "ordering remains coverage structure, honestly labeled",
+    "verdicts": {
+      "11d": {
+        "mean_pos": 0.4972946385772337,
+        "deviation_from_0.5": 0.0027053614227662837,
+        "threshold_3se": 0.004378111388883298,
+        "signal": false
+      },
+      "m32": {
+        "mean_pos": 0.5001621902282254,
+        "deviation_from_0.5": 0.00016219022822538953,
+        "threshold_3se": 0.004378111388883298,
+        "signal": false
+      },
+      "linear": {
+        "mean_pos": 0.500162172018759,
+        "deviation_from_0.5": 0.00016217201875901033,
+        "threshold_3se": 0.004378111388883298,
+        "signal": false
+      },
+      "face_top8_share": {
+        "share": 0.25097746684948213,
+        "deviation_from_expected": 0.0009774668494821337,
+        "threshold_3se": 0.005381207878029314,
+        "signal": false
+      }
+    }
+  }
+}

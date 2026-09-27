@@ -1,0 +1,172 @@
+{
+  "entities": {
+    "MiningSession": {
+      "title": "MiningSession",
+      "description": "Stratum V1 mining session with difficulty, worker, and status",
+      "type": "object",
+      "properties": {
+        "sessionId": {
+          "type": "string",
+          "description": "Unique session identifier",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 64
+        },
+        "poolId": {
+          "type": "string",
+          "description": "Pool profile ID",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 64
+        },
+        "workerName": {
+          "type": "string",
+          "description": "Worker identity string",
+          "maxLength": 128
+        },
+        "difficulty": {
+          "type": "string",
+          "description": "Current target difficulty string",
+          "maxLength": 32
+        },
+        "sharesAccepted": {
+          "type": "number",
+          "description": "Count of accepted shares"
+        },
+        "sharesRejected": {
+          "type": "number",
+          "description": "Count of rejected shares"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "closed", "errored"],
+          "description": "Session status"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp"
+        }
+      },
+      "required": [
+        "sessionId",
+        "poolId",
+        "workerName",
+        "difficulty",
+        "sharesAccepted",
+        "sharesRejected",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SubmittedShare": {
+      "title": "SubmittedShare",
+      "description": "Recorded proof-of-work share submitted to pool",
+      "type": "object",
+      "properties": {
+        "shareId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 64
+        },
+        "sessionId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 64
+        },
+        "jobId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "nonceHex": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{8}$",
+          "maxLength": 8
+        },
+        "headerHash": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$",
+          "maxLength": 64
+        },
+        "status": {
+          "type": "string",
+          "enum": ["accepted", "rejected"],
+          "description": "Share submission status"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "shareId",
+        "sessionId",
+        "jobId",
+        "nonceHex",
+        "headerHash",
+        "status",
+        "createdAt"
+      ]
+    },
+    "AuditReport": {
+      "title": "AuditReport",
+      "description": "Deterministic pre-flight and runtime audit verification record",
+      "type": "object",
+      "properties": {
+        "auditRunId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 64
+        },
+        "passCount": {
+          "type": "number"
+        },
+        "totalCount": {
+          "type": "number"
+        },
+        "allPassed": {
+          "type": "boolean"
+        },
+        "durationMs": {
+          "type": "number"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "auditRunId",
+        "passCount",
+        "totalCount",
+        "allPassed",
+        "durationMs",
+        "timestamp"
+      ]
+    }
+  },
+  "firestore": {
+    "/mining_sessions/{sessionId}": {
+      "schema": {
+        "$ref": "#/entities/MiningSession"
+      },
+      "description": "Collection of Stratum mining sessions"
+    },
+    "/mining_sessions/{sessionId}/shares/{shareId}": {
+      "schema": {
+        "$ref": "#/entities/SubmittedShare"
+      },
+      "description": "Subcollection of shares submitted under a specific session"
+    },
+    "/audit_reports/{auditRunId}": {
+      "schema": {
+        "$ref": "#/entities/AuditReport"
+      },
+      "description": "Collection of deterministic audit reports"
+    }
+  }
+}

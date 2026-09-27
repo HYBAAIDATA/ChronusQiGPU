@@ -1,0 +1,1280 @@
+{
+  "n_cycles": 8,
+  "theorem_proven": false,
+  "cycles": [
+    {
+      "cycle": 1,
+      "theorem_proven": false,
+      "fsm": {
+        "admitted": true,
+        "state": "searching",
+        "states_visited": [],
+        "consecutive_blocks_prevented": 0,
+        "kernel": "step_kernel",
+        "theorem_proven": false
+      },
+      "toe": {
+        "live": true,
+        "confidence": 0.6962698151376905,
+        "trend": "stable",
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "mining": {
+        "source": "turing_core_fallback",
+        "base_schedule_len": 1000,
+        "evolved_schedule_len": 1000,
+        "scheduler_bound": 1364,
+        "scheduler_is_lucas_bounded": true,
+        "base_coherence": 0.700901454579211,
+        "best_coherence": 0.700901454579211,
+        "delta_phi": 0.0,
+        "phase_transitions": 2,
+        "grover_k_star": 24,
+        "winner_nonce": -1,
+        "mining_success": false,
+        "theorem_proven": false
+      },
+      "meta_evolution": {
+        "step": 12,
+        "n_primitives": 5,
+        "n_discovered": 0,
+        "surrogate_rmse": 0.3189445122867611,
+        "surrogate_trustworthy": false,
+        "mutation_rate": 1.0,
+        "geometry_lucas_index": 10,
+        "geometry_breadth": 700,
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "pythia_learning": {
+        "germ_line": 0,
+        "somatic": 1,
+        "emergence_signal": 0.0,
+        "pythia_active": false,
+        "n_consolidated": 0,
+        "kernel": "trace_kernel",
+        "theorem_proven": false
+      },
+      "memory": {
+        "episodic_events": 1,
+        "semantic_concepts": 75,
+        "archival_entries": 0,
+        "curriculum_tasks_completed": 0,
+        "socratic_heuristics": 4,
+        "reflection_avg_confidence": 0.85,
+        "pythia_active": false,
+        "kernel": "trace_kernel",
+        "theorem_proven": false
+      },
+      "safety": {
+        "state": "idle",
+        "mining_allowed": true,
+        "last_mined_block_height": null,
+        "cooldown_active": false,
+        "consecutive_block_attempts": 0,
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "difficulty": {
+        "zero_bits": 0,
+        "difficulty": 1.0,
+        "kernel": "mining_kernel",
+        "theorem_proven": false
+      },
+      "folded": {
+        "artifacts": 0,
+        "queries": 0,
+        "raw_materializations": 0,
+        "kernel": "folded_kernel",
+        "theorem_proven": false
+      },
+      "lucas_scale": {
+        "profile": {
+          "levels": [
+            {
+              "index": 10,
+              "value": 123,
+              "name": "L_10 \u00b7 pattern",
+              "ladder_position": 0.0,
+              "bit_depth": 6.94251450533924,
+              "binet_magnitude": 122.99186938124426,
+              "pisot_drift": 0.008130618755783347
+            },
+            {
+              "index": 12,
+              "value": 322,
+              "name": "L_12 \u00b7 structure",
+              "ladder_position": 0.25,
+              "bit_depth": 8.330916878114618,
+              "binet_magnitude": 321.996894379985,
+              "pisot_drift": 0.0031056200151418573
+            },
+            {
+              "index": 15,
+              "value": 1364,
+              "name": "L_15 \u00b7 coherence",
+              "ladder_position": 0.5,
+              "bit_depth": 10.413627929024173,
+              "binet_magnitude": 1364.0007331374366,
+              "pisot_drift": 0.0007331374358574044
+            },
+            {
+              "index": 18,
+              "value": 5778,
+              "name": "L_18 \u00b7 abstraction",
+              "ladder_position": 0.75,
+              "bit_depth": 12.496354488564615,
+              "binet_magnitude": 5777.999826929732,
+              "pisot_drift": 0.00017307027171223924
+            },
+            {
+              "index": 20,
+              "value": 15127,
+              "name": "L_20 \u00b7 metacognition",
+              "ladder_position": 1.0,
+              "bit_depth": 13.884838278917112,
+              "binet_magnitude": 15126.999933893048,
+              "pisot_drift": 6.610696135189592e-05
+            }
+          ],
+          "substrate_validated": true,
+          "monotonic": true,
+          "complexity_growth": 122.98373983739837
+        },
+        "current_scale_index": 10,
+        "current_scale_value": 123
+      }
+    },
+    {
+      "cycle": 2,
+      "theorem_proven": false,
+      "fsm": {
+        "admitted": true,
+        "state": "searching",
+        "states_visited": [],
+        "consecutive_blocks_prevented": 0,
+        "kernel": "step_kernel",
+        "theorem_proven": false
+      },
+      "toe": {
+        "live": true,
+        "confidence": 0.7200298604645331,
+        "trend": "stable",
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "mining": {
+        "source": "turing_core_fallback",
+        "base_schedule_len": 1000,
+        "evolved_schedule_len": 1000,
+        "scheduler_bound": 1364,
+        "scheduler_is_lucas_bounded": true,
+        "base_coherence": 0.7077762652535455,
+        "best_coherence": 0.7077762652535455,
+        "delta_phi": 0.0,
+        "phase_transitions": 1,
+        "grover_k_star": 24,
+        "winner_nonce": -1,
+        "mining_success": false,
+        "theorem_proven": false
+      },
+      "meta_evolution": {
+        "step": 24,
+        "n_primitives": 5,
+        "n_discovered": 0,
+        "surrogate_rmse": 0.5233964851213131,
+        "surrogate_trustworthy": false,
+        "mutation_rate": 0.9690983005625052,
+        "geometry_lucas_index": 10,
+        "geometry_breadth": 400,
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "pythia_learning": {
+        "germ_line": 0,
+        "somatic": 2,
+        "emergence_signal": 0.0,
+        "pythia_active": false,
+        "n_consolidated": 0,
+        "kernel": "trace_kernel",
+        "theorem_proven": false
+      },
+      "memory": {
+        "episodic_events": 2,
+        "semantic_concepts": 75,
+        "archival_entries": 0,
+        "curriculum_tasks_completed": 0,
+        "socratic_heuristics": 4,
+        "reflection_avg_confidence": 0.85,
+        "pythia_active": false,
+        "kernel": "trace_kernel",
+        "theorem_proven": false
+      },
+      "safety": {
+        "state": "idle",
+        "mining_allowed": true,
+        "last_mined_block_height": null,
+        "cooldown_active": false,
+        "consecutive_block_attempts": 0,
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "difficulty": {
+        "zero_bits": 0,
+        "difficulty": 1.0,
+        "kernel": "mining_kernel",
+        "theorem_proven": false
+      },
+      "folded": {
+        "artifacts": 0,
+        "queries": 0,
+        "raw_materializations": 0,
+        "kernel": "folded_kernel",
+        "theorem_proven": false
+      },
+      "lucas_scale": {
+        "profile": {
+          "levels": [
+            {
+              "index": 10,
+              "value": 123,
+              "name": "L_10 \u00b7 pattern",
+              "ladder_position": 0.0,
+              "bit_depth": 6.94251450533924,
+              "binet_magnitude": 122.99186938124426,
+              "pisot_drift": 0.008130618755783347
+            },
+            {
+              "index": 12,
+              "value": 322,
+              "name": "L_12 \u00b7 structure",
+              "ladder_position": 0.25,
+              "bit_depth": 8.330916878114618,
+              "binet_magnitude": 321.996894379985,
+              "pisot_drift": 0.0031056200151418573
+            },
+            {
+              "index": 15,
+              "value": 1364,
+              "name": "L_15 \u00b7 coherence",
+              "ladder_position": 0.5,
+              "bit_depth": 10.413627929024173,
+              "binet_magnitude": 1364.0007331374366,
+              "pisot_drift": 0.0007331374358574044
+            },
+            {
+              "index": 18,
+              "value": 5778,
+              "name": "L_18 \u00b7 abstraction",
+              "ladder_position": 0.75,
+              "bit_depth": 12.496354488564615,
+              "binet_magnitude": 5777.999826929732,
+              "pisot_drift": 0.00017307027171223924
+            },
+            {
+              "index": 20,
+              "value": 15127,
+              "name": "L_20 \u00b7 metacognition",
+              "ladder_position": 1.0,
+              "bit_depth": 13.884838278917112,
+              "binet_magnitude": 15126.999933893048,
+              "pisot_drift": 6.610696135189592e-05
+            }
+          ],
+          "substrate_validated": true,
+          "monotonic": true,
+          "complexity_growth": 122.98373983739837
+        },
+        "current_scale_index": 10,
+        "current_scale_value": 123
+      }
+    },
+    {
+      "cycle": 3,
+      "theorem_proven": false,
+      "fsm": {
+        "admitted": true,
+        "state": "searching",
+        "states_visited": [],
+        "consecutive_blocks_prevented": 0,
+        "kernel": "step_kernel",
+        "theorem_proven": false
+      },
+      "toe": {
+        "live": true,
+        "confidence": 0.8201517018426774,
+        "trend": "stable",
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "mining": {
+        "source": "turing_core_fallback",
+        "base_schedule_len": 1000,
+        "evolved_schedule_len": 1000,
+        "scheduler_bound": 1364,
+        "scheduler_is_lucas_bounded": true,
+        "base_coherence": 0.7006669537185816,
+        "best_coherence": 0.7006669537185816,
+        "delta_phi": 0.0,
+        "phase_transitions": 2,
+        "grover_k_star": 24,
+        "winner_nonce": -1,
+        "mining_success": false,
+        "theorem_proven": false
+      },
+      "meta_evolution": {
+        "step": 36,
+        "n_primitives": 5,
+        "n_discovered": 0,
+        "surrogate_rmse": 0.33723540515960276,
+        "surrogate_trustworthy": false,
+        "mutation_rate": 0.9690983005625052,
+        "geometry_lucas_index": 15,
+        "geometry_breadth": 700,
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "pythia_learning": {
+        "germ_line": 0,
+        "somatic": 3,
+        "emergence_signal": 0.0,
+        "pythia_active": false,
+        "n_consolidated": 0,
+        "kernel": "trace_kernel",
+        "theorem_proven": false
+      },
+      "memory": {
+        "episodic_events": 3,
+        "semantic_concepts": 75,
+        "archival_entries": 0,
+        "curriculum_tasks_completed": 0,
+        "socratic_heuristics": 4,
+        "reflection_avg_confidence": 0.85,
+        "pythia_active": false,
+        "kernel": "trace_kernel",
+        "theorem_proven": false
+      },
+      "safety": {
+        "state": "idle",
+        "mining_allowed": true,
+        "last_mined_block_height": null,
+        "cooldown_active": false,
+        "consecutive_block_attempts": 0,
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "difficulty": {
+        "zero_bits": 0,
+        "difficulty": 1.0,
+        "kernel": "mining_kernel",
+        "theorem_proven": false
+      },
+      "folded": {
+        "artifacts": 0,
+        "queries": 0,
+        "raw_materializations": 0,
+        "kernel": "folded_kernel",
+        "theorem_proven": false
+      },
+      "lucas_scale": {
+        "profile": {
+          "levels": [
+            {
+              "index": 10,
+              "value": 123,
+              "name": "L_10 \u00b7 pattern",
+              "ladder_position": 0.0,
+              "bit_depth": 6.94251450533924,
+              "binet_magnitude": 122.99186938124426,
+              "pisot_drift": 0.008130618755783347
+            },
+            {
+              "index": 12,
+              "value": 322,
+              "name": "L_12 \u00b7 structure",
+              "ladder_position": 0.25,
+              "bit_depth": 8.330916878114618,
+              "binet_magnitude": 321.996894379985,
+              "pisot_drift": 0.0031056200151418573
+            },
+            {
+              "index": 15,
+              "value": 1364,
+              "name": "L_15 \u00b7 coherence",
+              "ladder_position": 0.5,
+              "bit_depth": 10.413627929024173,
+              "binet_magnitude": 1364.0007331374366,
+              "pisot_drift": 0.0007331374358574044
+            },
+            {
+              "index": 18,
+              "value": 5778,
+              "name": "L_18 \u00b7 abstraction",
+              "ladder_position": 0.75,
+              "bit_depth": 12.496354488564615,
+              "binet_magnitude": 5777.999826929732,
+              "pisot_drift": 0.00017307027171223924
+            },
+            {
+              "index": 20,
+              "value": 15127,
+              "name": "L_20 \u00b7 metacognition",
+              "ladder_position": 1.0,
+              "bit_depth": 13.884838278917112,
+              "binet_magnitude": 15126.999933893048,
+              "pisot_drift": 6.610696135189592e-05
+            }
+          ],
+          "substrate_validated": true,
+          "monotonic": true,
+          "complexity_growth": 122.98373983739837
+        },
+        "current_scale_index": 10,
+        "current_scale_value": 123
+      }
+    },
+    {
+      "cycle": 4,
+      "theorem_proven": false,
+      "fsm": {
+        "admitted": true,
+        "state": "searching",
+        "states_visited": [],
+        "consecutive_blocks_prevented": 0,
+        "kernel": "step_kernel",
+        "theorem_proven": false
+      },
+      "toe": {
+        "live": true,
+        "confidence": 0.8357520477493064,
+        "trend": "stable",
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "mining": {
+        "source": "turing_core_fallback",
+        "base_schedule_len": 1000,
+        "evolved_schedule_len": 1000,
+        "scheduler_bound": 1364,
+        "scheduler_is_lucas_bounded": true,
+        "base_coherence": 0.7075520979927258,
+        "best_coherence": 0.7075520979927258,
+        "delta_phi": 0.0,
+        "phase_transitions": 0,
+        "grover_k_star": 24,
+        "winner_nonce": -1,
+        "mining_success": false,
+        "theorem_proven": false
+      },
+      "meta_evolution": {
+        "step": 48,
+        "n_primitives": 5,
+        "n_discovered": 0,
+        "surrogate_rmse": 0.22614127212509189,
+        "surrogate_trustworthy": false,
+        "mutation_rate": 1.0,
+        "geometry_lucas_index": 10,
+        "geometry_breadth": 300,
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "pythia_learning": {
+        "germ_line": 0,
+        "somatic": 4,
+        "emergence_signal": 0.0,
+        "pythia_active": false,
+        "n_consolidated": 0,
+        "kernel": "trace_kernel",
+        "theorem_proven": false
+      },
+      "memory": {
+        "episodic_events": 4,
+        "semantic_concepts": 75,
+        "archival_entries": 0,
+        "curriculum_tasks_completed": 0,
+        "socratic_heuristics": 4,
+        "reflection_avg_confidence": 0.7999999999999999,
+        "pythia_active": false,
+        "kernel": "trace_kernel",
+        "theorem_proven": false
+      },
+      "safety": {
+        "state": "idle",
+        "mining_allowed": true,
+        "last_mined_block_height": null,
+        "cooldown_active": false,
+        "consecutive_block_attempts": 0,
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "difficulty": {
+        "zero_bits": 0,
+        "difficulty": 1.0,
+        "kernel": "mining_kernel",
+        "theorem_proven": false
+      },
+      "folded": {
+        "artifacts": 0,
+        "queries": 0,
+        "raw_materializations": 0,
+        "kernel": "folded_kernel",
+        "theorem_proven": false
+      },
+      "lucas_scale": {
+        "profile": {
+          "levels": [
+            {
+              "index": 10,
+              "value": 123,
+              "name": "L_10 \u00b7 pattern",
+              "ladder_position": 0.0,
+              "bit_depth": 6.94251450533924,
+              "binet_magnitude": 122.99186938124426,
+              "pisot_drift": 0.008130618755783347
+            },
+            {
+              "index": 12,
+              "value": 322,
+              "name": "L_12 \u00b7 structure",
+              "ladder_position": 0.25,
+              "bit_depth": 8.330916878114618,
+              "binet_magnitude": 321.996894379985,
+              "pisot_drift": 0.0031056200151418573
+            },
+            {
+              "index": 15,
+              "value": 1364,
+              "name": "L_15 \u00b7 coherence",
+              "ladder_position": 0.5,
+              "bit_depth": 10.413627929024173,
+              "binet_magnitude": 1364.0007331374366,
+              "pisot_drift": 0.0007331374358574044
+            },
+            {
+              "index": 18,
+              "value": 5778,
+              "name": "L_18 \u00b7 abstraction",
+              "ladder_position": 0.75,
+              "bit_depth": 12.496354488564615,
+              "binet_magnitude": 5777.999826929732,
+              "pisot_drift": 0.00017307027171223924
+            },
+            {
+              "index": 20,
+              "value": 15127,
+              "name": "L_20 \u00b7 metacognition",
+              "ladder_position": 1.0,
+              "bit_depth": 13.884838278917112,
+              "binet_magnitude": 15126.999933893048,
+              "pisot_drift": 6.610696135189592e-05
+            }
+          ],
+          "substrate_validated": true,
+          "monotonic": true,
+          "complexity_growth": 122.98373983739837
+        },
+        "current_scale_index": 10,
+        "current_scale_value": 123
+      }
+    },
+    {
+      "cycle": 5,
+      "theorem_proven": false,
+      "fsm": {
+        "admitted": true,
+        "state": "searching",
+        "states_visited": [],
+        "consecutive_blocks_prevented": 0,
+        "kernel": "step_kernel",
+        "theorem_proven": false
+      },
+      "toe": {
+        "live": true,
+        "confidence": 0.7802846183465536,
+        "trend": "stable",
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "mining": {
+        "source": "turing_core_fallback",
+        "base_schedule_len": 1000,
+        "evolved_schedule_len": 1000,
+        "scheduler_bound": 1364,
+        "scheduler_is_lucas_bounded": true,
+        "base_coherence": 0.7006668849339212,
+        "best_coherence": 0.7006668849339212,
+        "delta_phi": 0.0,
+        "phase_transitions": 0,
+        "grover_k_star": 24,
+        "winner_nonce": -1,
+        "mining_success": false,
+        "theorem_proven": false
+      },
+      "meta_evolution": {
+        "step": 60,
+        "n_primitives": 5,
+        "n_discovered": 0,
+        "surrogate_rmse": 0.1995975536110533,
+        "surrogate_trustworthy": false,
+        "mutation_rate": 1.0,
+        "geometry_lucas_index": 10,
+        "geometry_breadth": 300,
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "pythia_learning": {
+        "germ_line": 0,
+        "somatic": 5,
+        "emergence_signal": 0.0,
+        "pythia_active": false,
+        "n_consolidated": 0,
+        "kernel": "trace_kernel",
+        "theorem_proven": false
+      },
+      "memory": {
+        "episodic_events": 5,
+        "semantic_concepts": 75,
+        "archival_entries": 0,
+        "curriculum_tasks_completed": 0,
+        "socratic_heuristics": 4,
+        "reflection_avg_confidence": 0.7699999999999999,
+        "pythia_active": false,
+        "kernel": "trace_kernel",
+        "theorem_proven": false
+      },
+      "safety": {
+        "state": "idle",
+        "mining_allowed": true,
+        "last_mined_block_height": null,
+        "cooldown_active": false,
+        "consecutive_block_attempts": 0,
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "difficulty": {
+        "zero_bits": 0,
+        "difficulty": 1.0,
+        "kernel": "mining_kernel",
+        "theorem_proven": false
+      },
+      "folded": {
+        "artifacts": 0,
+        "queries": 0,
+        "raw_materializations": 0,
+        "kernel": "folded_kernel",
+        "theorem_proven": false
+      },
+      "lucas_scale": {
+        "profile": {
+          "levels": [
+            {
+              "index": 10,
+              "value": 123,
+              "name": "L_10 \u00b7 pattern",
+              "ladder_position": 0.0,
+              "bit_depth": 6.94251450533924,
+              "binet_magnitude": 122.99186938124426,
+              "pisot_drift": 0.008130618755783347
+            },
+            {
+              "index": 12,
+              "value": 322,
+              "name": "L_12 \u00b7 structure",
+              "ladder_position": 0.25,
+              "bit_depth": 8.330916878114618,
+              "binet_magnitude": 321.996894379985,
+              "pisot_drift": 0.0031056200151418573
+            },
+            {
+              "index": 15,
+              "value": 1364,
+              "name": "L_15 \u00b7 coherence",
+              "ladder_position": 0.5,
+              "bit_depth": 10.413627929024173,
+              "binet_magnitude": 1364.0007331374366,
+              "pisot_drift": 0.0007331374358574044
+            },
+            {
+              "index": 18,
+              "value": 5778,
+              "name": "L_18 \u00b7 abstraction",
+              "ladder_position": 0.75,
+              "bit_depth": 12.496354488564615,
+              "binet_magnitude": 5777.999826929732,
+              "pisot_drift": 0.00017307027171223924
+            },
+            {
+              "index": 20,
+              "value": 15127,
+              "name": "L_20 \u00b7 metacognition",
+              "ladder_position": 1.0,
+              "bit_depth": 13.884838278917112,
+              "binet_magnitude": 15126.999933893048,
+              "pisot_drift": 6.610696135189592e-05
+            }
+          ],
+          "substrate_validated": true,
+          "monotonic": true,
+          "complexity_growth": 122.98373983739837
+        },
+        "current_scale_index": 10,
+        "current_scale_value": 123
+      }
+    },
+    {
+      "cycle": 6,
+      "theorem_proven": false,
+      "fsm": {
+        "admitted": true,
+        "state": "searching",
+        "states_visited": [],
+        "consecutive_blocks_prevented": 0,
+        "kernel": "step_kernel",
+        "theorem_proven": false
+      },
+      "toe": {
+        "live": true,
+        "confidence": 0.9067508431590998,
+        "trend": "stable",
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "mining": {
+        "source": "turing_core_fallback",
+        "base_schedule_len": 1000,
+        "evolved_schedule_len": 1000,
+        "scheduler_bound": 1364,
+        "scheduler_is_lucas_bounded": true,
+        "base_coherence": 0.7072770026150222,
+        "best_coherence": 0.7072770026150222,
+        "delta_phi": 0.0,
+        "phase_transitions": 0,
+        "grover_k_star": 24,
+        "winner_nonce": -1,
+        "mining_success": false,
+        "theorem_proven": false
+      },
+      "meta_evolution": {
+        "step": 72,
+        "n_primitives": 5,
+        "n_discovered": 0,
+        "surrogate_rmse": 0.16306317432526896,
+        "surrogate_trustworthy": false,
+        "mutation_rate": 1.0,
+        "geometry_lucas_index": 10,
+        "geometry_breadth": 300,
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "pythia_learning": {
+        "germ_line": 0,
+        "somatic": 6,
+        "emergence_signal": 0.0,
+        "pythia_active": false,
+        "n_consolidated": 0,
+        "kernel": "trace_kernel",
+        "theorem_proven": false
+      },
+      "memory": {
+        "episodic_events": 6,
+        "semantic_concepts": 75,
+        "archival_entries": 0,
+        "curriculum_tasks_completed": 0,
+        "socratic_heuristics": 4,
+        "reflection_avg_confidence": 0.75,
+        "pythia_active": false,
+        "kernel": "trace_kernel",
+        "theorem_proven": false
+      },
+      "safety": {
+        "state": "idle",
+        "mining_allowed": true,
+        "last_mined_block_height": null,
+        "cooldown_active": false,
+        "consecutive_block_attempts": 0,
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "difficulty": {
+        "zero_bits": 0,
+        "difficulty": 1.0,
+        "kernel": "mining_kernel",
+        "theorem_proven": false
+      },
+      "folded": {
+        "artifacts": 0,
+        "queries": 0,
+        "raw_materializations": 0,
+        "kernel": "folded_kernel",
+        "theorem_proven": false
+      },
+      "lucas_scale": {
+        "profile": {
+          "levels": [
+            {
+              "index": 10,
+              "value": 123,
+              "name": "L_10 \u00b7 pattern",
+              "ladder_position": 0.0,
+              "bit_depth": 6.94251450533924,
+              "binet_magnitude": 122.99186938124426,
+              "pisot_drift": 0.008130618755783347
+            },
+            {
+              "index": 12,
+              "value": 322,
+              "name": "L_12 \u00b7 structure",
+              "ladder_position": 0.25,
+              "bit_depth": 8.330916878114618,
+              "binet_magnitude": 321.996894379985,
+              "pisot_drift": 0.0031056200151418573
+            },
+            {
+              "index": 15,
+              "value": 1364,
+              "name": "L_15 \u00b7 coherence",
+              "ladder_position": 0.5,
+              "bit_depth": 10.413627929024173,
+              "binet_magnitude": 1364.0007331374366,
+              "pisot_drift": 0.0007331374358574044
+            },
+            {
+              "index": 18,
+              "value": 5778,
+              "name": "L_18 \u00b7 abstraction",
+              "ladder_position": 0.75,
+              "bit_depth": 12.496354488564615,
+              "binet_magnitude": 5777.999826929732,
+              "pisot_drift": 0.00017307027171223924
+            },
+            {
+              "index": 20,
+              "value": 15127,
+              "name": "L_20 \u00b7 metacognition",
+              "ladder_position": 1.0,
+              "bit_depth": 13.884838278917112,
+              "binet_magnitude": 15126.999933893048,
+              "pisot_drift": 6.610696135189592e-05
+            }
+          ],
+          "substrate_validated": true,
+          "monotonic": true,
+          "complexity_growth": 122.98373983739837
+        },
+        "current_scale_index": 10,
+        "current_scale_value": 123
+      }
+    },
+    {
+      "cycle": 7,
+      "theorem_proven": false,
+      "fsm": {
+        "admitted": true,
+        "state": "searching",
+        "states_visited": [],
+        "consecutive_blocks_prevented": 0,
+        "kernel": "step_kernel",
+        "theorem_proven": false
+      },
+      "toe": {
+        "live": true,
+        "confidence": 0.7127093387749095,
+        "trend": "stable",
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "mining": {
+        "source": "turing_core_fallback",
+        "base_schedule_len": 1000,
+        "evolved_schedule_len": 1000,
+        "scheduler_bound": 1364,
+        "scheduler_is_lucas_bounded": true,
+        "base_coherence": 0.7081675525602402,
+        "best_coherence": 0.7081675525602402,
+        "delta_phi": 0.0,
+        "phase_transitions": 0,
+        "grover_k_star": 24,
+        "winner_nonce": -1,
+        "mining_success": false,
+        "theorem_proven": false
+      },
+      "meta_evolution": {
+        "step": 84,
+        "n_primitives": 5,
+        "n_discovered": 0,
+        "surrogate_rmse": 0.16883543099353637,
+        "surrogate_trustworthy": false,
+        "mutation_rate": 1.0,
+        "geometry_lucas_index": 10,
+        "geometry_breadth": 200,
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "pythia_learning": {
+        "germ_line": 0,
+        "somatic": 7,
+        "emergence_signal": 0.0,
+        "pythia_active": false,
+        "n_consolidated": 0,
+        "kernel": "trace_kernel",
+        "theorem_proven": false
+      },
+      "memory": {
+        "episodic_events": 7,
+        "semantic_concepts": 75,
+        "archival_entries": 0,
+        "curriculum_tasks_completed": 0,
+        "socratic_heuristics": 4,
+        "reflection_avg_confidence": 0.7357142857142857,
+        "pythia_active": false,
+        "kernel": "trace_kernel",
+        "theorem_proven": false
+      },
+      "safety": {
+        "state": "idle",
+        "mining_allowed": true,
+        "last_mined_block_height": null,
+        "cooldown_active": false,
+        "consecutive_block_attempts": 0,
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "difficulty": {
+        "zero_bits": 0,
+        "difficulty": 1.0,
+        "kernel": "mining_kernel",
+        "theorem_proven": false
+      },
+      "folded": {
+        "artifacts": 0,
+        "queries": 0,
+        "raw_materializations": 0,
+        "kernel": "folded_kernel",
+        "theorem_proven": false
+      },
+      "lucas_scale": {
+        "profile": {
+          "levels": [
+            {
+              "index": 10,
+              "value": 123,
+              "name": "L_10 \u00b7 pattern",
+              "ladder_position": 0.0,
+              "bit_depth": 6.94251450533924,
+              "binet_magnitude": 122.99186938124426,
+              "pisot_drift": 0.008130618755783347
+            },
+            {
+              "index": 12,
+              "value": 322,
+              "name": "L_12 \u00b7 structure",
+              "ladder_position": 0.25,
+              "bit_depth": 8.330916878114618,
+              "binet_magnitude": 321.996894379985,
+              "pisot_drift": 0.0031056200151418573
+            },
+            {
+              "index": 15,
+              "value": 1364,
+              "name": "L_15 \u00b7 coherence",
+              "ladder_position": 0.5,
+              "bit_depth": 10.413627929024173,
+              "binet_magnitude": 1364.0007331374366,
+              "pisot_drift": 0.0007331374358574044
+            },
+            {
+              "index": 18,
+              "value": 5778,
+              "name": "L_18 \u00b7 abstraction",
+              "ladder_position": 0.75,
+              "bit_depth": 12.496354488564615,
+              "binet_magnitude": 5777.999826929732,
+              "pisot_drift": 0.00017307027171223924
+            },
+            {
+              "index": 20,
+              "value": 15127,
+              "name": "L_20 \u00b7 metacognition",
+              "ladder_position": 1.0,
+              "bit_depth": 13.884838278917112,
+              "binet_magnitude": 15126.999933893048,
+              "pisot_drift": 6.610696135189592e-05
+            }
+          ],
+          "substrate_validated": true,
+          "monotonic": true,
+          "complexity_growth": 122.98373983739837
+        },
+        "current_scale_index": 10,
+        "current_scale_value": 123
+      }
+    },
+    {
+      "cycle": 8,
+      "theorem_proven": false,
+      "fsm": {
+        "admitted": true,
+        "state": "searching",
+        "states_visited": [],
+        "consecutive_blocks_prevented": 0,
+        "kernel": "step_kernel",
+        "theorem_proven": false
+      },
+      "toe": {
+        "live": true,
+        "confidence": 0.9091724323850572,
+        "trend": "stable",
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "mining": {
+        "source": "turing_core_fallback",
+        "base_schedule_len": 1000,
+        "evolved_schedule_len": 1000,
+        "scheduler_bound": 1364,
+        "scheduler_is_lucas_bounded": true,
+        "base_coherence": 0.7081675352323633,
+        "best_coherence": 0.7081675352323633,
+        "delta_phi": 0.0,
+        "phase_transitions": 0,
+        "grover_k_star": 24,
+        "winner_nonce": -1,
+        "mining_success": false,
+        "theorem_proven": false
+      },
+      "meta_evolution": {
+        "step": 96,
+        "n_primitives": 5,
+        "n_discovered": 0,
+        "surrogate_rmse": 26.173569848177188,
+        "surrogate_trustworthy": false,
+        "mutation_rate": 1.0,
+        "geometry_lucas_index": 10,
+        "geometry_breadth": 200,
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "pythia_learning": {
+        "germ_line": 0,
+        "somatic": 8,
+        "emergence_signal": 0.0,
+        "pythia_active": false,
+        "n_consolidated": 0,
+        "kernel": "trace_kernel",
+        "theorem_proven": false
+      },
+      "memory": {
+        "episodic_events": 8,
+        "semantic_concepts": 75,
+        "archival_entries": 0,
+        "curriculum_tasks_completed": 0,
+        "socratic_heuristics": 4,
+        "reflection_avg_confidence": 0.725,
+        "pythia_active": false,
+        "kernel": "trace_kernel",
+        "theorem_proven": false
+      },
+      "safety": {
+        "state": "idle",
+        "mining_allowed": true,
+        "last_mined_block_height": null,
+        "cooldown_active": false,
+        "consecutive_block_attempts": 0,
+        "kernel": "gap_kernel",
+        "theorem_proven": false
+      },
+      "difficulty": {
+        "zero_bits": 0,
+        "difficulty": 1.0,
+        "kernel": "mining_kernel",
+        "theorem_proven": false
+      },
+      "folded": {
+        "artifacts": 0,
+        "queries": 0,
+        "raw_materializations": 0,
+        "kernel": "folded_kernel",
+        "theorem_proven": false
+      },
+      "lucas_scale": {
+        "profile": {
+          "levels": [
+            {
+              "index": 10,
+              "value": 123,
+              "name": "L_10 \u00b7 pattern",
+              "ladder_position": 0.0,
+              "bit_depth": 6.94251450533924,
+              "binet_magnitude": 122.99186938124426,
+              "pisot_drift": 0.008130618755783347
+            },
+            {
+              "index": 12,
+              "value": 322,
+              "name": "L_12 \u00b7 structure",
+              "ladder_position": 0.25,
+              "bit_depth": 8.330916878114618,
+              "binet_magnitude": 321.996894379985,
+              "pisot_drift": 0.0031056200151418573
+            },
+            {
+              "index": 15,
+              "value": 1364,
+              "name": "L_15 \u00b7 coherence",
+              "ladder_position": 0.5,
+              "bit_depth": 10.413627929024173,
+              "binet_magnitude": 1364.0007331374366,
+              "pisot_drift": 0.0007331374358574044
+            },
+            {
+              "index": 18,
+              "value": 5778,
+              "name": "L_18 \u00b7 abstraction",
+              "ladder_position": 0.75,
+              "bit_depth": 12.496354488564615,
+              "binet_magnitude": 5777.999826929732,
+              "pisot_drift": 0.00017307027171223924
+            },
+            {
+              "index": 20,
+              "value": 15127,
+              "name": "L_20 \u00b7 metacognition",
+              "ladder_position": 1.0,
+              "bit_depth": 13.884838278917112,
+              "binet_magnitude": 15126.999933893048,
+              "pisot_drift": 6.610696135189592e-05
+            }
+          ],
+          "substrate_validated": true,
+          "monotonic": true,
+          "complexity_growth": 122.98373983739837
+        },
+        "current_scale_index": 10,
+        "current_scale_value": 123
+      }
+    }
+  ],
+  "lucas_scale_log": [
+    {
+      "cycle": 1,
+      "advanced": false,
+      "before_index": 10,
+      "after_index": 10
+    },
+    {
+      "cycle": 2,
+      "advanced": false,
+      "before_index": 10,
+      "after_index": 10
+    },
+    {
+      "cycle": 3,
+      "advanced": false,
+      "before_index": 10,
+      "after_index": 10
+    },
+    {
+      "cycle": 4,
+      "advanced": false,
+      "before_index": 10,
+      "after_index": 10
+    },
+    {
+      "cycle": 5,
+      "advanced": false,
+      "before_index": 10,
+      "after_index": 10
+    },
+    {
+      "cycle": 6,
+      "advanced": false,
+      "before_index": 10,
+      "after_index": 10
+    },
+    {
+      "cycle": 7,
+      "advanced": false,
+      "before_index": 10,
+      "after_index": 10
+    },
+    {
+      "cycle": 8,
+      "advanced": false,
+      "before_index": 10,
+      "after_index": 10
+    }
+  ],
+  "safety_fsm": {
+    "declared_states": [
+      "searching",
+      "submitting",
+      "waiting_external",
+      "cooldown"
+    ],
+    "states_visited_all_session": [],
+    "consecutive_blocks_prevented": 0,
+    "never_two_consecutive_blocks": true
+  },
+  "intelligence_active": {
+    "toe_live_first_to_last": [
+      true,
+      true
+    ],
+    "toe_confidence_first_to_last": [
+      0.6962698151376905,
+      0.9091724323850572
+    ],
+    "pythia_learning_active_first_to_last": [
+      false,
+      false
+    ],
+    "memory_active_first_to_last": [
+      false,
+      false
+    ],
+    "germ_line_first_to_last": [
+      0,
+      0
+    ],
+    "episodic_events_first_to_last": [
+      1,
+      8
+    ],
+    "semantic_concepts_first_to_last": [
+      75,
+      75
+    ],
+    "curriculum_first_to_last": [
+      0,
+      0
+    ],
+    "meta_evolution_step_first_to_last": [
+      12,
+      96
+    ],
+    "discovered_primitives_first_to_last": [
+      0,
+      0
+    ],
+    "surrogate_trustworthy_first_to_last": [
+      false,
+      false
+    ],
+    "surrogate_rmse_first_to_last": [
+      0.3189445122867611,
+      26.173569848177188
+    ],
+    "lucas_scale_first_to_last": [
+      10,
+      10
+    ],
+    "safety_fsm_first_to_last": [
+      "searching",
+      "searching"
+    ],
+    "total_phase_transitions": 5,
+    "total_winners": 0,
+    "total_delta_phi": 0.0
+  }
+}

@@ -1,0 +1,10 @@
+#! kustomization.yaml
+# Generated code, do not edit
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+    - ../../base
+patches:
+    - path: pythia-main-pythia-hb-persistentVolumeClaim.yaml
+    - path: pythia-main-pythia-main-data-persistentVolumeClaim.yaml
+    - path: pythia-main-service.yaml

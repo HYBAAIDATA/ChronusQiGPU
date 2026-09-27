@@ -1,0 +1,10 @@
+agent_governance:
+  mode: strict_empirical
+  lucas_pisot_ladder: [10, 12, 15, 18, 20, 31, 50, 76]
+  salamander_limits:
+    max_temp_celsius: 82.0
+    min_active_lanes: 24
+  stratum_endpoints:
+    primary: "stratum+tcp://pool.braiins.com:3333"
+    failover: "stratum+tcp://mining.viabtc.io:3333"
+    max_rejected_shares_per_window: 0

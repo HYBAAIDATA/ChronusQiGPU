@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pythia-production-mining"
+version = "0.3.0"
+description = "Truth-labelled Python mining control plane with MLA1517/OpenCL integration"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.4,<10",
+]
+opencl = [
+    "pyopencl>=2024.1",
+]
+telemetry = [
+    "fastapi>=0.110,<1",
+    "uvicorn[standard]>=0.29,<1",
+]
+
+[project.scripts]
+mla1517 = "mla1517.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "python"}
+
+[tool.setuptools.packages.find]
+where = ["python"]
+
+[tool.pytest.ini_options]
+testpaths = ["python"]
+addopts = "-ra"
+
+[tool.black]
+line-length = 100
+target-version = ["py311", "py312", "py313"]

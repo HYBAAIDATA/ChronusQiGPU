@@ -1,0 +1,8 @@
+{
+  "name": "EUCLID-CORE / PYTHIA — Exact-Mathematics Mining Orchestrator",
+  "description": "Joint Venture computational platform for exact rational Q[√5] mining orchestration, Stratum telemetry, adaptive intelligence, and verification suites.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

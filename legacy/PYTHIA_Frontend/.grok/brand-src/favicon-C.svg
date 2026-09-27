@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="PYTHIA">
+  <rect width="32" height="32" rx="7" fill="#0B0B0C"/>
+  <path fill="#7D9A86" d="M16 8.7a7.6 7.6 0 0 1 0 14.6 7.6 7.6 0 0 1 0-14.6z"/>
+  <circle cx="13" cy="16" r="7.6" fill="none" stroke="#C8CCD4" stroke-width="2.2"/>
+  <circle cx="19" cy="16" r="7.6" fill="none" stroke="#C8CCD4" stroke-width="2.2"/>
+</svg>

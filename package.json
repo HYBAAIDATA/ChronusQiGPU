@@ -1,0 +1,26 @@
+{
+  "name": "pythia-operator",
+  "private": true,
+  "version": "0.1.0",
+  "description": "PYTHIA consolidated stack — Python control plane + frontend/ operator app.",
+  "type": "module",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "start": "python main.py --host 0.0.0.0 --port 3000 --web-root dist/public",
+    "preview": "npm --prefix frontend run preview",
+    "clean": "python -c \"import shutil; shutil.rmtree('dist', ignore_errors=True)\"",
+    "lint": "npm --prefix frontend run lint",
+    "lint:py": "python -m flake8",
+    "format": "npm --prefix frontend run format",
+    "format:py": "python -m black .",
+    "test:py": "python -m pytest tests/",
+    "test:ts": "npm --prefix frontend run test:ts",
+    "test:ts:cov": "npm --prefix frontend run test:ts:cov",
+    "test": "npm run lint && npm run build",
+    "selftest": "python -X utf8 -m Intelligence.self_test"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

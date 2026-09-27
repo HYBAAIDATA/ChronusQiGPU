@@ -1,0 +1,46 @@
+name: Lucas system exactness
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  exact-lucas-system:
+    name: Exact Lucas matrix, provenance, federation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install test runner and exact quantum dependencies
+        run: python -m pip install pytest sympy numpy
+      - name: Run exact Lucas, PULVINI, quantum, production, and integration suites
+        run: >-
+          python -m pytest -q
+          tests/test_lucas_core.py
+          tests/test_lucas_scale_matrix.py
+          tests/test_benchmark_harness.py
+          tests/test_integration.py
+          tests/test_federation.py
+          tests/test_production_wiring.py
+          tests/euclid_dominance/test_pulvini_tensor_networks.py
+          tests/euclid_dominance/test_quantum_tensor.py
+          tests/euclid_dominance/test_lucas_pisot_scaling.py
+          tests/euclid_dominance/test_hilbert_coverage.py
+      - name: Verify formal CLI artifact
+        run: |
+          mkdir -p artifacts
+          python scripts/cli.py \\
+            --workload-id ci-lucas-system \\
+            --seed-hex 0000000000000000000000000000000000000000000000000000000000000000 \\
+            --nonce-bits 8 \\
+            --target-bytes 1 \\
+            --scale-matrix-json configs/lucas_scale_matrix.example.json \\
+            --trials 1 \\
+            --output artifacts/ci-lucas-system.json
+          python scripts/cli.py --verify-only artifacts/ci-lucas-system.json

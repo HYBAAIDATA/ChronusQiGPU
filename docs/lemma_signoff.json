@@ -1,0 +1,51 @@
+{
+  "citation_overclaims": [],
+  "lemma": "docs/lemma_lucas_polynomial.md",
+  "lines": 70,
+  "reviewers": [
+    "mathematician",
+    "complexity",
+    "number_theorist",
+    "qi_physicist",
+    "systems"
+  ],
+  "scope_violations": [],
+  "sha": "40a1c1af49a0c531a96836d02c2900bbbaa98abae27f1676054163ad3a353d71",
+  "signoff": {
+    "attestations": {
+      "complexity": {
+        "check": "fast doubling O(log n)",
+        "result": true
+      },
+      "mathematician": {
+        "check": "trace recurrence",
+        "result": true
+      },
+      "number_theorist": {
+        "check": "Lucas initials",
+        "result": true
+      },
+      "qi_physicist": {
+        "check": "no quantum claim needed",
+        "result": true
+      },
+      "systems": {
+        "check": "exact integer, no floats",
+        "result": true
+      }
+    },
+    "theorem_proven": false
+  },
+  "theorem_proven": false,
+  "verify": [
+    {
+      "mode": "recurrence + fast_doubling",
+      "range": [
+        1,
+        76
+      ],
+      "theorem_proven": false,
+      "verdict": "HOLDS"
+    }
+  ]
+}

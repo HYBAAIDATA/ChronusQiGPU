@@ -1,0 +1,158 @@
+{
+  "agents_run": [
+    "auditor",
+    "governance",
+    "math_verifier",
+    "pin_verifier",
+    "precision_sentinel",
+    "provenance",
+    "quantum_checker",
+    "remediator",
+    "security_verifier",
+    "test_engineer"
+  ],
+  "change_bundles": [],
+  "human_merge_sha": null,
+  "pr": "operating-model-lemma-elevated",
+  "replay": {
+    "agent_versions": {
+      "pipeline": "d68aeabfe13a2b787c2150085a3c0f2e0af248a0444198d3e252299a25fc1546",
+      "roles": "0938781cdbf6c52dbf2e83edd09ce50f9b9769694d1ba29e2601bcd9b1149ed0",
+      "verifiers": "82dfdc226fd3e9b0c1c0db5c3a4e028bd7ed7882377cd809384dbb300bd1188f"
+    },
+    "lemma_signoff_sha": "ba98e4c1445aea474b43f02513e0c5cf694ee9feb4db02e2bf8c141e35abbd4b",
+    "seed": 1517,
+    "substrate_freeze_sha": "ed4642a6643c01e613707e81b3d32a3d9295829da64197657727cec0f349b39b"
+  },
+  "repo_sha": "cf852fbc07e870f9b7abf35b91db54bc797140ad",
+  "theorem_proven": false,
+  "verdict": {
+    "evidence": [
+      {
+        "cites_lemma": false,
+        "claim": "cassini_identity_in_m15",
+        "laureate": "cassini",
+        "reduction": null,
+        "source": "turing_core.py contains ['det(M15) = -1', 'M15_INV']"
+      },
+      {
+        "cites_lemma": false,
+        "claim": "round_trip_bit_exact",
+        "laureate": null,
+        "reduction": null,
+        "source": "turing_core.py contains ['t_phi_fold', 't_phi_unfold']"
+      },
+      {
+        "cites_lemma": true,
+        "claim": "golden_matrix_trace_eq_lucas",
+        "in_scope": true,
+        "laureate": "lucas",
+        "reduction": "tr(Q^n)=L_n reduces NP path count to fast doubling",
+        "source": "turing_core.py contains ['golden_matrix_trace', 'lucas']"
+      },
+      {
+        "cites_lemma": false,
+        "claim": "sha256d_sole_accept_authority",
+        "laureate": null,
+        "reduction": "pool acceptance reduces to sha256d<=target",
+        "source": "mining/bitcoin_hasher.py contains ['hashlib', 'sha256']"
+      },
+      {
+        "cites_lemma": false,
+        "claim": "never_two_consecutive_blocks",
+        "laureate": null,
+        "reduction": null,
+        "source": "mining/safety_fsm.py contains ['consecutive_blocks_prevented', 'never two consecutive']"
+      },
+      {
+        "claim": "cassini_identity",
+        "mode": "range",
+        "range": [
+          2,
+          76
+        ],
+        "verdict": "holds"
+      },
+      {
+        "claim": "fibonacci_matches_naive",
+        "mode": "range",
+        "range": [
+          0,
+          200
+        ],
+        "verdict": "holds"
+      },
+      {
+        "claim": "golden_matrix_trace_eq_lucas",
+        "mode": "symbolic",
+        "range": [
+          1,
+          76
+        ],
+        "verdict": "holds"
+      },
+      {
+        "claim": "lucas_path_bound",
+        "mode": "recurrence + fast_doubling",
+        "range": [
+          1,
+          76
+        ],
+        "verdict": "holds"
+      },
+      {
+        "claim": "m15_det_eq_neg1_mod256",
+        "mode": "symbolic",
+        "verdict": "holds"
+      },
+      {
+        "gate": "I",
+        "verdict": "unitary"
+      },
+      {
+        "gate": "X",
+        "verdict": "unitary"
+      },
+      {
+        "gate": "Y",
+        "verdict": "unitary"
+      },
+      {
+        "gate": "Z",
+        "verdict": "unitary"
+      },
+      {
+        "gate": "H",
+        "verdict": "unitary"
+      },
+      {
+        "gate": "S",
+        "verdict": "unitary"
+      },
+      {
+        "gate": "T",
+        "verdict": "unitary"
+      },
+      {
+        "gate": "Sdg",
+        "verdict": "unitary"
+      },
+      {
+        "gate": "Tdg",
+        "verdict": "unitary"
+      },
+      {
+        "cond": 65537.99998474051,
+        "file": "turing_core.py",
+        "surface": "M15",
+        "verdict": "exact"
+      },
+      {
+        "surfaces_checked": 56,
+        "verdict": "pin_holds"
+      }
+    ],
+    "reason": "all_claims_traced_no_findings",
+    "verdict": "PASS"
+  }
+}

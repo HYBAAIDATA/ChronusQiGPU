@@ -1,0 +1,213 @@
+name: PYTHIA Production Mining CI
+
+on:
+  push:
+    branches: [main, codex/pythia-production-mining]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pythia-production-mining-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONPATH: ${{ github.workspace }}/mla1517_platform_v3.4/python
+  PYTHIA_CI: "1"
+  PYTHIA_LIVE_SUBMIT: "0"
+
+jobs:
+  format-and-lint:
+    name: Canonical Python — Black and Flake8
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install pinned project development dependencies
+        run: python -m pip install -e ".[dev]"
+      - name: Black formatting gate
+        run: >-
+          python -m black --check
+          mla1517_platform_v3.4/python/main.py
+          mla1517_platform_v3.4/python/coordinator.py
+          mla1517_platform_v3.4/python/mla1517/mining/intelligence_controller.py
+          mla1517_platform_v3.4/python/mla1517/mining/self_optimizing_agent.py
+          mla1517_platform_v3.4/python/mla1517/mining/self_healing_agent.py
+          mla1517_platform_v3.4/python/test_control_plane_wiring.py
+          mla1517_platform_v3.4/python/test_intelligence_controller.py
+          mla1517_platform_v3.4/python/test_self_optimizing_agent.py
+          mla1517_platform_v3.4/python/test_self_healing_agent.py
+      - name: Flake8 lint gate
+        run: >-
+          python -m flake8 --count --max-line-length=100
+          --extend-ignore=E203,W503,E501,E402,F811,E741
+          mla1517_platform_v3.4/python/main.py
+          mla1517_platform_v3.4/python/coordinator.py
+          mla1517_platform_v3.4/python/mla1517/mining/intelligence_controller.py
+          mla1517_platform_v3.4/python/mla1517/mining/self_optimizing_agent.py
+          mla1517_platform_v3.4/python/mla1517/mining/self_healing_agent.py
+          mla1517_platform_v3.4/python/test_control_plane_wiring.py
+          mla1517_platform_v3.4/python/test_intelligence_controller.py
+          mla1517_platform_v3.4/python/test_self_optimizing_agent.py
+          mla1517_platform_v3.4/python/test_self_healing_agent.py
+
+  canonical-logic:
+    name: Canonical behavioral gates — offline and deterministic
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install project test dependencies
+        run: python -m pip install -e ".[dev]"
+      - name: Require every behavioral gate file
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test_file in \
+            test_turing_core.py \
+            test_stratum_adapter.py \
+            test_phase3_modules.py \
+            test_phase4_assembly.py \
+            test_intelligence_controller.py \
+            test_self_optimizing_agent.py \
+            test_self_healing_agent.py \
+            test_control_plane_wiring.py; do
+            test -f "mla1517_platform_v3.4/python/$test_file" || {
+              echo "FAIL — required behavioral gate is missing: $test_file"
+              exit 1
+            }
+            echo "PASS — required behavioral gate present: $test_file"
+          done
+      - name: Turing/M32 complete coverage gate
+        run: python -m unittest discover -s mla1517_platform_v3.4/python -p test_turing_core.py -v
+      - name: Offline Stratum V1 proof boundary gate
+        run: python -m unittest discover -s mla1517_platform_v3.4/python -p test_stratum_adapter.py -v
+      - name: Cassini, TOE, persistence, and unavailable-hardware gate
+        run: python -m unittest discover -s mla1517_platform_v3.4/python -p test_phase3_modules.py -v
+      - name: Coordinator proof and persistence regression gate
+        run: python -m unittest discover -s mla1517_platform_v3.4/python -p test_phase4_assembly.py -v
+      - name: Intelligence controller gate
+        run: python -m unittest discover -s mla1517_platform_v3.4/python -p test_intelligence_controller.py -v
+      - name: Self-optimizing tuner gate
+        run: python -m unittest discover -s mla1517_platform_v3.4/python -p test_self_optimizing_agent.py -v
+      - name: Self-healing agent gate
+        run: python -m unittest discover -s mla1517_platform_v3.4/python -p test_self_healing_agent.py -v
+      - name: Coordinator control-sink routing gate
+        run: python -m unittest discover -s mla1517_platform_v3.4/python -p test_control_plane_wiring.py -v
+      - name: Aethel storage/encoding/handoff contract gate
+        run: >-
+          python -m pytest
+          tests/test_aethel_storage.py
+          tests/test_aethel_encoding.py
+          tests/test_aethel_concurrency.py
+          tests/test_aethel_geodesic_handoff.py
+          tests/test_aethel_package.py
+          -q
+      - name: Aethel selftest — C ABI + seqlock + geodesic handoff
+        run: python -m aethel selftest
+
+  integration-audit:
+    name: Integration audit — deletions, imports, and compile
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install project dependencies
+        run: python -m pip install -e ".[ml,dev]"
+      - name: Confirm forbidden legacy paths remain absent
+        shell: bash
+        run: |
+          set -euo pipefail
+          for path in \
+            mla1517_platform_v3.4/python/mla1517/mining/cpu_fallback_mock.py \
+            frontend/server.js; do
+            if [[ -e "$path" ]]; then
+              echo "FAIL — forbidden legacy path exists: $path"
+              exit 1
+            fi
+            echo "PASS — absent: $path"
+          done
+      - name: Verify canonical imports and no circular import failure
+        run: |
+          python -c "import coordinator; from mla1517.mining.intelligence_controller import IntelligenceController; from mla1517.mining.self_optimizing_agent import SelfOptimizingTuner; from mla1517.mining.self_healing_agent import SelfHealingAgent; print('PASS — canonical coordinator and three agentic layers import')"
+      - name: Compile canonical Python tree
+        run: python -m compileall -q mla1517_platform_v3.4/python
+      - name: Verify installed canonical entrypoints
+        run: >-
+          python -c "import control_api, coordinator, main, mining_runtime, mla1517;
+          print('PASS — installed canonical modules resolve')"
+      - name: Run dependency-scoped canonical smoke tests
+        run: >-
+          python -m unittest discover
+          -s mla1517_platform_v3.4/python
+          -p 'test_control_plane_wiring.py'
+          -v
+
+  hybrid-fleet:
+    name: Hybrid solver fleet — offline signal gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install project test dependencies
+        run: python -m pip install -e ".[dev]"
+      - name: Hybrid traversal signal gates (negative + positive control)
+        run: python -m pytest tests/test_hybrid_signal.py -q
+      - name: Benchmark harness smoke (synthetic corpus, labeled)
+        run: >-
+          python scripts/benchmark_hybrid.py
+          --n 4 --nonce-space 4096 --resamples 50
+      - name: Docker packaging check
+        run: |
+          test -f Dockerfile.hybrid || { echo "FAIL — Dockerfile.hybrid missing"; exit 1; }
+          test -f docker-compose.hybrid.yml || { echo "FAIL — docker-compose.hybrid.yml missing"; exit 1; }
+          echo "PASS — hybrid fleet packaging present"
+
+  hardware-gate:
+    name: Hardware gate — explicit NOT_RUN when silicon is unavailable
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Detect OpenCL without simulating hardware
+        run: |
+          python - <<'PY'
+          try:
+              import pyopencl as cl
+              platforms = cl.get_platforms()
+          except Exception as exc:
+              print(f"NOT_RUN — OpenCL runtime/device unavailable: {type(exc).__name__}")
+              raise SystemExit(0)
+          if not platforms:
+              print("NOT_RUN — OpenCL runtime reported no platforms")
+              raise SystemExit(0)
+          print("NOT_RUN — GitHub-hosted runner has no verified MLA1517 production device")
+          print("Detected OpenCL platforms:", len(platforms))
+          PY

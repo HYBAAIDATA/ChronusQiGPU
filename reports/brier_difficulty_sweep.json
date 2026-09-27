@@ -1,0 +1,62 @@
+{
+  "note": "brier_quantum_stack is the self-model's calibration of the stack's emergence signal against real sha256d outcomes; it is expected to move with difficulty and is reported as measured, per-difficulty.",
+  "sweep": [
+    {
+      "brier_quantum_stack": 0.063,
+      "brier_scores": {
+        "meta_evolution": 0.1291,
+        "pythia_learning": 1.0,
+        "quantum_stack": 0.063,
+        "toe": 0.3327
+      },
+      "difficulty_rate": 0.5,
+      "expected_hits": 10000.0,
+      "nonce_window": 20000,
+      "windows": 4,
+      "wins": 4
+    },
+    {
+      "brier_quantum_stack": 0.4378,
+      "brier_scores": {
+        "meta_evolution": 0.432,
+        "pythia_learning": 0.25,
+        "quantum_stack": 0.4378,
+        "toe": 0.2408
+      },
+      "difficulty_rate": 0.05,
+      "expected_hits": 1000.0,
+      "nonce_window": 20000,
+      "windows": 4,
+      "wins": 1
+    },
+    {
+      "brier_quantum_stack": 0.5611,
+      "brier_scores": {
+        "meta_evolution": 0.432,
+        "pythia_learning": 0.0,
+        "quantum_stack": 0.5611,
+        "toe": 0.1803
+      },
+      "difficulty_rate": 0.005,
+      "expected_hits": 100.0,
+      "nonce_window": 20000,
+      "windows": 4,
+      "wins": 0
+    },
+    {
+      "brier_quantum_stack": 0.5611,
+      "brier_scores": {
+        "meta_evolution": 0.432,
+        "pythia_learning": 0.0,
+        "quantum_stack": 0.5611,
+        "toe": 0.1803
+      },
+      "difficulty_rate": 0.0005,
+      "expected_hits": 10.0,
+      "nonce_window": 20000,
+      "windows": 4,
+      "wins": 0
+    }
+  ],
+  "theorem_proven": false
+}

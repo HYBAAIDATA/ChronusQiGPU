@@ -1,0 +1,14 @@
+node_modules
+dist
+__pycache__
+.pytest_cache
+models
+logs
+*.lock
+bun.lock
+package-lock.json
+metadata.json
+firebase-applet-config.json
+firebase-blueprint.json
+.env.example
+legacy

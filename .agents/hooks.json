@@ -1,0 +1,11 @@
+{
+  "drift-sentry-reminder": {
+    "enabled": true,
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "python scripts/drift_sentry.py --hook-pre-invocation"
+      }
+    ]
+  }
+}

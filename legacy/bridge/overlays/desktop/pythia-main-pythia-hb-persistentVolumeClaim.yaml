@@ -1,0 +1,9 @@
+#! pythia-main-pythia-hb-persistentVolumeClaim.yaml
+# Generated code, do not edit
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+    name: pythia-main-pythia-hb
+    namespace: pythia-main
+spec:
+    storageClassName: "hostpath" # see docker/desktop-storage-provisioner

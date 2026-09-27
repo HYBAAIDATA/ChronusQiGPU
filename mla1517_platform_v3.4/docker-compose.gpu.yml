@@ -1,0 +1,40 @@
+# MLA1517 v3.4 — explicit GPU passthrough for live measurement.
+# This file is intentionally separate from the general product compose stack.
+# It does not create a CPU fallback and it never fabricates pool acceptance.
+services:
+  mla1517-lucas-scaling:
+    build:
+      context: .
+      dockerfile: Dockerfile.lucas-scaling
+    container_name: mla1517-lucas-scaling
+    restart: "no"
+    devices:
+      - "${MLA1517_DRI_DEVICE:-/dev/dri}:/dev/dri"
+    group_add:
+      - "${MLA1517_VIDEO_GID:-44}"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: "${MLA1517_GPU_DRIVER:-all}"
+              count: 1
+              capabilities: [gpu]
+    environment:
+      MLA1517_ENABLE_LIVE_SUBMIT: "${MLA1517_ENABLE_LIVE_SUBMIT:?Set to 1 only for an approved live run}"
+      MLA1517_LIVE_APPROVAL_ID: "${MLA1517_LIVE_APPROVAL_ID:?Set an approved run identifier}"
+      MLA1517_STRATUM_USER: "${MLA1517_STRATUM_USER:?Set the pool worker identity}"
+      MLA1517_STRATUM_PASSWORD: "${MLA1517_STRATUM_PASSWORD:?Set the pool worker password}"
+      MLA1517_STRATUM_ADAPTER: "${MLA1517_STRATUM_ADAPTER:?Set module:factory for a negotiated consensus adapter}"
+      MLA1517_BRAIINS_ENDPOINT: "${MLA1517_BRAIINS_ENDPOINT:-stratum.braiins.com:3333}"
+      MLA1517_VIABTC_ENDPOINT: "${MLA1517_VIABTC_ENDPOINT:-btc.viabtc.io:3333}"
+      MLA1517_SCALING_BATCH_SIZE: "${MLA1517_SCALING_BATCH_SIZE:-1}"
+      MLA1517_SCALING_OUTPUT: /app/results/lucas_scaling_measurement.jsonl
+      MLA1517_LOG_LEVEL: "${MLA1517_LOG_LEVEL:-INFO}"
+    volumes:
+      - "${MLA1517_ADAPTER_DIR:?Set the host directory containing the negotiated adapter}:/app/adapters:ro"
+      - "${MLA1517_RESULTS_DIR:-./results}:/app/results"
+      # Vendor ICD descriptors are host-specific and must be supplied explicitly.
+      - "${MLA1517_OPENCL_VENDOR_DIR:?Set the host OpenCL vendor directory}:/etc/OpenCL/vendors:ro"
+    command: ["--live"]
+    security_opt:
+      - no-new-privileges:true

@@ -1,0 +1,21 @@
+# Live-submission overlay for the Braiins profile.
+#
+#   docker compose -f docker-compose.pools.yml -f docker-compose.live-braiins.yml --profile braiins up -d
+#
+# Drops --dry-run and adds --submit so verified winners are submitted to the
+# pool. Live submission is still gated by the armed triple env in
+# .env.braiins (HYBA_ENABLE_LIVE_SHARE_SUBMIT, HYBA_LIVE_SHARE_APPROVAL_ID,
+# HYBA_AUTONOMOUS_EXTERNAL_ACTIONS) — production_miner refuses to submit
+# without all three. --max-runtime bounds the session; restart stays "no"
+# so a finished run exits cleanly instead of looping.
+#
+# PYTHIA_EXECUTION_PATH=direct routes through DirectExecutionAdapter —
+# header → real SHA256d grind on the OpenCL iGPU → verified submit. The
+# default "aethel" path wraps every window in the four-layer ceremony
+# (aethel store, tensor fold, 1M-entry Turing schedule, igpu grind) whose
+# synchronous CPU cost stalls the session far past any deadline.
+services:
+  pythia-braiins:
+    environment:
+      PYTHIA_EXECUTION_PATH: "direct"
+    command: ["python3", "-m", "mining.production_miner", "--submit", "--max-runtime", "1200"]

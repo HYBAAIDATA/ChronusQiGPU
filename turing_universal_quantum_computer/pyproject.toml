@@ -1,0 +1,48 @@
+[project]
+name = "turing-universal-quantum-computer"
+version = "1.0.0"
+description = "Turing Virtual Quantum Computer — consolidated exact-quantum substrate: universal n-qubit engine (default 10,000) with stabilizer/sparse/closed-form exact backends, Q[sqrt(5)]/Pisot algebra, strict-quantum certificates, Hendrix schedule, and the four-layer production execution plane."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "PYTHIA Contributors" }]
+keywords = ["turing", "quantum", "exact-math", "vqc", "pythia", "mla1517"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Typing :: Typed",
+]
+
+dependencies = [
+    "numpy>=1.26,<3",
+    "sympy>=1.12,<2",
+]
+
+[project.optional-dependencies]
+discovery = [
+    "scipy>=1.11",
+    "networkx>=3.0",
+]
+hardware = [
+    "pyopencl>=2024.1",
+]
+dev = [
+    "pytest>=7.4,<10",
+]
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = [
+    "turing_universal_quantum_computer",
+    "turing_universal_quantum_computer.turing_core",
+    "turing_universal_quantum_computer.intelligences",
+    "turing_universal_quantum_computer.lucas",
+]
+
+[tool.setuptools.package-data]
+turing_universal_quantum_computer = ["py.typed", "kernels/*.cl"]

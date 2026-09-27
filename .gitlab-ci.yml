@@ -1,0 +1,135 @@
+# GitLab CI — full parity with .github/workflows/ci.yml
+# Security: SAST + Secret Detection (preserved)
+# Application: Node (typecheck/test/build) + Python (lint/test/compile) + Intelligence self-test
+
+stages:
+  - lint
+  - test
+  - build
+  - security
+  - secret-detection                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+
+# ── Node ──────────────────────────────────────────────────────────────────────
+node-lint:
+  stage: lint
+  image: node:22
+  cache:
+    key: node-$CI_COMMIT_REF_SLUG
+    paths:
+      - node_modules/
+  before_script:
+    - npm ci
+  script:
+    - npm run lint
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'main'
+
+node-test:
+  stage: test
+  image: node:22
+  cache:
+    key: node-$CI_COMMIT_REF_SLUG
+    paths:
+      - node_modules/
+  before_script:
+    - npm ci
+  script:
+    - npm test
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'main'
+
+node-build:
+  stage: build
+  image: node:22
+  cache:
+    key: node-$CI_COMMIT_REF_SLUG
+    paths:
+      - node_modules/
+  before_script:
+    - npm ci
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 hour
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'main'
+
+# ── Python ────────────────────────────────────────────────────────────────────
+python-lint:
+  stage: lint
+  image: python:3.12
+  cache:
+    key: pip-$CI_COMMIT_REF_SLUG
+    paths:
+      - .pip-cache/
+  variables:
+    PIP_CACHE_DIR: $CI_PROJECT_DIR/.pip-cache
+  before_script:
+    - pip install -e ".[dev]" --quiet
+  script:
+    - python -m flake8 --count
+    - python -m black --check .
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'main'
+
+python-test:
+  stage: test
+  image: python:3.12
+  cache:
+    key: pip-$CI_COMMIT_REF_SLUG
+    paths:
+      - .pip-cache/
+  variables:
+    PIP_CACHE_DIR: $CI_PROJECT_DIR/.pip-cache
+  before_script:
+    - pip install -e ".[dev]" --quiet
+  script:
+    - python -m pytest tests/ -x -q
+    - python -m compileall -q Intelligence core_engine mining hyba lucas pythagoras scripts tests mla1517_platform_v3.4/python
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'main'
+
+python-selftest:
+  stage: test
+  image: python:3.12
+  timeout: 20 minutes
+  # Enforced gate: a self-test failure fails the pipeline (was advisory).
+  allow_failure: false
+  cache:
+    key: pip-ml-$CI_COMMIT_REF_SLUG
+    paths:
+      - .pip-cache/
+  variables:
+    PIP_CACHE_DIR: $CI_PROJECT_DIR/.pip-cache
+  before_script:
+    - pip install -e ".[ml,dev]" --quiet
+    - python -c "import nltk; nltk.download('vader_lexicon', quiet=True)"
+  script:
+    - python -u -X utf8 -m Intelligence.self_test
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'main'
+
+# ── Security (preserved) ──────────────────────────────────────────────────────
+sast:
+  stage: security
+
+secret_detection:
+  stage: secret-detection
+
+include:
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
+
+variables:
+  SECRET_DETECTION_ENABLED: 'true'
+  EUCLID_ENABLE_SIMULATION: 'false'
+  PYTHONUNBUFFERED: '1'
+  PYTHONIOENCODING: 'utf-8'

@@ -1,0 +1,29 @@
+[flake8]
+max-line-length = 100
+extend-ignore =
+    # black compatibility
+    E203,W503,
+    # long lines in research notebooks / embedded data
+    E501,
+    # deliberate sys.path shims before conditional imports
+    E402,F811,
+    # 'I' is the conventional name for identity matrix / current in math code
+    E741
+exclude =
+    .git,
+    .pytest_cache,
+    __pycache__,
+    node_modules,
+    dist,
+    models,
+    logs,
+    .venv,
+    venv,
+    .kilo,
+    .tmp_build,
+    artifacts,
+    build,
+    legacy,
+    PYTHIA-main
+per-file-ignores =
+    __init__.py:F401

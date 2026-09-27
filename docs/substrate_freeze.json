@@ -1,0 +1,51 @@
+{
+  "file": "turing_core.py",
+  "frozen_sha": "32d6329dfbaf973d2437d2d36a88769b01ef4c539a24db7013d42cbacdc2eddc",
+  "lemma_sha": "face9c61a4bb3efb7ea5ad96c3f4dda78946237d507a0687387c5e950f00335a",
+  "lemma_signoff": {
+    "complexity": {
+      "check": "fast doubling O(log n)",
+      "result": true
+    },
+    "mathematician": {
+      "check": "trace recurrence",
+      "result": true
+    },
+    "number_theorist": {
+      "check": "Lucas initials",
+      "result": true
+    },
+    "qi_physicist": {
+      "check": "no quantum claim needed",
+      "result": true
+    },
+    "systems": {
+      "check": "exact integer, no floats",
+      "result": true
+    }
+  },
+  "lemma_verify": [
+    {
+      "mode": "recurrence + fast_doubling",
+      "range": [
+        1,
+        76
+      ],
+      "theorem_proven": false,
+      "verdict": "HOLDS"
+    }
+  ],
+  "signatures": {
+    "cryptographer": "mod-256 arithmetic verified",
+    "mathematician": "exact inverse verified",
+    "number_theorist": "Cassini verified",
+    "numerical": "no float leak on exact surfaces",
+    "systems": "runs in target runtime"
+  },
+  "sweep": {
+    "max_len": 511,
+    "vectors_per_len": 16,
+    "vectors_total": 8192
+  },
+  "theorem_proven": false
+}

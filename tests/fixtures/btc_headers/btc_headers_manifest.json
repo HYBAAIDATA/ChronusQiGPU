@@ -1,0 +1,27 @@
+{
+  "source": "https://blockstream.info/api/blocks/{height}",
+  "requested_heights": [800000, 809999],
+  "returned_blocks": 1640,
+  "http_429": true,
+  "nonce_source": "block.nonce field from the API response",
+  "spans": [
+    {
+      "first_height": 805000,
+      "last_height": 805009,
+      "count": 10,
+      "bits": [386207611],
+      "file": "btc_headers_805000_805009.bin",
+      "sha256": "f353f5bcbd5ba170780958269a2b3ea3f057e863e6c766fd2071d0c8fb3dddc2",
+      "bytes": 800
+    },
+    {
+      "first_height": 808370,
+      "last_height": 809999,
+      "count": 1630,
+      "bits": [386216622, 386198911],
+      "file": "btc_headers_808370_809999.bin",
+      "sha256": "7761a1d3c1e85463a341de26605781d9fae577783317aefe18d713f6de4d5d21",
+      "bytes": 130400
+    }
+  ]
+}

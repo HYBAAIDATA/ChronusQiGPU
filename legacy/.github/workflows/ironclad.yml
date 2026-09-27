@@ -1,0 +1,113 @@
+name: Ironclad Repository Gate
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ironclad-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONPATH: ${{ github.workspace }}/mla1517_platform_v3.4/python
+  PYTHIA_CI: '1'
+  PYTHIA_LIVE_SUBMIT: '0'
+  PYTHIA_EXECUTION_PATH: direct
+  PYTHIA_HASH_BACKEND: cpu
+
+jobs:
+  repository-guard:
+    name: Repository guard — fail closed
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install deterministic development dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -e '.[dev]'
+      - name: Git whitespace gate (changed revision only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}" "${GITHUB_SHA}"
+          else
+            git diff --check "${GITHUB_SHA}^" "${GITHUB_SHA}"
+          fi
+      - name: Repository guard
+        run: python scripts/ci_repo_guard.py
+      - name: Production contract audit
+        run: python scripts/audit_production_contracts.py
+      - name: Startup contract audit
+        run: python scripts/audit_startup_contract.py
+      - name: Offline benchmark smoke test
+        run: python scripts/benchmark_hashrate.py --backend cpu --batch 4096 --iterations 1
+      - name: Focused production tests
+        run: python -m pytest -q tests/test_production_miner.py tests/test_device_identity_contract.py
+      - name: Execute client UAT harness (offline, no pool calls)
+        run: python scripts/client_uat.py --skip-docker --json
+      - name: Compile all tracked Python sources
+        run: python -m compileall -q .
+
+  full-python:
+    name: Full Python suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install project development dependencies
+        run: python -m pip install -e '.[dev]'
+      - name: Run complete Python test suite
+        run: python -m pytest -q
+
+  compose-contract:
+    name: Deployment contract — compose and Dockerfile
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Render compose configuration without secrets
+        run: docker compose config --quiet
+      - name: Verify production files exist
+        run: |
+          test -f Dockerfile
+          test -f docker-compose.yml
+          test -f docker-compose.override.yml
+          test -f docker-compose.igpu-wsl2.yml
+          test -f iGPU_Accelerator_JV/kernels/bitcoin_sha256d.cl
+          test -f docker-compose.pools.yml
+          PYTHIA_BRAIINS_ENV_FILE=.env.braiins.example PYTHIA_MAIN_ENV_FILE=.env.braiins.example docker compose -f docker-compose.pools.yml --profile braiins config --quiet
+          PYTHIA_VIABTC_ENV_FILE=.env.viabtc.example PYTHIA_MAIN_ENV_FILE=.env.viabtc.example docker compose -f docker-compose.pools.yml --profile viabtc config --quiet
+
+  node:
+    name: Frontend — lint, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build

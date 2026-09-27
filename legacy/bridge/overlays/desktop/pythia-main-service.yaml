@@ -1,0 +1,11 @@
+# check if there is at least one published port
+
+#! pythia-main-service.yaml
+# Generated code, do not edit
+apiVersion: v1
+kind: Service
+metadata:
+    name: pythia-main-published
+    namespace: pythia-main
+spec:
+    type: LoadBalancer

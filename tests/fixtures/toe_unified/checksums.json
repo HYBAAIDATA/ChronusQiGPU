@@ -1,0 +1,13 @@
+{
+  "iris.data": {
+    "sha256": "6f608b71a7317216319b4d27b4d9bc84e6abd734eda7872b71a458569e2656c0",
+    "source": "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+    "name": "UCI Iris",
+    "rows": 150
+  },
+  "cost_sheet.csv": {
+    "sha256": "f3792ec4f2bebe448c486f5a94c74412b342bb03705fe08e91ae03f9ce540d80",
+    "source": "toe/unified/economics.py document_fortune500_scenario and financial_services_case",
+    "name": "program cost sheet"
+  }
+}

@@ -1,0 +1,164 @@
+# Four-pool deployment for Docker Desktop + WSL2 (one miner container per pool).
+#   docker compose -f docker-compose.pools.yml --profile braiins up -d --build
+#   profiles: braiins | viabtc | nicehash | ckpool
+# Credentials are supplied by the ignored env files referenced below.
+#
+# WSL2/dxgkrnl caveat: a docker stop that lands while an OpenCL op is in flight
+# leaves the miner in uninterruptible sleep and wedges the container + device.
+# Always drain before stopping a GPU miner:
+#   docker exec pythia-main touch /run/pythia/hb/miner-braiins.stop
+#   docker wait pythia-braiins   (exits at the next window boundary)
+#   docker stop pythia-braiins   (now a no-op; safe)
+x-main-common: &main-common
+  build:
+    context: .
+    dockerfile: Dockerfile
+  init: true
+  # External watcher for pythia-main only; worker restarts remain in-process.
+  restart: "on-failure:5"
+  working_dir: /app
+  devices:
+    - "/dev/dxg:/dev/dxg"
+  volumes:
+    - "/usr/lib/wsl:/usr/lib/wsl:ro"
+  environment:
+    PYTHIA_HOST: 0.0.0.0
+    PYTHIA_PORT: 3000
+    PYTHIA_EXECUTION_PATH: direct
+    PYTHIA_HASH_BACKEND: opencl
+    PYTHIA_AUTOSTART_WORKERS: "1"
+    MLA1517_MMIO_DEVICE: /dev/dxg
+    MLA1517_MODE: mla1517_gpu
+    MLA1517_GPU_BACKEND: opencl
+    MLA1517_SALAMANDER_ENABLE: "1"
+    MLA1517_EUCLIDCORE_ENABLE: "1"
+    HYBA_REQUIRE_HYBA: "1"
+    LD_LIBRARY_PATH: /usr/lib/wsl/lib
+    # Docker Desktop/WSL2 commonly presents overlayfs/bind mounts: tolerate
+    # EINVAL from directory fsync while retaining file fsync + atomic rename.
+    PYTHIA_DIR_FSYNC_POLICY: LENIENT
+  healthcheck:
+    test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3000/readyz')"]
+    interval: 10s
+    timeout: 5s
+    start_period: 30s
+    retries: 3
+  command: ["python3", "main.py", "--host", "0.0.0.0", "--port", "3000", "--web-root", "/app/dist/public"]
+
+x-miner-env: &miner-env
+  PYTHIA_EXECUTION_PATH: direct
+  PYTHIA_HASH_BACKEND: opencl
+  PYTHIA_SCORE_ORDER_LIMIT: "4096"
+  PYTHIA_NONCE_WINDOW: "1048576"
+  PYTHIA_EMIT_HEARTBEAT: "1"
+  PYTHONPATH: /app:/app/mla1517_platform_v3.4/python
+  HYBA_REQUIRE_HYBA: "1"
+  LD_LIBRARY_PATH: /usr/lib/wsl/lib
+
+x-miner-common: &miner-common
+  build:
+    context: .
+    dockerfile: Dockerfile
+  init: true
+  restart: "no"
+  working_dir: /app
+  devices:
+    - "/dev/dxg:/dev/dxg"
+  environment:
+    <<: *miner-env
+  volumes:
+    - "/usr/lib/wsl:/usr/lib/wsl:ro"
+    - pythia_hb:/run/pythia/hb
+  command: ["python3", "-m", "mining.production_miner", "--dry-run"]
+  healthcheck:
+    test: ["CMD-SHELL", "kill -0 1"]
+    interval: 30s
+    timeout: 5s
+    retries: 3
+
+services:
+  pythia-main:
+    <<: *main-common
+    container_name: pythia-main
+    ports:
+      - "${PYTHIA_CONTROL_HOST_PORT:-8377}:3000"
+    env_file:
+      - ${PYTHIA_MAIN_ENV_FILE:-.env.braiins}
+    volumes:
+      - "/usr/lib/wsl:/usr/lib/wsl:ro"
+      - pythia_main_data:/app/data
+      - pythia_hb:/run/pythia/hb
+
+  pythia-braiins:
+    <<: *miner-common
+    profiles: ["braiins"]
+    container_name: pythia-braiins
+    environment:
+      <<: *miner-env
+      PYTHIA_WORKER_NAME: "miner-braiins"
+      PYTHIA_STOP_FILE: "/run/pythia/hb/miner-braiins.stop"
+    env_file:
+      - ${PYTHIA_BRAIINS_ENV_FILE:-.env.braiins}
+    volumes:
+      - "/usr/lib/wsl:/usr/lib/wsl:ro"
+      - pythia_braiins_data:/app/data
+      - pythia_hb:/run/pythia/hb
+
+  pythia-viabtc:
+    <<: *miner-common
+    profiles: ["viabtc"]
+    container_name: pythia-viabtc
+    environment:
+      <<: *miner-env
+      PYTHIA_WORKER_NAME: "miner-viabtc"
+      PYTHIA_STOP_FILE: "/run/pythia/hb/miner-viabtc.stop"
+    env_file:
+      - ${PYTHIA_VIABTC_ENV_FILE:-.env.viabtc}
+    volumes:
+      - "/usr/lib/wsl:/usr/lib/wsl:ro"
+      - pythia_viabtc_data:/app/data
+      - pythia_hb:/run/pythia/hb
+
+  pythia-nicehash:
+    <<: *miner-common
+    profiles: ["nicehash"]
+    container_name: pythia-nicehash
+    environment:
+      <<: *miner-env
+      PYTHIA_WORKER_NAME: "miner-nicehash"
+      PYTHIA_STOP_FILE: "/run/pythia/hb/miner-nicehash.stop"
+    env_file:
+      - ${PYTHIA_NICEHASH_ENV_FILE:-.env.nicehash}
+    volumes:
+      - "/usr/lib/wsl:/usr/lib/wsl:ro"
+      - pythia_nicehash_data:/app/data
+      - pythia_hb:/run/pythia/hb
+
+  pythia-ckpool:
+    <<: *miner-common
+    profiles: ["ckpool"]
+    container_name: pythia-ckpool
+    environment:
+      <<: *miner-env
+      PYTHIA_WORKER_NAME: "miner-ckpool"
+      PYTHIA_STOP_FILE: "/run/pythia/hb/miner-ckpool.stop"
+    env_file:
+      - ${PYTHIA_CKPOOL_ENV_FILE:-.env.ckpool}
+    volumes:
+      - "/usr/lib/wsl:/usr/lib/wsl:ro"
+      - pythia_ckpool_data:/app/data
+      - pythia_hb:/run/pythia/hb
+
+volumes:
+  pythia_main_data:
+    driver: local
+  pythia_braiins_data:
+    driver: local
+  pythia_viabtc_data:
+    driver: local
+  pythia_nicehash_data:
+    driver: local
+  pythia_ckpool_data:
+    driver: local
+  pythia_hb:
+    driver: local

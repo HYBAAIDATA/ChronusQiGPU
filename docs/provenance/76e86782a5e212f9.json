@@ -1,0 +1,4004 @@
+{
+  "agents_run": [
+    "auditor",
+    "governance",
+    "math_verifier",
+    "pin_verifier",
+    "precision_sentinel",
+    "provenance",
+    "quantum_checker",
+    "remediator",
+    "security_verifier",
+    "test_engineer"
+  ],
+  "change_bundles": [
+    null,
+    {
+      "tests": [
+        {
+          "for": {
+            "detail": "grind_target_m32() declares exactness",
+            "file": "mining/bitcoin_hasher.py",
+            "line": 697,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at mining/bitcoin_hasher.py:697"
+        },
+        {
+          "for": {
+            "detail": "grind_target_m32() declares exactness",
+            "file": "mining/bitcoin_hasher.py",
+            "line": 707,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at mining/bitcoin_hasher.py:707"
+        },
+        {
+          "for": {
+            "detail": "intervene_on_state() declares exactness",
+            "file": "Intelligence/asi/causal_reasoning.py",
+            "line": 297,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/asi/causal_reasoning.py:297"
+        },
+        {
+          "for": {
+            "detail": "measure_phi_covariance() declares exactness",
+            "file": "Intelligence/asi/information_integration.py",
+            "line": 145,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/asi/information_integration.py:145"
+        },
+        {
+          "for": {
+            "detail": "measure_phi_covariance() declares exactness",
+            "file": "Intelligence/asi/information_integration.py",
+            "line": 155,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/asi/information_integration.py:155"
+        },
+        {
+          "for": {
+            "detail": "measure_phi_density() declares exactness",
+            "file": "Intelligence/asi/information_integration.py",
+            "line": 177,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/asi/information_integration.py:177"
+        },
+        {
+          "for": {
+            "detail": "measure_phi_density() declares exactness",
+            "file": "Intelligence/asi/information_integration.py",
+            "line": 187,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/asi/information_integration.py:187"
+        },
+        {
+          "for": {
+            "detail": "exp_map() declares exactness",
+            "file": "Intelligence/asi/manifold_bridge.py",
+            "line": 190,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/asi/manifold_bridge.py:190"
+        },
+        {
+          "for": {
+            "detail": "exp_map() declares exactness",
+            "file": "Intelligence/asi/manifold_bridge.py",
+            "line": 193,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/asi/manifold_bridge.py:193"
+        },
+        {
+          "for": {
+            "detail": "riemannian_gradient() declares exactness",
+            "file": "Intelligence/asi/manifold_bridge.py",
+            "line": 216,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/asi/manifold_bridge.py:216"
+        },
+        {
+          "for": {
+            "detail": "golden_smoothing_kernel() declares exactness",
+            "file": "Intelligence/asi/manifold_bridge.py",
+            "line": 382,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/asi/manifold_bridge.py:382"
+        },
+        {
+          "for": {
+            "detail": "golden_smoothing_kernel() declares exactness",
+            "file": "Intelligence/asi/manifold_bridge.py",
+            "line": 384,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/asi/manifold_bridge.py:384"
+        },
+        {
+          "for": {
+            "detail": "quantum_relative_entropy() declares exactness",
+            "file": "Intelligence/asi/manifold_bridge.py",
+            "line": 548,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/asi/manifold_bridge.py:548"
+        },
+        {
+          "for": {
+            "detail": "quantum_relative_entropy() declares exactness",
+            "file": "Intelligence/asi/manifold_bridge.py",
+            "line": 545,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/asi/manifold_bridge.py:545"
+        },
+        {
+          "for": {
+            "detail": "verify_full_chain() declares exactness",
+            "file": "Intelligence/chain_verification.py",
+            "line": 220,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/chain_verification.py:220"
+        },
+        {
+          "for": {
+            "detail": "_compute_coherence() declares exactness",
+            "file": "Intelligence/consciousness/quantum_consciousness_system.py",
+            "line": 159,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/consciousness/quantum_consciousness_system.py:159"
+        },
+        {
+          "for": {
+            "detail": "detect_hardware_profile() declares exactness",
+            "file": "Intelligence/hardware_config.py",
+            "line": 296,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/hardware_config.py:296"
+        },
+        {
+          "for": {
+            "detail": "attach_to_host() declares exactness",
+            "file": "Intelligence/igpu_telemetry.py",
+            "line": 901,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/igpu_telemetry.py:901"
+        },
+        {
+          "for": {
+            "detail": "record_step() declares exactness",
+            "file": "Intelligence/igpu_telemetry.py",
+            "line": 623,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/igpu_telemetry.py:623"
+        },
+        {
+          "for": {
+            "detail": "record_step() declares exactness",
+            "file": "Intelligence/igpu_telemetry.py",
+            "line": 640,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/igpu_telemetry.py:640"
+        },
+        {
+          "for": {
+            "detail": "record_step() declares exactness",
+            "file": "Intelligence/igpu_telemetry.py",
+            "line": 643,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/igpu_telemetry.py:643"
+        },
+        {
+          "for": {
+            "detail": "record_step() declares exactness",
+            "file": "Intelligence/igpu_telemetry.py",
+            "line": 646,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/igpu_telemetry.py:646"
+        },
+        {
+          "for": {
+            "detail": "record_step() declares exactness",
+            "file": "Intelligence/igpu_telemetry.py",
+            "line": 604,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/igpu_telemetry.py:604"
+        },
+        {
+          "for": {
+            "detail": "build_family_scale_profile() declares exactness",
+            "file": "Intelligence/lucas_scales.py",
+            "line": 292,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/lucas_scales.py:292"
+        },
+        {
+          "for": {
+            "detail": "build_family_scale_profile() declares exactness",
+            "file": "Intelligence/lucas_scales.py",
+            "line": 293,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/lucas_scales.py:293"
+        },
+        {
+          "for": {
+            "detail": "guide_mining() declares exactness",
+            "file": "Intelligence/orchestrator.py",
+            "line": 396,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/orchestrator.py:396"
+        },
+        {
+          "for": {
+            "detail": "_anchor_to_vector() declares exactness",
+            "file": "Intelligence/pathfinder.py",
+            "line": 98,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/pathfinder.py:98"
+        },
+        {
+          "for": {
+            "detail": "_optimal_step() declares exactness",
+            "file": "Intelligence/pathfinder.py",
+            "line": 126,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/pathfinder.py:126"
+        },
+        {
+          "for": {
+            "detail": "_optimal_step() declares exactness",
+            "file": "Intelligence/pathfinder.py",
+            "line": 128,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/pathfinder.py:128"
+        },
+        {
+          "for": {
+            "detail": "_optimal_step() declares exactness",
+            "file": "Intelligence/pathfinder.py",
+            "line": 131,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/pathfinder.py:131"
+        },
+        {
+          "for": {
+            "detail": "next_incremental_step_ehs() declares exactness",
+            "file": "Intelligence/safety_constraints.py",
+            "line": 79,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/safety_constraints.py:79"
+        },
+        {
+          "for": {
+            "detail": "next_incremental_step_ehs() declares exactness",
+            "file": "Intelligence/safety_constraints.py",
+            "line": 78,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/safety_constraints.py:78"
+        },
+        {
+          "for": {
+            "detail": "build_search_crystal() declares exactness",
+            "file": "Intelligence/search_crystal.py",
+            "line": 144,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/search_crystal.py:144"
+        },
+        {
+          "for": {
+            "detail": "_diagnose_numeric_drift() declares exactness",
+            "file": "Intelligence/self_healing/self_repair.py",
+            "line": 395,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/self_healing/self_repair.py:395"
+        },
+        {
+          "for": {
+            "detail": "_diagnose_numeric_drift() declares exactness",
+            "file": "Intelligence/self_healing/self_repair.py",
+            "line": 395,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/self_healing/self_repair.py:395"
+        },
+        {
+          "for": {
+            "detail": "_diagnose_numeric_drift() declares exactness",
+            "file": "Intelligence/self_healing/self_repair.py",
+            "line": 403,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/self_healing/self_repair.py:403"
+        },
+        {
+          "for": {
+            "detail": "_diagnose_numeric_drift() declares exactness",
+            "file": "Intelligence/self_healing/self_repair.py",
+            "line": 404,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/self_healing/self_repair.py:404"
+        },
+        {
+          "for": {
+            "detail": "_diagnose_numeric_drift() declares exactness",
+            "file": "Intelligence/self_healing/self_repair.py",
+            "line": 404,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/self_healing/self_repair.py:404"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 976,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:976"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 978,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:978"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 979,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:979"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 970,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:970"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 970,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:970"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 979,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:979"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1032,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1032"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1048,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1048"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1048,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1048"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1060,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1060"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1061,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1061"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1062,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1062"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1058,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1058"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1058,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1058"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1059,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1059"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1059,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1059"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1068,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1068"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1072,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1072"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1066,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1066"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1073,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1073"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1075,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1075"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1072,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1072"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1084,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1084"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1073,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1073"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1073,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1073"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1083,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1083"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1083,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1083"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1084,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1084"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1087,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1087"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1093,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1093"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1084,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1084"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1085,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1085"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1094,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1094"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1094,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/unified_punch.py:1094"
+        },
+        {
+          "for": {
+            "detail": "_jacobi_eigenvalues_real() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 848,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at kellogg/exact_tensor.py:848"
+        },
+        {
+          "for": {
+            "detail": "_f4_to_float() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 875,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at kellogg/exact_tensor.py:875"
+        },
+        {
+          "for": {
+            "detail": "_f4_to_float() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 876,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at kellogg/exact_tensor.py:876"
+        },
+        {
+          "for": {
+            "detail": "_f4_to_float() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 875,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at kellogg/exact_tensor.py:875"
+        },
+        {
+          "for": {
+            "detail": "_f4_to_float() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 876,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at kellogg/exact_tensor.py:876"
+        },
+        {
+          "for": {
+            "detail": "to_float() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 103,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at kellogg/exact_tensor.py:103"
+        },
+        {
+          "for": {
+            "detail": "to_float() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 103,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at kellogg/exact_tensor.py:103"
+        },
+        {
+          "for": {
+            "detail": "sample_born() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 680,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at kellogg/exact_tensor.py:680"
+        },
+        {
+          "for": {
+            "detail": "measure_pvm() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 792,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at kellogg/exact_tensor.py:792"
+        },
+        {
+          "for": {
+            "detail": "from_exact_state() declares exactness",
+            "file": "kellogg/quantum_tensor.py",
+            "line": 502,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at kellogg/quantum_tensor.py:502"
+        },
+        {
+          "for": {
+            "detail": "from_exact_state() declares exactness",
+            "file": "kellogg/quantum_tensor.py",
+            "line": 503,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at kellogg/quantum_tensor.py:503"
+        },
+        {
+          "for": {
+            "detail": "from_exact_state() declares exactness",
+            "file": "kellogg/quantum_tensor.py",
+            "line": 502,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at kellogg/quantum_tensor.py:502"
+        },
+        {
+          "for": {
+            "detail": "from_exact_state() declares exactness",
+            "file": "kellogg/quantum_tensor.py",
+            "line": 503,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at kellogg/quantum_tensor.py:503"
+        },
+        {
+          "for": {
+            "detail": "pisot_wind() declares exactness",
+            "file": "kellogg/scales.py",
+            "line": 298,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at kellogg/scales.py:298"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 747,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at toe/bridge.py:747"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 714,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at toe/bridge.py:714"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 738,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at toe/bridge.py:738"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 753,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at toe/bridge.py:753"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 754,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at toe/bridge.py:754"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 755,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at toe/bridge.py:755"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 760,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at toe/bridge.py:760"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 729,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at toe/bridge.py:729"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 730,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at toe/bridge.py:730"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 731,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at toe/bridge.py:731"
+        },
+        {
+          "for": {
+            "detail": "detect_family_signature() declares exactness",
+            "file": "toe/engine.py",
+            "line": 608,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at toe/engine.py:608"
+        },
+        {
+          "for": {
+            "detail": "detect_family_signature() declares exactness",
+            "file": "toe/engine.py",
+            "line": 609,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at toe/engine.py:609"
+        },
+        {
+          "for": {
+            "detail": "_roundtrip_check() declares exactness",
+            "file": "toe/engine.py",
+            "line": 859,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at toe/engine.py:859"
+        },
+        {
+          "for": {
+            "detail": "_roundtrip_check() declares exactness",
+            "file": "toe/engine.py",
+            "line": 865,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at toe/engine.py:865"
+        },
+        {
+          "for": {
+            "detail": "_roundtrip_check() declares exactness",
+            "file": "toe/engine.py",
+            "line": 853,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at toe/engine.py:853"
+        },
+        {
+          "for": {
+            "detail": "_algebraic_diagnostics() declares exactness",
+            "file": "toe/engine.py",
+            "line": 2570,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at toe/engine.py:2570"
+        },
+        {
+          "for": {
+            "detail": "_algebraic_diagnostics() declares exactness",
+            "file": "toe/engine.py",
+            "line": 2574,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at toe/engine.py:2574"
+        },
+        {
+          "for": {
+            "detail": "fold_poincare_11d_vector() declares exactness",
+            "file": "toe/poincare_golden_11d.py",
+            "line": 225,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at toe/poincare_golden_11d.py:225"
+        },
+        {
+          "for": {
+            "detail": "forecast_propagator_report() declares exactness",
+            "file": "toe/solovay_kitaev.py",
+            "line": 207,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at toe/solovay_kitaev.py:207"
+        },
+        {
+          "for": {
+            "detail": "fraud_detection_lift() declares exactness",
+            "file": "toe/unified/industries.py",
+            "line": 118,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at toe/unified/industries.py:118"
+        },
+        {
+          "for": {
+            "detail": "floor() declares exactness",
+            "file": "mla1517_platform_v3.4/python/mla1517/mining/geometry.py",
+            "line": 112,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at mla1517_platform_v3.4/python/mla1517/mining/geometry.py:112"
+        },
+        {
+          "for": {
+            "detail": "floor() declares exactness",
+            "file": "mla1517_platform_v3.4/python/mla1517/mining/geometry.py",
+            "line": 112,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at mla1517_platform_v3.4/python/mla1517/mining/geometry.py:112"
+        },
+        {
+          "for": {
+            "detail": "detect_family_signature() declares exactness",
+            "file": "turing_core.py",
+            "line": 347,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at turing_core.py:347"
+        },
+        {
+          "for": {
+            "detail": "detect_family_signature() declares exactness",
+            "file": "turing_core.py",
+            "line": 348,
+            "verdict": "float_leak"
+          },
+          "mode": "known_answer",
+          "spec": "assert the pinned constant/output for float_leak at turing_core.py:348"
+        },
+        {
+          "for": {
+            "detail": "grind_target_m32() declares exactness",
+            "file": "mining/bitcoin_hasher.py",
+            "line": 697,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "grind_target_m32() declares exactness",
+            "file": "mining/bitcoin_hasher.py",
+            "line": 707,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "intervene_on_state() declares exactness",
+            "file": "Intelligence/asi/causal_reasoning.py",
+            "line": 297,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "measure_phi_covariance() declares exactness",
+            "file": "Intelligence/asi/information_integration.py",
+            "line": 145,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "measure_phi_covariance() declares exactness",
+            "file": "Intelligence/asi/information_integration.py",
+            "line": 155,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "measure_phi_density() declares exactness",
+            "file": "Intelligence/asi/information_integration.py",
+            "line": 177,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "measure_phi_density() declares exactness",
+            "file": "Intelligence/asi/information_integration.py",
+            "line": 187,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "exp_map() declares exactness",
+            "file": "Intelligence/asi/manifold_bridge.py",
+            "line": 190,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "exp_map() declares exactness",
+            "file": "Intelligence/asi/manifold_bridge.py",
+            "line": 193,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "riemannian_gradient() declares exactness",
+            "file": "Intelligence/asi/manifold_bridge.py",
+            "line": 216,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "golden_smoothing_kernel() declares exactness",
+            "file": "Intelligence/asi/manifold_bridge.py",
+            "line": 382,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "golden_smoothing_kernel() declares exactness",
+            "file": "Intelligence/asi/manifold_bridge.py",
+            "line": 384,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "quantum_relative_entropy() declares exactness",
+            "file": "Intelligence/asi/manifold_bridge.py",
+            "line": 548,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "quantum_relative_entropy() declares exactness",
+            "file": "Intelligence/asi/manifold_bridge.py",
+            "line": 545,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "verify_full_chain() declares exactness",
+            "file": "Intelligence/chain_verification.py",
+            "line": 220,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_compute_coherence() declares exactness",
+            "file": "Intelligence/consciousness/quantum_consciousness_system.py",
+            "line": 159,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "detect_hardware_profile() declares exactness",
+            "file": "Intelligence/hardware_config.py",
+            "line": 296,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "attach_to_host() declares exactness",
+            "file": "Intelligence/igpu_telemetry.py",
+            "line": 901,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "record_step() declares exactness",
+            "file": "Intelligence/igpu_telemetry.py",
+            "line": 623,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "record_step() declares exactness",
+            "file": "Intelligence/igpu_telemetry.py",
+            "line": 640,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "record_step() declares exactness",
+            "file": "Intelligence/igpu_telemetry.py",
+            "line": 643,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "record_step() declares exactness",
+            "file": "Intelligence/igpu_telemetry.py",
+            "line": 646,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "record_step() declares exactness",
+            "file": "Intelligence/igpu_telemetry.py",
+            "line": 604,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "build_family_scale_profile() declares exactness",
+            "file": "Intelligence/lucas_scales.py",
+            "line": 292,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "build_family_scale_profile() declares exactness",
+            "file": "Intelligence/lucas_scales.py",
+            "line": 293,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "guide_mining() declares exactness",
+            "file": "Intelligence/orchestrator.py",
+            "line": 396,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_anchor_to_vector() declares exactness",
+            "file": "Intelligence/pathfinder.py",
+            "line": 98,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_optimal_step() declares exactness",
+            "file": "Intelligence/pathfinder.py",
+            "line": 126,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_optimal_step() declares exactness",
+            "file": "Intelligence/pathfinder.py",
+            "line": 128,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_optimal_step() declares exactness",
+            "file": "Intelligence/pathfinder.py",
+            "line": 131,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "next_incremental_step_ehs() declares exactness",
+            "file": "Intelligence/safety_constraints.py",
+            "line": 79,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "next_incremental_step_ehs() declares exactness",
+            "file": "Intelligence/safety_constraints.py",
+            "line": 78,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "build_search_crystal() declares exactness",
+            "file": "Intelligence/search_crystal.py",
+            "line": 144,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_diagnose_numeric_drift() declares exactness",
+            "file": "Intelligence/self_healing/self_repair.py",
+            "line": 395,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_diagnose_numeric_drift() declares exactness",
+            "file": "Intelligence/self_healing/self_repair.py",
+            "line": 395,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_diagnose_numeric_drift() declares exactness",
+            "file": "Intelligence/self_healing/self_repair.py",
+            "line": 403,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_diagnose_numeric_drift() declares exactness",
+            "file": "Intelligence/self_healing/self_repair.py",
+            "line": 404,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_diagnose_numeric_drift() declares exactness",
+            "file": "Intelligence/self_healing/self_repair.py",
+            "line": 404,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 976,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 978,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 979,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 970,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 970,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 979,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1032,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1048,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1048,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1060,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1061,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1062,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1058,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1058,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1059,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1059,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1068,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1072,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1066,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1073,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1075,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1072,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1084,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1073,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1073,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1083,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1083,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1084,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1087,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1093,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1084,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1085,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1094,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1094,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_jacobi_eigenvalues_real() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 848,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_f4_to_float() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 875,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_f4_to_float() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 876,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_f4_to_float() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 875,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_f4_to_float() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 876,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "to_float() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 103,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "to_float() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 103,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "sample_born() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 680,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "measure_pvm() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 792,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "from_exact_state() declares exactness",
+            "file": "kellogg/quantum_tensor.py",
+            "line": 502,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "from_exact_state() declares exactness",
+            "file": "kellogg/quantum_tensor.py",
+            "line": 503,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "from_exact_state() declares exactness",
+            "file": "kellogg/quantum_tensor.py",
+            "line": 502,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "from_exact_state() declares exactness",
+            "file": "kellogg/quantum_tensor.py",
+            "line": 503,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "pisot_wind() declares exactness",
+            "file": "kellogg/scales.py",
+            "line": 298,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 747,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 714,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 738,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 753,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 754,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 755,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 760,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 729,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 730,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 731,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "detect_family_signature() declares exactness",
+            "file": "toe/engine.py",
+            "line": 608,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "detect_family_signature() declares exactness",
+            "file": "toe/engine.py",
+            "line": 609,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_roundtrip_check() declares exactness",
+            "file": "toe/engine.py",
+            "line": 859,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_roundtrip_check() declares exactness",
+            "file": "toe/engine.py",
+            "line": 865,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_roundtrip_check() declares exactness",
+            "file": "toe/engine.py",
+            "line": 853,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_algebraic_diagnostics() declares exactness",
+            "file": "toe/engine.py",
+            "line": 2570,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "_algebraic_diagnostics() declares exactness",
+            "file": "toe/engine.py",
+            "line": 2574,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "fold_poincare_11d_vector() declares exactness",
+            "file": "toe/poincare_golden_11d.py",
+            "line": 225,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "forecast_propagator_report() declares exactness",
+            "file": "toe/solovay_kitaev.py",
+            "line": 207,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "fraud_detection_lift() declares exactness",
+            "file": "toe/unified/industries.py",
+            "line": 118,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "floor() declares exactness",
+            "file": "mla1517_platform_v3.4/python/mla1517/mining/geometry.py",
+            "line": 112,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "floor() declares exactness",
+            "file": "mla1517_platform_v3.4/python/mla1517/mining/geometry.py",
+            "line": 112,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "detect_family_signature() declares exactness",
+            "file": "turing_core.py",
+            "line": 347,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "detect_family_signature() declares exactness",
+            "file": "turing_core.py",
+            "line": 348,
+            "verdict": "float_leak"
+          },
+          "mode": "property_with_failure_predicate",
+          "spec": "property must fail when float_leak recurs"
+        },
+        {
+          "for": {
+            "detail": "grind_target_m32() declares exactness",
+            "file": "mining/bitcoin_hasher.py",
+            "line": 697,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "grind_target_m32() declares exactness",
+            "file": "mining/bitcoin_hasher.py",
+            "line": 707,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "intervene_on_state() declares exactness",
+            "file": "Intelligence/asi/causal_reasoning.py",
+            "line": 297,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "measure_phi_covariance() declares exactness",
+            "file": "Intelligence/asi/information_integration.py",
+            "line": 145,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "measure_phi_covariance() declares exactness",
+            "file": "Intelligence/asi/information_integration.py",
+            "line": 155,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "measure_phi_density() declares exactness",
+            "file": "Intelligence/asi/information_integration.py",
+            "line": 177,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "measure_phi_density() declares exactness",
+            "file": "Intelligence/asi/information_integration.py",
+            "line": 187,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "exp_map() declares exactness",
+            "file": "Intelligence/asi/manifold_bridge.py",
+            "line": 190,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "exp_map() declares exactness",
+            "file": "Intelligence/asi/manifold_bridge.py",
+            "line": 193,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "riemannian_gradient() declares exactness",
+            "file": "Intelligence/asi/manifold_bridge.py",
+            "line": 216,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "golden_smoothing_kernel() declares exactness",
+            "file": "Intelligence/asi/manifold_bridge.py",
+            "line": 382,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "golden_smoothing_kernel() declares exactness",
+            "file": "Intelligence/asi/manifold_bridge.py",
+            "line": 384,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "quantum_relative_entropy() declares exactness",
+            "file": "Intelligence/asi/manifold_bridge.py",
+            "line": 548,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "quantum_relative_entropy() declares exactness",
+            "file": "Intelligence/asi/manifold_bridge.py",
+            "line": 545,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "verify_full_chain() declares exactness",
+            "file": "Intelligence/chain_verification.py",
+            "line": 220,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_compute_coherence() declares exactness",
+            "file": "Intelligence/consciousness/quantum_consciousness_system.py",
+            "line": 159,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "detect_hardware_profile() declares exactness",
+            "file": "Intelligence/hardware_config.py",
+            "line": 296,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "attach_to_host() declares exactness",
+            "file": "Intelligence/igpu_telemetry.py",
+            "line": 901,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "record_step() declares exactness",
+            "file": "Intelligence/igpu_telemetry.py",
+            "line": 623,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "record_step() declares exactness",
+            "file": "Intelligence/igpu_telemetry.py",
+            "line": 640,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "record_step() declares exactness",
+            "file": "Intelligence/igpu_telemetry.py",
+            "line": 643,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "record_step() declares exactness",
+            "file": "Intelligence/igpu_telemetry.py",
+            "line": 646,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "record_step() declares exactness",
+            "file": "Intelligence/igpu_telemetry.py",
+            "line": 604,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "build_family_scale_profile() declares exactness",
+            "file": "Intelligence/lucas_scales.py",
+            "line": 292,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "build_family_scale_profile() declares exactness",
+            "file": "Intelligence/lucas_scales.py",
+            "line": 293,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "guide_mining() declares exactness",
+            "file": "Intelligence/orchestrator.py",
+            "line": 396,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_anchor_to_vector() declares exactness",
+            "file": "Intelligence/pathfinder.py",
+            "line": 98,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_optimal_step() declares exactness",
+            "file": "Intelligence/pathfinder.py",
+            "line": 126,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_optimal_step() declares exactness",
+            "file": "Intelligence/pathfinder.py",
+            "line": 128,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_optimal_step() declares exactness",
+            "file": "Intelligence/pathfinder.py",
+            "line": 131,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "next_incremental_step_ehs() declares exactness",
+            "file": "Intelligence/safety_constraints.py",
+            "line": 79,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "next_incremental_step_ehs() declares exactness",
+            "file": "Intelligence/safety_constraints.py",
+            "line": 78,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "build_search_crystal() declares exactness",
+            "file": "Intelligence/search_crystal.py",
+            "line": 144,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_diagnose_numeric_drift() declares exactness",
+            "file": "Intelligence/self_healing/self_repair.py",
+            "line": 395,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_diagnose_numeric_drift() declares exactness",
+            "file": "Intelligence/self_healing/self_repair.py",
+            "line": 395,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_diagnose_numeric_drift() declares exactness",
+            "file": "Intelligence/self_healing/self_repair.py",
+            "line": 403,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_diagnose_numeric_drift() declares exactness",
+            "file": "Intelligence/self_healing/self_repair.py",
+            "line": 404,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_diagnose_numeric_drift() declares exactness",
+            "file": "Intelligence/self_healing/self_repair.py",
+            "line": 404,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 976,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 978,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 979,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 970,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 970,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 979,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1032,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1048,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1048,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1060,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1061,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1062,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1058,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1058,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1059,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1059,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1068,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1072,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1066,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1073,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1075,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1072,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1084,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1073,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1073,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1083,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1083,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1084,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1087,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1093,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1084,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1085,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1094,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_execute_cpu() declares exactness",
+            "file": "Intelligence/unified_punch.py",
+            "line": 1094,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_jacobi_eigenvalues_real() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 848,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_f4_to_float() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 875,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_f4_to_float() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 876,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_f4_to_float() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 875,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_f4_to_float() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 876,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "to_float() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 103,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "to_float() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 103,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "sample_born() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 680,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "measure_pvm() declares exactness",
+            "file": "kellogg/exact_tensor.py",
+            "line": 792,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "from_exact_state() declares exactness",
+            "file": "kellogg/quantum_tensor.py",
+            "line": 502,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "from_exact_state() declares exactness",
+            "file": "kellogg/quantum_tensor.py",
+            "line": 503,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "from_exact_state() declares exactness",
+            "file": "kellogg/quantum_tensor.py",
+            "line": 502,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "from_exact_state() declares exactness",
+            "file": "kellogg/quantum_tensor.py",
+            "line": 503,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "pisot_wind() declares exactness",
+            "file": "kellogg/scales.py",
+            "line": 298,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 747,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 714,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 738,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 753,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 754,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 755,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 760,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 729,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 730,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "predict_trajectory() declares exactness",
+            "file": "toe/bridge.py",
+            "line": 731,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "detect_family_signature() declares exactness",
+            "file": "toe/engine.py",
+            "line": 608,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "detect_family_signature() declares exactness",
+            "file": "toe/engine.py",
+            "line": 609,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_roundtrip_check() declares exactness",
+            "file": "toe/engine.py",
+            "line": 859,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_roundtrip_check() declares exactness",
+            "file": "toe/engine.py",
+            "line": 865,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_roundtrip_check() declares exactness",
+            "file": "toe/engine.py",
+            "line": 853,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_algebraic_diagnostics() declares exactness",
+            "file": "toe/engine.py",
+            "line": 2570,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "_algebraic_diagnostics() declares exactness",
+            "file": "toe/engine.py",
+            "line": 2574,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "fold_poincare_11d_vector() declares exactness",
+            "file": "toe/poincare_golden_11d.py",
+            "line": 225,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "forecast_propagator_report() declares exactness",
+            "file": "toe/solovay_kitaev.py",
+            "line": 207,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "fraud_detection_lift() declares exactness",
+            "file": "toe/unified/industries.py",
+            "line": 118,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "floor() declares exactness",
+            "file": "mla1517_platform_v3.4/python/mla1517/mining/geometry.py",
+            "line": 112,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "floor() declares exactness",
+            "file": "mla1517_platform_v3.4/python/mla1517/mining/geometry.py",
+            "line": 112,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "detect_family_signature() declares exactness",
+            "file": "turing_core.py",
+            "line": 347,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        },
+        {
+          "for": {
+            "detail": "detect_family_signature() declares exactness",
+            "file": "turing_core.py",
+            "line": 348,
+            "verdict": "float_leak"
+          },
+          "mode": "falsification",
+          "spec": "counterexample search for float_leak \u2014 designed to fail if the defect is real"
+        }
+      ],
+      "tests_dir_only": true,
+      "title": "Tests for confirmed defects",
+      "type": "draft_pr"
+    }
+  ],
+  "human_merge_sha": null,
+  "pr": "operating-model-live",
+  "replay": {
+    "agent_versions": {
+      "pipeline": "2f7251a3d4eb3091b74ad45538ed9fa3477dffb265e1a0c1f72b252e7143e0ff",
+      "roles": "0938781cdbf6c52dbf2e83edd09ce50f9b9769694d1ba29e2601bcd9b1149ed0",
+      "verifiers": "ed27106cd3dfe8e3ae61339e07fe413fe2f08efd245953c47d0b560c04977701"
+    },
+    "lemma_signoff_sha": "af4fe22dff0da1b3c835d931bf8a80d866bf6ebd7c0839e159d0fb198975e0c3",
+    "seed": 1517,
+    "substrate_freeze_sha": "9d1ab10d8d297f86c7e4bb112779b6e2424fb3e53ea4045efe0da5bb567168e4"
+  },
+  "repo_sha": "fab2b8fae3030b4384b7391d2a25a099af712375",
+  "theorem_proven": false,
+  "verdict": {
+    "evidence": [
+      {
+        "detail": "grind_target_m32() declares exactness",
+        "file": "mining/bitcoin_hasher.py",
+        "line": 697,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "grind_target_m32() declares exactness",
+        "file": "mining/bitcoin_hasher.py",
+        "line": 707,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "intervene_on_state() declares exactness",
+        "file": "Intelligence/asi/causal_reasoning.py",
+        "line": 297,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "measure_phi_covariance() declares exactness",
+        "file": "Intelligence/asi/information_integration.py",
+        "line": 145,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "measure_phi_covariance() declares exactness",
+        "file": "Intelligence/asi/information_integration.py",
+        "line": 155,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "measure_phi_density() declares exactness",
+        "file": "Intelligence/asi/information_integration.py",
+        "line": 177,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "measure_phi_density() declares exactness",
+        "file": "Intelligence/asi/information_integration.py",
+        "line": 187,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "exp_map() declares exactness",
+        "file": "Intelligence/asi/manifold_bridge.py",
+        "line": 190,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "exp_map() declares exactness",
+        "file": "Intelligence/asi/manifold_bridge.py",
+        "line": 193,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "riemannian_gradient() declares exactness",
+        "file": "Intelligence/asi/manifold_bridge.py",
+        "line": 216,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "golden_smoothing_kernel() declares exactness",
+        "file": "Intelligence/asi/manifold_bridge.py",
+        "line": 382,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "golden_smoothing_kernel() declares exactness",
+        "file": "Intelligence/asi/manifold_bridge.py",
+        "line": 384,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "quantum_relative_entropy() declares exactness",
+        "file": "Intelligence/asi/manifold_bridge.py",
+        "line": 548,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "quantum_relative_entropy() declares exactness",
+        "file": "Intelligence/asi/manifold_bridge.py",
+        "line": 545,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "verify_full_chain() declares exactness",
+        "file": "Intelligence/chain_verification.py",
+        "line": 220,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_compute_coherence() declares exactness",
+        "file": "Intelligence/consciousness/quantum_consciousness_system.py",
+        "line": 159,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "detect_hardware_profile() declares exactness",
+        "file": "Intelligence/hardware_config.py",
+        "line": 296,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "attach_to_host() declares exactness",
+        "file": "Intelligence/igpu_telemetry.py",
+        "line": 901,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "record_step() declares exactness",
+        "file": "Intelligence/igpu_telemetry.py",
+        "line": 623,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "record_step() declares exactness",
+        "file": "Intelligence/igpu_telemetry.py",
+        "line": 640,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "record_step() declares exactness",
+        "file": "Intelligence/igpu_telemetry.py",
+        "line": 643,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "record_step() declares exactness",
+        "file": "Intelligence/igpu_telemetry.py",
+        "line": 646,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "record_step() declares exactness",
+        "file": "Intelligence/igpu_telemetry.py",
+        "line": 604,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "build_family_scale_profile() declares exactness",
+        "file": "Intelligence/lucas_scales.py",
+        "line": 292,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "build_family_scale_profile() declares exactness",
+        "file": "Intelligence/lucas_scales.py",
+        "line": 293,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "guide_mining() declares exactness",
+        "file": "Intelligence/orchestrator.py",
+        "line": 396,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_anchor_to_vector() declares exactness",
+        "file": "Intelligence/pathfinder.py",
+        "line": 98,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_optimal_step() declares exactness",
+        "file": "Intelligence/pathfinder.py",
+        "line": 126,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_optimal_step() declares exactness",
+        "file": "Intelligence/pathfinder.py",
+        "line": 128,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_optimal_step() declares exactness",
+        "file": "Intelligence/pathfinder.py",
+        "line": 131,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "next_incremental_step_ehs() declares exactness",
+        "file": "Intelligence/safety_constraints.py",
+        "line": 79,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "next_incremental_step_ehs() declares exactness",
+        "file": "Intelligence/safety_constraints.py",
+        "line": 78,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "build_search_crystal() declares exactness",
+        "file": "Intelligence/search_crystal.py",
+        "line": 144,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_diagnose_numeric_drift() declares exactness",
+        "file": "Intelligence/self_healing/self_repair.py",
+        "line": 395,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_diagnose_numeric_drift() declares exactness",
+        "file": "Intelligence/self_healing/self_repair.py",
+        "line": 395,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_diagnose_numeric_drift() declares exactness",
+        "file": "Intelligence/self_healing/self_repair.py",
+        "line": 403,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_diagnose_numeric_drift() declares exactness",
+        "file": "Intelligence/self_healing/self_repair.py",
+        "line": 404,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_diagnose_numeric_drift() declares exactness",
+        "file": "Intelligence/self_healing/self_repair.py",
+        "line": 404,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 976,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 978,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 979,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 970,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 970,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 979,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1032,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1048,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1048,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1060,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1061,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1062,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1058,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1058,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1059,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1059,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1068,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1072,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1066,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1073,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1075,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1072,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1084,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1073,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1073,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1083,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1083,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1084,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1087,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1093,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1084,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1085,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1094,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_execute_cpu() declares exactness",
+        "file": "Intelligence/unified_punch.py",
+        "line": 1094,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_jacobi_eigenvalues_real() declares exactness",
+        "file": "kellogg/exact_tensor.py",
+        "line": 848,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_f4_to_float() declares exactness",
+        "file": "kellogg/exact_tensor.py",
+        "line": 875,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_f4_to_float() declares exactness",
+        "file": "kellogg/exact_tensor.py",
+        "line": 876,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_f4_to_float() declares exactness",
+        "file": "kellogg/exact_tensor.py",
+        "line": 875,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_f4_to_float() declares exactness",
+        "file": "kellogg/exact_tensor.py",
+        "line": 876,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "to_float() declares exactness",
+        "file": "kellogg/exact_tensor.py",
+        "line": 103,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "to_float() declares exactness",
+        "file": "kellogg/exact_tensor.py",
+        "line": 103,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "sample_born() declares exactness",
+        "file": "kellogg/exact_tensor.py",
+        "line": 680,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "measure_pvm() declares exactness",
+        "file": "kellogg/exact_tensor.py",
+        "line": 792,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "from_exact_state() declares exactness",
+        "file": "kellogg/quantum_tensor.py",
+        "line": 502,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "from_exact_state() declares exactness",
+        "file": "kellogg/quantum_tensor.py",
+        "line": 503,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "from_exact_state() declares exactness",
+        "file": "kellogg/quantum_tensor.py",
+        "line": 502,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "from_exact_state() declares exactness",
+        "file": "kellogg/quantum_tensor.py",
+        "line": 503,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "pisot_wind() declares exactness",
+        "file": "kellogg/scales.py",
+        "line": 298,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "predict_trajectory() declares exactness",
+        "file": "toe/bridge.py",
+        "line": 747,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "predict_trajectory() declares exactness",
+        "file": "toe/bridge.py",
+        "line": 714,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "predict_trajectory() declares exactness",
+        "file": "toe/bridge.py",
+        "line": 738,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "predict_trajectory() declares exactness",
+        "file": "toe/bridge.py",
+        "line": 753,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "predict_trajectory() declares exactness",
+        "file": "toe/bridge.py",
+        "line": 754,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "predict_trajectory() declares exactness",
+        "file": "toe/bridge.py",
+        "line": 755,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "predict_trajectory() declares exactness",
+        "file": "toe/bridge.py",
+        "line": 760,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "predict_trajectory() declares exactness",
+        "file": "toe/bridge.py",
+        "line": 729,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "predict_trajectory() declares exactness",
+        "file": "toe/bridge.py",
+        "line": 730,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "predict_trajectory() declares exactness",
+        "file": "toe/bridge.py",
+        "line": 731,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "detect_family_signature() declares exactness",
+        "file": "toe/engine.py",
+        "line": 608,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "detect_family_signature() declares exactness",
+        "file": "toe/engine.py",
+        "line": 609,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_roundtrip_check() declares exactness",
+        "file": "toe/engine.py",
+        "line": 859,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_roundtrip_check() declares exactness",
+        "file": "toe/engine.py",
+        "line": 865,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_roundtrip_check() declares exactness",
+        "file": "toe/engine.py",
+        "line": 853,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_algebraic_diagnostics() declares exactness",
+        "file": "toe/engine.py",
+        "line": 2570,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "_algebraic_diagnostics() declares exactness",
+        "file": "toe/engine.py",
+        "line": 2574,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "fold_poincare_11d_vector() declares exactness",
+        "file": "toe/poincare_golden_11d.py",
+        "line": 225,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "forecast_propagator_report() declares exactness",
+        "file": "toe/solovay_kitaev.py",
+        "line": 207,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "fraud_detection_lift() declares exactness",
+        "file": "toe/unified/industries.py",
+        "line": 118,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "floor() declares exactness",
+        "file": "mla1517_platform_v3.4/python/mla1517/mining/geometry.py",
+        "line": 112,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "floor() declares exactness",
+        "file": "mla1517_platform_v3.4/python/mla1517/mining/geometry.py",
+        "line": 112,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "detect_family_signature() declares exactness",
+        "file": "turing_core.py",
+        "line": 347,
+        "verdict": "float_leak"
+      },
+      {
+        "detail": "detect_family_signature() declares exactness",
+        "file": "turing_core.py",
+        "line": 348,
+        "verdict": "float_leak"
+      }
+    ],
+    "reason": "defect_confirmed",
+    "verdict": "FAIL"
+  }
+}

@@ -1,0 +1,8 @@
+# Apple Metal overlay — native Darwin only; documents the Metal target.
+# There is no Linux container path for Metal: on macOS run the Python
+# runtime directly (OpenCL compat where present, Metal/MLX for planning).
+# Usage (native): HYBA_BACKEND=metal python3 -m hyba.gpureport
+services:
+  pythia:
+    environment:
+      - HYBA_BACKEND=metal

@@ -1,0 +1,143 @@
+{
+  "agents_run": [
+    "auditor",
+    "governance",
+    "math_verifier",
+    "pin_verifier",
+    "precision_sentinel",
+    "provenance",
+    "quantum_checker",
+    "remediator",
+    "security_verifier",
+    "test_engineer"
+  ],
+  "change_bundles": [],
+  "human_merge_sha": null,
+  "pr": "operating-model-live",
+  "replay": {
+    "agent_versions": {
+      "pipeline": "2f7251a3d4eb3091b74ad45538ed9fa3477dffb265e1a0c1f72b252e7143e0ff",
+      "roles": "0938781cdbf6c52dbf2e83edd09ce50f9b9769694d1ba29e2601bcd9b1149ed0",
+      "verifiers": "5a17a26d198006fc180909323ae5082a04c1d913825f6358994694636645b6bb"
+    },
+    "lemma_signoff_sha": "af4fe22dff0da1b3c835d931bf8a80d866bf6ebd7c0839e159d0fb198975e0c3",
+    "seed": 1517,
+    "substrate_freeze_sha": "9d1ab10d8d297f86c7e4bb112779b6e2424fb3e53ea4045efe0da5bb567168e4"
+  },
+  "repo_sha": "fab2b8fae3030b4384b7391d2a25a099af712375",
+  "theorem_proven": false,
+  "verdict": {
+    "evidence": [
+      {
+        "claim": "cassini_identity_in_m15",
+        "laureate": "cassini",
+        "reduction": null,
+        "source": "turing_core.py contains ['det(M15) = -1', 'M15_INV']"
+      },
+      {
+        "claim": "round_trip_bit_exact",
+        "laureate": null,
+        "reduction": null,
+        "source": "turing_core.py contains ['t_phi_fold', 't_phi_unfold']"
+      },
+      {
+        "claim": "golden_matrix_trace_eq_lucas",
+        "laureate": "lucas",
+        "reduction": "tr(Q^n)=L_n reduces NP path count to fast doubling",
+        "source": "turing_core.py contains ['golden_matrix_trace', 'lucas']"
+      },
+      {
+        "claim": "sha256d_sole_accept_authority",
+        "laureate": null,
+        "reduction": "pool acceptance reduces to sha256d<=target",
+        "source": "mining/bitcoin_hasher.py contains ['hashlib', 'sha256']"
+      },
+      {
+        "claim": "never_two_consecutive_blocks",
+        "laureate": null,
+        "reduction": null,
+        "source": "mining/safety_fsm.py contains ['consecutive_blocks_prevented', 'never two consecutive']"
+      },
+      {
+        "claim": "cassini_identity",
+        "mode": "range",
+        "range": [
+          2,
+          76
+        ],
+        "verdict": "holds"
+      },
+      {
+        "claim": "fibonacci_matches_naive",
+        "mode": "range",
+        "range": [
+          0,
+          200
+        ],
+        "verdict": "holds"
+      },
+      {
+        "claim": "golden_matrix_trace_eq_lucas",
+        "mode": "symbolic",
+        "range": [
+          1,
+          76
+        ],
+        "verdict": "holds"
+      },
+      {
+        "claim": "m15_det_eq_neg1_mod256",
+        "mode": "symbolic",
+        "verdict": "holds"
+      },
+      {
+        "gate": "I",
+        "verdict": "unitary"
+      },
+      {
+        "gate": "X",
+        "verdict": "unitary"
+      },
+      {
+        "gate": "Y",
+        "verdict": "unitary"
+      },
+      {
+        "gate": "Z",
+        "verdict": "unitary"
+      },
+      {
+        "gate": "H",
+        "verdict": "unitary"
+      },
+      {
+        "gate": "S",
+        "verdict": "unitary"
+      },
+      {
+        "gate": "T",
+        "verdict": "unitary"
+      },
+      {
+        "gate": "Sdg",
+        "verdict": "unitary"
+      },
+      {
+        "gate": "Tdg",
+        "verdict": "unitary"
+      },
+      {
+        "cond": 65537.99998474051,
+        "file": "turing_core.py",
+        "surface": "M15",
+        "verdict": "exact"
+      },
+      {
+        "surfaces_checked": 51,
+        "verdict": "pin_holds"
+      }
+    ],
+    "reason": "all_claims_traced_no_findings",
+    "verdict": "PASS"
+  }
+}

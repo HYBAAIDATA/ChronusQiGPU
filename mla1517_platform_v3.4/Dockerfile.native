@@ -1,0 +1,29 @@
+FROM debian:bookworm-slim AS native-build
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends g++ libc6-dev \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /src
+COPY cpp/include ./cpp/include
+COPY cpp/src/mla1517_shm_engine.cpp ./cpp/src/mla1517_shm_engine.cpp
+COPY cpp/src/mla1517_progressive_miner.cpp ./cpp/src/mla1517_progressive_miner.cpp
+COPY cpp/src/mla1517_simt_warp.cpp ./cpp/src/mla1517_simt_warp.cpp
+RUN g++ -std=c++17 -O3 -DNDEBUG -pthread \
+    -Icpp/include cpp/src/mla1517_shm_engine.cpp \
+    -o /out/mla1517-shm-engine \
+    && g++ -std=c++17 -O3 -DNDEBUG -pthread \
+    -Icpp/include cpp/src/mla1517_progressive_miner.cpp \
+    -o /out/mla1517-progressive-miner \
+    && g++ -std=c++17 -O3 -DNDEBUG -pthread \
+    -Icpp/include cpp/src/mla1517_simt_warp.cpp \
+    -o /out/mla1517-simt-warp
+
+FROM debian:bookworm-slim
+RUN useradd --create-home --uid 10001 mla
+COPY --from=native-build /out/mla1517-shm-engine /usr/local/bin/mla1517-shm-engine
+COPY --from=native-build /out/mla1517-progressive-miner /usr/local/bin/mla1517-progressive-miner
+COPY --from=native-build /out/mla1517-simt-warp /usr/local/bin/mla1517-simt-warp
+COPY docker/native-entrypoint.sh /usr/local/bin/mla1517-native-entrypoint
+RUN chmod 0755 /usr/local/bin/mla1517-native-entrypoint
+USER mla
+ENV MLA1517_WORKLOAD=mathematical
+ENTRYPOINT ["/usr/local/bin/mla1517-native-entrypoint"]

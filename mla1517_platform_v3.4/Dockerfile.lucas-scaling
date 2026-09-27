@@ -1,0 +1,28 @@
+# MLA1517 v3.4 live measurement image.
+# The image contains the OpenCL ICD loader and pyopencl bindings; the vendor
+# runtime is supplied by the deployment host and is never replaced by a CPU
+# implementation.
+FROM python:3.13-slim
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ocl-icd-libopencl1 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/python:/app/adapters
+
+COPY pyproject.toml .
+COPY python ./python
+COPY kernels ./kernels
+COPY scripts/measure_lucas_scaling.py ./scripts/measure_lucas_scaling.py
+COPY scripts/no_float_in_math_core.py ./scripts/no_float_in_math_core.py
+
+RUN python -m pip install --no-cache-dir --upgrade pip \
+    && python -m pip install --no-cache-dir numpy pyopencl \
+    && useradd --create-home --uid 10001 mla \
+    && chown -R mla:mla /app
+
+USER mla
+ENTRYPOINT ["python", "/app/scripts/measure_lucas_scaling.py"]

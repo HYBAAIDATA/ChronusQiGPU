@@ -1,0 +1,171 @@
+\documentclass{article}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{hyperref}
+\usepackage{booktabs}
+
+\title{Unimodular Integer Geometry in Discrete Multi-Dimensional Sampling: From $SL(2,\mathbb{Z})$ to $SL(3,\mathbb{Z})$ and MRI Substrates}
+\author{HYBA Intelligence Mathematical Team}
+\date{\today}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Non-Cartesian sampling trajectories based on the golden angle have emerged as standard tools in multi-dimensional sparse acquisition, particularly in magnetic resonance imaging (MRI). However, conventional formulations rely on floating-point approximations of irrational angles, causing numerical drift in multi-frame representations, loss of determinant preservation, and accumulation of inversion errors. In this paper, we construct an exact integer unimodular algebraic substrate for multi-dimensional discrete sampling based on the special linear groups $SL(2,\mathbb{Z})$ and $SL(3,\mathbb{Z})$. We prove: (1) exact unimodularity $\det(M^n) \equiv 1$ across all integer powers with $O(\log n)$ fast doubling; (2) division-free exact integer matrix inversion via integer adjugates; (3) structural preservation of 3D lattice vector coprimality $\gcd(v_x, v_y, v_z) = 1$, preventing discrete harmonic aliasing. Furthermore, we establish the formal scientific claim boundary distinguishing this exact discrete algebraic substrate from continuous physical scanner constraints (gradient amplitude limits, slew rate limits, and non-Cartesian reconstruction).
+\end{abstract}
+
+\section{Introduction}
+
+The golden ratio $\phi = \frac{1+\sqrt{5}}{2}$ and its rational approximations via Fibonacci numbers $F_{n+1}/F_n \to \phi$ provide optimal low-discrepancy angular increments for 2D radial sampling trajectories. The core mathematical mechanism relies on irrational rotations on the 1-torus:
+\[
+\theta_k = 2\pi (k\alpha \pmod 1), \quad \alpha = 1/\phi = \phi - 1 \approx 0.6180339887\dots
+\]
+
+When implementing multidimensional sampling engines, floating-point representations introduce subtle but significant artifacts:
+\begin{enumerate}
+    \item Determinant drift: Continuous coordinate transformations accumulate roundoff, violating volume preservation $\det A \neq 1$.
+    \item Division overhead and representation error: Inversion of floating-point coordinate transforms requires $O(d^3)$ operations with truncation error.
+    \item Artificial periodicities: Non-exact lattice coordinate projections can alias onto shared rational factors.
+\end{enumerate}
+
+In this work, we demonstrate that by formulating the sampling substrate directly over integer unimodular matrix groups $SL(d,\mathbb{Z})$, the fundamental invariants are preserved algebraically and identically.
+
+\section{The 2D Integer Substrate: $SL(2,\mathbb{Z})$}
+
+\subsection{Matrix Representation and Cassini's Invariant}
+
+Consider the canonical Fibonacci generator matrix:
+\[
+M = \begin{pmatrix} 1 & 1 \\ 1 & 0 \end{pmatrix}
+\]
+By induction, the $n$-th power of $M$ is:
+\[
+M^n = \begin{pmatrix} F_{n+1} & F_n \\ F_n & F_{n-1} \end{pmatrix}
+\]
+Cassini's identity states:
+\[
+F_{n-1}F_{n+1} - F_n^2 = (-1)^n
+\]
+Consequently, the determinant is identically:
+\[
+\det(M^n) = (-1)^n
+\]
+For even powers $n = 2k$, $\det(M^{2k}) = 1$, so $M^{2k} \in SL(2,\mathbb{Z})$. For any $A = \begin{pmatrix} a & b \\ c & d \end{pmatrix} \in SL(2,\mathbb{Z})$, the inverse is exact and integer-valued:
+\[
+A^{-1} = \begin{pmatrix} d & -b \\ -c & a \end{pmatrix} \in SL(2,\mathbb{Z})
+\]
+Matrix inversion is completely division-free.
+
+\subsection{Fast-Doubling Arithmetic}
+
+The naive computation of $F_n$ requires $O(n)$ additions. Fast doubling exploits the identities:
+\[
+F_{2k} = F_k(2F_{k+1} - F_k), \qquad F_{2k+1} = F_{k+1}^2 + F_k^2
+\]
+This evaluates $(F_n, F_{n+1})$ in $O(\log n)$ integer arithmetic operations, ensuring that the discrete state engine operates at logarithmic complexity without floating-point conversion.
+
+\subsection{Coprimality and Primitivity}
+
+\begin{lemma}
+For all $n \ge 1$, $\gcd(F_n, F_{n+1}) = 1$.
+\end{lemma}
+\begin{proof}
+By Euclidean division, $\gcd(F_{n+1}, F_n) = \gcd(F_n, F_{n+1} - F_n) = \gcd(F_n, F_{n-1})$. Since $\gcd(F_2, F_1) = \gcd(1, 1) = 1$, the lemma holds for all $n$.
+\end{proof}
+This guarantees that the lattice direction vector $\mathbf{v} = (F_n, F_{n+1})^T$ is strictly primitive.
+
+\section{Generalization to 3D: $SL(3,\mathbb{Z})$ Unimodular Geometry}
+
+\subsection{The 3D Companion Matrix}
+
+To generalize this structure to 3D discrete space, we consider the Tribonacci characteristic polynomial:
+\[
+P(\lambda) = \lambda^3 - \lambda^2 - \lambda - 1 = 0
+\]
+The corresponding companion matrix in $\mathbb{Z}^{3 \times 3}$ is:
+\[
+M_3 = \begin{pmatrix} 1 & 1 & 1 \\ 1 & 0 & 0 \\ 0 & 1 & 0 \end{pmatrix}
+\]
+
+\begin{theorem}[Exact $SL(3,\mathbb{Z})$ Invariance]
+For all $n \in \mathbb{Z}$, $\det(M_3^n) = +1$, and therefore $M_3^n \in SL(3,\mathbb{Z})$.
+\end{theorem}
+\begin{proof}
+Evaluating $\det(M_3)$ using the third-row cofactor expansion:
+\[
+\det(M_3) = 0 \cdot \det\begin{pmatrix} 1 & 1 \\ 0 & 0 \end{pmatrix} - 1 \cdot \det\begin{pmatrix} 1 & 1 \\ 1 & 0 \end{pmatrix} + 0 \cdot \det\begin{pmatrix} 1 & 1 \\ 1 & 0 \end{pmatrix} = -1 \cdot (0 - 1) = +1.
+\]
+By multiplicativity of the determinant, $\det(M_3^n) = (\det M_3)^n = (+1)^n = +1$ for all $n \in \mathbb{Z}$.
+\end{proof}
+
+\subsection{Exact Division-Free Inversion}
+
+For any matrix $A \in SL(3,\mathbb{Z})$:
+\[
+A = \begin{pmatrix} a & b & c \\ d & e & f \\ g & h & i \end{pmatrix} \implies A^{-1} = \operatorname{adj}(A) = \begin{pmatrix} ei - fh & -(bi - ch) & bf - ce \\ -(di - fg) & ai - cg & -(af - cd) \\ dh - eg & -(ah - bg) & ae - bd \end{pmatrix}
+\]
+Because $\det(A) = 1$, $A^{-1} \in SL(3,\mathbb{Z})$ has exact integer entries and requires zero divisions.
+
+\subsection{Preservation of 3D Vector Primitivity}
+
+\begin{theorem}[Preservation of 3D Coprimality]
+Let $\mathbf{v} = (v_1, v_2, v_3)^T \in \mathbb{Z}^3$ with $\gcd(v_1, v_2, v_3) = 1$. For any $A \in SL(3,\mathbb{Z})$, the vector $\mathbf{v}' = A\mathbf{v}$ satisfies $\gcd(v_1', v_2', v_3') = 1$.
+\end{theorem}
+\begin{proof}
+Let $g = \gcd(v_1', v_2', v_3')$. Then $g | v_j'$ for $j \in \{1, 2, 3\}$. Multiplying by $A^{-1} \in \mathbb{Z}^{3 \times 3}$ yields $\mathbf{v} = A^{-1}\mathbf{v}'$. Since $A^{-1}$ has purely integer entries, $g$ divides all components of $\mathbf{v}$. Since $\gcd(v_1, v_2, v_3) = 1$, $g$ must equal 1.
+\end{proof}
+
+\section{Physical Scanner Hardware Feasibility and Claim Boundaries}
+
+\subsection{Separation of Algebraic Substrate and Scanner Physics}
+
+MRI trajectory design is not purely an algebraic problem. Physical MR scanners impose continuous hardware constraints:
+\begin{enumerate}
+    \item Maximum gradient amplitude: $\|\mathbf{G}(t)\|_2 = \left\| \frac{2\pi}{\gamma} \frac{d\mathbf{k}}{dt} \right\|_2 \le G_{\max}$ (typically $40\text{--}80\text{ mT/m}$).
+    \item Maximum gradient slew rate: $\left\| \frac{d\mathbf{G}}{dt} \right\|_2 \le S_{\max}$ (typically $150\text{--}200\text{ T/m/s}$).
+    \item Pulse timing and raster quantization: $\Delta t = 4\,\mu\text{s}$ or $10\,\mu\text{s}$.
+    \item Off-resonance, eddy currents, and non-Cartesian NFFT/CG-SENSE reconstruction.
+\end{enumerate}
+
+\begin{table}[h]
+\centering
+\caption{Comparison of Trajectory Substrates}
+\begin{tabular}{lll}
+\toprule
+\textbf{Property} & \textbf{Floating-Point Golden Angle} & \textbf{HYBA $SL(3,\mathbb{Z})$ Substrate} \\
+\midrule
+Arithmetic & Float64 approximation & Exact $O(\log n)$ integer arithmetic \\
+Determinant & $\det A \approx 1 \pm \epsilon$ & $\det A \equiv 1$ (identically exact) \\
+Matrix Inverse & Numerical $O(d^3)$ float & Integer adjugate $A^{-1} \in SL(3,\mathbb{Z})$ \\
+Coprimality & Numerical check & Structurally guaranteed ($\gcd=1$) \\
+Reversibility & Truncation error $\approx 10^{-15}$ & Bit-exact ($\Delta = 0$ on integers) \\
+Hardware Layer & Requires gradient validation & Requires gradient validation \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Formal Claim Boundary}
+
+We formally specify the claim boundary under `discrete-unimodular-3d-mri-substrate`:
+\begin{quote}
+\textit{``The $SL(3,\mathbb{Z})$ unimodular integer geometry provides an exact discrete mathematical substrate on which 3D golden-angle sampling schemes can be constructed and algebraically verified before numerical and physical trajectory constraints are introduced.''}
+\end{quote}
+
+\section{Conclusion}
+
+We have established the exact $SL(3,\mathbb{Z})$ unimodular framework for 3D discrete sampling, proving exact determinant preservation, division-free inversion, and 3D coprimality, while providing a clear and scientifically rigorous boundary separating algebraic invariants from continuous MRI acquisition physics.
+
+\end{document}

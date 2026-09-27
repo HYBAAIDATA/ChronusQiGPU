@@ -1,0 +1,80 @@
+[standard]
+name = "The Seam"
+version = "1.0"
+status = "draft"
+reference = "igpu/seam"
+license = "Apache-2.0"
+
+[layers]
+L1 = "probe"
+L2 = "buffer"
+L3 = "kernel"
+L4 = "queue"
+L5 = "fleet"
+
+[invariants.probe]
+P1 = "no unmeasured device"
+P2 = "no unattested device"
+P3 = "no hidden firmware or privacy posture"
+P4 = "capability is a distribution, not a scalar"
+
+[invariants.buffer]
+B1 = "every buffer has a matching digest"
+B2 = "digest mismatch raises buffer_corruption"
+B3 = "buffers are per-device"
+B4 = "every access is authorized and audited"
+B5 = "encrypted buffers stay encrypted"
+
+[invariants.kernel]
+K1 = "no dispatch without capability match"
+K2 = "every dispatch is attested with physical measurement"
+K3 = "every result carries a digest and host_verified flag"
+K4 = "dispatch is idempotent by (device_id, idempotency_key)"
+K5 = "zero-knowledge mode proves without revealing"
+
+[invariants.queue]
+Q1 = "idempotency by (key, args)"
+Q2 = "backpressure by threshold"
+Q3 = "linearizable operations"
+Q4 = "throughput is a distribution"
+
+[invariants.fleet]
+F1 = "windows partition the job space exactly"
+F2 = "every result is host-verified; failures quarantine"
+F3 = "quarantine triggers re-route; gaps are declared"
+F4 = "verification is threshold-based, not single-host"
+F5 = "fallbacks are declared, never silent"
+
+[invariants.hybrid]
+H1 = "partition is a function of (class, capability)"
+H2 = "missing class yields declared gap, not substitution"
+H3 = "every fallback is surfaced"
+
+[invariants.seam]
+S1 = "errors are values, not exceptions"
+S2 = "public functions are idempotent where applicable"
+S3 = "every effect is attested"
+S4 = "the seam fails closed"
+S5 = "silicon identity never leaks above the seam"
+
+[invariants.reversible]
+R1 = "logical invertibility is not charge recovery"
+R2 = "Bennett uncomputation copies live outputs then runs the inverse"
+R3 = "MIT CRL/SCRL/2LAL/S2LAL are named families with modeled recovery factors"
+R4 = "commodity silicon reports charge_recovered = false"
+
+[conformance]
+levels = ["partial", "core", "extended", "full"]
+partial = ["P1", "P2", "B1", "B2", "K1", "K4", "Q1", "S1"]
+core = ["P1", "P2", "P3", "B1", "B2", "B3", "K1", "K2", "K3", "K4", "Q1", "Q2", "S1", "S4"]
+extended = ["P1", "P2", "P3", "P4", "B1", "B2", "B3", "B4", "K1", "K2", "K3", "K4", "Q1", "Q2", "Q3", "Q4", "F1", "F2", "F3", "F5", "H1", "H2", "H3", "S1", "S2", "S3", "S4", "S5"]
+full = ["all"]
+
+[reference_implementation]
+language = "python"
+module = "igpu.seam"
+repo = "QUANTUMDATA2/PYTHIAPhiMiner"
+
+[narrative]
+story = "Every system that talks to silicon lies about what the silicon can do. The seam measures what is there, declares what is not, and fails closed when it cannot deliver."
+roadmap_k5 = "zero-knowledge attestation is a declared research item, not a silent feature"

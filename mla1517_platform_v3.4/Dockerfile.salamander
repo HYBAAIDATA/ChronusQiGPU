@@ -1,0 +1,23 @@
+FROM python:3.13-slim AS build
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /src
+COPY host ./host
+RUN make -C host libmla1517_mmio.so
+
+FROM python:3.13-slim
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/python \
+    MLA1517_MMIO_LIBRARY=/usr/local/lib/libmla1517_mmio.so \
+    MLA1517_TELEMETRY_PATH=/dev/shm/mla1517_telemetry \
+    MLA1517_PRIME_DB_DIR=/var/lib/mla1517/prime-db
+WORKDIR /app
+COPY python ./python
+COPY --from=build /src/host/libmla1517_mmio.so /usr/local/lib/libmla1517_mmio.so
+RUN useradd --create-home --uid 10001 mla \
+    && mkdir -p /var/lib/mla1517/prime-db \
+    && chown -R mla:mla /app /var/lib/mla1517
+USER mla
+ENTRYPOINT ["python", "/app/python/salamander_engine.py"]

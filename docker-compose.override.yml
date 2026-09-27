@@ -1,0 +1,17 @@
+# Default local override keeps the container device-less (fail-closed,
+# truth_class unavailable). It is auto-loaded by plain `docker compose up`;
+# when using `-f`, list this override before the iGPU overlay so `!reset`
+# runs first and the overlay re-adds devices:
+# `docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.igpu-linux.yml up -d` (Linux host, /dev/dri)
+# `docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.igpu-wsl2.yml up -d` (Docker Desktop / WSL2, /dev/dxg)
+# Probe: `docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.igpu-linux.yml --profile probe run --rm igpu-probe`
+# HYBA_REQUIRE_HYBA=1 is the default: if no device whose OpenCL name matches a HYBA alias (HYBA_DEVICE_ALIAS, default hyba-mla1517/hyba_mla1517/mla1517/hyba) is enumerated, the miner reports unavailable rather than substituting another GPU/CPU.
+# env_file injects the repo .env (stratum creds, mining target, HYBA toggles)
+# into the container; the base `environment:` block still wins on conflicts
+# (NODE_ENV=production, PYTHON_BIN=python3, EUCLID_DATA_DIR=/app/data).
+services:
+  pythia:
+    env_file:
+      - .env
+    devices: !reset []
+    group_add: !reset []

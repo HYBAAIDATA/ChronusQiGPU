@@ -1,0 +1,50 @@
+[
+  {
+    "phi_power": 1,
+    "compression_ratio": 1.618,
+    "error_rate": "1.50e-09",
+    "ai_scaling_pct": 14.6
+  },
+  {
+    "phi_power": 2,
+    "compression_ratio": 2.618,
+    "error_rate": "2.25e-09",
+    "ai_scaling_pct": 23.62
+  },
+  {
+    "phi_power": 3,
+    "compression_ratio": 4.236,
+    "error_rate": "3.38e-09",
+    "ai_scaling_pct": 38.22
+  },
+  {
+    "phi_power": 4,
+    "compression_ratio": 6.854,
+    "error_rate": "5.06e-09",
+    "ai_scaling_pct": 61.85
+  },
+  {
+    "phi_power": 5,
+    "compression_ratio": 11.09,
+    "error_rate": "7.59e-09",
+    "ai_scaling_pct": 100.07
+  },
+  {
+    "phi_power": 6,
+    "compression_ratio": 17.944,
+    "error_rate": "1.14e-08",
+    "ai_scaling_pct": 161.92
+  },
+  {
+    "phi_power": 7,
+    "compression_ratio": 29.034,
+    "error_rate": "1.71e-08",
+    "ai_scaling_pct": 261.99
+  },
+  {
+    "phi_power": 8,
+    "compression_ratio": 46.9,
+    "error_rate": "2.56e-08",
+    "ai_scaling_pct": 423.9
+  }
+]

@@ -1,0 +1,18 @@
+#! pythia-main-pythia-hb-persistentVolumeClaim.yaml
+# Generated code, do not edit
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+    name: pythia-main-pythia-hb
+    namespace: pythia-main
+    labels:
+        com.docker.compose.service: pythia-main
+        com.docker.compose.volume: pythia_hb
+spec:
+    accessModes:
+        # TODO would need to check which services use this volume
+        - ReadWriteOnce
+    volumeMode: Filesystem
+    resources:
+        requests:
+            storage: 100Mi

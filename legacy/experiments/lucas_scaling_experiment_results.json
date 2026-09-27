@@ -1,0 +1,307 @@
+{
+  "QFT": {
+    "algorithm": "QFT",
+    "substrate": "trace",
+    "pool_kernel": "trace_kernel",
+    "measurements": [
+      {
+        "lucas_index": 10,
+        "L_k": 123,
+        "n_qubits": 6,
+        "N": 64,
+        "unitarity_error": 6.1547988927657116e-15,
+        "runtime_seconds": 0.6651449999772012,
+        "trace_bound": {
+          "kernel": "trace_kernel",
+          "n": 10,
+          "trace_Mn": 33.000000000000036,
+          "lucas_bound": 123,
+          "is_lucas_bounded": "True",
+          "theorem_proven": false
+        }
+      },
+      {
+        "lucas_index": 12,
+        "L_k": 322,
+        "n_qubits": 8,
+        "N": 256,
+        "unitarity_error": 3.525651992575263e-14,
+        "runtime_seconds": 48.64528530021198,
+        "trace_bound": {
+          "kernel": "trace_kernel",
+          "n": 12,
+          "trace_Mn": 129.00000000000006,
+          "lucas_bound": 322,
+          "is_lucas_bounded": "True",
+          "theorem_proven": false
+        }
+      },
+      {
+        "lucas_index": 15,
+        "L_k": 1364,
+        "n_qubits": 8,
+        "N": 256,
+        "unitarity_error": 3.525651992575263e-14,
+        "runtime_seconds": 45.603963600005955,
+        "trace_bound": {
+          "kernel": "trace_kernel",
+          "n": 15,
+          "trace_Mn": 1.000000000000536,
+          "lucas_bound": 1364,
+          "is_lucas_bounded": "True",
+          "theorem_proven": false
+        }
+      }
+    ],
+    "scaling_exponent": 1.6148980535126713,
+    "conjecture_S_supported": true,
+    "theorem_proven": false
+  },
+  "Grover": {
+    "algorithm": "Grover",
+    "substrate": "path",
+    "pool_kernel": "path_kernel",
+    "measurements": [
+      {
+        "lucas_index": 10,
+        "L_k": 123,
+        "n_qubits": 6,
+        "N": 64,
+        "marked_count": 1,
+        "peak_success_probability": 0.996585680786799,
+        "optimal_iterations": 6,
+        "runtime_seconds": 0.559277500025928,
+        "path_bound": {
+          "kernel": "path_kernel",
+          "n": 10,
+          "path_count": 65536,
+          "lucas_bound": 123,
+          "is_lucas_bounded": false,
+          "theorem_proven": false
+        }
+      },
+      {
+        "lucas_index": 12,
+        "L_k": 322,
+        "n_qubits": 6,
+        "N": 64,
+        "marked_count": 1,
+        "peak_success_probability": 0.996585680786799,
+        "optimal_iterations": 6,
+        "runtime_seconds": 0.521786900004372,
+        "path_bound": {
+          "kernel": "path_kernel",
+          "n": 12,
+          "path_count": 262144,
+          "lucas_bound": 322,
+          "is_lucas_bounded": false,
+          "theorem_proven": false
+        }
+      },
+      {
+        "lucas_index": 15,
+        "L_k": 1364,
+        "n_qubits": 6,
+        "N": 64,
+        "marked_count": 1,
+        "peak_success_probability": 0.996585680786799,
+        "optimal_iterations": 6,
+        "runtime_seconds": 0.6018823999911547,
+        "path_bound": {
+          "kernel": "path_kernel",
+          "n": 15,
+          "path_count": 2097152,
+          "lucas_bound": 1364,
+          "is_lucas_bounded": false,
+          "theorem_proven": false
+        }
+      }
+    ],
+    "scaling_exponent": 0.03591514631188742,
+    "conjecture_S_supported": true,
+    "theorem_proven": false
+  },
+  "QPE": {
+    "algorithm": "QPE",
+    "substrate": "gap",
+    "pool_kernel": "gap_kernel",
+    "measurements": [
+      {
+        "lucas_index": 10,
+        "L_k": 123,
+        "precision_qubits": 6,
+        "phase_error": 0.0,
+        "is_exact_dyadic": true,
+        "runtime_seconds": 0.03619270003400743,
+        "gap_bound": {
+          "kernel": "gap_kernel",
+          "n": 10,
+          "spectral_gap": 2.0,
+          "lucas_bound": 123,
+          "is_lucas_bounded": true,
+          "theorem_proven": false
+        }
+      },
+      {
+        "lucas_index": 12,
+        "L_k": 322,
+        "precision_qubits": 8,
+        "phase_error": 0.0,
+        "is_exact_dyadic": true,
+        "runtime_seconds": 0.5588770001195371,
+        "gap_bound": {
+          "kernel": "gap_kernel",
+          "n": 12,
+          "spectral_gap": 2.0,
+          "lucas_bound": 322,
+          "is_lucas_bounded": true,
+          "theorem_proven": false
+        }
+      },
+      {
+        "lucas_index": 15,
+        "L_k": 1364,
+        "precision_qubits": 8,
+        "phase_error": 0.0,
+        "is_exact_dyadic": true,
+        "runtime_seconds": 0.3286627000197768,
+        "gap_bound": {
+          "kernel": "gap_kernel",
+          "n": 15,
+          "spectral_gap": 2.0,
+          "lucas_bound": 1364,
+          "is_lucas_bounded": true,
+          "theorem_proven": false
+        }
+      }
+    ],
+    "scaling_exponent": 0.8155116618290372,
+    "conjecture_S_supported": true,
+    "theorem_proven": false
+  },
+  "QuantumWalk": {
+    "algorithm": "QuantumWalk",
+    "substrate": "path",
+    "pool_kernel": "path_kernel",
+    "measurements": [
+      {
+        "lucas_index": 10,
+        "L_k": 123,
+        "num_positions": 24,
+        "steps": 6,
+        "quantum_variance": 11.24999999999999,
+        "classical_variance": 6.0,
+        "ballistic_diffusive_ratio": 1.8749999999999982,
+        "runtime_seconds": 0.00036880001425743103,
+        "path_bound": {
+          "kernel": "path_kernel",
+          "n": 10,
+          "path_count": 24576,
+          "lucas_bound": 123,
+          "is_lucas_bounded": false,
+          "theorem_proven": false
+        }
+      },
+      {
+        "lucas_index": 12,
+        "L_k": 322,
+        "num_positions": 32,
+        "steps": 8,
+        "quantum_variance": 19.124999999999975,
+        "classical_variance": 8.0,
+        "ballistic_diffusive_ratio": 2.390624999999997,
+        "runtime_seconds": 0.0008139999117702246,
+        "path_bound": {
+          "kernel": "path_kernel",
+          "n": 12,
+          "path_count": 131072,
+          "lucas_bound": 322,
+          "is_lucas_bounded": false,
+          "theorem_proven": false
+        }
+      },
+      {
+        "lucas_index": 15,
+        "L_k": 1364,
+        "num_positions": 40,
+        "steps": 10,
+        "quantum_variance": 29.95312499999995,
+        "classical_variance": 10.0,
+        "ballistic_diffusive_ratio": 2.995312499999995,
+        "runtime_seconds": 0.0015039998106658459,
+        "path_bound": {
+          "kernel": "path_kernel",
+          "n": 15,
+          "path_count": 1310720,
+          "lucas_bound": 1364,
+          "is_lucas_bounded": false,
+          "theorem_proven": false
+        }
+      }
+    ],
+    "scaling_exponent": 0.5716691073745565,
+    "conjecture_S_supported": true,
+    "theorem_proven": false
+  },
+  "VQE": {
+    "algorithm": "VQE",
+    "substrate": "gap",
+    "pool_kernel": "gap_kernel",
+    "measurements": [
+      {
+        "lucas_index": 10,
+        "L_k": 123,
+        "iterations": 30,
+        "final_energy": -1.3625496629930125,
+        "exact_ground_energy": -1.414213562373095,
+        "energy_error": 0.05166389938008242,
+        "runtime_seconds": 0.07756899995729327,
+        "gap_bound": {
+          "kernel": "gap_kernel",
+          "n": 10,
+          "spectral_gap": 0.4142135623730945,
+          "lucas_bound": 123,
+          "is_lucas_bounded": true,
+          "theorem_proven": false
+        }
+      },
+      {
+        "lucas_index": 12,
+        "L_k": 322,
+        "iterations": 40,
+        "final_energy": -1.3762840836228185,
+        "exact_ground_energy": -1.414213562373095,
+        "energy_error": 0.03792947875027641,
+        "runtime_seconds": 0.08425660012289882,
+        "gap_bound": {
+          "kernel": "gap_kernel",
+          "n": 12,
+          "spectral_gap": 0.4142135623730945,
+          "lucas_bound": 322,
+          "is_lucas_bounded": true,
+          "theorem_proven": false
+        }
+      },
+      {
+        "lucas_index": 15,
+        "L_k": 1364,
+        "iterations": 50,
+        "final_energy": -1.386316776823,
+        "exact_ground_energy": -1.414213562373095,
+        "energy_error": 0.027896785550094894,
+        "runtime_seconds": 0.1281294000800699,
+        "gap_bound": {
+          "kernel": "gap_kernel",
+          "n": 15,
+          "spectral_gap": 0.4142135623730945,
+          "lucas_bound": 1364,
+          "is_lucas_bounded": true,
+          "theorem_proven": false
+        }
+      }
+    ],
+    "scaling_exponent": 0.21504921333142857,
+    "conjecture_S_supported": true,
+    "theorem_proven": false
+  }
+}

@@ -1,0 +1,19 @@
+FROM debian:bookworm-slim AS build
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /src
+COPY host ./host
+RUN make -C host primedb-ingest-daemon
+
+FROM debian:bookworm-slim
+RUN useradd --create-home --uid 10001 mla \
+    && mkdir -p /var/lib/mla1517/prime-db \
+    && chown -R mla:mla /var/lib/mla1517
+COPY --from=build /src/host/primedb_ingest_daemon /usr/local/bin/mla1517-primedb
+COPY docker/primedb-entrypoint.sh /usr/local/bin/mla1517-primedb-entrypoint
+RUN chmod 0755 /usr/local/bin/mla1517-primedb /usr/local/bin/mla1517-primedb-entrypoint
+USER mla
+ENV MLA1517_PRIME_DB_RING=/dev/shm/mla1517_primedb_ring \
+    MLA1517_PRIME_DB_DIR=/var/lib/mla1517/prime-db
+ENTRYPOINT ["/usr/local/bin/mla1517-primedb-entrypoint"]

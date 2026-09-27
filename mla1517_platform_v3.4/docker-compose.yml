@@ -1,0 +1,135 @@
+services:
+  mla1517-coordinator:
+    build:
+      context: .
+      dockerfile: Dockerfile.headless_miner
+    container_name: mla1517-coordinator
+    restart: unless-stopped
+    ipc: shareable
+    devices:
+      - "${MLA1517_UIO_DEVICE:-/dev/uio0}:/dev/uio0"
+    environment:
+      MLA1517_MMIO_DEVICE: /dev/uio0
+      MLA1517_MMIO_BYTES: "${MLA1517_MMIO_BYTES:-8192}"
+      MLA1517_PRIME_DB_RING: /dev/shm/mla1517_primedb_ring
+      MLA1517_PRIME_DB_OVERFLOW: /dev/shm/mla1517_overflow
+      MLA1517_PRIME_DB_CURSORS: /dev/shm/primedb_cursors
+      MLA1517_TELEMETRY_PATH: /dev/shm/mla1517_telemetry
+      MLA1517_DIFFICULTY_MASK: "${MLA1517_DIFFICULTY_MASK:-0x3f}"
+      MLA1517_BASE_STEP: "${MLA1517_BASE_STEP:-0}"
+      MLA1517_STRATUM_USER: "${MLA1517_STRATUM_USER:?Set MLA1517_STRATUM_USER}"
+      MLA1517_STRATUM_PASSWORD: "${MLA1517_STRATUM_PASSWORD:-x}"
+      MLA1517_BRAIINS_ENDPOINT: "${MLA1517_BRAIINS_ENDPOINT:-stratum.braiins.com:3333}"
+      MLA1517_VIABTC_ENDPOINT: "${MLA1517_VIABTC_ENDPOINT:-btc.viabtc.io:3333}"
+      MLA1517_LOG_LEVEL: "${MLA1517_LOG_LEVEL:-INFO}"
+    cap_add:
+      - IPC_LOCK
+    ulimits:
+      memlock: -1
+    networks:
+      - stratum-net
+    volumes:
+      - type: volume
+        source: mla1517_shm
+        target: /dev/shm
+
+  prime-db:
+    build:
+      context: .
+      dockerfile: Dockerfile.primedb
+    container_name: mla1517-prime-db
+    restart: unless-stopped
+    ipc: "service:mla1517-coordinator"
+    environment:
+      MLA1517_PRIME_DB_RING: /dev/shm/mla1517_primedb_ring
+      MLA1517_PRIME_DB_OVERFLOW: /dev/shm/mla1517_overflow
+      MLA1517_PRIME_DB_CURSORS: /dev/shm/primedb_cursors
+      MLA1517_PRIME_DB_DIR: /var/lib/mla1517/prime-db
+      MLA1517_PRIME_DB_CAPACITY: "${MLA1517_PRIME_DB_CAPACITY:-4096}"
+      MLA1517_PRIME_DB_SYNC_EVERY: "${MLA1517_PRIME_DB_SYNC_EVERY:-256}"
+    volumes:
+      - type: volume
+        source: mla1517_shm
+        target: /dev/shm
+      - type: bind
+        source: "${MLA1517_PRIME_DB_HOST_DIR:?Set MLA1517_PRIME_DB_HOST_DIR}"
+        target: /var/lib/mla1517/prime-db
+    cap_add:
+      - IPC_LOCK
+    ulimits:
+      memlock: -1
+    depends_on:
+      - mla1517-coordinator
+
+  telemetry:
+    build:
+      context: .
+      dockerfile: Dockerfile.telemetry
+    container_name: mla1517-telemetry
+    restart: unless-stopped
+    ipc: "service:mla1517-coordinator"
+    environment:
+      MLA1517_TELEMETRY_PATH: /dev/shm/mla1517_telemetry
+      MLA1517_PRIME_DB_DIR: /var/lib/mla1517/prime-db
+      MLA1517_PRIME_DB_CAPACITY: "${MLA1517_PRIME_DB_CAPACITY:-4096}"
+      MLA1517_PRIME_DB_CURSORS: /dev/shm/primedb_cursors
+      MLA1517_MMIO_LIBRARY: ./host/libmla1517_mmio.so
+    volumes:
+      - type: volume
+        source: mla1517_shm
+        target: /dev/shm
+      - type: bind
+        source: "${MLA1517_PRIME_DB_HOST_DIR:?Set MLA1517_PRIME_DB_HOST_DIR}"
+        target: /var/lib/mla1517/prime-db
+        read_only: true
+    ports:
+      - "${MLA1517_TELEMETRY_PORT:-8080}:8080"
+    depends_on:
+      - prime-db
+
+  salamander:
+    build:
+      context: .
+      dockerfile: Dockerfile.salamander
+    container_name: mla1517-salamander
+    restart: unless-stopped
+    ipc: "service:mla1517-coordinator"
+    devices:
+      - "${MLA1517_UIO_DEVICE:-/dev/uio0}:/dev/uio0"
+    environment:
+      MLA1517_MMIO_DEVICE: /dev/uio0
+      MLA1517_MMIO_BYTES: "${MLA1517_MMIO_BYTES:-8192}"
+      MLA1517_TELEMETRY_PATH: /dev/shm/mla1517_telemetry
+      MLA1517_PRIME_DB_CURSORS: /dev/shm/primedb_cursors
+      MLA1517_COORDINATOR_CONTROL_SOCKET: /dev/shm/mla1517_coordinator.sock
+      MLA1517_PRIME_DB_DIR: /var/lib/mla1517/prime-db
+      MLA1517_SALAMANDER_ENABLE: "${MLA1517_SALAMANDER_ENABLE:-0}"
+      MLA1517_SALAMANDER_FAULT_THRESHOLD: "${MLA1517_SALAMANDER_FAULT_THRESHOLD:-5}"
+      MLA1517_EUCLIDCORE_ENABLE: "${MLA1517_EUCLIDCORE_ENABLE:-0}"
+      MLA1517_EUCLIDCORE_SEED: "${MLA1517_EUCLIDCORE_SEED:-1517}"
+      MLA1517_POLYHEDRAL_MASK: "${MLA1517_POLYHEDRAL_MASK:-0x0000FFFF}"
+    volumes:
+      - type: volume
+        source: mla1517_shm
+        target: /dev/shm
+      - type: bind
+        source: "${MLA1517_PRIME_DB_HOST_DIR:?Set MLA1517_PRIME_DB_HOST_DIR}"
+        target: /var/lib/mla1517/prime-db
+        read_only: true
+    cap_add:
+      - IPC_LOCK
+    ulimits:
+      memlock: -1
+    depends_on:
+      - mla1517-coordinator
+
+networks:
+  stratum-net:
+    driver: bridge
+
+volumes:
+  mla1517_shm:
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: "size=512m,mode=1777"

@@ -1,0 +1,112 @@
+name: MRI Substrate CI — Constitutional Gates
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mri-substrate-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUNBUFFERED: "1"
+  PYTHONIOENCODING: "utf-8"
+  PYTHIA_CI: "1"
+  PYTHIA_LIVE_SUBMIT: "0"
+
+jobs:
+  constitutional-selftest:
+    name: 7-gate constitutional self-test (self_test.py)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Provision CPU OpenCL ICD and clinfo
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ocl-icd-opencl-dev pocl-opencl-icd clinfo
+      - name: Install Python dependencies
+        run: python -m pip install -e ".[ml,hardware]"
+      - name: Report OpenCL device bindings
+        run: |
+          clinfo -l || true
+          python -u - <<'PY'
+          try:
+              import pyopencl as cl
+          except Exception as exc:
+              print(f"NOT_RUN — pyopencl unavailable: {type(exc).__name__}: {exc}")
+              raise SystemExit(0)
+          try:
+              platforms = cl.get_platforms()
+          except Exception as exc:
+              print(f"NOT_RUN — OpenCL platform enumeration failed: {exc}")
+              raise SystemExit(0)
+          for p in platforms:
+              print(f"platform: {p.name} | {p.vendor} | {p.version}")
+              for d in p.get_devices():
+                  dtype = cl.device_type.to_string(d.type)
+                  print(
+                      f"  device: {d.name} | type={dtype}"
+                      f" | max_alloc={d.max_mem_alloc_size}B"
+                      f" | compute_units={d.max_compute_units}"
+                  )
+          PY
+      - name: Run 7-gate constitutional self-test
+        run: python -u -X utf8 self_test.py
+
+  chaos-verifier:
+    name: Agentic chaos-injection verifier (verify_agentic_healing.py)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Provision CPU OpenCL ICD and clinfo
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ocl-icd-opencl-dev pocl-opencl-icd clinfo
+      - name: Install Python dependencies
+        run: python -m pip install -e ".[ml,hardware]"
+      - name: Report OpenCL device bindings
+        run: |
+          clinfo -l || true
+          python -u - <<'PY'
+          try:
+              import pyopencl as cl
+          except Exception as exc:
+              print(f"NOT_RUN — pyopencl unavailable: {type(exc).__name__}: {exc}")
+              raise SystemExit(0)
+          try:
+              platforms = cl.get_platforms()
+          except Exception as exc:
+              print(f"NOT_RUN — OpenCL platform enumeration failed: {exc}")
+              raise SystemExit(0)
+          for p in platforms:
+              print(f"platform: {p.name} | {p.vendor} | {p.version}")
+              for d in p.get_devices():
+                  dtype = cl.device_type.to_string(d.type)
+                  print(
+                      f"  device: {d.name} | type={dtype}"
+                      f" | max_alloc={d.max_mem_alloc_size}B"
+                      f" | compute_units={d.max_compute_units}"
+                  )
+          PY
+      - name: Run agentic chaos-injection verifier
+        run: python -u -X utf8 scripts/verify_agentic_healing.py

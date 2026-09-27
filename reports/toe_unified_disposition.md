@@ -1,0 +1,75 @@
+# Unified analytics claim disposition
+
+Authority for the narrative that is not stored in this repository.
+Status is `MEASURED`, `DECLARED`, `MODELED`, or `UNSUPPORTED`.
+`MEASURED` and `MODELED` and `DECLARED` each name a test.
+Every row names a test. There is no unsupported row.
+
+| id | status | module | test | claim | note |
+|---|---|---|---|---|---|
+| A1 | DECLARED | `toe/unified/catalog.py` | `tests/test_toe_unified_connectors.py::test_each_displaced_class_binds` | Replace 19+ systems | Nineteen classes exist and each one binds to a fixture. That is not removal of a customer's installed systems. |
+| A2 | MODELED | `toe/unified/economics.py` | `tests/test_toe_unified_economics.py::test_document_scenario_numbers` | 90% cost reduction | The draft's 19-system inputs produce savings of 58000000 and 145000000. Those inputs are not a measurement of a deployment. |
+| A3 | MEASURED | `toe/unified/catalog.py` | `tests/test_toe_unified_catalog.py::test_catalog_count_and_classes` | 1000+ pre-built connectors | The catalog length is 1063. |
+| A4 | DECLARED | `toe/unified/connectors.py` | `tests/test_toe_unified_connectors.py::test_each_protocol_binds` | Instant deployment via 1000+ connectors | Six protocols bind to fixtures. A catalog row is not a live vendor endpoint. |
+| A5 | MEASURED | `toe/unified/operations.py` | `tests/test_toe_unified_operations.py::test_reprobe_and_quarantine` | Heal on call and on the health loop | heal() re-probes and quarantines when called. monitor.start() calls the same heal without a further call. |
+| B1 | MEASURED | `toe/unified/data_layer.py` | `tests/test_toe_unified_elevation.py::test_indexed_reads_are_two_orders_faster` | Indexed reads versus a full scan | On 100 entities of 20 rows, an indexed read examines 100 times fewer rows. The processing gate opens at a reduction of 0.90. |
+| B2 | MEASURED | `toe/unified/consciousness.py` | `tests/test_toe_unified_elevation.py::test_consciousness_reorders_from_actions` | Action weights reorder the interface | observe() adds weight for a widget. rank() follows that weight. |
+| B3 | DECLARED | `toe/unified/adaptive.py` | `tests/test_toe_unified_bi_adaptive.py::test_adaptive_reads_only_declared_signals` | Adaptive interface from user actions | The only inputs are user, widget, depth, and time. |
+| B4 | MEASURED | `toe/unified/monitor.py` | `tests/test_toe_unified_elevation.py::test_monitor_runs_without_a_manual_heal` | Health loop runs after start | start() ticks and calls heal without a further heal() from the caller. |
+| B5 | MEASURED | `toe/unified/catalog.py` | `tests/test_toe_unified_catalog.py::test_catalog_count_and_classes` | Universal connectivity of 1000+ connectors | Same catalog count as A3. |
+| C1 | DECLARED | `toe/unified/data_layer.py` | `tests/test_toe_unified_data_layer.py::test_concurrent_ingest_one_record` | Single source of truth | One digest is stored once, including under concurrent ingest. There is no enterprise-wide store outside this process. |
+| C2 | DECLARED | `toe/unified/data_layer.py` | `tests/test_toe_unified_data_layer.py::test_batch_and_stream_dedup` | Real-time streaming and batch processing | Both modes call the same ingest. No latency bound is declared. |
+| C3 | MEASURED | `toe/unified/data_layer.py` | `tests/test_toe_unified_elevation.py::test_storage_round_trip_compresses` | Compressed payload storage | Each new payload is zlib-compressed under its digest. The repetitive fixture stores at least twice smaller and restores exactly. |
+| C4 | DECLARED | `toe/unified/data_layer.py` | `tests/test_toe_unified_data_layer.py::test_malformed_row_rejected` | Automatic data quality and governance | A non-object row is rejected before any write. Quarantine still requires heal(). |
+| C5 | MEASURED | `toe/unified/intelligence.py` | `tests/test_toe_unified_intelligence.py::test_train_retrain_rollback` | Train, deploy, retrain, rollback | The live model pointer swaps only when held-out accuracy does not fall. |
+| C6 | MEASURED | `toe/unified/consciousness.py` | `tests/test_toe_unified_elevation.py::test_corrections_raise_accuracy` | Corrections move the decision threshold | The threshold becomes the midpoint of corrected class scores. On the fixture, accuracy rises to 1. |
+| C7 | MEASURED | `toe/unified/monitor.py` | `tests/test_toe_unified_elevation.py::test_drift_retrains_without_calling_retrain` | Drift sample retrains from the health loop | watch() plus one monitor tick retrains when accuracy on the watched rows is below 0.5. |
+| C8 | MEASURED | `toe/unified/intelligence.py` | `tests/test_toe_unified_intelligence.py::test_transfer_overlap` | Cross-domain transfer | Missing features are zero-filled and the overlap is reported. |
+| C9 | DECLARED | `toe/unified/bi.py` | `tests/test_toe_unified_bi_adaptive.py::test_dashboard_order_follows_use` | Dynamic dashboard generation | Declared widgets are reordered. New widgets are not created. |
+| C10 | MEASURED | `toe/unified/optimizer.py` | `tests/test_toe_unified_elevation.py::test_selective_filter_runs_first` | Selectivity query plan | Filters run in ascending selectivity. The chosen examine-cost is below the reverse order. |
+| C11 | DECLARED | `toe/unified/industries.py` | `tests/test_toe_unified_industries.py::test_manufacturing_schemas` | Real-time predictive insights | The functions return when called. No latency bound is declared. |
+| C12 | MEASURED | `toe/unified/bi.py` | `tests/test_toe_unified_bi_adaptive.py::test_grammar_accepts_and_rejects` | Natural language query interface | The accepted grammar is the parser's four patterns plus health and roi. |
+| C13 | MEASURED | `toe/unified/monitor.py` | `tests/test_toe_unified_elevation.py::test_monitor_runs_without_a_manual_heal` | Health loop ticks without a manual heal | Same loop as B4. |
+| C14 | DECLARED | `toe/unified/industries.py` | `tests/test_toe_unified_industries.py::test_manufacturing_schemas` | Predictive maintenance | maintenance_trend is a least-squares slope. It does not emit a failure time. |
+| C15 | MEASURED | `toe/unified/operations.py` | `tests/test_toe_unified_operations.py::test_worker_formula` | Automatic scaling from queue depth | workers = clamp(1, ceil(queue/batch), max_workers), or 1 when the queue is empty. |
+| C16 | MEASURED | `toe/unified/platform.py` | `tests/test_toe_unified_elevation.py::test_predict_during_swap` | Live model swap and connector reload | predict keeps returning a class while retrain swaps the model and reload replaces credentials. Stored rows remain. |
+| D1 | MODELED | `toe/unified/economics.py` | `tests/test_toe_unified_economics.py::test_document_scenario_numbers` | Licensing cost range 38M to 95M | 19 times 2M and 19 times 5M. |
+| D2 | MODELED | `toe/unified/economics.py` | `tests/test_toe_unified_economics.py::test_document_scenario_numbers` | Integration cost range 10M to 25M | Those are scenario inputs, added into current_annual. |
+| D3 | MODELED | `toe/unified/economics.py` | `tests/test_toe_unified_economics.py::test_document_scenario_numbers` | Maintenance cost range 15M to 30M | Scenario inputs, not a measured team cost. |
+| D4 | MODELED | `toe/unified/economics.py` | `tests/test_toe_unified_economics.py::test_document_scenario_numbers` | Infrastructure cost range 5M to 15M | Scenario inputs. |
+| D5 | MEASURED | `toe/unified/productivity.py` | `tests/test_toe_unified_elevation.py::test_reference_workloads` | Data-scientist reference workload is 4 steps to 1 | increase is 3.0. Live samples are recorded separately. |
+| D6 | MEASURED | `toe/unified/productivity.py` | `tests/test_toe_unified_elevation.py::test_reference_workloads` | Analyst reference workload is 7 steps to 2 | increase is 2.5. |
+| D7 | MEASURED | `toe/unified/productivity.py` | `tests/test_toe_unified_elevation.py::test_reference_workloads` | Operations reference overhead is 100 units to 20 | reduction is 0.8. |
+| D8 | MEASURED | `toe/unified/productivity.py` | `tests/test_toe_unified_elevation.py::test_reference_workloads` | Time-to-insight reference is 5 seconds to 1 | faster is 4.0. |
+| D9 | DECLARED | `toe/unified/data_layer.py` | `tests/test_toe_unified_data_layer.py::test_policy_recorded` | Consistent data policy | One policy record per entity. Batch and stream share that record. |
+| D10 | MEASURED | `toe/unified/security.py` | `tests/test_toe_unified_elevation.py::test_one_security_check_denies_then_allows` | One role check on platform actions | When enforcement is on, an unknown actor is denied. An operator grant allows ingest. |
+| D11 | DECLARED | `toe/unified/data_layer.py` | `tests/test_toe_unified_data_layer.py::test_audit_is_append_only` | Audit trail | The log is an append-only list in process. It is not a regulatory filing. |
+| E1 | MEASURED | `toe/unified/industries.py` | `tests/test_toe_unified_industries.py::test_finance_schemas` | Risk, fraud, regulatory totals, customer 360 | Each function returns the declared keys on a fixture. |
+| E2 | MEASURED | `toe/unified/industries.py` | `tests/test_toe_unified_industries.py::test_manufacturing_schemas` | Maintenance, quality, inventory, energy | Each function returns the declared keys on a fixture. |
+| E3 | MEASURED | `toe/unified/economics.py` | `tests/test_toe_unified_elevation.py::test_financial_case_saves_45m` | 23-system case saves 45M | Current cost 55M, platform 10M, savings 45M. |
+| E4 | MEASURED | `toe/unified/productivity.py` | `tests/test_toe_unified_elevation.py::test_reference_workloads` | Risk-model reference workload is 4 steps to 1 | reduction is 0.75. |
+| E5 | MEASURED | `toe/unified/productivity.py` | `tests/test_toe_unified_elevation.py::test_reference_workloads` | Regulatory-reporting reference workload is 10 steps to 1 | reduction is 0.90. |
+| E6 | MEASURED | `toe/unified/industries.py` | `tests/test_toe_unified_elevation.py::test_fraud_lift_on_separable_fixture` | Fraud precision lift on the separable fixture | Flag-all precision is 0.25. exact_linear precision is 1. Improvement is 3. |
+| E7 | DECLARED | `toe/unified/industries.py` | `tests/test_toe_unified_industries.py::test_healthcare_pack_uses_numeric_risk` | Healthcare patient-risk prediction | The healthcare pack calls the same numeric risk_scores function. It is not a clinical model. |
+| E8 | MEASURED | `toe/unified/industries.py` | `tests/test_toe_unified_elevation.py::test_sensor_batch_carries_operator` | Sensor batch carries an operator digest | Rising readings return direction rising, channel opcua, and a stable operator digest. |
+| E9 | DECLARED | `toe/unified/industries.py` | `tests/test_toe_unified_industries.py::test_manufacturing_schemas` | Supply-chain inventory position | inventory_position sums qty by sku. It does not plan a supply chain. |
+| F1 | MEASURED | `toe/unified/impact.py` | `tests/test_toe_unified_impact.py::test_split_sums_to_allocation` | Scholarship split across three universities | Oxford, Imperial, and Cambridge receive equal shares of the allocated amount. |
+| F2 | DECLARED | `toe/unified/impact.py` | `tests/test_toe_unified_impact.py::test_split_sums_to_allocation` | A disbursement record per institution | One recognition is stored. The three shares are computed, not stored as separate payments. |
+| F3 | MEASURED | `toe/unified/impact.py` | `tests/test_toe_unified_elevation.py::test_scholarship_outcomes` | Scholarship outcomes from allocated value | 150000 at unit cost 50000 is 3 scholarships across 3 partnerships and the Caribbean and Africa regions. |
+| F4 | MEASURED | `toe/unified/impact.py` | `tests/test_toe_unified_impact.py::test_recognize_value_flow` | recognize_value reaches the three-way split | The platform method writes one ledger entry and the split follows. |
+| G1 | MEASURED | `toe/unified/platform.py` | `tests/test_toe_unified_elevation.py::test_indexed_reads_are_two_orders_faster` | Processing-reduction gate at 0.90 | The gate opens after benchmark_processing records a reduction of at least 0.90. |
+| G2 | MEASURED | `toe/unified/platform.py` | `tests/test_toe_unified_phases.py::test_satisfaction_gate` | Satisfaction gate at 0.95 | The gate opens only when the mean of supplied ratings is at least 0.95. |
+| G3 | MEASURED | `toe/unified/platform.py` | `tests/test_toe_unified_phases.py::test_downtime_gate` | Unplanned-downtime gate at zero | The gate closes when unplanned_downtime is set above zero. |
+| G4 | MEASURED | `toe/unified/platform.py` | `tests/test_toe_unified_elevation.py::test_five_hundred_systems_gate` | Enterprise-systems gate at 500 | The gate opens when 500 connectors are bound. |
+| G5 | MEASURED | `toe/unified/platform.py` | `tests/test_toe_unified_elevation.py::test_roi_gate_opens_at_400_percent` | ROI gate at 4.0 | The 23-system case has a 3-year ROI above 4. |
+| G6 | MEASURED | `toe/unified/patents.py` | `tests/test_toe_unified_elevation.py::test_patent_gate_opens_at_ten` | Patent gate at 10 | file_patent increments the register. The gate opens at 10. |
+| H1 | MEASURED | `toe/unified/risks.py` | `tests/test_toe_unified_elevation.py::test_risk_defaults_and_observed_rate` | Integration-complexity default Low | With no observations the label is Low. One hundred successes move it to Very Low. |
+| H2 | MEASURED | `toe/unified/risks.py` | `tests/test_toe_unified_elevation.py::test_risk_defaults_and_observed_rate` | Performance-scalability default Very Low | Default label, before any observations. |
+| H3 | MEASURED | `toe/unified/risks.py` | `tests/test_toe_unified_elevation.py::test_risk_defaults_and_observed_rate` | User-adoption default Low | Default label, before any observations. |
+| H4 | MEASURED | `toe/unified/platform.py` | `tests/test_toe_unified_portability.py::test_export_import_round_trip` | Export and re-import | JSON records re-import into a new instance with the same digests. |
+| H5 | MEASURED | `toe/unified/risks.py` | `tests/test_toe_unified_elevation.py::test_risk_defaults_and_observed_rate` | Competitive-response default High | Default label. It does not change until observations are recorded. |
+| I1 | MEASURED | `toe/unified/platform.py` | `tests/test_toe_unified_ingest_digest.py::test_digest_stable_and_tamper_evident` | Every ingest carries an operator digest | The digest is stable and changes when the payload changes. |
+| I2 | MEASURED | `toe/unified/platform.py` | `tests/test_toe_unified_ingest_digest.py::test_digest_stable_and_tamper_evident` | compile_operator runs on the ingest path | The receipt stores that digest. |
+| I3 | MEASURED | `toe/unified/connectors.py` | `tests/test_toe_unified_failclosed.py::test_missing_credentials_write_nothing` | Fail closed without credentials | Each protocol raises and no row is stored. |
+| I4 | MEASURED | `toe/unified/operations.py` | `tests/test_toe_unified_operations.py::test_quarantine_is_reversible` | Re-probe, quarantine, release, worker count | Quarantine hides rows. release() puts them back. |
+| I5 | MEASURED | `toe/unified/platform.py` | `tests/test_toe_unified_phases.py::test_closed_gates_on_an_empty_platform` | Phase gates follow measured thresholds | An empty platform does not open connector, satisfaction, or savings gates. |

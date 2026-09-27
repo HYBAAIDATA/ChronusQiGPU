@@ -1,0 +1,38 @@
+groups:
+  - name: pythia-startup
+    rules:
+      - alert: HeartbeatFsyncDirSlow
+        expr: |
+          histogram_quantile(0.99,
+            rate(pythia_heartbeat_write_duration_seconds_bucket{phase="fsync_dir"}[5m])
+          ) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PYTHIA heartbeat directory fsync p99 is above 100ms"
+      - alert: BootAuditStalled
+        expr: |
+          rate(pythia_boot_audit_lines_total[10m]) == 0
+          and pythia_worker_up == 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "BOOT_AUDIT.log is not growing while a worker is up"
+      - alert: BootAuditStale
+        expr: time() - pythia_boot_audit_last_write_timestamp_seconds > 600
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PYTHIA boot audit last write is stale"
+
+  - alert: WorkerRestartBudgetExhausted
+    expr: pythia_worker_restart_budget_exhaustions_total > 0
+    for: 0m
+    labels:
+      severity: critical
+    annotations:
+      summary: "PYTHIA worker restart budget exhausted"
+      description: "A worker has entered terminal failed state after exceeding its bounded restart budget."

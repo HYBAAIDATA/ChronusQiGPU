@@ -1,0 +1,28 @@
+FROM python:3.13-slim AS build
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+COPY host ./host
+RUN make -C host
+
+FROM python:3.13-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/python \
+    MLA1517_MMIO_LIBRARY=/usr/local/lib/libmla1517_mmio.so
+
+WORKDIR /app
+COPY pyproject.toml .
+COPY python ./python
+COPY docker/headless-miner-entrypoint.sh /usr/local/bin/mla1517-headless-miner
+COPY --from=build /src/host/libmla1517_mmio.so /usr/local/lib/libmla1517_mmio.so
+
+RUN useradd --create-home --uid 10001 mla \
+    && chmod 0755 /usr/local/bin/mla1517-headless-miner
+USER mla
+
+ENTRYPOINT ["/usr/local/bin/mla1517-headless-miner"]
