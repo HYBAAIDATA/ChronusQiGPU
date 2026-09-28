@@ -161,9 +161,7 @@ async def main():
     print(f"   Phi Threshold: {config['phi_threshold']}")
     print(f"   Coherence Threshold: {config['coherence_threshold']}")
     print(f"   Causal Density Min: {config['causal_density_min']}")
-    print(
-        f"   Signatures Validated: {config['validated_signatures']}/{config['total_signatures']}"
-    )
+    print(f"   Signatures Validated: {config['validated_signatures']}/{config['total_signatures']}")
 
     print("\n" + "=" * 70)
     print("🌟 SYSTEM STATUS: Ready for Materials Science Data Integration")

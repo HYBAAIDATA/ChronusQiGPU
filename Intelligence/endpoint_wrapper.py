@@ -210,9 +210,7 @@ class EndpointIntelligenceWrapper(IntelligentEndpoint):
                 self.performance.get("investigation_count", 0) + 1
             )
 
-    def record_request(
-        self, response_time: float, success: bool, error: Optional[str] = None
-    ):
+    def record_request(self, response_time: float, success: bool, error: Optional[str] = None):
         """Record endpoint request"""
         self.request_count += 1
         self.total_response_time += response_time
@@ -261,7 +259,7 @@ def intelligent_endpoint(endpoint_name: str, endpoint_path: str):
         async def async_wrapper(*args, **kwargs):
             start_time = time.time()
             try:
-                # result = await func(*args, **kwargs)
+                result = await func(*args, **kwargs)
                 response_time = time.time() - start_time
                 wrapper.record_request(response_time, True)
                 return result
@@ -274,7 +272,7 @@ def intelligent_endpoint(endpoint_name: str, endpoint_path: str):
         def sync_wrapper(*args, **kwargs):
             start_time = time.time()
             try:
-                # result = func(*args, **kwargs)
+                result = func(*args, **kwargs)
                 response_time = time.time() - start_time
                 wrapper.record_request(response_time, True)
                 return result

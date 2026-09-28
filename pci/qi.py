@@ -68,7 +68,6 @@ class QICIaaS:
             Filtered data array
         """
         # Filter based on distance to phi-conjugate harmonics
-        phi_conj = 1.0 / self.phi
         harmonics = np.array([self.phi**k % 1.0 for k in range(1, 5)])
 
         # Vectorized resonance check

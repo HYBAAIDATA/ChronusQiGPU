@@ -144,9 +144,7 @@ class MassGapRelaxationEngine:
             logger.warning(f"Failed to absorb research data for '{topic}': {e}")
             return 0
 
-    async def run_global_relaxation(
-        self, parallel: bool = False
-    ) -> List[Dict[str, Any]]:
+    async def run_global_relaxation(self, parallel: bool = False) -> List[Dict[str, Any]]:
         """
         Execute relaxation across all research topics.
 

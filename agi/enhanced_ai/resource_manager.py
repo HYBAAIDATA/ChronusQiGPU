@@ -88,15 +88,11 @@ class ResourceManager:
         """Create a new session if under limit."""
         with self.lock:
             if len(self.sessions) >= self.max_sessions:
-                logger.warning(
-                    f"Cannot create session {session_id}: max sessions reached"
-                )
+                logger.warning(f"Cannot create session {session_id}: max sessions reached")
                 return False
 
             self.sessions[session_id] = SessionMetrics(session_id=session_id)
-            logger.info(
-                f"Session {session_id} created. Total sessions: {len(self.sessions)}"
-            )
+            logger.info(f"Session {session_id} created. Total sessions: {len(self.sessions)}")
             return True
 
     def destroy_session(self, session_id: str) -> bool:
@@ -104,9 +100,7 @@ class ResourceManager:
         with self.lock:
             if session_id in self.sessions:
                 del self.sessions[session_id]
-                logger.info(
-                    f"Session {session_id} destroyed. Total sessions: {len(self.sessions)}"
-                )
+                logger.info(f"Session {session_id} destroyed. Total sessions: {len(self.sessions)}")
                 return True
             return False
 
@@ -157,9 +151,9 @@ class ResourceManager:
 
             total_requests = sum(s.request_count for s in self.sessions.values())
             total_errors = sum(s.errors for s in self.sessions.values())
-            avg_response_time = sum(
-                s.averageResponseTime_ms for s in self.sessions.values()
-            ) / len(self.sessions)
+            avg_response_time = sum(s.averageResponseTime_ms for s in self.sessions.values()) / len(
+                self.sessions
+            )
 
             return {
                 "total_sessions": len(self.sessions),
@@ -236,9 +230,7 @@ class CircuitBreaker:
 
             if self.failure_count >= self.failure_threshold:
                 self.state = "open"
-                logger.warning(
-                    f"Circuit breaker opened after {self.failure_count} failures"
-                )
+                logger.warning(f"Circuit breaker opened after {self.failure_count} failures")
 
     def can_proceed(self) -> bool:
         """Check if we can proceed with operation."""

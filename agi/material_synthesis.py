@@ -17,7 +17,7 @@ async def run_synthesis_search():
     logger.info("🔬 Initializing Virtual Material Synthesis (Substrate-Agnostic)")
 
     # Initialize the Grover engine with Materials-Discovery weights
-    grover = AmplifiedResonantStructuredGrover()
+    AmplifiedResonantStructuredGrover()
     substrate = UniversalSubstrate()
 
     logger.info("🛰️ Mapping Schrödinger potential energy surface to Phi-Resonance...")

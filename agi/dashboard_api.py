@@ -103,8 +103,6 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown."""
-    global bus, dashboard, orchestrator
-
     logger.info("🛑 Shutting down Mass Gap Relaxation Dashboard API...")
 
     if dashboard:
@@ -147,14 +145,10 @@ async def health_check():
         "components": {
             "engine": "operational",
             "bus": (
-                "connected"
-                if adapter and adapter.get_status()["connected"]
-                else "disconnected"
+                "connected" if adapter and adapter.get_status()["connected"] else "disconnected"
             ),
             "dashboard": "monitoring" if dashboard.is_monitoring else "stopped",
-            "orchestrator": (
-                "running" if orchestrator and orchestrator.is_running else "stopped"
-            ),
+            "orchestrator": ("running" if orchestrator and orchestrator.is_running else "stopped"),
         },
     }
 

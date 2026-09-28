@@ -10,11 +10,11 @@ State meanings:
   OVERLOADED      — exceed bounds / recovery active; de-rate immediately
   UNCERTAIN       — missing telemetry prevents classification; hold until known
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Any
 
 
 class ScaleState(StrEnum):
@@ -45,8 +45,13 @@ class ScaleEvidence:
     current_throughput: float | None = None
 
     def __post_init__(self) -> None:
-        for name in ("kernel_latency_ms", "latency_bound_ms", "temperature_c",
-                     "thermal_limit_c", "executor_idle_ms"):
+        for name in (
+            "kernel_latency_ms",
+            "latency_bound_ms",
+            "temperature_c",
+            "thermal_limit_c",
+            "executor_idle_ms",
+        ):
             v = getattr(self, name)
             if not isinstance(v, (int, float)) or isinstance(v, bool) or float(v) < 0:
                 raise ValueError(f"ScaleEvidence.{name} must be a non-negative number")
@@ -97,7 +102,11 @@ class ScaleStateClassifier:
             return ScaleClassification(
                 state=ScaleState.OVERLOADED,
                 evidence=evidence,
-                reason="recovery_active" if evidence.recovery_active else f"device_errors={evidence.device_errors}",
+                reason=(
+                    "recovery_active"
+                    if evidence.recovery_active
+                    else f"device_errors={evidence.device_errors}"
+                ),
                 recommendation="de_rate_stop_scaling_allow_salamander_recovery_priority",
             )
 
@@ -118,13 +127,8 @@ class ScaleStateClassifier:
             return ScaleClassification(
                 state=ScaleState.OVERLOADED,
                 evidence=evidence,
-                reason=(
-                    f"latency_ratio={latency_ratio:.2f} "
-                    f"thermal_ratio={thermal_ratio:.2f}"
-                ),
-                recommendation=(
-                    "de_rate_cancel_speculative_windows_shorten_precompute_horizon"
-                ),
+                reason=(f"latency_ratio={latency_ratio:.2f} " f"thermal_ratio={thermal_ratio:.2f}"),
+                recommendation=("de_rate_cancel_speculative_windows_shorten_precompute_horizon"),
             )
 
         # Throughput plateau: adding more window didn't help
@@ -150,9 +154,7 @@ class ScaleStateClassifier:
                     f"thermal_ratio={thermal_ratio:.2f} "
                     f"throughput_plateau={throughput_plateau}"
                 ),
-                recommendation=(
-                    "hold_stop_scaling_shorten_precompute_horizon"
-                ),
+                recommendation=("hold_stop_scaling_shorten_precompute_horizon"),
             )
 
         # Under-utilised: latency well below bound AND thermal OK AND executor idle
@@ -178,9 +180,6 @@ class ScaleStateClassifier:
         return ScaleClassification(
             state=ScaleState.HEALTHY,
             evidence=evidence,
-            reason=(
-                f"latency_ratio={latency_ratio:.2f} "
-                f"thermal_ratio={thermal_ratio:.2f}"
-            ),
+            reason=(f"latency_ratio={latency_ratio:.2f} " f"thermal_ratio={thermal_ratio:.2f}"),
             recommendation="maintain_current_settings",
         )

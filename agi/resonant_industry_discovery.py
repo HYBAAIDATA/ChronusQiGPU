@@ -39,15 +39,9 @@ class ResonantIndustryDiscovery:
         self.candidates: List[IndustryCandidate] = []
         self.phi_threshold = 0.618  # Golden ratio threshold for resonance
 
-    def calculate_phi_resonance(
-        self, data_coherence: float, causal_density: float
-    ) -> float:
+    def calculate_phi_resonance(self, data_coherence: float, causal_density: float) -> float:
         """Calculate phi-resonance score for an industry."""
-        return (
-            abs(PHI - abs(data_coherence / causal_density))
-            if causal_density > 0
-            else 0.0
-        )
+        return abs(PHI - abs(data_coherence / causal_density)) if causal_density > 0 else 0.0
 
     async def scan_industries(self) -> List[IndustryCandidate]:
         """
@@ -105,9 +99,7 @@ class ResonantIndustryDiscovery:
             )
 
             # Integration score: phi-resonance × causal density × data coherence
-            integration = (
-                phi_res * candidate["causal_density"] * candidate["data_coherence"]
-            )
+            integration = phi_res * candidate["causal_density"] * candidate["data_coherence"]
 
             industry = IndustryCandidate(
                 name=candidate["name"],

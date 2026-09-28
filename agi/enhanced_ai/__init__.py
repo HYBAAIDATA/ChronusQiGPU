@@ -121,9 +121,7 @@ def demonstrate_agi_capabilities():
             print(f"⚛️  Phi Resonance: {response.phi_resonance_score:.2f}")
 
         # End conversation
-        await agi.end_conversation(
-            session.session_id, "Excellent explanations, thank you!"
-        )
+        await agi.end_conversation(session.session_id, "Excellent explanations, thank you!")
 
         print("\n✅ Demo completed successfully!")
         print("📈 Overall system confidence demonstrated")

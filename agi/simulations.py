@@ -99,25 +99,15 @@ class MultiCriteriaDecisionAnalysis:
 
             # Perform analysis based on method
             if method == "topsis":
-                result = await self._topsis_analysis(
-                    decision_matrix, weight_vector, criteria
-                )
+                result = await self._topsis_analysis(decision_matrix, weight_vector, criteria)
             elif method == "ahp":
-                result = await self._ahp_analysis(
-                    decision_matrix, weight_vector, criteria
-                )
+                result = await self._ahp_analysis(decision_matrix, weight_vector, criteria)
             elif method == "electre":
-                result = await self._electre_analysis(
-                    decision_matrix, weight_vector, criteria
-                )
+                result = await self._electre_analysis(decision_matrix, weight_vector, criteria)
             elif method == "promethee":
-                result = await self._promethee_analysis(
-                    decision_matrix, weight_vector, criteria
-                )
+                result = await self._promethee_analysis(decision_matrix, weight_vector, criteria)
             else:
-                result = await self._topsis_analysis(
-                    decision_matrix, weight_vector, criteria
-                )
+                result = await self._topsis_analysis(decision_matrix, weight_vector, criteria)
 
             # Apply quantum optimization for best result
             if iterations > 500:
@@ -158,9 +148,7 @@ class MultiCriteriaDecisionAnalysis:
         """TOPSIS - Technique for Order of Preference by Similarity to Ideal Solution"""
 
         # Normalize decision matrix
-        normalized_matrix = decision_matrix / np.sqrt(
-            np.sum(decision_matrix**2, axis=0)
-        )
+        normalized_matrix = decision_matrix / np.sqrt(np.sum(decision_matrix**2, axis=0))
 
         # Apply weights
         weighted_matrix = normalized_matrix * weights
@@ -261,18 +249,14 @@ class MultiCriteriaDecisionAnalysis:
         for i in range(n_alternatives):
             for j in range(n_alternatives):
                 if i != j:
-                    max_diff = np.max(
-                        np.abs(decision_matrix[i, :] - decision_matrix[j, :])
-                    )
+                    max_diff = np.max(np.abs(decision_matrix[i, :] - decision_matrix[j, :]))
                     if max_diff > 0:
-                        discordance_matrix[i, j] = max_diff / np.max(
+                        discordance_matrix[i, j] = max_diff / np.max(decision_matrix) - np.min(
                             decision_matrix
-                        ) - np.min(decision_matrix)
+                        )
 
         # Net superiority scores
-        net_scores = np.sum(concordance_matrix, axis=1) - np.sum(
-            concordance_matrix, axis=0
-        )
+        net_scores = np.sum(concordance_matrix, axis=1) - np.sum(concordance_matrix, axis=0)
         rankings = np.argsort(-net_scores)
 
         return {
@@ -424,9 +408,7 @@ class MonteCarloSimulation:
             # Apply quantum enhancement for large iterations
             quantum_speedup = 1.0
             if iterations > 5000:
-                quantum_result = await self._quantum_enhance_simulation(
-                    samples, result, iterations
-                )
+                quantum_result = await self._quantum_enhance_simulation(samples, result, iterations)
                 result.update(quantum_result)
                 quantum_speedup = quantum_result.get("quantum_speedup", 1.0)
 
@@ -479,7 +461,7 @@ class MonteCarloSimulation:
                 samples[var_name] = np.random.uniform(low, high, iterations)
 
             elif dist_type == "exponential":
-                #  var_params.get("scale", 1.0)
+                scale = var_params.get("scale", 1.0)
                 samples[var_name] = np.random.exponential(scale, iterations)
 
             elif dist_type == "lognormal":
@@ -516,9 +498,7 @@ class MonteCarloSimulation:
         # Calculate statistics
         mean_return = np.mean(portfolio_returns)
         std_return = np.std(portfolio_returns)
-        sharpe_ratio = (
-            (mean_return - risk_free_rate) / std_return if std_return > 0 else 0
-        )
+        sharpe_ratio = (mean_return - risk_free_rate) / std_return if std_return > 0 else 0
 
         # Calculate VaR (Value at Risk)
         var_95 = np.percentile(portfolio_returns, 5)
@@ -528,9 +508,7 @@ class MonteCarloSimulation:
         expected_shortfall_95 = np.mean(portfolio_returns[portfolio_returns <= var_95])
 
         return {
-            "convergence": (
-                std_return / np.abs(mean_return) if mean_return != 0 else 1.0
-            ),
+            "convergence": (std_return / np.abs(mean_return) if mean_return != 0 else 1.0),
             "confidence": 0.92,
             "mean_return": mean_return,
             "volatility": std_return,
@@ -556,7 +534,6 @@ class MonteCarloSimulation:
 
         # Extract risk parameters
         risk_factors = model.get("risk_factors", [])
-        correlations = model.get("correlations", {})
 
         # Calculate aggregate risk
         aggregate_risk = np.zeros(len(next(iter(samples.values()))))
@@ -572,9 +549,7 @@ class MonteCarloSimulation:
 
         # Calculate probability of exceeding thresholds
         thresholds = parameters.get("thresholds", [mean_risk + std_risk])
-        exceedance_probs = {
-            f"threshold_{t}": np.mean(aggregate_risk > t) for t in thresholds
-        }
+        exceedance_probs = {f"threshold_{t}": np.mean(aggregate_risk > t) for t in thresholds}
 
         return {
             "convergence": std_risk / np.abs(mean_risk) if mean_risk != 0 else 1.0,
@@ -678,17 +653,14 @@ class MonteCarloSimulation:
         std_result = np.std(results)
 
         return {
-            "convergence": (
-                std_result / np.abs(mean_result) if mean_result != 0 else 1.0
-            ),
+            "convergence": (std_result / np.abs(mean_result) if mean_result != 0 else 1.0),
             "confidence": 0.85,
             "mean": mean_result,
             "std": std_result,
             "min": np.min(results),
             "max": np.max(results),
             "percentiles": {
-                str(p): np.percentile(results, p)
-                for p in [1, 5, 10, 25, 50, 75, 90, 95, 99]
+                str(p): np.percentile(results, p) for p in [1, 5, 10, 25, 50, 75, 90, 95, 99]
             },
         }
 
@@ -755,9 +727,7 @@ class NashEquilibriumSolver:
         self.phi_scorer = PhiResonanceScorer()
         self.quantum_processor = UniversalQuantumProcessor(max_dimension=2**10)
 
-    async def solve(
-        self, payoff_matrix: List[List[float]], players: int = 2
-    ) -> Dict[str, Any]:
+    async def solve(self, payoff_matrix: List[List[float]], players: int = 2) -> Dict[str, Any]:
         """
         Solve for Nash equilibrium using mathematical methods
 
@@ -835,9 +805,7 @@ class NashEquilibriumSolver:
             "equilibrium_type": "mixed" if not pure_equilibria else "pure",
         }
 
-    async def _solve_n_player_game(
-        self, payoff_array: np.ndarray, players: int
-    ) -> Dict[str, Any]:
+    async def _solve_n_player_game(self, payoff_array: np.ndarray, players: int) -> Dict[str, Any]:
         """Solve n-player game using iterative methods"""
 
         # For n-player games, use iterative best response
@@ -847,9 +815,7 @@ class NashEquilibriumSolver:
         max_iterations = 1000
 
         while not equilibrium_reached and iterations < max_iterations:
-            new_strategies = self._best_response_update(
-                strategies, payoff_array, players
-            )
+            new_strategies = self._best_response_update(strategies, payoff_array, players)
 
             # Check convergence
             if self._strategies_converged(strategies, new_strategies):
@@ -869,9 +835,7 @@ class NashEquilibriumSolver:
             "equilibrium_type": "mixed",
         }
 
-    def _find_pure_strategy_equilibria(
-        self, payoff_array: np.ndarray
-    ) -> List[Tuple[int, int]]:
+    def _find_pure_strategy_equilibria(self, payoff_array: np.ndarray) -> List[Tuple[int, int]]:
         """Find pure strategy Nash equilibria"""
 
         equilibria = []
@@ -893,9 +857,7 @@ class NashEquilibriumSolver:
                 if is_equilibrium:
                     col_payoff = payoff_array[i, j]  # Assuming zero-sum for simplicity
                     for k in range(cols):
-                        if (
-                            payoff_array[i, k] < col_payoff
-                        ):  # Column player wants to minimize
+                        if payoff_array[i, k] < col_payoff:  # Column player wants to minimize
                             is_equilibrium = False
                             break
 
@@ -904,9 +866,7 @@ class NashEquilibriumSolver:
 
         return equilibria
 
-    def _find_mixed_strategy_equilibrium(
-        self, payoff_array: np.ndarray
-    ) -> Dict[str, Any]:
+    def _find_mixed_strategy_equilibrium(self, payoff_array: np.ndarray) -> Dict[str, Any]:
         """Find mixed strategy equilibrium using linear programming"""
 
         try:
@@ -1062,9 +1022,7 @@ class NashEquilibriumSolver:
             logger.warning(f"Quantum game analysis failed: {e}")
             return {
                 "quantum_speedup": 1.0,
-                "quantum_equilibrium": classical_result.get(
-                    "mixed_strategy_equilibrium", {}
-                ),
+                "quantum_equilibrium": classical_result.get("mixed_strategy_equilibrium", {}),
                 "quantum_game_value": classical_result.get("game_value", 0.0),
                 "phi_resonance_score": 0.5,
             }
@@ -1111,9 +1069,7 @@ class BayesianMCMC:
             elif method == "gibbs":
                 result = await self._gibbs_sampling(data_array, model, iterations)
             elif method == "hmc":
-                result = await self._hamiltonian_monte_carlo(
-                    data_array, model, iterations
-                )
+                result = await self._hamiltonian_monte_carlo(data_array, model, iterations)
             else:
                 result = await self._metropolis_hastings(data_array, model, iterations)
 
@@ -1165,9 +1121,7 @@ class BayesianMCMC:
         chain = np.zeros((iterations, n_params))
 
         # Priors (assuming normal priors)
-        priors = model.get(
-            "priors", {"mean": {"mu": 0, "sigma": 10}, "std": {"mu": 1, "sigma": 5}}
-        )
+        priors = model.get("priors", {"mean": {"mu": 0, "sigma": 10}, "std": {"mu": 1, "sigma": 5}})
 
         # Proposal distribution parameters
         proposal_std = model.get("proposal_std", 0.1)
@@ -1185,12 +1139,8 @@ class BayesianMCMC:
                 proposal[std_idx] = abs(proposal[std_idx])
 
             # Calculate log posterior probabilities
-            log_posterior_current = self._log_posterior(
-                data, current_params, param_names, priors
-            )
-            log_posterior_proposal = self._log_posterior(
-                data, proposal, param_names, priors
-            )
+            log_posterior_current = self._log_posterior(data, current_params, param_names, priors)
+            log_posterior_proposal = self._log_posterior(data, proposal, param_names, priors)
 
             # Acceptance probability
             log_alpha = log_posterior_proposal - log_posterior_current
@@ -1250,11 +1200,7 @@ class BayesianMCMC:
                 # Simplified conditional sampling
                 if param_name == "mean":
                     # Sample mean conditional on std
-                    std = (
-                        current_params[param_names.index("std")]
-                        if "std" in param_names
-                        else 1.0
-                    )
+                    std = current_params[param_names.index("std")] if "std" in param_names else 1.0
                     prior_mean = 0.0
                     prior_std = 10.0
 
@@ -1273,9 +1219,7 @@ class BayesianMCMC:
                 elif param_name == "std":
                     # Sample std conditional on mean
                     mean = (
-                        current_params[param_names.index("mean")]
-                        if "mean" in param_names
-                        else 0.0
+                        current_params[param_names.index("mean")] if "mean" in param_names else 0.0
                     )
 
                     # Posterior parameters for normal model with unknown variance
@@ -1332,9 +1276,7 @@ class BayesianMCMC:
         chain = np.zeros((iterations, n_params))
 
         # Priors
-        priors = model.get(
-            "priors", {"mean": {"mu": 0, "sigma": 10}, "std": {"mu": 1, "sigma": 5}}
-        )
+        priors = model.get("priors", {"mean": {"mu": 0, "sigma": 10}, "std": {"mu": 1, "sigma": 5}})
 
         accepted = 0
 
@@ -1355,9 +1297,7 @@ class BayesianMCMC:
                 params_copy += step_size * momentum_copy
 
                 if _ < leapfrog_steps - 1:  # Don't compute gradient on last step
-                    grad = self._gradient_log_posterior(
-                        data, params_copy, param_names, priors
-                    )
+                    grad = self._gradient_log_posterior(data, params_copy, param_names, priors)
                     momentum_copy += step_size * grad
 
             # Half step for momentum
@@ -1365,12 +1305,8 @@ class BayesianMCMC:
             momentum_copy -= 0.5 * step_size * grad
 
             # Calculate Hamiltonian
-            current_h = self._hamiltonian(
-                data, current_params, momentum, param_names, priors
-            )
-            proposed_h = self._hamiltonian(
-                data, params_copy, -momentum_copy, param_names, priors
-            )
+            current_h = self._hamiltonian(data, current_params, momentum, param_names, priors)
+            proposed_h = self._hamiltonian(data, params_copy, -momentum_copy, param_names, priors)
 
             # Acceptance probability
             alpha = min(1.0, np.exp(current_h - proposed_h))
@@ -1545,9 +1481,7 @@ class BayesianMCMC:
         for i in range(n_params):
             # Simple autocorrelation at lag 1
             series = samples[:, i]
-            autocorr = (
-                np.corrcoef(series[:-1], series[1:])[0, 1] if len(series) > 1 else 0
-            )
+            autocorr = np.corrcoef(series[:-1], series[1:])[0, 1] if len(series) > 1 else 0
 
             if abs(autocorr) < 0.99:
                 ess = n_samples * (1 - autocorr) / (1 + autocorr)

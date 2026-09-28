@@ -14,9 +14,7 @@ from datetime import datetime
 from typing import Any, Dict
 
 # Add paths for imports - ensure project root is on path
-project_root = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-)
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
@@ -90,9 +88,7 @@ class EnhancedAGITester:
             test_results["agi_capabilities"] = agi_results
 
             # Calculate overall score
-            test_results["overall_score"] = self._calculate_overall_score(
-                test_results["results"]
-            )
+            test_results["overall_score"] = self._calculate_overall_score(test_results["results"])
 
             logger.info(
                 f"Test suite completed with overall score: {test_results['overall_score']:.2f}"
@@ -292,9 +288,7 @@ class EnhancedAGITester:
                 {"context": "test"},
             )
 
-            session_started = (
-                session.session_id is not None and session.state.value == "active"
-            )
+            session_started = session.session_id is not None and session.state.value == "active"
             results["details"].append(
                 {
                     "test": "Start conversation",
@@ -417,8 +411,7 @@ class EnhancedAGITester:
                     "test": "End-to-end integration",
                     "messages_processed": len(messages),
                     "responses_received": len(responses),
-                    "average_confidence": sum(r.confidence for r in responses)
-                    / len(responses),
+                    "average_confidence": sum(r.confidence for r in responses) / len(responses),
                     "response_types": [r.response_type.value for r in responses],
                     "integration_success": integration_success,
                     "test_passed": integration_success,
