@@ -139,9 +139,12 @@ def test_engineer(defects: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
 def provenance(root: Path, label: str, verdict: Dict[str, Any],
                bundles: Sequence[Dict[str, Any]],
                human_merge_sha: Optional[str] = None,
-               *, write: bool = True) -> Path:
+               *, write: bool = True, out_dir: Optional[Path] = None) -> Path:
     """Replayable chain-of-custody record. Same seed + same agent versions +
-    same freeze/lemma shas must reproduce byte-identical output."""
+    same freeze/lemma shas must reproduce byte-identical output.
+
+    Written to ``root/docs/provenance`` unless ``out_dir`` says elsewhere
+    (a test audits the repository without rewriting its records)."""
     def file_sha(rel: str) -> Optional[str]:
         p = root / rel
         return hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else None
@@ -172,7 +175,7 @@ def provenance(root: Path, label: str, verdict: Dict[str, Any],
             sort_keys=True,
         ).encode()
     ).hexdigest()[:16]
-    path = root / PROVENANCE_DIR / f"{name}.json"
+    path = (Path(out_dir) if out_dir is not None else root / PROVENANCE_DIR) / f"{name}.json"
     if write:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n",
@@ -182,7 +185,8 @@ def provenance(root: Path, label: str, verdict: Dict[str, Any],
 
 def run_pipeline(root: Optional[Path] = None, *,
                  label: str = "working-tree",
-                 write_provenance: bool = True) -> Dict[str, Any]:
+                 write_provenance: bool = True,
+                 provenance_dir: Optional[Path] = None) -> Dict[str, Any]:
     """The driver. Order is fixed: preconditions → audit → truth agents →
     governance → provenance. Defects produce bounded bundles; nothing
     self-merges."""
@@ -218,13 +222,17 @@ def run_pipeline(root: Optional[Path] = None, *,
         bundles.append(test_engineer(defects))
 
     v = verifiers.governance(truth)
-    prov = provenance(root, label, v, bundles, write=write_provenance)
+    prov = provenance(root, label, v, bundles, write=write_provenance, out_dir=provenance_dir)
     return {
         "verdict": v["verdict"],
         "reason": v["reason"],
         "defects": defects,
         "bundles": bundles,
-        "provenance": str(prov.relative_to(root)) if write_provenance else None,
+        "provenance": (
+            (str(prov) if provenance_dir is not None else str(prov.relative_to(root)))
+            if write_provenance
+            else None
+        ),
         "awaiting": "human_merge" if bundles else None,
         "theorem_proven": False,
     }
