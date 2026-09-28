@@ -123,6 +123,100 @@ SALAMANDER keeps the machine alive without becoming proof authority.
 
 PYTHIA therefore inherits HYBA's central instinct: **do not wait for the existing shape of a system to dictate the only possible shape of its computation**. Explore the mathematics, test the topology, instrument the execution, and keep every external claim subordinate to measured evidence.
 
+## The HYBA / Taylor-Morris extension to the Church–Turing–Deutsch line
+
+This repository adopts a **project thesis**, not a claim of a newly established theorem.
+
+The historical line begins with the Church–Turing thesis: effectively calculable procedures can be represented by a universal model of computation. Deutsch extended the discussion into physics by asking for a universal computing device capable of simulating the behavior of finitely realizable physical systems under the governing laws of physics.
+
+HYBA proposes a further engineering principle:
+
+> **When a phenomenon admits a finite mathematical representation to a declared precision, and its governing transformations can be expressed as effective operators, the decisive computational question is not the label of the physical substrate but the quality of the representation, factorization, topology and operator structure used to realize the computation.**
+
+We refer to this within the project as the **HYBA / Taylor-Morris Extension**.
+
+In compact form:
+
+```text
+CHURCH–TURING
+Effective procedure
+→ universal computation
+
+DEUTSCH
+Finitely realizable physical process
+→ universal physical simulation
+
+HYBA / TAYLOR-MORRIS
+Mathematically representable state + effective operators
+→ substrate-agnostic computational realization
+→ representation / topology determine practical tractability
+```
+
+The working premise is therefore not merely **"use mathematics to describe the system"**. It is:
+
+> **The mathematical representation is itself part of the computer.**
+
+A poor representation can make a tractable structure appear intractable. A better representation may expose symmetry, factorization, geometry, causal structure, sparsity, invariants or reversible transforms that are invisible in a flat representation. HYBA therefore treats representation choice, topology and operator design as first-class computational variables rather than preprocessing details.
+
+This principle connects the project's major lines of work:
+
+```text
+folded memory / data
+→ change representation without destroying information
+
+Kellogg / tensor state
+→ represent high-dimensional joint state algebraically
+
+virtual quantum execution
+→ execute quantum-state transformations as mathematical operators on non-QPU substrates
+
+Poincaré / Klein / Cassini / Lucas geometry
+→ change traversal and state-space organization
+
+PYTHIA
+→ change how search work is represented, leased, ordered, executed and learned from
+
+AL HARAS
+→ change the topology of trust, attack propagation, verification and recovery
+```
+
+The project therefore uses the operational chain:
+
+```text
+OBSERVE
+→ REPRESENT
+→ COMPUTE
+→ VERIFY
+→ ACT
+→ ATTEST
+→ LEARN
+→ RECOVER
+```
+
+as a shared HYBA substrate contract. Representation precedes computation because the form in which a state is expressed determines which operators, invariants and decompositions become available to the machine.
+
+### Scope and falsifiability
+
+The HYBA / Taylor-Morris Extension does **not** assert that known undecidable problems become decidable, that complexity lower bounds disappear, or that every mathematical object has a finite effective representation. It also does not make an unmeasured hardware-speedup claim.
+
+Its falsifiable engineering claim is narrower and stronger:
+
+> **For computationally representable systems, substrate should not be treated as the first explanatory boundary. Representation, topology, operator structure, precision and resource scaling must be measured before a limitation is attributed to the substrate itself.**
+
+Every HYBA implementation must therefore move through:
+
+```text
+mathematical object
+→ executable representation
+→ operator
+→ invariant
+→ falsification
+→ measurement
+→ evidence
+```
+
+If an implementation cannot complete that chain, it remains a hypothesis.
+
 ## Mining evolution timeline
 
 The following timeline records the engineering trajectory rather than a claim of cryptographic advantage.
