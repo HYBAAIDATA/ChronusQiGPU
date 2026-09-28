@@ -43,6 +43,10 @@ class Regime:
     max_window: int
     kernel_timing: bool
     evidence: str
+    # Misspecification: the hash rate sags as a window runs (a heating
+    # device), rate / (1 + t / tau) at t seconds into the window. The policy
+    # still learns elapsed = o + hashes / H; nothing tells it about the sag.
+    sag_tau_s: float | None = None
 
 
 def _record(route: str, window: int, hashes: int, elapsed: float, kernel_s: float, invalid: bool):
@@ -70,7 +74,9 @@ def _record(route: str, window: int, hashes: int, elapsed: float, kernel_s: floa
     )
 
 
-def simulate(regime: Regime, *, mode: str, seconds: float = 600.0, seed: int = 1517) -> dict[str, Any]:
+def simulate(
+    regime: Regime, *, mode: str, seconds: float = 600.0, seed: int = 1517
+) -> dict[str, Any]:
     if mode not in ("legacy", "model"):
         raise ValueError(mode)
     rng = random.Random(seed)
@@ -99,6 +105,8 @@ def simulate(regime: Regime, *, mode: str, seconds: float = 600.0, seed: int = 1
                     legacy_lookahead=2,
                     capacity=3,
                     chunk_cap=regime.chunk_cap,
+                    # Production's responsiveness envelope (PYTHIA_MAX_WINDOW_SECONDS).
+                    max_window_seconds=2.0,
                 )
             )
             window = decision.window
@@ -112,9 +120,19 @@ def simulate(regime: Regime, *, mode: str, seconds: float = 600.0, seed: int = 1
         done, invalid, hashing_s = 0, False, 0.0
         while done < window:
             chunk = min(regime.chunk_cap, window - done)
-            dur = chunk / regime.hash_rate
+            tau = regime.sag_tau_s
+            # Exact integrals of rate H / (1 + t / tau) from the chunk's start
+            # h0 = hashing_s: n hashes take (tau + h0) * (exp(n / (H tau)) - 1).
+            if tau is None:
+                dur = chunk / regime.hash_rate
+            else:
+                dur = (tau + hashing_s) * math.expm1(chunk / (regime.hash_rate * tau))
             if next_event < t + dur:
-                valid = (next_event - t) * regime.hash_rate
+                into = next_event - t
+                if tau is None:
+                    valid = into * regime.hash_rate
+                else:
+                    valid = regime.hash_rate * tau * math.log1p(into / (tau + hashing_s))
                 useful += valid
                 stale += chunk - valid
                 done += chunk

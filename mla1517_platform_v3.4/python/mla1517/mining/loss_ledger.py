@@ -41,14 +41,12 @@ class LossLedger:
     stale_hashes: int = 0
     first_hash_latency_s: list[float] = field(default_factory=list)
     _started: float | None = None
-    _last: float | None = None
     _pending_bind_at: float | None = None
     _recovery_since: float | None = None
 
     def start(self, now: float) -> None:
         if self._started is None:
             self._started = now
-        self._last = now
 
     def observe_bind(self, now: float) -> None:
         self.start(now)
@@ -78,7 +76,6 @@ class LossLedger:
             self._pending_bind_at = None
         elapsed = max(0.0, record.elapsed_seconds)
         hashing = self._hashing_seconds(record, world)
-        self._last = started_at + elapsed
         if hashing is None:
             self.seconds["unattributed_execution"] += elapsed
             return
