@@ -89,13 +89,19 @@ def gpu_payload() -> dict[str, Any]:
         devices = []
         if isinstance(doc.get("opencl"), dict):
             devices = doc["opencl"].get("devices") or []
+        gpu_devices = [
+            device
+            for device in devices
+            if isinstance(device, dict) and bool(device.get("is_gpu", False))
+        ]
         hasher = doc.get("hasher") if isinstance(doc.get("hasher"), dict) else {}
         punch = doc.get("punch") if isinstance(doc.get("punch"), dict) else {}
         vendors = doc.get("vendors") if isinstance(doc.get("vendors"), dict) else {}
         running = str(hasher.get("backend") or punch.get("backend") or "cpu")
         payload = {
-            "available": bool(devices),
-            "count": len(devices),
+            "available": bool(gpu_devices),
+            "count": len(gpu_devices),
+            "opencl_device_count": len(devices),
             "devices": devices,
             "running_backend": running,
             "running_device": str(hasher.get("device") or ""),

@@ -85,7 +85,7 @@ def exact_ladder() -> tuple[ExactScaleResult, ...]:
 
 
 def _select_device(cl, devices):
-    """Prefer the HYBA iGPU (alias match), else first GPU, else first device.
+    """Prefer the HYBA iGPU (alias match), else first GPU.
 
     ``HYBA_REQUIRE_HYBA`` fails explicitly when no qualifying device
     enumerates — the ladder never silently executes on non-HYBA silicon.
@@ -94,8 +94,9 @@ def _select_device(cl, devices):
     contract as ``mining/bitcoin_hasher.py::_select_opencl_device``).
     """
     aliases = _hyba_aliases()
+    gpu_devices = [dev for dev in devices if dev.type & cl.device_type.GPU]
     if _require_hyba() and _identity_configured():
-        for dev in devices:
+        for dev in gpu_devices:
             if _device_matches_identity(dev):
                 return dev
         names = [f"{getattr(d, 'vendor', '')}: {getattr(d, 'name', '')}" for d in devices]
@@ -106,7 +107,7 @@ def _select_device(cl, devices):
             f"name={os.environ.get('HYBA_DEVICE_NAME', '')!r}); found: {names}"
         )
     if _require_hyba():
-        for dev in devices:
+        for dev in gpu_devices:
             name = str(getattr(dev, "name", "")).strip().casefold()
             if any(a and a in name for a in aliases):
                 return dev
@@ -115,12 +116,14 @@ def _select_device(cl, devices):
             "HYBA_REQUIRE_HYBA set but no HYBA-alias OpenCL device enumerated "
             f"(aliases={list(aliases)}); found: {names}"
         )
-    for dev in devices:
+    for dev in gpu_devices:
         name = str(getattr(dev, "name", "")).strip().casefold()
         if any(a and a in name for a in aliases):
             return dev
-    gpu = next((d for d in devices if d.type & cl.device_type.GPU), None)
-    return gpu if gpu is not None else devices[0]
+    if gpu_devices:
+        return gpu_devices[0]
+    names = [f"{getattr(d, 'vendor', '')}: {getattr(d, 'name', '')}" for d in devices]
+    raise GPUExecutionUnavailable(f"no OpenCL GPU device discovered; found: {names}")
 
 
 class OpenCLLadderExecutor:
@@ -143,7 +146,8 @@ class OpenCLLadderExecutor:
         devices = [device for platform in platforms for device in platform.get_devices()]
         if not devices:
             raise GPUExecutionUnavailable("no OpenCL device discovered")
-        self.context = cl.Context(devices=[_select_device(cl, devices)])
+        self.device = _select_device(cl, devices)
+        self.context = cl.Context(devices=[self.device])
         self.queue = cl.CommandQueue(self.context)
         source = Path(
             kernel_path or Path(__file__).parents[2] / "kernels/mla1517_lucas_pisot_scale.cl"

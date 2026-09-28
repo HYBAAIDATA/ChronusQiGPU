@@ -1,9 +1,13 @@
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
+
 from mla1517.scaling import (
     LUCAS_PISOT_LADDER,
     exact_ladder,
     GPUExecutionUnavailable,
     OpenCLLadderExecutor,
+    _select_device,
 )
 
 
@@ -19,6 +23,20 @@ class ScalingTests(unittest.TestCase):
         except GPUExecutionUnavailable:
             return
         self.skipTest("OpenCL device available; strict CI executes the device ladder")
+
+    def test_device_selection_rejects_cpu_opencl(self):
+        cl = SimpleNamespace(device_type=SimpleNamespace(GPU=2))
+        cpu = SimpleNamespace(name="PoCL CPU", vendor="PoCL", type=1)
+        with patch.dict("os.environ", {"HYBA_REQUIRE_HYBA": ""}):
+            with self.assertRaises(GPUExecutionUnavailable):
+                _select_device(cl, [cpu])
+
+    def test_device_selection_prefers_gpu_over_cpu_opencl(self):
+        cl = SimpleNamespace(device_type=SimpleNamespace(GPU=2))
+        cpu = SimpleNamespace(name="PoCL CPU", vendor="PoCL", type=1)
+        gpu = SimpleNamespace(name="Discrete GPU", vendor="Vendor", type=2)
+        with patch.dict("os.environ", {"HYBA_REQUIRE_HYBA": ""}):
+            self.assertIs(_select_device(cl, [cpu, gpu]), gpu)
 
 
 if __name__ == "__main__":

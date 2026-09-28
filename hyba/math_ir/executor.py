@@ -142,7 +142,7 @@ class IRExecutor:
             from mining.bitcoin_hasher import BitcoinHasher
 
             hasher = BitcoinHasher(device=name)
-            if hasher.backend != "opencl":
+            if not hasher.backend.startswith("opencl:"):
                 raise CapabilityMismatch(
                     f"sha256d on {name}: OpenCL unavailable "
                     f"({hasher.fallback_reason or 'unknown'})"

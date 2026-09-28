@@ -30,7 +30,8 @@ def main() -> int:
         print(json.dumps(report))
         return 1
     try:
-        results = OpenCLLadderExecutor().execute()
+        executor = OpenCLLadderExecutor()
+        results = executor.execute()
     except Exception as exc:
         report = {"status": "FAIL", "reason": "exact OpenCL ladder unavailable", "detail": str(exc)}
         report_path.write_text(json.dumps(report, indent=2) + "\n")
@@ -74,6 +75,8 @@ def main() -> int:
     report = {
         "status": "PASS",
         "gpu_backend": "opencl",
+        "device_name": str(getattr(executor.device, "name", "")),
+        "device_vendor": str(getattr(executor.device, "vendor", "")),
         "ladder": LUCAS_PISOT_LADDER,
         "primedb_round_trip": True,
     }

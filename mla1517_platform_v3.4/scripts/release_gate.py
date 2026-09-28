@@ -82,6 +82,19 @@ def _policy_check() -> dict[str, Any]:
     return {"status": "PASS" if all(checks.values()) else "FAIL", "checks": checks}
 
 
+def _release_status(checks: dict[str, Any]) -> str:
+    statuses = [
+        value["status"]
+        for value in checks.values()
+        if isinstance(value, dict) and "status" in value
+    ]
+    if not statuses or any(status not in {"PASS", "NOT_RUN"} for status in statuses):
+        return "FAIL"
+    if any(status == "NOT_RUN" for status in statuses):
+        return "BLOCKED"
+    return "PASS"
+
+
 def main() -> int:
     RESULTS.mkdir(exist_ok=True)
     checks: dict[str, Any] = {
@@ -121,15 +134,7 @@ def main() -> int:
             "status": "NOT_RUN",
             "detail": "set MLA1517_STRICT_HARDWARE_CI=1 to require a real exact OpenCL device",
         }
-    checks["status"] = (
-        "PASS"
-        if all(
-            value.get("status") == "PASS"
-            for value in checks.values()
-            if isinstance(value, dict) and "status" in value and value.get("status") != "NOT_RUN"
-        )
-        else "FAIL"
-    )
+    checks["status"] = _release_status(checks)
     checks["unavailable_toolchains_are_evidence"] = True
     output = RESULTS / "release_gate.json"
     output.write_text(json.dumps(checks, indent=2, sort_keys=True) + "\n")
