@@ -62,6 +62,7 @@ from .solver import M32SearchSolver
 from .stratum_adapter import StratumAdapterError
 from .tuning_gate import TuningGate
 from .intelligence_memory import IntelligenceMemory
+from .hashrate_governor import HashrateGovernor
 from .loss_ledger import LossLedger
 from .operating_policy import OperatingPolicy, PolicyContext
 from .policy_audit import PolicyAuditor
@@ -268,6 +269,10 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         except ValueError:
             audit_every = 64
         self.policy_audit = PolicyAuditor(every=audit_every)
+        # The rate the network sees stays under the operator's configured
+        # cap and 1% of the network; re-read from runtime config every 5 s.
+        self.governor = HashrateGovernor()
+        self._governor_config_at = float("-inf")
         self._policy_mode = os.getenv("PYTHIA_OPERATING_POLICY", "model").strip().lower()
         try:
             self._max_window_seconds = float(os.getenv("PYTHIA_MAX_WINDOW_SECONDS", "2.0"))
@@ -858,6 +863,23 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         except Exception as exc:
             LOG.warning("intelligence memory unavailable (%s); learning from scratch", exc)
 
+    def _refresh_governor(self) -> None:
+        now = time.monotonic()
+        if now - self._governor_config_at < 5.0:
+            return
+        self._governor_config_at = now
+        try:
+            import runtime_config
+
+            hashrate = runtime_config.load().get("hashrate", {})
+            self.governor.configure(
+                target_hs=hashrate.get("target_hs", 0.0),
+                ceiling_hs=hashrate.get("ceiling_hs", runtime_config.HASHRATE_CEILING_HS),
+            )
+        except Exception as exc:
+            # The last good limits stay in force; the network cap always does.
+            LOG.warning("hashrate config unavailable, keeping current cap: %s", exc)
+
     def intelligence_snapshot(self) -> dict[str, Any]:
         last = self.operating_policy.last
         return {
@@ -869,6 +891,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             "decision": last.as_dict() if last is not None else None,
             "loss": self.loss.snapshot(time.monotonic()),
             "audit": self.policy_audit.snapshot(),
+            "governor": self.governor.snapshot(),
             "memory": (
                 self.intelligence_memory.snapshot()
                 if self.intelligence_memory is not None
@@ -1114,6 +1137,18 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             client = self.client
             adapter = client.proof_adapter
             job = adapter.current_job
+            self._refresh_governor()
+            try:
+                self.governor.observe_network(job.nbits)
+            except (AttributeError, ValueError) as exc:
+                LOG.debug("network rate unavailable from job nbits: %s", exc)
+            if not self.governor.admit():
+                self.last_execution = {
+                    "executed": False,
+                    "reason": "hashrate_governor",
+                    "cap_hs": self.governor.cap_hs,
+                }
+                return False
             plan = self.agentic.consume_plan(timeout_ms=0)
             fallback_reason = (
                 None
@@ -1162,6 +1197,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 window=plan.window,
             )
             record: ExecutionRecord | None = None
+            candidate = None
             outcome = PoolOutcome.NO_CANDIDATE
             try:
                 header = adapter.build_header(job.job_id, lease.extranonce2, job.ntime, 0)
@@ -1211,6 +1247,11 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 completed = record is not None and record.completed_work_items > 0
                 self.agentic.finish_execution(lease.lease_id, scanned=completed)
                 if record is not None:
+                    self.governor.record(
+                        hashes=record.hash_count,
+                        share_target=job.target,
+                        shares=int(candidate is not None),
+                    )
                     self._record_execution(identity, plan, lease, record, outcome, coordinate)
             return outcome is PoolOutcome.ACCEPTED
 

@@ -96,6 +96,15 @@ export type EvidenceIntelligence = {
     vqc_available?: boolean;
     last?: { agree?: boolean | null; digest?: string; vqc?: { oracle_calls?: number; classical_evaluations?: number } } | null;
   };
+  governor?: {
+    cap_hs?: number;
+    target_hs?: number;
+    ceiling_hs?: number;
+    network_hs?: number | null;
+    max_network_fraction?: number | null;
+    deferred?: number;
+    share_yield?: { shares?: number; expected?: number; ratio?: number | null; ci95?: [number, number] | null };
+  };
 };
 
 const LOSS_LABELS: Record<string, string> = {
@@ -122,9 +131,25 @@ export function lossBreakdown(evidence?: MiningEvidence | null): LossShare[] {
 
 const formatRate = (hs?: number | null): string | null => {
   if (hs == null) return null;
+  for (const [scale, unit] of [
+    [1e18, "EH/s"],
+    [1e15, "PH/s"],
+    [1e12, "TH/s"],
+    [1e9, "GH/s"],
+  ] as const) {
+    if (hs >= scale) return `${(hs / scale).toFixed(2)} ${unit}`;
+  }
   if (hs >= 1e6) return `${(hs / 1e6).toFixed(2)} MH/s`;
   if (hs >= 1e3) return `${(hs / 1e3).toFixed(1)} kH/s`;
   return `${hs.toFixed(0)} H/s`;
+};
+
+// Which of the governor's three limits sets the cap.
+const capBinding = (g: NonNullable<EvidenceIntelligence["governor"]>): string => {
+  if (g.cap_hs == null) return "";
+  if (g.target_hs && g.cap_hs === g.target_hs) return "operator target";
+  if (g.cap_hs === g.ceiling_hs) return "ceiling";
+  return `${((g.max_network_fraction ?? 0) * 100).toFixed(0)}% of network`;
 };
 
 export function intelligenceRows(evidence?: MiningEvidence | null): EvidenceRow[] {
@@ -136,6 +161,8 @@ export function intelligenceRows(evidence?: MiningEvidence | null): EvidenceRow[
   const firstHash = intel.loss?.time_to_first_hash_ms;
   const memory = intel.memory ?? undefined;
   const audit = intel.audit;
+  const governor = intel.governor;
+  const shareYield = governor?.share_yield;
   const model = decision?.source === "model";
   return [
     row("policy_window", "Chosen window", decision?.window, model ? "computed" : "live"),
@@ -182,6 +209,24 @@ export function intelligenceRows(evidence?: MiningEvidence | null): EvidenceRow[
             (audit.vqc_available ? "" : " · VQC unavailable") +
             (audit.last?.digest ? ` · ${audit.last.digest.slice(0, 12)}` : ""),
       "computed",
+    ),
+    row(
+      "hashrate_cap",
+      "Hashrate cap",
+      governor?.cap_hs == null
+        ? null
+        : `${formatRate(governor.cap_hs)} · ${capBinding(governor)}` +
+            (governor.deferred ? ` · ${governor.deferred} windows deferred` : ""),
+      "computed",
+    ),
+    row(
+      "share_yield",
+      "Share yield (found ÷ search expectation)",
+      shareYield?.ratio == null || !shareYield.ci95
+        ? null
+        : `${shareYield.ratio.toFixed(2)}× (95% ${shareYield.ci95[0].toFixed(2)}–${shareYield.ci95[1].toFixed(2)})` +
+            ` · ${shareYield.shares ?? 0} shares`,
+      "measured",
     ),
   ];
 }

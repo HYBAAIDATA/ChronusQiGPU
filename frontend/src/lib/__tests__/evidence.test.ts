@@ -79,6 +79,15 @@ describe("mining evidence", () => {
         },
         memory: { backend: "aethel", ledger_verified: true, entries: 12 },
         audit: { audits: 21, disagreements: 0, vqc_available: true, last: { agree: true, digest: "416b371e4bcf8c6d" } },
+        governor: {
+          cap_hs: 1e18,
+          target_hs: 0,
+          ceiling_hs: 1e18,
+          network_hs: 6.18e20,
+          max_network_fraction: 0.01,
+          deferred: 3,
+          share_yield: { shares: 100, expected: 100, ratio: 1, ci95: [0.8136, 1.2163] },
+        },
       },
     };
     const rows = Object.fromEntries(intelligenceRows(withIntel).map((r) => [r.key, r]));
@@ -88,6 +97,15 @@ describe("mining evidence", () => {
     expect(rows.first_hash.value).toBe("12.3 ms");
     expect(rows.memory.value).toBe("verified · 12 entries");
     expect(rows.audit.value).toBe("21 audits · 0 disagreements · 416b371e4bcf");
+    expect(rows.hashrate_cap.value).toBe("1.00 EH/s · ceiling · 3 windows deferred");
+    expect(rows.share_yield).toMatchObject({ value: "1.00× (95% 0.81–1.22) · 100 shares", truth: "measured" });
+    const toyNetwork = { ...withIntel.intelligence!.governor!, cap_hs: 71_583.88, network_hs: 7_158_388 };
+    const toyRows = Object.fromEntries(
+      intelligenceRows({ ...withIntel, intelligence: { ...withIntel.intelligence, governor: toyNetwork } }).map(
+        (r) => [r.key, r],
+      ),
+    );
+    expect(toyRows.hashrate_cap.value).toBe("71.6 kH/s · 1% of network · 3 windows deferred");
     const losses = lossBreakdown(withIntel);
     expect(losses.map((l) => l.key)).toEqual(["useful_hashing", "window_overhead", "other"]);
   });
@@ -99,6 +117,7 @@ describe("mining evidence", () => {
     };
     const rows = Object.fromEntries(intelligenceRows(early).map((r) => [r.key, r]));
     expect(rows.overhead).toMatchObject({ value: null, truth: "unavailable" });
+    expect(rows.share_yield).toMatchObject({ value: null, truth: "unavailable" });
     expect(rows.policy_window.truth).toBe("live");
     expect(lossBreakdown(early)).toEqual([]);
     expect(intelligenceRows({ evidence_available: false })).toEqual([]);

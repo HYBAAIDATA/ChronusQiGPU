@@ -17,6 +17,7 @@ import pytest
 import mining_runtime
 from manifold_pool_coordinator import PoolEndpoint
 from mla1517.mining.coordinator import IntelligentPoolCoordinator
+from mla1517.mining.hashrate_governor import HashrateGovernor
 from mla1517.mining.pool_chain import PoolChainObserver, bip34_height
 from mla1517.mining.session import MiningSession
 from mla1517.mining.stratum_adapter import stratum_prevhash
@@ -50,6 +51,9 @@ def _pool_only_coordinator(endpoints, **kwargs) -> IntelligentPoolCoordinator:
         **kwargs,
     )
     coord.chain_observer = PoolChainObserver(lambda: coord.client)
+    # BLOCK_NBITS is a toy network (~1/600 H/s): any real miner is far above
+    # 1% of it, so these fixtures run without the network-share cap.
+    coord.governor = HashrateGovernor(max_network_fraction=None)
     return coord
 
 
