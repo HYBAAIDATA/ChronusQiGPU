@@ -14,32 +14,102 @@ from mla1517.mining.coordinator import CpuReferenceHasher, IntelligentPoolCoordi
 from manifold_pool_coordinator import _build_parser, parse_endpoint
 from worker_lifecycle import HeartbeatEmitter
 from mla1517.mining.chain_observer import BitcoinChainObserver
+from mla1517.mining.pool_chain import PoolChainObserver
 from mla1517.mining.session import MiningSession
+from manifold_pool_coordinator import PoolEndpoint
+
+LOG = logging.getLogger("pythia.mining_runtime")
+
+# PYTHIA mines only through these pools. ``domains`` identify a configured
+# endpoint as belonging to a pool; ``default`` is used only when no endpoint
+# is configured for it (NiceHash has none: its stratum host must be set).
+POOL_CATALOG: dict[str, dict] = {
+    "braiins": {"domains": ("braiins.com",), "default": "stratum.braiins.com:3333"},
+    "viabtc": {"domains": ("viabtc.io", "viabtc.com"), "default": "btc.viabtc.io:3333"},
+    "nicehash": {"domains": ("nicehash.com",), "default": None, "extranonce_subscribe": True},
+    "ckpool": {"domains": ("ckpool.org",), "default": "solo.ckpool.org:3333"},
+}
 
 
-def _enabled_pool_endpoint(args):
-    """The single pool this deployment addresses — one pool, all solvers.
+def _catalog_pool(host: str) -> str | None:
+    host = host.lower().rstrip(".")
+    for name, entry in POOL_CATALOG.items():
+        if any(host == d or host.endswith("." + d) for d in entry["domains"]):
+            return name
+    return None
 
-    Pools are never split: prefer the enabled pool whose worker matches the
-    authorized stratum user, else the first enabled pool in runtime_config.
-    """
-    try:
-        import runtime_config
 
-        enabled = [p for p in runtime_config.load()["pools"] if p.get("enabled")]
-        match = [p for p in enabled if p.get("worker") == args.user] or enabled
-        if match:
-            endpoint = match[0]["endpoint"]
-            host = endpoint.rsplit(":", 1)[0]
-            label = host.split(".")[-2] if "." in host else "pool"
-            return parse_endpoint(endpoint, label, tls=args.tls)
-    except Exception:
-        logging.getLogger(__name__).debug("runtime_config read failed", exc_info=True)
-    return parse_endpoint(
-        os.getenv("MLA1517_BRAIINS_ENDPOINT", "stratum.braiins.com:3333"),
-        "braiins",
-        tls=args.tls,
+def _endpoint(name: str, address: str, user: str, password: str, tls: bool) -> PoolEndpoint:
+    parsed = parse_endpoint(address, name, tls=tls)
+    pool = _catalog_pool(parsed.host)
+    if pool is None and os.getenv("PYTHIA_ALLOW_UNLISTED_POOLS", "") != "1":
+        raise SystemExit(
+            f"{address!r} is not one of the configured mining pools "
+            f"({', '.join(POOL_CATALOG)}); set PYTHIA_ALLOW_UNLISTED_POOLS=1 to override"
+        )
+    return PoolEndpoint(
+        parsed.host,
+        parsed.port,
+        pool or name,
+        parsed.tls,
+        username=user,
+        password=password,
+        extranonce_subscribe=bool(POOL_CATALOG.get(pool or "", {}).get("extranonce_subscribe")),
     )
+
+
+def pool_endpoints(args, config: dict | None = None) -> list[PoolEndpoint]:
+    """Primary first, then failover, each with its own worker credentials.
+
+    The operator config (``runtime_config`` pools, written by the control
+    API) wins: the enabled pool is primary and the other configured pools
+    follow in order. Without it, ``PYTHIA_POOLS`` (default
+    ``braiins,viabtc``) names the pools, each configured by
+    ``MLA1517_<POOL>_ENDPOINT`` / ``_USER`` / ``_PASSWORD``; the user and
+    password fall back to ``--user`` / ``--password``.
+    """
+    if config is None:
+        try:
+            import runtime_config
+
+            config = runtime_config.load()
+        except Exception:
+            LOG.debug("runtime_config unavailable", exc_info=True)
+            config = {}
+    configured = [p for p in config.get("pools", []) if isinstance(p, dict)]
+    if configured:
+        ordered = sorted(configured, key=lambda p: not p.get("enabled"))
+        return [
+            _endpoint(
+                f"pool{index}",
+                p["endpoint"],
+                p["worker"],
+                p.get("password") or args.password,
+                args.tls,
+            )
+            for index, p in enumerate(ordered)
+        ]
+    names = [n.strip().lower() for n in os.getenv("PYTHIA_POOLS", "braiins,viabtc").split(",")]
+    profile = os.getenv("PYTHIA_POOL_PROFILE", "").strip().lower()
+    if profile in names:
+        names.remove(profile)
+        names.insert(0, profile)
+    endpoints = []
+    for name in filter(None, names):
+        if name not in POOL_CATALOG:
+            raise SystemExit(f"unknown pool {name!r}; choose from {', '.join(POOL_CATALOG)}")
+        prefix = f"MLA1517_{name.upper()}"
+        address = os.getenv(f"{prefix}_ENDPOINT") or POOL_CATALOG[name]["default"]
+        if not address:
+            raise SystemExit(f"{prefix}_ENDPOINT is required for {name}")
+        user = os.getenv(f"{prefix}_USER") or args.user
+        if not user:
+            raise SystemExit(f"{prefix}_USER or --user is required for {name}")
+        password = os.getenv(f"{prefix}_PASSWORD") or args.password
+        endpoints.append(_endpoint(name, address, user, password, args.tls))
+    if not endpoints:
+        raise SystemExit("no mining pool configured")
+    return endpoints
 
 
 def _execution_hasher(backend: str):
@@ -75,25 +145,10 @@ def _execution_hasher(backend: str):
 async def _main_async(args) -> None:
     if not args.device:
         raise SystemExit("--device or MLA1517_MMIO_DEVICE is required")
-    if not args.user:
-        raise SystemExit("--user or MLA1517_STRATUM_USER is required")
-    # Sovereign default: Braiins primary, ViaBTC as the immediate failover.
-    # PYTHIA_POOL_PROFILE=viabtc swaps the failover order only.
-    braiins = parse_endpoint(
-        os.getenv("MLA1517_BRAIINS_ENDPOINT", "stratum.braiins.com:3333"),
-        "braiins",
-        tls=args.tls,
-    )
-    viabtc = parse_endpoint(
-        os.getenv("MLA1517_VIABTC_ENDPOINT", "btc.viabtc.io:3333"),
-        "viabtc",
-        tls=args.tls,
-    )
-    profile = os.getenv("PYTHIA_POOL_PROFILE", "").strip().lower()
-    endpoints = [viabtc, braiins] if profile == "viabtc" else [braiins, viabtc]
+    endpoints = pool_endpoints(args)
+    # Pool-only mining needs no local node: the pool's own jobs are the chain
+    # evidence. A configured bitcoind (PYTHIA_BITCOIN_RPC_URL) still wins.
     observer = BitcoinChainObserver.from_environment()
-    if args.submit and observer is None:
-        raise SystemExit("PYTHIA_BITCOIN_RPC_URL is required for the external-block gate")
     session = MiningSession(
         os.getenv("PYTHIA_MINING_SESSION_PATH", "data/mining_session.json"),
         cooldown_seconds=float(os.getenv("PYTHIA_MINING_COOLDOWN_SECONDS", "1")),
@@ -119,7 +174,7 @@ async def _main_async(args) -> None:
 
             coordinator = IntelligentPoolCoordinator(
                 endpoints,
-                username=args.user,
+                username=args.user or endpoints[0].username,
                 password=args.password,
                 submit_enabled=args.submit,
                 mining_session=session,
@@ -128,6 +183,9 @@ async def _main_async(args) -> None:
                 execution_hasher=_execution_hasher(os.getenv("PYTHIA_EXECUTION_BACKEND", "auto")),
                 causal_log_path=os.getenv("PYTHIA_CAUSAL_LOG_PATH", "data/causal_ledger.jsonl"),
             )
+            if coordinator.chain_observer is None:
+                coordinator.chain_observer = PoolChainObserver(lambda: coordinator.client)
+                LOG.info("chain evidence: pool Stratum jobs (no bitcoind configured)")
             coordinator.set_evidence_sink(publish_mining_evidence)
             coordinator.set_agentic_state_path(
                 os.getenv("PYTHIA_AGENTIC_STATE_PATH", "data/agentic_policy.json")

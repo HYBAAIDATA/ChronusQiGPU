@@ -23,7 +23,7 @@ import logging
 import os
 import struct
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
@@ -53,6 +53,14 @@ class PoolEndpoint:
     port: int
     name: str
     tls: bool = False
+    # Per-pool credentials: pools use different worker formats (account.worker
+    # vs BTC address), so failover must authorize and submit with the
+    # credentials of the pool actually connected. None falls back to the
+    # coordinator-wide username/password.
+    username: str | None = None
+    password: str | None = field(default=None, repr=False)
+    # Pools such as NiceHash deliver extranonce changes only to subscribers.
+    extranonce_subscribe: bool = False
 
 
 @dataclass(frozen=True)
@@ -321,6 +329,13 @@ class StratumClient:
             raise StratumAuthorizationError("mining.authorize was rejected")
         self.runtime_state.authorization_confirmed()
         self._publish_status()
+        if self.endpoint.extranonce_subscribe:
+            try:
+                await self.request("mining.extranonce.subscribe", [], timeout=5.0)
+            except (StratumProtocolError, TimeoutError) as exc:
+                # Optional extension: without it the pool reconnects us on an
+                # extranonce change instead of pushing mining.set_extranonce.
+                LOG.warning("%s declined mining.extranonce.subscribe: %s", self.endpoint.name, exc)
         LOG.info("Pool: %s connected", self.endpoint.name)
         LOG.info("Subscription: extranonce1=%s", self.proof_adapter.subscription.extranonce1)
         LOG.info("Authorized: true")
@@ -428,9 +443,15 @@ class StratumClient:
             self.runtime_state.extranonce_updated(subscription)
             self._publish_status()
         elif method == "client.reconnect":
-            LOG.warning("pool requested reconnect: %s", params)
+            # Honour the request by ending this session; the hardware loop
+            # reconnects to the CONFIGURED endpoint. A host/port redirect is
+            # logged but never followed, so a pool cannot divert the miner.
+            LOG.warning("%s requested reconnect: %s", self.endpoint.name, params)
+            raise ConnectionError("pool requested client.reconnect")
 
-    async def request(self, method: str, params: list[Any]) -> Any:
+    async def request(
+        self, method: str, params: list[Any], *, timeout: float | None = None
+    ) -> Any:
         if not self.writer:
             raise ConnectionError("Stratum session is not connected")
         if self._reader_task is not None and self._reader_task.done():
@@ -449,13 +470,12 @@ class StratumClient:
         )
         self.writer.write(payload)
         await self.writer.drain()
+        limit = self.request_timeout if timeout is None else timeout
         try:
-            return await asyncio.wait_for(future, timeout=self.request_timeout)
+            return await asyncio.wait_for(future, timeout=limit)
         except asyncio.TimeoutError as exc:
             self._pending.pop(request_id, None)
-            raise TimeoutError(
-                f"Stratum request {method!r} timed out after {self.request_timeout:.1f}s"
-            ) from exc
+            raise TimeoutError(f"Stratum request {method!r} timed out after {limit:.1f}s") from exc
 
     async def submit(self, params: list[Any]) -> Any:
         if len(params) < 2:
@@ -567,8 +587,8 @@ class ManifoldPoolCoordinator:
             endpoint = self.endpoints[index]
             client = StratumClient(
                 endpoint,
-                username=self.username,
-                password=self.password,
+                username=endpoint.username or self.username,
+                password=endpoint.password or self.password,
                 status_sink=self.stratum_status_sink,
             )
             try:
@@ -611,7 +631,7 @@ class ManifoldPoolCoordinator:
         if not self.submit_enabled:
             LOG.info("submit disabled; proof was checked but no network write occurred")
             return False
-        result = await self.client.submit([self.username, *proof.submission_params])
+        result = await self.client.submit([self.client.username, *proof.submission_params])
         if type(result) is not bool:
             raise StratumProtocolError("mining.submit must return a boolean result")
         accepted = result is True
@@ -637,7 +657,7 @@ class ManifoldPoolCoordinator:
         try:
             params = format_mla1517_submission_params(
                 record.state,
-                worker_name=self.username,
+                worker_name=self.client.username,
                 job=job,
             )
         except StratumTranslationError as exc:

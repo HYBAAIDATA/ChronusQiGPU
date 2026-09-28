@@ -25,18 +25,39 @@ EASY_TARGET = "ff" * 32  # every nonce meets it: a share on the first hash
 HARD_TARGET = "00" * 31 + "01"  # no nonce in any test window meets it
 
 
-def _job(job_id: str, *, clean: bool = True, prevhash: str | None = None) -> list:
+def _job(
+    job_id: str,
+    *,
+    clean: bool = True,
+    prevhash: str | None = None,
+    coinb1: str = "01000000",
+    nbits: str = "1d00ffff",
+) -> list:
     return [
         job_id,
         prevhash or secrets.token_hex(32),
-        "01000000",
+        coinb1,
         "ffffffff",
         [],
         "20000000",
-        "1d00ffff",
+        nbits,
         "65abcdef",
         clean,
     ]
+
+
+def bip34_coinb1(height: int) -> str:
+    """Legacy coinbase prefix up to the extranonce, carrying a BIP34 height."""
+    push = height.to_bytes(3, "little")
+    script_prefix = bytes([len(push)]) + push
+    return (
+        "02000000"
+        + "01"
+        + "00" * 32
+        + "ffffffff"
+        + f"{len(script_prefix) + 8:02x}"
+        + script_prefix.hex()
+    )
 
 
 def _line(payload: dict) -> bytes:
@@ -46,11 +67,14 @@ def _line(payload: dict) -> bytes:
 class FakePool:
     """Scripted Stratum V1 pool; responses are literal and never inferred."""
 
-    def __init__(self, *, target: str, job: list) -> None:
+    def __init__(self, *, target: str, job: list, worker: str | None = None) -> None:
         self.target = target
         self.job = job
+        self.worker = worker  # when set, only this worker is authorized
         self.submit_policy = "accept"  # accept | reject | drop
+        self.answer_extranonce_subscribe = True
         self.submits: list[list] = []
+        self.methods: list[str] = []
         self.connections = 0
         self._writer: asyncio.StreamWriter | None = None
 
@@ -69,7 +93,12 @@ class FakePool:
                 )
             )
             authorize = json.loads(await reader.readline())
-            writer.write(_line({"id": authorize["id"], "result": True, "error": None}))
+            self.methods.append("mining.authorize:" + str(authorize["params"][0]))
+            allowed = self.worker is None or authorize["params"][0] == self.worker
+            writer.write(_line({"id": authorize["id"], "result": allowed, "error": None}))
+            if not allowed:
+                await writer.drain()
+                return
             writer.write(
                 _line({"id": None, "method": "mining.set_target", "params": [self.target]})
             )
@@ -77,6 +106,12 @@ class FakePool:
             await writer.drain()
             while line := await reader.readline():
                 message = json.loads(line)
+                self.methods.append(str(message.get("method")))
+                if message.get("method") == "mining.extranonce.subscribe":
+                    if self.answer_extranonce_subscribe:
+                        writer.write(_line({"id": message["id"], "result": True, "error": None}))
+                        await writer.drain()
+                    continue
                 if message.get("method") != "mining.submit":
                     continue
                 self.submits.append(message["params"])
