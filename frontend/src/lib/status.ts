@@ -122,6 +122,7 @@ export type MlaStatus = {
   solvers?: SolverManifold;
   runtime?: RuntimeConfig;
   device?: { available?: boolean; count?: number; devices?: DeviceInfo[] };
+  gpu?: GpuSection;
   workers?: Record<string, WorkerPublic>;
   stratum?: { connected?: boolean; status?: string };
   measurement?: string;
