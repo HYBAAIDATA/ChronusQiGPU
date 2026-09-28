@@ -34,8 +34,9 @@ export type GpuSection = {
   available?: boolean;
   count?: number;
   devices?: DeviceInfo[];
-  running_backend?: string;
-  running_device?: string;
+  backend_active?: boolean;
+  detected_backend?: string;
+  detected_device?: string;
   hasher?: { backend?: string; device?: string; fallback_reason?: string | null };
   punch?: { use_opencl?: boolean; backend?: string; gpu_error?: string | null };
   vendors?: {

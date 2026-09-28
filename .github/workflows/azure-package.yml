@@ -23,7 +23,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker run -d --name pythia-ci -p 127.0.0.1:3000:3000 pythia-control:ci
+          docker run -d --name pythia-ci \
+            -e MLA1517_STRATUM_USER=ci.001 \
+            -e MLA1517_STRATUM_PASSWORD=x \
+            -e MLA1517_BRAIINS_ENDPOINT=stratum.braiins.com:3333 \
+            -p 127.0.0.1:3000:3000 pythia-control:ci
           trap 'docker logs pythia-ci; docker rm -f pythia-ci' EXIT
           for attempt in $(seq 1 30); do
             if curl --fail --silent http://127.0.0.1:3000/healthz > /tmp/health.json; then break; fi
@@ -32,7 +36,7 @@ jobs:
           curl --fail --silent http://127.0.0.1:3000/healthz
           curl --fail --silent http://127.0.0.1:3000/ > /tmp/index.html
           test -s /tmp/index.html
-          curl --fail --silent http://127.0.0.1:3000/api/v1/ready-to-mine > /tmp/ready.json
+          curl --silent --show-error http://127.0.0.1:3000/api/v1/ready-to-mine > /tmp/ready.json
           python - <<'PY'
           import json
           ready = json.load(open('/tmp/ready.json'))

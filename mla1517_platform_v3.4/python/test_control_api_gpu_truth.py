@@ -32,6 +32,9 @@ class GPUTruthTests(unittest.TestCase):
         self.assertFalse(payload["available"])
         self.assertEqual(payload["count"], 0)
         self.assertEqual(payload["opencl_device_count"], 1)
+        self.assertFalse(payload["backend_active"])
+        self.assertEqual(payload["detected_backend"], "opencl:cpu")
+        self.assertNotIn("running_backend", payload)
 
     def test_gpu_count_excludes_other_opencl_devices(self):
         report = {

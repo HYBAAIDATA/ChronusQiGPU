@@ -18,6 +18,9 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results"
+sys.path.insert(0, str(ROOT / "python"))
+
+from mla1517.behavior import load_behavior
 
 
 def _run(command: list[str]) -> dict[str, Any]:
@@ -69,7 +72,7 @@ def _contract_check() -> dict[str, Any]:
 
 
 def _policy_check() -> dict[str, Any]:
-    behavior = json.loads((ROOT / "behavior.json").read_text())
+    behavior = load_behavior()
     source = (ROOT / "python/manifold_pool_coordinator.py").read_text()
     checks = {
         "unlimited_claim_disabled": behavior.get("unlimited_speed_or_capacity_claim") is False,

@@ -32,6 +32,9 @@ class ReleaseGateStatusTests(unittest.TestCase):
     def test_unknown_status_fails_closed(self):
         self.assertEqual(_release_status({"hardware": {"status": "UNAVAILABLE"}}), "FAIL")
 
+    def test_policy_check_uses_canonical_behavior_defaults(self):
+        self.assertEqual(MODULE._policy_check()["status"], "PASS")
+
 
 if __name__ == "__main__":
     unittest.main()
