@@ -55,6 +55,7 @@ class CodebaseIssueType(Enum):
     PREDETERMINED_VARIABLE = "predetermined_variable"
     NUMERICAL_IMPRECISION = "numerical_imprecision"
     SYNTAX_OR_AST_DEFECT = "syntax_or_ast_defect"
+    BROKEN_IMPORT = "broken_import"
 
 
 @dataclass
@@ -143,13 +144,19 @@ class CodebaseAuditReport:
     scan_timestamp: float = field(default_factory=time.time)
 
     def summary(self) -> Dict[str, Any]:
+        broken = sum(
+            d.issue_type == CodebaseIssueType.BROKEN_IMPORT for d in self.diagnostics
+        )
         return {
             "scanned_files": self.scanned_files,
             "total_diagnostics": self.total_diagnostics,
             "mean_phi_resonance": round(self.mean_phi_resonance, 4),
             "drift_violations": self.drift_violations,
+            "broken_imports": broken,
             "substrate_health_index": round(self.substrate_health_index, 4),
-            "healthy": self.substrate_health_index >= 0.60 and self.drift_violations == 0,
+            "healthy": (
+                self.substrate_health_index >= 0.60 and self.drift_violations == 0 and not broken
+            ),
         }
 
     def to_dict(self) -> Dict[str, Any]:
@@ -418,8 +425,40 @@ class SalamanderCodebaseScanner:
         )
 
     def scan_codebase(self) -> CodebaseAuditReport:
-        """Scan all Python files across the repository."""
-        return self.scan_directory(subdirs=None, extensions=(".py",))
+        """Scan all Python files across the repository, imports included."""
+        report = self.scan_directory(subdirs=None, extensions=(".py",))
+        broken = self.audit_imports()
+        report.diagnostics.extend(broken)
+        report.total_diagnostics += len(broken)
+        return report
+
+    def audit_imports(self) -> List[CodebaseDiagnostic]:
+        """Every local import must resolve, and no import failure may be hidden.
+
+        A swallowed ImportError is how a wire breaks with no failing test:
+        Salamander's own skills were unreachable that way. The remedy is
+        never an automatic re-point: the module an import used to name can
+        do different work now (the Turing core's kernel probes about sqrt(N)
+        nonces), so each fix is a reviewed change with tests.
+        """
+        from scripts.import_audit import Auditor, live_files
+
+        return [
+            CodebaseDiagnostic(
+                file_path=f.file,
+                line_number=f.line,
+                issue_type=CodebaseIssueType.BROKEN_IMPORT,
+                snippet=f.module if f.name is None else f"{f.module}.{f.name}",
+                description=f.render(),
+                remedy=(
+                    "Import it from where it lives now, or remove the dead path; "
+                    "check what the new target actually does before wiring it."
+                ),
+                severity="CRITICAL",
+                pattern_name=f.code,
+            )
+            for f in Auditor(self.repo_root).audit(live_files(self.repo_root))
+        ]
 
 
 class SalamanderAgenticOptimizer:

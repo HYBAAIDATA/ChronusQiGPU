@@ -23,26 +23,15 @@ import hashlib
 import time
 import pytest
 
-try:
-    from Intelligence.agentic_mining import (
-        AgenticMiningWorkflow,
-    )
-    from toe.intelligences.causal import CausalIntelligence
-    from toe.intelligences.geometric import GeometricIntelligence
-    from toe.intelligences.plastic import PlasticIntelligence
-    from toe.intelligences.counterfactual import CounterfactualIntelligence
-    from toe.intelligences.quantum import QuantumIntelligence
-    from toe.system import TOESystem
-except ImportError:
-    from agentic_mining import (
-        AgenticMiningWorkflow,
-    )
-    from toe.intelligences.causal import CausalIntelligence
-    from toe.intelligences.geometric import GeometricIntelligence
-    from toe.intelligences.plastic import PlasticIntelligence
-    from toe.intelligences.counterfactual import CounterfactualIntelligence
-    from toe.intelligences.quantum import QuantumIntelligence
-    from toe.system import TOESystem
+from Intelligence.agentic_mining import (
+    AgenticMiningWorkflow,
+)
+from toe.intelligences.causal import CausalIntelligence
+from toe.intelligences.geometric import GeometricIntelligence
+from toe.intelligences.plastic import PlasticIntelligence
+from toe.intelligences.counterfactual import CounterfactualIntelligence
+from toe.intelligences.quantum import QuantumIntelligence
+from toe.system import TOESystem
 
 
 # =============================================================================

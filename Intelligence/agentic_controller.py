@@ -354,14 +354,6 @@ class AgenticController:
         self.max_threads = max_threads
         self.state = ControllerState()
         self._next_job_id = 0
-        # The quantum accelerator (iGPU / Turing core via quantum_cuda).
-        self._sim = None
-        try:
-            from core_engine import quantum_cuda
-
-            self._sim = quantum_cuda.create_simulator(0)
-        except Exception:  # pragma: no cover
-            pass
 
     # -- 1. Entropy assessment & landscape classification ----------------
 
@@ -539,7 +531,6 @@ class AgenticController:
                 else SolverType.GROVER_AMPLIFICATION
             )
         start, end = face.nonce_range
-        num_nonces = end - start
         qubits = face.assessed.qubit_allocation if face.assessed else 1
         threads = face.assessed.thread_allocation if face.assessed else 1
         job = SearchJob(
@@ -561,20 +552,11 @@ class AgenticController:
             SolverType.QUANTUM_ANNEALING,
             SolverType.HYBRID_ENSEMBLE,
         ):
-            # Quantum solvers: dispatch to the iGPU / Turing core.
-            if self._sim is not None:
-                winner = self._sim.submit_kernel(
-                    "",
-                    solver.value,
-                    min(num_nonces, 10000),
-                    header + b"\x00" * max(0, 80 - len(header)),
-                    target,
-                    -1,
-                )
-                hashes = min(num_nonces, 10000)
-            else:
-                # Fallback: classical scan.
-                winner, hashes = self._classical_scan(header, target, start, end)
+            # The quantum-labelled solvers choose search order; the work
+            # itself is the exact scan of [start, end). (The Turing core's
+            # kernel probes about sqrt(N) nonces from offset 0 whatever the
+            # window, so it must not stand in for this job's window.)
+            winner, hashes = self._classical_scan(header, target, start, end)
         elif solver in (SolverType.PARTICLE_SWARM, SolverType.SIMULATED_ANNEALING):
             # Classical solvers: swarm / SA.
             winner, hashes = self._classical_scan(header, target, start, end, threads=threads)
@@ -698,7 +680,7 @@ class AgenticController:
                 ),
                 "nonce_space": self._verified_search.total_nonce_space,
             },
-            "quantum_sim_available": self._sim is not None,
+            "quantum_sim_available": False,  # every solver runs the exact window scan
         }
 
 

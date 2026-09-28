@@ -40,23 +40,10 @@ import numpy as np
 
 import turing_core
 
-try:
-    # Canonical home of the substrate (aethel package).
-    from aethel.hardened_unified_substrate import (
-        CassiniVerifier,
-        apply_zeckendorf_compression,
-    )
-except ImportError:  # pragma: no cover - alternate layouts
-    try:
-        from .hardened_unified_substrate import (
-            CassiniVerifier,
-            apply_zeckendorf_compression,
-        )
-    except ImportError:  # pragma: no cover - top-level script use
-        from hardened_unified_substrate import (
-            CassiniVerifier,
-            apply_zeckendorf_compression,
-        )
+from aethel.hardened_unified_substrate import (  # the substrate's canonical home
+    CassiniVerifier,
+    apply_zeckendorf_compression,
+)
 
 
 DIM = 11

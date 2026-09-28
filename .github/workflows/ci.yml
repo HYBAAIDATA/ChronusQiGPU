@@ -41,6 +41,8 @@ jobs:
       - run: pip install -e ".[ml,dev]"
       - name: Lint (flake8)
         run: python -m flake8 --count
+      - name: Import audit (every local import resolves; none hidden)
+        run: python scripts/import_audit.py
       - name: Unit tests (pytest)
         run: python -m pytest tests/ -x -q
       - name: Byte-compile all Python sources

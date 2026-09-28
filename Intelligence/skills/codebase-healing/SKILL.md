@@ -22,18 +22,24 @@ algebraic repairs across the repository.
    - Evaluate $\phi$-structural resonance using `pythagoras.phi_resonance.PhiResonanceCalculator`.
    - Calculate the unified Substrate Health Index (SHI).
 
-2. **Formulate First-Principles Repairs**:
+2. **Audit Imports** (`SalamanderCodebaseScanner.audit_imports()`, `scripts/import_audit.py`):
+   - Every local import must resolve, down to the imported name.
+   - An import inside `try/except` that swallows the failure hides a broken wire from
+     every test; each finding is CRITICAL.
+   - Never re-point an import automatically: check what the new target actually does.
+
+3. **Formulate First-Principles Repairs**:
    - Call `SalamanderAgenticOptimizer.propose_repair(diagnostic)`.
    - Ensure every repair cites exact Hilbert space axioms ($U \in \mathcal{U}(\mathcal{H})$),
      exact group characters $F_N$ over $\mathbb{C}$, or $l_1$-norm density matrix coherence.
 
-3. **Execute Zero-Trust Healing**:
+4. **Execute Zero-Trust Healing**:
    - Call `SalamanderAgenticOptimizer.apply_repair_sandboxed()`.
    - Create atomic `.bak` snapshots.
    - Validate AST syntax and execute the isolated verification test suite.
    - Trigger immediate atomic rollback on any regression or test failure.
 
-4. **Verify Homeostasis**:
+5. **Verify Homeostasis**:
    - Re-evaluate Substrate Health Index: ensure $\text{SHI} \ge 0.85$ and 0 drift violations.
 
 ## Tools
