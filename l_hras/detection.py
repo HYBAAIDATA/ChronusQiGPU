@@ -156,14 +156,10 @@ def measure_lateral(adv: Adversary) -> float:
 def measure_escalation(adv: Adversary) -> float:
     """Weighted composite of persistence, lateral movement and severity —
     measured, so it can be driven either way by evidence."""
-    severity = max(
-        (float(e.observation.get("severity", 0.0)) for e in adv.events), default=0.0
-    )
+    severity = max((float(e.observation.get("severity", 0.0)) for e in adv.events), default=0.0)
     return min(
         1.0,
-        0.4 * measure_persistence(adv)
-        + 0.3 * measure_lateral(adv)
-        + 0.3 * min(1.0, severity),
+        0.4 * measure_persistence(adv) + 0.3 * measure_lateral(adv) + 0.3 * min(1.0, severity),
     )
 
 

@@ -215,11 +215,7 @@ def stand(lhras: LHRAS) -> Result[StandingState]:
     from .types import canonical_json
 
     lhras._config_integrity_sig = lhras.cfg.trust_root.sign(
-        {
-            "config_integrity": canonical_json(
-                selfdefense.config_integrity_payload(lhras.cfg)
-            )
-        }
+        {"config_integrity": canonical_json(selfdefense.config_integrity_payload(lhras.cfg))}
     )
 
     topologies_ok = topologies.verify_seven_topologies_clean(lhras)
@@ -267,12 +263,12 @@ def _seed_baselines(lhras: LHRAS) -> dict[str, Any]:
     from .types import Distribution
 
     baselines = {}
-    for adv in set(lhras.cfg.critical_lines) | set(lhras.cfg.rank_bounds) | {
-        e.value for e in AdversaryClass
-    }:
-        baselines[adv] = Distribution(
-            mean=1.0, stddev=0.0, samples=1, p50=1.0, p95=1.0, p99=1.0
-        )
+    for adv in (
+        set(lhras.cfg.critical_lines)
+        | set(lhras.cfg.rank_bounds)
+        | {e.value for e in AdversaryClass}
+    ):
+        baselines[adv] = Distribution(mean=1.0, stddev=0.0, samples=1, p50=1.0, p95=1.0, p99=1.0)
     return baselines
 
 
@@ -430,9 +426,7 @@ def _respond(lhras: LHRAS, request: Request) -> Result[Response]:
         return certificate
 
     # ─── Attestation + Aethel ────────────────────────────────────
-    cert_attest = lhras.attester.attest(
-        "certificate", certificate.value.to_dict()
-    )
+    cert_attest = lhras.attester.attest("certificate", certificate.value.to_dict())
     attest = attest_compose(
         links=[
             mult.value.attestation,
@@ -461,8 +455,7 @@ def _respond(lhras: LHRAS, request: Request) -> Result[Response]:
     # Each topology's Err already returned above; a value without an
     # ``ok`` flag (the Hodge class list) counts as verified standing.
     topologies_ok = all(
-        getattr(r.value, "ok", True)
-        for r in (poincare_r, pnp_r, ym_r, rh_r, bsd_r, hodge_r, ns_r)
+        getattr(r.value, "ok", True) for r in (poincare_r, pnp_r, ym_r, rh_r, bsd_r, hodge_r, ns_r)
     )
     intel_ok = ent.value.verified
     anomaly_ok = anomaly.value.classification != AnomalyClass.COMPROMISED
@@ -482,7 +475,11 @@ def _respond(lhras: LHRAS, request: Request) -> Result[Response]:
             attestation=attest.value,
             defense=defn.value,
             exposure=expo.value[0] if expo.value else None,
-            reason=("standing" if verdict else _verdict_reason(anomaly.value, modes_ok, topologies_ok, intel_ok)),
+            reason=(
+                "standing"
+                if verdict
+                else _verdict_reason(anomaly.value, modes_ok, topologies_ok, intel_ok)
+            ),
             prediction=prediction.value,
             paths=paths.value,
             anomaly=anomaly.value,

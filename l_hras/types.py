@@ -189,9 +189,7 @@ class PolicyBundle:
     def signing_payload(self) -> dict[str, Any]:
         return {
             "version": self.version,
-            "rules": [
-                {k: v for k, v in vars(r).items() if v is not None} for r in self.rules
-            ],
+            "rules": [{k: v for k, v in vars(r).items() if v is not None} for r in self.rules],
             "throttle_modes": dict(self.throttle_modes),
             "compliance_mappings": dict(self.compliance_mappings),
             "default_allow": self.default_allow,
@@ -201,9 +199,7 @@ class PolicyBundle:
         if not self.signature:
             self.signatures_verified = False
             return False
-        self.signatures_verified = trust_root.verify(
-            self.signature, self.signing_payload()
-        )
+        self.signatures_verified = trust_root.verify(self.signature, self.signing_payload())
         return self.signatures_verified
 
     def compliance_mappings_valid(self) -> bool:
@@ -213,11 +209,7 @@ class PolicyBundle:
         )
 
     def subset(self, tenant_id: str) -> "PolicyBundle":
-        scoped = [
-            r
-            for r in self.rules
-            if r.scope is None or r.scope in (tenant_id, "global")
-        ]
+        scoped = [r for r in self.rules if r.scope is None or r.scope in (tenant_id, "global")]
         return PolicyBundle(
             version=f"{self.version}/{tenant_id}",
             rules=scoped,
@@ -269,15 +261,11 @@ class SSOConfig:
         if len(parts) != 2:
             return False
         subject, sig = parts
-        expected = hmac.new(
-            self.secret, subject.encode("utf-8"), hashlib.sha256
-        ).hexdigest()
+        expected = hmac.new(self.secret, subject.encode("utf-8"), hashlib.sha256).hexdigest()
         return hmac.compare_digest(sig, expected)
 
     def issue(self, subject: str) -> str:
-        sig = hmac.new(
-            self.secret, subject.encode("utf-8"), hashlib.sha256
-        ).hexdigest()
+        sig = hmac.new(self.secret, subject.encode("utf-8"), hashlib.sha256).hexdigest()
         return f"{subject}.{sig}"
 
 

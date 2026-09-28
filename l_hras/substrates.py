@@ -79,7 +79,6 @@ from toe.poincare_golden_11d import (  # noqa: E402
 )
 from toe.poincare_yangmills import finite_gauge_gap  # noqa: E402
 
-
 # ---------------------------------------------------------------------------
 # Exact tensor (CONSUME:kellogg.exact_tensor)
 # ---------------------------------------------------------------------------
@@ -109,14 +108,10 @@ def exact_tensor_product(vectors: Sequence[ExactStateVector]) -> ExactStateVecto
 
 def bell_state() -> ExactStateVector:
     """|00>+|11> over sqrt(2), built exactly in F4."""
-    return ExactStateVector(
-        2, (_HALF_SQRT2, _F4_ZERO, _F4_ZERO, _HALF_SQRT2)
-    )
+    return ExactStateVector(2, (_HALF_SQRT2, _F4_ZERO, _F4_ZERO, _HALF_SQRT2))
 
 
-def _f4_partial_trace(
-    state: ExactStateVector, keep: int
-) -> list[list[F4]]:
+def _f4_partial_trace(state: ExactStateVector, keep: int) -> list[list[F4]]:
     """Reduced 2x2 density matrix of a two-qubit exact state.
 
     ``keep=0`` returns Tr_B(rho); ``keep=1`` returns Tr_A(rho).
@@ -197,6 +192,7 @@ def f4_to_float(value: F4) -> float:
 
 def density_matrix(rows: Sequence[Sequence[Any]]) -> ComplexMatrix:
     """Lift a real/F4 density matrix onto the ComplexMatrix substrate."""
+
     def _f(v: Any) -> float:
         return v.real.to_float() if isinstance(v, F4) else float(v)
 
@@ -234,22 +230,14 @@ def dephase(rows: Sequence[Sequence[float]], keep: float = 0.0) -> list[list[flo
     """Kill off-diagonals (decoherence). ``keep`` in [0,1] scales what
     coherence survives — 0 is full dephasing."""
     n = len(rows)
-    return [
-        [rows[i][j] if i == j else rows[i][j] * keep for j in range(n)]
-        for i in range(n)
-    ]
+    return [[rows[i][j] if i == j else rows[i][j] * keep for j in range(n)] for i in range(n)]
 
 
-def mix_with_identity(
-    rows: Sequence[Sequence[float]], epsilon: float
-) -> list[list[float]]:
+def mix_with_identity(rows: Sequence[Sequence[float]], epsilon: float) -> list[list[float]]:
     """rho -> (1-eps) rho + eps I/d — the depolarizing channel."""
     n = len(rows)
     return [
-        [
-            (1.0 - epsilon) * rows[i][j] + (epsilon / n if i == j else 0.0)
-            for j in range(n)
-        ]
+        [(1.0 - epsilon) * rows[i][j] + (epsilon / n if i == j else 0.0) for j in range(n)]
         for i in range(n)
     ]
 
@@ -259,11 +247,7 @@ def state_distance(a: Sequence[Sequence[float]], b: Sequence[Sequence[float]]) -
     declared divergence measure for belief states."""
     n = len(a)
     return math.sqrt(
-        sum(
-            (float(a[i][j]) - float(b[i][j])) ** 2
-            for i in range(n)
-            for j in range(len(a[i]))
-        )
+        sum((float(a[i][j]) - float(b[i][j])) ** 2 for i in range(n) for j in range(len(a[i])))
     )
 
 
@@ -299,17 +283,13 @@ def boundary() -> dict[str, Any]:
     return {"shape": "torus", "period": 1.0, "unit": "poincare_ball"}
 
 
-def lyapunov_at(
-    point: Sequence[float], steps: int = 64, K: float = 0.971635
-) -> float:
+def lyapunov_at(point: Sequence[float], steps: int = 64, K: float = 0.971635) -> float:
     """Measured standard-map Lyapunov exponent at a torus point.
 
     The returned value is ``1 + max(0, raw)`` — the gauge multiplier of
     the Yang–Mills evaluator. It is measured, never asserted.
     """
-    raw = maximal_lyapunov(
-        float(K), float(point[0]) % 1.0, float(point[1]) % 1.0, int(steps)
-    )
+    raw = maximal_lyapunov(float(K), float(point[0]) % 1.0, float(point[1]) % 1.0, int(steps))
     return 1.0 + max(0.0, raw)
 
 
@@ -461,7 +441,9 @@ def causal_counterfactual(
     return counterfactual_query(scm, state, node, value, observed, observables)
 
 
-def build_causal_scm(nodes: Sequence[str], edges: Sequence[tuple[str, str, float]]) -> StructuralCausalModel:
+def build_causal_scm(
+    nodes: Sequence[str], edges: Sequence[tuple[str, str, float]]
+) -> StructuralCausalModel:
     graph = CausalGraph()
     for parent, child, weight in edges:
         graph.add_edge(parent, child, float(weight))
@@ -532,9 +514,7 @@ def unfold_11d_vector(y: Sequence[float]) -> np.ndarray:
 
 
 def zeckendorf_cert_token(x: Sequence[float], context_id: str = ""):
-    return compute_zeckendorf_certificate(
-        np.asarray(list(x)[:11], dtype=np.float64), context_id
-    )
+    return compute_zeckendorf_certificate(np.asarray(list(x)[:11], dtype=np.float64), context_id)
 
 
 def zeckendorf_mask(component: int) -> int:
@@ -608,7 +588,9 @@ def open_aethel(path: Optional[str]) -> AethelStore:
     return AethelStore(path)
 
 
-def aethel_put(store: AethelStore, index_hint: int, block: bytes, cassini: tuple[int, int, int, int]) -> Any:
+def aethel_put(
+    store: AethelStore, index_hint: int, block: bytes, cassini: tuple[int, int, int, int]
+) -> Any:
     """Place a block at the next Fibonacci index and verify its Cassini
     quadruple against the ledger — tampering raises via ``space.verify``."""
     addr = store.put(block, advance=max(1, index_hint - int(store.space._cursor)))

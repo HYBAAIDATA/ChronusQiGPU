@@ -34,7 +34,9 @@ def fold_11d(x: Sequence[float], tol: float = 1e-14) -> Result[np.ndarray]:
         folded, _reflections = substrates.fold_11d_vector(x)
     except Exception as exc:
         return error(FOLD_NOT_EXACT, reason=str(exc))
-    norm_sq = float(np.dot(np.asarray(folded, dtype=np.float64), np.asarray(folded, dtype=np.float64)))
+    norm_sq = float(
+        np.dot(np.asarray(folded, dtype=np.float64), np.asarray(folded, dtype=np.float64))
+    )
     if not math.isfinite(norm_sq):
         return error(FOLD_NOT_EXACT, reason="non-finite folded norm")
     return Ok(np.asarray(folded, dtype=np.float64))
@@ -55,9 +57,7 @@ def check_fold_roundtrip(x: Sequence[float], tol: float = 1e-14) -> Result[bool]
     recovered = unfold_11d(folded.value)
     if recovered.is_err:
         return recovered
-    residual = float(
-        np.linalg.norm(np.asarray(x, dtype=np.float64) - recovered.value)
-    )
+    residual = float(np.linalg.norm(np.asarray(x, dtype=np.float64) - recovered.value))
     return Ok(residual <= tol)
 
 

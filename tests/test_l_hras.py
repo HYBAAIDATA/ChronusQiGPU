@@ -359,7 +359,7 @@ def test_multiply_f4_tensor(lhras):
     assert m.is_ok
     for v in m.value.vectors:
         assert v.num_qubits == 2 * lhras.cfg.state_dim
-    assert m.value.cardinality == 2 ** 6
+    assert m.value.cardinality == 2**6
 
 
 def test_entangle_continuous(lhras):
@@ -432,7 +432,10 @@ def test_willow_kl_positive():
         before = modes._default_belief()
         bent = modes.apply_info_op(before.state, InfoOp(kind=kind, target="a"))
         assert bent is not None
-        assert modes.willow_measure(before, modes.willow(before, InfoOp(kind=kind, target="a")).value) > 0
+        assert (
+            modes.willow_measure(before, modes.willow(before, InfoOp(kind=kind, target="a")).value)
+            > 0
+        )
 
 
 def test_attacker_cannot_shift(lhras):
@@ -522,17 +525,13 @@ def test_hodge_decomposition(lhras):
 
 def test_hodge_unknown_flagged(lhras):
     # 11 components on a 6-class declared basis → __unknown__ fails closed.
-    r = topologies.evaluate_hodge(
-        make_request(attack_vector=[1.0] * 11), lhras.cfg
-    )
+    r = topologies.evaluate_hodge(make_request(attack_vector=[1.0] * 11), lhras.cfg)
     assert r.is_err and r.error.code == HODGE_UNKNOWN_CLASS
 
 
 def test_ns_blowup_escalates(lhras):
     cfg = make_cfg(viscosity=0.5)  # flow instability exceeds the declared bound
-    r = topologies.evaluate_navier_stokes(
-        make_request(attack_vector=[9.0] * 6), cfg
-    )
+    r = topologies.evaluate_navier_stokes(make_request(attack_vector=[9.0] * 6), cfg)
     assert r.is_err and r.error.code == NS_BLOW_UP
 
 
@@ -760,9 +759,7 @@ def test_attestation_signed_by_root(lhras):
 
 
 def test_chain_root_matches(lhras):
-    links = [
-        lhras.attester.attest("e%d" % i, {"i": i}) for i in range(4)
-    ]
+    links = [lhras.attester.attest("e%d" % i, {"i": i}) for i in range(4)]
     comp = attestation.attest_compose(links, lhras.attester, policy="unanimous", k=4)
     assert comp.is_ok
     assert attestation.merkle_verify(comp.value.chain, comp.value.root, lhras.attester)
@@ -989,9 +986,7 @@ def test_full_workflow(lhras):
 
 
 def test_workflow_with_attack(lhras):
-    req = make_adversary_request(
-        adversary_id="apt-killer", telemetry=[0.01]  # below critical line
-    )
+    req = make_adversary_request(adversary_id="apt-killer", telemetry=[0.01])  # below critical line
     r = respond(lhras, req)
     assert r.is_err
 
@@ -1000,9 +995,7 @@ def test_workflow_with_honeypot(lhras):
     resp = respond(lhras, make_adversary_request(adversary_id="apt-hp"))
     assert resp.is_ok
     assert len(resp.value.defense.paths) > 0
-    pots = modes.place_honey_pots(
-        lhras.joint, resp.value.defense.paths, lhras.attester
-    )
+    pots = modes.place_honey_pots(lhras.joint, resp.value.defense.paths, lhras.attester)
     assert pots.is_ok and len(pots.value) > 0
 
 
@@ -1037,10 +1030,7 @@ def test_workflow_refuses_outside_trust_boundary(lhras):
 
 
 def test_refusal_rate_measured(lhras):
-    attempts = [
-        make_adversary_request(telemetry=[0.01], adversary_id="r%d" % i)
-        for i in range(5)
-    ]
+    attempts = [make_adversary_request(telemetry=[0.01], adversary_id="r%d" % i) for i in range(5)]
     refusals = sum(1 for r in map(lambda req: respond(lhras, req), attempts) if r.is_err)
     rate = refusals / len(attempts)
     assert rate == 1.0  # measured: every adversarial attempt refused
@@ -1065,8 +1055,7 @@ def test_exposure_completeness_measured(lhras):
     resp = respond(lhras, make_adversary_request(adversary_id="apt-bench1"))
     eligible = [p for p in resp.value.defense.paths if p.next_action_distribution]
     exposures = [
-        p for p in resp.value.defense.paths
-        if p.adversary == resp.value.exposure.adversary
+        p for p in resp.value.defense.paths if p.adversary == resp.value.exposure.adversary
     ]
     assert resp.value.exposure is not None
     assert len(exposures) >= 1

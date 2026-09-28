@@ -26,7 +26,11 @@ def aethel_write(
 
     cert_payload = cert.to_dict() if hasattr(cert, "to_dict") else cert
     payload = {
-        "cert_digest": cert_payload.get("digest") if isinstance(cert_payload, dict) else digest_of(cert_payload),
+        "cert_digest": (
+            cert_payload.get("digest")
+            if isinstance(cert_payload, dict)
+            else digest_of(cert_payload)
+        ),
         "masks": cert_payload.get("masks") if isinstance(cert_payload, dict) else None,
         "lucas": cert_payload.get("lucas") if isinstance(cert_payload, dict) else None,
         "attestation": attest.to_dict(),

@@ -58,11 +58,7 @@ def init_intelligence_subspace(name: str, cfg: Any) -> Any:
 def build_full_entanglement_graph(projections: dict[str, Any]) -> dict[tuple[str, str], bool]:
     """Complete graph K6 over the intelligence projections."""
     names = list(projections.keys())
-    return {
-        (a, b): True
-        for i, a in enumerate(names)
-        for b in names[i + 1 :]
-    }
+    return {(a, b): True for i, a in enumerate(names) for b in names[i + 1 :]}
 
 
 def entangle_all_six_in_f4(cfg: Any, attester: Any = None) -> Result[JointState]:
@@ -205,9 +201,7 @@ def causal_intervention(graph: Any, do_var: tuple[str, float]) -> Result[Any]:
         node, value = do_var
         state = substrates.quantum_state_from_observation({}, graph.dim)
         observables = substrates.default_observables(graph.graph.nodes, graph.dim)
-        post, diagnostics = substrates.causal_intervention(
-            state, node, value, observables, graph
-        )
+        post, diagnostics = substrates.causal_intervention(state, node, value, observables, graph)
         return Ok({"post_state": post, "diagnostics": diagnostics})
     except Exception as exc:
         return error(CAUSAL_INTERVENTION_FAILED, reason=str(exc))
@@ -261,11 +255,14 @@ def _extend(path: CounterfactualPath, step: str) -> CounterfactualPath:
 
 def _score(path: CounterfactualPath, obs: dict[str, float]) -> float:
     """Measured likelihood: observation energy times a gentle depth decay."""
-    energy = sum(
-        abs(float(v))
-        for k, v in obs.items()
-        if isinstance(v, (int, float)) and k not in ("adversary_id",)
-    ) or 0.5
+    energy = (
+        sum(
+            abs(float(v))
+            for k, v in obs.items()
+            if isinstance(v, (int, float)) and k not in ("adversary_id",)
+        )
+        or 0.5
+    )
     decay = 0.85 ** len(path.steps)
     base = min(1.0, energy) * decay
     bias = {"block": 1.0, "redirect": 0.9, "entangle": 0.8, "monitor": 0.7}

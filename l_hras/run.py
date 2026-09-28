@@ -49,9 +49,7 @@ def _self_test(lhras) -> dict:
 
     forged = Request(
         kind=RequestKind.ADVERSARIAL,
-        attestation=RequestAttestation(
-            token="0" * 64, payload_digest=benign.payload_digest()
-        ),
+        attestation=RequestAttestation(token="0" * 64, payload_digest=benign.payload_digest()),
         adversary_class=AdversaryClass.APT,
         adversary_id="forged-1",
     )
@@ -73,9 +71,17 @@ def _self_test(lhras) -> dict:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="l_hras.run", description="L-HRAS — The Guardian")
     parser.add_argument("--config", required=True, help="path to config.toml")
-    parser.add_argument("--self-test", action="store_true", help="fire a signed benign + a forged request after standing")
+    parser.add_argument(
+        "--self-test",
+        action="store_true",
+        help="fire a signed benign + a forged request after standing",
+    )
     parser.add_argument("--claims", action="store_true", help="print the claims register and exit")
-    parser.add_argument("--write-manifest", action="store_true", help="regenerate the code-integrity manifest and exit")
+    parser.add_argument(
+        "--write-manifest",
+        action="store_true",
+        help="regenerate the code-integrity manifest and exit",
+    )
     args = parser.parse_args(argv)
 
     if args.write_manifest:

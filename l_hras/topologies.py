@@ -75,9 +75,7 @@ def evaluate_pnp(event: Any, cfg: Any) -> Result[EffortRatio]:
         return error(PNP_RATIO_VIOLATED, reason="adversary_cost_zero")
     ratio = Fraction(v, a)
     if ratio > cfg.pnp_ratio:
-        return error(
-            PNP_RATIO_VIOLATED, ratio=str(ratio), declared=str(cfg.pnp_ratio)
-        )
+        return error(PNP_RATIO_VIOLATED, ratio=str(ratio), declared=str(cfg.pnp_ratio))
     return Ok(
         EffortRatio(
             verification_cost=int(v),
@@ -112,16 +110,12 @@ def evaluate_yang_mills(event: Any, cfg: Any) -> Result[GaugeField]:
         return error(YM_FIELD_BROKEN, reason=str(exc))
     cost = lyap * cfg.mass_gap * d
     if cost < cfg.mass_gap * d:
-        return error(
-            YM_FIELD_BROKEN, cost=cost, mass_gap=cfg.mass_gap, distance=d
-        )
+        return error(YM_FIELD_BROKEN, cost=cost, mass_gap=cfg.mass_gap, distance=d)
     return Ok(
         GaugeField(
             mass_gap=cfg.mass_gap,
             boundary=substrates.boundary(),
-            field_action=lambda adv, p, t: substrates.lyapunov_at(
-                substrates.to_point(p)
-            )
+            field_action=lambda adv, p, t: substrates.lyapunov_at(substrates.to_point(p))
             * substrates.distance(p, t),
             ok=True,
         )
@@ -143,9 +137,7 @@ def evaluate_riemann(event: Any, cfg: Any) -> Result[SignalDistribution]:
     except Exception as exc:
         return error(RIEMANN_BELOW_CRITICAL_LINE, reason=str(exc))
     if dist.mean <= line:
-        return error(
-            RIEMANN_BELOW_CRITICAL_LINE, mean=dist.mean, critical_line=line
-        )
+        return error(RIEMANN_BELOW_CRITICAL_LINE, mean=dist.mean, critical_line=line)
     return Ok(
         SignalDistribution(
             adversary_class=event.adversary_class,

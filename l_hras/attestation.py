@@ -73,9 +73,7 @@ class Attester:
         return self._bind(event, payload)
 
     def verify(self, attestation: Attestation) -> bool:
-        expected = digest_of(
-            {"event": attestation.event, "payload": attestation.payload}
-        )
+        expected = digest_of({"event": attestation.event, "payload": attestation.payload})
         if expected != attestation.digest:
             return False
         return self.root.verify(attestation.signature, {"attestation": attestation.digest})
@@ -138,9 +136,7 @@ def attest_compose(
     )
     return Ok(
         CompositeAttestation(
-            chain=[
-                a if a is not None else _null_link() for a in links
-            ],
+            chain=[a if a is not None else _null_link() for a in links],
             root=root,
             policy=policy,
             k=k,
@@ -149,9 +145,7 @@ def attest_compose(
 
 
 def _null_link() -> Attestation:
-    return Attestation(
-        id="null", event="absent", payload=None, digest="0" * 64, signature=""
-    )
+    return Attestation(id="null", event="absent", payload=None, digest="0" * 64, signature="")
 
 
 def merkle_verify(chain: Sequence[Attestation], root: Attestation, attester: Attester) -> bool:

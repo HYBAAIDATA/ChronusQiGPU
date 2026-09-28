@@ -63,7 +63,9 @@ def _event_state_projection(event: Any, name: str, num_qubits: int) -> Any:
     return substrates.exact_basis(num_qubits, index)
 
 
-def multiply(joint: Any, event: Any, digest: str, cfg: Any, attester: Any) -> Result[Multiplication]:
+def multiply(
+    joint: Any, event: Any, digest: str, cfg: Any, attester: Any
+) -> Result[Multiplication]:
     vectors = []
     for intel in joint.projection:
         joint_vec = joint.projection[intel]
@@ -100,7 +102,9 @@ def multiply(joint: Any, event: Any, digest: str, cfg: Any, attester: Any) -> Re
 # ---------------------------------------------------------------------------
 
 
-def entangle(joint: Any, event: Any, attester: Any, cfg: Any = None) -> Result[EntangledIntelligence]:
+def entangle(
+    joint: Any, event: Any, attester: Any, cfg: Any = None
+) -> Result[EntangledIntelligence]:
     if getattr(joint, "entangled_cache", None) is not None:
         return Ok(joint.entangled_cache)
     graph = joint.entanglement
@@ -146,9 +150,7 @@ class Guardian:
 
     def respond(self, event: Any) -> WorkerResponse:
         if self.compromised:
-            return WorkerResponse(
-                guardian_id=self.id, ok=False, vote="ignore", digest=""
-            )
+            return WorkerResponse(guardian_id=self.id, ok=False, vote="ignore", digest="")
         vote = "block" if event.kind.value == "adversarial" else "monitor"
         return WorkerResponse(
             guardian_id=self.id,
@@ -159,7 +161,9 @@ class Guardian:
 
 
 class Swarm:
-    def __init__(self, workers: list[Guardian], topology: dict, threshold: Fraction, attestation: Attestation):
+    def __init__(
+        self, workers: list[Guardian], topology: dict, threshold: Fraction, attestation: Attestation
+    ):
         self.id = _new_id("swarm")
         self.workers = workers
         self.topology = topology
@@ -167,9 +171,7 @@ class Swarm:
         self.attestation = attestation
 
     def subset(self, tenant_id: str) -> "Swarm":
-        return Swarm(
-            list(self.workers), dict(self.topology), self.threshold, self.attestation
-        )
+        return Swarm(list(self.workers), dict(self.topology), self.threshold, self.attestation)
 
 
 def spawn_guardian(cfg: Any, idx: int, aethel: Any, attester: Any) -> Result[Guardian]:
@@ -185,9 +187,7 @@ def build_swarm_topology(guardians: Sequence[Guardian]) -> dict[int, list[int]]:
 
 
 def attest_swarm(guardians: Sequence[Guardian], attester: Any) -> Attestation:
-    return attester.self_attest(
-        {"event": "swarm_born", "guardians": [g.id for g in guardians]}
-    )
+    return attester.self_attest({"event": "swarm_born", "guardians": [g.id for g in guardians]})
 
 
 def spawn_swarm(guardians: list[Guardian], threshold: Fraction, attester: Any) -> Result[Swarm]:
@@ -216,22 +216,20 @@ def aggregate_votes(responses: Sequence[WorkerResponse]) -> dict[str, Any]:
     }
 
 
-def consensus(swarm: Swarm, responses: Sequence[WorkerResponse], threshold: Fraction) -> Result[Decision]:
+def consensus(
+    swarm: Swarm, responses: Sequence[WorkerResponse], threshold: Fraction
+) -> Result[Decision]:
     votes = aggregate_votes(responses)
     if votes["top_fraction"] < threshold:
         return error(CONSENSUS_FAILED, votes=str(votes["top_fraction"]))
-    return Ok(
-        Decision(choice=votes["top_choice"], votes=votes, threshold=threshold)
-    )
+    return Ok(Decision(choice=votes["top_choice"], votes=votes, threshold=threshold))
 
 
 def swarm_defend(swarm: Swarm, event: Any, attester: Any) -> Result[Defense]:
     responses = [w.respond(event) for w in swarm.workers]
     ok_count = sum(1 for r in responses if r.ok)
     if Fraction(ok_count, len(responses)) < swarm.threshold:
-        return error(
-            SWARM_QUORUM_FAILED, ok_count=ok_count, total=len(responses)
-        )
+        return error(SWARM_QUORUM_FAILED, ok_count=ok_count, total=len(responses))
     decision = consensus(swarm, responses, swarm.threshold)
     if decision.is_err:
         return decision
@@ -375,9 +373,7 @@ def willow_measure(before: AdversaryBelief, after: AdversaryBelief) -> float:
     return substrates.state_distance(before.state, after.state)
 
 
-def willow_expose(
-    joint: Any, defense: Defense, attester: Any
-) -> Result[list[Exposure]]:
+def willow_expose(joint: Any, defense: Defense, attester: Any) -> Result[list[Exposure]]:
     if not defense.paths:
         return Ok([])
     exposures: list[Exposure] = []
@@ -413,9 +409,7 @@ def willow_expose(
                 before=before,
                 after=after.value,
                 kl=kld,
-                attestation=_attest(
-                    attester, "willow", {"path": path.steps, "kl": kld}
-                ),
+                attestation=_attest(attester, "willow", {"path": path.steps, "kl": kld}),
             )
         )
     return Ok(exposures)

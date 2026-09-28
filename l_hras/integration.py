@@ -85,7 +85,9 @@ def siem_emit(siem: Optional[SIEM], event: Any, reason: str, instance_id: str = 
         return
     siem.send(
         {
-            "event": event.canonical_payload() if hasattr(event, "canonical_payload") else str(event),
+            "event": (
+                event.canonical_payload() if hasattr(event, "canonical_payload") else str(event)
+            ),
             "reason": reason,
             "instance": instance_id,
         }

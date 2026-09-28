@@ -19,9 +19,7 @@ _PACKAGE_DIR = Path(__file__).resolve().parent
 
 def _package_files() -> list[Path]:
     return sorted(
-        p
-        for p in _PACKAGE_DIR.glob("*.py")
-        if p.is_file() and p.name != "__init__.py"
+        p for p in _PACKAGE_DIR.glob("*.py") if p.is_file() and p.name != "__init__.py"
     ) + [_PACKAGE_DIR / "__init__.py"]
 
 
@@ -123,9 +121,7 @@ class WitnessSession:
             "standing": l.standing,
             "swarm_id": l.swarm.id,
             "workers": len(l.swarm.workers),
-            "topologies": (
-                dict(l.standing_state.topologies) if l.standing_state else {}
-            ),
+            "topologies": (dict(l.standing_state.topologies) if l.standing_state else {}),
             "events": getattr(l, "event_count", 0),
             "refusals": getattr(l, "refusal_count", 0),
         }

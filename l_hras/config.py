@@ -132,9 +132,7 @@ def validate_config(cfg: Config) -> Result[Config]:
     for name in REQUIRED:
         if getattr(cfg, name) is None:
             return error(CONFIG_INCOMPLETE, field=name)
-        if name in ("critical_lines", "rank_bounds", "hodge_basis") and not getattr(
-            cfg, name
-        ):
+        if name in ("critical_lines", "rank_bounds", "hodge_basis") and not getattr(cfg, name):
             return error(CONFIG_INCOMPLETE, field=name)
 
     if cfg.swarm_size < 3:
@@ -150,9 +148,7 @@ def validate_config(cfg: Config) -> Result[Config]:
     if cfg.purity_threshold > 1:
         return error(PURITY_THRESHOLD_INVALID, purity_threshold=cfg.purity_threshold)
     if cfg.entropy_threshold < 0:
-        return error(
-            ENTROPY_THRESHOLD_INVALID, entropy_threshold=cfg.entropy_threshold
-        )
+        return error(ENTROPY_THRESHOLD_INVALID, entropy_threshold=cfg.entropy_threshold)
 
     # TP1 — every threshold has declared provenance.
     for name in PROVENANCED_SCALARS:
@@ -161,15 +157,11 @@ def validate_config(cfg: Config) -> Result[Config]:
     for adv in cfg.critical_lines:
         adv_prov = cfg.provenance.get("critical_lines") or {}
         if adv_prov.get(adv) is None:
-            return error(
-                THRESHOLD_PROVENANCE_MISSING, threshold="critical_lines", adversary=adv
-            )
+            return error(THRESHOLD_PROVENANCE_MISSING, threshold="critical_lines", adversary=adv)
     for adv in cfg.rank_bounds:
         adv_prov = cfg.provenance.get("rank_bounds") or {}
         if adv_prov.get(adv) is None:
-            return error(
-                THRESHOLD_PROVENANCE_MISSING, threshold="rank_bounds", adversary=adv
-            )
+            return error(THRESHOLD_PROVENANCE_MISSING, threshold="rank_bounds", adversary=adv)
 
     return Ok(cfg)
 
@@ -221,9 +213,7 @@ def _policy_bundle(raw: dict[str, Any] | None) -> Optional[PolicyBundle]:
         version=str(raw.get("version", "")),
         rules=rules,
         throttle_modes=dict(raw.get("throttle_modes", {})),
-        compliance_mappings={
-            k: list(v) for k, v in raw.get("compliance_mappings", {}).items()
-        },
+        compliance_mappings={k: list(v) for k, v in raw.get("compliance_mappings", {}).items()},
         signature=raw.get("signature"),
         default_allow=bool(raw.get("default_allow", True)),
     )
@@ -285,19 +275,14 @@ def config_from_dict(raw: dict[str, Any]) -> Config:
         threat_model=_threat_model(raw.get("threat_model")),
         trust_root=trust_root,
         policy_bundle=bundle,
-        mass_gap=(
-            None if raw.get("mass_gap") is None else float(raw["mass_gap"])
-        ),
-        critical_lines={
-            str(k): float(v) for k, v in (raw.get("critical_lines") or {}).items()
-        },
+        mass_gap=(None if raw.get("mass_gap") is None else float(raw["mass_gap"])),
+        critical_lines={str(k): float(v) for k, v in (raw.get("critical_lines") or {}).items()},
         rank_bounds={str(k): int(v) for k, v in (raw.get("rank_bounds") or {}).items()},
         hodge_basis=[str(x) for x in raw.get("hodge_basis", [])],
         viscosity=(None if raw.get("viscosity") is None else float(raw["viscosity"])),
         pnp_ratio=_fraction(raw.get("pnp_ratio")),
         swarm_size=int(swarm.get("swarm_size", raw.get("swarm_size", 3))),
-        swarm_threshold=_fraction(swarm.get("swarm_threshold", "2/3"))
-        or Fraction(2, 3),
+        swarm_threshold=_fraction(swarm.get("swarm_threshold", "2/3")) or Fraction(2, 3),
         max_counterfactuals=int(
             swarm.get("max_counterfactuals", raw.get("max_counterfactuals", 10_000))
         ),
@@ -315,9 +300,7 @@ def config_from_dict(raw: dict[str, Any]) -> Config:
         soar_endpoint=raw.get("soar_endpoint") or None,
         ti_feeds=[str(u) for u in raw.get("ti_feeds", [])],
         sso_provider=sso_provider,
-        compliance_mappings={
-            k: list(v) for k, v in (raw.get("compliance_mappings") or {}).items()
-        },
+        compliance_mappings={k: list(v) for k, v in (raw.get("compliance_mappings") or {}).items()},
         escalation_contacts=contacts,
         break_glass_policy=break_glass,
         key_custody_policy=dict(raw.get("key_custody_policy", {})),

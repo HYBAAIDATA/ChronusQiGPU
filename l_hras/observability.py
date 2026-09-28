@@ -128,9 +128,7 @@ class HealthMonitor:
         return self.lhras.policy is not None
 
     def _trust_root_valid(self) -> bool:
-        return self.lhras.cfg.trust_root is not None and bool(
-            self.lhras.cfg.trust_root.secret
-        )
+        return self.lhras.cfg.trust_root is not None and bool(self.lhras.cfg.trust_root.secret)
 
     def run_checks(self) -> dict[str, bool]:
         results = {}
