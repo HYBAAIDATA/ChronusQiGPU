@@ -73,6 +73,12 @@ async def _voyage(hasher) -> None:
         assert full["kernel_launch_count"] >= 1 and hasher.launches > launches_before
         assert full["kernel_ms"] > 0
         assert full["device_name"] == hasher.device
+        # Device-sized Lucas windows: the GPU is fed, not idled by tiny launches.
+        assert plan.window >= 1_000_000
+        assert plan.evidence_refs["window_basis"] == "device_launch_lucas"
+        rate = full["attempts"] / (full["kernel_ms"] / 1000.0)
+        assert rate > 5_000_000, f"device rate {rate / 1e6:.1f} MH/s"
+        print(f"UHD kernel rate {rate / 1e6:.1f} MH/s over {plan.window} nonces")
 
         await pool.push("mining.set_target", [EASY_TARGET])
         await until(lambda: coord.client.proof_adapter.target == int(EASY_TARGET, 16))

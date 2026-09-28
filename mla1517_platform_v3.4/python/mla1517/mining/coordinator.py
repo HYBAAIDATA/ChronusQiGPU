@@ -418,6 +418,11 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             "last_execution": self.last_execution,
             "tuning": asdict(decision) if decision is not None else None,
             "recovery": self.recovery.snapshot(),
+            "chain_evidence": (
+                getattr(self.chain_observer, "source", "bitcoind")
+                if self.chain_observer is not None
+                else None
+            ),
             "execution_backend": {
                 "backend": getattr(hasher, "backend", None),
                 "device": getattr(hasher, "device", None),
@@ -729,10 +734,28 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             built += 1
         return built
 
-    def _next_window(self) -> int:
+    def _window_cap(self) -> int:
+        """Largest window the executing route should take in one plan.
+
+        The CPU reference keeps its Lucas-rung budget. A bound OpenCL device
+        takes the largest Lucas number that fits its measured launch cap:
+        tiny launches leave the GPU idle (0.17 MH/s at 96 nonces vs 26 MH/s
+        at 1M+ on a UHD 620), and pool difficulties need the throughput.
+        """
         from lucas.core import lucas
 
-        cap = lucas(self.session.rung)
+        if self._execution_route() == "opencl_m32":
+            launch = int(getattr(self.execution_hasher, "m32_launch", 0) or 0)
+            if launch >= LANES:
+                k, best = 0, LANES
+                while lucas(k) <= launch:
+                    best = max(best, lucas(k))
+                    k += 1
+                return best
+        return lucas(self.session.rung)
+
+    def _next_window(self) -> int:
+        cap = self._window_cap()
         window = max(LANES, min(self._tuned_window or cap, cap))
         # Whole 32-lane epochs: the executed interval then equals the lease.
         legacy = window - window % LANES
@@ -803,20 +826,32 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         """Router bound to this plan's M32 lane order for the CPU reference path."""
         order, rung = plan.lane_order, self.session.rung
 
+        from lucas.core import lucas
+
+        rung_budget = max(LANES, lucas(rung) - lucas(rung) % LANES)
+
         def cpu_sweep(header: bytes, target_le: bytes, start: int, count: int):
-            result = self.solver.scan_header(
-                header=header,
-                target=int.from_bytes(target_le, "little"),
-                budget=count,
-                lane_order=order,
-                scale_index=rung,
-                start_nonce=start,
-            )
-            if not result.valid:
-                return None, None, result.attempts
-            blob = header[:76] + struct.pack("<I", result.found_nonce)
-            digest = hashlib.sha256(hashlib.sha256(blob).digest()).digest()
-            return result.found_nonce, digest, result.attempts
+            # Whole-epoch sub-windows keep the M32 probe order of one long
+            # sweep while respecting the solver's Lucas-rung budget, so a
+            # device-sized plan that falls back to the CPU still executes.
+            attempts, done = 0, 0
+            while done < count:
+                take = min(rung_budget, count - done)
+                result = self.solver.scan_header(
+                    header=header,
+                    target=int.from_bytes(target_le, "little"),
+                    budget=take,
+                    lane_order=order,
+                    scale_index=rung,
+                    start_nonce=start + done,
+                )
+                attempts += result.attempts
+                if result.valid:
+                    blob = header[:76] + struct.pack("<I", result.found_nonce)
+                    digest = hashlib.sha256(hashlib.sha256(blob).digest()).digest()
+                    return result.found_nonce, digest, attempts
+                done += take
+            return None, None, attempts
 
         return ExecutionRouter(
             self.execution_hasher, cpu_sweep, nonce_order=lambda _plan: NONCE_ORDER_M32
@@ -883,6 +918,11 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 policy_id=decision.lead if decision is not None else "flat_exhaustive",
                 evidence_refs={
                     "lane_order_source": order_source,
+                    "window_basis": (
+                        "device_launch_lucas"
+                        if self._execution_route() == "opencl_m32"
+                        else "cpu_lucas_rung"
+                    ),
                     "lookahead": self.agentic.lookahead,
                     "tuning_action": tuning.action if tuning is not None else None,
                     "toe_face_bias": (
@@ -1121,8 +1161,6 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         outcome: PoolOutcome,
         coordinate: CausalCoordinate,
     ) -> None:
-        from lucas.core import lucas
-
         final = replace(
             record,
             pool_outcome=outcome,
@@ -1168,7 +1206,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         latency_ms = final.kernel_ms if final.kernel_ms > 0 else final.elapsed_seconds * 1000.0
         decision = self.tuning.evaluate(
             current_window=plan.window,
-            max_window=lucas(self.session.rung),
+            max_window=self._window_cap(),
             kernel_latency_ms=latency_ms,
             hashes_computed=final.hash_count,
             elapsed_seconds=final.elapsed_seconds,
