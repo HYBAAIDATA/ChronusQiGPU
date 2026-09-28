@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { evidenceAlert, evidenceRows, type MiningEvidence } from "@/lib/evidence";
+import {
+  evidenceAlert,
+  evidenceRows,
+  intelligenceRows,
+  lossBreakdown,
+  type MiningEvidence,
+} from "@/lib/evidence";
 
 function value(evidence: MiningEvidence, key: string) {
   return evidenceRows(evidence).find((item) => item.key === key);
@@ -54,5 +60,45 @@ describe("mining evidence", () => {
       }),
     ).toBe("ROUTE FALLBACK: OPENCL_UNAVAILABLE");
     expect(evidenceAlert({ ...HARDWARE, worker_live: false })).toMatch(/NOT LIVE/);
+  });
+
+  it("shows the operating intelligence with its reasons and measured inputs", () => {
+    const withIntel: MiningEvidence = {
+      ...HARDWARE,
+      intelligence: {
+        policy_mode: "model",
+        window_ceiling: 1_346_269,
+        world: {
+          invalidation_rate: { per_hour_mean: 6.2 },
+          routes: { opencl_m32: { overhead_ms: 0.812, hash_rate_hs: 26_000_000, method: "direct" } },
+        },
+        decision: { window: 1_346_240, lookahead: 2, source: "model", reason: "min expected loss 0.0010" },
+        loss: {
+          fractions: { useful_hashing: 0.9, window_overhead: 0.05, stale_hashing: 0, other: 0.05, recovery: null },
+          time_to_first_hash_ms: { p50: 12.34, p90: 20, samples: 9 },
+        },
+        memory: { backend: "aethel", ledger_verified: true, entries: 12 },
+      },
+    };
+    const rows = Object.fromEntries(intelligenceRows(withIntel).map((r) => [r.key, r]));
+    expect(rows.policy_window).toMatchObject({ value: 1_346_240, truth: "computed" });
+    expect(rows.overhead.value).toBe("0.812 ms (direct)");
+    expect(rows.hash_rate.value).toBe("26.00 MH/s");
+    expect(rows.first_hash.value).toBe("12.3 ms");
+    expect(rows.memory.value).toBe("verified · 12 entries");
+    const losses = lossBreakdown(withIntel);
+    expect(losses.map((l) => l.key)).toEqual(["useful_hashing", "window_overhead", "other"]);
+  });
+
+  it("reports an unlearned route as not reported, never zero", () => {
+    const early: MiningEvidence = {
+      ...HARDWARE,
+      intelligence: { decision: { window: 96, source: "legacy", reason: "insufficient evidence" }, world: { routes: {} } },
+    };
+    const rows = Object.fromEntries(intelligenceRows(early).map((r) => [r.key, r]));
+    expect(rows.overhead).toMatchObject({ value: null, truth: "unavailable" });
+    expect(rows.policy_window.truth).toBe("live");
+    expect(lossBreakdown(early)).toEqual([]);
+    expect(intelligenceRows({ evidence_available: false })).toEqual([]);
   });
 });

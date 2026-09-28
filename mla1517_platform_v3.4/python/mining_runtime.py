@@ -172,6 +172,8 @@ async def _main_async(args) -> None:
                     )
                 )
 
+            # Learned operating state persists in Aethel beside the causal log.
+            os.environ.setdefault("PYTHIA_INTELLIGENCE_DIR", "data/intelligence")
             coordinator = IntelligentPoolCoordinator(
                 endpoints,
                 username=args.user or endpoints[0].username,
