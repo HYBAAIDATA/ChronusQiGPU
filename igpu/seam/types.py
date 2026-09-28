@@ -8,7 +8,7 @@ import time
 import uuid
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, Generic, List, TypeVar, Union
+from typing import Any, Dict, Generic, TypeVar, Union
 
 T = TypeVar("T")
 

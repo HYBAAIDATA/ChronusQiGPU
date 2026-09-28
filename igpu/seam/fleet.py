@@ -147,7 +147,7 @@ def route(job: Dict[str, Any], fleet: Sequence[Capability]) -> Result[List[Devic
                     cost_estimate=winner.cost,
                     fallback=used_fallback,
                     job_id=str(job.get("job_id", "")),
-                    idempotency_key=f"{job.get('job_id','')}:{kernel.value}:{window.start}",
+                    idempotency_key=f"{job.get('job_id', '')}:{kernel.value}:{window.start}",
                 )
             )
             if used_fallback:

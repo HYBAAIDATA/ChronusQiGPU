@@ -17,7 +17,6 @@ from igpu.seam.probe import Capability
 from igpu.seam.types import (
     Err,
     KernelName,
-    Ok,
     Result,
     SeamError,
     ThresholdPolicy,
