@@ -1,12 +1,13 @@
-import sys
+import importlib.util
 import unittest
 from pathlib import Path
 
-PLATFORM_ROOT = Path(__file__).resolve().parents[1]
-if str(PLATFORM_ROOT) not in sys.path:
-    sys.path.insert(0, str(PLATFORM_ROOT))
-
-from scripts.release_gate import _release_status
+MODULE_PATH = Path(__file__).resolve().parents[1] / "scripts" / "release_gate.py"
+SPEC = importlib.util.spec_from_file_location("mla1517_release_gate", MODULE_PATH)
+assert SPEC is not None and SPEC.loader is not None
+MODULE = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(MODULE)
+_release_status = MODULE._release_status
 
 
 class ReleaseGateStatusTests(unittest.TestCase):
