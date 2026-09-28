@@ -31,6 +31,15 @@ pythia-mine = "mining_runtime:main"
 hardware = [
     "pyopencl>=2024.1",
 ]
+# Salamander's opt-in LLM repair stage (HYBA_SELF_REPAIR_LLM_ENABLED=true).
+llm = [
+    "anthropic>=0.45",
+]
+# Apple silicon accelerators (Intelligence/apple_features.py); macOS only.
+apple = [
+    "coremltools>=7.0; sys_platform == 'darwin'",
+    "metalcompute>=0.2; sys_platform == 'darwin'",
+]
 ml = [
     "nltk>=3.8",
     "scikit-learn>=1.3",
@@ -43,6 +52,8 @@ dev = [
     "hypothesis>=6.0,<7",
     "black>=24.0,<27",
     "flake8>=7.0,<8",
+    # self_repair measures coverage when pytest-cov is present.
+    "pytest-cov>=6.1",
 ]
 
 [build-system]

@@ -26,3 +26,21 @@ def test_toe_t4_is_the_recurrence():
     for n in (1, 2, 7, 10, 15):
         assert toe_t4_lucas_pisot(n)
         assert lucas(n + 1) == lucas(n) + lucas(n - 1)
+
+
+def test_large_windows_wind_without_overflow_and_stay_exact():
+    # frac(delta_15 * L_m) against 3000-digit arithmetic, where the old float
+    # product overflowed (m ~ 1475) and had lost its fraction (m ~ 70).
+    from decimal import Decimal, getcontext
+
+    from kellogg.scales import _drift_step
+
+    getcontext().prec = 3000
+    phi = (1 + Decimal(5).sqrt()) / 2
+    delta = phi**15 - lucas(15)
+    for m in (0, 21, 90, 1475, 4096):
+        exact = float((delta * lucas(m)) % 1)
+        error = abs(exact - _drift_step(m))
+        assert min(error, 1 - error) < 1e-9, m
+    s = scale_job("job-big", 4096)
+    assert len(s.t11) == DIM and all(0.0 <= x < 1.0 for x in s.t11)

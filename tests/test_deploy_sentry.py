@@ -209,3 +209,56 @@ def test_this_repository_has_no_deploy_path_errors():
     findings = sentry.scan(sentry.ROOT, ("DS01", "DS02", "DS03", "DS05", "DS06"))
     errors = [f.line() for f in findings if f.severity == "error"]
     assert errors == []
+
+
+def test_a_variable_the_container_shell_reads_is_not_dead_config(tmp_path):
+    root = _repo(tmp_path)
+    _write(
+        root,
+        "docker-compose.live.yml",
+        """
+        services:
+          app:
+            environment:
+              PYTHIA_POOL: both
+              PYTHIA_UNUSED: x
+            command: ["sh", "-c", "python3 main.py --pool $${PYTHIA_POOL}"]
+        """,
+    )
+    findings = _messages(sentry.check_dead_config(root), "DS01")
+    assert findings == [
+        ("warning", "docker-compose.live.yml", "sets PYTHIA_UNUSED, which no code reads")
+    ]
+
+
+def test_entry_points_must_exist(tmp_path):
+    root = _repo(tmp_path)
+    _write(root, "mining/__init__.py", "")
+    _write(root, "mining/live.py", "")
+    _write(root, "scripts/bench.py", "")
+    _write(
+        root,
+        "docker-compose.pools.yml",
+        """
+        services:
+          gone:
+            command: ["python3", "-m", "mining.production_miner", "--dry-run"]
+          here:
+            command: ["python3", "-m", "mining.live"]
+          tool:
+            command: ["python", "-m", "pip", "list"]
+        """,
+    )
+    _write(
+        root,
+        "deploy/azure/Dockerfile",
+        'FROM x\nENTRYPOINT ["python3", "scripts/benchmark.py"]\nCMD ["python3", "scripts/bench.py"]\n',
+    )
+    assert sorted(_messages(sentry.check_entry_points(root), "DS07")) == [
+        ("error", "deploy/azure/Dockerfile", "runs scripts/benchmark.py, which does not exist"),
+        (
+            "warning",
+            "docker-compose.pools.yml",
+            "runs python -m mining.production_miner, which does not exist",
+        ),
+    ]

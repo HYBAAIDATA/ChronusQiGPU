@@ -16,6 +16,9 @@ DS05 frontend-deps  a package.json dependency nothing references, or a
                     script binary that is not declared
 DS06 boot-config    a deploy manifest that never sets a variable the service
                     refuses to boot without
+DS07 entry-points   a compose file, Dockerfile or workflow that runs
+                    ``python -m MODULE`` or ``python FILE.py`` for a local
+                    module or file that does not exist
 
 Findings on the deploy path (``deploy/``, ``.env.example``, workflows,
 pyproject, the runtime import closure, the frontend) are errors and fail
@@ -261,6 +264,23 @@ def read_variables(root: Path) -> tuple[set[str], list[re.Pattern]]:
     return literals, patterns
 
 
+def shell_reads(path: Path) -> set[str]:
+    """Variables a deployment file's own container shell reads.
+
+    Compose escapes a container-side ``$VAR`` as ``$$VAR`` / ``$${VAR}``;
+    a Dockerfile's RUN/CMD/ENTRYPOINT shell reads ``$VAR`` / ``${VAR}``.
+    """
+    text = path.read_text(encoding="utf-8", errors="replace")
+    if path.name.startswith("Dockerfile"):
+        lines = [
+            line
+            for line in re.sub(r"\\\n", " ", text).splitlines()
+            if line.strip().upper().startswith(("RUN ", "CMD ", "ENTRYPOINT "))
+        ]
+        return set(re.findall(r"\$\{?([A-Z][A-Z0-9_]+)", "\n".join(lines)))
+    return set(re.findall(r"\$\$\{?([A-Z][A-Z0-9_]+)", text))
+
+
 def check_dead_config(root: Path) -> list[Finding]:
     configured = configured_variables(root)
     literals, patterns = read_variables(root)
@@ -268,6 +288,7 @@ def check_dead_config(root: Path) -> list[Finding]:
     for name, sources in sorted(configured.items()):
         if name in literals or any(p.match(name) for p in patterns):
             continue
+        sources = [rel for rel in sources if name not in shell_reads(root / rel)]
         for rel in sources:
             findings.append(
                 Finding(
@@ -744,6 +765,103 @@ def check_frontend_deps(root: Path) -> list[Finding]:
     return findings
 
 
+# ─────────────────────────────── DS07 entry points ─────────────────────────────── #
+
+_PY_RUN = re.compile(r"\bpython3?(?:\.\d+)?\s+(?:-u\s+)?(-m\s+([\w.]+)|([\w./-]+\.py)\b)")
+
+
+def _commands(path: Path) -> list[str]:
+    """The command strings a deployment file runs."""
+    text = path.read_text(encoding="utf-8", errors="replace")
+    if path.name.startswith("Dockerfile"):
+        out = []
+        for line in re.sub(r"\\\n", " ", text).splitlines():
+            head = line.strip().split(None, 1)
+            if head and head[0].upper() in ("RUN", "CMD", "ENTRYPOINT") and len(head) > 1:
+                body = head[1]
+                try:
+                    body = " ".join(json.loads(body)) if body.startswith("[") else body
+                except json.JSONDecodeError:
+                    pass
+                out.append(body)
+        return out
+    data = yaml.safe_load(text) or {}
+    out: list[str] = []
+
+    def walk(node):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key in ("command", "entrypoint", "run", "test"):
+                    out.append(" ".join(map(str, value)) if isinstance(value, list) else str(value))
+                else:
+                    walk(value)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item)
+
+    walk(data)
+    return out
+
+
+def _local_module(root: Path, dotted: str) -> tuple[bool, bool]:
+    """(is_local, exists) for ``dotted`` against the repository's source roots."""
+    top = dotted.split(".")[0]
+    local = exists = False
+    for base in (root, root / PLATFORM):
+        if (base / top).is_dir() or (base / f"{top}.py").is_file():
+            local = True
+            target = base.joinpath(*dotted.split("."))
+            if target.with_suffix(".py").is_file() or (target / "__init__.py").is_file():
+                exists = True
+            elif (target / "__main__.py").is_file():
+                exists = True
+    return local, exists
+
+
+def check_entry_points(root: Path) -> list[Finding]:
+    findings = []
+    for path in _walk(root):
+        rel = _rel(path, root)
+        is_deploy = path.name.startswith("Dockerfile") or (
+            path.suffix in {".yml", ".yaml"}
+            and ("compose" in path.name or rel.startswith(".github/workflows/"))
+        )
+        if not is_deploy:
+            continue
+        try:
+            commands = _commands(path)
+        except (OSError, UnicodeDecodeError, yaml.YAMLError):
+            continue
+        for command in commands:
+            for match in _PY_RUN.finditer(command):
+                module, script = match.group(2), match.group(3)
+                if module:
+                    local, exists = _local_module(root, module)
+                    if local and not exists:
+                        findings.append(
+                            Finding(
+                                "DS07",
+                                _severity(rel),
+                                rel,
+                                f"runs python -m {module}, which does not exist",
+                                f"point it at the module that replaced {module}, or remove it",
+                            )
+                        )
+                elif script and not script.startswith(("/", "$")):
+                    candidates = [root / script, root / PLATFORM / script]
+                    if "/" in script and not any(c.is_file() for c in candidates):
+                        findings.append(
+                            Finding(
+                                "DS07",
+                                _severity(rel),
+                                rel,
+                                f"runs {script}, which does not exist",
+                                f"point it at the script that replaced {script}, or remove it",
+                            )
+                        )
+    return findings
+
+
 # ───────────────────────────────────── main ───────────────────────────────────── #
 
 CHECKS = {
@@ -753,6 +871,7 @@ CHECKS = {
     "DS04": check_ci_triggers,
     "DS05": check_frontend_deps,
     "DS06": check_boot_requirements,
+    "DS07": check_entry_points,
 }
 
 
