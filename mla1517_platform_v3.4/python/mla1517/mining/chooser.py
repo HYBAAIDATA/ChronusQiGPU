@@ -15,8 +15,8 @@ from typing import TYPE_CHECKING, Deque, Iterable, Mapping
 
 from .hyba_bridge import measure_window
 from .lane import FLAT_STRUCTURE_PRIOR, M32_STRUCTURE_PRIOR, SearchPolicy, build_lane_descriptor
-from .hyba_bridge import measure_window
 from .structure import INV_PHI, phi_structure_strength
+from .toe_decision import TOEMiningDecisionFrame
 from .toe_signal import TOECausalSignal
 
 if TYPE_CHECKING:
@@ -47,6 +47,10 @@ class SearchDecision:
     # None when the window was absent or too short to score. Never 0.0 for
     # "not measured".
     structure_parameter: float | None = None
+    # Production TOE provenance.  These are advisory receipts, never proof.
+    toe_frame_digest: str | None = None
+    toe_expansion_receipt: str | None = None
+    toe_surfaces: tuple[str, ...] = ()
 
 
 def _phi_structure(values: list[int]) -> float | None:
@@ -82,6 +86,26 @@ class MiningIntelligenceChooser:
             return None
         return sum(outcomes) / len(outcomes)
 
+    @staticmethod
+    def _toe_binding_valid(
+        toe_signal: TOECausalSignal | None,
+        toe_frame: TOEMiningDecisionFrame | None,
+    ) -> bool:
+        if not isinstance(toe_signal, TOECausalSignal) or not toe_signal.is_valid():
+            return False
+        # Backwards-compatible unit use may supply only a signal.  The canonical
+        # coordinator always supplies the full frame; when it does, identity must
+        # match before TOE is allowed to steer the solver.
+        if toe_frame is None:
+            return True
+        return (
+            isinstance(toe_frame, TOEMiningDecisionFrame)
+            and toe_frame.is_valid()
+            and toe_signal.job_id == toe_frame.job_id
+            and toe_signal.node_id == toe_frame.node_id
+            and toe_signal.sequence == toe_frame.sequence
+        )
+
     def choose(
         self,
         *,
@@ -91,19 +115,22 @@ class MiningIntelligenceChooser:
         candidate_window: Iterable[int] | None = None,
         budget: int = 250_000,
         toe_signal: TOECausalSignal | None = None,
+        toe_frame: TOEMiningDecisionFrame | None = None,
         solver: M32SearchSolver | None = None,
     ) -> SearchDecision:
         if budget <= 0:
             raise ValueError("budget must be positive")
-        # Feed-forward wiring only: a valid TOE signal sets the solver's
-        # starting lane before the next dispatch. face_bias never changes
-        # which lead is selected, and an invalid signal falls through to the
-        # default behavior untouched.
-        if isinstance(toe_signal, TOECausalSignal) and toe_signal.is_valid() and solver is not None:
+        toe_bound = self._toe_binding_valid(toe_signal, toe_frame)
+        # Feed-forward wiring only: a valid TOE binding sets the solver's
+        # starting lane before the next dispatch. face_bias never changes the
+        # cryptographic predicate or candidate set; an invalid binding falls
+        # through to measured default behavior untouched.
+        if toe_bound and solver is not None and toe_signal is not None:
             solver.set_lane_start_offset(toe_signal.face_bias)
             LOG.debug(
-                "TOE face_bias=%d applied to solver start lane",
+                "TOE face_bias=%d applied to solver start lane frame=%s",
                 toe_signal.face_bias,
+                toe_frame.frame_digest if toe_frame is not None else "legacy-signal-only",
             )
         candidate_window = tuple(candidate_window) if candidate_window is not None else None
         self.last_hyba = measure_window(candidate_window)
@@ -154,6 +181,11 @@ class MiningIntelligenceChooser:
                         M32_STRUCTURE_PRIOR if lead == "m32_structured" else FLAT_STRUCTURE_PRIOR
                     ),
                 )
+        if toe_frame is not None and toe_frame.is_valid():
+            # Full TOE is wired into the decision receipt.  Causal explanation
+            # and ladder remain audit-only until their dedicated fidelity/effect
+            # recovery probes are promoted; they do not select a lead here.
+            reason += "|toe_frame_bound"
         if solver is not None:
             solver.set_candidate_ordering(policy.candidate_ordering)
         decision = SearchDecision(
@@ -164,6 +196,21 @@ class MiningIntelligenceChooser:
             throttle=error_count > 0 or lead == "safe" or self.throttle,
             observed_accept_rate=self._accept_rate(lead),
             structure_parameter=structure_parameter,
+            toe_frame_digest=(
+                toe_frame.frame_digest
+                if isinstance(toe_frame, TOEMiningDecisionFrame) and toe_frame.is_valid()
+                else None
+            ),
+            toe_expansion_receipt=(
+                toe_frame.expansion_receipt_digest
+                if isinstance(toe_frame, TOEMiningDecisionFrame) and toe_frame.is_valid()
+                else None
+            ),
+            toe_surfaces=(
+                toe_frame.steering_surfaces + toe_frame.audit_only_surfaces
+                if isinstance(toe_frame, TOEMiningDecisionFrame) and toe_frame.is_valid()
+                else ()
+            ),
         )
         self.last_decision = decision
         return decision
