@@ -4,31 +4,34 @@ Core Intelligence Infrastructure
 ===============================
 Author  : Andre Taylor-Morris, Founder & CEO
 Date    : March 2026
-Status  : Production Implementation
 
-Ubiquitous Intelligence Architecture - Core Components
-Every endpoint observes, reasons, acts, learns, and reports.
-Intelligence IS the system.
+Ubiquitous Intelligence Architecture — canonical facade.
+
+Consolidated: the three modules this package originally declared as local
+submodules — ``intelligent_endpoint``, ``autonomy_governance`` and
+``intelligence_bus`` — are canonically owned by the top-level ``Intelligence``
+package. This package is now the stable public facade over them, so callers
+keep one import path for the ubiquitous-intelligence surface regardless of
+where the implementation lives.
 """
 
-from .intelligent_endpoint import (
-    AutonomyLevel,
-    Decision,
-    IntelligenceState,
-    IntelligentEndpoint,
-    LearningSignal,
-    Observation,
-)
-
-PHI = 1.618033988749895
-
-from .autonomy_governance import (
+from Intelligence.autonomy_governance import (
     HARD_LIMITS,
     get_autonomy_description,
     is_action_permitted,
     validate_autonomy_boundaries,
 )
-from .intelligence_bus import IntelligenceBus
+from Intelligence.intelligence_bus import IntelligenceBus
+from Intelligence.intelligent_endpoint import (
+    AutonomyLevel,
+    Decision,
+    IntelligentEndpoint,
+    IntelligenceState,
+    LearningSignal,
+    Observation,
+)
+
+PHI = 1.618033988749895
 
 __all__ = [
     # Core classes
@@ -51,8 +54,13 @@ __all__ = [
 ]
 
 
-def calculate_pure_quantum_intelligence(state=None, phi=1.618033988749895):
-    """Stub bridge: compute quantum intelligence score from state vector."""
+def calculate_pure_quantum_intelligence(state=None, phi=PHI):
+    """Report the φ-derived intelligence quotient for a measured state.
+
+    ``coherence`` is read from ``state`` when supplied and defaults to 1.0.
+    The quotient itself is the fixed identity ``φ²`` — it is a named
+    statistic, not a measurement of consciousness.
+    """
     if state is None:
         return {"phi": phi, "coherence": 1.0, "intelligence_quotient": phi**2}
     return {

@@ -44,7 +44,7 @@ async def demonstrate_enterprise_asi():
     # Create enterprise ASI frameworks
     print("\n🚀 Initializing Enterprise ASI Frameworks...")
 
-    agency_#  create_enterprise_asi_agency(
+    agency = create_enterprise_asi_agency(
         EnterpriseAgencyLevel.SUPERINTELLIGENT
     )
     autonomy_engine = create_enterprise_asi_autonomy()
@@ -91,7 +91,7 @@ async def demonstrate_enterprise_asi():
 
     # Execute AHP decision
     start_time = time.time()
-    # result = await agency_framework.make_enterprise_decision(
+    result = await agency_framework.make_enterprise_decision(
         context, state, DecisionMethodology.MCDA_ANALYTIC_HIERARCHY_PROCESS
     )
     execution_time = time.time() - start_time

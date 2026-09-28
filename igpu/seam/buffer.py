@@ -104,7 +104,8 @@ def allocate(
     )
     pol.audit_log.append({"action": "allocate", "caller": "seam", "at": now_iso(), "kind": kind})
     store.put_buffer(buf)
-    store.audit("buffer_allocate", buffer_id=buf.id, device_id=device_id, kind=kind)
+    store.audit("buffer_allocate", buffer_id=buf.id, device_id=device_id,
+                backing_kind=kind)
     return Ok(buf)
 
 

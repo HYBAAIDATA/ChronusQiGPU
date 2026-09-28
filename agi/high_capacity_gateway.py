@@ -502,9 +502,9 @@ class HighCapacityAPIGateway:
 
                 # Execute handler if provided
                 if handler:
-                    # result = handler(req_data)
+                    result = handler(req_data)
                 else:
-                    # result = {"processed": True, "data": req_data}
+                    result = {"processed": True, "data": req_data}
 
                 queue.mark_completed(req_id)
 

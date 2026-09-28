@@ -1,7 +1,7 @@
 {
   "file": "turing_core.py",
-  "frozen_sha": "32d6329dfbaf973d2437d2d36a88769b01ef4c539a24db7013d42cbacdc2eddc",
-  "lemma_sha": "face9c61a4bb3efb7ea5ad96c3f4dda78946237d507a0687387c5e950f00335a",
+  "frozen_sha": "c9643184d8e1811168f2c222c55216c722ebc2cd08473a504e52f9c327d1919c",
+  "lemma_sha": "40a1c1af49a0c531a96836d02c2900bbbaa98abae27f1676054163ad3a353d71",
   "lemma_signoff": {
     "complexity": {
       "check": "fast doubling O(log n)",

@@ -449,11 +449,11 @@ class MillenniumProblemsIntegration:
 
         # Apply Riemann optimization
         if isinstance(params, dict):
-            riemann_# result = self.riemann.optimize_parameters(params)
+            riemann_result = self.riemann.optimize_parameters(params)
         elif isinstance(params, (list, np.ndarray)):
             signal = np.array(params)
             optimized, improvement = self.riemann.optimize_signal(signal)
-            riemann_# result = OptimizationResult(
+            riemann_result = OptimizationResult(
                 domain="riemann",
                 score=float(np.mean(optimized)),
                 improvement=improvement,
@@ -475,7 +475,7 @@ class MillenniumProblemsIntegration:
         # Apply Navier-Stokes optimization
         if isinstance(params, (list, np.ndarray)):
             reasoning_chain = list(params) if isinstance(params, np.ndarray) else params
-            ns_# result = self.navier_stokes.optimize_reasoning_flow(reasoning_chain)
+            ns_result = self.navier_stokes.optimize_reasoning_flow(reasoning_chain)
             results["optimizations"].append(
                 {
                     "optimizer": "Navier-Stokes",
@@ -489,7 +489,7 @@ class MillenniumProblemsIntegration:
         # Apply Birch-Swinnerton-Dyer optimization
         if isinstance(params, (list, np.ndarray)):
             solutions = list(params) if isinstance(params, np.ndarray) else params
-            bsd_# result = self.bsd.optimize_pathways([solutions])
+            bsd_result = self.bsd.optimize_pathways([solutions])
             results["optimizations"].append(
                 {
                     "optimizer": "Birch-Swinnerton-Dyer",
@@ -503,7 +503,7 @@ class MillenniumProblemsIntegration:
         # Apply P vs NP optimization
         if isinstance(params, (list, np.ndarray)):
             problem = list(params) if isinstance(params, np.ndarray) else params
-            pvsnp_# result = self.pvsnp.optimize_strategy_selection(problem)
+            pvsnp_result = self.pvsnp.optimize_strategy_selection(problem)
             results["optimizations"].append(
                 {
                     "optimizer": "P vs NP",

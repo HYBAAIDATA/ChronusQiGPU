@@ -388,7 +388,7 @@ Problem: {problem_desc}
 import numpy as np
 from typing import Any, Dict
 
-1.618033988749895 = 1.6180339887498948
+PHI = 1.618033988749895
 
 def execute_algorithm(data: Any, **kwargs) -> Dict[str, Any]:
     """
@@ -423,7 +423,7 @@ def execute_algorithm(data: Any, **kwargs) -> Dict[str, Any]:
                 code += "    amplitudes = 2 * avg - amplitudes\n"
             elif gate.name == "PhiRotation":
                 code += "    # Phi-resonance rotation\n"
-                code += f"    phi_phase = 1.618033988749895 ** {gate.target_qubits[0]} * np.pi\n"
+                code += f"    phi_phase = PHI ** {gate.target_qubits[0]} * np.pi\n"
                 code += "    amplitudes *= np.exp(1j * phi_phase)\n"
 
         code += '''

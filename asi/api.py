@@ -47,12 +47,15 @@ _INTERNAL_KEY_HEADER = "X-HYBA-Internal-Key"
 _INTERNAL_KEY = os.getenv("HYBA_INTERNAL_KEY", "hyba-internal-asi-key")
 _INTERNAL_BYPASS_PATHS = {"/health", "/docs", "/redoc", "/openapi.json"}
 
-# Import ASI components
-from .problem_solver import ASIProblemSolver
-from .quantum_creator import QuantumCreator
-from .self_healing import SelfHealingSystem
+# Import ASI components. These names are the canonical ones declared by each
+# module's __init__; the earlier project used drifted aliases
+# (ASIProblemSolver / QuantumCreator / SelfHealingSystem / WebLearner) that
+# never existed as classes.
+from .problem_solver import NovelProblemSolver
+from .quantum_creator import QuantumAlgorithmCreator
+from .self_healing import SelfHealingEngine
 from .system_optimizer import SystemOptimizer
-from .web_learner import WebLearner
+from .web_learner import ContinuousWebLearner
 
 logger = logging.getLogger(__name__)
 
@@ -92,11 +95,11 @@ class HealthResponse(BaseModel):
 
 
 # Global ASI components
-asi_problem_solver: Optional[ASIProblemSolver] = None
-quantum_creator: Optional[QuantumCreator] = None
-self_healing: Optional[SelfHealingSystem] = None
+asi_problem_solver: Optional[NovelProblemSolver] = None
+quantum_creator: Optional[QuantumAlgorithmCreator] = None
+self_healing: Optional[SelfHealingEngine] = None
 system_optimizer: Optional[SystemOptimizer] = None
-web_learner: Optional[WebLearner] = None
+web_learner: Optional[ContinuousWebLearner] = None
 
 
 async def initialize_asi_components():
@@ -112,11 +115,11 @@ async def initialize_asi_components():
 
     try:
         # Initialize core ASI components
-        asi_problem_solver = ASIProblemSolver()
-        quantum_creator = QuantumCreator()
-        self_healing = SelfHealingSystem()
+        asi_problem_solver = NovelProblemSolver()
+        quantum_creator = QuantumAlgorithmCreator()
+        self_healing = SelfHealingEngine()
         system_optimizer = SystemOptimizer()
-        web_learner = WebLearner()
+        web_learner = ContinuousWebLearner()
 
         # Start background processes
         await self_healing.start_monitoring()
@@ -236,7 +239,7 @@ def create_asi_app() -> FastAPI:
 
         try:
             # Solve problem with ASI
-            # result = await asi_problem_solver.solve(
+            result = await asi_problem_solver.solve(
                 task_type=request.task_type,
                 parameters=request.parameters,
                 consciousness_level=request.consciousness_level,
@@ -271,7 +274,7 @@ def create_asi_app() -> FastAPI:
 
         try:
             # Create with quantum capabilities
-            # result = await quantum_creator.create(
+            result = await quantum_creator.create(
                 creation_type=request.task_type,
                 parameters=request.parameters,
                 consciousness_level=request.consciousness_level,
@@ -310,7 +313,7 @@ def create_asi_app() -> FastAPI:
 
         try:
             # Optimize system
-            # result = await system_optimizer.optimize(
+            result = await system_optimizer.optimize(
                 optimization_type=request.task_type,
                 parameters=request.parameters,
                 consciousness_level=request.consciousness_level,

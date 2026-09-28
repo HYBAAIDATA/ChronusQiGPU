@@ -283,7 +283,7 @@ class ConversationPersistence:
             collection = self.db[self.collection_name]
             cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
 
-            # result = await collection.delete_many(
+            result = await collection.delete_many(
                 {
                     "last_activity": {"$lt": cutoff_date},
                     "state": {"$in": ["ended", "inactive"]},

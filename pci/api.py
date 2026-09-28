@@ -725,7 +725,7 @@ class PostQuantumCivilizationAPI:
             context = data.get("context", {})
 
             # Generate predictions using phi-resonance
-            phi_score = 1.618033988749895 * np.random.random()
+            phi_score = PHI * np.random.random()
 
             return {
                 "predictions": [
@@ -810,7 +810,7 @@ class PostQuantumCivilizationAPI:
                 "regulator": rules["regulator"],
                 "requirements": rules["requirements"],
                 "verification_timestamp": datetime.now().isoformat(),
-                "phi_resonance_score": 1.618033988749895 * 0.9,
+                "phi_resonance_score": PHI * 0.9,
             }
 
         # ====================================================================

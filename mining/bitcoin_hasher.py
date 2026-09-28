@@ -463,10 +463,13 @@ class BitcoinHasher:
         self.k_gold = getattr(self.program, "bitcoin_sha256d_gold", None)
         self._buf_lanes = cl.Buffer(self.ctx, mf.READ_ONLY, 32) if self.k_m32 is not None else None
         if self.k_gold is not None:
-            # scratch[0]=winner probe-index sentinel, scratch[1]=fifo counter.
+            # scratch[0] = winner probe-index sentinel (scratch[1] is unused;
+            # hit selection is by flag compaction, not a write counter).
             self._buf_gold_scratch = cl.Buffer(self.ctx, mf.READ_WRITE, 8)
-            self._buf_gold_fifo = cl.Buffer(
-                self.ctx, mf.WRITE_ONLY, self.GOLD_FIFO_DEPTH * 4)
+            # One flag byte per dispatched probe, so the host can select the
+            # earliest GOLD_FIFO_DEPTH deterministically. Sized to the maximum
+            # single launch (grind_batch) and reused.
+            self._buf_gold_fifo = cl.Buffer(self.ctx, mf.WRITE_ONLY, self.grind_batch)
         else:
             self._buf_gold_scratch = None
             self._buf_gold_fifo = None
@@ -619,6 +622,46 @@ class BitcoinHasher:
                 f"(nonce {nonce}) — refusing to accept"
             )
         return None, None, n, flagged
+
+    def grind_target_range_chunked(
+        self, header80, target_be, base_nonce, count, stop_on_first: bool = True
+    ):
+        """Grind ``count`` nonces, chunking to whatever the device accepts.
+
+        ``grind_batch`` is derived from the real device memory limit and is
+        typically one rung *below* the policy default (e.g. 2**20 - 1 rather
+        than 2**20). A caller asking for a larger window is not doing anything
+        wrong — the device simply cannot take it in one launch. This method
+        walks the window in device-sized chunks so the full span is covered,
+        and reports the real hash count.
+
+        Returns ``(winner_nonce | None, winner_digest | None, hashes)``.
+        """
+        if len(header80) != 80:
+            raise ValueError("header must be exactly 80 bytes")
+        if len(target_be) != 32:
+            raise ValueError("target must be exactly 32 bytes")
+        total = int(count)
+        if total <= 0:
+            return None, None, 0
+        base = int(base_nonce) & 0xFFFFFFFF
+        limit = max(1, int(self.grind_batch))
+        hashes = 0
+        remaining = total
+        offset = 0
+        while remaining > 0:
+            take = min(limit, remaining)
+            win_nonce, win_digest, done = self.grind_target_range(
+                header80, target_be, (base + offset) & 0xFFFFFFFF, take
+            )
+            hashes += int(done or 0)
+            if win_nonce is not None:
+                if not stop_on_first:
+                    return win_nonce, win_digest, hashes
+                return win_nonce, win_digest, hashes
+            offset += take
+            remaining -= take
+        return None, None, hashes
 
     def grind_target_range(self, header80, target_be, base_nonce, count):
         """Contiguous-window grind with on-device nonce derivation.
@@ -896,6 +939,8 @@ class BitcoinHasher:
             self._buf_gold_scratch,
             np.array([NO_HIT, 0], dtype=np.uint32),
         )
+        # hit_flags is fully rewritten by the kernel for the dispatched range,
+        # so no host-side seeding is required.
         evt = self.k_gold(
             self.queue,
             (count,),
@@ -913,16 +958,16 @@ class BitcoinHasher:
         self.launches += 1
         scratch = np.empty(2, dtype=np.uint32)
         cl.enqueue_copy(self.queue, scratch, self._buf_gold_scratch).wait()
-        fifo_count = min(int(scratch[1]), self.GOLD_FIFO_DEPTH)
-        hit_nonces = []
-        if fifo_count:
-            fifo = np.empty(fifo_count, dtype=np.uint32)
-            cl.enqueue_copy(
-                self.queue, fifo, self._buf_gold_fifo, device_offset=0
-            ).wait()
-            hit_nonces = [
-                int((seed + int(g) * stride) & 0xFFFFFFFF) for g in fifo
-            ]
+        # Compact the per-probe hit flags: take the first GOLD_FIFO_DEPTH probes
+        # that hit, in ascending probe order. This is a pure function of the
+        # flag array, so it is identical on every run and matches the CPU path
+        # (which records the first GOLD_FIFO_DEPTH hits while walking i=0..n-1).
+        flags = np.empty(count, dtype=np.uint8)
+        cl.enqueue_copy(self.queue, flags, self._buf_gold_fifo).wait()
+        hit_gids = np.flatnonzero(flags)[: self.GOLD_FIFO_DEPTH]
+        hit_nonces = [
+            int((seed + int(g) * stride) & 0xFFFFFFFF) for g in hit_gids
+        ]
         gid = int(scratch[0])
         if gid != NO_HIT:
             nonce = (seed + gid * stride) & 0xFFFFFFFF

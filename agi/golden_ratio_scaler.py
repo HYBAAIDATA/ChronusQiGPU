@@ -57,7 +57,7 @@ class GoldenRatioScaler:
     """
 
     def __init__(self):
-        self.#  GoldenRatioScale()
+        self.scale = GoldenRatioScale()
         self.scaling_history = []
 
     def scale_decision_utility(
@@ -259,7 +259,7 @@ class GoldenRatioScaler:
 
             # Apply power scaling for enterprise level
             if i > iterations // 2:
-                power_#  self.scale.power_10_12 / (
+                power_scale = self.scale.power_10_12 / (
                     10**12 * (i - iterations // 2 + 1)
                 )
                 interpolation *= power_scale
@@ -320,7 +320,7 @@ class GoldenRatioScaler:
 
             # Apply power scaling for large resources
             if resource_value > 1000:
-                power_#  self.scale.power_15_18 / (10**17)
+                power_scale = self.scale.power_15_18 / (10**17)
                 scaled_value *= power_scale
 
             scaled_resources[resource_name] = max(1e-8, scaled_value)

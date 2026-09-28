@@ -143,23 +143,37 @@ __kernel void bitcoin_sha256d_range(__global const uchar *midstate,
 // walk is a bijection over the whole nonce domain — the launch probes a
 // phi-ordered slice of the space, every nonce exactly once across a full
 // cycle, zero nonce upload. ASIC-style semantics: the device derives the
-// sequence in-register, reduces the first winning probe index on-device
-// (atomic_min), and pushes hit probe-indices into a GOLD_FIFO_DEPTH-deep
-// FIFO (scratch[1] is the write counter — host reads scratch + fifo).
+// sequence in-register and reduces the first winning probe index on-device
+// with atomic_min (unchanged, already deterministic).
+//
+// hit_flags: one byte per dispatched probe, 1 when that probe met the target.
+// The host compacts the first GOLD_FIFO_DEPTH set flags in ascending probe
+// order. Writing flags (rather than selecting slots in-kernel) is what makes
+// the sample deterministic: the selected set is a pure function of which
+// probes hit, not of the order work-items happened to run. An earlier
+// atomic_inc FIFO returned whichever eight work-items arrived first, so the
+// telemetry was non-reproducible and disagreed with the CPU path.
+//
+// NOTE: hit_flags is telemetry, not executed-window evidence. Completion of
+// the dispatched window is established by the launch count and `count`.
+//
 // GOLD_FIFO_DEPTH = fib(6) = 8 — a Lucas-pool constant, not a magic number.
 // The host re-verifies every winner with hashlib before submission;
 // double-SHA256 remains the sole accept authority.
 #define GOLDEN_STRIDE 0x9E3779B9u
 #define GOLD_FIFO_DEPTH 8u
+#define NO_HIT_INDEX 0xFFFFFFFFu
+
 __kernel void bitcoin_sha256d_gold(__global const uchar *midstate,
                                    __global const uchar *header,
                                    __global const uchar *target,
                                    uint seed,
                                    __global uint *scratch,
-                                   __global uint *hit_fifo,
+                                   __global uchar *hit_flags,
                                    uint count) {
   uint gid=get_global_id(0);
   if (gid>=count) return;
+  hit_flags[gid] = 0u;
   uint s[8], w[64];
   for (int i=0;i<8;i++) s[i]=load_be(midstate+4*i);
   for (int i=0;i<16;i++) w[i]=0;
@@ -173,9 +187,10 @@ __kernel void bitcoin_sha256d_gold(__global const uchar *midstate,
   w[8]=0x80000000u; w[15]=256u;
   sha_init(s); sha_block(s,w);
   if (accept_less(s,target)) {
-    atomic_min(scratch, gid);
-    uint slot=atomic_inc(&scratch[1]);
-    if (slot<GOLD_FIFO_DEPTH) hit_fifo[slot]=gid;
+    // Winner: the lowest winning probe index. Unchanged.
+    atomic_min(&scratch[0], gid);
+    // One flag per probe; the host selects the earliest GOLD_FIFO_DEPTH.
+    hit_flags[gid] = 1u;
   }
 }
 

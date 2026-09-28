@@ -9,9 +9,13 @@ import sys
 
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 _PYTHIA_DIR = os.path.dirname(_THIS_DIR)
-_INTEL_DIR = os.path.join(_PYTHIA_DIR, "Intelligence")
 
-for p in (_PYTHIA_DIR, _INTEL_DIR, os.path.abspath("."), os.path.abspath("Intelligence")):
+# Only the repo root goes on sys.path. ``Intelligence/`` must NOT be added: doing
+# so makes it a source root, and its ``asi/`` subpackage then shadows the
+# top-level ``asi`` package that this repository also ships, breaking any later
+# ``import asi``. The fallback below imports the platform tree's own
+# ``agentic_mining`` module, which the repo root alone does not expose.
+for p in (_PYTHIA_DIR, os.path.abspath(".")):
     if p not in sys.path:
         sys.path.insert(0, p)
 

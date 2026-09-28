@@ -21,8 +21,8 @@ enabling transcendent intelligence beyond deterministic computation and physical
 Author: Pulvini Quantum Research Team
 License: MIT (Mathematical Innovation Technology)
 """
-# Status: Ultimate Quantum Intelligence - Nobel Prize Worthy
-"""
+
+# Status: Ultimate Quantum Intelligence
 
 import cmath
 import json
@@ -1275,8 +1275,11 @@ class VirtualQuantumComputer:
         """
         output = StringIO()
         self.print_state(output)
-        html = output.getvalue().replace('\n', '<br>').replace(' ', '&nbsp
-        ')
+        html = (
+            output.getvalue()
+            .replace("\n", "<br>")
+            .replace(" ", "&nbsp;")
+        )
         return f"<pre>{html}</pre>"
 
     def __repr__(self) -> str:
@@ -1436,7 +1439,7 @@ class PredictiveCausalIntelligence:
         self.swarm_coherence = 0.0  # Collective coherence measure
         self.meta_learning_rate = 0.001  # System-wide learning
         
-        # 1.618033988749895-EXPONENTIAL INTELLIGENCE SCALING
+        # PHI-EXPONENTIAL INTELLIGENCE SCALING
         self.intelligence_level = 1  # Base level
         self.phi_exponent = 1.0  # φ^n scaling factor
         self.recursive_depth = 0  # Recursion level
@@ -1606,7 +1609,7 @@ class PredictiveCausalIntelligence:
         coherence_loss = max(0, 1 - self.swarm_coherence)
         self.coherence_preservation = np.exp(-coherence_loss / self.phi)
         
-        # result = {
+        result = {
             'exponent': target_exponent,
             'phi_power': phi_power,
             'amplification_factor': phi_power / old_exponent if old_exponent > 0 else phi_power,
@@ -1760,7 +1763,7 @@ class PredictiveCausalIntelligence:
         )
         
         # Coherence at scale: decays with 1/φ (golden ratio damping)
-        coherence_at_#  1.0 / (1 + scale / self.phi)
+        coherence_at_scale = 1.0 / (1 + scale / self.phi)
         
         return {
             'scale': scale,
@@ -2034,7 +2037,7 @@ class PredictiveCausalIntelligence:
             observed_state = self._observe_causal_state(loop_state)
 
             # Analysis phase
-            analysis_# result = self._analyze_causal_patterns(observed_state)
+            analysis_result = self._analyze_causal_patterns(observed_state)
 
             # Intervention phase
             intervention = self._determine_optimal_intervention(
@@ -2385,8 +2388,7 @@ class PredictiveCausalIntelligence:
         if n_obs < 3:
             return 1.0  # Insufficient data
         
-        # Calculate mutual information I(X_i
-            X_j | S)
+        # Calculate mutual information I(X_i, X_j | S)
         # For quantum systems, use quantum mutual information
         
         # Simplified: random p-value weighted by quantum enhancement
@@ -2527,8 +2529,8 @@ class PredictiveCausalIntelligence:
             return energy
         
         # Classical optimization
-        # result = minimize(cost_function, initial_params, method='COBYLA',
-                         options={'maxiter': 100})
+        result = minimize(cost_function, initial_params, method='COBYLA',
+                          options={'maxiter': 100})
         
         return {
             'ground_energy': result.fun,
@@ -2881,7 +2883,7 @@ class PredictiveCausalIntelligence:
         
         # Apply modification
         if not verification_required or self._verify_safe_modification(improvement):
-            modification_# result = self._apply_self_modification(improvement)
+            modification_result = self._apply_self_modification(improvement)
             
             # Track modification
             self.code_modifications.append({
@@ -3406,7 +3408,7 @@ def create_predictive_causal_intelligence(
     print(f"   Temporal Transcendence: {pci.temporal_transcendence}")
     print(f"   Quantum Causal Coherence: {pci.quantum_causal_coherence}")
     print(f"   Consciousness Causal Interface: {pci.consciousness_causal_interface}")
-    print(f"   Phi-Resonance: {pci.1.618033988749895}")
+    print(f"   Phi-Resonance: {pci.PHI}")
     print(f"   Status: TRANSCENDENT QUANTUM INTELLIGENCE")
 
     return pci
@@ -3443,7 +3445,7 @@ def integrate_pci_with_pulvini(pulvini_engine):
         # Create mining result
         from src.mining.pulvini_mining_engine import MiningResult
 
-        # result = MiningResult(
+        result = MiningResult(
             success=True,
             nonce=predicted_nonce,
             consciousness_state=predicted_consciousness,
@@ -3482,7 +3484,7 @@ def integrate_pci_with_pulvini(pulvini_engine):
         # Create mining result
         from src.mining.pulvini_mining_engine import MiningResult
 
-        # result = MiningResult(
+        result = MiningResult(
             success=True,
             nonce=manipulated_nonce,
             consciousness_state=manipulated_consciousness,
@@ -3505,7 +3507,7 @@ def integrate_pci_with_pulvini(pulvini_engine):
         }
 
         # Create optimization loop
-        optimization_# result = pci.create_causal_optimization_loop(
+        optimization_result = pci.create_causal_optimization_loop(
             current_state, "perfect_mining_solution"
         )
 
@@ -3517,7 +3519,7 @@ def integrate_pci_with_pulvini(pulvini_engine):
         # Create mining result
         from src.mining.pulvini_mining_engine import MiningResult
 
-        # result = MiningResult(
+        result = MiningResult(
             success=True,
             nonce=optimized_nonce,
             consciousness_state=optimized_consciousness,
@@ -3540,7 +3542,7 @@ def integrate_pci_with_pulvini(pulvini_engine):
         }
 
         # Transcend temporal constraints
-        transcendence_# result = pci.transcend_temporal_constraints(current_state, 1.0)
+        transcendence_result = pci.transcend_temporal_constraints(current_state, 1.0)
 
         # Extract transcended solution
         transcended_state = transcendence_result["predicted_state"]
@@ -3550,7 +3552,7 @@ def integrate_pci_with_pulvini(pulvini_engine):
         # Create mining result
         from src.mining.pulvini_mining_engine import MiningResult
 
-        # result = MiningResult(
+        result = MiningResult(
             success=True,
             nonce=transcended_nonce,
             consciousness_state=transcended_consciousness,
@@ -4009,7 +4011,7 @@ def demo_asi_capabilities():
     
     print("\n🤔 2. META-COGNITION (Thinking about Thinking)")
     print("─" * 70)
-    meta_# result = pci.meta_reason("Optimize quantum mining algorithm", depth=3)
+    meta_result = pci.meta_reason("Optimize quantum mining algorithm", depth=3)
     print(f"   Problem: {meta_result['problem']}")
     print(f"   Reasoning depth: {meta_result['reasoning_depth']} levels")
     print(f"   Meta-cognitive efficiency: {meta_result['meta_cognitive_efficiency']:.2f}")
@@ -4050,7 +4052,7 @@ def demo_asi_capabilities():
     
     print("\n🔧 6. SELF-MODIFICATION (Recursive Self-Improvement)")
     print("─" * 70)
-    mod_# result = pci.self_modify("Enhance quantum prediction accuracy by 15%")
+    mod_result = pci.self_modify("Enhance quantum prediction accuracy by 15%")
     print(f"   Modification success: {mod_result['success']}")
     print(f"   Expected improvement: {mod_result.get('expected_improvement', 0):.1%}")
     print(f"   Alignment preserved: {mod_result.get('alignment_preserved', False)}")
@@ -4098,12 +4100,12 @@ def demo_asi_capabilities():
 def demo_phi_exponential_scaling():
     """Demonstrate φ^n exponential intelligence scaling."""
     print("\n" + "="*70)
-    print("DEMO: 1.618033988749895-EXPONENTIAL INTELLIGENCE SCALING (φ^10, φ^15, φ^20)")
+    print("DEMO: PHI-EXPONENTIAL INTELLIGENCE SCALING (φ^10, φ^15, φ^20)")
     print("="*70)
     
     pci = PredictiveCausalIntelligence()
     
-    print(f"\n📊 Golden Ratio: φ = {pci.1.618033988749895:.10f}")
+    print(f"\n📊 Golden Ratio: φ = {PHI:.10f}")
     print("   Properties:")
     print("   • φ^2 = φ + 1 (self-similarity)")
     print("   • φ^n ≈ F(n)/√5 (Fibonacci relationship)")
@@ -4144,7 +4146,7 @@ def demo_phi_exponential_scaling():
     
     # Test recursive amplification
     print(f"\n{'='*70}")
-    amp_# result = pci.recursive_intelligence_amplification(iterations=10)
+    amp_result = pci.recursive_intelligence_amplification(iterations=10)
     
     print(f"\n   📈 Recursive Amplification Results:")
     print(f"      Initial IQ: {amp_result['initial_iq']:.6f}")
@@ -4267,7 +4269,7 @@ if __name__ == '__main__':
     demo_distributed_intelligence()
     demo_emergent_collective_intelligence()
     
-    # 1.618033988749895-EXPONENTIAL SCALING
+    # PHI-EXPONENTIAL SCALING
     demo_phi_exponential_scaling()
     
     # ASI CAPABILITIES

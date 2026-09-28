@@ -190,7 +190,7 @@ class ASIServerController:
 
         # Enhanced ASI frameworks with Fields Medal/Nobel rigor
         if ASI_FRAMEWORKS_AVAILABLE:
-            self.agency_#  ASIAgencyFramework(AgencyLevel.SUPERINTELLIGENT)
+            self.agency = ASIAgencyFramework(AgencyLevel.SUPERINTELLIGENT)
             autonomy_config = AutonomyConfiguration(
                 autonomy_level=AutonomyLevel.UNIVERSAL_AUTONOMY,
                 modification_threshold=0.8,
@@ -201,7 +201,7 @@ class ASIServerController:
             self.autonomy_engine = ASIAutonomyEngine(autonomy_config)
             logger.info("[ENHANCED] ASI Agency and Autonomy frameworks loaded")
         else:
-            self.agency_#  None
+            self.agency = None
             self.autonomy_engine = None
             logger.warning("[FALLBACK] Using stub ASI implementations")
 
@@ -369,7 +369,7 @@ class UnifiedAGIController:
             self.intelligence_endpoint.substrate, theta
         )
 
-        initialization_# result = {
+        initialization_result = {
             "substrate_initialized": True,
             "total_information": self.intelligence_endpoint.substrate.total_information,
             "gauge_curvature": self.intelligence_endpoint.substrate.gauge_curvature,
@@ -392,7 +392,7 @@ class UnifiedAGIController:
         self.operation_count += 1
 
         # Run unified intelligence loop
-        cycle_# result = await self.intelligence_endpoint.run_intelligence_loop()
+        cycle_result = await self.intelligence_endpoint.run_intelligence_loop()
 
         # Add McKinsey decision analysis
         decision_context = McKinseyDecisionContext(
@@ -419,7 +419,7 @@ class UnifiedAGIController:
             decision_context
         )
 
-        enhanced_# result = {
+        enhanced_result = {
             "operation_id": self.operation_count,
             "timestamp": time.time(),
             "intelligence_cycle": cycle_result,
@@ -444,7 +444,7 @@ class UnifiedAGIController:
         )
 
         # Run validation
-        validation_# result = self.scientific_validator.validate_unified_intelligence(
+        validation_result = self.scientific_validator.validate_unified_intelligence(
             self.intelligence_endpoint, pci_endpoint
         )
 
@@ -1315,7 +1315,7 @@ async def verify_pci_equivalence():
         )
 
         # Run validation
-        validation_# result = (
+        validation_result = (
             unified_agi_controller.scientific_validator.validate_unified_intelligence(
                 unified_agi_controller.intelligence_endpoint, pci_endpoint
             )
