@@ -36,7 +36,7 @@ async def _pool(host="127.0.0.1"):
                             {
                                 "id": None,
                                 "method": "mining.set_difficulty",
-                                "params": [0.000001],
+                                "params": [0.000000001],
                             }
                         )
                         + "\n"

@@ -272,80 +272,83 @@ async def run_workflow(host, port, worker, password, *, window=4096, heal=True, 
     sku = IGpuSku("standalone")
     store = HyperscalerSku()
     bridge = StratumBridge(host, port, worker=worker, password=password)
-    t0 = time.perf_counter_ns()
-    await bridge.connect()
-    out.record_or_raise("L0_connect", bridge.connected, f"Pool: {host}:{port} connected", elapsed_ns=time.perf_counter_ns() - t0)
-    t0 = time.perf_counter_ns()
-    await bridge.handshake()
-    out.record_or_raise("L0_handshake", bool(bridge.authorized and bridge.extranonce1), f"Subscription: {bridge.extranonce1} Authorized: {bridge.authorized}", elapsed_ns=time.perf_counter_ns() - t0)
-    job = await bridge.wait_for_job(timeout=30)
-    parsed = all([job.job_id, job.prev_hash, job.version, job.nbits, job.ntime])
-    out.record_or_raise("L1_parse", parsed, f"Job parsed: id={job.job_id} nbits={job.nbits}")
-    en2 = "00" * max(1, min(bridge.extranonce2_size, 8))
-    coinbase = build_coinbase(job.coinb1, bridge.extranonce1, en2, job.coinb2)
-    root = merkle_root(coinbase_hash(coinbase), job.merkle_branch)
-    header = build_header80(job.version, job.prev_hash, root.hex(), job.ntime, job.nbits)
-    out.record_or_raise("L2_header", len(header) == 80, f"Merkle root: {root.hex()} header={len(header)}")
-    oi = classify_oi(job)
-    out.record_or_raise("L3_oi", oi.path in {"fold", "tensor"} and bool(oi.reason), f"OI classification: {oi.kind} reasoning: {oi.reason}")
-    cfg = genetic_configure(window)
-    out.record_or_raise("L4_genetic", cfg.batch > 0 and cfg.fitness >= 0, f"Applied config: batch={cfg.batch} kernel={cfg.kernel} threads={cfg.threads} window={cfg.window}")
-    ticket = sku.ingest(job.job_id, cfg.window)
-    out.record_or_raise("L5_seam", ticket.ledger_ok and ticket.work_items > 0, f"Seam dispatch: device={ticket.backend}")
-    target = nbits_to_target(job.nbits)
-    if job.difficulty > 0:
-        target = max(target, max(1, int(Fraction(DIFF1_TARGET) / Fraction(str(job.difficulty)))))
-    nonce = search_nonce(header[:76], target, max(cfg.window, window), oi.path)
-    out.record_or_raise("L6_search", nonce is not None, f"Nonce found: {nonce}")
-    if nonce is None:
-        if not fail_fast:
-            for skipped in ("L7_share", "L8_attest", "L9_submit", "L10_aethel"):
-                out.record(skipped, False, "blocked by L6_search")
+    try:
+        t0 = time.perf_counter_ns()
+        await bridge.connect()
+        out.record_or_raise("L0_connect", bridge.connected, f"Pool: {host}:{port} connected", elapsed_ns=time.perf_counter_ns() - t0)
+        t0 = time.perf_counter_ns()
+        await bridge.handshake()
+        out.record_or_raise("L0_handshake", bool(bridge.authorized and bridge.extranonce1), f"Subscription: {bridge.extranonce1} Authorized: {bridge.authorized}", elapsed_ns=time.perf_counter_ns() - t0)
+        job = await bridge.wait_for_job(timeout=30)
+        parsed = all([job.job_id, job.prev_hash, job.version, job.nbits, job.ntime])
+        out.record_or_raise("L1_parse", parsed, f"Job parsed: id={job.job_id} nbits={job.nbits}")
+        en2 = "00" * max(1, min(bridge.extranonce2_size, 8))
+        coinbase = build_coinbase(job.coinb1, bridge.extranonce1, en2, job.coinb2)
+        root = merkle_root(coinbase_hash(coinbase), job.merkle_branch)
+        header = build_header80(job.version, job.prev_hash, root.hex(), job.ntime, job.nbits)
+        out.record_or_raise("L2_header", len(header) == 80, f"Merkle root: {root.hex()} header={len(header)}")
+        oi = classify_oi(job)
+        out.record_or_raise("L3_oi", oi.path in {"fold", "tensor"} and bool(oi.reason), f"OI classification: {oi.kind} reasoning: {oi.reason}")
+        cfg = genetic_configure(window)
+        out.record_or_raise("L4_genetic", cfg.batch > 0 and cfg.fitness >= 0, f"Applied config: batch={cfg.batch} kernel={cfg.kernel} threads={cfg.threads} window={cfg.window}")
+        ticket = sku.ingest(job.job_id, cfg.window)
+        out.record_or_raise("L5_seam", ticket.ledger_ok and ticket.work_items > 0, f"Seam dispatch: device={ticket.backend}")
+        target = nbits_to_target(job.nbits)
+        if job.difficulty > 0:
+            target = max(target, max(1, int(Fraction(DIFF1_TARGET) / Fraction(str(job.difficulty)))))
+        nonce = search_nonce(header[:76], target, max(cfg.window, window), oi.path)
+        out.record_or_raise("L6_search", nonce is not None, f"Nonce found: {nonce}")
+        if nonce is None:
+            if not fail_fast:
+                for skipped in ("L7_share", "L8_attest", "L9_submit", "L10_aethel"):
+                    out.record(skipped, False, "blocked by L6_search")
+            out.assert_all()
+            return out
+        digest = sha256d(header[:76] + int(nonce).to_bytes(4, "little"))
+        out.record_or_raise("L7_share", share_meets_target(digest, target), f"Share hash: {digest.hex()}")
+        body = {"nonce": f"{int(nonce):08x}", "job_id": job.job_id, "difficulty": job.difficulty, "device": ticket.backend, "path": oi.path, "oi": oi.reason, "config": cfg.batch, "ts": time.time(), "merkle": root.hex()}
+        sig = attest_sign(body)
+        out.record_or_raise("L8_attest", attest_verify(body, sig), f"Certificate generated: id={sig[:16]}")
+        cert = dict(body)
+        cert["signature"] = sig
+        submit = bridge.submit_share(job.job_id, en2, job.ntime, f"{int(nonce):08x}")
+        accepted = bool(await submit) if submit is not None else False
+        out.record_or_raise("L9_submit", accepted is True, f"Pool response: {accepted}")
+        rec = store.put(json.dumps(cert).encode("utf-8"), job_id=job.job_id)
+        back = json.loads(store.egress(rec.address).decode("utf-8"))
+        replay_ok = back.get("signature") == sig and attest_verify({k: v for k, v in back.items() if k != "signature"}, back.get("signature", ""))
+        forged_body = dict(body)
+        forged_body["nonce"] = "deadbeef"
+        reject_ran = True
+        forgery_rejected = (not attest_verify(forged_body, sig)) and (not attest_verify(body, "z" * 64))
+        out.record_or_raise("L10_aethel", rec.address is not None and replay_ok and reject_ran and forgery_rejected, f"Certificate written: address={rec.address.index} replay={replay_ok} forgery_rejected={forgery_rejected}")
+        stale_en1 = bridge.extranonce1
+        new_en1 = ""
+        if heal:
+            try:
+                await bridge.disconnect()
+                bridge.extranonce1 = ""
+                bridge.authorized = False
+                out.speak("WARN", "Fault detected: pool_disconnect")
+                await bridge.connect()
+                await bridge.handshake()
+                new_en1 = bridge.extranonce1
+                healed = bool(bridge.connected and bridge.authorized and new_en1)
+                out.speak("INFO", f"Recovery action: reconnect stale_en1={stale_en1} live_en1={new_en1}")
+                out.record_or_raise("L11_heal", healed, f"Mining resumed: {healed} live_en1={new_en1}")
+            except Exception as exc:
+                out.speak("WARN", f"Fault detected: {exc}")
+                out.record_or_raise("L11_heal", False, f"Mining resumed: False {exc}", exc=exc)
+        else:
+            out.record_or_raise("L11_heal", True, "heal skipped")
+        required_logs = ("L0_connect PASS", "L9_submit PASS", "L10_aethel PASS")
+        logged = all(any(token in line for line in out.logs) for token in required_logs)
+        out.record_or_raise("L12_log", logged and len(out.logs) >= 12, f"log_lines={len(out.logs)}")
+        out.accepted = accepted
+        out.address = rec.address
+        out.extra = {"oi": oi.path, "nonce": nonce, "replay_ok": replay_ok, "forgery_rejected": forgery_rejected, "stale_extranonce1": stale_en1, "live_extranonce1": new_en1, "verdicts": {k: v.passed for k, v in out.verdicts.items()}}
         out.assert_all()
         return out
-    digest = sha256d(header[:76] + int(nonce).to_bytes(4, "little"))
-    out.record_or_raise("L7_share", share_meets_target(digest, target), f"Share hash: {digest.hex()}")
-    body = {"nonce": f"{int(nonce):08x}", "job_id": job.job_id, "difficulty": job.difficulty, "device": ticket.backend, "path": oi.path, "oi": oi.reason, "config": cfg.batch, "ts": time.time(), "merkle": root.hex()}
-    sig = attest_sign(body)
-    out.record_or_raise("L8_attest", attest_verify(body, sig), f"Certificate generated: id={sig[:16]}")
-    cert = dict(body)
-    cert["signature"] = sig
-    submit = bridge.submit_share(job.job_id, en2, job.ntime, f"{int(nonce):08x}")
-    accepted = bool(await submit) if submit is not None else False
-    out.record_or_raise("L9_submit", accepted is True, f"Pool response: {accepted}")
-    rec = store.put(json.dumps(cert).encode("utf-8"), job_id=job.job_id)
-    back = json.loads(store.egress(rec.address).decode("utf-8"))
-    replay_ok = back.get("signature") == sig and attest_verify({k: v for k, v in back.items() if k != "signature"}, back.get("signature", ""))
-    forged_body = dict(body)
-    forged_body["nonce"] = "deadbeef"
-    reject_ran = True
-    forgery_rejected = (not attest_verify(forged_body, sig)) and (not attest_verify(body, "z" * 64))
-    out.record_or_raise("L10_aethel", rec.address is not None and replay_ok and reject_ran and forgery_rejected, f"Certificate written: address={rec.address.index} replay={replay_ok} forgery_rejected={forgery_rejected}")
-    stale_en1 = bridge.extranonce1
-    new_en1 = ""
-    if heal:
-        try:
-            await bridge.disconnect()
-            bridge.extranonce1 = ""
-            bridge.authorized = False
-            out.speak("WARN", "Fault detected: pool_disconnect")
-            await bridge.connect()
-            await bridge.handshake()
-            new_en1 = bridge.extranonce1
-            healed = bool(bridge.connected and bridge.authorized and new_en1)
-            out.speak("INFO", f"Recovery action: reconnect stale_en1={stale_en1} live_en1={new_en1}")
-            out.record_or_raise("L11_heal", healed, f"Mining resumed: {healed} live_en1={new_en1}")
-        except Exception as exc:
-            out.speak("WARN", f"Fault detected: {exc}")
-            out.record_or_raise("L11_heal", False, f"Mining resumed: False {exc}", exc=exc)
-    else:
-        out.record_or_raise("L11_heal", True, "heal skipped")
-    required_logs = ("L0_connect PASS", "L9_submit PASS", "L10_aethel PASS")
-    logged = all(any(token in line for line in out.logs) for token in required_logs)
-    out.record_or_raise("L12_log", logged and len(out.logs) >= 12, f"log_lines={len(out.logs)}")
-    out.accepted = accepted
-    out.address = rec.address
-    out.extra = {"oi": oi.path, "nonce": nonce, "replay_ok": replay_ok, "forgery_rejected": forgery_rejected, "stale_extranonce1": stale_en1, "live_extranonce1": new_en1, "verdicts": {k: v.passed for k, v in out.verdicts.items()}}
-    await bridge.disconnect()
-    out.assert_all()
-    return out
+    finally:
+        # Always release the pool socket, including on a failed layer.
+        await bridge.disconnect()
