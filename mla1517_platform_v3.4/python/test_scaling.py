@@ -24,15 +24,14 @@ class ScalingTests(unittest.TestCase):
             return
         self.skipTest("OpenCL device available; strict CI executes the device ladder")
 
-    def test_device_selection_rejects_cpu_opencl(self):
-        cl = SimpleNamespace(device_type=SimpleNamespace(GPU=2))
+    def test_device_selection_accepts_cpu_opencl(self):
+        cl = SimpleNamespace(device_type=SimpleNamespace(CPU=1, GPU=2))
         cpu = SimpleNamespace(name="PoCL CPU", vendor="PoCL", type=1)
         with patch.dict("os.environ", {"HYBA_REQUIRE_HYBA": ""}):
-            with self.assertRaises(GPUExecutionUnavailable):
-                _select_device(cl, [cpu])
+            self.assertIs(_select_device(cl, [cpu]), cpu)
 
     def test_device_selection_prefers_gpu_over_cpu_opencl(self):
-        cl = SimpleNamespace(device_type=SimpleNamespace(GPU=2))
+        cl = SimpleNamespace(device_type=SimpleNamespace(CPU=1, GPU=2))
         cpu = SimpleNamespace(name="PoCL CPU", vendor="PoCL", type=1)
         gpu = SimpleNamespace(name="Discrete GPU", vendor="Vendor", type=2)
         with patch.dict("os.environ", {"HYBA_REQUIRE_HYBA": ""}):

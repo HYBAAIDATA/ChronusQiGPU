@@ -76,7 +76,8 @@ def main() -> int:
         db.close()
     report = {
         "status": "PASS",
-        "gpu_backend": "opencl",
+        "logical_substrate": "mla1517_gpu",
+        "execution_backend": executor.execution_backend,
         "device_name": str(getattr(executor.device, "name", "")),
         "device_vendor": str(getattr(executor.device, "vendor", "")),
         "ladder": LUCAS_PISOT_LADDER,

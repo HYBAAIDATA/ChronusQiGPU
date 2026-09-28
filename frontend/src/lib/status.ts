@@ -33,10 +33,20 @@ export type DeviceInfo = {
 export type GpuSection = {
   available?: boolean;
   count?: number;
+  opencl_device_count?: number;
+  physical_gpu_available?: boolean;
+  physical_gpu_count?: number;
   devices?: DeviceInfo[];
   backend_active?: boolean;
   detected_backend?: string;
   detected_device?: string;
+  logical_substrate?: {
+    name: string;
+    available: boolean;
+    active: boolean;
+    host_backend: string;
+    fallback_used: boolean;
+  };
   hasher?: { backend?: string; device?: string; fallback_reason?: string | null };
   punch?: { use_opencl?: boolean; backend?: string; gpu_error?: string | null };
   vendors?: {

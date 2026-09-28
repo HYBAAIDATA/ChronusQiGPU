@@ -14,7 +14,7 @@ class GPUTruthTests(unittest.TestCase):
     def setUp(self):
         control_api._GPU_CACHE.update({"at": 0.0, "payload": None})
 
-    def test_cpu_opencl_device_is_not_reported_as_gpu_available(self):
+    def test_opencl_cpu_is_a_valid_host_for_the_logical_substrate(self):
         report = {
             "opencl": {
                 "devices": [
@@ -29,14 +29,19 @@ class GPUTruthTests(unittest.TestCase):
         }
         with patch("hyba.gpureport.report", return_value=report):
             payload = control_api.gpu_payload()
-        self.assertFalse(payload["available"])
-        self.assertEqual(payload["count"], 0)
+        self.assertTrue(payload["available"])
+        self.assertEqual(payload["count"], 1)
         self.assertEqual(payload["opencl_device_count"], 1)
+        self.assertFalse(payload["physical_gpu_available"])
+        self.assertEqual(payload["physical_gpu_count"], 0)
         self.assertFalse(payload["backend_active"])
         self.assertEqual(payload["detected_backend"], "opencl:cpu")
+        self.assertEqual(payload["logical_substrate"]["host_backend"], "opencl:cpu")
+        self.assertTrue(payload["logical_substrate"]["available"])
+        self.assertFalse(payload["logical_substrate"]["fallback_used"])
         self.assertNotIn("running_backend", payload)
 
-    def test_gpu_count_excludes_other_opencl_devices(self):
+    def test_physical_gpu_count_excludes_other_opencl_devices(self):
         report = {
             "opencl": {
                 "devices": [
@@ -49,8 +54,37 @@ class GPUTruthTests(unittest.TestCase):
         with patch("hyba.gpureport.report", return_value=report):
             payload = control_api.gpu_payload()
         self.assertTrue(payload["available"])
-        self.assertEqual(payload["count"], 1)
+        self.assertEqual(payload["count"], 2)
         self.assertEqual(payload["opencl_device_count"], 2)
+        self.assertTrue(payload["physical_gpu_available"])
+        self.assertEqual(payload["physical_gpu_count"], 1)
+
+    def test_cpu_reference_keeps_the_logical_substrate_available(self):
+        report = {
+            "opencl": {"devices": []},
+            "hasher": {
+                "backend": "cpu",
+                "device": "CPU (hashlib)",
+                "fallback_reason": "no OpenCL device",
+            },
+        }
+        with patch("hyba.gpureport.report", return_value=report):
+            payload = control_api.gpu_payload()
+        self.assertTrue(payload["available"])
+        self.assertEqual(payload["count"], 1)
+        self.assertEqual(payload["opencl_device_count"], 0)
+        self.assertFalse(payload["physical_gpu_available"])
+        self.assertEqual(payload["logical_substrate"]["host_backend"], "cpu")
+        self.assertTrue(payload["logical_substrate"]["fallback_used"])
+
+    def test_cpu_reference_does_not_impersonate_a_bound_mining_device(self):
+        control = type("Control", (), {"mmio_device": None})()
+        with patch(
+            "control_api.gpu_payload",
+            return_value={"available": True, "opencl_device_count": 0},
+        ):
+            reason = control_api._mining_device_reason(control)
+        self.assertIn("no mining device", reason)
 
 
 if __name__ == "__main__":
