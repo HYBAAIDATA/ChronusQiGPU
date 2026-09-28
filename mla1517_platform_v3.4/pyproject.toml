@@ -7,7 +7,9 @@ name = "pythia-production-mining"
 version = "0.3.0"
 description = "Truth-labelled Python mining control plane with MLA1517/OpenCL integration"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "numpy>=1.26,<3",
+]
 
 [project.optional-dependencies]
 test = [
