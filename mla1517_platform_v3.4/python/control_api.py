@@ -317,12 +317,12 @@ class ControlPlane:
         handle.record.attempts_window = len(handle.restarts)
         env = os.environ.copy()
         env.setdefault("PYTHONPATH", str(self.python_root))
+        # Workers inherit the service's stdout/stderr so a container log
+        # shows why a worker exited; the restart budget still bounds it.
         handle.process = subprocess.Popen(
             [sys.executable, str(handle.script)],
             cwd=str(self.python_root),
             env=env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
             text=True,
         )
         self.audit.append(
