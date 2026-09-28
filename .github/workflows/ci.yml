@@ -2,6 +2,7 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -23,9 +24,9 @@ jobs:
       - run: npm ci --prefix frontend
       - name: Typecheck (tsc --noEmit)
         run: npm run lint
-      - name: Unit tests (tsx --test)
+      - name: Unit tests (vitest)
         run: npm run test:ts
-      - name: Build (vite + esbuild server bundle)
+      - name: Build (vite)
         run: npm run build
 
   python:
@@ -44,6 +45,18 @@ jobs:
         run: python -m pytest tests/ -x -q
       - name: Byte-compile all Python sources
         run: python -m compileall -q Intelligence core_engine mining hyba lucas pythagoras scripts tests mla1517_platform_v3.4/python
+
+  deploy-sentry:
+    name: Deploy sentry — config, dependency, native-build and CI wiring
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyyaml
+      - name: Scan for deploy pitfalls (errors fail; warnings are reported)
+        run: python -m scripts.deploy_sentry
 
   python-selftest:
     name: Python — Intelligence self-test (ML stack)

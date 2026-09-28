@@ -2,7 +2,7 @@ name: PYTHIA Canonical Push CI
 
 on:
   push:
-    branches: [toe/elevation-expansion]
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:

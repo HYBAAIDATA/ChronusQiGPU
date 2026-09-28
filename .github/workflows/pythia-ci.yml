@@ -2,7 +2,7 @@ name: PYTHIA Production Mining CI
 
 on:
   push:
-    branches: [main, codex/pythia-production-mining]
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -16,8 +16,6 @@ concurrency:
 
 env:
   PYTHONPATH: ${{ github.workspace }}/mla1517_platform_v3.4/python
-  PYTHIA_CI: "1"
-  PYTHIA_LIVE_SUBMIT: "0"
 
 jobs:
   format-and-lint:

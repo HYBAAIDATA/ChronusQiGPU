@@ -34,8 +34,6 @@ hardware = [
 ml = [
     "nltk>=3.8",
     "scikit-learn>=1.3",
-    "xgboost>=1.7",
-    "lightgbm>=4.0",
     # millennium.millennium_reasoning_service imports fastapi at module load.
     "fastapi>=0.110",
 ]
@@ -63,6 +61,7 @@ py-modules = [
     "main",
     "manifold_pool_coordinator",
     "mining_runtime",
+    "pool_catalog",
     "worker_lifecycle",
     "runtime_config",
     "turing_core",
