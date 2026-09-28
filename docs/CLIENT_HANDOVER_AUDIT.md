@@ -1,5 +1,7 @@
 # PYTHIA client handover audit
 
+> **Superseded (2026-09-28).** This is a dated record. `mining/production_miner.py`, which it audits, was retired to `legacy/`; the canonical miner is `mla1517_platform_v3.4/python` (see `docs/PRODUCTION_MINING_RUNBOOK.md`).
+
 **Scope:** `PHIDATA2/PYTHIA`, production Stratum V1 path, branch
 `production/stratum-mining-hardening`.
 

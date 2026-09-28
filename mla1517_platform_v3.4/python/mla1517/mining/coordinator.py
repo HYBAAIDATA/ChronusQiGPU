@@ -33,7 +33,11 @@ from queue import Empty
 from typing import Any, Mapping
 
 from mla1517.hardware import MMIOBridge, VaultRecord
-from manifold_pool_coordinator import CURRENT_HOT_STATE_FORMAT, ManifoldPoolCoordinator
+from manifold_pool_coordinator import (
+    CURRENT_HOT_STATE_FORMAT,
+    ManifoldPoolCoordinator,
+    parse_endpoint,
+)
 
 from .chooser import MiningIntelligenceChooser
 from .session import MiningSession
@@ -219,6 +223,12 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         hasher = kwargs.pop("execution_hasher", None)
         causal_log_path = kwargs.pop("causal_log_path", None)
         super().__init__(*args, **kwargs)
+        # A started worker hashes; whether it may submit is a separate,
+        # live question (submission_permitted). Unapproved, it mines in
+        # shadow: full SHA256d and target checks, shares found and learned
+        # from, nothing written to the pool.
+        self.mining_enabled = True
+        self._live_submit_approved = False
         self.session = session if session is not None else MiningSession()
         self.chain_observer = observer
         self._submission_lock = asyncio.Lock()
@@ -491,6 +501,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 "share_log_tail": self.session.share_log[-8:],
             },
             "causal_tail": self.causal.snapshot(24),
+            "submission": "live" if self.submission_permitted() else "shadow",
             "intelligence": self.intelligence_snapshot(),
         }
 
@@ -581,7 +592,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         )
 
     async def before_hardware_poll(self) -> bool:
-        if not self.submit_enabled:
+        if not self.submission_permitted():
             return not self._throttle_holds()
         if self.chain_observer is None:
             return False
@@ -769,7 +780,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
 
     def _fill_precompute_queue(self) -> int:
         """Top the queue up to the adaptive lookahead; bounded, never speculative in recovery."""
-        if not self.submit_enabled or self.session.state != "SEARCHING" or self.work_throttled:
+        if not self.mining_enabled or self.session.state != "SEARCHING" or self.work_throttled:
             return 0
         identity = self._refresh_work_identity()
         if identity is None:
@@ -973,7 +984,30 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         except Exception as exc:
             LOG.warning("knowledge not shared this cycle: %s", exc)
 
+    def submission_permitted(self) -> bool:
+        """The operator's --submit, or the dashboard's approval for this very pool."""
+        return self.submit_enabled or self._live_submit_approved
+
+    def _approval_binds_here(self, cfg: dict[str, Any], runtime_config: Any) -> bool:
+        """The dashboard approval is bound to one pool identity (endpoint and
+        worker): it permits submission only while that is the pool this
+        session is connected to and authorized as."""
+        if not runtime_config.live_submit_permitted(cfg):
+            return False
+        pool = runtime_config.active_pool(cfg)
+        client = self.client
+        if pool is None or client is None:
+            return False
+        approved = parse_endpoint(pool["endpoint"], "approved")
+        connected = client.endpoint
+        worker = connected.username or self.username
+        return (approved.host, approved.port) == (connected.host, connected.port) and (
+            pool["worker"] == worker
+        )
+
     def _refresh_governor(self) -> None:
+        """Re-read the operator's runtime config: the hashrate cap and the
+        live-submission approval both apply within 5 s, without a restart."""
         now = time.monotonic()
         if now - self._governor_config_at < 5.0:
             return
@@ -981,7 +1015,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         try:
             import runtime_config
 
-            hashrate = runtime_config.load().get("hashrate", {})
+            cfg = runtime_config.load()
+            hashrate = cfg.get("hashrate", {})
             self.governor.configure(
                 target_hs=hashrate.get("target_hs", 0.0),
                 ceiling_hs=hashrate.get("ceiling_hs", runtime_config.HASHRATE_CEILING_HS),
@@ -989,6 +1024,15 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         except Exception as exc:
             # The last good limits stay in force; the network cap always does.
             LOG.warning("hashrate config unavailable, keeping current cap: %s", exc)
+            return
+        try:
+            approved = self._approval_binds_here(cfg, runtime_config)
+        except Exception as exc:  # an unreadable approval is no approval
+            LOG.warning("live-submit approval unreadable, submission closed: %s", exc)
+            approved = False
+        if approved != self._live_submit_approved:
+            LOG.info("live submission %s", "approved" if approved else "closed (shadow)")
+        self._live_submit_approved = approved
 
     def _commit_forecasts(self, plan: SearchPlan) -> None:
         """The world model's forecasts for ``plan``, and the nulls', before it runs."""
@@ -1211,8 +1255,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         proof = self.client.proof_adapter.validate_candidate(
             job_id=job_id, extranonce2=extranonce2, ntime=ntime, nonce=nonce
         )
-        if not self.submit_enabled:
-            return False
+        if not self.submission_permitted():
+            return False  # shadow: a proof-checked share, never written
         if self.chain_observer is None:
             raise RuntimeError("live submission requires a Bitcoin chain observer")
         tip = await asyncio.to_thread(self.chain_observer.tip)
@@ -1285,7 +1329,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         """
         async with self._search_lock:
             if (
-                not self.submit_enabled
+                not self.mining_enabled
                 or self.session.state != "SEARCHING"
                 or self.work_throttled
                 or not self.client

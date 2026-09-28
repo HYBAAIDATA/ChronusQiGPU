@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hmac
 import json
 import mimetypes
 import os
@@ -688,6 +689,30 @@ def knowledge_payload() -> dict[str, Any]:
     return _KNOWLEDGE.snapshot(recent=50)
 
 
+ADMIN_KEY_ENV = "EUCLID_ADMIN_API_KEY"
+UNAUTHENTICATED_ENV = "PYTHIA_ALLOW_UNAUTHENTICATED_CONTROL"
+
+
+def control_authorization(headers: Any) -> tuple[HTTPStatus, str] | None:
+    """None when a state-changing request is authorized, else (status, reason).
+
+    Fail closed: every POST and PUT that changes state (start, stop, switch,
+    elevate, escalate, config) needs ``Authorization: Bearer <key>`` matching
+    EUCLID_ADMIN_API_KEY. With no key configured nothing may change state,
+    unless PYTHIA_ALLOW_UNAUTHENTICATED_CONTROL=1 declares a local dev box.
+    """
+    key = os.getenv(ADMIN_KEY_ENV, "").strip()
+    if not key:
+        if _is_truthy(os.getenv(UNAUTHENTICATED_ENV)):
+            return None
+        return HTTPStatus.FORBIDDEN, f"{ADMIN_KEY_ENV} is not configured; control is closed"
+    header = str(headers.get("Authorization", "") or "")
+    token = header[7:].strip() if header[:7].lower() == "bearer " else ""
+    if not token or not hmac.compare_digest(token.encode("utf-8"), key.encode("utf-8")):
+        return HTTPStatus.UNAUTHORIZED, "operator key required"
+    return None
+
+
 def announce_skills() -> int:
     """Tell every intelligence which skills Salamander holds.
 
@@ -1361,6 +1386,8 @@ class _Handler(BaseHTTPRequestHandler):
         if handler is None:
             self._json(HTTPStatus.NOT_FOUND, {"error": "not_found"})
             return
+        if self._refuse_unauthorized():
+            return
         body, err = self._read_json_body()
         if body is None:
             status = (
@@ -1387,6 +1414,8 @@ class _Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path != "/api/v1/config":
             self._json(HTTPStatus.NOT_FOUND, {"error": "not_found"})
+            return
+        if self._refuse_unauthorized():
             return
         body, err = self._read_json_body()
         if body is None:
@@ -1440,6 +1469,15 @@ class _Handler(BaseHTTPRequestHandler):
     def _json(self, status: HTTPStatus, payload: dict[str, Any]) -> None:
         body = json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
         self._send(int(status), "application/json; charset=utf-8", body)
+
+    def _refuse_unauthorized(self) -> bool:
+        refusal = control_authorization(self.headers)
+        if refusal is None:
+            return False
+        status, reason = refusal
+        _audit().append("control_refused", path=urlparse(self.path).path, reason=reason)
+        self._json(status, {"ok": False, "error": reason})
+        return True
 
     def _method_not_allowed(self) -> None:
         self._json(HTTPStatus.METHOD_NOT_ALLOWED, {"error": "method_not_allowed"})

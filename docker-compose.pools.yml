@@ -5,12 +5,14 @@
 # (PYTHIA_POOL_PROFILE, and PYTHIA_POOLS for failover order; see
 # pool_catalog.py). One supervisor per device keeps one hashrate governor,
 # so the operator cap and the 1%-of-network cap hold for the whole host.
-# Credentials are supplied by the ignored env file referenced below.
+# Credentials and EUCLID_ADMIN_API_KEY (the operator key every start, stop,
+# switch and config change must present) come from the ignored env file.
 #
 # WSL2/dxgkrnl caveat: a docker stop that lands while an OpenCL op is in flight
 # leaves the worker in uninterruptible sleep and wedges the container + device.
 # Always drain through the control API before stopping:
-#   curl -X POST http://127.0.0.1:${PYTHIA_CONTROL_HOST_PORT:-8377}/api/v1/mining/stop
+#   curl -X POST -H "Authorization: Bearer $EUCLID_ADMIN_API_KEY" \
+#        http://127.0.0.1:${PYTHIA_CONTROL_HOST_PORT:-8377}/api/v1/mining/stop
 #   (workers finish their window and stop; /readyz then reports not ready)
 #   docker stop pythia-main
 x-main-common: &main-common

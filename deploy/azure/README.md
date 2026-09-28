@@ -28,8 +28,10 @@ qualified. Do not interpret HTTP health as mining readiness.
 
    Set `image` to `pythia@sha256:<pushed-image-digest>`. Required parameters are
    `environmentName`, `registryName`, `image`, `storageBindingName`, `stratumUser`
-   (the pool worker identity; the control API refuses to boot without it), `tenantId`,
-   `clientId`, `clientSecret`, and `operatorObjectIds`. Keep `externalIngress=false`
+   (the pool worker identity; the control API refuses to boot without it), `adminApiKey`
+   (the operator key every state-changing request must present, at least 32 characters:
+   `openssl rand -hex 32`; without it control is closed), `tenantId`, `clientId`,
+   `clientSecret`, and `operatorObjectIds`. Keep `externalIngress=false`
    for the first deployment so the app cannot become public before auth is configured.
 4. Test from the environment: unauthorized requests must redirect to Entra or return
    401/403; an authenticated but unassigned identity must be denied. An assigned operator

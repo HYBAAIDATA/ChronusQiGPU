@@ -11,6 +11,8 @@ services:
       PYTHIA_HOST: 0.0.0.0
       PYTHIA_PORT: 3000
       PYTHIA_WEB_ROOT: /app/dist/public
+      # Required: control is closed without it (openssl rand -hex 32).
+      EUCLID_ADMIN_API_KEY: "${EUCLID_ADMIN_API_KEY:?set EUCLID_ADMIN_API_KEY}"
       HYBA_REQUIRE_HYBA: "${HYBA_REQUIRE_HYBA:-1}"
       HYBA_DEVICE_ALIAS: "${HYBA_DEVICE_ALIAS:-}"
     devices:

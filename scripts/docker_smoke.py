@@ -26,6 +26,7 @@ import argparse
 import collections
 import json
 import os
+import secrets
 import shutil
 import signal
 import subprocess
@@ -39,11 +40,17 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTAINER = "pythia-smoke"
 
 
+# The operator key the container is started with; state-changing calls present it.
+ADMIN_KEY = secrets.token_hex(32)
+
+
 def http(url: str, *, method: str = "GET", body: dict | None = None, timeout: float = 5.0):
     data = json.dumps(body).encode() if body is not None else None
     request = urllib.request.Request(url, data=data, method=method)
     if data is not None:
         request.add_header("Content-Type", "application/json")
+    if method not in ("GET", "HEAD"):
+        request.add_header("Authorization", f"Bearer {ADMIN_KEY}")
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
             return response.status, response.read()
@@ -122,6 +129,7 @@ class Smoke:
         env = {
             "PYTHIA_PORT": str(self.args.port),
             "MLA1517_STRATUM_USER": "smoke.rig",
+            "EUCLID_ADMIN_API_KEY": ADMIN_KEY,
             "MLA1517_STRATUM_ENDPOINT": f"127.0.0.1:{self.args.pool_port}",
             "PYTHIA_POOLS": "braiins",
             "PYTHIA_ALLOW_UNLISTED_POOLS": "1",
