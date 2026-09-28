@@ -246,6 +246,7 @@ class StratumClient:
         self._pending: dict[int, asyncio.Future[Any]] = {}
         self._reader_task: asyncio.Task[None] | None = None
         self._jobs: dict[str, StratumJob] = {}
+        self._job_awaiting_subscription = False
         self._closed = False
         self.proof_adapter = StratumProofAdapter()
         self._status_sink = status_sink
@@ -298,6 +299,7 @@ class StratumClient:
         self._closed = False
         self.proof_adapter.drop_session()
         self._jobs.clear()
+        self._job_awaiting_subscription = False
         self.runtime_state.connected()
         self._publish_status()
         self._reader_task = asyncio.create_task(self._read_loop())
@@ -307,6 +309,13 @@ class StratumClient:
         subscription_state = self.proof_adapter.handle_subscribe_result(subscription)
         self.runtime_state.subscription_confirmed(subscription_state)
         self._publish_status()
+        if self._job_awaiting_subscription:
+            self._job_awaiting_subscription = False
+            job = self.proof_adapter.current_job
+            if job is not None:
+                self.runtime_state.job_received(job, subscription_state)
+                self._publish_status()
+                LOG.info("Job received: %s", job.job_id)
         self.runtime_state.authorizing()
         self._publish_status()
         authorized = await self.request("mining.authorize", [self.username, self.password])
@@ -340,6 +349,7 @@ class StratumClient:
         self.reader = None
         self.proof_adapter.drop_session()
         self._jobs.clear()
+        self._job_awaiting_subscription = False
         self.runtime_state.disconnected("Stratum session closed")
         self._publish_status()
 
@@ -381,6 +391,7 @@ class StratumClient:
                 LOG.warning("%s reader stopped: %s", self.endpoint.name, exc)
                 self.proof_adapter.drop_session()
                 self._jobs.clear()
+                self._job_awaiting_subscription = False
                 self.runtime_state.disconnected(str(exc))
                 self._publish_status()
 
@@ -400,8 +411,14 @@ class StratumClient:
             self._jobs[job_id] = StratumJob(job_id, tuple(params), time.time())
             subscription = self.proof_adapter.subscription
             job = self.proof_adapter.current_job
-            if subscription is None or job is None:
+            if job is None:
                 raise StratumProtocolError("mining.notify did not create an active job")
+            if subscription is None:
+                # Pools commonly send the first notify in the same write as the
+                # subscribe reply, so the read loop can see it before connect()
+                # has recorded the subscription. Hold it until connect() does.
+                self._job_awaiting_subscription = True
+                return
             self.runtime_state.job_received(job, subscription)
             self._publish_status()
             LOG.info("Job received: %s", job_id)
