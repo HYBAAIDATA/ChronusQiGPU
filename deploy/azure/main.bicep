@@ -12,6 +12,9 @@ param appName string = 'pythia-control'
 param externalIngress bool = false
 @description('Existing environment Azure Files storage binding for durable control configuration.')
 param storageBindingName string
+@minLength(1)
+@description('Pool worker identity (account.worker); the control API refuses to boot without it.')
+param stratumUser string
 param tenantId string
 param clientId string
 @secure()
@@ -87,8 +90,8 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             value: '0'
           }
           {
-            name: 'PYTHIA_LIVE_SUBMIT'
-            value: '0'
+            name: 'MLA1517_STRATUM_USER'
+            value: stratumUser
           }
         ]
         volumeMounts: [
