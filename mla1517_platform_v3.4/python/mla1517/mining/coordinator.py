@@ -242,6 +242,11 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self.last_recovery_plan: RecoveryPlan | None = None
         self.last_control_signals: tuple[str, ...] = ()
         self.work_throttled = False
+        # A throttle pauses vault polling, never observation for good: after
+        # ``throttle_probe_s`` one record is let through, and only a fresh
+        # observation (a HOLD plan) can clear the throttle or re-assert it.
+        self.throttle_probe_s = 5.0
+        self._throttled_at = 0.0
         self.quarantined_records: set[str] = set()
         self.proven_exclusions: list[dict[str, Any]] = []
         self._control_sink: MMIOControlSink | None = None
@@ -531,10 +536,18 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
 
     def _set_throttled(self, throttled: bool) -> None:
         self.work_throttled = bool(throttled)
+        if throttled:
+            self._throttled_at = time.monotonic()
+
+    def _throttle_holds(self) -> bool:
+        return (
+            self.work_throttled
+            and time.monotonic() - self._throttled_at < self.throttle_probe_s
+        )
 
     async def before_hardware_poll(self) -> bool:
         if not self.submit_enabled:
-            return not self.work_throttled
+            return not self._throttle_holds()
         if self.chain_observer is None:
             return False
         if self.session.state == "SUBMITTING" and not self._submission_lock.locked():
@@ -572,7 +585,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 self._chain_tip = None
                 return False
         self.session.finish_cooldown()
-        return self.session.state == "SEARCHING" and not self.work_throttled
+        return self.session.state == "SEARCHING" and not self._throttle_holds()
 
     def _toe_or_declared_absent(self, operation: str) -> TOEMiningAdapter | None:
         """Return the live TOE adapter, or None for a declared operation.

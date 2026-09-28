@@ -8,6 +8,7 @@ breadth + throttle latch) and that the proof boundary is never touched.
 from __future__ import annotations
 
 import asyncio
+import time
 import struct
 import unittest
 from types import SimpleNamespace
@@ -120,6 +121,19 @@ class CoordinatorThrottleWiringTests(unittest.TestCase):
         )
         coord.toe = SimpleNamespace(analyse=lambda **kwargs: context)
         return coord
+
+    def test_throttle_pauses_polling_but_never_latches(self):
+        # A throttle that stopped vault polling for good would also stop the
+        # observations that clear it: the worker would wedge while alive.
+        coord = self._coordinator(_TORN_RESULT)
+        asyncio.run(coord.submit_record(_torn_record()))
+        self.assertTrue(coord.work_throttled)
+        self.assertFalse(coord.submit_enabled)
+        coord.throttle_probe_s = 0.05
+        self.assertFalse(asyncio.run(coord.before_hardware_poll()))
+        time.sleep(0.06)
+        self.assertTrue(asyncio.run(coord.before_hardware_poll()))
+        self.assertTrue(coord.work_throttled)  # only a HOLD observation clears it
 
     def test_causal_throttle_halves_breadth(self):
         coord = self._coordinator(_TORN_RESULT)
