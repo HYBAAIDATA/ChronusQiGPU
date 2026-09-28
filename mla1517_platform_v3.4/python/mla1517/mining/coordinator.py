@@ -23,7 +23,8 @@ import asyncio
 import logging
 import struct
 import time
-from dataclasses import replace
+import uuid
+from dataclasses import asdict, replace
 from queue import Empty
 from typing import Any, Mapping
 
@@ -42,7 +43,19 @@ from .self_healing_agent import (
     RecoveryPlan,
     SelfHealingAgent,
 )
-from .solver import M32SearchSolver
+from .agentic_controller import AgenticMiningController
+from .nonce_lease import LeaseConflict, LeaseExhausted, LeaseRecord
+from .search_plan import (
+    CompletionState,
+    ExecutionRecord,
+    PlanSource,
+    PoolOutcome,
+    SearchPlan,
+    WorkIdentity,
+)
+from .solver import M32SearchSolver, SolveResult
+from .stratum_adapter import StratumAdapterError
+from .tuning_gate import TuningGate
 from .toe_adapter import TOEUnavailable, TOEMiningAdapter
 from .toe_context import TOEContextBuilder, TOEContextUnavailable
 from .toe_signal import TOECausalSignal, build_toe_signal, lucas_ladder_status
@@ -59,6 +72,14 @@ _OBSERVED_WINDOW = 10 * LANES
 # by the Stratum proof adapter's SHA256d check — neither fabricates TOE
 # evidence. Any operation outside this set must raise TOEUnavailable.
 PERMITTED_WITHOUT_TOE = frozenset({"observe_record", "submit_candidate"})
+
+# Precompute wakes on Stratum changes, consumption and recovery edges; this
+# is only the idle heartbeat, not a polling rate.
+_PRECOMPUTE_IDLE_S = 0.25
+_BASELINE_POLICY = "baseline_fallback"
+# Salamander governor modes (interface owned by the Salamander lead).
+_FREEZING_SALAMANDER_MODES = frozenset({"FREEZE_SPECULATION", "RECOVERING", "PAUSED", "FAULTED"})
+_SALAMANDER_MODES = _FREEZING_SALAMANDER_MODES | {"NORMAL", "DE_RATE"}
 
 
 class MMIOControlSink:
@@ -185,6 +206,31 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self._records_observed = 0
         self._last_job_id: str | None = None
         self._recovery_backpressure = False
+        self.agentic = AgenticMiningController()
+        self.tuning = TuningGate()
+        self._tuned_window: int | None = None
+        self._salamander_mode = "NORMAL"
+        self._precompute_task: asyncio.Task | None = None
+        self._precompute_wake = asyncio.Event()
+        self._agentic_state_path: str | None = None
+        self._identity_block_logged: set[str] = set()
+        self._last_pool_outcome = PoolOutcome.NOT_SUBMITTED
+        self._last_submission_id: str | None = None
+        self._last_executed_key: tuple[str, int, str] | None = None
+        self.last_execution: dict[str, Any] | None = None
+        upstream_sink = self.stratum_status_sink
+
+        def _stratum_sink(snapshot: dict[str, Any]) -> None:
+            # Stratum publishes on every job/target/session edge; re-binding
+            # here invalidates queued plans in the same notification.
+            if upstream_sink is not None:
+                upstream_sink(snapshot)
+            try:
+                self._refresh_work_identity()
+            except Exception:
+                LOG.exception("agentic identity refresh from Stratum status failed")
+
+        self.stratum_status_sink = _stratum_sink
 
     async def run_hardware_loop(
         self,
@@ -207,12 +253,115 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             on_quarantine=self.quarantined_records.add,
             on_prune=self.proven_exclusions.append,
         )
-        await super().run_hardware_loop(
-            bridge,
-            difficulty_mask=difficulty_mask,
-            base_step=base_step,
-            poll_ms=poll_ms,
+        if self._agentic_state_path:
+            self.agentic.load_state(self._agentic_state_path)
+        self._precompute_task = asyncio.create_task(self._precompute_loop())
+        try:
+            await super().run_hardware_loop(
+                bridge,
+                difficulty_mask=difficulty_mask,
+                base_step=base_step,
+                poll_ms=poll_ms,
+            )
+        finally:
+            self._precompute_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._precompute_task
+            self._precompute_task = None
+            if self._agentic_state_path:
+                self.agentic.save_state(self._agentic_state_path)
+            if self.client is not None:
+                with contextlib.suppress(Exception):
+                    await self.client.close()
+                self.client = None
+
+    def set_agentic_state_path(self, path: str) -> None:
+        """Configure where the agentic controller persists its learned policy."""
+        self._agentic_state_path = path
+
+    async def connect_with_failover(self):
+        client = await super().connect_with_failover()
+        # The handshake's first mining.notify arrives before self.client is set.
+        self._refresh_work_identity()
+        self._precompute_wake.set()
+        return client
+
+    def apply_salamander_mode(self, mode: str) -> None:
+        """Consume the Salamander governor mode; speculation freezes while it heals."""
+        if mode not in _SALAMANDER_MODES:
+            raise ValueError(f"unknown Salamander mode {mode!r}")
+        self._salamander_mode = mode
+        self._sync_recovery_gate()
+
+    def _sync_recovery_gate(self) -> None:
+        self.agentic.set_recovery_active(
+            self._recovery_backpressure or self._salamander_mode in _FREEZING_SALAMANDER_MODES
         )
+        self._precompute_wake.set()
+
+    def agentic_status(self) -> dict[str, Any]:
+        decision = self.tuning.last_decision
+        return {
+            "agentic": self.agentic.snapshot(),
+            "last_execution": self.last_execution,
+            "tuning": asdict(decision) if decision is not None else None,
+            "salamander_mode": self._salamander_mode,
+        }
+
+    def _resolve_work_identity(self) -> tuple[WorkIdentity | None, str | None]:
+        """Project Stratum's canonical job generation; never invent one."""
+        client = self.client
+        if client is None:
+            return None, "NO_CLIENT"
+        adapter = getattr(client, "proof_adapter", None)
+        if adapter is None:
+            return None, "NO_PROOF_ADAPTER"
+        state = getattr(client, "runtime_state", None)
+        if state is None:
+            return None, "NO_RUNTIME_STATE"
+        if adapter.subscription is None:
+            return None, "NO_SUBSCRIPTION"
+        generation = state.current_job
+        if generation is None or adapter.current_job is None:
+            return None, "NO_CURRENT_JOB"
+        if not state.session_id:
+            return None, "NO_SESSION"
+        if generation.target is None or adapter.current_job.target is None:
+            return None, "NO_ACTIVE_TARGET"
+        if (
+            adapter.current_job.job_id != generation.job_id
+            or adapter.current_job.target != generation.target
+        ):
+            return None, "IDENTITY_MISMATCH"
+        return (
+            WorkIdentity(
+                pool_session_id=state.session_id,
+                generation=generation.generation_id,
+                job_id=generation.job_id,
+                job_fingerprint=generation.fingerprint,
+                target_generation=generation.target_generation,
+                clean_jobs=generation.clean_jobs,
+                received_at=generation.received_at,
+            ),
+            None,
+        )
+
+    def _refresh_work_identity(self) -> WorkIdentity | None:
+        identity, reason = self._resolve_work_identity()
+        if identity is None:
+            if reason in ("NO_PROOF_ADAPTER", "NO_RUNTIME_STATE") and (
+                reason not in self._identity_block_logged
+            ):
+                self._identity_block_logged.add(reason)
+                LOG.warning(
+                    "Stratum client lacks %s; agentic precompute and leased execution disabled",
+                    reason,
+                )
+            self.agentic.clear_work(reason or "NO_WORK_IDENTITY")
+            return None
+        if self.agentic.bind_work(identity):
+            self._precompute_wake.set()
+        return identity
 
     def _set_throttled(self, throttled: bool) -> None:
         self.work_throttled = bool(throttled)
@@ -388,6 +537,86 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 dispatched.append(routed)
         return dispatched
 
+    async def _precompute_loop(self) -> None:
+        """Event-driven lookahead; CancelledError propagates for clean shutdown."""
+        while True:
+            with contextlib.suppress(TimeoutError):
+                await asyncio.wait_for(self._precompute_wake.wait(), _PRECOMPUTE_IDLE_S)
+            self._precompute_wake.clear()
+            try:
+                self._fill_precompute_queue()
+            except Exception:
+                LOG.exception("agentic precompute step failed")
+
+    def _fill_precompute_queue(self) -> int:
+        """Top the queue up to the adaptive lookahead; bounded, never speculative in recovery."""
+        if not self.submit_enabled or self.session.state != "SEARCHING" or self.work_throttled:
+            return 0
+        identity = self._refresh_work_identity()
+        if identity is None:
+            return 0
+        built = 0
+        for _ in range(self.agentic.plans_needed()):
+            plan = self._build_plan(identity)
+            if plan is None or not self.agentic.submit_plan(plan):
+                break
+            built += 1
+        return built
+
+    def _next_window(self) -> int:
+        from lucas.core import lucas
+
+        cap = lucas(self.session.rung)
+        return max(1, min(self._tuned_window or cap, cap))
+
+    def _lane_order_for(self, start: int) -> tuple[tuple[int, ...], str]:
+        """The exact order the baseline would sweep: winner rotation or solver order."""
+        remembered = self.session.memory.lane_order()
+        if remembered is not None:
+            return tuple(remembered), "winner_memory"
+        return tuple(lane for _nonce, lane in self.solver.candidates(start, LANES)), "solver"
+
+    def _build_plan(self, identity: WorkIdentity) -> SearchPlan | None:
+        adapter = self.client.proof_adapter
+        window = self._next_window()
+        plan_id = str(uuid.uuid4())
+        try:
+            lease = self.agentic.reserve_lease(plan_id, window, adapter.next_extranonce2)
+        except (LeaseConflict, LeaseExhausted, StratumAdapterError) as exc:
+            LOG.debug("precompute lease unavailable: %s", exc)
+            return None
+        order, order_source = self._lane_order_for(lease.start)
+        decision = self.last_mining_decision
+        tuning = self.tuning.last_decision
+        try:
+            return SearchPlan(
+                job_fingerprint=identity.job_fingerprint,
+                pool_session_id=identity.pool_session_id,
+                generation=identity.generation,
+                base_step=lease.start,
+                window=window,
+                extranonce2=lease.extranonce2,
+                lane_order=order,
+                preferred_face=self.solver.get_lane_start_offset(),
+                dispatch_breadth=self._dispatch_breadth,
+                executor_route="cpu_reference",
+                policy_id=decision.lead if decision is not None else "flat_exhaustive",
+                evidence_refs={
+                    "lane_order_source": order_source,
+                    "lookahead": self.agentic.lookahead,
+                    "tuning_action": tuning.action if tuning is not None else None,
+                    "toe_face_bias": (
+                        self.last_toe_signal.face_bias if self.last_toe_signal is not None else None
+                    ),
+                },
+                created_at=time.monotonic(),
+                plan_id=plan_id,
+            )
+        except ValueError as exc:
+            self.agentic.release_lease(plan_id)
+            LOG.warning("precomputed plan rejected by contract: %s", exc)
+            return None
+
     async def submit_candidate(
         self,
         *,
@@ -405,6 +634,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
     async def _submit_candidate_locked(
         self, *, job_id: str, extranonce2: str, ntime: str, nonce: int | str
     ) -> bool:
+        self._last_pool_outcome = PoolOutcome.NOT_SUBMITTED
         if not self.client:
             raise ConnectionError("no active Stratum client")
         if self.session.state != "SEARCHING" or self.work_throttled:
@@ -426,6 +656,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             budget=250_000,
         )
         self.last_mining_decision = decision
+        self._last_submission_id = f"submission:{uuid.uuid4()}"
         self.session.begin_submission(
             header=proof.header,
             target=proof.target,
@@ -434,21 +665,41 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             parent_height=tip["height"],
             block_candidate=int.from_bytes(proof.digest, "little")
             <= compact_target(int.from_bytes(proof.header[72:76], "little")),
+            submission_id=self._last_submission_id,
         )
         if self._bridge is not None:
             self._bridge.stop()
+        runtime = getattr(self.client, "runtime_state", None)
+        submitted_before = runtime.submitted if runtime is not None else None
         result = None
         try:
             result = await super().submit_candidate(
                 job_id=job_id, extranonce2=extranonce2, ntime=ntime, nonce=nonce
             )
+        except BaseException:
+            # Unknown stays unknown: once mining.submit may have been written,
+            # neither acceptance nor rejection can be claimed.
+            wrote = runtime is None or runtime.submitted != submitted_before
+            self._last_pool_outcome = (
+                PoolOutcome.OUTCOME_UNKNOWN if wrote else PoolOutcome.NOT_SUBMITTED
+            )
+            raise
         finally:
             self.session.submission_finished(result)
+            # A resolved share returns the lifecycle to SEARCHING directly; the
+            # base loop only restarts the bridge after a refused poll, so the
+            # device paused for this submission must be resumed here.
+            if self._bridge is not None and self.session.state == "SEARCHING":
+                self._bridge.start()
+        self._last_pool_outcome = PoolOutcome.ACCEPTED if result is True else PoolOutcome.REJECTED
         self.mining_intelligence.learn(accepted=result, lead=decision.lead, job_id=job_id)
         return result
 
     async def search_current_job(self) -> bool:
-        """Search a fresh negotiated header without blocking pool notifications."""
+        """Execute one leased window: a precomputed SearchPlan, else the baseline.
+
+        Returns True only for a literal pool ACCEPTED response.
+        """
         async with self._search_lock:
             if (
                 not self.submit_enabled
@@ -457,33 +708,193 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 or not self.client
             ):
                 return False
+            identity = self._refresh_work_identity()
+            if identity is None:
+                self.last_execution = {
+                    "executed": False,
+                    "reason": self.agentic.admission_block_reason(),
+                }
+                return False
             client = self.client
             adapter = client.proof_adapter
             job = adapter.current_job
-            if job is None or job.target is None or adapter.subscription is None:
-                return False
-            extranonce2 = adapter.next_extranonce2()
-            header = adapter.build_header(job.job_id, extranonce2, job.ntime, 0)
-            order = self.session.memory.lane_order()
-            from lucas.core import lucas
+            plan = self.agentic.consume_plan(timeout_ms=0)
+            fallback_reason = (
+                None
+                if plan is not None
+                else self.agentic.telemetry.last_consume_miss_reason or "queue_empty"
+            )
+            lease: LeaseRecord | None = None
+            if plan is not None:
+                try:
+                    lease = self.agentic.begin_execution(plan)
+                except LeaseConflict:
+                    plan, fallback_reason = None, "stale_plan"
+            self._precompute_wake.set()
+            if plan is None:
+                window = self._next_window()
+                try:
+                    lease = self.agentic.begin_fallback(window, adapter.next_extranonce2)
+                except (LeaseConflict, LeaseExhausted, StratumAdapterError) as exc:
+                    LOG.warning("baseline search refused: %s", exc)
+                    self.last_execution = {"executed": False, "reason": f"lease: {exc}"}
+                    return False
+                self.agentic.note_fallback(fallback_reason)
+                order, _source = self._lane_order_for(lease.start)
+                budget, policy_id = window, _BASELINE_POLICY
+                source = PlanSource.BASELINE_FALLBACK
+                preferred_face = self.solver.get_lane_start_offset()
+            else:
+                order, budget, policy_id = plan.lane_order, plan.window, plan.policy_id
+                source, preferred_face = PlanSource.AGENTIC_PRECOMPUTED, plan.preferred_face
 
-            budget = lucas(self.session.rung)
-            result = await asyncio.to_thread(
-                self.solver.scan_header,
-                header=header,
-                target=job.target,
-                budget=budget,
-                lane_order=order,
-                scale_index=self.session.rung,
-            )
-            if client is not self.client or adapter.current_job != job or not result.valid:
-                return False
-            return await self.submit_candidate(
-                job_id=job.job_id,
-                extranonce2=extranonce2,
-                ntime=job.ntime,
-                nonce=result.found_nonce,
-            )
+            result: SolveResult | None = None
+            outcome = PoolOutcome.NO_CANDIDATE
+            execution_id = f"execution:{uuid.uuid4()}"
+            submission_id: str | None = None
+            try:
+                header = adapter.build_header(job.job_id, lease.extranonce2, job.ntime, 0)
+                result = await asyncio.to_thread(
+                    self.solver.scan_header,
+                    header=header,
+                    target=job.target,
+                    budget=budget,
+                    lane_order=order,
+                    scale_index=self.session.rung,
+                    start_nonce=lease.start,
+                )
+                current = self._refresh_work_identity()
+                stale = (
+                    client is not self.client
+                    or adapter.current_job != job
+                    or current is None
+                    or current.key != identity.key
+                )
+                if result.valid and stale:
+                    outcome = PoolOutcome.NOT_SUBMITTED
+                elif result.valid:
+                    self._last_submission_id = None
+                    try:
+                        await self.submit_candidate(
+                            job_id=job.job_id,
+                            extranonce2=lease.extranonce2,
+                            ntime=job.ntime,
+                            nonce=result.found_nonce,
+                        )
+                    finally:
+                        outcome = self._last_pool_outcome
+                        submission_id = self._last_submission_id
+            finally:
+                self.agentic.finish_execution(lease.lease_id, scanned=result is not None)
+                if result is not None:
+                    self._record_execution(
+                        identity=identity,
+                        plan=plan,
+                        lease=lease,
+                        source=source,
+                        fallback_reason=fallback_reason,
+                        policy_id=policy_id,
+                        order=tuple(order),
+                        preferred_face=preferred_face,
+                        budget=budget,
+                        result=result,
+                        outcome=outcome,
+                        execution_id=execution_id,
+                        submission_id=submission_id,
+                    )
+            return outcome is PoolOutcome.ACCEPTED
+
+    def _record_execution(
+        self,
+        *,
+        identity: WorkIdentity,
+        plan: SearchPlan | None,
+        lease: LeaseRecord,
+        source: PlanSource,
+        fallback_reason: str | None,
+        policy_id: str,
+        order: tuple[int, ...],
+        preferred_face: int,
+        budget: int,
+        result: SolveResult,
+        outcome: PoolOutcome,
+        execution_id: str,
+        submission_id: str | None,
+    ) -> None:
+        from lucas.core import lucas
+
+        candidate_id = f"candidate:{execution_id.split(':', 1)[1]}" if result.valid else None
+
+        record = ExecutionRecord(
+            plan_id=plan.plan_id if plan is not None else None,
+            job_fingerprint=identity.job_fingerprint,
+            policy_id=policy_id,
+            planned_window=budget,
+            actual_window=result.attempts,
+            device_used="cpu_reference",
+            hash_count=result.attempts,
+            elapsed_seconds=result.elapsed_seconds,
+            kernel_ms=result.elapsed_seconds * 1000.0,
+            temperature_c=None,
+            locally_valid_shares=1 if result.valid else 0,
+            pool_accepted=1 if outcome is PoolOutcome.ACCEPTED else 0,
+            pool_rejected=1 if outcome is PoolOutcome.REJECTED else 0,
+            pool_stale=0,
+            recovery_event=self.agentic.is_recovery_active(),
+            lane_order=order,
+            preferred_face=preferred_face,
+            plan_source=source,
+            plan_fallback_reason=(
+                fallback_reason if source is PlanSource.BASELINE_FALLBACK else None
+            ),
+            pool_outcome=outcome,
+            lease_id=lease.lease_id,
+            generation=identity.generation,
+            extranonce2=lease.extranonce2,
+            nonce_start=lease.start,
+            requested_route="cpu_reference",
+            executed_route="cpu_reference",
+            completion_state=(
+                CompletionState.EARLY_WINNER if result.valid else CompletionState.COMPLETE
+            ),
+            execution_id=execution_id,
+            candidate_id=candidate_id,
+            submission_id=submission_id,
+        )
+        self.agentic.record_outcome(record)
+        new_job = self._last_executed_key is not None and self._last_executed_key != identity.key
+        self._last_executed_key = identity.key
+        decision = self.tuning.evaluate(
+            current_window=budget,
+            max_window=lucas(self.session.rung),
+            kernel_latency_ms=result.elapsed_seconds * 1000.0,
+            hashes_computed=result.attempts,
+            elapsed_seconds=result.elapsed_seconds,
+            new_job_observed=new_job,
+            stratum_state="NEW_JOB" if new_job else "READY",
+            recovery_active=self.agentic.is_recovery_active(),
+        )
+        if decision.action != "HOLD":
+            self._tuned_window = decision.next_window
+        self.last_execution = {
+            "executed": True,
+            "pool_session_id": identity.pool_session_id,
+            "job_fingerprint": identity.job_fingerprint,
+            "execution_id": execution_id,
+            "candidate_id": candidate_id,
+            "submission_id": submission_id,
+            "plan_source": source.value,
+            "plan_id": record.plan_id,
+            "plan_fallback_reason": record.plan_fallback_reason,
+            "lease_id": lease.lease_id,
+            "generation": identity.generation,
+            "extranonce2": lease.extranonce2,
+            "nonce_start": lease.start,
+            "requested_window": budget,
+            "attempts": result.attempts,
+            "pool_outcome": outcome.value,
+            "tuning_action": decision.action,
+        }
 
     async def submit_record(self, record: VaultRecord) -> bool:
         if not self.client:
@@ -496,6 +907,10 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self._records_observed += 1
         new_job = self._last_job_id is not None and self._last_job_id != job.job_id
         self._last_job_id = job.job_id
+
+        # Stratum is the sole authority for work identity.
+        self._refresh_work_identity()
+
         cassini_error = self._cassini_fault(record.state)
         device_error = self._bridge.last_error() if self._bridge is not None else 0
 
@@ -565,6 +980,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             LOG.error("recovery queue saturated; applying fail-closed backpressure: %s", exc)
             self._set_throttled(True)
             self._recovery_backpressure = True
+        # Salamander gate: speculation freezes while recovery runs.
+        self._sync_recovery_gate()
         if self._control_sink is not None:
             # The coordinator is the only executor of recovery plans; drain
             # the non-blocking queue and dispatch each pending plan. Signals

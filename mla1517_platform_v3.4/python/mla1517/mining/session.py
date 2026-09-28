@@ -24,6 +24,8 @@ EDGES = {
     "WAITING_EXTERNAL": "COOLDOWN",
     "COOLDOWN": "SEARCHING",
 }
+# Bounded so frequent share acceptances cannot grow the persisted session.
+WINNER_MEMORY_LIMIT = 256
 
 
 def digest(header: bytes) -> bytes:
@@ -85,6 +87,7 @@ class PythiaWinnerMemory:
         if any(r["block_hash"] == record["block_hash"] for r in self.records):
             return
         self.records.append(record)
+        del self.records[:-WINNER_MEMORY_LIMIT]
         self._discover(record)
 
     def lane_order(self) -> tuple[int, ...] | None:
@@ -113,6 +116,7 @@ class MiningSession:
         self.cooldown_until: float | None = None
         self.memory = PythiaWinnerMemory()
         self.last_block_hash: str | None = None
+        self.last_share: dict | None = None
         self._lock_file = None
         if self.path is not None:
             self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -157,6 +161,7 @@ class MiningSession:
         self.pending = data["pending"]
         self.external = data["external"]
         self.cooldown_until = data["cooldown_until"]
+        self.last_share = data.get("last_share")
         self.memory = PythiaWinnerMemory(data["winners"])
         if state != "SEARCHING" and not self.pending:
             raise ValueError("active lifecycle is missing submission evidence")
@@ -187,6 +192,7 @@ class MiningSession:
             "winners": self.memory.records,
             "theorem_proven": False,
             "last_block_hash": self.last_block_hash,
+            "last_share": self.last_share,
         }
         temporary = self.path.with_suffix(self.path.suffix + ".tmp")
         with temporary.open("w", encoding="utf-8") as stream:
@@ -216,6 +222,7 @@ class MiningSession:
         parent_hash: str,
         parent_height: int,
         block_candidate: bool,
+        submission_id: str | None = None,
     ) -> None:
         if self.state != "SEARCHING":
             raise RuntimeError("mining lifecycle blocks submission")
@@ -241,6 +248,7 @@ class MiningSession:
             "parent_height": parent_height,
             "block_candidate": block_candidate,
             "outcome": None,
+            "submission_id": submission_id,
         }
         self._go("SUBMITTING")
         self._save()  # durable before the network write
@@ -251,6 +259,9 @@ class MiningSession:
         if accepted is not None and type(accepted) is not bool:
             raise ValueError("pool outcome must be boolean or unknown")
         self.pending["outcome"] = accepted
+        if accepted is not None and not self.pending["block_candidate"]:
+            self._resolve_share(accepted)
+            return
         self._go("WAITING_EXTERNAL")
         self._save()
         if accepted is True:
@@ -264,6 +275,30 @@ class MiningSession:
                 self.pending["job_id"],
             )
             self._save()
+
+    def _resolve_share(self, accepted: bool) -> None:
+        """A share with a literal pool answer is fully resolved.
+
+        It carries no chain-height evidence to wait for, so the lifecycle
+        returns to SEARCHING without consuming a block cycle (the rung is
+        unchanged). Block candidates and unknown outcomes keep the
+        external-chain gate.
+        """
+        pending = self.pending
+        self.history.pop()
+        self.state = "SEARCHING"
+        self.pending = None
+        self.last_share = {
+            "job_id": pending["job_id"],
+            "block_hash": pending["block_hash"],
+            "submission_id": pending.get("submission_id"),
+            "outcome": accepted,
+        }
+        if accepted:
+            self.memory.consolidate(
+                bytes.fromhex(pending["header"]), pending["target"], pending["job_id"]
+            )
+        self._save()
 
     def observe_external(
         self, *, block_hash: str, height: int, own_block_height: int | None = None

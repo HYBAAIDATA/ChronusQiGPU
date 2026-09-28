@@ -1,7 +1,8 @@
 """Optional OpenCL punch-host resolution.
 
-Resolution order: igpu.opencl_host (iGPU-first SHA256d), then
-toe.unified_punch / Intelligence.unified_punch, then filesystem siblings.
+Resolution order: the complete unified-punch host, then filesystem siblings,
+then the legacy iGPU SHA256d host.  A SHA-capable host is not necessarily a
+complete punch host, so it must not shadow the canonical implementation.
 """
 
 from __future__ import annotations
@@ -24,12 +25,6 @@ def _load_module_from_path(module_name: str, path: str):
 
 
 def resolve_punch_host_class() -> Optional[type]:
-    try:
-        from igpu.opencl_host import OpenClPunchHost
-
-        return OpenClPunchHost
-    except Exception:
-        pass
     for module_name in ("toe.unified_punch", "Intelligence.unified_punch"):
         try:
             mod = importlib.import_module(module_name)
@@ -50,6 +45,12 @@ def resolve_punch_host_class() -> Optional[type]:
         host_cls = getattr(mod, "UnifiedPunchHost", None) if mod else None
         if host_cls is not None:
             return host_cls
+    try:
+        from igpu.opencl_host import OpenClPunchHost
+
+        return OpenClPunchHost
+    except Exception:
+        pass
     return None
 
 
@@ -63,12 +64,4 @@ def resolve_punch_host() -> Optional[Any]:
         return None
     if getattr(host, "use_opencl", False):
         return host
-    try:
-        from igpu.opencl_host import resolve_opencl_host
-
-        ocl = resolve_opencl_host()
-        if ocl is not None:
-            return ocl
-    except Exception:
-        pass
     return host

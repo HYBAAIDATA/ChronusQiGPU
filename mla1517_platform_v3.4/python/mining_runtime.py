@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
 
@@ -66,15 +67,29 @@ async def _main_async(args) -> None:
         cooldown_seconds=float(os.getenv("PYTHIA_MINING_COOLDOWN_SECONDS", "1")),
     )
     try:
-        coordinator = IntelligentPoolCoordinator(
-            endpoints,
-            username=args.user,
-            password=args.password,
-            submit_enabled=args.submit,
-            mining_session=session,
-            chain_observer=observer,
-        )
-        with HeartbeatEmitter("agentic-mining"):
+        with HeartbeatEmitter("agentic-mining") as heartbeat:
+
+            def publish_stratum_status(snapshot: dict) -> None:
+                heartbeat.report(
+                    stratum_status=json.dumps(
+                        snapshot,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    )
+                )
+
+            coordinator = IntelligentPoolCoordinator(
+                endpoints,
+                username=args.user,
+                password=args.password,
+                submit_enabled=args.submit,
+                mining_session=session,
+                chain_observer=observer,
+                stratum_status_sink=publish_stratum_status,
+            )
+            coordinator.set_agentic_state_path(
+                os.getenv("PYTHIA_AGENTIC_STATE_PATH", "data/agentic_policy.json")
+            )
             with MMIOBridge(args.device, map_bytes=args.map_bytes) as bridge:
                 await coordinator.run_hardware_loop(
                     bridge,

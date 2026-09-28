@@ -327,6 +327,11 @@ class ExecutionRecord:
     planned_window_start: int | None = None
     chunk_count: int = 0
     power_w: float | None = None
+    # --- correlation spine: session → generation → plan → lease → execution
+    # → candidate → submission (persisted in MiningSession.pending/last_share).
+    execution_id: str | None = None
+    candidate_id: str | None = None
+    submission_id: str | None = None
 
     def __post_init__(self) -> None:
         source = PlanSource(self.plan_source)

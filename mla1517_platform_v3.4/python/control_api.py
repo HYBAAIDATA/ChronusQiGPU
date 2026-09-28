@@ -528,22 +528,152 @@ def _identity_payload() -> dict[str, Any]:
     return {"ok": ok, "reason": reason}
 
 
-def _ready_to_mine_reason(records: list[WorkerRecord]) -> tuple[bool, str]:
+def _stratum_status_payload(
+    control: ControlPlane,
+    records: list[WorkerRecord],
+) -> dict[str, Any]:
+    identity = control.identity.public()
+    endpoint = f"{identity['host']}:{identity['port']}"
+    fallback: dict[str, Any] = {
+        "schema": "mla1517.stratum/1",
+        "state": "CONFIGURED",
+        "ready": False,
+        "connected": False,
+        "status": "runtime_evidence_unavailable",
+        "evidence_available": False,
+        "primary": {
+            "configured": True,
+            "pool_id": identity["profile"],
+            "transport": "DISCONNECTED",
+            "subscribed": False,
+            "authorized": False,
+            "endpoint": endpoint,
+            "worker": identity["user_redacted"],
+            "connected_at": None,
+            "last_message_at": None,
+            "last_error": "runtime evidence unavailable",
+        },
+        "job": {
+            "active": False,
+            "generation": None,
+            "invalidated_generation": None,
+            "job_id": None,
+            "fingerprint": None,
+            "received_at": None,
+            "age_ms": None,
+            "clean_jobs": None,
+            "difficulty": None,
+            "difficulty_source": None,
+            "difficulty_received_at": None,
+            "share_target": None,
+            "target_generation": 0,
+        },
+        "submission": {
+            "state": "IDLE",
+            "last_result": None,
+            "last_submit_at": None,
+            "last_response_at": None,
+            "generation": None,
+            "job_id": None,
+            "job_fingerprint": None,
+        },
+        "counters": {
+            "jobs_received": 0,
+            "jobs_invalidated": 0,
+            "disconnects": 0,
+            "submitted": 0,
+            "accepted": 0,
+            "rejected": 0,
+            "unknown": 0,
+        },
+    }
+    raw = _read_metrics("agentic-mining").get("stratum_status")
+    try:
+        observed = json.loads(raw) if isinstance(raw, str) else raw
+    except (TypeError, ValueError):
+        return fallback
+    if not isinstance(observed, dict):
+        return fallback
+    primary = observed.get("primary")
+    job = observed.get("job")
+    submission = observed.get("submission")
+    counters = observed.get("counters")
+    if not all(isinstance(item, dict) for item in (primary, job, submission, counters)):
+        return fallback
+
+    primary = dict(primary)
+    job = dict(job)
+    submission = dict(submission)
+    counters = dict(counters)
+    connected = primary.get("transport") == "CONNECTED"
+    active_job = job.get("active") is True and job.get("generation") is not None
+    target_available = isinstance(job.get("share_target"), str) and bool(job.get("share_target"))
+    worker_live = any(
+        record.worker_id == "agentic-mining" and record.liveness for record in records
+    )
+    ready = (
+        worker_live
+        and connected
+        and primary.get("subscribed") is True
+        and primary.get("authorized") is True
+        and active_job
+        and target_available
+    )
+    primary["configured"] = True
+    primary["transport"] = "CONNECTED" if connected else "DISCONNECTED"
+    primary.setdefault("endpoint", endpoint)
+    primary.setdefault("worker", identity["user_redacted"])
+    state = str(observed.get("state") or "DEGRADED")
+    return {
+        "schema": "mla1517.stratum/1",
+        "state": state,
+        "ready": ready,
+        "connected": connected,
+        "status": state.lower(),
+        "evidence_available": True,
+        "primary": primary,
+        "job": job,
+        "submission": submission,
+        "counters": counters,
+    }
+
+
+def _ready_to_mine_reason(
+    records: list[WorkerRecord],
+    stratum: dict[str, Any],
+) -> tuple[bool, str]:
     identity = _identity_payload()
     if not identity["ok"]:
         return False, str(identity["reason"])
     if any(record.state == "failed" for record in records):
         return False, "supervisor_degraded"
-    if any(record.readiness for record in records):
-        return True, "ok"
-    return False, "worker_unavailable"
+    if not any(record.readiness for record in records):
+        return False, "worker_unavailable"
+    primary = stratum.get("primary", {})
+    job = stratum.get("job", {})
+    if primary.get("transport") != "CONNECTED":
+        return False, "stratum_disconnected"
+    if primary.get("subscribed") is not True:
+        return False, "stratum_not_subscribed"
+    if primary.get("authorized") is not True:
+        if stratum.get("state") == "AUTH_FAILED":
+            return False, "stratum_auth_failed"
+        return False, "stratum_not_authorized"
+    if job.get("active") is not True or job.get("generation") is None:
+        return False, "stratum_waiting_job"
+    if not job.get("share_target"):
+        return False, "stratum_target_unavailable"
+    if stratum.get("ready") is not True:
+        return False, "stratum_not_ready"
+    return True, "ok"
 
 
 def status_payload() -> dict[str, Any]:
     """Public status contract for the canonical operator UI."""
     control = _control_plane()
     records = control.records()
-    ready, reason = _ready_to_mine_reason(records)
+    stratum = _stratum_status_payload(control, records)
+    ready, reason = _ready_to_mine_reason(records, stratum)
     total_hashrate = sum(record.hashrate for record in records)
     total_shares = sum(record.shares_accepted for record in records)
     worker_map = {record.worker_id: record.public() for record in records}
@@ -602,10 +732,7 @@ def status_payload() -> dict[str, Any]:
         },
         "gpu": gpu,
         "workers": worker_map,
-        "stratum": {
-            "connected": ready,
-            "status": reason,
-        },
+        "stratum": stratum,
         "identity": _identity_payload(),
         "ready_to_mine": {
             "ready": ready,
@@ -654,14 +781,21 @@ def audit_tail_payload(limit: int = 50) -> dict[str, Any]:
     }
 
 
-def _reason_metrics(records: list[WorkerRecord]) -> str:
-    ready, reason = _ready_to_mine_reason(records)
+def _reason_metrics(records: list[WorkerRecord], stratum: dict[str, Any]) -> str:
+    ready, reason = _ready_to_mine_reason(records, stratum)
     reasons = (
         "ok",
         "identity_hmac_missing",
         "identity_hmac_malformed",
         "supervisor_degraded",
         "worker_unavailable",
+        "stratum_disconnected",
+        "stratum_not_subscribed",
+        "stratum_not_authorized",
+        "stratum_auth_failed",
+        "stratum_waiting_job",
+        "stratum_target_unavailable",
+        "stratum_not_ready",
     )
     lines = [
         f'pythia_ready_to_mine{{reason="{name}"}} {1 if name == reason else 0}' for name in reasons
@@ -676,8 +810,10 @@ def _reason_metrics(records: list[WorkerRecord]) -> str:
 
 
 def metrics_payload() -> str:
-    records = _control_plane().records()
-    extra = _reason_metrics(records)
+    control = _control_plane()
+    records = control.records()
+    stratum = _stratum_status_payload(control, records)
+    extra = _reason_metrics(records, stratum)
     runtime = METRICS.prometheus().strip()
     chunks = [chunk for chunk in (runtime, extra) if chunk]
     return "\n".join(chunks) + ("\n" if chunks else "")
