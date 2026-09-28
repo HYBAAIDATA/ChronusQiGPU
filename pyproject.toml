@@ -79,6 +79,7 @@ py-modules = [
 ]
 
 [tool.setuptools.package-data]
+mla1517 = ["seeds/*.yaml"]
 aethel = ["py.typed", "*.md"]
 kellogg = ["py.typed"]
 toe = ["py.typed", "default_propagators.json"]

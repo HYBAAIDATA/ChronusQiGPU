@@ -1,0 +1,103 @@
+# What PYTHIA's intelligences look for.
+#
+# A capable learner that is not told what to look for will not find it.
+# This file is the curriculum: each entry is a QUESTION, never an answer.
+# The learners find the answers from evidence, and mla1517/learning.py
+# judges them. Every question is published to the knowledge fabric
+# (topic "question.<id>"), and its current status to "learning.<id>".
+#
+# Kinds:
+#   quantity     a learner forecasts a number before it happens; scored
+#                against the null forecaster with the log score, in bits
+#   probability  a learner forecasts an event before it happens; same scoring
+#   law          a proven answer, exposed to refutation on every outcome
+#   fact         answered when an intelligence publishes the fact named
+#   open         a question nobody answers yet; "how" says what would
+#
+# Every entry says why it matters. A quantity or probability question also
+# names the BASELINE (the null forecaster) it must beat: learning is what the
+# learner knows that the baseline does not. Add a question by pull request, like any other change.
+
+schema: pythia.questions/1
+questions:
+  - id: window.elapsed
+    kind: quantity
+    ask: How long will the next window take?
+    why: >-
+      Every window size, precompute depth and responsiveness bound the
+      operating policy chooses rests on this prediction.
+    learner: mining.world_model
+    baseline: the previous window's time per hash on the same route
+    min_n: 30
+
+  - id: window.invalidated
+    kind: probability
+    ask: Will the next window's work be invalidated before it finishes?
+    why: >-
+      Invalidated work is the stale loss the policy trades against overhead;
+      the invalidation rate is the one quantity the pool, not the machine,
+      decides.
+    learner: mining.world_model
+    baseline: the fraction of windows invalidated so far
+    min_n: 30
+
+  - id: shares.follow.work
+    kind: law
+    ask: Does anything find shares faster than the work executed predicts?
+    why: >-
+      SHA-256d is modelled as a random oracle, so no ordering of nonces can
+      change how many shares a hash finds. The law is tested on every window
+      rather than assumed: a sustained departure is either a counting bug or
+      a discovery, and either way the first thing anyone needs to know.
+    law: shares ~ Poisson(hashes x (target + 1) / 2^256)
+
+  - id: route.opencl.rate
+    kind: fact
+    ask: What hash rate does the OpenCL route really sustain?
+    why: >-
+      The simulator's iGPU gains use assumed figures; only the device can
+      answer.
+    answered_by:
+      topic: mining.world
+      path: [routes, opencl_m32, hash_rate_hs]
+
+  - id: policy.levers
+    kind: fact
+    ask: Does any operating lever beat the learned policy on the live route?
+    why: >-
+      The discovery worker experiments on a twin of the live miner; a
+      replicated surprise would show where the policy's model is wrong.
+    answered_by:
+      topic: discovery.campaign
+      path: [discoveries]
+
+  - id: device.sag
+    kind: open
+    ask: Does the device slow down as a window runs?
+    why: >-
+      Under strong sag the learned policy does worse than the fixed window
+      (a recorded expected failure), and nothing in the linear route model
+      can see it.
+    how: >-
+      Compare window.elapsed's forecast errors against window length: a sag
+      shows as errors that grow with the window.
+
+  - id: precompute.depth
+    kind: open
+    ask: Is the precompute depth right for the current job churn?
+    why: >-
+      Depth beyond the wait-free minimum only produces plans that the next
+      job discards; too little depth leaves the executor waiting.
+    how: >-
+      The policy predicts executor waiting per window (precompute_wait_ms);
+      forecast it and score it against the loss ledger's measured idle time.
+
+  - id: recovery.effect
+    kind: open
+    ask: Which Salamander recoveries actually restore throughput?
+    why: >-
+      A recovery that is verified but does not restore throughput is a
+      symptom treated, not a cause removed.
+    how: >-
+      Salamander publishes salamander.recovery; compare the route's measured
+      hash rate in the windows before and after each one.

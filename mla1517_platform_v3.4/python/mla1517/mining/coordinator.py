@@ -23,6 +23,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import math
 import os
 import struct
 import time
@@ -52,6 +53,7 @@ from .execution_router import NONCE_ORDER_M32, ExecutionRouter
 from .recovery_authority import RecoveryGovernor, RecoveryRecord
 from .nonce_lease import LeaseConflict, LeaseExhausted, LeaseRecord
 from .search_plan import (
+    CompletionState,
     ExecutionRecord,
     PlanSource,
     PoolOutcome,
@@ -63,6 +65,7 @@ from .stratum_adapter import StratumAdapterError
 from .tuning_gate import TuningGate
 from .intelligence_memory import IntelligenceMemory
 from ..knowledge import KnowledgeFabric, default_journal_path
+from ..learning import LearningLedger, ResidualScale
 from .hashrate_governor import HashrateGovernor
 from .loss_ledger import LossLedger
 from .operating_policy import OperatingPolicy, PolicyContext
@@ -294,6 +297,12 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         # journal sits beside the Aethel memory and is shared by all workers.
         self.knowledge = KnowledgeFabric(default_journal_path() if memory_dir else None)
         self._knowledge_at = float("-inf")
+        # Learning is judged, not assumed: forecasts committed when a plan is
+        # made are scored against a null when its window finishes.
+        self.learning = LearningLedger.from_seeds(fabric=self.knowledge)
+        self._forecasts: dict[str, dict[str, Any]] = {}
+        self._elapsed_scale = {"learner": ResidualScale(), "null": ResidualScale()}
+        self._sec_per_hash: dict[str, float] = {}
         self.execution_hasher = hasher if hasher is not None else CpuReferenceHasher()
         self.causal = CausalLedger(path=causal_log_path)
         self.recovery = RecoveryGovernor(on_event=self._on_recovery_event)
@@ -767,9 +776,13 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             return 0
         built = 0
         for _ in range(self.agentic.plans_needed()):
+            started = time.perf_counter()
             plan = self._build_plan(identity)
             if plan is None or not self.agentic.submit_plan(plan):
                 break
+            # What a plan costs to build: the precompute depth is set from it.
+            self.world.observe_plan_latency(time.perf_counter() - started)
+            self._commit_forecasts(plan)
             self.causal.record(
                 "plan_created",
                 CausalCoordinate(
@@ -832,6 +845,13 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 derate_cap=self._tuned_window if derated else None,
                 max_window_seconds=self._max_window_seconds,
             )
+        )
+        # One authority over precompute depth: the policy's model once plan
+        # latency is measured, the controller's reactive adaptation before.
+        measured = decision.source == "model" and "precompute_wait_ms" in decision.expected
+        self.agentic.set_lookahead(
+            decision.lookahead if measured else None,
+            reason=f"job churn {decision.expected.get('job_churn_per_hour', 0.0):.1f}/h",
         )
         try:
             audit = self.policy_audit.maybe_audit(decision)
@@ -945,6 +965,11 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 },
                 evidence="computed",
             )
+            # The share law, tested on the governor's totals every cycle.
+            self.learning.law(
+                "shares.follow.work", expected=governor.expected_shares, observed=governor.shares
+            )
+            self.learning.publish()
         except Exception as exc:
             LOG.warning("knowledge not shared this cycle: %s", exc)
 
@@ -965,6 +990,58 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             # The last good limits stay in force; the network cap always does.
             LOG.warning("hashrate config unavailable, keeping current cap: %s", exc)
 
+    def _commit_forecasts(self, plan: SearchPlan) -> None:
+        """The world model's forecasts for ``plan``, and the nulls', before it runs."""
+        try:
+            route = self._execution_route()
+            model = self.world.route(route)
+            estimate = model.estimate() if model is not None else None
+            last = self._sec_per_hash.get(route)
+            entry: dict[str, Any] = {"route": route, "window": plan.window}
+            duration = None
+            if estimate is not None:
+                duration = estimate[0] + plan.window * estimate[1]
+                if last is not None:
+                    entry["elapsed"] = (
+                        (math.log(duration), self._elapsed_scale["learner"].sigma),
+                        (math.log(plan.window * last), self._elapsed_scale["null"].sigma),
+                    )
+            if duration is not None:
+                done = sum(self.world.completions.values())
+                invalidated = self.world.completions.get(CompletionState.INVALIDATED.value, 0)
+                entry["invalidated"] = (
+                    -math.expm1(-self.world.clean.mean * duration),
+                    (invalidated + 1) / (done + 2),
+                )
+            self._forecasts[plan.plan_id] = entry
+            while len(self._forecasts) > 256:  # plans a new job discarded
+                self._forecasts.pop(next(iter(self._forecasts)))
+        except Exception as exc:  # learning must never stop mining
+            LOG.warning("forecast failed: %s", exc)
+
+    def _score_forecasts(self, record: ExecutionRecord) -> None:
+        """Score the forecasts committed for this window; call before learning from it."""
+        try:
+            route = record.executed_route or record.device_used
+            entry = self._forecasts.pop(record.plan_id, None) if record.plan_id else None
+            complete = record.completion_state is CompletionState.COMPLETE
+            if entry is not None and entry["route"] == route:
+                invalid = record.completion_state is CompletionState.INVALIDATED
+                if "invalidated" in entry:
+                    self.learning.score_probability(
+                        "window.invalidated", invalid, *entry["invalidated"]
+                    )
+                if "elapsed" in entry and complete and record.elapsed_seconds > 0:
+                    x = math.log(record.elapsed_seconds)
+                    learner, null = entry["elapsed"]
+                    self.learning.score_quantity("window.elapsed", x, learner, null)
+                    self._elapsed_scale["learner"].observe(x - learner[0])
+                    self._elapsed_scale["null"].observe(x - null[0])
+            if complete and record.hash_count > 0 and record.elapsed_seconds > 0:
+                self._sec_per_hash[route] = record.elapsed_seconds / record.hash_count
+        except Exception as exc:  # learning must never stop mining
+            LOG.warning("forecast scoring failed: %s", exc)
+
     def intelligence_snapshot(self) -> dict[str, Any]:
         last = self.operating_policy.last
         return {
@@ -978,6 +1055,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             "audit": self.policy_audit.snapshot(),
             "governor": self.governor.snapshot(),
             "knowledge": self.knowledge.snapshot(recent=10),
+            "learning": self.learning.report(),
             "memory": (
                 self.intelligence_memory.snapshot()
                 if self.intelligence_memory is not None
@@ -1367,6 +1445,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self.agentic.record_outcome(final)
         now = time.monotonic()
         self.world.tick(now)
+        self._score_forecasts(final)
         self.world.observe_execution(final)
         self._share_knowledge(now)
         self.loss.observe_execution(final, self.world, started_at=now - final.elapsed_seconds)

@@ -9,8 +9,6 @@ here fails for one such mistake.
 
 from __future__ import annotations
 
-import math
-
 import pytest
 
 from mla1517.mining.operating_policy import (
@@ -155,15 +153,50 @@ def test_the_model_obeys_the_thermal_derate():
     assert OperatingPolicy(world).decide(_context(derate_cap=500)).window == 480
 
 
-def test_lookahead_covers_the_worst_planning_latency_within_capacity():
-    world = _world(0.002, 1e-6, invalidations_per_s=0.0)  # picks 992: 2.992 ms a window
+def test_precompute_depth_is_the_wait_free_minimum_at_ordinary_churn():
+    world = _world(0.002, 1e-6, invalidations_per_s=0.0)  # picks 992: W = 2.992 ms a window
     assert OperatingPolicy(world).decide(_context()).lookahead == 2  # no latency seen: legacy
     world.observe_plan_latency(0.010)
     decision = OperatingPolicy(world).decide(_context())
-    window_s = 0.002 + decision.window * 1e-6
-    assert decision.lookahead == math.ceil(0.010 / window_s) + 1 == 5
+    # One new job per 120 s (the bind prior): waiting 10 - 2.992 d ms reaches 0
+    # at d = 4; the old rule's extra plan (5) would only be discarded.
+    assert decision.window == 992 and decision.lookahead == 4
+    assert decision.expected["precompute_wait_ms"] == 0.0
+    assert decision.expected["precompute_discard_ms"] == pytest.approx(
+        (1 / 120) * 0.002992 * 4 * 0.010 * 1e3
+    )
+    assert decision.expected["job_churn_per_hour"] == pytest.approx(30.0)
     assert OperatingPolicy(world).decide(_context(capacity=3)).lookahead == 3
     assert OperatingPolicy(world).decide(_context(capacity=1)).lookahead == 1
+
+
+@pytest.mark.parametrize(
+    "jobs_per_s, depth, wait_ms, discard_ms",
+    [
+        # C(d) = max(0, 10 - 2.992 d) + rate * 2.992 * d * 10  (ms, per window)
+        (50.0, 3, 1.024, 4.488),  # d=3: 5.512 < d=4: 0 + 5.984
+        (200.0, 1, 7.008, 5.984),  # rate * l_mean = 2: a queued plan costs more than it saves
+    ],
+)
+def test_job_churn_cuts_precompute_depth(jobs_per_s, depth, wait_ms, discard_ms):
+    world = _world(0.002, 1e-6, invalidations_per_s=0.0)
+    world.bind.prior_events = jobs_per_s * world.bind.prior_seconds
+    world.observe_plan_latency(0.010)
+    decision = OperatingPolicy(world).decide(_context())
+    assert decision.lookahead == depth
+    assert decision.expected["precompute_wait_ms"] == pytest.approx(wait_ms)
+    assert decision.expected["precompute_discard_ms"] == pytest.approx(discard_ms)
+    assert f"depth {depth}: wait {wait_ms:.3f} ms" in decision.reason
+
+
+def test_one_slow_plan_does_not_set_the_depth_forever():
+    world = _world(0.002, 1e-6, invalidations_per_s=0.0)
+    world.observe_plan_latency(0.100)  # a stall
+    assert OperatingPolicy(world).decide(_context()).lookahead == 8  # capacity-bound
+    for _ in range(64):
+        world.observe_plan_latency(0.001)
+    assert world.plan_latency_quantile(0.9) == 0.001 and world.plan_latency_max_s == 0.100
+    assert OperatingPolicy(world).decide(_context()).lookahead == 1
 
 
 def test_decisions_and_contexts_are_immutable_once_made():
@@ -186,4 +219,4 @@ def test_the_reason_states_the_legacy_loss_it_beat():
     world = _world(0.002, 1e-6, invalidations_per_s=0.5)
     decision = OperatingPolicy(world).decide(_context())
     legacy_loss = expected_loss(192, 0.002, 1e-6, world.clean.mean, 1_000)[0]
-    assert decision.reason.endswith(f"vs legacy {legacy_loss:.4f}")
+    assert f"vs legacy {legacy_loss:.4f};" in decision.reason

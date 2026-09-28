@@ -14,7 +14,9 @@ policy needs, each with its own uncertainty and sample count:
   the split is measured directly; otherwise it is fitted by discounted least
   squares, which needs windows of different sizes to separate ``o`` from
   ``H`` (see ``RouteModel.identifiable``);
-* plan build latency.
+* plan build latency: a smoothed mean, the all-time worst case, and the
+  90th percentile of the most recent builds (so one stall does not set the
+  precompute depth forever).
 
 Rates are Gamma posteriors over exposure time with exponential forgetting, so
 the model follows a pool whose behaviour drifts. Every estimate reports
@@ -24,6 +26,7 @@ the model follows a pool whose behaviour drifts. Every estimate reports
 from __future__ import annotations
 
 import math
+from collections import deque
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -177,6 +180,7 @@ class MiningWorldModel:
     plan_latency_s: float | None = None
     plan_latency_max_s: float = 0.0
     plan_samples: int = 0
+    plan_latency_recent: deque = field(default_factory=lambda: deque(maxlen=64))
     completions: dict[str, int] = field(default_factory=dict)
     _last_at: float | None = None
 
@@ -209,6 +213,7 @@ class MiningWorldModel:
         if seconds < 0:
             return
         self.plan_samples += 1
+        self.plan_latency_recent.append(seconds)
         self.plan_latency_max_s = max(self.plan_latency_max_s, seconds)
         if self.plan_latency_s is None:
             self.plan_latency_s = seconds
@@ -220,6 +225,13 @@ class MiningWorldModel:
     def route(self, name: str) -> RouteModel | None:
         return self.routes.get(name)
 
+    def plan_latency_quantile(self, p: float = 0.9) -> float | None:
+        """Nearest-rank ``p`` quantile of the recent plan build latencies."""
+        if not self.plan_latency_recent:
+            return None
+        ordered = sorted(self.plan_latency_recent)
+        return ordered[max(0, math.ceil(p * len(ordered)) - 1)]
+
     def snapshot(self) -> dict[str, Any]:
         return {
             "schema": "pythia.world/1",
@@ -228,6 +240,9 @@ class MiningWorldModel:
             "routes": {name: model.snapshot() for name, model in sorted(self.routes.items())},
             "plan_latency_ms": None if self.plan_latency_s is None else self.plan_latency_s * 1e3,
             "plan_latency_max_ms": self.plan_latency_max_s * 1e3 if self.plan_samples else None,
+            "plan_latency_p90_ms": (
+                None if not self.plan_latency_recent else self.plan_latency_quantile(0.9) * 1e3
+            ),
             "completions": dict(self.completions),
         }
 
@@ -247,6 +262,7 @@ class MiningWorldModel:
             "plan_latency_s": self.plan_latency_s,
             "plan_latency_max_s": self.plan_latency_max_s,
             "plan_samples": self.plan_samples,
+            "plan_latency_recent": list(self.plan_latency_recent),
         }
 
     def import_state(self, state: dict[str, Any]) -> None:
@@ -268,6 +284,8 @@ class MiningWorldModel:
         self.plan_latency_s = None if latency is None else float(latency)
         self.plan_latency_max_s = float(state.get("plan_latency_max_s", 0.0))
         self.plan_samples = int(state.get("plan_samples", 0))
+        self.plan_latency_recent.clear()
+        self.plan_latency_recent.extend(float(x) for x in state.get("plan_latency_recent", ()))
 
 
 _ROUTE_STATE = (

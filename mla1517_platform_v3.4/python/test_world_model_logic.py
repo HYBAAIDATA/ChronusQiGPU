@@ -238,3 +238,20 @@ def test_edge_observations_count_and_an_empty_route_reports_no_evidence():
     assert world.plan_samples == 2
     assert snap["plan_latency_ms"] == pytest.approx(0.4)  # 0.9 * 0 + 0.1 * 4 ms
     assert snap["plan_latency_max_ms"] == pytest.approx(4.0)
+
+
+def test_plan_latency_quantile_is_the_nearest_rank_of_recent_builds():
+    world = MiningWorldModel()
+    assert world.plan_latency_quantile() is None and world.snapshot()["plan_latency_p90_ms"] is None
+    for ms in (7, 1, 10, 3, 5, 9, 2, 8, 4, 6):
+        world.observe_plan_latency(ms / 1000)
+    # Sorted 1..10 ms: the 90th percentile is rank ceil(0.9 * 10) = 9, the median rank 5.
+    assert world.plan_latency_quantile() == pytest.approx(0.009)
+    assert world.plan_latency_quantile(0.5) == pytest.approx(0.005)
+    assert world.snapshot()["plan_latency_p90_ms"] == pytest.approx(9.0)
+    for _ in range(64):  # only the most recent 64 builds count
+        world.observe_plan_latency(0.001)
+    assert world.plan_latency_quantile() == 0.001 and world.plan_latency_max_s == 0.010
+    restored = MiningWorldModel()
+    restored.import_state(world.export_state())
+    assert list(restored.plan_latency_recent) == list(world.plan_latency_recent)

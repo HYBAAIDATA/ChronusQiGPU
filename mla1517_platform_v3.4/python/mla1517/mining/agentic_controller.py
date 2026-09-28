@@ -103,6 +103,7 @@ class AgenticMiningController:
         self._capacity = queue_depth
         self._queue: Queue[SearchPlan] = Queue(maxsize=queue_depth)
         self._lookahead = max(1, min(initial_lookahead, queue_depth))
+        self._policy_depth = False
         self._leases = NonceLeaseLedger(max_active=queue_depth + 2)
         self._scale_classifier = scale_classifier or ScaleStateClassifier()
         self._lock = threading.Lock()
@@ -235,6 +236,22 @@ class AgenticMiningController:
     @property
     def capacity(self) -> int:
         return self._capacity
+
+    def set_lookahead(self, depth: int | None, reason: str = "") -> None:
+        """Precompute depth from the operating policy's world model.
+
+        While set, the policy is the single authority over the depth and the
+        reactive waste/starvation adaptation stands down; ``None`` hands the
+        depth back to it.
+        """
+        if depth is None:
+            self._policy_depth = False
+            return
+        depth = max(1, min(int(depth), self._capacity))
+        self._policy_depth = True
+        if depth != self._lookahead:
+            self._lookahead = depth
+            self.telemetry.lookahead_change_reason = f"policy: {reason}" if reason else "policy"
 
     def plans_needed(self) -> int:
         if self.admission_block_reason() is not None:
@@ -379,6 +396,8 @@ class AgenticMiningController:
         return (self.telemetry.plans_invalidated + self.telemetry.plans_stale) / created
 
     def _adapt(self) -> None:
+        if self._policy_depth:
+            return
         consumed = self._recent.count("consumed")
         invalidated = self._recent.count("invalidated")
         starved = self._recent.count("starved")

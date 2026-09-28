@@ -105,6 +105,31 @@ def test_a_real_run_kills_or_reports_survivors_and_never_touches_the_tree(
         ]
 
 
+def test_a_mutant_that_breaks_the_import_is_caught_not_a_survivor(tmp_path):
+    package = tmp_path / "pkg"
+    package.mkdir()
+    module = package / "adder.py"
+    module.write_text(
+        'import pathlib\n\nDATA = pathlib.Path("x") / "y"\n\n\ndef add(a, b):\n    return a + b\n',
+        encoding="utf-8",
+    )
+    (package / "test_adder.py").write_text(
+        "from adder import add\n\ndef test_add():\n    assert add(2, 3) == 5\n", encoding="utf-8"
+    )
+    args = SimpleNamespace(
+        module=str(module),
+        copy_root=str(package),
+        tests=["test_adder.py"],
+        lines="3",
+        limit=0,
+        workers=1,
+        timeout=60.0,
+    )
+    report = mc.run(args, root=tmp_path)
+    # Path("x") * "y" raises at import: pytest cannot even collect (exit 2).
+    assert report["mutants"] >= 1 and all(s["description"] != "/ -> *" for s in report["survivors"])
+
+
 def test_the_check_refuses_when_the_tests_import_something_else(tmp_path, monkeypatch):
     # An editable install's import hook can shadow the sandbox; the check
     # must stop before running a single mutant against the wrong code.

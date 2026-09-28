@@ -217,8 +217,8 @@ def test_a_mining_coordinator_shares_what_it_learns(tmp_path, monkeypatch):
     # Another process (here: another fabric on the same journal) sees it all.
     other = KnowledgeFabric(tmp_path / "knowledge.jsonl")
     assert other.joint_digest() == knowledge.joint_digest()
-    assert coord.intelligence_snapshot()["knowledge"]["topics"] == [
-        "mining.governor",
-        "mining.policy",
-        "mining.world",
-    ]
+    topics = coord.intelligence_snapshot()["knowledge"]["topics"]
+    assert {"mining.governor", "mining.policy", "mining.world"} <= set(topics)
+    # The questions it is asked, and how its learning stands, are shared too.
+    assert {"question.window.elapsed", "learning.window.elapsed"} <= set(topics)
+    assert knowledge.observe("learning.shares.follow.work").value["observed"] == 1

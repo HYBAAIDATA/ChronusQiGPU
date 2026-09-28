@@ -255,7 +255,9 @@ class Sandbox:
         seconds = time.monotonic() - started
         if proc.returncode == 0:
             return "survived", seconds
-        if proc.returncode == 1:
+        # 1: a test failed. 2: collection failed, so the mutant broke the
+        # module's import and no test could pass against it. Both catch it.
+        if proc.returncode in (1, 2):
             return "killed", seconds
         return "error", seconds
 

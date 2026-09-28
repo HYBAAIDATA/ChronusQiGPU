@@ -11,6 +11,8 @@ on:
       - "mla1517_platform_v3.4/python/mla1517/mining/operating_policy.py"
       - "mla1517_platform_v3.4/python/mla1517/mining/loss_ledger.py"
       - "mla1517_platform_v3.4/python/mla1517/mining/hashrate_governor.py"
+      - "mla1517_platform_v3.4/python/mla1517/learning.py"
+      - "mla1517_platform_v3.4/python/test_learning.py"
       - "mla1517_platform_v3.4/python/test_*_logic.py"
       - "mla1517_platform_v3.4/python/test_hashrate_governor.py"
       - "mla1517_platform_v3.4/python/test_mining_intelligence.py"
@@ -44,17 +46,21 @@ jobs:
           - module: loss_ledger
             tests: test_loss_ledger_logic.py test_mining_intelligence.py
             floor: "0.85"
+          - module: learning
+            path: mla1517/learning.py
+            tests: test_learning.py
+            floor: "0.85"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       # No install of the package itself: the sandboxes must be what imports.
-      - run: python -m pip install "numpy>=1.26,<3" "pytest>=7.4,<10"
+      - run: python -m pip install "numpy>=1.26,<3" "pytest>=7.4,<10" "pyyaml>=6.0,<7"
       - name: Mutate ${{ matrix.module }}
         run: >-
           python scripts/mutation_check.py
-          mla1517_platform_v3.4/python/mla1517/mining/${{ matrix.module }}.py
+          mla1517_platform_v3.4/python/${{ matrix.path || format('mla1517/mining/{0}.py', matrix.module) }}
           --tests ${{ matrix.tests }}
           --workers 4
           --min-score ${{ matrix.floor }}
