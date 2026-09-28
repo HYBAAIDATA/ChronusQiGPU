@@ -31,6 +31,15 @@ beyond the wait-free minimum ``ceil(l90 / W)`` is never worth it, and even
 that minimum is cut back once jobs arrive about as often as a plan takes to
 build (``lambda_b * l_mean`` near 1).
 
+Measured throughput. The line ``elapsed = o + hashes / H`` is a model; when
+the window sizes actually run disagree with it by more than ``_MISFIT`` (a
+device that slows as a window runs bends the curve, and the fitted overhead
+collapses towards zero, which would make the smallest window look free), the
+policy stops trusting it: it picks the measured window size with the most
+valid hashes per second of wall time, and every ``_PROBE_EVERY`` decisions
+tries an unmeasured neighbour, so it climbs to the peak of the throughput it
+can see.
+
 Precedence: recovery (Salamander) > caller bounds (thermal de-rate, lease
 space) > missing evidence (legacy window, legacy lookahead) > model. When the
 route's overhead and hash rate cannot yet be separated, the policy asks for a
@@ -46,6 +55,7 @@ from typing import Any
 from .world_model import MiningWorldModel
 
 _PROBE_EVERY = 8
+_MISFIT = 0.25
 
 
 def lucas_ladder(max_window: int, lanes: int) -> list[int]:
@@ -159,6 +169,9 @@ class OperatingPolicy:
                 )
             )
         overhead_s, sec_per_hash = estimate
+        misfit = route.misfit()
+        if misfit > _MISFIT:
+            return self._keep(self._by_measured_throughput(ctx, route, estimate, legacy, misfit))
         rate = self.world.clean.mean
         upper = ctx.max_window if ctx.derate_cap is None else min(ctx.max_window, ctx.derate_cap)
         ladder = lucas_ladder(upper, ctx.lanes) or [legacy]
@@ -171,32 +184,8 @@ class OperatingPolicy:
             scored.append({"window": w, "loss": total, "overhead": o_frac, "stale": s_frac})
         best = min(scored, key=lambda c: (c["loss"], -c["window"]))
         window = best["window"]
-        window_s = overhead_s + window * sec_per_hash
-        latency_q = self.world.plan_latency_quantile(0.9)
-        churn = self.world.bind.mean
-        precompute: dict[str, float] = {}
-        if latency_q is not None and window_s > 0:
-            latency_mean = self.world.plan_latency_s or 0.0
-            costs = [
-                (precompute_cost(d, window_s, latency_q, latency_mean, churn), d)
-                for d in range(1, max(1, ctx.capacity) + 1)
-            ]
-            (_, waiting, discarded), lookahead = min(costs, key=lambda c: (c[0][0], c[1]))
-            precompute = {
-                "precompute_wait_ms": waiting * 1e3,
-                "precompute_discard_ms": discarded * 1e3,
-                "job_churn_per_hour": churn * 3600.0,
-            }
-        else:
-            lookahead = ctx.legacy_lookahead
-        lookahead = max(1, min(lookahead, ctx.capacity))
+        lookahead, precompute, depth_reason = self._depth(overhead_s + window * sec_per_hash, ctx)
         legacy_loss = expected_loss(legacy, overhead_s, sec_per_hash, rate, ctx.chunk_cap)[0]
-        depth_reason = (
-            f"; depth {lookahead}: wait {precompute['precompute_wait_ms']:.3f} ms, "
-            f"discarded planning {precompute['precompute_discard_ms']:.4f} ms per window"
-            if precompute
-            else "; depth: no plan latency measured yet"
-        )
         return self._keep(
             PolicyDecision(
                 window,
@@ -219,6 +208,100 @@ class OperatingPolicy:
                 },
                 candidates=tuple(scored),
             )
+        )
+
+    def _depth(self, window_s: float, ctx: PolicyContext) -> tuple[int, dict[str, float], str]:
+        """Precompute depth for a window of ``window_s`` seconds (see the module doc)."""
+        latency_q = self.world.plan_latency_quantile(0.9)
+        churn = self.world.bind.mean
+        precompute: dict[str, float] = {}
+        if latency_q is not None and window_s > 0:
+            latency_mean = self.world.plan_latency_s or 0.0
+            costs = [
+                (precompute_cost(d, window_s, latency_q, latency_mean, churn), d)
+                for d in range(1, max(1, ctx.capacity) + 1)
+            ]
+            (_, waiting, discarded), lookahead = min(costs, key=lambda c: (c[0][0], c[1]))
+            precompute = {
+                "precompute_wait_ms": waiting * 1e3,
+                "precompute_discard_ms": discarded * 1e3,
+                "job_churn_per_hour": churn * 3600.0,
+            }
+        else:
+            lookahead = ctx.legacy_lookahead
+        lookahead = max(1, min(lookahead, ctx.capacity))
+        reason = (
+            f"; depth {lookahead}: wait {precompute['precompute_wait_ms']:.3f} ms, "
+            f"discarded planning {precompute['precompute_discard_ms']:.4f} ms per window"
+            if precompute
+            else "; depth: no plan latency measured yet"
+        )
+        return lookahead, precompute, reason
+
+    def _by_measured_throughput(
+        self, ctx: PolicyContext, route, estimate, legacy: int, misfit: float
+    ) -> PolicyDecision:
+        overhead_s, sec_per_hash = estimate
+        rate = self.world.clean.mean
+        upper = ctx.max_window if ctx.derate_cap is None else min(ctx.max_window, ctx.derate_cap)
+        ladder = lucas_ladder(upper, ctx.lanes) or [legacy]
+
+        def elapsed(w: int) -> float:
+            measured = route.measured_elapsed(w)
+            return measured if measured is not None else overhead_s + w * sec_per_hash
+
+        if ctx.max_window_seconds is not None:
+            within = [w for w in ladder if elapsed(w) <= ctx.max_window_seconds]
+            ladder = within or ladder[:1]
+
+        def valid_rate(w: int) -> float:
+            # Valid hashes per second of wall time: an invalidation wastes,
+            # on average, half the chunk it lands in.
+            t = elapsed(w)
+            return w / t * max(0.0, 1.0 - rate * t * min(w, ctx.chunk_cap) / w / 2.0)
+
+        measured = [w for w in ladder if route.measured_elapsed(w) is not None]
+        start = legacy if legacy in ladder else min(ladder, key=lambda w: abs(w - legacy))
+        best = max(measured, key=valid_rate) if measured else start
+        i = ladder.index(best)
+        unmeasured = [
+            ladder[j]
+            for j in (i - 1, i + 1)
+            if 0 <= j < len(ladder) and route.measured_elapsed(ladder[j]) is None
+        ]
+        window, source = best, "measured"
+        if unmeasured and (not measured or self.decisions % _PROBE_EVERY == 0):
+            window = unmeasured[(self.decisions // _PROBE_EVERY) % len(unmeasured)]
+            source = "probe"
+        top = max((valid_rate(w) for w in measured), default=0.0)
+        candidates = tuple(
+            {"window": w, "loss": 1.0 - valid_rate(w) / top, "valid_rate_hs": valid_rate(w)}
+            for w in measured
+        )
+        lookahead, precompute, depth_reason = self._depth(elapsed(window), ctx)
+        return PolicyDecision(
+            window,
+            lookahead,
+            source,
+            (
+                f"linear model misfit {misfit:.0%}: judged by measured throughput; "
+                + (
+                    f"window {window} at {valid_rate(window):.0f} valid H/s"
+                    if source == "measured"
+                    else f"measuring window {window} beside {best}"
+                )
+                + depth_reason
+            ),
+            expected={
+                "misfit": misfit,
+                "valid_rate_hs": valid_rate(window),
+                "measured_windows": float(len(measured)),
+                "overhead_ms": overhead_s * 1e3,
+                "hash_rate_hs": 1.0 / sec_per_hash,
+                "invalidations_per_hour": rate * 3600.0,
+                **precompute,
+            },
+            candidates=candidates if source == "measured" else (),
         )
 
     def _probe_window(self, legacy: int, ctx: PolicyContext) -> int:

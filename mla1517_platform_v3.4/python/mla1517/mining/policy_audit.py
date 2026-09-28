@@ -97,7 +97,7 @@ class PolicyAuditor:
         self._register_cls, self._vqc_error = _load_register()
 
     def maybe_audit(self, decision: PolicyDecision) -> dict[str, Any] | None:
-        if decision.source != "model" or not decision.candidates:
+        if decision.source not in ("model", "measured") or not decision.candidates:
             return None
         self._seen += 1
         if self._seen % self.every:

@@ -10,7 +10,9 @@ policy needs, each with its own uncertainty and sample count:
 * ``clean`` -- rate of work-invalidating events (``clean_jobs``, reconnects),
   which abandon an in-flight window at the next chunk boundary;
 * per executed route, the fixed per-window overhead ``o`` and hash rate
-  ``H`` in ``elapsed = o + hashes / H``. When the device reports kernel time
+  ``H`` in ``elapsed = o + hashes / H``, and the elapsed time each window
+  size actually took (so a device the line cannot describe, one that slows
+  as a window runs, is still judged by what it delivers). When the device reports kernel time
   the split is measured directly; otherwise it is fitted by discounted least
   squares, which needs windows of different sizes to separate ``o`` from
   ``H`` (see ``RouteModel.identifiable``);
@@ -105,6 +107,8 @@ class RouteModel:
     _d_overhead: float = 0.0
     _d_hashes: float = 0.0
     _d_kernel: float = 0.0
+    # Window size -> [discounted count, discounted elapsed sum, samples].
+    rungs: dict = field(default_factory=dict)
 
     def observe(self, hashes: int, elapsed_s: float, kernel_s: float) -> None:
         if hashes <= 0 or elapsed_s <= 0:
@@ -122,6 +126,38 @@ class RouteModel:
         self._y = self._y * f + elapsed_s
         self._hy = self._hy * f + hashes * elapsed_s
         self.fit_samples += 1
+        rung = self.rungs.setdefault(int(hashes), [0.0, 0.0, 0])
+        rung[0] = rung[0] * f + 1.0
+        rung[1] = rung[1] * f + elapsed_s
+        rung[2] += 1
+        if len(self.rungs) > _MAX_RUNGS:  # forget the least-evidenced size
+            del self.rungs[min(self.rungs, key=lambda k: self.rungs[k][0])]
+
+    def measured_elapsed(self, window: int, min_samples: int = 3) -> float | None:
+        """Mean elapsed of windows of exactly this size, once measured enough."""
+        rung = self.rungs.get(int(window))
+        if rung is None or rung[2] < min_samples or rung[0] <= 0:
+            return None
+        return rung[1] / rung[0]
+
+    def misfit(self, min_samples: int = 3) -> float:
+        """Largest relative gap between the line and a measured window size.
+
+        Near zero when ``elapsed = o + hashes / H`` describes the device; large
+        when it cannot (a rate that sags within a window bends the curve, and
+        the fitted overhead is then meaningless, often clamped to zero).
+        """
+        estimate = self.estimate()
+        if estimate is None:
+            return 0.0
+        overhead, per_hash = estimate
+        worst = 0.0
+        for hashes in self.rungs:
+            measured = self.measured_elapsed(hashes, min_samples)
+            predicted = overhead + hashes * per_hash
+            if measured is not None and predicted > 0:
+                worst = max(worst, abs(measured / predicted - 1.0))
+        return worst
 
     @property
     def _spread(self) -> float:
@@ -169,6 +205,8 @@ class RouteModel:
             "direct_samples": self.direct_samples,
             "fit_samples": self.fit_samples,
             "window_spread": round(self._spread, 4),
+            "measured_windows": sum(1 for r in self.rungs.values() if r[2] >= 3),
+            "misfit": round(self.misfit(), 4),
         }
 
 
@@ -257,7 +295,11 @@ class MiningWorldModel:
             "bind": rate(self.bind),
             "clean": rate(self.clean),
             "routes": {
-                name: {k: getattr(m, k) for k in _ROUTE_STATE} for name, m in self.routes.items()
+                name: {
+                    **{k: getattr(m, k) for k in _ROUTE_STATE},
+                    "rungs": {str(k): list(v) for k, v in m.rungs.items()},
+                }
+                for name, m in self.routes.items()
             },
             "plan_latency_s": self.plan_latency_s,
             "plan_latency_max_s": self.plan_latency_max_s,
@@ -279,6 +321,10 @@ class MiningWorldModel:
             model = RouteModel()
             for key in _ROUTE_STATE:
                 setattr(model, key, type(getattr(model, key))(raw[key]))
+            model.rungs = {
+                int(k): [float(v[0]), float(v[1]), int(v[2])]
+                for k, v in (raw.get("rungs") or {}).items()
+            }
             self.routes[str(name)] = model
         latency = state.get("plan_latency_s")
         self.plan_latency_s = None if latency is None else float(latency)
@@ -287,6 +333,8 @@ class MiningWorldModel:
         self.plan_latency_recent.clear()
         self.plan_latency_recent.extend(float(x) for x in state.get("plan_latency_recent", ()))
 
+
+_MAX_RUNGS = 64
 
 _ROUTE_STATE = (
     "direct_samples",

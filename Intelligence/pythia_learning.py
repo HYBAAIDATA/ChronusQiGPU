@@ -40,11 +40,14 @@ generating sequence via the golden ratio). PYTHIA's learning uses both:
   unfolds via the golden transform, and compares to the query. Trial-and-
   error adjusts the connection weights.
 - **Chemical signals (cell fate)** → the "culture medium" is the mining
-  context (block header, target, nonce distribution). Patterns that
-  repeatedly appear in successful mining become "germ-line" memories
-  (long-term, high-priority); patterns that don't become "somatic"
-  (contextual, lower-priority). This is McLaren's cell-fate mapping
-  applied to learned patterns.
+  context (block header, target, nonce distribution). A pattern becomes a
+  "germ-line" memory (long-term, high-priority) only when its association
+  with success is real: its success rate beats the base rate of every
+  other activation in an exact one-sided binomial test, Bonferroni-
+  corrected over the candidate patterns. Co-occurrence is not evidence:
+  under SHA-256d, whether a nonce yields a share is independent of any
+  pattern in it, so such coincidences stay "somatic" (contextual). Fates
+  are re-judged at every consolidation as the evidence grows.
 - **Environmental cues** → the complexity of the mining context (32-node
   dual-overlay frame, phi-phase rotations) provides the developmental
   signals that shape which memories consolidate.
@@ -79,6 +82,26 @@ logger = logging.getLogger("Intelligence.pythia")
 
 PHI = (1 + math.sqrt(5)) / 2
 PSI = (1 - math.sqrt(5)) / 2
+_MIN_ACTIVATIONS = 3
+_ALPHA = 0.01
+
+
+def _binomial_tail(k: int, n: int, p: float) -> float:
+    """P(X >= k) for X ~ Binomial(n, p), exactly (in log space)."""
+    if k <= 0:
+        return 1.0
+    log_p, log_q = math.log(p), math.log1p(-p)
+    total = 0.0
+    for i in range(k, n + 1):
+        log_term = (
+            math.lgamma(n + 1)
+            - math.lgamma(i + 1)
+            - math.lgamma(n - i + 1)
+            + i * log_p
+            + (n - i) * log_q
+        )
+        total += math.exp(log_term)
+    return min(1.0, total)
 
 
 @dataclass
@@ -124,6 +147,10 @@ class PythiaLearning:
         )
         # Short-term memory (hippocampus): unconsolidated patterns.
         self._short_term: List[Dict[str, Any]] = []
+        # Evidence for cell fate: per pattern [activations, successes], and
+        # the totals over every activation.
+        self._evidence: Dict[int, List[int]] = {}
+        self._totals = [0, 0]
         # Long-term memory (cortex): consolidated patterns stored in primes.
         self._long_term: List[LearnedPattern] = []
         # Activation history for synaptic plasticity.
@@ -211,22 +238,23 @@ class PythiaLearning:
 
     # -- 3. Cell fate mapping (Anne McLaren) ------------------------------
 
-    def _determine_cell_fate(self, activation_count: int, mining_success: bool) -> str:
-        """Determine whether a pattern becomes germ-line or somatic.
+    def _determine_cell_fate(self, pattern_id: int) -> str:
+        """Germ-line only for a pattern whose success is more than chance.
 
-        Inspired by Anne McLaren's cell-fate mapping: cells that receive
-        the right chemical signals become germ-line (reproductive,
-        long-term); others become somatic (functional, contextual).
-
-        Here: patterns that are repeatedly activated AND associated with
-        successful mining become germ-line (long-term, high-priority).
-        Patterns that are activated but not associated with success become
-        somatic (contextual, lower-priority).
+        Inspired by Anne McLaren's cell-fate mapping: a cell becomes
+        germ-line only on the right signal. Here the signal is statistical:
+        at least ``_MIN_ACTIVATIONS`` activations, and a success count this
+        pattern would reach by chance, at the base rate of all other
+        activations, with probability below ``_ALPHA`` divided by the number
+        of candidate patterns (Bonferroni).
         """
-        threshold = 3  # need at least 3 activations to qualify for germ-line
-        if activation_count >= threshold and mining_success:
-            return "germ_line"
-        return "somatic"
+        n, k = self._evidence.get(pattern_id, (0, 0))
+        if n < _MIN_ACTIVATIONS or k == 0:
+            return "somatic"
+        rest_n, rest_k = self._totals[0] - n, self._totals[1] - k
+        base = (rest_k + 1) / (rest_n + 2)  # Laplace: never 0 or 1
+        candidates = max(1, sum(1 for e in self._evidence.values() if e[0] >= _MIN_ACTIVATIONS))
+        return "germ_line" if _binomial_tail(k, n, base) < _ALPHA / candidates else "somatic"
 
     # -- 4. Learning step (neural adaptation + cell fate) -----------------
 
@@ -258,6 +286,12 @@ class PythiaLearning:
             h = hashlib.sha256(p.tobytes()).digest()
             pattern_id = int.from_bytes(h[:4], "big")
 
+        evidence = self._evidence.setdefault(pattern_id, [0, 0])
+        evidence[0] += 1
+        evidence[1] += int(bool(mining_success))
+        self._totals[0] += 1
+        self._totals[1] += int(bool(mining_success))
+
         # 3. Store in short-term memory with activation count.
         for entry in self._short_term:
             if entry["pattern_id"] == pattern_id:
@@ -283,7 +317,7 @@ class PythiaLearning:
         1. Fold each short-term pattern via the golden symplectic transform.
         2. Encode the pattern ID into Zeckendorf (store in the primes).
         3. Determine cell fate (germ-line vs somatic) based on activation
-           count and mining success.
+           evidence: an exact binomial test against the base rate.
         4. Move to long-term memory.
 
         Returns the number of patterns consolidated.
@@ -294,14 +328,13 @@ class PythiaLearning:
             pattern = entry["pattern"]
             pattern_id = entry["pattern_id"]
             activation_count = entry["activation_count"]
-            mining_success = entry.get("mining_success", False)
 
             # Fold the pattern (golden symplectic transform).
             folded = self._fold_pattern(pattern)
             # Store the pattern ID in the Zeckendorf / Fibonacci substrate.
             zeck = self._store_in_primes(pattern_id)
-            # Determine cell fate (McLaren: chemical signals → germ/somatic).
-            fate = self._determine_cell_fate(activation_count, mining_success)
+            # Determine cell fate (McLaren: the signal must be real).
+            fate = self._determine_cell_fate(pattern_id)
 
             # Confidence: based on activation count and Pisot convergence.
             confidence = min(1.0, 1.0 - abs(PSI) ** activation_count)
@@ -320,6 +353,12 @@ class PythiaLearning:
 
         # Clear short-term memory after consolidation.
         self._short_term.clear()
+
+        # Fates are re-judged as evidence accumulates: a real association
+        # earns germ-line status once the base rate is known, and a pattern
+        # that looked promising on little data loses it.
+        for memory in self._long_term:
+            memory.cell_fate = self._determine_cell_fate(memory.pattern_id)
 
         # Check for emergence: if we have germ-line memories that were
         # synthesised (not just rote-stored), the emergence signal rises.

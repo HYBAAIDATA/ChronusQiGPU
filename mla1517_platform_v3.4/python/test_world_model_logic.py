@@ -255,3 +255,36 @@ def test_plan_latency_quantile_is_the_nearest_rank_of_recent_builds():
     restored = MiningWorldModel()
     restored.import_state(world.export_state())
     assert list(restored.plan_latency_recent) == list(world.plan_latency_recent)
+
+
+def test_each_window_size_keeps_its_measured_elapsed_and_the_line_is_checked_against_it():
+    route = RouteModel(forgetting=1.0)
+    for hashes in (1_000, 2_000, 4_000) * 3:  # exactly linear: o = 2 ms, 1 us per hash
+        route.observe(hashes, 0.002 + hashes * 1e-6, 0.0)
+    assert route.measured_elapsed(2_000) == pytest.approx(0.004)
+    assert route.measured_elapsed(8_000) is None  # never run
+    assert route.misfit() == pytest.approx(0.0, abs=1e-9)
+    route.observe(500, 0.01, 0.0)
+    assert route.measured_elapsed(500) is None  # one sample is not a measurement
+    assert route.measured_elapsed(500, min_samples=1) == pytest.approx(0.01)
+
+    bent = RouteModel(forgetting=1.0)
+    for hashes in (1_000, 2_000, 4_000) * 6:  # elapsed grows as hashes squared
+        bent.observe(hashes, (hashes / 1_000) ** 2 * 1e-3, 0.0)
+    overhead, per_hash = bent.estimate()
+    worst = max(
+        abs(((h / 1_000) ** 2 * 1e-3) / (overhead + h * per_hash) - 1)
+        for h in (1_000, 2_000, 4_000)
+    )
+    assert bent.misfit() == pytest.approx(worst) and worst > 0.25
+
+
+def test_measured_sizes_survive_a_restart_and_are_bounded():
+    world = MiningWorldModel()
+    for hashes in range(1, 80):
+        world.observe_execution(_record(hash_count=hashes * 32, elapsed_seconds=0.001 * hashes))
+    route = world.route(ROUTE)
+    assert len(route.rungs) == 64  # the least-evidenced sizes are forgotten
+    restored = MiningWorldModel()
+    restored.import_state(world.export_state())
+    assert restored.route(ROUTE).rungs == route.rungs

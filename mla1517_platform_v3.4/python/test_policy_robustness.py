@@ -1,10 +1,12 @@
 """Training under a misspecified world: the device slows as a window runs.
 
-The policy learns ``elapsed = o + hashes / H`` and minimises
-``J(T) = o/(o+T) + lambda*min(T, T_chunk)/2``. The simulator's sag regime
-breaks the model's assumption: the rate falls as ``H / (1 + t / tau)`` within
-each window, and nothing tells the policy. These tests record where learning
-still helps and where it currently fails.
+The policy learns ``elapsed = o + hashes / H``. The simulator's sag regime
+breaks that assumption: the rate falls as ``H / (1 + t / tau)`` within each
+window, and nothing tells the policy. The line then bends away from what the
+window sizes actually take; its fitted overhead collapses towards zero, which
+once made the smallest window look free (36% efficiency under strong sag).
+When the line misfits the measured window sizes, the policy now judges them
+by measured valid-hash throughput instead.
 """
 
 from __future__ import annotations
@@ -36,19 +38,18 @@ def test_mild_sag_still_learns_most_of_the_gain():
     # tau = 0.5 s: the best fixed window (1344) reaches 0.969.
     legacy, model, _ = _run(0.5)
     assert model > legacy + 0.10
-    assert model > 0.93
+    assert model > 0.95
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "J(T) rewards time spent hashing, not hashes per second, and the linear route model "
-        "cannot represent a rate that sags within a window: under strong sag the policy keeps "
-        "the largest window (36% efficiency against 81% for the fixed window; the best fixed "
-        "window reaches 91%). Fix: judge rungs by measured throughput, or step down when "
-        "observed elapsed persistently exceeds the model's prediction."
-    ),
-)
-def test_strong_sag_never_leaves_the_policy_worse_than_the_fixed_window():
-    legacy, model, _ = _run(0.05)
-    assert model >= legacy - 0.02
+def test_moderate_sag_no_longer_collapses_to_the_smallest_window():
+    # tau = 0.2 s: the fitted overhead once collapsed to 0 and the policy ran
+    # 32-nonce windows at 43% efficiency.
+    legacy, model, window = _run(0.2)
+    assert model > 0.9 and window > 32
+
+
+def test_strong_sag_is_judged_by_measured_throughput():
+    legacy, model, window = _run(0.05)
+    # The best fixed window reaches 0.907 (window 512); the fixed 96 window 0.808.
+    assert model > legacy
+    assert model > 0.83 and window < 2048
