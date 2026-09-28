@@ -23,7 +23,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker run -d --name pythia-ci -p 127.0.0.1:3000:3000 pythia-control:ci
+          # The control plane fails closed without a Stratum identity, so boot it
+          # with placeholder, non-secret values and an unreachable pool.
+          docker run -d --name pythia-ci -p 127.0.0.1:3000:3000 \
+            -e MLA1517_STRATUM_USER=ci-smoke \
+            -e MLA1517_STRATUM_PASSWORD=ci-smoke \
+            -e MLA1517_STRATUM_ENDPOINT=127.0.0.1:1 \
+            pythia-control:ci
           trap 'docker logs pythia-ci; docker rm -f pythia-ci' EXIT
           for attempt in $(seq 1 30); do
             if curl --fail --silent http://127.0.0.1:3000/healthz > /tmp/health.json; then break; fi
