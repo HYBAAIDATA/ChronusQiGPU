@@ -44,3 +44,7 @@ models/
 
 # scratch build/output dir
 .tmp_build/
+
+# L-HRAS aethel storage roots (config.example.toml defaults)
+aethel_store/
+aethel_backup/
