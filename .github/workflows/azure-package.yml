@@ -36,6 +36,10 @@ jobs:
             sleep 2
           done
           curl --fail --silent http://127.0.0.1:3000/healthz
+          # Every durable path must sit on the writable volume for uid 10001:
+          # the share log that prevents re-submits, the causal ledger, agentic
+          # state and the intelligence's Aethel memory.
+          docker exec pythia-ci sh -c 'for p in "$PYTHIA_MINING_SESSION_PATH" "$PYTHIA_CAUSAL_LOG_PATH" "$PYTHIA_AGENTIC_STATE_PATH" "$PYTHIA_INTELLIGENCE_DIR/x"; do d=$(dirname "$p"); mkdir -p "$d" && test -w "$d" || { echo "not writable: $d"; exit 1; }; done'
           curl --fail --silent http://127.0.0.1:3000/ > /tmp/index.html
           test -s /tmp/index.html
           # Not-ready is reported as HTTP 503 with a JSON body, so --fail must not be used here.

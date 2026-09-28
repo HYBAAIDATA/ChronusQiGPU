@@ -17,7 +17,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHIA_RUNTIME_CONFIG=/var/lib/pythia/runtime_config.json \
     PYTHIA_BOOT_LOCK=/tmp/pythia/main.lock \
     PYTHIA_BOOT_AUDIT=/var/lib/pythia/boot-audit.jsonl \
-    PYTHIA_WORKER_HEARTBEAT_DIR=/tmp/pythia/hb
+    PYTHIA_WORKER_HEARTBEAT_DIR=/tmp/pythia/hb \
+    PYTHIA_MINING_SESSION_PATH=/var/lib/pythia/mining_session.json \
+    PYTHIA_CAUSAL_LOG_PATH=/var/lib/pythia/causal_ledger.jsonl \
+    PYTHIA_AGENTIC_STATE_PATH=/var/lib/pythia/agentic_policy.json \
+    PYTHIA_INTELLIGENCE_DIR=/var/lib/pythia/intelligence
 WORKDIR /app
 COPY . .
 COPY --from=frontend /build/dist/public ./dist/public
