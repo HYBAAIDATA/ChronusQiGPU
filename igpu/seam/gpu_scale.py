@@ -28,7 +28,7 @@ class GpuScale:
 
     @property
     def ladder_index(self) -> int:
-        """The snapped ladder stop; ``work_items`` is the ladder index."""
+        """The snapped ladder stop (``nearest_ladder_index`` of the request)."""
         return self.work_items
 
     def as_dict(self) -> Dict[str, object]:

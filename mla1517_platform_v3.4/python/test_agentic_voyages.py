@@ -346,22 +346,42 @@ async def _voyage_b(tmp_path):
         assert old_client.status_snapshot()["submission"]["state"] == "OUTCOME_UNKNOWN"
         assert coord.agentic.current_identity() is None  # dead session is not work
 
+        # The share is logged as unknown, durably, and the miner is not parked.
+        lost = coord.last_execution
         durable = json.loads((tmp_path / "session.json").read_text())
-        assert durable["state"] == "WAITING_EXTERNAL"
-        assert durable["pending"]["outcome"] is None
+        assert durable["state"] == "SEARCHING" and durable["pending"] is None
+        assert durable["share_log"][-1]["outcome"] is None
+        assert durable["share_log"][-1]["submission_id"] == lost["submission_id"]
+        assert coord.session.cycles == 0
 
         # Recovery: reconnect exactly as the hardware loop does.
         await old_client.close()
         coord.client = None
         pool.submit_policy = "accept"
         await _connected(coord, "job-a")
+        chain.block_hash = parent_of_current_job(coord)
         assert coord.agentic.current_identity().pool_session_id != old_session_id
-        assert await coord.search_current_job() is False  # lifecycle still unresolved
-        assert len(pool.submits) == 1  # no blind duplicate submit
-        assert coord.session.pending["outcome"] is None  # nothing fabricated
+
+        # Never blindly re-submit the lost share, not even after a reconnect.
+        _worker, job_id, extranonce2, ntime, nonce = pool.submits[0]
+        assert (
+            await coord.submit_candidate(
+                job_id=job_id, extranonce2=extranonce2, ntime=ntime, nonce=nonce
+            )
+            is False
+        )
+        assert len(pool.submits) == 1
+
+        # Mining continues and new, distinct shares reach the pool.
+        accepted = [await coord.search_current_job() for _ in range(3)]
+        assert accepted.count(True) >= 2
+        assert len(pool.submits) == 1 + accepted.count(True)
+        assert len({tuple(p[1:]) for p in pool.submits}) == len(pool.submits)
         coord.session.close()
         reopened = MiningSession(tmp_path / "session.json")
-        assert reopened.state == "WAITING_EXTERNAL" and reopened.pending["outcome"] is None
+        assert reopened.state == "SEARCHING"
+        assert any(entry["outcome"] is None for entry in reopened.share_log)
+        assert reopened.already_submitted(durable["share_log"][0]["block_hash"])
         reopened.close()
     finally:
         if coord.client:

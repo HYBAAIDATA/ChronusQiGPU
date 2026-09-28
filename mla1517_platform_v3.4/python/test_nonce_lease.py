@@ -169,6 +169,30 @@ class TestAllocation:
         with pytest.raises(LeaseExhausted):
             led.allocate("second", 64, alloc)
 
+    def test_reconnect_to_the_same_header_space_never_rehashes(self):
+        """Same Stratum fingerprint in a new session: coverage and extranonce2 carry over."""
+        led = NonceLeaseLedger()
+        led.bind(("session-1", 1, "fp-a"), 1, work_space="fp-a")
+        first_alloc = Extranonce2()
+        done = led.allocate("a", 64, first_alloc)
+        led.begin("a", ("session-1", 1, "fp-a"))
+        led.complete("a")
+        led.bind(("session-2", 1, "fp-a"), 1, work_space="fp-a")
+        reconnect_alloc = Extranonce2()  # the pool reset its extranonce2 counter
+        fresh = led.allocate("b", 64, reconnect_alloc)
+        assert fresh.extranonce2 != done.extranonce2
+        assert reconnect_alloc.issued == ["00000000", "00000001"]
+        with pytest.raises(LeaseConflict, match="completed coverage"):
+            led.reserve_range("c", done.extranonce2, done.start, 32)
+        assert led.snapshot()["carried_units_total"] == 1
+
+    def test_a_different_header_space_starts_clean(self):
+        led = NonceLeaseLedger()
+        led.bind(("session-1", 1, "fp-a"), 1, work_space="fp-a")
+        led.allocate("a", 64, Extranonce2())
+        led.bind(("session-2", 1, "fp-b"), 1, work_space="fp-b")
+        assert led.allocate("b", 64, Extranonce2()).extranonce2 == "00000000"
+
     def test_rebind_restarts_allocation_for_new_generation(self):
         led = ledger()
         alloc = Extranonce2()

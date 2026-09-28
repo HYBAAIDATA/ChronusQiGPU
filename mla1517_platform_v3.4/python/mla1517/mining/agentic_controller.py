@@ -33,6 +33,7 @@ from typing import Any, Callable, Deque
 
 from .nonce_lease import LeaseConflict, LeaseRecord, NonceLeaseLedger
 from .scale_state import ScaleEvidence, ScaleState, ScaleStateClassifier
+from .quality import QualityLedger
 from .search_plan import ExecutionRecord, LeaseState, PoolOutcome, SearchPlan, WorkIdentity
 
 LOG = logging.getLogger("mla1517.mining.agentic")
@@ -115,6 +116,7 @@ class AgenticMiningController:
         self.telemetry = AgenticTelemetry()
         self._outcome_history: Deque[ExecutionRecord] = deque(maxlen=256)
         self._lead_history: dict[str, deque] = {}
+        self.quality = QualityLedger()
 
     # ------------------------------------------------------------------ #
     # Stratum work identity
@@ -135,7 +137,11 @@ class AgenticMiningController:
             self._identity = identity
             self._binding_epoch += 1
         drained = self._drain_queue()
-        self._leases.bind(identity.key, identity.generation)
+        self._leases.bind(
+            identity.key,
+            identity.generation,
+            work_space=identity.work_space or identity.job_fingerprint,
+        )
         self.telemetry.plans_invalidated += drained
         self._recent.extend(["invalidated"] * drained)
         if identity.clean_jobs:
@@ -325,13 +331,25 @@ class AgenticMiningController:
 
     def begin_fallback(self, window: int, allocate_extranonce2: Callable[[], str]) -> LeaseRecord:
         """Baseline work is leased too, so it can never duplicate agentic coverage."""
-        identity = self.current_identity()
-        if identity is None:
+        lease = self.reserve_fallback(window, allocate_extranonce2)
+        return self.begin_reserved(lease.lease_id)
+
+    def reserve_fallback(self, window: int, allocate_extranonce2: Callable[[], str]) -> LeaseRecord:
+        if self.current_identity() is None:
             raise LeaseConflict("no Stratum work identity is bound")
-        lease = self._leases.allocate(
+        return self._leases.allocate(
             NonceLeaseLedger.new_fallback_id(), window, allocate_extranonce2
         )
-        return self._leases.begin(lease.lease_id, identity.key)
+
+    def begin_reserved(self, lease_id: str) -> LeaseRecord:
+        identity = self.current_identity()
+        if identity is None:
+            self._leases.invalidate(lease_id)
+            raise LeaseConflict("no Stratum work identity is bound")
+        return self._leases.begin(lease_id, identity.key)
+
+    def lease(self, lease_id: str) -> LeaseRecord | None:
+        return self._leases.get(lease_id)
 
     def finish_execution(self, lease_id: str, *, scanned: bool) -> bool:
         if scanned:
@@ -382,6 +400,7 @@ class AgenticMiningController:
     def record_outcome(self, record: ExecutionRecord) -> None:
         """Only literal ACCEPTED/REJECTED pool responses train policy history."""
         self._outcome_history.append(record)
+        self.quality.observe(record)
         self.telemetry.last_plan_source = record.plan_source.value
         self.telemetry.last_outcome = {
             "plan_id": record.plan_id,
@@ -495,6 +514,7 @@ class AgenticMiningController:
             "learning_update_applied": t.learning_update_applied,
             "executor_idle_waiting_for_plan_ms": t.executor_idle_waiting_for_plan_ms,
             "scale_state": t.scale_state,
+            "quality": self.quality.snapshot(),
         }
 
     # ------------------------------------------------------------------ #

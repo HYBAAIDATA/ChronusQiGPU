@@ -246,7 +246,6 @@ class StratumClient:
         self._pending: dict[int, asyncio.Future[Any]] = {}
         self._reader_task: asyncio.Task[None] | None = None
         self._jobs: dict[str, StratumJob] = {}
-        self._job_awaiting_subscription = False
         self._closed = False
         self.proof_adapter = StratumProofAdapter()
         self._status_sink = status_sink
@@ -299,7 +298,6 @@ class StratumClient:
         self._closed = False
         self.proof_adapter.drop_session()
         self._jobs.clear()
-        self._job_awaiting_subscription = False
         self.runtime_state.connected()
         self._publish_status()
         self._reader_task = asyncio.create_task(self._read_loop())
@@ -308,14 +306,11 @@ class StratumClient:
         subscription = await self.request("mining.subscribe", [self.agent, None])
         subscription_state = self.proof_adapter.handle_subscribe_result(subscription)
         self.runtime_state.subscription_confirmed(subscription_state)
+        if self.proof_adapter.current_job is not None:
+            # A notify that raced ahead of the subscribe response is
+            # registered as a Stratum generation now that it can be.
+            self.runtime_state.job_received(self.proof_adapter.current_job, subscription_state)
         self._publish_status()
-        if self._job_awaiting_subscription:
-            self._job_awaiting_subscription = False
-            job = self.proof_adapter.current_job
-            if job is not None:
-                self.runtime_state.job_received(job, subscription_state)
-                self._publish_status()
-                LOG.info("Job received: %s", job.job_id)
         self.runtime_state.authorizing()
         self._publish_status()
         authorized = await self.request("mining.authorize", [self.username, self.password])
@@ -349,7 +344,6 @@ class StratumClient:
         self.reader = None
         self.proof_adapter.drop_session()
         self._jobs.clear()
-        self._job_awaiting_subscription = False
         self.runtime_state.disconnected("Stratum session closed")
         self._publish_status()
 
@@ -391,7 +385,6 @@ class StratumClient:
                 LOG.warning("%s reader stopped: %s", self.endpoint.name, exc)
                 self.proof_adapter.drop_session()
                 self._jobs.clear()
-                self._job_awaiting_subscription = False
                 self.runtime_state.disconnected(str(exc))
                 self._publish_status()
 
@@ -414,10 +407,9 @@ class StratumClient:
             if job is None:
                 raise StratumProtocolError("mining.notify did not create an active job")
             if subscription is None:
-                # Pools commonly send the first notify in the same write as the
-                # subscribe reply, so the read loop can see it before connect()
-                # has recorded the subscription. Hold it until connect() does.
-                self._job_awaiting_subscription = True
+                # Pools commonly send the first notify straight after the
+                # subscribe response, before connect() has consumed it.
+                LOG.debug("job %s held until the subscription is confirmed", job_id)
                 return
             self.runtime_state.job_received(job, subscription)
             self._publish_status()
@@ -441,6 +433,8 @@ class StratumClient:
     async def request(self, method: str, params: list[Any]) -> Any:
         if not self.writer:
             raise ConnectionError("Stratum session is not connected")
+        if self._reader_task is not None and self._reader_task.done():
+            raise ConnectionError("Stratum reader has stopped; no response can arrive")
         request_id = self._next_id
         self._next_id += 1
         loop = asyncio.get_running_loop()
@@ -527,16 +521,20 @@ class ManifoldPoolCoordinator:
         self.endpoint_index = 1
         return True
 
+    async def _handle_control_request(self, request: Mapping[str, Any]) -> dict[str, Any]:
+        if request.get("op") == "failover":
+            ok = await self.force_failover(str(request.get("target", "secondary")))
+            return {"status": "ok" if ok else "error"}
+        return {"status": "error", "reason": "unsupported operation"}
+
     async def _control_handler(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
     ) -> None:
         try:
             request = json.loads((await asyncio.wait_for(reader.readline(), 2.0)).decode())
-            if request.get("op") == "failover":
-                ok = await self.force_failover(str(request.get("target", "secondary")))
-                reply = {"status": "ok" if ok else "error"}
-            else:
-                reply = {"status": "error", "reason": "unsupported operation"}
+            if not isinstance(request, dict):
+                raise ValueError("control request must be a JSON object")
+            reply = await self._handle_control_request(request)
         except Exception as exc:
             reply = {"status": "error", "reason": str(exc)}
         writer.write((json.dumps(reply) + "\n").encode())

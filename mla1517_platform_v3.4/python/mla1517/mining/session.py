@@ -26,6 +26,9 @@ EDGES = {
 }
 # Bounded so frequent share acceptances cannot grow the persisted session.
 WINNER_MEMORY_LIMIT = 256
+SHARE_LOG_LIMIT = 256
+_CORRELATION_KEYS = ("pool_session_id", "generation", "execution_id", "candidate_id", "lease_id")
+_SHARE_STATES = {True: "ACCEPTED", False: "REJECTED", None: "UNKNOWN"}
 
 
 def digest(header: bytes) -> bytes:
@@ -98,7 +101,13 @@ class PythiaWinnerMemory:
 
 
 class MiningSession:
-    """One persisted four-state loop; interrupted submissions remain blocked."""
+    """One persisted four-state loop for blocks; shares never park it.
+
+    A block candidate waits for external chain progress and a cooldown, so
+    the miner never extends its own block. A share (accepted, rejected or
+    unknown) is logged durably and the loop returns to SEARCHING at once; a
+    logged share can never be submitted again.
+    """
 
     def __init__(
         self, path: str | Path | None = None, *, cooldown_seconds: float = 1.0, clock=time.time
@@ -116,7 +125,7 @@ class MiningSession:
         self.cooldown_until: float | None = None
         self.memory = PythiaWinnerMemory()
         self.last_block_hash: str | None = None
-        self.last_share: dict | None = None
+        self.share_log: list[dict] = []
         self._lock_file = None
         if self.path is not None:
             self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -129,6 +138,13 @@ class MiningSession:
             except BaseException:
                 self.close()
                 raise
+
+    @property
+    def last_share(self) -> dict | None:
+        return self.share_log[-1] if self.share_log else None
+
+    def already_submitted(self, block_hash: str) -> bool:
+        return any(entry["block_hash"] == block_hash for entry in self.share_log)
 
     @property
     def rung(self) -> int:
@@ -161,7 +177,7 @@ class MiningSession:
         self.pending = data["pending"]
         self.external = data["external"]
         self.cooldown_until = data["cooldown_until"]
-        self.last_share = data.get("last_share")
+        self.share_log = _restore_share_log(data)
         self.memory = PythiaWinnerMemory(data["winners"])
         if state != "SEARCHING" and not self.pending:
             raise ValueError("active lifecycle is missing submission evidence")
@@ -177,6 +193,11 @@ class MiningSession:
                 self.pending["target"],
                 self.pending["job_id"],
             )
+        if state == "WAITING_EXTERNAL" and not self.pending["block_candidate"]:
+            # Files written before the share policy parked shares here.
+            self.history.pop()
+            self.state = "SUBMITTING"
+            self._resolve_share(self.pending["outcome"])
 
     def _save(self) -> None:
         if self.path is None:
@@ -192,7 +213,7 @@ class MiningSession:
             "winners": self.memory.records,
             "theorem_proven": False,
             "last_block_hash": self.last_block_hash,
-            "last_share": self.last_share,
+            "share_log": self.share_log,
         }
         temporary = self.path.with_suffix(self.path.suffix + ".tmp")
         with temporary.open("w", encoding="utf-8") as stream:
@@ -223,6 +244,7 @@ class MiningSession:
         parent_height: int,
         block_candidate: bool,
         submission_id: str | None = None,
+        correlation: dict | None = None,
     ) -> None:
         if self.state != "SEARCHING":
             raise RuntimeError("mining lifecycle blocks submission")
@@ -249,6 +271,12 @@ class MiningSession:
             "block_candidate": block_candidate,
             "outcome": None,
             "submission_id": submission_id,
+            "sent_at": self.clock(),
+            "correlation": {
+                key: (correlation or {}).get(key)
+                for key in _CORRELATION_KEYS
+                if (correlation or {}).get(key) is not None
+            },
         }
         self._go("SUBMITTING")
         self._save()  # durable before the network write
@@ -259,7 +287,7 @@ class MiningSession:
         if accepted is not None and type(accepted) is not bool:
             raise ValueError("pool outcome must be boolean or unknown")
         self.pending["outcome"] = accepted
-        if accepted is not None and not self.pending["block_candidate"]:
+        if not self.pending["block_candidate"]:
             self._resolve_share(accepted)
             return
         self._go("WAITING_EXTERNAL")
@@ -276,24 +304,29 @@ class MiningSession:
             )
             self._save()
 
-    def _resolve_share(self, accepted: bool) -> None:
-        """A share with a literal pool answer is fully resolved.
+    def _resolve_share(self, accepted: bool | None) -> None:
+        """A share carries no chain-height evidence to wait for.
 
-        It carries no chain-height evidence to wait for, so the lifecycle
-        returns to SEARCHING without consuming a block cycle (the rung is
-        unchanged). Block candidates and unknown outcomes keep the
-        external-chain gate.
+        The outcome (True, False, or None when the pool response was lost) is
+        logged durably and the lifecycle returns to SEARCHING without
+        consuming a block cycle, so the rung is unchanged.
         """
         pending = self.pending
         self.history.pop()
         self.state = "SEARCHING"
         self.pending = None
-        self.last_share = {
-            "job_id": pending["job_id"],
-            "block_hash": pending["block_hash"],
-            "submission_id": pending.get("submission_id"),
-            "outcome": accepted,
-        }
+        self.share_log.append(
+            {
+                **pending.get("correlation", {}),
+                "job_id": pending["job_id"],
+                "block_hash": pending["block_hash"],
+                "submission_id": pending.get("submission_id"),
+                "sent_at": pending.get("sent_at"),
+                "outcome": accepted,
+                "state": _SHARE_STATES[accepted],
+            }
+        )
+        del self.share_log[:-SHARE_LOG_LIMIT]
         if accepted:
             self.memory.consolidate(
                 bytes.fromhex(pending["header"]), pending["target"], pending["job_id"]
@@ -383,6 +416,23 @@ class MiningSession:
             _release_lock(self._lock_file)
             self._lock_file.close()
             self._lock_file = None
+
+
+def _restore_share_log(data: dict) -> list[dict]:
+    """Read the bounded share log; round-2 files stored a single last_share."""
+    entries = data.get("share_log")
+    if entries is None:
+        entries = [data["last_share"]] if data.get("last_share") else []
+    if not isinstance(entries, list) or len(entries) > SHARE_LOG_LIMIT:
+        raise ValueError("invalid share log")
+    for entry in entries:
+        if (
+            not isinstance(entry, dict)
+            or not isinstance(entry.get("block_hash"), str)
+            or entry.get("outcome") not in (True, False, None)
+        ):
+            raise ValueError("invalid share log entry")
+    return entries
 
 
 def _acquire_exclusive_lock(fileobj) -> None:
