@@ -175,6 +175,15 @@ class PolicyTests(unittest.TestCase):
         busy = OperatingPolicy(world).decide(_ctx(chunk_cap=10**9)).window
         self.assertLess(busy, calm)
 
+    def test_window_seconds_envelope_bounds_the_choice(self):
+        world = MiningWorldModel()
+        _train(world)  # ~5e7 H/s: 2 ms of hashing is ~100k nonces
+        d = OperatingPolicy(world).decide(_ctx(max_window_seconds=0.002))
+        self.assertEqual(d.source, "model")
+        self.assertLessEqual(d.window / d.expected["hash_rate_hs"], 0.002)
+        free = OperatingPolicy(world).decide(_ctx())
+        self.assertGreater(free.window, d.window)
+
     def test_choice_is_the_argmin_of_reported_candidates(self):
         world = MiningWorldModel()
         _train(world)
@@ -324,6 +333,7 @@ class LiveCoordinatorTests(unittest.TestCase):
             created.append(self_)
 
         os.environ["PYTHIA_INTELLIGENCE_DIR"] = str(memory_dir)
+        os.environ["PYTHIA_INTELLIGENCE_CHECKPOINT_S"] = "0.5"
         coordinator_module.IntelligentPoolCoordinator.__init__ = capture
         logging.disable(logging.CRITICAL)
         try:
@@ -331,6 +341,7 @@ class LiveCoordinatorTests(unittest.TestCase):
         finally:
             coordinator_module.IntelligentPoolCoordinator.__init__ = original
             os.environ.pop("PYTHIA_INTELLIGENCE_DIR", None)
+            os.environ.pop("PYTHIA_INTELLIGENCE_CHECKPOINT_S", None)
             logging.disable(logging.NOTSET)
         return stats, created[0]
 
@@ -346,7 +357,8 @@ class LiveCoordinatorTests(unittest.TestCase):
             snap = coord.evidence_snapshot()["intelligence"]
             decision = snap["decision"]
             self.assertIsNotNone(decision)
-            self.assertLessEqual(decision["window"], lucas(coord.session.rung))
+            self.assertLessEqual(decision["window"], coord._intelligence_ceiling())
+            self.assertLessEqual(coord._intelligence_ceiling(), lucas(31))
             self.assertIn("cpu_reference", snap["world"]["routes"])
             self.assertGreater(snap["loss"]["executions"], 0)
             self.assertTrue(snap["memory"]["ledger_verified"])

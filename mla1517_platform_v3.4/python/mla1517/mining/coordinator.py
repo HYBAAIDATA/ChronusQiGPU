@@ -258,9 +258,17 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self.operating_policy = OperatingPolicy(self.world)
         self.loss = LossLedger()
         self._policy_mode = os.getenv("PYTHIA_OPERATING_POLICY", "model").strip().lower()
+        try:
+            self._max_window_seconds = float(os.getenv("PYTHIA_MAX_WINDOW_SECONDS", "2.0"))
+        except ValueError:
+            self._max_window_seconds = 2.0
         self._idle_seen_ms = 0.0
         self._bound_session: str | None = None
-        self._memory_every = 256
+        try:
+            self._memory_every_s = float(os.getenv("PYTHIA_INTELLIGENCE_CHECKPOINT_S", "60"))
+        except ValueError:
+            self._memory_every_s = 60.0
+        self._memory_saved_at = time.monotonic()
         self.intelligence_memory: IntelligenceMemory | None = None
         memory_dir = os.getenv("PYTHIA_INTELLIGENCE_DIR", "").strip()
         if memory_dir:
@@ -768,17 +776,35 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             PolicyContext(
                 route=self._execution_route(),
                 lanes=LANES,
-                # The solver enforces budget <= lucas(rung): a hard invariant.
-                max_window=cap,
+                # The intelligence may climb the Lucas scale ladder; every
+                # solver call still enforces budget <= lucas(rung).
+                max_window=max(cap, self._intelligence_ceiling()),
                 legacy_window=legacy,
                 legacy_lookahead=self.agentic.lookahead,
                 capacity=self.agentic.capacity,
                 chunk_cap=self._chunk_cap(),
                 recovery_active=self.agentic.is_recovery_active(),
                 derate_cap=self._tuned_window if derated else None,
+                max_window_seconds=self._max_window_seconds,
             )
         )
         return decision.window
+
+    def _intelligence_ceiling(self) -> int:
+        """Largest window the operating intelligence may choose.
+
+        OpenCL: the measured launch cap (``_window_cap``). CPU reference: the
+        Lucas value of the highest scale rung that fits a uint32 nonce space
+        (L_31); ``cpu_sweep`` executes it as rung-sized solver calls, so the
+        solver's ``budget <= lucas(rung)`` invariant holds for every call.
+        """
+        from lucas.core import lucas
+        from lucas.ladder import SCALE_RUNGS
+
+        if self._execution_route() == "opencl_m32":
+            return self._window_cap()
+        top = max(r for r in SCALE_RUNGS if lucas(r) < 2**32)
+        return lucas(top)
 
     def _chunk_cap(self) -> int:
         hasher = self.execution_hasher
@@ -803,7 +829,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         return {
             "schema": "pythia.intelligence/1",
             "policy_mode": self._policy_mode,
-            "window_ceiling": f"lucas({self.session.rung})",
+            "window_ceiling": self._intelligence_ceiling(),
+            "max_window_seconds": self._max_window_seconds,
             "world": self.world.snapshot(),
             "decision": last.as_dict() if last is not None else None,
             "loss": self.loss.snapshot(time.monotonic()),
@@ -1185,8 +1212,9 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self._idle_seen_ms = idle_ms
         if (
             self.intelligence_memory is not None
-            and self.loss.executions % self._memory_every == 0
+            and now - self._memory_saved_at >= self._memory_every_s
         ):
+            self._memory_saved_at = now
             try:
                 self.intelligence_memory.checkpoint(self.world.export_state())
             except Exception as exc:

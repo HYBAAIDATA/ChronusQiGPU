@@ -74,6 +74,9 @@ class PolicyContext:
     chunk_cap: int
     recovery_active: bool = False
     derate_cap: int | None = None
+    # Homeostatic envelope: no window may hash longer than this, so recovery
+    # commands and new jobs are never stuck behind one huge window.
+    max_window_seconds: float | None = None
 
 
 @dataclass(frozen=True)
@@ -139,6 +142,9 @@ class OperatingPolicy:
         rate = self.world.clean.mean
         upper = ctx.max_window if ctx.derate_cap is None else min(ctx.max_window, ctx.derate_cap)
         ladder = lucas_ladder(upper, ctx.lanes) or [legacy]
+        if ctx.max_window_seconds is not None:
+            within = [w for w in ladder if w * sec_per_hash <= ctx.max_window_seconds]
+            ladder = within or ladder[:1]
         scored = []
         for w in ladder:
             total, o_frac, s_frac = expected_loss(w, overhead_s, sec_per_hash, rate, ctx.chunk_cap)
