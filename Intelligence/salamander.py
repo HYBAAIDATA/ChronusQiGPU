@@ -899,8 +899,16 @@ class SalamanderEngine:
             auto_heal = kwargs.get("auto_heal", False)
             return self.agentic_heal(auto_heal=auto_heal)
         elif skill_name in self.skills:
+            # Other skills are guidance, not code: hand back what to follow
+            # (and where it came from) rather than claim an execution.
             skill = self.skills[skill_name]
-            return {"skill": skill.name, "status": "EXECUTED", "description": skill.description}
+            return {
+                "skill": skill.name,
+                "status": "GUIDANCE",
+                "description": skill.description,
+                "instructions": skill.instructions,
+                "provenance": skill.provenance,
+            }
         else:
             raise KeyError(
                 f"Skill '{skill_name}' not found in equipped skills ({list(self.skills.keys())})."

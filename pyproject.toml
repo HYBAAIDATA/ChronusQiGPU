@@ -55,12 +55,14 @@ packages = ["lucas", "millennium", "mla1517", "mla1517.mining", "aethel", "kello
 py-modules = [
     "control_api",
     "coordinator",
+    "discovery_runtime",
     "euclid_core",
     "extended_algebra",
     "headless_miner",
     "main",
     "manifold_pool_coordinator",
     "mining_runtime",
+    "policy_bench",
     "pool_catalog",
     "worker_lifecycle",
     "runtime_config",
@@ -89,6 +91,8 @@ testpaths = ["mla1517_platform_v3.4/python", "tests"]
 [tool.black]
 line-length = 100
 target-version = ["py312"]
+# Vendored skill grafts are kept byte-exact (Intelligence/skill_graft.py).
+extend-exclude = "Intelligence/skills/"
 exclude = '''
 /(\n    \\.git\n  | \\.pytest_cache\n  | __pycache__\n  | node_modules\n  | dist\n  | models\n  | logs\n  | legacy\n  | \\.venv\n  | venv\n)/
 '''

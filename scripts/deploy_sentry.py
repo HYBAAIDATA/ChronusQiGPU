@@ -59,7 +59,12 @@ SKIP_DIRS = {
 APP_PREFIXES = ("PYTHIA_", "MLA1517_", "EUCLID_", "AETHEL_", "KELLOGG_", "TOE_", "HYBA_", "LHRAS_")
 DEPLOY_PATHS = ("deploy/", ".env.example", ".github/workflows/")
 CODE_SUFFIXES = {".py", ".ts", ".tsx", ".js", ".mjs", ".cjs", ".sh", ".c", ".h"}
-ENTRY_SCRIPTS = ("main.py", f"{PLATFORM}/mining_runtime.py", f"{PLATFORM}/salamander_engine.py")
+ENTRY_SCRIPTS = (
+    "main.py",
+    f"{PLATFORM}/mining_runtime.py",
+    f"{PLATFORM}/salamander_engine.py",
+    f"{PLATFORM}/discovery_runtime.py",
+)
 # Distributions whose import name differs from the distribution name.
 IMPORT_NAMES = {"pyyaml": "yaml", "scikit-learn": "sklearn", "pytest-asyncio": "pytest_asyncio"}
 # Distributions used as tools or plugins rather than imported.

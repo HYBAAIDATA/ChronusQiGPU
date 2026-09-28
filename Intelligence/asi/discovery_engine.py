@@ -1,5 +1,3 @@
-# pythagoras/asi/discovery_engine.py — NEW
-
 """Active Discovery Engine — the missing loop.
 
 Instrumentation is not intelligence. The 20 attribute modules measure
@@ -14,6 +12,12 @@ variance), not random search. A finding becomes a Discovery only if it is
 (a) surprising under the current world model and (b) replicates across
 independent trials — both necessary conditions for a claim to be more than
 noise.
+
+Surprise is measured against the engine's own theory, not a blank prior:
+every experiment is absorbed into the causal theory as it lands, and an
+untested composition is predicted from it (additive singleton effects
+plus learned pairwise synergy). A composition that merely adds up what is
+already known is a confirmation, never a discovery.
 """
 
 import itertools
@@ -88,6 +92,7 @@ class ActiveDiscoveryEngine:
         surprise_threshold: float = 0.15,
         replication_tolerance: float = 0.05,
         workspace: Optional[GlobalWorkspace] = None,
+        experiments_reversible: bool = True,
     ):
         """
         environment: fn(rule_composition, initial_state) -> observed_effect.
@@ -96,12 +101,16 @@ class ActiveDiscoveryEngine:
         n_trials: independent trials per hypothesis (replication).
         surprise_threshold: min |observed - predicted| to flag a discovery.
         replication_tolerance: max allowed std across trials for a claim.
+        experiments_reversible: whether an experiment leaves the world as it
+            found it (a simulation does; live intervention may not). The
+            safety layer refuses irreversible experiments.
         """
         self.environment = environment
         self.primitives = {r.name: r for r in primitives}
         self.n_trials = n_trials
         self.surprise_threshold = surprise_threshold
         self.replication_tolerance = replication_tolerance
+        self.experiments_reversible = experiments_reversible
 
         self.bayesian = BayesianReasoningEngine(prior_mean=0.0, prior_variance=1.0)
         self.compositional = CompositionalGeneralizationEngine()
@@ -194,6 +203,10 @@ class ActiveDiscoveryEngine:
                 if hid in tested_ids:
                     continue
                 mean, var = self.bayesian.predict(hid)
+                belief = self.bayesian.beliefs.get(hid)
+                if belief is None or belief.n_observations == 0:
+                    # Untested: the theory's prediction, not a blank prior.
+                    mean, _ = self.theory.predict(self._expand(list(combo)))
                 hypotheses.append(
                     Hypothesis(
                         hypothesis_id=hid,
@@ -215,6 +228,7 @@ class ActiveDiscoveryEngine:
         if not hypotheses:
             return None
         discovered_ids = {d.hypothesis_id for d in self.discoveries}
+        known = {tuple(self._expand(h.rule_composition)) for h in self.hypotheses_tested}
 
         def score(h: Hypothesis) -> float:
             builds_on_discovery = any(c in discovered_ids for c in h.rule_composition)
@@ -223,7 +237,25 @@ class ActiveDiscoveryEngine:
             # compositions competes with exploration of uncertain ones.
             return exploration + self.goal_weight * h.predicted_effect
 
-        return max(hypotheses, key=score)
+        def basis_known(h: Hypothesis) -> bool:
+            # A composition is tested only once the theory knows its parts:
+            # every atom, and every consecutive pair of a longer chain.
+            # Otherwise an unmeasured part's own effect reads as a surprise
+            # of the whole (a false discovery).
+            atoms = self._expand(h.rule_composition)
+            if len(atoms) == 1:
+                return True
+            parts = [(atom,) for atom in atoms]
+            if len(atoms) > 2:
+                parts += [tuple(atoms[i : i + 2]) for i in range(len(atoms) - 1)]
+            return all(part in known for part in parts)
+
+        # Equal scores: the shorter composition first, so the theory learns
+        # its basis before it is asked to predict what builds on it.
+        return max(
+            hypotheses,
+            key=lambda h: (basis_known(h), score(h), -len(self._expand(h.rule_composition))),
+        )
 
     # ------------------------------------------------------------------
     # Autotelic goals: she sets her own objective
@@ -286,7 +318,9 @@ class ActiveDiscoveryEngine:
     def run_experiment(self, hypothesis: Hypothesis, initial_state) -> Optional[dict]:
         """Execute n_trials of the hypothesis. Returns None if the safety
         layer refuses the experiment (e.g., irreversible intervention)."""
-        if not self.safety.safe_explore({"reversible": True}, risk_tolerance=0.5):
+        if not self.safety.safe_explore(
+            {"reversible": self.experiments_reversible}, risk_tolerance=0.5
+        ):
             return None
 
         atomic = self._expand(hypothesis.rule_composition)
@@ -333,6 +367,10 @@ class ActiveDiscoveryEngine:
                 "trial_std": trial_std,
             }
         )
+        # The theory learns from every experiment as it lands, so the next
+        # hypothesis is predicted from everything known so far.
+        self.theory.absorb_log(self.experiment_log[self.theory.n_absorbed :])
+        self.theory.n_absorbed = len(self.experiment_log)
 
         return {
             "observed": observed,

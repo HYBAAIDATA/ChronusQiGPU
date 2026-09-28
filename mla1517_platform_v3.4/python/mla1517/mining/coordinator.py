@@ -62,6 +62,7 @@ from .solver import M32SearchSolver
 from .stratum_adapter import StratumAdapterError
 from .tuning_gate import TuningGate
 from .intelligence_memory import IntelligenceMemory
+from ..knowledge import KnowledgeFabric, default_journal_path
 from .hashrate_governor import HashrateGovernor
 from .loss_ledger import LossLedger
 from .operating_policy import OperatingPolicy, PolicyContext
@@ -289,6 +290,10 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         memory_dir = os.getenv("PYTHIA_INTELLIGENCE_DIR", "").strip()
         if memory_dir:
             self._attach_intelligence_memory(memory_dir)
+        # What this miner learns, every intelligence can know: the fabric's
+        # journal sits beside the Aethel memory and is shared by all workers.
+        self.knowledge = KnowledgeFabric(default_journal_path() if memory_dir else None)
+        self._knowledge_at = float("-inf")
         self.execution_hasher = hasher if hasher is not None else CpuReferenceHasher()
         self.causal = CausalLedger(path=causal_log_path)
         self.recovery = RecoveryGovernor(on_event=self._on_recovery_event)
@@ -401,6 +406,22 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self._precompute_wake.set()
 
     def _on_recovery_event(self, kind: str, record: RecoveryRecord) -> None:
+        if kind in ("recovery_verified", "recovery_failed") and hasattr(self, "knowledge"):
+            try:
+                self.knowledge.publish(
+                    "salamander.recovery_authority",
+                    "salamander.recovery",
+                    {
+                        "recovery_id": record.recovery_id,
+                        "state": record.state.value,
+                        "commands": list(record.commands),
+                        "reason": record.reason,
+                        "failure": record.failure,
+                    },
+                    evidence="measured",
+                )
+            except Exception as exc:
+                LOG.warning("recovery outcome not shared: %s", exc)
         self.causal.record(
             kind,
             CausalCoordinate(recovery_id=record.recovery_id),
@@ -863,6 +884,70 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         except Exception as exc:
             LOG.warning("intelligence memory unavailable (%s); learning from scratch", exc)
 
+    def _share_knowledge(self, now: float) -> None:
+        """Publish what the miner has learned and read what others have.
+
+        Values are rounded to what is meaningful so a new version means the
+        learning changed, not that time passed: dependents decohere only
+        when their basis really moved.
+        """
+        if now - self._knowledge_at < 5.0:
+            return
+        self._knowledge_at = now
+
+        def sig(value: Any, digits: int = 3) -> Any:
+            if not isinstance(value, (int, float)) or isinstance(value, bool) or not value:
+                return value
+            return float(f"{value:.{digits}g}")
+
+        try:
+            self.knowledge.sync()
+            world = self.world.snapshot()
+            learned = {
+                "routes": {
+                    name: {
+                        "overhead_ms": sig(route.get("overhead_ms")),
+                        "hash_rate_hs": sig(route.get("hash_rate_hs")),
+                        "method": route.get("method"),
+                    }
+                    for name, route in sorted(world.get("routes", {}).items())
+                },
+                "invalidations_per_hour": sig(
+                    world.get("invalidation_rate", {}).get("per_hour_mean"), 2
+                ),
+            }
+            world_fact = self.knowledge.publish(
+                "mining.world_model", "mining.world", learned, evidence="measured"
+            )
+            decision = self.operating_policy.last
+            if decision is not None:
+                self.knowledge.publish(
+                    "mining.operating_policy",
+                    "mining.policy",
+                    {
+                        "window": decision.window,
+                        "lookahead": decision.lookahead,
+                        "source": decision.source,
+                    },
+                    evidence="computed",
+                    depends_on=[world_fact],
+                )
+            governor = self.governor
+            share_yield = governor.share_yield()
+            self.knowledge.publish(
+                "mining.hashrate_governor",
+                "mining.governor",
+                {
+                    "cap_hs": sig(governor.cap_hs),
+                    "network_hs": sig(governor.network_hs),
+                    "share_yield": sig(share_yield["ratio"]),
+                    "shares": share_yield["shares"],
+                },
+                evidence="computed",
+            )
+        except Exception as exc:
+            LOG.warning("knowledge not shared this cycle: %s", exc)
+
     def _refresh_governor(self) -> None:
         now = time.monotonic()
         if now - self._governor_config_at < 5.0:
@@ -892,6 +977,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             "loss": self.loss.snapshot(time.monotonic()),
             "audit": self.policy_audit.snapshot(),
             "governor": self.governor.snapshot(),
+            "knowledge": self.knowledge.snapshot(recent=10),
             "memory": (
                 self.intelligence_memory.snapshot()
                 if self.intelligence_memory is not None
@@ -1282,6 +1368,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         now = time.monotonic()
         self.world.tick(now)
         self.world.observe_execution(final)
+        self._share_knowledge(now)
         self.loss.observe_execution(final, self.world, started_at=now - final.elapsed_seconds)
         idle_ms = self.agentic.telemetry.executor_idle_waiting_for_plan_ms
         self.loss.observe_idle(max(0.0, idle_ms - self._idle_seen_ms) / 1000.0)

@@ -75,7 +75,12 @@ def _record(route: str, window: int, hashes: int, elapsed: float, kernel_s: floa
 
 
 def simulate(
-    regime: Regime, *, mode: str, seconds: float = 600.0, seed: int = 1517
+    regime: Regime,
+    *,
+    mode: str,
+    seconds: float = 600.0,
+    seed: int = 1517,
+    max_window_seconds: float | None = 2.0,
 ) -> dict[str, Any]:
     if mode not in ("legacy", "model"):
         raise ValueError(mode)
@@ -106,7 +111,7 @@ def simulate(
                     capacity=3,
                     chunk_cap=regime.chunk_cap,
                     # Production's responsiveness envelope (PYTHIA_MAX_WINDOW_SECONDS).
-                    max_window_seconds=2.0,
+                    max_window_seconds=max_window_seconds,
                 )
             )
             window = decision.window

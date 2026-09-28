@@ -49,6 +49,7 @@ _RESTART_WINDOW_SECONDS = 600
 _WORKER_SPECS = {
     "agentic-mining": "mining_runtime.py",
     "salamander": "salamander_engine.py",
+    "discovery": "discovery_runtime.py",
 }
 _LOCK_HELD = False
 _LOCK_GUARD = threading.Lock()
@@ -196,7 +197,9 @@ def _is_truthy(value: str | None, *, default: bool = False) -> bool:
 def _worker_ids() -> list[str]:
     configured = [
         item.strip()
-        for item in os.getenv("PYTHIA_CONTROL_WORKERS", "agentic-mining,salamander").split(",")
+        for item in os.getenv(
+            "PYTHIA_CONTROL_WORKERS", "agentic-mining,salamander,discovery"
+        ).split(",")
         if item.strip()
     ]
     return [worker_id for worker_id in configured if worker_id in _WORKER_SPECS]
@@ -669,6 +672,36 @@ def _ready_to_mine_reason(
 
 
 MINING_EVIDENCE_SCHEMA = "pythia.mining_evidence/1"
+
+
+_KNOWLEDGE: Any = None
+
+
+def knowledge_payload() -> dict[str, Any]:
+    """Every intelligence's shared knowledge, replayed from the fabric journal."""
+    global _KNOWLEDGE
+    from mla1517.knowledge import KnowledgeFabric, default_journal_path
+
+    if _KNOWLEDGE is None:
+        _KNOWLEDGE = KnowledgeFabric(default_journal_path())
+    _KNOWLEDGE.sync()
+    return _KNOWLEDGE.snapshot(recent=50)
+
+
+def announce_skills() -> int:
+    """Tell every intelligence which skills Salamander holds.
+
+    Publishes each verified skill graft to the knowledge fabric; a rejected
+    graft is never announced. The control plane comes up regardless.
+    """
+    try:
+        from Intelligence.skill_graft import announce
+        from mla1517.knowledge import KnowledgeFabric, default_journal_path
+
+        return len(announce(KnowledgeFabric(default_journal_path())))
+    except Exception as exc:  # noqa: BLE001 - reported, never fatal to the control plane
+        print(f"[pythia-control] skill announcement failed: {type(exc).__name__}: {exc}")
+        return 0
 
 
 def mining_evidence_payload() -> dict[str, Any]:
@@ -1218,6 +1251,9 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/api/v1/mining/evidence":
             self._json(HTTPStatus.OK, mining_evidence_payload())
             return
+        if path == "/api/v1/knowledge":
+            self._json(HTTPStatus.OK, knowledge_payload())
+            return
         if path == "/api/v1/gpu":
             self._json(HTTPStatus.OK, gpu_payload())
             return
@@ -1458,6 +1494,7 @@ def serve(
     web_root: str | Path = "dist/public",
 ) -> None:
     _control_plane()
+    announce_skills()
     server = ThreadingHTTPServer((host, int(port)), _Handler)
     server.web_root = Path(web_root).resolve()
     try:

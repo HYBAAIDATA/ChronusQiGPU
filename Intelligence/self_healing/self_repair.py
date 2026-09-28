@@ -952,6 +952,32 @@ class LLMRepairOutcome:
     raw_response: str = ""
 
 
+_DISCIPLINE_CHARS = 10_000
+
+
+def _repair_discipline() -> str:
+    """The grafted skills that apply to repair, with their provenance.
+
+    Salamander's LLM stage follows the same discipline its grafts teach:
+    root cause before any fix, and evidence before any claim of success.
+    """
+    from ..skill_loader import skills_for
+
+    sections = []
+    for skill in skills_for("repair"):
+        origin = skill.provenance or {}
+        body = skill.instructions
+        if len(body) > _DISCIPLINE_CHARS:
+            body = body[:_DISCIPLINE_CHARS] + "\n[... truncated]"
+        sections.append(
+            f"### Skill: {skill.name} (from {origin.get('repo')}@"
+            f"{str(origin.get('commit'))[:12]}, {origin.get('licence')})\n{body}"
+        )
+    if not sections:
+        return ""
+    return "Follow this repair discipline:\n\n" + "\n\n".join(sections)
+
+
 def _build_repair_prompt(
     cf: ClassifiedFailure, source_file_content: Optional[str], source_file_path: str
 ) -> str:
@@ -969,6 +995,9 @@ def _build_repair_prompt(
         parts.append(
             f"The referenced source file ({source_file_path}) could not be read for inclusion here."
         )
+    discipline = _repair_discipline()
+    if discipline:
+        parts.append(discipline)
     parts.append(
         "Respond in exactly two parts:\n"
         "1. A section starting with 'DIAGNOSIS:' containing your root-cause analysis in plain text.\n"
