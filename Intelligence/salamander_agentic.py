@@ -425,8 +425,11 @@ class SalamanderCodebaseScanner:
 class SalamanderAgenticOptimizer:
     """Autonomous zero-trust optimizer applying mathematical repairs and AST refinement."""
 
-    def __init__(self, repo_root: Optional[Path] = None) -> None:
+    def __init__(self, repo_root: Optional[Path] = None, verify_cmd: Optional[str] = None) -> None:
         self.repo_root = repo_root or Path(__file__).resolve().parent.parent
+        # The command that proves a repair (e.g. the covering pytest run).
+        # Without one, repairs are proposed, never applied.
+        self.verify_cmd = verify_cmd
         self._history: List[Dict[str, Any]] = []
 
     def propose_repair(self, diagnostic: CodebaseDiagnostic) -> Dict[str, Any]:
@@ -487,6 +490,9 @@ class SalamanderAgenticOptimizer:
         if not target_file.exists():
             return False, f"Target file does not exist: {target_file}"
 
+        if test_callable is None and test_cmd is None:
+            return False, "No verification supplied; a repair is never applied unverified"
+
         original_content = target_file.read_text(encoding="utf-8")
         backup_path = target_file.with_suffix(target_file.suffix + ".bak")
 
@@ -510,10 +516,9 @@ class SalamanderAgenticOptimizer:
                 ast.parse(new_content)
 
             # 4. Sandbox verification: run test callable or test command
-            test_passed = True
             if test_callable is not None:
                 test_passed = bool(test_callable())
-            elif test_cmd is not None:
+            else:
                 proc = subprocess.run(
                     test_cmd,
                     shell=True,
@@ -578,19 +583,19 @@ class SalamanderAgenticOptimizer:
                     "            state = (coin @ state[:2]) if len(state) >= 2 else state"
                 )
                 return self.apply_repair_sandboxed(
-                    target_path, replacement, target_block, test_callable=lambda: True
+                    target_path, replacement, target_block, test_cmd=self.verify_cmd
                 )
 
         elif pat in ("fake_quantum", "cognitive_drift_fake_quantum", "simulation_fallback"):
             if "fall back to simulation" in diag.snippet.lower():
                 replacement = "            # Substrate agnosticism: execute exact unitary algebra\n            return Substrate.QUANTUM_HW"
                 return self.apply_repair_sandboxed(
-                    target_path, replacement, diag.snippet, test_callable=lambda: True
+                    target_path, replacement, diag.snippet, test_cmd=self.verify_cmd
                 )
             elif "classical fft as simulation" in diag.snippet.lower():
                 replacement = "        # QFT is the discrete Fourier character matrix over Z_N"
                 return self.apply_repair_sandboxed(
-                    target_path, replacement, diag.snippet, test_callable=lambda: True
+                    target_path, replacement, diag.snippet, test_cmd=self.verify_cmd
                 )
 
         elif pat == "cosmetic_coherence":
@@ -600,7 +605,7 @@ class SalamanderAgenticOptimizer:
                 "        corr = float(abs(amplitude[i] - amplitude[i + 1]))"
             )
             return self.apply_repair_sandboxed(
-                target_path, replacement, target_block, test_callable=lambda: True
+                target_path, replacement, target_block, test_cmd=self.verify_cmd
             )
 
         elif pat == "hardcoded_collapse":
@@ -611,14 +616,14 @@ class SalamanderAgenticOptimizer:
                 "        reduction_prob = 1.0 - math.exp(-e_g * state.coherence_time / max(1e-12, self.coherence_time))"
             )
             return self.apply_repair_sandboxed(
-                target_path, replacement, target_block, test_callable=lambda: True
+                target_path, replacement, target_block, test_cmd=self.verify_cmd
             )
 
         elif pat == "magic_constant":
             target_block = diag.snippet
             replacement = "        # Capacity bounded by registered state Hilbert space dimension\n        self.quantum_channel_capacity = 0.0"
             return self.apply_repair_sandboxed(
-                target_path, replacement, target_block, test_callable=lambda: True
+                target_path, replacement, target_block, test_cmd=self.verify_cmd
             )
 
         return False, f"No dynamic repair rule for pattern {pat}"

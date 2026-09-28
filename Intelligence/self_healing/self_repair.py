@@ -665,6 +665,16 @@ def _is_safe_rule_target(rel_path: str) -> bool:
     )
 
 
+def _is_test_file(rel_path: str) -> bool:
+    name = rel_path.replace("\\", "/").rsplit("/", 1)[-1]
+    return (
+        name.startswith("test_")
+        or name.endswith("_test.py")
+        or name == "conftest.py"
+        or "/tests/" in "/" + rel_path.replace("\\", "/")
+    )
+
+
 def _rel_target(repo_root: Path, target_path: Path) -> str:
     try:
         return str(target_path.relative_to(repo_root))
@@ -1205,6 +1215,18 @@ def apply_and_verify(
 
     if not proposal.proposed_content or not proposal.target_file:
         msg = f"Proposal {proposal.id} has no proposed patch to apply (diagnostic-only)."
+        if memory_db is not None:
+            memory_db.update_self_repair_proposal_status(proposal.id, "pending_review", msg)
+        return ApplyResult(applied=False, verified=False, reverted=False, message=msg)
+
+    # Tests are the specification: a heal changes code to meet them. A patch
+    # that edits a test (wider tolerances, relaxed assertions) turns the rerun
+    # green by construction, so it never applies without a human.
+    if _is_test_file(proposal.target_file):
+        msg = (
+            f"Proposal {proposal.id} edits {proposal.target_file}, a test; changes to the "
+            "specification always wait for human review."
+        )
         if memory_db is not None:
             memory_db.update_self_repair_proposal_status(proposal.id, "pending_review", msg)
         return ApplyResult(applied=False, verified=False, reverted=False, message=msg)
