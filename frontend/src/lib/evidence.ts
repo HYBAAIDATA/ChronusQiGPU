@@ -90,6 +90,12 @@ export type EvidenceIntelligence = {
     time_to_first_hash_ms?: { p50?: number; p90?: number; samples?: number } | null;
   };
   memory?: { backend?: string; ledger_verified?: boolean; entries?: number; last_error?: string | null } | null;
+  audit?: {
+    audits?: number;
+    disagreements?: number;
+    vqc_available?: boolean;
+    last?: { agree?: boolean | null; digest?: string; vqc?: { oracle_calls?: number; classical_evaluations?: number } } | null;
+  };
 };
 
 const LOSS_LABELS: Record<string, string> = {
@@ -129,6 +135,7 @@ export function intelligenceRows(evidence?: MiningEvidence | null): EvidenceRow[
   const decision = intel.decision ?? undefined;
   const firstHash = intel.loss?.time_to_first_hash_ms;
   const memory = intel.memory ?? undefined;
+  const audit = intel.audit;
   const model = decision?.source === "model";
   return [
     row("policy_window", "Chosen window", decision?.window, model ? "computed" : "live"),
@@ -165,6 +172,16 @@ export function intelligenceRows(evidence?: MiningEvidence | null): EvidenceRow[
           ? `verified · ${memory.entries ?? 0} entries`
           : `unverified${memory.last_error ? ` · ${memory.last_error}` : ""}`,
       "live",
+    ),
+    row(
+      "audit",
+      "Quantum audit (VQC + Kellogg)",
+      !audit || !audit.audits
+        ? null
+        : `${audit.audits} audits · ${audit.disagreements ?? 0} disagreements` +
+            (audit.vqc_available ? "" : " · VQC unavailable") +
+            (audit.last?.digest ? ` · ${audit.last.digest.slice(0, 12)}` : ""),
+      "computed",
     ),
   ];
 }

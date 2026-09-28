@@ -64,6 +64,7 @@ from .tuning_gate import TuningGate
 from .intelligence_memory import IntelligenceMemory
 from .loss_ledger import LossLedger
 from .operating_policy import OperatingPolicy, PolicyContext
+from .policy_audit import PolicyAuditor
 from .world_model import MiningWorldModel
 from .toe_adapter import TOEUnavailable, TOEMiningAdapter
 from .toe_context import TOEContextBuilder, TOEContextUnavailable
@@ -257,6 +258,11 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self.world = MiningWorldModel()
         self.operating_policy = OperatingPolicy(self.world)
         self.loss = LossLedger()
+        try:
+            audit_every = int(os.getenv("PYTHIA_POLICY_AUDIT_EVERY", "64"))
+        except ValueError:
+            audit_every = 64
+        self.policy_audit = PolicyAuditor(every=audit_every)
         self._policy_mode = os.getenv("PYTHIA_OPERATING_POLICY", "model").strip().lower()
         try:
             self._max_window_seconds = float(os.getenv("PYTHIA_MAX_WINDOW_SECONDS", "2.0"))
@@ -788,6 +794,21 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 max_window_seconds=self._max_window_seconds,
             )
         )
+        try:
+            audit = self.policy_audit.maybe_audit(decision)
+        except Exception as exc:  # an audit must never stop mining
+            LOG.warning("policy audit failed: %s", exc)
+            audit = None
+        if audit is not None:
+            self.causal.record(
+                "policy_audit",
+                CausalCoordinate(),
+                decided_window=audit["decided_window"],
+                classical_window=audit["classical_window"],
+                vqc_window=audit["vqc"].get("window"),
+                agree=audit["agree"],
+                digest=audit["attestation"]["digest"],
+            )
         return decision.window
 
     def _intelligence_ceiling(self) -> int:
@@ -834,6 +855,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             "world": self.world.snapshot(),
             "decision": last.as_dict() if last is not None else None,
             "loss": self.loss.snapshot(time.monotonic()),
+            "audit": self.policy_audit.snapshot(),
             "memory": (
                 self.intelligence_memory.snapshot()
                 if self.intelligence_memory is not None

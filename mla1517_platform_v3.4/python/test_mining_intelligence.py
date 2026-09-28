@@ -19,6 +19,7 @@ from mla1517.mining.operating_policy import (
 from mla1517.mining.search_plan import CompletionState, ExecutionRecord
 from mla1517.mining.world_model import GammaRate, MiningWorldModel, RouteModel
 from policy_bench import REGIMES, simulate
+from mla1517.mining.policy_audit import PolicyAuditor, grover_minimum
 
 LANES = tuple(range(32))
 ROUTE = "opencl_range"
@@ -312,6 +313,83 @@ class PolicyBenchTests(unittest.TestCase):
         legacy, model = self._pair("igpu_mainnet_extended_ceiling", 120)
         self.assertGreater(model["efficiency"], 0.95)
         self.assertLess(legacy, 0.5)
+
+
+class PolicyAuditTests(unittest.TestCase):
+    def _decision(self, seed=1):
+        world = MiningWorldModel()
+        _train(world, seed=seed)
+        return OperatingPolicy(world).decide(_ctx())
+
+    def test_vqc_minimum_matches_classical_argmin(self):
+        if not PolicyAuditor().snapshot()["vqc_available"]:
+            self.skipTest("turing_universal_quantum_computer not importable")
+        rng = random.Random(3)
+        for trial in range(25):
+            losses = [rng.random() for _ in range(rng.randint(2, 22))]
+            found = grover_minimum(losses, seed=trial)
+            self.assertEqual(losses[found["index"]], min(losses))
+            self.assertLessEqual(found["qubits"], 5)
+
+    def test_audit_agrees_and_is_attested(self):
+        auditor = PolicyAuditor(every=1)
+        if not auditor.snapshot()["vqc_available"]:
+            self.skipTest("turing_universal_quantum_computer not importable")
+        record = auditor.maybe_audit(self._decision())
+        self.assertTrue(record["agree"])
+        self.assertEqual(record["vqc"]["window"], record["classical_window"])
+        self.assertEqual(record["decided_window"], record["classical_window"])
+        att = record["attestation"]
+        self.assertEqual(att["schema"], "kellogg.attestation/v1")
+        self.assertEqual(len(att["digest"]), 64)
+        self.assertFalse(att["boundary"]["theorem_proven"])
+        again = PolicyAuditor(every=1).maybe_audit(self._decision())
+        self.assertEqual(again["attestation"]["digest"], att["digest"])
+
+    def test_audit_without_vqc_still_attests_classical_choice(self):
+        auditor = PolicyAuditor(every=1)
+        auditor._register_cls, auditor._vqc_error = None, "ModuleNotFoundError: test"
+        record = auditor.maybe_audit(self._decision())
+        self.assertIsNone(record["agree"])
+        self.assertFalse(record["vqc"]["available"])
+        self.assertIn("digest", record["attestation"])
+
+    def test_audit_cadence_and_legacy_decisions_are_skipped(self):
+        auditor = PolicyAuditor(every=3)
+        decision = self._decision()
+        results = [auditor.maybe_audit(decision) for _ in range(6)]
+        self.assertEqual(sum(r is not None for r in results), 2)
+        legacy = OperatingPolicy(MiningWorldModel()).decide(_ctx())
+        self.assertIsNone(PolicyAuditor(every=1).maybe_audit(legacy))
+
+    def test_disagreement_is_recorded_not_acted_on(self):
+        auditor = PolicyAuditor(every=1)
+
+        class Wrong:
+            """A register that always measures the worst candidate."""
+
+            def __init__(self, n):
+                self.n = n
+
+            def uniform_superposition(self):
+                pass
+
+            def apply_grover_oracle(self, marked):
+                pass
+
+            def diffusion(self):
+                pass
+
+            def measure(self, seed):
+                return 0
+
+        auditor._register_cls = Wrong
+        decision = self._decision()
+        record = auditor.maybe_audit(decision)
+        if record["vqc"]["window"] != record["classical_window"]:
+            self.assertFalse(record["agree"])
+            self.assertEqual(auditor.disagreements, 1)
+        self.assertEqual(record["decided_window"], decision.window)
 
 
 class LiveCoordinatorTests(unittest.TestCase):

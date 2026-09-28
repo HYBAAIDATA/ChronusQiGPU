@@ -78,6 +78,7 @@ describe("mining evidence", () => {
           time_to_first_hash_ms: { p50: 12.34, p90: 20, samples: 9 },
         },
         memory: { backend: "aethel", ledger_verified: true, entries: 12 },
+        audit: { audits: 21, disagreements: 0, vqc_available: true, last: { agree: true, digest: "416b371e4bcf8c6d" } },
       },
     };
     const rows = Object.fromEntries(intelligenceRows(withIntel).map((r) => [r.key, r]));
@@ -86,6 +87,7 @@ describe("mining evidence", () => {
     expect(rows.hash_rate.value).toBe("26.00 MH/s");
     expect(rows.first_hash.value).toBe("12.3 ms");
     expect(rows.memory.value).toBe("verified · 12 entries");
+    expect(rows.audit.value).toBe("21 audits · 0 disagreements · 416b371e4bcf");
     const losses = lossBreakdown(withIntel);
     expect(losses.map((l) => l.key)).toEqual(["useful_hashing", "window_overhead", "other"]);
   });
