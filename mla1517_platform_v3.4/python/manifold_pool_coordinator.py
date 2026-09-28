@@ -306,6 +306,10 @@ class StratumClient:
         subscription = await self.request("mining.subscribe", [self.agent, None])
         subscription_state = self.proof_adapter.handle_subscribe_result(subscription)
         self.runtime_state.subscription_confirmed(subscription_state)
+        if self.proof_adapter.current_job is not None:
+            # A notify that raced ahead of the subscribe response is
+            # registered as a Stratum generation now that it can be.
+            self.runtime_state.job_received(self.proof_adapter.current_job, subscription_state)
         self._publish_status()
         self.runtime_state.authorizing()
         self._publish_status()
@@ -400,8 +404,13 @@ class StratumClient:
             self._jobs[job_id] = StratumJob(job_id, tuple(params), time.time())
             subscription = self.proof_adapter.subscription
             job = self.proof_adapter.current_job
-            if subscription is None or job is None:
+            if job is None:
                 raise StratumProtocolError("mining.notify did not create an active job")
+            if subscription is None:
+                # Pools commonly send the first notify straight after the
+                # subscribe response, before connect() has consumed it.
+                LOG.debug("job %s held until the subscription is confirmed", job_id)
+                return
             self.runtime_state.job_received(job, subscription)
             self._publish_status()
             LOG.info("Job received: %s", job_id)
@@ -424,6 +433,8 @@ class StratumClient:
     async def request(self, method: str, params: list[Any]) -> Any:
         if not self.writer:
             raise ConnectionError("Stratum session is not connected")
+        if self._reader_task is not None and self._reader_task.done():
+            raise ConnectionError("Stratum reader has stopped; no response can arrive")
         request_id = self._next_id
         self._next_id += 1
         loop = asyncio.get_running_loop()
@@ -510,16 +521,20 @@ class ManifoldPoolCoordinator:
         self.endpoint_index = 1
         return True
 
+    async def _handle_control_request(self, request: Mapping[str, Any]) -> dict[str, Any]:
+        if request.get("op") == "failover":
+            ok = await self.force_failover(str(request.get("target", "secondary")))
+            return {"status": "ok" if ok else "error"}
+        return {"status": "error", "reason": "unsupported operation"}
+
     async def _control_handler(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
     ) -> None:
         try:
             request = json.loads((await asyncio.wait_for(reader.readline(), 2.0)).decode())
-            if request.get("op") == "failover":
-                ok = await self.force_failover(str(request.get("target", "secondary")))
-                reply = {"status": "ok" if ok else "error"}
-            else:
-                reply = {"status": "error", "reason": "unsupported operation"}
+            if not isinstance(request, dict):
+                raise ValueError("control request must be a JSON object")
+            reply = await self._handle_control_request(request)
         except Exception as exc:
             reply = {"status": "error", "reason": str(exc)}
         writer.write((json.dumps(reply) + "\n").encode())

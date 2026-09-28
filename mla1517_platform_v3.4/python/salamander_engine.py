@@ -5,6 +5,7 @@ import asyncio
 import json
 import os
 import socket
+import uuid
 from pathlib import Path
 from typing import Any, Callable
 from mla1517.hardware import MMIOBridge
@@ -21,6 +22,9 @@ from mla1517.telemetry_reader import TelemetryReader, TelemetrySnapshotError
 from worker_lifecycle import HeartbeatEmitter
 
 CURSOR_MAGIC, CURSOR_VERSION, CURSOR_BYTES = 0x50444243, 1, 256
+# The miner treats Salamander as the lane-mask owner only while it keeps
+# reporting; the keepalive must stay well inside the coordinator's TTL (10 s).
+MODE_KEEPALIVE_MS = 2000
 
 
 class SalamanderEngine:
@@ -74,6 +78,13 @@ class SalamanderEngine:
         self.control_socket = os.getenv(
             "MLA1517_COORDINATOR_CONTROL_SOCKET", "/dev/shm/mla1517_coordinator.sock"
         )
+        # Recovery authority reporting: every acting step opens (or continues)
+        # a recovery_id; the first later step with nothing left to fix
+        # verifies it by reporting NORMAL/DE_RATE.
+        self.mode_reporter: Callable[[dict[str, Any]], bool] | None = None
+        self.recovery_id: str | None = None
+        self.reported_mode: str | None = None
+        self._reported_at_ms: int | None = None
 
     def sense(self) -> dict[str, Any]:
         try:
@@ -135,6 +146,13 @@ class SalamanderEngine:
             return False
 
     def _trigger_stratum_failover(self) -> bool:
+        reply = self._control_request(
+            {"op": "failover", "target": "secondary", "reason": "salamander", "dwell_ms": 10000}
+        )
+        return bool(reply) and reply.get("status") == "ok"
+
+    def _control_request(self, payload: dict[str, Any]) -> dict[str, Any] | None:
+        """One JSON request/reply on the coordinator control socket."""
         try:
             if os.name == "nt":
                 # Windows has no AF_UNIX; the coordinator publishes its
@@ -152,22 +170,38 @@ class SalamanderEngine:
             with socket.socket(family, socket.SOCK_STREAM) as sock:
                 sock.settimeout(2.0)
                 sock.connect(peer)
-                sock.sendall(
-                    (
-                        json.dumps(
-                            {
-                                "op": "failover",
-                                "target": "secondary",
-                                "reason": "salamander",
-                                "dwell_ms": 10000,
-                            }
-                        )
-                        + "\n"
-                    ).encode()
-                )
-                return json.loads(sock.makefile("rb").readline()).get("status") == "ok"
+                sock.sendall((json.dumps(payload) + "\n").encode())
+                reply = json.loads(sock.makefile("rb").readline())
+                return reply if isinstance(reply, dict) else None
         except (OSError, ValueError, json.JSONDecodeError):
-            return False
+            return None
+
+    def _report_mode(self, actions: list[str], now_ms: int) -> str:
+        if actions:
+            if self.recovery_id is None:
+                self.recovery_id = f"salamander:{uuid.uuid4()}"
+            mode = "RECOVERING"
+        else:
+            mode = "DE_RATE" if self.mclaren.degraded else "NORMAL"
+        closing = mode != "RECOVERING" and self.recovery_id is not None
+        due = (
+            self._reported_at_ms is None
+            or mode != self.reported_mode
+            or closing
+            or now_ms - self._reported_at_ms >= MODE_KEEPALIVE_MS
+        )
+        if due:
+            payload = {"op": "salamander_mode", "mode": mode, "recovery_id": self.recovery_id}
+            if self.mode_reporter is not None:
+                delivered = bool(self.mode_reporter(payload))
+            else:
+                reply = self._control_request(payload)
+                delivered = bool(reply) and reply.get("status") == "ok"
+            if delivered:
+                self.reported_mode, self._reported_at_ms = mode, now_ms
+                if closing:
+                    self.recovery_id = None
+        return mode
 
     def step(self, now_ms: int | None = None) -> dict[str, Any]:
         state = self.sense()
@@ -220,7 +254,11 @@ class SalamanderEngine:
                 actions.append("request_failover")
             else:
                 self.failover_state.cancel_switch()
+        closing_recovery = self.recovery_id
+        mode = self._report_mode(actions, now_ms)
         return {
+            "mode": mode,
+            "recovery_id": self.recovery_id or closing_recovery,
             "enabled": True,
             "governance_enabled": self.governance_enabled,
             "policy": self.policy,

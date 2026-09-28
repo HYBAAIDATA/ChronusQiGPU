@@ -26,6 +26,10 @@ from .search_plan import LeaseState, NonceLease
 
 NONCE_SPACE = 1 << 32
 LANE_ALIGN = 32
+# How many recently worked header spaces keep their coverage across rebinds,
+# and how many extranonce2 values may be skipped looking for a fresh one.
+_WORK_SPACE_MEMORY = 8
+_EXTRANONCE2_SKIP_LIMIT = 64
 
 
 class LeaseConflict(RuntimeError):
@@ -83,20 +87,56 @@ class NonceLeaseLedger:
         self._covered: dict[str, list[list[int]]] = {}
         self._units: list[str] = []
         self._cursor = 0
+        self._work_space: Hashable | None = None
+        self._carried: set[str] = set()
+        self._history: OrderedDict[Hashable, tuple[set[str], dict[str, list[list[int]]]]] = (
+            OrderedDict()
+        )
         self.invalidated_total = 0
         self.completed_total = 0
+        self.carried_units_total = 0
 
     # ------------------------------------------------------------------ #
-    def bind(self, identity_key: Hashable, generation: int) -> int:
-        """Bind to a Stratum identity; a different key invalidates everything."""
+    def bind(
+        self, identity_key: Hashable, generation: int, *, work_space: Hashable | None = None
+    ) -> int:
+        """Bind to a Stratum identity; a different key invalidates everything.
+
+        ``work_space`` names the header space (Stratum's job fingerprint).
+        When a reconnect lands on a space already worked, its completed
+        coverage and used extranonce2 values carry over, so no nonce range is
+        hashed twice; leases themselves never carry over.
+        """
         if identity_key == self._identity_key:
             return 0
+        self._remember()
         invalidated = self._reset()
         self._identity_key = identity_key
         self._generation = generation
+        self._work_space = work_space
+        if work_space is not None and work_space in self._history:
+            units, covered = self._history[work_space]
+            self._carried = set(units)
+            self._covered = {k: [list(iv) for iv in v] for k, v in covered.items()}
+            self.carried_units_total += len(units)
         return invalidated
 
+    def _remember(self) -> None:
+        if self._work_space is None:
+            return
+        units = set(self._units) | self._carried
+        if not units:
+            return
+        self._history[self._work_space] = (
+            units,
+            {k: [list(iv) for iv in v] for k, v in self._covered.items()},
+        )
+        self._history.move_to_end(self._work_space)
+        while len(self._history) > _WORK_SPACE_MEMORY:
+            self._history.popitem(last=False)
+
     def unbind(self) -> int:
+        self._remember()
         invalidated = self._reset()
         self._identity_key = None
         self._generation = 0
@@ -110,6 +150,8 @@ class NonceLeaseLedger:
         self._active.clear()
         self._covered.clear()
         self._units.clear()
+        self._carried = set()
+        self._work_space = None
         self._cursor = 0
         self.invalidated_total += invalidated
         return invalidated
@@ -129,10 +171,13 @@ class NonceLeaseLedger:
         if span > NONCE_SPACE:
             raise LeaseConflict("window exceeds the nonce space")
         if not self._units or self._cursor + span > NONCE_SPACE:
-            extranonce2 = allocate_extranonce2()
-            seen = set(self._units) | set(self._covered)
+            seen = set(self._units) | set(self._covered) | self._carried
             seen |= {lease.extranonce2 for lease in self._active.values()}
-            if extranonce2 in seen:
+            for _ in range(_EXTRANONCE2_SKIP_LIMIT):
+                extranonce2 = allocate_extranonce2()
+                if extranonce2 not in seen:
+                    break
+            else:
                 raise LeaseExhausted("extranonce2 space exhausted for this generation")
             self._units.append(extranonce2)
             self._cursor = 0
@@ -245,5 +290,6 @@ class NonceLeaseLedger:
             "completed_total": self.completed_total,
             "invalidated_total": self.invalidated_total,
             "work_units": len(self._units),
+            "carried_units_total": self.carried_units_total,
             "covered_nonces": sum(hi - lo for iv in self._covered.values() for lo, hi in iv),
         }

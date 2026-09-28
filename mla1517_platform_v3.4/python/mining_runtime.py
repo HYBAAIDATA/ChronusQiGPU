@@ -6,9 +6,11 @@ import asyncio
 import json
 import logging
 import os
+import sys
+from pathlib import Path
 
 from mla1517.hardware import MMIOBridge
-from mla1517.mining.coordinator import IntelligentPoolCoordinator
+from mla1517.mining.coordinator import CpuReferenceHasher, IntelligentPoolCoordinator
 from manifold_pool_coordinator import _build_parser, parse_endpoint
 from worker_lifecycle import HeartbeatEmitter
 from mla1517.mining.chain_observer import BitcoinChainObserver
@@ -38,6 +40,36 @@ def _enabled_pool_endpoint(args):
         "braiins",
         tls=args.tls,
     )
+
+
+def _execution_hasher(backend: str):
+    """The hasher behind the Execution Router.
+
+    ``auto`` binds an OpenCL device only if it passes the hasher's own
+    self-check against hashlib, otherwise the CPU reference runs and the
+    reason is kept as evidence. ``cpu`` never touches OpenCL.
+    """
+    backend = backend.strip().lower()
+    if backend == "cpu":
+        return CpuReferenceHasher()
+    repo_root = str(Path(__file__).resolve().parents[2])
+    if repo_root not in sys.path:
+        sys.path.insert(0, repo_root)
+    try:
+        from mining.bitcoin_hasher import BitcoinHasher
+
+        hasher = BitcoinHasher(backend=backend)
+    except Exception as exc:
+        if backend in ("gpu", "opencl"):
+            raise
+        fallback = CpuReferenceHasher()
+        fallback.fallback_reason = f"OpenCL unavailable: {exc}"
+        return fallback
+    if hasher.backend == "cpu":
+        fallback = CpuReferenceHasher()
+        fallback.fallback_reason = hasher.fallback_reason or "no OpenCL device bound"
+        return fallback
+    return hasher
 
 
 async def _main_async(args) -> None:
@@ -78,6 +110,13 @@ async def _main_async(args) -> None:
                     )
                 )
 
+            def publish_mining_evidence(snapshot: dict) -> None:
+                heartbeat.report(
+                    mining_evidence=json.dumps(
+                        snapshot, sort_keys=True, separators=(",", ":"), default=str
+                    )
+                )
+
             coordinator = IntelligentPoolCoordinator(
                 endpoints,
                 username=args.user,
@@ -86,7 +125,10 @@ async def _main_async(args) -> None:
                 mining_session=session,
                 chain_observer=observer,
                 stratum_status_sink=publish_stratum_status,
+                execution_hasher=_execution_hasher(os.getenv("PYTHIA_EXECUTION_BACKEND", "auto")),
+                causal_log_path=os.getenv("PYTHIA_CAUSAL_LOG_PATH", "data/causal_ledger.jsonl"),
             )
+            coordinator.set_evidence_sink(publish_mining_evidence)
             coordinator.set_agentic_state_path(
                 os.getenv("PYTHIA_AGENTIC_STATE_PATH", "data/agentic_policy.json")
             )

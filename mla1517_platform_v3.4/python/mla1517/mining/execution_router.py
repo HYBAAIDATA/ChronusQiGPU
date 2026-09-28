@@ -75,6 +75,7 @@ DEVICE_RESULT_MISMATCH = "DEVICE_RESULT_MISMATCH"
 NONCE_ORDER_M32 = "m32_turing_complete"
 NONCE_ORDER_KLEIN = "klein_poincare_numerical"
 NONCE_ORDER_SEQUENTIAL = "sequential"
+NONCE_ORDER_GOLDEN = "golden_stride"
 
 
 class NonceOrderUnavailable(RuntimeError):
@@ -297,6 +298,9 @@ class ExecutionRouter:
                 launch_cap=max(1, int(getattr(self._hasher, "grind_batch", 1) or 1)),
             )
 
+        cap = int(getattr(self._hasher, "grind_batch", 1) or 1)
+        if requested is ExecutionRoute.opencl_m32:
+            cap = int(getattr(self._hasher, "m32_window_max", cap) or cap)
         return RouteDecision(
             requested_route=requested,
             executed_route=requested,
@@ -305,7 +309,7 @@ class ExecutionRouter:
             device_vendor=prov["device_vendor"],
             kernel_identity=kernel_name,
             kernel_build_status="compiled",
-            launch_cap=max(1, int(getattr(self._hasher, "grind_batch", 1) or 1)),
+            launch_cap=max(1, cap),
         )
 
     # -- execution ----------------------------------------------------------
@@ -342,7 +346,9 @@ class ExecutionRouter:
             plan_source=plan.source,
             # The plan did not run at all, so this is a PLAN fallback (no
             # plan_id), distinct from a route fallback.
-            plan_fallback_reason=None if is_agentic else reason.value,
+            plan_fallback_reason=(
+                None if is_agentic else (plan.plan_fallback_reason or reason.value)
+            ),
             fallback_reason=None,
             requested_route=decision.requested_route.value,
             executed_route=None,
@@ -422,6 +428,21 @@ class ExecutionRouter:
                 None,
             )
 
+        # A golden-stride walk probes seed + i*stride across the whole domain;
+        # it cannot stay inside a leased interval, so leased work refuses it.
+        if lease is not None and decision.executed_route is ExecutionRoute.opencl_gold:
+            return (
+                self._refused_record(
+                    plan,
+                    decision,
+                    CompletionState.REFUSED,
+                    FallbackReason.ROUTE_REFUSED,
+                    0,
+                    0,
+                ),
+                None,
+            )
+
         requested_order = self._nonce_order(plan)
 
         # --- exact, disjoint physical chunking -----------------------------
@@ -444,7 +465,7 @@ class ExecutionRouter:
             if is_still_fresh is not None and not is_still_fresh():
                 invalidated_midway = True
                 break
-            nonce, digest, done = self._run_chunk(plan, header, target, chunk)
+            nonce, digest, done = self._run_chunk(plan, header, target, chunk, decision)
             completed += int(done)
             if nonce is not None and winner_nonce is None:
                 winner_nonce, winner_digest = nonce, digest
@@ -522,15 +543,31 @@ class ExecutionRouter:
         )
 
     def _run_chunk(
-        self, plan: SearchPlan, header: bytes, target: bytes, chunk: ChunkSpec
+        self,
+        plan: SearchPlan,
+        header: bytes,
+        target: bytes,
+        chunk: ChunkSpec,
+        decision: RouteDecision,
     ) -> Tuple[Optional[int], Optional[bytes], int]:
-        """Run one physical chunk. Returns (winner, digest, hashes_executed)."""
-        if getattr(self._hasher, "backend", "cpu") == "cpu":
-            winner, digest, done = self._cpu(header, target, chunk.start, chunk.count)
-            return winner, digest, done
-        # Device path: the hasher performs its own launch and re-verifies; we
-        # only ever ask for exactly this chunk.
-        winner, digest, done, _hits = self._hasher.grind_target_gold(header, target, chunk.count)
+        """Run one physical chunk on the route that was DECIDED.
+
+        Dispatching on the decided route (not the hasher's backend) keeps a
+        recorded cpu_reference fallback from silently running on the device.
+        ``target`` is little-endian here; the hasher and kernels take it
+        big-endian, so it is reversed exactly once at this boundary.
+        """
+        route = decision.executed_route
+        if route is ExecutionRoute.cpu_reference:
+            return self._cpu(header, target, chunk.start, chunk.count)
+        target_be = bytes(target)[::-1]
+        if route is ExecutionRoute.opencl_m32:
+            return self._hasher.grind_target_m32(
+                header, target_be, chunk.start, plan.lane_order, chunk.count
+            )
+        if route is ExecutionRoute.opencl_range:
+            return self._hasher.grind_target_range(header, target_be, chunk.start, chunk.count)
+        winner, digest, done, _hits = self._hasher.grind_target_gold(header, target_be, chunk.count)
         return winner, digest, done
 
     def _independent_recheck(self, header: bytes, target: bytes, nonce: int, digest: bytes) -> bool:
@@ -592,8 +629,14 @@ class ExecutionRouter:
         # ``plan_id`` is retained and ``fallback_reason`` carries the route
         # cause. ``plan_source`` stays AGENTIC_PRECOMPUTED.
         plan_source = plan.source
-        plan_fallback_reason = None
+        plan_fallback_reason = (
+            plan.plan_fallback_reason if plan_source is PlanSource.BASELINE_FALLBACK else None
+        )
         route_fallback_reason = decision.fallback_reason.value if fell_back else None
+        executed_order = {
+            ExecutionRoute.opencl_range: NONCE_ORDER_SEQUENTIAL,
+            ExecutionRoute.opencl_gold: NONCE_ORDER_GOLDEN,
+        }.get(decision.executed_route, requested_order)
         record = ExecutionRecord(
             plan_id=plan.plan_id if plan_source is PlanSource.AGENTIC_PRECOMPUTED else None,
             job_fingerprint=plan.job_fingerprint,
@@ -635,7 +678,7 @@ class ExecutionRouter:
             executed_nonce_order=(
                 None
                 if state in (CompletionState.INVALIDATED, CompletionState.REFUSED)
-                else requested_order
+                else executed_order
             ),
             planned_lane_order=plan.lane_order,
             planned_window_start=plan.base_step,

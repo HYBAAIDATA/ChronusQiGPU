@@ -186,6 +186,9 @@ class WorkIdentity:
     target_generation: int
     clean_jobs: bool
     received_at: float
+    # Hash of only the fields that determine header bytes (not job_id or the
+    # share target): identical work spaces must never be hashed twice.
+    work_space: str | None = None
 
     def __post_init__(self) -> None:
         if not self.pool_session_id or not self.job_id or not self.job_fingerprint:
@@ -224,6 +227,8 @@ class SearchPlan:
     source: PlanSource = PlanSource.AGENTIC_PRECOMPUTED
     schedule: tuple[int, ...] = ()
     expires_at: float | None = None
+    # Why no agentic plan ran; required for BASELINE_FALLBACK, forbidden otherwise.
+    plan_fallback_reason: str | None = None
 
     def __post_init__(self) -> None:
         if not self.job_fingerprint or not self.pool_session_id:
@@ -249,6 +254,10 @@ class SearchPlan:
         if self.expires_at is not None and self.expires_at <= self.created_at:
             raise ValueError("expires_at must be after created_at")
         object.__setattr__(self, "source", PlanSource(self.source))
+        if self.source is PlanSource.BASELINE_FALLBACK and not self.plan_fallback_reason:
+            raise ValueError("a baseline plan must say why no agentic plan ran")
+        if self.source is PlanSource.AGENTIC_PRECOMPUTED and self.plan_fallback_reason:
+            raise ValueError("an agentic plan cannot carry a plan_fallback_reason")
         object.__setattr__(self, "evidence_refs", MappingProxyType(dict(self.evidence_refs)))
 
     def is_valid_for(self, identity: WorkIdentity | None) -> bool:
@@ -328,7 +337,7 @@ class ExecutionRecord:
     chunk_count: int = 0
     power_w: float | None = None
     # --- correlation spine: session → generation → plan → lease → execution
-    # → candidate → submission (persisted in MiningSession.pending/last_share).
+    # → candidate → submission (persisted in MiningSession.pending/share_log).
     execution_id: str | None = None
     candidate_id: str | None = None
     submission_id: str | None = None

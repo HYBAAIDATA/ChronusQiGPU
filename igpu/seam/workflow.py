@@ -268,10 +268,20 @@ def search_nonce(header76: bytes, target: int, window: int, path: str) -> Option
 
 
 async def run_workflow(host, port, worker, password, *, window=4096, heal=True, fail_fast=True):
+    bridge = StratumBridge(host, port, worker=worker, password=password)
+    try:
+        return await _run_workflow(
+            bridge, host, port, window=window, heal=heal, fail_fast=fail_fast
+        )
+    finally:
+        # A failed layer must not leave the pool connection open.
+        await bridge.disconnect()
+
+
+async def _run_workflow(bridge, host, port, *, window, heal, fail_fast):
     out = WorkflowResult(fail_fast=fail_fast)
     sku = IGpuSku("standalone")
     store = HyperscalerSku()
-    bridge = StratumBridge(host, port, worker=worker, password=password)
     t0 = time.perf_counter_ns()
     await bridge.connect()
     out.record_or_raise("L0_connect", bridge.connected, f"Pool: {host}:{port} connected", elapsed_ns=time.perf_counter_ns() - t0)

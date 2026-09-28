@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Header } from "./components/Header";
 import { Mla1517MiningPanel } from "./components/Mla1517MiningPanel";
+import { MiningEvidencePanel } from "./components/MiningEvidencePanel";
 import { apiFetch } from "./lib/api";
 import type { MlaStatus, ReadyToMine } from "./lib/status";
 import { AlgebraView } from "./views/AlgebraView";
@@ -85,12 +86,15 @@ export default function App() {
       </nav>
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
         {view === "operations" && (
-          <Mla1517MiningPanel
-            status={status}
-            ready={ready}
-            offline={offline}
-            onConfigChanged={poll}
-          />
+          <>
+            <Mla1517MiningPanel
+              status={status}
+              ready={ready}
+              offline={offline}
+              onConfigChanged={poll}
+            />
+            <MiningEvidencePanel />
+          </>
         )}
         {view === "algebra" && <AlgebraView />}
         {view === "intelligence" && <IntelligenceView />}

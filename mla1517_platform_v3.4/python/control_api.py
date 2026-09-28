@@ -668,6 +668,35 @@ def _ready_to_mine_reason(
     return True, "ok"
 
 
+MINING_EVIDENCE_SCHEMA = "pythia.mining_evidence/1"
+
+
+def mining_evidence_payload() -> dict[str, Any]:
+    """The live miner's own evidence snapshot, exactly as it published it.
+
+    Nothing is synthesised here: when the miner has not published, or the
+    payload is malformed, the answer says evidence is unavailable instead of
+    showing zeros. ``worker_live`` states whether the publisher is alive now.
+    """
+    records = _control_plane().records()
+    worker_live = any(
+        record.worker_id == "agentic-mining" and record.liveness for record in records
+    )
+    raw = _read_metrics("agentic-mining").get("mining_evidence")
+    try:
+        observed = json.loads(raw) if isinstance(raw, str) else raw
+    except (TypeError, ValueError):
+        observed = None
+    if not isinstance(observed, dict) or observed.get("schema") != MINING_EVIDENCE_SCHEMA:
+        return {
+            "schema": MINING_EVIDENCE_SCHEMA,
+            "evidence_available": False,
+            "worker_live": worker_live,
+            "reason": "the miner has not published evidence",
+        }
+    return {**observed, "evidence_available": True, "worker_live": worker_live}
+
+
 def status_payload() -> dict[str, Any]:
     """Public status contract for the canonical operator UI."""
     control = _control_plane()
@@ -1185,6 +1214,9 @@ class _Handler(BaseHTTPRequestHandler):
             return
         if path == "/api/v1/mla1517/status":
             self._json(HTTPStatus.OK, status_payload())
+            return
+        if path == "/api/v1/mining/evidence":
+            self._json(HTTPStatus.OK, mining_evidence_payload())
             return
         if path == "/api/v1/gpu":
             self._json(HTTPStatus.OK, gpu_payload())
