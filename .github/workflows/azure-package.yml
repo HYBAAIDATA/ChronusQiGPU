@@ -38,7 +38,9 @@ jobs:
           curl --fail --silent http://127.0.0.1:3000/healthz
           curl --fail --silent http://127.0.0.1:3000/ > /tmp/index.html
           test -s /tmp/index.html
-          curl --fail --silent http://127.0.0.1:3000/api/v1/ready-to-mine > /tmp/ready.json
+          # Not-ready is reported as HTTP 503 with a JSON body, so --fail must not be used here.
+          ready_status=$(curl --silent --output /tmp/ready.json --write-out '%{http_code}' http://127.0.0.1:3000/api/v1/ready-to-mine)
+          test "$ready_status" = 503
           python - <<'PY'
           import json
           ready = json.load(open('/tmp/ready.json'))
