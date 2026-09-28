@@ -23,6 +23,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import os
 import struct
 import time
 import uuid
@@ -60,6 +61,10 @@ from .search_plan import (
 from .solver import M32SearchSolver
 from .stratum_adapter import StratumAdapterError
 from .tuning_gate import TuningGate
+from .intelligence_memory import IntelligenceMemory
+from .loss_ledger import LossLedger
+from .operating_policy import OperatingPolicy, PolicyContext
+from .world_model import MiningWorldModel
 from .toe_adapter import TOEUnavailable, TOEMiningAdapter
 from .toe_context import TOEContextBuilder, TOEContextUnavailable
 from .toe_signal import TOECausalSignal, build_toe_signal, lucas_ladder_status
@@ -247,6 +252,19 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self.agentic = AgenticMiningController()
         self.tuning = TuningGate()
         self._tuned_window: int | None = None
+        # Measured-only operating intelligence: HOW MUCH per window. It never
+        # touches SHA256d, targets, shares or pool outcomes.
+        self.world = MiningWorldModel()
+        self.operating_policy = OperatingPolicy(self.world)
+        self.loss = LossLedger()
+        self._policy_mode = os.getenv("PYTHIA_OPERATING_POLICY", "model").strip().lower()
+        self._idle_seen_ms = 0.0
+        self._bound_session: str | None = None
+        self._memory_every = 256
+        self.intelligence_memory: IntelligenceMemory | None = None
+        memory_dir = os.getenv("PYTHIA_INTELLIGENCE_DIR", "").strip()
+        if memory_dir:
+            self._attach_intelligence_memory(memory_dir)
         self.execution_hasher = hasher if hasher is not None else CpuReferenceHasher()
         self.causal = CausalLedger(path=causal_log_path)
         self.recovery = RecoveryGovernor(on_event=self._on_recovery_event)
@@ -353,9 +371,9 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         return await super()._handle_control_request(request)
 
     def _sync_recovery_gate(self) -> None:
-        self.agentic.set_recovery_active(
-            self._recovery_backpressure or self.recovery.freezes_speculation
-        )
+        active = self._recovery_backpressure or self.recovery.freezes_speculation
+        self.agentic.set_recovery_active(active)
+        self.loss.observe_recovery(time.monotonic(), active)
         self._precompute_wake.set()
 
     def _on_recovery_event(self, kind: str, record: RecoveryRecord) -> None:
@@ -414,6 +432,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 "share_log_tail": self.session.share_log[-8:],
             },
             "causal_tail": self.causal.snapshot(24),
+            "intelligence": self.intelligence_snapshot(),
         }
 
     def agentic_status(self) -> dict[str, Any]:
@@ -472,6 +491,11 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             self.agentic.clear_work(reason or "NO_WORK_IDENTITY")
             return None
         if self.agentic.bind_work(identity):
+            now = time.monotonic()
+            new_session = self._bound_session not in (None, identity.pool_session_id)
+            self._bound_session = identity.pool_session_id
+            self.world.observe_bind(now, clean_jobs=identity.clean_jobs, new_session=new_session)
+            self.loss.observe_bind(now)
             self.causal.record(
                 "identity_bound",
                 CausalCoordinate(
@@ -711,7 +735,61 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         cap = lucas(self.session.rung)
         window = max(LANES, min(self._tuned_window or cap, cap))
         # Whole 32-lane epochs: the executed interval then equals the lease.
-        return window - window % LANES
+        legacy = window - window % LANES
+        if self._policy_mode != "model":
+            return legacy
+        derated = self.tuning.last_decision is not None and (
+            self.tuning.last_decision.action == "DE_RATE"
+        )
+        decision = self.operating_policy.decide(
+            PolicyContext(
+                route=self._execution_route(),
+                lanes=LANES,
+                # The solver enforces budget <= lucas(rung): a hard invariant.
+                max_window=cap,
+                legacy_window=legacy,
+                legacy_lookahead=self.agentic.lookahead,
+                capacity=self.agentic.capacity,
+                chunk_cap=self._chunk_cap(),
+                recovery_active=self.agentic.is_recovery_active(),
+                derate_cap=self._tuned_window if derated else None,
+            )
+        )
+        return decision.window
+
+    def _chunk_cap(self) -> int:
+        hasher = self.execution_hasher
+        cap = int(getattr(hasher, "grind_batch", 1) or 1)
+        if self._execution_route() == "opencl_m32":
+            cap = int(getattr(hasher, "m32_window_max", cap) or cap)
+        return max(1, cap)
+
+    def _attach_intelligence_memory(self, directory: str) -> None:
+        try:
+            memory = IntelligenceMemory(directory)
+            state = memory.load()
+            if state is not None:
+                self.world.import_state(state)
+                LOG.info("intelligence memory restored from aethel %s", directory)
+            self.intelligence_memory = memory
+        except Exception as exc:
+            LOG.warning("intelligence memory unavailable (%s); learning from scratch", exc)
+
+    def intelligence_snapshot(self) -> dict[str, Any]:
+        last = self.operating_policy.last
+        return {
+            "schema": "pythia.intelligence/1",
+            "policy_mode": self._policy_mode,
+            "window_ceiling": f"lucas({self.session.rung})",
+            "world": self.world.snapshot(),
+            "decision": last.as_dict() if last is not None else None,
+            "loss": self.loss.snapshot(time.monotonic()),
+            "memory": (
+                self.intelligence_memory.snapshot()
+                if self.intelligence_memory is not None
+                else None
+            ),
+        }
 
     def _execution_route(self) -> str:
         hasher = self.execution_hasher
@@ -1060,6 +1138,21 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             submission_id=coordinate.submission_id,
         )
         self.agentic.record_outcome(final)
+        now = time.monotonic()
+        self.world.tick(now)
+        self.world.observe_execution(final)
+        self.loss.observe_execution(final, self.world, started_at=now - final.elapsed_seconds)
+        idle_ms = self.agentic.telemetry.executor_idle_waiting_for_plan_ms
+        self.loss.observe_idle(max(0.0, idle_ms - self._idle_seen_ms) / 1000.0)
+        self._idle_seen_ms = idle_ms
+        if (
+            self.intelligence_memory is not None
+            and self.loss.executions % self._memory_every == 0
+        ):
+            try:
+                self.intelligence_memory.checkpoint(self.world.export_state())
+            except Exception as exc:
+                LOG.warning("intelligence checkpoint failed: %s", exc)
         self.causal.record(
             "execution_finished",
             coordinate,

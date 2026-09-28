@@ -305,5 +305,60 @@ class PolicyBenchTests(unittest.TestCase):
         self.assertLess(legacy, 0.5)
 
 
+class LiveCoordinatorTests(unittest.TestCase):
+    """The intelligence inside the real coordinator on the soak voyage."""
+
+    def _soak(self, seconds, memory_dir):
+        import asyncio
+        import logging
+        import os
+
+        import soak_voyage
+        from mla1517.mining import coordinator as coordinator_module
+
+        created = []
+        original = coordinator_module.IntelligentPoolCoordinator.__init__
+
+        def capture(self_, *args, **kwargs):
+            original(self_, *args, **kwargs)
+            created.append(self_)
+
+        os.environ["PYTHIA_INTELLIGENCE_DIR"] = str(memory_dir)
+        coordinator_module.IntelligentPoolCoordinator.__init__ = capture
+        logging.disable(logging.CRITICAL)
+        try:
+            stats = asyncio.run(soak_voyage.run_soak(seconds, seed=1517, backend="cpu"))
+        finally:
+            coordinator_module.IntelligentPoolCoordinator.__init__ = original
+            os.environ.pop("PYTHIA_INTELLIGENCE_DIR", None)
+            logging.disable(logging.NOTSET)
+        return stats, created[0]
+
+    def test_soak_with_intelligence_stays_honest_and_remembers(self):
+        from lucas.core import lucas
+
+        memory_dir = Path(tempfile.mkdtemp())
+        try:
+            stats, coord = self._soak(4.0, memory_dir)
+            self.assertEqual(stats["unexpected_errors"], [])
+            self.assertEqual(stats["duplicate_submits"], 0)
+            self.assertEqual(stats["stale_submits"], 0)
+            snap = coord.evidence_snapshot()["intelligence"]
+            decision = snap["decision"]
+            self.assertIsNotNone(decision)
+            self.assertLessEqual(decision["window"], lucas(coord.session.rung))
+            self.assertIn("cpu_reference", snap["world"]["routes"])
+            self.assertGreater(snap["loss"]["executions"], 0)
+            self.assertTrue(snap["memory"]["ledger_verified"])
+            self.assertGreater(snap["memory"]["checkpoints_this_run"], 0)
+            learned = snap["world"]["routes"]["cpu_reference"]["fit_samples"]
+            restored = MiningWorldModel()
+            restored.import_state(IntelligenceMemory(memory_dir).load())
+            self.assertGreater(restored.routes["cpu_reference"].fit_samples, 0)
+            self.assertLessEqual(restored.routes["cpu_reference"].fit_samples, learned)
+        finally:
+            shutil.rmtree(memory_dir, ignore_errors=True)
+
+
 if __name__ == "__main__":
     unittest.main()

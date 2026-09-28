@@ -177,7 +177,7 @@ REGIMES = (
         96,
         15104,
         False,
-        "as above, ceiling raised to the top rung lucas(20)",
+        "WHAT-IF: needs the solver budget invariant (budget <= lucas(rung)) raised to lucas(20)",
     ),
     Regime(
         "cpu_reconnect_storm",
@@ -213,7 +213,7 @@ REGIMES = (
         15104,
         1 << 26,
         True,
-        "ASSUMED iGPU figures; ceiling extended along the Lucas ladder to 2^26",
+        "WHAT-IF, ASSUMED iGPU figures: needs the lucas(rung) budget invariant extended to 2^26",
     ),
 )
 

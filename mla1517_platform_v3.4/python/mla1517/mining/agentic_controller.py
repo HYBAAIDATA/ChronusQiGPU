@@ -232,6 +232,10 @@ class AgenticMiningController:
     def lookahead(self) -> int:
         return self._lookahead
 
+    @property
+    def capacity(self) -> int:
+        return self._capacity
+
     def plans_needed(self) -> int:
         if self.admission_block_reason() is not None:
             return 0
