@@ -1,0 +1,101 @@
+name: Governed Subsystem Promotion
+on:
+  workflow_dispatch:
+    inputs:
+      subsystem:
+        description: Subsystem key from promotion manifest
+        required: true
+        type: choice
+        options: [guardian, folded, pisot, identity, witness, schema, mediation]
+      target_state:
+        required: true
+        type: choice
+        options: [VERIFIED, PILOT, PRODUCTION]
+      commit_sha:
+        required: true
+        type: string
+permissions:
+  contents: read
+  checks: write
+  statuses: write
+  deployments: write
+  pull-requests: read
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      authors: ${{ steps.authors.outputs.list }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ inputs.commit_sha }}', fetch-depth: 0}
+      - id: authors
+        run: python scripts/list_authors.py --subsystem '${{ inputs.subsystem }}' --commit '${{ inputs.commit_sha }}' >> "$GITHUB_OUTPUT"
+  validate:
+    needs: preflight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ inputs.commit_sha }}'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python scripts/promotion_pipeline.py validate --subsystem '${{ inputs.subsystem }}' --target '${{ inputs.target_state }}' --commit '${{ inputs.commit_sha }}'
+  gates:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ inputs.commit_sha }}'}
+      - run: make -k gates || true
+        env: {MEDIATION_MANIFEST_KEY: '${{ secrets.MEDIATION_MANIFEST_KEY }}'}
+      - uses: actions/upload-artifact@v4
+        with: {name: promotion-gate-results, path: results/}
+      - run: make gate-rollup
+  approvals-verified:
+    if: inputs.target_state == 'VERIFIED'
+    needs: gates
+    runs-on: ubuntu-latest
+    environment: promotion-verified
+    steps: [{run: "echo 'GitHub environment approval granted'"}]
+  approvals-pilot:
+    if: inputs.target_state == 'PILOT'
+    needs: gates
+    runs-on: ubuntu-latest
+    environment: promotion-pilot
+    steps: [{run: "echo 'GitHub environment approval granted'"}]
+  approvals-production:
+    if: inputs.target_state == 'PRODUCTION'
+    needs: gates
+    runs-on: ubuntu-latest
+    environment: promotion-production
+    steps: [{run: "echo 'GitHub environment approval granted'"}]
+  collect-approvals:
+    needs: [preflight, gates, approvals-verified, approvals-pilot, approvals-production]
+    if: >-
+      always() && needs.gates.result == 'success' &&
+      ((inputs.target_state == 'VERIFIED' && needs.approvals-verified.result == 'success') ||
+       (inputs.target_state == 'PILOT' && needs.approvals-pilot.result == 'success') ||
+       (inputs.target_state == 'PRODUCTION' && needs.approvals-production.result == 'success'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ inputs.commit_sha }}'}
+      - uses: actions/download-artifact@v4
+        with: {name: promotion-gate-results, path: results}
+      - run: python scripts/collect_approvals.py --subsystem '${{ inputs.subsystem }}' --target '${{ inputs.target_state }}' --commit '${{ inputs.commit_sha }}' --authors '${{ needs.preflight.outputs.authors }}'
+        env: {GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'}
+      - uses: actions/upload-artifact@v4
+        with: {name: promotion-approvals, path: results/approvals/}
+  advance:
+    needs: collect-approvals
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ inputs.commit_sha }}'}
+      - uses: actions/download-artifact@v4
+        with: {name: promotion-gate-results, path: results}
+      - uses: actions/download-artifact@v4
+        with: {name: promotion-approvals, path: results/approvals}
+      - run: python scripts/advance_state.py --subsystem '${{ inputs.subsystem }}' --target '${{ inputs.target_state }}' --commit '${{ inputs.commit_sha }}'
+        env: {PROMOTION_SIGNING_KEY: '${{ secrets.PROMOTION_SIGNING_KEY }}'}
+      - uses: actions/upload-artifact@v4
+        with: {name: promotion-receipt, path: results/promotion_receipt.json}

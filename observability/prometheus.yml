@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 15s
+scrape_configs:
+  - job_name: mla1517-core
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['mla1517-core:9100']
+        labels: {role: core}
+  - job_name: mla1517-pythia
+    static_configs:
+      - targets: ['mla1517-pythia:9101']
+        labels: {role: miner}
+  - job_name: hyba-enterprise
+    static_configs:
+      - targets: ['hyba-enterprise:9102']
+        labels: {role: enterprise}

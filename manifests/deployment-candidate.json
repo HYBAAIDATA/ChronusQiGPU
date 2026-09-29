@@ -1,0 +1,73 @@
+{
+  "air_gapped": false,
+  "customer_managed_keys": false,
+  "deployment_profile": "developer",
+  "deployment_seed": "developer-local",
+  "dominant_tiers": [
+    "T1_VERTEX",
+    "T5_EXTERNAL_COMPAT"
+  ],
+  "economics": [
+    "bytes_moved",
+    "verified_result_cost"
+  ],
+  "exactness": "exact",
+  "human_approval_for_high_risk_actions": false,
+  "industry": "engineering",
+  "local_identity_provider": false,
+  "module_evidence": [
+    {
+      "module": "core",
+      "source_verified": true,
+      "tests_passed": true,
+      "version": "1"
+    },
+    {
+      "module": "mla1517",
+      "source_verified": true,
+      "tests_passed": true,
+      "version": "3.4"
+    },
+    {
+      "module": "primedb",
+      "source_verified": true,
+      "tests_passed": true,
+      "version": "3.4"
+    },
+    {
+      "module": "al_haras",
+      "source_verified": true,
+      "tests_passed": true,
+      "version": "1.0.1"
+    },
+    {
+      "module": "proof_service",
+      "source_verified": true,
+      "tests_passed": false,
+      "version": "reference"
+    },
+    {
+      "module": "observe",
+      "source_verified": true,
+      "tests_passed": false,
+      "version": "reference"
+    }
+  ],
+  "modules": [
+    "core",
+    "mla1517",
+    "primedb",
+    "al_haras",
+    "proof_service",
+    "observe"
+  ],
+  "name": "pythia-reference-candidate",
+  "private_networking": false,
+  "resilience": "standard",
+  "risk_level": "experimental",
+  "silent_fallback": false,
+  "sovereignty": "local",
+  "use_cases": [
+    "reference_conformance"
+  ]
+}

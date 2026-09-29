@@ -1,0 +1,39 @@
+{
+  "targets": {
+    "guardian": "CONTRACTED",
+    "folded": "RESEARCH",
+    "pisot": "RESEARCH",
+    "identity": "CONTRACTED",
+    "witness": "CONTRACTED",
+    "schema": "CONTRACTED",
+    "mediation": "CONTRACTED"
+  },
+  "evidence": {
+    "G_CONTRACT_1": "al_haras.conjunction dataclasses",
+    "G_CONTRACT_2": "OverallStatus enum",
+    "G_CONTRACT_3": "canonical HMAC-SHA256 domain",
+    "G_CONTRACT_4": "versioned named surface tuples",
+    "I_CON_1": "SovereignEntitlement dataclass",
+    "I_CON_2": "audience verification",
+    "I_CON_3": "token_id and ReplayCache",
+    "I_CON_4": "revocation_state",
+    "I_CON_5": "rotation_overlap",
+    "I_CON_6": "hsm_key_ref",
+    "W_CON_1": "WitnessReceipt dataclass",
+    "W_CON_2": "epoch field",
+    "W_CON_3": "external anchor callback set",
+    "W_CON_4": "witness_identity",
+    "W_CON_5": "verify_chain_against_witness",
+    "S_CON_1": "hyba_contracts.PRIMEObjectV2 schema v2 (MLAObjectV1 retained only as earlier reference)",
+    "S_CON_2": "HotDescriptorV1 Q14I assertion",
+    "S_CON_3": "route outside logical dataclass axes",
+    "S_CON_4": "three zero-only reserved fields",
+    "S_CON_5": "reject_historical_schema",
+    "S_CON_6": "CANONICAL_VERSION",
+    "C_CON_1": "PRIVILEGED_PREFIXES",
+    "C_CON_2": "degraded_allowed disposition",
+    "C_CON_3": "QUARANTINE returns 423",
+    "C_CON_4": "verdict disposition contract"
+  },
+  "rollback_evidence": {}
+}
