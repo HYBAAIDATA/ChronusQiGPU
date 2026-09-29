@@ -158,7 +158,8 @@ class HashChainAudit:
             with self.path.open("rb") as source:
                 source.seek(-min(size, _TAIL_READ_BYTES), os.SEEK_END)
                 tail = source.read()
-            line = tail.rsplit(b"\n", 1)[-2] if tail.endswith(b"\n") else tail.split(b"\n")[-1]
+            lines = tail.rstrip(b"\n").split(b"\n")
+            line = lines[-1] if lines else b""
             if not line.strip():
                 return None
             record = json.loads(line.decode("utf-8"))
