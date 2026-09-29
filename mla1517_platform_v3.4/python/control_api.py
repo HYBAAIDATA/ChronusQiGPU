@@ -16,26 +16,28 @@ import sys
 import threading
 import time
 import traceback
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from dataclasses import field
 from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
+from http.server import ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qs, unquote, urlparse
+from urllib.parse import parse_qs
+from urllib.parse import unquote
+from urllib.parse import urlparse
 
-from startup_contract import (
-    AppendOnlyAudit,
-    BootLock,
-    METRICS,
-    StartupConfigError,
-    WorkerRecord,
-    fs_selfcheck,
-    identity_hmac_status,
-    now_iso,
-    resolve_stratum_identity,
-)
 import runtime_config
 import system_fabric
+from startup_contract import METRICS
+from startup_contract import AppendOnlyAudit
+from startup_contract import BootLock
+from startup_contract import StartupConfigError
+from startup_contract import WorkerRecord
+from startup_contract import fs_selfcheck
+from startup_contract import identity_hmac_status
+from startup_contract import now_iso
+from startup_contract import resolve_stratum_identity
 
 try:
     from al_haras_pythia import pythia_guardian_api
@@ -764,7 +766,8 @@ _KNOWLEDGE: Any = None
 def knowledge_payload() -> dict[str, Any]:
     """Every intelligence's shared knowledge, replayed from the fabric journal."""
     global _KNOWLEDGE
-    from mla1517.knowledge import KnowledgeFabric, default_journal_path
+    from mla1517.knowledge import KnowledgeFabric
+    from mla1517.knowledge import default_journal_path
 
     if _KNOWLEDGE is None:
         _KNOWLEDGE = KnowledgeFabric(default_journal_path())
@@ -816,8 +819,10 @@ def announce_skills() -> int:
     graft is never announced. The control plane comes up regardless.
     """
     try:
+        from mla1517.knowledge import KnowledgeFabric
+        from mla1517.knowledge import default_journal_path
+
         from Intelligence.skill_graft import announce
-        from mla1517.knowledge import KnowledgeFabric, default_journal_path
 
         return len(announce(KnowledgeFabric(default_journal_path())))
     except Exception as exc:  # noqa: BLE001 - reported, never fatal to the control plane
@@ -1475,9 +1480,7 @@ class _Handler(BaseHTTPRequestHandler):
             "x-hyba-actor": self.headers.get("X-HYBA-Actor", ""),
         }
 
-    def _guardian_preflight(
-        self, path: str, body: dict[str, Any] | None = None
-    ) -> bool:
+    def _guardian_preflight(self, path: str, body: dict[str, Any] | None = None) -> bool:
         """Fail closed before any privileged handler is invoked."""
         operation = path.removeprefix("/api/v1/").replace("/", ".")
         code, receipt = pythia_guardian_api().evaluate(
@@ -1494,9 +1497,7 @@ class _Handler(BaseHTTPRequestHandler):
         self._guardian_receipt = receipt
         return True
 
-    def _guardian_commit_evidence(
-        self, path: str, status: int, receipt: dict[str, Any]
-    ) -> None:
+    def _guardian_commit_evidence(self, path: str, status: int, receipt: dict[str, Any]) -> None:
         digest = hashlib.sha256(
             json.dumps(receipt, sort_keys=True, default=str).encode("utf-8")
         ).hexdigest()
@@ -2073,4 +2074,3 @@ if __name__ == "__main__":
         signal.SIGTERM, lambda *_: (_CONTROL.shutdown() if _CONTROL is not None else None)
     )
     main()
-

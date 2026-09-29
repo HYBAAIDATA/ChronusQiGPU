@@ -1,11 +1,14 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
+
 
 @dataclass(frozen=True)
 class ModuleSpec:
     name: str
     dependencies: tuple[str, ...] = ()
     research_gated: bool = False
+
 
 MODULE_REGISTRY = {
     "core": ModuleSpec("core"),
@@ -35,17 +38,27 @@ MODULE_REGISTRY = {
     "energy": ModuleSpec("energy", ("observe",), True),
 }
 
+
 def dependency_closure(requested: tuple[str, ...]) -> tuple[str, ...]:
     missing = sorted(set(requested) - MODULE_REGISTRY.keys())
-    if missing: raise ValueError(f"unknown modules: {','.join(missing)}")
+    if missing:
+        raise ValueError(f"unknown modules: {','.join(missing)}")
     ordered: list[str] = []
     visiting: set[str] = set()
     visited: set[str] = set()
+
     def visit(name: str) -> None:
-        if name in visiting: raise ValueError(f"module dependency cycle at {name}")
-        if name in visited: return
+        if name in visiting:
+            raise ValueError(f"module dependency cycle at {name}")
+        if name in visited:
+            return
         visiting.add(name)
-        for dep in MODULE_REGISTRY[name].dependencies: visit(dep)
-        visiting.remove(name); visited.add(name); ordered.append(name)
-    for name in requested: visit(name)
+        for dep in MODULE_REGISTRY[name].dependencies:
+            visit(dep)
+        visiting.remove(name)
+        visited.add(name)
+        ordered.append(name)
+
+    for name in requested:
+        visit(name)
     return tuple(ordered)

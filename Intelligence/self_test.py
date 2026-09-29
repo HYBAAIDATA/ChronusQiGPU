@@ -25,7 +25,10 @@ from __future__ import annotations
 
 import logging
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Tuple
 
 logger = logging.getLogger("Intelligence.self_test")
 
@@ -71,7 +74,9 @@ def _check_mining_bridge() -> Dict[str, Any]:
     """Wire intelligence into the Pythia engine and run a real scan."""
     try:
         import turing_core
-        from .mining_bridge import wire_intelligence_into_mining, unwire_intelligence_from_mining
+
+        from .mining_bridge import unwire_intelligence_from_mining
+        from .mining_bridge import wire_intelligence_into_mining
 
         wired = wire_intelligence_into_mining()
         if not wired:
@@ -277,12 +282,12 @@ def _check_lucas_scales(orchestrator) -> Dict[str, Any]:
         monotonic = profile["monotonic"]
         # Verify exact values are present: every level equals its exact
         # Lucas value from the substrate.
-        import turing_core
 
         values = [lv["value"] for lv in profile["levels"]]
         # The declared rungs, valued by an independent recurrence
         # (L_0 = 2, L_1 = 1, L_n = L_(n-1) + L_(n-2)).
-        from lucas.ladder import CURRICULUM_RUNGS, FULL_LADDER
+        from lucas.ladder import CURRICULUM_RUNGS
+        from lucas.ladder import FULL_LADDER
 
         from .lucas_scales import LUCAS_SCALE_LADDER
 
@@ -470,6 +475,7 @@ def _check_folded_state(orchestrator) -> Dict[str, Any]:
         import math
 
         import numpy as np
+
         import turing_core
 
         # Deterministic probe payloads — no os.urandom / RNG anywhere.
@@ -546,8 +552,8 @@ def _check_folded_state(orchestrator) -> Dict[str, Any]:
 
 def run_intelligence_self_test() -> Dict[str, Any]:
     """Run the full falsifiable intelligence self-test and return a report."""
-    from .registry import build_default_registry
     from .orchestrator import IntelligenceOrchestrator
+    from .registry import build_default_registry
 
     registry = build_default_registry()
     orchestrator = IntelligenceOrchestrator(registry=registry)
