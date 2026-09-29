@@ -28,6 +28,7 @@ import os
 import struct
 import time
 import uuid
+from collections import deque
 from dataclasses import asdict, replace
 from queue import Empty
 from typing import Any, Mapping
@@ -36,6 +37,7 @@ from mla1517.hardware import MMIOBridge, VaultRecord
 from manifold_pool_coordinator import (
     CURRENT_HOT_STATE_FORMAT,
     ManifoldPoolCoordinator,
+    StratumAuthorizationError,
     parse_endpoint,
 )
 
@@ -53,8 +55,9 @@ from .self_healing_agent import (
 )
 from .agentic_controller import AgenticMiningController
 from .causal import CausalCoordinate, CausalLedger
+from .dispatch_algebra import certify_dispatch
 from .execution_router import NONCE_ORDER_HENDRIX, NONCE_ORDER_M32, ExecutionRouter
-from .hendrix_order import NonceOrderUnavailable, load_hendrix
+from .hendrix_order import NonceOrderUnavailable, hendrix_schedule, load_hendrix
 from .recovery_authority import RecoveryGovernor, RecoveryRecord
 from .nonce_lease import LeaseConflict, LeaseExhausted, LeaseRecord
 from .search_plan import (
@@ -98,6 +101,9 @@ PERMITTED_WITHOUT_TOE = frozenset({"observe_record", "submit_candidate"})
 # Precompute wakes on Stratum changes, consumption and recovery edges; this
 # is only the idle heartbeat, not a polling rate.
 _PRECOMPUTE_IDLE_S = 0.25
+# Measured hashrate is hashes completed over this trailing wall-clock span.
+_HASHRATE_SPAN_S = 30.0
+_METRICS_MIN_INTERVAL_S = 1.0
 _BASELINE_POLICY = "baseline_fallback"
 _EVIDENCE_MIN_INTERVAL_S = 0.5
 _NONCE_ORDERS = {"m32": NONCE_ORDER_M32, "hendrix": NONCE_ORDER_HENDRIX}
@@ -359,6 +365,15 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self._last_submission_id: str | None = None
         self._last_executed_key: tuple[str, int, str] | None = None
         self.last_execution: dict[str, Any] | None = None
+        self.last_dispatch_algebra: dict[str, Any] | None = None
+        self._dispatch_counts = {"certified": 0, "refused": 0}
+        self._metrics_sink: Any = None
+        self._metrics_published_at = float("-inf")
+        self._hash_samples: deque[tuple[float, int]] = deque()
+        self._hash_meter_started = time.monotonic()
+        self._hashes_total = 0
+        self._executions_total = 0
+        self._shares_accepted = 0
         upstream_sink = self.stratum_status_sink
 
         def _stratum_sink(snapshot: dict[str, Any]) -> None:
@@ -415,6 +430,88 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 with contextlib.suppress(Exception):
                     await self.client.close()
                 self.client = None
+
+    async def run_execution_loop(
+        self,
+        *,
+        idle_s: float = 0.05,
+        max_backoff_s: float = 300.0,
+    ) -> None:
+        """Mine through the Execution Router alone, with no MMIO bridge.
+
+        The same leased SearchPlan -> router -> host recheck -> proof adapter
+        path as the hardware loop, driven by the pool's jobs instead of vault
+        records. Pool loss is retried with exponential backoff across every
+        configured endpoint (primary first, then failover); an authorization
+        refusal from every pool is retried too, so the worker and its
+        telemetry stay up while the operator fixes the credentials.
+        """
+        if self.submit_enabled and self.chain_observer is None:
+            raise RuntimeError("live mining requires a Bitcoin chain observer")
+        if self._agentic_state_path:
+            self.agentic.load_state(self._agentic_state_path)
+        try:
+            await self._start_control_server()
+        except OSError as exc:
+            LOG.warning("coordinator control channel unavailable: %s", exc)
+        self._hash_meter_started = time.monotonic()
+        self._precompute_task = asyncio.create_task(self._precompute_loop())
+        delay = self.reconnect_delay
+        try:
+            while True:
+                if not self.client or not self.client.connected:
+                    if self.client:
+                        with contextlib.suppress(Exception):
+                            await self.client.close()
+                        self.client = None
+                    try:
+                        await self.connect_with_failover()
+                    except Exception as exc:
+                        kind = (
+                            "every pool refused authorization"
+                            if isinstance(exc, StratumAuthorizationError)
+                            else "every pool unavailable"
+                        )
+                        LOG.warning("%s: %s; retrying in %.1fs", kind, exc, delay)
+                        self._publish_metrics(force=True)
+                        await asyncio.sleep(delay)
+                        delay = min(delay * 2, max_backoff_s)
+                        continue
+                    delay = self.reconnect_delay
+                    LOG.info("mining through %s", self.client.endpoint.name)
+                executions_before = self._executions_total
+                permitted = await self.before_hardware_poll()
+                if permitted:
+                    try:
+                        await self.search_current_job()
+                    except (ConnectionError, asyncio.IncompleteReadError) as exc:
+                        LOG.warning("pool connection lost during search: %s", exc)
+                        with contextlib.suppress(Exception):
+                            await self.client.close()
+                        self.client = None
+                        continue
+                self._publish_metrics()
+                if self._executions_total == executions_before:
+                    await asyncio.sleep(idle_s)
+        finally:
+            self._precompute_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._precompute_task
+            self._precompute_task = None
+            if self._agentic_state_path:
+                self.agentic.save_state(self._agentic_state_path)
+            if self.client is not None:
+                with contextlib.suppress(Exception):
+                    await self.client.close()
+                self.client = None
+            if self._control_server:
+                self._control_server.close()
+                with contextlib.suppress(Exception):
+                    await self._control_server.wait_closed()
+                with contextlib.suppress(OSError):
+                    os.unlink(self.control_socket_path)
+            if self.telemetry:
+                self.telemetry.close()
 
     def set_agentic_state_path(self, path: str) -> None:
         """Configure where the agentic controller persists its learned policy."""
@@ -494,6 +591,47 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         """Receive the evidence snapshot whenever the voyage changes."""
         self._evidence_sink = sink
 
+    def set_metrics_sink(self, sink: Any) -> None:
+        """Receive measured worker counters (``hashrate_hs``, ``shares_accepted``)."""
+        self._metrics_sink = sink
+
+    def measured_hashing(self) -> dict[str, Any]:
+        """Hashes completed over the trailing wall-clock span; nothing estimated."""
+        now = time.monotonic()
+        while self._hash_samples and self._hash_samples[0][0] < now - _HASHRATE_SPAN_S:
+            self._hash_samples.popleft()
+        span = min(_HASHRATE_SPAN_S, now - self._hash_meter_started)
+        hashes = sum(count for _at, count in self._hash_samples)
+        return {
+            "hashrate_hs": hashes / span if span > 0 else 0.0,
+            "span_s": round(span, 3),
+            "hashes_in_span": hashes,
+            "hashes_total": self._hashes_total,
+            "executions_total": self._executions_total,
+            "shares_accepted": self._shares_accepted,
+        }
+
+    def _publish_metrics(self, *, force: bool = False) -> None:
+        if self._metrics_sink is None:
+            return
+        now = time.monotonic()
+        if not force and now - self._metrics_published_at < _METRICS_MIN_INTERVAL_S:
+            return
+        self._metrics_published_at = now
+        hashing = self.measured_hashing()
+        try:
+            self._metrics_sink(
+                {
+                    "hashrate_hs": round(hashing["hashrate_hs"], 3),
+                    "hashes_total": hashing["hashes_total"],
+                    "shares_accepted": hashing["shares_accepted"],
+                    "executions_total": hashing["executions_total"],
+                    "backend": str(getattr(self.execution_hasher, "backend", "unknown")),
+                }
+            )
+        except Exception:
+            LOG.exception("metrics sink failed")
+
     def _publish_evidence(self, *, force: bool = False) -> None:
         if self._evidence_sink is None:
             return
@@ -537,6 +675,12 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             "causal_tail": self.causal.snapshot(24),
             "submission": "live" if self.submission_permitted() else "shadow",
             "intelligence": self.intelligence_snapshot(),
+            "dispatch_algebra": (
+                {**self.last_dispatch_algebra, "counts": dict(self._dispatch_counts)}
+                if self.last_dispatch_algebra is not None
+                else None
+            ),
+            "hashing": self.measured_hashing(),
         }
 
     def agentic_status(self) -> dict[str, Any]:
@@ -1270,6 +1414,42 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             self.execution_hasher, cpu_sweep, nonce_order=lambda _plan: nonce_order
         )
 
+    def _effective_nonce_order(self) -> str:
+        """The order the router will execute for the current route."""
+        route = self._execution_route()
+        if self._nonce_order == NONCE_ORDER_HENDRIX and route == "opencl_m32":
+            on_device = bool(getattr(self.execution_hasher, "hendrix_on_device", False))
+            return NONCE_ORDER_HENDRIX if on_device else NONCE_ORDER_M32
+        return self._nonce_order
+
+    def _certify_dispatch(
+        self, plan: SearchPlan, job_id: str, header: bytes, target_le: bytes
+    ) -> dict[str, Any]:
+        """Exact-algebra certificate for one dispatch; a failure refuses it."""
+        order = self._effective_nonce_order()
+        schedule = None
+        if order == NONCE_ORDER_HENDRIX and plan.window > 0:
+            try:
+                schedule = hendrix_schedule(plan.window)
+            except NonceOrderUnavailable as exc:
+                LOG.warning("Hendrix schedule unavailable for certificate: %s", exc)
+        certificate = certify_dispatch(
+            plan_id=plan.plan_id,
+            job_id=job_id,
+            base_step=plan.base_step,
+            window=plan.window,
+            lane_order=plan.lane_order,
+            header=header,
+            target_le=target_le,
+            ceiling=max(self._window_cap(), self._intelligence_ceiling()),
+            nonce_order=order,
+            route=plan.executor_route,
+            hendrix=schedule,
+        )
+        self._dispatch_counts["certified" if certificate["ok"] else "refused"] += 1
+        self.last_dispatch_algebra = certificate
+        return certificate
+
     def _identity_is(self, key: tuple[str, int, str]) -> bool:
         identity, _reason = self._resolve_work_identity()
         return identity is not None and identity.key == key
@@ -1531,11 +1711,24 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             outcome = PoolOutcome.NO_CANDIDATE
             try:
                 header = adapter.build_header(job.job_id, lease.extranonce2, job.ntime, 0)
+                target_le = job.target.to_bytes(32, "little")
+                certificate = self._certify_dispatch(plan, job.job_id, header, target_le)
+                if not certificate["ok"]:
+                    LOG.error("dispatch refused by algebra certificate: %s", certificate["refusal"])
+                    self.causal.record(
+                        "dispatch_refused", coordinate, reason=certificate["refusal"]
+                    )
+                    self.last_execution = {
+                        "executed": False,
+                        "reason": f"dispatch_algebra: {certificate['refusal']}",
+                    }
+                    self._publish_evidence(force=True)
+                    return False
                 record, candidate = await asyncio.to_thread(
                     self._router_for(plan).execute_plan,
                     plan,
                     header,
-                    job.target.to_bytes(32, "little"),
+                    target_le,
                     identity=identity,
                     lease=reserved.contract(),
                     is_still_fresh=lambda: self._identity_is(identity.key),
@@ -1674,7 +1867,14 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             "pool_outcome": outcome.value,
             "tuning_action": decision.action,
         }
+        self._executions_total += 1
+        if final.hash_count > 0:
+            self._hash_samples.append((time.monotonic(), int(final.hash_count)))
+            self._hashes_total += int(final.hash_count)
+        if outcome is PoolOutcome.ACCEPTED:
+            self._shares_accepted += 1
         self._publish_evidence()
+        self._publish_metrics(force=True)
 
     async def submit_record(self, record: VaultRecord) -> bool:
         if not self.client:

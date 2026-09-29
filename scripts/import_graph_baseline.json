@@ -86,7 +86,6 @@
     "hyba/operating_model/failure_modes.py:15: imports test module tests/test_operating_model.py",
     "millennium/clay_checklist.py:68: imports test module tests/test_millennium_package.py",
     "mla1517_platform_v3.4/python/soak_voyage.py:31: imports test module mla1517_platform_v3.4/python/test_agentic_voyages.py",
-    "mla1517_platform_v3.4/python/system_fabric.py:834: imports test module Intelligence/self_test.py",
-    "scripts/release_gate.py:54: imports test module tests/test_mla1517_reference.py"
+    "mla1517_platform_v3.4/python/system_fabric.py:835: imports test module Intelligence/self_test.py"
   ]
 }

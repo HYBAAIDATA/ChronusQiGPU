@@ -81,3 +81,19 @@ def test_live_code_importing_a_test_module_is_a_layer_violation(tmp_path):
         },
     )
     assert ig.layer_violations(_graph(root)) == ["app.py:1: imports test module test_helpers.py"]
+
+
+def test_tooling_may_drive_tests_and_line_moves_are_not_new(tmp_path, monkeypatch):
+    root = _repo(
+        tmp_path,
+        {"scripts/probe.py": "import test_probe_target\n", "test_probe_target.py": ""},
+    )
+    assert ig.layer_violations(_graph(root)) == []
+    baseline = tmp_path / "baseline.json"
+    baseline.write_text('{"cycles": [], "layers": ["app.py:3: imports test module t.py"]}')
+    monkeypatch.setattr(ig, "BASELINE", baseline)
+    monkeypatch.setattr(
+        ig, "layer_violations", lambda graph: ["app.py:9: imports test module t.py"]
+    )
+    monkeypatch.setattr(ig, "build", lambda: None)
+    assert ig.main(["layers"]) == 0

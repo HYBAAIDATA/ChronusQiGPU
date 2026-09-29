@@ -25,11 +25,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lucas.core import lucas  # noqa: E402
+from lucas.ladder import FULL_LADDER  # noqa: E402
 from orcle import compact_target  # noqa: E402
 
 BITS = 0x201C3CFF
 N_BLOCKS = 400
-RUNGS = (10, 12, 15, 18, 20)
+RUNGS = tuple(FULL_LADDER)
 
 
 def make_header(height, timestamp, nonce):

@@ -395,7 +395,8 @@ def layer_violations(graph: Graph) -> list[str]:
             line = graph.lines.get((src, dst), 0)
             if to.startswith("legacy/"):
                 out.append(f"{rel}:{line}: imports legacy module {to}")
-            elif _is_test(to):
+            elif _is_test(to) and not rel.startswith("scripts/"):
+                # Tooling may drive the tests (capability probes); live code may not.
                 out.append(f"{rel}:{line}: imports test module {to}")
     return sorted(out)
 
@@ -437,8 +438,13 @@ def main(argv: list[str] | None = None) -> int:
     else:
         result = cycles(graph) if args.command == "cycles" else layer_violations(graph)
         baseline = _baseline()
-        known = baseline.get(args.command, [])
-        new = [item for item in result if item not in known]
+
+        # Line numbers move with unrelated edits; a violation is its files.
+        def key(item):
+            return item if isinstance(item, list) else re.sub(r":\d+:", ":", item, count=1)
+
+        known = {json.dumps(key(item)) for item in baseline.get(args.command, [])}
+        new = [item for item in result if json.dumps(key(item)) not in known]
         for item in result:
             shown = " <- ".join(item) if isinstance(item, list) else item
             print(("NEW " if item in new else "known ") + shown)

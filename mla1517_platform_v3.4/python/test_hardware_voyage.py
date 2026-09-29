@@ -29,6 +29,9 @@ from test_agentic_voyages import (
 )
 
 
+MAINNET_NBITS = "17021ec5"  # a 2026 mainnet job (Braiins, 2026-09-29)
+
+
 @pytest.fixture(scope="module")
 def device_hasher():
     hasher = mining_runtime._execution_hasher("auto")
@@ -52,7 +55,10 @@ def _coordinator(port: int, chain: FakeChain, hasher) -> IntelligentPoolCoordina
 
 
 async def _voyage(hasher) -> None:
-    pool = FakePool(target=HARD_TARGET, job=_job("job-hw"))
+    # Mainnet-scale nbits: the hashrate governor caps a miner at 1% of the
+    # network rate the job implies, and a difficulty-1 toy network would
+    # (correctly) refuse a device-sized GPU window after the first.
+    pool = FakePool(target=HARD_TARGET, job=_job("job-hw", nbits=MAINNET_NBITS))
     server, port = await _served(pool)
     chain = FakeChain()
     coord = _coordinator(port, chain, hasher)

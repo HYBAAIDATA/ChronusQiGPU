@@ -19,23 +19,25 @@ deliberately does not evaluate in floating point.
 
 from __future__ import annotations
 
-#: The hardware-scaling dial — the canonical declaration in lucas/ladder.py,
-#: re-exported here for the platform package.
-from lucas.ladder import SCALE_RUNGS
+from lucas.ladder import SCALE_RUNGS as _CANONICAL_SCALE_RUNGS
 
 # --------------------------------------------------------------------------
 # Exact integer recurrence ladder
 # --------------------------------------------------------------------------
 
-#: The declared ladder. Immutable; the scale controller rejects anything else.
-#: 17 is included because the build programme names 15 -> 17 as the FIRST
-#: transition target, so a ladder without it would refuse the programme's
-#: own first declared step.
-LADDER: tuple[int, ...] = (10, 12, 15, 17, 18, 20, 31, 50, 76)
+#: The hardware-scaling dial. lucas/ladder.py is the single declaration of the
+#: rungs; restating the tuple here would fork the contract.
+SCALE_RUNGS: tuple[int, ...] = tuple(_CANONICAL_SCALE_RUNGS)
 
 #: The first declared transition in the build programme.
 FIRST_SOURCE_SCALE: int = 15
 FIRST_TARGET_SCALE: int = 17
+
+#: The declared ladder. Immutable; the scale controller rejects anything else.
+#: It is the canonical rungs plus 17, because the build programme names
+#: 15 -> 17 as the FIRST transition target, so a ladder without it would
+#: refuse the programme's own first declared step.
+LADDER: tuple[int, ...] = tuple(sorted({*SCALE_RUNGS, FIRST_TARGET_SCALE}))
 
 #: Smallest target the consensus-permitted difficulty represents.
 LOWEST_BITS: int = 0x1D00FFFF
