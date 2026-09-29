@@ -22,13 +22,30 @@ from __future__ import annotations
 
 import math
 import struct
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 
 import turing_core
+from lucas.ladder import FULL_LADDER
 
 THEOREM_PROVEN = False
+
+# Lucas scale ladder the search primitives accept: rungs 10, 12, 15, 18,
+# 20 — the same curriculum rungs the GPU engine uses.
+SEARCH_SCALE_RUNGS: tuple = tuple(FULL_LADDER)
+
+
+def _scale_lucas_value(scale_index: int) -> int:
+    """L_n for a ladder rung; rejects anything off the ladder."""
+    idx = int(scale_index)
+    if idx not in SEARCH_SCALE_RUNGS:
+        raise ValueError(
+            f"Lucas scale index {scale_index!r} is not a search rung "
+            f"(one of {', '.join(str(r) for r in SEARCH_SCALE_RUNGS)})"
+        )
+    return turing_core.lucas(idx)
+
 
 # Canonical 2-node search graph: probe <-> accept. Walk counts are the
 # path quantity the path_kernel bounds.
@@ -64,6 +81,11 @@ class GroverStyleSearch:
     candidate each iteration probes. Verification is real double-SHA256
     against the consensus target — amplitude math orders the search, it
     never replaces the consensus check.
+
+    ``scale_index`` selects a Lucas ladder rung (10/12/15/18/20): the
+    search's effective space becomes ``N_eff = len(schedule) * L_n`` and
+    k* is taken over the scaled space — the same N -> N * L_n hardware
+    scaling the GPU engine applies.
     """
 
     def __init__(self) -> None:
@@ -86,6 +108,7 @@ class GroverStyleSearch:
         header: bytes,
         schedule: List[int],
         target: Any,
+        scale_index: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Probe the schedule in Grover order; return the winner if any."""
         self._searches += 1
@@ -100,7 +123,11 @@ class GroverStyleSearch:
                 "kernel": "path_kernel",
                 "theorem_proven": False,
             }
-        k_star = self.optimal_iterations(size)
+        lucas_value = 1
+        if scale_index is not None:
+            lucas_value = _scale_lucas_value(scale_index)
+        scaled_size = size * lucas_value
+        k_star = self.optimal_iterations(scaled_size)
         target_int = _target_int(target)
         visited = np.zeros(size, dtype=bool)
         next_unseen = 0
@@ -117,9 +144,7 @@ class GroverStyleSearch:
                 probed += 1
                 nonce = int(schedule[idx]) & 0xFFFFFFFF
                 _pack_nonce(blob, nonce)
-                if turing_core.hash_meets_target(
-                    double_sha256(view), target_int
-                ):
+                if turing_core.hash_meets_target(double_sha256(view), target_int):
                     winner = nonce
                     break
             idx = (idx + k_star) % size
@@ -137,6 +162,9 @@ class GroverStyleSearch:
             "mining_success": winner >= 0,
             "kernel": "path_kernel",
             "theorem_proven": False,
+            "scale_index": scale_index,
+            "lucas_value": lucas_value,
+            "scaled_space": scaled_size,
         }
 
     def status(self) -> Dict[str, Any]:

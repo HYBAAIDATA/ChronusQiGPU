@@ -1,7 +1,8 @@
 # LUCAS WIRING: draws from lucas/ (pool) OR implements its Lucas kernel
 # inline below. MUST NOT import from any sibling algorithm.
 # Substrate route: mining
-"""``quantum_cuda`` — iGPU / Turing exact-quantum-math accelerator shim.
+"""``quantum_cuda`` — the Quantum CUDA GPU engine for the Turing
+exact-quantum-math substrate.
 
 This module is the in-repo replacement for the external
 ``backend/libs/quantum_cuda_v2`` package that ``core_engine.quantum_metal_integration``
@@ -11,25 +12,34 @@ in ``turing_core`` (Binet/Cassini/Lucas-Pisot, Zeckendorf, the 32-node
 icosahedron-dodecahedron dual overlay, and the Pythia double-SHA256 mining
 engine).
 
-Platform detection
--------------------
-On **macOS** the shim probes for Apple Metal and, if a native Metal-backed
-``quantum_cuda`` accelerator is installed (e.g. an external
-``backend/libs/quantum_cuda_v2`` built against Metal), it is picked up and
-used as the device backend — the exact-math kernel still drives the search
-schedule, but the double-SHA256 hashing is offloaded to the Metal GPU.
+Device binding — no silicon expectation
+---------------------------------------
+The engine binds to whatever compute device is **actually enumerated** on
+the host. There is no bespoke-silicon assumption: a cloud container's CPU
+is a first-class binding, and so is the user's real GPU (CUDA via
+``nvidia-smi``, ROCm via ``rocm-smi``, any OpenCL device via ``pyopencl``,
+or Apple Metal on macOS when the native accelerator is installed).
+``list_devices()`` / ``device_name()`` / ``stats()['device_name']`` report
+real enumerated hardware names — never a fabricated device catalogue.
 
-On **Windows / Linux / any platform without Metal**, the shim falls back to
-the pure-CPU Turing/iGPU exact-math core. The accept/reject test is the
-exact Stratum V1 consensus rule on every platform, so the search is honest
-regardless of which backend is active.
+Lucas scale
+-----------
+Every quantum algorithm the engine runs (``grover_amplitude_amplification``
+plus ``hybrid_ensemble_search`` / ``quantum_walk_search`` / ``qaoa_*`` /
+``quantum_annealing_search`` / ``vqe_*``) is scaled by the Lucas ladder
+``scale_index ∈ FULL_LADDER``: the search space is multiplied by
+the exact Lucas value ``N_eff = N · L_n`` (the hardware-dimension scaling
+from ``grover_exact_scale.lucas_row``), Grover's optimal iteration count
+k* is recomputed over the scaled space, and the Zeckendorf/Lucas schedule
+is generated over the scaled space. ``QUANTUM_CUDA_SCALE_INDEX`` overrides
+the default rung (10).
 
 This shim exposes the small API surface that
 ``quantum_metal_integration.QuantumMetalMiner`` expects —
 
-    quantum_cuda.create_simulator(device_id) -> Simulator
+    quantum_cuda.create_simulator(device_id, seed, scale_index) -> Simulator
     quantum_cuda.device_name(device_id)      -> str
-    quantum_cuda.submit_kernel(sim, msl, algorithm, num_nonces, header, target, winner) -> int
+    quantum_cuda.submit_kernel(sim, msl, algorithm, num_nonces, header, target, winner, scale_index, base_nonce) -> int
 
 — but the kernel is **real quantum math**, not a random-number heuristic:
 
@@ -53,9 +63,11 @@ import hashlib
 import math
 import os
 import platform
+import shutil
 import struct
+import subprocess
 import sys
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 # Re-export the exact quantum-math substrate so callers can reach the real
 # math without a second import path.
@@ -63,6 +75,38 @@ from . import turing_core as _turing  # noqa: E402
 
 PHI = _turing.PHI
 PSI = _turing.PSI
+
+from .lucas.ladder import FULL_LADDER
+
+# The Lucas scale ladder the GPU engine accepts: the canonical FULL_LADDER
+# declared in lucas/ladder.py. The effective search space
+# is multiplied by L_n — N_eff = num_nonces * L_n — per the
+# ``grover_exact_scale.lucas_row`` hardware-dimension convention.
+QUANTUM_SCALE_RUNGS: Tuple[int, ...] = tuple(FULL_LADDER)
+DEFAULT_SCALE_INDEX: int = QUANTUM_SCALE_RUNGS[0]
+
+# The nonce field is four bytes; the scaled space never exceeds it.
+_MAX_NONCE_SPACE = 1 << 32
+
+
+def _validate_scale_index(scale_index: int) -> int:
+    """Return ``scale_index`` as an int when it is a GPU-engine rung.
+
+    The engine accepts exactly the canonical Lucas ladder rungs —
+    anything else raises ``ValueError`` (explicit, not silently clamped).
+    """
+    try:
+        idx = int(scale_index)
+    except (TypeError, ValueError):
+        raise ValueError(
+            f"Lucas scale index must be an integer rung, got {scale_index!r}"
+        ) from None
+    if idx not in QUANTUM_SCALE_RUNGS:
+        raise ValueError(
+            f"Lucas scale index {idx} is not a GPU-engine rung "
+            f"(one of {', '.join(str(r) for r in QUANTUM_SCALE_RUNGS)})"
+        )
+    return idx
 
 
 # ---------------------------------------------------------------------------
@@ -122,8 +166,7 @@ def _detect_metal() -> Optional[Any]:
             if (
                 _metal is not None
                 and hasattr(_metal, "create_simulator")
-                and os.path.abspath(getattr(_metal, "__file__", ""))
-                != os.path.abspath(__file__)
+                and os.path.abspath(getattr(_metal, "__file__", "")) != os.path.abspath(__file__)
             ):
                 return _metal
         except ImportError:
@@ -160,17 +203,118 @@ CUDA_AVAILABLE: bool = _detect_cuda()
 ROCM_AVAILABLE: bool = _detect_rocm()
 
 
-# iGPU device catalogue. The "Quantum CUDA" device is the Turing/iGPU core;
-# these names are descriptive labels for the same exact-math accelerator.
-# Updated for Docker deployments — labels reflect the actual backend.
-_DEVICES = {
-    0: "Turing-Q5 iGPU (exact Q[sqrt(5)] rational core)",
-    1: "M3 iGPU (Lucas-Pisot scaled near-state subsystem)",
-    2: "H100-class iGPU (Zeckendorf HBM3e controller)",
-    3: "Docker CPU (Turing Q[√5] exact-math, universal substrate)",
-    4: "Docker GPU (NVIDIA CUDA + Turing exact-math scheduler)",
-    5: "Docker GPU (AMD ROCm + Turing exact-math scheduler)",
-}
+# ---------------------------------------------------------------------------
+# Real device enumeration — no silicon expectation
+# ---------------------------------------------------------------------------
+#
+# The engine binds to whatever compute actually enumerates on the host: the
+# CPU inside a cloud container or the user's real GPU. Device names come
+# from the vendor tools / driver APIs themselves — the catalogue is a census,
+# not an assumption.
+
+
+def _nvidia_device_names() -> List[str]:
+    """Real NVIDIA GPU names via ``nvidia-smi`` (empty when absent)."""
+    exe = shutil.which("nvidia-smi")
+    if exe is None:
+        return []
+    try:
+        proc = subprocess.run(
+            [exe, "--query-gpu=name", "--format=csv,noheader"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return []
+    if proc.returncode != 0:
+        return []
+    return [line.strip() for line in proc.stdout.splitlines() if line.strip()]
+
+
+def _rocm_device_names() -> List[str]:
+    """Real AMD GPU names via ``rocm-smi --showproductname`` (empty when absent)."""
+    exe = shutil.which("rocm-smi")
+    if exe is None:
+        return []
+    try:
+        proc = subprocess.run(
+            [exe, "--showproductname"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return []
+    if proc.returncode != 0:
+        return []
+    names = [
+        line.split(":", 1)[1].strip()
+        for line in proc.stdout.splitlines()
+        if ":" in line and "card" in line.lower()
+    ]
+    return names or ["AMD ROCm GPU"]
+
+
+def _opencl_device_names() -> List[str]:
+    """Real OpenCL device names via ``pyopencl`` (empty when absent)."""
+    try:
+        import pyopencl as cl  # type: ignore[import-not-found]
+    except ImportError:
+        return []
+    names: List[str] = []
+    try:
+        for platform_obj in cl.get_platforms():
+            for dev in platform_obj.get_devices():
+                names.append(dev.name.strip())
+    except Exception:  # pragma: no cover - driver/init errors
+        return []
+    return names
+
+
+def _cpu_device_name() -> str:
+    """The container/host CPU — the universal fallback device."""
+    processor = platform.processor() or platform.machine() or "generic"
+    return f"CPU ({processor})"
+
+
+_ENUMERATED_DEVICES: Optional[List[Dict[str, str]]] = None
+
+
+def _enumerate_devices() -> List[Dict[str, str]]:
+    """Enumerate the devices this host actually has — the device census.
+
+    Order is preference order: discrete GPUs first (CUDA, ROCm), then the
+    Metal iGPU on Apple Silicon, then every OpenCL device, then the CPU —
+    which is always present, so a cloud container with no GPU still binds.
+    """
+    global _ENUMERATED_DEVICES
+    if _ENUMERATED_DEVICES is not None:
+        return _ENUMERATED_DEVICES
+    devices: List[Dict[str, str]] = []
+    for name in _nvidia_device_names():
+        devices.append({"name": name, "backend": "cuda"})
+    for name in _rocm_device_names():
+        devices.append({"name": name, "backend": "rocm"})
+    if _METAL_BACKEND is not None:
+        devices.append({"name": "Apple Silicon GPU (Metal)", "backend": "metal"})
+    for name in _opencl_device_names():
+        devices.append({"name": name, "backend": "opencl"})
+    devices.append({"name": _cpu_device_name(), "backend": "cpu"})
+    _ENUMERATED_DEVICES = devices
+    return devices
+
+
+def _bind_device(device_id: int) -> Dict[str, str]:
+    """Resolve ``device_id`` against the real enumeration.
+
+    An out-of-range id binds to the best device present (first enumerated),
+    which is a GPU when the host has one and the CPU otherwise.
+    """
+    devices = _enumerate_devices()
+    if 0 <= device_id < len(devices):
+        return devices[device_id]
+    return devices[0]
 
 
 class QuantumSimulator:
@@ -188,12 +332,26 @@ class QuantumSimulator:
     consensus rule on every backend.
     """
 
-    def __init__(self, device_id: int = 0, seed: Optional[int] = None):
+    def __init__(
+        self,
+        device_id: int = 0,
+        seed: Optional[int] = None,
+        scale_index: Optional[int] = None,
+    ):
         self.device_id = device_id
         # Seed is used only to choose the Zeckendorf starting offset; the
         # accept/reject decision is the exact double-SHA256 consensus rule.
         self.seed = seed if seed is not None else 0
         self.algorithm = "hybrid_ensemble_search"
+        # Lucas scale rung: 10/12/15/18/20. ``QUANTUM_CUDA_SCALE_INDEX``
+        # overrides the default so a container/user can scale without code.
+        if scale_index is None:
+            scale_index = int(os.environ.get("QUANTUM_CUDA_SCALE_INDEX", DEFAULT_SCALE_INDEX))
+        self.scale_index = _validate_scale_index(scale_index)
+        self._scale_lucas = _turing.lucas(self.scale_index)
+        # Real device binding: the cloud-container CPU or the user's GPU —
+        # whatever enumerates, never an assumed bespoke board.
+        self._device = _bind_device(device_id)
         # Native Metal backend (None on non-macOS or when Metal is absent).
         self._metal = _METAL_BACKEND
         self._metal_device = None
@@ -206,13 +364,48 @@ class QuantumSimulator:
             "kernels_submitted": 0,
             "nonces_searched": 0,
             "winners_found": 0,
-            "backend": "metal" if self._metal_device is not None else "cpu",
+            # ``backend`` is what the kernel actually executes on — the
+            # native Metal path when present, else the CPU hashlib path.
+            # The *bound* device (what enumeration found) is reported as
+            # ``bound_backend``/``device_name``: binding to the user's GPU
+            # does not mean compute runs there until a backend path exists
+            # for it — an honest distinction.
+            "backend": ("metal" if self._metal_device is not None else "cpu"),
+            "bound_backend": self._device["backend"],
+            "device_name": self.device_label,
+            "scale_index": self.scale_index,
+            "lucas_value": self._scale_lucas,
+            "scaled_space": 0,
         }
 
     @property
     def backend(self) -> str:
-        """Active backend: ``"metal"`` on macOS+Metal, else ``"cpu"``."""
-        return "metal" if self._metal_device is not None else "cpu"
+        """The compute backend the kernel executes on: ``"metal"`` when a
+        native Metal device was created, else ``"cpu"`` (the hashlib path).
+        ``stats()['bound_backend']`` reports which enumerated device the
+        engine bound to (cuda/rocm/opencl/metal/cpu)."""
+        return str(self._stats["backend"])
+
+    @property
+    def device_label(self) -> str:
+        """Human-readable name of the real bound device."""
+        return f"{self._device['name']} [{self._device['backend']}]"
+
+    def set_scale_index(self, scale_index: int) -> None:
+        """Change the Lucas scale rung (10/12/15/18/20)."""
+        self.scale_index = _validate_scale_index(scale_index)
+        self._scale_lucas = _turing.lucas(self.scale_index)
+        self._stats["scale_index"] = self.scale_index
+        self._stats["lucas_value"] = self._scale_lucas
+
+    def scaled_space(self, num_nonces: int, scale_index: Optional[int] = None) -> int:
+        """The Lucas-scaled search space: ``N_eff = num_nonces * L_n``.
+
+        Exact integer multiplication by the rung's Lucas value, clamped to
+        the 32-bit nonce field width (``2**32``).
+        """
+        idx = _validate_scale_index(self.scale_index if scale_index is None else scale_index)
+        return min(num_nonces * _turing.lucas(idx), _MAX_NONCE_SPACE)
 
     # -- exact Grover / Lucas-Pisot scheduling -----------------------------
 
@@ -232,16 +425,23 @@ class QuantumSimulator:
         sqrt_n = math.isqrt(num_nonces)
         return max(1, (355 * sqrt_n) // 452)
 
-    def _zeckendorf_schedule(self, num_nonces: int, seed: int) -> list[int]:
+    def _zeckendorf_schedule(
+        self, num_nonces: int, seed: int, limit: Optional[int] = None
+    ) -> list[int]:
         """Zeckendorf-spaced nonce probe schedule.
 
-        Returns a list of nonce offsets in [0, num_nonces) ordered by
-        Zeckendorf indices of the seed, then by Lucas-Pisot spacing. This is
-        the exact, non-consecutive spacing enforced in silicon by INV-5; it
-        gives the iGPU a deterministic, structure-aware search order instead
-        of a random one.
+        Returns the first ``limit`` offsets (default: the whole space) in
+        [0, num_nonces) ordered by Zeckendorf indices of the seed, then by
+        Lucas-Pisot spacing. This is the exact, non-consecutive spacing
+        enforced in silicon by INV-5; it gives the engine a deterministic,
+        structure-aware search order instead of a random one.
+
+        The Lucas fill runs on the modular recurrence ``L_k mod n`` — the
+        exact residue, without materializing the (astronomically large)
+        Lucas integers for k. That keeps generation O(limit) at any scale.
         """
-        if num_nonces <= 0:
+        count = num_nonces if limit is None else max(0, min(int(limit), num_nonces))
+        if num_nonces <= 0 or count <= 0:
             return []
         # Seed -> Zeckendorf decomposition gives the leading offsets.
         leading = _turing.zeckendorf_encode(abs(seed) % max(num_nonces, 1) or 1)
@@ -252,10 +452,13 @@ class QuantumSimulator:
             if off not in seen:
                 offsets.append(off)
                 seen.add(off)
-        # Lucas-Pisot fill: L_k mod num_nonces for k = 1, 2, ...
+        # Lucas-Pisot fill: L_k mod num_nonces via the exact modular
+        # recurrence — identical residues to lucas(k) % n, O(1) per step.
+        l_prev, l_cur = 2 % num_nonces, 1 % num_nonces  # L_0, L_1
         k = 1
-        while len(offsets) < num_nonces:
-            off = _turing.lucas(k) % num_nonces
+        while len(offsets) < count:
+            off = l_cur
+            l_prev, l_cur = l_cur, (l_prev + l_cur) % num_nonces
             if off not in seen:
                 offsets.append(off)
                 seen.add(off)
@@ -268,9 +471,9 @@ class QuantumSimulator:
             if off not in seen:
                 offsets.append(off)
                 seen.add(off)
-            if len(offsets) >= num_nonces:
+            if len(offsets) >= count:
                 break
-        return offsets[:num_nonces]
+        return offsets[:count]
 
     # -- kernel submission ------------------------------------------------
 
@@ -282,25 +485,50 @@ class QuantumSimulator:
         header: bytes,
         target: bytes,
         initial_winner: int,
+        scale_index: Optional[int] = None,
+        base_nonce: int = 0,
     ) -> int:
-        """Run the exact-quantum-math search kernel.
+        """Run the exact-quantum-math search kernel, Lucas-scaled.
 
-        Returns the winning nonce, or -1 if no nonce in the window meets the
-        target. The accept/reject test is the exact Stratum V1 consensus rule:
-        ``double_sha256(header)`` reversed (little-endian) must be < target.
+        ``scale_index`` selects the Lucas ladder rung (10/12/15/18/20); the
+        engine's search space becomes ``num_nonces * L_n`` (clamped to the
+        32-bit nonce field), Grover's k* is computed over that scaled space,
+        and the Zeckendorf/Lucas schedule covers it. ``base_nonce`` shifts
+        the probed nonces so a caller can bind the kernel to a window
+        ``[base_nonce, base_nonce + scaled_space)``.
+
+        Returns the winning nonce, or -1 if no probed nonce meets the
+        target. The accept/reject test is the exact Stratum V1 consensus
+        rule: ``double_sha256(header)`` reversed (little-endian) < target.
         """
         self.algorithm = algorithm
         self._stats["kernels_submitted"] += 1
         if num_nonces <= 0 or len(header) < 80:
             return -1
 
+        idx = _validate_scale_index(self.scale_index if scale_index is None else scale_index)
+        lucas_value = _turing.lucas(idx)
+        scaled_space = self.scaled_space(num_nonces, idx)
+
         # The header arrives with the nonce field zeroed; the schedule
         # writes each candidate nonce into bytes [76:80] little-endian.
         header_array = bytearray(header)
         chunk1 = bytes(header_array[:76])
 
-        k_star = self._optimal_grover_iterations(num_nonces)
-        schedule = self._zeckendorf_schedule(num_nonces, self.seed)
+        k_star = self._optimal_grover_iterations(scaled_space)
+        # Grover probes only its k* offsets — materializing the whole
+        # scaled space is pointless. The other algorithms sweep the full
+        # scaled window (their budget IS the space).
+        probe_budget = (
+            min(k_star, scaled_space)
+            if algorithm == "grover_amplitude_amplification"
+            else scaled_space
+        )
+        schedule = self._zeckendorf_schedule(scaled_space, self.seed, limit=probe_budget)
+        self._stats["scale_index"] = idx
+        self._stats["lucas_value"] = lucas_value
+        self._stats["scaled_space"] = scaled_space
+        self._stats["probe_budget"] = len(schedule)
 
         # Target is a 32-byte big-endian threshold (consensus order).
         target_be = bytes(target)
@@ -314,12 +542,12 @@ class QuantumSimulator:
                     self._metal_device,
                     msl_source,
                     algorithm,
-                    num_nonces,
+                    scaled_space,
                     bytes(header_array),
                     target_be,
                     initial_winner,
                 )
-                self._stats["nonces_searched"] += num_nonces
+                self._stats["nonces_searched"] += scaled_space
                 if metal_winner is not None and metal_winner >= 0:
                     self._stats["winners_found"] += 1
                     return int(metal_winner)
@@ -334,15 +562,14 @@ class QuantumSimulator:
         # accept test is exact; no probabilistic "quantum advantage" is
         # claimed for the search itself.
         for off in schedule:
-            nonce_bytes = struct.pack("<I", off)
+            nonce = (base_nonce + off) & 0xFFFFFFFF
+            nonce_bytes = struct.pack("<I", nonce)
             h = hashlib.sha256(hashlib.sha256(chunk1 + nonce_bytes).digest()).digest()
             probed += 1
             if h[::-1] < target_be:
-                winner = off
+                winner = nonce
                 break
-            if probed >= k_star and algorithm == "grover_amplitude_amplification":
-                # Grover's iterator is bounded by k_star; if no winner by then
-                # the algorithm reports no amplified result (honest bound).
+            if probed >= len(schedule):
                 break
 
         self._stats["nonces_searched"] += probed
@@ -354,38 +581,37 @@ class QuantumSimulator:
         return dict(self._stats)
 
 
-def create_simulator(device_id: int = 0, seed: Optional[int] = None) -> QuantumSimulator:
-    """Create an exact-math quantum simulator for the given iGPU device."""
-    return QuantumSimulator(device_id=device_id, seed=seed)
+def create_simulator(
+    device_id: int = 0,
+    seed: Optional[int] = None,
+    scale_index: Optional[int] = None,
+) -> QuantumSimulator:
+    """Create an exact-math quantum simulator bound to a real device.
+
+    ``device_id`` indexes the real enumeration (0 = the best device present:
+    the user's GPU when there is one, the container CPU otherwise).
+    ``scale_index`` is the Lucas rung (10/12/15/18/20; default 10 or
+    ``QUANTUM_CUDA_SCALE_INDEX``).
+    """
+    return QuantumSimulator(device_id=device_id, seed=seed, scale_index=scale_index)
 
 
 def device_name(device_id: int = 0) -> str:
-    """Return the human-readable name of the active accelerator device.
+    """Return the human-readable name of a real enumerated device.
 
-    On macOS with Metal available, the name reflects the Metal GPU.
-    On Docker with CUDA available, the name reflects the NVIDIA GPU.
-    On every other platform it names the Turing/iGPU exact-math core.
-
-    Detection is honest — no fabricated backends.
+    An out-of-range ``device_id`` names the best device present — the same
+    binding rule ``create_simulator`` uses. Detection is honest: the string
+    is the vendor-reported device name plus its backend tag, never a
+    fabricated silicon name.
     """
-    if METAL_AVAILABLE:
-        base = _DEVICES.get(device_id, f"Apple Metal device {device_id}")
-        return f"{base} [Metal GPU active]"
-    if CUDA_AVAILABLE:
-        base = _DEVICES.get(4, "Docker GPU (NVIDIA CUDA)")
-        return f"{base} [CUDA active]"
-    if ROCM_AVAILABLE:
-        base = _DEVICES.get(5, "Docker GPU (AMD ROCm)")
-        return f"{base} [ROCm active]"
-    # Docker CPU or Windows/Linux without GPU — Turing exact-math fallback
-    if not _is_macos():
-        return _DEVICES.get(3, "Docker CPU (Turing Q[√5] exact-math)")
-    return _DEVICES.get(device_id, f"Unknown iGPU device {device_id}")
+    devices = _enumerate_devices()
+    dev = devices[device_id] if 0 <= device_id < len(devices) else devices[0]
+    return f"{dev['name']} [{dev['backend']}]"
 
 
 def list_devices() -> Dict[int, str]:
-    """List the available iGPU / Turing devices."""
-    return dict(_DEVICES)
+    """List every compute device actually enumerated on this host."""
+    return {i: f"{dev['name']} [{dev['backend']}]" for i, dev in enumerate(_enumerate_devices())}
 
 
 def submit_kernel(
@@ -396,18 +622,28 @@ def submit_kernel(
     header: bytes,
     target: bytes,
     initial_winner: int,
+    scale_index: Optional[int] = None,
+    base_nonce: int = 0,
 ) -> int:
     """Module-level kernel submission matching the legacy ``quantum_cuda`` API.
 
     ``quantum_metal_integration.QuantumMetalMiner`` calls
     ``quantum_cuda.submit_kernel(self.device, msl, algorithm, ...)``; this
     wrapper delegates to ``simulator.submit_kernel`` so the existing caller
-    works unchanged against the iGPU / Turing core.
+    works unchanged against the iGPU / Turing core. ``scale_index`` and
+    ``base_nonce`` pass straight through to the simulator.
     """
     if simulator is None:
         return -1
     return simulator.submit_kernel(
-        msl_source, algorithm, num_nonces, header, target, initial_winner
+        msl_source,
+        algorithm,
+        num_nonces,
+        header,
+        target,
+        initial_winner,
+        scale_index=scale_index,
+        base_nonce=base_nonce,
     )
 
 
@@ -418,6 +654,10 @@ __all__ = [
     "list_devices",
     "submit_kernel",
     "METAL_AVAILABLE",
+    "CUDA_AVAILABLE",
+    "ROCM_AVAILABLE",
+    "QUANTUM_SCALE_RUNGS",
+    "DEFAULT_SCALE_INDEX",
     "PHI",
     "PSI",
 ]

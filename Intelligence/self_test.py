@@ -268,7 +268,10 @@ def _check_lucas_scales(orchestrator) -> Dict[str, Any]:
         # The ladder must be substrate-validated and monotonic.
         substrate_ok = profile["substrate_validated"]
         monotonic = profile["monotonic"]
-        # Verify exact values are present.
+        # Verify exact values are present: every level equals its exact
+        # Lucas value from the substrate.
+        import turing_core
+
         values = [lv["value"] for lv in profile["levels"]]
         # The declared rungs, valued by an independent recurrence
         # (L_0 = 2, L_1 = 1, L_n = L_(n-1) + L_(n-2)).

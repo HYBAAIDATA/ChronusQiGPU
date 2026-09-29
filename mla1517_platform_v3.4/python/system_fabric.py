@@ -1006,6 +1006,24 @@ def self_repair_status() -> dict[str, Any]:
     }
 
 
+def _repo_engineer_store_dir() -> Path:
+    """Writable home for the repo engineer's store.
+
+    The container runs as uid 10001 with ``PYTHIA_INTELLIGENCE_DIR`` as the
+    provisioned writable root; ``<repo>/data`` is not writable there.
+    ``PYTHIA_REPO_ENGINEER_DIR`` overrides outright; otherwise the store
+    lives under the intelligence dir, falling back to ``<repo>/data`` on
+    developer checkouts where the repo tree is writable.
+    """
+    override = os.getenv("PYTHIA_REPO_ENGINEER_DIR", "").strip()
+    if override:
+        return Path(override)
+    intel = os.getenv("PYTHIA_INTELLIGENCE_DIR", "").strip()
+    if intel:
+        return Path(intel) / "repo_engineer"
+    return _REPO_ROOT / "data" / "repo_engineer"
+
+
 def initialize_repo_engineer() -> None:
     """Load repository context once during API startup without calling a model.
 

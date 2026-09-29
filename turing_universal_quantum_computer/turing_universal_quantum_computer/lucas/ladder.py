@@ -1,16 +1,24 @@
 """Lucas ladder — the canonical scale sequence the mining session climbs.
 
-FULL_LADDER is the ordered list of Lucas indices the orchestrator climbs
-as cumulative coherence (delta_phi) grows: L_10 -> L_12 -> L_15 -> L_18
--> L_20. Values are verified against the exact fast-doubling substrate
-in lucas.core — nothing is hardcoded against a table of expectations.
+FULL_LADDER is the ordered list of Lucas indices the orchestrator climbs:
+the original curriculum prefix plus the restored mining rungs 31, 50 and
+the Pisot collapse index 76. Values are verified against the exact
+fast-doubling substrate in lucas.core — nothing is hardcoded against a
+table of expectations.
 """
 
 from __future__ import annotations
 
 from .core import lucas
 
-FULL_LADDER: list[int] = [10, 12, 15, 18, 20]
+CURRICULUM_RUNGS: tuple[int, ...] = (10, 12, 15, 18, 20)
+
+# The declared mining ladder. A launch/scale index is valid iff it is a rung
+# or a multiple of a rung. This is the single source for scale rungs; algorithm
+# and device layers import it rather than restating the tuple.
+SCALE_RUNGS: tuple[int, ...] = (*CURRICULUM_RUNGS, 31, 50, 76)
+FULL_LADDER: list[int] = list(SCALE_RUNGS)
+PISOT_EXACT_N: int = 76
 
 THEOREM_PROVEN = False
 
