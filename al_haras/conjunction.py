@@ -92,7 +92,11 @@ def guardian_conjunction(*,modes,topologies,intelligences,anomaly,attestation,in
     for label,group in (("mode",modes),("topology",topologies),("intelligence",intelligences)):
         failed=[v.surface_id for v in group if v.status is SurfaceStatus.FAIL]
         if failed: reasons.append(f"{label}_failure:{','.join(failed)}")
-    if not all((integrity.cassini_ok,integrity.zeckendorf_ok,integrity.chain_ok,integrity.lineage_ok)): reasons.append("integrity_failure")
+    integrity_failed=not all((integrity.cassini_ok,integrity.zeckendorf_ok,integrity.chain_ok,integrity.lineage_ok))
+    if integrity_failed: reasons.append("integrity_failure")
+    # Integrity failure is isolated from ordinary policy/surface denial because
+    # the associated object and principal require containment and investigation.
+    if integrity_failed: return _signed(OverallStatus.QUARANTINE,modes,topologies,intelligences,anomaly,attestation,integrity,reasons,signing_key)
     if reasons: return _signed(OverallStatus.DENY,modes,topologies,intelligences,anomaly,attestation,integrity,reasons,signing_key)
     if anomaly.active and anomaly.severity.upper() in {"HIGH","CRITICAL"}: reasons.append("anomaly_high")
     if not (attestation.measured and attestation.signed): reasons.append("attestation_unmeasured")

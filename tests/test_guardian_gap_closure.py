@@ -18,6 +18,8 @@ class Tests(unittest.TestCase):
   broken=list(passed(TOPOLOGY_IDS)); broken[0]=SurfaceVerdict(TOPOLOGY_IDS[0],SurfaceStatus.FAIL)
   deny=guardian_conjunction(modes=passed(MODE_IDS),topologies=broken,intelligences=passed(INTELLIGENCE_IDS),anomaly=AnomalyState(),attestation=AttestationState("c","d",True,True),integrity=IntegrityState(True,True,True,True),signing_key=KEY)
   self.assertEqual(deny.overall,OverallStatus.DENY)
+  quarantine=guardian_conjunction(modes=passed(MODE_IDS),topologies=passed(TOPOLOGY_IDS),intelligences=passed(INTELLIGENCE_IDS),anomaly=AnomalyState(),attestation=AttestationState("c","d",True,True),integrity=IntegrityState(False,True,True,True),signing_key=KEY)
+  self.assertEqual(quarantine.overall,OverallStatus.QUARANTINE)
  def test_unknown_degrades(self):
   intel=list(passed(INTELLIGENCE_IDS)); intel[-1]=SurfaceVerdict(INTELLIGENCE_IDS[-1],SurfaceStatus.UNAVAILABLE)
   v=guardian_conjunction(modes=passed(MODE_IDS),topologies=passed(TOPOLOGY_IDS),intelligences=intel,anomaly=AnomalyState(),attestation=AttestationState("c","d",True,True),integrity=IntegrityState(True,True,True,True),signing_key=KEY)
