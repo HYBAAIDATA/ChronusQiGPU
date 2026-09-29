@@ -43,6 +43,11 @@ class AutonomousSupervisor:
         self._supervisor: Any = None
         self._optimiser: Any = None
         self._measure_fn: Optional[Callable[[], Any]] = None
+        self._cuop_status: dict[str, Any] = {
+            "available": False,
+            "evidence_class": "Unavailable",
+            "reason": "not_measured",
+        }
 
     # ------------------------------------------------------------------
     # Wiring
@@ -53,7 +58,7 @@ class AutonomousSupervisor:
             return
         try:
             from Intelligence.autonomous_capabilities import (
-                AutonomousCapabilitySupervisor,
+                AutonomySupervisor,
                 CassiniCycleLedger,
                 CuopLearner,
                 CuopMeter,
@@ -65,7 +70,7 @@ class AutonomousSupervisor:
             return
 
         ledger = CassiniCycleLedger()
-        supervisor = AutonomousCapabilitySupervisor(engine=None, ledger=ledger)
+        supervisor = AutonomySupervisor(engine=None, ledger=ledger)
 
         # Register a subsystem probe for the local control plane.
         def control_plane_probe() -> str:
@@ -105,24 +110,41 @@ class AutonomousSupervisor:
         meter = CuopMeter(usd_per_kwh=float(os.getenv("PYTHIA_CUOP_USD_KWH", "0.10")))
 
         def measure_cuop() -> Any:
-            """Approximate CUOP from live telemetry counters."""
+            """Return measured CUOP, or ``None`` with explicit unavailable evidence."""
             try:
                 import control_api as _ca
 
-                control = _ca._control_plane()
-                total_hashes = sum(
-                    float(r.hashrate or 0.0) * self.interval_s for r in control.records()
-                )
-                # Approximate GPU power for an iGPU laptop; operator can override.
-                power_w = float(os.getenv("PYTHIA_CUOP_POWER_W", "15.0"))
-                return meter.measure(
-                    useful_ops=max(1.0, total_hashes),
+                power_raw = os.getenv("PYTHIA_CUOP_POWER_W")
+                if not power_raw:
+                    raise RuntimeError("power_telemetry_unavailable")
+                power_w = float(power_raw)
+                if power_w <= 0.0:
+                    raise RuntimeError("power_telemetry_invalid")
+                records = list(_ca._control_plane().records())
+                measured_rates = [float(r.hashrate) for r in records if r.hashrate is not None]
+                if not measured_rates:
+                    raise RuntimeError("hashrate_telemetry_unavailable")
+                reading = meter.measure(
+                    useful_ops=sum(measured_rates) * self.interval_s,
                     mean_power_w=power_w,
                     window_s=self.interval_s,
                 )
+                self._cuop_status = {
+                    "available": True,
+                    "evidence_class": "Measured",
+                    "reason": None,
+                    "reading": reading.to_dict(),
+                }
+                return reading
             except Exception as exc:
-                logger.debug("measure_cuop failed: %s", exc)
-                return meter.measure(useful_ops=1.0, mean_power_w=1.0, window_s=1.0)
+                reason = str(exc) or type(exc).__name__
+                self._cuop_status = {
+                    "available": False,
+                    "evidence_class": "Unavailable",
+                    "reason": reason,
+                }
+                logger.info("CUOP unavailable: %s", reason)
+                return None
 
         def get_window() -> float:
             try:
@@ -155,8 +177,21 @@ class AutonomousSupervisor:
             rel_step=0.25,
         )
         optimiser = SelfOptimisingLoop(meter=meter, learners=[learner], ledger=ledger)
-        optimiser.measure_baseline(measure_cuop)
-        supervisor.attach_optimiser(optimiser, measure_cuop)
+        baseline = measure_cuop()
+        if baseline is not None:
+            optimiser.measure_baseline(lambda: baseline)
+            supervisor.attach_optimiser(optimiser, measure_cuop)
+        else:
+            ledger.log(
+                "supervision",
+                {
+                    "trigger": "cuop_unavailable",
+                    "action": "optimiser_not_attached",
+                    "reason": self._cuop_status["reason"],
+                    "evidence_class": "Unavailable",
+                    "theorem_proven": False,
+                },
+            )
         self._supervisor = supervisor
         self._optimiser = optimiser
         self._measure_fn = measure_cuop
@@ -226,6 +261,7 @@ class AutonomousSupervisor:
                 "cycle_count": self._cycle_count,
                 "started_at": self._started_at,
                 "last_result": self._last_result,
+                "cuop": dict(self._cuop_status),
                 "supervisor": supervisor_status,
             }
 
