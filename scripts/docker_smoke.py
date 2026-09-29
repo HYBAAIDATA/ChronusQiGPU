@@ -191,6 +191,10 @@ class Smoke:
     def teardown(self) -> None:
         with open(self.out / "container.log", "w", encoding="utf-8") as fh:
             subprocess.run(["docker", "logs", CONTAINER], stdout=fh, stderr=subprocess.STDOUT)
+        subprocess.run(
+            ["docker", "exec", "-u", "0", CONTAINER, "chmod", "-R", "a+rX", "/var/lib/pythia"],
+            capture_output=True,
+        )
         subprocess.run(["docker", "rm", "-f", CONTAINER], capture_output=True)
         for proc in self.procs:
             proc.send_signal(signal.SIGINT)
