@@ -481,13 +481,17 @@ class ExecutionRouter:
             )
 
         requested_order = self._nonce_order(plan)
-        # Hendrix runs only where it is implemented (the CPU reference); the
-        # schedule is resolved before any work so an unavailable package fails
-        # loudly instead of degrading to another order.
+        # Hendrix runs where it is implemented: the CPU reference, and an
+        # OpenCL M32 route whose program carries the bitcoin_sha256d_hendrix
+        # kernel. The schedule is resolved before any work so an unavailable
+        # package fails loudly instead of degrading to another order.
+        on_device = decision.executed_route is ExecutionRoute.opencl_m32 and bool(
+            getattr(self._hasher, "hendrix_on_device", False)
+        )
         schedule = (
             hendrix_schedule(plan.window)
             if requested_order == NONCE_ORDER_HENDRIX
-            and decision.executed_route is ExecutionRoute.cpu_reference
+            and (decision.executed_route is ExecutionRoute.cpu_reference or on_device)
             and plan.window > 0
             else None
         )
@@ -514,7 +518,18 @@ class ExecutionRouter:
             if is_still_fresh is not None and not is_still_fresh():
                 invalidated_midway = True
                 break
-            if schedule is not None:
+            if schedule is not None and on_device:
+                position = (chunk.start - plan.base_step) & 0xFFFFFFFF
+                nonce, digest, done = self._hasher.grind_target_hendrix(
+                    header,
+                    bytes(target)[::-1],
+                    plan.base_step,
+                    plan.window,
+                    schedule.stride,
+                    position,
+                    chunk.count,
+                )
+            elif schedule is not None:
                 position = (chunk.start - plan.base_step) & 0xFFFFFFFF
                 nonce, digest, done = self._cpu_nonces(
                     header,
@@ -697,6 +712,7 @@ class ExecutionRouter:
         if (
             requested_order == NONCE_ORDER_HENDRIX
             and decision.executed_route is ExecutionRoute.opencl_m32
+            and not getattr(self._hasher, "hendrix_on_device", False)
         ):
             executed_order = NONCE_ORDER_M32
         record = ExecutionRecord(

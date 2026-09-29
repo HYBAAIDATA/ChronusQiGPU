@@ -126,6 +126,27 @@ def test_device_m32_window_is_recorded_as_m32_not_hendrix():
     assert rec.executed_nonce_order == NONCE_ORDER_M32
 
 
+def test_a_device_with_the_hendrix_kernel_runs_hendrix_itself():
+    hasher = RecordingHasher()
+    hasher.hendrix_on_device = True
+    runs: list = []
+
+    def grind_target_hendrix(header, target_be, base, window, stride, position, count):
+        runs.append((base, window, stride, position, count))
+        return None, None, count
+
+    hasher.grind_target_hendrix = grind_target_hendrix
+    plan, lease = _leased("opencl_m32", 96, base=4096)
+    rec, _ = _hendrix_router(hasher).execute_plan(plan, HEADER, bytes(32), lease=lease)
+    stride = hendrix_schedule(96).stride
+    positions = [(r[3], r[4]) for r in runs]
+    assert all(r[:3] == (4096, 96, stride) for r in runs) and hasher.calls == []
+    assert positions[0][0] == 0 and sum(c for _, c in positions) == 96
+    assert all(a + n == b for (a, n), (b, _) in zip(positions, positions[1:]))
+    assert rec.executed_route == "opencl_m32"
+    assert rec.executed_nonce_order == NONCE_ORDER_HENDRIX
+
+
 def test_device_range_window_is_recorded_as_sequential():
     plan, lease = _leased("opencl_range", 96, base=4096)
     rec, _ = _hendrix_router(RecordingHasher()).execute_plan(plan, HEADER, bytes(32), lease=lease)
