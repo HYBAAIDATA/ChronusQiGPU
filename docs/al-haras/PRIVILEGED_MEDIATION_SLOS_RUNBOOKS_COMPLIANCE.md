@@ -4,7 +4,7 @@
 
 The audit now discovers concrete FastAPI decorators and table-driven `BaseHTTPRequestHandler` routes while excluding tests, artifacts, legacy trees, and policy constants. FastAPI security routes perform Guardian evaluation and return a Guardian receipt. Miner mining/security/TOE routes execute fail-closed Guardian preflight before handler dispatch; successful responses attach the receipt and append only its hash to the audit log.
 
-Local result with both adapters present: 13 privileged routes discovered, 0 violations. A signed HMAC mediation manifest is emitted when `MEDIATION_MANIFEST_KEY` is configured; otherwise the manifest is content-hashed and explicitly marked `UNSIGNED`. Unsigned route coverage can unblock the static audit but cannot satisfy independent evidence/promotion requirements.
+Local result with both adapters present: 13 privileged routes discovered, 0 violations. A signed HMAC mediation manifest is emitted when `MEDIATION_MANIFEST_KEY` is configured. If the key is absent, the manifest is marked `UNSIGNED` and the gate fails; unsigned mediation evidence cannot promote.
 
 ## Observability and SLOs
 

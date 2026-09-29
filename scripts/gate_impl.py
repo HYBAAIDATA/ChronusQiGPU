@@ -61,8 +61,8 @@ def privileged(root):
  report=manifest(routes,violations,key);artifact=root/'results'/'mediation_manifest.json';artifact.parent.mkdir(exist_ok=True);artifact.write_text(json.dumps(report,sort_keys=True,indent=2))
  if not privileged_routes:return Outcome(Status.FAIL,"no privileged routes discovered; route inventory is incomplete",(str(artifact),))
  reason=f"{len(violations)} violation(s) across {len(privileged_routes)} privileged route(s)"
- if not key:reason+="; manifest is content-hashed but unsigned"
- return Outcome(Status.FAIL if violations else Status.PASS,reason,(str(artifact),))
+ if not key:reason+="; MEDIATION_MANIFEST_KEY is absent and unsigned mediation evidence cannot promote"
+ return Outcome(Status.FAIL if violations or not key else Status.PASS,reason,(str(artifact),))
 GATES={'promotion-manifest':promotion,'schema-freeze':schema,'envelope-verify':envelope,'claim-register':claims,'import-audit':imports,'rule7-no-float':no_float,'abi-check':abi,'refuted-claims':refuted,'conformance-vectors':conformance,'resilience-suite':resilience,'privileged-path-audit':privileged}
 def main(name,root='.'):
  result=run(name,GATES[name],Path(root).resolve());print(json.dumps({'gate':result.gate,'status':result.status.value,'reason':result.reason}));return 0 if result.status in {Status.PASS,Status.SKIP} else 1
