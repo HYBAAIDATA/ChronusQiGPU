@@ -730,7 +730,7 @@ _LUCAS_KERNEL_NAMES = frozenset({
 _SUBSTRATE_SOURCES = frozenset({
     "lucas", "lucas.core", "lucas.ladder", "lucas.fold", "lucas.algebra",
     "turing_core", "pythia_turing_math",
-    "mla1517.core",
+    "mla1517.core", "mla1517.fibonacci_store",
     "kellogg.scales",
     "hyba.operating_model.lemma",
 })
