@@ -1,8 +1,9 @@
 """Frozen logical 11-axis schema and distinct 64-byte transport ABI."""
 
 from __future__ import annotations
-from dataclasses import dataclass
+
 import struct
+from dataclasses import dataclass
 
 CANONICAL_VERSION = 1
 _HOT = struct.Struct("<Q14I")

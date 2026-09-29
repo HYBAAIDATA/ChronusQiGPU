@@ -1,10 +1,15 @@
 """Composable industry and assurance pack contracts."""
 
 from __future__ import annotations
-from dataclasses import dataclass, field
-from enum import Enum
+
 import time
-from typing import Any, Callable, Iterable, Mapping
+from dataclasses import dataclass
+from dataclasses import field
+from enum import Enum
+from typing import Any
+from typing import Callable
+from typing import Iterable
+from typing import Mapping
 
 
 class PackType(str, Enum):

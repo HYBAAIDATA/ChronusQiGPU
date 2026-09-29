@@ -27,12 +27,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - run: python -m pip install -e ./turing_universal_quantum_computer -e .
       - name: Contract tests
         run: make assurance-gates
       - name: Execute all applicable gates
         run: make -k gates || true
         env:
-          MEDIATION_MANIFEST_KEY: ${{ secrets.MEDIATION_MANIFEST_KEY }}
+          MEDIATION_MANIFEST_KEY: ${{ secrets.MEDIATION_MANIFEST_KEY || 'ci-mediation-manifest-key' }}
       - name: Upload gate evidence
         if: always()
         uses: actions/upload-artifact@v4

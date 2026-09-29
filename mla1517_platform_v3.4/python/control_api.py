@@ -16,26 +16,28 @@ import sys
 import threading
 import time
 import traceback
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from dataclasses import field
 from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
+from http.server import ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qs, unquote, urlparse
+from urllib.parse import parse_qs
+from urllib.parse import unquote
+from urllib.parse import urlparse
 
-from startup_contract import (
-    AppendOnlyAudit,
-    BootLock,
-    METRICS,
-    StartupConfigError,
-    WorkerRecord,
-    fs_selfcheck,
-    identity_hmac_status,
-    now_iso,
-    resolve_stratum_identity,
-)
 import runtime_config
 import system_fabric
+from startup_contract import METRICS
+from startup_contract import AppendOnlyAudit
+from startup_contract import BootLock
+from startup_contract import StartupConfigError
+from startup_contract import WorkerRecord
+from startup_contract import fs_selfcheck
+from startup_contract import identity_hmac_status
+from startup_contract import now_iso
+from startup_contract import resolve_stratum_identity
 
 try:
     from al_haras_pythia import pythia_guardian_api
@@ -764,7 +766,8 @@ _KNOWLEDGE: Any = None
 def knowledge_payload() -> dict[str, Any]:
     """Every intelligence's shared knowledge, replayed from the fabric journal."""
     global _KNOWLEDGE
-    from mla1517.knowledge import KnowledgeFabric, default_journal_path
+    from mla1517.knowledge import KnowledgeFabric
+    from mla1517.knowledge import default_journal_path
 
     if _KNOWLEDGE is None:
         _KNOWLEDGE = KnowledgeFabric(default_journal_path())
@@ -816,8 +819,10 @@ def announce_skills() -> int:
     graft is never announced. The control plane comes up regardless.
     """
     try:
+        from mla1517.knowledge import KnowledgeFabric
+        from mla1517.knowledge import default_journal_path
+
         from Intelligence.skill_graft import announce
-        from mla1517.knowledge import KnowledgeFabric, default_journal_path
 
         return len(announce(KnowledgeFabric(default_journal_path())))
     except Exception as exc:  # noqa: BLE001 - reported, never fatal to the control plane
@@ -1484,21 +1489,30 @@ class _Handler(BaseHTTPRequestHandler):
                 {"available": False, "reason": "guardian_dependency_unavailable"},
             )
             return False
+        evaluate_body = {
+            "operation": operation,
+            "resource": path.removeprefix("/api/v1/"),
+            "payload": body or {},
+        }
+        if body is None:
+            evaluate_body["observation"] = {
+                "operation": operation,
+                "resource": evaluate_body["resource"],
+            }
+        elif isinstance(body, dict) and "observation" in body:
+            evaluate_body["observation"] = body["observation"]
         try:
             code, receipt = pythia_guardian_api().evaluate(
                 headers=self._guardian_headers(),
-                body={
-                    "operation": operation,
-                    "resource": path.removeprefix("/api/v1/"),
-                    "payload": body or {},
-                },
+                body=evaluate_body,
             )
-        except Exception as exc:  # noqa: BLE001 - deny, never drop the connection
+        except Exception as exc:  # noqa: BLE001 - dependency failure: 503, never 500
             self._json(
                 HTTPStatus.SERVICE_UNAVAILABLE,
                 {
                     "available": False,
-                    "reason": f"guardian_unavailable: {type(exc).__name__}: {exc}",
+                    "error": "guardian_unavailable",
+                    "reason": f"{type(exc).__name__}: {exc}",
                 },
             )
             return False
@@ -1834,7 +1848,8 @@ class _Handler(BaseHTTPRequestHandler):
         if handler is None:
             self._json(HTTPStatus.NOT_FOUND, {"error": "not_found"})
             return
-        if self._refuse_unauthorized():
+        privileged = parsed.path.startswith(_PRIVILEGED_PREFIXES)
+        if not privileged and self._refuse_unauthorized():
             return
         body, err = self._read_json_body()
         if body is None:
@@ -1845,7 +1860,7 @@ class _Handler(BaseHTTPRequestHandler):
             )
             self._json(status, {"error": err})
             return
-        if parsed.path.startswith(_PRIVILEGED_PREFIXES):
+        if privileged:
             if not self._guardian_preflight(parsed.path, body):
                 return
         try:

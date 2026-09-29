@@ -1,8 +1,15 @@
-from .compiler import compile_assembly, verify_lock
-from .gates import assert_promotion, evaluate
-from .model import AssemblyIntent, GateStatus, ModuleEvidence, SpeedClass, Tier
+from .compiler import compile_assembly
+from .compiler import verify_lock
+from .gates import assert_promotion
+from .gates import evaluate
+from .model import AssemblyIntent
+from .model import GateStatus
+from .model import ModuleEvidence
+from .model import SpeedClass
+from .model import Tier
 from .profiles import PROFILES
-from .tiers import TIER_POLICY, authorize_placement
+from .tiers import TIER_POLICY
+from .tiers import authorize_placement
 
 __all__ = [
     "AssemblyIntent",

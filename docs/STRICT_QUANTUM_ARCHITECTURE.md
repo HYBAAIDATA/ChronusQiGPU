@@ -18,7 +18,6 @@ fallback is used. Unsupported Hamiltonian exponentials continue to fail
 closed with `NotImplementedError`, and state-vector resource bounds continue
 to fail closed rather than degrade.
 
-These tests certify algebraic invariants only. They do not license or
-establish claims of physical quantum hardware, quantum advantage, or
-unclaimed exponential speedup, accepted pool shares, or measured iGPU
-throughput.
+These tests certify algebraic invariants only. Physical quantum hardware,
+quantum advantage, accepted pool shares, measured iGPU throughput, and
+exponential speedup all remain unclaimed.

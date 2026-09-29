@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+
 import argparse
 import json
 import os
 from pathlib import Path
-from hyba_profiles import AssemblyIntent, ModuleEvidence, Tier, compile_assembly
+
+from hyba_profiles import AssemblyIntent
+from hyba_profiles import ModuleEvidence
+from hyba_profiles import Tier
+from hyba_profiles import compile_assembly
 
 
 def main():

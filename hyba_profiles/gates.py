@@ -1,5 +1,9 @@
 from __future__ import annotations
-from .model import AssemblyIntent, GateCheck, GateReport, GateStatus
+
+from .model import AssemblyIntent
+from .model import GateCheck
+from .model import GateReport
+from .model import GateStatus
 from .profiles import PROFILES
 
 

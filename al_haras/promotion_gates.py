@@ -1,9 +1,11 @@
 """Evidence-gated subsystem promotion with explicit claim boundaries."""
 
 from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Iterable, Mapping
+from typing import Iterable
+from typing import Mapping
 
 
 class PromotionState(IntEnum):

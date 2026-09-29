@@ -1,12 +1,15 @@
 """Fail-closed Guardian conjunction over measured evidence surfaces."""
 
 from __future__ import annotations
-from dataclasses import asdict, dataclass
-from enum import Enum
+
 import hashlib
 import hmac
 import json
-from typing import Any, Mapping
+from dataclasses import asdict
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any
+from typing import Mapping
 
 
 class SurfaceStatus(str, Enum):

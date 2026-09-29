@@ -1,13 +1,22 @@
 """Offline-verifiable compliance evidence pack assembly."""
 
 from __future__ import annotations
-from dataclasses import asdict, dataclass
+
 import hashlib
 import json
 import uuid
+from dataclasses import asdict
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Iterable, Mapping
-from hyba_contracts import AssurancePack, PackManifest, compose, emit_gap_report
+from typing import Any
+from typing import Callable
+from typing import Iterable
+from typing import Mapping
+
+from hyba_contracts import AssurancePack
+from hyba_contracts import PackManifest
+from hyba_contracts import compose
+from hyba_contracts import emit_gap_report
 
 
 @dataclass(frozen=True)

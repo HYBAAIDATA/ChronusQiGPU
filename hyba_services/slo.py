@@ -1,6 +1,7 @@
 """Profile-bound SLOs, dashboard models, and alert-rule rendering."""
 
 from __future__ import annotations
+
 from dataclasses import dataclass
 
 

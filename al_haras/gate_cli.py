@@ -1,10 +1,13 @@
 """CLI for evaluating a repository's declared subsystem promotion states."""
 
 from __future__ import annotations
+
 import argparse
 import json
 from pathlib import Path
-from .promotion_gates import PromotionState, evaluate_gate
+
+from .promotion_gates import PromotionState
+from .promotion_gates import evaluate_gate
 
 
 def evaluate_manifest(data: dict) -> dict:

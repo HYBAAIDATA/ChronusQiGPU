@@ -1,10 +1,13 @@
 """Provider-neutral sovereign entitlement verification boundary."""
 
 from __future__ import annotations
-from dataclasses import asdict, dataclass
+
 import json
 import time
-from typing import Callable, Iterable
+from dataclasses import asdict
+from dataclasses import dataclass
+from typing import Callable
+from typing import Iterable
 
 
 class SovereignEntitlementError(PermissionError):

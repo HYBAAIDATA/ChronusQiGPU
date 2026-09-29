@@ -1,8 +1,10 @@
 """Route markers and fail-closed Guardian preflight/evidence helpers."""
 
 from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any
+from typing import Mapping
 
 
 @dataclass(frozen=True)

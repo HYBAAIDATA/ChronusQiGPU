@@ -1,10 +1,12 @@
 """Uniform file-backed gate result library."""
 
 from __future__ import annotations
-from dataclasses import asdict, dataclass
-from enum import Enum
+
 import json
 import time
+from dataclasses import asdict
+from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from typing import Callable
 

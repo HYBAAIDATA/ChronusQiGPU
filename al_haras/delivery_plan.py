@@ -1,7 +1,8 @@
 """Evidence-gated §63 sprint and release-train definitions."""
 
 from dataclasses import dataclass
-from typing import Callable, Mapping
+from typing import Callable
+from typing import Mapping
 
 
 @dataclass(frozen=True)

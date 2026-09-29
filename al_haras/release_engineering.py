@@ -1,9 +1,11 @@
 """Release tagging, pinning, checksum and upgrade policy."""
 
 from __future__ import annotations
+
 import hashlib
 import re
 from pathlib import Path
+
 from .promotion_pipeline import PromotionRejected
 
 TAG = re.compile(r"^v(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$")

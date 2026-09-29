@@ -1,10 +1,17 @@
 """Fold/operator registries and evidence-bearing execution."""
 
 from __future__ import annotations
+
 import time
 import uuid
-from typing import Any, Callable, Mapping
-from hyba_contracts import FoldContract, FoldMode, OperatorContract, ResultReceipt
+from typing import Any
+from typing import Callable
+from typing import Mapping
+
+from hyba_contracts import FoldContract
+from hyba_contracts import FoldMode
+from hyba_contracts import OperatorContract
+from hyba_contracts import ResultReceipt
 
 
 class UnsupportedPairing(ValueError):

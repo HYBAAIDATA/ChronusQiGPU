@@ -1,10 +1,13 @@
 """Core semantic-version, schema migration, ABI and compatibility contracts."""
 
 from __future__ import annotations
+
+import struct
 from dataclasses import dataclass
 from enum import Enum
-import struct
-from typing import Any, Callable, Mapping
+from typing import Any
+from typing import Callable
+from typing import Mapping
 
 
 class ChangeLevel(str, Enum):

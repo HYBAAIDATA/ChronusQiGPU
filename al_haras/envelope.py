@@ -1,12 +1,16 @@
 """Evidence-bound result envelope; operational metrics remain measured-only."""
 
 from __future__ import annotations
-from dataclasses import asdict, dataclass, replace
-from enum import Enum
+
 import hashlib
 import hmac
 import json
-from typing import Any, Callable
+from dataclasses import asdict
+from dataclasses import dataclass
+from dataclasses import replace
+from enum import Enum
+from typing import Any
+from typing import Callable
 
 
 class FoldMode(str, Enum):

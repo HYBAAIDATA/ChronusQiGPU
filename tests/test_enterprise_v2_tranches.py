@@ -1,14 +1,20 @@
+import os
 import tempfile
 import unittest
 from pathlib import Path
-from hyba_contracts import *
-from hyba_services.core import *
-from hyba_services.platform import *
-from al_haras.extraction import route_path, STAGES
-from al_haras.environment_boundary import *
-from al_haras.core_api import import_audit, PrivateImport
-from al_haras.delivery_plan import SPRINTS, RELEASE_TRAINS, run_sprint
+
+from al_haras.core_api import PrivateImport
+from al_haras.core_api import import_audit
+from al_haras.delivery_plan import RELEASE_TRAINS
+from al_haras.delivery_plan import SPRINTS
+from al_haras.delivery_plan import run_sprint
+from al_haras.environment_boundary import FailureClass, classify_failure
+from al_haras.extraction import STAGES
+from al_haras.extraction import route_path
 from al_haras.gate_runner import run_gates
+from hyba_contracts import BackendCertificate, BackendClass, EnterprisePolicyContext, FoldContract
+from hyba_services.core import LineageStore, ObjectService, PolicyService, ProofService
+from hyba_services.platform import ModelRegistry, Path, PromotionBlocked
 
 
 class Math:
@@ -75,8 +81,9 @@ BACKEND = BackendCertificate(
 
 class Tests(unittest.TestCase):
     def test_prime_object_policy_and_lineage(self):
-        with tempfile.TemporaryDirectory() as d:
-            lineage = LineageStore(f"{d}/lineage.db", b"l" * 32)
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            self.addCleanup(os.unlink, f.name)
+            lineage = LineageStore(f.name, b"l" * 32)
             service = ObjectService(Math(), {"fibonacci": FOLD}, lineage.head)
             obj = service.create({"x": 1}, "fibonacci", 8, "t", "i")
             obj.validate()

@@ -1,6 +1,7 @@
 """Static guard for accidental floating-point use in declared exact paths."""
 
 from __future__ import annotations
+
 import ast
 import re
 from pathlib import Path

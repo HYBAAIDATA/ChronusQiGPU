@@ -1,5 +1,8 @@
 from __future__ import annotations
-from .model import SpeedClass, Tier, TierPolicy
+
+from .model import SpeedClass
+from .model import Tier
+from .model import TierPolicy
 
 TIER_POLICY = {
     Tier.T0: TierPolicy(Tier.T0, SpeedClass.S0, True, False, True),

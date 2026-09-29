@@ -1,12 +1,16 @@
 """Commit-bound promotion and separation-of-duties contracts."""
 
 from __future__ import annotations
-from dataclasses import asdict, dataclass
+
 import hashlib
 import hmac
 import json
 import time
-from typing import Iterable, Mapping
+from dataclasses import asdict
+from dataclasses import dataclass
+from typing import Iterable
+from typing import Mapping
+
 from .promotion_gates import PromotionState
 
 ROLE_REQUIREMENTS = {

@@ -1,13 +1,27 @@
+import os
 import tempfile
 import unittest
 from dataclasses import replace
 from pathlib import Path
-from al_haras.promotion_gates import *
-from al_haras.envelope import *
-from al_haras.claim_register import *
-from al_haras.refuted_claims import *
-from al_haras.no_float_guard import scan_paths, FloatForbidden
-from al_haras.conformance import Backend, run_all_backends, BackendDivergence
+
+from al_haras.claim_register import Claim
+from al_haras.claim_register import ClaimRegister
+from al_haras.claim_register import ClaimRejected
+from al_haras.claim_register import ClaimStatus
+from al_haras.conformance import Backend
+from al_haras.conformance import BackendDivergence
+from al_haras.conformance import run_all_backends
+from al_haras.envelope import FoldMode
+from al_haras.envelope import build_envelope
+from al_haras.envelope import replace
+from al_haras.envelope import verify_envelope
+from al_haras.no_float_guard import FloatForbidden
+from al_haras.no_float_guard import scan_paths
+from al_haras.promotion_gates import DEFINITIONS
+from al_haras.promotion_gates import PromotionState
+from al_haras.promotion_gates import evaluate_gate
+from al_haras.refuted_claims import ClaimRefuted
+from al_haras.refuted_claims import assert_claims
 
 KEY = b"e" * 32
 
@@ -80,8 +94,9 @@ class PromotionEvidenceTests(unittest.TestCase):
             envelope(fold_mode=FoldMode.REHYDRATE, rehydration_count=0)
 
     def test_claim_register_requires_evidence_and_review(self):
-        with tempfile.TemporaryDirectory() as d:
-            reg = ClaimRegister(f"{d}/claims.db", lambda eid: eid == "env-ok")
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            self.addCleanup(os.unlink, f.name)
+            reg = ClaimRegister(f.name, lambda eid: eid == "env-ok")
             with self.assertRaises(ClaimRejected):
                 reg.register(Claim("c", "claim", ClaimStatus.VERIFIED, (), "owner"))
             reg.register(Claim("c", "claim", ClaimStatus.VERIFIED, ("env-ok",), "owner"))

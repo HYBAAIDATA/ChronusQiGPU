@@ -2,19 +2,18 @@
 
 from __future__ import annotations
 
-
+from .mediation_runtime import attach_receipt
+from .mediation_runtime import evaluate_guardian
+from .mediation_runtime import evidence_attach
+from .mediation_runtime import guardian_middleware
 from .runtime import GuardianAPI
-from .mediation_runtime import (
-    attach_receipt,
-    evidence_attach,
-    evaluate_guardian,
-    guardian_middleware,
-)
 
 
 def create_router(api: GuardianAPI):
     try:
-        from fastapi import APIRouter, Header, Request
+        from fastapi import APIRouter
+        from fastapi import Header
+        from fastapi import Request
         from fastapi.responses import JSONResponse
     except ImportError as exc:
         raise RuntimeError("FastAPI is required for the AL HARAS router") from exc

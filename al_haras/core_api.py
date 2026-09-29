@@ -1,6 +1,7 @@
 """Declared mla1517-core public API and import-audit helper."""
 
 from __future__ import annotations
+
 import ast
 from pathlib import Path
 
@@ -121,7 +122,7 @@ class PrivateImport(ValueError):
 
 
 def audit_file(path: Path) -> None:
-    tree = ast.parse(path.read_text(), filename=str(path))
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     for node in ast.walk(tree):
         if (
             isinstance(node, ast.ImportFrom)

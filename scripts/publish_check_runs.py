@@ -32,6 +32,8 @@ def main():
             r = json.loads(path.read_text())
         except Exception:
             continue
+        if not isinstance(r, dict):
+            continue
         if {"gate", "status", "reason"} <= r.keys():
             results.append(r)
     if not results:

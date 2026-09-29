@@ -1,10 +1,14 @@
 from __future__ import annotations
+
 import json
-import tempfile
 import sys
-from pathlib import Path
+import tempfile
 from dataclasses import replace
-from gate_runner import Outcome, Status, run
+from pathlib import Path
+
+from gate_runner import Outcome
+from gate_runner import Status
+from gate_runner import run
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -24,7 +28,8 @@ def promotion(root):
 
 def schema(root):
     from al_haras.schema import HotDescriptorV1
-    from hyba_contracts import HOT_DESCRIPTOR_V1, SCHEMA_VERSION
+    from hyba_contracts import HOT_DESCRIPTOR_V1
+    from hyba_contracts import SCHEMA_VERSION
 
     ok = (
         len(HotDescriptorV1(*range(1, 13)).pack()) == HOT_DESCRIPTOR_V1.size == 64
@@ -34,7 +39,9 @@ def schema(root):
 
 
 def envelope(root):
-    from al_haras.envelope import FoldMode, build_envelope, verify_envelope
+    from al_haras.envelope import FoldMode
+    from al_haras.envelope import build_envelope
+    from al_haras.envelope import verify_envelope
 
     key = b"e" * 32
     values = dict(
@@ -76,7 +83,10 @@ def envelope(root):
 
 
 def claims(root):
-    from al_haras.claim_register import Claim, ClaimRegister, ClaimStatus, ClaimRejected
+    from al_haras.claim_register import Claim
+    from al_haras.claim_register import ClaimRegister
+    from al_haras.claim_register import ClaimRejected
+    from al_haras.claim_register import ClaimStatus
 
     with tempfile.TemporaryDirectory() as d:
         reg = ClaimRegister(str(Path(d) / "claims.db"), lambda x: x == "e")
@@ -104,7 +114,8 @@ def imports(root):
 
 
 def no_float(root):
-    from al_haras.no_float_guard import scan_paths, FloatForbidden
+    from al_haras.no_float_guard import FloatForbidden
+    from al_haras.no_float_guard import scan_paths
 
     candidates = []
     for pattern in (
@@ -192,8 +203,10 @@ def resilience(root):
 
 
 def privileged(root):
-    from al_haras.privileged_audit import audit, manifest
     import os
+
+    from al_haras.privileged_audit import audit
+    from al_haras.privileged_audit import manifest
 
     routes, violations = audit(root)
     privileged_routes = [

@@ -1,21 +1,25 @@
 """Canonical object, policy, lineage and proof reference services."""
 
 from __future__ import annotations
-from dataclasses import dataclass, replace
+
 import hashlib
 import hmac
 import json
 import sqlite3
 import time
 import uuid
-from typing import Any, Callable, Mapping, Protocol
-from hyba_contracts import (
-    BackendCertificate,
-    EnterprisePolicyContext,
-    FoldContract,
-    PRIMEObjectV2,
-    canonical_hash,
-)
+from dataclasses import dataclass
+from dataclasses import replace
+from typing import Any
+from typing import Callable
+from typing import Mapping
+from typing import Protocol
+
+from hyba_contracts import BackendCertificate
+from hyba_contracts import EnterprisePolicyContext
+from hyba_contracts import FoldContract
+from hyba_contracts import PRIMEObjectV2
+from hyba_contracts import canonical_hash
 
 
 class MathBackend(Protocol):

@@ -1,10 +1,11 @@
 """Durable claims whose elevation is constrained by verified envelopes."""
 
 from __future__ import annotations
-from dataclasses import dataclass
-from enum import IntEnum
+
 import json
 import sqlite3
+from dataclasses import dataclass
+from enum import IntEnum
 from typing import Callable
 
 

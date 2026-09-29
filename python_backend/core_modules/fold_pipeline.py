@@ -1,14 +1,17 @@
 """Persistent exact folded-object execution and proof boundary."""
 
 from __future__ import annotations
-from dataclasses import dataclass
-from fractions import Fraction
+
 import hashlib
 import hmac
 import json
 import sqlite3
+from dataclasses import dataclass
+from fractions import Fraction
 from typing import Iterable
-from .math_folding import PulviniFold, pulvini_fold
+
+from .math_folding import PulviniFold
+from .math_folding import pulvini_fold
 
 
 class UnsupportedPairing(ValueError):
@@ -49,9 +52,6 @@ class FoldPipeline:
             "CREATE TABLE IF NOT EXISTS folded_objects(object_id TEXT PRIMARY KEY,family TEXT NOT NULL,exact_json TEXT NOT NULL,folded_json TEXT NOT NULL,residual_json TEXT NOT NULL,lineage_json TEXT NOT NULL)"
         )
         self.db.commit()
-
-    def close(self):
-        self.db.close()
 
     def put_folded(
         self,

@@ -20,6 +20,42 @@ The integrated package contains a real, bounded structured search path:
 This is structured search. It is not a claim that a manifold, resonance score,
 Lucas/Pisot value, or quantum label changes the SHA256d probability law.
 
+## Mathematical capability verification
+
+The Python mathematical layer is real and now execution-verified (states are
+measured, not claimed; every verifier reports `theorem_proven=False`):
+
+- `lucas/` (core, ladder, pool, bound, t_phi): exact big-int Lucas stack;
+  ladder `10,12,15,18,20,31,50,76` with `L_76 = 7639424778862807`, Cassini
+  `L_n² - 5F_n² = 4(-1)ⁿ` and `L_n = F_{n-1} + F_{n+1}` identities verified
+  through `n = 80`; modular M15 tensor satisfies `M15·M15⁻¹ ≡ I (mod 256)`;
+  the seven bound kernels return `is_lucas_bounded` route verdicts.
+- `kellogg/scales.py`: exact `Z[φ]` layer — `phi_power(n) = F_{n-1} + F_n φ`,
+  `pisot_drift(n) = φⁿ - L_n` with exact norm `(-1)ⁿ`, Zeckendorf greedy.
+- `millennium/` (quantum_algorithms, folded_grover, grover_exact_scale):
+  QFT/QPE/Grover/VQE simulators (labeled simulation, not device execution);
+  `FoldedGrover` matches a dense-matrix reference bit-for-bit and preserves
+  the Cassini witness to `< 1e-12`.
+- `toe/`: `strict_quantum` certifies work windows in exact `Q(i)` —
+  `consensus_authority=False` by construction; `solovay_kitaev` synthesizes
+  gates over the Clifford+T alphabet with exact `F4` matrix arithmetic
+  (X found as `H·S†·S†·H`, error < 1e-12).
+- `mtheory/`: exact T-duality spectrum invariance, `SL(2,ℤ)` Möbius group
+  laws, `KKTower` mass spectrum in `Fraction`; `thermo/model.py`: sourced
+  Landauer/adiabatic energy estimates with falsification hooks.
+- `mining/` (nonce_scheduler, difficulty, search): deterministic schedule,
+  bounded difficulty controller, real `sha256d` winner verification.
+
+Found and fixed during verification: `binet_residual(n)` computed
+`|φⁿ - L_n|` by raw float64 subtraction, which returns garbage for `n > ~74`
+(`φ⁷⁶ > 2⁵³`; returned ≈19 instead of `|ψ|⁷⁶ ≈ 1.3e-16`). Both copies
+(`millennium/` and the `turing_universal_quantum_computer` vendored copy) now
+compute the Binet-identical `|ψ|ⁿ` directly, verified against exact `Z[φ]`
+drift evaluated in 60-digit arithmetic. The honest-state gate itself is
+unchanged: these capabilities are verified mathematics, not evidence that any
+of them alters the SHA256d acceptance law — the call-graph integration defect
+below remains the open item.
+
 ## Corpus evidence found in the workspace
 
 The Notion mining workbench records the following real-data artifacts:

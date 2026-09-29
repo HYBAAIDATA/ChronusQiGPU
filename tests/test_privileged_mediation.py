@@ -1,8 +1,11 @@
 import tempfile
 import unittest
 from pathlib import Path
-from al_haras.privileged_audit import audit, manifest, verify_manifest
+
 from al_haras.mediation_runtime import privileged_route
+from al_haras.privileged_audit import audit
+from al_haras.privileged_audit import manifest
+from al_haras.privileged_audit import verify_manifest
 
 
 class Tests(unittest.TestCase):

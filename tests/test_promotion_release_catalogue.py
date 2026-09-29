@@ -1,9 +1,32 @@
+import os
 import tempfile
 import unittest
+
 from al_haras.promotion_gates import PromotionState
-from al_haras.promotion_pipeline import *
-from al_haras.release_engineering import *
-from hyba_services import *
+from al_haras.promotion_pipeline import (
+    Approval,
+    PromotionRejected,
+    PromotionState,
+    build_receipt,
+    enforce_sod,
+)
+from al_haras.release_engineering import authorize_upgrade, is_prerelease, is_release_tag, pin
+from hyba_services import (
+    AckRequired,
+    FeatureDisabled,
+    FlowService,
+    FunctionRegistry,
+    InMemoryTransport,
+    Observability,
+    OntologyService,
+    ServiceContext,
+    ServicePolicyError,
+    agent_tick,
+    autonomous_apply,
+    energy_report,
+    privacy_run,
+    quantum_submit,
+)
 
 
 class Tests(unittest.TestCase):
@@ -106,8 +129,9 @@ class Tests(unittest.TestCase):
         self.assertEqual(
             FlowService(Objects(), Sink(), obs).start([1, 2], ctx, lambda e: "f", lambda e: 1), 2
         )
-        with tempfile.TemporaryDirectory() as d:
-            onto = OntologyService(f"{d}/onto.db", {"read"}, {"READ"}, {"Case"}, obs)
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            self.addCleanup(os.unlink, f.name)
+            onto = OntologyService(f.name, {"read"}, {"READ"}, {"Case"}, obs)
             onto.publish(
                 "t",
                 "i",

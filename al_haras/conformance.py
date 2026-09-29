@@ -1,7 +1,9 @@
 """Cross-backend exact conformance vector runner."""
 
 from dataclasses import dataclass
-from typing import Any, Callable, Iterable
+from typing import Any
+from typing import Callable
+from typing import Iterable
 
 
 @dataclass(frozen=True)

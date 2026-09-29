@@ -1,14 +1,13 @@
 import unittest
-from hyba_profiles import (
-    AssemblyIntent,
-    GateStatus,
-    ModuleEvidence,
-    PROFILES,
-    Tier,
-    authorize_placement,
-    compile_assembly,
-    verify_lock,
-)
+
+from hyba_profiles import PROFILES
+from hyba_profiles import AssemblyIntent
+from hyba_profiles import GateStatus
+from hyba_profiles import ModuleEvidence
+from hyba_profiles import Tier
+from hyba_profiles import authorize_placement
+from hyba_profiles import compile_assembly
+from hyba_profiles import verify_lock
 from hyba_profiles.tiers import ProofRequired
 
 KEY = b"k" * 32

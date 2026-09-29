@@ -4,7 +4,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from hyba_services.slo import alert_rules, render_dashboard
+from hyba_services.slo import alert_rules
+from hyba_services.slo import render_dashboard
 
 p = argparse.ArgumentParser()
 p.add_argument("--profile", required=True)

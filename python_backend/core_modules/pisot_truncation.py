@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from fractions import Fraction
 from typing import Sequence
+
 from .math_folding import below_pisot_threshold
 
 

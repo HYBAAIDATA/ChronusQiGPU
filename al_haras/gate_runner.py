@@ -1,12 +1,15 @@
 """Repository-neutral signed gate runner."""
 
 from __future__ import annotations
-from dataclasses import asdict, dataclass
+
 import hashlib
 import hmac
 import json
 import time
-from typing import Callable, Mapping
+from dataclasses import asdict
+from dataclasses import dataclass
+from typing import Callable
+from typing import Mapping
 
 
 @dataclass(frozen=True)

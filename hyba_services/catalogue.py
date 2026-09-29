@@ -1,13 +1,18 @@
 """Dependency-injected executable references for the HYBA service catalogue."""
 
 from __future__ import annotations
-from dataclasses import dataclass
+
 import hashlib
 import json
 import sqlite3
 import time
+from dataclasses import dataclass
 from typing import Iterable
-from .observability import Metric, MetricKind, Observability, Source
+
+from .observability import Metric
+from .observability import MetricKind
+from .observability import Observability
+from .observability import Source
 
 
 class FeatureDisabled(PermissionError):

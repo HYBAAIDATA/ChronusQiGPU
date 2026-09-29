@@ -1,10 +1,14 @@
 """Independent checkpoint witness with mandatory external anchoring."""
 
 from __future__ import annotations
-from dataclasses import asdict, dataclass, replace
+
 import json
 import time
-from typing import Callable, Iterable
+from dataclasses import asdict
+from dataclasses import dataclass
+from dataclasses import replace
+from typing import Callable
+from typing import Iterable
 
 
 class WitnessError(RuntimeError):

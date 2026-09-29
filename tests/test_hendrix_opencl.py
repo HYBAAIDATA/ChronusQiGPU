@@ -24,7 +24,13 @@ def _digest(nonce: int) -> bytes:
 
 @pytest.fixture(scope="module")
 def device():
-    pytest.importorskip("pyopencl")
+    cl = pytest.importorskip("pyopencl")
+    try:
+        devices = [d for p in cl.get_platforms() for d in p.get_devices()]
+    except Exception:
+        devices = []
+    if not devices:
+        pytest.skip("NOT_RUN: no OpenCL device on this host")
     hasher = BitcoinHasher(backend="opencl")
     if not hasher.hendrix_on_device:
         pytest.skip(f"no OpenCL Hendrix kernel bound ({hasher.fallback_reason})")

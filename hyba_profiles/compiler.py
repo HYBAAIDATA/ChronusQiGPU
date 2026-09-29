@@ -1,11 +1,16 @@
 from __future__ import annotations
+
 import hashlib
 import hmac
 import json
 from dataclasses import asdict
 from enum import Enum
+
 from .gates import evaluate
-from .model import AssemblyBlueprint, AssemblyIntent, AssemblyLock, CompilationResult
+from .model import AssemblyBlueprint
+from .model import AssemblyIntent
+from .model import AssemblyLock
+from .model import CompilationResult
 from .profiles import PROFILES
 from .registry import dependency_closure
 

@@ -32,7 +32,6 @@ import argparse
 import ast
 import json
 import subprocess
-import sys
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -60,6 +59,10 @@ class Finding:
     module: str
     name: str | None
     swallowed: bool
+
+    @property
+    def hidden(self) -> bool:
+        return self.swallowed
 
     def render(self) -> str:
         what = f"{self.module}.{self.name}" if self.name else self.module
@@ -350,20 +353,10 @@ def main(argv: list[str] | None = None) -> int:
         Path(args.json).write_text(
             json.dumps([f.__dict__ for f in findings], indent=2), encoding="utf-8"
         )
-    try:
-        from scripts import gate_runner  # package import (pytest, editable install)
-    except ImportError:  # script run: this file's directory is on sys.path
-        import gate_runner
-    gate_runner.run(
-        "import-audit",
-        lambda root: gate_runner.Outcome(
-            gate_runner.Status.FAIL if findings else gate_runner.Status.PASS,
-            f"{len(findings)} finding(s), {hidden} swallowed",
-        ),
-        ROOT,
-    )
     return 1 if findings else 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    from gate_impl import main as _gate_main
+
+    raise SystemExit(_gate_main("import-audit"))
