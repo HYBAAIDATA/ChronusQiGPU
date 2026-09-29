@@ -94,6 +94,38 @@ CLAIMS: tuple[Claim, ...] = (
         status="MEASURED",
         test="test_attestation_signed_by_root",
     ),
+    Claim(
+        claim="The six-intelligence joint is an exact basis product; no multipartite entanglement is claimed.",
+        threat="overclaiming (entanglement)",
+        control="l_hras.foundations.entanglement (exact F4 partial trace)",
+        evidence="six_party_report: purities 1, Schmidt ranks 1, Meyer-Wallach Q = 0",
+        status="MEASURED",
+        test="test_six_party_joint_is_unentangled_basis_product",
+    ),
+    Claim(
+        claim="Exact state vectors are universal (Clifford+T+Toffoli), exponential-memory bounded by a fail-closed cap; Gottesman-Knill is not invoked.",
+        threat="overclaiming (complexity)",
+        control="l_hras.foundations.complexity",
+        evidence="gate-set classification + MLA1517_MAX_AMPLITUDES cap check",
+        status="MEASURED",
+        test="test_gate_set_is_universal_not_clifford",
+    ),
+    Claim(
+        claim="The fold->certificate pipeline is a diffeomorphism followed by declared many-to-one quantization; it is not an isometry.",
+        threat="overclaiming (geometry)",
+        control="l_hras.foundations.quantization",
+        evidence="measured Jacobian condition number + 1/(2*phi^15) error bound",
+        status="MEASURED",
+        test="test_fold_declared_non_isometric_with_measured_distortion",
+    ),
+    Claim(
+        claim="Cassini identity, Zeckendorf codec round-trip and non-adjacency, and rank-bound decidability are machine-checked in Lean 4.",
+        threat="empiricism masquerading as proof",
+        control="proofs/lean (Guardian package)",
+        evidence="lake build of Guardian.{Cassini,Zeckendorf,LedgerBound}",
+        status="MEASURED",
+        test="proofs/lean: lake build",
+    ),
 )
 
 
