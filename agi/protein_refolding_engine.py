@@ -66,9 +66,7 @@ class BioIntelligenceNode:
             optimal_fold = self.pci.find_resonant_minimum(field_state)
             # Step 3: Execute on Apple Silicon GPU/ANE
             result = await self.metal_accel.execute_fold(optimal_fold)
-            print(
-                f"✨ Fold Solved | Purity: {result.confidence} | Target: {result.binding_site}"
-            )
+            print(f"✨ Fold Solved | Purity: {result.confidence} | Target: {result.binding_site}")
             return {
                 "purity_score": result.confidence,
                 "therapeutic_target": result.binding_site,
@@ -110,8 +108,6 @@ if __name__ == "__main__":
         fold_result = await node.solve_folding_anomaly(amyloid_beta)
         molecule_result = await node.trigger_small_molecule_discovery(fold_result)
 
-        print(
-            f"💊 Discovery Complete: {molecule_result['molecule_id']} ready for manufacturing."
-        )
+        print(f"💊 Discovery Complete: {molecule_result['molecule_id']} ready for manufacturing.")
 
     asyncio.run(main())

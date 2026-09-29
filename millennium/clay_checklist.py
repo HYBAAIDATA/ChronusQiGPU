@@ -281,43 +281,25 @@ def _dynamic_c4_status() -> Dict[str, Any]:
 
 
 def _dynamic_g4_status() -> Dict[str, Any]:
-    """G4 — RI/MOM renormalization module is not present in this distribution."""
-    try:
-        from python_backend.hyba.quantum.yang_mills_ri_mom import (  # noqa: F401
-            RIMOMRenormalization,
-            LatticeMomentum,
-        )
-    except Exception as e:
-        return {
-            "live": False,
-            "error": str(e),
-            "scope": "CONTINUUM_OPEN",
-            "honesty_note": (
-                "RI/MOM module not present in this checkout; nothing is "
-                "claimed for G4."
-            ),
-        }
-    return {"live": False, "scope": "CONTINUUM_OPEN"}  # unreachable defensive
+    """G4 — no RI/MOM renormalization module exists in this repository."""
+    return {
+        "live": False,
+        "error": "no RI/MOM renormalization module exists in this repository",
+        "scope": "CONTINUUM_OPEN",
+        "honesty_note": "RI/MOM module not present in this checkout; nothing is claimed for G4.",
+    }
 
 
 def _dynamic_g6_status() -> Dict[str, Any]:
-    """G6 — Wightman checker module is not present in this distribution."""
-    try:
-        from python_backend.hyba.quantum.yang_mills_wightman_check import (  # noqa: F401
-            WightmanAxiomCheck,
-        )
-
-    except Exception as e:
-        return {
-            "live": False,
-            "error": str(e),
-            "scope": "CONTINUUM_OPEN",
-            "honesty_note": (
-                "Wightman checker module not present in this checkout; "
-                "nothing is claimed for G6."
-            ),
-        }
-    return {"live": False, "scope": "CONTINUUM_OPEN"}  # unreachable defensive
+    """G6 — no Wightman axiom checker exists in this repository."""
+    return {
+        "live": False,
+        "error": "no Wightman axiom checker exists in this repository",
+        "scope": "CONTINUUM_OPEN",
+        "honesty_note": (
+            "Wightman checker module not present in this checkout; nothing is claimed for G6."
+        ),
+    }
 
 
 # =============================================================================

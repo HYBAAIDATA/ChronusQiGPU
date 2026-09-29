@@ -1,86 +1,102 @@
-# PYTHIA production mining runbook
+# Production mining runbook
 
-This is the operational path for Stratum V1 SHA-256d mining. It is separate
-from the research/frontend control plane and accepts a share only after an
-independent exact SHA-256d target check.
+The canonical path is one supervisor per host: `main.py` starts the control
+API (`mla1517_platform_v3.4/python/control_api.py`), which supervises three
+workers: `agentic-mining` (`mining_runtime.py`), `salamander` and
+`discovery`. The retired `mining/production_miner.py` flow lives in
+`legacy/` and is not used.
 
-## Pre-flight
+## Before the first run
 
 ```bash
-python scripts/audit_production_contracts.py
-python scripts/benchmark_hashrate.py --backend opencl --batch 1000000 --iterations 5
-pytest -q tests/test_production_miner.py tests/test_device_identity_contract.py tests/test_hash_pipeline.py
+python -m flake8 --count
+python -m pytest tests/ -q
+(cd mla1517_platform_v3.4/python && python -m pytest -q)
+python -m scripts.deploy_sentry
+python scripts/import_audit.py
 ```
-
-The benchmark is offline. It must report `consensus_vector_passed: true`,
-`errors: []`, and a non-zero measured rate. `--backend opencl` is required for
-a hardware claim; `auto` may deliberately select the CPU reference when the
-hardware gate is not strict.
 
 ## Configuration
 
-Use a secret manager or a local ignored `.env`; never commit credentials.
+Credentials live in an ignored env file or a secret manager, never in Git.
+Start from `.env.example`; two variables are required:
 
 ```bash
-export PYTHIA_STRATUM_ENDPOINT='stratum+ssl://pool.example:443'
-export PYTHIA_STRATUM_WORKER='account.worker'
-export PYTHIA_STRATUM_PASSWORD='pool-password'
-export PYTHIA_EXECUTION_PATH='aethel'
-export PYTHIA_HASH_BACKEND='opencl'
-export PYTHIA_TURING_QUBITS=10000
-export PYTHIA_NONCE_WINDOW=1048576
-export HYBA_REQUIRE_HYBA=1
-export HYBA_DEVICE_VENDOR=Intel
-export HYBA_DEVICE_PCI_IDS=0x5917
-export HYBA_DEVICE_NAME="Intel(R) Graphics [0x5917]"
-export HYBA_ENABLE_LIVE_SHARE_SUBMIT=true
-export HYBA_LIVE_SHARE_APPROVAL_ID='approved-change-id'
-export HYBA_AUTONOMOUS_EXTERNAL_ACTIONS=true
+MLA1517_STRATUM_USER='account.worker'           # the pool worker identity
+EUCLID_ADMIN_API_KEY="$(openssl rand -hex 32)"  # the operator key
 ```
 
-## Live workflow
+Pools come from the pool catalog: `PYTHIA_POOL_PROFILE` picks the primary
+and `PYTHIA_POOLS` the failover order (see `pool_catalog.py`). The device is
+`MLA1517_MMIO_DEVICE`; `PYTHIA_EXECUTION_BACKEND=auto|cpu|opencl` picks the
+SHA256d executor, and `HYBA_REQUIRE_HYBA=1` with `HYBA_DEVICE_ALIAS` refuses
+any OpenCL device that is not the declared one. The operating policy sizes
+windows itself, within `PYTHIA_MAX_WINDOW_SECONDS` (default 2 s).
 
-Dry-run connects, subscribes, authorizes, receives jobs, constructs headers,
-and searches without submitting:
+## Start: shadow first
 
 ```bash
-python -m mining.production_miner --dry-run --max-runtime 120
+python main.py
+curl -X POST -H "Authorization: Bearer $EUCLID_ADMIN_API_KEY" \
+     http://127.0.0.1:3000/api/v1/mining/start
 ```
 
-Live submission requires both the command flag and the explicit environment
-gate:
+A started worker mines in **shadow** until live submission is approved. It
+connects, authorizes, receives jobs, and hashes with full SHA256d and target
+checks. It finds, records and learns from proof-checked shares, but writes
+nothing to the pool.
+
+- `GET /api/v1/mining/evidence` reports `"submission": "shadow"`.
+- `GET /api/v1/knowledge` shows what the miner has measured (`mining.world`:
+  each route's hash rate and overhead) and how its learning stands
+  (`learning.*`).
+
+Shadow evidence to capture before going live:
+
+- `/api/v1/mla1517/status`: the three workers `running`;
+- `/api/v1/mining/evidence`: `execution_backend.route` is the expected
+  device, `last_execution.executed` is true, shares appear in the session
+  share log;
+- `/api/v1/knowledge`: `learning.shares.follow.work` reports `holds`, meaning
+  shares arrive at the rate the work predicts; an `anomaly` stops the run.
+
+## Live submission
+
+Approve it in the operator UI (Runtime control, live submit), or:
 
 ```bash
-python -m mining.production_miner --submit --max-runtime 3600
+curl -X PUT -H "Authorization: Bearer $EUCLID_ADMIN_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"live_submit": {"enabled": true}}' \
+     http://127.0.0.1:3000/api/v1/config
 ```
 
-For ordered failover, set `PYTHIA_POOL_SPECS` to semicolon-separated
-`endpoint|worker|password` entries. Credentials are read at runtime and never
-written to Git:
+- **Binding:** the approval is bound to the enabled pool's endpoint and
+  worker.
+- **When it applies:** the worker re-reads it within 5 s and submits only
+  while it is connected to exactly that identity. Switching pools revokes it.
+- **What changes:** the evidence then reports `"submission": "live"`.
+- **Acceptance:** the pool's `mining.submit` result, never device visibility
+  or a benchmark.
+
+## Stop
 
 ```bash
-export PYTHIA_POOL_SPECS="stratum+tcp://btc.viabtc.io:3333|ACCOUNT.WORKER|PASSWORD;stratum+tcp://stratum.braiins.com:3333|ACCOUNT.WORKER|PASSWORD"
+curl -X POST -H "Authorization: Bearer $EUCLID_ADMIN_API_KEY" \
+     http://127.0.0.1:3000/api/v1/mining/stop
 ```
 
-With `PYTHIA_EXECUTION_PATH=aethel`, the production executor is the
-AETHEL store -> Tensor fold -> symbolic TURING schedule -> iGPU/OpenCL
-SHA-256d path. `PYTHIA_EXECUTION_PATH=direct` is retained only for
-conformance isolation. The client implements TLS, correlated JSON-RPC requests, subscription,
-authorization, difficulty/target updates, extranonce updates, job replacement,
-clean-jobs handling, stale-job suppression, bounded reads/writes, reconnect
-backoff, and accepted/rejected accounting.
+Workers finish their window and stop. On WSL2, always stop mining this way
+before stopping the container: a stop that lands during an OpenCL call can
+wedge the device.
 
-## Acceptance evidence
+## Stop conditions
 
-Production status is not `mining successfully` until logs contain all of:
+Stop immediately if any of these happen:
 
-```text
-Stratum authorized
-Job received
-Execution path=AETHEL->Tensor->TURING->iGPU
-Hasher backend=opencl
-Share result accepted=True
-```
-
-A measured hashrate alone proves only kernel execution. A pool's positive
-`mining.submit` response is the authority for share acceptance.
+- the device identity is not exact, or falls back to CPU under
+  `HYBA_REQUIRE_HYBA=1`;
+- the kernel self-check fails;
+- a candidate fails the independent SHA256d recheck;
+- `learning.shares.follow.work` reports an anomaly;
+- the hashrate governor reports the network cap binding unexpectedly.

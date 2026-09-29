@@ -25,8 +25,11 @@ from __future__ import annotations
 import logging
 import os
 import re
+import json
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+
+import yaml
 
 logger = logging.getLogger("Intelligence.skill_loader")
 
@@ -47,6 +50,12 @@ class PythiaSkill:
     tools: List[str] = field(default_factory=list)
     # File path.
     path: str = ""
+    # For a skill grafted from upstream: PROVENANCE.json (see skill_graft).
+    provenance: Optional[Dict[str, Any]] = None
+
+    @property
+    def applies_to(self) -> List[str]:
+        return list((self.provenance or {}).get("applies_to", []))
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -61,6 +70,11 @@ class PythiaSkill:
             ),
             "tools": self.tools,
             "path": self.path,
+            "grafted_from": (
+                f"{self.provenance['repo']}@{self.provenance['commit'][:12]}"
+                if self.provenance
+                else None
+            ),
         }
 
 
@@ -73,6 +87,13 @@ def _parse_frontmatter(content: str) -> tuple[Dict[str, Any], str]:
     if match:
         fm_text = match.group(1)
         body = match.group(2).strip()
+        try:
+            parsed = yaml.safe_load(fm_text)
+        except yaml.YAMLError:
+            parsed = None
+        if isinstance(parsed, dict):
+            # Real YAML: block scalars (description: |-) and lists included.
+            return {str(k): v for k, v in parsed.items()}, body
         # Simple YAML parsing (avoid pyyaml dependency for basic cases).
         for line in fm_text.split("\n"):
             line = line.strip()
@@ -107,10 +128,23 @@ def discover_skills(skills_dir: str = SKILLS_DIR) -> List[PythiaSkill]:
     if not os.path.isdir(skills_dir):
         logger.warning("Skills directory not found: %s", skills_dir)
         return skills
-    for entry in os.listdir(skills_dir):
+    for entry in sorted(os.listdir(skills_dir)):
         skill_path = os.path.join(skills_dir, entry, "SKILL.md")
         if not os.path.isfile(skill_path):
             continue
+        provenance = None
+        if os.path.isfile(os.path.join(skills_dir, entry, "PROVENANCE.json")):
+            from pathlib import Path
+
+            from .skill_graft import verify_one
+
+            problems = verify_one(Path(skills_dir, entry))
+            if problems:
+                # A rejected graft is never equipped.
+                logger.warning("Skill graft %s rejected: %s", entry, "; ".join(problems))
+                continue
+            with open(os.path.join(skills_dir, entry, "PROVENANCE.json"), encoding="utf-8") as f:
+                provenance = json.load(f)
         try:
             with open(skill_path, "r", encoding="utf-8") as f:
                 content = f.read()
@@ -119,13 +153,14 @@ def discover_skills(skills_dir: str = SKILLS_DIR) -> List[PythiaSkill]:
             skill = PythiaSkill(
                 name=fm.get("name", entry),
                 description=fm.get("description", ""),
-                version=fm.get("version", "1.0.0"),
+                version=str(fm.get("version", "1.0.0")),
                 tags=(
                     fm.get("tags", []) if isinstance(fm.get("tags"), list) else [fm.get("tags", "")]
                 ),
                 instructions=body,
                 tools=tools,
                 path=skill_path,
+                provenance=provenance,
             )
             skills.append(skill)
             logger.info("Discovered skill: %s (%s)", skill.name, skill.description[:60])
@@ -180,6 +215,16 @@ def seed_skill_knowledge(memory_system) -> Dict[str, Any]:
     }
 
 
+def load_skills(skills_dir: str = SKILLS_DIR) -> Dict[str, PythiaSkill]:
+    """The equipped skills by name: local skills and verified grafts."""
+    return {skill.name: skill for skill in discover_skills(skills_dir)}
+
+
+def skills_for(purpose: str, skills_dir: str = SKILLS_DIR) -> List[PythiaSkill]:
+    """Grafted skills whose plan says they apply to ``purpose``."""
+    return [s for s in discover_skills(skills_dir) if purpose in s.applies_to]
+
+
 def get_skill_summary() -> Dict[str, Any]:
     """Return a summary of discovered skills."""
     skills = discover_skills()
@@ -192,6 +237,8 @@ def get_skill_summary() -> Dict[str, Any]:
 __all__ = [
     "PythiaSkill",
     "discover_skills",
+    "load_skills",
+    "skills_for",
     "seed_skill_knowledge",
     "get_skill_summary",
     "SKILLS_DIR",

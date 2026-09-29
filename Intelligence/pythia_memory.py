@@ -856,6 +856,19 @@ class ArchivalMemory:
 # Cognitive Scaffolding — progressive curriculum
 # ---------------------------------------------------------------------------
 
+MASTERY_MIN_TRIALS = 5
+
+
+def wilson_lower(successes: int, trials: int, z: float = 1.959964) -> float:
+    """Wilson score 95% lower bound of a success rate (0 with no trials)."""
+    if trials <= 0:
+        return 0.0
+    p = successes / trials
+    denominator = 1 + z * z / trials
+    centre = p + z * z / (2 * trials)
+    spread = z * math.sqrt(p * (1 - p) / trials + z * z / (4 * trials * trials))
+    return max(0.0, (centre - spread) / denominator)
+
 
 @dataclass
 class CurriculumTask:
@@ -866,7 +879,7 @@ class CurriculumTask:
     difficulty: float  # 0.0 (trivial) to 1.0 (frontier)
     concepts: List[str]  # concepts this task exercises
     prerequisite_concepts: List[str]  # concepts that must be mastered first
-    mastery_threshold: float = 0.7  # confidence needed to advance
+    mastery_threshold: float = 0.7  # success rate (95% lower bound) needed to advance
 
 
 class CognitiveScaffolding:
@@ -883,6 +896,7 @@ class CognitiveScaffolding:
         self._curriculum: List[CurriculumTask] = []
         self._current_task_idx = 0
         self._mastery_history: List[Dict[str, Any]] = []
+        self._outcomes: Dict[int, Tuple[int, int]] = {}  # task -> (trials, successes)
         self._build_default_curriculum()
 
     def _build_default_curriculum(self) -> None:
@@ -955,23 +969,32 @@ class CognitiveScaffolding:
                 return False
         return True
 
-    def record_mastery(self, task: CurriculumTask, success: bool, confidence: float) -> bool:
-        """Record whether the agent mastered the current task.
+    def record_mastery(self, task: CurriculumTask, success: bool) -> bool:
+        """Record one outcome of the current task; True when it is mastered.
 
-        Returns True if the agent should advance to the next task.
+        Mastery is earned from outcomes, not asserted: at least
+        ``MASTERY_MIN_TRIALS`` attempts, and the Wilson 95% lower bound of
+        the success rate at or above the task's threshold (capped at 0.95:
+        certainty is never reachable from finite evidence).
         """
+        trials, successes = self._outcomes.get(task.task_id, (0, 0))
+        trials, successes = trials + 1, successes + int(bool(success))
+        self._outcomes[task.task_id] = (trials, successes)
+        confidence = wilson_lower(successes, trials)
         self._mastery_history.append(
             {
                 "task_id": task.task_id,
                 "description": task.description,
                 "success": success,
+                "trials": trials,
+                "successes": successes,
                 "confidence": confidence,
             }
         )
         # Strengthen the concepts this task exercises.
         for concept in task.concepts:
             self.semantic.learn_concept(concept)
-        if success and confidence >= task.mastery_threshold:
+        if trials >= MASTERY_MIN_TRIALS and confidence >= min(task.mastery_threshold, 0.95):
             self._current_task_idx += 1
             return True
         return False
@@ -1341,10 +1364,7 @@ class PythiaMemorySystem:
         current_task = self.curriculum.current_task()
         mastery_advanced = False
         if current_task is not None:
-            confidence = 1.0 - abs(PSI) ** (len(plan) + 1)
-            mastery_advanced = self.curriculum.record_mastery(
-                current_task, success=not error_state, confidence=confidence
-            )
+            mastery_advanced = self.curriculum.record_mastery(current_task, success=not error_state)
         return {
             "event_id": event.event_id,
             "socratic_feedback": (

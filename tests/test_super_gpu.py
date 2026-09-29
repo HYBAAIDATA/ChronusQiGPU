@@ -237,6 +237,32 @@ def test_executor_refuses_unrunnable_backend():
         IRExecutor(rtl, "sha256d_scan").compile()
 
 
+@pytest.mark.parametrize("backend", ["opencl:gpu", "opencl:cpu"])
+def test_executor_accepts_measured_opencl_hasher_backend(monkeypatch, backend):
+    class FakeHasher:
+        fallback_reason = None
+
+        def __init__(self, device):
+            self.backend = backend
+
+    monkeypatch.setattr("mining.bitcoin_hasher.BitcoinHasher", FakeHasher)
+    executor = IRExecutor(fake_gpu(), "sha256d_scan").compile()
+    assert executor._host.backend == backend
+
+
+def test_executor_rejects_software_hasher_fallback(monkeypatch):
+    class FakeHasher:
+        backend = "cpu"
+        fallback_reason = "no OpenCL device"
+
+        def __init__(self, device):
+            pass
+
+    monkeypatch.setattr("mining.bitcoin_hasher.BitcoinHasher", FakeHasher)
+    with pytest.raises(CapabilityMismatch, match="OpenCL unavailable"):
+        IRExecutor(fake_gpu(), "sha256d_scan").compile()
+
+
 def test_wrong_winner_rejected_by_hashlib(monkeypatch):
     """A device that lies about a winning nonce is refused at recheck."""
     cpu = cpu_device()

@@ -122,9 +122,7 @@ class IntelligenceBus:
 
         strategy_weights: dict[str, list[float]] = {}
         for payload in self.shared_mining_priors.values():
-            weights = (
-                payload.get("strategy_weights", {}) if isinstance(payload, dict) else {}
-            )
+            weights = payload.get("strategy_weights", {}) if isinstance(payload, dict) else {}
             for strategy, weight in weights.items():
                 strategy_weights.setdefault(str(strategy), []).append(float(weight))
 
@@ -154,14 +152,10 @@ class IntelligenceBus:
         report = self.system_intelligence_report()
         endpoint_count = report["total_endpoints"]
         high_phi_messages = report["high_phi_messages"]
-        connectivity_ratio = (
-            endpoint_count / max(endpoint_count + 1, 1) if endpoint_count else 0.0
-        )
+        connectivity_ratio = endpoint_count / max(endpoint_count + 1, 1) if endpoint_count else 0.0
 
         emergent = bool(
-            endpoint_count >= 2
-            and report["system_phi"] >= 0.5
-            and high_phi_messages >= 1
+            endpoint_count >= 2 and report["system_phi"] >= 0.5 and high_phi_messages >= 1
         )
         return {
             "emergent": emergent,
@@ -183,9 +177,7 @@ class IntelligenceBus:
         if len(history) >= 10:
             recent = history[-5:]
             earlier = history[:-5]
-            earlier_mean = (
-                float(np.mean(earlier)) if earlier else float(np.mean(history[-10:-5]))
-            )
+            earlier_mean = float(np.mean(earlier)) if earlier else float(np.mean(history[-10:-5]))
             recent_mean = float(np.mean(recent))
             if recent_mean > earlier_mean:
                 system_phi_trend = "improving"
@@ -200,9 +192,7 @@ class IntelligenceBus:
             "endpoint_summaries": summaries,
             "message_volume": len(self.message_log),
             "high_phi_messages": sum(
-                1
-                for m in self.message_log
-                if m["signal"].get("phi_resonance", 0) >= 0.5
+                1 for m in self.message_log if m["signal"].get("phi_resonance", 0) >= 0.5
             ),
             "system_phi_trend": system_phi_trend,
         }

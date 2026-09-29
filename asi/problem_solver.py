@@ -143,33 +143,19 @@ class NovelProblemSolver:
         """Categorize problem based on description"""
         desc_lower = description.lower()
 
-        if any(
-            word in desc_lower for word in ["prove", "theorem", "equation", "formula"]
-        ):
+        if any(word in desc_lower for word in ["prove", "theorem", "equation", "formula"]):
             return ProblemCategory.MATHEMATICAL
-        elif any(
-            word in desc_lower for word in ["optimize", "minimize", "maximize", "best"]
-        ):
+        elif any(word in desc_lower for word in ["optimize", "minimize", "maximize", "best"]):
             return ProblemCategory.OPTIMIZATION
         elif any(word in desc_lower for word in ["algorithm", "compute", "calculate"]):
             return ProblemCategory.COMPUTATIONAL
-        elif any(
-            word in desc_lower
-            for word in ["physics", "chemistry", "biology", "science"]
-        ):
+        elif any(word in desc_lower for word in ["physics", "chemistry", "biology", "science"]):
             return ProblemCategory.SCIENTIFIC
-        elif any(
-            word in desc_lower for word in ["design", "build", "engineer", "construct"]
-        ):
+        elif any(word in desc_lower for word in ["design", "build", "engineer", "construct"]):
             return ProblemCategory.ENGINEERING
-        elif any(
-            word in desc_lower for word in ["business", "profit", "revenue", "market"]
-        ):
+        elif any(word in desc_lower for word in ["business", "profit", "revenue", "market"]):
             return ProblemCategory.BUSINESS
-        elif any(
-            word in desc_lower
-            for word in ["research", "study", "investigate", "analyze"]
-        ):
+        elif any(word in desc_lower for word in ["research", "study", "investigate", "analyze"]):
             return ProblemCategory.RESEARCH
         else:
             return ProblemCategory.UNKNOWN
@@ -198,9 +184,7 @@ class NovelProblemSolver:
             logger.error(f"Error researching problem: {e}")
             return {"success": False, "sources": [], "knowledge": []}
 
-    def _needs_quantum_algorithm(
-        self, description: str, category: ProblemCategory
-    ) -> bool:
+    def _needs_quantum_algorithm(self, description: str, category: ProblemCategory) -> bool:
         """Determine if problem needs custom quantum algorithm"""
         # Quantum advantage categories
         quantum_categories = {
@@ -244,20 +228,14 @@ class NovelProblemSolver:
         # Step 1: Knowledge-based approach
         if knowledge.get("success"):
             solution["steps"].append("Applied knowledge from research")
-            solution["reasoning"].append(
-                f"Consulted {len(knowledge.get('sources', []))} sources"
-            )
+            solution["reasoning"].append(f"Consulted {len(knowledge.get('sources', []))} sources")
 
         # Step 2: Quantum algorithm approach
         if algorithm_id:
             algorithm = self.quantum_creator.get_algorithm(algorithm_id)
             if algorithm:
-                solution["steps"].append(
-                    f"Applied custom quantum algorithm: {algorithm.name}"
-                )
-                solution["reasoning"].append(
-                    f"Expected speedup: {algorithm.expected_speedup:.2f}x"
-                )
+                solution["steps"].append(f"Applied custom quantum algorithm: {algorithm.name}")
+                solution["reasoning"].append(f"Expected speedup: {algorithm.expected_speedup:.2f}x")
                 solution["results"]["quantum_advantage"] = True
                 solution["results"]["algorithm_used"] = algorithm.name
 
@@ -270,9 +248,7 @@ class NovelProblemSolver:
 
         return solution
 
-    def _generate_solution_summary(
-        self, problem: Problem, solution: Dict[str, Any]
-    ) -> str:
+    def _generate_solution_summary(self, problem: Problem, solution: Dict[str, Any]) -> str:
         """Generate human-readable solution summary"""
 
         summary = f"ASI Solution for: {problem.description}\n\n"
@@ -292,9 +268,7 @@ class NovelProblemSolver:
 
         return summary
 
-    def _validate_solution(
-        self, solution: Dict[str, Any], problem: Problem
-    ) -> Dict[str, Any]:
+    def _validate_solution(self, solution: Dict[str, Any], problem: Problem) -> Dict[str, Any]:
         """Validate solution quality"""
 
         # Calculate confidence based on multiple factors
@@ -319,9 +293,7 @@ class NovelProblemSolver:
             "confidence": confidence,
             "quality_score": confidence * 100,
             "completeness": len(solution.get("steps", [])) / 3.0,
-            "quantum_enhanced": solution.get("results", {}).get(
-                "quantum_advantage", False
-            ),
+            "quantum_enhanced": solution.get("results", {}).get("quantum_advantage", False),
         }
 
     def get_problem(self, problem_id: str) -> Optional[Problem]:

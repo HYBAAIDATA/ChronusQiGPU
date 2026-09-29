@@ -1,0 +1,1309 @@
+{
+  "schema": "toe.elevation_benchmark/v1",
+  "commit": "41295f8fc1a95f6e1c368271a9e9c4578d576276",
+  "branch": "main",
+  "worktree_clean": false,
+  "timestamp": "2026-09-29T08:04:23.653851+00:00",
+  "environment": {
+    "python": "3.14.2",
+    "platform": "Windows-10-10.0.19045-SP0",
+    "numpy": "2.5.3"
+  },
+  "state": {
+    "roundtrip_trials": 20,
+    "max_abs_error": 0.0,
+    "tolerance": 1e-09,
+    "evidence_class": "MEASURED"
+  },
+  "prediction": {
+    "available": true,
+    "task": "binary Iris setosa-vs-rest (3-class is unreachable)",
+    "splits": 20,
+    "accuracy_mean": 0.985,
+    "accuracy_min": 0.9,
+    "accuracy_max": 1.0,
+    "claimed_in_repo": 0.9933,
+    "evidence_class": "REPRODUCED (binary scope only)"
+  },
+  "causality": {
+    "observational_effect": 3.547385691822669,
+    "adjusted_effect": 2.995070733039082,
+    "ground_truth_effect": 3.0,
+    "ground_truth_source": "exact do() difference on the generating SCM (Q(phi))",
+    "absolute_error": 0.0049292669609179995,
+    "relative_error": 0.0016430889869726666,
+    "observational_absolute_error": 0.5473856918226692,
+    "standard_error": 0.004465254855140651,
+    "tolerance": "4.0 standard errors",
+    "adjustment_set": [
+      "U"
+    ],
+    "method": "linear_regression",
+    "n_samples": 50000,
+    "provenance": {
+      "estimator": "toe.causal_ladder.estimate_causal_effect/v1",
+      "method_requested": "auto",
+      "do_values": [
+        0.0,
+        1.0
+      ],
+      "graph_sha256": "d480b1863a31afb659f3141984071fcad8ad8dae975621f6ae5404615b4bca0d",
+      "observed": [
+        "U",
+        "X",
+        "Y"
+      ],
+      "data_sha256": "461c7d6542343cad3b8b963e618c4e22d3658bc8e7da20960853907834a0dca7",
+      "method": "linear_regression"
+    },
+    "backdoor_sets": {
+      "confounded_fork": [
+        "U"
+      ],
+      "unconfounded": [],
+      "instrument_only": [],
+      "latent_confounder": null,
+      "m_bias": []
+    },
+    "latent_confounder_estimate": {
+      "available": false,
+      "treatment": "X",
+      "outcome": "Y",
+      "method": null,
+      "adjustment_set": null,
+      "naive_effect": null,
+      "adjusted_effect": null,
+      "standard_error": null,
+      "interventional_means": {},
+      "n_samples": null,
+      "reason": "no backdoor-admissible adjustment set among the observed variables; the effect is not identified by adjustment",
+      "provenance": {
+        "estimator": "toe.causal_ladder.estimate_causal_effect/v1",
+        "method_requested": "auto",
+        "do_values": [
+          0.0,
+          1.0
+        ],
+        "graph_sha256": "d480b1863a31afb659f3141984071fcad8ad8dae975621f6ae5404615b4bca0d",
+        "observed": [
+          "X",
+          "Y"
+        ]
+      }
+    },
+    "stratified_binary_case": {
+      "method": "stratification",
+      "adjusted": 1.9901220472081338,
+      "naive": 3.770683905591906,
+      "se": 0.017369113538332974,
+      "truth": 2.0,
+      "n": 20000,
+      "adjustment_set": [
+        "U"
+      ]
+    },
+    "calibration": {
+      "label": "SYNTHETIC CALIBRATION: labelled synthetic SCMs, not production evidence",
+      "learned_parameters": null,
+      "coefficient_draw_seed": 2026,
+      "calibration_seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "validation_seeds": [
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119
+      ],
+      "calibration_coverage_95": 1.0,
+      "validation_coverage_95": 0.9,
+      "validation_max_abs_z": 2.4267372621446293,
+      "adjusted_beats_naive_in_all_validation_runs": true,
+      "calibration_runs": [
+        {
+          "seed": 0,
+          "a": 0.6786798274459447,
+          "gamma": 1.2537736328468758,
+          "beta": 0.07093627663842605,
+          "truth": 0.07093627663842605,
+          "naive": 0.6445347273778441,
+          "adjusted": 0.06419812639568023,
+          "se": 0.007027162426250656,
+          "z": -0.9588721355827494
+        },
+        {
+          "seed": 1,
+          "a": 1.7900008814739132,
+          "gamma": 0.6539552757604397,
+          "beta": -1.6602926599320562,
+          "truth": -1.6602926599320562,
+          "naive": -1.382552407890767,
+          "adjusted": -1.6539613017225108,
+          "se": 0.0070220155635679115,
+          "z": 0.9016440012457705
+        },
+        {
+          "seed": 2,
+          "a": 1.4015459785776299,
+          "gamma": 1.334838532886821,
+          "beta": 1.7002402948991424,
+          "truth": 1.7002402948991424,
+          "naive": 2.3273108379318646,
+          "adjusted": 1.699410336985923,
+          "se": 0.00704347525892512,
+          "z": -0.11783358111007808
+        },
+        {
+          "seed": 3,
+          "a": 1.3217171822756721,
+          "gamma": 1.5958084886138055,
+          "beta": 1.6086919378148492,
+          "truth": 1.6086919378148492,
+          "naive": 2.3840251427280625,
+          "adjusted": 1.6137180249238492,
+          "se": 0.0071016940787844976,
+          "z": 0.7077307263931364
+        },
+        {
+          "seed": 4,
+          "a": 1.6265389372379269,
+          "gamma": 1.379781269741375,
+          "beta": -1.560395523792438,
+          "truth": -1.560395523792438,
+          "naive": -0.9440792489097933,
+          "adjusted": -1.5568112432638108,
+          "se": 0.007075943182092939,
+          "z": 0.5065445604054556
+        },
+        {
+          "seed": 5,
+          "a": 1.421306421019774,
+          "gamma": 0.666104815385195,
+          "beta": 1.9005681171142284,
+          "truth": 1.9005681171142284,
+          "naive": 2.206485265789105,
+          "adjusted": 1.8885597477970846,
+          "se": 0.007043367892976195,
+          "z": -1.704918655337994
+        },
+        {
+          "seed": 6,
+          "a": 1.1744822488519047,
+          "gamma": 1.7221440325412565,
+          "beta": 1.1110684047767547,
+          "truth": 1.1110684047767547,
+          "naive": 1.9605843293937464,
+          "adjusted": 1.109410489297879,
+          "se": 0.007089134585015954,
+          "z": -0.23386711861556295
+        },
+        {
+          "seed": 7,
+          "a": 1.519083414013309,
+          "gamma": 0.8153369918154634,
+          "beta": -1.4909213774953256,
+          "truth": -1.4909213774953256,
+          "naive": -1.1128641162505408,
+          "adjusted": -1.4779060405441666,
+          "se": 0.007064894509383976,
+          "z": 1.8422549599107667
+        },
+        {
+          "seed": 8,
+          "a": 1.9698685221252126,
+          "gamma": 1.8939759473126685,
+          "beta": 1.8308154065762974,
+          "truth": 1.8308154065762974,
+          "naive": 2.5915861367328783,
+          "adjusted": 1.8212675768031712,
+          "se": 0.007098388529588412,
+          "z": -1.3450700441836474
+        },
+        {
+          "seed": 9,
+          "a": 1.999484186015687,
+          "gamma": 1.270381319944383,
+          "beta": -2.5420805935660615,
+          "truth": -2.5420805935660615,
+          "naive": -2.029121447485041,
+          "adjusted": -2.5314052077677376,
+          "se": 0.007088504957924654,
+          "z": 1.5060137309192831
+        }
+      ],
+      "validation_runs": [
+        {
+          "seed": 100,
+          "a": 1.01059185813738,
+          "gamma": 1.3361758053831538,
+          "beta": -1.2472687533079714,
+          "truth": -1.2472687533079714,
+          "naive": -0.5721648470025,
+          "adjusted": -1.2533132063655388,
+          "se": 0.007096510579157926,
+          "z": -0.8517500242048025
+        },
+        {
+          "seed": 101,
+          "a": 1.1861716971645693,
+          "gamma": 1.814712214970533,
+          "beta": 1.2238532476014798,
+          "truth": 1.2238532476014798,
+          "naive": 2.1198570352508455,
+          "adjusted": 1.2144092255285512,
+          "se": 0.0070962623129805025,
+          "z": -1.330844556810361
+        },
+        {
+          "seed": 102,
+          "a": 1.3661350381634985,
+          "gamma": 0.5371089523411646,
+          "beta": 1.2651740030427838,
+          "truth": 1.2651740030427838,
+          "naive": 1.5206864391396422,
+          "adjusted": 1.2609596662752223,
+          "se": 0.007103886399521045,
+          "z": -0.5932438288773442
+        },
+        {
+          "seed": 103,
+          "a": 1.0453133485586106,
+          "gamma": 1.1333262446226648,
+          "beta": -0.6073600400551236,
+          "truth": -0.6073600400551236,
+          "naive": -0.039120447300358595,
+          "adjusted": -0.6042679589248139,
+          "se": 0.007013306125941393,
+          "z": 0.4408878030965214
+        },
+        {
+          "seed": 104,
+          "a": 1.3785767244672293,
+          "gamma": 1.247682625806614,
+          "beta": -2.301312338168473,
+          "truth": -2.301312338168473,
+          "naive": -1.712886018050517,
+          "adjusted": -2.3077007198258617,
+          "se": 0.007118726970666984,
+          "z": -0.897405067466731
+        },
+        {
+          "seed": 105,
+          "a": 1.259538123040079,
+          "gamma": 1.625220185519249,
+          "beta": 0.6009914819344928,
+          "truth": 0.6009914819344928,
+          "naive": 1.3917225415949,
+          "adjusted": 0.5875340703577434,
+          "se": 0.007057992384263854,
+          "z": -1.9066911444610468
+        },
+        {
+          "seed": 106,
+          "a": 1.2365460663826957,
+          "gamma": 1.8751319556458224,
+          "beta": -1.4481394062424735,
+          "truth": -1.4481394062424735,
+          "naive": -0.5186841129307609,
+          "adjusted": -1.4473582890436967,
+          "se": 0.007077146413741772,
+          "z": 0.11037177318532261
+        },
+        {
+          "seed": 107,
+          "a": 1.1299492258280528,
+          "gamma": 1.8893496801957128,
+          "beta": -0.12486020417737631,
+          "truth": -0.12486020417737631,
+          "naive": 0.8085826994731001,
+          "adjusted": -0.12687060847330134,
+          "se": 0.007044273976326563,
+          "z": -0.2853955287203935
+        },
+        {
+          "seed": 108,
+          "a": 1.2769808523935058,
+          "gamma": 0.5380642068630037,
+          "beta": -1.6528507873791614,
+          "truth": -1.6528507873791614,
+          "naive": -1.3952694599360727,
+          "adjusted": -1.659594652686772,
+          "se": 0.007078897025984695,
+          "z": -0.9526717626850247
+        },
+        {
+          "seed": 109,
+          "a": 0.6934982778668276,
+          "gamma": 0.5733315605229726,
+          "beta": 1.227975838924193,
+          "truth": 1.227975838924193,
+          "naive": 1.5025013907898623,
+          "adjusted": 1.2453374853128585,
+          "se": 0.007154316480607417,
+          "z": 2.4267372621446293
+        },
+        {
+          "seed": 110,
+          "a": 1.830236986322139,
+          "gamma": 0.6538645705279804,
+          "beta": 0.733858172420093,
+          "truth": 0.733858172420093,
+          "naive": 1.0140578438329513,
+          "adjusted": 0.7406929322300293,
+          "se": 0.0070749921266425615,
+          "z": 0.9660448644456293
+        },
+        {
+          "seed": 111,
+          "a": 1.2050604836167307,
+          "gamma": 1.2231696719412448,
+          "beta": -1.626436389254238,
+          "truth": -1.626436389254238,
+          "naive": -1.0218299949066094,
+          "adjusted": -1.622599128528222,
+          "se": 0.007048107823419375,
+          "z": 0.5444384254828751
+        },
+        {
+          "seed": 112,
+          "a": 1.8288818164394787,
+          "gamma": 1.4400057610203398,
+          "beta": -0.2592219259901425,
+          "truth": -0.2592219259901425,
+          "naive": 0.35158889043476366,
+          "adjusted": -0.2555552912834562,
+          "se": 0.007093668766132609,
+          "z": 0.5168883447436856
+        },
+        {
+          "seed": 113,
+          "a": 1.2041090545936297,
+          "gamma": 1.8941970351296147,
+          "beta": 2.923353730687495,
+          "truth": 2.923353730687495,
+          "naive": 3.852373997640147,
+          "adjusted": 2.9244380122066733,
+          "se": 0.007103864873456655,
+          "z": 0.15263262160709962
+        },
+        {
+          "seed": 114,
+          "a": 1.3184484010674782,
+          "gamma": 1.3396940797799861,
+          "beta": 1.018523588696893,
+          "truth": 1.018523588696893,
+          "naive": 1.6626856846884237,
+          "adjusted": 1.0221512065732927,
+          "se": 0.007076993745641129,
+          "z": 0.512593059536611
+        },
+        {
+          "seed": 115,
+          "a": 0.9614409195052296,
+          "gamma": 1.6997030039898644,
+          "beta": 0.011397676094929032,
+          "truth": 0.011397676094929032,
+          "naive": 0.8452605254951719,
+          "adjusted": 0.0018013818937159254,
+          "se": 0.007013529119160676,
+          "z": -1.3682547028993466
+        },
+        {
+          "seed": 116,
+          "a": 1.2183393590699243,
+          "gamma": 1.8266751438596998,
+          "beta": -0.40159901071199755,
+          "truth": -0.40159901071199755,
+          "naive": 0.4966943634595423,
+          "adjusted": -0.3897170493034037,
+          "se": 0.007103997069549336,
+          "z": 1.672574086428733
+        },
+        {
+          "seed": 117,
+          "a": 0.9415612164718135,
+          "gamma": 0.903553903206552,
+          "beta": -2.8013444177876234,
+          "truth": -2.8013444177876234,
+          "naive": -2.350873757307835,
+          "adjusted": -2.7981821076743403,
+          "se": 0.007015152699306559,
+          "z": 0.45078279102830554
+        },
+        {
+          "seed": 118,
+          "a": 1.483464064620901,
+          "gamma": 1.3959098230377347,
+          "beta": -0.25063527508615246,
+          "truth": -0.25063527508615246,
+          "naive": 0.4042212698705207,
+          "adjusted": -0.24913065296687265,
+          "se": 0.00710567585144677,
+          "z": 0.21174933260901094
+        },
+        {
+          "seed": 119,
+          "a": 1.2843332133474687,
+          "gamma": 1.2342762912802678,
+          "beta": 2.529058331243883,
+          "truth": 2.529058331243883,
+          "naive": 3.134681501688679,
+          "adjusted": 2.5439750209847682,
+          "se": 0.00705715795684962,
+          "z": 2.113696452891097
+        }
+      ]
+    },
+    "evidence_class": "MEASURED on synthetic SCMs with a supplied DAG"
+  },
+  "intervention": {
+    "target": "X",
+    "value": 2,
+    "incoming_edges_before": {
+      "X": [
+        [
+          "U",
+          "X",
+          1.5
+        ],
+        [
+          "Z",
+          "X",
+          0.5
+        ]
+      ]
+    },
+    "incoming_edges_after": {
+      "X": []
+    },
+    "edges_cut": [
+      [
+        "U",
+        "X"
+      ],
+      [
+        "Z",
+        "X"
+      ]
+    ],
+    "expected_Y": 6.0,
+    "actual_Y": 6.0,
+    "arithmetic": "exact_q_phi",
+    "evidence_class": "MEASURED; EXACT in Q(phi)"
+  },
+  "counterfactual": {
+    "factual_state": {
+      "U": 0.323606797749979,
+      "Z": -0.647213595499958,
+      "X": 0.323606797749979,
+      "Y": 1.8445587471748803
+    },
+    "abduced_exogenous": {
+      "Y": 0.3
+    },
+    "intervention_target": "X",
+    "intervention_value": 2.0,
+    "incoming_edges_before": [
+      [
+        "U",
+        "X",
+        1.5
+      ],
+      [
+        "Z",
+        "X",
+        0.5
+      ]
+    ],
+    "incoming_edges_after": [],
+    "counterfactual_state": {
+      "U": 0.323606797749979,
+      "X": 2.0,
+      "Y": 6.873738353924943
+    },
+    "expected_result": 6.873738353924944,
+    "actual_result": 6.873738353924943,
+    "absolute_error": 8.881784197001252e-16,
+    "tolerance": 1e-12,
+    "negative_controls": [
+      "wrong value",
+      "consistency",
+      "unrelated node",
+      "missing evidence",
+      "Z via cut edge"
+    ],
+    "api": "toe.causal_ladder.counterfactual_query -> counterfactual_state",
+    "evidence_class": "MEASURED"
+  },
+  "explanation": {
+    "target": "Y",
+    "ground_truth_ranking": [
+      "X1",
+      "X2"
+    ],
+    "ground_truth_irrelevant": [
+      "W",
+      "Z"
+    ],
+    "observed_ranking": [
+      "X1",
+      "X2",
+      "W",
+      "Z"
+    ],
+    "attributions": {
+      "W": 0.0,
+      "X1": 5.088834918244174,
+      "X2": 0.5408440748028142,
+      "Z": 0.0
+    },
+    "irrelevant_feature_rank": {
+      "W": 3,
+      "Z": 4
+    },
+    "unit_invariance": {
+      "max_abs_attribution_change": 0.0,
+      "passed": true
+    },
+    "target_specificity": {
+      "Y_top": "X1",
+      "T_top": "Z"
+    },
+    "faithfulness": {
+      "top_cause_ablation": {
+        "counterfactual_prediction": 1.5111650817558246,
+        "delta": 5.088834918244175
+      },
+      "completeness_residual": 8.881784197001252e-16
+    },
+    "stability": {
+      "distinct_evidence_hashes_over_3_runs": 1
+    },
+    "unavailable_cases": {
+      "missing input value": "missing or non-finite input evidence: ['X1']",
+      "no background": "no background evidence: ablation has no reference values",
+      "no model identifier": "no model identifier: the explanation cannot be bound to a model",
+      "target not produced": "model does not produce target 'Q'"
+    },
+    "coefficient_monotonicity": [
+      1.6962783060813915,
+      3.392556612162783,
+      5.088834918244174,
+      6.785113224325567
+    ],
+    "method": "interventional_shapley_exact/v1",
+    "model_evaluations": 385,
+    "evidence_sha256": "7dd42536de0d07fd0780b52c5546ddec81920b25afff65c4832f623d0e06b6f3",
+    "evidence_class": "MEASURED (adversarial suite); exact enumeration limited to 12 inputs"
+  },
+  "agreement": {
+    "agreeing": 0.993354176413852,
+    "partially_disagreeing": 0.8110177634953863,
+    "opposed": 0.0,
+    "single_evaluator": null,
+    "bridge_scalar_factors": null,
+    "metric": "mean pairwise 1 - ||p_i - p_j|| / (||p_i|| + ||p_j||) over distinct evaluators",
+    "evidence_class": "MEASURED"
+  },
+  "action_policy": {
+    "futures": [
+      {
+        "action": "A",
+        "intervention": {
+          "X": 1.0
+        },
+        "available": true,
+        "future": {
+          "C": 1.0,
+          "S": 1.0,
+          "X": 1.0,
+          "Y": 4.0
+        },
+        "objective_value": 4.0,
+        "violated": [],
+        "unevaluable": [],
+        "admissible": true,
+        "excluded_because": null
+      },
+      {
+        "action": "B",
+        "intervention": {
+          "X": 2.0
+        },
+        "available": true,
+        "future": {
+          "C": 2.0,
+          "S": 1.0,
+          "X": 2.0,
+          "Y": 9.0
+        },
+        "objective_value": 9.0,
+        "violated": [],
+        "unevaluable": [],
+        "admissible": true,
+        "excluded_because": null
+      },
+      {
+        "action": "C",
+        "intervention": {
+          "X": 3.0
+        },
+        "available": true,
+        "future": {
+          "C": 3.0,
+          "S": 1.0,
+          "X": 3.0,
+          "Y": 14.0
+        },
+        "objective_value": 14.0,
+        "violated": [
+          "budget"
+        ],
+        "unevaluable": [],
+        "admissible": false,
+        "excluded_because": "violates constraint: budget"
+      }
+    ],
+    "selected_action": "B",
+    "reason": "B maximizes Y (9.0) among 2 admissible candidate(s); excluded: C (violates constraint: budget)",
+    "constraints": [
+      {
+        "name": "budget",
+        "variable": "C",
+        "op": "<=",
+        "bound": 2.5
+      }
+    ],
+    "perturbation": "X->Y weight 5 -> -1",
+    "perturbed_selected_action": "A",
+    "decision_sha256": "32e6ddfedc4223f75a9467cb111a6f21ae52ef1ef5efc67b6076c629486150cc",
+    "evidence_class": "MEASURED"
+  },
+  "provenance": {
+    "replay_same_inputs": true,
+    "parameter_mutation_detected": true,
+    "config_mutation_detected": true,
+    "state_mutation_detected": true,
+    "explanation_mutation_detected": true,
+    "action_mutation_detected": true,
+    "reordering_detected": true,
+    "intact_ledger_verifies": true,
+    "receipt_format": "toe.receipt/v1",
+    "evidence_class": "MEASURED"
+  },
+  "exact_arithmetic": {
+    "float_phi": "(1 + math.sqrt(5)) / 2 -> NUMERICALLY VERIFIED",
+    "exact_phi": "lucas.algebra.ZPhi with Fraction coefficients -> EXACT",
+    "exact_Y": {
+      "a": "2",
+      "b": "1"
+    },
+    "float_vs_exact_max_abs_diff": 2.220446049250313e-16,
+    "tolerance": 1e-12
+  },
+  "bridge": {
+    "api": "toe.bridge.TOEBridge.reason(task)",
+    "elapsed_s": 0.362755299982382,
+    "sections": [
+      "state",
+      "causal_analysis",
+      "intervention",
+      "counterfactual",
+      "explanation",
+      "action_policy",
+      "execution_evidence",
+      "provenance"
+    ],
+    "receipts": [
+      {
+        "kind": "causal_effect",
+        "receipt_sha256": "164b248a3e50414a550ae72ef50e4c7ff58a042218fe405bf0d8c5821c26a421"
+      },
+      {
+        "kind": "counterfactual",
+        "receipt_sha256": "c912287c30f4959ca6fa27dccceb0e7e255d55d8fe29e0d4920654fc54f7d273"
+      },
+      {
+        "kind": "explanation",
+        "receipt_sha256": "7b0471ce654d4f6148430d6caed6a5d4f5ac189efdeac30269ad1c93cc7cd209"
+      },
+      {
+        "kind": "action",
+        "receipt_sha256": "c669e26fbd5dd95df9aa8bcf4e7ad5d4cb7f9355c7a50960601a097412371b96"
+      }
+    ],
+    "capability_evidence": {
+      "backdoor_identification": "MEASURED: d-separation on supplied DAGs",
+      "adjusted_effect_estimation": "MEASURED: backdoor adjustment vs synthetic SCM truth",
+      "intervention_edge_surgery": "MEASURED: incoming edges cut on a copy",
+      "counterfactual_abduction_action_prediction": "MEASURED: fails closed on missing evidence",
+      "faithful_explanation": "MEASURED: exact interventional Shapley, <= 12 inputs",
+      "evaluator_agreement": "MEASURED: distinct evaluators only; None below two",
+      "action_policy": "MEASURED: futures by abduction-action-prediction",
+      "provenance_receipts": "MEASURED: replay and mutation detection",
+      "phi_arithmetic": "float path NUMERICALLY VERIFIED; evaluate_exact path EXACT in Q(phi)",
+      "causal_discovery": "NOT ESTABLISHED: infer_causal_graph is a correlation heuristic",
+      "explain_causality_ranking": "descriptive expectation-magnitude ranking; not causal"
+    }
+  },
+  "domain_generality": {
+    "modules": {
+      "causal_ladder.py": 0,
+      "explanation.py": 0,
+      "agreement.py": 0,
+      "policy.py": 0,
+      "receipts.py": 0
+    },
+    "control_hits_toe_intelligences_counterfactual": 5,
+    "note": "toe/intelligences/* remains mining-specific and is outside this core"
+  },
+  "checks": [
+    {
+      "section": "state",
+      "name": "11D fold/unfold roundtrip max error < 1e-9",
+      "passed": true,
+      "evidence": {
+        "max_abs_error": 0.0,
+        "trials": 20
+      }
+    },
+    {
+      "section": "prediction",
+      "name": "binary setosa-vs-rest mean accuracy >= 0.95 over 20 splits",
+      "passed": true,
+      "evidence": {
+        "mean": 0.985,
+        "min": 0.9
+      }
+    },
+    {
+      "section": "causality",
+      "name": "confounded_backdoor_set == ['U']",
+      "passed": true,
+      "evidence": {
+        "got": [
+          "U"
+        ]
+      }
+    },
+    {
+      "section": "causality",
+      "name": "unconfounded_backdoor_set == []",
+      "passed": true,
+      "evidence": {
+        "got": []
+      }
+    },
+    {
+      "section": "causality",
+      "name": "instrument is not adjusted for",
+      "passed": true,
+      "evidence": {
+        "got": []
+      }
+    },
+    {
+      "section": "causality",
+      "name": "latent confounder is not identified (None)",
+      "passed": true,
+      "evidence": {
+        "got": null
+      }
+    },
+    {
+      "section": "causality",
+      "name": "M-bias collider left unadjusted",
+      "passed": true,
+      "evidence": {
+        "got": []
+      }
+    },
+    {
+      "section": "causality",
+      "name": "adjusted effect available",
+      "passed": true,
+      "evidence": {
+        "reason": null
+      }
+    },
+    {
+      "section": "causality",
+      "name": "confounding measurably biases association (> 0.15)",
+      "passed": true,
+      "evidence": {
+        "naive": 3.547385691822669,
+        "truth": 3.0
+      }
+    },
+    {
+      "section": "causality",
+      "name": "adjusted_effect == truth within 4.0 SE",
+      "passed": true,
+      "evidence": {
+        "adjusted": 2.995070733039082,
+        "se": 0.004465254855140651,
+        "truth": 3.0
+      }
+    },
+    {
+      "section": "causality",
+      "name": "adjusted error < naive error / 10",
+      "passed": true,
+      "evidence": {
+        "adjusted_error": 0.0049292669609179995,
+        "naive_error": 0.5473856918226692
+      }
+    },
+    {
+      "section": "causality",
+      "name": "unobserved confounder -> unavailable, no numeric estimate",
+      "passed": true,
+      "evidence": {
+        "reason": "no backdoor-admissible adjustment set among the observed variables; the effect is not identified by adjustment"
+      }
+    },
+    {
+      "section": "causality",
+      "name": "stratified estimate on discrete confounding within 4 SE",
+      "passed": true,
+      "evidence": {
+        "adjusted": 1.9901220472081338,
+        "naive": 3.770683905591906,
+        "truth": 2.0
+      }
+    },
+    {
+      "section": "causality",
+      "name": "validation: every run within 4 SE of truth",
+      "passed": true,
+      "evidence": {
+        "max_abs_z": 2.4267372621446293
+      }
+    },
+    {
+      "section": "causality",
+      "name": "validation: 95% interval coverage >= 0.80",
+      "passed": true,
+      "evidence": {
+        "coverage": 0.9
+      }
+    },
+    {
+      "section": "causality",
+      "name": "validation: adjusted beats naive in every run",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "intervention",
+      "name": "incoming edges before == [U->X, Z->X]",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "intervention",
+      "name": "incoming edges after == []",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "intervention",
+      "name": "factual model keeps its edges",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "intervention",
+      "name": "E[Y|do(X=2)] == 6 exactly",
+      "passed": true,
+      "evidence": {
+        "got": "ZPhi(a=Fraction(6, 1), b=Fraction(0, 1))"
+      }
+    },
+    {
+      "section": "counterfactual",
+      "name": "counterfactual_result == expected within 1e-12",
+      "passed": true,
+      "evidence": {
+        "expected": 6.873738353924944,
+        "actual": 6.873738353924943
+      }
+    },
+    {
+      "section": "counterfactual",
+      "name": "edge_cut_behavior: X's parents cut in counterfactual world",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "counterfactual",
+      "name": "Z (reaches Y only via X) cannot move the counterfactual Y",
+      "passed": true,
+      "evidence": {
+        "with_z_shift": 6.873738353924944
+      }
+    },
+    {
+      "section": "counterfactual",
+      "name": "negative control: wrong intervention value changes result",
+      "passed": true,
+      "evidence": {
+        "delta": 3.000000000000001
+      }
+    },
+    {
+      "section": "counterfactual",
+      "name": "negative control: do(X = factual X) reproduces factual Y",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "counterfactual",
+      "name": "negative control: intervention on unrelated node, no effect",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "counterfactual",
+      "name": "negative control: missing evidence fails closed",
+      "passed": true,
+      "evidence": {
+        "missing": [
+          "U"
+        ]
+      }
+    },
+    {
+      "section": "explanation",
+      "name": "1. X1 ranks above irrelevant Z",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "explanation",
+      "name": "2. X1 ranks above huge irrelevant W",
+      "passed": true,
+      "evidence": {
+        "w_attribution": 0.0
+      }
+    },
+    {
+      "section": "explanation",
+      "name": "3. rescaling W by 10x/1000x leaves attributions unchanged",
+      "passed": true,
+      "evidence": {
+        "max_abs_change": 0.0
+      }
+    },
+    {
+      "section": "explanation",
+      "name": "4. input order does not alter the explanation",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "explanation",
+      "name": "5. changing target changes explanation (T -> Z top)",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "explanation",
+      "name": "6. intervening on the top cause moves outcome as attributed",
+      "passed": true,
+      "evidence": {
+        "delta": 5.088834918244175
+      }
+    },
+    {
+      "section": "explanation",
+      "name": "7. removing W leaves prediction and attributions unchanged",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "explanation",
+      "name": "8. attribution monotone in the true coefficient",
+      "passed": true,
+      "evidence": {
+        "series": [
+          1.6962783060813915,
+          3.392556612162783,
+          5.088834918244174,
+          6.785113224325567
+        ]
+      }
+    },
+    {
+      "section": "explanation",
+      "name": "9. repeated execution is identical",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "explanation",
+      "name": "10. missing evidence -> unavailable, no attributions",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "explanation",
+      "name": "attributions sum to factual - baseline",
+      "passed": true,
+      "evidence": {
+        "residual": 8.881784197001252e-16
+      }
+    },
+    {
+      "section": "agreement",
+      "name": "metric drops as evaluators disagree",
+      "passed": true,
+      "evidence": {
+        "agree": 0.993354176413852,
+        "mild": 0.8110177634953863,
+        "oppose": 0.0
+      }
+    },
+    {
+      "section": "agreement",
+      "name": "one evaluator -> None, not 1.0",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "agreement",
+      "name": "bridge: identical scalar evaluators -> None (was 1.0)",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "action_policy",
+      "name": "futures A=4, B=9 computed by counterfactual",
+      "passed": true,
+      "evidence": {
+        "futures": {
+          "A": 4.0,
+          "B": 9.0,
+          "C": 14.0
+        }
+      }
+    },
+    {
+      "section": "action_policy",
+      "name": "selected == B",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "action_policy",
+      "name": "C excluded for declared constraint",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "action_policy",
+      "name": "perturbed model (X->Y weight -1) selects A",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "provenance",
+      "name": "replay_same_inputs",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "provenance",
+      "name": "parameter_mutation_detected",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "provenance",
+      "name": "config_mutation_detected",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "provenance",
+      "name": "state_mutation_detected",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "provenance",
+      "name": "explanation_mutation_detected",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "provenance",
+      "name": "action_mutation_detected",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "provenance",
+      "name": "reordering_detected",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "provenance",
+      "name": "intact_ledger_verifies",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "exact_arithmetic",
+      "name": "exact path: Y = 2 + phi structurally (ZPhi(2, 1))",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "exact_arithmetic",
+      "name": "float path agrees with exact path within 1e-12",
+      "passed": true,
+      "evidence": {
+        "max_abs_diff": 2.220446049250313e-16
+      }
+    },
+    {
+      "section": "bridge",
+      "name": "TOEBridge.reason: every section available",
+      "passed": true,
+      "evidence": {
+        "unavailable": []
+      }
+    },
+    {
+      "section": "bridge",
+      "name": "reason selects B with receipts verified",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "bridge",
+      "name": "missing samples -> envelope unavailable, no invented effect",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "bridge",
+      "name": "status declares causal discovery NOT ESTABLISHED",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "bridge",
+      "name": "predict() envelope still available for downstream adapters",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "domain",
+      "name": "TOE reasoning core has no mining vocabulary",
+      "passed": true,
+      "evidence": {
+        "hits": {
+          "causal_ladder.py": 0,
+          "explanation.py": 0,
+          "agreement.py": 0,
+          "policy.py": 0,
+          "receipts.py": 0
+        }
+      }
+    },
+    {
+      "section": "domain",
+      "name": "detector control: mining module is flagged",
+      "passed": true,
+      "evidence": {}
+    },
+    {
+      "section": "tests",
+      "name": "pytest .: no failures",
+      "passed": true,
+      "evidence": {
+        "n_passed": 149,
+        "n_failed": 0,
+        "n_skipped": 0
+      }
+    },
+    {
+      "section": "tests",
+      "name": "pytest mla1517_platform_v3.4/python: no failures",
+      "passed": true,
+      "evidence": {
+        "n_passed": 3,
+        "n_failed": 0,
+        "n_skipped": 0
+      }
+    }
+  ],
+  "tests": {
+    "passed": 152,
+    "failed": 0,
+    "skipped": 0,
+    "runs": [
+      {
+        "command": "python -m pytest -q tests/test_toe_elevation.py tests/test_toe_package.py tests/test_toe_propagator_cache.py tests/test_toe_expansion_contract.py tests/test_toe_consensus_boundary.py tests/test_intelligence_poincare_salamander.py",
+        "cwd": ".",
+        "exit_code": 0,
+        "passed": 149,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "command": "python -m pytest -q test_toe_mining_integration.py test_structured_observed_context.py",
+        "cwd": "mla1517_platform_v3.4/python",
+        "exit_code": 0,
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0
+      }
+    ]
+  },
+  "unavailable": [],
+  "claim_boundaries": [
+    "Causal structure is SUPPLIED to TOE. Causal discovery is NOT ESTABLISHED: infer_causal_graph is a correlation heuristic and is labelled so.",
+    "Adjusted-effect recovery is MEASURED on synthetic linear-Gaussian and discrete SCMs with a supplied DAG. It is not established for misspecified graphs, nonlinear outcome models under linear adjustment, or unobserved confounding (reported unavailable).",
+    "Counterfactuals assume the supplied SCM, additive phi-scaled noise and full evidence for the nodes the outcome depends on; missing evidence fails closed.",
+    "phi: the float path is NUMERICALLY VERIFIED against the exact Q(phi) path; only evaluate_exact and arithmetic='exact_q_phi' are EXACT.",
+    "Explanation is faithful to the supplied model (interventional Shapley, exact enumeration, at most 12 inputs); it explains the model, not the world beyond it.",
+    "explain_causality remains a descriptive magnitude ranking and is labelled not causal.",
+    "Action policy selects among supplied candidates by modelled futures; it does not generate actions and it is only as good as the supplied model.",
+    "Prediction evidence is the binary Iris setosa-vs-rest task only.",
+    "Synthetic calibration has no learned parameters and is not production evidence."
+  ],
+  "summary": {
+    "status": "PASS",
+    "checks_passed": 64,
+    "checks_failed": 0
+  }
+}

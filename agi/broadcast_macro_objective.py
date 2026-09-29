@@ -51,9 +51,7 @@ class MacroObjectiveBroadcaster:
                 phi_resonance=objective["phi_resonance"],
             )
 
-            await self.bus.broadcast(
-                sender_id="agi.macro_objective_controller", signal=signal
-            )
+            await self.bus.broadcast(sender_id="agi.macro_objective_controller", signal=signal)
         else:
             # Platform bus fallback
             message = {

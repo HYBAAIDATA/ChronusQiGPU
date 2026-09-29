@@ -56,9 +56,7 @@ class BiosecurityScanner:
         for region in self.regions:
             result = await self.scan_zoonotic_spillover(region)
             results.append(result)
-            print(
-                f"✅ {region}: Shield Active | Key Generated for {result['pathogen_id']}"
-            )
+            print(f"✅ {region}: Shield Active | Key Generated for {result['pathogen_id']}")
 
         return results
 

@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import hmac
 import json
 import mimetypes
 import os
@@ -13,26 +15,36 @@ import subprocess
 import sys
 import threading
 import time
-from dataclasses import dataclass, field
+import traceback
+from dataclasses import dataclass
+from dataclasses import field
 from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
+from http.server import ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qs, unquote, urlparse
+from urllib.parse import parse_qs
+from urllib.parse import unquote
+from urllib.parse import urlparse
 
-from startup_contract import (
-    AppendOnlyAudit,
-    BootLock,
-    METRICS,
-    StartupConfigError,
-    WorkerRecord,
-    fs_selfcheck,
-    identity_hmac_status,
-    now_iso,
-    resolve_stratum_identity,
-)
 import runtime_config
 import system_fabric
+from startup_contract import METRICS
+from startup_contract import AppendOnlyAudit
+from startup_contract import BootLock
+from startup_contract import StartupConfigError
+from startup_contract import WorkerRecord
+from startup_contract import fs_selfcheck
+from startup_contract import identity_hmac_status
+from startup_contract import now_iso
+from startup_contract import resolve_stratum_identity
+
+try:
+    from al_haras_pythia import pythia_guardian_api
+except ModuleNotFoundError as exc:
+    if exc.name != "al_haras":
+        raise
+    pythia_guardian_api = None
 from worker_lifecycle import HeartbeatReader
 
 _SCHEMA_VERSION = "mla1517.status/1"
@@ -41,6 +53,19 @@ _TOE_SCHEMA_VERSION = "mla1517.toe_collapse/1"
 _TOE_MAX_BODY_BYTES = 4 * 1024 * 1024
 _STATUS_BACKEND = "Python/C/OpenCL"
 _CANONICAL_DEVICE = "canonical-python-backend"
+PRIVILEGED_MEDIATION_INSTALLED = True
+_PRIVILEGED_PREFIXES = (
+    "/api/v1/mining/",
+    "/api/v1/policy/",
+    "/api/v1/worker/",
+    "/api/v1/recovery/",
+    "/api/v1/admin/",
+    "/api/v1/toe/",
+    "/api/v1/quantum/",
+    "/api/v1/scale/",
+    "/api/v1/assembly/",
+    "/api/v1/security/",
+)
 from lucas.ladder import FULL_LADDER
 
 _EXACT_LADDER = list(FULL_LADDER)
@@ -49,7 +74,16 @@ _RESTART_WINDOW_SECONDS = 600
 _WORKER_SPECS = {
     "agentic-mining": "mining_runtime.py",
     "salamander": "salamander_engine.py",
+    "discovery": "discovery_runtime.py",
 }
+# Workers that drive the mining device. The discovery worker experiments on a
+# simulated twin, so it runs (and learns) on a host with no device bound.
+_DEVICE_WORKERS = frozenset({"agentic-mining", "salamander"})
+# With PYTHIA_EXECUTION_DEVICE declared, the mining worker drives the
+# Execution Router directly (OpenCL or the labelled CPU reference) and needs
+# no MMIO bridge. Salamander supervises the bridge, so it still waits for one.
+_EXECUTION_DEVICE_WORKERS = frozenset({"agentic-mining"})
+_EXECUTION_DEVICES = ("opencl", "cpu")
 _LOCK_HELD = False
 _LOCK_GUARD = threading.Lock()
 _AUDIT: AppendOnlyAudit | None = None
@@ -71,17 +105,31 @@ _TOE_BRIDGE_GUARD = threading.Lock()
 
 
 def gpu_payload() -> dict[str, Any]:
-    """Full GPU truth surface: ranked devices, vendors, live backends.
+    """Full GPU truth surface: logical substrate and observed host backends.
 
     Result is cached for ``_GPU_CACHE_TTL_S`` so the 5 s UI poll does not
     pay OpenCL enumeration + hasher/punch init on every tick. Failures
-    degrade to ``{"available": False}`` — never raise, never invent.
+    degrade to an unavailable substrate — never raise, never invent.
     """
     now = time.monotonic()
     cached = _GPU_CACHE.get("payload")
     if cached is not None and (now - float(_GPU_CACHE.get("at", 0.0))) < _GPU_CACHE_TTL_S:
         return cached
-    payload: dict[str, Any] = {"available": False, "devices": []}
+    payload: dict[str, Any] = {
+        "available": False,
+        "count": 0,
+        "opencl_device_count": 0,
+        "physical_gpu_available": False,
+        "physical_gpu_count": 0,
+        "devices": [],
+        "logical_substrate": {
+            "name": "hyba-super-gpu",
+            "available": False,
+            "active": False,
+            "host_backend": "none",
+            "fallback_used": False,
+        },
+    }
     try:
         from hyba.gpureport import report as _gpu_report
 
@@ -89,16 +137,35 @@ def gpu_payload() -> dict[str, Any]:
         devices = []
         if isinstance(doc.get("opencl"), dict):
             devices = doc["opencl"].get("devices") or []
+        gpu_devices = [
+            device
+            for device in devices
+            if isinstance(device, dict) and bool(device.get("is_gpu", False))
+        ]
         hasher = doc.get("hasher") if isinstance(doc.get("hasher"), dict) else {}
         punch = doc.get("punch") if isinstance(doc.get("punch"), dict) else {}
         vendors = doc.get("vendors") if isinstance(doc.get("vendors"), dict) else {}
-        running = str(hasher.get("backend") or punch.get("backend") or "cpu")
+        detected_backend = str(hasher.get("backend") or punch.get("backend") or "none")
+        substrate_available = detected_backend == "cpu" or detected_backend.startswith("opencl:")
+        fallback_used = bool(hasher.get("fallback_reason"))
+        member_count = len(devices) + int(detected_backend == "cpu")
         payload = {
-            "available": bool(devices),
-            "count": len(devices),
+            "available": substrate_available,
+            "count": member_count,
+            "opencl_device_count": len(devices),
+            "physical_gpu_available": bool(gpu_devices),
+            "physical_gpu_count": len(gpu_devices),
             "devices": devices,
-            "running_backend": running,
-            "running_device": str(hasher.get("device") or ""),
+            "backend_active": False,
+            "detected_backend": detected_backend,
+            "detected_device": str(hasher.get("device") or ""),
+            "logical_substrate": {
+                "name": "hyba-super-gpu",
+                "available": substrate_available,
+                "active": False,
+                "host_backend": detected_backend,
+                "fallback_used": fallback_used,
+            },
             "hasher": hasher,
             "punch": {
                 "use_opencl": bool(punch.get("use_opencl", False)),
@@ -109,7 +176,7 @@ def gpu_payload() -> dict[str, Any]:
             "generated_at": now_iso(),
         }
     except Exception as exc:
-        payload = {"available": False, "devices": [], "error": f"{type(exc).__name__}: {exc}"}
+        payload["error"] = f"{type(exc).__name__}: {exc}"
     _GPU_CACHE["at"] = now
     _GPU_CACHE["payload"] = payload
     return payload
@@ -196,10 +263,21 @@ def _is_truthy(value: str | None, *, default: bool = False) -> bool:
 def _worker_ids() -> list[str]:
     configured = [
         item.strip()
-        for item in os.getenv("PYTHIA_CONTROL_WORKERS", "agentic-mining,salamander").split(",")
+        for item in os.getenv(
+            "PYTHIA_CONTROL_WORKERS", "agentic-mining,salamander,discovery"
+        ).split(",")
         if item.strip()
     ]
     return [worker_id for worker_id in configured if worker_id in _WORKER_SPECS]
+
+
+def _execution_device_env() -> str:
+    value = os.getenv("PYTHIA_EXECUTION_DEVICE", "").strip().lower()
+    if value and value not in _EXECUTION_DEVICES:
+        raise StartupConfigError(
+            f"PYTHIA_EXECUTION_DEVICE must be one of {', '.join(_EXECUTION_DEVICES)}"
+        )
+    return value
 
 
 def _read_metrics(worker_id: str) -> dict[str, Any]:
@@ -264,11 +342,13 @@ class ControlPlane:
         self.lock = threading.RLock()
         self.autostart = _is_truthy(os.getenv("PYTHIA_AUTOSTART_WORKERS"), default=True)
         self.mmio_device = os.getenv("MLA1517_MMIO_DEVICE", "").strip()
+        self.execution_device = _execution_device_env()
         self.audit.append(
             "control_api_initialized",
             workers=list(self.handles),
             autostart=self.autostart,
             mmio_device=bool(self.mmio_device),
+            execution_device=self.execution_device or None,
             stratum=self.identity.public(),
             alias_policy=os.getenv("PYTHIA_ALIAS_POLICY", "compat").strip().lower() or "compat",
         )
@@ -279,10 +359,19 @@ class ControlPlane:
         for handle in self.handles.values():
             if not self.autostart:
                 handle.record.state = "disabled"
-            elif not self.mmio_device:
+            elif not self._device_ready(handle):
                 handle.record.state = "armed_no_device"
             else:
                 handle.record.state = "stopped"
+
+    def mining_device_bound(self) -> bool:
+        return bool(self.mmio_device) or bool(self.execution_device)
+
+    def _device_ready(self, handle: WorkerHandle) -> bool:
+        worker_id = handle.record.worker_id
+        if worker_id not in _DEVICE_WORKERS or self.mmio_device:
+            return True
+        return bool(self.execution_device) and worker_id in _EXECUTION_DEVICE_WORKERS
 
     def ensure_workers(self) -> None:
         with self.lock:
@@ -294,7 +383,7 @@ class ControlPlane:
             return
         if not self.autostart:
             return
-        if not self.mmio_device:
+        if not self._device_ready(handle):
             return
         if handle.process is not None and handle.process.poll() is None:
             return
@@ -317,12 +406,12 @@ class ControlPlane:
         handle.record.attempts_window = len(handle.restarts)
         env = os.environ.copy()
         env.setdefault("PYTHONPATH", str(self.python_root))
+        # Workers inherit the service's stdout/stderr so a container log
+        # shows why a worker exited; the restart budget still bounds it.
         handle.process = subprocess.Popen(
             [sys.executable, str(handle.script)],
             cwd=str(self.python_root),
             env=env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
             text=True,
         )
         self.audit.append(
@@ -417,7 +506,7 @@ class ControlPlane:
                 record = handle.record
                 if enabled:
                     if record.state == "disabled":
-                        target = "stopped" if self.mmio_device else "armed_no_device"
+                        target = "stopped" if self._device_ready(handle) else "armed_no_device"
                         record.transition(target, self.audit, "mining_start")
                 else:
                     self._retire_handle(handle, "mining_stop")
@@ -479,7 +568,7 @@ class ControlPlane:
                     continue
                 self._retire_handle(handle, "config_restart")
                 restarted.append(handle.record.worker_id)
-            if self.autostart and self.mmio_device:
+            if self.autostart and self.mining_device_bound():
                 for handle in self.handles.values():
                     if handle.record.worker_id in restarted:
                         try:
@@ -671,6 +760,76 @@ def _ready_to_mine_reason(
 MINING_EVIDENCE_SCHEMA = "pythia.mining_evidence/1"
 
 
+_KNOWLEDGE: Any = None
+
+
+def knowledge_payload() -> dict[str, Any]:
+    """Every intelligence's shared knowledge, replayed from the fabric journal."""
+    global _KNOWLEDGE
+    from mla1517.knowledge import KnowledgeFabric
+    from mla1517.knowledge import default_journal_path
+
+    if _KNOWLEDGE is None:
+        _KNOWLEDGE = KnowledgeFabric(default_journal_path())
+    _KNOWLEDGE.sync()
+    return _KNOWLEDGE.snapshot(recent=50)
+
+
+ADMIN_KEY_ENV = "EUCLID_ADMIN_API_KEY"
+UNAUTHENTICATED_ENV = "PYTHIA_ALLOW_UNAUTHENTICATED_CONTROL"
+
+
+def control_authorization(headers: Any) -> tuple[HTTPStatus, str] | None:
+    """None when a state-changing request is authorized, else (status, reason).
+
+    Fail closed: every POST and PUT that changes state (start, stop, switch,
+    elevate, escalate, config) needs ``Authorization: Bearer <key>`` matching
+    EUCLID_ADMIN_API_KEY. With no key configured nothing may change state,
+    unless PYTHIA_ALLOW_UNAUTHENTICATED_CONTROL=1 declares a local dev box.
+    """
+    key = os.getenv(ADMIN_KEY_ENV, "").strip()
+    if not key:
+        if _is_truthy(os.getenv(UNAUTHENTICATED_ENV)):
+            return None
+        return HTTPStatus.FORBIDDEN, f"{ADMIN_KEY_ENV} is not configured; control is closed"
+    header = str(headers.get("Authorization", "") or "")
+    token = header[7:].strip() if header[:7].lower() == "bearer " else ""
+    if not token or not hmac.compare_digest(token.encode("utf-8"), key.encode("utf-8")):
+        return HTTPStatus.UNAUTHORIZED, "operator key required"
+    return None
+
+
+def start_repo_engineer() -> bool:
+    """Load the repo engineer; an optional service never keeps the control
+    API from serving. A failure is audited and printed, and the engineer's
+    own route reports it when asked."""
+    try:
+        system_fabric.initialize_repo_engineer()
+        return True
+    except Exception as exc:  # noqa: BLE001 - reported, never fatal to the control plane
+        _audit().append("repo_engineer_unavailable", error=f"{type(exc).__name__}: {exc}")
+        print(f"[pythia-control] repo engineer unavailable: {type(exc).__name__}: {exc}")
+        return False
+
+
+def announce_skills() -> int:
+    """Tell every intelligence which skills Salamander holds.
+
+    Publishes each verified skill graft to the knowledge fabric; a rejected
+    graft is never announced. The control plane comes up regardless.
+    """
+    try:
+        from mla1517.knowledge import KnowledgeFabric
+        from mla1517.knowledge import default_journal_path
+
+        from Intelligence.skill_graft import announce
+
+        return len(announce(KnowledgeFabric(default_journal_path())))
+    except Exception as exc:  # noqa: BLE001 - reported, never fatal to the control plane
+        print(f"[pythia-control] skill announcement failed: {type(exc).__name__}: {exc}")
+        return 0
+
+
 def mining_evidence_payload() -> dict[str, Any]:
     """The live miner's own evidence snapshot, exactly as it published it.
 
@@ -706,7 +865,7 @@ def status_payload() -> dict[str, Any]:
     total_hashrate = sum(record.hashrate for record in records)
     total_shares = sum(record.shares_accepted for record in records)
     worker_map = {record.worker_id: record.public() for record in records}
-    device_present = bool(control.mmio_device)
+    device_present = control.mining_device_bound()
     gpu = gpu_payload()
     device_entries = []
     if isinstance(gpu.get("devices"), list) and gpu["devices"]:
@@ -773,6 +932,129 @@ def status_payload() -> dict[str, Any]:
             },
         },
     }
+
+
+def _worker_live(records: list[WorkerRecord], worker_id: str = "agentic-mining") -> bool:
+    return any(record.worker_id == worker_id and record.liveness for record in records)
+
+
+def _metrics_json(worker_id: str, key: str) -> Any:
+    raw = _read_metrics(worker_id).get(key)
+    try:
+        return json.loads(raw) if isinstance(raw, str) else raw
+    except (TypeError, ValueError):
+        return None
+
+
+def stratum_status_payload() -> dict[str, Any]:
+    """The mining worker's Stratum session (``/api/v1/stratum/status``)."""
+    control = _control_plane()
+    records = control.records()
+    return {
+        **_stratum_status_payload(control, records),
+        "worker_live": _worker_live(records),
+        "generated_at": now_iso(),
+    }
+
+
+def telemetry_events_payload(limit: Any = 100) -> dict[str, Any]:
+    """Recent Stratum events the mining worker observed (jobs, targets, shares)."""
+    try:
+        count = max(1, min(int(limit), 200))
+    except (TypeError, ValueError):
+        count = 100
+    control = _control_plane()
+    records = control.records()
+    base = {
+        "schema": "pythia.telemetry_events/1",
+        "generated_at": now_iso(),
+        "source": "agentic-mining",
+        "worker_live": _worker_live(records),
+    }
+    observed = _metrics_json("agentic-mining", "stratum_events")
+    if not isinstance(observed, dict) or not isinstance(observed.get("events"), list):
+        return base | {
+            "available": False,
+            "reason": "the mining worker has not reported Stratum telemetry",
+            "events": [],
+            "totals": None,
+        }
+    return base | {
+        "available": True,
+        "events": observed["events"][-count:],
+        "totals": observed.get("totals"),
+        "last_seq": observed.get("last_seq"),
+    }
+
+
+def hardware_status_payload() -> dict[str, Any]:
+    """Mining device binding, OpenCL inventory and the worker's live execution."""
+    control = _control_plane()
+    records = control.records()
+    gpu = gpu_payload()
+    bound = control.mining_device_bound()
+    metrics = _read_metrics("agentic-mining")
+    evidence = _metrics_json("agentic-mining", "mining_evidence")
+    hashing = None
+    if "hashrate_hs" in metrics:
+        hashing = {
+            key: metrics.get(key)
+            for key in ("hashrate_hs", "hashes_total", "executions_total", "backend")
+        }
+    devices = [
+        {
+            "name": entry.get("name"),
+            "vendor": entry.get("vendor"),
+            "family": entry.get("family"),
+            "is_gpu": bool(entry.get("is_gpu", False)),
+        }
+        for entry in gpu.get("devices") or []
+        if isinstance(entry, dict)
+    ]
+    return {
+        "schema": "pythia.hardware_status/1",
+        "generated_at": now_iso(),
+        "mining_device": {
+            "bound": bound,
+            "mmio_bridge_configured": bool(control.mmio_device),
+            "execution_device": control.execution_device or None,
+            "reason": (
+                None
+                if bound
+                else _mining_device_reason(control)
+                or "no mining device bound — set PYTHIA_EXECUTION_DEVICE=opencl or MLA1517_MMIO_DEVICE"
+            ),
+        },
+        "opencl": {
+            "available": bool(gpu.get("available", False)),
+            "device_count": int(gpu.get("opencl_device_count", 0) or 0),
+            "physical_gpu_count": int(gpu.get("physical_gpu_count", 0) or 0),
+            "devices": devices,
+            "error": gpu.get("error"),
+        },
+        "execution": evidence.get("execution_backend") if isinstance(evidence, dict) else None,
+        "hashing": hashing,
+        "workers": {
+            record.worker_id: {"state": record.state, "liveness": record.liveness}
+            for record in records
+        },
+    }
+
+
+def security_status_payload() -> tuple[HTTPStatus, dict[str, Any]]:
+    """AL HARAS public status; 503 only when the guardian cannot exist here."""
+    if pythia_guardian_api is None:
+        return HTTPStatus.SERVICE_UNAVAILABLE, {
+            "available": False,
+            "reason": "guardian_dependency_unavailable",
+        }
+    try:
+        return HTTPStatus.OK, pythia_guardian_api().public_status()
+    except Exception as exc:  # noqa: BLE001 - reported, never a dropped socket
+        return HTTPStatus.SERVICE_UNAVAILABLE, {
+            "available": False,
+            "reason": f"guardian_unavailable: {type(exc).__name__}: {exc}",
+        }
 
 
 def telemetry_summary_payload() -> dict[str, Any]:
@@ -945,7 +1227,7 @@ def _apply_runtime_config(cfg: dict[str, Any]) -> dict[str, Any]:
     """
     control = _control_plane()
     applied: dict[str, Any] = {"spawned": [], "retired": [], "restarted": []}
-    if not control.mmio_device:
+    if not control.mining_device_bound():
         applied["note"] = "no mining device — config saved, workers stay armed_no_device"
         return applied
     applied["restarted"] = control.restart_running()
@@ -1031,12 +1313,31 @@ def _runner_stop(runner: Any) -> tuple[HTTPStatus, dict[str, Any]]:
     return HTTPStatus.OK, {"ok": stopped, "state": runner.status()["state"]}
 
 
+def _repo_engineer_ask(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
+    prompt = body.get("prompt")
+    if not isinstance(prompt, str) or not prompt.strip() or len(prompt) > 2_000:
+        return HTTPStatus.BAD_REQUEST, {"ok": False, "error": "prompt_must_be_1_to_2000_characters"}
+    readiness = system_fabric.repo_engineer_status()
+    if not readiness["ready"]:
+        return (
+            HTTPStatus.SERVICE_UNAVAILABLE,
+            {"ok": False, "error": "repo_engineer_not_configured", "readiness": readiness},
+        )
+    try:
+        started = system_fabric.start_repo_engineer(prompt)
+    except ValueError as exc:
+        return HTTPStatus.BAD_REQUEST, {"ok": False, "error": str(exc)}
+    if not started:
+        return HTTPStatus.CONFLICT, {"ok": False, "error": "runner_busy"}
+    return HTTPStatus.ACCEPTED, {"ok": True, "state": "running"}
+
+
 def _mining_device_reason(control: "ControlPlane") -> str | None:
     """None when a mining device is bound; otherwise the honest reason."""
-    if control.mmio_device:
+    if control.mmio_device or getattr(control, "execution_device", ""):
         return None
     gpu = gpu_payload()
-    if int(gpu.get("count", 0) or 0) > 0:
+    if int(gpu.get("opencl_device_count", 0) or 0) > 0:
         return None
     return "no mining device — MLA1517_MMIO_DEVICE unset and no OpenCL device"
 
@@ -1051,9 +1352,11 @@ def _mining_start(_body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
     _audit().append("mining_start", workers=list(control.handles))
     records = {r.worker_id: r.state for r in control.records()}
     payload: dict[str, Any] = {"ok": True, "workers": records}
-    if not control.mmio_device:
+    if not control.mining_device_bound():
         payload["note"] = (
-            "workers armed_no_device — MLA1517_MMIO_DEVICE unset; " "no worker process will spawn"
+            "workers armed_no_device — no mining device bound; set "
+            "PYTHIA_EXECUTION_DEVICE=opencl to mine on the OpenCL device, or "
+            "MLA1517_MMIO_DEVICE for the MLA1517 bridge"
         )
     return HTTPStatus.OK, payload
 
@@ -1170,9 +1473,90 @@ def toe_collapse_payload(data: Any) -> dict[str, Any]:
 class _Handler(BaseHTTPRequestHandler):
     server_version = "PYTHIAControlAPI/1.0"
 
+    def _guardian_headers(self) -> dict[str, str]:
+        return {
+            "authorization": self.headers.get("Authorization", ""),
+            "x-hyba-tenant": self.headers.get("X-HYBA-Tenant", ""),
+            "x-hyba-actor": self.headers.get("X-HYBA-Actor", ""),
+        }
+
+    def _guardian_preflight(self, path: str, body: dict[str, Any] | None = None) -> bool:
+        """Fail closed before any privileged handler is invoked."""
+        operation = path.removeprefix("/api/v1/").replace("/", ".")
+        evaluate_body = {
+            "operation": operation,
+            "resource": path.removeprefix("/api/v1/"),
+            "payload": body or {},
+        }
+        if body is None:
+            evaluate_body["observation"] = {
+                "operation": operation,
+                "resource": evaluate_body["resource"],
+            }
+        elif isinstance(body, dict) and "observation" in body:
+            evaluate_body["observation"] = body["observation"]
+        try:
+            code, receipt = pythia_guardian_api().evaluate(
+                headers=self._guardian_headers(),
+                body=evaluate_body,
+            )
+        except Exception as exc:  # noqa: BLE001 - dependency failure: 503, never 500
+            self._json(
+                HTTPStatus.SERVICE_UNAVAILABLE,
+                {
+                    "available": False,
+                    "error": "guardian_unavailable",
+                    "reason": f"{type(exc).__name__}: {exc}",
+                },
+            )
+            return False
+        if code != HTTPStatus.OK:
+            self._json(HTTPStatus(code), receipt)
+            return False
+        self._guardian_receipt = receipt
+        return True
+
+    def _guardian_commit_evidence(self, path: str, status: int, receipt: dict[str, Any]) -> None:
+        digest = hashlib.sha256(
+            json.dumps(receipt, sort_keys=True, default=str).encode("utf-8")
+        ).hexdigest()
+        _audit().append(
+            "guardian_mediated",
+            path=path,
+            status=int(status),
+            receipt_sha256=digest,
+            allowed=bool(receipt.get("allowed")),
+        )
+
     def do_GET(self) -> None:  # noqa: N802
+        self._guarded(self._route_get)
+
+    def do_POST(self) -> None:  # noqa: N802
+        self._guarded(self._route_post)
+
+    def _guarded(self, route: Any) -> None:
+        """A failing route answers 500 JSON instead of dropping the connection."""
+        try:
+            route()
+        except (BrokenPipeError, ConnectionResetError):
+            self.close_connection = True
+        except Exception as exc:  # noqa: BLE001 - reported to the client and stderr
+            path = urlparse(self.path).path
+            traceback.print_exc()
+            try:
+                self._json(
+                    HTTPStatus.INTERNAL_SERVER_ERROR,
+                    {"error": "internal_error", "detail": type(exc).__name__, "path": path},
+                )
+            except Exception:
+                self.close_connection = True
+
+    def _route_get(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path
+        if path.startswith(_PRIVILEGED_PREFIXES):
+            if not self._guardian_preflight(path):
+                return
         if path in {"/api/health", "/healthz", "/api/v1/healthz"}:
             self._json(
                 HTTPStatus.OK,
@@ -1218,6 +1602,9 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/api/v1/mining/evidence":
             self._json(HTTPStatus.OK, mining_evidence_payload())
             return
+        if path == "/api/v1/knowledge":
+            self._json(HTTPStatus.OK, knowledge_payload())
+            return
         if path == "/api/v1/gpu":
             self._json(HTTPStatus.OK, gpu_payload())
             return
@@ -1243,17 +1630,66 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/api/v1/intelligence/selftest":
             self._json(HTTPStatus.OK, system_fabric.selftest_status())
             return
+        if path == "/api/v1/intelligence/maintenance":
+            self._json(HTTPStatus.OK, system_fabric.self_repair_status())
+            return
+        if path == "/api/v1/intelligence/engineer/status":
+            self._json(HTTPStatus.OK, system_fabric.repo_engineer_status())
+            return
         if path == "/api/v1/agentic/status":
             self._json(HTTPStatus.OK, system_fabric.agentic_status())
             return
         if path == "/api/v1/campaign/status":
             self._json(HTTPStatus.OK, system_fabric.campaign_status())
             return
+        if path == "/api/v1/stratum/status":
+            self._json(HTTPStatus.OK, stratum_status_payload())
+            return
+        if path == "/api/v1/telemetry/events":
+            params = parse_qs(parsed.query)
+            self._json(HTTPStatus.OK, telemetry_events_payload(params.get("n", ["100"])[0]))
+            return
+        if path == "/api/v1/hardware/status":
+            self._json(HTTPStatus.OK, hardware_status_payload())
+            return
+        if path == "/api/v1/security/status":
+            self._json(*security_status_payload())
+            return
+        if path == "/api/v1/security/subscribe":
+            code, security = security_status_payload()
+            if code != HTTPStatus.OK:
+                self._json(code, security)
+                return
+            self._json(
+                HTTPStatus.OK,
+                {
+                    "product": "HYBA Security",
+                    "capability": security["capability"],
+                    "subscription_required": True,
+                    "subscription_url": security["subscription_url"],
+                },
+            )
+            return
         self._static_or_404(path)
 
     _POST_TABLE: dict[str, Any] = {
         "/api/v1/system/verify": lambda _b: _runner_start(system_fabric.start_verification),
         "/api/v1/intelligence/selftest": lambda _b: _runner_start(system_fabric.start_selftest),
+        "/api/v1/intelligence/maintenance/start": lambda _b: _runner_start(
+            system_fabric.start_self_repair
+        ),
+        "/api/v1/intelligence/maintenance/run": lambda _b: _runner_start(
+            system_fabric.run_self_repair_now
+        ),
+        "/api/v1/intelligence/maintenance/stop": lambda _b: (
+            HTTPStatus.ACCEPTED,
+            {
+                "ok": system_fabric.stop_self_repair(),
+                "state": system_fabric.self_repair_status()["state"],
+                "detail": "stop takes effect after the current full diagnosis cycle",
+            },
+        ),
+        "/api/v1/intelligence/engineer/ask": _repo_engineer_ask,
         "/api/v1/agentic/start": _agentic_start,
         "/api/v1/agentic/stop": lambda _b: _runner_stop(system_fabric.AGENTIC),
         "/api/v1/campaign/start": _campaign_start,
@@ -1266,6 +1702,33 @@ class _Handler(BaseHTTPRequestHandler):
         "/api/v1/salamander/fault": _salamander_fault,
     }
 
+    def _guardian_api(self):
+        """Return the lazily-built guardian, or answer 503 instead of
+        dropping the connection when it cannot be constructed."""
+        try:
+            return pythia_guardian_api()
+        except Exception:
+            self._json(
+                HTTPStatus.SERVICE_UNAVAILABLE,
+                {"allowed": False, "reason": "guardian_unavailable"},
+            )
+            return None
+
+    def _drain(self, length: int) -> None:
+        """Discard a refused body, bounded so a hostile Content-Length cannot
+        force unbounded reads; past the cap the connection is closed."""
+        remaining = min(int(length), _TOE_MAX_BODY_BYTES * 4)
+        if length > remaining:
+            self.close_connection = True
+        try:
+            while remaining > 0:
+                chunk = self.rfile.read(min(remaining, 65536))
+                if not chunk:
+                    break
+                remaining -= len(chunk)
+        except (OSError, ValueError):
+            self.close_connection = True
+
     def _read_json_body(self) -> tuple[dict[str, Any] | None, str | None]:
         try:
             length = int(self.headers.get("Content-Length") or 0)
@@ -1274,6 +1737,9 @@ class _Handler(BaseHTTPRequestHandler):
         if length <= 0:
             return {}, None
         if length > _TOE_MAX_BODY_BYTES:
+            # Empty the socket before the 413 so the client reads the status
+            # instead of a connection reset mid-upload.
+            self._drain(length)
             return None, "body_too_large"
         raw = self.rfile.read(length)
         try:
@@ -1284,8 +1750,37 @@ class _Handler(BaseHTTPRequestHandler):
             return None, "body_must_be_object"
         return body, None
 
-    def do_POST(self) -> None:  # noqa: N802
+    def _route_post(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path == "/api/v1/security/evaluate":
+            body, err = self._read_json_body()
+            if body is None:
+                status = (
+                    HTTPStatus.REQUEST_ENTITY_TOO_LARGE
+                    if err == "body_too_large"
+                    else HTTPStatus.BAD_REQUEST
+                )
+                self._json(status, {"allowed": False, "reason": err})
+                return
+            if pythia_guardian_api is None:
+                self._json(
+                    HTTPStatus.SERVICE_UNAVAILABLE,
+                    {"allowed": False, "reason": "guardian_dependency_unavailable"},
+                )
+                return
+            guardian = self._guardian_api()
+            if guardian is None:
+                return
+            code, payload = guardian.evaluate(
+                headers={
+                    "authorization": self.headers.get("Authorization", ""),
+                    "x-hyba-tenant": self.headers.get("X-HYBA-Tenant", ""),
+                    "x-hyba-actor": self.headers.get("X-HYBA-Actor", ""),
+                },
+                body=body,
+            )
+            self._json(HTTPStatus(code), payload)
+            return
         if parsed.path == "/api/v1/toe/collapse":
             body, err = self._read_json_body()
             if body is None:
@@ -1294,36 +1789,61 @@ class _Handler(BaseHTTPRequestHandler):
                     if err == "body_too_large"
                     else HTTPStatus.BAD_REQUEST
                 )
-                self._json(status, {"error": err})
+                self._json(status, {"allowed": False, "reason": err})
                 return
             if not body:
-                self._json(HTTPStatus.BAD_REQUEST, {"error": "empty_body"})
-                return
-            if err is not None:
-                status = (
-                    HTTPStatus.REQUEST_ENTITY_TOO_LARGE
-                    if err == "body_too_large"
-                    else HTTPStatus.BAD_REQUEST
+                self._json(
+                    HTTPStatus.BAD_REQUEST,
+                    {"allowed": False, "reason": "empty_body"},
                 )
-                self._json(status, {"error": err})
+                return
+            if pythia_guardian_api is None:
+                self._json(
+                    HTTPStatus.SERVICE_UNAVAILABLE,
+                    {"allowed": False, "reason": "guardian_dependency_unavailable"},
+                )
                 return
             data = body.get("data", body)
-            try:
-                self._json(HTTPStatus.OK, toe_collapse_payload(data))
-            except Exception as exc:
-                self._json(
-                    HTTPStatus.INTERNAL_SERVER_ERROR,
-                    {
-                        "schema_version": _TOE_SCHEMA_VERSION,
-                        "available": False,
-                        "error": f"{type(exc).__name__}: {exc}",
-                        "generated_at": now_iso(),
-                    },
-                )
+            observation = data if isinstance(data, dict) else {"value": data}
+            guardian = self._guardian_api()
+            if guardian is None:
+                return
+            code, decision = guardian.evaluate(
+                headers={
+                    "authorization": self.headers.get("Authorization", ""),
+                    "x-hyba-tenant": self.headers.get("X-HYBA-Tenant", ""),
+                    "x-hyba-actor": self.headers.get("X-HYBA-Actor", ""),
+                },
+                body={
+                    "operation": "toe.collapse",
+                    "resource": "toe/collapse",
+                    "payload": {"data": data},
+                    "observation": observation,
+                },
+                include_evidence=True,
+            )
+            if code != HTTPStatus.OK:
+                self._json(HTTPStatus(code), decision)
+                return
+            evidence = decision.pop("intelligence_evidence")
+            result = evidence["result"]
+            self._json(
+                HTTPStatus.OK,
+                {
+                    "schema_version": _TOE_SCHEMA_VERSION,
+                    "generated_at": now_iso(),
+                    "guardian_receipt": decision,
+                    "execution_evidence": evidence["execution_evidence"],
+                    **result,
+                },
+            )
             return
         handler = self._POST_TABLE.get(parsed.path)
         if handler is None:
             self._json(HTTPStatus.NOT_FOUND, {"error": "not_found"})
+            return
+        privileged = parsed.path.startswith(_PRIVILEGED_PREFIXES)
+        if not privileged and self._refuse_unauthorized():
             return
         body, err = self._read_json_body()
         if body is None:
@@ -1334,6 +1854,9 @@ class _Handler(BaseHTTPRequestHandler):
             )
             self._json(status, {"error": err})
             return
+        if privileged:
+            if not self._guardian_preflight(parsed.path, body):
+                return
         try:
             status, payload = handler(body)
         except ValueError as exc:
@@ -1351,6 +1874,8 @@ class _Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path != "/api/v1/config":
             self._json(HTTPStatus.NOT_FOUND, {"error": "not_found"})
+            return
+        if self._refuse_unauthorized():
             return
         body, err = self._read_json_body()
         if body is None:
@@ -1402,8 +1927,23 @@ class _Handler(BaseHTTPRequestHandler):
             self.wfile.write(body)
 
     def _json(self, status: HTTPStatus, payload: dict[str, Any]) -> None:
+        receipt = getattr(self, "_guardian_receipt", None)
+        if receipt is not None:
+            payload = dict(payload)
+            payload.setdefault("guardian_receipt", receipt)
+            self._guardian_commit_evidence(urlparse(self.path).path, int(status), receipt)
+            del self._guardian_receipt
         body = json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
         self._send(int(status), "application/json; charset=utf-8", body)
+
+    def _refuse_unauthorized(self) -> bool:
+        refusal = control_authorization(self.headers)
+        if refusal is None:
+            return False
+        status, reason = refusal
+        _audit().append("control_refused", path=urlparse(self.path).path, reason=reason)
+        self._json(status, {"ok": False, "error": reason})
+        return True
 
     def _method_not_allowed(self) -> None:
         self._json(HTTPStatus.METHOD_NOT_ALLOWED, {"error": "method_not_allowed"})
@@ -1452,17 +1992,79 @@ class _Handler(BaseHTTPRequestHandler):
         self._send(HTTPStatus.OK, content_type or "application/octet-stream", content, cache)
 
 
+def _active_ports_path() -> Path:
+    return Path(os.getenv("PYTHIA_ACTIVE_PORTS_FILE", "/tmp/hyba_active_ports.json"))
+
+
+def _write_active_ports(update: Any) -> None:
+    """Merge-update the shared port file; other writers' keys survive."""
+    path = _active_ports_path()
+    try:
+        current = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+    except (OSError, ValueError):
+        current = {}
+    if not isinstance(current, dict):
+        current = {}
+    if not update(current):
+        return
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+        temporary.write_text(json.dumps(current, indent=2, sort_keys=True), encoding="utf-8")
+        os.replace(temporary, path)
+    except OSError as exc:
+        print(f"[pythia-control] active port file {path} not updated: {exc}")
+
+
+def publish_active_port(host: str, port: int) -> None:
+    """Tell the frontend dev gateway where this control API listens."""
+    reach = "127.0.0.1" if host in ("", "0.0.0.0", "::") else host
+
+    def update(current: dict[str, Any]) -> bool:
+        current.update(
+            {
+                "python_host": host,
+                "python_port": int(port),
+                "python_url": f"http://{reach}:{int(port)}",
+                "python_pid": os.getpid(),
+                "python_updated_at": now_iso(),
+            }
+        )
+        return True
+
+    _write_active_ports(update)
+
+
+def retract_active_port() -> None:
+    def update(current: dict[str, Any]) -> bool:
+        if current.get("python_pid") != os.getpid():
+            return False
+        for key in ("python_host", "python_port", "python_url", "python_pid", "python_updated_at"):
+            current.pop(key, None)
+        return True
+
+    _write_active_ports(update)
+
+
 def serve(
     host: str = "0.0.0.0",
     port: int = 3000,
     web_root: str | Path = "dist/public",
 ) -> None:
     _control_plane()
+    start_repo_engineer()
+    announce_skills()
+    if system_fabric.startup_self_repair_enabled():
+        system_fabric.start_self_repair(startup=True)
     server = ThreadingHTTPServer((host, int(port)), _Handler)
     server.web_root = Path(web_root).resolve()
+    bound = getattr(server, "server_address", None)
+    if bound and bound[1]:
+        publish_active_port(host, bound[1])
     try:
         server.serve_forever()
     finally:
+        retract_active_port()
         if _CONTROL is not None:
             _CONTROL.shutdown()
         server.server_close()

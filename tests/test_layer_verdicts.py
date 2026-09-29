@@ -95,7 +95,8 @@ def test_l5_seam_ledger_required():
 
 def test_l6_search_none_is_fail_zero_is_pass():
     out = WorkflowResult(fail_fast=False)
-    out.record("L6_search", 0 is not None, "Nonce found: 0")
+    nonce = 0
+    out.record("L6_search", nonce is not None, "Nonce found: 0")
     assert out.verdicts["L6_search"].passed is True
     out2 = WorkflowResult(fail_fast=False)
     out2.record("L6_search", None is not None, "Nonce found: None")

@@ -98,8 +98,19 @@ def validate_local_size(
     return number
 
 
+def _round_to_local(global_size: int, local_size: int) -> int:
+    """Pad ``global_size`` up to a multiple of ``local_size``.
+
+    OpenCL requires the global range to be an exact multiple of the local
+    range. ``cgemv_lr``/``cgemv_batch`` bound-check ``get_global_id`` against
+    the real problem size, so padded lanes exit without touching memory.
+    """
+    return -(-int(global_size) // int(local_size)) * int(local_size)
+
+
 _CL_SOURCE = """
 #ifdef USE_FP64
+#pragma OPENCL EXTENSION cl_khr_fp64 : enable
 typedef double acc_t;
 #else
 typedef float acc_t;
@@ -507,15 +518,19 @@ def _engine_or_default(engine: Any) -> Any:
     return engine if engine is not None else IGPUOpenCLEngine.get()
 
 
-def _as_square(matrix: np.ndarray, dim: int, name: str) -> np.ndarray:
-    array = np.ascontiguousarray(matrix, dtype=np.float64)
+def _as_square(
+    matrix: np.ndarray, dim: int, name: str, dtype: Any = np.float64
+) -> np.ndarray:
+    array = np.ascontiguousarray(matrix, dtype=dtype)
     if array.shape != (dim, dim):
         raise ValueError(f"{name} must have shape ({dim}, {dim}), got {array.shape}")
     return array
 
 
-def _as_vector(vector: np.ndarray, dim: int, name: str) -> np.ndarray:
-    array = np.ascontiguousarray(vector, dtype=np.float64)
+def _as_vector(
+    vector: np.ndarray, dim: int, name: str, dtype: Any = np.float64
+) -> np.ndarray:
+    array = np.ascontiguousarray(vector, dtype=dtype)
     if array.shape != (dim,):
         raise ValueError(f"{name} must have shape ({dim},), got {array.shape}")
     return array
@@ -547,6 +562,18 @@ class _ResidentBase:
     def _build_options(self) -> list:
         return ["-DUSE_FP64"] if getattr(self._engine, "uses_fp64", False) else []
 
+    @property
+    def _acc_dtype(self) -> Any:
+        """Element dtype matching the compiled ``acc_t``: float64 only when
+        the bound device advertises ``cl_khr_fp64``, else float32. Buffer
+        sizes and host arrays must agree with the kernel's element width or
+        every read/write lands mid-element and silently produces garbage."""
+        return np.float64 if getattr(self._engine, "uses_fp64", False) else np.float32
+
+    @property
+    def _acc_bytes(self) -> int:
+        return int(np.dtype(self._acc_dtype).itemsize)
+
     def _upload(self, name: str, array: np.ndarray) -> None:
         self._engine.write_buffer(self._buffers.get(name), array, 0)
 
@@ -573,29 +600,27 @@ class ResidentIGPUState(_ResidentBase):
             raise ValueError(f"dim must be a positive int, got {dim!r}")
         self.dim = int(dim)
         super().__init__(engine=engine, label=label or f"state{self.dim}")
-        self._buffers.buffer("A", self.dim * self.dim * 8)
-        self._buffers.buffer("x", self.dim * 8)
-        self._buffers.buffer("y", self.dim * 8)
+        self._buffers.buffer("A", self.dim * self.dim * self._acc_bytes)
+        self._buffers.buffer("x", self.dim * self._acc_bytes)
+        self._buffers.buffer("y", self.dim * self._acc_bytes)
 
     def set_A(self, matrix: np.ndarray) -> None:
-        self._upload("A", _as_square(matrix, self.dim, "A"))
+        self._upload("A", _as_square(matrix, self.dim, "A", self._acc_dtype))
 
     def set_x(self, vector: np.ndarray) -> None:
-        self._upload("x", _as_vector(vector, self.dim, "x"))
+        self._upload("x", _as_vector(vector, self.dim, "x", self._acc_dtype))
 
     def apply(self, B: np.ndarray, *, local_size: Any = None) -> np.ndarray:
         """Return ``A @ (B @ x)`` computed on the device."""
-        factor = _as_square(B, self.dim, "B")
+        factor = _as_square(B, self.dim, "B", self._acc_dtype)
         self._buffers.buffer("B", factor.nbytes, read_only=True)
         self._upload("B", factor)
-        cl = self._engine.cl
         program = self._engine.program(_CL_SOURCE, self._build_options())
         local = self._engine.default_local_size("cgemv_lr", local_size)
-        out = np.empty(self.dim, dtype=np.float64)
-        cl.enqueue_nd_range_kernel(
+        out = np.empty(self.dim, dtype=self._acc_dtype)
+        program.cgemv_lr(
             self._engine.queue,
-            program.cgemv_lr,
-            (self.dim,),
+            (_round_to_local(self.dim, local),),
             (local,),
             self._buffers.get("A"),
             self._buffers.get("B"),
@@ -626,13 +651,13 @@ class ResidentIGPUEnsemble(_ResidentBase):
         self.members = int(members)
         self.dim = int(dim)
         super().__init__(engine=engine, label=label or f"ensemble{self.members}x{self.dim}")
-        self._buffers.buffer("A", self.members * self.dim * 8)
-        self._buffers.buffer("B", self.dim * self.dim * 8, read_only=True)
-        self._buffers.buffer("X", self.dim * self.members * 8, read_only=True)
-        self._buffers.buffer("Y", self.members * self.members * 8)
+        self._buffers.buffer("A", self.members * self.dim * self._acc_bytes)
+        self._buffers.buffer("B", self.dim * self.dim * self._acc_bytes, read_only=True)
+        self._buffers.buffer("X", self.dim * self.members * self._acc_bytes, read_only=True)
+        self._buffers.buffer("Y", self.members * self.members * self._acc_bytes)
 
     def _as_A(self, matrix: np.ndarray) -> np.ndarray:
-        array = np.ascontiguousarray(matrix, dtype=np.float64)
+        array = np.ascontiguousarray(matrix, dtype=self._acc_dtype)
         if array.shape != (self.members, self.dim):
             raise ValueError(
                 f"A must have shape ({self.members}, {self.dim}), got {array.shape}"
@@ -640,7 +665,7 @@ class ResidentIGPUEnsemble(_ResidentBase):
         return array
 
     def _as_X(self, matrix: np.ndarray) -> np.ndarray:
-        array = np.ascontiguousarray(matrix, dtype=np.float64)
+        array = np.ascontiguousarray(matrix, dtype=self._acc_dtype)
         if array.shape != (self.dim, self.members):
             raise ValueError(
                 f"X must have shape ({self.dim}, {self.members}), got {array.shape}"
@@ -651,21 +676,19 @@ class ResidentIGPUEnsemble(_ResidentBase):
         self._upload("A", self._as_A(matrix))
 
     def set_B(self, matrix: np.ndarray) -> None:
-        self._upload("B", _as_square(matrix, self.dim, "B"))
+        self._upload("B", _as_square(matrix, self.dim, "B", self._acc_dtype))
 
     def set_X(self, matrix: np.ndarray) -> None:
         self._upload("X", self._as_X(matrix))
 
     def apply(self, *, local_size: Any = None) -> np.ndarray:
         """Return the ``(members, members)`` batch ``A @ (B @ X)``."""
-        cl = self._engine.cl
         program = self._engine.program(_CL_SOURCE, self._build_options())
         local = self._engine.default_local_size("cgemv_batch", local_size)
-        out = np.empty((self.members, self.members), dtype=np.float64)
-        cl.enqueue_nd_range_kernel(
+        out = np.empty((self.members, self.members), dtype=self._acc_dtype)
+        program.cgemv_batch(
             self._engine.queue,
-            program.cgemv_batch,
-            (self.members * self.members,),
+            (_round_to_local(self.members * self.members, local),),
             (local,),
             self._buffers.get("A"),
             self._buffers.get("B"),

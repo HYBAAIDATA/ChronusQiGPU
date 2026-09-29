@@ -139,17 +139,24 @@ def _run_punch_ids(punch_ids: List[int], inputs: Dict[str, Any]) -> Dict[str, An
     out_double = np.zeros(total * DIM, dtype=np.float64)
     ids = np.asarray([int(p) for p in punch_ids], dtype=np.uint8)
     return host._execute_cpu(
-        ids, in_float, in_ulong, in_int, in_double,
-        out_float, out_ulong, out_int, out_long, out_double,
-        total, N,
+        ids,
+        in_float,
+        in_ulong,
+        in_int,
+        in_double,
+        out_float,
+        out_ulong,
+        out_int,
+        out_long,
+        out_double,
+        total,
+        N,
     )
 
 
 def _emit_punch(punch_id: int) -> Callable[[Dict[str, Any], Dict[str, Any]], Dict[str, Any]]:
     def run(inputs: Dict[str, Any], dispatch: Dict[str, Any]) -> Dict[str, Any]:
-        ids = inputs.get("punch_ids") or [punch_id] * max(
-            1, int(inputs.get("total", 1))
-        )
+        ids = inputs.get("punch_ids") or [punch_id] * max(1, int(inputs.get("total", 1)))
         outs = _run_punch_ids(ids, inputs)
         return {
             "float": outs["float"],
@@ -219,14 +226,16 @@ def emit_exact_hadamard() -> Callable[[Dict[str, Any], Dict[str, Any]], Dict[str
     return run
 
 
-def emit_golden_ontology_transform() -> Callable[
-    [Dict[str, Any], Dict[str, Any]], Dict[str, Any]
-]:
+def emit_golden_ontology_transform() -> Callable[[Dict[str, Any], Dict[str, Any]], Dict[str, Any]]:
     """fibonacci_butterfly_kernel — exact-int butterfly + invariant checks."""
 
     def run(inputs: Dict[str, Any], dispatch: Dict[str, Any]) -> Dict[str, Any]:
         x_re = np.asarray(inputs["x_re"], dtype=np.int64)
-        x_im = np.asarray(inputs.get("x_im"), dtype=np.int64) if inputs.get("x_im") is not None else None
+        x_im = (
+            np.asarray(inputs.get("x_im"), dtype=np.int64)
+            if inputs.get("x_im") is not None
+            else None
+        )
         basis = np.asarray(inputs["fib_basis"], dtype=np.int64)
         n = int(inputs.get("n_points", len(x_re)))
         y_re = np.zeros(n, dtype=np.int64)
@@ -243,13 +252,9 @@ def emit_golden_ontology_transform() -> Callable[
             if y_im is not None:
                 y_im[k] = acc_im
         # invariants (the kernels' result flags)
-        binet = all(
-            int(basis[j]) == int(basis[j - 1]) + int(basis[j - 2])
-            for j in range(2, n)
-        )
+        binet = all(int(basis[j]) == int(basis[j - 1]) + int(basis[j - 2]) for j in range(2, n))
         cassini = all(
-            int(basis[m + 1]) * int(basis[m - 1]) - int(basis[m]) ** 2
-            == (-1 if m % 2 == 1 else 1)
+            int(basis[m + 1]) * int(basis[m - 1]) - int(basis[m]) ** 2 == (-1 if m % 2 == 1 else 1)
             for m in range(1, n - 1)
         )
         out = {"y_re": y_re, "binet_closure": binet, "cassini_identity": cassini}
@@ -261,15 +266,24 @@ def emit_golden_ontology_transform() -> Callable[
 
 
 def emit_grover_iterate() -> Callable[[Dict[str, Any], Dict[str, Any]], Dict[str, Any]]:
-    """GroverStyleSearch is the oracle — real sha256d accept, Grover order."""
+    """GroverStyleSearch is the oracle — real sha256d accept, Grover order.
+
+    The Lucas scale rung (10/12/15/18/20) flows through the dispatch — a
+    workload ``scale_index`` or the route's ``lucas_dispatch.scale_index`` —
+    and scales the search space by L_n.
+    """
 
     def run(inputs: Dict[str, Any], dispatch: Dict[str, Any]) -> Dict[str, Any]:
         from mining.search import GroverStyleSearch
 
+        scale_index = dispatch.get("scale_index")
+        if scale_index is None:
+            scale_index = dispatch.get("lucas_dispatch", {}).get("scale_index")
         return GroverStyleSearch().search(
             header=bytes(inputs["header"]),
             schedule=list(inputs["schedule"]),
             target=inputs["target"],
+            scale_index=scale_index,
         )
 
     return run
@@ -331,9 +345,7 @@ def emit_t_phi_sum_u8() -> Callable[[Dict[str, Any], Dict[str, Any]], Dict[str, 
         weights = list(inputs["weights"])
         return {
             "dot": turing_core.folded_modular_dot(folded, original_len, weights),
-            "streamed": list(
-                turing_core.iter_original_u8(folded, original_len)
-            ),
+            "streamed": list(turing_core.iter_original_u8(folded, original_len)),
         }
 
     return run

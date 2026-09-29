@@ -33,9 +33,20 @@ export type DeviceInfo = {
 export type GpuSection = {
   available?: boolean;
   count?: number;
+  opencl_device_count?: number;
+  physical_gpu_available?: boolean;
+  physical_gpu_count?: number;
   devices?: DeviceInfo[];
-  running_backend?: string;
-  running_device?: string;
+  backend_active?: boolean;
+  detected_backend?: string;
+  detected_device?: string;
+  logical_substrate?: {
+    name: string;
+    available: boolean;
+    active: boolean;
+    host_backend: string;
+    fallback_used: boolean;
+  };
   hasher?: { backend?: string; device?: string; fallback_reason?: string | null };
   punch?: { use_opencl?: boolean; backend?: string; gpu_error?: string | null };
   vendors?: {
@@ -171,6 +182,7 @@ export type MlaStatus = {
   solvers?: SolverManifold;
   runtime?: RuntimeConfig;
   device?: { available?: boolean; count?: number; devices?: DeviceInfo[] };
+  gpu?: GpuSection;
   workers?: Record<string, WorkerPublic>;
   stratum?: StratumStatus;
   measurement?: string;
@@ -227,6 +239,34 @@ export type VerificationStatus = RunnerStatus & {
 
 export type SelftestStatus = RunnerStatus & {
   summary?: { passed?: boolean; checks?: { passed: number; total: number }; failures?: string[] };
+};
+
+export type MaintenanceStatus = RunnerStatus & {
+  interval_s?: number;
+  llm_enabled?: boolean;
+  auto_apply_enabled?: boolean;
+  result?: {
+    session_id?: string;
+    failure_count?: number;
+    proposal_count?: number;
+    applied_count?: number;
+    summary?: string;
+    error?: string;
+  };
+};
+
+export type RepoEngineerStatus = {
+  schema?: string;
+  provider?: string;
+  model?: string;
+  ready?: boolean;
+  sdk_available?: boolean;
+  credential_available?: boolean;
+  context_loaded?: boolean;
+  context_files?: string[];
+  tools?: string[];
+  write_access?: boolean;
+  runner?: RunnerStatus;
 };
 
 export type AgenticStatus = RunnerStatus;

@@ -7,7 +7,14 @@ name = "pythia-production-mining"
 version = "0.3.0"
 description = "Truth-labelled Python mining control plane with MLA1517/OpenCL integration"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "numpy>=1.26,<3",
+    "pyyaml>=6.0,<7",
+    # The virtual quantum computer (in-tree: ../turing_universal_quantum_computer)
+    # is part of the miner: the Hendrix nonce order and the VQC policy audit.
+    # Install it beside this package: pip install ../turing_universal_quantum_computer .
+    "turing-universal-quantum-computer>=1.0",
+]
 
 [project.optional-dependencies]
 test = [

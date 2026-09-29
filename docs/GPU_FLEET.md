@@ -67,5 +67,6 @@ Probe any overlay: `--profile probe run --rm igpu-probe` (`clinfo`).
 
 In-kernel `(reversed digest < target)` + host `hashlib` re-verify on every
 hit + init self-check (`0,1,0x12345678,0xFFFFFFFF`). Lucas
-`effective = physical * L_n` is `projection_is_measured:false`; only
-`live_mine` wall-clock `hashes_total/seconds_wall` is measured.
+`effective = physical * L_n` is `projection_is_measured:false`; only a
+route's measured window rate is measured (the world model's `hash_rate_hs`
+per route, published as `mining.world` at `/api/v1/knowledge`).

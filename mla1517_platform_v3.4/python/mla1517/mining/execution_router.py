@@ -55,14 +55,22 @@ from mla1517.mining.search_plan import (
     SearchPlan,
     WorkIdentity,
 )
+from mla1517.mining.hendrix_order import (
+    NonceOrderUnavailable,
+    hendrix_nonces,
+    hendrix_schedule,
+)
 
 __all__ = [
     "RouteDecision",
     "ChunkSpec",
     "ExecutionRouter",
     "DEVICE_RESULT_MISMATCH",
+    "NONCE_ORDER_HENDRIX",
     "NONCE_ORDER_KLEIN",
     "NONCE_ORDER_M32",
+    "NonceOrderUnavailable",
+    "sha256d_scan",
 ]
 
 #: Recorded when a device's own claim fails the independent host rehash.
@@ -76,10 +84,35 @@ NONCE_ORDER_M32 = "m32_turing_complete"
 NONCE_ORDER_KLEIN = "klein_poincare_numerical"
 NONCE_ORDER_SEQUENTIAL = "sequential"
 NONCE_ORDER_GOLDEN = "golden_stride"
+# Hendrix structured search: position i of the leased window visits
+# base + (i * stride) % window with gcd(stride, window) == 1. A bijection of
+# the lease, so unlike golden stride it is allowed on leased work. Only the
+# CPU reference executes it: the M32 kernel derives base + lane[gid % 32] +
+# 32 * (gid / 32) on-device and has no stride input, so a device window is
+# recorded as the M32 order it actually ran.
+NONCE_ORDER_HENDRIX = "hendrix_coprime_stride"
 
 
-class NonceOrderUnavailable(RuntimeError):
-    """A requested nonce-order strategy is not implemented in this runtime."""
+def sha256d_scan(
+    header: bytes, target: bytes, nonces: Sequence[int]
+) -> Tuple[Optional[int], Optional[bytes], int]:
+    """Hash ``nonces`` in the given order; first ``sha256d <= target`` wins.
+
+    ``target`` is little-endian, as everywhere else on the CPU path.
+    """
+    import hashlib
+
+    prefix = bytes(header[:76])
+    limit = int.from_bytes(target, "little")
+    done = 0
+    for nonce in nonces:
+        digest = hashlib.sha256(
+            hashlib.sha256(prefix + int(nonce).to_bytes(4, "little")).digest()
+        ).digest()
+        done += 1
+        if int.from_bytes(digest, "little") <= limit:
+            return int(nonce), digest, done
+    return None, None, done
 
 
 @dataclass(frozen=True)
@@ -218,9 +251,13 @@ class ExecutionRouter:
         ],
         freshness: Optional[Callable[[SearchPlan], bool]] = None,
         nonce_order: Callable[[SearchPlan], str] = lambda plan: NONCE_ORDER_M32,
+        cpu_nonce_executor: Callable[
+            [bytes, bytes, Sequence[int]], Tuple[Optional[int], Optional[bytes], int]
+        ] = sha256d_scan,
     ) -> None:
         self._hasher = hasher
         self._cpu = cpu_executor
+        self._cpu_nonces = cpu_nonce_executor
         self._freshness = freshness
         self._nonce_order = nonce_order
 
@@ -444,8 +481,24 @@ class ExecutionRouter:
             )
 
         requested_order = self._nonce_order(plan)
+        # Hendrix runs where it is implemented: the CPU reference, and an
+        # OpenCL M32 route whose program carries the bitcoin_sha256d_hendrix
+        # kernel. The schedule is resolved before any work so an unavailable
+        # package fails loudly instead of degrading to another order.
+        on_device = decision.executed_route is ExecutionRoute.opencl_m32 and bool(
+            getattr(self._hasher, "hendrix_on_device", False)
+        )
+        schedule = (
+            hendrix_schedule(plan.window)
+            if requested_order == NONCE_ORDER_HENDRIX
+            and (decision.executed_route is ExecutionRoute.cpu_reference or on_device)
+            and plan.window > 0
+            else None
+        )
 
         # --- exact, disjoint physical chunking -----------------------------
+        # With Hendrix the chunks tile the permutation positions [0, window)
+        # offset by base_step; each chunk visits base + nonce_at(position).
         cap = decision.launch_cap or max(1, int(getattr(self._hasher, "grind_batch", 1) or 1))
         chunks = partition_window(plan.base_step, plan.window, cap)
         # Coverage is proved, not assumed.
@@ -453,7 +506,10 @@ class ExecutionRouter:
 
         launches_before = int(getattr(self._hasher, "launches", 0) or 0)
         kernel_ms_before = float(getattr(self._hasher, "kernel_ms", 0.0) or 0.0)
-        t0 = time.monotonic()
+        # perf_counter, not monotonic: on Windows monotonic is ~15.6 ms
+        # granular, which records sub-millisecond executions as elapsed 0 —
+        # unmeasurable timing that downstream learners must reject.
+        t0 = time.perf_counter()
 
         completed = 0
         winner_nonce: Optional[int] = None
@@ -465,13 +521,32 @@ class ExecutionRouter:
             if is_still_fresh is not None and not is_still_fresh():
                 invalidated_midway = True
                 break
-            nonce, digest, done = self._run_chunk(plan, header, target, chunk, decision)
+            if schedule is not None and on_device:
+                position = (chunk.start - plan.base_step) & 0xFFFFFFFF
+                nonce, digest, done = self._hasher.grind_target_hendrix(
+                    header,
+                    bytes(target)[::-1],
+                    plan.base_step,
+                    plan.window,
+                    schedule.stride,
+                    position,
+                    chunk.count,
+                )
+            elif schedule is not None:
+                position = (chunk.start - plan.base_step) & 0xFFFFFFFF
+                nonce, digest, done = self._cpu_nonces(
+                    header,
+                    target,
+                    hendrix_nonces(plan.base_step, schedule, position, chunk.count),
+                )
+            else:
+                nonce, digest, done = self._run_chunk(plan, header, target, chunk, decision)
             completed += int(done)
             if nonce is not None and winner_nonce is None:
                 winner_nonce, winner_digest = nonce, digest
                 break  # earliest probe-order hit ends the window
 
-        elapsed = time.monotonic() - t0
+        elapsed = time.perf_counter() - t0
         launches = int(getattr(self._hasher, "launches", 0) or 0) - launches_before
         # Kernel time comes from the device clock, never from wall time. A CPU
         # reference run has no device clock, so it reports 0.0 rather than a
@@ -637,6 +712,12 @@ class ExecutionRouter:
             ExecutionRoute.opencl_range: NONCE_ORDER_SEQUENTIAL,
             ExecutionRoute.opencl_gold: NONCE_ORDER_GOLDEN,
         }.get(decision.executed_route, requested_order)
+        if (
+            requested_order == NONCE_ORDER_HENDRIX
+            and decision.executed_route is ExecutionRoute.opencl_m32
+            and not getattr(self._hasher, "hendrix_on_device", False)
+        ):
+            executed_order = NONCE_ORDER_M32
         record = ExecutionRecord(
             plan_id=plan.plan_id if plan_source is PlanSource.AGENTIC_PRECOMPUTED else None,
             job_fingerprint=plan.job_fingerprint,

@@ -9,6 +9,7 @@ import logging
 from dataclasses import dataclass
 
 import numpy as np
+from scipy.optimize import minimize
 
 logger = logging.getLogger(__name__)
 
@@ -74,9 +75,7 @@ class QuantumMathematics:
         amplitudes = np.ones(dimension, dtype=complex) / np.sqrt(dimension)
         return QuantumState(amplitudes, dimension)
 
-    def apply_quantum_gate(
-        self, state: QuantumState, gate: QuantumOperator
-    ) -> QuantumState:
+    def apply_quantum_gate(self, state: QuantumState, gate: QuantumOperator) -> QuantumState:
         """Apply a quantum gate to a quantum state using real matrix multiplication"""
         if state.dimension != gate.dimension:
             raise ValueError("State and gate dimensions must match")
@@ -92,13 +91,12 @@ class QuantumMathematics:
             state.normalize()
 
         # ⟨ψ|O|ψ⟩ = ψ† O ψ
-        state.amplitudes.conj()
-        # result = bra @ observable.matrix @ ket
+        bra = state.amplitudes.conj()
+        ket = state.amplitudes
+        result = bra @ observable.matrix @ ket
         return result
 
-    def calculate_probability_amplitude(
-        self, state: QuantumState, basis_state: int
-    ) -> complex:
+    def calculate_probability_amplitude(self, state: QuantumState, basis_state: int) -> complex:
         """Calculate probability amplitude ⟨i|ψ⟩"""
         if basis_state >= state.dimension:
             raise ValueError("Basis state index out of range")
@@ -115,9 +113,7 @@ class QuantumMathematics:
         if not state.is_normalized:
             state.normalize()
 
-        probabilities = [
-            self.calculate_probability(state, i) for i in range(state.dimension)
-        ]
+        probabilities = [self.calculate_probability(state, i) for i in range(state.dimension)]
         cumulative_probs = np.cumsum(probabilities)
 
         # Random measurement based on quantum probabilities
@@ -170,9 +166,7 @@ class QuantumMathematics:
         """Create CNOT gate using real quantum mathematics"""
         # CNOT = |0⟩⟨0| ⊗ I + |1⟩⟨1| ⊗ X
         # = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]]
-        matrix = np.array(
-            [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]], dtype=complex
-        )
+        matrix = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]], dtype=complex)
         gate = QuantumOperator(matrix, 4)
         gate.check_unitary()
         return gate
@@ -219,9 +213,7 @@ class QuantumMathematics:
         overlap = np.conj(state1.amplitudes) @ state2.amplitudes
         return abs(overlap) ** 2
 
-    def calculate_trace_distance(
-        self, state1: QuantumState, state2: QuantumState
-    ) -> float:
+    def calculate_trace_distance(self, state1: QuantumState, state2: QuantumState) -> float:
         """Calculate trace distance between two quantum states"""
         if state1.dimension != state2.dimension:
             raise ValueError("States must have the same dimension")
@@ -385,15 +377,11 @@ class QuantumDecisionTheory:
             # Map parameters to quantum state
             state = self._params_to_state(params, initial_state.dimension)
             # Calculate expectation value
-            observable = self._function_to_observable(
-                objective_function, state.dimension
-            )
-            return np.real(
-                self.quantum_math.calculate_expectation_value(state, observable)
-            )
+            observable = self._function_to_observable(objective_function, state.dimension)
+            return np.real(self.quantum_math.calculate_expectation_value(state, observable))
 
         # Use classical optimization on quantum parameters
-        # result = minimize(cost_function, initial_state.amplitudes.real, method="BFGS")
+        result = minimize(cost_function, initial_state.amplitudes.real, method="BFGS")
 
         # Convert back to quantum state
         optimized_amplitudes = result.x.astype(complex)
@@ -404,9 +392,7 @@ class QuantumDecisionTheory:
         amplitudes = params[:dimension].astype(complex)
         return QuantumState(amplitudes, dimension)
 
-    def _function_to_observable(
-        self, func: callable, dimension: int
-    ) -> QuantumOperator:
+    def _function_to_observable(self, func: callable, dimension: int) -> QuantumOperator:
         """Convert function to quantum observable"""
         # Create diagonal matrix with function values
         values = np.array([func(i) for i in range(dimension)])
@@ -456,18 +442,14 @@ class QuantumCausalAnalysis:
             for target in targets:
                 target_idx = variables.index(target)
                 # Create quantum causal link
-                influence_matrix += self._create_causal_link(
-                    source_idx, target_idx, n_vars
-                )
+                influence_matrix += self._create_causal_link(source_idx, target_idx, n_vars)
 
         # Normalize to create valid quantum operator
         influence_matrix = influence_matrix / np.max(np.abs(influence_matrix))
 
         return QuantumOperator(influence_matrix, dimension)
 
-    def _create_causal_link(
-        self, source_idx: int, target_idx: int, n_vars: int
-    ) -> np.ndarray:
+    def _create_causal_link(self, source_idx: int, target_idx: int, n_vars: int) -> np.ndarray:
         """Create quantum causal link between variables"""
         dimension = 2**n_vars
         matrix = np.zeros((dimension, dimension), dtype=complex)
@@ -476,7 +458,6 @@ class QuantumCausalAnalysis:
         for i in range(dimension):
             binary = format(i, f"0{n_vars}b")
             source_bit = int(binary[source_idx])
-            int(binary[target_idx])
 
             if source_bit == 1:  # If source is active
                 # Flip target bit (quantum causal effect)

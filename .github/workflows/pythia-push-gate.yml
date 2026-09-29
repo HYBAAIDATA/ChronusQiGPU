@@ -2,7 +2,7 @@ name: PYTHIA Canonical Push CI
 
 on:
   push:
-    branches: [toe/elevation-expansion]
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -21,12 +21,17 @@ jobs:
           python-version: "3.12"
       - name: Install canonical test package
         working-directory: mla1517_platform_v3.4
-        run: python -m pip install --upgrade pip && python -m pip install -e ".[test]"
+        run: python -m pip install --upgrade pip && python -m pip install -e ../turing_universal_quantum_computer -e ".[test]"
       - name: Compile canonical Python tree
         working-directory: mla1517_platform_v3.4
         run: python -m compileall -q python
+      - name: Build the host driver and run its C contract tests
+        working-directory: mla1517_platform_v3.4
+        run: make -C host all aethel-test primedb-storage-test primedb-boundary-test behavioral-gap-test
+      # pytest also runs the unittest classes; unittest discovery silently
+      # skipped every pytest-style module (about 150 tests).
       - name: Run canonical Python tests
         working-directory: mla1517_platform_v3.4
         env:
-          PYTHONPATH: python
-        run: python -m unittest discover -s python -p "test*.py" -v
+          PYTHONPATH: python:..
+        run: python -m pytest python -q -rs

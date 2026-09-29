@@ -196,6 +196,7 @@ class StratumBridge:
         self.extranonce2_size = 4
         self.difficulty = 1.0
         self.last_job: Optional[LiveJob] = None
+        self.clean_job_generation = 0
         self.shares_accepted = 0
         self.shares_rejected = 0
         self.submit_calls = 0
@@ -309,6 +310,9 @@ class StratumBridge:
                 self.last_job.difficulty = self.difficulty
         elif method == "mining.notify" and isinstance(params, list):
             if len(params) >= 9:
+                clean_jobs = bool(params[8])
+                if clean_jobs:
+                    self.clean_job_generation += 1
                 self.last_job = LiveJob(
                     job_id=str(params[0]),
                     prev_hash=str(params[1]),
@@ -318,9 +322,12 @@ class StratumBridge:
                     version=str(params[5]),
                     nbits=str(params[6]),
                     ntime=str(params[7]),
-                    clean_jobs=bool(params[8]),
+                    clean_jobs=clean_jobs,
                     difficulty=self.difficulty,
                 )
+
+    def is_job_valid(self, clean_job_generation: int) -> bool:
+        return clean_job_generation == self.clean_job_generation
 
     async def wait_for_job(self, timeout: float = 30.0) -> LiveJob:
         deadline = time.time() + timeout
@@ -330,7 +337,14 @@ class StratumBridge:
             if self._listening:
                 await asyncio.sleep(0.05)
                 continue
-            line = await self._reader.readline()
+            # The deadline holds while reading too: a silent pool must not
+            # hold this call past its timeout.
+            try:
+                line = await asyncio.wait_for(
+                    self._reader.readline(), max(0.0, deadline - time.time())
+                )
+            except asyncio.TimeoutError:
+                break
             if not line:
                 raise ConnectionError("pool closed connection")
             try:
@@ -415,7 +429,10 @@ class StratumBridge:
         if writer is not None:
             writer.close()
             try:
-                await writer.wait_closed()
+                # A peer that never acknowledges the close must not hold us.
+                await asyncio.wait_for(writer.wait_closed(), 5.0)
+            except asyncio.TimeoutError:
+                writer.transport.abort()
             except Exception:
                 pass
 
@@ -830,7 +847,9 @@ async def _amain(argv=None) -> int:
                     f"nbits={job.nbits} prev={job.prev_hash[:16]}..."
                 )
 
-            out = mine_job(
+            clean_job_generation = bridge.clean_job_generation
+            out = await asyncio.to_thread(
+                mine_job,
                 job,
                 bridge.extranonce1,
                 bridge.extranonce2_size,
@@ -839,6 +858,9 @@ async def _amain(argv=None) -> int:
                 base_nonce=base_nonce,
                 extranonce2_int=extranonce2_counter,
             )
+            if not bridge.is_job_valid(clean_job_generation):
+                print(f"[STALE JOB] Discarded completed work for {job.job_id}")
+                continue
             res = out["result"]
             total_hashes += res.hashes_computed
             total_batches += 1
@@ -910,6 +932,9 @@ async def _amain(argv=None) -> int:
                     if not args.continuous:
                         return 0
                 else:
+                    if not bridge.is_job_valid(clean_job_generation):
+                        print(f"[STALE JOB] Refusing submission for {job.job_id}")
+                        continue
                     submission = bridge.submit_share(
                         job.job_id, out["extranonce2"], out["ntime"], nonce_hex
                     )

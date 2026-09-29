@@ -1,0 +1,6 @@
+{
+  "promotion-verified": {"roles": ["ARCH_OWNER", "EVIDENCE_OWNER"], "prevent_self_review": true, "wait_timer_minutes": 0},
+  "promotion-pilot": {"roles": ["SECURITY_OWNER", "PRODUCT_OWNER"], "prevent_self_review": true, "wait_timer_minutes": 15},
+  "promotion-production": {"roles": ["SECURITY_OWNER", "COMPLIANCE_OWNER", "INDEPENDENT_REVIEWER"], "prevent_self_review": true, "wait_timer_minutes": 60, "protected_branch": "main"},
+  "hardware-acceptance": {"roles": ["SECURITY_OWNER", "ARCH_OWNER"], "prevent_self_review": true, "protected_branch": "main"}
+}

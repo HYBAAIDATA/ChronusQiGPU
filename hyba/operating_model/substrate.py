@@ -61,12 +61,18 @@ def _deterministic_bytes(length: int, seed: int) -> bytes:
                  for i in range(length))
 
 
+def _frozen_bytes(path: Path) -> bytes:
+    """Hash-stable content bytes: git text checkouts give CRLF on Windows,
+    LF elsewhere — the freeze pins content, not the checkout's EOL flavour."""
+    return path.read_bytes().replace(b"\r\n", b"\n")
+
+
 def freeze_substrate(root: Optional[Path] = None, *, write: bool = True) -> Dict[str, Any]:
     """Verify the substrate and record the freeze. Raises on any failure —
     a substrate that cannot prove its invariants must not be built on."""
     root = repo_root() if root is None else Path(root)
     core_path = root / "turing_core.py"
-    blob = core_path.read_bytes()
+    blob = _frozen_bytes(core_path)
     core = _load_turing_core(root)
 
     checks: Dict[str, str] = {}
@@ -111,7 +117,7 @@ def freeze_substrate(root: Optional[Path] = None, *, write: bool = True) -> Dict
     lemma_signoff = collect_signoff(LEMMA, LEMMA["verified_range"])
     lemma_doc = root / LEMMA_PATH
     lemma_sha = hashlib.sha256(
-        lemma_doc.read_bytes()).hexdigest() if lemma_doc.is_file() else None
+        _frozen_bytes(lemma_doc)).hexdigest() if lemma_doc.is_file() else None
 
     record = {
         "frozen_sha": hashlib.sha256(blob).hexdigest(),
@@ -148,7 +154,7 @@ def substrate_frozen(root: Optional[Path] = None) -> bool:
         return False
     if stored.get("theorem_proven") is not False:
         return False
-    if stored.get("frozen_sha") != hashlib.sha256(core.read_bytes()).hexdigest():
+    if stored.get("frozen_sha") != hashlib.sha256(_frozen_bytes(core)).hexdigest():
         return False
     # Lemma drift also re-opens the freeze — they freeze together.
     lemma_doc = root / "docs" / "lemma_lucas_polynomial.md"
@@ -157,5 +163,5 @@ def substrate_frozen(root: Optional[Path] = None) -> bool:
         if not lemma_doc.is_file():
             return False
         return stored_lemma_sha == hashlib.sha256(
-            lemma_doc.read_bytes()).hexdigest()
+            _frozen_bytes(lemma_doc)).hexdigest()
     return True

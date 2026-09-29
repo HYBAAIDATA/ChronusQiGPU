@@ -14,6 +14,12 @@ from mla1517.scaling import OpenCLLadderExecutor, LUCAS_PISOT_LADDER
 from mla1517.store import PrimeDB
 
 
+def _write_report(report_path: Path, report: dict[str, object]) -> None:
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(json.dumps(report, indent=2) + "\n")
+    print(json.dumps(report))
+
+
 def main() -> int:
     report_path = Path(__file__).parents[1] / "results/strict_hardware_gate.json"
     if os.getenv("MLA1517_STRICT_HARDWARE_CI") != "1":
@@ -21,25 +27,22 @@ def main() -> int:
             "status": "FAIL",
             "reason": "MLA1517_STRICT_HARDWARE_CI=1 is required for sovereign hardware CI",
         }
-        report_path.write_text(json.dumps(report, indent=2) + "\n")
-        print(json.dumps(report))
+        _write_report(report_path, report)
         return 1
     if os.getenv("MLA1517_GPU_BACKEND", "").lower() != "opencl":
         report = {"status": "FAIL", "reason": "MLA1517_GPU_BACKEND=opencl is required"}
-        report_path.write_text(json.dumps(report, indent=2) + "\n")
-        print(json.dumps(report))
+        _write_report(report_path, report)
         return 1
     try:
-        results = OpenCLLadderExecutor().execute()
+        executor = OpenCLLadderExecutor()
+        results = executor.execute()
     except Exception as exc:
         report = {"status": "FAIL", "reason": "exact OpenCL ladder unavailable", "detail": str(exc)}
-        report_path.write_text(json.dumps(report, indent=2) + "\n")
-        print(json.dumps(report))
+        _write_report(report_path, report)
         return 1
     if tuple(item.scale for item in results) != LUCAS_PISOT_LADDER:
         report = {"status": "FAIL", "reason": "ladder mismatch"}
-        report_path.write_text(json.dumps(report, indent=2) + "\n")
-        print(json.dumps(report))
+        _write_report(report_path, report)
         return 1
     with tempfile.TemporaryDirectory() as directory:
         db = PrimeDB(Path(directory) / "prime.db")
@@ -73,12 +76,14 @@ def main() -> int:
         db.close()
     report = {
         "status": "PASS",
-        "gpu_backend": "opencl",
+        "logical_substrate": "mla1517_gpu",
+        "execution_backend": executor.execution_backend,
+        "device_name": str(getattr(executor.device, "name", "")),
+        "device_vendor": str(getattr(executor.device, "vendor", "")),
         "ladder": LUCAS_PISOT_LADDER,
         "primedb_round_trip": True,
     }
-    report_path.write_text(json.dumps(report, indent=2) + "\n")
-    print(json.dumps(report))
+    _write_report(report_path, report)
     return 0
 
 

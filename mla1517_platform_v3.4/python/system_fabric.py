@@ -35,6 +35,7 @@ The fabric also supervises the three lazily-wired components:
 from __future__ import annotations
 
 import importlib.util
+import os
 import sys
 import threading
 import time
@@ -870,3 +871,202 @@ def selftest_status() -> dict[str, Any]:
             "failures": sorted((result.get("failures") or {}).keys()),
         },
     }
+
+
+# ---------------------------------------------------------------------------
+# Codebase maintenance — supervised diagnosis/proposal loop.
+# ---------------------------------------------------------------------------
+
+SELF_REPAIR = _Runner("self-repair")
+_SELF_REPAIR_WAKE = threading.Event()
+_DEFAULT_SELF_REPAIR_INTERVAL_S = 0
+_MAX_SELF_REPAIR_INTERVAL_S = 7 * 24 * 60 * 60
+REPO_ENGINEER = _Runner("repo-engineer")
+_REPO_ENGINEER_SERVICE: Any = None
+_REPO_ENGINEER_LOCK = threading.Lock()
+
+
+def _self_repair_interval_s() -> int:
+    """Use a bounded interval; zero means run once and then stop."""
+    try:
+        value = int(os.getenv("HYBA_SELF_REPAIR_INTERVAL_S", str(_DEFAULT_SELF_REPAIR_INTERVAL_S)))
+    except ValueError:
+        return _DEFAULT_SELF_REPAIR_INTERVAL_S
+    if value == 0:
+        return 0
+    return min(max(value, 300), _MAX_SELF_REPAIR_INTERVAL_S)
+
+
+def _repair_report_payload(report: Any) -> dict[str, Any]:
+    proposals = list(getattr(report, "proposals", ()))
+    classified = list(getattr(report, "classified", ()))
+    apply_results = list(getattr(report, "apply_results", ()))
+    summary = getattr(report, "summary", None)
+    return {
+        "session_id": getattr(report, "session_id", None),
+        "started_at": getattr(report, "started_at", None),
+        "finished_at": getattr(report, "finished_at", None),
+        "failure_count": len(classified),
+        "proposal_count": len(proposals),
+        "applied_count": sum(bool(getattr(item, "applied", False)) for item in apply_results),
+        "llm_enabled": bool(getattr(report, "llm_enabled", False)),
+        "auto_apply_enabled": bool(getattr(report, "auto_apply_enabled", False)),
+        "summary": summary() if callable(summary) else "Repair cycle completed.",
+    }
+
+
+def _run_self_repair(runner: _Runner, interval_s: int) -> dict[str, Any] | None:
+    _ensure_repo_path()
+    from Intelligence.self_healing.self_repair import run_self_repair_cycle
+
+    while not runner.stopped:
+        _SELF_REPAIR_WAKE.clear()
+        runner.progress = {"phase": "diagnosing", "interval_s": interval_s}
+        try:
+            report = run_self_repair_cycle(
+                repo_root=_REPO_ROOT,
+                rerun_flaky=False,
+                attempt_llm_for_unclassified=True,
+            )
+            runner.result = _repair_report_payload(report)
+            runner.error = None
+            runner.progress = {
+                "phase": "cycle_complete",
+                "last_completed_at": runner.result["finished_at"],
+                "interval_s": interval_s,
+            }
+        except Exception as exc:
+            runner.error = f"{type(exc).__name__}: {exc}"
+            runner.result = {"error": runner.error}
+            runner.progress = {"phase": "cycle_failed", "interval_s": interval_s}
+            if interval_s == 0:
+                raise
+
+        if interval_s == 0:
+            return runner.result
+        if runner.stopped:
+            runner.progress["phase"] = "stopped"
+            runner.state = "stopped"
+            return runner.result
+        runner.progress["phase"] = "waiting"
+        _SELF_REPAIR_WAKE.wait(interval_s)
+    return runner.result
+
+
+def start_self_repair(*, startup: bool = False) -> bool:
+    """Start the persistent maintenance loop, beginning with a real diagnosis."""
+    if startup and os.getenv("HYBA_SKIP_STARTUP_SELF_HEALING", "false").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }:
+        return False
+    interval_s = _self_repair_interval_s()
+    _SELF_REPAIR_WAKE.clear()
+    return SELF_REPAIR.start(lambda runner: _run_self_repair(runner, interval_s))
+
+
+def startup_self_repair_enabled() -> bool:
+    return os.getenv("HYBA_STARTUP_SELF_HEALING_ENABLED", "false").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+
+
+def run_self_repair_now() -> bool:
+    """Start a cycle or queue one to run immediately after the active cycle."""
+    if SELF_REPAIR.state == "running":
+        _SELF_REPAIR_WAKE.set()
+        return True
+    return start_self_repair()
+
+
+def stop_self_repair() -> bool:
+    """Stop after the active full test/repair cycle has reached its safe boundary."""
+    if SELF_REPAIR.state != "running":
+        return False
+    SELF_REPAIR.progress["stop_requested"] = True
+    SELF_REPAIR._stop.set()
+    _SELF_REPAIR_WAKE.set()
+    return True
+
+
+def self_repair_status() -> dict[str, Any]:
+    return {
+        "schema": "pythia.maintenance/1",
+        **SELF_REPAIR.status(),
+        "interval_s": _self_repair_interval_s(),
+        "llm_enabled": os.getenv("HYBA_SELF_REPAIR_LLM_ENABLED", "false").strip().lower()
+        in {"1", "true", "yes"},
+        "auto_apply_enabled": os.getenv("HYBA_SELF_REPAIR_AUTO_APPLY", "false")
+        .strip()
+        .lower()
+        in {"1", "true", "yes"},
+    }
+
+
+def _repo_engineer_store_dir() -> Path:
+    """Writable home for the repo engineer's store.
+
+    The container runs as uid 10001 with ``PYTHIA_INTELLIGENCE_DIR`` as the
+    provisioned writable root; ``<repo>/data`` is not writable there.
+    ``PYTHIA_REPO_ENGINEER_DIR`` overrides outright; otherwise the store
+    lives under the intelligence dir, falling back to ``<repo>/data`` on
+    developer checkouts where the repo tree is writable.
+    """
+    override = os.getenv("PYTHIA_REPO_ENGINEER_DIR", "").strip()
+    if override:
+        return Path(override)
+    intel = os.getenv("PYTHIA_INTELLIGENCE_DIR", "").strip()
+    if intel:
+        return Path(intel) / "repo_engineer"
+    return _REPO_ROOT / "data" / "repo_engineer"
+
+
+def initialize_repo_engineer() -> None:
+    """Load repository context once during API startup without calling a model.
+
+    A store that cannot initialise (read-only image layer, missing data
+    directory) is reported and retried on the next status call — never fatal
+    to the control plane, same contract as ``announce_skills``.
+    """
+    global _REPO_ENGINEER_SERVICE
+    with _REPO_ENGINEER_LOCK:
+        if _REPO_ENGINEER_SERVICE is None:
+            try:
+                _ensure_repo_path()
+                from Intelligence.repo_engineer import RepoEngineer
+
+                _REPO_ENGINEER_SERVICE = RepoEngineer(
+                    _REPO_ROOT, store_dir=_repo_engineer_store_dir()
+                )
+            except Exception as exc:  # noqa: BLE001 - reported, never fatal
+                print(
+                    f"[pythia-control] repo engineer init failed: "
+                    f"{type(exc).__name__}: {exc}"
+                )
+
+
+def repo_engineer_status() -> dict[str, Any]:
+    initialize_repo_engineer()
+    service = (
+        _REPO_ENGINEER_SERVICE.status()
+        if _REPO_ENGINEER_SERVICE is not None
+        else {"ready": False, "provider": "unavailable", "model": "unavailable"}
+    )
+    return {
+        "schema": "pythia.repo-engineer/1",
+        **service,
+        "runner": REPO_ENGINEER.status(),
+    }
+
+
+def start_repo_engineer(prompt: str) -> bool:
+    """Run one repo-grounded engineering task in the supervised runner."""
+    if not isinstance(prompt, str) or not prompt.strip() or len(prompt) > 2_000:
+        raise ValueError("prompt must be between 1 and 2000 characters")
+    initialize_repo_engineer()
+    if _REPO_ENGINEER_SERVICE is None:
+        return False
+    return REPO_ENGINEER.start(lambda _runner: _REPO_ENGINEER_SERVICE.ask(prompt))

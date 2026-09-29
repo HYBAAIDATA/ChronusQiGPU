@@ -1,5 +1,7 @@
 # PYTHIA Production-Readiness Audit
 
+> **Superseded (2026-09-28).** This is a dated record. `mining/production_miner.py`, which it audits, was retired to `legacy/`; the canonical miner is `mla1517_platform_v3.4/python` (see `docs/PRODUCTION_MINING_RUNBOOK.md`).
+
 Date: 2026-09-23. Auditor: Devin (automated). Scope: full repository, canonical path
 `mla1517_platform_v3.4/python` + `mining/` + `Intelligence/` bindings + `src/` frontend.
 

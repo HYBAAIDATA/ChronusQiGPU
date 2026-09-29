@@ -222,9 +222,7 @@ class EnhancedKnowledgeBase:
             relevant_entries = await self._find_relevant_entries(concepts, domains)
 
             # Enhance with semantic relationships
-            enhanced_entries = await self._enhance_with_semantics(
-                relevant_entries, concepts
-            )
+            enhanced_entries = await self._enhance_with_semantics(relevant_entries, concepts)
 
             # Apply quantum optimization for ranking
             ranked_entries = await self._quantum_rank_entries(enhanced_entries, query)
@@ -234,9 +232,7 @@ class EnhancedKnowledgeBase:
             if len(self.query_history) > self.max_history:
                 self.query_history.pop(0)
 
-            logger.info(
-                f"Found {len(ranked_entries)} relevant knowledge entries for query"
-            )
+            logger.info(f"Found {len(ranked_entries)} relevant knowledge entries for query")
             return ranked_entries
 
         except Exception as e:
@@ -256,9 +252,7 @@ class EnhancedKnowledgeBase:
                     self.knowledge_entries[entry.concept] = entry
                     logger.info(f"Updated knowledge entry: {entry.concept}")
                 else:
-                    logger.info(
-                        f"Existing entry has higher confidence for: {entry.concept}"
-                    )
+                    logger.info(f"Existing entry has higher confidence for: {entry.concept}")
                 return True
 
             # Add to knowledge base
@@ -290,9 +284,7 @@ class EnhancedKnowledgeBase:
             logger.error(f"Failed to add knowledge: {e}")
             return False
 
-    async def add_knowledge(
-        self, topic: str, content: any, confidence: float = 1.0
-    ) -> bool:
+    async def add_knowledge(self, topic: str, content: any, confidence: float = 1.0) -> bool:
         """
         Add knowledge to the base with dict-to-float transformation.
         Handles both dict and string content types.
@@ -305,7 +297,9 @@ class EnhancedKnowledgeBase:
                     content.get("phi_resonance_score", content.get("confidence", 0.85))
                 )
                 # Convert dict to descriptive string
-                description = f"Research data: {content.get('finding', content.get('content', str(content)))}"
+                description = (
+                    f"Research data: {content.get('finding', content.get('content', str(content)))}"
+                )
             else:
                 # Handle string content
                 confidence = float(confidence)
@@ -341,9 +335,7 @@ class EnhancedKnowledgeBase:
                 self.domain_index[entry.domain] = set()
             self.domain_index[entry.domain].add(entry.concept)
 
-            logger.info(
-                f"Added knowledge entry: {topic} (confidence: {confidence:.3f})"
-            )
+            logger.info(f"Added knowledge entry: {topic} (confidence: {confidence:.3f})")
             return True
 
         except Exception as e:
@@ -367,9 +359,7 @@ class EnhancedKnowledgeBase:
             response_concepts = await self._extract_concepts(response)
 
             # Identify knowledge gaps
-            gaps = await self._identify_knowledge_gaps(
-                query_concepts, response_concepts
-            )
+            gaps = await self._identify_knowledge_gaps(query_concepts, response_concepts)
 
             # Update confidence based on feedback
             if user_feedback:
@@ -390,9 +380,7 @@ class EnhancedKnowledgeBase:
                     )
                     await self.add_knowledge(new_entry, verify_confidence=False)
 
-            logger.info(
-                f"Learned from interaction, identified {len(gaps)} knowledge gaps"
-            )
+            logger.info(f"Learned from interaction, identified {len(gaps)} knowledge gaps")
             return True
 
         except Exception as e:
@@ -550,9 +538,7 @@ class EnhancedKnowledgeBase:
             if "solution" in quantum_result:
                 # Reorder entries based on quantum solution
                 solution_order = quantum_result["solution"]
-                ranked_entries = [
-                    entries[i] for i in solution_order if i < len(entries)
-                ]
+                ranked_entries = [entries[i] for i in solution_order if i < len(entries)]
                 return ranked_entries
 
             # Fallback to confidence-based ranking
@@ -590,9 +576,7 @@ class EnhancedKnowledgeBase:
             logger.warning(f"Confidence verification failed: {e}")
             return entry.confidence
 
-    def _check_semantic_conflict(
-        self, entry1: KnowledgeEntry, entry2: KnowledgeEntry
-    ) -> bool:
+    def _check_semantic_conflict(self, entry1: KnowledgeEntry, entry2: KnowledgeEntry) -> bool:
         """Check if two entries have conflicting semantic information"""
         # Simple conflict detection based on relationships and descriptions
         common_relationships = set(entry1.relationships) & set(entry2.relationships)
@@ -604,16 +588,12 @@ class EnhancedKnowledgeBase:
             # Look for contradictory keywords
             contradictions = ["not", "never", "impossible", "false", "incorrect"]
             for word in contradictions:
-                if (word in desc1 and word not in desc2) or (
-                    word in desc2 and word not in desc1
-                ):
+                if (word in desc1 and word not in desc2) or (word in desc2 and word not in desc1):
                     return True
 
         return False
 
-    def _check_supporting_evidence(
-        self, entry1: KnowledgeEntry, entry2: KnowledgeEntry
-    ) -> bool:
+    def _check_supporting_evidence(self, entry1: KnowledgeEntry, entry2: KnowledgeEntry) -> bool:
         """Check if entry2 provides supporting evidence for entry1"""
         # Check for overlapping concepts and complementary information
         common_relationships = set(entry1.relationships) & set(entry2.relationships)
@@ -658,10 +638,7 @@ class EnhancedKnowledgeBase:
 
         # Look for concepts in query that aren't well-represented in response
         for concept in query_concepts:
-            if (
-                concept not in response_concepts
-                and concept not in self.knowledge_entries
-            ):
+            if concept not in response_concepts and concept not in self.knowledge_entries:
                 gaps.append(concept)
 
         return gaps
@@ -696,9 +673,7 @@ class EnhancedKnowledgeBase:
                 if concept in self.knowledge_entries:
                     current_confidence = self.knowledge_entries[concept].confidence
                     new_confidence = current_confidence + adjustment
-                    self.knowledge_entries[concept].confidence = max(
-                        0.1, min(1.0, new_confidence)
-                    )
+                    self.knowledge_entries[concept].confidence = max(0.1, min(1.0, new_confidence))
 
         except Exception as e:
             logger.warning(f"Failed to update confidence from feedback: {e}")
@@ -707,13 +682,10 @@ class EnhancedKnowledgeBase:
         """Get statistics about the knowledge base"""
         total_entries = len(self.knowledge_entries)
         domain_counts = {
-            domain.value: len(concepts)
-            for domain, concepts in self.domain_index.items()
+            domain.value: len(concepts) for domain, concepts in self.domain_index.items()
         }
 
-        avg_confidence = np.mean(
-            [entry.confidence for entry in self.knowledge_entries.values()]
-        )
+        avg_confidence = np.mean([entry.confidence for entry in self.knowledge_entries.values()])
         avg_phi_score = np.mean(
             [entry.phi_resonance_score for entry in self.knowledge_entries.values()]
         )

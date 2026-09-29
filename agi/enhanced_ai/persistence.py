@@ -183,9 +183,7 @@ class ConversationPersistence:
             logger.error(f"Error getting user conversations: {e}")
             return []
 
-    async def get_conversation_analytics(
-        self, user_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+    async def get_conversation_analytics(self, user_id: Optional[str] = None) -> Dict[str, Any]:
         """
         Get conversation analytics
 
@@ -220,7 +218,7 @@ class ConversationPersistence:
                 },
             ]
 
-            # result = await collection.aggregate(pipeline).to_list(1)
+            result = await collection.aggregate(pipeline).to_list(1)
 
             if result:
                 stats = result[0]
@@ -257,7 +255,7 @@ class ConversationPersistence:
 
         try:
             collection = self.db[self.collection_name]
-            # result = await collection.delete_one({"session_id": session_id})
+            result = await collection.delete_one({"session_id": session_id})
             return result.deleted_count > 0
 
         except Exception as e:
