@@ -44,6 +44,8 @@ class PromotionEvidenceTests(unittest.TestCase):
    self.assertEqual(len(scan_paths([exact])),1)
    exact.write_text("x=1.25\n")
    with self.assertRaises(FloatForbidden):scan_paths([exact])
+   exact.write_text("def exact(x):\n if isinstance(x,float): raise TypeError('exact input required')\n return x\n")
+   self.assertEqual(len(scan_paths([exact])),1)
  def test_conformance_requires_alignment(self):
   a=Backend("a",lambda k,v:(k,v));b=Backend("b",lambda k,v:(k,v))
   self.assertEqual(run_all_backends((a,b),(("fibonacci",15),)),1)
