@@ -101,16 +101,17 @@ TOOLS: List[PythiaTool] = [
         name="quantum_cuda_simulator",
         category="quantum",
         description=(
-            "The iGPU / Turing exact-math quantum simulator. On macOS with "
-            "Metal available, offloads SHA256 to the GPU. On Windows, uses "
-            "the exact Q[sqrt(5)] rational core. Provides Zeckendorf-spaced "
-            "nonce schedules and optimal Grover iteration counts."
+            "The Quantum CUDA GPU engine / exact-math simulator. Binds to "
+            "whatever device enumerates — the container CPU or the user's "
+            "GPU (CUDA/ROCm/OpenCL/Metal) — and scales the search by the "
+            "Lucas rungs 10/12/15/18/20 via scale_index. Provides "
+            "Zeckendorf-spaced nonce schedules and optimal Grover counts."
         ),
-        module_path="core_engine.quantum_cuda.create_simulator",
-        inputs=["device_index"],
+        module_path="turing_universal_quantum_computer.quantum_cuda.create_simulator",
+        inputs=["device_index", "seed", "scale_index"],
         outputs=["QuantumSimulator"],
-        complexity="O(1) to create; O(sqrt(N)) for Grover search",
-        safety_notes="Platform-aware: Metal only on macOS, Turing fallback on Windows.",
+        complexity="O(1) to create; O(sqrt(N*L_n)) for Grover search",
+        safety_notes="Binds any enumerated device; scale rung must be a ladder index.",
     ),
     PythiaTool(
         name="submit_kernel",
@@ -120,7 +121,7 @@ TOOLS: List[PythiaTool] = [
             "winning nonce or -1. Uses the exact Zeckendorf schedule and "
             "Grover k* iteration count."
         ),
-        module_path="core_engine.quantum_cuda.QuantumSimulator.submit_kernel",
+        module_path="turing_universal_quantum_computer.quantum_cuda.QuantumSimulator.submit_kernel",
         inputs=[
             "job_id",
             "algorithm",
@@ -136,7 +137,7 @@ TOOLS: List[PythiaTool] = [
         name="zeckendorf_schedule",
         category="quantum",
         description="Generates a Zeckendorf-spaced nonce schedule for structured search.",
-        module_path="core_engine.quantum_cuda.QuantumSimulator._zeckendorf_schedule",
+        module_path="turing_universal_quantum_computer.quantum_cuda.QuantumSimulator._zeckendorf_schedule",
         inputs=["nonce_window", "seed"],
         outputs=["nonce_schedule_list"],
         complexity="O(window_size)",
@@ -145,7 +146,7 @@ TOOLS: List[PythiaTool] = [
         name="optimal_grover_iterations",
         category="quantum",
         description="Computes k* = pi/4 * sqrt(N/M) optimal Grover iteration count.",
-        module_path="core_engine.quantum_cuda.QuantumSimulator._optimal_grover_iterations",
+        module_path="turing_universal_quantum_computer.quantum_cuda.QuantumSimulator._optimal_grover_iterations",
         inputs=["search_space_size"],
         outputs=["k_star_int"],
         complexity="O(1)",

@@ -161,9 +161,9 @@ def report_behaviour():
 
     # 3. Lucas ladder exactness at the declared rungs.
     try:
-        from mla1517.scaling import LADDER
+        from mla1517.scaling import LUCAS_PISOT_LADDER
 
-        rungs = getattr(LADDER, "rungs", None) or LADDER
+        rungs = getattr(LUCAS_PISOT_LADDER, "rungs", None) or LUCAS_PISOT_LADDER
         print(f"    declared ladder        : {list(rungs)}")
     except Exception:
         print("    ladder symbol not found; trying module constants")

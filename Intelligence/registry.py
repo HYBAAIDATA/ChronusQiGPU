@@ -21,6 +21,7 @@ from __future__ import annotations
 import importlib
 import logging
 import os
+import sys
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
 
@@ -252,11 +253,23 @@ def build_default_registry() -> ModuleRegistry:
         probe_import=True,
     )
 
-    # --- quantum_cuda / quantum_metal_integration: relocated to
-    #     iGPU_Accelerator_JV/legacy_python/core_engine/ (vendor accelerator
-    #     archive). Not registered — the registry must not advertise modules
-    #     that are not importable. Consumers guard with try/except or
-    #     ``_instances.get(...)``.
+    # --- quantum_cuda: the Quantum CUDA GPU engine lives in the vendored
+    #     ``turing_universal_quantum_computer`` package (a sibling
+    #     directory, not on sys.path by default), so probe_import=False and
+    #     the factory inserts the package root before importing. The engine
+    #     binds to whatever device actually enumerates — the cloud
+    #     container's CPU or the user's GPU — and scales its quantum
+    #     algorithms by the Lucas rungs 10/12/15/18/20.
+    reg.register(
+        "quantum_cuda",
+        "turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda",
+        "Quantum CUDA GPU engine: exact Grover/Zeckendorf search kernel "
+        "bound to whatever device enumerates (container CPU or user GPU), "
+        "scaled by the Lucas rungs 10/12/15/18/20 via scale_index.",
+        ["gpu_engine", "grover", "zeckendorf_schedule", "lucas_scale"],
+        factory=_quantum_cuda_factory,
+        probe_import=False,
+    )
 
     # --- cortex enhancements (src/cortex_*.py) ---------------------------
 
@@ -469,6 +482,22 @@ def build_default_registry() -> ModuleRegistry:
 
 def _import(path: str):
     return importlib.import_module(path)
+
+
+def _quantum_cuda_factory():
+    """Instantiate the vendored Quantum CUDA simulator on the real device.
+
+    The package is vendored at ``<repo>/turing_universal_quantum_computer/``
+    — its inner package directory is the importable unit, so the outer
+    directory goes on ``sys.path`` first.
+    """
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    pkg_root = os.path.join(repo_root, "turing_universal_quantum_computer")
+    if pkg_root not in sys.path:
+        sys.path.insert(0, pkg_root)
+    from turing_universal_quantum_computer.quantum_cuda import create_simulator
+
+    return create_simulator(0)
 
 
 __all__ = ["ModuleRegistry", "ModuleEntry", "build_default_registry"]
