@@ -149,6 +149,25 @@ def execution_device() -> str | None:
     return value
 
 
+def assert_declared_chain(observer: BitcoinChainObserver | None) -> None:
+    """Startup validation: a declared network must match the configured node.
+
+    ``PYTHIA_BITCOIN_NETWORK`` set without ``PYTHIA_BITCOIN_RPC_URL``, or a
+    node on a different chain, fails closed at boot — a testnet node can never
+    masquerade as mainnet chain evidence.
+    """
+    expected = os.getenv("PYTHIA_BITCOIN_NETWORK", "").strip().lower()
+    if not expected:
+        return
+    if observer is None:
+        raise SystemExit("PYTHIA_BITCOIN_NETWORK is set but PYTHIA_BITCOIN_RPC_URL is not")
+    try:
+        observer.assert_chain(expected)
+    except RuntimeError as exc:
+        raise SystemExit(str(exc)) from exc
+    LOG.info("Bitcoin chain confirmed: %s", expected)
+
+
 async def _main_async(args) -> None:
     device = execution_device()
     if not args.device and device is None:
@@ -161,6 +180,7 @@ async def _main_async(args) -> None:
     # Pool-only mining needs no local node: the pool's own jobs are the chain
     # evidence. A configured bitcoind (PYTHIA_BITCOIN_RPC_URL) still wins.
     observer = BitcoinChainObserver.from_environment()
+    assert_declared_chain(observer)
     session = MiningSession(
         os.getenv("PYTHIA_MINING_SESSION_PATH", "data/mining_session.json"),
         cooldown_seconds=float(os.getenv("PYTHIA_MINING_COOLDOWN_SECONDS", "1")),

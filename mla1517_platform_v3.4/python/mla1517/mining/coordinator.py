@@ -1871,8 +1871,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         if final.hash_count > 0:
             self._hash_samples.append((time.monotonic(), int(final.hash_count)))
             self._hashes_total += int(final.hash_count)
-        if outcome is PoolOutcome.ACCEPTED:
-            self._shares_accepted += 1
+        self._shares_accepted += int(outcome is PoolOutcome.ACCEPTED)
         self._publish_evidence()
         self._publish_metrics(force=True)
 

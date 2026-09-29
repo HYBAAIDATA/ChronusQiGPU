@@ -277,7 +277,7 @@ def _check_lucas_scales(orchestrator) -> Dict[str, Any]:
         monotonic = profile["monotonic"]
         # Verify exact values are present: every level equals its exact
         # Lucas value from the substrate.
-        import turing_core
+        import turing_core  # noqa: F401  (availability probe)
 
         values = [lv["value"] for lv in profile["levels"]]
         # The declared rungs, valued by an independent recurrence

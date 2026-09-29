@@ -1475,28 +1475,40 @@ class _Handler(BaseHTTPRequestHandler):
             "x-hyba-actor": self.headers.get("X-HYBA-Actor", ""),
         }
 
-    def _guardian_preflight(
-        self, path: str, body: dict[str, Any] | None = None
-    ) -> bool:
+    def _guardian_preflight(self, path: str, body: dict[str, Any] | None = None) -> bool:
         """Fail closed before any privileged handler is invoked."""
         operation = path.removeprefix("/api/v1/").replace("/", ".")
-        code, receipt = pythia_guardian_api().evaluate(
-            headers=self._guardian_headers(),
-            body={
-                "operation": operation,
-                "resource": path.removeprefix("/api/v1/"),
-                "payload": body or {},
-            },
-        )
+        if pythia_guardian_api is None:
+            self._json(
+                HTTPStatus.SERVICE_UNAVAILABLE,
+                {"available": False, "reason": "guardian_dependency_unavailable"},
+            )
+            return False
+        try:
+            code, receipt = pythia_guardian_api().evaluate(
+                headers=self._guardian_headers(),
+                body={
+                    "operation": operation,
+                    "resource": path.removeprefix("/api/v1/"),
+                    "payload": body or {},
+                },
+            )
+        except Exception as exc:  # noqa: BLE001 - deny, never drop the connection
+            self._json(
+                HTTPStatus.SERVICE_UNAVAILABLE,
+                {
+                    "available": False,
+                    "reason": f"guardian_unavailable: {type(exc).__name__}: {exc}",
+                },
+            )
+            return False
         if code != HTTPStatus.OK:
             self._json(HTTPStatus(code), receipt)
             return False
         self._guardian_receipt = receipt
         return True
 
-    def _guardian_commit_evidence(
-        self, path: str, status: int, receipt: dict[str, Any]
-    ) -> None:
+    def _guardian_commit_evidence(self, path: str, status: int, receipt: dict[str, Any]) -> None:
         digest = hashlib.sha256(
             json.dumps(receipt, sort_keys=True, default=str).encode("utf-8")
         ).hexdigest()
@@ -2073,4 +2085,3 @@ if __name__ == "__main__":
         signal.SIGTERM, lambda *_: (_CONTROL.shutdown() if _CONTROL is not None else None)
     )
     main()
-

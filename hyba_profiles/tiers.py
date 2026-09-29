@@ -10,11 +10,22 @@ TIER_POLICY = {
     Tier.T5: TierPolicy(Tier.T5, SpeedClass.S5, False, False, False),
 }
 
-class ProofRequired(ValueError): pass
-class LineageRequired(ValueError): pass
-class FoldedQueryNotAllowed(ValueError): pass
 
-def authorize_placement(*, tier: Tier, cassini_valid: bool, lineage_present: bool, folded_query: bool = False) -> TierPolicy:
+class ProofRequired(ValueError):
+    pass
+
+
+class LineageRequired(ValueError):
+    pass
+
+
+class FoldedQueryNotAllowed(ValueError):
+    pass
+
+
+def authorize_placement(
+    *, tier: Tier, cassini_valid: bool, lineage_present: bool, folded_query: bool = False
+) -> TierPolicy:
     policy = TIER_POLICY[tier]
     if policy.deterministic_proof_required and not cassini_valid:
         raise ProofRequired(tier.value)
