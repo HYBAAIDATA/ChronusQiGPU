@@ -23,6 +23,8 @@ ENV PYTHIA_PORT=3000
 ENV PYTHIA_WEB_ROOT=/app/dist/public
 ENV HYBA_REQUIRE_HYBA=1
 ENV OCL_ICD_VENDORS=/etc/OpenCL/vendors
+ENV AL_HARAS_DATA_DIR=/var/lib/hyba/al-haras
+RUN mkdir -p /var/lib/hyba/al-haras && chmod 700 /var/lib/hyba/al-haras
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
   CMD python3 -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3000/api/health')"
