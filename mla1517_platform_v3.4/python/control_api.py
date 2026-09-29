@@ -34,6 +34,7 @@ from startup_contract import (
 )
 import runtime_config
 import system_fabric
+from al_haras_pythia import pythia_guardian_api
 from worker_lifecycle import HeartbeatReader
 
 _SCHEMA_VERSION = "mla1517.status/1"
@@ -1316,6 +1317,21 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/api/v1/campaign/status":
             self._json(HTTPStatus.OK, system_fabric.campaign_status())
             return
+        if path == "/api/v1/security/status":
+            self._json(HTTPStatus.OK, pythia_guardian_api().public_status())
+            return
+        if path == "/api/v1/security/subscribe":
+            security = pythia_guardian_api().public_status()
+            self._json(
+                HTTPStatus.OK,
+                {
+                    "product": "HYBA Security",
+                    "capability": security["capability"],
+                    "subscription_required": True,
+                    "subscription_url": security["subscription_url"],
+                },
+            )
+            return
         self._static_or_404(path)
 
     _POST_TABLE: dict[str, Any] = {
@@ -1371,6 +1387,26 @@ class _Handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
+        if parsed.path == "/api/v1/security/evaluate":
+            body, err = self._read_json_body()
+            if body is None:
+                status = (
+                    HTTPStatus.REQUEST_ENTITY_TOO_LARGE
+                    if err == "body_too_large"
+                    else HTTPStatus.BAD_REQUEST
+                )
+                self._json(status, {"allowed": False, "reason": err})
+                return
+            code, payload = pythia_guardian_api().evaluate(
+                headers={
+                    "authorization": self.headers.get("Authorization", ""),
+                    "x-hyba-tenant": self.headers.get("X-HYBA-Tenant", ""),
+                    "x-hyba-actor": self.headers.get("X-HYBA-Actor", ""),
+                },
+                body=body,
+            )
+            self._json(HTTPStatus(code), payload)
+            return
         if parsed.path == "/api/v1/toe/collapse":
             body, err = self._read_json_body()
             if body is None:
@@ -1379,32 +1415,45 @@ class _Handler(BaseHTTPRequestHandler):
                     if err == "body_too_large"
                     else HTTPStatus.BAD_REQUEST
                 )
-                self._json(status, {"error": err})
+                self._json(status, {"allowed": False, "reason": err})
                 return
             if not body:
-                self._json(HTTPStatus.BAD_REQUEST, {"error": "empty_body"})
-                return
-            if err is not None:
-                status = (
-                    HTTPStatus.REQUEST_ENTITY_TOO_LARGE
-                    if err == "body_too_large"
-                    else HTTPStatus.BAD_REQUEST
+                self._json(
+                    HTTPStatus.BAD_REQUEST,
+                    {"allowed": False, "reason": "empty_body"},
                 )
-                self._json(status, {"error": err})
                 return
             data = body.get("data", body)
-            try:
-                self._json(HTTPStatus.OK, toe_collapse_payload(data))
-            except Exception as exc:
-                self._json(
-                    HTTPStatus.INTERNAL_SERVER_ERROR,
-                    {
-                        "schema_version": _TOE_SCHEMA_VERSION,
-                        "available": False,
-                        "error": f"{type(exc).__name__}: {exc}",
-                        "generated_at": now_iso(),
-                    },
-                )
+            observation = data if isinstance(data, dict) else {"value": data}
+            code, decision = pythia_guardian_api().evaluate(
+                headers={
+                    "authorization": self.headers.get("Authorization", ""),
+                    "x-hyba-tenant": self.headers.get("X-HYBA-Tenant", ""),
+                    "x-hyba-actor": self.headers.get("X-HYBA-Actor", ""),
+                },
+                body={
+                    "operation": "toe.collapse",
+                    "resource": "toe/collapse",
+                    "payload": {"data": data},
+                    "observation": observation,
+                },
+                include_evidence=True,
+            )
+            if code != HTTPStatus.OK:
+                self._json(HTTPStatus(code), decision)
+                return
+            evidence = decision.pop("intelligence_evidence")
+            result = evidence["result"]
+            self._json(
+                HTTPStatus.OK,
+                {
+                    "schema_version": _TOE_SCHEMA_VERSION,
+                    "generated_at": now_iso(),
+                    "guardian_receipt": decision,
+                    "execution_evidence": evidence["execution_evidence"],
+                    **result,
+                },
+            )
             return
         handler = self._POST_TABLE.get(parsed.path)
         if handler is None:
