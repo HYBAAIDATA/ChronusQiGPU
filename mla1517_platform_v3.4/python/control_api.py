@@ -77,17 +77,31 @@ _TOE_BRIDGE_GUARD = threading.Lock()
 
 
 def gpu_payload() -> dict[str, Any]:
-    """Full GPU truth surface: ranked devices, vendors, live backends.
+    """Full GPU truth surface: logical substrate and observed host backends.
 
     Result is cached for ``_GPU_CACHE_TTL_S`` so the 5 s UI poll does not
     pay OpenCL enumeration + hasher/punch init on every tick. Failures
-    degrade to ``{"available": False}`` — never raise, never invent.
+    degrade to an unavailable substrate — never raise, never invent.
     """
     now = time.monotonic()
     cached = _GPU_CACHE.get("payload")
     if cached is not None and (now - float(_GPU_CACHE.get("at", 0.0))) < _GPU_CACHE_TTL_S:
         return cached
-    payload: dict[str, Any] = {"available": False, "devices": []}
+    payload: dict[str, Any] = {
+        "available": False,
+        "count": 0,
+        "opencl_device_count": 0,
+        "physical_gpu_available": False,
+        "physical_gpu_count": 0,
+        "devices": [],
+        "logical_substrate": {
+            "name": "hyba-super-gpu",
+            "available": False,
+            "active": False,
+            "host_backend": "none",
+            "fallback_used": False,
+        },
+    }
     try:
         from hyba.gpureport import report as _gpu_report
 
@@ -95,16 +109,35 @@ def gpu_payload() -> dict[str, Any]:
         devices = []
         if isinstance(doc.get("opencl"), dict):
             devices = doc["opencl"].get("devices") or []
+        gpu_devices = [
+            device
+            for device in devices
+            if isinstance(device, dict) and bool(device.get("is_gpu", False))
+        ]
         hasher = doc.get("hasher") if isinstance(doc.get("hasher"), dict) else {}
         punch = doc.get("punch") if isinstance(doc.get("punch"), dict) else {}
         vendors = doc.get("vendors") if isinstance(doc.get("vendors"), dict) else {}
-        running = str(hasher.get("backend") or punch.get("backend") or "cpu")
+        detected_backend = str(hasher.get("backend") or punch.get("backend") or "none")
+        substrate_available = detected_backend == "cpu" or detected_backend.startswith("opencl:")
+        fallback_used = bool(hasher.get("fallback_reason"))
+        member_count = len(devices) + int(detected_backend == "cpu")
         payload = {
-            "available": bool(devices),
-            "count": len(devices),
+            "available": substrate_available,
+            "count": member_count,
+            "opencl_device_count": len(devices),
+            "physical_gpu_available": bool(gpu_devices),
+            "physical_gpu_count": len(gpu_devices),
             "devices": devices,
-            "running_backend": running,
-            "running_device": str(hasher.get("device") or ""),
+            "backend_active": False,
+            "detected_backend": detected_backend,
+            "detected_device": str(hasher.get("device") or ""),
+            "logical_substrate": {
+                "name": "hyba-super-gpu",
+                "available": substrate_available,
+                "active": False,
+                "host_backend": detected_backend,
+                "fallback_used": fallback_used,
+            },
             "hasher": hasher,
             "punch": {
                 "use_opencl": bool(punch.get("use_opencl", False)),
@@ -115,7 +148,7 @@ def gpu_payload() -> dict[str, Any]:
             "generated_at": now_iso(),
         }
     except Exception as exc:
-        payload = {"available": False, "devices": [], "error": f"{type(exc).__name__}: {exc}"}
+        payload["error"] = f"{type(exc).__name__}: {exc}"
     _GPU_CACHE["at"] = now
     _GPU_CACHE["payload"] = payload
     return payload
@@ -1101,7 +1134,7 @@ def _mining_device_reason(control: "ControlPlane") -> str | None:
     if control.mmio_device:
         return None
     gpu = gpu_payload()
-    if int(gpu.get("count", 0) or 0) > 0:
+    if int(gpu.get("opencl_device_count", 0) or 0) > 0:
         return None
     return "no mining device — MLA1517_MMIO_DEVICE unset and no OpenCL device"
 

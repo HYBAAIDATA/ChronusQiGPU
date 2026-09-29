@@ -37,7 +37,7 @@ CHECKS = {
     "salamander_corrected_controls": ("python/salamander_control.py", ("MIN_LANES", "FAULT_TAU_MS", "READMIT_PASSES", "orphan", "commit_lane_mask")),
     "measured_agentic_stack": ("python/agentic_mining.py", ("MeasuredForwardIndex", "CommissionedSCM", "ObservedCounterfactuals", "SupportViolation")),
     "no_synthetic_agent_runtime": ("python/agentic_mining.py", ("no simulator", "generated trajectory", "synthetic counterfactual")),
-    "no_unlimited_claims": ("behavior.json", ('"unlimited_speed_or_capacity_claim": false',)),
+    "no_unlimited_claims": ("python/mla1517/behavior.py", ('"unlimited_speed_or_capacity_claim": False',)),
     "shared_primedb_cursor_abi": ("host/primedb_storage.c", ("/dev/shm/primedb_cursors", "recover_head_cursor", "primedb_cursors_t")),
     "vertex_growth_no_drop": ("host/primedb_storage.c", ("grow_vertex", "MLA1517_PRIME_DB_MAX_BYTES", "ftruncate")),
     "ring_overflow_spill": ("host/mla1517_producer_daemon.c", ("MLA1517_PRIME_DB_OVERFLOW", "add_ring_overflow", "add_catastrophic_overflow")),

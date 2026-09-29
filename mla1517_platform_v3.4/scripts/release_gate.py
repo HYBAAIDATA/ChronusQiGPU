@@ -18,6 +18,9 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results"
+sys.path.insert(0, str(ROOT / "python"))
+
+from mla1517.behavior import load_behavior
 
 
 def _run(command: list[str]) -> dict[str, Any]:
@@ -69,7 +72,7 @@ def _contract_check() -> dict[str, Any]:
 
 
 def _policy_check() -> dict[str, Any]:
-    behavior = json.loads((ROOT / "behavior.json").read_text())
+    behavior = load_behavior()
     source = (ROOT / "python/manifold_pool_coordinator.py").read_text()
     checks = {
         "unlimited_claim_disabled": behavior.get("unlimited_speed_or_capacity_claim") is False,
@@ -80,6 +83,19 @@ def _policy_check() -> dict[str, Any]:
         in (ROOT / "docker/headless-miner-entrypoint.sh").read_text(),
     }
     return {"status": "PASS" if all(checks.values()) else "FAIL", "checks": checks}
+
+
+def _release_status(checks: dict[str, Any]) -> str:
+    statuses = [
+        value["status"]
+        for value in checks.values()
+        if isinstance(value, dict) and "status" in value
+    ]
+    if not statuses or any(status not in {"PASS", "NOT_RUN"} for status in statuses):
+        return "FAIL"
+    if any(status == "NOT_RUN" for status in statuses):
+        return "BLOCKED"
+    return "PASS"
 
 
 def main() -> int:
@@ -121,15 +137,7 @@ def main() -> int:
             "status": "NOT_RUN",
             "detail": "set MLA1517_STRICT_HARDWARE_CI=1 to require a real exact OpenCL device",
         }
-    checks["status"] = (
-        "PASS"
-        if all(
-            value.get("status") == "PASS"
-            for value in checks.values()
-            if isinstance(value, dict) and "status" in value and value.get("status") != "NOT_RUN"
-        )
-        else "FAIL"
-    )
+    checks["status"] = _release_status(checks)
     checks["unavailable_toolchains_are_evidence"] = True
     output = RESULTS / "release_gate.json"
     output.write_text(json.dumps(checks, indent=2, sort_keys=True) + "\n")

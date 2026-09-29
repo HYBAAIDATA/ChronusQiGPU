@@ -85,10 +85,10 @@ def exact_ladder() -> tuple[ExactScaleResult, ...]:
 
 
 def _select_device(cl, devices):
-    """Prefer the HYBA iGPU (alias match), else first GPU, else first device.
+    """Prefer the HYBA identity, then a GPU, then another OpenCL device.
 
     ``HYBA_REQUIRE_HYBA`` fails explicitly when no qualifying device
-    enumerates — the ladder never silently executes on non-HYBA silicon.
+    enumerates — the ladder never silently executes on a different device.
     When ``HYBA_DEVICE_NAME``/``HYBA_DEVICE_VENDOR``/``HYBA_DEVICE_PCI_IDS``
     are configured, the identity gate replaces the alias check (same
     contract as ``mining/bitcoin_hasher.py::_select_opencl_device``).
@@ -119,31 +119,38 @@ def _select_device(cl, devices):
         name = str(getattr(dev, "name", "")).strip().casefold()
         if any(a and a in name for a in aliases):
             return dev
-    gpu = next((d for d in devices if d.type & cl.device_type.GPU), None)
-    return gpu if gpu is not None else devices[0]
+    gpu_devices = [dev for dev in devices if dev.type & cl.device_type.GPU]
+    if gpu_devices:
+        return gpu_devices[0]
+    return devices[0]
 
 
 class OpenCLLadderExecutor:
-    """Execute the declared ladder on a real OpenCL device, never a CPU fallback."""
+    """Execute the declared ladder on a real OpenCL host device."""
 
     def __init__(self, kernel_path: str | Path | None = None):
         try:
             import pyopencl as cl
         except ImportError as exc:
             raise GPUExecutionUnavailable(
-                "pyopencl is not installed; GPU ladder execution unavailable"
+                "pyopencl is not installed; OpenCL ladder execution unavailable"
             ) from exc
         self.cl = cl
         try:
             platforms = cl.get_platforms()
         except cl.LogicError as exc:
-            raise GPUExecutionUnavailable(
-                f"OpenCL runtime reported no platforms: {exc}"
-            ) from exc
+            raise GPUExecutionUnavailable(f"OpenCL runtime reported no platforms: {exc}") from exc
         devices = [device for platform in platforms for device in platform.get_devices()]
         if not devices:
             raise GPUExecutionUnavailable("no OpenCL device discovered")
-        self.context = cl.Context(devices=[_select_device(cl, devices)])
+        self.device = _select_device(cl, devices)
+        if self.device.type & cl.device_type.GPU:
+            self.execution_backend = "opencl:gpu"
+        elif self.device.type & int(getattr(cl.device_type, "CPU", 0) or 0):
+            self.execution_backend = "opencl:cpu"
+        else:
+            self.execution_backend = "opencl:accelerator"
+        self.context = cl.Context(devices=[self.device])
         self.queue = cl.CommandQueue(self.context)
         source = Path(
             kernel_path or Path(__file__).parents[2] / "kernels/mla1517_lucas_pisot_scale.cl"
