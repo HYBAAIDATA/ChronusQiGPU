@@ -18,7 +18,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List
 
-from .fibonacci_store import fib, fib_pair, lucas
+from lucas.core import lucas
+
+from .fibonacci_store import fib, fib_pair
 
 __all__ = [
     "CassiniResult",

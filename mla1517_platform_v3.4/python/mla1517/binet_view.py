@@ -112,7 +112,7 @@ def binet_fibonacci(index: int) -> BinetValue:
 def binet_lucas(index: int) -> BinetValue:
     """Algebraic view of ``L_index = phi^n + psi^n``."""
     v = binet_exact(index)
-    from .fibonacci_store import lucas
+    from lucas.core import lucas
 
     return BinetValue(
         exact=lucas(index),
