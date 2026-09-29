@@ -1,4 +1,5 @@
 from .core import LineageStore,ObjectService,PolicyService,ProofService
 from .folding import FoldExecutor,UnsupportedPairing
 from .observability import InMemoryTransport,Metric,MetricKind,Observability,ProofCostReport,ResourceTruth,Source,dashboard,measure_proof,resource_truth
-from .platform import EvidenceService,ModelRegistry,TrainingRun,VaultService,agent_tick,bind_ontology,quality_report,run_training
+from .platform import EvidenceService,ModelRegistry,TrainingRun,VaultService,agent_tick as bounded_agent_tick,bind_ontology,quality_report,run_training
+from .catalogue import (AckRequired,ControlEvidenceService,DeployService,FeatureDisabled,FlowService,FunctionRegistry,OntologyService,ProofFacade,QualityReport,ServiceContext,ServicePolicyError,ShareService,VaultCatalogue,agent_tick,autonomous_apply,autonomous_propose,autonomous_rollback,capture_notebook,edge_enroll,edge_sync,energy_report,energy_schedule,federated_query,insight_alert,ota_update,privacy_run,promote_capture,quantum_submit,validate_quality)

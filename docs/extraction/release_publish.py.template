@@ -1,0 +1,9 @@
+"""Private-index publication; credentials are accepted only from environment."""
+import argparse,os,subprocess
+from pathlib import Path
+p=argparse.ArgumentParser();p.add_argument('--index',required=True);a=p.parse_args();creds=os.environ.get('PRIVATE_INDEX_CREDS')
+if not creds:raise SystemExit('PRIVATE_INDEX_CREDS missing')
+# Secret value is passed to the publisher environment, never command output.
+files=[str(p) for pattern in ('*.whl','*.tar.gz') for p in Path('dist').glob(pattern)]
+if not files:raise SystemExit('no release artifacts')
+env={**os.environ,'TWINE_PASSWORD':creds};subprocess.run(['python','-m','twine','upload','--repository-url',a.index,'--username','__token__',*files],env=env,check=True)

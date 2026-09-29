@@ -1,0 +1,36 @@
+name: mla1517-core release
+on:
+  push:
+    tags: ['v*.*.*']
+permissions:
+  contents: read
+  packages: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install build
+      - run: python scripts/release_build.py --version '${{ github.ref_name }}'
+      - uses: actions/upload-artifact@v4
+        with: {name: dist, path: dist/}
+  gates:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: {name: dist, path: dist}
+      - run: pip install dist/*.whl && make gates
+  publish:
+    needs: gates
+    environment: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: {name: dist, path: dist}
+      - run: python scripts/release_publish.py --index '${{ secrets.PRIVATE_INDEX_URL }}'
+        env: {PRIVATE_INDEX_CREDS: '${{ secrets.PRIVATE_INDEX_CREDS }}'}

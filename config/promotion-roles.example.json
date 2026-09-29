@@ -1,0 +1,8 @@
+{
+  "ARCH_OWNER": ["replace-with-github-login"],
+  "EVIDENCE_OWNER": ["replace-with-github-login"],
+  "SECURITY_OWNER": ["replace-with-github-login"],
+  "PRODUCT_OWNER": ["replace-with-github-login"],
+  "COMPLIANCE_OWNER": ["replace-with-github-login"],
+  "INDEPENDENT_REVIEWER": ["replace-with-external-github-login"]
+}

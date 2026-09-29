@@ -1,0 +1,13 @@
+"""Install in mla1517-core only after repository extraction."""
+import argparse,hashlib,json,subprocess
+from pathlib import Path
+from mla1517_core.__about__ import __version__
+p=argparse.ArgumentParser();p.add_argument('--version',required=True);a=p.parse_args();tag=a.version;version=tag.removeprefix('v')
+if version!=__version__:raise SystemExit('tag/package version mismatch')
+if version not in Path('pyproject.toml').read_text() or version not in Path('docs/CHANGELOG.md').read_text():raise SystemExit('version sources inconsistent')
+subprocess.run(['python','-m','build'],check=True)
+artifacts=list(Path('dist').glob('*.whl'))+list(Path('dist').glob('*.tar.gz'))
+if not artifacts:raise SystemExit('no build artifacts')
+for artifact in artifacts:subprocess.run(['gpg','--batch','--detach-sign','--armor',str(artifact)],check=True)
+checks={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in Path('dist').iterdir() if p.is_file()};Path('dist/SHA256SUMS.json').write_text(json.dumps(checks,sort_keys=True,indent=2))
+subprocess.run(['syft',str(artifacts[0]),'-o','spdx-json=dist/sbom.spdx.json'],check=True)

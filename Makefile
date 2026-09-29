@@ -20,6 +20,7 @@ assurance-gates:
 	PYTHONPATH=.:mla1517_platform_v3.4/python python3 -m unittest discover -s tests -p 'test_promotion_evidence.py' -v
 	PYTHONPATH=.:mla1517_platform_v3.4/python python3 -m unittest discover -s tests -p 'test_enterprise_v2_tranches.py' -v
 	PYTHONPATH=.:mla1517_platform_v3.4/python python3 -m unittest discover -s tests -p 'test_packs_versioning_observability.py' -v
+	PYTHONPATH=.:mla1517_platform_v3.4/python python3 -m unittest discover -s tests -p 'test_promotion_release_catalogue.py' -v
 	PYTHONPATH=.:mla1517_platform_v3.4/python python3 -m unittest discover -s tests -p 'test_fold_pipeline.py' -v
 	PYTHONPATH=.:mla1517_platform_v3.4/python python3 -m al_haras.gate_cli config/al-haras-promotion-evidence.json
 	python3 -m compileall -q al_haras hyba_contracts hyba_services hyba_profiles python_backend/core_modules
