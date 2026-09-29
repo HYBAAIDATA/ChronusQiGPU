@@ -31,7 +31,16 @@ class CassiniVerifier:
 
     @classmethod
     def verify(cls, n: int) -> bool:
-        """Verify L_n^2 - 5 F_n^2 = 4 (-1)^n."""
+        """Verify the Cassini identity L_n^2 - 5 F_n^2 = 4 (-1)^n at index ``n``.
+
+        This recomputes ``lucas(n)``/``fibonacci(n)`` and checks the identity
+        on them — it is a theorem check on the arithmetic, not an admission
+        gate. It returns True for every ``n`` the engine can compute, so
+        gating caller-supplied values on it admits everything. To check a
+        stored value, use :meth:`verify_with_values` /
+        :meth:`verify_matrix`, or ``aethel.fibonacci.cassini_holds`` on the
+        stored quadruple.
+        """
         l_n = cls.lucas(n)
         f_n = cls.fibonacci(n)
         cassini_det = (l_n**2) - 5 * (f_n**2)

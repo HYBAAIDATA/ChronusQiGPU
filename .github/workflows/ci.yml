@@ -43,6 +43,8 @@ jobs:
         run: python -m flake8 --count
       - name: Import audit (every local import resolves; none hidden)
         run: python scripts/import_audit.py
+      - name: Import graph (no new import cycles or layer violations)
+        run: python scripts/import_graph.py cycles && python scripts/import_graph.py layers
       - name: Unit tests (pytest)
         run: python -m pytest tests/ -x -q
       # The virtual quantum computer is part of the miner; its own tests run
@@ -52,6 +54,13 @@ jobs:
         run: python -m pytest tests -q
       - name: Byte-compile all Python sources
         run: python -m compileall -q Intelligence core_engine mining hyba lucas pythagoras scripts tests mla1517_platform_v3.4/python
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pythia-coverage-report
+          path: coverage.xml
+          retention-days: 30
 
   deploy-sentry:
     name: Deploy sentry — config, dependency, native-build and CI wiring

@@ -98,6 +98,7 @@ class ClusterInventory:
         inv = cls(detected_at=time.time())
         for tier, fn in (
             ("opencl", _probe_opencl),
+            ("opencl_remote", _probe_remote_opencl),
             ("cuda", _probe_cuda),
             ("metal", _probe_metal),
             ("rocm", _probe_rocm),
@@ -452,6 +453,62 @@ def _probe_rtl() -> List[DeviceInfo]:
                 ),
             )
         )
+    return out
+
+
+def _remote_opencl_endpoints() -> List[str]:
+    raw = os.environ.get("HYBA_REMOTE_OPENCL_ENDPOINTS", "")
+    out = [part.strip() for part in raw.split(",") if part.strip()]
+    single = os.environ.get("MLA1517_REMOTE_GPU_ENDPOINT", "").strip()
+    if single and single not in out:
+        out.append(single)
+    return out
+
+
+def _probe_remote_opencl() -> List[DeviceInfo]:
+    """Devices measured by remote GPU agents — a GPU anywhere counts.
+
+    Endpoints come from ``HYBA_REMOTE_OPENCL_ENDPOINTS`` (comma list) or
+    ``MLA1517_REMOTE_GPU_ENDPOINT``. Each agent is a real OpenCL host —
+    a local box, another PC, or a cloud VM. Unreachable or deviceless
+    endpoints degrade explicitly in ``errors``; they are never faked.
+    """
+    endpoints = _remote_opencl_endpoints()
+    if not endpoints:
+        return []
+    try:
+        from mla1517.remote_gpu import RemoteGPUClient
+    except Exception:
+        import sys
+
+        plat = _REPO_ROOT / "mla1517_platform_v3.4" / "python"
+        if str(plat) not in sys.path:
+            sys.path.append(str(plat))
+        from mla1517.remote_gpu import RemoteGPUClient
+    out: List[DeviceInfo] = []
+    errors: List[str] = []
+    for endpoint in endpoints:
+        try:
+            devices = RemoteGPUClient(endpoint).devices()
+        except Exception as exc:
+            errors.append(f"{endpoint}: {exc}")
+            continue
+        for d in devices:
+            caps = dict(d.capabilities)
+            caps["remote_endpoint"] = endpoint
+            out.append(
+                DeviceInfo(
+                    name=d.name,
+                    vendor=d.vendor,
+                    backend="opencl_remote",
+                    type=d.device_type,
+                    compute_units=d.compute_units,
+                    global_mem_mb=d.global_mem_mb,
+                    capabilities=tuple(sorted(caps.items())),
+                )
+            )
+    if errors and not out:
+        raise RuntimeError("; ".join(errors))
     return out
 
 

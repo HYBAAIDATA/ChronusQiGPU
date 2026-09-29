@@ -261,7 +261,7 @@ def _check_agi_asi_requirements(orchestrator) -> Dict[str, Any]:
 
 
 def _check_lucas_scales(orchestrator) -> Dict[str, Any]:
-    """Validate the Lucas intelligence scale ladder (L_10..L_20)."""
+    """Validate the Lucas intelligence scale ladder (every rung of lucas.ladder)."""
     try:
         status = orchestrator.lucas_scale_status()
         profile = status["profile"]
@@ -273,7 +273,18 @@ def _check_lucas_scales(orchestrator) -> Dict[str, Any]:
         import turing_core
 
         values = [lv["value"] for lv in profile["levels"]]
-        values_ok = all(lv["value"] == turing_core.lucas(lv["index"]) for lv in profile["levels"])
+        # The declared rungs, valued by an independent recurrence
+        # (L_0 = 2, L_1 = 1, L_n = L_(n-1) + L_(n-2)).
+        from lucas.ladder import FULL_LADDER
+
+        def _lucas(n: int) -> int:
+            a, b = 2, 1
+            for _ in range(n):
+                a, b = b, a + b
+            return a
+
+        expected = [_lucas(n) for n in FULL_LADDER]
+        values_ok = values == expected and expected[:5] == [123, 322, 1364, 5778, 15127]
         # Coherence probe on a phi-phase signal (honest: not scale-invariant).
         import math
 
@@ -398,11 +409,13 @@ def _check_extended_algebra() -> Dict[str, Any]:
         sched_ok = 0 < len(sched) <= 1000 and len(set(sched)) == len(sched)
         ladders_ok = True
         try:
-            from .lucas_scales import SCALE_ORDER, build_family_scale_profile
+            from lucas.ladder import FULL_LADDER
+
+            from .lucas_scales import build_family_scale_profile
 
             for f in turing_core.FAMILY_COEFFS:
                 p = build_family_scale_profile(f)
-                ladders_ok = ladders_ok and p.monotonic and len(p.levels) == len(SCALE_ORDER)
+                ladders_ok = ladders_ok and p.monotonic and len(p.levels) == len(FULL_LADDER)
         except Exception:
             ladders_ok = False
         ham_ok = True

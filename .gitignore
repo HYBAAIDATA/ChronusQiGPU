@@ -52,3 +52,6 @@ models/
 aethel_store/
 aethel_backup/
 smoke-artifacts/
+
+# Lean 4 build output
+proofs/lean/.lake/

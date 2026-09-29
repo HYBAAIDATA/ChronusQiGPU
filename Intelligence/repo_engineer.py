@@ -49,6 +49,15 @@ ROUTE_KEYWORDS: dict[str, set[str]] = {
 NATIVE_CAPABILITIES = tuple(ROUTE_KEYWORDS)
 
 
+def default_store_dir(repo_root: Path) -> Path:
+    """Beside the other intelligences' state: ``PYTHIA_INTELLIGENCE_DIR`` when
+    set (the deployed image points it at its writable volume; the source tree
+    is read-only there), else the repository's own ``data/``."""
+    configured = os.getenv("PYTHIA_INTELLIGENCE_DIR", "").strip()
+    base = Path(configured) if configured else repo_root / "data"
+    return base / "repo_engineer"
+
+
 class RepoEngineer:
     """Route repository tasks through native audits, skills, tests, and memory."""
 
@@ -70,7 +79,7 @@ class RepoEngineer:
         self.store = PythiaStore(
             self.memory,
             self.learning,
-            store_dir=store_dir or self.repo_root / "data" / "repo_engineer",
+            store_dir=store_dir or default_store_dir(self.repo_root),
         )
         self.store.load()
         self.context, self.context_files = self._load_context()
