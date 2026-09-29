@@ -261,7 +261,14 @@ def _check_agi_asi_requirements(orchestrator) -> Dict[str, Any]:
 
 
 def _check_lucas_scales(orchestrator) -> Dict[str, Any]:
-    """Validate the Lucas intelligence scale ladder (every rung of lucas.ladder)."""
+    """Validate the Lucas intelligence scale ladder.
+
+    The profile climbs the curriculum rungs by design; the mining rungs
+    live in the substrate lookup (LUCAS_SCALE_LADDER) and on
+    IGPU_SCALE_RUNGS, not in this profile. Verify the profile's rungs and
+    values against an independent recurrence, and the lookup against the
+    full ladder.
+    """
     try:
         status = orchestrator.lucas_scale_status()
         profile = status["profile"]
@@ -272,7 +279,9 @@ def _check_lucas_scales(orchestrator) -> Dict[str, Any]:
         values = [lv["value"] for lv in profile["levels"]]
         # The declared rungs, valued by an independent recurrence
         # (L_0 = 2, L_1 = 1, L_n = L_(n-1) + L_(n-2)).
-        from lucas.ladder import FULL_LADDER
+        from lucas.ladder import CURRICULUM_RUNGS, FULL_LADDER
+
+        from .lucas_scales import LUCAS_SCALE_LADDER
 
         def _lucas(n: int) -> int:
             a, b = 2, 1
@@ -280,8 +289,13 @@ def _check_lucas_scales(orchestrator) -> Dict[str, Any]:
                 a, b = b, a + b
             return a
 
-        expected = [_lucas(n) for n in FULL_LADDER]
-        values_ok = values == expected and expected[:5] == [123, 322, 1364, 5778, 15127]
+        expected = [_lucas(n) for n in CURRICULUM_RUNGS]
+        values_ok = (
+            [lv["index"] for lv in profile["levels"]] == list(CURRICULUM_RUNGS)
+            and values == expected
+            and expected == [123, 322, 1364, 5778, 15127]
+            and all(rung in LUCAS_SCALE_LADDER for rung in FULL_LADDER)
+        )
         # Coherence probe on a phi-phase signal (honest: not scale-invariant).
         import math
 
@@ -411,7 +425,7 @@ def _check_extended_algebra() -> Dict[str, Any]:
             from .lucas_scales import build_family_scale_profile
 
             for f in turing_core.FAMILY_COEFFS:
-                p = build_family_scale_profile(f)
+                p = build_family_scale_profile(f, indices=FULL_LADDER)
                 ladders_ok = ladders_ok and p.monotonic and len(p.levels) == len(FULL_LADDER)
         except Exception:
             ladders_ok = False
