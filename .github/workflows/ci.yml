@@ -45,6 +45,11 @@ jobs:
         run: python scripts/import_audit.py
       - name: Unit tests (pytest)
         run: python -m pytest tests/ -x -q
+      # The virtual quantum computer is part of the miner; its own tests run
+      # from its folder so the installed package, not the folder, is imported.
+      - name: Virtual quantum computer tests
+        working-directory: turing_universal_quantum_computer
+        run: python -m pytest tests -q
       - name: Byte-compile all Python sources
         run: python -m compileall -q Intelligence core_engine mining hyba lucas pythagoras scripts tests mla1517_platform_v3.4/python
 

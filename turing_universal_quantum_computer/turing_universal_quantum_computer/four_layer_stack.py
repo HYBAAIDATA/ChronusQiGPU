@@ -355,7 +355,7 @@ class NearStateIGpu:
         if winner_nonce is not None:
             blob = header80[:76] + struct.pack("<I", int(winner_nonce) & 0xFFFFFFFF)
             digest = _double_sha256(blob)
-            recheck_ok = digest == result.winning_hash and digest[::-1] < target_be
+            recheck_ok = digest == result.winning_hash and digest[::-1] <= target_be  # consensus: <= target
             cassini_ok = CassiniVerifier.verify(7)
 
         elapsed = time.perf_counter() - t0
