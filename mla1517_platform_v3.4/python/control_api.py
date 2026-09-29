@@ -1351,10 +1351,16 @@ class _Handler(BaseHTTPRequestHandler):
             self._json(HTTPStatus.OK, system_fabric.campaign_status())
             return
         if path == "/api/v1/security/status":
-            self._json(HTTPStatus.OK, pythia_guardian_api().public_status())
+            guardian = self._guardian_api()
+            if guardian is None:
+                return
+            self._json(HTTPStatus.OK, guardian.public_status())
             return
         if path == "/api/v1/security/subscribe":
-            security = pythia_guardian_api().public_status()
+            guardian = self._guardian_api()
+            if guardian is None:
+                return
+            security = guardian.public_status()
             self._json(
                 HTTPStatus.OK,
                 {
@@ -1381,6 +1387,18 @@ class _Handler(BaseHTTPRequestHandler):
         "/api/v1/mining/escalate": _mining_escalate,
         "/api/v1/salamander/fault": _salamander_fault,
     }
+
+    def _guardian_api(self):
+        """Return the lazily-built guardian, or answer 503 instead of
+        dropping the connection when it cannot be constructed."""
+        try:
+            return pythia_guardian_api()
+        except Exception:
+            self._json(
+                HTTPStatus.SERVICE_UNAVAILABLE,
+                {"allowed": False, "reason": "guardian_unavailable"},
+            )
+            return None
 
     def _drain(self, length: int) -> None:
         """Discard a refused body, bounded so a hostile Content-Length cannot
@@ -1430,7 +1448,10 @@ class _Handler(BaseHTTPRequestHandler):
                 )
                 self._json(status, {"allowed": False, "reason": err})
                 return
-            code, payload = pythia_guardian_api().evaluate(
+            guardian = self._guardian_api()
+            if guardian is None:
+                return
+            code, payload = guardian.evaluate(
                 headers={
                     "authorization": self.headers.get("Authorization", ""),
                     "x-hyba-tenant": self.headers.get("X-HYBA-Tenant", ""),
@@ -1458,7 +1479,10 @@ class _Handler(BaseHTTPRequestHandler):
                 return
             data = body.get("data", body)
             observation = data if isinstance(data, dict) else {"value": data}
-            code, decision = pythia_guardian_api().evaluate(
+            guardian = self._guardian_api()
+            if guardian is None:
+                return
+            code, decision = guardian.evaluate(
                 headers={
                     "authorization": self.headers.get("Authorization", ""),
                     "x-hyba-tenant": self.headers.get("X-HYBA-Tenant", ""),

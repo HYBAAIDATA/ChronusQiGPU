@@ -43,6 +43,7 @@ class SubscriptionClaims:
     expires_at: int
     max_payload_bytes: int = 1_048_576
     version: str = "al-haras.subscription.v2"
+    jti: str | None = None
 
     def __post_init__(self) -> None:
         required = (
@@ -62,6 +63,8 @@ class SubscriptionClaims:
             raise SubscriptionError("invalid subscription validity window")
         if self.max_payload_bytes <= 0:
             raise SubscriptionError("max_payload_bytes must be positive")
+        if self.jti is not None and not self.jti:
+            raise SubscriptionError("jti must be non-empty when present")
 
     def payload(self) -> dict[str, Any]:
         value = asdict(self)
@@ -83,9 +86,14 @@ class SubscriptionClaims:
                 expires_at=int(payload["expires_at"]),
                 max_payload_bytes=int(payload.get("max_payload_bytes", 1_048_576)),
                 version=str(payload.get("version", "")),
+                jti=(None if payload.get("jti") is None else str(payload["jti"])),
             )
         except (KeyError, TypeError, ValueError) as exc:
             raise SubscriptionError("invalid subscription claims") from exc
+
+
+class SubscriptionReplayError(SubscriptionError):
+    """A token whose ``jti`` was already consumed within its validity window."""
 
 
 class SubscriptionAuthority:
@@ -94,11 +102,23 @@ class SubscriptionAuthority:
     Issuance belongs in the subscription control plane. It remains available as
     an explicit method for that control plane and deterministic tests; data-plane
     request handling calls only ``verify``.
+
+    Verification is signature-first: an attacker-controlled token cannot probe
+    which claim was wrong, because every unauthenticated mutation collapses to
+    the same ``invalid subscription signature`` error.
+
+    ``jti`` replay registry: when a token carries a ``jti`` claim, the admission
+    path calls :meth:`consume`, which rejects a jti already consumed within its
+    validity window. The registry is in-memory and per-process; issuers that
+    need cross-instance replay protection must allocate unique ``jti`` values
+    per request and accept restart-window replay, or front the authority with
+    a shared nonce store.
     """
 
     def __init__(self, keys: Mapping[str, bytes], issuer: str) -> None:
         self._keys = dict(keys)
         self.issuer = issuer
+        self._consumed_jti: dict[str, int] = {}
         for key_id, secret in self._keys.items():
             if not key_id or not isinstance(secret, bytes) or len(secret) < 32:
                 raise ValueError("subscription keys must be named and at least 32 bytes")
@@ -132,18 +152,18 @@ class SubscriptionAuthority:
         if not isinstance(payload, dict):
             raise SubscriptionError("subscription payload must be an object")
         claims = SubscriptionClaims.from_payload(payload)
+        secret = self._keys.get(claims.key_id)
+        expected = (
+            _b64encode(hmac.new(secret, body.encode("ascii"), hashlib.sha256).digest())
+            if secret is not None
+            else ""
+        )
+        if not hmac.compare_digest(expected, signature):
+            raise SubscriptionError("invalid subscription signature")
         if claims.version != "al-haras.subscription.v2":
             raise SubscriptionError("unsupported subscription version")
         if claims.issuer != self.issuer:
             raise SubscriptionError("issuer mismatch")
-        secret = self._keys.get(claims.key_id)
-        if secret is None:
-            raise SubscriptionError("unknown subscription key")
-        expected = _b64encode(
-            hmac.new(secret, body.encode("ascii"), hashlib.sha256).digest()
-        )
-        if not hmac.compare_digest(expected, signature):
-            raise SubscriptionError("invalid subscription signature")
         current = int(time.time() if now is None else now)
         if current < claims.not_before:
             raise SubscriptionError("subscription not active")
@@ -156,6 +176,24 @@ class SubscriptionAuthority:
         if capability not in claims.capabilities:
             raise SubscriptionError("capability not subscribed")
         return claims
+
+    def consume(self, claims: SubscriptionClaims, *, now: int | None = None) -> None:
+        """Register a verified token's ``jti``; raise on replay.
+
+        Called by the admission path after ``verify`` succeeds and all other
+        gates pass, so a rejected request never burns the token's nonce.
+        Tokens without ``jti`` are accepted without replay tracking.
+        """
+        if claims.jti is None:
+            return
+        current = int(time.time() if now is None else now)
+        consumed = self._consumed_jti
+        for nonce, expiry in list(consumed.items()):
+            if expiry <= current:
+                del consumed[nonce]
+        if claims.jti in consumed:
+            raise SubscriptionReplayError("subscription token replay detected")
+        consumed[claims.jti] = claims.expires_at
 
     def active_key_ids(self) -> Iterable[str]:
         return tuple(sorted(self._keys))

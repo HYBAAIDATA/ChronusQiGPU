@@ -30,17 +30,27 @@ class GuardianPolicy:
 
 
 class ALHaras:
-    """Subscription-gated, tenant-bound Guardian decision boundary."""
+    """Subscription-gated, tenant-bound Guardian decision boundary.
+
+    ``audit`` is the durable ledger for post-authentication decisions
+    (admissions, denials of entitled requests, evidence outcomes). Pre-
+    authentication boundary denials — bad or missing credentials — are
+    attacker-influenceable and therefore go to ``boundary_audit``, a
+    volatile in-memory chain kept for observability only. If no separate
+    boundary chain is supplied, boundary denials share the durable ledger.
+    """
 
     def __init__(
         self,
         authority: SubscriptionAuthority,
         policy: GuardianPolicy,
         audit: HashChainAudit,
+        boundary_audit: HashChainAudit | None = None,
     ) -> None:
         self.authority = authority
         self.policy = policy
         self.audit = audit
+        self.boundary_audit = boundary_audit if boundary_audit is not None else audit
 
     def record_boundary_verdict(
         self,
@@ -52,10 +62,9 @@ class ALHaras:
         payload_hash: str,
         evaluated_at: int,
         intelligence_evidence: Mapping[str, Any] | None = None,
+        durable: bool = True,
     ) -> GuardianVerdict:
-        evidence_hash = (
-            digest(intelligence_evidence) if intelligence_evidence is not None else None
-        )
+        evidence_hash = digest(intelligence_evidence) if intelligence_evidence is not None else None
         event = {
             "schema_version": "al-haras.decision.v1",
             "request_id": request.request_id,
@@ -71,7 +80,7 @@ class ALHaras:
             "policy_version": self.policy.version,
             "evaluated_at": evaluated_at,
         }
-        record = self.audit.append(event)
+        record = (self.audit if durable else self.boundary_audit).append(event)
         return GuardianVerdict(
             allowed=allowed,
             reason=reason,
@@ -94,6 +103,7 @@ class ALHaras:
     ) -> tuple[Admission | None, GuardianVerdict | None]:
         evaluated_at = int(time.time() if now is None else now)
         payload_hash = digest(request.payload)
+        claims = None
         try:
             claims = self.authority.verify(
                 subscription_token,
@@ -109,6 +119,10 @@ class ALHaras:
             elif payload_size > size_limit:
                 reason = "PAYLOAD_LIMIT_EXCEEDED"
             else:
+                # Consume the token's replay identifier (if any) before
+                # admitting: a presented-but-rejected request never burns
+                # the token's jti for a retry.
+                self.authority.consume(claims, now=evaluated_at)
                 return (
                     Admission(
                         request=request,
@@ -120,7 +134,6 @@ class ALHaras:
                 )
         except SubscriptionError as exc:
             reason = f"SUBSCRIPTION_DENIED:{exc}"
-            claims = None
         verdict = self.record_boundary_verdict(
             request,
             allowed=False,
@@ -128,6 +141,7 @@ class ALHaras:
             subscription_id=claims.subscription_id if claims else None,
             payload_hash=payload_hash,
             evaluated_at=evaluated_at,
+            durable=claims is not None,
         )
         return None, verdict
 

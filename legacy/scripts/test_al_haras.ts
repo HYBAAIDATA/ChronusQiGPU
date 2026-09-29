@@ -1,8 +1,10 @@
 import {
   AlHarasTopologicalVerifier,
   generateClientHodgeResonanceHeaders,
-} from "../src/security/al_haras_gateway";
+} from "../../frontend/src/security/al_haras_gateway";
 
+// NOTE: this exercises a structural-resonance check over public Fibonacci/
+// Lucas values. It is NOT an authentication test — see the gateway header.
 async function runAlHarastTest() {
   console.log("==================================================");
   console.log("AL HARAS STRUCTURAL RESONANCE HANDSHAKE TEST SUITE");
@@ -44,9 +46,9 @@ async function runAlHarastTest() {
 
   console.log("\n==================================================");
   if (zeckValid && cassiniValid && gapResult.gapPositive) {
-    console.log("[✓] AUTHENTICATION SUCCESS: 11D Manifold geometric routing materialized.");
+    console.log("[✓] RESONANCE VALID: 11D manifold geometric routing materialized.");
   } else {
-    console.log("[x] AUTHENTICATION FAILURE: Request dropped into the vacuum.");
+    console.log("[x] RESONANCE INVALID: request dropped into the vacuum.");
   }
 }
 
