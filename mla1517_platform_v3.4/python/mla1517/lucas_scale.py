@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple
 
 from .constants import LADDER, cassini_seal
-from .fibonacci_store import fib, lucas
+from .core import fib, lucas
 
 __all__ = ["ScaleTransition", "next_ladder_index", "climb", "transition", "authorise"]
 
