@@ -43,7 +43,7 @@ browser ─HTTP→ control_api.main (/api/* + statics)
 | CPU↔device route change | correct results + explicit route/fallback evidence | BLOCKED (no device) |
 | pool reject/timeout/accept | distinct outcomes, correct counters | PENDING-B |
 | browser reconnect | backend evidence reconstructs progress | **PASS** (S6) |
-| unauthorized direct request | denied independent of UI | **FAIL** — zero HTTP auth: unauthenticated `PUT /api/v1/config` persisted, `POST /api/v1/agentic/start` ran, `POST /api/v1/salamander/fault` wrote audit records (S4 — security finding, in B scope) |
+| unauthorized direct request | denied independent of UI | **PASS @bfceb68** — S4 found zero HTTP auth at baseline (real finding); the boundary landed via parallel work (`03f62ec` + mediation): `control_authorization` requires `Authorization: Bearer $EUCLID_ADMIN_API_KEY` with `hmac.compare_digest`, fail-closed 403 when no key configured, dev opt-out only via explicit `PYTHIA_ALLOW_UNAUTHENTICATED_CONTROL=1` — verified by code-read + Owner B's live 403 checks |
 | persistence/restore across restart | runtime_config + sidecars reload honestly | PENDING-B |
 
 ## Agent responsibilities (live modules)
