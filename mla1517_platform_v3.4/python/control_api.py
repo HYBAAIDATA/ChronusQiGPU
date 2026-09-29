@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import hmac
 import json
 import mimetypes
@@ -43,6 +44,19 @@ _TOE_SCHEMA_VERSION = "mla1517.toe_collapse/1"
 _TOE_MAX_BODY_BYTES = 4 * 1024 * 1024
 _STATUS_BACKEND = "Python/C/OpenCL"
 _CANONICAL_DEVICE = "canonical-python-backend"
+PRIVILEGED_MEDIATION_INSTALLED = True
+_PRIVILEGED_PREFIXES = (
+    "/api/v1/mining/",
+    "/api/v1/policy/",
+    "/api/v1/worker/",
+    "/api/v1/recovery/",
+    "/api/v1/admin/",
+    "/api/v1/toe/",
+    "/api/v1/quantum/",
+    "/api/v1/scale/",
+    "/api/v1/assembly/",
+    "/api/v1/security/",
+)
 from lucas.ladder import FULL_LADDER
 
 _EXACT_LADDER = list(FULL_LADDER)
@@ -1268,9 +1282,52 @@ def toe_collapse_payload(data: Any) -> dict[str, Any]:
 class _Handler(BaseHTTPRequestHandler):
     server_version = "PYTHIAControlAPI/1.0"
 
+    def _guardian_headers(self) -> dict[str, str]:
+        return {
+            "authorization": self.headers.get("Authorization", ""),
+            "x-hyba-tenant": self.headers.get("X-HYBA-Tenant", ""),
+            "x-hyba-actor": self.headers.get("X-HYBA-Actor", ""),
+        }
+
+    def _guardian_preflight(
+        self, path: str, body: dict[str, Any] | None = None
+    ) -> bool:
+        """Fail closed before any privileged handler is invoked."""
+        operation = path.removeprefix("/api/v1/").replace("/", ".")
+        code, receipt = pythia_guardian_api().evaluate(
+            headers=self._guardian_headers(),
+            body={
+                "operation": operation,
+                "resource": path.removeprefix("/api/v1/"),
+                "payload": body or {},
+            },
+        )
+        if code != HTTPStatus.OK:
+            self._json(HTTPStatus(code), receipt)
+            return False
+        self._guardian_receipt = receipt
+        return True
+
+    def _guardian_commit_evidence(
+        self, path: str, status: int, receipt: dict[str, Any]
+    ) -> None:
+        digest = hashlib.sha256(
+            json.dumps(receipt, sort_keys=True, default=str).encode("utf-8")
+        ).hexdigest()
+        _audit().append(
+            "guardian_mediated",
+            path=path,
+            status=int(status),
+            receipt_sha256=digest,
+            allowed=bool(receipt.get("allowed")),
+        )
+
     def do_GET(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
         path = parsed.path
+        if path.startswith(_PRIVILEGED_PREFIXES):
+            if not self._guardian_preflight(path):
+                return
         if path in {"/api/health", "/healthz", "/api/v1/healthz"}:
             self._json(
                 HTTPStatus.OK,
@@ -1503,6 +1560,9 @@ class _Handler(BaseHTTPRequestHandler):
             )
             self._json(status, {"error": err})
             return
+        if parsed.path.startswith(_PRIVILEGED_PREFIXES):
+            if not self._guardian_preflight(parsed.path, body):
+                return
         try:
             status, payload = handler(body)
         except ValueError as exc:
@@ -1573,6 +1633,12 @@ class _Handler(BaseHTTPRequestHandler):
             self.wfile.write(body)
 
     def _json(self, status: HTTPStatus, payload: dict[str, Any]) -> None:
+        receipt = getattr(self, "_guardian_receipt", None)
+        if receipt is not None:
+            payload = dict(payload)
+            payload.setdefault("guardian_receipt", receipt)
+            self._guardian_commit_evidence(urlparse(self.path).path, int(status), receipt)
+            del self._guardian_receipt
         body = json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
         self._send(int(status), "application/json; charset=utf-8", body)
 
@@ -1673,3 +1739,4 @@ if __name__ == "__main__":
         signal.SIGTERM, lambda *_: (_CONTROL.shutdown() if _CONTROL is not None else None)
     )
     main()
+

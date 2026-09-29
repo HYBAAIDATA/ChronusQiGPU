@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from .runtime import GuardianAPI
+from .mediation_runtime import attach_receipt, evidence_attach, evaluate_guardian, guardian_middleware
 
 
 def create_router(api: GuardianAPI):
@@ -17,19 +18,43 @@ def create_router(api: GuardianAPI):
     router = APIRouter(prefix="/api/v1/security", tags=["HYBA Security — AL HARAS"])
 
     @router.get("/status")
-    async def status() -> dict[str, Any]:
-        return api.public_status()
+    @guardian_middleware
+    @evidence_attach
+    async def status(
+        request: Request,
+        authorization: str | None = Header(default=None),
+        x_hyba_tenant: str | None = Header(default=None),
+        x_hyba_actor: str | None = Header(default=None),
+    ):
+        headers = {"authorization": authorization or "", "x-hyba-tenant": x_hyba_tenant or "", "x-hyba-actor": x_hyba_actor or ""}
+        decision = evaluate_guardian(api, headers, "security.status", "security/status")
+        if not decision.allowed:
+            return JSONResponse(status_code=decision.status_code, content=decision.receipt)
+        return attach_receipt(api.public_status(), decision.receipt)
 
     @router.get("/subscribe")
-    async def subscribe() -> dict[str, Any]:
-        return {
+    @guardian_middleware
+    @evidence_attach
+    async def subscribe(
+        request: Request,
+        authorization: str | None = Header(default=None),
+        x_hyba_tenant: str | None = Header(default=None),
+        x_hyba_actor: str | None = Header(default=None),
+    ):
+        headers = {"authorization": authorization or "", "x-hyba-tenant": x_hyba_tenant or "", "x-hyba-actor": x_hyba_actor or ""}
+        decision = evaluate_guardian(api, headers, "security.subscribe", "security/subscribe")
+        if not decision.allowed:
+            return JSONResponse(status_code=decision.status_code, content=decision.receipt)
+        return attach_receipt({
             "product": "HYBA Security",
             "capability": api.settings.capability,
             "subscription_required": True,
             "subscription_url": api.settings.subscription_url,
-        }
+        }, decision.receipt)
 
     @router.post("/evaluate")
+    @guardian_middleware
+    @evidence_attach
     async def evaluate(
         request: Request,
         authorization: str | None = Header(default=None),

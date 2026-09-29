@@ -54,10 +54,15 @@ def resilience(root):
  names=('test_crash_recovery.py','test_replay.py','test_policy_rotation.py','test_compound_failure.py');found=[str(p) for n in names for p in root.rglob(n)]
  return Outcome(Status.PASS if len(found)==4 else Status.SKIP,"full resilience suite present" if len(found)==4 else f"resilience suite incomplete ({len(found)}/4)",tuple(found))
 def privileged(root):
- marker=root/'config'/'privileged-mediation.json'
- if not marker.exists():return Outcome(Status.FAIL,"runtime mediation inventory absent; container-wide mediation remains unverified")
- data=json.loads(marker.read_text());ok=data.get('complete') is True and data.get('audited_commit')
- return Outcome(Status.PASS if ok else Status.FAIL,"privileged mediation inventory evaluated",(str(marker),))
+ from al_haras.privileged_audit import audit,manifest
+ import os
+ routes,violations=audit(root);privileged_routes=[r for r in routes if r.path.startswith("/api/v1/") and any(r.path.startswith(p) for p in ("/api/v1/mining/","/api/v1/policy/","/api/v1/worker/","/api/v1/recovery/","/api/v1/admin/","/api/v1/toe/","/api/v1/quantum/","/api/v1/scale/","/api/v1/assembly/","/api/v1/security/"))]
+ key=os.environ.get("MEDIATION_MANIFEST_KEY","").encode() or None
+ report=manifest(routes,violations,key);artifact=root/'results'/'mediation_manifest.json';artifact.parent.mkdir(exist_ok=True);artifact.write_text(json.dumps(report,sort_keys=True,indent=2))
+ if not privileged_routes:return Outcome(Status.FAIL,"no privileged routes discovered; route inventory is incomplete",(str(artifact),))
+ reason=f"{len(violations)} violation(s) across {len(privileged_routes)} privileged route(s)"
+ if not key:reason+="; manifest is content-hashed but unsigned"
+ return Outcome(Status.FAIL if violations else Status.PASS,reason,(str(artifact),))
 GATES={'promotion-manifest':promotion,'schema-freeze':schema,'envelope-verify':envelope,'claim-register':claims,'import-audit':imports,'rule7-no-float':no_float,'abi-check':abi,'refuted-claims':refuted,'conformance-vectors':conformance,'resilience-suite':resilience,'privileged-path-audit':privileged}
 def main(name,root='.'):
  result=run(name,GATES[name],Path(root).resolve());print(json.dumps({'gate':result.gate,'status':result.status.value,'reason':result.reason}));return 0 if result.status in {Status.PASS,Status.SKIP} else 1

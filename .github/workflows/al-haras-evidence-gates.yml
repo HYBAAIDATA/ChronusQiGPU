@@ -31,6 +31,8 @@ jobs:
         run: make assurance-gates
       - name: Execute all applicable gates
         run: make -k gates || true
+        env:
+          MEDIATION_MANIFEST_KEY: ${{ secrets.MEDIATION_MANIFEST_KEY }}
       - name: Upload gate evidence
         if: always()
         uses: actions/upload-artifact@v4

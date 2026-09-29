@@ -1,0 +1,183 @@
+{
+  "backend_unavailable_plus_quota_exceeded": {
+    "escalation": [
+      "operations"
+    ],
+    "evidence_emitted": [
+      "compound_failure_receipt"
+    ],
+    "id": "backend_unavailable_plus_quota_exceeded",
+    "prerequisites": [],
+    "rollback": [],
+    "steps": [
+      "fail_closed",
+      "request_quota",
+      "wait_backend",
+      "resume"
+    ],
+    "title": "Backend and quota outage",
+    "trigger": "compound_failure",
+    "verification": [
+      "backend_attested"
+    ]
+  },
+  "cassini_mismatch_plus_audit_chain_tamper": {
+    "escalation": [
+      "incident_response"
+    ],
+    "evidence_emitted": [
+      "compound_failure_receipt"
+    ],
+    "id": "cassini_mismatch_plus_audit_chain_tamper",
+    "prerequisites": [],
+    "rollback": [
+      "keep_writes_frozen"
+    ],
+    "steps": [
+      "quarantine_objects",
+      "freeze_tenant_writes",
+      "restore_chain_from_witness",
+      "revalidate_objects",
+      "resume_degraded"
+    ],
+    "title": "Integrity and chain tamper",
+    "trigger": "compound_failure",
+    "verification": [
+      "objects_revalidated"
+    ]
+  },
+  "guardian_deny_plus_witness_unavailable": {
+    "escalation": [
+      "incident_response"
+    ],
+    "evidence_emitted": [
+      "compound_failure_receipt"
+    ],
+    "id": "guardian_deny_plus_witness_unavailable",
+    "prerequisites": [],
+    "rollback": [],
+    "steps": [
+      "hold_execution",
+      "verify_deny_reason",
+      "attempt_witness_failover",
+      "enter_degraded_deny"
+    ],
+    "title": "Guardian denial and witness outage",
+    "trigger": "compound_failure",
+    "verification": [
+      "execution_held"
+    ]
+  },
+  "key_rotation": {
+    "escalation": [
+      "security_owner"
+    ],
+    "evidence_emitted": [
+      "rotation_receipt"
+    ],
+    "id": "key_rotation",
+    "prerequisites": [
+      "new_key_attested"
+    ],
+    "rollback": [
+      "restore_old_key"
+    ],
+    "steps": [
+      "stage_new_key",
+      "enter_overlap",
+      "reissue_tokens",
+      "exit_overlap",
+      "retire_old_key"
+    ],
+    "title": "Tenant key rotation",
+    "trigger": "rotation_due",
+    "verification": [
+      "new_tokens_verify",
+      "old_key_retired"
+    ]
+  },
+  "schema_migration": {
+    "escalation": [
+      "architecture_owner"
+    ],
+    "evidence_emitted": [
+      "migration_receipt",
+      "snapshot_hash"
+    ],
+    "id": "schema_migration",
+    "prerequisites": [
+      "migration_supported",
+      "snapshot_verified"
+    ],
+    "rollback": [
+      "restore_snapshot",
+      "resume_previous_version"
+    ],
+    "steps": [
+      "enter_read_only",
+      "drain_in_flight",
+      "apply_steps",
+      "verify_schema",
+      "verify_witness",
+      "resume_writes"
+    ],
+    "title": "Forward schema migration",
+    "trigger": "version_change",
+    "verification": [
+      "target_schema_verified",
+      "chain_verified"
+    ]
+  },
+  "tenant_crossing_plus_revoked_entitlement": {
+    "escalation": [
+      "security_owner"
+    ],
+    "evidence_emitted": [
+      "compound_failure_receipt"
+    ],
+    "id": "tenant_crossing_plus_revoked_entitlement",
+    "prerequisites": [],
+    "rollback": [],
+    "steps": [
+      "deny_request",
+      "invalidate_session",
+      "rotate_tenant_keys",
+      "audit_access",
+      "notify_security"
+    ],
+    "title": "Tenant crossing and revoked credential",
+    "trigger": "compound_failure",
+    "verification": [
+      "session_invalid",
+      "keys_rotated"
+    ]
+  },
+  "witness_loss": {
+    "escalation": [
+      "security_owner",
+      "incident_response"
+    ],
+    "evidence_emitted": [
+      "incident_evidence"
+    ],
+    "id": "witness_loss",
+    "prerequisites": [
+      "last_receipt_verified"
+    ],
+    "rollback": [
+      "restore_archived_chain"
+    ],
+    "steps": [
+      "archive_chain",
+      "truncate_to_verified",
+      "revalidate_forward",
+      "quarantine_invalid",
+      "reanchor"
+    ],
+    "title": "Witness-loss recovery",
+    "trigger": "anchor_stale",
+    "verification": [
+      "new_anchor_verified"
+    ]
+  }
+}

@@ -46,6 +46,7 @@ jobs:
       - uses: actions/checkout@v4
         with: {ref: '${{ inputs.commit_sha }}'}
       - run: make -k gates || true
+        env: {MEDIATION_MANIFEST_KEY: '${{ secrets.MEDIATION_MANIFEST_KEY }}'}
       - uses: actions/upload-artifact@v4
         with: {name: promotion-gate-results, path: results/}
       - run: make gate-rollup
