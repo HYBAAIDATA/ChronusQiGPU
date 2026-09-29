@@ -2,8 +2,23 @@
 
 from __future__ import annotations
 
+import sys
 from functools import lru_cache
+from pathlib import Path
 from typing import Any, Mapping
+
+# The guardian plane (``al_haras``), the TOE bridge evidence provider
+# (``toe``) and the TUQC inner package live at repo level. When the control
+# API is entered through ``python main.py`` only this directory lands on
+# sys.path, so the mediation imports must make the repo layout explicit —
+# otherwise the guardian silently binds to None and every privileged route
+# answers a permanent, unsatisfiable 503.
+_PY_DIR = Path(__file__).resolve().parent
+_REPO_ROOT = _PY_DIR.parent.parent
+_TUQC_DIR = _REPO_ROOT / "turing_universal_quantum_computer"
+for _path in (str(_REPO_ROOT), str(_PY_DIR), str(_TUQC_DIR)):
+    if _path not in sys.path:
+        sys.path.append(_path)
 
 from al_haras.audit import HashChainAudit
 from al_haras.entitlements import SubscriptionAuthority

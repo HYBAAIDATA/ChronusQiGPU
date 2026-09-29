@@ -1482,6 +1482,12 @@ class _Handler(BaseHTTPRequestHandler):
 
     def _guardian_preflight(self, path: str, body: dict[str, Any] | None = None) -> bool:
         """Fail closed before any privileged handler is invoked."""
+        if pythia_guardian_api is None:
+            self._json(
+                HTTPStatus.SERVICE_UNAVAILABLE,
+                {"allowed": False, "reason": "guardian_dependency_unavailable"},
+            )
+            return False
         operation = path.removeprefix("/api/v1/").replace("/", ".")
         evaluate_body = {
             "operation": operation,
@@ -1705,6 +1711,12 @@ class _Handler(BaseHTTPRequestHandler):
     def _guardian_api(self):
         """Return the lazily-built guardian, or answer 503 instead of
         dropping the connection when it cannot be constructed."""
+        if pythia_guardian_api is None:
+            self._json(
+                HTTPStatus.SERVICE_UNAVAILABLE,
+                {"allowed": False, "reason": "guardian_dependency_unavailable"},
+            )
+            return None
         try:
             return pythia_guardian_api()
         except Exception:
