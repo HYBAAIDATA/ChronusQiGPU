@@ -38,13 +38,14 @@ browser ─HTTP→ control_api.main (/api/* + statics)
 | boot placeholder env, no device | API serves; workers report unavailable honestly; hashrate = policy string never a number; no fabricated state | **PASS** — 36 field-level asserts on `/api/v1/*`, `worker_unavailable` reason surfaces (S2) |
 | operator UI standby/offline honesty | UI shows honest standby; flips to "API offline" within one poll when killed | **PASS** (S3, PNG evidence) |
 | start→device-ready→compute→pool-ready→candidate | real evidence chain end-to-end | BLOCKED (no OpenCL device) |
-| stop during compute/campaign/recovery | cessation visible; cleanup exercised | **PASS** — workers stop and report cessation (S5); nuance: SIGTERM handler has dead-code path flagged for B |
-| Salamander fault→repair→verify | recovery verified by new observation before resume | PENDING-B |
+| stop during compute/campaign/recovery | cessation visible; cleanup exercised | **PASS** — S5 baseline + B (PR #22): `try/finally retire_all` on every campaign exit, `campaign_record` preserved on non-completion, terminal `stopped` never `error`; SIGTERM/SIGBREAK now graceful (dead `__main__` handler removed) |
+| Salamander fault→repair→verify | recovery verified by new observation before resume | **PASS** (B, PR #22): fault→ack-gated `retire`→RECOVERING/`recovery_id`→quiet observation→probation+3 self-tests→`readmit`; ack-fail=no repair; MIN_LANES→`degraded_mode` |
 | CPU↔device route change | correct results + explicit route/fallback evidence | BLOCKED (no device) |
-| pool reject/timeout/accept | distinct outcomes, correct counters | PENDING-B |
-| browser reconnect | backend evidence reconstructs progress | **PASS** (S6) |
-| unauthorized direct request | denied independent of UI | **PASS @bfceb68** — S4 found zero HTTP auth at baseline (real finding); the boundary landed via parallel work (`03f62ec` + mediation): `control_authorization` requires `Authorization: Bearer $EUCLID_ADMIN_API_KEY` with `hmac.compare_digest`, fail-closed 403 when no key configured, dev opt-out only via explicit `PYTHIA_ALLOW_UNAUTHENTICATED_CONTROL=1` — verified by code-read + Owner B's live 403 checks |
-| persistence/restore across restart | runtime_config + sidecars reload honestly | PENDING-B |
+| pool reject/timeout/accept | distinct outcomes, correct counters | **PASS** (B, PR #22): real loopback StratumClient — accept→`true`, reject→`false`, timeout→`OUTCOME_UNKNOWN` (no invented acks); stale-job submit refused; failover once/cooldown/cancel |
+| browser reconnect | backend evidence reconstructs progress | **PASS** (S6 + B recorded both consoles live vs real API) |
+| unauthorized direct request | denied independent of UI | **PASS @bfceb68** — S4 found zero HTTP auth at baseline (real finding); the boundary landed via parallel work (`03f62ec` + mediation): `control_authorization` requires `Authorization: Bearer $EUCLID_ADMIN_API_KEY` with `hmac.compare_digest`, fail-closed 403 when no key configured, dev opt-out only via explicit `PYTHIA_ALLOW_UNAUTHENTICATED_CONTROL=1`. B (PR #22) additionally fixed `pythia_guardian_api` binding `None` → all privileged AL HARAS routes were permanently 503; now live 400/402/403→allow verified. Verified by code-read + B's live deny checks |
+| persistence/restore across restart | runtime_config + sidecars reload honestly | **PASS** (B, PR #22): config durable + corrupt→defaults; MiningSession share-log restore |
+| honest telemetry | hashrate only from executed work; zeros real | **PASS** (B, PR #22): `measured_hs_avg:null` when unmeasured (0.0 is a real measurement, never a default); stale sidecars excluded via 30s TTL |
 
 ## Agent responsibilities (live modules)
 
