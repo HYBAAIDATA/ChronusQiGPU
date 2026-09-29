@@ -1,0 +1,25 @@
+name: AL HARAS Evidence Gates
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: al-haras-evidence-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts-and-promotion:
+    name: Canonical contracts and conservative promotion
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: make assurance-gates

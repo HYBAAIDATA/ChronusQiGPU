@@ -24,7 +24,7 @@
     "W_CON_3": "external anchor callback set",
     "W_CON_4": "witness_identity",
     "W_CON_5": "verify_chain_against_witness",
-    "S_CON_1": "MLAObjectV1",
+    "S_CON_1": "hyba_contracts.PRIMEObjectV2 schema v2 (MLAObjectV1 retained only as earlier reference)",
     "S_CON_2": "HotDescriptorV1 Q14I assertion",
     "S_CON_3": "route outside logical dataclass axes",
     "S_CON_4": "three zero-only reserved fields",

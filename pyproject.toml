@@ -71,7 +71,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 package-dir = {"" = "mla1517_platform_v3.4/python", "aethel" = "aethel", "kellogg" = "kellogg", "toe" = "toe", "python_backend" = "python_backend", "al_haras" = "al_haras", "lucas" = "lucas", "millennium" = "millennium"}
-packages = ["lucas", "millennium", "mla1517", "mla1517.mining", "aethel", "kellogg", "toe", "toe.intelligences", "toe.unified", "python_backend", "python_backend.pythia_mining", "python_backend.mathematical_foundation", "python_backend.hyba", "python_backend.hyba.runtime", "python_backend.core_modules", "al_haras", "hyba_profiles"]
+packages = ["lucas", "millennium", "mla1517", "mla1517.mining", "aethel", "kellogg", "toe", "toe.intelligences", "toe.unified", "python_backend", "python_backend.pythia_mining", "python_backend.mathematical_foundation", "python_backend.hyba", "python_backend.hyba.runtime", "python_backend.core_modules", "al_haras", "hyba_profiles", "hyba_contracts", "hyba_services"]
 py-modules = [
     "al_haras_pythia",
     "control_api",
@@ -118,3 +118,4 @@ extend-exclude = "Intelligence/skills/"
 exclude = '''
 /(\n    \\.git\n  | \\.pytest_cache\n  | __pycache__\n  | node_modules\n  | dist\n  | models\n  | logs\n  | legacy\n  | \\.venv\n  | venv\n)/
 '''
+
