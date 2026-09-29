@@ -9,36 +9,21 @@ sampler. The quantum choice must equal the classical one; the inputs, both
 choices and the verdict are bound in a Kellogg attestation.
 
 A disagreement is recorded and never acted on: the classical argmin stays
-authoritative. When the VQC package is not installed the audit says so and
-still attests the classical decision. Nothing here touches SHA256d.
+authoritative. The VQC is part of the miner (a declared dependency); a broken
+install is reported by the audit, which still attests the classical decision.
+Nothing here touches SHA256d.
 """
 
 from __future__ import annotations
 
 import math
-import sys
-from pathlib import Path
 from typing import Any, Sequence
 
 from .operating_policy import PolicyDecision
 
 
 def _load_register():
-    """The VQC's exact register, from an install or the in-tree distribution."""
-    try:
-        from turing_universal_quantum_computer.hilbert import QuantumRegister
-
-        return QuantumRegister, None
-    except Exception as exc:
-        first = f"{type(exc).__name__}: {exc}"
-    # In-tree: the repo-root folder is the distribution, the package is inside
-    # it (the convention benchmarks/ and tests/ follow).
-    dist = Path(__file__).resolve().parents[4] / "turing_universal_quantum_computer"
-    if not (dist / "turing_universal_quantum_computer" / "hilbert.py").is_file():
-        return None, first
-    for name in [m for m in sys.modules if m.split(".")[0] == "turing_universal_quantum_computer"]:
-        del sys.modules[name]
-    sys.path.insert(0, str(dist))
+    """The VQC's exact register: the miner's declared dependency, as installed."""
     try:
         from turing_universal_quantum_computer.hilbert import QuantumRegister
     except Exception as exc:
@@ -74,7 +59,12 @@ def grover_minimum(losses: Sequence[float], *, seed: int, register_cls=None) -> 
         measured = register.measure(seed=round_seed)
         rounds += 1
         trace.append(
-            {"threshold": threshold, "marked": len(marked), "iterations": iterations, "measured": measured}
+            {
+                "threshold": threshold,
+                "marked": len(marked),
+                "iterations": iterations,
+                "measured": measured,
+            }
         )
         if measured < k and losses[measured] < losses[threshold]:
             threshold = measured

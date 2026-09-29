@@ -12,9 +12,7 @@ A load failure is never swallowed: ``load_hendrix`` returns the error and
 
 from __future__ import annotations
 
-import sys
 from functools import lru_cache
-from pathlib import Path
 from typing import Any, Iterator, List, Optional, Tuple
 
 __all__ = [
@@ -38,22 +36,16 @@ def _import() -> Any:
 
 @lru_cache(maxsize=1)
 def load_hendrix() -> Tuple[Optional[Any], Optional[str]]:
-    """``(HendrixStructuredSearch, None)`` from an install or the in-tree
-    distribution, else ``(None, reason)``. Same resolution as policy_audit."""
+    """``(HendrixStructuredSearch, None)``, else ``(None, reason)``.
+
+    The virtual quantum computer is a declared dependency of the miner
+    (``turing-universal-quantum-computer``), imported as installed; a missing
+    install is reported, never papered over by searching the source tree.
+    """
     try:
         return _import(), None
     except Exception as exc:
-        first = f"{type(exc).__name__}: {exc}"
-    dist = Path(__file__).resolve().parents[4] / "turing_universal_quantum_computer"
-    if not (dist / "turing_universal_quantum_computer" / "pisot.py").is_file():
-        return None, first
-    for name in [m for m in sys.modules if m.split(".")[0] == "turing_universal_quantum_computer"]:
-        del sys.modules[name]
-    sys.path.insert(0, str(dist))
-    try:
-        return _import(), None
-    except Exception as exc:
-        return None, f"{first}; in-tree: {type(exc).__name__}: {exc}"
+        return None, f"{type(exc).__name__}: {exc}"
 
 
 @lru_cache(maxsize=64)

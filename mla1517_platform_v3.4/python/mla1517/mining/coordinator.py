@@ -106,10 +106,11 @@ _NONCE_ORDERS = {"m32": NONCE_ORDER_M32, "hendrix": NONCE_ORDER_HENDRIX}
 def resolve_nonce_order(value: str) -> str:
     """The configured nonce order; an unknown or unloadable one fails startup.
 
-    M32 is the default because it is what the OpenCL kernel executes; Hendrix
-    runs on the CPU reference only, and a device window records M32.
+    Hendrix is the default: the structured search is part of the miner, and
+    both the CPU reference and the OpenCL device (bitcoin_sha256d_hendrix)
+    execute it. ``m32`` keeps the Turing lane order.
     """
-    key = (value or "m32").strip().lower()
+    key = (value or "hendrix").strip().lower()
     if key not in _NONCE_ORDERS:
         raise ValueError(
             f"PYTHIA_NONCE_ORDER must be one of {sorted(_NONCE_ORDERS)}, got {value!r}"
@@ -310,7 +311,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self.governor = HashrateGovernor()
         self._governor_config_at = float("-inf")
         self._policy_mode = os.getenv("PYTHIA_OPERATING_POLICY", "model").strip().lower()
-        self._nonce_order = resolve_nonce_order(os.getenv("PYTHIA_NONCE_ORDER", "m32"))
+        self._nonce_order = resolve_nonce_order(os.getenv("PYTHIA_NONCE_ORDER", "hendrix"))
         try:
             self._max_window_seconds = float(os.getenv("PYTHIA_MAX_WINDOW_SECONDS", "2.0"))
         except ValueError:

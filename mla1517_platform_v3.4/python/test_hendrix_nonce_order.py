@@ -218,7 +218,7 @@ def test_coordinator_runs_hendrix_when_configured(monkeypatch):
     assert rec.requested_nonce_order == rec.executed_nonce_order == NONCE_ORDER_HENDRIX
 
 
-def test_coordinator_default_stays_m32(monkeypatch):
+def test_hendrix_is_the_coordinators_default_order(monkeypatch):
     from manifold_pool_coordinator import PoolEndpoint
     from test_pool_only_mining import _pool_only_coordinator
 
@@ -226,5 +226,9 @@ def test_coordinator_default_stays_m32(monkeypatch):
     assert "PYTHIA_NONCE_ORDER" not in os.environ
     coord = _pool_only_coordinator([PoolEndpoint("h", 1, "braiins")])
     plan = _plan(coord._execution_route(), lane_order=LANES)
+    rec, _ = coord._router_for(plan).execute_plan(plan, HEADER, (1).to_bytes(32, "little"))
+    assert rec.requested_nonce_order == rec.executed_nonce_order == NONCE_ORDER_HENDRIX
+    monkeypatch.setenv("PYTHIA_NONCE_ORDER", "m32")  # the Turing lane order stays selectable
+    coord = _pool_only_coordinator([PoolEndpoint("h", 1, "braiins")])
     rec, _ = coord._router_for(plan).execute_plan(plan, HEADER, (1).to_bytes(32, "little"))
     assert rec.requested_nonce_order == rec.executed_nonce_order == NONCE_ORDER_M32

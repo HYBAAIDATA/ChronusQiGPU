@@ -328,3 +328,58 @@ def test_an_in_tree_distribution_ci_installs_alone_must_declare_its_imports(tmp_
         platform.replace('"numpy>=1.26"', '"numpy>=1.26", "pyyaml>=6", "sympy"'),
     )
     assert _messages(sentry.check_distribution_deps(root), "DS02") == []
+
+
+def test_a_distribution_installed_beside_another_supplies_its_declared_imports(tmp_path):
+    # The miner installs the virtual quantum computer from the tree in the same
+    # pip command; what the VQC declares (sympy) is installed too, and the VQC
+    # is not held to the miner's tests.
+    root = _repo(tmp_path)
+    _write(
+        root,
+        "vqc/pyproject.toml",
+        """
+        [project]
+        name = "vqc"
+        dependencies = ["sympy>=1.12"]
+        """,
+    )
+    _write(root, "vqc/vqc/__init__.py", "import sympy\n")
+    _write(
+        root,
+        "platform/pyproject.toml",
+        """
+        [project]
+        name = "platform"
+        dependencies = ["vqc>=1.0"]
+
+        [project.optional-dependencies]
+        test = ["pytest>=7"]
+
+        [tool.setuptools]
+        package-dir = {"" = "python"}
+        """,
+    )
+    _write(root, "platform/python/pkg/__init__.py", "")
+    _write(root, "platform/python/pkg/order.py", "import vqc\nimport yaml\n")
+    _write(root, "platform/python/test_order.py", "import pytest\nimport pkg.order\n")
+    _write(
+        root,
+        ".github/workflows/gate.yml",
+        """
+        on:
+          push:
+            branches: [main]
+        jobs:
+          canonical:
+            runs-on: ubuntu-latest
+            steps:
+              - working-directory: platform
+                run: python -m pip install -e ../vqc -e ".[test]"
+              - working-directory: platform
+                run: python -m pytest python -q
+        """,
+    )
+    findings = _messages(sentry.check_distribution_deps(root), "DS02")
+    # sympy comes with the VQC; yaml is still the miner's to declare.
+    assert [f[2].split(",")[0] for f in findings] == ["imports 'yaml' unguarded"], findings

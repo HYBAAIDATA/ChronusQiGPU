@@ -13,9 +13,12 @@ Stratum TCP/TLS -> subscribe -> authorize -> mining.notify
   -> SearchPlan + nonce lease (no overlap, no resurrection of old work)
   -> hashrate governor: admit the window only within the cap
      (operator target, 1 EH/s ceiling, 1% of the network rate from nbits)
-  -> Execution Router: the bound route executes the leased interval
+  -> Execution Router: the bound route executes the leased interval, in the
+     Hendrix structured-search order (PYTHIA_NONCE_ORDER, default hendrix):
+     position p visits base + (p * stride) mod window, every nonce once
        cpu_reference   exact SHA256d on the CPU
-       opencl_m32      the OpenCL M32 kernel, after a start-up self-check
+       opencl_m32      the OpenCL kernels (bitcoin_sha256d_hendrix, or the
+                       M32 lane order), after a start-up self-check
   -> independent SHA256d / target recheck of every candidate
   -> submission gate: --submit, or the operator's approval bound to this
      pool's endpoint and worker; otherwise shadow (recorded, not written)
@@ -27,6 +30,12 @@ Stratum TCP/TLS -> subscribe -> authorize -> mining.notify
 self-check and falls back to the CPU reference otherwise; the fallback reason
 is reported in the evidence. `HYBA_REQUIRE_HYBA=1` refuses any device that is
 not one of `HYBA_DEVICE_ALIAS`.
+
+The virtual quantum computer (`turing_universal_quantum_computer/`) is part
+of the miner: it supplies the Hendrix schedule and the exact register the
+policy audit runs Grover minimum finding on. It is a declared dependency,
+installed beside the miner (`pip install ./turing_universal_quantum_computer .`),
+and every image and CI job installs it.
 
 Nothing on this path changes Bitcoin's proof boundary:
 

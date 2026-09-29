@@ -38,7 +38,7 @@ WORKDIR /app
 COPY . .
 COPY --from=frontend /build/dist/public ./dist/public
 COPY --from=native /src/host/libmla1517_mmio.so /src/host/libprimedb_storage.so /usr/local/lib/
-RUN pip install --no-cache-dir . \
+RUN pip install --no-cache-dir ./turing_universal_quantum_computer . \
     && groupadd --gid 10001 pythia \
     && useradd --uid 10001 --gid pythia --no-create-home pythia \
     && mkdir -p /var/lib/pythia /tmp/pythia/hb \

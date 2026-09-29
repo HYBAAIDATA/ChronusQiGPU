@@ -555,6 +555,10 @@ class _Install:
     extras: frozenset[str]
     source: str  # the file that installs it, or "" when nothing does
     commands: tuple[tuple[Path, str], ...]  # (working directory, command) run alongside
+    # Distributions the same pip command installs beside it (a dependency
+    # installed from the tree, e.g. the virtual quantum computer): what they
+    # declare is installed too.
+    beside: tuple[tuple[Path, frozenset[str]], ...] = ()
 
 
 def _split_commands(command: str) -> list[str]:
@@ -628,13 +632,23 @@ def _distributions(root: Path) -> list[Path]:
 def _dist_installs(root: Path) -> list[_Install]:
     dists = {d.resolve(): d for d in _distributions(root)}
     installs: list[_Install] = []
+    installed: set[Path] = set()
     for rel, commands in _deploy_units(root):
         for cwd, command in commands:
-            for target, extras in _install_targets(command):
-                dist = dists.get((cwd / target).resolve())
-                if dist is not None:
-                    installs.append(_Install(dist, extras, rel, tuple(commands)))
-    installed = {i.dist for i in installs}
+            for part in _split_commands(command):
+                targets = [((cwd / t).resolve(), extras) for t, extras in _install_targets(part)]
+                # The command's own project ("." in its directory) is what runs;
+                # other in-tree distributions it installs are its dependencies.
+                primary = [t for t in targets if t[0] == cwd.resolve()] or targets
+                for path, extras in targets:
+                    if path in dists:
+                        installed.add(dists[path])
+                for path, extras in primary:
+                    dist = dists.get(path)
+                    if dist is None:
+                        continue
+                    beside = tuple((dists[p], e) for p, e in targets if p != path and p in dists)
+                    installs.append(_Install(dist, extras, rel, tuple(commands), beside))
     for dist in dists.values():
         if dist not in installed:
             # Nothing installs it: hold it to the whole pyproject, as a warning.
@@ -717,6 +731,12 @@ def check_distribution_deps(root: Path) -> list[Finding]:
         have = {
             _import_name(d) for d in core.union(*(extras.get(e, set()) for e in install.extras))
         }
+        for other, other_extras in install.beside:
+            other_core, other_all = declared_distributions(other)
+            have |= {
+                _import_name(d)
+                for d in other_core.union(*(other_all.get(e, set()) for e in other_extras))
+            }
         anywhere = {_import_name(d) for d in core.union(*extras.values())}
         how = f'.[{",".join(sorted(install.extras))}]' if install.extras else "."
         where = (
