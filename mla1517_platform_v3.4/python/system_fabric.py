@@ -61,6 +61,27 @@ def _module_present(module: str) -> bool:
         return False
 
 
+# Wiring tiers that claim a live caller; "idle"/"stub" already admit no
+# production path, so they keep their label even when an optional
+# dependency (e.g. networkx) would make the import fail.
+_WIRED_TIERS = frozenset({"production", "fabric", "orchestrator"})
+
+
+def _module_importable(module: str) -> tuple[bool, str | None]:
+    """Real-import evidence behind a wired claim.
+
+    ``find_spec`` resolves a file without executing it, so a module whose
+    own imports are broken still looks "present". For tiers that promise
+    reachability the check must actually import the module.
+    """
+    try:
+        _ensure_repo_path()
+        importlib.import_module(module)
+        return True, None
+    except Exception as exc:  # noqa: BLE001 - any import-time failure means not wired
+        return False, f"{type(exc).__name__}: {exc}"
+
+
 # ---------------------------------------------------------------------------
 # Forensic map — every subsystem the user named, graded against the tree.
 # wired: production | fabric | orchestrator | idle | stub
@@ -398,14 +419,21 @@ def forensic_map(*, opencl_count: int, have_mmio: bool, have_credentials: bool) 
     subs = []
     for s in SUBSYSTEMS:
         present = _module_present(s["module"])
-        subs.append(
-            {
-                **s,
-                "wired": s["wired"] if present else "parked",
-                "gate_state": gate_state(s["gate"]),
-                "present": present,
-            }
-        )
+        entry = {
+            **s,
+            "wired": s["wired"] if present else "parked",
+            "gate_state": gate_state(s["gate"]),
+            "present": present,
+        }
+        if present and s["wired"] in _WIRED_TIERS:
+            importable, import_error = _module_importable(s["module"])
+            entry["import_ok"] = importable
+            if not importable:
+                # The declared reachability is unproven on this box — demote
+                # rather than carry a claim the import evidence refutes.
+                entry["wired"] = "parked"
+                entry["parked_reason"] = f"import failed: {import_error}"
+        subs.append(entry)
     summary: dict[str, int] = {}
     for s in subs:
         summary[s["wired"]] = summary.get(s["wired"], 0) + 1
@@ -560,8 +588,14 @@ class _Runner:
                     if self.state == "running":
                         self.state = "done"
                 except Exception as exc:
-                    self.error = f"{type(exc).__name__}: {exc}"
-                    self.state = "error"
+                    if self.stopped:
+                        # Operator stop: the workflow raised on the stop
+                        # flag — that is a clean stop, not an error.
+                        self.state = "stopped"
+                        self.progress["stop_detail"] = f"{type(exc).__name__}: {exc}"
+                    else:
+                        self.error = f"{type(exc).__name__}: {exc}"
+                        self.state = "error"
                 finally:
                     self.finished_at = time.time()
 
@@ -736,85 +770,102 @@ def _run_campaign(
         ],
         "phases": [],
     }
-    for index, phase in enumerate(phases):
-        if runner.stopped:
-            raise InterruptedError("campaign stopped by operator")
-        runner.progress["phase_index"] = index
-        runner.progress["phase_pool"] = phase["pool"]
-        # Apply the phase through the normal config path: enable exactly the
-        # named pool, set the hashrate target and arm count, bind live_submit
-        # to that pool identity when the phase asks for it.
-        next_cfg = dict(runtime_config.load())
-        pools = [dict(p) for p in next_cfg.get("pools", [])]
-        selected = next(
-            (p for p in pools if p["worker"] == phase["pool"] or p["endpoint"] == phase["pool"]),
-            None,
-        )
-        if selected is None:
-            raise ValueError(f"campaign phase {index}: pool {phase['pool']!r} not configured")
-        for p in pools:
-            p["enabled"] = p is selected
-        next_cfg["pools"] = pools
-        next_cfg["solvers"] = {
-            "arms": int(phase.get("arms") or cfg["solvers"]["arms"]),
-            "workers": cfg["solvers"]["workers"],
-        }
-        next_cfg["hashrate"] = {
-            "target_hs": float(phase.get("target_hs") or cfg["hashrate"]["ceiling_hs"]),
-            "ceiling_hs": cfg["hashrate"]["ceiling_hs"],
-        }
-        if phase.get("live_submit"):
-            next_cfg["live_submit"] = {
-                "enabled": True,
-                "approval_id": runtime_config.identity_commit(
-                    selected["endpoint"], selected["worker"]
-                ),
-            }
-        else:
-            next_cfg["live_submit"] = {"enabled": False, "approval_id": ""}
-        applied = apply_config(next_cfg)
-        started = time.time()
-        measured: list[float] = []
-        shares_seen = 0
-        duration = float(phase["duration_s"])
-        while time.time() - started < duration:
+    completed = False
+    try:
+        for index, phase in enumerate(phases):
             if runner.stopped:
-                break
-            counters = counter_probe()
-            rate = counters.get("hashrate_hs")
-            if rate:
-                measured.append(float(rate))
-            shares_seen = max(shares_seen, int(counters.get("shares_accepted") or 0))
-            time.sleep(min(2.0, max(0.25, duration / 240)))
-        record["phases"].append(
-            {
-                "index": index,
-                "pool": phase["pool"],
-                "endpoint": selected["endpoint"],
-                "worker": selected["worker"],
-                "duration_s": duration,
-                "target_hs": next_cfg["hashrate"]["target_hs"],
-                "arms": next_cfg["solvers"]["arms"],
-                "live_submit": bool(phase.get("live_submit", False)),
-                "started_at": started,
-                "finished_at": time.time(),
-                "measured_hs_avg": (sum(measured) / len(measured)) if measured else None,
-                "measured_hs_peak": max(measured) if measured else None,
-                "shares_accepted": shares_seen,
-                "applied": applied,
+                raise InterruptedError("campaign stopped by operator")
+            runner.progress["phase_index"] = index
+            runner.progress["phase_pool"] = phase["pool"]
+            # Apply the phase through the normal config path: enable exactly the
+            # named pool, set the hashrate target and arm count, bind live_submit
+            # to that pool identity when the phase asks for it.
+            next_cfg = dict(runtime_config.load())
+            pools = [dict(p) for p in next_cfg.get("pools", [])]
+            selected = next(
+                (
+                    p
+                    for p in pools
+                    if p["worker"] == phase["pool"] or p["endpoint"] == phase["pool"]
+                ),
+                None,
+            )
+            if selected is None:
+                raise ValueError(f"campaign phase {index}: pool {phase['pool']!r} not configured")
+            for p in pools:
+                p["enabled"] = p is selected
+            next_cfg["pools"] = pools
+            next_cfg["solvers"] = {
+                "arms": int(phase.get("arms") or cfg["solvers"]["arms"]),
+                "workers": cfg["solvers"]["workers"],
             }
-        )
-    # Bounded run: the campaign owns its arms and retires them at the end.
-    record["retired"] = retire_all()
-    runner.progress["phase_index"] = len(phases)
-    return record
+            next_cfg["hashrate"] = {
+                "target_hs": float(phase.get("target_hs") or cfg["hashrate"]["ceiling_hs"]),
+                "ceiling_hs": cfg["hashrate"]["ceiling_hs"],
+            }
+            if phase.get("live_submit"):
+                next_cfg["live_submit"] = {
+                    "enabled": True,
+                    "approval_id": runtime_config.identity_commit(
+                        selected["endpoint"], selected["worker"]
+                    ),
+                }
+            else:
+                next_cfg["live_submit"] = {"enabled": False, "approval_id": ""}
+            applied = apply_config(next_cfg)
+            started = time.time()
+            measured: list[float] = []
+            shares_seen = 0
+            duration = float(phase["duration_s"])
+            while time.time() - started < duration:
+                if runner.stopped:
+                    break
+                counters = counter_probe()
+                rate = counters.get("hashrate_hs")
+                # An observed 0.0 is a measurement; only an absent reading
+                # is dropped, so measured-average never hides a stalled arm.
+                if rate is not None:
+                    try:
+                        measured.append(float(rate))
+                    except (TypeError, ValueError):
+                        pass
+                shares_seen = max(shares_seen, int(counters.get("shares_accepted") or 0))
+                time.sleep(min(2.0, max(0.25, duration / 240)))
+            record["phases"].append(
+                {
+                    "index": index,
+                    "pool": phase["pool"],
+                    "endpoint": selected["endpoint"],
+                    "worker": selected["worker"],
+                    "duration_s": duration,
+                    "target_hs": next_cfg["hashrate"]["target_hs"],
+                    "arms": next_cfg["solvers"]["arms"],
+                    "live_submit": bool(phase.get("live_submit", False)),
+                    "started_at": started,
+                    "finished_at": time.time(),
+                    "measured_hs_avg": (sum(measured) / len(measured)) if measured else None,
+                    "measured_hs_peak": max(measured) if measured else None,
+                    "shares_accepted": shares_seen,
+                    "applied": applied,
+                }
+            )
+        runner.progress["phase_index"] = len(phases)
+        completed = True
+        return record
+    finally:
+        # Bounded run: the campaign owns its arms on every exit path —
+        # done, operator stop, or a phase failure — never leave them
+        # running after the campaign itself is gone.
+        record["retired"] = retire_all()
+        if not completed:
+            runner.progress["campaign_record"] = record
 
 
 def start_campaign(
     *,
     apply_config: Callable[[dict[str, Any]], dict[str, Any]],
     retire_all: Callable[[], list[str]],
-    counter_probe: Callable[[], dict[str, float]],
+    counter_probe: Callable[[], dict[str, Any]],
 ) -> bool:
     return CAMPAIGN.start(
         lambda r: _run_campaign(
