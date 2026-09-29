@@ -1483,14 +1483,28 @@ class _Handler(BaseHTTPRequestHandler):
     def _guardian_preflight(self, path: str, body: dict[str, Any] | None = None) -> bool:
         """Fail closed before any privileged handler is invoked."""
         operation = path.removeprefix("/api/v1/").replace("/", ".")
-        code, receipt = pythia_guardian_api().evaluate(
-            headers=self._guardian_headers(),
-            body={
-                "operation": operation,
-                "resource": path.removeprefix("/api/v1/"),
-                "payload": body or {},
-            },
-        )
+        evaluate_body = {
+            "operation": operation,
+            "resource": path.removeprefix("/api/v1/"),
+            "payload": body or {},
+        }
+        if isinstance(body, dict) and "observation" in body:
+            evaluate_body["observation"] = body["observation"]
+        try:
+            code, receipt = pythia_guardian_api().evaluate(
+                headers=self._guardian_headers(),
+                body=evaluate_body,
+            )
+        except Exception as exc:  # noqa: BLE001 - dependency failure: 503, never 500
+            self._json(
+                HTTPStatus.SERVICE_UNAVAILABLE,
+                {
+                    "available": False,
+                    "error": "guardian_unavailable",
+                    "reason": f"{type(exc).__name__}: {exc}",
+                },
+            )
+            return False
         if code != HTTPStatus.OK:
             self._json(HTTPStatus(code), receipt)
             return False
@@ -1823,7 +1837,8 @@ class _Handler(BaseHTTPRequestHandler):
         if handler is None:
             self._json(HTTPStatus.NOT_FOUND, {"error": "not_found"})
             return
-        if self._refuse_unauthorized():
+        privileged = parsed.path.startswith(_PRIVILEGED_PREFIXES)
+        if not privileged and self._refuse_unauthorized():
             return
         body, err = self._read_json_body()
         if body is None:
@@ -1834,7 +1849,7 @@ class _Handler(BaseHTTPRequestHandler):
             )
             self._json(status, {"error": err})
             return
-        if parsed.path.startswith(_PRIVILEGED_PREFIXES):
+        if privileged:
             if not self._guardian_preflight(parsed.path, body):
                 return
         try:
