@@ -1,3 +1,4 @@
+import os
 import tempfile
 import unittest
 
@@ -128,7 +129,8 @@ class Tests(unittest.TestCase):
         self.assertEqual(
             FlowService(Objects(), Sink(), obs).start([1, 2], ctx, lambda e: "f", lambda e: 1), 2
         )
-        with tempfile.NamedTemporaryFile() as f:
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            self.addCleanup(os.unlink, f.name)
             onto = OntologyService(f.name, {"read"}, {"READ"}, {"Case"}, obs)
             onto.publish(
                 "t",

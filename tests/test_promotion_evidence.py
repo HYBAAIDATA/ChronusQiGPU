@@ -1,3 +1,4 @@
+import os
 import tempfile
 import unittest
 from dataclasses import replace
@@ -93,7 +94,8 @@ class PromotionEvidenceTests(unittest.TestCase):
             envelope(fold_mode=FoldMode.REHYDRATE, rehydration_count=0)
 
     def test_claim_register_requires_evidence_and_review(self):
-        with tempfile.NamedTemporaryFile() as f:
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            self.addCleanup(os.unlink, f.name)
             reg = ClaimRegister(f.name, lambda eid: eid == "env-ok")
             with self.assertRaises(ClaimRejected):
                 reg.register(Claim("c", "claim", ClaimStatus.VERIFIED, (), "owner"))

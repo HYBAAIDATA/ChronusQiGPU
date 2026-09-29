@@ -1,3 +1,4 @@
+import os
 import tempfile
 import unittest
 from fractions import Fraction
@@ -9,8 +10,9 @@ from python_backend.core_modules.pisot_truncation import truncate_diagonal_tenso
 
 class Tests(unittest.TestCase):
     def test_persist_execute_and_proof(self):
-        with tempfile.NamedTemporaryFile() as f:
+        with tempfile.NamedTemporaryFile(delete=False) as f:
             p = FoldPipeline(f.name, b"k" * 32)
+            self.addCleanup(lambda: (p.db.close(), os.unlink(f.name)))
             oid = p.put_folded([Fraction(1, 2), Fraction(2, 3)])
             out = p.execute(oid, "pulvini_roundtrip")
             self.assertEqual(out["output"], (Fraction(1, 2), Fraction(2, 3)))

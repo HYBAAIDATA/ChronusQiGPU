@@ -1,7 +1,8 @@
 # Workflow map — actual entry points, responsibilities, lifecycle, journeys
 
-Pin: `e09afab`. Wires marked [verified] only where runtime evidence exists at
-baseline; static metadata claims stay labelled.
+Pin: `e09afab` (baseline); journey evidence recorded at `73a716d`. Wires
+marked [verified] only where runtime evidence exists; static metadata claims
+stay labelled.
 
 ## Entry points
 
@@ -29,19 +30,20 @@ browser ─HTTP→ control_api.main (/api/* + statics)
                  └─ salamander_* (self-healing), telemetry_daemon, heartbeat dir
 ```
 
-## Operator journeys (Owner B evidence pending)
+## Operator journeys
 
 | Scenario | Expected honest behavior | Status |
 |---|---|---|
-| boot without stratum identity | StartupConfigError exit 1 (fail-closed) | [verified baseline: documented + code-read; runtime recheck by B] |
-| boot placeholder env, no device | API serves; workers `armed_no_device`; hashrate = policy string; no fabricated state | PENDING-B |
-| start→device-ready→compute→pool-ready→candidate | real evidence chain end-to-end | BLOCKED (no device) |
-| stop during compute/campaign/recovery | cessation visible; cleanup exercised | PENDING-B |
+| boot without stratum identity | StartupConfigError exit 1 (fail-closed) | **PASS** — executed: every missing env var aborts before serving (S1, headless evidence `phiminer_*` set @ `C:\Users\Administrator\screenshots`) |
+| boot placeholder env, no device | API serves; workers report unavailable honestly; hashrate = policy string never a number; no fabricated state | **PASS** — 36 field-level asserts on `/api/v1/*`, `worker_unavailable` reason surfaces (S2) |
+| operator UI standby/offline honesty | UI shows honest standby; flips to "API offline" within one poll when killed | **PASS** (S3, PNG evidence) |
+| start→device-ready→compute→pool-ready→candidate | real evidence chain end-to-end | BLOCKED (no OpenCL device) |
+| stop during compute/campaign/recovery | cessation visible; cleanup exercised | **PASS** — workers stop and report cessation (S5); nuance: SIGTERM handler has dead-code path flagged for B |
 | Salamander fault→repair→verify | recovery verified by new observation before resume | PENDING-B |
-| CPU↔device route change | correct results + explicit route/fallback evidence | PENDING-B |
+| CPU↔device route change | correct results + explicit route/fallback evidence | BLOCKED (no device) |
 | pool reject/timeout/accept | distinct outcomes, correct counters | PENDING-B |
-| browser reconnect | backend evidence reconstructs progress | PENDING-B |
-| unauthorized direct request | denied independent of UI | PENDING-B |
+| browser reconnect | backend evidence reconstructs progress | **PASS** (S6) |
+| unauthorized direct request | denied independent of UI | **FAIL** — zero HTTP auth: unauthenticated `PUT /api/v1/config` persisted, `POST /api/v1/agentic/start` ran, `POST /api/v1/salamander/fault` wrote audit records (S4 — security finding, in B scope) |
 | persistence/restore across restart | runtime_config + sidecars reload honestly | PENDING-B |
 
 ## Agent responsibilities (live modules)
