@@ -55,6 +55,13 @@ jobs:
       - name: Byte-compile all Python sources
         run: python -m compileall -q Intelligence core_engine mining hyba lucas pythagoras scripts tests mla1517_platform_v3.4/python
 
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pythia-coverage-report
+          path: coverage.xml
+          retention-days: 30
+
   deploy-sentry:
     name: Deploy sentry — config, dependency, native-build and CI wiring
     runs-on: ubuntu-latest
