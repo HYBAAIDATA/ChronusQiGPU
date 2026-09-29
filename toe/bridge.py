@@ -79,7 +79,7 @@ import math
 import os
 import sys
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 # The tensor substrate is the Kellogg package (kellogg/), not part of TOE.
 # Support both package import and direct script execution
@@ -100,14 +100,19 @@ try:
         model_agreement_from_ensemble,
     )
     from .causal_ladder import (
+        CausalCapabilityUnavailable,
+        CausalGraph,
         CausalLadderResult,
         StructuralCausalModel,
         infer_causal_graph,
         association_query,
         do_operator,
         counterfactual_query,
+        counterfactual_state,
+        estimate_causal_effect,
         identify_backdoor,
         identify_frontdoor,
+        intervene,
     )
 except (ImportError, SystemError, Exception):
     _PKG_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -128,17 +133,47 @@ except (ImportError, SystemError, Exception):
         model_agreement_from_ensemble,
     )
     from toe.causal_ladder import (  # type: ignore[no-redef]
+        CausalCapabilityUnavailable,
+        CausalGraph,
         CausalLadderResult,
         StructuralCausalModel,
         infer_causal_graph,
         association_query,
         do_operator,
         counterfactual_query,
+        counterfactual_state,
+        estimate_causal_effect,
         identify_backdoor,
         identify_frontdoor,
+        intervene,
     )
 
+from toe.agreement import evaluator_agreement as agreement_between  # noqa: E402
+from toe.explanation import explain as explain_outcome  # noqa: E402
+from toe.explanation import structural_model  # noqa: E402
+from toe.policy import Constraint, Objective, counterfactual_futures  # noqa: E402
+from toe.policy import decide as decide_action  # noqa: E402
+from toe.receipts import ReceiptLedger, digest as receipt_digest  # noqa: E402
+from toe.receipts import replay as replay_receipt  # noqa: E402
+
 logger = logging.getLogger("toe.bridge")
+
+# Evidence class of each capability the bridge exposes. The classes are
+# the ones measured by scripts/probe_hyba_capability.py and recorded in
+# reports/toe_elevation_benchmark.json; nothing here is asserted by fiat.
+CAPABILITY_EVIDENCE: Dict[str, str] = {
+    "backdoor_identification": "MEASURED: d-separation on supplied DAGs",
+    "adjusted_effect_estimation": "MEASURED: backdoor adjustment vs synthetic SCM truth",
+    "intervention_edge_surgery": "MEASURED: incoming edges cut on a copy",
+    "counterfactual_abduction_action_prediction": "MEASURED: fails closed on missing evidence",
+    "faithful_explanation": "MEASURED: exact interventional Shapley, <= 12 inputs",
+    "evaluator_agreement": "MEASURED: distinct evaluators only; None below two",
+    "action_policy": "MEASURED: futures by abduction-action-prediction",
+    "provenance_receipts": "MEASURED: replay and mutation detection",
+    "phi_arithmetic": "float path NUMERICALLY VERIFIED; evaluate_exact path EXACT in Q(phi)",
+    "causal_discovery": "NOT ESTABLISHED: infer_causal_graph is a correlation heuristic",
+    "explain_causality_ranking": "descriptive expectation-magnitude ranking; not causal",
+}
 
 PHI = (1 + math.sqrt(5)) / 2
 
@@ -184,9 +219,7 @@ def _build_propagator_table(
     integrity check.
     """
     H = Observables.harmonic_oscillator_hamiltonian(dim, hbar, mass, omega)
-    return {
-        t: ComplexMatrix.matrix_exp_unitary(H, round(t / hbar, 12)) for t in times
-    }
+    return {t: ComplexMatrix.matrix_exp_unitary(H, round(t / hbar, 12)) for t in times}
 
 
 # Module-level propagator table — the single source of truth for the
@@ -300,7 +333,9 @@ class TOECausalAnalysis:
     factor_weights: Dict[str, float] = field(default_factory=dict)
     recommendations: Dict[str, List[str]] = field(default_factory=dict)
     born_probabilities: Dict[str, float] = field(default_factory=dict)
-    model_agreement: float = 0.0
+    # Mean pairwise fidelity between DISTINCT factor-filtered states, or
+    # None when fewer than two distinct factor evaluators exist.
+    model_agreement: Optional[float] = None
     data_quality: float = 0.0
     diagnostics: Dict[str, Any] = field(default_factory=dict)
 
@@ -369,6 +404,8 @@ class TOEBridge:
         self._omega = float(self._config.get("omega", _DEFAULT_OMEGA))
         # Always available — uses only the project's own quantum tensor.
         self._available = True
+        # Hash-chained receipts for every structural result this bridge issues.
+        self.receipts = ReceiptLedger()
 
     # -- lifecycle --------------------------------------------------------
 
@@ -394,7 +431,17 @@ class TOEBridge:
                 "causal_ladder_do_calculus",
                 "sector_agnostic_prediction",
                 "algebraic_family_signature",
+                "backdoor_identification",
+                "adjusted_effect_estimation",
+                "structural_intervention",
+                "structural_counterfactual",
+                "faithful_explanation",
+                "evaluator_agreement",
+                "action_policy",
+                "provenance_receipts",
+                "reason",
             ],
+            "capability_evidence": dict(CAPABILITY_EVIDENCE),
         }
 
     def execution_evidence(self) -> Dict[str, Any]:
@@ -461,6 +508,7 @@ class TOEBridge:
         but it cannot silently stand in for the bespoke exact tensor.
         """
         from kellogg.exact_tensor import ExactTOETensor
+
         try:
             return ExactTOETensor().evaluate(data, quarter_turns=quarter_turns)
         except Exception as exc:
@@ -532,9 +580,7 @@ class TOEBridge:
         the opt-in debug path — never on the default path.
         """
         t = _FORECAST_TIMES[0]
-        reference = ComplexMatrix.matrix_exp_unitary(
-            self._hamiltonian(), round(t / self._hbar, 12)
-        )
+        reference = ComplexMatrix.matrix_exp_unitary(self._hamiltonian(), round(t / self._hbar, 12))
         served = self._propagator(t)
         for r in range(reference.rows):
             for c in range(reference.cols):
@@ -811,7 +857,6 @@ class TOEBridge:
                 top_factor = key_factors[0][0]
                 recommendations["immediate"] = [
                     f"Address {top_factor}: highest quantum expectation value ({key_factors[0][1]:.4f})",
-                    f"Measurement of {top_factor} will most strongly collapse the state",
                 ]
                 if len(key_factors) > 1:
                     second = key_factors[1][0]
@@ -823,14 +868,16 @@ class TOEBridge:
                     "Re-measure after intervention to verify state evolution",
                 ]
 
-            # Model agreement (ensemble of factor observables)
-            factor_states = []
-            for obs in factor_obs.values():
-                # Each observable defines a measurement basis; the "agreement"
-                # is how aligned the state is across all bases
-                factor_states.append(state)
-            agreement = (
-                model_agreement_from_ensemble(factor_states) if len(factor_states) > 1 else 1.0
+            # Model agreement between DISTINCT factor evaluators. Each factor
+            # observable A filters the state into A|psi>/||A|psi>||; factors
+            # whose normalised observables coincide are one evaluator. The
+            # previous code compared |psi> with itself N times, which scored
+            # 1.0 by construction.
+            filtered = _distinct_filtered_states(state, factor_obs)
+            agreement: Optional[float] = (
+                model_agreement_from_ensemble(list(filtered.values()))
+                if len(filtered) > 1
+                else None
             )
 
             # Data quality from the Born-distribution spread (low = peaked)
@@ -838,12 +885,13 @@ class TOEBridge:
             max_entropy = math.log2(self._dim) if self._dim > 1 else 1.0
             data_quality = float(1.0 - entropy / max_entropy) if max_entropy > 0 else 0.5
 
-            # Confidence
-            confidence = float(
-                0.3 * data_quality
-                + 0.3 * agreement
-                + 0.4 * (1.0 - np_std(list(factor_weights.values())) if factor_weights else 0.5)
-            )
+            # Confidence: an unavailable agreement drops out of the blend
+            # instead of contributing a manufactured value.
+            spread_term = 1.0 - np_std(list(factor_weights.values())) if factor_weights else 0.5
+            terms = [(0.3, data_quality), (0.4, spread_term)]
+            if agreement is not None:
+                terms.append((0.3, agreement))
+            confidence = float(sum(w * v for w, v in terms) / sum(w for w, _ in terms))
             confidence = max(0.0, min(1.0, confidence))
 
             return TOECausalAnalysis(
@@ -853,7 +901,7 @@ class TOEBridge:
                 factor_weights=factor_weights,
                 recommendations=recommendations,
                 born_probabilities={k: float(v) for k, v in list(probs.items())[:10]},
-                model_agreement=float(agreement),
+                model_agreement=None if agreement is None else float(agreement),
                 data_quality=float(data_quality),
                 diagnostics={
                     "num_factors": len(key_factors),
@@ -861,6 +909,15 @@ class TOEBridge:
                     "factor_names": list(factor_weights.keys()),
                     "entropy": float(entropy),
                     "engine": "quantum_tensor (exact quantum measurement theory)",
+                    "ranking_basis": "expectation_magnitude",
+                    "causal_explanation": (
+                        "UNAVAILABLE: this ranking is descriptive and names no target "
+                        "outcome; use TOEBridge.explain for an outcome-specific explanation"
+                    ),
+                    "model_agreement_metric": (
+                        "mean pairwise fidelity of distinct factor-filtered states"
+                    ),
+                    "model_agreement_evaluators": sorted(filtered),
                 },
             )
         except Exception as e:
@@ -998,15 +1055,26 @@ class TOEBridge:
             counterfactual_val: Optional[float] = None
             counterfactual_diag: Dict[str, Any] = {}
             if observed and intervention_node and intervention_value is not None:
-                counterfactual_val, counterfactual_diag = counterfactual_query(
-                    scm,
-                    state,
-                    intervention_node,
-                    intervention_value,
-                    observed,
-                    factor_obs,
-                    dim=dim,
-                )
+                outcome_for_cf = list(factor_obs.keys())[-1] if factor_obs else None
+                try:
+                    counterfactual_val, counterfactual_diag = counterfactual_query(
+                        scm,
+                        state,
+                        intervention_node,
+                        intervention_value,
+                        observed,
+                        factor_obs,
+                        dim=dim,
+                        outcome_node=(
+                            outcome_for_cf if outcome_for_cf != intervention_node else None
+                        ),
+                    )
+                except CausalCapabilityUnavailable as exc:
+                    counterfactual_diag = {
+                        "available": False,
+                        "reason": exc.reason,
+                        "missing_evidence": exc.missing,
+                    }
 
             # Confidence from graph quality
             confidence = 0.5
@@ -1036,6 +1104,10 @@ class TOEBridge:
                     "intervention_value": intervention_value,
                     "num_factors": len(factor_obs),
                     "engine": "causal_ladder (Pearl do-calculus on quantum tensor)",
+                    "graph_source": (
+                        "infer_causal_graph: correlation-magnitude heuristic, NOT causal "
+                        "discovery; supply a graph to TOEBridge.reason for causal claims"
+                    ),
                 },
             )
         except Exception as e:
@@ -1094,6 +1166,471 @@ class TOEBridge:
             **sections,
             "source": "kellogg_quantum_tensor (Kellogg-owned deterministic Complex/ComplexMatrix/QuantumState)",
         }
+
+    # -- structural reasoning over a SUPPLIED causal model ----------------
+    #
+    # Everything below takes the causal graph as an input. Nothing here
+    # discovers structure from data, and every result reports ``available``
+    # with a reason instead of a manufactured value.
+
+    def _as_graph(self, graph: Any) -> CausalGraph:
+        if isinstance(graph, CausalGraph):
+            return graph
+        if isinstance(graph, StructuralCausalModel):
+            return graph.graph
+        if isinstance(graph, Mapping):
+            return CausalGraph.from_edges(graph.get("edges", []), graph.get("nodes", ()))
+        return CausalGraph.from_edges(graph)
+
+    def _as_scm(self, model: Any) -> StructuralCausalModel:
+        if isinstance(model, StructuralCausalModel):
+            return model
+        return StructuralCausalModel(
+            graph=self._as_graph(model),
+            dim=self._dim,
+            hbar=self._hbar,
+            mass=self._mass,
+            omega=self._omega,
+        )
+
+    def _evidence(self, operator: str, arithmetic: str = "float64") -> Dict[str, Any]:
+        return {
+            **self.execution_evidence(),
+            "operator": operator,
+            "arithmetic": arithmetic,
+            "reasoning_version": REASONING_VERSION,
+        }
+
+    def identify_adjustment(
+        self,
+        graph: Any,
+        treatment: str,
+        outcome: str,
+        observed: Optional[Sequence[str]] = None,
+    ) -> Dict[str, Any]:
+        """Smallest backdoor-admissible adjustment set on a supplied DAG."""
+        g = self._as_graph(graph)
+        try:
+            adjustment = identify_backdoor(g, treatment, outcome, observed=observed)
+        except ValueError as exc:
+            return {"available": False, "reason": str(exc), "adjustment_set": None}
+        return {
+            "available": adjustment is not None,
+            "adjustment_set": adjustment,
+            "is_dag": g.is_dag(),
+            "graph_sha256": g.digest(),
+            "reason": (
+                None
+                if adjustment is not None
+                else "no backdoor-admissible set among the observed variables"
+            ),
+        }
+
+    def estimate_effect(
+        self,
+        samples: Mapping[str, Sequence[Any]],
+        graph: Any,
+        treatment: str,
+        outcome: str,
+        *,
+        observed: Optional[Sequence[str]] = None,
+        do_values: Sequence[float] = (0.0, 1.0),
+        method: str = "auto",
+    ) -> Dict[str, Any]:
+        """E[Y | do(X=x)] from observational samples by backdoor adjustment."""
+        g = self._as_graph(graph)
+        estimate = estimate_causal_effect(
+            samples, g, treatment, outcome, observed=observed, do_values=do_values, method=method
+        )
+        out = estimate.as_dict()
+        receipt = self.receipts.issue(
+            "causal_effect",
+            inputs={"data_sha256": estimate.provenance.get("data_sha256")},
+            config={
+                "graph_sha256": g.digest(),
+                "treatment": treatment,
+                "outcome": outcome,
+                "method_requested": method,
+                "do_values": [float(v) for v in do_values],
+            },
+            output=out,
+            execution_evidence=self._evidence("estimate_causal_effect"),
+        )
+        out["receipt_sha256"] = receipt.receipt_sha256
+        return out
+
+    def intervene(
+        self,
+        model: Any,
+        interventions: Mapping[str, Any],
+        exogenous: Optional[Mapping[str, Any]] = None,
+        *,
+        arithmetic: str = "float64",
+    ) -> Dict[str, Any]:
+        """do(interventions) on a copy of the model, with edge-cut evidence."""
+        try:
+            result = intervene(self._as_scm(model), interventions, exogenous, arithmetic=arithmetic)
+        except CausalCapabilityUnavailable as exc:
+            return {"available": False, "reason": exc.reason, "missing_evidence": exc.missing}
+        return {"available": True, **result}
+
+    def counterfactual(
+        self,
+        model: Any,
+        factual: Mapping[str, Any],
+        interventions: Mapping[str, Any],
+        outcomes: Sequence[str],
+        *,
+        arithmetic: str = "float64",
+    ) -> Dict[str, Any]:
+        """Abduction-action-prediction for one factual unit."""
+        scm = self._as_scm(model)
+        try:
+            result = counterfactual_state(
+                scm, interventions, factual, outcomes, arithmetic=arithmetic
+            )
+        except CausalCapabilityUnavailable as exc:
+            return {"available": False, "reason": exc.reason, "missing_evidence": exc.missing}
+        out = {"available": True, **result}
+        receipt = self.receipts.issue(
+            "counterfactual",
+            inputs={"factual": factual},
+            config={
+                "model_id": scm.digest(),
+                "interventions": dict(interventions),
+                "outcomes": list(outcomes),
+            },
+            output=out,
+            execution_evidence=self._evidence("counterfactual_state", arithmetic),
+        )
+        out["receipt_sha256"] = receipt.receipt_sha256
+        return out
+
+    def explain(
+        self,
+        model: Any,
+        instance: Mapping[str, Any],
+        *,
+        target: str,
+        background: Any,
+        model_id: Optional[str] = None,
+        exogenous: Optional[Mapping[str, float]] = None,
+    ) -> Dict[str, Any]:
+        """Outcome-specific explanation by intervention (exact Shapley).
+
+        ``model`` is a callable (then ``model_id`` is required) or a
+        structural model / graph spec, whose identifier is derived from its
+        exact parameters and the noise it is evaluated with.
+        """
+        parents: Optional[List[str]] = None
+        if callable(model):
+            fn, mid = model, model_id
+        else:
+            scm = self._as_scm(model)
+            fn = structural_model(scm, exogenous=exogenous)
+            mid = model_id or receipt_digest(
+                {"scm_sha256": scm.digest(), "exogenous": dict(exogenous or {})}
+            )
+            if target in scm.graph.nodes:
+                parents = list(scm.graph.parents.get(target, []))
+        result = explain_outcome(
+            fn, instance, target=target, background=background, model_id=mid, causal_parents=parents
+        )
+        out = result.as_dict()
+        receipt = self.receipts.issue(
+            "explanation",
+            inputs={"instance": dict(instance)},
+            config={
+                "model_id": mid,
+                "target": target,
+                "background_sha256": result.background_sha256,
+            },
+            output=out,
+            execution_evidence=self._evidence("explain"),
+        )
+        out["receipt_sha256"] = receipt.receipt_sha256
+        return out
+
+    def decide(
+        self,
+        state: Mapping[str, float],
+        candidates: Mapping[str, Mapping[str, float]],
+        *,
+        model: Any,
+        objective: Any,
+        constraints: Sequence[Any] = (),
+        model_id: Optional[str] = None,
+        outcomes: Optional[Sequence[str]] = None,
+    ) -> Dict[str, Any]:
+        """Select among candidate actions by their evaluated futures.
+
+        ``model`` is a futures callable ``(state, action) -> future`` (then
+        ``model_id`` is required) or a structural model, whose futures come
+        from abduction-action-prediction on the factual ``state``.
+        """
+        if callable(model):
+            futures, mid = model, model_id
+        else:
+            scm = self._as_scm(model)
+            futures = counterfactual_futures(scm, outcomes=outcomes)
+            mid = model_id or scm.digest()
+        obj = objective if isinstance(objective, Objective) else Objective(**dict(objective))
+        cons = [c if isinstance(c, Constraint) else Constraint.from_dict(c) for c in constraints]
+        decision = decide_action(
+            state, candidates, futures=futures, objective=obj, constraints=cons, model_id=mid
+        )
+        out = decision.as_dict()
+        receipt = self.receipts.issue(
+            "action",
+            inputs={"state": dict(state)},
+            config={
+                "model_id": mid,
+                "objective": obj.as_dict(),
+                "constraints": [c.as_dict() for c in cons],
+                "candidates": {k: dict(v) for k, v in candidates.items()},
+            },
+            output=out,
+            execution_evidence=self._evidence("decide"),
+        )
+        out["receipt_sha256"] = receipt.receipt_sha256
+        return out
+
+    def evaluator_agreement(
+        self,
+        predictions: Mapping[str, Any],
+        evaluator_ids: Optional[Mapping[str, str]] = None,
+    ) -> Dict[str, Any]:
+        """Agreement between distinct evaluators; None below two."""
+        return agreement_between(predictions, evaluator_ids=evaluator_ids)
+
+    def verify_receipts(self) -> Dict[str, Any]:
+        return self.receipts.verify()
+
+    @staticmethod
+    def replay(receipt: Any, recompute: Any) -> Dict[str, Any]:
+        return replay_receipt(receipt, recompute)
+
+    def reason(self, task: Mapping[str, Any]) -> Dict[str, Any]:
+        """The full TOE sequence on a supplied causal model.
+
+        observe state -> represent state -> supplied causal structure ->
+        admissible adjustment -> effect estimate -> intervention ->
+        counterfactual -> explanation -> action selection -> receipts.
+
+        ``task`` keys: ``graph`` (edges ``(parent, child, weight)``) and
+        ``state`` (factual values) are required. Optional: ``treatment``,
+        ``outcome``, ``samples`` (observational columns), ``observed``,
+        ``do_values``, ``intervention`` ({node: value}), ``background``
+        (rows; defaults to up to 32 evenly spaced sample rows),
+        ``explain_inputs`` (default: the outcome's parents), ``candidates``,
+        ``objective`` and ``constraints``. A section that cannot be computed
+        is ``available: False`` with its reason, and the envelope is
+        available only when every section is.
+        """
+
+        def unavailable(reason: str, **extra: Any) -> Dict[str, Any]:
+            return {"available": False, "reason": reason, **extra}
+
+        first_receipt = len(self.receipts.records)
+        graph_spec, state = task.get("graph"), task.get("state")
+        if graph_spec is None or not isinstance(state, Mapping):
+            return unavailable("reason() needs a supplied causal graph and a factual state")
+        try:
+            scm = self._as_scm(graph_spec)
+        except (KeyError, TypeError, ValueError) as exc:
+            return unavailable(f"causal graph could not be built: {exc}")
+        graph = scm.graph
+        treatment, outcome = task.get("treatment"), task.get("outcome")
+        samples = task.get("samples")
+        intervention = task.get("intervention")
+        sections: Dict[str, Dict[str, Any]] = {}
+
+        numeric_state = {
+            str(k): float(v)
+            for k, v in state.items()
+            if isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+        }
+        tomography = self.state_tomography(numeric_state)
+        sections["state"] = {
+            "available": bool(numeric_state) and tomography.available,
+            "reason": None if numeric_state else "state has no finite numeric values",
+            "state_sha256": receipt_digest({"state": numeric_state}),
+            "variables": sorted(numeric_state),
+            "representation": {
+                "engine": "kellogg.quantum_tensor",
+                "entropy": tomography.entropy,
+                "coherence": tomography.coherence,
+                "fisher_info": tomography.fisher_info,
+            },
+        }
+
+        if not graph.is_dag():
+            sections["causal_analysis"] = unavailable(
+                "supplied graph is not a DAG", graph_sha256=graph.digest()
+            )
+        elif not (treatment and outcome):
+            sections["causal_analysis"] = unavailable("treatment and outcome not named")
+        else:
+            observed = task.get("observed")
+            if observed is None:
+                observed = list(samples) if samples else list(graph.nodes)
+            adjustment = self.identify_adjustment(graph, treatment, outcome, observed=observed)
+            if samples:
+                effect = self.estimate_effect(
+                    samples,
+                    graph,
+                    treatment,
+                    outcome,
+                    observed=task.get("observed"),
+                    do_values=task.get("do_values", (0.0, 1.0)),
+                )
+            else:
+                effect = unavailable("no observational samples supplied")
+            sections["causal_analysis"] = {
+                "available": bool(adjustment["available"] and effect.get("available")),
+                "reason": adjustment.get("reason") or effect.get("reason"),
+                "graph_source": "supplied",
+                "graph_sha256": graph.digest(),
+                "treatment": treatment,
+                "outcome": outcome,
+                "adjustment": adjustment,
+                "effect": effect,
+            }
+
+        if intervention:
+            sections["intervention"] = self.intervene(scm, intervention)
+            if outcome:
+                sections["counterfactual"] = self.counterfactual(
+                    scm, state, intervention, [outcome]
+                )
+            else:
+                sections["counterfactual"] = unavailable("no outcome named")
+        else:
+            sections["intervention"] = unavailable("no intervention supplied")
+            sections["counterfactual"] = unavailable("no intervention supplied")
+
+        sections["explanation"] = self._reason_explanation(scm, task, state, sections)
+
+        candidates, objective = task.get("candidates"), task.get("objective")
+        if candidates and objective:
+            sections["action_policy"] = self.decide(
+                state,
+                candidates,
+                model=scm,
+                objective=objective,
+                constraints=task.get("constraints", ()),
+            )
+        else:
+            sections["action_policy"] = unavailable("no candidate actions and objective supplied")
+
+        sections["execution_evidence"] = {"available": True, **self._evidence("reason")}
+        issued = self.receipts.records[first_receipt:]
+        sections["provenance"] = {
+            "available": True,
+            "run_id": self.receipts.run_id,
+            "receipts": [{"kind": r.kind, "receipt_sha256": r.receipt_sha256} for r in issued],
+            "ledger": self.receipts.verify(),
+        }
+        missing = [
+            {"section": name, "reason": body.get("reason")}
+            for name, body in sections.items()
+            if not body.get("available")
+        ]
+        return {
+            "available": not missing and sections["provenance"]["ledger"]["ok"],
+            "unavailable": missing,
+            **sections,
+        }
+
+    def _reason_explanation(
+        self,
+        scm: StructuralCausalModel,
+        task: Mapping[str, Any],
+        state: Mapping[str, Any],
+        sections: Mapping[str, Mapping[str, Any]],
+    ) -> Dict[str, Any]:
+        outcome = task.get("outcome")
+        graph = scm.graph
+        if not outcome or outcome not in graph.nodes:
+            return {"available": False, "reason": "no outcome in the supplied graph to explain"}
+        inputs = list(task.get("explain_inputs") or sorted(graph.parents.get(outcome, [])))
+        if not inputs:
+            return {"available": False, "reason": f"{outcome!r} has no inputs to attribute"}
+        background = task.get("background")
+        samples = task.get("samples")
+        if background is None and samples and all(k in samples for k in inputs):
+            n = len(samples[inputs[0]])
+            m = min(32, n)
+            idx = sorted({round(i * (n - 1) / (m - 1)) for i in range(m)}) if m > 1 else [0]
+            background = [{k: samples[k][i] for k in inputs} for i in idx]
+        if background is None:
+            return {"available": False, "reason": "no background evidence for ablation"}
+        # The unit's own outcome noise, so the factual prediction reproduces
+        # the observed outcome. Requires the outcome and all its parents.
+        needed = [outcome, *graph.parents.get(outcome, [])]
+        absent = [k for k in needed if not isinstance(state.get(k), (int, float))]
+        if absent:
+            return {
+                "available": False,
+                "reason": f"factual evidence missing for {absent}",
+                "missing_evidence": absent,
+            }
+        residual = float(state[outcome]) - sum(
+            float(graph.edge_weights[(p, outcome)]) * float(state[p])
+            for p in graph.parents.get(outcome, [])
+        )
+        noise = {outcome: residual / PHI}
+        instance = {k: state.get(k) for k in inputs}
+        explanation = self.explain(
+            scm, instance, target=outcome, background=background, exogenous=noise
+        )
+        counterfactual = sections.get("counterfactual", {})
+        causal = sections.get("causal_analysis", {})
+        factual_outcome = float(state[outcome])
+        cf_value = (
+            counterfactual.get("outcome_values", {}).get(outcome)
+            if counterfactual.get("available")
+            else None
+        )
+        explanation["context"] = {
+            "adjustment_set": (causal.get("adjustment") or {}).get("adjustment_set"),
+            "intervention": task.get("intervention"),
+            "edges_cut": (counterfactual.get("surgery") or {}).get("edges_cut"),
+            "factual_outcome": factual_outcome,
+            "counterfactual_outcome": cf_value,
+            "delta": None if cf_value is None else cf_value - factual_outcome,
+        }
+        return explanation
+
+
+REASONING_VERSION = "toe.bridge.reason/v1"
+
+
+def _distinct_filtered_states(
+    state: QuantumState, observables: Dict[str, ComplexMatrix]
+) -> Dict[str, QuantumState]:
+    """``A|psi> / ||A|psi>||`` for each factor, one per distinct observable.
+
+    Observables equal up to a (complex) scalar filter the state identically
+    and are one evaluator, so only the first by name is kept.
+    """
+    seen: set = set()
+    out: Dict[str, QuantumState] = {}
+    for name in sorted(observables):
+        obs = observables[name]
+        entries = [complex(e.re, e.im) for row in obs.data for e in row]
+        pivot = max(entries, key=abs, default=0j)
+        if pivot == 0:
+            continue
+        key = tuple((round((e / pivot).real, 12), round((e / pivot).imag, 12)) for e in entries)
+        if key in seen:
+            continue
+        filtered = QuantumState(state.dim, obs.apply(state.amplitudes))
+        if filtered.norm() == 0:
+            continue
+        seen.add(key)
+        out[name] = filtered.normalize()
+    return out
 
 
 # ---------------------------------------------------------------------------
