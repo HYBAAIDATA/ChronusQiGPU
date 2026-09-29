@@ -94,8 +94,16 @@ def binet_lucas(n: int) -> float:
 
 
 def binet_residual(n: int) -> float:
-    """|phi^n - L_n| = |psi|^n — the Pisot drift, exact by Binet."""
-    return abs(PHI**n - lucas_core.lucas(n))
+    """|phi^n - L_n| = |psi|^n — the Pisot drift, exact by Binet.
+
+    Evaluated as |psi|^n, not |phi^n - L_n|: the two are identical by
+    Binet's formula, but float64 subtraction loses all significance to
+    cancellation once phi^n outgrows the 53-bit mantissa (n > ~74 —
+    e.g. the raw difference returns ~19 instead of ~1.3e-16 at n = 76).
+    |psi|^n stays accurate until it underflows to 0.0 (n > ~1500), the
+    same "below float64 resolution" convention theta_of uses.
+    """
+    return abs(PSI) ** n
 
 
 def zeckendorf(n: int) -> List[int]:
