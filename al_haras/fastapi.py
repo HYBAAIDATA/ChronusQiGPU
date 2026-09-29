@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Any
-
+from .mediation_runtime import attach_receipt
+from .mediation_runtime import evaluate_guardian
+from .mediation_runtime import evidence_attach
+from .mediation_runtime import guardian_middleware
 from .runtime import GuardianAPI
-from .mediation_runtime import attach_receipt, evidence_attach, evaluate_guardian, guardian_middleware
 
 
 def create_router(api: GuardianAPI):
     try:
-        from fastapi import APIRouter, Header, Request
+        from fastapi import APIRouter
+        from fastapi import Header
+        from fastapi import Request
         from fastapi.responses import JSONResponse
     except ImportError as exc:
         raise RuntimeError("FastAPI is required for the AL HARAS router") from exc
@@ -26,7 +29,11 @@ def create_router(api: GuardianAPI):
         x_hyba_tenant: str | None = Header(default=None),
         x_hyba_actor: str | None = Header(default=None),
     ):
-        headers = {"authorization": authorization or "", "x-hyba-tenant": x_hyba_tenant or "", "x-hyba-actor": x_hyba_actor or ""}
+        headers = {
+            "authorization": authorization or "",
+            "x-hyba-tenant": x_hyba_tenant or "",
+            "x-hyba-actor": x_hyba_actor or "",
+        }
         decision = evaluate_guardian(api, headers, "security.status", "security/status")
         if not decision.allowed:
             return JSONResponse(status_code=decision.status_code, content=decision.receipt)
@@ -41,16 +48,23 @@ def create_router(api: GuardianAPI):
         x_hyba_tenant: str | None = Header(default=None),
         x_hyba_actor: str | None = Header(default=None),
     ):
-        headers = {"authorization": authorization or "", "x-hyba-tenant": x_hyba_tenant or "", "x-hyba-actor": x_hyba_actor or ""}
+        headers = {
+            "authorization": authorization or "",
+            "x-hyba-tenant": x_hyba_tenant or "",
+            "x-hyba-actor": x_hyba_actor or "",
+        }
         decision = evaluate_guardian(api, headers, "security.subscribe", "security/subscribe")
         if not decision.allowed:
             return JSONResponse(status_code=decision.status_code, content=decision.receipt)
-        return attach_receipt({
-            "product": "HYBA Security",
-            "capability": api.settings.capability,
-            "subscription_required": True,
-            "subscription_url": api.settings.subscription_url,
-        }, decision.receipt)
+        return attach_receipt(
+            {
+                "product": "HYBA Security",
+                "capability": api.settings.capability,
+                "subscription_required": True,
+                "subscription_url": api.settings.subscription_url,
+            },
+            decision.receipt,
+        )
 
     @router.post("/evaluate")
     @guardian_middleware

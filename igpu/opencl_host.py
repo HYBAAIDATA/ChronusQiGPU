@@ -88,6 +88,7 @@ _IGPU_HINTS = (
     "apple",
 )
 
+
 # SHA-256d scanner kernel loaded from igpu/kernels/scan_sha256d.cl — single
 # source of truth for the standalone scanner. Previously duplicated inline;
 # now loaded from the file to keep kernels and host in sync.

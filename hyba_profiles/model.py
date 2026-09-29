@@ -1,7 +1,11 @@
 from __future__ import annotations
-from dataclasses import asdict, dataclass, field
+
+from dataclasses import asdict
+from dataclasses import dataclass
+from dataclasses import field
 from enum import Enum
 from typing import Any
+
 
 class Tier(str, Enum):
     T0 = "T0_PROOF_REGISTER"
@@ -11,6 +15,7 @@ class Tier(str, Enum):
     T4 = "T4_SOVEREIGN_PERSISTENT"
     T5 = "T5_EXTERNAL_COMPAT"
 
+
 class SpeedClass(str, Enum):
     S0 = "S0_IMMEDIATE"
     S1 = "S1_ULTRA_LOW"
@@ -19,12 +24,14 @@ class SpeedClass(str, Enum):
     S4 = "S4_PERSISTENCE"
     S5 = "S5_COMPATIBILITY"
 
+
 class GateStatus(str, Enum):
     ACCEPTED = "ACCEPTED"
     CONDITIONALLY_ACCEPTED = "CONDITIONALLY_ACCEPTED"
     REJECTED = "REJECTED"
     NOT_EXECUTED = "NOT_EXECUTED"
     EXTERNAL_ASSESSMENT_REQUIRED = "EXTERNAL_ASSESSMENT_REQUIRED"
+
 
 @dataclass(frozen=True)
 class TierPolicy:
@@ -33,6 +40,7 @@ class TierPolicy:
     deterministic_proof_required: bool
     folded_query_allowed: bool
     lineage_required: bool
+
 
 @dataclass(frozen=True)
 class ModuleEvidence:
@@ -43,6 +51,7 @@ class ModuleEvidence:
     deployment_verified: bool = False
     external_assessment: bool = False
     evidence_refs: tuple[str, ...] = ()
+
 
 @dataclass(frozen=True)
 class AssemblyIntent:
@@ -66,12 +75,14 @@ class AssemblyIntent:
     human_approval_for_high_risk_actions: bool = False
     silent_fallback: bool = False
 
+
 @dataclass(frozen=True)
 class GateCheck:
     name: str
     passed: bool
     required: bool
     evidence: str
+
 
 @dataclass(frozen=True)
 class GateReport:
@@ -80,6 +91,7 @@ class GateReport:
     checks: tuple[GateCheck, ...]
     blockers: tuple[str, ...]
     external_assessments: tuple[str, ...]
+
 
 @dataclass(frozen=True)
 class AssemblyBlueprint:
@@ -92,6 +104,7 @@ class AssemblyBlueprint:
     compliance_crosswalk: tuple[str, ...]
     resource_plan: dict[str, Any]
 
+
 @dataclass(frozen=True)
 class AssemblyLock:
     schema_version: str
@@ -103,6 +116,7 @@ class AssemblyLock:
     signature_algorithm: str
     signature: str
 
+
 @dataclass(frozen=True)
 class CompilationResult:
     blueprint: AssemblyBlueprint
@@ -112,10 +126,14 @@ class CompilationResult:
 
     def to_dict(self) -> dict[str, Any]:
         def convert(value: Any) -> Any:
-            if isinstance(value, Enum): return value.value
+            if isinstance(value, Enum):
+                return value.value
             if hasattr(value, "__dataclass_fields__"):
                 return {k: convert(v) for k, v in asdict(value).items()}
-            if isinstance(value, dict): return {k: convert(v) for k, v in value.items()}
-            if isinstance(value, (tuple, list)): return [convert(v) for v in value]
+            if isinstance(value, dict):
+                return {k: convert(v) for k, v in value.items()}
+            if isinstance(value, (tuple, list)):
+                return [convert(v) for v in value]
             return value
+
         return convert(self)

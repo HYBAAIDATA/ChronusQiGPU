@@ -10,21 +10,23 @@ from .audit import HashChainAudit, canonical_json, digest
 from .entitlements import SubscriptionAuthority, SubscriptionError
 from .models import Admission, GuardianRequest, GuardianVerdict
 
+DEFAULT_ALLOWED_OPERATIONS: frozenset[str] = frozenset(
+    {
+        "analytics.predict",
+        "analytics.explain",
+        "analytics.graph.execute",
+        "mining.observe",
+        "security.evaluate",
+        "toe.collapse",
+    }
+)
+
 
 @dataclass(frozen=True)
 class GuardianPolicy:
     version: str
     capability: str = "hyba.security"
-    allowed_operations: frozenset[str] = frozenset(
-        {
-            "analytics.predict",
-            "analytics.explain",
-            "analytics.graph.execute",
-            "mining.observe",
-            "security.evaluate",
-            "toe.collapse",
-        }
-    )
+    allowed_operations: frozenset[str] = DEFAULT_ALLOWED_OPERATIONS
     max_payload_bytes: int = 1_048_576
     require_intelligence_evidence: bool = False
 
