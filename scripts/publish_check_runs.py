@@ -10,7 +10,7 @@ def main():
  for path in Path('results').rglob('*.json'):
   try:r=json.loads(path.read_text())
   except Exception:continue
-  if {'gate','status','reason'}<=r.keys():results.append(r)
+  if isinstance(r,dict) and {'gate','status','reason'}<=r.keys():results.append(r)
  if not results:raise SystemExit('no gate results')
  api=env['GITHUB_API_URL'].rstrip('/');repo=env['GITHUB_REPOSITORY'];sha=env['GITHUB_SHA'];token=env['GITHUB_TOKEN']
  conclusions={'PASS':'success','FAIL':'failure','SKIP':'skipped','ERROR':'failure'}

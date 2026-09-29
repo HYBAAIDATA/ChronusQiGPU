@@ -43,15 +43,20 @@ def no_float(root):
  except FloatForbidden as exc:return Outcome(Status.FAIL,str(exc))
 def abi(root):return schema(root)
 def refuted(root):
+ import re
  from al_haras.refuted_claims import CLAIMS_STILL_REFUTED
  violations=[]
- for path in [root/'README.md']+[p for p in (root/'docs').rglob('*.md') if 'al-haras' not in p.parts] if (root/'docs').exists() else [root/'README.md']:
+ markers=('refuted','must not claim','not established','does not prove','unclaimed','not license')
+ paths=[root/'README.md']+[p for p in (root/'docs').rglob('*.md') if 'al-haras' not in p.parts] if (root/'docs').exists() else [root/'README.md']
+ for path in paths:
   if not path.exists():continue
-  for no,line in enumerate(path.read_text(errors='replace').splitlines(),1):
-   low=line.casefold()
-   if any(marker in low for marker in ('refuted','must not claim','not established','does not prove','unclaimed')):continue
-   for claim in CLAIMS_STILL_REFUTED:
-    if claim.casefold() in low:violations.append(f"{path.relative_to(root)}:{no}:{claim}")
+  text=path.read_text(errors='replace');pos=0
+  for part in re.split(r'\n\s*\n',text):
+   start=text.find(part,pos);low=part.casefold()
+   if not any(marker in low for marker in markers):
+    for claim in CLAIMS_STILL_REFUTED:
+     if claim.casefold() in low:violations.append(f"{path.relative_to(root)}:{text.count(chr(10),0,start)+1}:{claim}")
+   pos=start+len(part)
  artifact=root/'results'/'refuted-claims-violations.json';artifact.parent.mkdir(exist_ok=True);artifact.write_text(json.dumps(violations,indent=2))
  return Outcome(Status.FAIL if violations else Status.PASS,f"{len(violations)} unqualified refuted-claim matches",(str(artifact),))
 def conformance(root):return Outcome(Status.SKIP,"fewer than two independently available exact backends; no conformance claim")
