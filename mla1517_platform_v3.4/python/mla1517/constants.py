@@ -19,6 +19,10 @@ deliberately does not evaluate in floating point.
 
 from __future__ import annotations
 
+#: The hardware-scaling dial — the canonical declaration in lucas/ladder.py,
+#: re-exported here for the platform package.
+from lucas.ladder import SCALE_RUNGS
+
 # --------------------------------------------------------------------------
 # Exact integer recurrence ladder
 # --------------------------------------------------------------------------
@@ -28,9 +32,6 @@ from __future__ import annotations
 #: transition target, so a ladder without it would refuse the programme's
 #: own first declared step.
 LADDER: tuple[int, ...] = (10, 12, 15, 17, 18, 20, 31, 50, 76)
-
-#: The hardware-scaling dial, as declared separately from the curriculum.
-SCALE_RUNGS: tuple[int, ...] = (10, 12, 15, 18, 20, 31, 50, 76)
 
 #: The first declared transition in the build programme.
 FIRST_SOURCE_SCALE: int = 15

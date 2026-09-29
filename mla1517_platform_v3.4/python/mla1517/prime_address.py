@@ -22,7 +22,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List
 
-from .fibonacci_store import fib, lucas
+from .core import fib, lucas
 from .zeckendorf_codec import to_mask
 
 __all__ = [
