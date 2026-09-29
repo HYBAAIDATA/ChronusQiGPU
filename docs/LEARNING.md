@@ -97,12 +97,14 @@ could be answered.
 | `shares.follow.work`: does anything find shares faster than the work predicts? | law | `Poisson(hashes × (target+1)/2²⁵⁶)`, tested every cycle |
 | `route.opencl.rate`: what does the OpenCL route really sustain? | fact | the world model's measured route |
 | `policy.levers`: does any lever beat the learned policy? | fact | the discovery worker's campaign |
-| `device.sag`: does the device slow within a window? | open | how: `window.elapsed` errors that grow with window length |
-| `precompute.depth`: is the depth right for current churn? | open | how: forecast waiting, score against the loss ledger's idle time |
-| `recovery.effect`: which recoveries restore throughput? | open | how: hash rate before and after each Salamander recovery |
+| `device.sag`: does the device slow within a window? | fact | the world model: marginal time per hash across the window sizes it has measured |
+| `precompute.depth`: will a plan be ready when the executor needs one? | probability | the policy's depth model vs "fraction of windows that found a plan ready" |
+| `recovery.effect`: which recoveries restore throughput? | fact | measured hash rate over the windows before and after each verified recovery |
+| `policy.promotion`: has a candidate earned its place? | fact | the promotion gate (below) |
 
-The open questions are deliberate. They mark what the system does not yet
-know, so the next learner has somewhere to start.
+These three were open questions in the first version of the ledger; each
+now has a learner. An open question is still the right way to add
+something nobody can answer yet: it tells the next learner where to start.
 
 ## The learners, honestly
 
@@ -113,19 +115,41 @@ know, so the next learner has somewhere to start.
 | Hashrate governor (share yield) | yes | `shares.follow.work` |
 | Active Discovery Engine (theory of lever effects) | discovery worker, on a simulated twin | replication and surprise against its own theory |
 | Salamander's skill grafts | repair stage (guidance) | provenance verification before each new graft |
-| `Intelligence/pythia_learning.py`, `pythia_memory.py` curriculum | **no** | **not yet judged** |
+| `Intelligence/pythia_learning.py`, `pythia_memory.py` curriculum | no | evidence tests of their own (below) |
 
-The last row needs care before it is trusted:
+That last learner used to trust itself. Its curriculum advanced on a
+confidence computed from the length of a plan, and a pattern became a
+"germ-line" memory after three sightings next to a share. Both now need
+evidence:
 
-- Its curriculum advances on **self-assessed** mastery. The confidence is
-  computed from the length of the plan, not from any outcome.
-- Its "germ-line" memories are patterns that co-occur with mining success.
-  Under the share law above, whether a nonce yields a share is independent
-  of any pattern in it. Patterns learned from success would therefore be
-  coincidences.
+- **Mastery** is the Wilson 95% lower bound of the recorded success rate,
+  over at least five attempts.
+- **Germ-line** needs an exact one-sided binomial test against the base rate
+  of every other pattern, Bonferroni-corrected, re-judged at every
+  consolidation. Under the share law a pattern's shares are at the base
+  rate, so in practice nothing passes: which is the correct answer.
 
-It should pass through this ledger, with a question and a baseline, before
-anything relies on it.
+## The promotion gate
+
+A self-improving player keeps its current best version until a candidate
+beats it in play (Silver et al., 2017). Here a candidate is a set of
+operating levers the discovery worker found in the twin, and it must win
+twice (`mla1517/mining/promotion.py`):
+
+1. **Twin round** (discovery worker): replayed on eight fresh paired seeds,
+   never the seeds it was found on (a finding chosen as the best of many is
+   flattered on those: the winner's curse). It must win an exact one-sided
+   sign test at 5% (`promotion.candidate`).
+2. **Shadow round** (live miner): the candidate decides beside the running
+   policy for every window, without acting. Where both chose window sizes
+   the miner has measured, each choice is worth its measured valid hashes
+   per second. Decisions are pooled into epochs of 64, and the candidate
+   must again win the sign test over the epochs (`promotion.status`).
+
+Only then are its levers applied. A lever may only tighten the operator's
+bounds (a shorter responsiveness envelope, a lower window ceiling); nothing
+learned can widen them, and no lever touches SHA256d, targets or
+submission.
 
 ## Where the principles come from
 
@@ -216,14 +240,6 @@ discarded.
 
 ## Next steps
 
-- **A promotion gate** (Silver): a candidate policy replaces the running
-  one only after beating it on paired seeds in the twin, then in shadow on
-  live outcomes.
-- **Learners for the open questions:** `device.sag` (error growth with
-  window length), `precompute.depth` (forecast waiting, score against
-  measured idle) and `recovery.effect`.
 - **Choosing what to study next:** pick the question whose answer would
   change a decision most (expected information gain), not the one easiest
   to answer.
-- **Judge or retire** `Intelligence/pythia_learning.py` and its curriculum
-  through this ledger.

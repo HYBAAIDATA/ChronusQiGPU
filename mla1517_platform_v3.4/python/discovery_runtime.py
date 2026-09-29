@@ -14,7 +14,9 @@ Each replicated, surprising finding is published to the fabric bound to the
 world fact it was derived from. When the world model learns something
 different, those discoveries decohere and the next campaign runs on the new
 world. Findings come from a simulation and say so (evidence "simulated"):
-they inform, and nothing acts on them automatically.
+they inform. A finding the live miner can apply is replayed on fresh seeds
+(the promotion gate's twin round, ``promotion.candidate``); only a candidate
+that then also wins in shadow on live measurements is ever applied.
 """
 
 from __future__ import annotations
@@ -28,6 +30,7 @@ from typing import Any, Callable
 
 from mla1517.knowledge import Fact, KnowledgeFabric, default_journal_path
 from mla1517.mining.operating_policy import lucas_ladder
+from mla1517.mining.promotion import applicable, judge_twin
 from policy_bench import REGIMES, Regime, simulate
 
 LOG = logging.getLogger("pythia.discovery")
@@ -42,6 +45,11 @@ LEVERS = {
     "chunk_half": "hash in chunks half as large",
 }
 CAMPAIGN_EVERY_S = 300.0
+# The twin round of the promotion gate replays a finding on seeds the
+# campaign never saw: a finding selected as the best of many is flattered
+# on the seeds it was selected on (the winner's curse).
+TRIAL_SEEDS = 8
+TRIAL_FIRST_SEED = 90_001
 POLL_S = 30.0
 
 
@@ -88,10 +96,13 @@ def twin_regime(world: Fact | None) -> tuple[Regime, dict[str, Any]]:
 class PolicyTwin:
     """``environment(levers, state) -> efficiency change`` on paired seeds."""
 
-    def __init__(self, regime: Regime, *, seconds: float = 30.0, seeds: int = 5) -> None:
+    def __init__(
+        self, regime: Regime, *, seconds: float = 30.0, seeds: int = 5, first_seed: int = 1517
+    ) -> None:
         self.regime = regime
         self.seconds = seconds
         self.seeds = seeds
+        self.first_seed = first_seed
         self.calls = 0
         self._baseline: dict[int, float] = {}
 
@@ -118,7 +129,7 @@ class PolicyTwin:
         return result["efficiency"]
 
     def __call__(self, levers: list[str], _state: Any = None) -> float:
-        seed = 1517 + self.calls % self.seeds
+        seed = self.first_seed + self.calls % self.seeds
         self.calls += 1
         if seed not in self._baseline:
             self._baseline[seed] = self.efficiency(self.regime, 2.0, seed)
@@ -174,6 +185,7 @@ def run_campaign(
     fabric.sync()
     world = fabric.observe("mining.world")
     regime, basis = twin_regime(world)
+    default_twin = twin is None
     if twin is None:
         twin = PolicyTwin(regime, seconds=seconds, seeds=seeds)
     engine = _engine(twin, levers or LEVERS, seeds)
@@ -197,6 +209,25 @@ def run_campaign(
             depends_on=depends_on,
         )
         published.append(fact.topic)
+    candidates = []
+    for discovery in engine.discoveries:
+        levers = engine._expand(discovery.rule_composition)
+        if discovery.observed_effect <= 0 or not applicable(levers):
+            continue
+        trial_twin = (
+            PolicyTwin(regime, seconds=seconds, seeds=TRIAL_SEEDS, first_seed=TRIAL_FIRST_SEED)
+            if default_twin
+            else twin
+        )
+        record = judge_twin([trial_twin(levers, None) for _ in range(TRIAL_SEEDS)])
+        fabric.publish(
+            "discovery.engine",
+            "promotion.candidate",
+            {"levers": levers, **record, "twin": basis},
+            evidence="simulated",
+            depends_on=depends_on,
+        )
+        candidates.append({"levers": levers, "verdict": record["verdict"]})
     # What each lever alone did: the basis every surprise is measured from.
     lever_effects = {
         entry["hypothesis"]: round(entry["observed"], 4)
@@ -207,6 +238,7 @@ def run_campaign(
         "hypotheses_tested": report["hypotheses_tested"],
         "discoveries": report["discoveries"],
         "published": published,
+        "promotion_candidates": candidates,
         "lever_effects": lever_effects,
         "twin": basis,
     }

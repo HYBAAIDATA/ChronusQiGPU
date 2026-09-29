@@ -35,10 +35,15 @@ hardware = [
 llm = [
     "anthropic>=0.45",
 ]
-# Apple silicon accelerators (Intelligence/apple_features.py); macOS only.
+# Apple silicon accelerators (Intelligence/apple_features.py, hyba/inventory.py); macOS only.
 apple = [
     "coremltools>=7.0; sys_platform == 'darwin'",
     "metalcompute>=0.2; sys_platform == 'darwin'",
+    "mlx>=0.18; sys_platform == 'darwin' and platform_machine == 'arm64'",
+]
+# Intelligence.asi.manifold_bridge.adjacency_to_digraph's networkx view.
+graph = [
+    "networkx>=3.0",
 ]
 ml = [
     "nltk>=3.8",

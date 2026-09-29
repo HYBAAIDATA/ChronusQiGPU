@@ -53,7 +53,8 @@ from .self_healing_agent import (
 )
 from .agentic_controller import AgenticMiningController
 from .causal import CausalCoordinate, CausalLedger
-from .execution_router import NONCE_ORDER_M32, ExecutionRouter
+from .execution_router import NONCE_ORDER_HENDRIX, NONCE_ORDER_M32, ExecutionRouter
+from .hendrix_order import NonceOrderUnavailable, load_hendrix
 from .recovery_authority import RecoveryGovernor, RecoveryRecord
 from .nonce_lease import LeaseConflict, LeaseExhausted, LeaseRecord
 from .search_plan import (
@@ -72,6 +73,8 @@ from ..knowledge import KnowledgeFabric, default_journal_path
 from ..learning import LearningLedger, ResidualScale
 from .hashrate_governor import HashrateGovernor
 from .loss_ledger import LossLedger
+from .promotion import ShadowTrial, applicable
+from .recovery_effect import RecoveryEffects
 from .operating_policy import OperatingPolicy, PolicyContext
 from .policy_audit import PolicyAuditor
 from .world_model import MiningWorldModel
@@ -97,6 +100,25 @@ PERMITTED_WITHOUT_TOE = frozenset({"observe_record", "submit_candidate"})
 _PRECOMPUTE_IDLE_S = 0.25
 _BASELINE_POLICY = "baseline_fallback"
 _EVIDENCE_MIN_INTERVAL_S = 0.5
+_NONCE_ORDERS = {"m32": NONCE_ORDER_M32, "hendrix": NONCE_ORDER_HENDRIX}
+
+
+def resolve_nonce_order(value: str) -> str:
+    """The configured nonce order; an unknown or unloadable one fails startup.
+
+    M32 is the default because it is what the OpenCL kernel executes; Hendrix
+    runs on the CPU reference only, and a device window records M32.
+    """
+    key = (value or "m32").strip().lower()
+    if key not in _NONCE_ORDERS:
+        raise ValueError(
+            f"PYTHIA_NONCE_ORDER must be one of {sorted(_NONCE_ORDERS)}, got {value!r}"
+        )
+    if key == "hendrix":
+        search_cls, error = load_hendrix()
+        if search_cls is None:
+            raise NonceOrderUnavailable(f"PYTHIA_NONCE_ORDER=hendrix: {error}")
+    return _NONCE_ORDERS[key]
 
 
 def _header_work_space(generation: Any) -> str:
@@ -288,11 +310,20 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self.governor = HashrateGovernor()
         self._governor_config_at = float("-inf")
         self._policy_mode = os.getenv("PYTHIA_OPERATING_POLICY", "model").strip().lower()
+        self._nonce_order = resolve_nonce_order(os.getenv("PYTHIA_NONCE_ORDER", "m32"))
         try:
             self._max_window_seconds = float(os.getenv("PYTHIA_MAX_WINDOW_SECONDS", "2.0"))
         except ValueError:
             self._max_window_seconds = 2.0
         self._idle_seen_ms = 0.0
+        # Learners for the seeded questions recovery.effect, precompute.depth
+        # and policy.promotion (see docs/LEARNING.md).
+        self.recovery_effects = RecoveryEffects()
+        self._ready_record = [0, 0]  # windows that found a plan ready, windows
+        self._last_window_s: float | None = None
+        self._shadow: ShadowTrial | None = None
+        self._shadow_tried: set[tuple[str, ...]] = set()
+        self._shadow_published: str | None = None
         self._bound_session: str | None = None
         try:
             self._memory_every_s = float(os.getenv("PYTHIA_INTELLIGENCE_CHECKPOINT_S", "60"))
@@ -425,6 +456,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self._precompute_wake.set()
 
     def _on_recovery_event(self, kind: str, record: RecoveryRecord) -> None:
+        if kind == "recovery_verified" and hasattr(self, "recovery_effects"):
+            self.recovery_effects.recovery_verified(record.recovery_id, list(record.commands))
         if kind in ("recovery_verified", "recovery_failed") and hasattr(self, "knowledge"):
             try:
                 self.knowledge.publish(
@@ -586,10 +619,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             self._throttled_at = time.monotonic()
 
     def _throttle_holds(self) -> bool:
-        return (
-            self.work_throttled
-            and time.monotonic() - self._throttled_at < self.throttle_probe_s
-        )
+        return self.work_throttled and time.monotonic() - self._throttled_at < self.throttle_probe_s
 
     async def before_hardware_poll(self) -> bool:
         if not self.submission_permitted():
@@ -604,8 +634,10 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 tip = await asyncio.to_thread(self.chain_observer.tip)
                 own_height = None
                 pending = self.session.pending
-                if pending and pending["block_candidate"] and (
-                    pending["outcome"] is None or pending["outcome"] is True
+                if (
+                    pending
+                    and pending["block_candidate"]
+                    and (pending["outcome"] is None or pending["outcome"] is True)
                 ):
                     own_height = await asyncio.to_thread(
                         self.chain_observer.confirmed_height, pending["block_hash"]
@@ -841,22 +873,29 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         derated = self.tuning.last_decision is not None and (
             self.tuning.last_decision.action == "DE_RATE"
         )
-        decision = self.operating_policy.decide(
-            PolicyContext(
-                route=self._execution_route(),
-                lanes=LANES,
-                # The intelligence may climb the Lucas scale ladder; every
-                # solver call still enforces budget <= lucas(rung).
-                max_window=max(cap, self._intelligence_ceiling()),
-                legacy_window=legacy,
-                legacy_lookahead=self.agentic.lookahead,
-                capacity=self.agentic.capacity,
-                chunk_cap=self._chunk_cap(),
-                recovery_active=self.agentic.is_recovery_active(),
-                derate_cap=self._tuned_window if derated else None,
-                max_window_seconds=self._max_window_seconds,
-            )
+        ctx = PolicyContext(
+            route=self._execution_route(),
+            lanes=LANES,
+            # The intelligence may climb the Lucas scale ladder; every
+            # solver call still enforces budget <= lucas(rung).
+            max_window=max(cap, self._intelligence_ceiling()),
+            legacy_window=legacy,
+            legacy_lookahead=self.agentic.lookahead,
+            capacity=self.agentic.capacity,
+            chunk_cap=self._chunk_cap(),
+            recovery_active=self.agentic.is_recovery_active(),
+            derate_cap=self._tuned_window if derated else None,
+            max_window_seconds=self._max_window_seconds,
         )
+        shadow = self._shadow
+        # A promoted candidate's levers tighten the live context; a candidate
+        # still in shadow decides beside the policy without acting.
+        decision = self.operating_policy.decide(shadow.context(ctx) if shadow else ctx)
+        if shadow is not None and shadow.status == "shadow":
+            try:
+                shadow.observe(ctx, decision)
+            except Exception as exc:  # a shadow trial must never stop mining
+                LOG.warning("shadow trial failed: %s", exc)
         # One authority over precompute depth: the policy's model once plan
         # latency is measured, the controller's reactive adaptation before.
         measured = decision.source == "model" and "precompute_wait_ms" in decision.expected
@@ -947,6 +986,13 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     world.get("invalidation_rate", {}).get("per_hour_mean"), 2
                 ),
             }
+            sags = {
+                name: route["sag"]
+                for name, route in sorted(world.get("routes", {}).items())
+                if route.get("sag") is not None
+            }
+            if sags:
+                learned["sag"] = {name: sig(value) for name, value in sags.items()}
             world_fact = self.knowledge.publish(
                 "mining.world_model", "mining.world", learned, evidence="measured"
             )
@@ -980,6 +1026,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             self.learning.law(
                 "shares.follow.work", expected=governor.expected_shares, observed=governor.shares
             )
+            self._follow_promotion()
             self.learning.publish()
         except Exception as exc:
             LOG.warning("knowledge not shared this cycle: %s", exc)
@@ -1033,6 +1080,77 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         if approved != self._live_submit_approved:
             LOG.info("live submission %s", "approved" if approved else "closed (shadow)")
         self._live_submit_approved = approved
+
+    def _forecast_plan_ready(self) -> tuple[float, float] | None:
+        """precompute.depth: the depth model's forecast and the base rate's,
+        committed before the executor looks at the queue."""
+        try:
+            if self._last_window_s is None:
+                return None
+            p = self.world.plan_ready_probability(self.agentic.lookahead, self._last_window_s)
+            if p is None:
+                return None
+            ready, n = self._ready_record
+            return p, (ready + 1) / (n + 2)
+        except Exception as exc:  # learning must never stop mining
+            LOG.warning("plan-ready forecast failed: %s", exc)
+            return None
+
+    def _score_plan_ready(self, forecast: tuple[float, float] | None, miss: str | None) -> None:
+        # Recovery and admission holds are not a depth question.
+        if miss in ("recovery", "precompute_unavailable"):
+            return
+        ready = miss is None
+        self._ready_record[0] += int(ready)
+        self._ready_record[1] += 1
+        if forecast is not None:
+            try:
+                self.learning.score_probability("precompute.depth", ready, *forecast)
+            except Exception as exc:
+                LOG.warning("plan-ready scoring failed: %s", exc)
+
+    def _observe_recovery_effect(self, record: ExecutionRecord) -> None:
+        """recovery.effect: the windows before and after each verified recovery."""
+        if record.completion_state is not CompletionState.COMPLETE:
+            return
+        if record.elapsed_seconds > 0:
+            self._last_window_s = record.elapsed_seconds
+        try:
+            if self.recovery_effects.observe_window(record.hash_count, record.elapsed_seconds):
+                self.knowledge.publish(
+                    "mining.recovery_effect",
+                    "salamander.recovery_effect",
+                    self.recovery_effects.snapshot(),
+                    evidence="measured",
+                )
+        except Exception as exc:  # learning must never stop mining
+            LOG.warning("recovery effect not shared: %s", exc)
+
+    def _follow_promotion(self) -> None:
+        """policy.promotion: take a twin-round winner into shadow; publish its status."""
+        if self._shadow is None or self._shadow.status != "shadow":
+            candidate = self.knowledge.observe("promotion.candidate")
+            if (
+                candidate is not None
+                and not self.knowledge.stale(candidate)
+                and candidate.value.get("verdict") == "shadow"
+                and self._shadow is None
+            ):
+                levers = tuple(candidate.value.get("levers") or ())
+                if applicable(levers) and levers not in self._shadow_tried:
+                    self._shadow_tried.add(levers)
+                    self._shadow = ShadowTrial(levers, self.world)
+        if self._shadow is None:
+            return
+        snapshot = self._shadow.snapshot()
+        key = f"{snapshot['status']}:{snapshot['epochs']}"
+        if key != self._shadow_published:
+            self.knowledge.publish(
+                "mining.promotion_gate", "promotion.status", snapshot, evidence="measured"
+            )
+            self._shadow_published = key
+        if self._shadow.status == "rejected":
+            self._shadow = None
 
     def _commit_forecasts(self, plan: SearchPlan) -> None:
         """The world model's forecasts for ``plan``, and the nulls', before it runs."""
@@ -1146,8 +1264,9 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 done += take
             return None, None, attempts
 
+        nonce_order = self._nonce_order
         return ExecutionRouter(
-            self.execution_hasher, cpu_sweep, nonce_order=lambda _plan: NONCE_ORDER_M32
+            self.execution_hasher, cpu_sweep, nonce_order=lambda _plan: nonce_order
         )
 
     def _identity_is(self, key: tuple[str, int, str]) -> bool:
@@ -1357,12 +1476,14 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     "cap_hs": self.governor.cap_hs,
                 }
                 return False
+            ready_forecast = self._forecast_plan_ready()
             plan = self.agentic.consume_plan(timeout_ms=0)
             fallback_reason = (
                 None
                 if plan is not None
                 else self.agentic.telemetry.last_consume_miss_reason or "queue_empty"
             )
+            self._score_plan_ready(ready_forecast, fallback_reason)
             reserved: LeaseRecord | None = None
             lease: LeaseRecord | None = None
             if plan is not None:
@@ -1491,6 +1612,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self.world.tick(now)
         self._score_forecasts(final)
         self.world.observe_execution(final)
+        self._observe_recovery_effect(final)
         self._share_knowledge(now)
         self.loss.observe_execution(final, self.world, started_at=now - final.elapsed_seconds)
         idle_ms = self.agentic.telemetry.executor_idle_waiting_for_plan_ms

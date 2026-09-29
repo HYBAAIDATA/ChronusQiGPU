@@ -414,3 +414,48 @@ def test_questions_are_immutable_once_seeded():
 
     with pytest.raises(FrozenInstanceError):
         EVENT.kind = "law"
+
+
+def test_the_miner_answers_the_three_formerly_open_questions():
+    from test_pool_only_mining import _pool_only_coordinator
+    from manifold_pool_coordinator import PoolEndpoint
+
+    coord = _pool_only_coordinator([PoolEndpoint("127.0.0.1", 1, "ckpool")])
+    route = coord._execution_route()
+
+    # precompute.depth: nothing to forecast before a window has run...
+    assert coord._forecast_plan_ready() is None
+    coord._observe_recovery_effect(_record(route, 1_000, 1_000, 0.010, 0.0, False))
+    coord.world.observe_plan_latency(0.001)
+    forecast = coord._forecast_plan_ready()
+    assert forecast is not None and forecast[1] == 0.5  # base rate: (0 + 1) / (0 + 2)
+    coord._score_plan_ready(forecast, None)  # a plan was ready
+    coord._score_plan_ready(coord._forecast_plan_ready(), "queue_empty")
+    coord._score_plan_ready(coord._forecast_plan_ready(), "recovery")  # not a depth question
+    assert coord._ready_record == [1, 2]
+    assert coord.learning.status("precompute.depth")["n"] == 2
+
+    # recovery.effect: sixteen windows before, the recovery, sixteen after.
+    for _ in range(16):
+        coord._observe_recovery_effect(_record(route, 1_000, 1_000, 0.020, 0.0, False))
+    from mla1517.mining.recovery_authority import RecoveryRecord, RecoveryState
+
+    record = RecoveryRecord("r1", "salamander", ("THROTTLE",), "test", RecoveryState.VERIFIED)
+    coord._on_recovery_event("recovery_verified", record)
+    for _ in range(16):
+        coord._observe_recovery_effect(_record(route, 1_000, 1_000, 0.010, 0.0, False))
+    effect = coord.knowledge.observe("salamander.recovery_effect").value
+    assert effect["by_commands"]["THROTTLE"]["last_ratio"] == pytest.approx(2.0)
+    assert coord.learning.status("recovery.effect")["status"] == "answered"
+
+    # policy.promotion: a twin-round winner goes into shadow and says so.
+    coord.knowledge.publish(
+        "discovery.engine",
+        "promotion.candidate",
+        {"levers": ["envelope_half"], "verdict": "shadow"},
+        evidence="simulated",
+    )
+    coord._follow_promotion()
+    assert coord._shadow is not None and coord._shadow.levers == ("envelope_half",)
+    assert coord.knowledge.observe("promotion.status").value["status"] == "shadow"
+    assert coord.learning.status("policy.promotion")["status"] == "answered"

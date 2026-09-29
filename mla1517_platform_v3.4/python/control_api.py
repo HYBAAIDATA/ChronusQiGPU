@@ -52,6 +52,9 @@ _WORKER_SPECS = {
     "salamander": "salamander_engine.py",
     "discovery": "discovery_runtime.py",
 }
+# Workers that drive the mining device. The discovery worker experiments on a
+# simulated twin, so it runs (and learns) on a host with no device bound.
+_DEVICE_WORKERS = frozenset({"agentic-mining", "salamander"})
 _LOCK_HELD = False
 _LOCK_GUARD = threading.Lock()
 _AUDIT: AppendOnlyAudit | None = None
@@ -283,10 +286,13 @@ class ControlPlane:
         for handle in self.handles.values():
             if not self.autostart:
                 handle.record.state = "disabled"
-            elif not self.mmio_device:
+            elif not self._device_ready(handle):
                 handle.record.state = "armed_no_device"
             else:
                 handle.record.state = "stopped"
+
+    def _device_ready(self, handle: WorkerHandle) -> bool:
+        return bool(self.mmio_device) or handle.record.worker_id not in _DEVICE_WORKERS
 
     def ensure_workers(self) -> None:
         with self.lock:
@@ -298,7 +304,7 @@ class ControlPlane:
             return
         if not self.autostart:
             return
-        if not self.mmio_device:
+        if not self._device_ready(handle):
             return
         if handle.process is not None and handle.process.poll() is None:
             return
@@ -421,7 +427,7 @@ class ControlPlane:
                 record = handle.record
                 if enabled:
                     if record.state == "disabled":
-                        target = "stopped" if self.mmio_device else "armed_no_device"
+                        target = "stopped" if self._device_ready(handle) else "armed_no_device"
                         record.transition(target, self.audit, "mining_start")
                 else:
                     self._retire_handle(handle, "mining_stop")

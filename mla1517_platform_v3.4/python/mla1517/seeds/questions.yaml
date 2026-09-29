@@ -72,32 +72,53 @@ questions:
       path: [discoveries]
 
   - id: device.sag
-    kind: open
+    kind: fact
     ask: Does the device slow down as a window runs?
     why: >-
-      Under strong sag the learned policy does worse than the fixed window
-      (a recorded expected failure), and nothing in the linear route model
-      can see it.
+      A device that slows within a window bends elapsed = o + hashes / H;
+      the linear model then collapses its overhead to zero and would pick
+      the smallest window. The policy switches to measured throughput when
+      the line misfits, and this says why.
+    answered_by:
+      topic: mining.world
+      path: [sag]
     how: >-
-      Compare window.elapsed's forecast errors against window length: a sag
-      shows as errors that grow with the window.
+      The world model keeps each window size's measured elapsed; a quadratic
+      through them gives the marginal time per hash, and sag is how much
+      slower a hash is at the largest measured window than at the smallest.
 
   - id: precompute.depth
-    kind: open
-    ask: Is the precompute depth right for the current job churn?
+    kind: probability
+    ask: Will a precomputed plan be ready when the executor needs one?
     why: >-
-      Depth beyond the wait-free minimum only produces plans that the next
-      job discards; too little depth leaves the executor waiting.
-    how: >-
-      The policy predicts executor waiting per window (precompute_wait_ms);
-      forecast it and score it against the loss ledger's measured idle time.
+      The precompute depth is chosen from a model of plan latency and job
+      churn. A plan that is not ready costs a synchronous build; one that is
+      ready too early is discarded by the next job. If the model predicts
+      readiness better than the base rate, the depth rests on evidence.
+    learner: mining.operating_policy
+    baseline: the fraction of windows so far that found a plan ready
+    min_n: 30
 
   - id: recovery.effect
-    kind: open
+    kind: fact
     ask: Which Salamander recoveries actually restore throughput?
     why: >-
       A recovery that is verified but does not restore throughput is a
       symptom treated, not a cause removed.
+    answered_by:
+      topic: salamander.recovery_effect
+      path: [by_commands]
     how: >-
-      Salamander publishes salamander.recovery; compare the route's measured
-      hash rate in the windows before and after each one.
+      For each verified recovery, the miner compares its measured hash rate
+      over the windows before it with the windows after it.
+
+  - id: policy.promotion
+    kind: fact
+    ask: Has a candidate policy earned its place over the running one?
+    why: >-
+      A lever the discovery worker finds in the twin is only a hypothesis.
+      It replaces the running policy after winning twice: on fresh paired
+      seeds in the twin, then in shadow on the live miner's measurements.
+    answered_by:
+      topic: promotion.status
+      path: [status]

@@ -8,6 +8,8 @@ on:
   pull_request:
     paths:
       - "mla1517_platform_v3.4/python/mla1517/mining/world_model.py"
+      - "mla1517_platform_v3.4/python/mla1517/mining/promotion.py"
+      - "mla1517_platform_v3.4/python/test_promotion_gate.py"
       - "mla1517_platform_v3.4/python/mla1517/mining/operating_policy.py"
       - "mla1517_platform_v3.4/python/mla1517/mining/loss_ledger.py"
       - "mla1517_platform_v3.4/python/mla1517/mining/hashrate_governor.py"
@@ -45,6 +47,9 @@ jobs:
             floor: "0.85"
           - module: loss_ledger
             tests: test_loss_ledger_logic.py test_mining_intelligence.py
+            floor: "0.85"
+          - module: promotion
+            tests: test_promotion_gate.py
             floor: "0.85"
           - module: learning
             path: mla1517/learning.py

@@ -262,3 +262,69 @@ def test_entry_points_must_exist(tmp_path):
             "runs python -m mining.production_miner, which does not exist",
         ),
     ]
+
+
+def test_an_in_tree_distribution_ci_installs_alone_must_declare_its_imports(tmp_path):
+    # The push gate installs mla1517_platform_v3.4 by itself; learning.py
+    # imported yaml, which only the root pyproject declared.
+    root = _repo(tmp_path)
+    platform = """
+    [project]
+    name = "platform"
+    dependencies = ["numpy>=1.26"]
+
+    [project.optional-dependencies]
+    test = ["pytest>=7"]
+
+    [tool.setuptools]
+    package-dir = {"" = "python"}
+
+    [tool.pytest.ini_options]
+    testpaths = ["python"]
+    """
+    _write(root, "platform/pyproject.toml", platform)
+    _write(root, "platform/python/pkg/__init__.py", "")
+    _write(root, "platform/python/pkg/learning.py", "import yaml\n")
+    _write(root, "platform/python/pkg/audit.py", "def load():\n    import sympy\n")
+    _write(
+        root,
+        "platform/python/test_learning.py",
+        "import pytest\nimport pkg.learning\nfrom pkg import audit\n",
+    )
+    _write(
+        root,
+        ".github/workflows/gate.yml",
+        """
+        on:
+          push:
+            branches: [main]
+        jobs:
+          canonical:
+            runs-on: ubuntu-latest
+            steps:
+              - working-directory: platform
+                run: python -m pip install -e ".[test]"
+              - working-directory: platform
+                run: python -m pytest python -q
+        """,
+    )
+    findings = _messages(sentry.check_distribution_deps(root), "DS02")
+    assert sorted(findings) == [
+        (
+            "error",
+            "platform/python/pkg/learning.py",
+            "imports 'yaml' unguarded, which platform/pyproject.toml does not declare "
+            "(.github/workflows/gate.yml installs platform as '.[test]')",
+        ),
+        (
+            "warning",
+            "platform/python/pkg/audit.py",
+            "optionally imports 'sympy', which no extra of platform/pyproject.toml declares",
+        ),
+    ]
+    _write(
+        root,
+        "platform/pyproject.toml",
+        platform.replace('"numpy>=1.26"', '"numpy>=1.26", "pyyaml>=6", "sympy"'),
+    )
+    assert _messages(sentry.check_distribution_deps(root), "DS02") == []

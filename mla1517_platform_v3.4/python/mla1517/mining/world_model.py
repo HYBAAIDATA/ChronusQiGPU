@@ -159,6 +159,53 @@ class RouteModel:
                 worst = max(worst, abs(measured / predicted - 1.0))
         return worst
 
+    def sag(self, min_samples: int = 3) -> float | None:
+        """How much slower a hash is at the largest measured window than at
+        the smallest: ``m(h_max) / m(h_min) - 1`` for the marginal time per
+        hash ``m(h) = de/dh`` of a quadratic through the measured sizes.
+
+        Positive: the device slows as a window runs (it heats, throttles or
+        drains a queue); zero: the line holds; negative: it speeds up. None
+        until three window sizes are each measured ``min_samples`` times.
+        Model-free in the sense that matters: it uses only the measured
+        means of each size, never the fitted line.
+        """
+        points = [
+            (h, e)
+            for h in sorted(self.rungs)
+            if (e := self.measured_elapsed(h, min_samples)) is not None
+        ]
+        if len(points) < 3:
+            return None
+        scale = float(points[-1][0])
+        xs = [h / scale for h, _ in points]
+        ys = [e for _, e in points]
+        s = [sum(x**k for x in xs) for k in range(5)]
+        t = [sum(y * x**k for x, y in zip(xs, ys)) for k in range(3)]
+        matrix = [[s[0], s[1], s[2]], [s[1], s[2], s[3]], [s[2], s[3], s[4]]]
+
+        def det(m: list[list[float]]) -> float:
+            return (
+                m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
+                - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
+                + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])
+            )
+
+        d = det(matrix)
+        if abs(d) < 1e-18:
+            return None
+        coef = []
+        for col in range(3):
+            m = [row[:] for row in matrix]
+            for r in range(3):
+                m[r][col] = t[r]
+            coef.append(det(m) / d)
+        _, b, c = coef
+        low, high = b + 2 * c * xs[0], b + 2 * c * xs[-1]
+        if low <= 0:
+            return None
+        return high / low - 1.0
+
     @property
     def _spread(self) -> float:
         """Coefficient of variation of window sizes seen (fit identifiability)."""
@@ -207,6 +254,7 @@ class RouteModel:
             "window_spread": round(self._spread, 4),
             "measured_windows": sum(1 for r in self.rungs.values() if r[2] >= 3),
             "misfit": round(self.misfit(), 4),
+            "sag": None if (sag := self.sag()) is None else round(sag, 4),
         }
 
 
@@ -269,6 +317,27 @@ class MiningWorldModel:
             return None
         ordered = sorted(self.plan_latency_recent)
         return ordered[max(0, math.ceil(p * len(ordered)) - 1)]
+
+    def plan_ready_probability(self, depth: int, window_s: float) -> float | None:
+        """The operating policy's own model of whether a plan will be ready.
+
+        With ``depth`` plans queued, a plan has ``depth`` windows of lead
+        time (the model the depth is chosen by: waiting ``max(0, l - d W)``).
+        A new job during the window drains the queue, leaving only the rest
+        of the window, uniform on ``[0, W]``: ready then with probability
+        ``E[max(0, 1 - l / W)]``. Latencies ``l`` are the recent builds;
+        None until one is measured.
+        """
+        latencies = self.plan_latency_recent
+        if not latencies or window_s <= 0:
+            return None
+        n = len(latencies)
+        lead = max(1, depth) * window_s
+        steady = (sum(1 for x in latencies if x <= lead) + 0.5) / (n + 1)
+        drained = sum(max(0.0, 1.0 - x / window_s) for x in latencies) / n
+        no_job = math.exp(-self.bind.mean * window_s)
+        p = no_job * steady + (1.0 - no_job) * drained
+        return min(0.99, max(0.01, p))
 
     def snapshot(self) -> dict[str, Any]:
         return {

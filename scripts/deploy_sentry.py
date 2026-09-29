@@ -6,8 +6,11 @@ its packaging and its deployment disagreed without any test noticing:
 DS01 dead-config    a variable a deployment sets (Dockerfile ENV, compose,
                     workflow, Bicep, .env.example) that no code reads
 DS02 python-deps    a runtime import that pyproject does not declare, a
-                    runtime module the image excludes, or a declared
-                    distribution that nothing imports
+                    runtime module the image excludes, a declared
+                    distribution that nothing imports, or an import that
+                    an in-tree distribution's tests or entry points need
+                    but that distribution's own pyproject (with the extras
+                    CI or an image installs) does not declare
 DS03 native-build   ``make -C DIR`` with no DIR/Makefile, or a native library
                     the runtime loads that the deploy image never builds
 DS04 ci-triggers    a workflow that runs twice per PR commit, or one filtered
@@ -36,6 +39,7 @@ import fnmatch
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 import tomllib
@@ -43,6 +47,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import yaml
+
+from scripts.import_audit import source_roots
 
 ROOT = Path(__file__).resolve().parents[1]
 PLATFORM = "mla1517_platform_v3.4/python"
@@ -310,6 +316,7 @@ def _dist_name(requirement: str) -> str:
 
 
 def declared_distributions(root: Path) -> tuple[set[str], dict[str, set[str]]]:
+    """Core and extra distributions declared by ``root/pyproject.toml``."""
     data = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
     project = data.get("project", {})
     core = {_dist_name(r) for r in project.get("dependencies", [])}
@@ -370,15 +377,28 @@ def runtime_closure(
             resolved = _resolve_local(target.split(":")[0], roots)
             if resolved:
                 queue.append(resolved)
+    return import_closure(root, queue, roots)
+
+
+def import_closure(
+    root: Path, queue: list[Path], roots: list[Path]
+) -> tuple[dict[str, Path], dict[str, tuple[str, bool]]]:
+    """Local modules reachable from ``queue`` through ``roots``, and third-party imports.
+
+    A module reached only through guarded imports is optional, and so is
+    everything it imports: a lazy ``from pkg import x`` inside a function or a
+    ``try`` cannot break import of the entry point.
+    """
+    pending: list[tuple[Path, bool]] = [(p, True) for p in queue]
     stdlib = set(sys.stdlib_module_names) | {"__future__"}
     local: dict[str, Path] = {}
     third: dict[str, tuple[str, bool]] = {}
-    seen: set[Path] = set()
-    while queue:
-        path = queue.pop()
-        if path in seen:
+    seen: dict[Path, bool] = {}
+    while pending:
+        path, reached = pending.pop()
+        if path in seen and (seen[path] or not reached):
             continue
-        seen.add(path)
+        seen[path] = reached
         local[_rel(path, root)] = path
         try:
             tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"))
@@ -387,42 +407,44 @@ def runtime_closure(
         parents = {
             child: parent for parent in ast.walk(tree) for child in ast.iter_child_nodes(parent)
         }
+        # A script's own directory is on sys.path when it runs.
+        module_roots = [path.parent, *roots]
         for node in ast.walk(tree):
+            if not isinstance(node, (ast.Import, ast.ImportFrom)):
+                continue
+            required = reached and not _guarded(node, parents)
             modules: list[str] = []
             if isinstance(node, ast.Import):
                 modules = [alias.name for alias in node.names]
-            elif isinstance(node, ast.ImportFrom):
-                if node.level:
-                    package = path.parent
-                    for _ in range(node.level - 1):
-                        package = package.parent
-                    target = (
-                        package.joinpath(*(node.module or "").split("."))
-                        if node.module
-                        else package
-                    )
-                    for candidate in (target.with_suffix(".py"), target / "__init__.py"):
-                        if candidate.is_file():
-                            queue.append(candidate)
-                    for alias in node.names:
-                        sub = target / f"{alias.name}.py"
-                        if sub.is_file():
-                            queue.append(sub)
-                    continue
-                if node.module:
-                    modules = [node.module] + [f"{node.module}.{a.name}" for a in node.names]
-            # A script's own directory is on sys.path when it runs.
-            module_roots = [path.parent, *roots]
+            elif node.level:
+                package = path.parent
+                for _ in range(node.level - 1):
+                    package = package.parent
+                target = (
+                    package.joinpath(*(node.module or "").split(".")) if node.module else package
+                )
+                for candidate in (target.with_suffix(".py"), target / "__init__.py"):
+                    if candidate.is_file():
+                        pending.append((candidate, required))
+                for alias in node.names:
+                    sub = target / f"{alias.name}.py"
+                    if sub.is_file():
+                        pending.append((sub, required))
+                continue
+            elif node.module:
+                modules = [node.module] + [f"{node.module}.{a.name}" for a in node.names]
             for module in modules:
                 top = module.split(".")[0]
                 if top in stdlib:
                     continue
                 if _is_local_top(top, module_roots):
-                    resolved = _resolve_local(module, module_roots)
-                    if resolved:
-                        queue.append(resolved)
+                    parts = module.split(".")
+                    # Importing a.b.c runs a/__init__.py and a/b/__init__.py first.
+                    for depth in range(1, len(parts) + 1):
+                        resolved = _resolve_local(".".join(parts[:depth]), module_roots)
+                        if resolved:
+                            pending.append((resolved, required))
                     continue
-                required = not _guarded(node, parents)
                 previous = third.get(top)
                 if previous is None or (required and not previous[1]):
                     third[top] = (_rel(path, root), required)
@@ -513,7 +535,220 @@ def check_python_deps(root: Path) -> list[Finding]:
                     f"remove {dist!r} from pyproject.toml",
                 )
             )
-    return findings
+    return findings + check_distribution_deps(root)
+
+
+# In-tree distributions: a folder with its own pyproject.toml that CI or an
+# image installs on its own (``cd DIR && pip install -e ".[test]"``) gets only
+# what THAT pyproject declares, not the root one. The push gate failed at
+# collection for five pushes because mla1517/learning.py imports yaml and only
+# the root pyproject declared pyyaml.
+
+_PIP_INSTALL = re.compile(r"\bpip3?\s+install\s+(.*)")
+_PYTEST = re.compile(r"\bpytest\b(.*)")
+_UVICORN = re.compile(r"\b(?:uvicorn|gunicorn)\s+(?:.*\s)?([\w.]+):\w+")
+
+
+@dataclass(frozen=True)
+class _Install:
+    dist: Path
+    extras: frozenset[str]
+    source: str  # the file that installs it, or "" when nothing does
+    commands: tuple[tuple[Path, str], ...]  # (working directory, command) run alongside
+
+
+def _split_commands(command: str) -> list[str]:
+    return [c.strip() for c in re.split(r"&&|\|\||;|\n", command) if c.strip()]
+
+
+def _words(command: str) -> list[str]:
+    try:
+        return shlex.split(command)
+    except ValueError:
+        return command.split()
+
+
+def _install_targets(command: str) -> list[tuple[str, frozenset[str]]]:
+    """(path, extras) for every ``pip install`` argument in ``command``."""
+    out = []
+    for part in _split_commands(command):
+        match = _PIP_INSTALL.search(part)
+        if not match:
+            continue
+        for word in _words(match.group(1)):
+            spec = re.fullmatch(r"([^\[\]\s]+)(?:\[([^\]]*)\])?", word)
+            if word.startswith("-") or not spec:
+                continue
+            extras = frozenset(e.strip() for e in (spec.group(2) or "").split(",") if e.strip())
+            out.append((spec.group(1), extras))
+    return out
+
+
+def _deploy_units(root: Path) -> list[tuple[str, list[tuple[Path, str]]]]:
+    """(file, [(working directory, command)]) per workflow job, Dockerfile, compose file."""
+    units: list[tuple[str, list[tuple[Path, str]]]] = []
+    for path in _walk(root):
+        rel = _rel(path, root)
+        try:
+            if path.name.startswith("Dockerfile"):
+                # The build context: the Dockerfile's folder when it is a distribution.
+                cwd = path.parent if (path.parent / "pyproject.toml").is_file() else root
+                units.append((rel, [(cwd, c) for c in _commands(path)]))
+            elif path.suffix in {".yml", ".yaml"} and rel.startswith(".github/workflows/"):
+                data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+                for job in (data.get("jobs") or {}).values():
+                    if not isinstance(job, dict):
+                        continue
+                    default = ((job.get("defaults") or {}).get("run") or {}).get(
+                        "working-directory", "."
+                    )
+                    steps = [s for s in job.get("steps") or [] if isinstance(s, dict)]
+                    units.append(
+                        (
+                            rel,
+                            [
+                                (root / str(s.get("working-directory", default)), str(s["run"]))
+                                for s in steps
+                                if "run" in s
+                            ],
+                        )
+                    )
+            elif path.suffix in {".yml", ".yaml"} and "compose" in path.name:
+                units.append((rel, [(path.parent, c) for c in _commands(path)]))
+        except (OSError, UnicodeDecodeError, yaml.YAMLError):
+            continue
+    return units
+
+
+def _distributions(root: Path) -> list[Path]:
+    """In-tree distributions other than the root one, as import_audit finds them."""
+    return [d for d in source_roots(root) if d != root and (d / "pyproject.toml").is_file()]
+
+
+def _dist_installs(root: Path) -> list[_Install]:
+    dists = {d.resolve(): d for d in _distributions(root)}
+    installs: list[_Install] = []
+    for rel, commands in _deploy_units(root):
+        for cwd, command in commands:
+            for target, extras in _install_targets(command):
+                dist = dists.get((cwd / target).resolve())
+                if dist is not None:
+                    installs.append(_Install(dist, extras, rel, tuple(commands)))
+    installed = {i.dist for i in installs}
+    for dist in dists.values():
+        if dist not in installed:
+            # Nothing installs it: hold it to the whole pyproject, as a warning.
+            _, extras = declared_distributions(dist)
+            installs.append(_Install(dist, frozenset(extras), "", ()))
+    return installs
+
+
+def _pyproject(dist: Path) -> dict:
+    return tomllib.loads((dist / "pyproject.toml").read_text(encoding="utf-8"))
+
+
+def _test_files(target: Path, stop: Path) -> list[Path]:
+    """The test modules pytest collects under ``target``, with their conftests."""
+    if target.is_file():
+        files = [target]
+    else:
+        files = [
+            p
+            for p in _walk(target, {".py"})
+            if p.name.startswith("test_") or p.name.endswith("_test.py") or p.name == "conftest.py"
+        ]
+    here = target if target.is_dir() else target.parent
+    while True:
+        if (here / "conftest.py").is_file():
+            files.append(here / "conftest.py")
+        if here == stop or stop not in here.parents:
+            return files
+        here = here.parent
+
+
+def _install_entries(install: _Install, roots: list[Path]) -> list[Path]:
+    """The files the installed distribution runs: its tests, scripts and commands."""
+    dist = install.dist
+    project = _pyproject(dist)
+    entries: list[Path] = []
+    for target in project.get("project", {}).get("scripts", {}).values():
+        resolved = _resolve_local(target.split(":")[0], roots)
+        if resolved:
+            entries.append(resolved)
+    testpaths = project.get("tool", {}).get("pytest", {}).get("ini_options", {}).get("testpaths")
+    default_tests = [dist / t for t in testpaths] if testpaths else [dist]
+    commands = install.commands or ((dist, "pytest"),)
+    for cwd, command in commands:
+        for part in _split_commands(command):
+            pytest = _PYTEST.search(part)
+            if pytest and "pip" not in part:
+                paths = [cwd / w for w in _words(pytest.group(1)) if (cwd / w).exists()]
+                for target in paths or default_tests:
+                    entries.extend(_test_files(target, dist))
+            for match in _PY_RUN.finditer(part):
+                module, script = match.group(2), match.group(3)
+                if module:
+                    resolved = _resolve_local(module, [cwd, *roots])
+                    main = _resolve_local(f"{module}.__main__", [cwd, *roots])
+                    entries.extend(p for p in (resolved, main) if p)
+                elif script:
+                    entries.extend(p for p in (cwd / script, dist / script) if p.is_file())
+            for module in _UVICORN.findall(part):
+                resolved = _resolve_local(module, [cwd, *roots])
+                if resolved:
+                    entries.append(resolved)
+    return entries
+
+
+def check_distribution_deps(root: Path) -> list[Finding]:
+    findings: dict[tuple[str, str, str], Finding] = {}
+    for install in _dist_installs(root):
+        dist = install.dist
+        rel = _rel(dist, root)
+        package_dir = (
+            _pyproject(dist).get("tool", {}).get("setuptools", {}).get("package-dir", {}).get("")
+        )
+        roots = list(
+            dict.fromkeys(
+                [*([dist / package_dir] if package_dir else []), dist, *source_roots(root)]
+            )
+        )
+        core, extras = declared_distributions(dist)
+        have = {
+            _import_name(d) for d in core.union(*(extras.get(e, set()) for e in install.extras))
+        }
+        anywhere = {_import_name(d) for d in core.union(*extras.values())}
+        how = f'.[{",".join(sorted(install.extras))}]' if install.extras else "."
+        where = (
+            f"{install.source} installs {rel} as {how!r}"
+            if install.source
+            else f"nothing installs {rel}; held to all its extras"
+        )
+        _, third = import_closure(root, _install_entries(install, roots), roots)
+        for top, (importer, required) in sorted(third.items()):
+            if required and top not in have:
+                severity = "error" if install.source else "warning"
+                message = (
+                    f"imports {top!r} unguarded, which {rel}/pyproject.toml does not declare "
+                    f"({where})"
+                )
+                fix = (
+                    f"add the distribution providing {top!r} to {rel}/pyproject.toml "
+                    "dependencies (or to the extra that install uses)"
+                )
+            elif not required and top not in anywhere and importer.startswith(f"{rel}/"):
+                # Optional imports of code outside the distribution are its owner's to declare.
+                severity = "warning"
+                message = (
+                    f"optionally imports {top!r}, which no extra of {rel}/pyproject.toml declares"
+                )
+                fix = f"declare it in an optional-dependencies extra of {rel}/pyproject.toml"
+            else:
+                continue
+            findings.setdefault(
+                (importer, top, severity), Finding("DS02", severity, importer, message, fix)
+            )
+    return list(findings.values())
 
 
 # ─────────────────────────────── DS03 native build ────────────────────────────── #

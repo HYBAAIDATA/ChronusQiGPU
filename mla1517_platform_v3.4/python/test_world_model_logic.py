@@ -288,3 +288,66 @@ def test_measured_sizes_survive_a_restart_and_are_bounded():
     restored = MiningWorldModel()
     restored.import_state(world.export_state())
     assert restored.route(ROUTE).rungs == route.rungs
+
+
+def _sized_route(elapsed_of, sizes=(64, 192, 320, 512, 992)) -> RouteModel:
+    route = RouteModel(forgetting=1.0)
+    for _ in range(3):
+        for hashes in sizes:
+            route.observe(hashes, elapsed_of(hashes), 0.0)
+    return route
+
+
+def test_sag_is_the_growth_of_the_marginal_time_per_hash():
+    # e(h) = 0.5 ms + 1 us * h * (1 + h / 250): m(h) = 1 us * (1 + h / 125).
+    route = _sized_route(lambda h: 0.0005 + h * 1e-6 * (1 + h / 250))
+    assert route.sag() == pytest.approx((1 + 992 / 125) / (1 + 64 / 125) - 1, rel=1e-6)
+    assert route.snapshot()["sag"] == pytest.approx(route.sag(), abs=1e-4)
+
+
+def test_a_straight_line_has_no_sag_and_too_few_sizes_say_nothing():
+    assert _sized_route(lambda h: 0.0005 + h * 1e-6).sag() == pytest.approx(0.0, abs=1e-9)
+    assert _sized_route(lambda h: 0.0005 + h * 1e-6, sizes=(64, 992)).sag() is None
+    # Speeding up (a warming cache) is negative sag.
+    assert _sized_route(lambda h: 0.0005 + h * 1e-6 * (1 - h / 4000)).sag() < 0
+
+
+def test_plan_readiness_follows_the_depth_model():
+    world = MiningWorldModel()
+    assert world.plan_ready_probability(2, 0.01) is None
+    for latency in (0.001, 0.002, 0.015, 0.030):
+        world.observe_plan_latency(latency)
+    world.bind.prior_events = 0.0  # no new jobs: only the lead time matters
+    # d W = 20 ms covers three of four builds: (3 + 0.5) / 5.
+    assert world.plan_ready_probability(2, 0.010) == pytest.approx(0.7)
+    assert world.plan_ready_probability(4, 0.010) == pytest.approx(0.9)
+    # Jobs every 10 ms on average: mostly the drained queue decides.
+    world.bind.prior_events = 100.0 * world.bind.prior_seconds
+    no_job = math.exp(-world.bind.mean * 0.010)
+    drained = ((1 - 0.1) + (1 - 0.2)) / 4
+    assert world.plan_ready_probability(2, 0.010) == pytest.approx(
+        no_job * 0.7 + (1 - no_job) * drained
+    )
+
+
+def test_sag_needs_exactly_three_sizes_and_is_scale_free():
+    three = _sized_route(lambda h: 0.0005 + h * 1e-6 * (1 + h / 250), sizes=(64, 320, 992))
+    assert three.sag() == pytest.approx((1 + 992 / 125) / (1 + 64 / 125) - 1, rel=1e-6)
+    # A marginal time that is not positive at the smallest size has no ratio.
+    falling = _sized_route(lambda h: 0.0005 - 1e-6 * h + 2e-9 * h * h, sizes=(64, 320, 992))
+    assert falling.sag() is None
+
+
+def test_plan_readiness_is_clamped_and_depth_is_at_least_one():
+    world = MiningWorldModel()
+    world.bind.prior_events = 0.0
+    for _ in range(200):
+        world.observe_plan_latency(0.0001)
+    assert world.plan_ready_probability(2, 0.010) == 0.99  # (200.5 / 201), clamped
+    world = MiningWorldModel()
+    world.bind.prior_events = 0.0
+    for latency in (0.005, 0.015):
+        world.observe_plan_latency(latency)
+    # Depth 0 counts as one plan of lead: 10 ms covers one of two builds.
+    assert world.plan_ready_probability(0, 0.010) == pytest.approx(1.5 / 3)
+    assert world.plan_ready_probability(2, 0.0) is None

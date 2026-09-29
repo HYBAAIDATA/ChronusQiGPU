@@ -355,7 +355,7 @@ def state_to_graph(state: np.ndarray, threshold: Optional[float] = None) -> np.n
 def adjacency_to_digraph(adjacency: np.ndarray):
     """Optional convenience: adjacency matrix -> networkx.DiGraph.
 
-    networkx is not a declared dependency; this is a thin optional view.
+    networkx is optional (the ``graph`` extra); this is a thin view.
     """
     import networkx as nx
 

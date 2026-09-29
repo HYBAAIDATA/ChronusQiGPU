@@ -115,3 +115,21 @@ def test_campaigns_follow_the_world_not_the_clock():
     assert not dr.campaign_due("w2", False, "w1", every / 2)  # moved, too soon
     assert dr.campaign_due("w2", False, "w1", every)
     assert dr.campaign_due("w1", True, "w1", every)  # its findings decohered
+
+
+def test_a_live_applicable_finding_enters_the_promotion_gate_and_a_widening_one_never_does():
+    effects = {"envelope_half": 0.05, "rung_down": -0.05, "envelope_double": 0.2}
+
+    def twin(levers, _state):
+        return sum(effects[lever] for lever in levers)
+
+    fabric = KnowledgeFabric()
+    _world(fabric)
+    summary = dr.run_campaign(fabric, cycles=30, seeds=5, twin=twin, levers={k: k for k in effects})
+    assert "discovery.policy.envelope_double" in summary["published"]  # found, but...
+    assert summary["promotion_candidates"] == [
+        {"levers": ["envelope_half"], "verdict": "shadow"}
+    ]  # ...only the tightening lever is a candidate
+    candidate = fabric.observe("promotion.candidate")
+    assert candidate.evidence == "simulated"
+    assert candidate.value["wins"] == dr.TRIAL_SEEDS and candidate.value["p_value"] < 0.05

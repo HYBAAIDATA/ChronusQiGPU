@@ -10,6 +10,9 @@ requires-python = ">=3.11"
 dependencies = [
     "numpy>=1.26,<3",
     "pyyaml>=6.0,<7",
+    # The Hendrix nonce order loads turing_universal_quantum_computer, whose
+    # package imports sympy.
+    "sympy>=1.12,<2",
 ]
 
 [project.optional-dependencies]
