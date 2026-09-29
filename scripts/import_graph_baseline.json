@@ -1,0 +1,92 @@
+{
+  "cycles": [
+    [
+      "Intelligence/__init__.py",
+      "Intelligence/self_healing/__init__.py",
+      "Intelligence/self_healing/governor.py",
+      "Intelligence/self_healing/startup_self_healing.py"
+    ],
+    [
+      "Intelligence/asi/__init__.py",
+      "Intelligence/asi/causal_reasoning.py",
+      "Intelligence/asi/framework.py",
+      "Intelligence/asi/information_integration.py",
+      "Intelligence/asi/predictive_processing.py"
+    ],
+    [
+      "hyba/hybrid/__init__.py",
+      "hyba/hybrid/asic_solver.py",
+      "hyba/hybrid/coordinator.py",
+      "hyba/hybrid/gpu_solver.py",
+      "hyba/hybrid/lucas_partition.py"
+    ],
+    [
+      "hyba/math_ir/__init__.py",
+      "hyba/math_ir/executor.py"
+    ],
+    [
+      "hyba/operating_model/__init__.py",
+      "hyba/operating_model/failure_modes.py",
+      "hyba/operating_model/lemma.py",
+      "hyba/operating_model/pipeline.py",
+      "hyba/operating_model/substrate.py",
+      "hyba/operating_model/verifiers.py"
+    ],
+    [
+      "igpu/seam/__init__.py",
+      "igpu/seam/buffer.py",
+      "igpu/seam/fleet.py",
+      "igpu/seam/hybrid.py",
+      "igpu/seam/kernel.py",
+      "igpu/seam/probe.py",
+      "igpu/seam/queue.py"
+    ],
+    [
+      "l_hras/__init__.py",
+      "l_hras/detection.py",
+      "l_hras/fold.py",
+      "l_hras/governance.py",
+      "l_hras/guardian.py",
+      "l_hras/intelligences.py",
+      "l_hras/modes.py",
+      "l_hras/store.py",
+      "l_hras/topologies.py"
+    ],
+    [
+      "omega/__init__.py",
+      "omega/catalog.py"
+    ],
+    [
+      "phi_rotation/__init__.py",
+      "phi_rotation/cassini.py",
+      "phi_rotation/korobov.py",
+      "phi_rotation/lucas.py",
+      "phi_rotation/pisot.py"
+    ],
+    [
+      "toe/__init__.py",
+      "toe/bridge.py",
+      "toe/engine.py",
+      "toe/expansion.py",
+      "toe/manifold_bridge.py",
+      "toe/system.py"
+    ],
+    [
+      "toe/unified/__init__.py",
+      "toe/unified/platform.py"
+    ],
+    [
+      "turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/__init__.py",
+      "turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/ten_thousand.py"
+    ]
+  ],
+  "layers": [
+    "Intelligence/__init__.py:55: imports test module Intelligence/self_test.py",
+    "agi/enhanced_ai/__init__.py:36: imports test module agi/enhanced_ai/test_enhanced_agi.py",
+    "hyba/operating_model/failure_modes.py:15: imports test module tests/test_operating_model.py",
+    "millennium/clay_checklist.py:68: imports test module tests/test_millennium_package.py",
+    "mla1517_platform_v3.4/python/soak_voyage.py:31: imports test module mla1517_platform_v3.4/python/test_agentic_voyages.py",
+    "mla1517_platform_v3.4/python/system_fabric.py:834: imports test module Intelligence/self_test.py",
+    "scripts/release_gate.py:54: imports test module tests/test_mla1517_reference.py"
+  ]
+}
