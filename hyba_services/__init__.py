@@ -1,3 +1,4 @@
 from .core import LineageStore,ObjectService,PolicyService,ProofService
 from .folding import FoldExecutor,UnsupportedPairing
+from .observability import InMemoryTransport,Metric,MetricKind,Observability,ProofCostReport,ResourceTruth,Source,dashboard,measure_proof,resource_truth
 from .platform import EvidenceService,ModelRegistry,TrainingRun,VaultService,agent_tick,bind_ontology,quality_report,run_training
