@@ -150,6 +150,15 @@ export default defineConfig(({ command, isPreview }) => ({
     host: "0.0.0.0",
     port: 8080,
     strictPort: true,
+    // Local operation: the PYTHIA control API serves /api/v1 on its own port;
+    // the app was built same-origin, so dev proxies rather than teaching the
+    // UI a second base URL. PYTHIA_API_URL overrides the default target.
+    proxy: {
+      "/api": process.env.PYTHIA_API_URL ?? "http://127.0.0.1:3000",
+      "/healthz": process.env.PYTHIA_API_URL ?? "http://127.0.0.1:3000",
+      "/readyz": process.env.PYTHIA_API_URL ?? "http://127.0.0.1:3000",
+      "/metrics": process.env.PYTHIA_API_URL ?? "http://127.0.0.1:3000",
+    },
   },
   preview: {
     host: "127.0.0.1",

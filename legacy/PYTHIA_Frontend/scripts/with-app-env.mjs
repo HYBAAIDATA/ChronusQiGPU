@@ -111,7 +111,12 @@ function main(argv) {
     process.exit(2);
   }
   const env = mergeAppEnv(readAppEnv(projectRoot()), process.env);
-  const child = spawn(command, args, { stdio: "inherit", env });
+  const child = spawn(command, args, {
+    stdio: "inherit",
+    env,
+    // Windows can't exec the bare `vite` bin shim — resolve it via cmd.
+    shell: process.platform === "win32",
+  });
   // The dev server is long-running and is stopped by signalling this wrapper.
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
     process.on(signal, () => child.kill(signal));
