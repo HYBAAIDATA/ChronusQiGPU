@@ -13,4 +13,11 @@ paths = [
   '''\.gitlab-ci\.yml''',
   '''Dockerfile''',
   '''Dockerfile\.hybrid''',
+  # legacy/ ships dev fixtures: a preview-auth constant and a Firebase
+  # client-side apiKey (public identifier, not a credential).
+  '''legacy/''',
+  # folded-store probe fixture key, not a credential.
+  '''Intelligence/self_test\.py''',
+  # empty MLA1517_* placeholders in the env template it writes.
+  '''mla1517_platform_v3\.4/build_pythia_layout\.sh''',
 ]
