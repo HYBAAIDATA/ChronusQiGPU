@@ -16,6 +16,7 @@ from worker_lifecycle import HeartbeatEmitter
 from mla1517.mining.chain_observer import BitcoinChainObserver
 from mla1517.mining.pool_chain import PoolChainObserver
 from mla1517.mining.session import MiningSession
+from mla1517.mining.stratum_events import StratumEventLog
 from manifold_pool_coordinator import PoolEndpoint
 
 LOG = logging.getLogger("pythia.mining_runtime")
@@ -130,9 +131,32 @@ def _execution_hasher(backend: str):
     return hasher
 
 
+EXECUTION_DEVICES = ("opencl", "cpu")
+
+
+def execution_device() -> str | None:
+    """Bridge-free mining device from ``PYTHIA_EXECUTION_DEVICE``, if declared.
+
+    ``opencl`` mines on the OpenCL device the hasher binds and self-checks
+    against hashlib, and refuses to start without one; ``cpu`` mines on the
+    labelled CPU reference. Unset keeps the MMIO bridge as the only device.
+    """
+    value = os.getenv("PYTHIA_EXECUTION_DEVICE", "").strip().lower()
+    if not value:
+        return None
+    if value not in EXECUTION_DEVICES:
+        raise SystemExit(f"PYTHIA_EXECUTION_DEVICE must be one of {', '.join(EXECUTION_DEVICES)}")
+    return value
+
+
 async def _main_async(args) -> None:
-    if not args.device:
-        raise SystemExit("--device or MLA1517_MMIO_DEVICE is required")
+    device = execution_device()
+    if not args.device and device is None:
+        raise SystemExit(
+            "--device or MLA1517_MMIO_DEVICE is required "
+            "(or PYTHIA_EXECUTION_DEVICE=opencl|cpu for bridge-free mining)"
+        )
+    backend = device if not args.device else os.getenv("PYTHIA_EXECUTION_BACKEND", "auto")
     endpoints = pool_endpoints(args)
     # Pool-only mining needs no local node: the pool's own jobs are the chain
     # evidence. A configured bitcoind (PYTHIA_BITCOIN_RPC_URL) still wins.
@@ -143,14 +167,19 @@ async def _main_async(args) -> None:
     )
     try:
         with HeartbeatEmitter("agentic-mining") as heartbeat:
+            stratum_events = StratumEventLog()
 
             def publish_stratum_status(snapshot: dict) -> None:
+                stratum_events.observe(snapshot)
                 heartbeat.report(
                     stratum_status=json.dumps(
                         snapshot,
                         sort_keys=True,
                         separators=(",", ":"),
-                    )
+                    ),
+                    stratum_events=json.dumps(
+                        stratum_events.payload(), sort_keys=True, separators=(",", ":")
+                    ),
                 )
 
             def publish_mining_evidence(snapshot: dict) -> None:
@@ -170,16 +199,27 @@ async def _main_async(args) -> None:
                 mining_session=session,
                 chain_observer=observer,
                 stratum_status_sink=publish_stratum_status,
-                execution_hasher=_execution_hasher(os.getenv("PYTHIA_EXECUTION_BACKEND", "auto")),
+                execution_hasher=_execution_hasher(backend),
                 causal_log_path=os.getenv("PYTHIA_CAUSAL_LOG_PATH", "data/causal_ledger.jsonl"),
             )
             if coordinator.chain_observer is None:
                 coordinator.chain_observer = PoolChainObserver(lambda: coordinator.client)
                 LOG.info("chain evidence: pool Stratum jobs (no bitcoind configured)")
             coordinator.set_evidence_sink(publish_mining_evidence)
+            coordinator.set_metrics_sink(lambda counters: heartbeat.report(**counters))
             coordinator.set_agentic_state_path(
                 os.getenv("PYTHIA_AGENTIC_STATE_PATH", "data/agentic_policy.json")
             )
+            if not args.device:
+                hasher = coordinator.execution_hasher
+                LOG.info(
+                    "bridge-free mining: device=%s backend=%s hasher_device=%s",
+                    device,
+                    getattr(hasher, "backend", None),
+                    getattr(hasher, "device", None),
+                )
+                await coordinator.run_execution_loop()
+                return
             with MMIOBridge(args.device, map_bytes=args.map_bytes) as bridge:
                 await coordinator.run_hardware_loop(
                     bridge,

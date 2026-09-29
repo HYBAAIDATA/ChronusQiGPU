@@ -947,6 +947,15 @@ class IntelligenceOrchestrator:
         """
         return self.toe.predict(data)
 
+    def toe_reason(self, task: Dict[str, Any]) -> Dict[str, Any]:
+        """Run TOE's structural reasoning sequence on a supplied causal model.
+
+        Adjustment, effect estimate, intervention, counterfactual,
+        outcome-specific explanation, action selection and receipts, each
+        section reporting its own availability. See ``TOEBridge.reason``.
+        """
+        return self.toe.reason(task)
+
     def toe_guide_mining(
         self,
         header: bytes,

@@ -121,7 +121,9 @@ class LogicalState:
 
     def to_descriptor(self) -> MLA1517State:
         """Serialise to the fixed 64-byte hot descriptor."""
-        from .core import fib, lucas
+        from lucas.core import lucas
+
+        from .fibonacci_store import fib
         from .pisot_fold import pisot_fold
         from .zeckendorf_codec import to_mask
 

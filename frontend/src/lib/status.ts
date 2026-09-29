@@ -241,6 +241,34 @@ export type SelftestStatus = RunnerStatus & {
   summary?: { passed?: boolean; checks?: { passed: number; total: number }; failures?: string[] };
 };
 
+export type MaintenanceStatus = RunnerStatus & {
+  interval_s?: number;
+  llm_enabled?: boolean;
+  auto_apply_enabled?: boolean;
+  result?: {
+    session_id?: string;
+    failure_count?: number;
+    proposal_count?: number;
+    applied_count?: number;
+    summary?: string;
+    error?: string;
+  };
+};
+
+export type RepoEngineerStatus = {
+  schema?: string;
+  provider?: string;
+  model?: string;
+  ready?: boolean;
+  sdk_available?: boolean;
+  credential_available?: boolean;
+  context_loaded?: boolean;
+  context_files?: string[];
+  tools?: string[];
+  write_access?: boolean;
+  runner?: RunnerStatus;
+};
+
 export type AgenticStatus = RunnerStatus;
 
 export type CampaignPhaseRecord = {

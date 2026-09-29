@@ -596,6 +596,7 @@ class AgenticMiningWorkflow:
         self,
         cycles: int = 3,
         telemetry_provider=None,
+        telemetry_source: str = "fixture",
     ) -> List[Dict[str, Any]]:
         """Phase 5: Continuous execution loop across all 5 intelligences and all 13 substrates.
 
@@ -622,6 +623,8 @@ class AgenticMiningWorkflow:
         """
         if not self.is_initialized:
             raise RuntimeError("Cannot enter steady state: workflow not initialized.")
+        if telemetry_source not in {"fixture", "measured"}:
+            raise ValueError("telemetry_source must be 'fixture' or 'measured'")
 
         self.is_mining = True
         cycle_telemetry: List[Dict[str, Any]] = []
@@ -697,7 +700,14 @@ class AgenticMiningWorkflow:
                 "dispatches_total": obs.get("dispatches_total"),
                 "kernel_ms_mean": obs.get("kernel_ms_mean"),
                 "backend": obs.get("backend"),
-                "truth_class": "measured" if telemetry_provider else "observed",
+                "truth_class": (
+                    "observed"
+                    if telemetry_provider is None
+                    else "measured" if telemetry_source == "measured" else "simulated"
+                ),
+                "telemetry_source": (
+                    "host_dispatch" if telemetry_provider is None else telemetry_source
+                ),
                 "plasticity_active": bool(self.plastic.plasticity_score > 0),
                 "invariants_verified": geo_alloc.cassini_parity_valid
                 and cf_eval.yang_mills_bound_met,
