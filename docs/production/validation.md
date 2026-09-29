@@ -28,6 +28,26 @@ Install: `uv pip install -e ".[ml,dev]" -e ./turing_universal_quantum_computer`.
 | Live pool submission | — | NOT_RUN — not authorized (triple gate) | — |
 | GitHub Actions | repo workflows | NOT_RUN — no PR yet; provisioning health TBD at first PR | — |
 
+## CI definition reconciliation (Coordinator, executed by reading + local verification)
+
+| Workflow | Finding at e09afab | Action taken |
+|---|---|---|
+| `ci.yml` → `python` job | `pip install -e ".[ml,dev]"` omits TUQC → `sympy` never installed → `pytest -x` dies collecting `tests/test_benchmark_hendrix_vs_grover.py` | Fixed: install now includes `-e ./turing_universal_quantum_computer` |
+| `ci.yml` → `python` job | `flake8 --count` repo-wide → 744 findings → guaranteed fail; the enforced contract (pythia-ci) gates only the 9 platform files | Fixed: gate aligned to the same 9-file scope; repo-wide count kept as a `continue-on-error` informational step (debt reported honestly, not gated silently) |
+| `ci.yml` → `python` job | `compileall` skipped `toe/`, `kellogg/`, `aethel/`, `millennium/`, `turing_universal_quantum_computer/` | Fixed: added to compile list |
+| `pythia-ci.yml` | The real behavioral gate — canonical-logic/integration-audit/hybrid-fleet/hardware-gate jobs; all 8 required gate files exist @ pin; `python -m aethel selftest` verified locally | No change |
+| `pythia-push-gate.yml` | `-e ".[test]"` valid (platform pyproject owns the extra), `python/` valid via working-directory; platform tests have no numpy dependency (only lazy imports in accelerator/scaling) | No change — verified correct |
+| `azure-package.yml` | Docker build not executed locally (no docker daemon verified on this box) | NOT_RUN — needs docker-enabled runner/host |
+| `Dockerfile` | root `main.py` (23-line shim → `control_api.main`) present and consistent with `CMD`; `/api/health` + `/healthz` both served by control_api | Verified by reading + wheel smoke |
+| Blueprint | exists for this repo (Windows, py3.12, TUQC editable, npm-cli path) — the CI-verify runs used an equivalent `.venv` | No change |
+
+## Packaging verification (Coordinator, executed)
+
+- `uv build` → `pythia_mla1517-0.1.0` + `turing_universal_quantum_computer-1.0.0` wheels + sdists: **PASS**.
+- Fresh venv (`~/dist_verify/clean_venv`), wheel-only install: **PASS** — `mla1517`, `mla1517.mining.coordinator`, `main`, `control_api`, `mining_runtime`, `system_fabric`, `salamander_engine`, `worker_lifecycle`, `toe`, `kellogg`, `lucas`, `aethel`, `turing_universal_quantum_computer` all import.
+- Console scripts from the delivered artifact: `pythia-api --help`, `pythia-mine --help` **PASS** — fail-closed help text, no fabricated state.
+- TUQC wheel contains all declared subpackages (`turing_core`, `intelligences`, `lucas`) + `kernels/*.cl` via package-data.
+
 ## Invocation pitfalls recorded (so owners don't repeat them)
 
 - TUQC tests must run with cwd = `turing_universal_quantum_computer/`; from repo
