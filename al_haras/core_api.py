@@ -15,7 +15,7 @@ PUBLIC_SYMBOLS={
 "mla1517_core.host":{"HostGPUPlan","execute_reference"},"mla1517_core.connectors":{"CapabilityReport","select_backend"},"mla1517_core.runtime":{"MLA1517Runtime","ExecutionEnvelope"},"mla1517_core.primedb_engine":{"NativePrimeDB","VaultRecord"},"mla1517_core.knowledge":{"KnowledgeFabric"},"mla1517_core.learning":{"LearningLedger"},"mla1517_core.m32.geometry":{"M32Topology","build_m32","laplacian_gap","build_hermitian","operator_gap","route","polyhedral_destination"},"mla1517_core.hyba_devices":{"DeviceInventory","VirtualGPU","Attestation","MathIR","MultiHasher"}}
 class PrivateImport(ValueError):pass
 def audit_file(path:Path)->None:
- tree=ast.parse(path.read_text(),filename=str(path))
+ tree=ast.parse(path.read_text(encoding="utf-8"),filename=str(path))
  for node in ast.walk(tree):
   if isinstance(node,ast.ImportFrom) and node.module and node.module.startswith("mla1517_core"):
    if node.module.startswith(("mla1517_core._","mla1517_core.internal","mla1517_core.experiments")):raise PrivateImport(f"{path}:{node.lineno}:{node.module}")
