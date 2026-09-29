@@ -35,6 +35,7 @@ from startup_contract import (
 )
 import runtime_config
 import system_fabric
+
 try:
     from al_haras_pythia import pythia_guardian_api
 except ModuleNotFoundError as exc:
@@ -998,8 +999,12 @@ def hardware_status_payload() -> dict[str, Any]:
             "bound": bound,
             "mmio_bridge_configured": bool(control.mmio_device),
             "execution_device": control.execution_device or None,
-            "reason": None if bound else _mining_device_reason(control)
-            or "no mining device bound — set PYTHIA_EXECUTION_DEVICE=opencl or MLA1517_MMIO_DEVICE",
+            "reason": (
+                None
+                if bound
+                else _mining_device_reason(control)
+                or "no mining device bound — set PYTHIA_EXECUTION_DEVICE=opencl or MLA1517_MMIO_DEVICE"
+            ),
         },
         "opencl": {
             "available": bool(gpu.get("available", False)),
@@ -1620,6 +1625,18 @@ class _Handler(BaseHTTPRequestHandler):
         "/api/v1/salamander/fault": _salamander_fault,
     }
 
+    def _guardian_api(self):
+        """Return the lazily-built guardian, or answer 503 instead of
+        dropping the connection when it cannot be constructed."""
+        try:
+            return pythia_guardian_api()
+        except Exception:
+            self._json(
+                HTTPStatus.SERVICE_UNAVAILABLE,
+                {"allowed": False, "reason": "guardian_unavailable"},
+            )
+            return None
+
     def _drain(self, length: int) -> None:
         """Discard a refused body, bounded so a hostile Content-Length cannot
         force unbounded reads; past the cap the connection is closed."""
@@ -1674,7 +1691,10 @@ class _Handler(BaseHTTPRequestHandler):
                     {"allowed": False, "reason": "guardian_dependency_unavailable"},
                 )
                 return
-            code, payload = pythia_guardian_api().evaluate(
+            guardian = self._guardian_api()
+            if guardian is None:
+                return
+            code, payload = guardian.evaluate(
                 headers={
                     "authorization": self.headers.get("Authorization", ""),
                     "x-hyba-tenant": self.headers.get("X-HYBA-Tenant", ""),
@@ -1708,7 +1728,10 @@ class _Handler(BaseHTTPRequestHandler):
                 return
             data = body.get("data", body)
             observation = data if isinstance(data, dict) else {"value": data}
-            code, decision = pythia_guardian_api().evaluate(
+            guardian = self._guardian_api()
+            if guardian is None:
+                return
+            code, decision = guardian.evaluate(
                 headers={
                     "authorization": self.headers.get("Authorization", ""),
                     "x-hyba-tenant": self.headers.get("X-HYBA-Tenant", ""),

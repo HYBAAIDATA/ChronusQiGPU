@@ -25,6 +25,9 @@ class ALHarasSettings:
     max_payload_bytes: int = 1_048_576
     require_intelligence_evidence: bool = False
     subscription_url: str = "/contact?product=hyba-security"
+    audit_quarantine: bool = True
+    lhras_enabled: bool = False
+    lhras_config: str | None = None
 
     @classmethod
     def from_env(cls, *, service: str) -> "ALHarasSettings":
@@ -55,4 +58,7 @@ class ALHarasSettings:
                 "AL_HARAS_SUBSCRIPTION_URL",
                 "/contact?product=hyba-security",
             ),
+            audit_quarantine=_truthy(os.getenv("AL_HARAS_AUDIT_QUARANTINE"), default=True),
+            lhras_enabled=_truthy(os.getenv("AL_HARAS_ENABLE_LHRAS"), default=False),
+            lhras_config=os.getenv("AL_HARAS_LHRAS_CONFIG") or None,
         )

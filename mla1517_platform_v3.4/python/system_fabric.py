@@ -1038,7 +1038,9 @@ def initialize_repo_engineer() -> None:
                 _ensure_repo_path()
                 from Intelligence.repo_engineer import RepoEngineer
 
-                _REPO_ENGINEER_SERVICE = RepoEngineer(_REPO_ROOT)
+                _REPO_ENGINEER_SERVICE = RepoEngineer(
+                    _REPO_ROOT, store_dir=_repo_engineer_store_dir()
+                )
             except Exception as exc:  # noqa: BLE001 - reported, never fatal
                 print(
                     f"[pythia-control] repo engineer init failed: "
