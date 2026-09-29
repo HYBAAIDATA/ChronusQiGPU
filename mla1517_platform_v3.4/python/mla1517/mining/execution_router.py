@@ -506,7 +506,10 @@ class ExecutionRouter:
 
         launches_before = int(getattr(self._hasher, "launches", 0) or 0)
         kernel_ms_before = float(getattr(self._hasher, "kernel_ms", 0.0) or 0.0)
-        t0 = time.monotonic()
+        # perf_counter, not monotonic: on Windows monotonic is ~15.6 ms
+        # granular, which records sub-millisecond executions as elapsed 0 —
+        # unmeasurable timing that downstream learners must reject.
+        t0 = time.perf_counter()
 
         completed = 0
         winner_nonce: Optional[int] = None
@@ -543,7 +546,7 @@ class ExecutionRouter:
                 winner_nonce, winner_digest = nonce, digest
                 break  # earliest probe-order hit ends the window
 
-        elapsed = time.monotonic() - t0
+        elapsed = time.perf_counter() - t0
         launches = int(getattr(self._hasher, "launches", 0) or 0) - launches_before
         # Kernel time comes from the device clock, never from wall time. A CPU
         # reference run has no device clock, so it reports 0.0 rather than a

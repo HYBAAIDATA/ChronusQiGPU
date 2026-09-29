@@ -782,6 +782,19 @@ def control_authorization(headers: Any) -> tuple[HTTPStatus, str] | None:
     return None
 
 
+def start_repo_engineer() -> bool:
+    """Load the repo engineer; an optional service never keeps the control
+    API from serving. A failure is audited and printed, and the engineer's
+    own route reports it when asked."""
+    try:
+        system_fabric.initialize_repo_engineer()
+        return True
+    except Exception as exc:  # noqa: BLE001 - reported, never fatal to the control plane
+        _audit().append("repo_engineer_unavailable", error=f"{type(exc).__name__}: {exc}")
+        print(f"[pythia-control] repo engineer unavailable: {type(exc).__name__}: {exc}")
+        return False
+
+
 def announce_skills() -> int:
     """Tell every intelligence which skills Salamander holds.
 
@@ -1952,7 +1965,7 @@ def serve(
     web_root: str | Path = "dist/public",
 ) -> None:
     _control_plane()
-    system_fabric.initialize_repo_engineer()
+    start_repo_engineer()
     announce_skills()
     if system_fabric.startup_self_repair_enabled():
         system_fabric.start_self_repair(startup=True)

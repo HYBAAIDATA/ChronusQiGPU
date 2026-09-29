@@ -18,15 +18,22 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir ./turing_universal_quantum_computer ".[hardware]"
 
+# Create non-root user for production security
+RUN groupadd -r pythia && useradd -r -g pythia -d /app -s /sbin/nologin pythia
+RUN mkdir -p /var/lib/hyba/al-haras && chmod 700 /var/lib/hyba/al-haras
+RUN chown -R pythia:pythia /app /var/lib/hyba/al-haras
+
 ENV PYTHIA_HOST=0.0.0.0
 ENV PYTHIA_PORT=3000
 ENV PYTHIA_WEB_ROOT=/app/dist/public
 ENV HYBA_REQUIRE_HYBA=1
 ENV OCL_ICD_VENDORS=/etc/OpenCL/vendors
 ENV AL_HARAS_DATA_DIR=/var/lib/hyba/al-haras
-RUN mkdir -p /var/lib/hyba/al-haras && chmod 700 /var/lib/hyba/al-haras
+
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
   CMD python3 -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3000/api/health')"
+
+USER pythia
 
 CMD ["python3", "main.py", "--host", "0.0.0.0", "--port", "3000", "--web-root", "/app/dist/public"]

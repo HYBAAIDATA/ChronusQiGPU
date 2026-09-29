@@ -6,9 +6,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from .core import fib, lucas
 
-from lucas.ladder import SCALE_RUNGS
+from lucas.ladder import FULL_LADDER
 
-LUCAS_PISOT_LADDER = tuple(SCALE_RUNGS)
+LUCAS_PISOT_LADDER = tuple(FULL_LADDER)
 
 # Bespoke HYBA iGPU identity — same contract as mining/bitcoin_hasher.py.
 # Duplicated deliberately: this substrate module must not import siblings.

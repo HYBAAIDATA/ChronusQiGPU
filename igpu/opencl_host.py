@@ -88,7 +88,23 @@ _IGPU_HINTS = (
     "apple",
 )
 
-SHA256D_SRC = r"""
+# SHA-256d scanner kernel loaded from igpu/kernels/scan_sha256d.cl — single
+# source of truth for the standalone scanner. Previously duplicated inline;
+# now loaded from the file to keep kernels and host in sync.
+def _load_scan_kernel_source() -> str:
+    """Load the SHA-256d scanner kernel from its .cl file."""
+    kernel_path = Path(__file__).resolve().parent / "kernels" / "scan_sha256d.cl"
+    if kernel_path.is_file():
+        return kernel_path.read_text(encoding="utf-8")
+    # Fallback: the inline source (kept for environments where the .cl file
+    # is not present, e.g. a pyz or frozen distribution).
+    return _SHA256D_SRC_FALLBACK
+
+
+SHA256D_SRC = _load_scan_kernel_source()
+
+# Inline fallback — only used if the .cl file is unavailable.
+_SHA256D_SRC_FALLBACK = r"""
 __constant uint K[64] = {
   0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
   0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
