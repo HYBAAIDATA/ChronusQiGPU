@@ -1,9 +1,9 @@
 {
   "schema": "toe.elevation_benchmark/v1",
-  "commit": "8c52a6acda07a2471ebaff6fac53f63ddf28ecd6",
+  "commit": "f57d1a9aea77088665063f842eb4538635fbe54c",
   "branch": "main",
-  "worktree_clean": false,
-  "timestamp": "2026-09-29T13:42:12.565262+00:00",
+  "worktree_clean": true,
+  "timestamp": "2026-09-29T13:51:13.337862+00:00",
   "environment": {
     "python": "3.14.2",
     "platform": "Windows-10-10.0.19045-SP0",
@@ -728,7 +728,7 @@
   },
   "bridge": {
     "api": "toe.bridge.TOEBridge.reason(task)",
-    "elapsed_s": 0.4181493000360206,
+    "elapsed_s": 0.3369554000091739,
     "sections": [
       "state",
       "causal_analysis",
@@ -742,19 +742,19 @@
     "receipts": [
       {
         "kind": "causal_effect",
-        "receipt_sha256": "32b0316ec379844cb28ca28cf01c43b0172e19764bcb5fa8468520e8e14efda9"
+        "receipt_sha256": "4ce9b21fc1599e0fe79826fae9bb8b54186d3a102610aeca456dfa89e3cf4c3c"
       },
       {
         "kind": "counterfactual",
-        "receipt_sha256": "a49c1c36fe785314b7630778f1ba0f10e589c6590bbd167d4473eeb8cad05ba4"
+        "receipt_sha256": "8af99b5d747ce569622db5612cfca4f1737e3523d7c9cd9228156b8f9035571f"
       },
       {
         "kind": "explanation",
-        "receipt_sha256": "d1723cd6149de0d226de9aa1efca4547b9627642be9b58f204f3ecec266e39c5"
+        "receipt_sha256": "1c4edad0205500efad30d50dbc23ceab3cfeebdeb38ac6a8d7f2f9c42f63868b"
       },
       {
         "kind": "action",
-        "receipt_sha256": "86aafd8fd93ea8bcf80197d92b8ba36aef7f342169745bd3fef4abd4a57e12fa"
+        "receipt_sha256": "22319d31d847fee0422a6ed128978f96bb62c36406d120f3bacd1b36ccaf318d"
       }
     ],
     "capability_evidence": {

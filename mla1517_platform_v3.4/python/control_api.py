@@ -29,6 +29,7 @@ from urllib.parse import urlparse
 
 import runtime_config
 import system_fabric
+import autonomous_supervisor
 from startup_contract import METRICS
 from startup_contract import AppendOnlyAudit
 from startup_contract import BootLock
@@ -1633,6 +1634,9 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/api/v1/intelligence/maintenance":
             self._json(HTTPStatus.OK, system_fabric.self_repair_status())
             return
+        if path == "/api/v1/intelligence/autonomous":
+            self._json(HTTPStatus.OK, system_fabric.autonomous_supervisor_status())
+            return
         if path == "/api/v1/intelligence/engineer/status":
             self._json(HTTPStatus.OK, system_fabric.repo_engineer_status())
             return
@@ -1688,6 +1692,10 @@ class _Handler(BaseHTTPRequestHandler):
                 "state": system_fabric.self_repair_status()["state"],
                 "detail": "stop takes effect after the current full diagnosis cycle",
             },
+        ),
+        "/api/v1/intelligence/autonomous/trigger": lambda _b: (
+            HTTPStatus.OK,
+            autonomous_supervisor.trigger_cycle(),
         ),
         "/api/v1/intelligence/engineer/ask": _repo_engineer_ask,
         "/api/v1/agentic/start": _agentic_start,
@@ -2056,6 +2064,12 @@ def serve(
     announce_skills()
     if system_fabric.startup_self_repair_enabled():
         system_fabric.start_self_repair(startup=True)
+    if os.getenv("PYTHIA_AUTONOMOUS_SUPERVISOR", "true").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }:
+        autonomous_supervisor.ensure_started()
     server = ThreadingHTTPServer((host, int(port)), _Handler)
     server.web_root = Path(web_root).resolve()
     bound = getattr(server, "server_address", None)

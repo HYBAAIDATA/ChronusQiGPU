@@ -484,6 +484,16 @@ def _call(method: str) -> Any:
         return {"available": False, "error": f"{type(exc).__name__}: {exc}"}
 
 
+def autonomous_supervisor_status() -> dict[str, Any]:
+    """Status of the consolidated self-healing / self-optimising supervisor."""
+    try:
+        import autonomous_supervisor
+
+        return autonomous_supervisor.status()
+    except Exception as exc:
+        return {"schema": "pythia.autonomous_supervisor/1", "error": f"{type(exc).__name__}: {exc}"}
+
+
 def intelligence_status() -> dict[str, Any]:
     ensure_orchestrator()
     with _INTEL_LOCK:
@@ -628,9 +638,7 @@ def verification_status() -> dict[str, Any]:
                     # depending on the stage; a flagless stage counts as
                     # held — verify_full_chain fails closed by exception and
                     # scores s.get("correct", True) the same way.
-                    "ok": stage.get(
-                        "ok", stage.get("passed", stage.get("correct", True))
-                    ),
+                    "ok": stage.get("ok", stage.get("passed", stage.get("correct", True))),
                     "detail": stage.get("detail", stage.get("summary")),
                 }
                 for name, stage in stages.items()
@@ -999,9 +1007,7 @@ def self_repair_status() -> dict[str, Any]:
         "interval_s": _self_repair_interval_s(),
         "llm_enabled": os.getenv("HYBA_SELF_REPAIR_LLM_ENABLED", "false").strip().lower()
         in {"1", "true", "yes"},
-        "auto_apply_enabled": os.getenv("HYBA_SELF_REPAIR_AUTO_APPLY", "false")
-        .strip()
-        .lower()
+        "auto_apply_enabled": os.getenv("HYBA_SELF_REPAIR_AUTO_APPLY", "false").strip().lower()
         in {"1", "true", "yes"},
     }
 
@@ -1043,8 +1049,7 @@ def initialize_repo_engineer() -> None:
                 )
             except Exception as exc:  # noqa: BLE001 - reported, never fatal
                 print(
-                    f"[pythia-control] repo engineer init failed: "
-                    f"{type(exc).__name__}: {exc}"
+                    f"[pythia-control] repo engineer init failed: " f"{type(exc).__name__}: {exc}"
                 )
 
 
