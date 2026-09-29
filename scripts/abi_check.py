@@ -1,2 +1,4 @@
 from gate_impl import main
-if __name__=='__main__':raise SystemExit(main('abi-check'))
+
+if __name__ == "__main__":
+    raise SystemExit(main("abi-check"))

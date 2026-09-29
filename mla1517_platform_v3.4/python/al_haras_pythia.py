@@ -7,9 +7,25 @@ from typing import Any, Mapping
 
 from al_haras.audit import HashChainAudit
 from al_haras.entitlements import SubscriptionAuthority
-from al_haras.guardian import ALHaras, GuardianPolicy
+from al_haras.guardian import ALHaras, DEFAULT_ALLOWED_OPERATIONS, GuardianPolicy
 from al_haras.runtime import GuardianAPI, build_guardian
 from al_haras.settings import ALHarasSettings
+
+# Operations the PYTHIA control API mediates through the guardian on its
+# privileged prefixes (path minus /api/v1/, slashes to dots). Without them the
+# default policy set denies every mediated control route.
+_PYTHIA_ALLOWED_OPERATIONS: frozenset[str] = DEFAULT_ALLOWED_OPERATIONS | frozenset(
+    {
+        "mining.elevate",
+        "mining.escalate",
+        "mining.evidence",
+        "mining.start",
+        "mining.stop",
+        "mining.switch",
+        "security.status",
+        "security.subscribe",
+    }
+)
 
 
 @lru_cache(maxsize=1)
@@ -61,13 +77,14 @@ def pythia_guardian_api() -> GuardianAPI:
     """
     settings = ALHarasSettings.from_env(service="pythia")
     try:
-        guardian = build_guardian(settings)
+        guardian = build_guardian(settings, allowed_operations=_PYTHIA_ALLOWED_OPERATIONS)
     except RuntimeError:
         guardian = ALHaras(
             authority=SubscriptionAuthority(settings.keyring, settings.issuer),
             policy=GuardianPolicy(
                 version=settings.policy_version,
                 capability=settings.capability,
+                allowed_operations=_PYTHIA_ALLOWED_OPERATIONS,
                 max_payload_bytes=settings.max_payload_bytes,
                 require_intelligence_evidence=settings.require_intelligence_evidence,
             ),
