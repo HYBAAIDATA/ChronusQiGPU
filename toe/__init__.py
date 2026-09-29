@@ -16,7 +16,15 @@ original toe.py monolith, and the substrate modules it runs on):
     toe.operator_compilers          deterministic typed-operator compilation
                                     for arbitrary payloads
     toe.causal_ladder               Pearl ladder: association / do-operator /
-                                    counterfactuals over the Kellogg tensor
+                                    counterfactuals over the Kellogg tensor;
+                                    d-separation backdoor sets, adjusted
+                                    effect estimation, exact Q(phi) path
+    toe.explanation                 outcome-specific explanation by
+                                    intervention (exact Shapley)
+    toe.agreement                   agreement between distinct evaluators
+    toe.policy                      action selection over evaluated futures
+    toe.receipts                    hash-chained, replayable provenance
+                                    receipts
     toe.manifold_bridge             Galois-persistent candidate store +
                                     O(1) lookup
     toe.poincare_golden_11d         11D Poincare-golden fold/unfold +

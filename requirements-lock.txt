@@ -1,0 +1,19 @@
+# PYTHIA Production Requirements Lock
+# Generated for production reproducibility — pin exact versions.
+# Regenerate with: pip freeze > requirements-lock.txt (after pip install -e .[dev,ml,hardware])
+
+numpy==1.26.4
+pyyaml==6.0.2
+sympy==1.13.3
+pyopencl==2024.1
+nltk==3.9.1
+scikit-learn==1.5.2
+fastapi==0.115.6
+anthropic==0.40.0
+networkx==3.4.2
+pytest==8.3.4
+pytest-asyncio==0.24.0
+hypothesis==6.122.1
+black==24.10.0
+flake8==7.1.1
+pytest-cov==6.1.1

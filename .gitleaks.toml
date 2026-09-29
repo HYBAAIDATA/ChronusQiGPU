@@ -1,0 +1,16 @@
+title = "gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlist for known false positives, test fixtures, and documentation"
+paths = [
+  '''\.env\.example''',
+  '''frontend/package-lock\.json''',
+  '''turing_universal_quantum_computer/tests/.*''',
+  '''tests/.*''',
+  '''\.gitlab-ci\.yml''',
+  '''Dockerfile''',
+  '''Dockerfile\.hybrid''',
+]
