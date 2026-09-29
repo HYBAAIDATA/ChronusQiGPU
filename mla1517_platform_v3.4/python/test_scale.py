@@ -25,7 +25,7 @@ class ScaleTests(unittest.TestCase):
         c = ScaleController(ScaleBudget(max_index=10000, max_physical_bytes=300))
         d = c.authorize(ScalePoint(1000))
         self.assertFalse(d.accepted)
-        self.assertEqual(d.reason, "physical_budget_exceeded")
+        self.assertEqual(d.reason, "output_budget_exceeded")
 
     def test_work_budget_rejects_large_scale(self):
         c = ScaleController(ScaleBudget(max_index=100, max_work_units=100))

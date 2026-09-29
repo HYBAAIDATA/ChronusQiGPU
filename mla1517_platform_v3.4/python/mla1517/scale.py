@@ -153,7 +153,7 @@ class ScaleController:
         if estimate.logical_state_bits > b.max_bit_length:
             return ScaleDecision(False, point, estimate, "bit_budget_exceeded")
         if estimate.physical_bytes > b.max_physical_bytes:
-            return ScaleDecision(False, point, estimate, "physical_budget_exceeded")
+            return ScaleDecision(False, point, estimate, "output_budget_exceeded")
         if estimate.work_units > b.max_work_units:
             return ScaleDecision(False, point, estimate, "work_budget_exceeded")
         return ScaleDecision(True, point, estimate, "accepted")
@@ -162,7 +162,7 @@ class ScaleController:
         """Authorize a finite ordered scale program without executing it."""
         points = list(points)
         if len(points) > self.budget.max_steps:
-            raise ValueError("scale program exceeds max_steps")
+            raise ValueError("scale_program_too_long")
         return [self.authorize(point) for point in points]
 
     def execute_exact(self, point: ScalePoint) -> dict[str, Any]:

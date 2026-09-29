@@ -41,8 +41,8 @@ COPY --from=native /src/host/libmla1517_mmio.so /src/host/libprimedb_storage.so 
 RUN pip install --no-cache-dir ./turing_universal_quantum_computer . \
     && groupadd --gid 10001 pythia \
     && useradd --uid 10001 --gid pythia --no-create-home pythia \
-    && mkdir -p /var/lib/pythia /tmp/pythia/hb \
-    && chown -R pythia:pythia /var/lib/pythia /tmp/pythia
+    && mkdir -p /var/lib/pythia /tmp/pythia/hb /app/data/repo_engineer \
+    && chown -R pythia:pythia /var/lib/pythia /tmp/pythia /app/data
 USER 10001:10001
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \

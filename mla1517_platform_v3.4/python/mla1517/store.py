@@ -78,6 +78,8 @@ class PrimeDB:
             raise KeyError(object_id)
         data = json.loads(row["object_json"])
         data["fibonacci_pair"] = tuple(data["fibonacci_pair"])
+        if "exact_state" in data:
+            data["exact_state"] = tuple(data["exact_state"])
         obj = MLAObject(**data)
         obj.validate()
         return obj

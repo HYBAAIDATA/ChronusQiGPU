@@ -1007,21 +1007,37 @@ def self_repair_status() -> dict[str, Any]:
 
 
 def initialize_repo_engineer() -> None:
-    """Load repository context once during API startup without calling a model."""
+    """Load repository context once during API startup without calling a model.
+
+    A store that cannot initialise (read-only image layer, missing data
+    directory) is reported and retried on the next status call — never fatal
+    to the control plane, same contract as ``announce_skills``.
+    """
     global _REPO_ENGINEER_SERVICE
     with _REPO_ENGINEER_LOCK:
         if _REPO_ENGINEER_SERVICE is None:
-            _ensure_repo_path()
-            from Intelligence.repo_engineer import RepoEngineer
+            try:
+                _ensure_repo_path()
+                from Intelligence.repo_engineer import RepoEngineer
 
-            _REPO_ENGINEER_SERVICE = RepoEngineer(_REPO_ROOT)
+                _REPO_ENGINEER_SERVICE = RepoEngineer(_REPO_ROOT)
+            except Exception as exc:  # noqa: BLE001 - reported, never fatal
+                print(
+                    f"[pythia-control] repo engineer init failed: "
+                    f"{type(exc).__name__}: {exc}"
+                )
 
 
 def repo_engineer_status() -> dict[str, Any]:
     initialize_repo_engineer()
+    service = (
+        _REPO_ENGINEER_SERVICE.status()
+        if _REPO_ENGINEER_SERVICE is not None
+        else {"ready": False, "provider": "unavailable", "model": "unavailable"}
+    )
     return {
         "schema": "pythia.repo-engineer/1",
-        **_REPO_ENGINEER_SERVICE.status(),
+        **service,
         "runner": REPO_ENGINEER.status(),
     }
 
@@ -1031,4 +1047,6 @@ def start_repo_engineer(prompt: str) -> bool:
     if not isinstance(prompt, str) or not prompt.strip() or len(prompt) > 2_000:
         raise ValueError("prompt must be between 1 and 2000 characters")
     initialize_repo_engineer()
+    if _REPO_ENGINEER_SERVICE is None:
+        return False
     return REPO_ENGINEER.start(lambda _runner: _REPO_ENGINEER_SERVICE.ask(prompt))

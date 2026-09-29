@@ -57,14 +57,16 @@ logger = logging.getLogger("Intelligence.lucas_scales")
 # auditable; ``validate_against_substrate`` confirms they match
 # ``turing_core.lucas`` at runtime.
 from lucas.core import lucas as _lucas_value
+from lucas.ladder import CURRICULUM_RUNGS as _CURRICULUM_RUNGS
 from lucas.ladder import FULL_LADDER as _FULL_LADDER
 from lucas.ladder import PISOT_EXACT_N as _PISOT_EXACT_N
 from lucas.ladder import SCALE_RUNGS as _SCALE_RUNGS
 
 LUCAS_SCALE_LADDER: Dict[int, int] = {i: _lucas_value(i) for i in _FULL_LADDER}
 
-# Ordered scale indices (ascending).
-SCALE_ORDER: Tuple[int, ...] = tuple(_FULL_LADDER)
+# Ordered scale indices (ascending) — the five intelligence curriculum
+# rungs. Mining rungs (31/50/76) live on IGPU_SCALE_RUNGS, not this profile.
+SCALE_ORDER: Tuple[int, ...] = tuple(_CURRICULUM_RUNGS)
 
 # Human-readable names for each scale level.
 SCALE_NAMES: Dict[int, str] = {
