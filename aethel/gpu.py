@@ -25,6 +25,8 @@ class TensorCoreGPU_Context:
         self.cassini = CassiniVerifier()
         self.require_gpu = require_gpu
         self.punch_host = punch_host
+        # Backend that physically ran the last projection; None until one has.
+        self._last_projection_backend = None
         if self.punch_host is None:
             self.punch_host = resolve_punch_host()
         if require_gpu and not self.gpu_active:
@@ -39,6 +41,8 @@ class TensorCoreGPU_Context:
 
     @property
     def projection_backend(self) -> str:
+        if self._last_projection_backend is not None:
+            return self._last_projection_backend
         if self.gpu_active:
             return getattr(self.punch_host, "last_dispatch_backend", None) or getattr(
                 self.punch_host, "backend", "cpu"
@@ -63,13 +67,18 @@ class TensorCoreGPU_Context:
             except NotImplementedError:
                 # OpenClPunchHost supports only 0x02/0x1C; 0x15 falls back
                 # to the exact CPU projection below instead of crashing.
-                pass
+                self._last_projection_backend = "cpu"
             else:
+                self._last_projection_backend = getattr(
+                    self.punch_host, "last_dispatch_backend", None
+                ) or getattr(self.punch_host, "backend", "cpu")
                 norm_sq = float(out["float"][0])
                 if not np.isfinite(norm_sq) or norm_sq < 0:
                     return 0
                 anchor = int(round(float(np.sqrt(norm_sq)))) % 90
                 return max(0, anchor)
+        else:
+            self._last_projection_backend = "cpu"
         norm_sq = float(
             sum((pv_base ** -(i + 1)) * (float(flat[i]) ** 2) for i in range(len(flat)))
         )
