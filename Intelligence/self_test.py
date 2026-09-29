@@ -268,10 +268,12 @@ def _check_lucas_scales(orchestrator) -> Dict[str, Any]:
         # The ladder must be substrate-validated and monotonic.
         substrate_ok = profile["substrate_validated"]
         monotonic = profile["monotonic"]
-        # Verify exact values are present.
+        # Verify exact values are present: every level equals its exact
+        # Lucas value from the substrate.
+        import turing_core
+
         values = [lv["value"] for lv in profile["levels"]]
-        expected = [123, 322, 1364, 5778, 15127]
-        values_ok = values == expected
+        values_ok = all(lv["value"] == turing_core.lucas(lv["index"]) for lv in profile["levels"])
         # Coherence probe on a phi-phase signal (honest: not scale-invariant).
         import math
 
@@ -396,11 +398,11 @@ def _check_extended_algebra() -> Dict[str, Any]:
         sched_ok = 0 < len(sched) <= 1000 and len(set(sched)) == len(sched)
         ladders_ok = True
         try:
-            from .lucas_scales import build_family_scale_profile
+            from .lucas_scales import SCALE_ORDER, build_family_scale_profile
 
             for f in turing_core.FAMILY_COEFFS:
                 p = build_family_scale_profile(f)
-                ladders_ok = ladders_ok and p.monotonic and len(p.levels) == 5
+                ladders_ok = ladders_ok and p.monotonic and len(p.levels) == len(SCALE_ORDER)
         except Exception:
             ladders_ok = False
         ham_ok = True

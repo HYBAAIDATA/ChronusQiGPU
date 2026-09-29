@@ -27,7 +27,7 @@ Lucas scale
 Every quantum algorithm the engine runs (``grover_amplitude_amplification``
 plus ``hybrid_ensemble_search`` / ``quantum_walk_search`` / ``qaoa_*`` /
 ``quantum_annealing_search`` / ``vqe_*``) is scaled by the Lucas ladder
-``scale_index ∈ {10, 12, 15, 18, 20}``: the search space is multiplied by
+``scale_index ∈ FULL_LADDER``: the search space is multiplied by
 the exact Lucas value ``N_eff = N · L_n`` (the hardware-dimension scaling
 from ``grover_exact_scale.lucas_row``), Grover's optimal iteration count
 k* is recomputed over the scaled space, and the Zeckendorf/Lucas schedule
@@ -78,8 +78,8 @@ PSI = _turing.PSI
 
 from .lucas.ladder import FULL_LADDER
 
-# The Lucas scale ladder the GPU engine accepts: the five curriculum rungs
-# 10, 12, 15, 18, 20 (lucas/ ladder FULL_LADDER). The effective search space
+# The Lucas scale ladder the GPU engine accepts: the canonical FULL_LADDER
+# declared in lucas/ladder.py. The effective search space
 # is multiplied by L_n — N_eff = num_nonces * L_n — per the
 # ``grover_exact_scale.lucas_row`` hardware-dimension convention.
 QUANTUM_SCALE_RUNGS: Tuple[int, ...] = tuple(FULL_LADDER)
@@ -92,7 +92,7 @@ _MAX_NONCE_SPACE = 1 << 32
 def _validate_scale_index(scale_index: int) -> int:
     """Return ``scale_index`` as an int when it is a GPU-engine rung.
 
-    The engine accepts exactly the Lucas ladder rungs 10, 12, 15, 18, 20 —
+    The engine accepts exactly the canonical Lucas ladder rungs —
     anything else raises ``ValueError`` (explicit, not silently clamped).
     """
     try:

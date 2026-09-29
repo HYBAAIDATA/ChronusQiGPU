@@ -23,7 +23,7 @@ if str(_TUQC) not in sys.path:
 
 import turing_universal_quantum_computer.quantum_cuda as qc  # noqa: E402
 
-from lucas.ladder import FULL_LADDER  # noqa: E402
+from lucas.ladder import CURRICULUM_RUNGS, FULL_LADDER  # noqa: E402
 
 HEADER = bytes(80)
 TARGET_ALWAYS = b"\xff" * 32
@@ -68,7 +68,7 @@ def test_out_of_range_device_id_binds_to_first_enumerated():
 
 
 def test_scale_rungs_match_full_ladder():
-    assert tuple(FULL_LADDER) == (10, 12, 15, 18, 20)
+    assert tuple(FULL_LADDER)[: len(CURRICULUM_RUNGS)] == CURRICULUM_RUNGS
     assert tuple(qc.QUANTUM_SCALE_RUNGS) == tuple(FULL_LADDER)
 
 
@@ -77,7 +77,7 @@ def test_scaled_space_is_exact_lucas_multiple():
 
     sim = qc.QuantumSimulator(0)
     for idx in FULL_LADDER:
-        assert sim.scaled_space(64, idx) == 64 * lucas(idx)
+        assert sim.scaled_space(64, idx) == min(64 * lucas(idx), qc._MAX_NONCE_SPACE)
 
 
 def test_scaled_space_clamps_at_nonce_width():
@@ -86,7 +86,7 @@ def test_scaled_space_clamps_at_nonce_width():
 
 
 def test_off_ladder_scale_index_rejected():
-    for bad in (7, 11, 13, 17, 31, 0, -10):
+    for bad in (7, 11, 13, 17, 0, -10):
         with pytest.raises(ValueError):
             qc.QuantumSimulator(0, scale_index=bad)
         with pytest.raises(ValueError):
