@@ -210,10 +210,9 @@ def apply_zeckendorf_compression(payload: bytes, host=None) -> SparseTopology:
     else:
         for i, chunk in enumerate(chunks):
             n = int.from_bytes(chunk, "big")
-            try:
-                sparse.add(i * 8, HardenedZeckendorfCodec.encode(n))
-            except ValueError:
-                sparse.add(i * 8, HardenedZeckendorfCodec.encode_7byte_chunk(chunk))
+            # n <= 2**64 - 1 < FIBONACCI[-1] (F_93), so encode cannot
+            # raise for an 8-byte chunk — no fallback path is needed.
+            sparse.add(i * 8, HardenedZeckendorfCodec.encode(n))
     sparse.total_bytes = len(payload)
     return sparse
 

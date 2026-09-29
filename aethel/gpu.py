@@ -54,16 +54,22 @@ class TensorCoreGPU_Context:
         if self.gpu_active and pv_base == PHI:
             vec = np.zeros(DIM, dtype=np.float32)
             vec[: len(flat)] = flat
-            out = self.punch_host.run_punch_batch(
-                PUNCH_MANIFOLD_COMPUTE,
-                n=1,
-                in_float=vec,
-            )
-            norm_sq = float(out["float"][0])
-            if not np.isfinite(norm_sq) or norm_sq < 0:
-                return 0
-            anchor = int(round(float(np.sqrt(norm_sq)))) % 90
-            return max(0, anchor)
+            try:
+                out = self.punch_host.run_punch_batch(
+                    PUNCH_MANIFOLD_COMPUTE,
+                    n=1,
+                    in_float=vec,
+                )
+            except NotImplementedError:
+                # OpenClPunchHost supports only 0x02/0x1C; 0x15 falls back
+                # to the exact CPU projection below instead of crashing.
+                pass
+            else:
+                norm_sq = float(out["float"][0])
+                if not np.isfinite(norm_sq) or norm_sq < 0:
+                    return 0
+                anchor = int(round(float(np.sqrt(norm_sq)))) % 90
+                return max(0, anchor)
         norm_sq = float(
             sum((pv_base ** -(i + 1)) * (float(flat[i]) ** 2) for i in range(len(flat)))
         )

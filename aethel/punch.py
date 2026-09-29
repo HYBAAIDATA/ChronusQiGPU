@@ -62,6 +62,4 @@ def resolve_punch_host() -> Optional[Any]:
         host = host_cls()
     except Exception:
         return None
-    if getattr(host, "use_opencl", False):
-        return host
     return host
