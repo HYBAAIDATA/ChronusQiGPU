@@ -37,19 +37,55 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from al_haras.entitlements import SubscriptionAuthority, SubscriptionClaims  # noqa: E402
+
 CONTAINER = "pythia-smoke"
 
 
 # The operator key the container is started with; state-changing calls present it.
 ADMIN_KEY = secrets.token_hex(32)
 
+# The subscription boundary mediates the privileged routes: the container gets a
+# smoke-only keyring and this process mints a token for tenant/actor headers.
+SUBSCRIPTION_KEY = secrets.token_hex(32)
+SUBSCRIPTION = SubscriptionAuthority(
+    {"smoke": SUBSCRIPTION_KEY.encode()}, "hyba-subscriptions"
+).issue(
+    SubscriptionClaims(
+        subscription_id="smoke-sub",
+        tenant_id="smoke",
+        issuer="hyba-subscriptions",
+        key_id="smoke",
+        capabilities=("hyba.security",),
+        actors=("operator-1",),
+        not_before=0,
+        expires_at=int(time.time()) + 3600,
+    )
+)
+MEDIATED = {
+    "Authorization": f"Bearer {SUBSCRIPTION}",
+    "X-HYBA-Tenant": "smoke",
+    "X-HYBA-Actor": "operator-1",
+}
 
-def http(url: str, *, method: str = "GET", body: dict | None = None, timeout: float = 5.0):
+
+def http(
+    url: str,
+    *,
+    method: str = "GET",
+    body: dict | None = None,
+    timeout: float = 5.0,
+    headers: dict | None = None,
+):
     data = json.dumps(body).encode() if body is not None else None
     request = urllib.request.Request(url, data=data, method=method)
     if data is not None:
         request.add_header("Content-Type", "application/json")
-    if method not in ("GET", "HEAD"):
+    for name, value in (headers or {}).items():
+        request.add_header(name, value)
+    if method not in ("GET", "HEAD") and "Authorization" not in (headers or {}):
         request.add_header("Authorization", f"Bearer {ADMIN_KEY}")
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -134,6 +170,8 @@ class Smoke:
             "PYTHIA_POOLS": "braiins",
             "PYTHIA_ALLOW_UNLISTED_POOLS": "1",
             "MLA1517_MMIO_DEVICE": "/var/lib/pythia/mmio.regs",
+            "AL_HARAS_SUBSCRIPTION_KEYS": json.dumps({"smoke": SUBSCRIPTION_KEY}),
+            "AL_HARAS_DATA_DIR": "/var/lib/pythia/al-haras",
         }
         argv = [
             "docker",
@@ -213,7 +251,10 @@ class Smoke:
         )
 
         status, started_payload = http_json(
-            f"{self.base}/api/v1/mining/start", method="POST", body={}
+            f"{self.base}/api/v1/mining/start",
+            method="POST",
+            body={"observation": {"value": 1}},
+            headers=MEDIATED,
         )
         self.stage(
             "operator start",
@@ -226,7 +267,7 @@ class Smoke:
         workers: dict = {}
         while time.monotonic() < deadline:
             time.sleep(5)
-            _, evidence = http_json(f"{self.base}/api/v1/mining/evidence")
+            _, evidence = http_json(f"{self.base}/api/v1/mining/evidence", headers=MEDIATED)
             _, status_payload = http_json(f"{self.base}/api/v1/mla1517/status")
             workers = {
                 name: record.get("state")

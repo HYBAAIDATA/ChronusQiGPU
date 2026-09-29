@@ -1488,7 +1488,12 @@ class _Handler(BaseHTTPRequestHandler):
             "resource": path.removeprefix("/api/v1/"),
             "payload": body or {},
         }
-        if isinstance(body, dict) and "observation" in body:
+        if body is None:
+            evaluate_body["observation"] = {
+                "operation": operation,
+                "resource": evaluate_body["resource"],
+            }
+        elif isinstance(body, dict) and "observation" in body:
             evaluate_body["observation"] = body["observation"]
         try:
             code, receipt = pythia_guardian_api().evaluate(
