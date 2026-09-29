@@ -109,7 +109,9 @@ class MMIOBridge:
         self._library = _load_library(library_path)
         self._handle = self._library.mla1517_open(os.fspath(device_path).encode(), map_bytes)
         if not self._handle:
-            raise MLA1517HardwareError(f"unable to map MLA1517 device {device_path!s}")
+            # A missing path is an absent device, never created on its own.
+            reason = "no such device or file" if not os.path.exists(device_path) else "open/mmap failed"
+            raise MLA1517HardwareError(f"unable to map MLA1517 device {device_path!s}: {reason}")
         self._ring_handle: C.c_void_p | None = None
 
     def _check(self, result: int) -> None:

@@ -63,8 +63,8 @@ services:
 
   telemetry:
     build:
-      context: .
-      dockerfile: Dockerfile.telemetry
+      context: ..
+      dockerfile: mla1517_platform_v3.4/Dockerfile.telemetry
     container_name: mla1517-telemetry
     restart: unless-stopped
     ipc: "service:mla1517-coordinator"

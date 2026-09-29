@@ -628,7 +628,7 @@ class ManifoldPoolCoordinator:
         proof = self.client.proof_adapter.validate_candidate(
             job_id=job_id, extranonce2=extranonce2, ntime=ntime, nonce=nonce
         )
-        if not self.submit_enabled:
+        if not self.submission_permitted():
             LOG.info("submit disabled; proof was checked but no network write occurred")
             return False
         result = await self.client.submit([self.client.username, *proof.submission_params])
@@ -663,7 +663,7 @@ class ManifoldPoolCoordinator:
         except StratumTranslationError as exc:
             LOG.error("share not submitted: %s", exc)
             return False
-        if not self.submit_enabled:
+        if not self.submission_permitted():
             LOG.info("submit disabled; validated share payload shape only")
             return False
         result = await self.client.submit(params)
@@ -674,6 +674,10 @@ class ManifoldPoolCoordinator:
             self.telemetry.add_accepted()
         LOG.info("share response accepted=%s endpoint=%s", accepted, self.client.endpoint.name)
         return accepted
+
+    def submission_permitted(self) -> bool:
+        """Whether a proof-checked share may be written to the pool now."""
+        return self.submit_enabled
 
     async def before_hardware_poll(self) -> bool:
         return True

@@ -23,6 +23,7 @@ hex header per line). Without it the corpus is DETERMINISTICALLY SYNTHETIC
 from __future__ import annotations
 
 import argparse
+import os
 import hashlib
 import json
 import statistics
@@ -41,7 +42,10 @@ from hyba.hybrid.coordinator import HybridCoordinator, StratumJob
 from hyba.hybrid.gpu_solver import GPUSolver
 from hyba.hybrid.nonce_scheduler import AttestationRegistry
 
-REPORTS = Path(__file__).resolve().parent.parent / "reports"
+# Dockerfile.hybrid points HYBA_REPORTS_DIR at a volume-mountable directory.
+REPORTS = Path(
+    os.getenv("HYBA_REPORTS_DIR") or Path(__file__).resolve().parent.parent / "reports"
+)
 
 
 def synthetic_headers(n: int, seed: int = 0x48495259) -> List[bytes]:

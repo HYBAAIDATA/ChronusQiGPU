@@ -55,6 +55,7 @@ class CodebaseIssueType(Enum):
     PREDETERMINED_VARIABLE = "predetermined_variable"
     NUMERICAL_IMPRECISION = "numerical_imprecision"
     SYNTAX_OR_AST_DEFECT = "syntax_or_ast_defect"
+    BROKEN_IMPORT = "broken_import"
 
 
 @dataclass
@@ -143,13 +144,19 @@ class CodebaseAuditReport:
     scan_timestamp: float = field(default_factory=time.time)
 
     def summary(self) -> Dict[str, Any]:
+        broken = sum(
+            d.issue_type == CodebaseIssueType.BROKEN_IMPORT for d in self.diagnostics
+        )
         return {
             "scanned_files": self.scanned_files,
             "total_diagnostics": self.total_diagnostics,
             "mean_phi_resonance": round(self.mean_phi_resonance, 4),
             "drift_violations": self.drift_violations,
+            "broken_imports": broken,
             "substrate_health_index": round(self.substrate_health_index, 4),
-            "healthy": self.substrate_health_index >= 0.60 and self.drift_violations == 0,
+            "healthy": (
+                self.substrate_health_index >= 0.60 and self.drift_violations == 0 and not broken
+            ),
         }
 
     def to_dict(self) -> Dict[str, Any]:
@@ -418,15 +425,50 @@ class SalamanderCodebaseScanner:
         )
 
     def scan_codebase(self) -> CodebaseAuditReport:
-        """Scan all Python files across the repository."""
-        return self.scan_directory(subdirs=None, extensions=(".py",))
+        """Scan all Python files across the repository, imports included."""
+        report = self.scan_directory(subdirs=None, extensions=(".py",))
+        broken = self.audit_imports()
+        report.diagnostics.extend(broken)
+        report.total_diagnostics += len(broken)
+        return report
+
+    def audit_imports(self) -> List[CodebaseDiagnostic]:
+        """Every local import must resolve, and no import failure may be hidden.
+
+        A swallowed ImportError is how a wire breaks with no failing test:
+        Salamander's own skills were unreachable that way. The remedy is
+        never an automatic re-point: the module an import used to name can
+        do different work now (the Turing core's kernel probes about sqrt(N)
+        nonces), so each fix is a reviewed change with tests.
+        """
+        from scripts.import_audit import Auditor, live_files
+
+        return [
+            CodebaseDiagnostic(
+                file_path=f.file,
+                line_number=f.line,
+                issue_type=CodebaseIssueType.BROKEN_IMPORT,
+                snippet=f.module if f.name is None else f"{f.module}.{f.name}",
+                description=f.render(),
+                remedy=(
+                    "Import it from where it lives now, or remove the dead path; "
+                    "check what the new target actually does before wiring it."
+                ),
+                severity="CRITICAL",
+                pattern_name=f.code,
+            )
+            for f in Auditor(self.repo_root).audit(live_files(self.repo_root))
+        ]
 
 
 class SalamanderAgenticOptimizer:
     """Autonomous zero-trust optimizer applying mathematical repairs and AST refinement."""
 
-    def __init__(self, repo_root: Optional[Path] = None) -> None:
+    def __init__(self, repo_root: Optional[Path] = None, verify_cmd: Optional[str] = None) -> None:
         self.repo_root = repo_root or Path(__file__).resolve().parent.parent
+        # The command that proves a repair (e.g. the covering pytest run).
+        # Without one, repairs are proposed, never applied.
+        self.verify_cmd = verify_cmd
         self._history: List[Dict[str, Any]] = []
 
     def propose_repair(self, diagnostic: CodebaseDiagnostic) -> Dict[str, Any]:
@@ -487,6 +529,9 @@ class SalamanderAgenticOptimizer:
         if not target_file.exists():
             return False, f"Target file does not exist: {target_file}"
 
+        if test_callable is None and test_cmd is None:
+            return False, "No verification supplied; a repair is never applied unverified"
+
         original_content = target_file.read_text(encoding="utf-8")
         backup_path = target_file.with_suffix(target_file.suffix + ".bak")
 
@@ -510,10 +555,9 @@ class SalamanderAgenticOptimizer:
                 ast.parse(new_content)
 
             # 4. Sandbox verification: run test callable or test command
-            test_passed = True
             if test_callable is not None:
                 test_passed = bool(test_callable())
-            elif test_cmd is not None:
+            else:
                 proc = subprocess.run(
                     test_cmd,
                     shell=True,
@@ -578,19 +622,19 @@ class SalamanderAgenticOptimizer:
                     "            state = (coin @ state[:2]) if len(state) >= 2 else state"
                 )
                 return self.apply_repair_sandboxed(
-                    target_path, replacement, target_block, test_callable=lambda: True
+                    target_path, replacement, target_block, test_cmd=self.verify_cmd
                 )
 
         elif pat in ("fake_quantum", "cognitive_drift_fake_quantum", "simulation_fallback"):
             if "fall back to simulation" in diag.snippet.lower():
                 replacement = "            # Substrate agnosticism: execute exact unitary algebra\n            return Substrate.QUANTUM_HW"
                 return self.apply_repair_sandboxed(
-                    target_path, replacement, diag.snippet, test_callable=lambda: True
+                    target_path, replacement, diag.snippet, test_cmd=self.verify_cmd
                 )
             elif "classical fft as simulation" in diag.snippet.lower():
                 replacement = "        # QFT is the discrete Fourier character matrix over Z_N"
                 return self.apply_repair_sandboxed(
-                    target_path, replacement, diag.snippet, test_callable=lambda: True
+                    target_path, replacement, diag.snippet, test_cmd=self.verify_cmd
                 )
 
         elif pat == "cosmetic_coherence":
@@ -600,7 +644,7 @@ class SalamanderAgenticOptimizer:
                 "        corr = float(abs(amplitude[i] - amplitude[i + 1]))"
             )
             return self.apply_repair_sandboxed(
-                target_path, replacement, target_block, test_callable=lambda: True
+                target_path, replacement, target_block, test_cmd=self.verify_cmd
             )
 
         elif pat == "hardcoded_collapse":
@@ -611,14 +655,14 @@ class SalamanderAgenticOptimizer:
                 "        reduction_prob = 1.0 - math.exp(-e_g * state.coherence_time / max(1e-12, self.coherence_time))"
             )
             return self.apply_repair_sandboxed(
-                target_path, replacement, target_block, test_callable=lambda: True
+                target_path, replacement, target_block, test_cmd=self.verify_cmd
             )
 
         elif pat == "magic_constant":
             target_block = diag.snippet
             replacement = "        # Capacity bounded by registered state Hilbert space dimension\n        self.quantum_channel_capacity = 0.0"
             return self.apply_repair_sandboxed(
-                target_path, replacement, target_block, test_callable=lambda: True
+                target_path, replacement, target_block, test_cmd=self.verify_cmd
             )
 
         return False, f"No dynamic repair rule for pattern {pat}"

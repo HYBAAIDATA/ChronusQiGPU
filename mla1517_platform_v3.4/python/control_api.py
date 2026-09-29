@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hmac
 import json
 import mimetypes
 import os
@@ -50,7 +51,11 @@ _RESTART_WINDOW_SECONDS = 600
 _WORKER_SPECS = {
     "agentic-mining": "mining_runtime.py",
     "salamander": "salamander_engine.py",
+    "discovery": "discovery_runtime.py",
 }
+# Workers that drive the mining device. The discovery worker experiments on a
+# simulated twin, so it runs (and learns) on a host with no device bound.
+_DEVICE_WORKERS = frozenset({"agentic-mining", "salamander"})
 _LOCK_HELD = False
 _LOCK_GUARD = threading.Lock()
 _AUDIT: AppendOnlyAudit | None = None
@@ -197,7 +202,9 @@ def _is_truthy(value: str | None, *, default: bool = False) -> bool:
 def _worker_ids() -> list[str]:
     configured = [
         item.strip()
-        for item in os.getenv("PYTHIA_CONTROL_WORKERS", "agentic-mining,salamander").split(",")
+        for item in os.getenv(
+            "PYTHIA_CONTROL_WORKERS", "agentic-mining,salamander,discovery"
+        ).split(",")
         if item.strip()
     ]
     return [worker_id for worker_id in configured if worker_id in _WORKER_SPECS]
@@ -280,10 +287,13 @@ class ControlPlane:
         for handle in self.handles.values():
             if not self.autostart:
                 handle.record.state = "disabled"
-            elif not self.mmio_device:
+            elif not self._device_ready(handle):
                 handle.record.state = "armed_no_device"
             else:
                 handle.record.state = "stopped"
+
+    def _device_ready(self, handle: WorkerHandle) -> bool:
+        return bool(self.mmio_device) or handle.record.worker_id not in _DEVICE_WORKERS
 
     def ensure_workers(self) -> None:
         with self.lock:
@@ -295,7 +305,7 @@ class ControlPlane:
             return
         if not self.autostart:
             return
-        if not self.mmio_device:
+        if not self._device_ready(handle):
             return
         if handle.process is not None and handle.process.poll() is None:
             return
@@ -318,12 +328,12 @@ class ControlPlane:
         handle.record.attempts_window = len(handle.restarts)
         env = os.environ.copy()
         env.setdefault("PYTHONPATH", str(self.python_root))
+        # Workers inherit the service's stdout/stderr so a container log
+        # shows why a worker exited; the restart budget still bounds it.
         handle.process = subprocess.Popen(
             [sys.executable, str(handle.script)],
             cwd=str(self.python_root),
             env=env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
             text=True,
         )
         self.audit.append(
@@ -418,7 +428,7 @@ class ControlPlane:
                 record = handle.record
                 if enabled:
                     if record.state == "disabled":
-                        target = "stopped" if self.mmio_device else "armed_no_device"
+                        target = "stopped" if self._device_ready(handle) else "armed_no_device"
                         record.transition(target, self.audit, "mining_start")
                 else:
                     self._retire_handle(handle, "mining_stop")
@@ -670,6 +680,60 @@ def _ready_to_mine_reason(
 
 
 MINING_EVIDENCE_SCHEMA = "pythia.mining_evidence/1"
+
+
+_KNOWLEDGE: Any = None
+
+
+def knowledge_payload() -> dict[str, Any]:
+    """Every intelligence's shared knowledge, replayed from the fabric journal."""
+    global _KNOWLEDGE
+    from mla1517.knowledge import KnowledgeFabric, default_journal_path
+
+    if _KNOWLEDGE is None:
+        _KNOWLEDGE = KnowledgeFabric(default_journal_path())
+    _KNOWLEDGE.sync()
+    return _KNOWLEDGE.snapshot(recent=50)
+
+
+ADMIN_KEY_ENV = "EUCLID_ADMIN_API_KEY"
+UNAUTHENTICATED_ENV = "PYTHIA_ALLOW_UNAUTHENTICATED_CONTROL"
+
+
+def control_authorization(headers: Any) -> tuple[HTTPStatus, str] | None:
+    """None when a state-changing request is authorized, else (status, reason).
+
+    Fail closed: every POST and PUT that changes state (start, stop, switch,
+    elevate, escalate, config) needs ``Authorization: Bearer <key>`` matching
+    EUCLID_ADMIN_API_KEY. With no key configured nothing may change state,
+    unless PYTHIA_ALLOW_UNAUTHENTICATED_CONTROL=1 declares a local dev box.
+    """
+    key = os.getenv(ADMIN_KEY_ENV, "").strip()
+    if not key:
+        if _is_truthy(os.getenv(UNAUTHENTICATED_ENV)):
+            return None
+        return HTTPStatus.FORBIDDEN, f"{ADMIN_KEY_ENV} is not configured; control is closed"
+    header = str(headers.get("Authorization", "") or "")
+    token = header[7:].strip() if header[:7].lower() == "bearer " else ""
+    if not token or not hmac.compare_digest(token.encode("utf-8"), key.encode("utf-8")):
+        return HTTPStatus.UNAUTHORIZED, "operator key required"
+    return None
+
+
+def announce_skills() -> int:
+    """Tell every intelligence which skills Salamander holds.
+
+    Publishes each verified skill graft to the knowledge fabric; a rejected
+    graft is never announced. The control plane comes up regardless.
+    """
+    try:
+        from Intelligence.skill_graft import announce
+        from mla1517.knowledge import KnowledgeFabric, default_journal_path
+
+        return len(announce(KnowledgeFabric(default_journal_path())))
+    except Exception as exc:  # noqa: BLE001 - reported, never fatal to the control plane
+        print(f"[pythia-control] skill announcement failed: {type(exc).__name__}: {exc}")
+        return 0
 
 
 def mining_evidence_payload() -> dict[str, Any]:
@@ -1219,6 +1283,9 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/api/v1/mining/evidence":
             self._json(HTTPStatus.OK, mining_evidence_payload())
             return
+        if path == "/api/v1/knowledge":
+            self._json(HTTPStatus.OK, knowledge_payload())
+            return
         if path == "/api/v1/gpu":
             self._json(HTTPStatus.OK, gpu_payload())
             return
@@ -1282,6 +1349,21 @@ class _Handler(BaseHTTPRequestHandler):
         "/api/v1/salamander/fault": _salamander_fault,
     }
 
+    def _drain(self, length: int) -> None:
+        """Discard a refused body, bounded so a hostile Content-Length cannot
+        force unbounded reads; past the cap the connection is closed."""
+        remaining = min(int(length), _TOE_MAX_BODY_BYTES * 4)
+        if length > remaining:
+            self.close_connection = True
+        try:
+            while remaining > 0:
+                chunk = self.rfile.read(min(remaining, 65536))
+                if not chunk:
+                    break
+                remaining -= len(chunk)
+        except (OSError, ValueError):
+            self.close_connection = True
+
     def _read_json_body(self) -> tuple[dict[str, Any] | None, str | None]:
         try:
             length = int(self.headers.get("Content-Length") or 0)
@@ -1290,6 +1372,9 @@ class _Handler(BaseHTTPRequestHandler):
         if length <= 0:
             return {}, None
         if length > _TOE_MAX_BODY_BYTES:
+            # Empty the socket before the 413 so the client reads the status
+            # instead of a connection reset mid-upload.
+            self._drain(length)
             return None, "body_too_large"
         raw = self.rfile.read(length)
         try:
@@ -1374,6 +1459,8 @@ class _Handler(BaseHTTPRequestHandler):
         if handler is None:
             self._json(HTTPStatus.NOT_FOUND, {"error": "not_found"})
             return
+        if self._refuse_unauthorized():
+            return
         body, err = self._read_json_body()
         if body is None:
             status = (
@@ -1400,6 +1487,8 @@ class _Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path != "/api/v1/config":
             self._json(HTTPStatus.NOT_FOUND, {"error": "not_found"})
+            return
+        if self._refuse_unauthorized():
             return
         body, err = self._read_json_body()
         if body is None:
@@ -1454,6 +1543,15 @@ class _Handler(BaseHTTPRequestHandler):
         body = json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
         self._send(int(status), "application/json; charset=utf-8", body)
 
+    def _refuse_unauthorized(self) -> bool:
+        refusal = control_authorization(self.headers)
+        if refusal is None:
+            return False
+        status, reason = refusal
+        _audit().append("control_refused", path=urlparse(self.path).path, reason=reason)
+        self._json(status, {"ok": False, "error": reason})
+        return True
+
     def _method_not_allowed(self) -> None:
         self._json(HTTPStatus.METHOD_NOT_ALLOWED, {"error": "method_not_allowed"})
 
@@ -1507,6 +1605,7 @@ def serve(
     web_root: str | Path = "dist/public",
 ) -> None:
     _control_plane()
+    announce_skills()
     server = ThreadingHTTPServer((host, int(port)), _Handler)
     server.web_root = Path(web_root).resolve()
     try:

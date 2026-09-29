@@ -23,6 +23,8 @@ import asyncio
 import hashlib
 import json
 import logging
+import math
+import os
 import struct
 import time
 import uuid
@@ -31,7 +33,11 @@ from queue import Empty
 from typing import Any, Mapping
 
 from mla1517.hardware import MMIOBridge, VaultRecord
-from manifold_pool_coordinator import CURRENT_HOT_STATE_FORMAT, ManifoldPoolCoordinator
+from manifold_pool_coordinator import (
+    CURRENT_HOT_STATE_FORMAT,
+    ManifoldPoolCoordinator,
+    parse_endpoint,
+)
 
 from .chooser import MiningIntelligenceChooser
 from .session import MiningSession
@@ -47,10 +53,12 @@ from .self_healing_agent import (
 )
 from .agentic_controller import AgenticMiningController
 from .causal import CausalCoordinate, CausalLedger
-from .execution_router import NONCE_ORDER_M32, ExecutionRouter
+from .execution_router import NONCE_ORDER_HENDRIX, NONCE_ORDER_M32, ExecutionRouter
+from .hendrix_order import NonceOrderUnavailable, load_hendrix
 from .recovery_authority import RecoveryGovernor, RecoveryRecord
 from .nonce_lease import LeaseConflict, LeaseExhausted, LeaseRecord
 from .search_plan import (
+    CompletionState,
     ExecutionRecord,
     PlanSource,
     PoolOutcome,
@@ -60,6 +68,16 @@ from .search_plan import (
 from .solver import M32SearchSolver
 from .stratum_adapter import StratumAdapterError
 from .tuning_gate import TuningGate
+from .intelligence_memory import IntelligenceMemory
+from ..knowledge import KnowledgeFabric, default_journal_path
+from ..learning import LearningLedger, ResidualScale
+from .hashrate_governor import HashrateGovernor
+from .loss_ledger import LossLedger
+from .promotion import ShadowTrial, applicable
+from .recovery_effect import RecoveryEffects
+from .operating_policy import OperatingPolicy, PolicyContext
+from .policy_audit import PolicyAuditor
+from .world_model import MiningWorldModel
 from .toe_adapter import TOEUnavailable, TOEMiningAdapter
 from .toe_context import TOEContextBuilder, TOEContextUnavailable
 from .toe_signal import TOECausalSignal, build_toe_signal, lucas_ladder_status
@@ -82,6 +100,26 @@ PERMITTED_WITHOUT_TOE = frozenset({"observe_record", "submit_candidate"})
 _PRECOMPUTE_IDLE_S = 0.25
 _BASELINE_POLICY = "baseline_fallback"
 _EVIDENCE_MIN_INTERVAL_S = 0.5
+_NONCE_ORDERS = {"m32": NONCE_ORDER_M32, "hendrix": NONCE_ORDER_HENDRIX}
+
+
+def resolve_nonce_order(value: str) -> str:
+    """The configured nonce order; an unknown or unloadable one fails startup.
+
+    Hendrix is the default: the structured search is part of the miner, and
+    both the CPU reference and the OpenCL device (bitcoin_sha256d_hendrix)
+    execute it. ``m32`` keeps the Turing lane order.
+    """
+    key = (value or "hendrix").strip().lower()
+    if key not in _NONCE_ORDERS:
+        raise ValueError(
+            f"PYTHIA_NONCE_ORDER must be one of {sorted(_NONCE_ORDERS)}, got {value!r}"
+        )
+    if key == "hendrix":
+        search_cls, error = load_hendrix()
+        if search_cls is None:
+            raise NonceOrderUnavailable(f"PYTHIA_NONCE_ORDER=hendrix: {error}")
+    return _NONCE_ORDERS[key]
 
 
 def _header_work_space(generation: Any) -> str:
@@ -208,6 +246,12 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         hasher = kwargs.pop("execution_hasher", None)
         causal_log_path = kwargs.pop("causal_log_path", None)
         super().__init__(*args, **kwargs)
+        # A started worker hashes; whether it may submit is a separate,
+        # live question (submission_permitted). Unapproved, it mines in
+        # shadow: full SHA256d and target checks, shares found and learned
+        # from, nothing written to the pool.
+        self.mining_enabled = True
+        self._live_submit_approved = False
         self.session = session if session is not None else MiningSession()
         self.chain_observer = observer
         self._submission_lock = asyncio.Lock()
@@ -236,6 +280,11 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self.last_recovery_plan: RecoveryPlan | None = None
         self.last_control_signals: tuple[str, ...] = ()
         self.work_throttled = False
+        # A throttle pauses vault polling, never observation for good: after
+        # ``throttle_probe_s`` one record is let through, and only a fresh
+        # observation (a HOLD plan) can clear the throttle or re-assert it.
+        self.throttle_probe_s = 5.0
+        self._throttled_at = 0.0
         self.quarantined_records: set[str] = set()
         self.proven_exclusions: list[dict[str, Any]] = []
         self._control_sink: MMIOControlSink | None = None
@@ -247,6 +296,55 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self.agentic = AgenticMiningController()
         self.tuning = TuningGate()
         self._tuned_window: int | None = None
+        # Measured-only operating intelligence: HOW MUCH per window. It never
+        # touches SHA256d, targets, shares or pool outcomes.
+        self.world = MiningWorldModel()
+        self.operating_policy = OperatingPolicy(self.world)
+        self.loss = LossLedger()
+        try:
+            audit_every = int(os.getenv("PYTHIA_POLICY_AUDIT_EVERY", "64"))
+        except ValueError:
+            audit_every = 64
+        self.policy_audit = PolicyAuditor(every=audit_every)
+        # The rate the network sees stays under the operator's configured
+        # cap and 1% of the network; re-read from runtime config every 5 s.
+        self.governor = HashrateGovernor()
+        self._governor_config_at = float("-inf")
+        self._policy_mode = os.getenv("PYTHIA_OPERATING_POLICY", "model").strip().lower()
+        self._nonce_order = resolve_nonce_order(os.getenv("PYTHIA_NONCE_ORDER", "hendrix"))
+        try:
+            self._max_window_seconds = float(os.getenv("PYTHIA_MAX_WINDOW_SECONDS", "2.0"))
+        except ValueError:
+            self._max_window_seconds = 2.0
+        self._idle_seen_ms = 0.0
+        # Learners for the seeded questions recovery.effect, precompute.depth
+        # and policy.promotion (see docs/LEARNING.md).
+        self.recovery_effects = RecoveryEffects()
+        self._ready_record = [0, 0]  # windows that found a plan ready, windows
+        self._last_window_s: float | None = None
+        self._shadow: ShadowTrial | None = None
+        self._shadow_tried: set[tuple[str, ...]] = set()
+        self._shadow_published: str | None = None
+        self._bound_session: str | None = None
+        try:
+            self._memory_every_s = float(os.getenv("PYTHIA_INTELLIGENCE_CHECKPOINT_S", "60"))
+        except ValueError:
+            self._memory_every_s = 60.0
+        self._memory_saved_at = time.monotonic()
+        self.intelligence_memory: IntelligenceMemory | None = None
+        memory_dir = os.getenv("PYTHIA_INTELLIGENCE_DIR", "").strip()
+        if memory_dir:
+            self._attach_intelligence_memory(memory_dir)
+        # What this miner learns, every intelligence can know: the fabric's
+        # journal sits beside the Aethel memory and is shared by all workers.
+        self.knowledge = KnowledgeFabric(default_journal_path() if memory_dir else None)
+        self._knowledge_at = float("-inf")
+        # Learning is judged, not assumed: forecasts committed when a plan is
+        # made are scored against a null when its window finishes.
+        self.learning = LearningLedger.from_seeds(fabric=self.knowledge)
+        self._forecasts: dict[str, dict[str, Any]] = {}
+        self._elapsed_scale = {"learner": ResidualScale(), "null": ResidualScale()}
+        self._sec_per_hash: dict[str, float] = {}
         self.execution_hasher = hasher if hasher is not None else CpuReferenceHasher()
         self.causal = CausalLedger(path=causal_log_path)
         self.recovery = RecoveryGovernor(on_event=self._on_recovery_event)
@@ -353,12 +451,30 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         return await super()._handle_control_request(request)
 
     def _sync_recovery_gate(self) -> None:
-        self.agentic.set_recovery_active(
-            self._recovery_backpressure or self.recovery.freezes_speculation
-        )
+        active = self._recovery_backpressure or self.recovery.freezes_speculation
+        self.agentic.set_recovery_active(active)
+        self.loss.observe_recovery(time.monotonic(), active)
         self._precompute_wake.set()
 
     def _on_recovery_event(self, kind: str, record: RecoveryRecord) -> None:
+        if kind == "recovery_verified" and hasattr(self, "recovery_effects"):
+            self.recovery_effects.recovery_verified(record.recovery_id, list(record.commands))
+        if kind in ("recovery_verified", "recovery_failed") and hasattr(self, "knowledge"):
+            try:
+                self.knowledge.publish(
+                    "salamander.recovery_authority",
+                    "salamander.recovery",
+                    {
+                        "recovery_id": record.recovery_id,
+                        "state": record.state.value,
+                        "commands": list(record.commands),
+                        "reason": record.reason,
+                        "failure": record.failure,
+                    },
+                    evidence="measured",
+                )
+            except Exception as exc:
+                LOG.warning("recovery outcome not shared: %s", exc)
         self.causal.record(
             kind,
             CausalCoordinate(recovery_id=record.recovery_id),
@@ -419,6 +535,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 "share_log_tail": self.session.share_log[-8:],
             },
             "causal_tail": self.causal.snapshot(24),
+            "submission": "live" if self.submission_permitted() else "shadow",
+            "intelligence": self.intelligence_snapshot(),
         }
 
     def agentic_status(self) -> dict[str, Any]:
@@ -477,6 +595,11 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             self.agentic.clear_work(reason or "NO_WORK_IDENTITY")
             return None
         if self.agentic.bind_work(identity):
+            now = time.monotonic()
+            new_session = self._bound_session not in (None, identity.pool_session_id)
+            self._bound_session = identity.pool_session_id
+            self.world.observe_bind(now, clean_jobs=identity.clean_jobs, new_session=new_session)
+            self.loss.observe_bind(now)
             self.causal.record(
                 "identity_bound",
                 CausalCoordinate(
@@ -493,10 +616,15 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
 
     def _set_throttled(self, throttled: bool) -> None:
         self.work_throttled = bool(throttled)
+        if throttled:
+            self._throttled_at = time.monotonic()
+
+    def _throttle_holds(self) -> bool:
+        return self.work_throttled and time.monotonic() - self._throttled_at < self.throttle_probe_s
 
     async def before_hardware_poll(self) -> bool:
-        if not self.submit_enabled:
-            return not self.work_throttled
+        if not self.submission_permitted():
+            return not self._throttle_holds()
         if self.chain_observer is None:
             return False
         if self.session.state == "SUBMITTING" and not self._submission_lock.locked():
@@ -507,8 +635,10 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 tip = await asyncio.to_thread(self.chain_observer.tip)
                 own_height = None
                 pending = self.session.pending
-                if pending and pending["block_candidate"] and (
-                    pending["outcome"] is None or pending["outcome"] is True
+                if (
+                    pending
+                    and pending["block_candidate"]
+                    and (pending["outcome"] is None or pending["outcome"] is True)
                 ):
                     own_height = await asyncio.to_thread(
                         self.chain_observer.confirmed_height, pending["block_hash"]
@@ -534,7 +664,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 self._chain_tip = None
                 return False
         self.session.finish_cooldown()
-        return self.session.state == "SEARCHING" and not self.work_throttled
+        return self.session.state == "SEARCHING" and not self._throttle_holds()
 
     def _toe_or_declared_absent(self, operation: str) -> TOEMiningAdapter | None:
         """Return the live TOE adapter, or None for a declared operation.
@@ -683,16 +813,20 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
 
     def _fill_precompute_queue(self) -> int:
         """Top the queue up to the adaptive lookahead; bounded, never speculative in recovery."""
-        if not self.submit_enabled or self.session.state != "SEARCHING" or self.work_throttled:
+        if not self.mining_enabled or self.session.state != "SEARCHING" or self.work_throttled:
             return 0
         identity = self._refresh_work_identity()
         if identity is None:
             return 0
         built = 0
         for _ in range(self.agentic.plans_needed()):
+            started = time.perf_counter()
             plan = self._build_plan(identity)
             if plan is None or not self.agentic.submit_plan(plan):
                 break
+            # What a plan costs to build: the precompute depth is set from it.
+            self.world.observe_plan_latency(time.perf_counter() - started)
+            self._commit_forecasts(plan)
             self.causal.record(
                 "plan_created",
                 CausalCoordinate(
@@ -734,7 +868,363 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         cap = self._window_cap()
         window = max(LANES, min(self._tuned_window or cap, cap))
         # Whole 32-lane epochs: the executed interval then equals the lease.
-        return window - window % LANES
+        legacy = window - window % LANES
+        if self._policy_mode != "model":
+            return legacy
+        derated = self.tuning.last_decision is not None and (
+            self.tuning.last_decision.action == "DE_RATE"
+        )
+        ctx = PolicyContext(
+            route=self._execution_route(),
+            lanes=LANES,
+            # The intelligence may climb the Lucas scale ladder; every
+            # solver call still enforces budget <= lucas(rung).
+            max_window=max(cap, self._intelligence_ceiling()),
+            legacy_window=legacy,
+            legacy_lookahead=self.agentic.lookahead,
+            capacity=self.agentic.capacity,
+            chunk_cap=self._chunk_cap(),
+            recovery_active=self.agentic.is_recovery_active(),
+            derate_cap=self._tuned_window if derated else None,
+            max_window_seconds=self._max_window_seconds,
+        )
+        shadow = self._shadow
+        # A promoted candidate's levers tighten the live context; a candidate
+        # still in shadow decides beside the policy without acting.
+        decision = self.operating_policy.decide(shadow.context(ctx) if shadow else ctx)
+        if shadow is not None and shadow.status == "shadow":
+            try:
+                shadow.observe(ctx, decision)
+            except Exception as exc:  # a shadow trial must never stop mining
+                LOG.warning("shadow trial failed: %s", exc)
+        # One authority over precompute depth: the policy's model once plan
+        # latency is measured, the controller's reactive adaptation before.
+        measured = decision.source == "model" and "precompute_wait_ms" in decision.expected
+        self.agentic.set_lookahead(
+            decision.lookahead if measured else None,
+            reason=f"job churn {decision.expected.get('job_churn_per_hour', 0.0):.1f}/h",
+        )
+        try:
+            audit = self.policy_audit.maybe_audit(decision)
+        except Exception as exc:  # an audit must never stop mining
+            LOG.warning("policy audit failed: %s", exc)
+            audit = None
+        if audit is not None:
+            self.causal.record(
+                "policy_audit",
+                CausalCoordinate(),
+                decided_window=audit["decided_window"],
+                classical_window=audit["classical_window"],
+                vqc_window=audit["vqc"].get("window"),
+                agree=audit["agree"],
+                digest=audit["attestation"]["digest"],
+            )
+        return decision.window
+
+    def _intelligence_ceiling(self) -> int:
+        """Largest window the operating intelligence may choose.
+
+        OpenCL: the measured launch cap (``_window_cap``). CPU reference: the
+        Lucas value of the highest scale rung that fits a uint32 nonce space
+        (L_31); ``cpu_sweep`` executes it as rung-sized solver calls, so the
+        solver's ``budget <= lucas(rung)`` invariant holds for every call.
+        """
+        from lucas.core import lucas
+        from lucas.ladder import SCALE_RUNGS
+
+        if self._execution_route() == "opencl_m32":
+            return self._window_cap()
+        top = max(r for r in SCALE_RUNGS if lucas(r) < 2**32)
+        return lucas(top)
+
+    def _chunk_cap(self) -> int:
+        hasher = self.execution_hasher
+        cap = int(getattr(hasher, "grind_batch", 1) or 1)
+        if self._execution_route() == "opencl_m32":
+            cap = int(getattr(hasher, "m32_window_max", cap) or cap)
+        return max(1, cap)
+
+    def _attach_intelligence_memory(self, directory: str) -> None:
+        try:
+            memory = IntelligenceMemory(directory)
+            state = memory.load()
+            if state is not None:
+                self.world.import_state(state)
+                LOG.info("intelligence memory restored from aethel %s", directory)
+            self.intelligence_memory = memory
+        except Exception as exc:
+            LOG.warning("intelligence memory unavailable (%s); learning from scratch", exc)
+
+    def _share_knowledge(self, now: float) -> None:
+        """Publish what the miner has learned and read what others have.
+
+        Values are rounded to what is meaningful so a new version means the
+        learning changed, not that time passed: dependents decohere only
+        when their basis really moved.
+        """
+        if now - self._knowledge_at < 5.0:
+            return
+        self._knowledge_at = now
+
+        def sig(value: Any, digits: int = 3) -> Any:
+            if not isinstance(value, (int, float)) or isinstance(value, bool) or not value:
+                return value
+            return float(f"{value:.{digits}g}")
+
+        try:
+            self.knowledge.sync()
+            world = self.world.snapshot()
+            learned = {
+                "routes": {
+                    name: {
+                        "overhead_ms": sig(route.get("overhead_ms")),
+                        "hash_rate_hs": sig(route.get("hash_rate_hs")),
+                        "method": route.get("method"),
+                    }
+                    for name, route in sorted(world.get("routes", {}).items())
+                },
+                "invalidations_per_hour": sig(
+                    world.get("invalidation_rate", {}).get("per_hour_mean"), 2
+                ),
+            }
+            sags = {
+                name: route["sag"]
+                for name, route in sorted(world.get("routes", {}).items())
+                if route.get("sag") is not None
+            }
+            if sags:
+                learned["sag"] = {name: sig(value) for name, value in sags.items()}
+            world_fact = self.knowledge.publish(
+                "mining.world_model", "mining.world", learned, evidence="measured"
+            )
+            decision = self.operating_policy.last
+            if decision is not None:
+                self.knowledge.publish(
+                    "mining.operating_policy",
+                    "mining.policy",
+                    {
+                        "window": decision.window,
+                        "lookahead": decision.lookahead,
+                        "source": decision.source,
+                    },
+                    evidence="computed",
+                    depends_on=[world_fact],
+                )
+            governor = self.governor
+            share_yield = governor.share_yield()
+            self.knowledge.publish(
+                "mining.hashrate_governor",
+                "mining.governor",
+                {
+                    "cap_hs": sig(governor.cap_hs),
+                    "network_hs": sig(governor.network_hs),
+                    "share_yield": sig(share_yield["ratio"]),
+                    "shares": share_yield["shares"],
+                },
+                evidence="computed",
+            )
+            # The share law, tested on the governor's totals every cycle.
+            self.learning.law(
+                "shares.follow.work", expected=governor.expected_shares, observed=governor.shares
+            )
+            self._follow_promotion()
+            self.learning.publish()
+        except Exception as exc:
+            LOG.warning("knowledge not shared this cycle: %s", exc)
+
+    def submission_permitted(self) -> bool:
+        """The operator's --submit, or the dashboard's approval for this very pool."""
+        return self.submit_enabled or self._live_submit_approved
+
+    def _approval_binds_here(self, cfg: dict[str, Any], runtime_config: Any) -> bool:
+        """The dashboard approval is bound to one pool identity (endpoint and
+        worker): it permits submission only while that is the pool this
+        session is connected to and authorized as."""
+        if not runtime_config.live_submit_permitted(cfg):
+            return False
+        pool = runtime_config.active_pool(cfg)
+        client = self.client
+        if pool is None or client is None:
+            return False
+        approved = parse_endpoint(pool["endpoint"], "approved")
+        connected = client.endpoint
+        worker = connected.username or self.username
+        return (approved.host, approved.port) == (connected.host, connected.port) and (
+            pool["worker"] == worker
+        )
+
+    def _refresh_governor(self) -> None:
+        """Re-read the operator's runtime config: the hashrate cap and the
+        live-submission approval both apply within 5 s, without a restart."""
+        now = time.monotonic()
+        if now - self._governor_config_at < 5.0:
+            return
+        self._governor_config_at = now
+        try:
+            import runtime_config
+
+            cfg = runtime_config.load()
+            hashrate = cfg.get("hashrate", {})
+            self.governor.configure(
+                target_hs=hashrate.get("target_hs", 0.0),
+                ceiling_hs=hashrate.get("ceiling_hs", runtime_config.HASHRATE_CEILING_HS),
+            )
+        except Exception as exc:
+            # The last good limits stay in force; the network cap always does.
+            LOG.warning("hashrate config unavailable, keeping current cap: %s", exc)
+            return
+        try:
+            approved = self._approval_binds_here(cfg, runtime_config)
+        except Exception as exc:  # an unreadable approval is no approval
+            LOG.warning("live-submit approval unreadable, submission closed: %s", exc)
+            approved = False
+        if approved != self._live_submit_approved:
+            LOG.info("live submission %s", "approved" if approved else "closed (shadow)")
+        self._live_submit_approved = approved
+
+    def _forecast_plan_ready(self) -> tuple[float, float] | None:
+        """precompute.depth: the depth model's forecast and the base rate's,
+        committed before the executor looks at the queue."""
+        try:
+            if self._last_window_s is None:
+                return None
+            p = self.world.plan_ready_probability(self.agentic.lookahead, self._last_window_s)
+            if p is None:
+                return None
+            ready, n = self._ready_record
+            return p, (ready + 1) / (n + 2)
+        except Exception as exc:  # learning must never stop mining
+            LOG.warning("plan-ready forecast failed: %s", exc)
+            return None
+
+    def _score_plan_ready(self, forecast: tuple[float, float] | None, miss: str | None) -> None:
+        # Recovery and admission holds are not a depth question.
+        if miss in ("recovery", "precompute_unavailable"):
+            return
+        ready = miss is None
+        self._ready_record[0] += int(ready)
+        self._ready_record[1] += 1
+        if forecast is not None:
+            try:
+                self.learning.score_probability("precompute.depth", ready, *forecast)
+            except Exception as exc:
+                LOG.warning("plan-ready scoring failed: %s", exc)
+
+    def _observe_recovery_effect(self, record: ExecutionRecord) -> None:
+        """recovery.effect: the windows before and after each verified recovery."""
+        if record.completion_state is not CompletionState.COMPLETE:
+            return
+        if record.elapsed_seconds > 0:
+            self._last_window_s = record.elapsed_seconds
+        try:
+            if self.recovery_effects.observe_window(record.hash_count, record.elapsed_seconds):
+                self.knowledge.publish(
+                    "mining.recovery_effect",
+                    "salamander.recovery_effect",
+                    self.recovery_effects.snapshot(),
+                    evidence="measured",
+                )
+        except Exception as exc:  # learning must never stop mining
+            LOG.warning("recovery effect not shared: %s", exc)
+
+    def _follow_promotion(self) -> None:
+        """policy.promotion: take a twin-round winner into shadow; publish its status."""
+        if self._shadow is None or self._shadow.status != "shadow":
+            candidate = self.knowledge.observe("promotion.candidate")
+            if (
+                candidate is not None
+                and not self.knowledge.stale(candidate)
+                and candidate.value.get("verdict") == "shadow"
+                and self._shadow is None
+            ):
+                levers = tuple(candidate.value.get("levers") or ())
+                if applicable(levers) and levers not in self._shadow_tried:
+                    self._shadow_tried.add(levers)
+                    self._shadow = ShadowTrial(levers, self.world)
+        if self._shadow is None:
+            return
+        snapshot = self._shadow.snapshot()
+        key = f"{snapshot['status']}:{snapshot['epochs']}"
+        if key != self._shadow_published:
+            self.knowledge.publish(
+                "mining.promotion_gate", "promotion.status", snapshot, evidence="measured"
+            )
+            self._shadow_published = key
+        if self._shadow.status == "rejected":
+            self._shadow = None
+
+    def _commit_forecasts(self, plan: SearchPlan) -> None:
+        """The world model's forecasts for ``plan``, and the nulls', before it runs."""
+        try:
+            route = self._execution_route()
+            model = self.world.route(route)
+            estimate = model.estimate() if model is not None else None
+            last = self._sec_per_hash.get(route)
+            entry: dict[str, Any] = {"route": route, "window": plan.window}
+            duration = None
+            if estimate is not None:
+                duration = estimate[0] + plan.window * estimate[1]
+                if last is not None:
+                    entry["elapsed"] = (
+                        (math.log(duration), self._elapsed_scale["learner"].sigma),
+                        (math.log(plan.window * last), self._elapsed_scale["null"].sigma),
+                    )
+            if duration is not None:
+                done = sum(self.world.completions.values())
+                invalidated = self.world.completions.get(CompletionState.INVALIDATED.value, 0)
+                entry["invalidated"] = (
+                    -math.expm1(-self.world.clean.mean * duration),
+                    (invalidated + 1) / (done + 2),
+                )
+            self._forecasts[plan.plan_id] = entry
+            while len(self._forecasts) > 256:  # plans a new job discarded
+                self._forecasts.pop(next(iter(self._forecasts)))
+        except Exception as exc:  # learning must never stop mining
+            LOG.warning("forecast failed: %s", exc)
+
+    def _score_forecasts(self, record: ExecutionRecord) -> None:
+        """Score the forecasts committed for this window; call before learning from it."""
+        try:
+            route = record.executed_route or record.device_used
+            entry = self._forecasts.pop(record.plan_id, None) if record.plan_id else None
+            complete = record.completion_state is CompletionState.COMPLETE
+            if entry is not None and entry["route"] == route:
+                invalid = record.completion_state is CompletionState.INVALIDATED
+                if "invalidated" in entry:
+                    self.learning.score_probability(
+                        "window.invalidated", invalid, *entry["invalidated"]
+                    )
+                if "elapsed" in entry and complete and record.elapsed_seconds > 0:
+                    x = math.log(record.elapsed_seconds)
+                    learner, null = entry["elapsed"]
+                    self.learning.score_quantity("window.elapsed", x, learner, null)
+                    self._elapsed_scale["learner"].observe(x - learner[0])
+                    self._elapsed_scale["null"].observe(x - null[0])
+            if complete and record.hash_count > 0 and record.elapsed_seconds > 0:
+                self._sec_per_hash[route] = record.elapsed_seconds / record.hash_count
+        except Exception as exc:  # learning must never stop mining
+            LOG.warning("forecast scoring failed: %s", exc)
+
+    def intelligence_snapshot(self) -> dict[str, Any]:
+        last = self.operating_policy.last
+        return {
+            "schema": "pythia.intelligence/1",
+            "policy_mode": self._policy_mode,
+            "window_ceiling": self._intelligence_ceiling(),
+            "max_window_seconds": self._max_window_seconds,
+            "world": self.world.snapshot(),
+            "decision": last.as_dict() if last is not None else None,
+            "loss": self.loss.snapshot(time.monotonic()),
+            "audit": self.policy_audit.snapshot(),
+            "governor": self.governor.snapshot(),
+            "knowledge": self.knowledge.snapshot(recent=10),
+            "learning": self.learning.report(),
+            "memory": (
+                self.intelligence_memory.snapshot()
+                if self.intelligence_memory is not None
+                else None
+            ),
+        }
 
     def _execution_route(self) -> str:
         hasher = self.execution_hasher
@@ -775,8 +1265,9 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 done += take
             return None, None, attempts
 
+        nonce_order = self._nonce_order
         return ExecutionRouter(
-            self.execution_hasher, cpu_sweep, nonce_order=lambda _plan: NONCE_ORDER_M32
+            self.execution_hasher, cpu_sweep, nonce_order=lambda _plan: nonce_order
         )
 
     def _identity_is(self, key: tuple[str, int, str]) -> bool:
@@ -884,8 +1375,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         proof = self.client.proof_adapter.validate_candidate(
             job_id=job_id, extranonce2=extranonce2, ntime=ntime, nonce=nonce
         )
-        if not self.submit_enabled:
-            return False
+        if not self.submission_permitted():
+            return False  # shadow: a proof-checked share, never written
         if self.chain_observer is None:
             raise RuntimeError("live submission requires a Bitcoin chain observer")
         tip = await asyncio.to_thread(self.chain_observer.tip)
@@ -958,7 +1449,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         """
         async with self._search_lock:
             if (
-                not self.submit_enabled
+                not self.mining_enabled
                 or self.session.state != "SEARCHING"
                 or self.work_throttled
                 or not self.client
@@ -974,12 +1465,26 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             client = self.client
             adapter = client.proof_adapter
             job = adapter.current_job
+            self._refresh_governor()
+            try:
+                self.governor.observe_network(job.nbits)
+            except (AttributeError, ValueError) as exc:
+                LOG.debug("network rate unavailable from job nbits: %s", exc)
+            if not self.governor.admit():
+                self.last_execution = {
+                    "executed": False,
+                    "reason": "hashrate_governor",
+                    "cap_hs": self.governor.cap_hs,
+                }
+                return False
+            ready_forecast = self._forecast_plan_ready()
             plan = self.agentic.consume_plan(timeout_ms=0)
             fallback_reason = (
                 None
                 if plan is not None
                 else self.agentic.telemetry.last_consume_miss_reason or "queue_empty"
             )
+            self._score_plan_ready(ready_forecast, fallback_reason)
             reserved: LeaseRecord | None = None
             lease: LeaseRecord | None = None
             if plan is not None:
@@ -1022,6 +1527,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 window=plan.window,
             )
             record: ExecutionRecord | None = None
+            candidate = None
             outcome = PoolOutcome.NO_CANDIDATE
             try:
                 header = adapter.build_header(job.job_id, lease.extranonce2, job.ntime, 0)
@@ -1071,6 +1577,11 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 completed = record is not None and record.completed_work_items > 0
                 self.agentic.finish_execution(lease.lease_id, scanned=completed)
                 if record is not None:
+                    self.governor.record(
+                        hashes=record.hash_count,
+                        share_target=job.target,
+                        shares=int(candidate is not None),
+                    )
                     self._record_execution(identity, plan, lease, record, outcome, coordinate)
             return outcome is PoolOutcome.ACCEPTED
 
@@ -1098,6 +1609,25 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             submission_id=coordinate.submission_id,
         )
         self.agentic.record_outcome(final)
+        now = time.monotonic()
+        self.world.tick(now)
+        self._score_forecasts(final)
+        self.world.observe_execution(final)
+        self._observe_recovery_effect(final)
+        self._share_knowledge(now)
+        self.loss.observe_execution(final, self.world, started_at=now - final.elapsed_seconds)
+        idle_ms = self.agentic.telemetry.executor_idle_waiting_for_plan_ms
+        self.loss.observe_idle(max(0.0, idle_ms - self._idle_seen_ms) / 1000.0)
+        self._idle_seen_ms = idle_ms
+        if (
+            self.intelligence_memory is not None
+            and now - self._memory_saved_at >= self._memory_every_s
+        ):
+            self._memory_saved_at = now
+            try:
+                self.intelligence_memory.checkpoint(self.world.export_state())
+            except Exception as exc:
+                LOG.warning("intelligence checkpoint failed: %s", exc)
         self.causal.record(
             "execution_finished",
             coordinate,

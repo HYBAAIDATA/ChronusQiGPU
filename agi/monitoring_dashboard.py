@@ -37,9 +37,7 @@ class MassGapDashboard:
     ):
         self.engine = mass_gap_engine
         self.auto_tuner = auto_tuner or (
-            mass_gap_engine.auto_tuner
-            if hasattr(mass_gap_engine, "auto_tuner")
-            else None
+            mass_gap_engine.auto_tuner if hasattr(mass_gap_engine, "auto_tuner") else None
         )
         self.bus_adapter = bus_adapter
 
@@ -320,7 +318,9 @@ class MassGapDashboard:
         summary += f"║ Recommendations: {len(data['recommendations']):2d}                                       ║\n"
 
         for rec in data["recommendations"][:3]:  # Show top 3
-            summary += f"║   [{rec['priority'][0].upper()}] {rec['action'][:25]:25s}                  ║\n"
+            summary += (
+                f"║   [{rec['priority'][0].upper()}] {rec['action'][:25]:25s}                  ║\n"
+            )
 
         summary += "╚══════════════════════════════════════════════════════════════╝\n"
 

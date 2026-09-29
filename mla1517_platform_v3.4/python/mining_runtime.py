@@ -20,15 +20,9 @@ from manifold_pool_coordinator import PoolEndpoint
 
 LOG = logging.getLogger("pythia.mining_runtime")
 
-# PYTHIA mines only through these pools. ``domains`` identify a configured
-# endpoint as belonging to a pool; ``default`` is used only when no endpoint
-# is configured for it (NiceHash has none: its stratum host must be set).
-POOL_CATALOG: dict[str, dict] = {
-    "braiins": {"domains": ("braiins.com",), "default": "stratum.braiins.com:3333"},
-    "viabtc": {"domains": ("viabtc.io", "viabtc.com"), "default": "btc.viabtc.io:3333"},
-    "nicehash": {"domains": ("nicehash.com",), "default": None, "extranonce_subscribe": True},
-    "ckpool": {"domains": ("ckpool.org",), "default": "solo.ckpool.org:3333"},
-}
+# PYTHIA mines only through the pools in pool_catalog, resolved exactly as
+# the control API's startup contract resolves them.
+from pool_catalog import POOL_CATALOG, pool_names, pool_settings  # noqa: E402
 
 
 def _catalog_pool(host: str) -> str | None:
@@ -63,10 +57,9 @@ def pool_endpoints(args, config: dict | None = None) -> list[PoolEndpoint]:
 
     The operator config (``runtime_config`` pools, written by the control
     API) wins: the enabled pool is primary and the other configured pools
-    follow in order. Without it, ``PYTHIA_POOLS`` (default
-    ``braiins,viabtc``) names the pools, each configured by
-    ``MLA1517_<POOL>_ENDPOINT`` / ``_USER`` / ``_PASSWORD``; the user and
-    password fall back to ``--user`` / ``--password``.
+    follow in order. Without it, ``pool_catalog`` resolves ``PYTHIA_POOLS``
+    and each pool's ``MLA1517_*`` settings, the same resolution the control
+    API reports; failover pools fall back to ``--user`` / ``--password``.
     """
     if config is None:
         try:
@@ -89,24 +82,19 @@ def pool_endpoints(args, config: dict | None = None) -> list[PoolEndpoint]:
             )
             for index, p in enumerate(ordered)
         ]
-    names = [n.strip().lower() for n in os.getenv("PYTHIA_POOLS", "braiins,viabtc").split(",")]
-    profile = os.getenv("PYTHIA_POOL_PROFILE", "").strip().lower()
-    if profile in names:
-        names.remove(profile)
-        names.insert(0, profile)
     endpoints = []
-    for name in filter(None, names):
+    for index, name in enumerate(pool_names()):
         if name not in POOL_CATALOG:
             raise SystemExit(f"unknown pool {name!r}; choose from {', '.join(POOL_CATALOG)}")
         prefix = f"MLA1517_{name.upper()}"
-        address = os.getenv(f"{prefix}_ENDPOINT") or POOL_CATALOG[name]["default"]
-        if not address:
+        pool = pool_settings(
+            name, primary=index == 0, fallback_user=args.user, fallback_password=args.password
+        )
+        if not pool.endpoint:
             raise SystemExit(f"{prefix}_ENDPOINT is required for {name}")
-        user = os.getenv(f"{prefix}_USER") or args.user
-        if not user:
+        if not pool.user:
             raise SystemExit(f"{prefix}_USER or --user is required for {name}")
-        password = os.getenv(f"{prefix}_PASSWORD") or args.password
-        endpoints.append(_endpoint(name, address, user, password, args.tls))
+        endpoints.append(_endpoint(name, pool.endpoint, pool.user, pool.password, args.tls))
     if not endpoints:
         raise SystemExit("no mining pool configured")
     return endpoints
@@ -172,6 +160,8 @@ async def _main_async(args) -> None:
                     )
                 )
 
+            # Learned operating state persists in Aethel beside the causal log.
+            os.environ.setdefault("PYTHIA_INTELLIGENCE_DIR", "data/intelligence")
             coordinator = IntelligentPoolCoordinator(
                 endpoints,
                 username=args.user or endpoints[0].username,

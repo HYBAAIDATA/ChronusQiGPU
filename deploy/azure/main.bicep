@@ -12,6 +12,13 @@ param appName string = 'pythia-control'
 param externalIngress bool = false
 @description('Existing environment Azure Files storage binding for durable control configuration.')
 param storageBindingName string
+@minLength(1)
+@description('Pool worker identity (account.worker); the control API refuses to boot without it.')
+param stratumUser string
+@secure()
+@minLength(32)
+@description('Operator key for state-changing control requests (Authorization: Bearer). Without it, control is closed.')
+param adminApiKey string
 param tenantId string
 param clientId string
 @secure()
@@ -70,6 +77,10 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
           name: 'entra-client-secret'
           value: clientSecret
         }
+        {
+          name: 'admin-api-key'
+          value: adminApiKey
+        }
       ]
     }
     template: {
@@ -87,8 +98,12 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             value: '0'
           }
           {
-            name: 'PYTHIA_LIVE_SUBMIT'
-            value: '0'
+            name: 'MLA1517_STRATUM_USER'
+            value: stratumUser
+          }
+          {
+            name: 'EUCLID_ADMIN_API_KEY'
+            secretRef: 'admin-api-key'
           }
         ]
         volumeMounts: [

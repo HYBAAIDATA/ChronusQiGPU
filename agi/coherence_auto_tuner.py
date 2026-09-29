@@ -61,11 +61,7 @@ class CoherenceMetrics:
     @property
     def absorption_rate(self) -> float:
         """Calculate average data absorption rate."""
-        return (
-            sum(self.data_absorbed) / len(self.data_absorbed)
-            if self.data_absorbed
-            else 0.0
-        )
+        return sum(self.data_absorbed) / len(self.data_absorbed) if self.data_absorbed else 0.0
 
 
 class CoherenceBasedAutoTuner:
@@ -147,13 +143,9 @@ class CoherenceBasedAutoTuner:
                 )
 
                 adjustments_made += 1
-                logger.info(
-                    f"🎯 Adjusted '{topic}': {metrics.threshold:.6f} → {new_threshold:.6f}"
-                )
+                logger.info(f"🎯 Adjusted '{topic}': {metrics.threshold:.6f} → {new_threshold:.6f}")
 
-        logger.info(
-            f"✅ Auto-tuning cycle complete: {adjustments_made} adjustments made"
-        )
+        logger.info(f"✅ Auto-tuning cycle complete: {adjustments_made} adjustments made")
 
     async def _calculate_adjustment(self, metrics: CoherenceMetrics) -> float:
         """

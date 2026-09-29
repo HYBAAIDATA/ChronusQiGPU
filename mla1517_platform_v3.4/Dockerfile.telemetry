@@ -1,8 +1,11 @@
+# Build from the repository root (docker-compose.yml: context ..): the
+# platform depends on the virtual quantum computer beside it.
 FROM python:3.13-slim
 WORKDIR /app
-COPY pyproject.toml .
-COPY python ./python
-RUN pip install --no-cache-dir '.[telemetry]'
+COPY turing_universal_quantum_computer /src/turing_universal_quantum_computer
+COPY mla1517_platform_v3.4/pyproject.toml .
+COPY mla1517_platform_v3.4/python ./python
+RUN pip install --no-cache-dir /src/turing_universal_quantum_computer '.[telemetry]'
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app/python \

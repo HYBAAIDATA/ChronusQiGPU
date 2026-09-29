@@ -51,7 +51,7 @@ class Phase4ApiTests(unittest.TestCase):
         self.assertEqual(payload["host"]["stratum"]["profile"], "viabtc")
         self.assertEqual(payload["canonicalEngine"]["execution"], "canonical_python_control_api")
         self.assertFalse(payload["canonicalEngine"]["fallback"])
-        self.assertEqual(sorted(payload["workers"]), ["agentic-mining", "salamander"])
+        self.assertEqual(sorted(payload["workers"]), ["agentic-mining", "discovery", "salamander"])
         self.assertEqual(payload["workers"]["agentic-mining"]["state"], "disabled")
         self.assertFalse(payload["stratum"]["connected"])
         self.assertFalse(payload["stratum"]["ready"])

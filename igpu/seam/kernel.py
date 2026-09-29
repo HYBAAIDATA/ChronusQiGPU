@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
@@ -119,7 +120,7 @@ def dispatch(caller: str, device_id: str, kernel: KernelName, args: Any, idempot
 
 def _host_verify(kernel: KernelName, outputs: List[bytes]) -> bool:
     if kernel is KernelName.sha256d_verify:
-        return all(len(o) in (0, 32) for o in outputs)
+        return bool(outputs) and all(o in (b"\x00", b"\x01") for o in outputs)
     return True
 
 
@@ -147,7 +148,22 @@ def _execute(handle: KernelHandle) -> Result[KernelResult]:
             else:
                 outputs = [b""]
         elif kernel is KernelName.sha256d_verify:
-            outputs = [b"\x00" * 32]
+            a = handle.args if isinstance(handle.args, dict) else {}
+            payload = a.get("payload")
+            claimed = a.get("claimed")
+            if (
+                not isinstance(payload, (bytes, bytearray))
+                or not isinstance(claimed, (bytes, bytearray))
+                or len(claimed) != 32
+            ):
+                handle.state = "failed"
+                store.put_handle(handle)
+                return Err(
+                    SeamError.capability_mismatch,
+                    "sha256d_verify requires args: payload (bytes) and claimed (32-byte digest)",
+                )
+            actual = hashlib.sha256(hashlib.sha256(bytes(payload)).digest()).digest()
+            outputs = [b"\x01" if actual == bytes(claimed) else b"\x00"]
         elif kernel in (
             KernelName.lucas_wind,
             KernelName.pisot_wind,

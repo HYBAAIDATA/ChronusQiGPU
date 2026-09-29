@@ -13,7 +13,7 @@ import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from typing import Any, Mapping
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 from .catalog import ConnectorSpec, get as get_spec
 
@@ -111,6 +111,11 @@ class RestDriver:
             return Extract(spec.id, entity, mode, tuple(rows))
         base = _require(credentials, "base_url", spec)
         url = urljoin(str(base).rstrip("/") + "/", entity)
+        # Same-origin gate: an entity like "//host/path" makes urljoin escape
+        # the configured base, which would send the bearer token to a foreign
+        # origin. Reject anything that resolves outside base_url's netloc.
+        if urlparse(url).netloc != urlparse(str(base)).netloc:
+            raise ConnectorError(f"{spec.id} entity {entity!r} resolves outside base_url")
         request = urllib.request.Request(url, headers={"Accept": "application/json"})
         token = credentials.get("token")
         if token:

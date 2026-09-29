@@ -24,6 +24,9 @@ artifacts/
 *.lib
 *.pdb
 *.so
+mla1517_platform_v3.4/host/primedb_ingest_daemon
+mla1517_platform_v3.4/host/mla1517_producer
+mla1517_platform_v3.4/host/*_test
 data/
 PYTHIA-main/
 full_prompt.md
@@ -44,3 +47,8 @@ models/
 
 # scratch build/output dir
 .tmp_build/
+
+# L-HRAS aethel storage roots (config.example.toml defaults)
+aethel_store/
+aethel_backup/
+smoke-artifacts/

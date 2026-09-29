@@ -226,3 +226,37 @@ __kernel void bitcoin_sha256d_m32(__global const uchar *midstate,
   sha_init(s); sha_block(s,w);
   if (accept_less(s,target)) atomic_min(scratch, gid);
 }
+
+//   bitcoin_sha256d_hendrix  Hendrix structured-search order: schedule
+// position p = position_base + gid visits nonce = base + (p * stride) mod
+// window, with stride coprime to window, so the positions [0, window) visit
+// every nonce of the leased window exactly once and never leave it. The
+// product is taken in 64 bits (p, stride < 2^32). The smallest winning
+// position wins via atomic_min on gid, so the device's winner is the
+// schedule's first, exactly as in the serial scan; the host rehashes it.
+__kernel void bitcoin_sha256d_hendrix(__global const uchar *midstate,
+                                      __global const uchar *header,
+                                      __global const uchar *target,
+                                      uint base_nonce,
+                                      uint window,
+                                      uint stride,
+                                      uint position_base,
+                                      __global uint *scratch,
+                                      uint count) {
+  uint gid=get_global_id(0);
+  if (gid>=count) return;
+  uint s[8], w[64];
+  for (int i=0;i<8;i++) s[i]=load_be(midstate+4*i);
+  for (int i=0;i<16;i++) w[i]=0;
+  for (int i=0;i<3;i++) w[i]=load_be(header+64+4*i);
+  ulong p=(ulong)position_base+(ulong)gid;
+  uint n=base_nonce+(uint)((p*(ulong)stride)%(ulong)window);
+  w[3]=((n&255u)<<24)|((n&0xff00u)<<8)|((n>>8)&0xff00u)|(n>>24);
+  w[4]=0x80000000u; w[15]=640u;
+  sha_block(s,w);
+  for (int i=0;i<8;i++) w[i]=s[i];
+  for (int i=8;i<16;i++) w[i]=0;
+  w[8]=0x80000000u; w[15]=256u;
+  sha_init(s); sha_block(s,w);
+  if (accept_less(s,target)) atomic_min(scratch, gid);
+}

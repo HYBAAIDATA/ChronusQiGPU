@@ -19,9 +19,12 @@ from abc import ABC, abstractmethod
 from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from .intelligence_bus import IntelligenceBus
 
 PHI = (1 + np.sqrt(5)) / 2  # 1.6180339887...
 logger = logging.getLogger("hyba.intelligence")
@@ -154,7 +157,7 @@ class IntelligentEndpoint(ABC):
         }
 
         # Bus connection (set by IntelligenceBus on registration)
-        self._bus: Optional[IntelligenceBus] = None
+        self._bus: Optional["IntelligenceBus"] = None
 
         # Callback for actions requiring approval
         self._approval_callback: Optional[Callable] = None
@@ -334,8 +337,7 @@ class IntelligentEndpoint(ABC):
             "observations": len(self.observations),
             "decisions_made": self.performance["decisions_made"],
             "accuracy": (
-                self.performance["decisions_correct"]
-                / max(self.performance["decisions_made"], 1)
+                self.performance["decisions_correct"] / max(self.performance["decisions_made"], 1)
             ),
             "phi_resonance": np.mean(recent_phi),
             "avg_value_delta": np.mean(recent_deltas) if recent_deltas else 0.0,
@@ -353,9 +355,7 @@ class IntelligentEndpoint(ABC):
             self.performance["decisions_correct"] += 1
         n = self.performance["decisions_made"]
         prev_avg = self.performance["average_value_delta"]
-        self.performance["average_value_delta"] = (
-            prev_avg * (n - 1) + signal.delta
-        ) / n
+        self.performance["average_value_delta"] = (prev_avg * (n - 1) + signal.delta) / n
 
     async def _request_approval(self, decision: Decision) -> bool:
         """Request approval for decisions beyond autonomy level."""

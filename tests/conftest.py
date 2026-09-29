@@ -46,4 +46,3 @@ while _INTELLIGENCE_DIR in sys.path:
 import hyba_compat  # noqa: E402
 
 hyba_compat.install()
-

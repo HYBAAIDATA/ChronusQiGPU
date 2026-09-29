@@ -2,7 +2,7 @@ name: Azure packaging
 on:
   pull_request:
   push:
-    branches: [main, codex/mining-lifecycle-integration]
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
@@ -14,27 +14,19 @@ jobs:
       - name: Compile Bicep without deploying resources
         run: az bicep build --file deploy/azure/main.bicep --outfile /tmp/pythia-arm.json
   container:
+    name: Docker live smoke — deploy image against a scripted pool
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Build Azure control image
         run: docker build -f deploy/azure/Dockerfile -t pythia-control:ci .
-      - name: Check process health and honest mining readiness
-        shell: bash
-        run: |
-          set -euo pipefail
-          docker run -d --name pythia-ci -p 127.0.0.1:3000:3000 pythia-control:ci
-          trap 'docker logs pythia-ci; docker rm -f pythia-ci' EXIT
-          for attempt in $(seq 1 30); do
-            if curl --fail --silent http://127.0.0.1:3000/healthz > /tmp/health.json; then break; fi
-            sleep 2
-          done
-          curl --fail --silent http://127.0.0.1:3000/healthz
-          curl --fail --silent http://127.0.0.1:3000/ > /tmp/index.html
-          test -s /tmp/index.html
-          curl --fail --silent http://127.0.0.1:3000/api/v1/ready-to-mine > /tmp/ready.json
-          python - <<'PY'
-          import json
-          ready = json.load(open('/tmp/ready.json'))
-          assert ready['ready'] is False, ready
-          PY
+      - name: Live smoke (boot, operator start, pool session, device path, evidence)
+        run: python3 scripts/docker_smoke.py --image pythia-control:ci --seconds 60 --out smoke-artifacts
+      - name: Upload smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-live-smoke
+          path: smoke-artifacts/
+          if-no-files-found: warn

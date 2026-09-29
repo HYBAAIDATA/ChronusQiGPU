@@ -16,7 +16,7 @@ COPY --from=frontend /build/dist/public ./dist/public
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ocl-icd-libopencl1 intel-opencl-icd pocl-opencl-icd rocm-opencl-icd clinfo \
     && rm -rf /var/lib/apt/lists/*
-RUN pip install --no-cache-dir ".[hardware]"
+RUN pip install --no-cache-dir ./turing_universal_quantum_computer ".[hardware]"
 
 ENV PYTHIA_HOST=0.0.0.0
 ENV PYTHIA_PORT=3000

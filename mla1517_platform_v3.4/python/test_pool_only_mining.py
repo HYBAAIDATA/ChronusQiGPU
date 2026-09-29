@@ -17,6 +17,7 @@ import pytest
 import mining_runtime
 from manifold_pool_coordinator import PoolEndpoint
 from mla1517.mining.coordinator import IntelligentPoolCoordinator
+from mla1517.mining.hashrate_governor import HashrateGovernor
 from mla1517.mining.pool_chain import PoolChainObserver, bip34_height
 from mla1517.mining.session import MiningSession
 from mla1517.mining.stratum_adapter import stratum_prevhash
@@ -50,6 +51,9 @@ def _pool_only_coordinator(endpoints, **kwargs) -> IntelligentPoolCoordinator:
         **kwargs,
     )
     coord.chain_observer = PoolChainObserver(lambda: coord.client)
+    # BLOCK_NBITS is a toy network (~1/600 H/s): any real miner is far above
+    # 1% of it, so these fixtures run without the network-share cap.
+    coord.governor = HashrateGovernor(max_network_fraction=None)
     return coord
 
 
@@ -316,7 +320,7 @@ def test_unlisted_pools_are_refused_unless_overridden(monkeypatch):
 
 
 def test_environment_catalog_for_the_four_pools(monkeypatch):
-    for name in ("BRAIINS", "VIABTC", "NICEHASH", "CKPOOL"):
+    for name in ("BRAIINS", "VIABTC", "NICEHASH", "CKPOOL", "STRATUM"):
         for suffix in ("ENDPOINT", "USER", "PASSWORD"):
             monkeypatch.delenv(f"MLA1517_{name}_{suffix}", raising=False)
     monkeypatch.setenv("PYTHIA_POOLS", "braiins,ckpool")
@@ -328,6 +332,54 @@ def test_environment_catalog_for_the_four_pools(monkeypatch):
     monkeypatch.setenv("PYTHIA_POOLS", "nicehash")
     with pytest.raises(SystemExit, match="MLA1517_NICEHASH_ENDPOINT"):
         mining_runtime.pool_endpoints(ARGS, {"pools": []})
+
+
+def _clear_pool_env(monkeypatch):
+    for name in ("BRAIINS", "VIABTC", "NICEHASH", "CKPOOL", "STRATUM"):
+        for suffix in ("ENDPOINT", "USER", "PASSWORD"):
+            monkeypatch.delenv(f"MLA1517_{name}_{suffix}", raising=False)
+    for name in (
+        "PYTHIA_POOLS",
+        "PYTHIA_POOL_PROFILE",
+        "MLA1517_POOL_PROFILE",
+        "PYTHIA_STRATUM_WORKER",
+        "PYTHIA_STRATUM_PASSWORD",
+        "PYTHIA_STRATUM_ENDPOINT",
+    ):
+        monkeypatch.delenv(name, raising=False)
+
+
+def test_one_variable_is_enough_to_mine(monkeypatch):
+    from startup_contract import resolve_stratum_identity
+
+    _clear_pool_env(monkeypatch)
+    monkeypatch.setenv("MLA1517_STRATUM_USER", "acct.rig")
+    identity = resolve_stratum_identity()
+    assert (identity.profile, identity.host, identity.port) == ("braiins", "stratum.braiins.com", 3333)
+    args = SimpleNamespace(user="acct.rig", password="x", tls=False)
+    primary, failover = mining_runtime.pool_endpoints(args, {"pools": []})
+    assert (primary.name, primary.username, primary.password) == ("braiins", "acct.rig", "x")
+    assert failover.name == "viabtc"
+
+
+def test_worker_mines_the_identity_the_control_api_reports(monkeypatch):
+    from startup_contract import resolve_stratum_identity
+
+    _clear_pool_env(monkeypatch)
+    monkeypatch.setenv("PYTHIA_POOL_PROFILE", "ckpool")
+    monkeypatch.setenv("MLA1517_STRATUM_USER", "bc1qcanonical")
+    monkeypatch.setenv("MLA1517_CKPOOL_USER", "bc1qper-pool")
+    monkeypatch.setenv("MLA1517_STRATUM_ENDPOINT", "eu.ckpool.org:3334")
+    identity = resolve_stratum_identity()
+    args = SimpleNamespace(user="bc1qcanonical", password="x", tls=False)
+    primary = mining_runtime.pool_endpoints(args, {"pools": []})[0]
+    assert (primary.name, primary.host, primary.port, primary.username) == (
+        identity.profile,
+        identity.host,
+        identity.port,
+        identity.user,
+    )
+    assert primary.username == "bc1qcanonical"
 
 
 # ── device-sized windows (pool difficulty needs the throughput) ──────── #

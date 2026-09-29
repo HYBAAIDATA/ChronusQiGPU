@@ -70,9 +70,7 @@ class DFTValidationOracle:
         """Execute comprehensive DFT validation of YBCO for quantum ASIC applications"""
 
         logger.info("🚀 INITIALIZING DFT VALIDATION ORACLE")
-        logger.info(
-            "🎯 Objective: Validate YBCO for next-generation HYBA Quantum ASICs"
-        )
+        logger.info("🎯 Objective: Validate YBCO for next-generation HYBA Quantum ASICs")
         logger.info("🔬 Method: Density Functional Theory + Quantum Resonance Analysis")
 
         # Step 1: Structural stability analysis
@@ -135,15 +133,9 @@ class DFTValidationOracle:
             compression_ratio = 1 - pressure / (3 * bulk_modulus)
 
             # Update lattice parameters under pressure
-            a_compressed = (
-                self.ybco_structure["lattice_parameters"]["a"] * compression_ratio
-            )
-            b_compressed = (
-                self.ybco_structure["lattice_parameters"]["b"] * compression_ratio
-            )
-            c_compressed = (
-                self.ybco_structure["lattice_parameters"]["c"] * compression_ratio
-            )
+            a_compressed = self.ybco_structure["lattice_parameters"]["a"] * compression_ratio
+            b_compressed = self.ybco_structure["lattice_parameters"]["b"] * compression_ratio
+            c_compressed = self.ybco_structure["lattice_parameters"]["c"] * compression_ratio
 
             # Calculate structural stability metric
             # Based on deviation from optimal orthorhombic structure
@@ -196,21 +188,17 @@ class DFTValidationOracle:
             resistivity = rho0 + alpha * temperature + beta * temperature**2
 
             # Carrier concentration (simplified)
-            carrier_density = self.ybco_structure["electronic_structure"][
-                "carrier_density"
-            ] * (
+            carrier_density = self.ybco_structure["electronic_structure"]["carrier_density"] * (
                 1 - 0.001 * (temperature - 77) / 77
             )  # Decrease with temperature
 
             # Fermi velocity (temperature dependent)
-            fermi_velocity = self.ybco_structure["electronic_structure"][
-                "fermi_velocity"
-            ] * (1 + 0.0001 * temperature)
+            fermi_velocity = self.ybco_structure["electronic_structure"]["fermi_velocity"] * (
+                1 + 0.0001 * temperature
+            )
 
             # Quantum coherence metric
-            coherence_length = self.ybco_structure["electronic_structure"][
-                "coherence_length"
-            ] * (
+            coherence_length = self.ybco_structure["electronic_structure"]["coherence_length"] * (
                 1 + 0.001 * (77 - temperature) / 77
             )  # Increase at lower T
 
@@ -226,9 +214,7 @@ class DFTValidationOracle:
             )
 
         # Find optimal temperature range
-        optimal_temp_data = max(
-            electronic_data, key=lambda x: x["quantum_coherence_score"]
-        )
+        optimal_temp_data = max(electronic_data, key=lambda x: x["quantum_coherence_score"])
 
         return {
             "temperature_dependence": electronic_data,
@@ -258,12 +244,8 @@ class DFTValidationOracle:
         tc_doping = tc_pressure * (1 - abs(current_doping - optimal_doping) * 10)
 
         # Critical fields (Ginzburg-Landau theory)
-        coherence_length = self.ybco_structure["electronic_structure"][
-            "coherence_length"
-        ]
-        penetration_depth = self.ybco_structure["electronic_structure"][
-            "penetration_depth"
-        ]
+        coherence_length = self.ybco_structure["electronic_structure"]["coherence_length"]
+        penetration_depth = self.ybco_structure["electronic_structure"]["penetration_depth"]
 
         # Upper critical field
         h_c2 = (1.0 / (2 * np.pi)) * (1.055e-34 / (2 * 1.602e-19 * coherence_length**2))
@@ -280,8 +262,7 @@ class DFTValidationOracle:
             "critical_current_4k_a_cm2": jc_4k,
             "coherence_length_nm": coherence_length * 1e9,
             "penetration_depth_nm": penetration_depth * 1e9,
-            "kappa_parameter": penetration_depth
-            / coherence_length,  # Type II superconductor
+            "kappa_parameter": penetration_depth / coherence_length,  # Type II superconductor
             "quantum_suitable": tc_doping > 77 and h_c2_tesla > 100,
         }
 
@@ -306,20 +287,14 @@ class DFTValidationOracle:
         metrics["thermal_stability"] = min(1.0, thermal_margin * 2)
 
         # Coherence preservation (based on coherence length and purity)
-        coherence_length = self.ybco_structure["electronic_structure"][
-            "coherence_length"
-        ]
+        coherence_length = self.ybco_structure["electronic_structure"]["coherence_length"]
         required_coherence = 10e-9  # 10 nm minimum for quantum coherence
-        metrics["coherence_preservation"] = min(
-            1.0, coherence_length / required_coherence
-        )
+        metrics["coherence_preservation"] = min(1.0, coherence_length / required_coherence)
 
         # Integration feasibility (based on crystal structure and processing)
         crystal_quality = 0.9  # High-quality YBCO films achievable
         processing_complexity = 0.7  # Moderate complexity
-        metrics["integration_feasibility"] = (
-            crystal_quality + processing_complexity
-        ) / 2
+        metrics["integration_feasibility"] = (crystal_quality + processing_complexity) / 2
 
         # Scalability (based on manufacturing maturity)
         manufacturing_maturity = 0.8  # YBCO is well-established
@@ -375,9 +350,7 @@ class DFTValidationOracle:
             "structural_resonance": structural_resonance,
             "overall_quantum_resonance": quantum_resonance_score,
             "hyba_compatible": quantum_resonance_score > 0.7,
-            "resonance_classification": self._classify_resonance(
-                quantum_resonance_score
-            ),
+            "resonance_classification": self._classify_resonance(quantum_resonance_score),
         }
 
     def _calculate_electronic_resonance(self) -> float:
@@ -595,12 +568,8 @@ class DFTValidationOracle:
         stability = results["structural_stability"]
         logger.info("\n📐 STRUCTURAL STABILITY:")
         logger.info(f"   🎯 Optimal Pressure: {stability['optimal_pressure']:.1f} GPa")
-        logger.info(
-            f"   💪 Max Stability Score: {stability['max_stability_score']:.3f}"
-        )
-        logger.info(
-            f"   ✅ Phase Stable Up To: {stability['phase_transition_pressure']} GPa"
-        )
+        logger.info(f"   💪 Max Stability Score: {stability['max_stability_score']:.3f}")
+        logger.info(f"   ✅ Phase Stable Up To: {stability['phase_transition_pressure']} GPa")
         logger.info(
             f"   🔧 Structural Integrity: {'PASS' if stability['structural_integrity'] else 'FAIL'}"
         )
@@ -608,15 +577,9 @@ class DFTValidationOracle:
         # Electronic structure
         electronic = results["electronic_structure"]
         logger.info("\n⚛️ ELECTRONIC STRUCTURE:")
-        logger.info(
-            f"   🌡️ Optimal Temperature: {electronic['optimal_temperature']:.1f} K"
-        )
-        logger.info(
-            f"   🧠 Max Quantum Coherence: {electronic['max_quantum_coherence']:.3f}"
-        )
-        logger.info(
-            f"   🔌 Room Temp Resistivity: {electronic['room_temp_resistivity']:.3f} µΩ·cm"
-        )
+        logger.info(f"   🌡️ Optimal Temperature: {electronic['optimal_temperature']:.1f} K")
+        logger.info(f"   🧠 Max Quantum Coherence: {electronic['max_quantum_coherence']:.3f}")
+        logger.info(f"   🔌 Room Temp Resistivity: {electronic['room_temp_resistivity']:.3f} µΩ·cm")
         logger.info(
             f"   ✅ Metallic Behavior: {'YES' if electronic['metallic_behavior'] else 'NO'}"
         )
@@ -627,9 +590,7 @@ class DFTValidationOracle:
         logger.info(
             f"   ❄️ Critical Temperature: {superconducting['critical_temperature_k']:.1f} K"
         )
-        logger.info(
-            f"   🧲 Critical Field: {superconducting['critical_field_tesla']:.1f} T"
-        )
+        logger.info(f"   🧲 Critical Field: {superconducting['critical_field_tesla']:.1f} T")
         logger.info(
             f"   ⚡ Critical Current @77K: {superconducting['critical_current_77k_a_cm2']:.1e} A/cm²"
         )
@@ -649,18 +610,12 @@ class DFTValidationOracle:
         # Quantum resonance
         resonance = results["quantum_resonance"]
         logger.info("\n🎯 QUANTUM RESONANCE:")
-        logger.info(
-            f"   🌟 Phi-Resonance Score: {resonance['phi_resonance_score']:.6f}"
-        )
-        logger.info(
-            f"   📐 Harmonic Alignment: {resonance['lattice_harmonic_alignment']:.6f}"
-        )
+        logger.info(f"   🌟 Phi-Resonance Score: {resonance['phi_resonance_score']:.6f}")
+        logger.info(f"   📐 Harmonic Alignment: {resonance['lattice_harmonic_alignment']:.6f}")
         logger.info(
             f"   🧠 Overall Quantum Resonance: {resonance['overall_quantum_resonance']:.3f}"
         )
-        logger.info(
-            f"   ✅ HYBA Compatible: {'YES' if resonance['hyba_compatible'] else 'NO'}"
-        )
+        logger.info(f"   ✅ HYBA Compatible: {'YES' if resonance['hyba_compatible'] else 'NO'}")
         logger.info(f"   🏆 Classification: {resonance['resonance_classification']}")
 
         # Overall assessment
@@ -673,9 +628,7 @@ class DFTValidationOracle:
             logger.info(f"      • {step}")
 
         logger.info("=" * 80)
-        logger.info(
-            "🚀 DFT VALIDATION COMPLETE - YBCO READY FOR QUANTUM ASIC DEVELOPMENT"
-        )
+        logger.info("🚀 DFT VALIDATION COMPLETE - YBCO READY FOR QUANTUM ASIC DEVELOPMENT")
         logger.info("=" * 80)
 
 
@@ -685,9 +638,7 @@ async def run_dft_validation():
     logger.info("🚀 INITIALIZING DFT VALIDATION ORACLE")
     logger.info("🎯 Target: YBa2Cu3O7 (YBCO) for Quantum ASIC Applications")
     logger.info("🔬 Method: Density Functional Theory + Quantum Resonance Analysis")
-    logger.info(
-        "🎯 Goal: Validate material for next-generation HYBA Quantum Processors"
-    )
+    logger.info("🎯 Goal: Validate material for next-generation HYBA Quantum Processors")
 
     oracle = DFTValidationOracle()
 
@@ -696,19 +647,13 @@ async def run_dft_validation():
 
     logger.info("\n🎉 DFT VALIDATION SUMMARY:")
     logger.info(f"🔬 Material: {results['material']}")
-    logger.info(
-        f"📊 Overall Score: {results['overall_assessment']['overall_score']:.3f}"
-    )
+    logger.info(f"📊 Overall Score: {results['overall_assessment']['overall_score']:.3f}")
     logger.info(f"🎯 Recommendation: {results['overall_assessment']['recommendation']}")
-    logger.info(
-        f"✅ HYBA Compatible: {results['quantum_resonance']['hyba_compatible']}"
-    )
+    logger.info(f"✅ HYBA Compatible: {results['quantum_resonance']['hyba_compatible']}")
     logger.info(f"🔌 ASIC Ready: {results['asic_compatibility']['asic_ready']}")
 
     logger.info("\n🚀 READY FOR NEXT-GENERATION QUANTUM ASIC DEVELOPMENT!")
-    logger.info(
-        "📋 Proceed with thin-film deposition and quantum processor integration"
-    )
+    logger.info("📋 Proceed with thin-film deposition and quantum processor integration")
 
     return results
 

@@ -1,12 +1,14 @@
 from __future__ import annotations
 import argparse
 import json
+import os
 from .store import PrimeDB
 
 
 def main() -> None:
     p = argparse.ArgumentParser(prog="mla1517")
-    p.add_argument("--db", default="prime.db")
+    # MLA1517_DB puts the store on the deployment's volume (Dockerfile.production).
+    p.add_argument("--db", default=os.getenv("MLA1517_DB", "prime.db"))
     sub = p.add_subparsers(dest="command", required=True)
     put = sub.add_parser("put")
     put.add_argument("--index", type=int, required=True)

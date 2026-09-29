@@ -107,9 +107,7 @@ class ProductionConfig:
     def get_development(cls) -> "ProductionConfig":
         """Get development configuration."""
         config = cls(environment=ResourceLimitLevel.DEVELOPMENT)
-        config.resource_quotas = ResourceQuotas(
-            max_sessions=10, session_ttl_seconds=7200
-        )
+        config.resource_quotas = ResourceQuotas(max_sessions=10, session_ttl_seconds=7200)
         config.enable_audit_logging = False
         config.log_level = "DEBUG"
         return config
@@ -118,9 +116,7 @@ class ProductionConfig:
     def get_staging(cls) -> "ProductionConfig":
         """Get staging configuration."""
         config = cls(environment=ResourceLimitLevel.STAGING)
-        config.resource_quotas = ResourceQuotas(
-            max_sessions=100, session_ttl_seconds=3600
-        )
+        config.resource_quotas = ResourceQuotas(max_sessions=100, session_ttl_seconds=3600)
         config.log_level = "INFO"
         return config
 
@@ -128,9 +124,7 @@ class ProductionConfig:
     def get_production(cls) -> "ProductionConfig":
         """Get production configuration."""
         config = cls(environment=ResourceLimitLevel.PRODUCTION)
-        config.resource_quotas = ResourceQuotas(
-            max_sessions=1000, session_ttl_seconds=1800
-        )
+        config.resource_quotas = ResourceQuotas(max_sessions=1000, session_ttl_seconds=1800)
         config.enable_metrics = True
         config.enable_audit_logging = True
         config.log_level = "WARNING"

@@ -40,6 +40,7 @@ from typing import (
 )
 
 import numpy as np
+from scipy.optimize import minimize
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import eigs
 from scipy.stats import norm
@@ -82,7 +83,7 @@ class DecisionMethodology(Enum):
 
 # Import enhanced ASI frameworks and Golden Ratio scaler
 try:
-    from golden_ratio_scaler import create_golden_ratio_scaler
+    from agi.golden_ratio_scaler import create_golden_ratio_scaler
 
     GOLDEN_RATIO_SCALER_AVAILABLE = True
 except ImportError:
@@ -129,9 +130,7 @@ class ASIStateVector:
         if np.any(self.belief_distribution < 0):
             self.belief_distribution = np.abs(self.belief_distribution)
         if np.sum(self.belief_distribution) > 0:
-            self.belief_distribution = self.belief_distribution / np.sum(
-                self.belief_distribution
-            )
+            self.belief_distribution = self.belief_distribution / np.sum(self.belief_distribution)
 
         # Normalize quantum amplitudes
         norm = np.linalg.norm(self.quantum_amplitudes)
@@ -166,8 +165,7 @@ class EnterpriseDecisionResult:
                 "recommended_action": self.optimal_action,
                 "expected_value": self.expected_utility,
                 "risk_adjusted_value": self.risk_adjusted_return,
-                "confidence_level": self.confidence_interval[1]
-                - self.confidence_interval[0],
+                "confidence_level": self.confidence_interval[1] - self.confidence_interval[0],
             },
             "risk_analysis": {
                 "value_at_risk": self.sensitivity_analysis.get("VaR_95", 0.0),
@@ -178,9 +176,7 @@ class EnterpriseDecisionResult:
                 "competitive_advantage": self.enterprise_validation.get(
                     "competitive_advantage", False
                 ),
-                "market_positioning": self.enterprise_validation.get(
-                    "market_positioning", False
-                ),
+                "market_positioning": self.enterprise_validation.get("market_positioning", False),
                 "regulatory_compliance": self.enterprise_validation.get(
                     "regulatory_compliance", True
                 ),
@@ -192,12 +188,8 @@ class EnterpriseDecisionResult:
             },
             "performance_metrics": {
                 "computational_efficiency": self.computational_complexity,
-                "convergence_achieved": self.convergence_metrics.get(
-                    "converged", False
-                ),
-                "solution_quality": self.convergence_metrics.get(
-                    "objective_value", 0.0
-                ),
+                "convergence_achieved": self.convergence_metrics.get("converged", False),
+                "solution_quality": self.convergence_metrics.get("objective_value", 0.0),
             },
         }
 
@@ -275,9 +267,7 @@ class EnterpriseASIAgencyFramework:
             self.golden_scaler = None
             logger.warning("[ENTERPRISE] Golden Ratio scaler not available")
 
-        logger.info(
-            f"[ENTERPRISE] ASI Agency Framework initialized at level: {agency_level.name}"
-        )
+        logger.info(f"[ENTERPRISE] ASI Agency Framework initialized at level: {agency_level.name}")
         logger.info("[ENTERPRISE] Standards: McKinsey/MIT/Oxford compliance verified")
 
     async def make_enterprise_decision(
@@ -302,37 +292,27 @@ class EnterpriseASIAgencyFramework:
 
         # Route to appropriate decision methodology
         if methodology == DecisionMethodology.MCDA_ANALYTIC_HIERARCHY_PROCESS:
-            # result = await self._ahp_decision(context, state)
-            pass
+            result = await self._ahp_decision(context, state)
         elif methodology == DecisionMethodology.MONTE_CARLO_SIMULATION:
-            # result = await self._monte_carlo_decision(context, state)
-            pass
+            result = await self._monte_carlo_decision(context, state)
         elif methodology == DecisionMethodology.REAL_OPTIONS_VALUATION:
-            # result = await self._real_options_decision(context, state)
-            pass
+            result = await self._real_options_decision(context, state)
         elif methodology == DecisionMethodology.BAYESIAN_MCMC:
-            # result = await self._bayesian_mcmc_decision(context, state)
-            pass
+            result = await self._bayesian_mcmc_decision(context, state)
         elif methodology == DecisionMethodology.NASH_EQUILIBRIUM:
-            # result = await self._nash_equilibrium_decision(context, state)
-            pass
+            result = await self._nash_equilibrium_decision(context, state)
         elif methodology == DecisionMethodology.QUANTUM_DECISION:
-            # result = await self._quantum_decision(context, state)
-            pass
+            result = await self._quantum_decision(context, state)
         elif methodology == DecisionMethodology.PORTFOLIO_OPTIMIZATION:
-            # result = await self._portfolio_optimization_decision(context, state)
-            pass
+            result = await self._portfolio_optimization_decision(context, state)
         elif methodology == DecisionMethodology.ROBUST_OPTIMIZATION:
-            # result = await self._robust_optimization_decision(context, state)
-            pass
+            result = await self._robust_optimization_decision(context, state)
         else:
             raise ValueError(f"Unsupported methodology: {methodology}")
 
         # Post-processing: enterprise validation and reporting
-        # result = await self._enterprise_validation(result, context, state)
-        result.computational_complexity = (
-            f"O({self._estimate_complexity(context, state)})"
-        )
+        result = await self._enterprise_validation(result, context, state)
+        result.computational_complexity = f"O({self._estimate_complexity(context, state)})"
 
         # Apply Golden Ratio scaling if available
         if self.golden_scaler:
@@ -391,9 +371,7 @@ class EnterpriseASIAgencyFramework:
         expected_utility = scores[optimal_action]
 
         # Consistency ratio (AHP requirement)
-        consistency_index = (np.max(eigenvalues) - criteria_count) / (
-            criteria_count - 1
-        )
+        consistency_index = (np.max(eigenvalues) - criteria_count) / (criteria_count - 1)
         random_index = {1: 0, 2: 0, 3: 0.58, 4: 0.9, 5: 1.12, 6: 1.24, 7: 1.32, 8: 1.41}
         consistency_ratio = consistency_index / random_index.get(criteria_count, 1.12)
 
@@ -404,9 +382,7 @@ class EnterpriseASIAgencyFramework:
             perturbed_priorities[i] *= 1.1  # 10% perturbation
             perturbed_priorities = perturbed_priorities / np.sum(perturbed_priorities)
             perturbed_scores = alt_matrix @ perturbed_priorities
-            sensitivity[stakeholder] = (
-                perturbed_scores[optimal_action] - scores[optimal_action]
-            )
+            sensitivity[stakeholder] = perturbed_scores[optimal_action] - scores[optimal_action]
 
         return EnterpriseDecisionResult(
             optimal_action=optimal_action,
@@ -461,7 +437,6 @@ class EnterpriseASIAgencyFramework:
         )
 
         # Calculate payoffs
-        payoffs = np.sum(weighted_scenarios, axis=1)
 
         # Calculate statistics for each alternative
         alternative_payoffs = weighted_scenarios
@@ -489,9 +464,7 @@ class EnterpriseASIAgencyFramework:
             1, num_simulations + 1
         )
         convergence_error = (
-            np.abs(running_means[-1] - running_means[-100])
-            if num_simulations > 100
-            else 0.0
+            np.abs(running_means[-1] - running_means[-100]) if num_simulations > 100 else 0.0
         )
         converged = convergence_error < self.mit_benchmarks["convergence_tolerance"]
 
@@ -622,9 +595,7 @@ class EnterpriseASIAgencyFramework:
 
             # Calculate acceptance probability
             proposal_log_likelihood = self._log_likelihood(proposal, context)
-            log_acceptance_prob = min(
-                0, proposal_log_likelihood - current_log_likelihood
-            )
+            log_acceptance_prob = min(0, proposal_log_likelihood - current_log_likelihood)
 
             # Accept or reject
             if np.log(np.random.random()) < log_acceptance_prob:
@@ -715,10 +686,7 @@ class EnterpriseASIAgencyFramework:
 
         # Optimize for mixed equilibrium
         initial_strategy = np.ones(2 * strategies) / (2 * strategies)
-        # result = minimize(
-        #     mixed_equilibrium_objective, initial_strategy, method="L-BFGS-B"
-        # )
-        result = type("obj", (object,), {"success": False})()  # Placeholder
+        result = minimize(mixed_equilibrium_objective, initial_strategy, method="L-BFGS-B")
 
         if result.success:
             mixed_strategy = result.x
@@ -746,9 +714,7 @@ class EnterpriseASIAgencyFramework:
             risk_adjusted_return=expected_utility * (1 - context.market_volatility),
             confidence_interval=(expected_utility * 0.8, expected_utility * 1.2),
             sensitivity_analysis={"pure_equilibria_count": len(pure_equilibria)},
-            scenario_analysis={
-                "mixed_equilibrium": True if not pure_equilibria else False
-            },
+            scenario_analysis={"mixed_equilibrium": True if not pure_equilibria else False},
             computational_complexity="O(2^n)",
             convergence_metrics={
                 "converged": result.success,
@@ -781,7 +747,6 @@ class EnterpriseASIAgencyFramework:
         amplitudes = state.quantum_amplitudes[:alternatives]
 
         # Apply quantum gates (simplified Hadamard transform)
-        hadamard = np.array([[1, 1], [1, -1]]) / np.sqrt(2)
 
         # Quantum amplitude amplification
         for i in range(3):  # Grover iterations
@@ -809,8 +774,7 @@ class EnterpriseASIAgencyFramework:
         return EnterpriseDecisionResult(
             optimal_action=optimal_action,
             expected_utility=expected_utility,
-            risk_adjusted_return=expected_utility
-            * (1 + coherence * context.strategic_importance),
+            risk_adjusted_return=expected_utility * (1 + coherence * context.strategic_importance),
             confidence_interval=(expected_utility * 0.95, expected_utility * 1.05),
             sensitivity_analysis={
                 "quantum_coherence": coherence,
@@ -858,9 +822,7 @@ class EnterpriseASIAgencyFramework:
         def portfolio_objective(weights):
             portfolio_return = np.sum(weights * expected_returns)
             portfolio_risk = np.sqrt(weights.T @ cov_matrix @ weights)
-            sharpe_ratio = (
-                portfolio_return - 0.02
-            ) / portfolio_risk  # Risk-adjusted return
+            sharpe_ratio = (portfolio_return - 0.02) / portfolio_risk  # Risk-adjusted return
             return -sharpe_ratio  # Minimize negative Sharpe ratio
 
         # Constraints: weights sum to 1, no short selling
@@ -868,14 +830,13 @@ class EnterpriseASIAgencyFramework:
         bounds = [(0, 1) for _ in range(assets)]
 
         initial_weights = np.ones(assets) / assets
-        # result = minimize(
-        #     portfolio_objective,
-        #     initial_weights,
-        #     method="SLSQP",
-        #     bounds=bounds,
-        #     constraints=constraints,
-        # )
-        result = type("obj", (object,), {"success": False})()  # Placeholder
+        result = minimize(
+            portfolio_objective,
+            initial_weights,
+            method="SLSQP",
+            bounds=bounds,
+            constraints=constraints,
+        )
 
         if result.success:
             optimal_weights = result.x
@@ -974,9 +935,7 @@ class EnterpriseASIAgencyFramework:
             },
         )
 
-    def _log_likelihood(
-        self, theta: np.ndarray, context: EnterpriseDecisionContext
-    ) -> float:
+    def _log_likelihood(self, theta: np.ndarray, context: EnterpriseDecisionContext) -> float:
         """Calculate log-likelihood for Bayesian inference"""
         # Simplified Gaussian likelihood
         mean = context.financial_impact
@@ -1005,12 +964,9 @@ class EnterpriseASIAgencyFramework:
             > context.strategic_importance * context.financial_impact * 0.5,
             "risk_acceptable": result.risk_adjusted_return > 0,
             "stakeholder_consensus": True,  # Simplified
-            "regulatory_compliant": len(context.regulatory_constraints)
-            == 0,  # Simplified
-            "financial_viable": result.expected_utility
-            > context.financial_impact * 0.1,
-            "competitive_advantage": result.expected_utility
-            > np.mean([result.expected_utility]),
+            "regulatory_compliant": len(context.regulatory_constraints) == 0,  # Simplified
+            "financial_viable": result.expected_utility > context.financial_impact * 0.1,
+            "competitive_advantage": result.expected_utility > np.mean([result.expected_utility]),
             "implementation_feasible": True,  # Simplified
         }
 
@@ -1055,15 +1011,11 @@ class EnterpriseASIAgencyFramework:
                 "average_utility": np.mean(utilities),
                 "utility_variance": np.var(utilities),
                 "risk_adjusted_performance": np.mean(risk_adjusted),
-                "decision_consistency": 1.0
-                - (np.std(utilities) / (np.mean(utilities) + 1e-8)),
+                "decision_consistency": 1.0 - (np.std(utilities) / (np.mean(utilities) + 1e-8)),
             },
             "mit_standards": {
                 "convergence_rate": np.mean(
-                    [
-                        d.convergence_metrics.get("converged", False)
-                        for d in self.decision_history
-                    ]
+                    [d.convergence_metrics.get("converged", False) for d in self.decision_history]
                 ),
                 "computational_efficiency": "O(1) scaling achieved",
                 "statistical_significance": True,
@@ -1104,7 +1056,7 @@ def create_enterprise_asi_agency(
         EnterpriseASIAgencyFramework: Configured for enterprise use
     """
 
-    #  EnterpriseASIAgencyFramework(agency_level)
+    framework = EnterpriseASIAgencyFramework(agency_level)
 
     logger.info("[ENTERPRISE] Enterprise ASI Agency Framework created")
     logger.info(f"[ENTERPRISE] Agency Level: {agency_level.name}")

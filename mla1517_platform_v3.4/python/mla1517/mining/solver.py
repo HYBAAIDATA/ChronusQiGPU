@@ -69,9 +69,11 @@ class M32SearchSolver:
         return self._candidate_ordering
 
     def set_lane_start_offset(self, preferred_face: int) -> None:
-        """Sets the starting lane for the 32-face sweep. The lane
-        ordering is a cyclic rotation of the canonical face
-        order; the underlying search space is unchanged."""
+        """Set the starting lane for the 32-face sweep.
+
+        The lane ordering is a cyclic rotation of the selected complete order;
+        the underlying search space is unchanged.
+        """
         if (
             isinstance(preferred_face, bool)
             or not isinstance(preferred_face, int)
@@ -79,6 +81,10 @@ class M32SearchSolver:
         ):
             raise ValueError("preferred_face must be an integer in [0, 31]")
         self._lane_start_offset = preferred_face
+
+    def clear_lane_start_offset(self) -> None:
+        """Remove a stale TOE/memory start-lane preference between jobs."""
+        self._lane_start_offset = None
 
     def get_lane_start_offset(self) -> int:
         """Return the configured starting lane (0 when no bias is applied)."""

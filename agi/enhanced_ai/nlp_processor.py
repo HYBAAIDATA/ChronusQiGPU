@@ -127,9 +127,7 @@ class EnhancedNLPProcessor:
                 else 0.0
             )
 
-            confidence = self._calculate_confidence(
-                intent_confidence, len(entities), max_emotion
-            )
+            confidence = self._calculate_confidence(intent_confidence, len(entities), max_emotion)
             # Create utterance
             utterance = NLPUtterance(
                 text=text,
@@ -146,9 +144,7 @@ class EnhancedNLPProcessor:
             # Update knowledge gaps
             await self._update_knowledge_gaps(utterance, session_context)
 
-            logger.info(
-                f"Processed utterance: {intent} with confidence {confidence:.2f}"
-            )
+            logger.info(f"Processed utterance: {intent} with confidence {confidence:.2f}")
             return utterance
 
         except Exception as e:
@@ -162,9 +158,7 @@ class EnhancedNLPProcessor:
                 timestamp=start_time,
             )
 
-    async def generate_response(
-        self, utterance: NLPUtterance, user_id: str = "default"
-    ) -> str:
+    async def generate_response(self, utterance: NLPUtterance, user_id: str = "default") -> str:
         """
         Generate a natural language response based on the processed utterance
 
@@ -181,9 +175,7 @@ class EnhancedNLPProcessor:
             elif utterance.intent == "general_knowledge":
                 response = await self._generate_knowledge_response(utterance)
             elif utterance.intent == "conversational":
-                response = await self._generate_conversational_response(
-                    utterance, session_context
-                )
+                response = await self._generate_conversational_response(utterance, session_context)
             elif utterance.intent == "problem_solving":
                 response = await self._generate_problem_solving_response(utterance)
             else:
@@ -354,9 +346,7 @@ class EnhancedNLPProcessor:
         if "mathematical_concept" in entities:
             for concept in entities["mathematical_concept"]:
                 if concept in self.knowledge_base:
-                    enhanced_entities[f"{concept}_details"] = self.knowledge_base[
-                        concept
-                    ]
+                    enhanced_entities[f"{concept}_details"] = self.knowledge_base[concept]
 
         # Add contextual information
         enhanced_entities["intent_context"] = {
@@ -380,9 +370,7 @@ class EnhancedNLPProcessor:
         total_confidence = intent_confidence + entity_confidence + emotion_confidence
         return min(total_confidence, 1.0)
 
-    async def _update_knowledge_gaps(
-        self, utterance: NLPUtterance, context: ConversationContext
-    ):
+    async def _update_knowledge_gaps(self, utterance: NLPUtterance, context: ConversationContext):
         """Update knowledge gaps based on conversation"""
         # Simple implementation - identify unknown entities
         for entity_type, entities in utterance.entities.items():
@@ -445,9 +433,7 @@ class EnhancedNLPProcessor:
         else:
             return response
 
-    async def _quantum_optimize_response(
-        self, response: str, utterance: NLPUtterance
-    ) -> str:
+    async def _quantum_optimize_response(self, response: str, utterance: NLPUtterance) -> str:
         """Use quantum processing to optimize response quality"""
         try:
             # Create optimization problem for response quality

@@ -136,7 +136,9 @@ class LucasScaledAethelExecutionAdapter:
         if (
             not fold_ok
             or not cassini
-            or not result["recheck_bit_exact"]
+            # A window with no winner is the ordinary outcome, not a failure:
+            # only a claimed winner must survive the bit-exact recheck.
+            or (result["winning_nonce"] is not None and not result["recheck_bit_exact"])
             or not self.toe.verify_provenance()
         ):
             raise RuntimeError("TOE/AETHEL/Tensor/Hendrix/iGPU invariant failed")
