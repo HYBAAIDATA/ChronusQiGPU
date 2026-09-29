@@ -48,8 +48,21 @@ Install: `uv pip install -e ".[ml,dev]" -e ./turing_universal_quantum_computer`.
 - Console scripts from the delivered artifact: `pythia-api --help`, `pythia-mine --help` **PASS** — fail-closed help text, no fabricated state.
 - TUQC wheel contains all declared subpackages (`turing_core`, `intelligences`, `lucas`) + `kernels/*.cl` via package-data.
 
+## Integrated baseline @ 73a716d (post #15 + #18 merge, Coordinator)
+
+| Gate | Command | Result @ 73a716d |
+|---|---|---|
+| pytest (repo suite) | `.venv/Scripts/python.exe -m pytest tests/ -q` | **1702 passed, 16 skipped, 92 subtests** in 206s — includes Owner A's 62 new `test_a_*` tests |
+| unittest (platform) | `python -m unittest discover -s mla1517_platform_v3.4/python` | **317 ran, OK (7 skipped)** |
+| TUQC suite | `pytest tests -q` inside `turing_universal_quantum_computer/` | **55 passed** (Owner A, incl. `test_vqc.py` 8/8 after the early-exit fix) |
+| flake8 | `flake8 --count` repo-wide | **0** — upstream #16 repaired all findings |
+| IR-2 sqlite tempfile lock | 4 tests (`test_enterprise_v2_tranches`, `test_fold_pipeline`, `test_promotion_evidence`, `test_promotion_release_catalogue`) | **FAIL→FIXED** — `NamedTemporaryFile()` (exclusive lock) → `delete=False` + `addCleanup(os.unlink)`; verified 21/21 |
+
 ## Invocation pitfalls recorded (so owners don't repeat them)
 
+- `tempfile.NamedTemporaryFile()` on Windows holds an exclusive lock — sqlite
+  cannot `connect` to the path inside the `with` block. Use `delete=False` and
+  unlink in `addCleanup` (after the consumer's sqlite handle closes).
 - TUQC tests must run with cwd = `turing_universal_quantum_computer/`; from repo
   root, `import turing_universal_quantum_computer` resolves the outer dir as a
   namespace package (`__file__=None`) and 30/45 tests fail on AttributeError —

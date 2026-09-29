@@ -1,3 +1,4 @@
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -80,7 +81,8 @@ BACKEND = BackendCertificate(
 
 class Tests(unittest.TestCase):
     def test_prime_object_policy_and_lineage(self):
-        with tempfile.NamedTemporaryFile() as f:
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            self.addCleanup(os.unlink, f.name)
             lineage = LineageStore(f.name, b"l" * 32)
             service = ObjectService(Math(), {"fibonacci": FOLD}, lineage.head)
             obj = service.create({"x": 1}, "fibonacci", 8, "t", "i")

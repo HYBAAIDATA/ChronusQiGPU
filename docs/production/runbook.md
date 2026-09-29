@@ -42,8 +42,10 @@ python main.py --host 127.0.0.1 --port 3000 --web-root dist/public   # control A
 python -u mla1517_platform_v3.4/python/main.py ...                   # same entry, direct path
 ```
 
-Boot writes `data/BOOT_AUDIT.log` + `data/pythia-main.lock` (process-scoped lock;
-second instance needs `PYTHIA_BOOT_LOCK`/`PYTHIA_BOOT_AUDIT` overrides).
+Boot writes `BOOT_AUDIT.log` + `pythia-main.lock` to the boot-work dir
+(`C:\tmp\pythia\` on this Windows box — verified path; `data/` holds only
+runtime_config). Second instance needs `PYTHIA_BOOT_LOCK`/`PYTHIA_BOOT_AUDIT`
+overrides.
 Stop: SIGTERM/SIGINT — runner-stop semantics under Owner B verification (RUN-01).
 Restart: runtime_config + heartbeat sidecars reload — persistence verification pending (B).
 
@@ -60,7 +62,7 @@ Restart: runtime_config + heartbeat sidecars reload — persistence verification
 ## Backup / restore
 
 - `data/runtime_config.json` — operator-facing config (bounded writes; pool passwords merged server-side)
-- `data/BOOT_AUDIT.log`, heartbeat dir sidecars (`*.bin` HMAC + `*.metrics.json`)
+- `C:\tmp\pythia\BOOT_AUDIT.log`, heartbeat dir sidecars (`*.bin` HMAC + `*.metrics.json`)
 - Restore = reinstall + same env + existing `data/` dir; recovery verification pending (B).
 
 ## Release gates (before calling a build releasable)
