@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Sigma } from "lucide-react";
+import { EngineAlgebraCard } from "../components/EngineAlgebraCard";
 import { TruthChip } from "../components/TruthChip";
 import { ExactSequenceMath, Q5 } from "../lib/exact_math";
 import { ExactGrover } from "../lib/first_principles_quantum";
@@ -74,6 +75,8 @@ export const AlgebraView: React.FC = () => {
           </p>
         </div>
       </section>
+
+      <EngineAlgebraCard />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="console-surface">

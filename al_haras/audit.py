@@ -9,12 +9,43 @@ import json
 import os
 from pathlib import Path
 import threading
+import time
 from typing import Any, Iterable, Mapping
 
 try:
     import fcntl
 except ImportError:  # pragma: no cover - Linux containers are the production target.
     fcntl = None
+try:
+    import msvcrt
+except ImportError:  # pragma: no cover - POSIX hosts use fcntl.
+    msvcrt = None
+
+
+def _lock_exclusive(fd: int) -> None:
+    """Block until this process holds the ledger's exclusive lock."""
+    if fcntl is not None:
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        return
+    os.lseek(fd, 0, os.SEEK_SET)
+    delay = 0.001
+    while True:
+        try:
+            # Non-blocking attempts with a short backoff: LK_LOCK would poll
+            # only once a second. Waits as long as flock(LOCK_EX) would.
+            msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            return
+        except OSError:
+            time.sleep(delay)
+            delay = min(delay * 2, 0.05)
+
+
+def _unlock(fd: int) -> None:
+    if fcntl is not None:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        return
+    os.lseek(fd, 0, os.SEEK_SET)
+    msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
 
 
 def canonical_json(value: Any) -> bytes:
@@ -43,8 +74,8 @@ class HashChainAudit:
         self._records: list[dict[str, Any]] = []
         self._lock = threading.Lock()
         if path is not None:
-            if fcntl is None:
-                raise RuntimeError("persistent AL HARAS audit requires POSIX file locking")
+            if fcntl is None and msvcrt is None:
+                raise RuntimeError("persistent AL HARAS audit requires an OS file lock")
             path.parent.mkdir(parents=True, exist_ok=True)
             try:
                 os.chmod(path.parent, 0o700)
@@ -75,10 +106,12 @@ class HashChainAudit:
         lock_path = self.path.with_name(f"{self.path.name}.lock")
         fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
         try:
-            fcntl.flock(fd, fcntl.LOCK_EX)
-            yield
+            _lock_exclusive(fd)
+            try:
+                yield
+            finally:
+                _unlock(fd)
         finally:
-            fcntl.flock(fd, fcntl.LOCK_UN)
             os.close(fd)
 
     def _read_records_unlocked(self) -> list[dict[str, Any]]:

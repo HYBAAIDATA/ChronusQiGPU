@@ -1,4 +1,4 @@
-"""Lucas intelligence scale profile (L_10 / L_12 / L_15 / L_18 / L_20).
+"""Lucas intelligence scale profile over the declared Lucas ladder.
 
 The Lucas numbers are the prime-generating companion sequence to the
 Fibonacci numbers, both governed by the golden ratio φ = (1+√5)/2. They
@@ -13,6 +13,9 @@ exact Lucas values::
     L_15 = 1364
     L_18 = 5778
     L_20 = 15127
+    L_31 = 3010349
+    L_50 = 28143753123
+    L_76 = 7639424778862807
 
 Each scale is a named intelligence "level" that is applied transparently
 to intelligence-related quantities across the orchestrator:
@@ -54,16 +57,16 @@ logger = logging.getLogger("Intelligence.lucas_scales")
 # auditable; ``validate_against_substrate`` confirms they match
 # ``turing_core.lucas`` at runtime.
 from lucas.core import lucas as _lucas_value
+from lucas.ladder import CURRICULUM_RUNGS as _CURRICULUM_RUNGS
 from lucas.ladder import FULL_LADDER as _FULL_LADDER
 from lucas.ladder import PISOT_EXACT_N as _PISOT_EXACT_N
 from lucas.ladder import SCALE_RUNGS as _SCALE_RUNGS
 
-LUCAS_SCALE_LADDER: Dict[int, int] = {
-    i: _lucas_value(i) for i in _FULL_LADDER
-}
+LUCAS_SCALE_LADDER: Dict[int, int] = {i: _lucas_value(i) for i in _FULL_LADDER}
 
-# Ordered scale indices (ascending).
-SCALE_ORDER: Tuple[int, ...] = tuple(_FULL_LADDER)
+# Ordered scale indices (ascending) — the five intelligence curriculum
+# rungs. Mining rungs (31/50/76) live on IGPU_SCALE_RUNGS, not this profile.
+SCALE_ORDER: Tuple[int, ...] = tuple(_CURRICULUM_RUNGS)
 
 # Human-readable names for each scale level.
 SCALE_NAMES: Dict[int, str] = {
@@ -72,13 +75,13 @@ SCALE_NAMES: Dict[int, str] = {
     15: "L_15 · coherence",
     18: "L_18 · abstraction",
     20: "L_20 · metacognition",
+    31: "L_31 · mining",
+    50: "L_50 · enterprise",
+    76: "L_76 · Pisot collapse",
 }
 
-# Extended iGPU/mining scale rungs — the canonical ladder plus the mining
-# rungs 31, 50 and the Pisot collapse index 76, sourced once from
-# lucas.ladder.SCALE_RUNGS (mirrors IGPU_SCALE_RUNGS in
-# src/lib/m3_igpu_scaler.ts). SCALE_ORDER above is left untouched — this is
-# the hardware-scaling dial, not the intelligence curriculum.
+# Extended iGPU/mining scale rungs — sourced once from
+# lucas.ladder.SCALE_RUNGS.
 IGPU_SCALE_RUNGS: Tuple[int, ...] = tuple(_SCALE_RUNGS)
 PISOT_EXACT_N: int = _PISOT_EXACT_N
 
@@ -128,10 +131,10 @@ PHI = (1 + math.sqrt(5)) / 2
 class LucasScaleLevel:
     """One rung of the Lucas intelligence scale ladder."""
 
-    index: int  # n in L_n (10, 12, 15, 18, 20)
+    index: int  # n in L_n
     value: int  # exact L_n
     name: str  # human-readable label
-    # Normalised [0, 1] position on the ladder (0 = L_10, 1 = L_20).
+    # Normalised [0, 1] position on the ladder (0 = L_10, 1 = top rung).
     ladder_position: float
     # log2(value) — the "bit-depth" of the scale, used for qubit budgets.
     bit_depth: float
@@ -219,7 +222,7 @@ class LucasScaleProfile:
     def salience_weight(self, scale_index: int) -> float:
         """Return the salience/retention weight for a Lucas scale.
 
-        Normalised so L_10 = 1.0 and L_20 = the complexity growth factor.
+        Normalised so L_10 = 1.0 and the top rung is the complexity growth factor.
         Higher scales retain salience longer (archival bias).
         """
         lv = self.level_for(scale_index)

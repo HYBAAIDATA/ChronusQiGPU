@@ -173,7 +173,9 @@ def test_salamander_repairs_with_the_grafted_discipline():
     cf = ClassifiedFailure(failure, "unclassified", "n/a", "no rule applies")
     prompt = _build_repair_prompt(cf, "x = 1\n", "tests/t.py")
     for name in ("systematic-debugging", "verification-before-completion"):
-        body = _parse_frontmatter((skill_graft.SKILLS_DIR / name / "SKILL.md").read_text())[1]
+        body = _parse_frontmatter(
+            (skill_graft.SKILLS_DIR / name / "SKILL.md").read_text(encoding="utf-8")
+        )[1]
         assert f"### Skill: {name} (from https://github.com/obra/superpowers@" in prompt
         assert body[:300] in prompt
     assert prompt.index("### Skill:") < prompt.index("Respond in exactly two parts")
