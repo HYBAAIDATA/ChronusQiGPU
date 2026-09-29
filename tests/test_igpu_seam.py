@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+import hashlib
+
 from igpu.seam import store
-from igpu.seam.buffer import allocate, read, release, write
+from igpu.seam.attest_compose import attest_compose
+from igpu.seam.buffer import AccessPolicy, allocate, read, release, write
 from igpu.seam.fleet import coordinate, route
 from igpu.seam.hybrid import kernel_class, partition
 from igpu.seam.invariants import audit_hyba_hybrid, audit_igpu
 from igpu.seam.kernel import cancel, dispatch, poll
 from igpu.seam.probe import lifecycle, probe_devices
 from igpu.seam.queue import WorkItem, dequeue, enqueue, queue_state
+from igpu.seam.threshold import VerificationRequest, min_required, verify_threshold
 from igpu.seam.types import (
     BufferBacking,
     DeviceClass,
@@ -17,6 +21,9 @@ from igpu.seam.types import (
     KernelName,
     Ok,
     SeamError,
+    ThresholdPolicy,
+    attest,
+    digest_of,
 )
 
 
@@ -97,15 +104,173 @@ def test_dispatch_is_idempotent():
 def test_poll_marks_host_verified():
     probe_devices()
     cap = store.all_caps()[0]
-    kernel = KernelName.sha256d_verify
-    if kernel not in cap.supported_kernels:
-        kernel = next(iter(cap.supported_kernels))
+    kernels = sorted(cap.supported_kernels, key=lambda k: k.value)
+    kernel = next(k for k in kernels if k is not KernelName.sha256d_verify)
     handle = dispatch("seam", cap.device_id, kernel, {}, "verify-1")
     assert isinstance(handle, Ok)
     result = poll("seam", handle.value)
     assert isinstance(result, Ok)
     assert result.value is not None
     assert result.value.host_verified is True
+
+
+def test_seam_string_is_not_a_master_key():
+    probe_devices()
+    cap = store.all_caps()[0]
+    buf = allocate(cap.device_id, 4, policy=AccessPolicy(owner="alice"))
+    assert isinstance(buf, Ok)
+    # 'seam' is the default owner label, not a privilege: alice's buffer is
+    # closed to a caller merely naming itself 'seam'.
+    assert read("seam", buf.value).error is SeamError.privacy_violation
+    assert write("seam", buf.value, b"xy").error is SeamError.privacy_violation
+    assert release("seam", buf.value).error is SeamError.privacy_violation
+    assert isinstance(read("alice", buf.value), Ok)
+
+
+def test_encrypted_backing_fails_closed_without_cipher():
+    probe_devices()
+    cap = store.all_caps()[0]
+    denied = allocate(cap.device_id, 8, BufferBacking.encrypted_at_rest)
+    assert denied.error is SeamError.capability_mismatch
+
+
+def test_negative_offset_is_rejected_not_wrapped():
+    probe_devices()
+    cap = store.all_caps()[0]
+    buf = allocate(cap.device_id, 8)
+    assert isinstance(buf, Ok)
+    assert write("seam", buf.value, b"zz", offset=-2).error is SeamError.unknown
+    assert read("seam", buf.value, offset=-4).error is SeamError.unknown
+
+
+def _sha256d(payload: bytes) -> bytes:
+    return hashlib.sha256(hashlib.sha256(payload).digest()).digest()
+
+
+def test_sha256d_verify_actually_verifies():
+    probe_devices()
+    cap = next(c for c in store.all_caps() if KernelName.sha256d_verify in c.supported_kernels)
+    payload = b"real share payload"
+    good = dispatch(
+        "t",
+        cap.device_id,
+        KernelName.sha256d_verify,
+        {"payload": payload, "claimed": _sha256d(payload)},
+        "v-good",
+    )
+    result = poll("t", good.value)
+    assert isinstance(result, Ok) and result.value.outputs == [b"\x01"]
+    bad = dispatch(
+        "t",
+        cap.device_id,
+        KernelName.sha256d_verify,
+        {"payload": payload, "claimed": _sha256d(b"other")},
+        "v-bad",
+    )
+    result = poll("t", bad.value)
+    assert isinstance(result, Ok) and result.value.outputs == [b"\x00"]
+    missing = dispatch("t", cap.device_id, KernelName.sha256d_verify, {}, "v-none")
+    refused = poll("t", missing.value)
+    assert refused.error is SeamError.capability_mismatch
+    assert not store.is_quarantined(cap.device_id)
+
+
+def _cap(device_id: str, vendor: str, kernels) -> "object":
+    from igpu.seam.probe import Capability, CapabilityFeatures
+    from igpu.seam.types import DeviceState, Distribution, PrivacyMode
+
+    return Capability(
+        device_id=device_id,
+        device_class=DeviceClass.cpu_reference,
+        vendor=vendor,
+        model="m",
+        firmware_digest=digest_of(device_id.encode()),
+        memory_bytes=0,
+        compute_units=1,
+        max_work_group=1,
+        measured_hps=Distribution(1.0, 0.0, 1),
+        supported_kernels=set(kernels),
+        kernel_costs={},
+        features=CapabilityFeatures(),
+        attestation_chain=[attest(device_id, issuer=f"probe:{device_id}")],
+        privacy_mode=PrivacyMode.none,
+        state=DeviceState.present,
+    )
+
+
+def _traversal_caps(n: int):
+    caps = []
+    for i in range(n):
+        cap = _cap(f"dev-{i}", f"vendor-{i}", {KernelName.lucas_wind})
+        store.put_cap(cap)
+        caps.append(cap)
+    return caps
+
+
+def _lucas_expected() -> list:
+    return [digest_of((0).to_bytes(4, "little"))]
+
+
+def test_threshold_k_cannot_undercut_majority_floor():
+    caps = _traversal_caps(3)
+    req = VerificationRequest(
+        kernel=KernelName.lucas_wind,
+        inputs=[],
+        outputs=_lucas_expected(),
+        candidates=[c.device_id for c in caps],
+        policy=ThresholdPolicy.majority,
+        k=1,
+    )
+    # majority of 3 is 2 — a lone agreeing link must not satisfy the vote
+    assert min_required(ThresholdPolicy.majority, 1, 3) == 2
+    out = verify_threshold(req, caps)
+    assert isinstance(out, Ok)
+
+
+def test_threshold_repoll_does_not_quarantine_healthy_verifier():
+    caps = _traversal_caps(1)
+    cap = caps[0]
+    kernel, inputs = KernelName.lucas_wind, []
+    idem = digest_of("|".join([kernel.value] + inputs).encode("utf-8"))
+    handle = dispatch("t", cap.device_id, kernel, {"inputs": inputs}, f"tv:{idem}:{cap.device_id}")
+    assert isinstance(handle, Ok)
+    first = poll("t", handle.value)
+    assert isinstance(first, Ok) and first.value is not None
+    req = VerificationRequest(
+        kernel=kernel,
+        inputs=inputs,
+        outputs=_lucas_expected(),
+        candidates=[cap.device_id],
+        policy=ThresholdPolicy.unanimous,
+    )
+    out = verify_threshold(req, caps)
+    assert out.error is SeamError.verification_failed
+    assert not store.is_quarantined(cap.device_id)
+
+
+def test_attest_compose_rejects_forged_issuer():
+    link = attest("subject", issuer="result:forged-device")
+    out = attest_compose([link], issuers={"result:dev-0"})
+    assert out.error is SeamError.attestation_failure
+
+
+def test_enqueue_denied_on_quarantined_device():
+    probe_devices()
+    cap = store.all_caps()[0]
+    store.quarantine(cap.device_id, "test")
+    item = WorkItem(
+        id="",
+        job_id="j",
+        kernel=KernelName.lucas_wind,
+        args="{}",
+        priority=0,
+        deadline=None,
+        idempotency_key="q-q",
+        submitted_at="",
+        assigned_device=None,
+        state="pending",
+    )
+    assert enqueue("seam", cap.device_id, item).error is SeamError.device_quarantined
 
 
 def test_queue_backpressure_and_idempotency():

@@ -1333,6 +1333,21 @@ class _Handler(BaseHTTPRequestHandler):
         "/api/v1/salamander/fault": _salamander_fault,
     }
 
+    def _drain(self, length: int) -> None:
+        """Discard a refused body, bounded so a hostile Content-Length cannot
+        force unbounded reads; past the cap the connection is closed."""
+        remaining = min(int(length), _TOE_MAX_BODY_BYTES * 4)
+        if length > remaining:
+            self.close_connection = True
+        try:
+            while remaining > 0:
+                chunk = self.rfile.read(min(remaining, 65536))
+                if not chunk:
+                    break
+                remaining -= len(chunk)
+        except (OSError, ValueError):
+            self.close_connection = True
+
     def _read_json_body(self) -> tuple[dict[str, Any] | None, str | None]:
         try:
             length = int(self.headers.get("Content-Length") or 0)
@@ -1341,6 +1356,9 @@ class _Handler(BaseHTTPRequestHandler):
         if length <= 0:
             return {}, None
         if length > _TOE_MAX_BODY_BYTES:
+            # Empty the socket before the 413 so the client reads the status
+            # instead of a connection reset mid-upload.
+            self._drain(length)
             return None, "body_too_large"
         raw = self.rfile.read(length)
         try:

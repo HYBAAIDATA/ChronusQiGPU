@@ -17,6 +17,8 @@ from igpu.seam.probe import Capability
 from igpu.seam.types import (
     Err,
     KernelName,
+    Ok,
+    PrivacyMode,
     Result,
     SeamError,
     ThresholdPolicy,
@@ -71,21 +73,33 @@ def select_independent(candidates: Sequence[str], fleet: Sequence[Capability], k
 
 
 def min_required(policy: ThresholdPolicy, k: Optional[int], n: int) -> int:
+    # k may only raise the requirement above the policy floor, never lower it —
+    # otherwise majority/unanimous votes pass on a lone agreeing link while the
+    # rest dissented.
     if policy is ThresholdPolicy.unanimous:
         return max(n, 1)
     if policy is ThresholdPolicy.at_least_k:
-        return max(int(k or 1), 1)
+        return max(int(k) if k is not None else n, 1)
+    floor = max((n // 2) + 1, 1) if policy is ThresholdPolicy.majority else 1
     if k is not None:
-        return max(k, 1)
-    return max((n // 2) + 1, 1)
+        return max(k, floor)
+    return floor
 
 
 def verify_threshold(req: VerificationRequest, fleet: Sequence[Capability]) -> Result[CompositeAttestation]:
     k = req.k
     need = min_required(req.policy, k, len(req.candidates))
-    verifiers = select_independent(req.candidates, fleet, k or need)
+    verifiers = select_independent(req.candidates, fleet, max(need, k or 0))
     if len(verifiers) < need:
         return Err(SeamError.verification_failed, f"independent verifiers {len(verifiers)} < {need}")
+
+    caps_by_id = {c.device_id: c for c in fleet}
+    allowed_issuers: set[str] = set()
+    for device_id in verifiers:
+        allowed_issuers.add(f"result:{device_id}")
+        cap = caps_by_id.get(device_id)
+        if cap is not None and cap.privacy_mode is PrivacyMode.zero_knowledge:
+            allowed_issuers.add("zk")
 
     links = []
     expected = list(req.outputs)
@@ -95,10 +109,21 @@ def verify_threshold(req: VerificationRequest, fleet: Sequence[Capability]) -> R
         if isinstance(dispatched, Err):
             store.audit("threshold_dispatch_fail", device_id=device_id, detail=dispatched.detail)
             continue
+        pre_state = dispatched.value.state
         polled = poll("threshold", dispatched.value)
-        if isinstance(polled, Err) or polled.value is None:
-            store.quarantine(device_id, "threshold_poll")
-            store.audit("threshold_dissent", device_id=device_id, reason="poll")
+        if isinstance(polled, Ok) and polled.value is None:
+            # Already-complete handle: a repoll is not evidence of dissent.
+            store.audit("threshold_repoll", device_id=device_id)
+            continue
+        if isinstance(polled, Err):
+            if pre_state == "pending" and polled.error is SeamError.verification_failed:
+                # Fresh execution fault on this dispatch — device dissent.
+                store.quarantine(device_id, "threshold_poll")
+                store.audit("threshold_dissent", device_id=device_id, reason="poll")
+            else:
+                # Stale failed/cancelled handle replayed by idempotency — already
+                # counted when it first failed; not new evidence against the device.
+                store.audit("threshold_skip", device_id=device_id, reason=polled.error.value)
             continue
         result = polled.value
         got = list(result.handle.outputs) if result.handle.outputs else [digest_of(o) for o in result.outputs]
@@ -106,8 +131,17 @@ def verify_threshold(req: VerificationRequest, fleet: Sequence[Capability]) -> R
             store.quarantine(device_id, "threshold_mismatch")
             store.audit("threshold_dissent", device_id=device_id, reason="output_mismatch")
             continue
+        if result.attestation.issuer not in allowed_issuers:
+            store.quarantine(device_id, "threshold_issuer")
+            store.audit(
+                "threshold_dissent",
+                device_id=device_id,
+                reason="issuer_forgery",
+                issuer=result.attestation.issuer,
+            )
+            continue
         links.append(result.attestation)
 
     if len(links) < need:
         return Err(SeamError.verification_failed, f"agreeing links {len(links)} < {need}")
-    return attest_compose(links, req.policy, k)
+    return attest_compose(links, req.policy, k, issuers=allowed_issuers)

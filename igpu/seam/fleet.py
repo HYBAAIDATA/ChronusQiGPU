@@ -173,7 +173,13 @@ def execute(caller: str, assignments: Sequence[DeviceAssignment], fleet: Sequenc
                 continue
             results.append(polled.value)
     degraded = any(a.fallback for a in assignments)
-    gap = None if results or not assignments else "all assignments failed"
+    failed = len(assignments) - len(results)
+    if failed == len(assignments):
+        gap = "all assignments failed" if assignments else None
+    elif failed:
+        gap = f"{failed} of {len(assignments)} assignments failed or were skipped"
+    else:
+        gap = None
     tree = canonical_json([a.as_dict() for a in assignments])
     att = attest(tree, issuer="fleet")
     wall = sum(r.measurement.time_ns for r in results)

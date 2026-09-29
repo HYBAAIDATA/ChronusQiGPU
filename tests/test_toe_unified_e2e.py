@@ -1,5 +1,6 @@
 """Layer 6. Start to output. The load test repeats real Iris measurements under unique ids."""
 
+import os
 import time
 
 from toe.unified import UnifiedAnalyticsPlatform
@@ -9,7 +10,10 @@ from test_toe_unified_invariants import SEED, load_iris
 
 TOUCHED = {"A1", "C1", "C5", "I1", "F4", "G2", "B4"}
 assert SEED == 1517
-LOAD_ROWS = 1_000_000
+# 1M rows costs several hundred MB and minutes inside the default suite; the
+# only assertion is elapsed > 0, so the default stays small and a stress run
+# is an explicit opt-in via PYTHIA_E2E_LOAD_ROWS.
+LOAD_ROWS = int(os.getenv("PYTHIA_E2E_LOAD_ROWS", "10000"))
 
 
 def test_e2e_1_start_to_recognize():

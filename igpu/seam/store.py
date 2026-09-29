@@ -105,6 +105,11 @@ def queue_of(device_id: str) -> Dict[str, Any]:
         return q
 
 
+def lock() -> threading.RLock:
+    """Queue mutations span several reads/writes — hold this across them."""
+    return _lock
+
+
 def audit(kind: str, **fields: Any) -> None:
     with _lock:
         rec = {"kind": kind, **fields}

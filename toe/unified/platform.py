@@ -91,7 +91,10 @@ class UnifiedAnalyticsPlatform:
         self.operations.note_probe(ok)
 
     def entities(self) -> list[str]:
-        return sorted({record.entity for record in self.data._records.values()})
+        # Read under the data layer's lock — monitor ticks iterate while the
+        # main thread may be ingesting.
+        with self.data._lock:
+            return sorted({record.entity for record in self.data._records.values()})
 
     def quality(self, entity: str):
         return self.data.quality(entity)
@@ -100,7 +103,8 @@ class UnifiedAnalyticsPlatform:
         return self.data.policy_for(entity).max_null_rate
 
     def batches(self, entity: str) -> list[str]:
-        return sorted({record.batch_id for record in self.data._records.values() if record.entity == entity})
+        with self.data._lock:
+            return sorted({record.batch_id for record in self.data._records.values() if record.entity == entity})
 
     def quarantine(self, batch_id: str) -> int:
         return self.data.quarantine(batch_id)
@@ -112,6 +116,9 @@ class UnifiedAnalyticsPlatform:
         return self.data.batch_null_rate(batch_id)
 
     def integrate(self, connector_id: str, entity: str, *, mode: str = "batch") -> dict:
+        # Connector-sourced rows are writes: the ingest permission applies
+        # here exactly as it does to ingest_rows.
+        self.security.authorize("ingest")
         bound = self._connections.get(connector_id)
         if bound is None:
             raise KeyError(f"{connector_id} is not connected")
@@ -150,10 +157,22 @@ class UnifiedAnalyticsPlatform:
         return self.data.snapshot()
 
     def import_records(self, rows: list[dict]) -> list[dict]:
+        # Rows carry the exporting platform's quarantine state; dropping it
+        # would reactivate records the source had isolated. Payload digests
+        # are content-derived, so re-ingested rows map back one-to-one.
         grouped: dict[tuple[str, str], list[dict]] = {}
+        quarantined: list[tuple[str, str, dict]] = []
         for row in rows:
             grouped.setdefault((row["source"], row["entity"]), []).append(row["payload"])
-        return [self.ingest_rows(source, entity, payloads) for (source, entity), payloads in sorted(grouped.items())]
+            if row.get("quarantined"):
+                quarantined.append((row["source"], row["entity"], row["payload"]))
+        results = [
+            self.ingest_rows(source, entity, payloads)
+            for (source, entity), payloads in sorted(grouped.items())
+        ]
+        if quarantined:
+            self.data.quarantine_payloads(quarantined)
+        return results
 
     def govern(self, entity: str, classification: str, retention_days: int, owner: str, max_null_rate: float = 0.2) -> Policy:
         return self.data.set_policy(
@@ -165,6 +184,7 @@ class UnifiedAnalyticsPlatform:
         return self.models.train(name, rows, features, target)
 
     def retrain(self, name: str, rows: list[dict], eval_rows: list[dict] | None = None):
+        self.security.authorize("train")
         return self.models.retrain(name, rows, eval_rows)
 
     def predict(self, name: str, rows: list[dict]) -> list[int]:
@@ -233,6 +253,8 @@ class UnifiedAnalyticsPlatform:
         self._retrain_if_drifted()
 
     def watch(self, name: str, rows: list[dict]) -> None:
+        if not rows:
+            raise ValueError("watch requires at least one row to score drift")
         self._drift = (name, list(rows))
 
     def _retrain_if_drifted(self) -> None:
@@ -249,18 +271,34 @@ class UnifiedAnalyticsPlatform:
             self._drift = None
 
     def benchmark_processing(self, entities: int = 100, per_entity: int = 20) -> dict:
+        if entities < 1 or per_entity < 1:
+            raise ValueError("benchmark requires entities >= 1 and per_entity >= 1")
+        # Measure against a scratch layer — benchmark rows must never land in
+        # the live store (they would leak into exports, entities(), heal(),
+        # health() and audit), and the role check stays on this platform.
+        scratch = UnifiedDataLayer()
         for index in range(entities):
-            self.ingest_rows("benchmark", f"entity{index}", [{"n": value} for value in range(per_entity)])
-        self.data.index_visits = 0
-        self.data.scan_visits = 0
-        self.data.rows("entity0")
-        self.data.scan_rows("entity0")
-        ratio = self.data.scan_visits / max(self.data.index_visits, 1)
-        reduction = 1.0 - (self.data.index_visits / self.data.scan_visits)
+            rows = [{"n": value} for value in range(per_entity)]
+            compiled = compile_operator({"events": rows})
+            scratch.ingest(
+                "benchmark",
+                f"entity{index}",
+                rows,
+                operator_digest=compiled.input_digest,
+                operator_kind=compiled.kind,
+            )
+        scratch.index_visits = 0
+        scratch.scan_visits = 0
+        scratch.rows("entity0")
+        scratch.scan_rows("entity0")
+        if scratch.scan_visits == 0:
+            raise ValueError("benchmark produced no scan visits")
+        ratio = scratch.scan_visits / max(scratch.index_visits, 1)
+        reduction = 1.0 - (scratch.index_visits / scratch.scan_visits)
         self._processing_reduction = reduction
         return {
-            "index_visits": self.data.index_visits,
-            "scan_visits": self.data.scan_visits,
+            "index_visits": scratch.index_visits,
+            "scan_visits": scratch.scan_visits,
             "ratio": ratio,
             "reduction": reduction,
         }

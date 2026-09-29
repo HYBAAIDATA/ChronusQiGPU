@@ -123,6 +123,7 @@ H: Gate = (
     (ExactComplex(SQRT2_INV), ExactComplex(-SQRT2_INV)),
 )
 S: Gate = ((C1, C0), (C0, CI))
+S_DG: Gate = ((C1, C0), (C0, -CI))
 T: Gate = ((C1, C0), (C0, ExactComplex(SQRT2_INV, SQRT2_INV)))
 
 
@@ -284,10 +285,33 @@ class ExactStateVector:
         )
 
     def evolve_hamiltonian(self, hamiltonian: str, quarter_turns: int) -> "ExactStateVector":
-        if hamiltonian != "Z":
-            raise NotImplementedError(
-                "exact evolution is limited to declared Pauli-Z quarter-turns; arbitrary matrix exponentials fail closed"
-            )
+        """Exact Pauli-axis rotation by ``quarter_turns`` quarter-turns (pi/2 each).
+
+        Z applies diag(1, i^k) to the least-significant qubit directly.
+        X and Y are conjugations of that same rotation by Clifford gates that
+        are exact in Q(sqrt(2)) + i Q(sqrt(2)):  X^k = H Z^k H (H maps the
+        z-axis to x), and Y^k = (S H) Z^k (H S^dag) (S*H maps z to y).
+        Non-Pauli axes and non-integer turns still fail closed.
+        """
         if not isinstance(quarter_turns, int):
             raise TypeError("quarter_turns must be an integer")
-        return self.evolve_pauli_z(quarter_turns)
+        if hamiltonian == "Z":
+            return self.evolve_pauli_z(quarter_turns)
+        if hamiltonian == "X":
+            return (
+                self.apply_single(0, H)
+                .evolve_pauli_z(quarter_turns)
+                .apply_single(0, H)
+            )
+        if hamiltonian == "Y":
+            return (
+                self.apply_single(0, S_DG)
+                .apply_single(0, H)
+                .evolve_pauli_z(quarter_turns)
+                .apply_single(0, H)
+                .apply_single(0, S)
+            )
+        raise NotImplementedError(
+            "exact evolution supports declared Pauli X/Y/Z quarter-turns; "
+            "arbitrary matrix exponentials fail closed"
+        )

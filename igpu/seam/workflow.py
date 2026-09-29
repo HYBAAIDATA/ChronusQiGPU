@@ -328,9 +328,8 @@ async def _run_workflow(bridge, host, port, *, window, heal, fail_fast):
     replay_ok = back.get("signature") == sig and attest_verify({k: v for k, v in back.items() if k != "signature"}, back.get("signature", ""))
     forged_body = dict(body)
     forged_body["nonce"] = "deadbeef"
-    reject_ran = True
     forgery_rejected = (not attest_verify(forged_body, sig)) and (not attest_verify(body, "z" * 64))
-    out.record_or_raise("L10_aethel", rec.address is not None and replay_ok and reject_ran and forgery_rejected, f"Certificate written: address={rec.address.index} replay={replay_ok} forgery_rejected={forgery_rejected}")
+    out.record_or_raise("L10_aethel", rec.address is not None and replay_ok and forgery_rejected, f"Certificate written: address={rec.address.index} replay={replay_ok} forgery_rejected={forgery_rejected}")
     stale_en1 = bridge.extranonce1
     new_en1 = ""
     if heal:

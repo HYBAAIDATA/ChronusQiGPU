@@ -75,20 +75,23 @@ class QueueState:
 def enqueue(caller: str, device_id: str, item: WorkItem) -> Result[str]:
     if store.get_cap(device_id) is None:
         return Err(SeamError.device_absent, device_id)
-    q = store.queue_of(device_id)
-    key = f"{item.idempotency_key}:{item.args}"
-    for existing in q["pending"] + q["in_flight"]:
-        if f"{existing.idempotency_key}:{existing.args}" == key:
-            return Ok(existing.id)
-    if len(q["in_flight"]) >= int(q["threshold"]):
-        return Err(SeamError.rate_limited, f"in_flight={len(q['in_flight'])}")
-    item.id = item.id or new_id("w")
-    item.assigned_device = device_id
-    item.state = "pending"
-    item.submitted_at = item.submitted_at or now_iso()
-    q["pending"].append(item)
-    store.audit("enqueue", device_id=device_id, item_id=item.id, caller=caller)
-    return Ok(item.id)
+    if store.is_quarantined(device_id):
+        return Err(SeamError.device_quarantined, device_id)
+    with store.lock():
+        q = store.queue_of(device_id)
+        key = f"{item.idempotency_key}:{item.args}"
+        for existing in q["pending"] + q["in_flight"]:
+            if f"{existing.idempotency_key}:{existing.args}" == key:
+                return Ok(existing.id)
+        if len(q["in_flight"]) >= int(q["threshold"]):
+            return Err(SeamError.rate_limited, f"in_flight={len(q['in_flight'])}")
+        item.id = item.id or new_id("w")
+        item.assigned_device = device_id
+        item.state = "pending"
+        item.submitted_at = item.submitted_at or now_iso()
+        q["pending"].append(item)
+        store.audit("enqueue", device_id=device_id, item_id=item.id, caller=caller)
+        return Ok(item.id)
 
 
 def peek(caller: str, device_id: str) -> Result[Optional[WorkItem]]:
@@ -99,30 +102,32 @@ def peek(caller: str, device_id: str) -> Result[Optional[WorkItem]]:
 
 
 def dequeue(caller: str, device_id: str) -> Result[Optional[WorkItem]]:
-    q = store.queue_of(device_id)
-    if not q["pending"]:
-        return Ok(None)
-    item = q["pending"].pop(0)
-    item.state = "in_flight"
-    q["in_flight"].append(item)
-    store.audit("dequeue", device_id=device_id, item_id=item.id, caller=caller)
-    return Ok(item)
+    with store.lock():
+        q = store.queue_of(device_id)
+        if not q["pending"]:
+            return Ok(None)
+        item = q["pending"].pop(0)
+        item.state = "in_flight"
+        q["in_flight"].append(item)
+        store.audit("dequeue", device_id=device_id, item_id=item.id, caller=caller)
+        return Ok(item)
 
 
 def queue_state(caller: str, device_id: str) -> Result[QueueState]:
-    q = store.queue_of(device_id)
-    samples = list(q["throughputs"]) or [0.0]
-    mean = sum(samples) / len(samples)
-    return Ok(
-        QueueState(
-            queue_id=f"q_{device_id}",
-            device_id=device_id,
-            pending=len(q["pending"]),
-            in_flight=len(q["in_flight"]),
-            completed=int(q["completed"]),
-            failed=int(q["failed"]),
-            backpressure=len(q["in_flight"]) >= int(q["threshold"]),
-            threshold=int(q["threshold"]),
-            throughput=Distribution(mean, 0.0, len(samples)),
+    with store.lock():
+        q = store.queue_of(device_id)
+        samples = list(q["throughputs"]) or [0.0]
+        mean = sum(samples) / len(samples)
+        return Ok(
+            QueueState(
+                queue_id=f"q_{device_id}",
+                device_id=device_id,
+                pending=len(q["pending"]),
+                in_flight=len(q["in_flight"]),
+                completed=int(q["completed"]),
+                failed=int(q["failed"]),
+                backpressure=len(q["in_flight"]) >= int(q["threshold"]),
+                threshold=int(q["threshold"]),
+                throughput=Distribution(mean, 0.0, len(samples)),
+            )
         )
-    )
