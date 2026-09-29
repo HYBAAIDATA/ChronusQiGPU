@@ -5,7 +5,6 @@ The load-bearing property is not that it produces numbers -- it is that it
 REFUSES when the causal structure does not identify the effect.
 """
 
-from dataclasses import replace
 import sys
 from pathlib import Path
 
