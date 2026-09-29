@@ -25,8 +25,13 @@ def claims(root):
   reg.close()
  return Outcome(Status.PASS if ok else Status.FAIL,"claim evidence and independent-review boundary checked")
 def imports(root):
- from al_haras.core_api import import_audit
- paths=[p for p in root.rglob('*.py') if not any(x in p.parts for x in ('.git','venv','.venv','node_modules'))];checked=import_audit(paths);return Outcome(Status.PASS,f"audited {len(checked)} Python files")
+ from al_haras.core_api import PrivateImport,audit_file
+ from scripts.import_audit import Auditor,live_files
+ files=live_files(root);msgs=[f.render() for f in Auditor(root).audit(files)]
+ for p in files:
+  try:audit_file(p)
+  except PrivateImport as e:msgs.append(str(e))
+ return Outcome(Status.FAIL if msgs else Status.PASS,f"{len(msgs)} import finding(s)",tuple(msgs))
 def no_float(root):
  from al_haras.no_float_guard import scan_paths,FloatForbidden
  candidates=[]
