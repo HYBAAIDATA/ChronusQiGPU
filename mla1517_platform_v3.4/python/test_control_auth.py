@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import json
 import threading
+import time
 from http import HTTPStatus
 from http.server import ThreadingHTTPServer
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 import pytest
+
+from al_haras.entitlements import SubscriptionAuthority, SubscriptionClaims
 
 import control_api
 
@@ -48,9 +51,26 @@ def test_the_authorization_rule(monkeypatch, env, headers, expected):
 
 
 def test_a_refused_request_never_reaches_its_handler(monkeypatch, tmp_path):
+    """Privileged POSTs are mediated by the guardian: the operator key alone is
+    not a subscription, so only a full boundary request reaches the handler."""
     monkeypatch.setenv(control_api.ADMIN_KEY_ENV, KEY)
     monkeypatch.setenv("PYTHIA_BOOT_AUDIT", str(tmp_path / "audit.log"))
+    monkeypatch.setenv("AL_HARAS_SUBSCRIPTION_KEYS", json.dumps({"test": "k" * 32}))
+    monkeypatch.setenv("AL_HARAS_DATA_DIR", str(tmp_path / "al-haras"))
     monkeypatch.setattr(control_api, "_AUDIT", None)
+    control_api.pythia_guardian_api.cache_clear()
+    token = SubscriptionAuthority({"test": b"k" * 32}, "hyba-subscriptions").issue(
+        SubscriptionClaims(
+            subscription_id="sub-test",
+            tenant_id="tenant-1",
+            issuer="hyba-subscriptions",
+            key_id="test",
+            capabilities=("hyba.security",),
+            actors=("operator-1",),
+            not_before=0,
+            expires_at=int(time.time()) + 3600,
+        )
+    )
     calls = []
 
     def stop(body):
@@ -65,9 +85,9 @@ def test_a_refused_request_never_reaches_its_handler(monkeypatch, tmp_path):
     thread.start()
     url = f"http://127.0.0.1:{server.server_address[1]}/api/v1/mining/stop"
 
-    def post(headers):
+    def post(headers, data=b"{}"):
         request = Request(
-            url, data=b"{}", method="POST", headers={"Content-Type": "application/json", **headers}
+            url, data=data, method="POST", headers={"Content-Type": "application/json", **headers}
         )
         try:
             with urlopen(request, timeout=5) as response:
@@ -76,10 +96,21 @@ def test_a_refused_request_never_reaches_its_handler(monkeypatch, tmp_path):
             return exc.code, json.loads(exc.read())
 
     try:
-        status, body = post({})
-        assert status == 401 and body["error"] == "operator key required" and calls == []
-        status, body = post({"Authorization": f"Bearer {KEY}"})
-        assert status == 200 and body == {"ok": True} and calls == [{}]
+        status, _ = post({})
+        assert status == 400 and calls == []
+        status, _ = post({"Authorization": f"Bearer {KEY}"})
+        assert status == 400 and calls == []
+        observation = {"observation": {"value": 1}}
+        status, body = post(
+            {
+                "Authorization": f"Bearer {token}",
+                "X-HYBA-Tenant": "tenant-1",
+                "X-HYBA-Actor": "operator-1",
+            },
+            data=json.dumps(observation).encode("utf-8"),
+        )
+        assert status == 200 and body["ok"] is True and calls == [observation]
     finally:
         server.shutdown()
         server.server_close()
+        control_api.pythia_guardian_api.cache_clear()

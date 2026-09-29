@@ -8,7 +8,7 @@ from typing import Any, Callable, Mapping
 
 from .audit import HashChainAudit, digest
 from .entitlements import SubscriptionAuthority
-from .guardian import ALHaras, GuardianPolicy
+from .guardian import ALHaras, DEFAULT_ALLOWED_OPERATIONS, GuardianPolicy
 from .models import GuardianRequest
 from .settings import ALHarasSettings
 
@@ -43,12 +43,19 @@ def build_lhras(settings: ALHarasSettings):
     return instance
 
 
-def build_guardian(settings: ALHarasSettings) -> ALHaras:
+def build_guardian(
+    settings: ALHarasSettings,
+    *,
+    allowed_operations: frozenset[str] | None = None,
+) -> ALHaras:
     return ALHaras(
         authority=SubscriptionAuthority(settings.keyring, settings.issuer),
         policy=GuardianPolicy(
             version=settings.policy_version,
             capability=settings.capability,
+            allowed_operations=(
+                DEFAULT_ALLOWED_OPERATIONS if allowed_operations is None else allowed_operations
+            ),
             max_payload_bytes=settings.max_payload_bytes,
             require_intelligence_evidence=settings.require_intelligence_evidence,
         ),

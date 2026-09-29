@@ -32,13 +32,9 @@ import argparse
 import ast
 import json
 import subprocess
-import sys
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from gate_impl import main as gate_main
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -63,6 +59,10 @@ class Finding:
     module: str
     name: str | None
     swallowed: bool
+
+    @property
+    def hidden(self) -> bool:
+        return self.swallowed
 
     def render(self) -> str:
         what = f"{self.module}.{self.name}" if self.name else self.module
@@ -357,4 +357,6 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(gate_main("import-audit"))
+    from gate_impl import main as _gate_main
+
+    raise SystemExit(_gate_main("import-audit"))
