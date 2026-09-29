@@ -14,7 +14,12 @@ import math
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from Intelligence.lucas_scales import IGPU_SCALE_RUNGS, is_ladder_index, nearest_ladder_index
+from Intelligence.lucas_scales import (
+    IGPU_SCALE_RUNGS,
+    LUCAS_SCALE_LADDER,
+    is_ladder_index,
+    nearest_ladder_index,
+)
 from hyba.inventory import ClusterInventory, DeviceInfo
 
 # Default work-item quantum used when a caller supplies no workload size.
@@ -145,7 +150,9 @@ class SuperGPU:
         except KeyError:
             discipline = "ladder"
 
-        def decide(dev: DeviceInfo, cap: str, reason: str, cap_chunk: int = _DEFAULT_WORK_ITEMS) -> RouteDecision:
+        def decide(
+            dev: DeviceInfo, cap: str, reason: str, cap_chunk: int = _DEFAULT_WORK_ITEMS
+        ) -> RouteDecision:
             # Serial ops derive no chunk config — honestly unconfigured.
             if discipline == "serial":
                 lucas = {}
@@ -229,11 +236,29 @@ class SuperGPU:
         if op in ("grover_search", "search", "grover_iterate"):
             marked = int(work.get("marked") or 1)
             space = int(work.get("space") or items)
+            # Lucas scale: ``scale_index`` (rung 10/12/15/18/20) multiplies
+            # the search space by the exact Lucas value L_n — the same
+            # N -> N * L_n hardware-dimension scaling the GPU engine uses.
+            scale_index = work.get("scale_index")
+            lucas_value = 1
+            if scale_index is not None:
+                idx = int(scale_index)
+                if idx not in LUCAS_SCALE_LADDER:
+                    raise ValueError(
+                        f"Lucas scale index {scale_index!r} is not a GPU-engine "
+                        f"rung (one of {', '.join(str(r) for r in LUCAS_SCALE_LADDER)})"
+                    )
+                lucas_value = LUCAS_SCALE_LADDER[idx]
+                space = space * lucas_value
             depth = max(1, int(math.floor(math.pi / 4.0 * math.sqrt(space / max(marked, 1)))))
             dev = self._best_gpu() or self._cpu()
             assert dev is not None
             decision = decide(dev, "search", "largest compute for the sweep")
             decision.lucas_dispatch["grover_depth"] = depth
+            if scale_index is not None:
+                decision.lucas_dispatch["scale_index"] = int(scale_index)
+                decision.lucas_dispatch["lucas_value"] = lucas_value
+                decision.lucas_dispatch["scaled_space"] = space
             return decision
 
         cpu = self._cpu()
@@ -271,9 +296,7 @@ class SuperGPU:
         result = executor.run(dict(inputs or {}), dispatch)
         # A dispatch that never derived a Lucas chunk config — unrouted op
         # or off-ladder chunk — is honestly unconfigured, not "measured".
-        if decision.reason.startswith("unrouted") or not decision.lucas_dispatch.get(
-            "on_ladder"
-        ):
+        if decision.reason.startswith("unrouted") or not decision.lucas_dispatch.get("on_ladder"):
             result.truth_class = "unconfigured"
         # Every dispatched op attests — the receipt layer of the substrate.
         from hyba.attestation import attest_dispatch

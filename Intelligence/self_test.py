@@ -261,17 +261,44 @@ def _check_agi_asi_requirements(orchestrator) -> Dict[str, Any]:
 
 
 def _check_lucas_scales(orchestrator) -> Dict[str, Any]:
-    """Validate the Lucas intelligence scale ladder (L_10..L_20)."""
+    """Validate the Lucas intelligence scale ladder.
+
+    The profile climbs the curriculum rungs by design; the mining rungs
+    live in the substrate lookup (LUCAS_SCALE_LADDER) and on
+    IGPU_SCALE_RUNGS, not in this profile. Verify the profile's rungs and
+    values against an independent recurrence, and the lookup against the
+    full ladder.
+    """
     try:
         status = orchestrator.lucas_scale_status()
         profile = status["profile"]
         # The ladder must be substrate-validated and monotonic.
         substrate_ok = profile["substrate_validated"]
         monotonic = profile["monotonic"]
-        # Verify exact values are present.
+        # Verify exact values are present: every level equals its exact
+        # Lucas value from the substrate.
+        import turing_core
+
         values = [lv["value"] for lv in profile["levels"]]
-        expected = [123, 322, 1364, 5778, 15127]
-        values_ok = values == expected
+        # The declared rungs, valued by an independent recurrence
+        # (L_0 = 2, L_1 = 1, L_n = L_(n-1) + L_(n-2)).
+        from lucas.ladder import CURRICULUM_RUNGS, FULL_LADDER
+
+        from .lucas_scales import LUCAS_SCALE_LADDER
+
+        def _lucas(n: int) -> int:
+            a, b = 2, 1
+            for _ in range(n):
+                a, b = b, a + b
+            return a
+
+        expected = [_lucas(n) for n in CURRICULUM_RUNGS]
+        values_ok = (
+            [lv["index"] for lv in profile["levels"]] == list(CURRICULUM_RUNGS)
+            and values == expected
+            and expected == [123, 322, 1364, 5778, 15127]
+            and all(rung in LUCAS_SCALE_LADDER for rung in FULL_LADDER)
+        )
         # Coherence probe on a phi-phase signal (honest: not scale-invariant).
         import math
 
@@ -396,11 +423,13 @@ def _check_extended_algebra() -> Dict[str, Any]:
         sched_ok = 0 < len(sched) <= 1000 and len(set(sched)) == len(sched)
         ladders_ok = True
         try:
+            from lucas.ladder import FULL_LADDER
+
             from .lucas_scales import build_family_scale_profile
 
             for f in turing_core.FAMILY_COEFFS:
-                p = build_family_scale_profile(f)
-                ladders_ok = ladders_ok and p.monotonic and len(p.levels) == 5
+                p = build_family_scale_profile(f, indices=FULL_LADDER)
+                ladders_ok = ladders_ok and p.monotonic and len(p.levels) == len(FULL_LADDER)
         except Exception:
             ladders_ok = False
         ham_ok = True

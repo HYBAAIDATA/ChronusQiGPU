@@ -10,6 +10,16 @@ AL_HARAS_POLICY_VERSION=al-haras.policy.v1
 AL_HARAS_CAPABILITY=hyba.security
 AL_HARAS_MAX_PAYLOAD_BYTES=1048576
 AL_HARAS_SUBSCRIPTION_URL=/contact?product=hyba-security
+# Corrupt-spool recovery: rename damaged ledgers aside and resume on a fresh
+# chain whose first record is the recovery event (default true). Set to false
+# to fail startup hard instead.
+AL_HARAS_AUDIT_QUARANTINE=true
+# Optional L-HRAS Guardian layer (see docs/al-haras/GAP_ANALYSIS.md).
+# Point at an L-HRAS config.toml (l_hras/config.example.toml); the trust
+# root, threat model, policy bundle, and threshold provenance live there.
+# Enabling without a valid config fails closed with a 503.
+AL_HARAS_ENABLE_LHRAS=false
+AL_HARAS_LHRAS_CONFIG=/etc/hyba/lhras/config.toml
 ```
 
 PYTHIA additionally sets:
@@ -35,10 +45,18 @@ AL_HARAS_REQUIRE_INTELLIGENCE_EVIDENCE=true
 
 ## Recovery
 
-On restart, AL HARAS loads and verifies the complete local chain before accepting
-traffic, recovers the durable tail hash and refuses startup on malformed JSON or
-chain corruption. Every append re-reads the durable head while holding an
-exclusive cross-process lock, preventing independent workers from forking the
-chain. Preserve the ledger volume and treat any gap or hash mismatch as an
-integrity incident. `ACTION_REQUESTED`,
-`ACTION_ACKNOWLEDGED`, and `RECOVERY_VERIFIED` remain distinct states.
+The guardian is built lazily on the first request that reaches it. At that
+point AL HARAS loads and verifies the complete local chain; when
+`AL_HARAS_AUDIT_QUARANTINE` is enabled (the default), a malformed or corrupt
+spool is renamed to `<file>.corrupt-<timestamp>`, a fresh chain is opened, and
+its first record is an `audit_quarantined` recovery event pointing at the
+quarantined file. With quarantine disabled the same corruption fails startup.
+On platforms without POSIX `flock` (for example a Windows dev host) the PYTHIA
+wiring falls back to an in-memory chain and `public_status` reports
+`audit_durable: false`; treat that mode as non-production evidence only.
+
+Each append verifies only the durable tail record under an exclusive
+cross-process lock — cost stays constant in ledger length and independent
+writers cannot fork the chain — while the `records` property still re-verifies
+the entire chain on read. Preserve the ledger volume and treat any gap, hash
+mismatch, or `audit_quarantined` event as an integrity incident.

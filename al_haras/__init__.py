@@ -5,6 +5,7 @@ from .entitlements import (
     SubscriptionAuthority,
     SubscriptionClaims,
     SubscriptionError,
+    SubscriptionReplayError,
 )
 from .guardian import ALHaras, GuardianPolicy
 from .models import GuardianRequest, GuardianVerdict
@@ -21,6 +22,7 @@ __all__ = [
     "SubscriptionAuthority",
     "SubscriptionClaims",
     "SubscriptionError",
+    "SubscriptionReplayError",
 ]
 
-__version__ = "1.0.1"
+__version__ = "1.1.0"

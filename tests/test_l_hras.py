@@ -574,13 +574,15 @@ def test_counterfactual_ranked(lhras):
     assert likes == sorted(likes, reverse=True)
 
 
-def test_causal_l1_l2_l3(lhras):
+def test_causal_l1_l2_and_l3_refuses_cyclic_graph(lhras):
     graph = lhras.joint.causal_graph
     obs = {"severity": 0.5}
     l1 = intelligences.causal_association(graph, obs)
     l2 = intelligences.causal_intervention(graph, ("predictive", 1.0))
     l3 = intelligences.causal_counterfactual(graph, obs, ("predictive", 1.0))
-    assert l1.is_ok and l2.is_ok and l3.is_ok
+    assert l1.is_ok and l2.is_ok
+    assert l3.is_err
+    assert "not a DAG" in str(l3.error)
 
 
 def test_topological_analysis():

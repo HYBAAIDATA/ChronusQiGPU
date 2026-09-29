@@ -5,6 +5,8 @@
 - [Container security runbook](CONTAINER_SECURITY.md)
 - [Threat model](THREAT_MODEL.md)
 - [Exact math-folding reference](MATH_FOLDING.md)
+- [L-HRAS gap analysis](GAP_ANALYSIS.md)
+- [Offering positioning](OFFERING.md)
 
 ## Evidence boundary
 

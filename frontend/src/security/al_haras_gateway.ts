@@ -26,7 +26,8 @@ export interface HodgeResonanceHeaders {
 }
 
 export interface GeometricMaterializationResult {
-  authenticated: boolean;
+  // Structural resonance only — NOT authentication; see the file header.
+  resonance_valid: boolean;
   manifoldDimension: number;
   spectralGapNum: bigint;
   spectralGapDen: bigint;
@@ -175,7 +176,7 @@ export function alHarasTopologicalGatewayMiddleware(
 
     // Structural resonance established: materialize geometry
     const materialization: GeometricMaterializationResult = {
-      authenticated: true,
+      resonance_valid: true,
       manifoldDimension: 11,
       spectralGapNum: gapResult.gapNum,
       spectralGapDen: gapResult.gapDen,

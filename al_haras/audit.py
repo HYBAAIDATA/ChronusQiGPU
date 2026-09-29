@@ -9,18 +9,47 @@ import json
 import os
 from pathlib import Path
 import threading
+import time
 from typing import Any, Iterable, Mapping
 
 try:
     import fcntl
 except ImportError:  # pragma: no cover - Linux containers are the production target.
     fcntl = None
+try:
+    import msvcrt
+except ImportError:  # pragma: no cover - POSIX hosts use fcntl.
+    msvcrt = None
+
+
+def _lock_exclusive(fd: int) -> None:
+    """Block until this process holds the ledger's exclusive lock."""
+    if fcntl is not None:
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        return
+    os.lseek(fd, 0, os.SEEK_SET)
+    delay = 0.001
+    while True:
+        try:
+            # Non-blocking attempts with a short backoff: LK_LOCK would poll
+            # only once a second. Waits as long as flock(LOCK_EX) would.
+            msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            return
+        except OSError:
+            time.sleep(delay)
+            delay = min(delay * 2, 0.05)
+
+
+def _unlock(fd: int) -> None:
+    if fcntl is not None:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        return
+    os.lseek(fd, 0, os.SEEK_SET)
+    msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
 
 
 def canonical_json(value: Any) -> bytes:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), default=str).encode(
-        "utf-8"
-    )
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
 
 
 def digest(value: Any) -> str:
@@ -31,29 +60,73 @@ class AuditIntegrityError(RuntimeError):
     """Existing durable audit state is malformed or hash-chain invalid."""
 
 
+_TAIL_READ_BYTES = 64 * 1024
+
+
 class HashChainAudit:
     """Append-only decision records.
 
     Records contain identifiers, hashes, and policy outcomes; client payloads are
     never persisted. Local JSONL is a container spool, not a WORM claim.
+
+    Appends verify the durable tail only: the whole chain is verified once at
+    construction, then each append links to the file's actual last record while
+    holding the exclusive lock. This keeps append cost independent of ledger
+    length and prevents interleaved writers from forking the chain.
     """
 
-    def __init__(self, path: Path | None = None) -> None:
+    def __init__(self, path: Path | None = None, *, quarantine: bool = False) -> None:
         self.path = path
+        self._quarantine = quarantine
+        self._quarantine_stamp: str | None = None
         self._records: list[dict[str, Any]] = []
         self._lock = threading.Lock()
         if path is not None:
-            if fcntl is None:
-                raise RuntimeError("persistent AL HARAS audit requires POSIX file locking")
+            if fcntl is None and msvcrt is None:
+                raise RuntimeError("persistent AL HARAS audit requires an OS file lock")
             path.parent.mkdir(parents=True, exist_ok=True)
             try:
                 os.chmod(path.parent, 0o700)
             except OSError:
                 pass
             with self._file_lock():
-                self._records = self._read_records_unlocked()
-                if not self.verify(self._records):
-                    raise AuditIntegrityError("existing AL HARAS audit chain is corrupt")
+                self._records = self._load_or_quarantine_unlocked()
+
+    def _load_or_quarantine_unlocked(self) -> list[dict[str, Any]]:
+        """Verify the whole durable chain at startup; on corruption either
+        fail closed or quarantine the damaged spool and resume on a fresh
+        chain whose first event records the recovery."""
+        try:
+            records = self._read_records_unlocked()
+        except AuditIntegrityError:
+            if not self._quarantine:
+                raise
+            self._quarantine_file_unlocked()
+            records = []
+        if not self.verify(records):
+            if not self._quarantine:
+                raise AuditIntegrityError("existing AL HARAS audit chain is corrupt")
+            self._quarantine_file_unlocked()
+            records = []
+        if self._quarantine_stamp is not None:
+            self._append_unlocked(
+                {
+                    "schema_version": "al-haras.audit-recovery.v1",
+                    "event": "audit_quarantined",
+                    "quarantined_to": self._quarantine_stamp,
+                },
+                records,
+            )
+        return records
+
+    def _quarantine_file_unlocked(self) -> None:
+        if self.path is None or not self.path.exists():
+            self._quarantine_stamp = "empty"
+            return
+        stamp = f"{self.path.name}.corrupt-{int(time.time())}"
+        target = self.path.with_name(stamp)
+        os.replace(self.path, target)
+        self._quarantine_stamp = target.name
 
     @property
     def records(self) -> tuple[dict[str, Any], ...]:
@@ -75,10 +148,12 @@ class HashChainAudit:
         lock_path = self.path.with_name(f"{self.path.name}.lock")
         fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
         try:
-            fcntl.flock(fd, fcntl.LOCK_EX)
-            yield
+            _lock_exclusive(fd)
+            try:
+                yield
+            finally:
+                _unlock(fd)
         finally:
-            fcntl.flock(fd, fcntl.LOCK_UN)
             os.close(fd)
 
     def _read_records_unlocked(self) -> list[dict[str, Any]]:
@@ -92,24 +167,55 @@ class HashChainAudit:
                         continue
                     value = json.loads(line)
                     if not isinstance(value, dict):
-                        raise AuditIntegrityError(
-                            f"audit line {line_number} is not an object"
-                        )
+                        raise AuditIntegrityError(f"audit line {line_number} is not an object")
                     records.append(value)
         except (OSError, json.JSONDecodeError) as exc:
             raise AuditIntegrityError("existing AL HARAS audit is unreadable") from exc
         return records
+
+    def _read_tail_unlocked(self) -> dict[str, Any] | None:
+        """Return the durable tail record, verifying its internal hash.
+
+        Only the last line is parsed, so append cost stays O(1) in ledger
+        length. A record whose ``record_hash`` does not match its own body is
+        corruption; a trailing partial line (torn write) is detected as a
+        JSON error and also fails closed.
+        """
+        if self.path is None or not self.path.exists():
+            return None
+        size = self.path.stat().st_size
+        if size == 0:
+            return None
+        try:
+            with self.path.open("rb") as source:
+                source.seek(-min(size, _TAIL_READ_BYTES), os.SEEK_END)
+                tail = source.read()
+            lines = tail.rstrip(b"\n").split(b"\n")
+            line = lines[-1] if lines else b""
+            if not line.strip():
+                return None
+            record = json.loads(line.decode("utf-8"))
+        except (OSError, IndexError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise AuditIntegrityError("durable audit tail is unreadable") from exc
+        if not isinstance(record, dict):
+            raise AuditIntegrityError("durable audit tail is not an object")
+        body = {
+            "event": record.get("event"),
+            "previous_hash": record.get("previous_hash"),
+        }
+        if record.get("record_hash") != digest(body):
+            raise AuditIntegrityError("durable audit tail record is corrupt")
+        return record
 
     def append(self, event: Mapping[str, Any]) -> dict[str, Any]:
         if self.path is None:
             with self._lock:
                 return self._append_unlocked(event, self._records)
         with self._file_lock():
-            records = self._read_records_unlocked()
-            if not self.verify(records):
-                raise AuditIntegrityError("existing AL HARAS audit chain is corrupt")
-            record = self._append_unlocked(event, records)
-            self._records = records
+            tail = self._read_tail_unlocked()
+            previous = tail["record_hash"] if tail is not None else "GENESIS"
+            record = self._append_record_unlocked(event, previous)
+            self._records = [tail, record] if tail is not None else [record]
             return copy.deepcopy(record)
 
     def _append_unlocked(
@@ -118,6 +224,15 @@ class HashChainAudit:
         records: list[dict[str, Any]],
     ) -> dict[str, Any]:
         previous_hash = records[-1]["record_hash"] if records else "GENESIS"
+        record = self._append_record_unlocked(event, previous_hash)
+        records.append(record)
+        return record
+
+    def _append_record_unlocked(
+        self,
+        event: Mapping[str, Any],
+        previous_hash: str,
+    ) -> dict[str, Any]:
         body = {"event": dict(event), "previous_hash": previous_hash}
         record = {**body, "record_hash": digest(body)}
         if self.path is not None:
@@ -137,7 +252,6 @@ class HashChainAudit:
                 os.fsync(fd)
             finally:
                 os.close(fd)
-        records.append(record)
         return copy.deepcopy(record)
 
     @staticmethod

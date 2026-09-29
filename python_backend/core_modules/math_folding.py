@@ -117,10 +117,7 @@ def lucas_cassini(n: int) -> int:
 
 
 def verify_cassini(n: int) -> bool:
-    return (
-        fibonacci_cassini(n) == (-1) ** n
-        and lucas_cassini(n) == 5 * ((-1) ** (n - 1))
-    )
+    return fibonacci_cassini(n) == (-1) ** n and lucas_cassini(n) == 5 * ((-1) ** (n - 1))
 
 
 @dataclass(frozen=True)
@@ -173,8 +170,7 @@ def pulvini_fold(values: Iterable[int | Fraction]) -> PulviniFold:
     if original_length % 2:
         exact.append(Fraction(0))
     pairs = tuple(
-        (exact[index] + exact[index + 1], exact[index])
-        for index in range(0, len(exact), 2)
+        (exact[index] + exact[index + 1], exact[index]) for index in range(0, len(exact), 2)
     )
     folded = PulviniFold(pairs=pairs, original_length=original_length)
     if folded.unfold() != tuple(exact[:original_length]):
