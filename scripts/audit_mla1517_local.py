@@ -161,21 +161,13 @@ def report_behaviour():
 
     # 3. Lucas ladder exactness at the declared rungs.
     try:
-        from mla1517.scaling import LADDER
-
-        rungs = getattr(LADDER, "rungs", None) or LADDER
-        print(f"    declared ladder        : {list(rungs)}")
-    except Exception:
-        print("    ladder symbol not found; trying module constants")
-    try:
         from lucas.core import lucas as L
 
-        vals = [L(r) for r in (10, 12, 15, 18, 20, 31, 50, 76)]
+        vals = [L(r) for r in (10, 12, 15, 17, 18, 20, 31, 50, 76)]
         print(f"    exact Lucas at rungs   : {vals}")
-        print(f"    L_15={vals[2]}  L_20={vals[4]}  (spec uses 15->17 as the first transition)")
-        print(f"    L_17={L(17)}  (the declared target scale)")
-    except Exception as exc:
-        print(f"    Lucas unavailable: {exc}")
+        print(f"    L_15={vals[2]}  L_17={vals[3]}  L_20={vals[5]}")
+    except ImportError:
+        print("    lucas.core unavailable; ladder check skipped")
 
     # 5. The 64-byte hot descriptor, and whether PRIME-DB is really native.
     try:
