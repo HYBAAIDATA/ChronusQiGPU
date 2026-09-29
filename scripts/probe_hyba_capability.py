@@ -82,6 +82,9 @@ VALIDATION_SEEDS = list(range(100, 120))
 COEFFICIENT_SEED = 2026
 PYTEST_FILES = [
     "tests/test_toe_elevation.py",
+    # Second opinion: re-derives expected values from first principles and
+    # proves the harness fails closed when an invariant is broken.
+    "tests/test_toe_independent_verification.py",
     "tests/test_toe_package.py",
     "tests/test_toe_propagator_cache.py",
     "tests/test_toe_expansion_contract.py",
