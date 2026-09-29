@@ -161,7 +161,7 @@ def report_behaviour():
 
     # 3. Lucas ladder exactness at the declared rungs.
     try:
-        from mla1517.scaling import LADDER
+        from mla1517.scaling import LUCAS_PISOT_LADDER as LADDER
 
         rungs = getattr(LADDER, "rungs", None) or LADDER
         print(f"    declared ladder        : {list(rungs)}")
