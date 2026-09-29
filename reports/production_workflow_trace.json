@@ -1,0 +1,9 @@
+{
+  "schema": "pythia.production_workflow_trace/1",
+  "evidence_commit": null,
+  "mode": "NOT_RUN",
+  "reason": "Run python scripts/trace_production_workflow.py on the committed worktree",
+  "live_pool_claim": "NOT_RUN",
+  "physical_device_claim": "NOT_RUN",
+  "stages": []
+}

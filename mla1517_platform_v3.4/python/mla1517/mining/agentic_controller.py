@@ -424,6 +424,7 @@ class AgenticMiningController:
         """Only literal ACCEPTED/REJECTED pool responses train policy history."""
         self._outcome_history.append(record)
         self.quality.observe(record)
+        self.telemetry.learning_update_applied = False
         self.telemetry.last_plan_source = record.plan_source.value
         self.telemetry.last_outcome = {
             "plan_id": record.plan_id,

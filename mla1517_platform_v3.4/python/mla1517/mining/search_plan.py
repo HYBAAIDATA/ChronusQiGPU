@@ -224,6 +224,7 @@ class SearchPlan:
     evidence_refs: Mapping[str, Any]
     created_at: float
     plan_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    toe_frame_id: str | None = None
     source: PlanSource = PlanSource.AGENTIC_PRECOMPUTED
     schedule: tuple[int, ...] = ()
     expires_at: float | None = None
@@ -258,7 +259,13 @@ class SearchPlan:
             raise ValueError("a baseline plan must say why no agentic plan ran")
         if self.source is PlanSource.AGENTIC_PRECOMPUTED and self.plan_fallback_reason:
             raise ValueError("an agentic plan cannot carry a plan_fallback_reason")
-        object.__setattr__(self, "evidence_refs", MappingProxyType(dict(self.evidence_refs)))
+        refs = dict(self.evidence_refs)
+        if self.toe_frame_id is not None:
+            if not self.toe_frame_id:
+                raise ValueError("toe_frame_id cannot be empty")
+            if refs.get("toe_frame_digest") != self.toe_frame_id:
+                raise ValueError("toe_frame_id must match evidence_refs.toe_frame_digest")
+        object.__setattr__(self, "evidence_refs", MappingProxyType(refs))
 
     def is_valid_for(self, identity: WorkIdentity | None) -> bool:
         """False unless session, Stratum generation and fingerprint all match."""
@@ -338,9 +345,11 @@ class ExecutionRecord:
     power_w: float | None = None
     # --- correlation spine: session → generation → plan → lease → execution
     # → candidate → submission (persisted in MiningSession.pending/share_log).
+    toe_frame_id: str | None = None
     execution_id: str | None = None
     candidate_id: str | None = None
     submission_id: str | None = None
+    learning_record_id: str | None = None
 
     def __post_init__(self) -> None:
         source = PlanSource(self.plan_source)

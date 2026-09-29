@@ -84,6 +84,11 @@ from .world_model import MiningWorldModel
 from .toe_adapter import TOEUnavailable, TOEMiningAdapter
 from .toe_context import TOEContextBuilder, TOEContextUnavailable
 from .toe_signal import TOECausalSignal, build_toe_signal, lucas_ladder_status
+from .toe_decision import (
+    TOEDecisionFrameUnavailable,
+    TOEMiningDecisionFrame,
+    build_toe_decision_frame,
+)
 
 LOG = logging.getLogger("mla1517.stratum.intelligence")
 
@@ -280,6 +285,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self.solver = M32SearchSolver()
         self.last_mining_decision = None
         self.last_toe_context = None
+        self.last_toe_frame: TOEMiningDecisionFrame | None = None
         self.last_toe_signal: TOECausalSignal | None = None
         self.purity_torn_events: list[dict[str, Any]] = []
         self._dispatch_breadth = _OBSERVED_WINDOW
@@ -1470,8 +1476,12 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             dispatch_breadth=self._dispatch_breadth,
             executor_route=self._execution_route(),
             policy_id=_BASELINE_POLICY,
-            evidence_refs={"lane_order_source": order_source},
+            evidence_refs={
+                "lane_order_source": order_source,
+                **(self.last_toe_frame.evidence_refs() if self.last_toe_frame else {}),
+            },
             created_at=time.monotonic(),
+            toe_frame_id=(self.last_toe_frame.frame_digest if self.last_toe_frame else None),
             plan_id=lease.lease_id,
             source=PlanSource.BASELINE_FALLBACK,
             plan_fallback_reason=reason,
@@ -1521,14 +1531,25 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     "toe_face_bias": (
                         self.last_toe_signal.face_bias if self.last_toe_signal is not None else None
                     ),
+                    **(self.last_toe_frame.evidence_refs() if self.last_toe_frame else {}),
                 },
                 created_at=time.monotonic(),
+                toe_frame_id=(self.last_toe_frame.frame_digest if self.last_toe_frame else None),
                 plan_id=plan_id,
             )
         except ValueError as exc:
             self.agentic.release_lease(plan_id)
             LOG.warning("precomputed plan rejected by contract: %s", exc)
             return None
+
+    def _record_submission_gate(self, reason: str, job_id: str) -> None:
+        coordinate = CausalCoordinate(**(self._pending_correlation or {}))
+        self.causal.record(
+            "submission_gate_refused",
+            coordinate,
+            reason=reason,
+            job_id=job_id,
+        )
 
     async def submit_candidate(
         self,
@@ -1551,27 +1572,25 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         if not self.client:
             raise ConnectionError("no active Stratum client")
         if self.session.state != "SEARCHING" or self.work_throttled:
+            self._record_submission_gate("NOT_SEARCHING_OR_THROTTLED", job_id)
             return False
         proof = self.client.proof_adapter.validate_candidate(
             job_id=job_id, extranonce2=extranonce2, ntime=ntime, nonce=nonce
         )
         if not self.submission_permitted():
+            self._record_submission_gate("SUBMISSION_DISABLED", job_id)
             return False  # shadow: a proof-checked share, never written
         if self.chain_observer is None:
             raise RuntimeError("live submission requires a Bitcoin chain observer")
         tip = await asyncio.to_thread(self.chain_observer.tip)
         if proof.header[4:36][::-1].hex() != tip["block_hash"]:
             LOG.warning("candidate parent differs from verified chain tip")
+            self._record_submission_gate("PARENT_MISMATCH", job_id)
             return False
         if self.session.already_submitted(proof.digest[::-1].hex()):
             LOG.warning("share already submitted; refusing a duplicate mining.submit")
+            self._record_submission_gate("DUPLICATE_SUBMISSION", job_id)
             return False
-        decision = self.mining_intelligence.choose(
-            has_job=True,
-            candidate_window=self._observed_candidate_window(),
-            budget=250_000,
-        )
-        self.last_mining_decision = decision
         self._last_submission_id = f"submission:{uuid.uuid4()}"
         self.session.begin_submission(
             header=proof.header,
@@ -1617,7 +1636,6 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             if self._bridge is not None and self.session.state == "SEARCHING":
                 self._bridge.start()
         self._last_pool_outcome = PoolOutcome.ACCEPTED if result is True else PoolOutcome.REJECTED
-        self.mining_intelligence.learn(accepted=result, lead=decision.lead, job_id=job_id)
         return result
 
     async def search_current_job(self) -> bool:
@@ -1692,6 +1710,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 pool_session_id=identity.pool_session_id,
                 generation=identity.generation,
                 job_fingerprint=identity.job_fingerprint,
+                toe_frame_id=plan.toe_frame_id,
                 plan_id=plan.plan_id,
                 lease_id=lease.lease_id,
                 execution_id=f"execution:{uuid.uuid4()}",
@@ -1787,6 +1806,13 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         outcome: PoolOutcome,
         coordinate: CausalCoordinate,
     ) -> None:
+        learning_record_id = (
+            f"learning:{uuid.uuid4()}"
+            if outcome in (PoolOutcome.ACCEPTED, PoolOutcome.REJECTED)
+            else None
+        )
+        if learning_record_id is not None:
+            coordinate = coordinate.extend(learning_record_id=learning_record_id)
         final = replace(
             record,
             pool_outcome=outcome,
@@ -1800,8 +1826,23 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             execution_id=coordinate.execution_id,
             candidate_id=coordinate.candidate_id,
             submission_id=coordinate.submission_id,
+            learning_record_id=coordinate.learning_record_id,
         )
         self.agentic.record_outcome(final)
+        if outcome in (PoolOutcome.ACCEPTED, PoolOutcome.REJECTED):
+            self.mining_intelligence.learn(
+                accepted=outcome is PoolOutcome.ACCEPTED,
+                lead=plan.policy_id,
+                job_id=identity.job_id,
+            )
+        self.causal.record(
+            "learning_observed",
+            coordinate,
+            applied=self.agentic.telemetry.learning_update_applied,
+            pool_outcome=outcome.value,
+            plan_id=plan.plan_id,
+            toe_frame_id=plan.toe_frame_id,
+        )
         now = time.monotonic()
         self.world.tick(now)
         self._score_forecasts(final)
@@ -2004,6 +2045,13 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     exc,
                 )
                 self.last_toe_context = None
+
+        self.last_toe_frame = None
+        if self.last_toe_context is not None:
+            try:
+                self.last_toe_frame = build_toe_decision_frame(self.last_toe_context)
+            except TOEDecisionFrameUnavailable as exc:
+                LOG.warning("TOE decision frame unavailable for %s: %s", record_id, exc)
 
         # Feed-forward TOE wiring: convert the measured context into a causal
         # signal, apply its throttle gate, then let the chooser apply

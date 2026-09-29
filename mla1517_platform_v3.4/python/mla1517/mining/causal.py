@@ -26,12 +26,14 @@ _AXES = (
     "pool_session_id",
     "generation",
     "job_fingerprint",
+    "toe_frame_id",
     "plan_id",
     "lease_id",
     "execution_id",
     "candidate_id",
     "submission_id",
     "recovery_id",
+    "learning_record_id",
 )
 
 
@@ -40,12 +42,14 @@ class CausalCoordinate:
     pool_session_id: str | None = None
     generation: int | None = None
     job_fingerprint: str | None = None
+    toe_frame_id: str | None = None
     plan_id: str | None = None
     lease_id: str | None = None
     execution_id: str | None = None
     candidate_id: str | None = None
     submission_id: str | None = None
     recovery_id: str | None = None
+    learning_record_id: str | None = None
 
     def extend(self, **axes: Any) -> "CausalCoordinate":
         unknown = set(axes) - set(_AXES)
