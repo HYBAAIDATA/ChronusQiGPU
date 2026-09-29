@@ -147,7 +147,7 @@ def route(job: Dict[str, Any], fleet: Sequence[Capability]) -> Result[List[Devic
                     cost_estimate=winner.cost,
                     fallback=used_fallback,
                     job_id=str(job.get("job_id", "")),
-                    idempotency_key=f"{job.get('job_id','')}:{kernel.value}:{window.start}",
+                    idempotency_key=f"{job.get('job_id', '')}:{kernel.value}:{window.start}",
                 )
             )
             if used_fallback:
@@ -173,7 +173,13 @@ def execute(caller: str, assignments: Sequence[DeviceAssignment], fleet: Sequenc
                 continue
             results.append(polled.value)
     degraded = any(a.fallback for a in assignments)
-    gap = None if results or not assignments else "all assignments failed"
+    failed = len(assignments) - len(results)
+    if failed == len(assignments):
+        gap = "all assignments failed" if assignments else None
+    elif failed:
+        gap = f"{failed} of {len(assignments)} assignments failed or were skipped"
+    else:
+        gap = None
     tree = canonical_json([a.as_dict() for a in assignments])
     att = attest(tree, issuer="fleet")
     wall = sum(r.measurement.time_ns for r in results)

@@ -190,9 +190,7 @@ class AutonomousReasoningEngine:
         self.autonomous_mode = False
         self.current_focus: Optional[str] = None
 
-    async def reason_about(
-        self, problem: str, context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def reason_about(self, problem: str, context: Dict[str, Any]) -> Dict[str, Any]:
         """
         Perform multi-step reasoning about a problem
 
@@ -327,9 +325,7 @@ class AutonomousReasoningEngine:
 
         return chain
 
-    def _generate_hypotheses(
-        self, reasoning_chain: List[ReasoningStep]
-    ) -> List[Hypothesis]:
+    def _generate_hypotheses(self, reasoning_chain: List[ReasoningStep]) -> List[Hypothesis]:
         """Generate hypotheses from reasoning chain"""
 
         hypotheses = []
@@ -439,9 +435,7 @@ class AutonomousReasoningEngine:
             self.knowledge_base[knowledge.knowledge_id] = knowledge
             logger.info(f"Integrated knowledge about: {topic}")
 
-    async def set_autonomous_goal(
-        self, goal_description: str, priority: GoalPriority
-    ) -> Goal:
+    async def set_autonomous_goal(self, goal_description: str, priority: GoalPriority) -> Goal:
         """Set a goal for autonomous pursuit
 
         This allows PYTHAGORAS to work on goals autonomously, like:
@@ -543,9 +537,7 @@ class AutonomousReasoningEngine:
 
         # Update main goal progress
         completed_sub_goals = sum(1 for sg in goal.sub_goals if sg.completed)
-        goal.progress = (
-            completed_sub_goals / len(goal.sub_goals) if goal.sub_goals else 0
-        )
+        goal.progress = completed_sub_goals / len(goal.sub_goals) if goal.sub_goals else 0
 
         if goal.progress >= 1.0:
             goal.completed = True

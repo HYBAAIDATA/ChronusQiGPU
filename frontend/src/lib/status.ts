@@ -85,6 +85,66 @@ export type SolverManifold = {
   hashrate: string;
 };
 
+export type StratumPrimaryStatus = {
+  configured?: boolean;
+  pool_id?: string;
+  transport?: "CONNECTED" | "DISCONNECTED" | string;
+  subscribed?: boolean;
+  authorized?: boolean;
+  endpoint?: string;
+  worker?: string;
+  connected_at?: number | null;
+  last_message_at?: number | null;
+  last_error?: string | null;
+};
+
+export type StratumJobStatus = {
+  active?: boolean;
+  generation?: number | null;
+  invalidated_generation?: number | null;
+  job_id?: string | null;
+  fingerprint?: string | null;
+  received_at?: number | null;
+  age_ms?: number | null;
+  clean_jobs?: boolean | null;
+  difficulty?: string | number | null;
+  difficulty_source?: string | null;
+  difficulty_received_at?: number | null;
+  share_target?: string | null;
+  target_generation?: number;
+};
+
+export type StratumSubmissionStatus = {
+  state?: "IDLE" | "SUBMITTING" | "ACCEPTED" | "REJECTED" | "OUTCOME_UNKNOWN" | string;
+  last_result?: "ACCEPTED" | "REJECTED" | "OUTCOME_UNKNOWN" | null | string;
+  last_submit_at?: number | null;
+  last_response_at?: number | null;
+  generation?: number | null;
+  job_id?: string | null;
+  job_fingerprint?: string | null;
+};
+
+export type StratumStatus = {
+  schema?: string;
+  state?: string;
+  ready?: boolean;
+  connected?: boolean;
+  status?: string;
+  evidence_available?: boolean;
+  primary?: StratumPrimaryStatus;
+  job?: StratumJobStatus;
+  submission?: StratumSubmissionStatus;
+  counters?: {
+    jobs_received?: number;
+    jobs_invalidated?: number;
+    disconnects?: number;
+    submitted?: number;
+    accepted?: number;
+    rejected?: number;
+    unknown?: number;
+  };
+};
+
 export type RuntimePool = {
   endpoint: string;
   worker: string;
@@ -124,7 +184,7 @@ export type MlaStatus = {
   device?: { available?: boolean; count?: number; devices?: DeviceInfo[] };
   gpu?: GpuSection;
   workers?: Record<string, WorkerPublic>;
-  stratum?: { connected?: boolean; status?: string };
+  stratum?: StratumStatus;
   measurement?: string;
 };
 
@@ -169,7 +229,12 @@ export type VerificationStatus = RunnerStatus & {
   ready?: boolean;
   theorem_proven?: boolean;
   stages?: Record<string, { ok?: boolean; detail?: string }>;
-  overlay?: { faces_total?: number; icosahedral?: number; dodecahedral?: number; face_pairs?: number };
+  overlay?: {
+    faces_total?: number;
+    icosahedral?: number;
+    dodecahedral?: number;
+    face_pairs?: number;
+  };
 };
 
 export type SelftestStatus = RunnerStatus & {

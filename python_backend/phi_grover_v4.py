@@ -26,22 +26,6 @@ from typing import List, Dict
 
 log = logging.getLogger("phi_grover_v4")
 
-try:
-    from python_backend.mathematical_foundation.quantum_walk_operators import (
-        QuantumWalkOrchestrator,
-    )
-
-    _HAS_QWO = True
-except ImportError:
-    _HAS_QWO = False
-
-try:
-    from python_backend.mathematical_foundation.lucas_search_attractor import LucasSearchAttractor
-
-    _HAS_LUCAS = True
-except ImportError:
-    _HAS_LUCAS = False
-
 # ============================================================
 # CONSTANTS
 # ============================================================
@@ -314,21 +298,12 @@ def warrior_process(
     budget,
     base_threshold,
     bus,
-    use_quantum_walk=True,
     call_frequency=5000,
     shared_face_probs=None,
     shared_face_resonance=None,
 ):
     seed = int.from_bytes(os.urandom(8), "big") ^ (face_idx * 0xDEADBEEF)
     rng = random.Random(seed)
-    qwo = None
-    if use_quantum_walk and _HAS_QWO:
-        try:
-            qwo = QuantumWalkOrchestrator(budget=budget)
-        except Exception:
-            qwo = None
-    lucas = LucasSearchAttractor() if _HAS_LUCAS else None
-    _ = qwo, lucas  # Optional component initialization probes.
 
     n = rng.randint(0, 2**32 - 1)
     for _ in range(500):
@@ -381,7 +356,6 @@ def solve_32_warriors(
     budget,
     threshold,
     actual_nonce=None,
-    use_quantum_walk=True,
 ):
     import time
 
@@ -405,7 +379,6 @@ def solve_32_warriors(
                 budget,
                 threshold,
                 bus,
-                use_quantum_walk,
                 5000,
                 shared_face_probs,
                 shared_face_resonance,

@@ -8,7 +8,6 @@ Tunes receptivity based on phi-resonant coherence.
 
 import asyncio
 import logging
-import time
 from typing import Any, Dict
 
 from hyba_backend.services.agi.mass_gap_relaxation import MassGapRelaxationEngine
@@ -39,9 +38,7 @@ class ResearchCycleOrchestrator:
         data_points = 1024 * 531  # 531x amplification
         coherence = relaxation_result["coherence"]
 
-        print(
-            f"📥 Absorbing {data_points} data points for {topic} | Coherence: {coherence}"
-        )
+        print(f"📥 Absorbing {data_points} data points for {topic} | Coherence: {coherence}")
         await asyncio.sleep(0.05)
 
         return {
@@ -57,14 +54,10 @@ class ResearchCycleOrchestrator:
         Runs the full global research cycle.
         """
         print("🌊 Initializing Live Global Research Cycle (1-Hour Absorption Mode)")
-        start_time = time.perf_counter()
-
         results = []
         for topic in self.topics:
             result = await self.execute_topic_cycle(topic)
             results.append(result)
-
-        duration = time.perf_counter() - start_time
 
         total_data = sum(r["data_absorbed"] for r in results)
         avg_coherence = sum(r["final_coherence"] for r in results) / len(results)

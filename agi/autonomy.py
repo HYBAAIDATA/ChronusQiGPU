@@ -44,10 +44,11 @@ from typing import (
 )
 
 import numpy as np
+from scipy.optimize import differential_evolution
 
 # Import Golden Ratio scaler
 try:
-    from golden_ratio_scaler import create_golden_ratio_scaler
+    from agi.golden_ratio_scaler import create_golden_ratio_scaler
 
     GOLDEN_RATIO_SCALER_AVAILABLE = True
 except ImportError:
@@ -190,8 +191,7 @@ class EnterpriseMetaLearningEngine:
 
         # Calculate weighted complexity score
         complexity_score = sum(
-            self.complexity_weights[key] * value
-            for key, value in complexity_metrics.items()
+            self.complexity_weights[key] * value for key, value in complexity_metrics.items()
         )
 
         self.problem_solvers[name] = {
@@ -205,9 +205,7 @@ class EnterpriseMetaLearningEngine:
             "last_used": 0.0,
         }
 
-        logger.info(
-            f"[ENTERPRISE] Registered solver: {name} (complexity: {complexity_score:.4f})"
-        )
+        logger.info(f"[ENTERPRISE] Registered solver: {name} (complexity: {complexity_score:.4f})")
 
     def select_optimal_solver(self, problem_context: Dict[str, Any]) -> str:
         """
@@ -258,15 +256,12 @@ class EnterpriseMetaLearningEngine:
             # Update basic performance
             solver["usage_count"] += 1
             solver["total_performance"] += performance
-            solver["avg_performance"] = (
-                solver["total_performance"] / solver["usage_count"]
-            )
+            solver["avg_performance"] = solver["total_performance"] / solver["usage_count"]
             solver["last_used"] = time.time()
 
             # Calculate McKinsey 7-S alignment
             mckinsey_alignment = sum(
-                self.mckinsey_kpi_weights[kpi] * value
-                for kpi, value in mckinsey_kpis.items()
+                self.mckinsey_kpi_weights[kpi] * value for kpi, value in mckinsey_kpis.items()
             )
             solver["mckinsey_alignment"] = mckinsey_alignment
 
@@ -293,15 +288,9 @@ class EnterpriseMetaLearningEngine:
 
         # Calculate aggregate metrics
         total_usage = sum(s["usage_count"] for s in self.problem_solvers.values())
-        avg_complexity = np.mean(
-            [s["complexity_score"] for s in self.problem_solvers.values()]
-        )
-        avg_performance = np.mean(
-            [s["avg_performance"] for s in self.problem_solvers.values()]
-        )
-        avg_mckinsey = np.mean(
-            [s["mckinsey_alignment"] for s in self.problem_solvers.values()]
-        )
+        avg_complexity = np.mean([s["complexity_score"] for s in self.problem_solvers.values()])
+        avg_performance = np.mean([s["avg_performance"] for s in self.problem_solvers.values()])
+        avg_mckinsey = np.mean([s["mckinsey_alignment"] for s in self.problem_solvers.values()])
 
         return {
             "total_solvers": len(self.problem_solvers),
@@ -476,29 +465,24 @@ class EnterpriseASIAutonomyEngine:
         problem_context = await self._analyze_enterprise_context(context)
 
         # Phase 2: Meta-learning solver selection
-        optimal_solver = self.meta_learning_engine.select_optimal_solver(
-            problem_context
-        )
+        optimal_solver = self.meta_learning_engine.select_optimal_solver(problem_context)
 
         # Phase 3: Consciousness-guided decision
         consciousness_state = await self._compute_collective_consciousness()
-        # decision_result = await self._execute_solver_with_consciousness(
-        #     optimal_solver, problem_context, consciousness_state
-        # )
-        decision_result = {}  # Placeholder
+        decision_result = await self._execute_solver_with_consciousness(
+            optimal_solver, problem_context, consciousness_state
+        )
 
         # Phase 4: Self-improvement evaluation
         if await self._should_self_improve():
-            # improvement_result = await self._execute_self_improvement_cycle()
-            improvement_result = {}  # Placeholder
+            improvement_result = await self._execute_self_improvement_cycle()
             decision_result["self_improvement"] = improvement_result
 
         # Phase 5: Performance monitoring
         await self._monitor_enterprise_performance(decision_result)
 
         # Phase 6: Governance compliance
-        # governance_result = await self._verify_governance_compliance(decision_result)
-        governance_result = {}  # Placeholder
+        governance_result = await self._verify_governance_compliance(decision_result)
         decision_result["governance"] = governance_result
 
         # Phase 7: Consciousness evolution
@@ -511,9 +495,7 @@ class EnterpriseASIAutonomyEngine:
 
         return decision_result["action"], decision_result
 
-    async def _analyze_enterprise_context(
-        self, context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def _analyze_enterprise_context(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """Analyze context with enterprise framework"""
 
         problem_context = {
@@ -541,9 +523,7 @@ class EnterpriseASIAutonomyEngine:
         complexity = compressed_size / max(original_size, 1)
         return min(1.0, complexity)
 
-    def _estimate_resource_requirements(
-        self, context: Dict[str, Any]
-    ) -> Dict[str, float]:
+    def _estimate_resource_requirements(self, context: Dict[str, Any]) -> Dict[str, float]:
         """Estimate computational resource requirements"""
 
         return {
@@ -580,15 +560,12 @@ class EnterpriseASIAutonomyEngine:
         avg_consciousness = np.mean(consciousness_levels)
 
         # Compute quantum coherence
-        coherences = [
-            node.quantum_coherence for node in self.consciousness_nodes.values()
-        ]
+        coherences = [node.quantum_coherence for node in self.consciousness_nodes.values()]
         avg_coherence = np.mean(coherences)
 
         # Compute network synchronization
         total_connectivity = sum(
-            np.sum(node.connectivity_matrix)
-            for node in self.consciousness_nodes.values()
+            np.sum(node.connectivity_matrix) for node in self.consciousness_nodes.values()
         )
         max_connectivity = len(self.consciousness_nodes) ** 2
         synchronization = total_connectivity / max_connectivity
@@ -600,9 +577,7 @@ class EnterpriseASIAutonomyEngine:
             "processing_capacity": sum(
                 node.processing_capacity for node in self.consciousness_nodes.values()
             ),
-            "collective_intelligence": avg_consciousness
-            * avg_coherence
-            * synchronization,
+            "collective_intelligence": avg_consciousness * avg_coherence * synchronization,
         }
 
     async def _execute_solver_with_consciousness(
@@ -619,43 +594,31 @@ class EnterpriseASIAutonomyEngine:
         solver_func = self.meta_learning_engine.problem_solvers[solver_name]["function"]
 
         # Execute solver with consciousness enhancement
-        # base_result = solver_func(problem_context)
-        base_result = 0.0  # Placeholder
+        base_result = solver_func(problem_context)
 
         # Apply consciousness amplification
-        consciousness_multiplier = 1.0 + consciousness_state.get(
-            "consciousness_level", 0.0
-        )
-        # enhanced_result = base_result * consciousness_multiplier
-        enhanced_result = 0.0  # Placeholder
+        consciousness_multiplier = 1.0 + consciousness_state.get("consciousness_level", 0.0)
+        enhanced_result = base_result * consciousness_multiplier
 
         # Apply Golden Ratio scaling if available
         if hasattr(self, "golden_scaler") and self.golden_scaler:
             # enhanced_result = self.golden_scaler.scale_decision_utility(
             #     enhanced_result, "quantum"
             # )
-            consciousness_multiplier = (
-                self.golden_scaler.scale_consciousness_amplification(
-                    consciousness_multiplier, "enhanced"
-                )
+            consciousness_multiplier = self.golden_scaler.scale_consciousness_amplification(
+                consciousness_multiplier, "enhanced"
             )
 
         # McKinsey KPI calculation
         mckinsey_kpis = {
             "strategic_fit": min(1.0, enhanced_result),
-            "operational_excellence": consciousness_state.get(
-                "network_synchronization", 0.5
-            ),
+            "operational_excellence": consciousness_state.get("network_synchronization", 0.5),
             "financial_performance": enhanced_result
             * problem_context.get("financial_impact", 1.0)
             / 1000000,
             "risk_management": 1.0 - problem_context.get("risk_level", 0.0),
-            "innovation_potential": consciousness_state.get(
-                "collective_intelligence", 0.5
-            ),
-            "stakeholder_value": sum(
-                problem_context.get("stakeholder_impact", {}).values()
-            )
+            "innovation_potential": consciousness_state.get("collective_intelligence", 0.5),
+            "stakeholder_value": sum(problem_context.get("stakeholder_impact", {}).values())
             / max(1, len(problem_context.get("stakeholder_impact", {}))),
         }
 
@@ -680,23 +643,15 @@ class EnterpriseASIAutonomyEngine:
         current_time = time.time()
 
         # Check cooldown period
-        if (
-            current_time - self.last_modification_time
-            < self.config.modification_cooldown
-        ):
+        if current_time - self.last_modification_time < self.config.modification_cooldown:
             return False
 
         # Check modification frequency
         recent_modifications = [
-            m
-            for m in self.modification_history
-            if current_time - m.timestamp < 3600  # Last hour
+            m for m in self.modification_history if current_time - m.timestamp < 3600  # Last hour
         ]
 
-        if (
-            len(recent_modifications)
-            >= self.safety_constraints["max_modifications_per_hour"]
-        ):
+        if len(recent_modifications) >= self.safety_constraints["max_modifications_per_hour"]:
             return False
 
         # Check performance thresholds
@@ -720,10 +675,7 @@ class EnterpriseASIAutonomyEngine:
 
         for opportunity in improvement_opportunities:
             if await self._verify_safety_constraints(opportunity):
-                # improvement_result = await self._execute_enterprise_modification(
-                #     opportunity
-                # )
-                improvement_result = {"success": False}  # Placeholder
+                improvement_result = await self._execute_enterprise_modification(opportunity)
                 if improvement_result["success"]:
                     improvements_made.append(improvement_result)
                     self.last_modification_time = time.time()
@@ -734,9 +686,7 @@ class EnterpriseASIAutonomyEngine:
             "performance_impact": sum(
                 imp.get("performance_impact", 0) for imp in improvements_made
             ),
-            "safety_verified": all(
-                imp.get("safety_verified", False) for imp in improvements_made
-            ),
+            "safety_verified": all(imp.get("safety_verified", False) for imp in improvements_made),
         }
 
     async def _identify_improvement_opportunities(self) -> List[Dict[str, Any]]:
@@ -770,10 +720,7 @@ class EnterpriseASIAutonomyEngine:
             )
 
         # Consciousness expansion opportunities
-        if (
-            self.current_autonomy_level.value
-            >= EnterpriseAutonomyLevel.SELF_MODIFICATION.value
-        ):
+        if self.current_autonomy_level.value >= EnterpriseAutonomyLevel.SELF_MODIFICATION.value:
             opportunities.append(
                 {
                     "type": "consciousness_expansion",
@@ -840,26 +787,20 @@ class EnterpriseASIAutonomyEngine:
         governance_score = min(1.0, opportunity.get("mckinsey_impact", 0.5) + 0.3)
         return governance_score > 0.7
 
-    async def _execute_enterprise_modification(
-        self, opportunity: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def _execute_enterprise_modification(self, opportunity: Dict[str, Any]) -> Dict[str, Any]:
         """Execute enterprise modification with formal verification"""
 
         modification_id = f"mod_{int(time.time())}_{len(self.modification_history)}"
 
         # Execute modification based on type
         if opportunity["type"] == "performance_optimization":
-            # result = await self._optimize_performance_parameters(opportunity)
-            pass
+            result = await self._optimize_performance_parameters(opportunity)
         elif opportunity["type"] == "meta_learning_enhancement":
-            # result = await self._enhance_meta_learning(opportunity)
-            pass
+            result = await self._enhance_meta_learning(opportunity)
         elif opportunity["type"] == "consciousness_expansion":
-            # result = await self._expand_consciousness(opportunity)
-            pass
+            result = await self._expand_consciousness(opportunity)
         else:
-            # result = {"success": False, "reason": "Unknown modification type"}
-            pass
+            result = {"success": False, "reason": "Unknown modification type"}
 
         if result["success"]:
             # Create modification record
@@ -883,16 +824,12 @@ class EnterpriseASIAutonomyEngine:
         result["modification_id"] = modification_id
         return result
 
-    async def _optimize_performance_parameters(
-        self, opportunity: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def _optimize_performance_parameters(self, opportunity: Dict[str, Any]) -> Dict[str, Any]:
         """Optimize performance parameters using enterprise methods"""
-
-        target_metric = opportunity["target_metric"]
 
         # Define optimization objective
         def objective(params):
-            test_config = EnterpriseAutonomyConfiguration(
+            EnterpriseAutonomyConfiguration(
                 autonomy_level=self.current_autonomy_level,
                 modification_strategy=self.config.modification_strategy,
                 learning_rate=params[0],
@@ -911,7 +848,7 @@ class EnterpriseASIAutonomyEngine:
 
         # Optimize parameters
         bounds = [(0.001, 0.1), (0.0, 0.5), (0.8, 1.0)]
-        # result = differential_evolution(objective, bounds, maxiter=50)
+        result = differential_evolution(objective, bounds, maxiter=50)
 
         if result.success:
             # Apply optimized parameters
@@ -936,9 +873,7 @@ class EnterpriseASIAutonomyEngine:
 
         return {"success": False, "reason": "Optimization failed"}
 
-    async def _enhance_meta_learning(
-        self, opportunity: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def _enhance_meta_learning(self, opportunity: Dict[str, Any]) -> Dict[str, Any]:
         """Enhance meta-learning capabilities"""
 
         # Register new adaptive solver
@@ -969,9 +904,7 @@ class EnterpriseASIAutonomyEngine:
             "rollback_available": True,
         }
 
-    async def _expand_consciousness(
-        self, opportunity: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def _expand_consciousness(self, opportunity: Dict[str, Any]) -> Dict[str, Any]:
         """Expand consciousness network"""
 
         # Add new consciousness node
@@ -1028,8 +961,7 @@ class EnterpriseASIAutonomyEngine:
             improvements = decision_result["self_improvement"]["improvements_executed"]
             learning_progress = min(1.0, improvements * 0.1)
             self.performance_metrics["learning_progress"] = (
-                self.performance_metrics["learning_progress"] * 0.9
-                + learning_progress * 0.1
+                self.performance_metrics["learning_progress"] * 0.9 + learning_progress * 0.1
             )
 
         # Update McKinsey 7-S compliance verification
@@ -1044,15 +976,9 @@ class EnterpriseASIAutonomyEngine:
 
         if isinstance(strategic_fit, (int, float)) and strategic_fit > 0.6:
             mckinsey_compliance += 0.25
-        if (
-            isinstance(operational_excellence, (int, float))
-            and operational_excellence > 0.5
-        ):
+        if isinstance(operational_excellence, (int, float)) and operational_excellence > 0.5:
             mckinsey_compliance += 0.15
-        if (
-            isinstance(financial_performance, (int, float))
-            and financial_performance > 0.5
-        ):
+        if isinstance(financial_performance, (int, float)) and financial_performance > 0.5:
             mckinsey_compliance += 0.25
         if isinstance(risk_management, (int, float)) and risk_management > 0.7:
             mckinsey_compliance += 0.20
@@ -1077,10 +1003,7 @@ class EnterpriseASIAutonomyEngine:
             "risk_management": risk_management > 0.7,
             "stakeholder_value": stakeholder_value > 0.6,
             "regulatory_compliance": True,  # Simplified
-            "ethical_considerations": decision_result.get(
-                "consciousness_amplification", 1.0
-            )
-            < 2.0,
+            "ethical_considerations": decision_result.get("consciousness_amplification", 1.0) < 2.0,
             "performance_standards": decision_result.get("confidence", 0.5) > 0.7,
         }
 
@@ -1090,15 +1013,12 @@ class EnterpriseASIAutonomyEngine:
             "compliance_checks": compliance_checks,
             "overall_compliance": overall_compliance,
             "governance_approved": overall_compliance > 0.7,
-            "compliance_level": (
-                "Enterprise" if overall_compliance > 0.8 else "Standard"
-            ),
+            "compliance_level": ("Enterprise" if overall_compliance > 0.8 else "Standard"),
         }
 
     async def _evolve_consciousness_network(self):
         """Evolve consciousness network over time"""
 
-        current_time = time.time()
         dt = 0.01  # Time step
 
         for node in self.consciousness_nodes.values():
@@ -1129,10 +1049,7 @@ class EnterpriseASIAutonomyEngine:
                     for node in self.consciousness_nodes.values()
                 },
                 "network_coherence": np.mean(
-                    [
-                        node.quantum_coherence
-                        for node in self.consciousness_nodes.values()
-                    ]
+                    [node.quantum_coherence for node in self.consciousness_nodes.values()]
                 ),
                 "collective_intelligence": self._compute_collective_consciousness(),
             }
@@ -1176,12 +1093,9 @@ class EnterpriseASIAutonomyEngine:
             "meta_learning_metrics": meta_learning_metrics,
             "modification_metrics": modification_metrics,
             "enterprise_compliance": {
-                "mckinsey_7s_aligned": self.performance_metrics["mckinsey_7s_score"]
-                > 0.7,
+                "mckinsey_7s_aligned": self.performance_metrics["mckinsey_7s_score"] > 0.7,
                 "mit_standards_met": self.performance_metrics["mit_compliance"],
-                "oxford_rigor_achieved": self.performance_metrics[
-                    "oxford_mathematical_rigor"
-                ],
+                "oxford_rigor_achieved": self.performance_metrics["oxford_mathematical_rigor"],
                 "governance_compliant": self.config.governance_compliance,
             },
             "enterprise_readiness": {

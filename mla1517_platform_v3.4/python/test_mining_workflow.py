@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from mla1517.mining.stratum_adapter import StratumProofAdapter, TargetError
+from mla1517.mining.stratum_adapter import TargetError
 from mla1517.mining.workflow import MiningWorkflow, SessionDown, payload_matches, store_share
 
 

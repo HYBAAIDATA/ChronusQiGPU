@@ -51,8 +51,42 @@ class Phase4ApiTests(unittest.TestCase):
         self.assertEqual(payload["host"]["stratum"]["profile"], "viabtc")
         self.assertEqual(payload["canonicalEngine"]["execution"], "canonical_python_control_api")
         self.assertFalse(payload["canonicalEngine"]["fallback"])
-        self.assertEqual(sorted(payload["workers"]), ["agentic-mining", "salamander"])
+        self.assertEqual(sorted(payload["workers"]), ["agentic-mining", "discovery", "salamander"])
         self.assertEqual(payload["workers"]["agentic-mining"]["state"], "disabled")
+        self.assertFalse(payload["stratum"]["connected"])
+        self.assertFalse(payload["stratum"]["ready"])
+        self.assertEqual(payload["stratum"]["state"], "CONFIGURED")
+
+    def test_stratum_transport_is_not_collapsed_into_worker_readiness(self) -> None:
+        control_api.status_payload()
+        metrics_path = Path(self.env["PYTHIA_WORKER_HEARTBEAT_DIR"]) / "agentic-mining.metrics.json"
+        metrics_path.parent.mkdir(parents=True, exist_ok=True)
+        snapshot = {
+            "state": "READY",
+            "ready": True,
+            "primary": {
+                "transport": "CONNECTED",
+                "subscribed": True,
+                "authorized": True,
+            },
+            "job": {
+                "active": True,
+                "generation": 7,
+                "share_target": "ff" * 32,
+            },
+            "submission": {"state": "IDLE"},
+            "counters": {},
+        }
+        metrics_path.write_text(
+            json.dumps({"counters": {"stratum_status": json.dumps(snapshot)}}),
+            encoding="utf-8",
+        )
+
+        payload = control_api.status_payload()
+        self.assertTrue(payload["stratum"]["connected"])
+        self.assertTrue(payload["stratum"]["primary"]["authorized"])
+        self.assertFalse(payload["stratum"]["ready"])
+        self.assertFalse(payload["ready_to_mine"]["ready"])
 
     def test_ready_to_mine_alias_routes_to_same_backend(self) -> None:
         web_root = Path(self.tempdir.name)

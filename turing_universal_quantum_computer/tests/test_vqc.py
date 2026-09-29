@@ -50,11 +50,23 @@ class VQCPackageTests(unittest.TestCase):
     def test_vqc_execution_certifies_window(self):
         adapter = tqc.LucasScaledAethelExecutionAdapter(scale_index=76)
         header = bytes(range(76)) + (0).to_bytes(4, "little")
-        result = adapter.execute(header, target=(1 << 256) - 1, base_nonce=0, count=256)
+        # No nonce can meet a zero target: the whole window is hashed and a
+        # window without a winner completes (the ordinary case in mining).
+        result = adapter.execute(header, target=0, base_nonce=0, count=256)
         self.assertEqual(result.hashes, 256)
+        self.assertIsNone(result.winner)
         self.assertTrue(result.metadata["fold_roundtrip_lossless"])
         self.assertTrue(result.metadata["cassini_holds"])
         self.assertTrue(result.metadata["toe"]["provenance_verified"])
+
+    def test_vqc_execution_stops_at_the_schedules_first_winner(self):
+        adapter = tqc.LucasScaledAethelExecutionAdapter(scale_index=76)
+        header = bytes(range(76)) + (0).to_bytes(4, "little")
+        # Every nonce meets the maximal target: the first scheduled one wins.
+        result = adapter.execute(header, target=(1 << 256) - 1, base_nonce=0, count=256)
+        self.assertEqual(result.hashes, 1)
+        self.assertIsNotNone(result.winner)
+        self.assertTrue(result.metadata["igpu"]["recheck_bit_exact"])
 
 
 if __name__ == "__main__":

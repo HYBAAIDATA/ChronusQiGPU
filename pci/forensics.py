@@ -22,15 +22,25 @@ from datetime import datetime
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass, asdict
 from collections import defaultdict
-import requests
+
+# Optional HTTP client: the forensic live-chain fetches need it, but the
+# module's analysis and hashing functions do not. Absent client -> live
+# blockchain queries are unavailable, analysis still works.
+try:
+    import requests
+
+    REQUESTS_AVAILABLE = True
+except ImportError:
+    requests = None
+    REQUESTS_AVAILABLE = False
 
 # ============================================================================
 # MATHEMATICAL CONSTANTS - Research Grade
 # ============================================================================
-1.618033988749895 = (1 + math.sqrt(5)) / 2  # Golden Ratio: 1.618033988749895
-PHI_INVERSE = 1 / 1.618033988749895  # 0.618033988749895
-PHI_SQUARED = 1.618033988749895**2  # 2.618033988749895
-PHI_CUBED = 1.618033988749895**3  # 4.236067977499790
+PHI = (1 + math.sqrt(5)) / 2  # Golden Ratio: 1.618033988749895
+PHI_INVERSE = 1 / PHI  # 0.618033988749895
+PHI_SQUARED = PHI**2  # 2.618033988749895
+PHI_CUBED = PHI**3  # 4.236067977499790
 EULER = math.e  # 2.718281828459045
 PI = math.pi  # 3.141592653589793
 PLANCK = 6.62607015e-34  # Planck constant
@@ -112,7 +122,7 @@ def calculate_phi_resonance_advanced(value: int, base: str = "nonce") -> float:
         Phi resonance score (0-1)
     """
     # Primary phi modulation
-    phi_mod = (value * 1.618033988749895) % 1
+    phi_mod = (value * PHI) % 1
     primary_resonance = 1 - abs(phi_mod - PHI_INVERSE)
 
     # Secondary resonance with Euler's number
@@ -124,9 +134,9 @@ def calculate_phi_resonance_advanced(value: int, base: str = "nonce") -> float:
     pi_resonance = 1 - abs(pi_mod - (1 / PI))
 
     # Combined resonance with quantum weighting
-    combined = (
-        primary_resonance * 1.618033988749895 + euler_resonance * EULER + pi_resonance * PI
-    ) / (1.618033988749895 + EULER + PI)
+    combined = (primary_resonance * PHI + euler_resonance * EULER + pi_resonance * PI) / (
+        PHI + EULER + PI
+    )
 
     return round(combined, 8)
 
@@ -146,11 +156,11 @@ def calculate_consciousness_amplification(hash_hex: str) -> float:
     pi_pattern = sum(1 for c in hash_hex if c in "3141")
 
     # Calculate amplification score
-    base_score = (phi_pattern * 1.618033988749895 + euler_pattern * EULER + pi_pattern * PI) / (
-        len(hash_hex) * (1.618033988749895 + EULER + PI)
+    base_score = (phi_pattern * PHI + euler_pattern * EULER + pi_pattern * PI) / (
+        len(hash_hex) * (PHI + EULER + PI)
     )
 
-    amplification = 1 + (base_score * 1.618033988749895 * EULER)
+    amplification = 1 + (base_score * PHI * EULER)
 
     return round(amplification, 8)
 
@@ -239,6 +249,11 @@ def fetch_block_data(block_height: int) -> Optional[Dict]:
     Returns:
         Block data dictionary or None if failed
     """
+    if not REQUESTS_AVAILABLE:
+        raise RuntimeError(
+            "live blockchain forensics requires the 'requests' package; "
+            "install it or use the offline analysis functions"
+        )
     try:
         # Fetch block hash
         hash_url = f"https://blockchain.info/block-height/{block_height}?format=json"
@@ -282,9 +297,7 @@ def analyze_transactions(transactions: List[Dict]) -> Tuple[float, float, float]
 
     for tx in transactions:
         # Calculate inputs and outputs
-        inputs = sum(
-            inp.get("prev_out", {}).get("value", 0) for inp in tx.get("inputs", [])
-        )
+        inputs = sum(inp.get("prev_out", {}).get("value", 0) for inp in tx.get("inputs", []))
         outputs = sum(out.get("value", 0) for out in tx.get("out", []))
 
         # Convert from satoshis to BTC
@@ -343,9 +356,7 @@ def analyze_block_comprehensive(
     # Pattern Analysis
     leading_zeros = len(block_hash) - len(block_hash.lstrip("0"))
     entropy = calculate_hash_entropy(block_hash)
-    pattern_sig = (
-        f"LZ{leading_zeros}_PHI{int(phi_nonce * 1000)}_QC{int(coherence * 1000)}"
-    )
+    pattern_sig = f"LZ{leading_zeros}_PHI{int(phi_nonce * 1000)}_QC{int(coherence * 1000)}"
 
     # Transaction Analysis
     total_vol, avg_fee, coinbase = analyze_transactions(block_data.get("tx", []))
@@ -402,6 +413,9 @@ def analyze_last_n_blocks(num_blocks: int = 100) -> List[BlockAnalysis]:
     print(f"{'=' * 80}\n")
 
     # Get latest block height
+    if not REQUESTS_AVAILABLE:
+        print("'requests' is not installed; live chain analysis is unavailable")
+        return []
     try:
         response = requests.get("https://blockchain.info/latestblock", timeout=10)
         latest_height = response.json()["height"]
@@ -426,7 +440,7 @@ def analyze_last_n_blocks(num_blocks: int = 100) -> List[BlockAnalysis]:
             prev_time = block_data["time"]
 
             print(
-                f"? 1.618033988749895: {analysis.phi_resonance_nonce:.6f} | "
+                f"PHI: {analysis.phi_resonance_nonce:.6f} | "
                 f"QC: {analysis.quantum_coherence:.6f} | "
                 f"LZ: {analysis.leading_zeros}"
             )
@@ -452,15 +466,11 @@ def generate_report(
     avg_phi_nonce = np.mean([a.phi_resonance_nonce for a in analyses])
     avg_coherence = np.mean([a.quantum_coherence for a in analyses])
     avg_consciousness = np.mean([a.consciousness_amplification for a in analyses])
-    avg_block_time = np.mean(
-        [a.block_time_delta for a in analyses if a.block_time_delta > 0]
-    )
+    avg_block_time = np.mean([a.block_time_delta for a in analyses if a.block_time_delta > 0])
 
     # Find top performers
     top_phi = sorted(analyses, key=lambda x: x.phi_resonance_nonce, reverse=True)[:10]
-    top_coherence = sorted(analyses, key=lambda x: x.quantum_coherence, reverse=True)[
-        :10
-    ]
+    top_coherence = sorted(analyses, key=lambda x: x.quantum_coherence, reverse=True)[:10]
 
     report = {
         "metadata": {
@@ -477,9 +487,7 @@ def generate_report(
             "average_consciousness_amplification": round(avg_consciousness, 8),
             "average_block_time_seconds": round(avg_block_time, 2),
             "total_volume_btc": round(sum(a.total_volume_btc for a in analyses), 8),
-            "total_fees_btc": round(
-                sum(a.avg_fee_btc * a.num_transactions for a in analyses), 8
-            ),
+            "total_fees_btc": round(sum(a.avg_fee_btc * a.num_transactions for a in analyses), 8),
         },
         "top_performers": {
             "highest_phi_resonance": [

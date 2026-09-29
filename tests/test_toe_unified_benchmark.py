@@ -74,10 +74,28 @@ def test_bench_iris_accuracy_is_reproducible(tmp_path):
         "high_annual_savings": scenario["high"]["annual_savings"],
         "bank_annual_savings": 45_000_000,
     }
-    (tmp_path / "toe_unified_benchmark.json").write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    out = tmp_path / "toe_unified_benchmark.json"
+    out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     assert payload["baseline_accuracy"] == 100 / 150
+
+    # Compare the deterministic fields against the committed report — the
+    # platform/python fields are host-stamped and intentionally excluded.
+    committed = json.loads(
+        (ROOT / "reports" / "toe_unified_benchmark.json").read_text(encoding="utf-8")
+    )
+    for field in (
+        "seed",
+        "dataset",
+        "dataset_rows",
+        "baseline_accuracy",
+        "exact_linear_accuracy",
+        "catalog_definitions",
+        "live_vendor_endpoints",
+        "low_annual_savings",
+        "high_annual_savings",
+        "bank_annual_savings",
+    ):
+        assert payload[field] == committed[field], field
     assert payload["exact_linear_accuracy"] == model_accuracy
     assert payload["low_annual_savings"] == 58_000_000
     assert payload["high_annual_savings"] == 145_000_000

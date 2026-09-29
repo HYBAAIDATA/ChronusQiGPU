@@ -171,9 +171,7 @@ class QuantumAlgorithmCreator:
 
         return algorithm
 
-    def _analyze_problem(
-        self, description: str, problem_type: AlgorithmType
-    ) -> Dict[str, Any]:
+    def _analyze_problem(self, description: str, problem_type: AlgorithmType) -> Dict[str, Any]:
         """Analyze problem to determine optimal quantum approach"""
 
         # Extract problem characteristics
@@ -388,23 +386,23 @@ Problem: {problem_desc}
 import numpy as np
 from typing import Any, Dict
 
-1.618033988749895 = 1.6180339887498948
+PHI = 1.618033988749895
 
 def execute_algorithm(data: Any, **kwargs) -> Dict[str, Any]:
     """
     Execute the novel quantum algorithm
-    
+
     Args:
         data: Input data
         **kwargs: Additional parameters
-    
+
     Returns:
         Algorithm results
     """
     # Initialize quantum state
     dimension = 2 ** {circuit.num_qubits}
     amplitudes = np.ones(dimension, dtype=complex) / np.sqrt(dimension)
-    
+
 '''
 
         # Generate gate operations
@@ -423,7 +421,7 @@ def execute_algorithm(data: Any, **kwargs) -> Dict[str, Any]:
                 code += "    amplitudes = 2 * avg - amplitudes\n"
             elif gate.name == "PhiRotation":
                 code += "    # Phi-resonance rotation\n"
-                code += f"    phi_phase = 1.618033988749895 ** {gate.target_qubits[0]} * np.pi\n"
+                code += f"    phi_phase = PHI ** {gate.target_qubits[0]} * np.pi\n"
                 code += "    amplitudes *= np.exp(1j * phi_phase)\n"
 
         code += '''
@@ -431,14 +429,14 @@ def execute_algorithm(data: Any, **kwargs) -> Dict[str, Any]:
     norm = np.linalg.norm(amplitudes)
     if norm > 0:
         amplitudes = amplitudes / norm
-    
+
     # Measure
     probabilities = np.abs(amplitudes) ** 2
     measurements = np.random.choice(dimension, size=1000, p=probabilities)
-    
+
     # Get top results
     top_indices = np.argsort(probabilities)[-10:][::-1]
-    
+
     return {
         "measurements": measurements.tolist(),
         "top_results": [
@@ -466,9 +464,7 @@ def target_function(x: int) -> bool:
         base_speedup = np.sqrt(dimension)  # Grover-like speedup
 
         # Adjust for circuit depth
-        depth_factor = (
-            1.0 - (circuit.depth / 100) * 0.1
-        )  # Deeper circuits have overhead
+        depth_factor = 1.0 - (circuit.depth / 100) * 0.1  # Deeper circuits have overhead
 
         # Adjust for phi-resonance
         phi_bonus = 1.0
@@ -538,9 +534,7 @@ def target_function(x: int) -> bool:
             "total_algorithms_created": len(self.created_algorithms),
             "algorithm_types": {
                 algo_type.value: sum(
-                    1
-                    for algo in self.created_algorithms
-                    if algo.algorithm_type == algo_type
+                    1 for algo in self.created_algorithms if algo.algorithm_type == algo_type
                 )
                 for algo_type in AlgorithmType
             },

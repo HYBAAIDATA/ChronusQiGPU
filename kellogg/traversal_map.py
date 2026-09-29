@@ -16,7 +16,7 @@ import hashlib
 import json
 import random
 from dataclasses import dataclass
-from decimal import Decimal, getcontext
+from decimal import Decimal, localcontext
 from fractions import Fraction
 from typing import Optional, Sequence
 
@@ -219,20 +219,23 @@ def pisot_addresses(horizon: int = HORIZON, scale: int = TORUS_SCALE) -> tuple:
     the repository actually ships; ``float_mismatches`` counts where
     that boundary and this quantization disagree.
     """
-    getcontext().prec = 80
-    phi = (Decimal(1) + Decimal(5).sqrt()) / 2
-    delta = phi**-15
-    coordinate = Decimal(0)
     addresses = []
     state = tuple(0.0 for _ in range(11))
     mismatches = 0
-    for n in range(horizon):
-        addresses.append(int(coordinate * scale) % scale)
-        floated = int(state[0] * scale) % scale
-        if floated != addresses[-1]:
-            mismatches += 1
-        coordinate = (coordinate + delta * lucas(n)) % 1
-        state = pisot_wind(state, n)
+    # localcontext: callers keep their thread's decimal precision; mutating
+    # getcontext().prec here would leak 80-digit arithmetic into them.
+    with localcontext() as ctx:
+        ctx.prec = 80
+        phi = (Decimal(1) + Decimal(5).sqrt()) / 2
+        delta = phi**-15
+        coordinate = Decimal(0)
+        for n in range(horizon):
+            addresses.append(int(coordinate * scale) % scale)
+            floated = int(state[0] * scale) % scale
+            if floated != addresses[-1]:
+                mismatches += 1
+            coordinate = (coordinate + delta * lucas(n)) % 1
+            state = pisot_wind(state, n)
     return tuple(addresses), mismatches
 
 

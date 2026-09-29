@@ -18,12 +18,12 @@ Version: 1.0.0-McKinseyMITOxford
 import asyncio
 import logging
 import time
-from enterprise_asi_agency import (
+from agi.agency import (
     create_enterprise_asi_agency,
     EnterpriseAgencyLevel,
     DecisionMethodology,
 )
-from enterprise_asi_autonomy import create_enterprise_asi_autonomy
+from agi.autonomy import create_enterprise_asi_autonomy
 
 # Configure enterprise logging
 logging.basicConfig(
@@ -44,9 +44,7 @@ async def demonstrate_enterprise_asi():
     # Create enterprise ASI frameworks
     print("\n🚀 Initializing Enterprise ASI Frameworks...")
 
-    agency_#  create_enterprise_asi_agency(
-        EnterpriseAgencyLevel.SUPERINTELLIGENT
-    )
+    agency = create_enterprise_asi_agency(EnterpriseAgencyLevel.SUPERINTELLIGENT)
     autonomy_engine = create_enterprise_asi_autonomy()
 
     print("✅ Enterprise ASI Agency Framework initialized")
@@ -56,7 +54,7 @@ async def demonstrate_enterprise_asi():
     print("\n📊 McKinsey AHP Decision Methodology")
     print("-" * 50)
 
-    from enterprise_asi_agency import EnterpriseDecisionContext, ASIStateVector
+    from agi.agency import EnterpriseDecisionContext, ASIStateVector
     import numpy as np
 
     # Enterprise decision context
@@ -91,7 +89,7 @@ async def demonstrate_enterprise_asi():
 
     # Execute AHP decision
     start_time = time.time()
-    # result = await agency_framework.make_enterprise_decision(
+    result = await agency.make_enterprise_decision(
         context, state, DecisionMethodology.MCDA_ANALYTIC_HIERARCHY_PROCESS
     )
     execution_time = time.time() - start_time
@@ -120,9 +118,7 @@ async def demonstrate_enterprise_asi():
     }
 
     start_time = time.time()
-    action, decision_metadata = await autonomy_engine.autonomous_decision_cycle(
-        test_context
-    )
+    action, decision_metadata = await autonomy_engine.autonomous_decision_cycle(test_context)
     execution_time = time.time() - start_time
 
     print(f"✅ Autonomous Decision completed in {execution_time:.3f}s")
@@ -154,9 +150,7 @@ async def demonstrate_enterprise_asi():
     autonomy_engine.performance_metrics["learning_progress"] = 0.0
 
     start_time = time.time()
-    action, decision_metadata = await autonomy_engine.autonomous_decision_cycle(
-        test_context
-    )
+    action, decision_metadata = await autonomy_engine.autonomous_decision_cycle(test_context)
     execution_time = time.time() - start_time
 
     self_improvement = decision_metadata.get("self_improvement", {})
@@ -171,7 +165,7 @@ async def demonstrate_enterprise_asi():
     print("\n📋 Enterprise ASI Status")
     print("-" * 50)
 
-    agency_metrics = agency_framework.get_enterprise_metrics()
+    agency_metrics = agency.get_enterprise_metrics()
     autonomy_status = autonomy_engine.get_enterprise_autonomy_status()
 
     print("🏢 Agency Framework Metrics:")
@@ -203,23 +197,17 @@ async def demonstrate_enterprise_asi():
     print("-" * 50)
 
     enterprise_compliance = autonomy_status.get("enterprise_compliance", {})
-    print(
-        f"🏆 McKinsey 7-S Aligned: {enterprise_compliance.get('mckinsey_7s_aligned', False)}"
-    )
+    print(f"🏆 McKinsey 7-S Aligned: {enterprise_compliance.get('mckinsey_7s_aligned', False)}")
     print(f"🔬 MIT Standards Met: {enterprise_compliance.get('mit_compliance', False)}")
     print(
         f"📚 Oxford Rigor Achieved: {enterprise_compliance.get('oxford_mathematical_rigor', False)}"
     )
-    print(
-        f"⚖️ Governance Compliant: {enterprise_compliance.get('governance_compliant', False)}"
-    )
+    print(f"⚖️ Governance Compliant: {enterprise_compliance.get('governance_compliant', False)}")
 
     enterprise_readiness = autonomy_status.get("enterprise_readiness", {})
     print("\n🚀 Enterprise Readiness:")
     print(f"   Production Ready: {enterprise_readiness.get('production_ready', False)}")
-    print(
-        f"   Scalability Achieved: {enterprise_readiness.get('scalability_achieved', False)}"
-    )
+    print(f"   Scalability Achieved: {enterprise_readiness.get('scalability_achieved', False)}")
     print(f"   Safety Certified: {enterprise_readiness.get('safety_certified', False)}")
 
     # Final summary

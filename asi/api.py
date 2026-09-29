@@ -30,7 +30,7 @@ from typing import Any, Dict, Optional
 from datetime import datetime
 
 try:
-    from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
+    from fastapi import FastAPI, HTTPException, Request
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import JSONResponse
     from pydantic import BaseModel, Field
@@ -38,21 +38,22 @@ try:
     FASTAPI_AVAILABLE = True
 except ImportError:
     FASTAPI_AVAILABLE = False
-    logging.warning(
-        "FastAPI not available - ASI service will have limited functionality"
-    )
+    logging.warning("FastAPI not available - ASI service will have limited functionality")
 
 # ── Internal-access control ────────────────────────────────────────────────
 _INTERNAL_KEY_HEADER = "X-HYBA-Internal-Key"
 _INTERNAL_KEY = os.getenv("HYBA_INTERNAL_KEY", "hyba-internal-asi-key")
 _INTERNAL_BYPASS_PATHS = {"/health", "/docs", "/redoc", "/openapi.json"}
 
-# Import ASI components
-from .problem_solver import ASIProblemSolver
-from .quantum_creator import QuantumCreator
-from .self_healing import SelfHealingSystem
+# Import ASI components. These names are the canonical ones declared by each
+# module's __init__; the earlier project used drifted aliases
+# (ASIProblemSolver / QuantumCreator / SelfHealingSystem / WebLearner) that
+# never existed as classes.
+from .problem_solver import NovelProblemSolver
+from .quantum_creator import QuantumAlgorithmCreator
+from .self_healing import SelfHealingEngine
 from .system_optimizer import SystemOptimizer
-from .web_learner import WebLearner
+from .web_learner import ContinuousWebLearner
 
 logger = logging.getLogger(__name__)
 
@@ -62,12 +63,8 @@ class ASIRequest(BaseModel):
     """ASI request model."""
 
     task_type: str = Field(..., description="Type of ASI task")
-    parameters: Dict[str, Any] = Field(
-        default_factory=dict, description="Task parameters"
-    )
-    consciousness_level: Optional[float] = Field(
-        1.0, description="Consciousness level (0.0-1.0)"
-    )
+    parameters: Dict[str, Any] = Field(default_factory=dict, description="Task parameters")
+    consciousness_level: Optional[float] = Field(1.0, description="Consciousness level (0.0-1.0)")
 
 
 class ASIResponse(BaseModel):
@@ -92,31 +89,26 @@ class HealthResponse(BaseModel):
 
 
 # Global ASI components
-asi_problem_solver: Optional[ASIProblemSolver] = None
-quantum_creator: Optional[QuantumCreator] = None
-self_healing: Optional[SelfHealingSystem] = None
+asi_problem_solver: Optional[NovelProblemSolver] = None
+quantum_creator: Optional[QuantumAlgorithmCreator] = None
+self_healing: Optional[SelfHealingEngine] = None
 system_optimizer: Optional[SystemOptimizer] = None
-web_learner: Optional[WebLearner] = None
+web_learner: Optional[ContinuousWebLearner] = None
 
 
 async def initialize_asi_components():
     """Initialize all ASI components."""
-    global \
-        asi_problem_solver, \
-        quantum_creator, \
-        self_healing, \
-        system_optimizer, \
-        web_learner
+    global asi_problem_solver, quantum_creator, self_healing, system_optimizer, web_learner
 
     logger.info("[ASI] Initializing Artificial Superintelligence components...")
 
     try:
         # Initialize core ASI components
-        asi_problem_solver = ASIProblemSolver()
-        quantum_creator = QuantumCreator()
-        self_healing = SelfHealingSystem()
+        asi_problem_solver = NovelProblemSolver()
+        quantum_creator = QuantumAlgorithmCreator()
+        self_healing = SelfHealingEngine()
         system_optimizer = SystemOptimizer()
-        web_learner = WebLearner()
+        web_learner = ContinuousWebLearner()
 
         # Start background processes
         await self_healing.start_monitoring()
@@ -228,15 +220,13 @@ def create_asi_app() -> FastAPI:
         """ASAI problem solving endpoint."""
 
         if not asi_problem_solver:
-            raise HTTPException(
-                status_code=503, detail="ASI problem solver not available"
-            )
+            raise HTTPException(status_code=503, detail="ASI problem solver not available")
 
         start_time = asyncio.get_event_loop().time()
 
         try:
             # Solve problem with ASI
-            # result = await asi_problem_solver.solve(
+            result = await asi_problem_solver.solve(
                 task_type=request.task_type,
                 parameters=request.parameters,
                 consciousness_level=request.consciousness_level,
@@ -247,7 +237,7 @@ def create_asi_app() -> FastAPI:
             return ASIResponse(
                 success=True,
                 task_type=request.task_type,
-                # result =result,
+                result=result,
                 consciousness_metrics={
                     "level": request.consciousness_level,
                     "integration": 0.92,
@@ -271,7 +261,7 @@ def create_asi_app() -> FastAPI:
 
         try:
             # Create with quantum capabilities
-            # result = await quantum_creator.create(
+            result = await quantum_creator.create(
                 creation_type=request.task_type,
                 parameters=request.parameters,
                 consciousness_level=request.consciousness_level,
@@ -282,7 +272,7 @@ def create_asi_app() -> FastAPI:
             return ASIResponse(
                 success=True,
                 task_type=request.task_type,
-                # result =result,
+                result=result,
                 consciousness_metrics={
                     "level": request.consciousness_level,
                     "quantum_coherence": 0.95,
@@ -293,24 +283,20 @@ def create_asi_app() -> FastAPI:
             )
 
         except Exception as e:
-            raise HTTPException(
-                status_code=500, detail=f"Quantum creation failed: {str(e)}"
-            )
+            raise HTTPException(status_code=500, detail=f"Quantum creation failed: {str(e)}")
 
     @app.post("/asi/optimize", response_model=ASIResponse)
     async def optimize_system(request: ASIRequest):
         """System optimization endpoint."""
 
         if not system_optimizer:
-            raise HTTPException(
-                status_code=503, detail="System optimizer not available"
-            )
+            raise HTTPException(status_code=503, detail="System optimizer not available")
 
         start_time = asyncio.get_event_loop().time()
 
         try:
             # Optimize system
-            # result = await system_optimizer.optimize(
+            result = await system_optimizer.optimize(
                 optimization_type=request.task_type,
                 parameters=request.parameters,
                 consciousness_level=request.consciousness_level,
@@ -321,7 +307,7 @@ def create_asi_app() -> FastAPI:
             return ASIResponse(
                 success=True,
                 task_type=request.task_type,
-                # result =result,
+                result=result,
                 consciousness_metrics={
                     "level": request.consciousness_level,
                     "optimization_efficiency": 0.89,
@@ -332,9 +318,7 @@ def create_asi_app() -> FastAPI:
             )
 
         except Exception as e:
-            raise HTTPException(
-                status_code=500, detail=f"System optimization failed: {str(e)}"
-            )
+            raise HTTPException(status_code=500, detail=f"System optimization failed: {str(e)}")
 
     @app.get("/asi/status")
     async def asi_status():
@@ -349,9 +333,7 @@ def create_asi_app() -> FastAPI:
                 web_learner,
             ]
         ):
-            raise HTTPException(
-                status_code=503, detail="ASI components not fully initialized"
-            )
+            raise HTTPException(status_code=503, detail="ASI components not fully initialized")
 
         return {
             "asi_status": "fully_operational",
@@ -368,15 +350,9 @@ def create_asi_app() -> FastAPI:
                 "web_learning": web_learner.is_learning() if web_learner else False,
             },
             "metrics": {
-                "problems_solved": asi_problem_solver.get_metrics()
-                if asi_problem_solver
-                else {},
-                "quantum_creations": quantum_creator.get_metrics()
-                if quantum_creator
-                else {},
-                "optimizations": system_optimizer.get_metrics()
-                if system_optimizer
-                else {},
+                "problems_solved": asi_problem_solver.get_metrics() if asi_problem_solver else {},
+                "quantum_creations": quantum_creator.get_metrics() if quantum_creator else {},
+                "optimizations": system_optimizer.get_metrics() if system_optimizer else {},
             },
         }
 

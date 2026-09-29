@@ -459,29 +459,21 @@ class PostQuantumCivilizationAPI:
         ):
             """Get executive summary for a recommendation."""
             try:
-                summary = self.transparency_dashboard.generate_executive_summary(
-                    recommendation_id
-                )
+                summary = self.transparency_dashboard.generate_executive_summary(recommendation_id)
                 if not summary:
-                    raise HTTPException(
-                        status_code=404, detail="Recommendation not found"
-                    )
+                    raise HTTPException(status_code=404, detail="Recommendation not found")
                 return summary
             finally:
                 security_manager.release_concurrent_request(api_key.customer_id)
 
-        @router.get(
-            "/api/pci/visualization/{graph_id}", tags=["Transparency Dashboard"]
-        )
+        @router.get("/api/pci/visualization/{graph_id}", tags=["Transparency Dashboard"])
         async def get_visualization_data(
             graph_id: str,
             api_key: APIKey = Depends(verify_api_key),
         ):
             """Get visualization payload for frontend graph rendering."""
             try:
-                visualization = self.transparency_dashboard.get_visualization_data(
-                    graph_id
-                )
+                visualization = self.transparency_dashboard.get_visualization_data(graph_id)
                 if not visualization:
                     raise HTTPException(status_code=404, detail="Graph not found")
                 return visualization
@@ -524,16 +516,12 @@ class PostQuantumCivilizationAPI:
                 resource_requirements=self._estimate_resources(problem),
                 international_implications=self._assess_international_impact(problem),
                 classified_analysis=(
-                    "[CLASSIFIED]"
-                    if clearance == SecurityClearance.TOP_SECRET
-                    else None
+                    "[CLASSIFIED]" if clearance == SecurityClearance.TOP_SECRET else None
                 ),
             )
 
             self.security_assessments[problem.problem_id] = assessment
-            logger.warning(
-                f"National security assessment: {problem.problem_id} ({threat_level})"
-            )
+            logger.warning(f"National security assessment: {problem.problem_id} ({threat_level})")
 
             return assessment
 
@@ -581,22 +569,16 @@ class PostQuantumCivilizationAPI:
                         logger.error(
                             f"Causal intelligence analysis failed for step {step.name}: {e}"
                         )
-                        step_result["results"]["causal_intelligence"] = {
-                            "error": str(e)
-                        }
+                        step_result["results"]["causal_intelligence"] = {"error": str(e)}
 
                 # Execute consciousness analysis if required
                 if step.requires_consciousness:
                     try:
-                        consciousness_analysis = (
-                            await self._execute_consciousness_analysis(step)
-                        )
+                        consciousness_analysis = await self._execute_consciousness_analysis(step)
                         step_result["analyses"].append("consciousness_metric")
                         step_result["results"]["consciousness"] = consciousness_analysis
                     except Exception as e:
-                        logger.error(
-                            f"Consciousness analysis failed for step {step.name}: {e}"
-                        )
+                        logger.error(f"Consciousness analysis failed for step {step.name}: {e}")
                         step_result["results"]["consciousness"] = {"error": str(e)}
 
                 # Execute domain-specific analysis
@@ -610,9 +592,7 @@ class PostQuantumCivilizationAPI:
                 executed_steps.append(step_result)
 
             # Generate campaign summary
-            campaign_summary = await self._generate_campaign_summary(
-                executed_steps, campaign
-            )
+            campaign_summary = await self._generate_campaign_summary(executed_steps, campaign)
 
             # Audit the campaign execution
             audit_event(
@@ -663,9 +643,7 @@ class PostQuantumCivilizationAPI:
                 differentiation=self._calculate_differentiation(problem),
                 integration=self._calculate_integration(problem),
                 interpretation=self._interpret_consciousness(consciousness),
-                civilization_implications=self._assess_civilization_implications(
-                    consciousness
-                ),
+                civilization_implications=self._assess_civilization_implications(consciousness),
             )
 
         @router.post("/api/consciousness/civilization-level", tags=["Consciousness"])
@@ -706,9 +684,7 @@ class PostQuantumCivilizationAPI:
                 intervention_points=interventions,
                 predicted_outcomes=predictions,
                 confidence_intervals=self._calculate_confidence(predictions),
-                optimal_interventions=self._rank_interventions(
-                    interventions, predictions
-                ),
+                optimal_interventions=self._rank_interventions(interventions, predictions),
                 unintended_consequences=self._identify_consequences(causal_graph),
                 long_term_effects=self._project_long_term(causal_graph),
             )
@@ -721,11 +697,9 @@ class PostQuantumCivilizationAPI:
             Simplified endpoint for frontend integration.
             Returns predictions based on input parameters.
             """
-            problem_type = data.get("problem_type", "enterprise")
-            context = data.get("context", {})
 
             # Generate predictions using phi-resonance
-            phi_score = 1.618033988749895 * np.random.random()
+            phi_score = PHI * np.random.random()
 
             return {
                 "predictions": [
@@ -810,7 +784,7 @@ class PostQuantumCivilizationAPI:
                 "regulator": rules["regulator"],
                 "requirements": rules["requirements"],
                 "verification_timestamp": datetime.now().isoformat(),
-                "phi_resonance_score": 1.618033988749895 * 0.9,
+                "phi_resonance_score": PHI * 0.9,
             }
 
         # ====================================================================
@@ -1107,9 +1081,7 @@ class PostQuantumCivilizationAPI:
         """Calculate system resilience"""
         return 0.75
 
-    def _generate_security_recommendations(
-        self, problem: CivilizationProblem
-    ) -> List[str]:
+    def _generate_security_recommendations(self, problem: CivilizationProblem) -> List[str]:
         """Generate security recommendations"""
         return [
             "Establish secure communication channels",
@@ -1167,9 +1139,7 @@ class PostQuantumCivilizationAPI:
             "outcomes": ["result_1", "result_2"],
         }
 
-    def _identify_intervention_points(
-        self, causal_graph: Dict[str, List[str]]
-    ) -> List[str]:
+    def _identify_intervention_points(self, causal_graph: Dict[str, List[str]]) -> List[str]:
         """Identify intervention points"""
         return ["intervention_1", "intervention_2", "intervention_3"]
 
@@ -1232,9 +1202,7 @@ class PostQuantumCivilizationAPI:
             long_term_effects=self._project_long_term(causal_graph),
         ).dict()
 
-    async def _execute_consciousness_analysis(
-        self, step: CampaignStep
-    ) -> Dict[str, Any]:
+    async def _execute_consciousness_analysis(self, step: CampaignStep) -> Dict[str, Any]:
         """Execute consciousness analysis for a campaign step."""
         problem = CivilizationProblem(
             problem_id=f"consciousness-{step.name.replace(' ', '-').lower()}",
@@ -1259,9 +1227,7 @@ class PostQuantumCivilizationAPI:
             differentiation=self._calculate_differentiation(problem),
             integration=self._calculate_integration(problem),
             interpretation=self._interpret_consciousness(consciousness),
-            civilization_implications=self._assess_civilization_implications(
-                consciousness
-            ),
+            civilization_implications=self._assess_civilization_implications(consciousness),
         ).dict()
 
     async def _execute_domain_analysis(self, step: CampaignStep) -> Dict[str, Any]:
@@ -1357,13 +1323,7 @@ class PostQuantumCivilizationAPI:
                 "total_steps": len(campaign.steps),
                 "executed_steps": len(executed_steps),
                 "success_rate": (
-                    len(
-                        [
-                            s
-                            for s in executed_steps
-                            if "error" not in str(s.get("results", {}))
-                        ]
-                    )
+                    len([s for s in executed_steps if "error" not in str(s.get("results", {}))])
                     / len(executed_steps)
                     if executed_steps
                     else 0
@@ -1371,25 +1331,13 @@ class PostQuantumCivilizationAPI:
             },
             "analysis_summary": {
                 "causal_intelligence_executed": len(
-                    [
-                        s
-                        for s in executed_steps
-                        if "causal_structure" in s.get("analyses", [])
-                    ]
+                    [s for s in executed_steps if "causal_structure" in s.get("analyses", [])]
                 ),
                 "consciousness_analysis_executed": len(
-                    [
-                        s
-                        for s in executed_steps
-                        if "consciousness_metric" in s.get("analyses", [])
-                    ]
+                    [s for s in executed_steps if "consciousness_metric" in s.get("analyses", [])]
                 ),
                 "domain_analyses_completed": len(
-                    [
-                        s
-                        for s in executed_steps
-                        if "domain_analysis" in s.get("results", {})
-                    ]
+                    [s for s in executed_steps if "domain_analysis" in s.get("results", {})]
                 ),
             },
             "key_insights": [],
@@ -1402,18 +1350,15 @@ class PostQuantumCivilizationAPI:
             step_name = step.get("name", "unknown")
             results = step.get("results", {})
 
-            if "consciousness" in results and "phi_value" in results.get(
-                "consciousness", {}
-            ):
+            if "consciousness" in results and "phi_value" in results.get("consciousness", {}):
                 phi = results["consciousness"]["phi_value"]
                 if phi > 0.7:
                     summary["key_insights"].append(
                         f"{step_name}: High consciousness integration (Φ={phi:.3f})"
                     )
 
-            if (
-                "causal_intelligence" in results
-                and "prediction_accuracy" in results.get("causal_intelligence", {})
+            if "causal_intelligence" in results and "prediction_accuracy" in results.get(
+                "causal_intelligence", {}
             ):
                 accuracy = results["causal_intelligence"]["prediction_accuracy"]
                 if accuracy > 0.8:
@@ -1435,9 +1380,7 @@ class PostQuantumCivilizationAPI:
         # Assess risks
         if summary["campaign_overview"]["success_rate"] < 0.8:
             summary["risk_assessment"]["overall_risk"] = "high"
-            summary["risk_assessment"]["factors"].append(
-                "Some steps failed to execute properly"
-            )
+            summary["risk_assessment"]["factors"].append("Some steps failed to execute properly")
 
         if campaign.max_autonomy_level >= 4:
             summary["risk_assessment"]["factors"].append(
@@ -1475,9 +1418,7 @@ class UnifiedPCIController:
         self.operation_count = 0
         self.validation_results = []
 
-        logger.info(
-            "[UNIFIED] PCI Controller initialized with unified intelligence infrastructure"
-        )
+        logger.info("[UNIFIED] PCI Controller initialized with unified intelligence infrastructure")
 
     async def initialize_substrate(self) -> Dict[str, Any]:
         """
@@ -1542,12 +1483,8 @@ class UnifiedPCIController:
             },
         )
 
-        mckinsey_analysis = self.mckinsey_engine.analytic_hierarchy_process(
-            decision_context
-        )
-        monte_carlo_results = self.mckinsey_engine.monte_carlo_simulation(
-            decision_context
-        )
+        mckinsey_analysis = self.mckinsey_engine.analytic_hierarchy_process(decision_context)
+        monte_carlo_results = self.mckinsey_engine.monte_carlo_simulation(decision_context)
 
         enhanced_result = {
             "operation_id": self.operation_count,
@@ -1559,9 +1496,7 @@ class UnifiedPCIController:
             "unified_infrastructure": True,
         }
 
-        logger.info(
-            f"[UNIFIED] PCI intelligence cycle {self.operation_count} completed"
-        )
+        logger.info(f"[UNIFIED] PCI intelligence cycle {self.operation_count} completed")
         return enhanced_result
 
     async def validate_scientific_rigor(self) -> Dict[str, Any]:
@@ -1589,19 +1524,14 @@ class UnifiedPCIController:
             "reproducibility_score": validation_result.reproducibility_score,
             "peer_review_status": validation_result.peer_review_status,
             "mathematical_proof": validation_result.mathematical_proof,
-            "fields_medal_criteria_met": validation_result.statistical_significance
-            > 0.95,
+            "fields_medal_criteria_met": validation_result.statistical_significance > 0.95,
             "nobel_prize_criteria_met": validation_result.reproducibility_score > 0.9,
             "conclusion": (
-                "ACCEPTED"
-                if validation_result.statistical_significance > 0.9
-                else "REJECTED"
+                "ACCEPTED" if validation_result.statistical_significance > 0.9 else "REJECTED"
             ),
         }
 
-        logger.info(
-            f"[UNIFIED] Scientific validation: {scientific_report['conclusion']}"
-        )
+        logger.info(f"[UNIFIED] Scientific validation: {scientific_report['conclusion']}")
         return scientific_report
 
     async def get_comprehensive_status(self) -> Dict[str, Any]:

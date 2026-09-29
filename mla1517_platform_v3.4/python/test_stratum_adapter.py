@@ -1,4 +1,5 @@
 """Executable behavioural tests for the live Stratum proof boundary."""
+
 from __future__ import annotations
 
 import hashlib
@@ -82,6 +83,7 @@ class StratumAdapterTests(unittest.TestCase):
 
     def test_dropped_session_cannot_build_a_header(self) -> None:
         self.adapter.drop_session()
+        self.assertIsNone(self.adapter.target)
         with self.assertRaises(StratumAdapterError):
             self.adapter.build_header("job-1", "00000001", "65abcdef", 0)
 
@@ -124,9 +126,7 @@ class StratumAdapterTests(unittest.TestCase):
             )
 
     def test_set_extranonce_replaces_the_subscription(self) -> None:
-        self.adapter.handle_message(
-            {"method": "mining.set_extranonce", "params": ["eeff", 2]}
-        )
+        self.adapter.handle_message({"method": "mining.set_extranonce", "params": ["eeff", 2]})
         self.assertEqual(self.adapter.subscription.extranonce1, "eeff")
         self.assertEqual(self.adapter.subscription.extranonce2_size, 2)
         self.assertEqual(self.adapter.next_extranonce2(), "0000")
@@ -135,7 +135,9 @@ class StratumAdapterTests(unittest.TestCase):
         proof = self.adapter.validate_candidate(
             job_id="job-1", extranonce2="00000001", ntime="65abcdef", nonce=0
         )
-        self.assertEqual(proof.digest, hashlib.sha256(hashlib.sha256(proof.header).digest()).digest())
+        self.assertEqual(
+            proof.digest, hashlib.sha256(hashlib.sha256(proof.header).digest()).digest()
+        )
 
 
 if __name__ == "__main__":

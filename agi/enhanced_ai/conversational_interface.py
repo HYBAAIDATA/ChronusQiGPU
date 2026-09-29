@@ -188,9 +188,7 @@ class EnhancedConversationalInterface:
             # Update user preferences
             await self._update_user_preferences(user_id, utterance)
 
-            logger.info(
-                f"Started conversation session: {session_id} for user: {user_id}"
-            )
+            logger.info(f"Started conversation session: {session_id} for user: {user_id}")
             return session
 
         except Exception as e:
@@ -225,14 +223,10 @@ class EnhancedConversationalInterface:
             session.context.last_interaction = datetime.now()
 
             # Determine response strategy
-            response_strategy = await self._determine_response_strategy(
-                utterance, session
-            )
+            response_strategy = await self._determine_response_strategy(utterance, session)
 
             # Generate response
-            response_text = await self._generate_response(
-                utterance, session, response_strategy
-            )
+            response_text = await self._generate_response(utterance, session, response_strategy)
 
             # Enhance response with knowledge and computation
             enhanced_response = await self._enhance_response(
@@ -266,9 +260,7 @@ class EnhancedConversationalInterface:
 
             session.state = ConversationState.ACTIVE
 
-            logger.info(
-                f"Generated response for session {session_id}: {response.response_type}"
-            )
+            logger.info(f"Generated response for session {session_id}: {response.response_type}")
             return response
 
         except Exception as e:
@@ -296,9 +288,7 @@ class EnhancedConversationalInterface:
 
             # Process satisfaction feedback
             if satisfaction_feedback:
-                satisfaction_score = await self._calculate_satisfaction_score(
-                    satisfaction_feedback
-                )
+                satisfaction_score = await self._calculate_satisfaction_score(satisfaction_feedback)
                 session.satisfaction_score = satisfaction_score
 
                 # Update knowledge base with feedback
@@ -326,9 +316,7 @@ class EnhancedConversationalInterface:
             logger.error(f"Failed to end conversation: {e}")
             return False
 
-    async def get_conversation_context(
-        self, session_id: str
-    ) -> Optional[ConversationContext]:
+    async def get_conversation_context(self, session_id: str) -> Optional[ConversationContext]:
         """Get the current conversation context"""
         if session_id in self.active_sessions:
             return self.active_sessions[session_id].context
@@ -434,9 +422,7 @@ class EnhancedConversationalInterface:
             return self.conversation_strategies[intent]
 
         # Default strategy based on understanding level
-        understanding_level = self.nlp_processor.get_understanding_level(
-            session.user_id
-        )
+        understanding_level = self.nlp_processor.get_understanding_level(session.user_id)
 
         if understanding_level in [
             NLPUnderstandingLevel.ADVANCED,
@@ -460,27 +446,19 @@ class EnhancedConversationalInterface:
             user_prefs = self.user_preferences.get(session.user_id, {})
 
             # Generate base response using NLP processor
-            base_response = await self.nlp_processor.generate_response(
-                utterance, session.user_id
-            )
+            base_response = await self.nlp_processor.generate_response(utterance, session.user_id)
 
             # Apply strategy-specific enhancements
             if strategy["type"] == ResponseType.MATHEMATICAL:
-                base_response = await self._enhance_mathematical_response(
-                    base_response, utterance
-                )
+                base_response = await self._enhance_mathematical_response(base_response, utterance)
             elif strategy["type"] == ResponseType.INFORMATIONAL:
-                base_response = await self._enhance_informational_response(
-                    base_response, utterance
-                )
+                base_response = await self._enhance_informational_response(base_response, utterance)
             elif strategy["type"] == ResponseType.PROBLEM_SOLVING:
                 base_response = await self._enhance_problem_solving_response(
                     base_response, utterance
                 )
             elif strategy["type"] == ResponseType.CREATIVE:
-                base_response = await self._enhance_creative_response(
-                    base_response, utterance
-                )
+                base_response = await self._enhance_creative_response(base_response, utterance)
 
             # Apply user preference enhancements
             if user_prefs.get("formal_tone", False):
@@ -517,9 +495,7 @@ class EnhancedConversationalInterface:
 
             # Apply quantum optimization if response is complex
             if strategy["complexity"] == "high" and len(enhanced_text) > 200:
-                enhanced_text = await self._quantum_optimize_response(
-                    enhanced_text, utterance
-                )
+                enhanced_text = await self._quantum_optimize_response(enhanced_text, utterance)
 
             # Add conversational elements
             enhanced_text = self._add_conversational_elements(
@@ -575,9 +551,7 @@ class EnhancedConversationalInterface:
             logger.error(f"Response metrics calculation failed: {e}")
             return {"confidence": 0.5, "phi_resonance": 0.5, "knowledge_used": []}
 
-    async def _enhance_mathematical_response(
-        self, response: str, utterance: NLPUtterance
-    ) -> str:
+    async def _enhance_mathematical_response(self, response: str, utterance: NLPUtterance) -> str:
         """Enhance response for mathematical queries"""
         entities = utterance.entities
 
@@ -587,9 +561,7 @@ class EnhancedConversationalInterface:
 
         return f"Let me approach this with mathematical precision: {response}"
 
-    async def _enhance_informational_response(
-        self, response: str, utterance: NLPUtterance
-    ) -> str:
+    async def _enhance_informational_response(self, response: str, utterance: NLPUtterance) -> str:
         """Enhance response for informational queries"""
         return f"Based on my comprehensive knowledge base, here's what I can tell you: {response}"
 
@@ -599,13 +571,9 @@ class EnhancedConversationalInterface:
         """Enhance response for problem-solving queries"""
         return f"Let's solve this systematically using computational intelligence: {response}"
 
-    async def _enhance_creative_response(
-        self, response: str, utterance: NLPUtterance
-    ) -> str:
+    async def _enhance_creative_response(self, response: str, utterance: NLPUtterance) -> str:
         """Enhance response for creative queries"""
-        return (
-            f"Here's a creative approach informed by computational analysis: {response}"
-        )
+        return f"Here's a creative approach informed by computational analysis: {response}"
 
     def _summarize_knowledge(self, entries: List[Any]) -> str:
         """Summarize knowledge base entries"""
@@ -615,9 +583,7 @@ class EnhancedConversationalInterface:
         concepts = [entry.concept for entry in entries[:3]]  # Limit to top 3
         return f"Related concepts: {', '.join(concepts)}"
 
-    async def _quantum_optimize_response(
-        self, response: str, utterance: NLPUtterance
-    ) -> str:
+    async def _quantum_optimize_response(self, response: str, utterance: NLPUtterance) -> str:
         """Use quantum processing to optimize response quality"""
         try:
             # Create optimization problem
@@ -644,9 +610,7 @@ class EnhancedConversationalInterface:
             logger.warning(f"Quantum response optimization failed: {e}")
             return response
 
-    def _add_conversational_elements(
-        self, response: str, emotional_state: Dict[str, float]
-    ) -> str:
+    def _add_conversational_elements(self, response: str, emotional_state: Dict[str, float]) -> str:
         """Add conversational elements based on emotional state"""
         if "positive" in emotional_state and emotional_state["positive"] > 0.7:
             return f"Great question! {response}"
@@ -733,9 +697,7 @@ class EnhancedConversationalInterface:
         return {
             "session_id": session.session_id,
             "user_id": session.user_id,
-            "duration": (
-                session.end_time or datetime.now() - session.start_time
-            ).total_seconds(),
+            "duration": (session.end_time or datetime.now() - session.start_time).total_seconds(),
             "message_count": len(session.response_history),
             "satisfaction_score": session.satisfaction_score,
             "last_activity": session.last_activity.isoformat(),
@@ -744,9 +706,7 @@ class EnhancedConversationalInterface:
 
     def get_user_statistics(self, user_id: str) -> Dict[str, Any]:
         """Get statistics for a user across all sessions"""
-        user_sessions = [
-            s for s in self.active_sessions.values() if s.user_id == user_id
-        ]
+        user_sessions = [s for s in self.active_sessions.values() if s.user_id == user_id]
 
         if not user_sessions:
             return {
@@ -758,13 +718,10 @@ class EnhancedConversationalInterface:
             }
 
         total_duration = sum(
-            (s.end_time or datetime.now() - s.start_time).total_seconds()
-            for s in user_sessions
+            (s.end_time or datetime.now() - s.start_time).total_seconds() for s in user_sessions
         )
         total_messages = sum(len(s.response_history) for s in user_sessions)
-        avg_satisfaction = sum(s.satisfaction_score for s in user_sessions) / len(
-            user_sessions
-        )
+        avg_satisfaction = sum(s.satisfaction_score for s in user_sessions) / len(user_sessions)
 
         return {
             "user_id": user_id,

@@ -125,15 +125,19 @@ def _conflict(field: str, canonical: str, alias: str) -> None:
 
 def resolve_stratum_identity() -> StratumIdentity:
     """Resolve once at boot; aliases may confirm but never override canonical."""
-    user = os.getenv("MLA1517_STRATUM_USER", "").strip()
-    password = os.getenv("MLA1517_STRATUM_PASSWORD", "")
-    profile = os.getenv("PYTHIA_POOL_PROFILE", os.getenv("MLA1517_POOL_PROFILE", "braiins")).strip().lower()
-    if profile not in {"braiins", "viabtc"}:
-        raise StartupConfigError("PYTHIA_POOL_PROFILE must be braiins or viabtc")
+    # The mining worker resolves its primary pool through the same catalog.
+    from pool_catalog import POOL_CATALOG, pool_names, pool_settings
+
+    names = pool_names()
+    profile = names[0] if names else "braiins"
+    if profile not in POOL_CATALOG:
+        raise StartupConfigError(f"PYTHIA_POOL_PROFILE must be one of {', '.join(POOL_CATALOG)}")
+    prefix = f"MLA1517_{profile.upper()}"
+    settings = pool_settings(profile, primary=True)
+    user = settings.user or ""
+    password = settings.password
     if not user:
         raise StartupConfigError("MLA1517_STRATUM_USER is required")
-    if not password:
-        raise StartupConfigError("MLA1517_STRATUM_PASSWORD is required")
     alias_policy = os.getenv("PYTHIA_ALIAS_POLICY", "compat").strip().lower()
     if alias_policy not in {"compat", "strict", "ignore"}:
         raise StartupConfigError("PYTHIA_ALIAS_POLICY must be compat, strict, or ignore")
@@ -148,14 +152,12 @@ def resolve_stratum_identity() -> StratumIdentity:
             raise ConfigConflict("PYTHIA_STRATUM_PASSWORD is required by strict alias policy")
         if alias_password and alias_password != password:
             raise ConfigConflict("password aliases conflict with canonical MLA1517 value")
-    canonical_endpoint = os.getenv("MLA1517_STRATUM_ENDPOINT", "").strip()
-    if not canonical_endpoint:
-        canonical_endpoint = os.getenv(
-            "MLA1517_BRAIINS_ENDPOINT" if profile == "braiins" else "MLA1517_VIABTC_ENDPOINT", ""
-        ).strip()
+    canonical_endpoint = settings.endpoint or ""
     alias_endpoint = os.getenv("PYTHIA_STRATUM_ENDPOINT", "").strip()
     if not canonical_endpoint:
-        raise StartupConfigError("canonical MLA1517 Stratum endpoint is required")
+        raise StartupConfigError(
+            f"MLA1517_STRATUM_ENDPOINT or {prefix}_ENDPOINT is required for {profile}"
+        )
     if alias_policy != "ignore" and alias_endpoint:
         if _endpoint(alias_endpoint, "PYTHIA_STRATUM_ENDPOINT") != _endpoint(canonical_endpoint, "MLA1517_STRATUM_ENDPOINT"):
             raise ConfigConflict("endpoint aliases conflict with canonical MLA1517 value")

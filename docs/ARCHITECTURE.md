@@ -20,8 +20,7 @@ mla1517_platform_v3.4/python
 mining/
   ├── stratum_bridge.py            live bridge + live-submit env gate
   ├── bitcoin_hasher.py            real SHA256d/OpenCL
-  ├── hash_pipeline.py             backend pipeline
-  └── production_miner.py
+  └── hash_pipeline.py             backend pipeline
 hyba/ + Intelligence/{backend_binding,igpu_telemetry,unified_manifold_device}.py
                                    device identity binding + telemetry
 ```

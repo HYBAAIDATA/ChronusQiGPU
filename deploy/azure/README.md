@@ -27,8 +27,11 @@ qualified. Do not interpret HTTP health as mining readiness.
    ```
 
    Set `image` to `pythia@sha256:<pushed-image-digest>`. Required parameters are
-   `environmentName`, `registryName`, `image`, `storageBindingName`, `tenantId`,
-   `clientId`, `clientSecret`, and `operatorObjectIds`. Keep `externalIngress=false`
+   `environmentName`, `registryName`, `image`, `storageBindingName`, `stratumUser`
+   (the pool worker identity; the control API refuses to boot without it), `adminApiKey`
+   (the operator key every state-changing request must present, at least 32 characters:
+   `openssl rand -hex 32`; without it control is closed), `tenantId`, `clientId`,
+   `clientSecret`, and `operatorObjectIds`. Keep `externalIngress=false`
    for the first deployment so the app cannot become public before auth is configured.
 4. Test from the environment: unauthorized requests must redirect to Entra or return
    401/403; an authenticated but unassigned identity must be denied. An assigned operator
@@ -43,11 +46,23 @@ state before schema changes; image rollback does not undo state changes.
 ## Hardware worker release gate
 
 Use a separate Linux host with the verified MMIO/OpenCL device and drivers, the same
-code revision, a durable local POSIX filesystem, and TLS pool connectivity. Live runtime
-requires `MLA1517_MMIO_DEVICE`, Stratum identity, `PYTHIA_BITCOIN_RPC_URL`, either
-`PYTHIA_BITCOIN_RPC_AUTH` or `PYTHIA_BITCOIN_RPC_COOKIE`, and
-`PYTHIA_MINING_SESSION_PATH`. Remote RPC must use HTTPS. Protect pool/node credentials
-and back up the session; removing it can remove the external-block safety history.
+code revision, a durable local POSIX filesystem, and TLS pool connectivity. The image
+already carries the host driver (`libmla1517_mmio.so`); live runtime needs
+`MLA1517_MMIO_DEVICE` (the device's register block) and the Stratum identity. Without a
+node the pool's own jobs are the chain evidence; a configured `PYTHIA_BITCOIN_RPC_URL`
+(HTTPS when remote) takes precedence. Protect pool/node credentials and back up the
+session; removing it can remove the external-block safety history.
+
+## Live smoke
+
+`python scripts/docker_smoke.py --image <image>` runs the image as deployed against a
+scripted Stratum pool, with a register block on a bind mount fed by
+`scripts/smoke_vault_feeder.py`, and checks boot, the operator UI, the durable volume,
+`POST /api/v1/mining/start`, the pool session, continuous vault observation and the
+evidence snapshot. CI runs it on every pull request (`Azure packaging` workflow) and
+publishes the stage table to the job summary and the logs as the `docker-live-smoke`
+artifact. The feeder writes ABI-shaped fixtures, not MLA1517 output; the host's own
+integrity checks gate them, so the smoke never hashes and never submits.
 
 The hosted control app does **not** yet operate that separate host remotely. Do not
 expose the standalone Python control API directly; its current authorization boundary

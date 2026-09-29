@@ -377,9 +377,7 @@ class SelfHealingEngine:
             # Adjust cache sizes based on hit rates
             for cache_name, cache_stats in stats.items():
                 if cache_stats["hit_rate"] < 0.5:
-                    optimizations.append(
-                        f"Increased {cache_name} size for better hit rate"
-                    )
+                    optimizations.append(f"Increased {cache_name} size for better hit rate")
         except Exception as e:
             logger.error(f"Error optimizing caches: {e}")
 

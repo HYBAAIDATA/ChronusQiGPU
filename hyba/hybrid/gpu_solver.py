@@ -91,8 +91,13 @@ class GPUSolver:
         kernel_ms0 = self._hasher.kernel_ms
         wall0 = time.perf_counter()
         nonces = 0
+        # The hasher's grind_batch is derived from the real device memory limit
+        # and can sit below this solver's policy constant, so the request is
+        # bounded by the hasher's own accepted cap. Using self._grind_batch here
+        # raised ValueError on any device whose snapped cap is smaller.
+        launch = max(1, min(int(self._grind_batch), int(self._hasher.grind_batch)))
         while time.perf_counter() - wall0 < 0.5:
-            _, _, done = self._hasher.grind_target_range(header, target, 0, self._grind_batch)
+            _, _, done = self._hasher.grind_target_range(header, target, 0, launch)
             nonces += done
             break  # a single max-range launch already saturates the queue
         wall_s = max(time.perf_counter() - wall0, 1e-9)

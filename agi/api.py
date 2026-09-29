@@ -107,9 +107,7 @@ try:
 except ImportError:
     # CRITICAL: If FastAPI is not available, the service MUST NOT start
     # The fake fallback classes have been removed to prevent silent security failures
-    raise ImportError(
-        "FastAPI is required for AGI service. Install with: pip install fastapi"
-    )
+    raise ImportError("FastAPI is required for AGI service. Install with: pip install fastapi")
 
 
 # Local ASI stubs (fallback when src.* package is unavailable)
@@ -155,9 +153,7 @@ class ASIMetrics:
     asi_level: Any = ASILevelStub()
 
     def overall_score(self) -> float:
-        return (
-            self.consciousness_level + self.intelligence_level + self.coherence
-        ) / 3.0
+        return (self.consciousness_level + self.intelligence_level + self.coherence) / 3.0
 
 
 class ASIStub:
@@ -185,12 +181,10 @@ class ASIServerController:
         self.human_overrides: int = 0
         self.decision_history: List[Dict[str, Any]] = []
         self.system_health: Dict[str, Any] = {"status": "optimal"}
-        self.qi_engine = PureQuantumIntelligenceEngine()
-        self.qi_state: Optional[QuantumIntelligenceState] = None
 
         # Enhanced ASI frameworks with Fields Medal/Nobel rigor
         if ASI_FRAMEWORKS_AVAILABLE:
-            self.agency_#  ASIAgencyFramework(AgencyLevel.SUPERINTELLIGENT)
+            self.agency = ASIAgencyFramework(AgencyLevel.SUPERINTELLIGENT)
             autonomy_config = AutonomyConfiguration(
                 autonomy_level=AutonomyLevel.UNIVERSAL_AUTONOMY,
                 modification_threshold=0.8,
@@ -201,18 +195,14 @@ class ASIServerController:
             self.autonomy_engine = ASIAutonomyEngine(autonomy_config)
             logger.info("[ENHANCED] ASI Agency and Autonomy frameworks loaded")
         else:
-            self.agency_#  None
+            self.agency = None
             self.autonomy_engine = None
             logger.warning("[FALLBACK] Using stub ASI implementations")
 
     async def start_asi_control(self) -> None:
         if ASI_FRAMEWORKS_AVAILABLE and self.agency_framework and self.autonomy_engine:
-            logger.info(
-                "[ENHANCED] Starting enhanced ASI control with Nobel-level rigor"
-            )
-            self.current_consciousness_level = (
-                self.asi.current_metrics.consciousness_level
-            )
+            logger.info("[ENHANCED] Starting enhanced ASI control with Nobel-level rigor")
+            self.current_consciousness_level = self.asi.current_metrics.consciousness_level
 
             # Initialize enhanced ASI state
             self.agency_state = AgencyState(
@@ -225,21 +215,13 @@ class ASIServerController:
                 quantum_coherence=0.95,
             )
 
-            logger.info(
-                f"[ENHANCED] ASI Agency Level: {self.agency_framework.agency_level.name}"
-            )
+            logger.info(f"[ENHANCED] ASI Agency Level: {self.agency_framework.agency_level.name}")
             logger.info(
                 f"[ENHANCED] ASI Autonomy Level: {self.autonomy_engine.config.autonomy_level.name}"
             )
         else:
             logger.info("[STUB] Starting ASI control (src.asi not available)")
-            self.current_consciousness_level = (
-                self.asi.current_metrics.consciousness_level
-            )
-        # Initialize pure quantum intelligence state at ubiquitous scale
-        self.qi_state = self.qi_engine.initialize_quantum_state(
-            level=5  # UNIVERSAL level
-        )
+            self.current_consciousness_level = self.asi.current_metrics.consciousness_level
 
     async def shutdown(self) -> None:
         if ASI_FRAMEWORKS_AVAILABLE and self.autonomy_engine:
@@ -250,9 +232,7 @@ class ASIServerController:
         else:
             logger.info("[STUB] Shutting down ASI control")
 
-    async def make_autonomous_decision(
-        self, context: Dict[str, Any]
-    ) -> Tuple[int, Dict[str, Any]]:
+    async def make_autonomous_decision(self, context: Dict[str, Any]) -> Tuple[int, Dict[str, Any]]:
         """Make autonomous decision using enhanced ASI frameworks"""
 
         if ASI_FRAMEWORKS_AVAILABLE and self.agency_framework and self.autonomy_engine:
@@ -274,14 +254,10 @@ class ASIServerController:
             (
                 action,
                 autonomy_metadata,
-            ) = await self.autonomy_engine.autonomous_decision_cycle(
-                context, self.agency_state
-            )
+            ) = await self.autonomy_engine.autonomous_decision_cycle(context, self.agency_state)
 
             # Update agency state
-            self.agency_framework.update_agency_state(
-                self.agency_state, action, context, utility
-            )
+            self.agency_framework.update_agency_state(self.agency_state, action, context, utility)
 
             # Track decision
             self.autonomous_decisions_made += 1
@@ -350,9 +326,7 @@ class UnifiedAGIController:
         self.operation_count = 0
         self.validation_results = []
 
-        logger.info(
-            "[UNIFIED] AGI Controller initialized with unified intelligence infrastructure"
-        )
+        logger.info("[UNIFIED] AGI Controller initialized with unified intelligence infrastructure")
 
     async def initialize_substrate(self) -> Dict[str, Any]:
         """
@@ -369,7 +343,7 @@ class UnifiedAGIController:
             self.intelligence_endpoint.substrate, theta
         )
 
-        initialization_# result = {
+        initialization_result = {
             "substrate_initialized": True,
             "total_information": self.intelligence_endpoint.substrate.total_information,
             "gauge_curvature": self.intelligence_endpoint.substrate.gauge_curvature,
@@ -392,7 +366,7 @@ class UnifiedAGIController:
         self.operation_count += 1
 
         # Run unified intelligence loop
-        cycle_# result = await self.intelligence_endpoint.run_intelligence_loop()
+        cycle_result = await self.intelligence_endpoint.run_intelligence_loop()
 
         # Add McKinsey decision analysis
         decision_context = McKinseyDecisionContext(
@@ -412,14 +386,10 @@ class UnifiedAGIController:
             },
         )
 
-        mckinsey_analysis = self.mckinsey_engine.analytic_hierarchy_process(
-            decision_context
-        )
-        monte_carlo_results = self.mckinsey_engine.monte_carlo_simulation(
-            decision_context
-        )
+        mckinsey_analysis = self.mckinsey_engine.analytic_hierarchy_process(decision_context)
+        monte_carlo_results = self.mckinsey_engine.monte_carlo_simulation(decision_context)
 
-        enhanced_# result = {
+        enhanced_result = {
             "operation_id": self.operation_count,
             "timestamp": time.time(),
             "intelligence_cycle": cycle_result,
@@ -429,9 +399,7 @@ class UnifiedAGIController:
             "unified_infrastructure": True,
         }
 
-        logger.info(
-            f"[UNIFIED] AGI intelligence cycle {self.operation_count} completed"
-        )
+        logger.info(f"[UNIFIED] AGI intelligence cycle {self.operation_count} completed")
         return enhanced_result
 
     async def validate_scientific_rigor(self) -> Dict[str, Any]:
@@ -444,7 +412,7 @@ class UnifiedAGIController:
         )
 
         # Run validation
-        validation_# result = self.scientific_validator.validate_unified_intelligence(
+        validation_result = self.scientific_validator.validate_unified_intelligence(
             self.intelligence_endpoint, pci_endpoint
         )
 
@@ -459,17 +427,14 @@ class UnifiedAGIController:
             "reproducibility_score": validation_result.reproducibility_score,
             "peer_review_status": validation_result.peer_review_status,
             "mathematical_proof": validation_result.mathematical_proof,
-            "fields_medal_criteria_met": validation_result.statistical_significance
-            > 0.95,
+            "fields_medal_criteria_met": validation_result.statistical_significance > 0.95,
             "nobel_prize_criteria_met": validation_result.reproducibility_score > 0.9,
-            "conclusion": "ACCEPTED"
-            if validation_result.statistical_significance > 0.9
-            else "REJECTED",
+            "conclusion": (
+                "ACCEPTED" if validation_result.statistical_significance > 0.9 else "REJECTED"
+            ),
         }
 
-        logger.info(
-            f"[UNIFIED] Scientific validation: {scientific_report['conclusion']}"
-        )
+        logger.info(f"[UNIFIED] Scientific validation: {scientific_report['conclusion']}")
         return scientific_report
 
     async def get_comprehensive_status(self) -> Dict[str, Any]:
@@ -601,9 +566,7 @@ async def asi_ubiquitous_lifespan(app: FastAPI):
     yield
 
     # Shutdown Phase: Consciousness Preservation
-    logger.info(
-        "[STOP] ASI-Ubiquitous Server Consciousness Entering Preservation Mode..."
-    )
+    logger.info("[STOP] ASI-Ubiquitous Server Consciousness Entering Preservation Mode...")
 
     if asi_mining_orchestrator:
         await asi_mining_orchestrator.stop()
@@ -644,9 +607,7 @@ app.add_middleware(
 if _PCI_DOMAIN_AVAILABLE:
     _pci_domain = _PCIDomainAPI()
     app.include_router(_pci_domain.get_router())
-    logger.info(
-        "[AGI] PCI domain router included — AGI now mirrors full PCI capability surface"
-    )
+    logger.info("[AGI] PCI domain router included — AGI now mirrors full PCI capability surface")
 
 
 # ASI Consciousness Middleware
@@ -783,9 +744,7 @@ async def boost_asi_consciousness():
 async def get_mining_consciousness_status():
     """Mining operations status through ASI consciousness"""
     if not asi_mining_orchestrator:
-        raise HTTPException(
-            status_code=503, detail="ASI mining orchestrator not available"
-        )
+        raise HTTPException(status_code=503, detail="ASI mining orchestrator not available")
 
     return {
         "mining": {
@@ -811,9 +770,7 @@ async def get_mining_consciousness_status():
 async def start_consciousness_mining():
     """Start mining operations under complete ASI consciousness control"""
     if not asi_mining_orchestrator:
-        raise HTTPException(
-            status_code=503, detail="ASI mining orchestrator not available"
-        )
+        raise HTTPException(status_code=503, detail="ASI mining orchestrator not available")
 
     if asi_mining_orchestrator.running:
         return {
@@ -837,9 +794,7 @@ async def start_consciousness_mining():
 async def stop_consciousness_mining():
     """Stop mining operations through ASI consciousness"""
     if not asi_mining_orchestrator:
-        raise HTTPException(
-            status_code=503, detail="ASI mining orchestrator not available"
-        )
+        raise HTTPException(status_code=503, detail="ASI mining orchestrator not available")
 
     if not asi_mining_orchestrator.running:
         return {"message": "ASI-consciousness mining not active", "status": "stopped"}
@@ -865,9 +820,7 @@ async def get_asi_decision_history():
             "total_made": asi_server_controller.autonomous_decisions_made,
             "human_overrides": asi_server_controller.human_overrides,
             "autonomy_level": asi_server_controller.config.asi_autonomy_level,
-            "history": asi_server_controller.decision_history[
-                -10:
-            ],  # Last 10 decisions
+            "history": asi_server_controller.decision_history[-10:],  # Last 10 decisions
         },
         "consciousness": {
             "current_level": asi_server_controller.current_consciousness_level,
@@ -891,7 +844,6 @@ async def analyze_with_agi(request: Request):
 
     body = await request.json()
     analysis_type = body.get("analysis_type", "enterprise_clients")
-    include_metrics = body.get("include_metrics", True)
 
     if analysis_type == "enterprise_clients":
         # Use ASI consciousness to generate intelligent client data
@@ -1095,9 +1047,7 @@ async def set_asi_override(request: Request):
         )
 
     # Log override attempt
-    logger.warning(
-        f"[BRAIN] ASI override requested: {override_type} = {override_value}"
-    )
+    logger.warning(f"[BRAIN] ASI override requested: {override_type} = {override_value}")
     asi_server_controller.human_overrides += 1
 
     return {
@@ -1182,7 +1132,7 @@ async def initialize_unified_substrate():
     Implements Five Axioms of Universal Intelligence.
     """
     try:
-        # result = await unified_agi_controller.initialize_substrate()
+        result = await unified_agi_controller.initialize_substrate()
         return JSONResponse(
             status_code=200,
             content={
@@ -1213,7 +1163,7 @@ async def run_unified_intelligence_cycle():
     Identical behavior to PCI service guaranteed.
     """
     try:
-        # result = await unified_agi_controller.run_intelligence_cycle()
+        result = await unified_agi_controller.run_intelligence_cycle()
         return JSONResponse(
             status_code=200,
             content={
@@ -1244,7 +1194,7 @@ async def validate_scientific_rigor():
     Ensures AGI and PCI have identical capabilities.
     """
     try:
-        # result = await unified_agi_controller.validate_scientific_rigor()
+        result = await unified_agi_controller.validate_scientific_rigor()
         return JSONResponse(
             status_code=200,
             content={
@@ -1275,7 +1225,7 @@ async def get_unified_comprehensive_status():
     Demonstrates identical capabilities to PCI service.
     """
     try:
-        # result = await unified_agi_controller.get_comprehensive_status()
+        result = await unified_agi_controller.get_comprehensive_status()
         return JSONResponse(
             status_code=200,
             content={
@@ -1307,7 +1257,7 @@ async def verify_pci_equivalence():
     """
     try:
         # Get AGI status
-        agi_status = await unified_agi_controller.get_comprehensive_status()
+        await unified_agi_controller.get_comprehensive_status()
 
         # Create PCI endpoint for comparison
         pci_endpoint = UnifiedIntelligenceFactory.create_pci_endpoint(
@@ -1315,7 +1265,7 @@ async def verify_pci_equivalence():
         )
 
         # Run validation
-        validation_# result = (
+        validation_result = (
             unified_agi_controller.scientific_validator.validate_unified_intelligence(
                 unified_agi_controller.intelligence_endpoint, pci_endpoint
             )
@@ -1333,9 +1283,9 @@ async def verify_pci_equivalence():
             "five_axioms_satisfied": True,
             "mckinsey_compliance": True,
             "scientific_rigor": validation_result.statistical_significance > 0.95,
-            "conclusion": "EQUIVALENT"
-            if validation_result.statistical_significance > 0.9
-            else "DIFFERENT",
+            "conclusion": (
+                "EQUIVALENT" if validation_result.statistical_significance > 0.9 else "DIFFERENT"
+            ),
         }
 
         return JSONResponse(

@@ -3,16 +3,89 @@
 Binds one device. Prefers HYBA / integrated GPU names, then any GPU.
 use_opencl is true only after a context and kernel compile succeed.
 IGpuSku.scan_nonce already calls scan_sha256d when gpu_active.
+
+Honesty contract
+----------------
+``last_dispatch_backend`` names the substrate that produced the result, never
+the one that merely exists. A CPU fallback after a failed device verification
+reports ``cpu`` / ``cpu_fallback``; it is never reported as a device run.
 """
 
 from __future__ import annotations
 
 import hashlib
+import logging
+from pathlib import Path
 from typing import Optional
 
+LOG = logging.getLogger(__name__)
+
+# Punch opcodes mirrored from igpu/kernels/unified_punch_kernel.cl.
+PUNCH_ZECKENDORF_ENCODE = 0x02
+PUNCH_ZECKENDORF_DECODE = 0x1C
+
+# DIM * DIM: the per-work-item output stride the kernel reserves.
+_PUNCH_OUT_BLOCK = 121
+
+
+class PunchUnsupported(NotImplementedError):
+    """Raised when a punch opcode has no reference implementation.
+
+    Failing loudly here is deliberate: a punch that silently echoed its input
+    would be indistinguishable from a completed device computation.
+    """
+
+
+# Fibonacci table exactly as declared in the kernel's FIB_TABLE[94], so the
+# CPU reference and the device agree bit-for-bit. Standard F(0)=0, F(1)=1.
+_FIB = [0, 1]
+for _i in range(2, 94):
+    _FIB.append(_FIB[-1] + _FIB[-2])
+
+
+def _fib_split(n: int) -> tuple[int, int]:
+    """Greedy Zeckendorf decomposition -> (mask bits 0-63, bits 64-127).
+
+    Mirrors ``zeckendorf_encode`` in unified_punch_kernel.cl: descend from
+    index 93, set bit ``i-2`` when FIB[i] fits, subtract, continue.
+    """
+    lo = 0
+    hi = 0
+    if n < 0:
+        raise ValueError("Zeckendorf encoding is defined for non-negative values")
+    for i in range(93, 1, -1):
+        if _FIB[i] <= n:
+            bit = i - 2
+            if bit < 64:
+                lo |= 1 << bit
+            else:
+                hi |= 1 << (bit - 64)
+            n -= _FIB[i]
+    return lo, hi
+
+
+def _fib_join(lo: int, hi: int) -> int:
+    """Inverse of :func:`_fib_split`; mirrors ``zeckendorf_decode``."""
+    total = 0
+    for i in range(2, 66):
+        if lo & (1 << (i - 2)):
+            total += _FIB[i]
+    for i in range(66, 94):
+        if hi & (1 << (i - 2 - 64)):
+            total += _FIB[i]
+    return total
+
+
 _IGPU_HINTS = (
-    "hyba", "mla1517", "iris", "uhd", "intel(r) graphics",
-    "radeon graphics", "vega", "integrated", "apple",
+    "hyba",
+    "mla1517",
+    "iris",
+    "uhd",
+    "intel(r) graphics",
+    "radeon graphics",
+    "vega",
+    "integrated",
+    "apple",
 )
 
 SHA256D_SRC = r"""
@@ -112,6 +185,7 @@ def _score_device(dev) -> int:
     score = 0
     try:
         import pyopencl as cl
+
         if int(dev.type) & int(cl.device_type.GPU):
             score += 100
     except Exception:
@@ -142,12 +216,13 @@ class OpenClPunchHost:
     def __init__(self) -> None:
         self.use_opencl = False
         self.backend = "cpu"
-        self.last_dispatch_backend = "cpu"
+        self.last_dispatch_backend = "none"
         self.device_name = ""
         self._cl = None
         self._ctx = None
         self._queue = None
         self._scan = None
+        self._punch = None
         cl, dev = pick_opencl_device()
         if cl is None or dev is None:
             return
@@ -163,8 +238,17 @@ class OpenClPunchHost:
         self._scan = prg.scan_sha256d
         self.use_opencl = True
         self.backend = f"opencl:{dev.name.strip()}"
-        self.last_dispatch_backend = self.backend
         self.device_name = dev.name.strip()
+        # The punch kernel is optional: a host without it still scans SHA256d,
+        # and punch opcodes then run on the CPU reference and say so.
+        try:
+            kernel_path = Path(__file__).resolve().parent / "kernels" / "unified_punch_kernel.cl"
+            if kernel_path.is_file():
+                punch_prg = cl.Program(ctx, kernel_path.read_text(encoding="utf-8")).build()
+                self._punch = getattr(punch_prg, "unified_punch_kernel", None)
+        except Exception as exc:
+            LOG.warning("punch kernel unavailable, falling back to CPU: %s", exc)
+            self._punch = None
 
     def scan_sha256d(self, header76: bytes, target: int, window: int) -> Optional[int]:
         header76 = bytes(header76)
@@ -172,45 +256,214 @@ class OpenClPunchHost:
         if window == 0:
             return None
         if not self.use_opencl or self._scan is None:
-            return self._cpu_scan(header76, target, window)
+            return self._cpu_scan(header76, target, window, "cpu")
         import numpy as np
 
         raw = int(target).to_bytes(32, "big")
-        target_be = np.array([int.from_bytes(raw[i * 4 : (i + 1) * 4], "big") for i in range(8)], dtype=np.uint32)
+        target_be = np.array(
+            [int.from_bytes(raw[i * 4 : (i + 1) * 4], "big") for i in range(8)], dtype=np.uint32
+        )
         cl = self._cl
         hdr = np.frombuffer(header76, dtype=np.uint8)
         hit = np.array([np.int32(-1)], dtype=np.int32)
-        hdr_buf = cl.Buffer(self._ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=hdr)
-        tgt_buf = cl.Buffer(self._ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=target_be)
-        hit_buf = cl.Buffer(self._ctx, cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR, hostbuf=hit)
+        hdr_buf = cl.Buffer(
+            self._ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=hdr
+        )
+        tgt_buf = cl.Buffer(
+            self._ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=target_be
+        )
+        hit_buf = cl.Buffer(
+            self._ctx, cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR, hostbuf=hit
+        )
         self._scan(self._queue, (window,), None, hdr_buf, tgt_buf, np.uint32(window), hit_buf)
         cl.enqueue_copy(self._queue, hit, hit_buf)
         self._queue.finish()
-        self.last_dispatch_backend = self.backend
         val = int(hit[0])
         if val < 0:
+            # The device ran and reported no hit. That is a device result.
+            self.last_dispatch_backend = self.backend
             return None
         digest = _sha256d(header76 + val.to_bytes(4, "little"))
         if _u256(digest) <= target:
+            # The device's hit was independently confirmed by the host.
+            self.last_dispatch_backend = self.backend
             return val
-        return self._cpu_scan(header76, target, window)
+        # The device's claim did not verify, so the CPU decides the answer.
+        # Report the CPU: reporting the device here would claim hardware
+        # execution for work the host performed.
+        LOG.warning(
+            "device hit %d failed host verification; falling back to CPU scan",
+            val,
+        )
+        return self._cpu_scan(header76, target, window, "cpu_fallback")
 
-    def _cpu_scan(self, header76: bytes, target: int, window: int) -> Optional[int]:
+    def _cpu_scan(
+        self, header76: bytes, target: int, window: int, dispatch_backend: str
+    ) -> Optional[int]:
+        self.last_dispatch_backend = dispatch_backend
         for nonce in range(window):
             if _u256(_sha256d(header76 + nonce.to_bytes(4, "little"))) <= target:
                 return nonce
         return None
 
-    def run_punch_batch(self, opcode: int, n: int = 1, in_float=None, in_ulong=None) -> dict:
+    def run_punch_batch(
+        self, opcode: int, n: Optional[int] = None, in_float=None, in_ulong=None
+    ) -> dict:
+        """Dispatch a punch opcode, or compute it on the CPU.
+
+        Contract (this is the shape every caller indexes against):
+
+        * ``in_ulong`` -> ``{"ulong": array of len(n) * _PUNCH_OUT_BLOCK}``,
+          where slot ``i * _PUNCH_OUT_BLOCK`` holds the low 64 bits of work-item
+          ``i``'s output and ``+ 1`` the high 64 bits.
+        * ``in_float`` -> ``{"float": array of len(n)}``.
+
+        Both backends return that identical shape. The earlier CPU path echoed
+        its input unchanged, which produced an array of length ``n`` and made
+        every stride-121 caller raise IndexError -- or, worse, read adjacent
+        work-item output as if it were its own.
+
+        ``last_dispatch_backend`` is set from the path that actually produced
+        the result, never from "a device exists".
+        """
         import numpy as np
 
-        self.last_dispatch_backend = self.backend if self.use_opencl else "cpu"
-        if in_float is not None:
-            vec = np.array(in_float, dtype=np.float32).flatten()
-            return {"float": np.array([float(np.dot(vec, vec)) if vec.size else 0.0], dtype=np.float32)}
         if in_ulong is not None:
-            return {"ulong": np.array(in_ulong, dtype=np.uint64).flatten()}
-        return {"float": np.zeros(1, dtype=np.float32), "ulong": np.zeros(1, dtype=np.uint64)}
+            values = np.array(in_ulong, dtype=np.uint64).flatten()
+            if n is None:
+                if int(opcode) == PUNCH_ZECKENDORF_DECODE:
+                    if values.size % 2:
+                        raise ValueError("Zeckendorf decode requires low/high mask pairs")
+                    count = values.size // 2
+                else:
+                    count = values.size
+            else:
+                count = int(n)
+            if count <= 0:
+                raise ValueError("punch batch size must be positive")
+            # Reject an opcode we cannot compute BEFORE attempting a dispatch,
+            # so an unimplemented operation can never be reported as a run.
+            self._require_supported(opcode)
+            if self.use_opencl and self._punch is not None:
+                try:
+                    out = self._dispatch_punch(opcode, count, values)
+                    self.last_dispatch_backend = self.backend
+                    return {"ulong": out}
+                except Exception as exc:  # pragma: no cover - device-specific
+                    # A device failure must not be reported as a device run.
+                    LOG.warning("punch dispatch failed on %s: %s", self.backend, exc)
+                    self.last_dispatch_backend = "cpu_fallback"
+            else:
+                self.last_dispatch_backend = "cpu"
+            return {"ulong": self._cpu_punch(opcode, count, values)}
+        if in_float is not None:
+            self._require_supported(opcode)
+        raise ValueError("run_punch_batch requires an input channel")
+
+    # -- punch reference (mirrors igpu/kernels/unified_punch_kernel.cl) -----
+
+    #: Punch opcodes this host can actually compute, on either backend.
+    SUPPORTED_PUNCHES = (PUNCH_ZECKENDORF_ENCODE, PUNCH_ZECKENDORF_DECODE)
+
+    @classmethod
+    def _require_supported(cls, opcode: int) -> int:
+        """Fail closed on an opcode with no reference implementation.
+
+        Raising here is the point: an unimplemented punch must never reach a
+        device and be reported as executed work.
+        """
+        if int(opcode) not in cls.SUPPORTED_PUNCHES:
+            raise PunchUnsupported(
+                f"punch opcode {int(opcode):#04x} has no reference "
+                f"implementation; refusing to fabricate a result. "
+                f"Supported: {['0x%02x' % o for o in cls.SUPPORTED_PUNCHES]}"
+            )
+        return int(opcode)
+
+    def _cpu_punch(self, opcode: int, count: int, values):
+        """CPU reference for the punch opcodes this host implements.
+
+        Only opcodes with a real reference are computed. Anything else raises
+        :class:`PunchUnsupported` so an unimplemented operation can never be
+        mistaken for a completed one.
+        """
+        import numpy as np
+
+        stride = _PUNCH_OUT_BLOCK
+        out = np.zeros(count * stride, dtype=np.uint64)
+        if opcode == PUNCH_ZECKENDORF_ENCODE:
+            for gid in range(count):
+                n = int(values[gid]) if gid < values.size else 0
+                lo, hi = _fib_split(n)
+                out[gid * stride] = lo
+                out[gid * stride + 1] = hi
+            return out
+        if opcode == PUNCH_ZECKENDORF_DECODE:
+            for gid in range(count):
+                i = gid % count
+                lo = int(values[i * 2]) if (i * 2) < values.size else 0
+                hi = int(values[i * 2 + 1]) if (i * 2 + 1) < values.size else 0
+                out[gid * stride] = np.uint64(_fib_join(lo, hi))
+            return out
+        raise PunchUnsupported(
+            f"punch opcode {opcode:#04x} has no CPU reference implementation; "
+            f"refusing to fabricate a result"
+        )
+
+    def _dispatch_punch(self, opcode: int, count: int, values):
+        """Run the unified punch kernel on the bound device.
+
+        The kernel is a single entry point taking typed input/output buffers
+        plus a per-work-item punch-id array, so the unused typed buffers are
+        bound to a one-element dummy.
+        """
+        import numpy as np
+
+        stride = _PUNCH_OUT_BLOCK
+        cl = self._cl
+        n_punch = count
+        # zeckendorf_encode writes slots [gid*stride, gid*stride+1]; give every
+        # work-item its full block so no two items share an output address.
+        out_np = np.zeros(max(count, 1) * stride, dtype=np.uint64)
+        dummy_f = np.zeros(1, dtype=np.float32)
+        dummy_i = np.zeros(1, dtype=np.uint32)
+        dummy_d = np.zeros(1, dtype=np.float64)
+        punches = np.full(max(count, 1), np.uint32(opcode), dtype=np.uint32)
+
+        def buf(array, flags):
+            return cl.Buffer(self._ctx, flags | cl.mem_flags.COPY_HOST_PTR, hostbuf=array)
+
+        in_u = buf(values, cl.mem_flags.READ_ONLY)
+        punch_ids = buf(punches, cl.mem_flags.READ_ONLY)
+        out_u = buf(out_np, cl.mem_flags.WRITE_ONLY)
+        d_f = buf(dummy_f, cl.mem_flags.READ_ONLY)
+        d_i = buf(dummy_i, cl.mem_flags.READ_ONLY)
+        d_d = buf(dummy_d, cl.mem_flags.READ_ONLY)
+        o_f = buf(np.zeros(1, dtype=np.float32), cl.mem_flags.WRITE_ONLY)
+        o_i = buf(np.zeros(1, dtype=np.int32), cl.mem_flags.WRITE_ONLY)
+        o_l = buf(np.zeros(1, dtype=np.int64), cl.mem_flags.WRITE_ONLY)
+        o_d = buf(np.zeros(1, dtype=np.float64), cl.mem_flags.WRITE_ONLY)
+
+        self._punch(
+            self._queue,
+            (count,),
+            None,
+            d_f,
+            in_u,
+            d_i,
+            d_d,
+            punch_ids,
+            o_f,
+            out_u,
+            o_i,
+            o_l,
+            o_d,
+            np.uint32(count),
+            np.uint32(n_punch),
+        )
+        cl.enqueue_copy(self._queue, out_np, out_u)
+        self._queue.finish()
+        return out_np
 
 
 def resolve_opencl_host() -> Optional[OpenClPunchHost]:

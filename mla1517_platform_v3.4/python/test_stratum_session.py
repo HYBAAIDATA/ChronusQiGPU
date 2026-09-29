@@ -1,13 +1,19 @@
 """TCP Stratum session: handshake, header, submit, drop, reconnect."""
+
 from __future__ import annotations
 
 import asyncio
 import json
 import unittest
 
-from manifold_pool_coordinator import PoolEndpoint, StratumClient, StratumProtocolError
+from manifold_pool_coordinator import (
+    ManifoldPoolCoordinator,
+    PoolEndpoint,
+    StratumAuthorizationError,
+    StratumClient,
+    StratumProtocolError,
+)
 from mla1517.mining.stratum_adapter import StaleJobError, sha256d
-
 
 NOTIFY = [
     "job-tcp",
@@ -31,6 +37,7 @@ class _Pool:
         self.submits: list[list] = []
         self.connections = 0
         self.reject_next_authorize = False
+        self.drop_submit_response = False
 
     async def handle(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         self.connections += 1
@@ -57,6 +64,8 @@ class _Pool:
             await writer.drain()
             submit = json.loads(await reader.readline())
             self.submits.append(submit["params"])
+            if self.drop_submit_response:
+                return
             writer.write(_line({"id": submit["id"], "result": True, "error": None}))
             await writer.drain()
         finally:
@@ -75,11 +84,13 @@ class StratumSessionTests(unittest.TestCase):
         pool = _Pool()
         server = await asyncio.start_server(pool.handle, "127.0.0.1", 0)
         port = server.sockets[0].getsockname()[1]
+        snapshots: list[dict] = []
         client = StratumClient(
             PoolEndpoint("127.0.0.1", port, "local"),
             username="PYTHIA.001",
             password="x",
             request_timeout=2.0,
+            status_sink=snapshots.append,
         )
         try:
             await client.connect()
@@ -98,8 +109,21 @@ class StratumSessionTests(unittest.TestCase):
             self.assertIs(accepted, True)
             self.assertEqual(pool.submits[0][0], "PYTHIA.001")
             self.assertEqual(pool.submits[0][1], "job-tcp")
+            self.assertTrue(
+                any(
+                    snapshot["connected"] and not snapshot["primary"]["authorized"]
+                    for snapshot in snapshots
+                )
+            )
+            self.assertTrue(any(snapshot["state"] == "READY" for snapshot in snapshots))
+            self.assertTrue(
+                any(snapshot["submission"]["state"] == "ACCEPTED" for snapshot in snapshots)
+            )
             deadline = asyncio.get_running_loop().time() + 1.0
-            while client.proof_adapter.subscription is not None and asyncio.get_running_loop().time() < deadline:
+            while (
+                client.proof_adapter.subscription is not None
+                and asyncio.get_running_loop().time() < deadline
+            ):
                 await asyncio.sleep(0.01)
             self.assertIsNone(client.proof_adapter.subscription)
             with self.assertRaises(StaleJobError):
@@ -107,6 +131,32 @@ class StratumSessionTests(unittest.TestCase):
             await client.connect()
             self.assertEqual(client.proof_adapter.current_job.job_id, "job-tcp")
             self.assertEqual(pool.connections, 2)
+        finally:
+            await client.close()
+            server.close()
+            await server.wait_closed()
+
+    def test_lost_submit_response_is_outcome_unknown(self) -> None:
+        asyncio.run(self._unknown_submit())
+
+    async def _unknown_submit(self) -> None:
+        pool = _Pool()
+        pool.drop_submit_response = True
+        server = await asyncio.start_server(pool.handle, "127.0.0.1", 0)
+        port = server.sockets[0].getsockname()[1]
+        client = StratumClient(
+            PoolEndpoint("127.0.0.1", port, "local"),
+            username="PYTHIA.001",
+            password="x",
+            request_timeout=2.0,
+        )
+        try:
+            await client.connect()
+            with self.assertRaises(ConnectionError):
+                await client.submit(["PYTHIA.001", "job-tcp", "00000000", "65abcdef", "00000001"])
+            snapshot = client.status_snapshot()
+            self.assertEqual(snapshot["submission"]["state"], "OUTCOME_UNKNOWN")
+            self.assertEqual(snapshot["counters"]["unknown"], 1)
         finally:
             await client.close()
             server.close()
@@ -135,6 +185,32 @@ class StratumSessionTests(unittest.TestCase):
             await client.close()
             server.close()
             await server.wait_closed()
+
+    def test_all_authorization_failures_raise_hard_fault(self) -> None:
+        asyncio.run(self._all_auth_failures())
+
+    async def _all_auth_failures(self) -> None:
+        pools = [_Pool(), _Pool()]
+        for pool in pools:
+            pool.reject_next_authorize = True
+        servers = [await asyncio.start_server(pool.handle, "127.0.0.1", 0) for pool in pools]
+        endpoints = [
+            PoolEndpoint("127.0.0.1", server.sockets[0].getsockname()[1], f"local-{index}")
+            for index, server in enumerate(servers)
+        ]
+        coordinator = ManifoldPoolCoordinator(
+            endpoints,
+            username="PYTHIA.001",
+            password="x",
+        )
+        try:
+            with self.assertRaises(StratumAuthorizationError):
+                await coordinator.connect_with_failover()
+            self.assertEqual([pool.connections for pool in pools], [1, 1])
+        finally:
+            for server in servers:
+                server.close()
+                await server.wait_closed()
 
 
 if __name__ == "__main__":

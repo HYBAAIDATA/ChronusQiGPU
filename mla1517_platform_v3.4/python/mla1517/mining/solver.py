@@ -69,9 +69,11 @@ class M32SearchSolver:
         return self._candidate_ordering
 
     def set_lane_start_offset(self, preferred_face: int) -> None:
-        """Sets the starting lane for the 32-face sweep. The lane
-        ordering is a cyclic rotation of the canonical face
-        order; the underlying search space is unchanged."""
+        """Set the starting lane for the 32-face sweep.
+
+        The lane ordering is a cyclic rotation of the selected complete order;
+        the underlying search space is unchanged.
+        """
         if (
             isinstance(preferred_face, bool)
             or not isinstance(preferred_face, int)
@@ -79,6 +81,10 @@ class M32SearchSolver:
         ):
             raise ValueError("preferred_face must be an integer in [0, 31]")
         self._lane_start_offset = preferred_face
+
+    def clear_lane_start_offset(self) -> None:
+        """Remove a stale TOE/memory start-lane preference between jobs."""
+        self._lane_start_offset = None
 
     def get_lane_start_offset(self) -> int:
         """Return the configured starting lane (0 when no bias is applied)."""
@@ -182,8 +188,12 @@ class M32SearchSolver:
         budget: int,
         lane_order: Iterable[int] | None = None,
         scale_index: int = 10,
+        start_nonce: int = 0,
     ) -> SolveResult:
-        """Search the exact negotiated template, preserving its share target."""
+        """Search the exact negotiated template, preserving its share target.
+
+        ``start_nonce`` must be lane-aligned; the sweep never wraps uint32.
+        """
         from lucas.core import lucas
 
         require_lucas_execution_scale(scale_index)
@@ -191,10 +201,14 @@ class M32SearchSolver:
             raise ValueError("complete negotiated header and uint256 target required")
         if type(budget) is not int or not 0 < budget <= lucas(scale_index):
             raise ValueError("search budget exceeds the active Lucas rung")
+        if type(start_nonce) is not int or start_nonce < 0 or start_nonce % LANES:
+            raise ValueError("start_nonce must be a lane-aligned uint32")
+        if start_nonce + -(-budget // LANES) * LANES > 1 << 32:
+            raise ValueError("search range would wrap the uint32 nonce space")
         started = time.perf_counter_ns()
         attempts = 0
         winner = lane_found = None
-        for nonce, lane in self.candidates(0, budget, lane_order):
+        for nonce, lane in self.candidates(start_nonce, budget, lane_order):
             attempts += 1
             self._lane_attempts[self.lane_index.slot(lane)] += 1
             if check_pow(header[:76] + struct.pack("<I", nonce), target):

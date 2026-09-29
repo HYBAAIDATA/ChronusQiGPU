@@ -16,15 +16,15 @@
   "pr": "replay-test",
   "replay": {
     "agent_versions": {
-      "pipeline": "d68aeabfe13a2b787c2150085a3c0f2e0af248a0444198d3e252299a25fc1546",
-      "roles": "0938781cdbf6c52dbf2e83edd09ce50f9b9769694d1ba29e2601bcd9b1149ed0",
-      "verifiers": "93b71e1e24fe9600f7c26f724f88b318c5f4484f8405e490277b023cb897c7c2"
+      "pipeline": "56dd4ef4cd4437116a57b36fd3cbc09546fb3172bbb80339f7ce202c5ab6bac9",
+      "roles": "8dbb91c42709f630dce0c021b4afac70a4b9a5e8b3b1c2edc1c1fbb380f0ee29",
+      "verifiers": "42c36eb9c429fcfb6a7e50c63bd640bc8401bc856be3fe0282cfdcff6f93b003"
     },
     "lemma_signoff_sha": "ba98e4c1445aea474b43f02513e0c5cf694ee9feb4db02e2bf8c141e35abbd4b",
     "seed": 1517,
-    "substrate_freeze_sha": "2117cca1ec033b341b3828d9fa965088133a0f7f72a2e4ba24d7b26e73a84f0c"
+    "substrate_freeze_sha": "945de58ae8c5ab68d8fe073a4ca778d24f160b1c8ef19e772bd1c050b52e166d"
   },
-  "repo_sha": "b5a0fd4cf5211c441691cb529bd5d529e6dae295",
+  "repo_sha": "9e0522e6b9a5c7047746e4fec3f7d31f549532d3",
   "theorem_proven": false,
   "verdict": {
     "reason": "r",

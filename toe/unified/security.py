@@ -22,6 +22,12 @@ class SecurityModel:
         self.actor = "anonymous"
 
     def grant(self, name: str, role: str) -> None:
+        # Role changes are themselves an authorized action: once any role is
+        # provisioned, only a caller holding the grant capability may grant —
+        # otherwise any caller could grant itself admin and the whole table
+        # is decoration. The empty table is the one-time bootstrap window.
+        if self.enforced and self._roles:
+            self.authorize("grant")
         if role not in ROLES:
             raise ValueError(f"unknown role {role}")
         self._roles[name] = role

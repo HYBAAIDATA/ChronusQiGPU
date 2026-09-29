@@ -139,9 +139,7 @@ class AdaptiveRateLimiter:
 
     def __init__(self, config: RateLimitConfig):
         self.config = config
-        self.request_timestamps: deque = deque(
-            maxlen=int(config.requests_per_second * 2)
-        )
+        self.request_timestamps: deque = deque(maxlen=int(config.requests_per_second * 2))
         self.active_connections = 0
         self.lock = threading.RLock()
         self.burst_capacity = 0
@@ -262,9 +260,7 @@ class PriorityRequestQueue:
                 metric = self.metrics[request_id]
                 metric.completed_at = time.time()
                 if metric.started_at:
-                    metric.response_time_ms = (
-                        metric.completed_at - metric.started_at
-                    ) * 1000
+                    metric.response_time_ms = (metric.completed_at - metric.started_at) * 1000
 
                 if error:
                     metric.status = RequestStatus.FAILED
@@ -285,14 +281,10 @@ class PriorityRequestQueue:
     def get_metrics(self) -> Dict[str, Any]:
         """Get queue metrics"""
         with self.lock:
-            completed = [
-                m for m in self.metrics.values() if m.status == RequestStatus.COMPLETED
-            ]
+            completed = [m for m in self.metrics.values() if m.status == RequestStatus.COMPLETED]
 
             if completed:
-                avg_response = sum(m.response_time_ms for m in completed) / len(
-                    completed
-                )
+                avg_response = sum(m.response_time_ms for m in completed) / len(completed)
                 p95_response = sorted([m.response_time_ms for m in completed])[
                     int(len(completed) * 0.95)
                 ]
@@ -372,15 +364,14 @@ class ConnectionPool:
             if not self.active_connections:
                 return {"active": 0, "capacity": self.max_connections, "utilization": 0}
 
-            avg_requests = sum(
-                c["request_count"] for c in self.active_connections.values()
-            ) / len(self.active_connections)
+            avg_requests = sum(c["request_count"] for c in self.active_connections.values()) / len(
+                self.active_connections
+            )
 
             return {
                 "active": len(self.active_connections),
                 "capacity": self.max_connections,
-                "utilization": (len(self.active_connections) / self.max_connections)
-                * 100,
+                "utilization": (len(self.active_connections) / self.max_connections) * 100,
                 "avg_requests_per_connection": avg_requests,
             }
 
@@ -502,9 +493,9 @@ class HighCapacityAPIGateway:
 
                 # Execute handler if provided
                 if handler:
-                    # result = handler(req_data)
+                    result = handler(req_data)
                 else:
-                    # result = {"processed": True, "data": req_data}
+                    result = {"processed": True, "data": req_data}
 
                 queue.mark_completed(req_id)
 

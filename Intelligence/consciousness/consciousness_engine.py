@@ -160,21 +160,6 @@ class ConsciousnessEngine:
                 emergence_coefficient,
                 self.CONSCIOUSNESS_THRESHOLD,
             )
-            # Publish consciousness event via orchestrator
-            try:
-                from python_backend.core_modules.euclid_orchestrator import (
-                    SchoolName,
-                    EventType,
-                )
-
-                self._orchestrator.publish(
-                    SchoolName.SECURITY_GOVERNANCE,
-                    "consciousness_threshold_crossed",
-                    {"phi": emergence_coefficient, "cycle": self._cycle_count},
-                    EventType.EMERGENCE_SIGNAL,
-                )
-            except Exception:
-                pass
 
         return result
 

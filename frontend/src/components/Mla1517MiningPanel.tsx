@@ -1,15 +1,21 @@
 import React from "react";
 import {
   Activity,
+  CheckCircle2,
   CircuitBoard,
+  Circle,
   Cpu,
   Fingerprint,
   Gauge,
   Layers,
+  LoaderCircle,
+  Network,
   ShieldAlert,
   Waypoints,
+  XCircle,
 } from "lucide-react";
 import type { MlaStatus, ReadyToMine, WorkerPublic } from "../lib/status";
+import { stratumAlert, stratumStages } from "../lib/stratum";
 import { RuntimeControlPanel } from "./RuntimeControlPanel";
 import { SystemFabricPanel } from "./SystemFabricPanel";
 import { TelemetryPanel } from "./TelemetryPanel";
@@ -45,6 +51,100 @@ const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, 
 );
 
 const Empty = () => <span className="text-[#6b7c93] lowercase">{NOT_REPORTED}</span>;
+
+const StratumOperationalPanel: React.FC<{ status: MlaStatus["stratum"] }> = ({ status }) => {
+  const primary = status?.primary;
+  const job = status?.job;
+  const submission = status?.submission;
+  const alert = stratumAlert(status);
+  const stages = stratumStages(status);
+  const target = job?.share_target;
+  const age = job?.age_ms;
+
+  return (
+    <Card title="Stratum operations" icon={<Network className="w-4 h-4" />}>
+      {alert ? (
+        <div className="mb-4 flex items-center gap-2 border-l-2 border-[#df1b41] bg-[rgba(223,27,65,0.06)] px-3 py-2 text-[11px] font-telemetry-mono text-[#b4233c]">
+          <ShieldAlert className="h-4 w-4 shrink-0" />
+          {alert}
+        </div>
+      ) : null}
+
+      <div className="grid grid-cols-2 gap-x-5 lg:grid-cols-4">
+        <Field label="State">{status?.state ?? <Empty />}</Field>
+        <Field label="Transport">{primary?.transport ?? <Empty />}</Field>
+        <Field label="Subscription">{primary?.subscribed === true ? "confirmed" : <Empty />}</Field>
+        <Field label="Authorization">
+          {primary?.authorized === true ? "confirmed" : <Empty />}
+        </Field>
+        <Field label="Generation">
+          {job?.generation != null ? `#${job.generation}` : <Empty />}
+        </Field>
+        <Field label="Job age">
+          {typeof age === "number" ? `${(age / 1000).toFixed(1)}s` : <Empty />}
+        </Field>
+        <Field label="Difficulty">
+          {job?.difficulty != null ? String(job.difficulty) : <Empty />}
+        </Field>
+        <Field label="Submission">{submission?.state ?? <Empty />}</Field>
+        <Field label="Job ID">{job?.job_id ?? <Empty />}</Field>
+        <Field label="Fingerprint">
+          {job?.fingerprint ? job.fingerprint.slice(0, 16) : <Empty />}
+        </Field>
+        <Field label="Target generation">
+          {job?.target_generation != null ? `#${job.target_generation}` : <Empty />}
+        </Field>
+        <Field label="Share target">
+          {target ? (
+            <span title={target}>{`${target.slice(0, 12)}...${target.slice(-8)}`}</span>
+          ) : (
+            <Empty />
+          )}
+        </Field>
+      </div>
+
+      <div className="mt-5 grid grid-cols-4 gap-px border border-[rgba(10,37,64,0.10)] bg-[rgba(10,37,64,0.08)] sm:grid-cols-8">
+        {stages.map((stage) => {
+          const Icon =
+            stage.state === "complete"
+              ? CheckCircle2
+              : stage.state === "active"
+                ? LoaderCircle
+                : stage.state === "blocked"
+                  ? XCircle
+                  : Circle;
+          const tone =
+            stage.state === "complete"
+              ? "text-[#067647]"
+              : stage.state === "active"
+                ? "text-[#b45309]"
+                : stage.state === "blocked"
+                  ? "text-[#df1b41]"
+                  : "text-[#9aa8b8]";
+          return (
+            <div
+              key={stage.key}
+              className="flex min-h-16 flex-col items-center justify-center gap-1 bg-white px-1.5 py-2 text-center"
+            >
+              <Icon className={`h-4 w-4 ${tone}`} />
+              <span className="text-[9px] font-telemetry-mono uppercase text-[#42566f] sm:text-[10px]">
+                {stage.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-[11px] font-telemetry-mono text-[#6b7c93]">
+        <span>submitted {status?.counters?.submitted ?? 0}</span>
+        <span className="text-[#067647]">accepted {status?.counters?.accepted ?? 0}</span>
+        <span className="text-[#df1b41]">rejected {status?.counters?.rejected ?? 0}</span>
+        <span className="text-[#b45309]">unknown {status?.counters?.unknown ?? 0}</span>
+        <span>disconnects {status?.counters?.disconnects ?? 0}</span>
+      </div>
+    </Card>
+  );
+};
 
 const WorkerRow: React.FC<{ name: string; worker: WorkerPublic }> = ({ name, worker }) => {
   const stateTone =
@@ -87,8 +187,7 @@ const WorkerRow: React.FC<{ name: string; worker: WorkerPublic }> = ({ name, wor
           )}
         </span>
         <span className="text-[#6b7c93]">
-          shares{" "}
-          {shares > 0 ? <span className="text-[#0a2540]">{shares}</span> : <Empty />}
+          shares {shares > 0 ? <span className="text-[#0a2540]">{shares}</span> : <Empty />}
         </span>
       </div>
       {worker.last_error ? (
@@ -139,13 +238,11 @@ export const Mla1517MiningPanel: React.FC<PanelProps> = ({
             Operational mining console
           </p>
           <h1 className="font-serif-display mt-3 text-4xl sm:text-5xl font-semibold tracking-tight text-[#0a2540]">
-            {offline ? (
-              "Control plane unreachable."
-            ) : readyToMine ? (
-              "Ready to mine."
-            ) : (
-              "Standing by."
-            )}
+            {offline
+              ? "Control plane unreachable."
+              : readyToMine
+                ? "Ready to mine."
+                : "Standing by."}
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[#42566f]">
             {offline
@@ -171,6 +268,8 @@ export const Mla1517MiningPanel: React.FC<PanelProps> = ({
         </div>
       </section>
 
+      <StratumOperationalPanel status={status?.stratum} />
+
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Stratum identity */}
         <Card title="Stratum identity" icon={<Fingerprint className="w-4 h-4" />}>
@@ -185,11 +284,11 @@ export const Mla1517MiningPanel: React.FC<PanelProps> = ({
                 {identity.password_committed ? "committed (HMAC)" : <Empty />}
               </Field>
               <Field label="Pool link">
-                {status?.stratum?.connected ? (
+                {status?.stratum?.primary?.transport === "CONNECTED" ? (
                   <span className="text-[#067647]">connected</span>
                 ) : (
                   <span className="text-[#b45309]">
-                    {status?.stratum?.status ?? "not connected"}
+                    {status?.stratum?.state ?? "not connected"}
                   </span>
                 )}
               </Field>

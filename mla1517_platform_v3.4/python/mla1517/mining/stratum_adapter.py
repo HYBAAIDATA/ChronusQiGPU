@@ -6,6 +6,7 @@ will only return ``mining.submit`` parameters after an independent target
 check. Search ordering, TOE context, Cassini metadata, and hardware telemetry
 are not proof predicates.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -249,7 +250,11 @@ class StratumProofAdapter:
         if method == "mining.set_extranonce":
             if self.subscription is None:
                 raise StratumAdapterError("mining.set_extranonce before subscribe")
-            if not isinstance(params, Sequence) or isinstance(params, (str, bytes)) or len(params) != 2:
+            if (
+                not isinstance(params, Sequence)
+                or isinstance(params, (str, bytes))
+                or len(params) != 2
+            ):
                 raise StratumAdapterError("mining.set_extranonce requires extranonce1 and size")
             self.subscription = self.parse_subscribe_result([[], params[0], params[1]])
             self._extranonce2_counter = 0
@@ -280,6 +285,7 @@ class StratumProofAdapter:
     def drop_session(self) -> None:
         """A dropped socket invalidates the handshake and every job."""
         self.subscription = None
+        self.target = None
         self.current_job = None
         self.jobs.clear()
         self._extranonce2_counter = 0
@@ -346,7 +352,9 @@ class StratumProofAdapter:
     def _check_cassini(self, job: StratumJob, extranonce2: str, nonce: str) -> None:
         if self.require_cassini_seal and not job.cassini_seal:
             raise CassiniSealError("required Cassini seal is absent")
-        if self.cassini_validator is not None and not self.cassini_validator(job, extranonce2, nonce):
+        if self.cassini_validator is not None and not self.cassini_validator(
+            job, extranonce2, nonce
+        ):
             raise CassiniSealError("Cassini seal validator rejected the candidate")
 
     def validate_candidate(
@@ -369,7 +377,11 @@ class StratumProofAdapter:
             raise TargetError("candidate SHA256d digest does not meet negotiated target")
         return ProofCheckedCandidate(
             job_id=job_id,
-            extranonce2=_hex(extranonce2, "extranonce2", length=(self.subscription.extranonce2_size * 2) if self.subscription else None),
+            extranonce2=_hex(
+                extranonce2,
+                "extranonce2",
+                length=(self.subscription.extranonce2_size * 2) if self.subscription else None,
+            ),
             ntime=_uint32_hex(ntime, "ntime"),
             nonce=nonce_hex,
             header=header,

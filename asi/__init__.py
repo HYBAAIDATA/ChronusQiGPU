@@ -11,35 +11,33 @@ Premium capabilities for internal use and special clients:
 This is the superintelligence layer - beyond AGI.
 """
 
-from .problem_solver import NovelProblemSolver
-from .quantum_creator import QuantumAlgorithmCreator
+from .asi_core import ASICore
+from .problem_solver import NovelProblemSolver, get_problem_solver
+from .quantum_creator import QuantumAlgorithmCreator, get_quantum_creator
 from .self_healing import SelfHealingEngine
 from .system_optimizer import SystemOptimizer
-from .web_learner import ContinuousWebLearner
+from .web_learner import ContinuousWebLearner, get_web_learner
 
 __version__ = "1.0.0"
 __all__ = [
+    "ASICore",
     "ContinuousWebLearner",
     "NovelProblemSolver",
     "QuantumAlgorithmCreator",
     "SelfHealingEngine",
     "SystemOptimizer",
     "create_asi_system",
+    "get_problem_solver",
+    "get_quantum_creator",
+    "get_web_learner",
 ]
 
 
-def create_asi_system():
-    """
-    Create complete ASI system with all superintelligence capabilities
+def create_asi_system() -> ASICore:
+    """Create the complete ASI system with all superintelligence capabilities.
 
-    Returns:
-        ASI system instance with:
-        - Self-healing
-        - Quantum algorithm creation
-        - Continuous learning
-        - Novel problem solving
-        - System optimization
+    Returns an :class:`ASICore` bundling self-healing, quantum algorithm
+    creation, continuous learning, novel problem solving and system
+    optimization behind one orchestrating object.
     """
-    from .asi_core import ASICore
-
     return ASICore()

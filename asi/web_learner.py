@@ -12,7 +12,30 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Optional
 
-from hyba_backend.api.web_research import get_research_engine, research_and_learn
+try:  # optional: the pre-consolidation web-research backend
+    from hyba_backend.api.web_research import get_research_engine, research_and_learn
+
+    RESEARCH_BACKEND_AVAILABLE = True
+except (ImportError, ModuleNotFoundError):
+    # The pre-consolidation research backend has no counterpart in this
+    # repository. Degrade to an explicitly unavailable backend rather than
+    # substituting a stub that would let a caller believe real web research
+    # happened. See hyba_compat.LegacyNamespaceRemoved.
+    RESEARCH_BACKEND_AVAILABLE = False
+
+    def get_research_engine():
+        """No research backend exists here — report unavailable, do not fake one."""
+        return None
+
+    async def research_and_learn(topic):
+        """Fail closed: with no backend, no knowledge is ever produced."""
+        return {
+            "success": False,
+            "topic": topic,
+            "reason": "web research backend unavailable in this repository",
+            "sources": [],
+        }
+
 
 logger = logging.getLogger(__name__)
 
@@ -216,9 +239,7 @@ class ContinuousWebLearner:
                 hours_since_update = (
                     datetime.now(timezone.utc) - topic.last_updated
                 ).total_seconds() / 3600
-                recency_boost = min(
-                    hours_since_update / 24, 2.0
-                )  # Max 2.0 boost after 48 hours
+                recency_boost = min(hours_since_update / 24, 2.0)  # Max 2.0 boost after 48 hours
             else:
                 recency_boost = 2.0  # Never updated
 
@@ -382,9 +403,7 @@ class ContinuousWebLearner:
             "total_sources": sum(t.sources_consulted for t in self.learning_topics),
             "topics_by_priority": {
                 priority.value: sum(
-                    1
-                    for t in self.learning_topics
-                    if t.priority == priority and not t.completed
+                    1 for t in self.learning_topics if t.priority == priority and not t.completed
                 )
                 for priority in LearningPriority
             },
@@ -393,15 +412,11 @@ class ContinuousWebLearner:
                     "topic": t.topic,
                     "priority": t.priority.value,
                     "knowledge_items": t.knowledge_items,
-                    "last_updated": (
-                        t.last_updated.isoformat() if t.last_updated else None
-                    ),
+                    "last_updated": (t.last_updated.isoformat() if t.last_updated else None),
                 }
                 for t in sorted(
                     self.learning_topics,
-                    key=lambda x: (
-                        x.last_updated or datetime.min.replace(tzinfo=timezone.utc)
-                    ),
+                    key=lambda x: (x.last_updated or datetime.min.replace(tzinfo=timezone.utc)),
                     reverse=True,
                 )[:5]
             ],

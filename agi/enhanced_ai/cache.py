@@ -49,7 +49,9 @@ class InMemoryCache:
 
     def _generate_key(self, prefix: str, *args, **kwargs) -> str:
         """Generate cache key from arguments"""
-        key_data = f"{prefix}:{json.dumps(args, sort_keys=True)}:{json.dumps(kwargs, sort_keys=True)}"
+        key_data = (
+            f"{prefix}:{json.dumps(args, sort_keys=True)}:{json.dumps(kwargs, sort_keys=True)}"
+        )
         return hashlib.md5(key_data.encode()).hexdigest()
 
     def get(self, key: str) -> Optional[Any]:
@@ -152,9 +154,7 @@ class AGICacheManager:
             @wraps(func)
             async def wrapper(*args, **kwargs):
                 # Generate cache key
-                cache_key = self.knowledge_cache._generate_key(
-                    "knowledge", query, domain
-                )
+                cache_key = self.knowledge_cache._generate_key("knowledge", query, domain)
 
                 # Check cache
                 cached = self.knowledge_cache.get(cache_key)
@@ -163,7 +163,7 @@ class AGICacheManager:
                     return cached
 
                 # Execute function
-                # result = await func(*args, **kwargs)
+                result = await func(*args, **kwargs)
 
                 # Cache result
                 self.knowledge_cache.set(cache_key, result)
@@ -191,7 +191,7 @@ class AGICacheManager:
                     return cached
 
                 # Execute function
-                # result = await func(*args, **kwargs)
+                result = await func(*args, **kwargs)
 
                 # Cache result
                 self.nlp_cache.set(cache_key, result)
@@ -221,7 +221,7 @@ class AGICacheManager:
                     return cached
 
                 # Execute function
-                # result = await func(*args, **kwargs)
+                result = await func(*args, **kwargs)
 
                 # Cache result
                 self.quantum_cache.set(cache_key, result)

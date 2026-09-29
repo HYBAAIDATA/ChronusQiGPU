@@ -12,6 +12,10 @@ class HealthMonitor:
         self.interval = interval
         self.ticks = 0
         self.retrains = 0
+        # A raising tick body must not kill the loop — the contract is that
+        # once started it keeps probing and retraining.
+        self.errors = 0
+        self.last_error: str | None = None
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
 
@@ -26,7 +30,11 @@ class HealthMonitor:
 
         def loop() -> None:
             while not self._stop.wait(self.interval):
-                self.tick_once()
+                try:
+                    self.tick_once()
+                except Exception as exc:
+                    self.errors += 1
+                    self.last_error = f"{type(exc).__name__}: {exc}"
 
         self._thread = threading.Thread(target=loop, name="toe-health", daemon=True)
         self._thread.start()

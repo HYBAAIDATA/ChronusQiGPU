@@ -79,9 +79,7 @@ class BioResonanceOracle:
                 edges.append((i, j))
                 weights.append(phi_weight)
 
-        graph_config = GraphConfig(
-            num_nodes=num_nodes, edges=edges, edge_weights=np.array(weights)
-        )
+        graph_config = GraphConfig(num_nodes=num_nodes, edges=edges, edge_weights=np.array(weights))
 
         config = SubstrateConfig(
             config_type=ConfigType.GRAPH,
@@ -118,9 +116,7 @@ class BioResonanceOracle:
         info_integration = oracle_result.best_state.metrics.info_integration
 
         # Generate 3D coordinates from optimal state
-        coordinates_3d = self._generate_3d_coordinates(
-            oracle_result.best_state, sequence
-        )
+        coordinates_3d = self._generate_3d_coordinates(oracle_result.best_state, sequence)
 
         # Generate small molecule candidate (folding key)
         folding_key = self._generate_folding_key(coordinates_3d, sequence)
@@ -157,14 +153,9 @@ class BioResonanceOracle:
             z = (i - n / 2) * 1.5  # Linear separation along z-axis
 
             # Apply quantum corrections from best state
-            if (
-                hasattr(best_state, "canonical")
-                and best_state.canonical.spectral_operators
-            ):
+            if hasattr(best_state, "canonical") and best_state.canonical.spectral_operators:
                 quantum_correction = np.mean(
-                    best_state.canonical.spectral_operators.get(
-                        "phi_weighted", np.array([1.0])
-                    )
+                    best_state.canonical.spectral_operators.get("phi_weighted", np.array([1.0]))
                 )
                 x *= 1 + 0.1 * quantum_correction
                 y *= 1 + 0.1 * quantum_correction
@@ -191,9 +182,7 @@ class BioResonanceOracle:
             "molecular_formula": "C42H52N8O6",  # Optimized for amyloid binding
             "binding_sites": binding_sites,
             "mechanism": "Beta-sheet breaker with phi-resonance stabilization",
-            "predicted_efficacy": min(
-                0.95, 1.0 - (1.0 / 1.618034)
-            ),  # Phi-based efficacy
+            "predicted_efficacy": min(0.95, 1.0 - (1.0 / 1.618034)),  # Phi-based efficacy
             "synthesis_complexity": "Medium (8-step organic synthesis)",
             "delivery_method": "Blood-brain barrier permeable",
             "safety_profile": "High (targeted binding, low off-target)",

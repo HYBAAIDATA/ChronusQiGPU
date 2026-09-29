@@ -38,7 +38,7 @@ class GoldenRatioScale:
         self.inverse_phi = 1 / self.phi
 
         # Golden ratio based scaling sequences
-        self.fibonacci_like_#  [1, self.phi, self.phi**2, self.phi**3, self.phi**4]
+        self.fibonacci_like_scale = [1, self.phi, self.phi**2, self.phi**3, self.phi**4]
         self.enterprise_scales = {
             "micro": self.power_10_12 * self.convergence_factor,
             "macro": self.power_15_18 * self.phi,
@@ -57,12 +57,10 @@ class GoldenRatioScaler:
     """
 
     def __init__(self):
-        self.#  GoldenRatioScale()
+        self.scale = GoldenRatioScale()
         self.scaling_history = []
 
-    def scale_decision_utility(
-        self, utility: float, context: str = "standard"
-    ) -> float:
+    def scale_decision_utility(self, utility: float, context: str = "standard") -> float:
         """
         Scale decision utility using Golden Ratio powers
 
@@ -82,9 +80,7 @@ class GoldenRatioScaler:
         else:
             # Enterprise scale scaling
             scale_factor = self.scale.enterprise_scales[context]
-            scaled_utility = (
-                utility * scale_factor / (10**6)
-            )  # Normalize to reasonable range
+            scaled_utility = utility * scale_factor / (10**6)  # Normalize to reasonable range
 
         # Apply convergence factor for stability
         scaled_utility = scaled_utility * self.scale.convergence_factor
@@ -110,9 +106,7 @@ class GoldenRatioScaler:
         if optimization_level == "standard":
             scale_factor = self.scale.phi
         elif optimization_level == "enterprise":
-            scale_factor = self.scale.power_10_12 / (
-                10**11
-            )  # Normalized trillion scale
+            scale_factor = self.scale.power_10_12 / (10**11)  # Normalized trillion scale
         elif optimization_level == "quantum":
             scale_factor = self.scale.power_15_18 / (10**20)  # Normalized massive scale
         else:
@@ -123,9 +117,7 @@ class GoldenRatioScaler:
                 scaled_params[param_name] = param_value
             else:
                 # Apply Golden Ratio scaling with convergence
-                scaled_value = (
-                    param_value * scale_factor * self.scale.convergence_factor
-                )
+                scaled_value = param_value * scale_factor * self.scale.convergence_factor
 
                 # Apply Fibonacci-like scaling for certain parameters
                 if "learning_rate" in param_name.lower():
@@ -208,23 +200,16 @@ class GoldenRatioScaler:
                 if "performance" in metric_name.lower():
                     scaled_value = metric_value * base_factor * self.scale.phi
                 elif "efficiency" in metric_name.lower():
-                    scaled_value = (
-                        metric_value * base_factor * self.scale.convergence_factor
-                    )
+                    scaled_value = metric_value * base_factor * self.scale.convergence_factor
                 elif "quality" in metric_name.lower():
                     scaled_value = metric_value * base_factor * self.scale.phi_squared
                 elif "speed" in metric_name.lower():
-                    scaled_value = (
-                        metric_value * base_factor * self.scale.fibonacci_like_scale[1]
-                    )
+                    scaled_value = metric_value * base_factor * self.scale.fibonacci_like_scale[1]
                 else:
                     scaled_value = metric_value * base_factor
 
                 # Ensure reasonable bounds
-                if (
-                    "ratio" in metric_name.lower()
-                    or "percentage" in metric_name.lower()
-                ):
+                if "ratio" in metric_name.lower() or "percentage" in metric_name.lower():
                     scaled_value = max(0.0, min(1.0, scaled_value))
                 else:
                     scaled_value = max(1e-8, scaled_value)
@@ -259,9 +244,7 @@ class GoldenRatioScaler:
 
             # Apply power scaling for enterprise level
             if i > iterations // 2:
-                power_#  self.scale.power_10_12 / (
-                    10**12 * (i - iterations // 2 + 1)
-                )
+                power_scale = self.scale.power_10_12 / (10**12 * (i - iterations // 2 + 1))
                 interpolation *= power_scale
 
             optimized_values.append(interpolation)
@@ -320,7 +303,7 @@ class GoldenRatioScaler:
 
             # Apply power scaling for large resources
             if resource_value > 1000:
-                power_#  self.scale.power_15_18 / (10**17)
+                power_scale = self.scale.power_15_18 / (10**17)
                 scaled_value *= power_scale
 
             scaled_resources[resource_name] = max(1e-8, scaled_value)
@@ -340,9 +323,7 @@ class GoldenRatioScaler:
             "power_20": self.scale.power_20,
             "fibonacci_like_scales": self.scale.fibonacci_like_scale,
             "scaling_operations_count": len(self.scaling_history),
-            "last_scaling_time": self.scaling_history[-1]
-            if self.scaling_history
-            else None,
+            "last_scaling_time": self.scaling_history[-1] if self.scaling_history else None,
         }
 
     def reset_scaling_history(self):

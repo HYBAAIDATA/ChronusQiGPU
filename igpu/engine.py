@@ -98,6 +98,16 @@ def validate_local_size(
     return number
 
 
+def _round_to_local(global_size: int, local_size: int) -> int:
+    """Pad ``global_size`` up to a multiple of ``local_size``.
+
+    OpenCL requires the global range to be an exact multiple of the local
+    range. ``cgemv_lr``/``cgemv_batch`` bound-check ``get_global_id`` against
+    the real problem size, so padded lanes exit without touching memory.
+    """
+    return -(-int(global_size) // int(local_size)) * int(local_size)
+
+
 _CL_SOURCE = """
 #ifdef USE_FP64
 typedef double acc_t;
@@ -588,14 +598,12 @@ class ResidentIGPUState(_ResidentBase):
         factor = _as_square(B, self.dim, "B")
         self._buffers.buffer("B", factor.nbytes, read_only=True)
         self._upload("B", factor)
-        cl = self._engine.cl
         program = self._engine.program(_CL_SOURCE, self._build_options())
         local = self._engine.default_local_size("cgemv_lr", local_size)
         out = np.empty(self.dim, dtype=np.float64)
-        cl.enqueue_nd_range_kernel(
+        program.cgemv_lr(
             self._engine.queue,
-            program.cgemv_lr,
-            (self.dim,),
+            (_round_to_local(self.dim, local),),
             (local,),
             self._buffers.get("A"),
             self._buffers.get("B"),
@@ -658,14 +666,12 @@ class ResidentIGPUEnsemble(_ResidentBase):
 
     def apply(self, *, local_size: Any = None) -> np.ndarray:
         """Return the ``(members, members)`` batch ``A @ (B @ X)``."""
-        cl = self._engine.cl
         program = self._engine.program(_CL_SOURCE, self._build_options())
         local = self._engine.default_local_size("cgemv_batch", local_size)
         out = np.empty((self.members, self.members), dtype=np.float64)
-        cl.enqueue_nd_range_kernel(
+        program.cgemv_batch(
             self._engine.queue,
-            program.cgemv_batch,
-            (self.members * self.members,),
+            (_round_to_local(self.members * self.members, local),),
             (local,),
             self._buffers.get("A"),
             self._buffers.get("B"),

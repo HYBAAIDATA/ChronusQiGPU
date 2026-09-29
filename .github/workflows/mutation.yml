@@ -1,0 +1,83 @@
+name: Mutation check
+
+# Do the tests fail when the intelligence's logic is wrong? Each module is
+# mutated one planted mistake at a time; the score must stay above its
+# floor, so test strength can only ratchet up. Survivors are listed in the
+# job summary.
+on:
+  pull_request:
+    paths:
+      - "mla1517_platform_v3.4/python/mla1517/mining/world_model.py"
+      - "mla1517_platform_v3.4/python/mla1517/mining/promotion.py"
+      - "mla1517_platform_v3.4/python/test_promotion_gate.py"
+      - "mla1517_platform_v3.4/python/mla1517/mining/operating_policy.py"
+      - "mla1517_platform_v3.4/python/mla1517/mining/loss_ledger.py"
+      - "mla1517_platform_v3.4/python/mla1517/mining/hashrate_governor.py"
+      - "mla1517_platform_v3.4/python/mla1517/learning.py"
+      - "mla1517_platform_v3.4/python/test_learning.py"
+      - "mla1517_platform_v3.4/python/test_*_logic.py"
+      - "mla1517_platform_v3.4/python/test_hashrate_governor.py"
+      - "mla1517_platform_v3.4/python/test_mining_intelligence.py"
+      - "scripts/mutation_check.py"
+      - "turing_universal_quantum_computer/**"
+      - ".github/workflows/mutation.yml"
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mutation:
+    name: Mutation — ${{ matrix.module }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - module: hashrate_governor
+            tests: test_hashrate_governor.py
+            floor: "0.85"
+          - module: world_model
+            tests: test_world_model_logic.py test_mining_intelligence.py
+            floor: "0.85"
+          - module: operating_policy
+            tests: test_operating_policy_logic.py test_mining_intelligence.py
+            floor: "0.85"
+          - module: loss_ledger
+            tests: test_loss_ledger_logic.py test_mining_intelligence.py
+            floor: "0.85"
+          - module: promotion
+            tests: test_promotion_gate.py
+            floor: "0.85"
+          - module: learning
+            path: mla1517/learning.py
+            tests: test_learning.py
+            floor: "0.85"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # No install of the mutated package itself: the sandboxes must be what
+      # imports. The virtual quantum computer is a dependency of the miner
+      # (the default Hendrix order), installed as it is everywhere else.
+      - run: >-
+          python -m pip install "numpy>=1.26,<3" "pytest>=7.4,<10" "pyyaml>=6.0,<7"
+          ./turing_universal_quantum_computer
+      - name: Mutate ${{ matrix.module }}
+        run: >-
+          python scripts/mutation_check.py
+          mla1517_platform_v3.4/python/${{ matrix.path || format('mla1517/mining/{0}.py', matrix.module) }}
+          --tests ${{ matrix.tests }}
+          --workers 4
+          --min-score ${{ matrix.floor }}
+          --json mutation-${{ matrix.module }}.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mutation-${{ matrix.module }}
+          path: mutation-${{ matrix.module }}.json
+          if-no-files-found: warn

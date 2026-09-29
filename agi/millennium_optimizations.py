@@ -17,7 +17,6 @@ from dataclasses import dataclass
 import logging
 from enum import Enum
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -60,7 +59,7 @@ class RiemannOptimization:
             return complex(float("inf"))
 
         # Dirichlet series approximation (first 100 terms)
-        # result = 0.0
+        result = 0.0
         for n in range(1, 101):
             result += 1.0 / (n**s)
         return result
@@ -88,7 +87,7 @@ class RiemannOptimization:
         optimized = fft_signal * (1.0 + 0.096 * weights)
 
         # IFFT back to time domain
-        # result = np.fft.ifft(optimized).real
+        result = np.fft.ifft(optimized).real
 
         improvement = 0.096  # +9.6%
 
@@ -138,9 +137,7 @@ class NavierStokesOptimization:
         div = np.sum(np.gradient(velocity_field, axis=0), axis=0)
         return div
 
-    def _pressure_correction(
-        self, velocity: np.ndarray, dt: float = 0.01
-    ) -> np.ndarray:
+    def _pressure_correction(self, velocity: np.ndarray, dt: float = 0.01) -> np.ndarray:
         """Apply pressure correction for incompressible flow"""
         # Pressure correction reduces divergence (incompressibility constraint)
         div = self._velocity_divergence(velocity)
@@ -172,9 +169,7 @@ class NavierStokesOptimization:
         improvement = 0.07  # +7.0%
         return optimized, improvement
 
-    def optimize_reasoning_flow(
-        self, reasoning_chain: List[float]
-    ) -> OptimizationResult:
+    def optimize_reasoning_flow(self, reasoning_chain: List[float]) -> OptimizationResult:
         """
         Optimize reasoning chain using Navier-Stokes flow dynamics
 
@@ -371,9 +366,7 @@ class PvsNPOptimization:
         problem_size = len(problem)
 
         # Estimate complexity
-        complexity_class, complexity_value = self._estimate_problem_complexity(
-            problem_size
-        )
+        complexity_class, complexity_value = self._estimate_problem_complexity(problem_size)
 
         # Select strategy
         if complexity_class == "P":
@@ -382,9 +375,7 @@ class PvsNPOptimization:
             strategy = "PolynomialAlgorithm"
         else:
             # Use heuristic for NP
-            solution = problem_array * (
-                1.0 + 0.085 * np.random.random(len(problem_array))
-            )
+            solution = problem_array * (1.0 + 0.085 * np.random.random(len(problem_array)))
             strategy = "HeuristicApproximation"
 
         improvement = 0.085  # +8.5%
@@ -398,9 +389,9 @@ class PvsNPOptimization:
                 "algorithm": strategy,
                 "complexity_class": complexity_class,
                 "problem_size": problem_size,
-                "estimated_complexity": float(np.log2(complexity_value))
-                if complexity_value > 0
-                else 0,
+                "estimated_complexity": (
+                    float(np.log2(complexity_value)) if complexity_value > 0 else 0
+                ),
             },
             algorithm="PvsNPOptimization",
             iterations=1,
@@ -449,11 +440,11 @@ class MillenniumProblemsIntegration:
 
         # Apply Riemann optimization
         if isinstance(params, dict):
-            riemann_# result = self.riemann.optimize_parameters(params)
+            riemann_result = self.riemann.optimize_parameters(params)
         elif isinstance(params, (list, np.ndarray)):
             signal = np.array(params)
             optimized, improvement = self.riemann.optimize_signal(signal)
-            riemann_# result = OptimizationResult(
+            riemann_result = OptimizationResult(
                 domain="riemann",
                 score=float(np.mean(optimized)),
                 improvement=improvement,
@@ -475,7 +466,7 @@ class MillenniumProblemsIntegration:
         # Apply Navier-Stokes optimization
         if isinstance(params, (list, np.ndarray)):
             reasoning_chain = list(params) if isinstance(params, np.ndarray) else params
-            ns_# result = self.navier_stokes.optimize_reasoning_flow(reasoning_chain)
+            ns_result = self.navier_stokes.optimize_reasoning_flow(reasoning_chain)
             results["optimizations"].append(
                 {
                     "optimizer": "Navier-Stokes",
@@ -489,7 +480,7 @@ class MillenniumProblemsIntegration:
         # Apply Birch-Swinnerton-Dyer optimization
         if isinstance(params, (list, np.ndarray)):
             solutions = list(params) if isinstance(params, np.ndarray) else params
-            bsd_# result = self.bsd.optimize_pathways([solutions])
+            bsd_result = self.bsd.optimize_pathways([solutions])
             results["optimizations"].append(
                 {
                     "optimizer": "Birch-Swinnerton-Dyer",
@@ -503,7 +494,7 @@ class MillenniumProblemsIntegration:
         # Apply P vs NP optimization
         if isinstance(params, (list, np.ndarray)):
             problem = list(params) if isinstance(params, np.ndarray) else params
-            pvsnp_# result = self.pvsnp.optimize_strategy_selection(problem)
+            pvsnp_result = self.pvsnp.optimize_strategy_selection(problem)
             results["optimizations"].append(
                 {
                     "optimizer": "P vs NP",
@@ -521,9 +512,7 @@ class MillenniumProblemsIntegration:
 
         self.last_results = results
 
-        logger.info(
-            f"Millennium optimization complete: +{final_improvement:.1f}% improvement"
-        )
+        logger.info(f"Millennium optimization complete: +{final_improvement:.1f}% improvement")
 
         return results
 

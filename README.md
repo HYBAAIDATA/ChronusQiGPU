@@ -27,11 +27,11 @@ There is no Node/TypeScript backend in the canonical runtime. The frontend is a 
 python3 main.py --host 0.0.0.0 --port 3000 --web-root dist/public
 
 # Hardware miner; requires the actual MMIO device and pool credentials
-PYTHONPATH=mla1517_platform_v3.4/python \\
-  python3 mla1517_platform_v3.4/python/headless_miner.py \\
-  --device /dev/uio0 \\
-  --user <stratum-user.worker> \\
-  --password x \\
+PYTHONPATH=mla1517_platform_v3.4/python \
+  python3 mla1517_platform_v3.4/python/headless_miner.py \
+  --device /dev/uio0 \
+  --user <stratum-user.worker> \
+  --password x \
   --submit
 
 # Stratum TLS: stratum+ssl:// endpoints, or --tls / MLA1517_STRATUM_TLS=1 on bare host:port
@@ -101,3 +101,299 @@ A missing device must produce an unavailable/failed-closed gate. It must never b
 The repository contains the canonical M32 structured scheduler, SHA256d proof boundary, MMIO-to-vault-to-Stratum path, measured chooser, Python TOE subsystem, and exact OpenCL contract. `docs/STRUCTURED_MINING_AUDIT.md` records which of those components are on the live call graph and which require an end-to-end behavioral test. `docs/PRODUCTION_READINESS_AUDIT.md` is the latest full-repo classification (production / experimental / test-only) with the executed test matrix.
 
 Every named PYTHIA capability is an engineering requirement. If it is not present in the canonical Python path and verified by an executable test, it is an open implementation defect—not a simulated success and not silently reclassified as research.
+
+---
+
+# HYBA → PYTHIA: a natural evolution
+
+PYTHIA is not a departure from HYBA. It is a natural operational evolution of the same research direction: **change the representation, change the topology, preserve the truth boundary**.
+
+HYBA began by asking whether data, memory, search, state and computation had to be represented in the conventional flat forms inherited from existing systems. Folding, exact reconstruction, structured state, manifold ordering, mathematical intelligence and evidence-first operation followed from that question. PYTHIA applies the same discipline to mining: not by changing Bitcoin consensus, and not by declaring a shortcut around SHA256d, but by changing how work is represented, prepared, ordered, allocated, observed and recovered before the canonical proof boundary.
+
+The architectural principle is simple:
+
+```text
+STRATUM tells us what work is real.
+INTELLIGENCE decides how to prepare and order that work.
+EXECUTION performs exactly the authorised work.
+SHA256d decides whether a candidate is valid.
+THE POOL decides whether a share is accepted.
+SALAMANDER keeps the machine alive without becoming proof authority.
+```
+
+PYTHIA therefore inherits HYBA's central instinct: **do not wait for the existing shape of a system to dictate the only possible shape of its computation**. Explore the mathematics, test the topology, instrument the execution, and keep every external claim subordinate to measured evidence.
+
+## The HYBA / Taylor-Morris extension to the Church–Turing–Deutsch line
+
+This repository adopts a **project thesis**, not a claim of a newly established theorem.
+
+The historical line begins with the Church–Turing thesis: effectively calculable procedures can be represented by a universal model of computation. Deutsch extended the discussion into physics by asking for a universal computing device capable of simulating the behavior of finitely realizable physical systems under the governing laws of physics.
+
+HYBA proposes a further engineering principle:
+
+> **When a phenomenon admits a finite mathematical representation to a declared precision, and its governing transformations can be expressed as effective operators, the decisive computational question is not the label of the physical substrate but the quality of the representation, factorization, topology and operator structure used to realize the computation.**
+
+We refer to this within the project as the **HYBA / Taylor-Morris Extension**.
+
+In compact form:
+
+```text
+CHURCH–TURING
+Effective procedure
+→ universal computation
+
+DEUTSCH
+Finitely realizable physical process
+→ universal physical simulation
+
+HYBA / TAYLOR-MORRIS
+Mathematically representable state + effective operators
+→ substrate-agnostic computational realization
+→ representation / topology determine practical tractability
+```
+
+The working premise is therefore not merely **"use mathematics to describe the system"**. It is:
+
+> **The mathematical representation is itself part of the computer.**
+
+A poor representation can make a tractable structure appear intractable. A better representation may expose symmetry, factorization, geometry, causal structure, sparsity, invariants or reversible transforms that are invisible in a flat representation. HYBA therefore treats representation choice, topology and operator design as first-class computational variables rather than preprocessing details.
+
+This principle connects the project's major lines of work:
+
+```text
+folded memory / data
+→ change representation without destroying information
+
+Kellogg / tensor state
+→ represent high-dimensional joint state algebraically
+
+virtual quantum execution
+→ execute quantum-state transformations as mathematical operators on non-QPU substrates
+
+Poincaré / Klein / Cassini / Lucas geometry
+→ change traversal and state-space organization
+
+PYTHIA
+→ change how search work is represented, leased, ordered, executed and learned from
+
+AL HARAS
+→ change the topology of trust, attack propagation, verification and recovery
+```
+
+The project therefore uses the operational chain:
+
+```text
+OBSERVE
+→ REPRESENT
+→ COMPUTE
+→ VERIFY
+→ ACT
+→ ATTEST
+→ LEARN
+→ RECOVER
+```
+
+as a shared HYBA substrate contract. Representation precedes computation because the form in which a state is expressed determines which operators, invariants and decompositions become available to the machine.
+
+### Scope and falsifiability
+
+The HYBA / Taylor-Morris Extension does **not** assert that known undecidable problems become decidable, that complexity lower bounds disappear, or that every mathematical object has a finite effective representation. It also does not make an unmeasured hardware-speedup claim.
+
+Its falsifiable engineering claim is narrower and stronger:
+
+> **For computationally representable systems, substrate should not be treated as the first explanatory boundary. Representation, topology, operator structure, precision and resource scaling must be measured before a limitation is attributed to the substrate itself.**
+
+Every HYBA implementation must therefore move through:
+
+```text
+mathematical object
+→ executable representation
+→ operator
+→ invariant
+→ falsification
+→ measurement
+→ evidence
+```
+
+If an implementation cannot complete that chain, it remains a hypothesis.
+
+## Mining evolution timeline
+
+The following timeline records the engineering trajectory rather than a claim of cryptographic advantage.
+
+### 1. Conventional proof boundary
+
+The starting point is Bitcoin's existing contract: construct a valid 80-byte header, execute double-SHA256, compare the digest to the negotiated target, and submit through Stratum. That boundary remains unchanged.
+
+### 2. Structured M32 search
+
+PYTHIA introduced deterministic 32-lane structured work allocation, TOE context, Lucas/Cassini geometry and complete-search ordering while retaining exhaustive SHA256d verification. The geometry can change **order and allocation**; it cannot change what constitutes proof.
+
+### 3. Golden-stride traversal
+
+The golden-stride path introduced a full-domain permutation using the odd `0x9E3779B9` stride, preserving coverage while changing probe order. Hardware execution and host reference checks became explicit evidence gates.
+
+### 4. 11-dimensional search geometry
+
+The research surface expanded into 11-dimensional Poincaré/Cassini and Klein/Poincaré representations. These are internal state/search-order geometries. They do not weaken SHA256d, replace the target, or create a separate consensus rule. Where a Klein transform is implemented numerically, it must be labelled as deterministic numerical ordering rather than exact arithmetic.
+
+### 5. Agentic mining
+
+Mining then evolved from reactive chooser logic toward an agentic workflow:
+
+```text
+live job
+→ immutable job identity
+→ precomputed SearchPlans
+→ bounded queue / nonce leases
+→ execution
+→ ExecutionRecord
+→ literal pool outcome
+→ operational learning
+→ next search
+```
+
+Intelligence is trained on operational evidence—job churn, stale work, queue starvation, execution latency, recovery and literal pool outcomes—not on invented claims that nearby nonces become cryptographically more likely after a win.
+
+### 6. Salamander governance
+
+Self-healing and self-optimisation are being consolidated into a measured governor loop:
+
+```text
+observe
+→ classify
+→ bounded action
+→ actuator acknowledgement
+→ post-action observation
+→ verified recovery
+→ resume
+```
+
+The optimiser yields to the healer. Recovery never changes SHA256d validity or pool truth.
+
+### 7. Execution truth and route provenance
+
+The current execution workstream is closing the gap between **requested execution** and **actual execution**. Its intended contract is:
+
+```text
+SearchPlan
+→ route decision
+→ freshness / lease guard
+→ exact disjoint chunks
+→ actual CPU/OpenCL execution
+→ independent host SHA256d recheck
+→ evidence-backed ExecutionRecord
+```
+
+A reported Cline delivery (`7cc591e`) adds an `ExecutionRouter`, explicit `requested_route` / `executed_route` / `fallback_reason`, execution completion evidence, exact chunk coverage and hardware-backed tests on an Intel UHD 620. At the time of this README update that delivery is treated as **integration evidence pending canonical merge into `main`**; this README does not convert an external workstream report into a merged-repository fact.
+
+Reported workstream verification:
+
+- 34 execution-router tests, including 4 hardware-backed tests;
+- 136 platform mining/lease tests;
+- 1208 tests in the reported `tests/` run with 0 failures;
+- 4/4 kernel mirrors reported byte-identical;
+- Intel UHD 620 OpenCL execution reported for the hardware-backed subset.
+
+Still explicitly unverified in that workstream: fleet-scale hardware execution, live pool acknowledgement, full Stratum lifecycle, chain-reorg behavior, and the complete cross-subsystem production voyage.
+
+### 8. The production trajectory
+
+The target is not a collection of impressive modules. It is one continuous, evidence-correlated miner:
+
+```text
+BOOT
+→ STRATUM CONNECT / SUBSCRIBE / AUTHORIZE
+→ LIVE JOB / GENERATION
+→ AGENTIC PRECOMPUTE
+→ UNIQUE NONCE LEASE
+→ EXECUTION ROUTER
+→ CPU / OPENCL EXECUTION
+→ SHA256d RECHECK
+→ SUBMISSION
+→ LITERAL POOL OUTCOME
+→ LEARNING
+→ CONTINUED MINING
+→ FAULT
+→ SALAMANDER RECOVERY
+→ CONTINUED MINING
+```
+
+The system is not complete merely because individual modules pass tests. Production closure requires the joins between them to survive job churn, accepted shares, rejected shares, unknown submission outcomes, disconnects, failover, device recovery and process restart.
+
+## Research trajectory: mathematics before labels
+
+PYTHIA contains exact-state work, tensor/state geometry, swarm and agentic workflows, and computational probes over difficult mathematical problems. These surfaces are research inputs and capability probes, not permission to overstate what has been established.
+
+The Millennium-problem probe suite, for example, may execute real finite computations, check identities or expose gaps, while still reporting that no new Millennium theorem has been established. **A partial computational result is not a proof, and an open result is not an impossibility claim.**
+
+The project trajectory is therefore:
+
+```text
+mathematical structure
+→ executable model
+→ falsification
+→ measured runtime evidence
+→ bounded operational use
+→ stronger integration
+```
+
+not:
+
+```text
+interesting mathematics
+→ marketing claim
+```
+
+# Bitcoin stewardship doctrine
+
+PYTHIA is not being built to dominate Bitcoin, threaten SHA256, weaken proof-of-work, or undermine network security.
+
+The SHA256d and target boundary is deliberately outside Intelligence authority. PYTHIA may change ordering, scheduling, representation, topology, allocation, recovery and observability. It may not redefine a valid Bitcoin proof.
+
+The posture is one of **quiet guardianship**:
+
+- preserve consensus truth;
+- never fabricate pool acceptance;
+- never bypass SHA256d;
+- make execution and provenance more observable;
+- isolate experimental mathematics from proof authority;
+- strengthen failure handling and recovery;
+- treat evidence boundaries as security boundaries.
+
+We do not need to build a bigger lock around every conventional door. Where architecture permits, reduce or remove unnecessary doors: shrink externally reachable control surfaces, isolate authorities, bind actions to explicit identities, prefer capability-scoped interfaces, fail closed, and make privileged transitions observable.
+
+That is a security design direction, **not a claim that PYTHIA is impossible to hack**. No serious system is declared unhackable without a defined threat model and sustained adversarial evidence. The engineering objective is instead to make compromise materially harder by changing the attack surface and topology while keeping recovery and evidence intact.
+
+## Security trajectory
+
+The desired production posture is:
+
+```text
+minimal exposed surface
+→ authenticated and authorised entry
+→ least privilege / capability-scoped control
+→ isolated Stratum, execution, proof and recovery authorities
+→ immutable job / plan / execution correlation
+→ no secret-dependent security assumptions
+→ measured anomaly and recovery loops
+→ fail closed on missing evidence
+```
+
+The 11-dimensional and other mathematical representations are internal computational structures, not access-control mechanisms. Security must remain grounded in authentication, authorization, isolation, provenance, integrity, least privilege, safe defaults and adversarial testing.
+
+# Evidence classes for future documentation
+
+Project documentation should distinguish at least:
+
+```text
+SOURCE VERIFIED
+SOFTWARE EXECUTION VERIFIED
+HARDWARE EXECUTION VERIFIED
+POOL VERIFIED
+UNVERIFIED
+```
+
+A discovered GPU is not hardware execution. A launched kernel is not a completed window. A submitted share is not an accepted share. An accepted share is not a block confirmation. A mathematical identity is not Bitcoin proof-of-work.
+
+This evidence hierarchy is part of PYTHIA's identity and part of HYBA's natural evolution.

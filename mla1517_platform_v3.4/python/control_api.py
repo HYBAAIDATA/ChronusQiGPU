@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hmac
 import json
 import mimetypes
 import os
@@ -33,6 +34,7 @@ from startup_contract import (
 )
 import runtime_config
 import system_fabric
+from al_haras_pythia import pythia_guardian_api
 from worker_lifecycle import HeartbeatReader
 
 _SCHEMA_VERSION = "mla1517.status/1"
@@ -49,7 +51,11 @@ _RESTART_WINDOW_SECONDS = 600
 _WORKER_SPECS = {
     "agentic-mining": "mining_runtime.py",
     "salamander": "salamander_engine.py",
+    "discovery": "discovery_runtime.py",
 }
+# Workers that drive the mining device. The discovery worker experiments on a
+# simulated twin, so it runs (and learns) on a host with no device bound.
+_DEVICE_WORKERS = frozenset({"agentic-mining", "salamander"})
 _LOCK_HELD = False
 _LOCK_GUARD = threading.Lock()
 _AUDIT: AppendOnlyAudit | None = None
@@ -229,7 +235,9 @@ def _is_truthy(value: str | None, *, default: bool = False) -> bool:
 def _worker_ids() -> list[str]:
     configured = [
         item.strip()
-        for item in os.getenv("PYTHIA_CONTROL_WORKERS", "agentic-mining,salamander").split(",")
+        for item in os.getenv(
+            "PYTHIA_CONTROL_WORKERS", "agentic-mining,salamander,discovery"
+        ).split(",")
         if item.strip()
     ]
     return [worker_id for worker_id in configured if worker_id in _WORKER_SPECS]
@@ -312,10 +320,13 @@ class ControlPlane:
         for handle in self.handles.values():
             if not self.autostart:
                 handle.record.state = "disabled"
-            elif not self.mmio_device:
+            elif not self._device_ready(handle):
                 handle.record.state = "armed_no_device"
             else:
                 handle.record.state = "stopped"
+
+    def _device_ready(self, handle: WorkerHandle) -> bool:
+        return bool(self.mmio_device) or handle.record.worker_id not in _DEVICE_WORKERS
 
     def ensure_workers(self) -> None:
         with self.lock:
@@ -327,7 +338,7 @@ class ControlPlane:
             return
         if not self.autostart:
             return
-        if not self.mmio_device:
+        if not self._device_ready(handle):
             return
         if handle.process is not None and handle.process.poll() is None:
             return
@@ -350,12 +361,12 @@ class ControlPlane:
         handle.record.attempts_window = len(handle.restarts)
         env = os.environ.copy()
         env.setdefault("PYTHONPATH", str(self.python_root))
+        # Workers inherit the service's stdout/stderr so a container log
+        # shows why a worker exited; the restart budget still bounds it.
         handle.process = subprocess.Popen(
             [sys.executable, str(handle.script)],
             cwd=str(self.python_root),
             env=env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
             text=True,
         )
         self.audit.append(
@@ -450,7 +461,7 @@ class ControlPlane:
                 record = handle.record
                 if enabled:
                     if record.state == "disabled":
-                        target = "stopped" if self.mmio_device else "armed_no_device"
+                        target = "stopped" if self._device_ready(handle) else "armed_no_device"
                         record.transition(target, self.audit, "mining_start")
                 else:
                     self._retire_handle(handle, "mining_stop")
@@ -561,22 +572,235 @@ def _identity_payload() -> dict[str, Any]:
     return {"ok": ok, "reason": reason}
 
 
-def _ready_to_mine_reason(records: list[WorkerRecord]) -> tuple[bool, str]:
+def _stratum_status_payload(
+    control: ControlPlane,
+    records: list[WorkerRecord],
+) -> dict[str, Any]:
+    identity = control.identity.public()
+    endpoint = f"{identity['host']}:{identity['port']}"
+    fallback: dict[str, Any] = {
+        "schema": "mla1517.stratum/1",
+        "state": "CONFIGURED",
+        "ready": False,
+        "connected": False,
+        "status": "runtime_evidence_unavailable",
+        "evidence_available": False,
+        "primary": {
+            "configured": True,
+            "pool_id": identity["profile"],
+            "transport": "DISCONNECTED",
+            "subscribed": False,
+            "authorized": False,
+            "endpoint": endpoint,
+            "worker": identity["user_redacted"],
+            "connected_at": None,
+            "last_message_at": None,
+            "last_error": "runtime evidence unavailable",
+        },
+        "job": {
+            "active": False,
+            "generation": None,
+            "invalidated_generation": None,
+            "job_id": None,
+            "fingerprint": None,
+            "received_at": None,
+            "age_ms": None,
+            "clean_jobs": None,
+            "difficulty": None,
+            "difficulty_source": None,
+            "difficulty_received_at": None,
+            "share_target": None,
+            "target_generation": 0,
+        },
+        "submission": {
+            "state": "IDLE",
+            "last_result": None,
+            "last_submit_at": None,
+            "last_response_at": None,
+            "generation": None,
+            "job_id": None,
+            "job_fingerprint": None,
+        },
+        "counters": {
+            "jobs_received": 0,
+            "jobs_invalidated": 0,
+            "disconnects": 0,
+            "submitted": 0,
+            "accepted": 0,
+            "rejected": 0,
+            "unknown": 0,
+        },
+    }
+    raw = _read_metrics("agentic-mining").get("stratum_status")
+    try:
+        observed = json.loads(raw) if isinstance(raw, str) else raw
+    except (TypeError, ValueError):
+        return fallback
+    if not isinstance(observed, dict):
+        return fallback
+    primary = observed.get("primary")
+    job = observed.get("job")
+    submission = observed.get("submission")
+    counters = observed.get("counters")
+    if not all(isinstance(item, dict) for item in (primary, job, submission, counters)):
+        return fallback
+
+    primary = dict(primary)
+    job = dict(job)
+    submission = dict(submission)
+    counters = dict(counters)
+    connected = primary.get("transport") == "CONNECTED"
+    active_job = job.get("active") is True and job.get("generation") is not None
+    target_available = isinstance(job.get("share_target"), str) and bool(job.get("share_target"))
+    worker_live = any(
+        record.worker_id == "agentic-mining" and record.liveness for record in records
+    )
+    ready = (
+        worker_live
+        and connected
+        and primary.get("subscribed") is True
+        and primary.get("authorized") is True
+        and active_job
+        and target_available
+    )
+    primary["configured"] = True
+    primary["transport"] = "CONNECTED" if connected else "DISCONNECTED"
+    primary.setdefault("endpoint", endpoint)
+    primary.setdefault("worker", identity["user_redacted"])
+    state = str(observed.get("state") or "DEGRADED")
+    return {
+        "schema": "mla1517.stratum/1",
+        "state": state,
+        "ready": ready,
+        "connected": connected,
+        "status": state.lower(),
+        "evidence_available": True,
+        "primary": primary,
+        "job": job,
+        "submission": submission,
+        "counters": counters,
+    }
+
+
+def _ready_to_mine_reason(
+    records: list[WorkerRecord],
+    stratum: dict[str, Any],
+) -> tuple[bool, str]:
     identity = _identity_payload()
     if not identity["ok"]:
         return False, str(identity["reason"])
     if any(record.state == "failed" for record in records):
         return False, "supervisor_degraded"
-    if any(record.readiness for record in records):
-        return True, "ok"
-    return False, "worker_unavailable"
+    if not any(record.readiness for record in records):
+        return False, "worker_unavailable"
+    primary = stratum.get("primary", {})
+    job = stratum.get("job", {})
+    if primary.get("transport") != "CONNECTED":
+        return False, "stratum_disconnected"
+    if primary.get("subscribed") is not True:
+        return False, "stratum_not_subscribed"
+    if primary.get("authorized") is not True:
+        if stratum.get("state") == "AUTH_FAILED":
+            return False, "stratum_auth_failed"
+        return False, "stratum_not_authorized"
+    if job.get("active") is not True or job.get("generation") is None:
+        return False, "stratum_waiting_job"
+    if not job.get("share_target"):
+        return False, "stratum_target_unavailable"
+    if stratum.get("ready") is not True:
+        return False, "stratum_not_ready"
+    return True, "ok"
+
+
+MINING_EVIDENCE_SCHEMA = "pythia.mining_evidence/1"
+
+
+_KNOWLEDGE: Any = None
+
+
+def knowledge_payload() -> dict[str, Any]:
+    """Every intelligence's shared knowledge, replayed from the fabric journal."""
+    global _KNOWLEDGE
+    from mla1517.knowledge import KnowledgeFabric, default_journal_path
+
+    if _KNOWLEDGE is None:
+        _KNOWLEDGE = KnowledgeFabric(default_journal_path())
+    _KNOWLEDGE.sync()
+    return _KNOWLEDGE.snapshot(recent=50)
+
+
+ADMIN_KEY_ENV = "EUCLID_ADMIN_API_KEY"
+UNAUTHENTICATED_ENV = "PYTHIA_ALLOW_UNAUTHENTICATED_CONTROL"
+
+
+def control_authorization(headers: Any) -> tuple[HTTPStatus, str] | None:
+    """None when a state-changing request is authorized, else (status, reason).
+
+    Fail closed: every POST and PUT that changes state (start, stop, switch,
+    elevate, escalate, config) needs ``Authorization: Bearer <key>`` matching
+    EUCLID_ADMIN_API_KEY. With no key configured nothing may change state,
+    unless PYTHIA_ALLOW_UNAUTHENTICATED_CONTROL=1 declares a local dev box.
+    """
+    key = os.getenv(ADMIN_KEY_ENV, "").strip()
+    if not key:
+        if _is_truthy(os.getenv(UNAUTHENTICATED_ENV)):
+            return None
+        return HTTPStatus.FORBIDDEN, f"{ADMIN_KEY_ENV} is not configured; control is closed"
+    header = str(headers.get("Authorization", "") or "")
+    token = header[7:].strip() if header[:7].lower() == "bearer " else ""
+    if not token or not hmac.compare_digest(token.encode("utf-8"), key.encode("utf-8")):
+        return HTTPStatus.UNAUTHORIZED, "operator key required"
+    return None
+
+
+def announce_skills() -> int:
+    """Tell every intelligence which skills Salamander holds.
+
+    Publishes each verified skill graft to the knowledge fabric; a rejected
+    graft is never announced. The control plane comes up regardless.
+    """
+    try:
+        from Intelligence.skill_graft import announce
+        from mla1517.knowledge import KnowledgeFabric, default_journal_path
+
+        return len(announce(KnowledgeFabric(default_journal_path())))
+    except Exception as exc:  # noqa: BLE001 - reported, never fatal to the control plane
+        print(f"[pythia-control] skill announcement failed: {type(exc).__name__}: {exc}")
+        return 0
+
+
+def mining_evidence_payload() -> dict[str, Any]:
+    """The live miner's own evidence snapshot, exactly as it published it.
+
+    Nothing is synthesised here: when the miner has not published, or the
+    payload is malformed, the answer says evidence is unavailable instead of
+    showing zeros. ``worker_live`` states whether the publisher is alive now.
+    """
+    records = _control_plane().records()
+    worker_live = any(
+        record.worker_id == "agentic-mining" and record.liveness for record in records
+    )
+    raw = _read_metrics("agentic-mining").get("mining_evidence")
+    try:
+        observed = json.loads(raw) if isinstance(raw, str) else raw
+    except (TypeError, ValueError):
+        observed = None
+    if not isinstance(observed, dict) or observed.get("schema") != MINING_EVIDENCE_SCHEMA:
+        return {
+            "schema": MINING_EVIDENCE_SCHEMA,
+            "evidence_available": False,
+            "worker_live": worker_live,
+            "reason": "the miner has not published evidence",
+        }
+    return {**observed, "evidence_available": True, "worker_live": worker_live}
 
 
 def status_payload() -> dict[str, Any]:
     """Public status contract for the canonical operator UI."""
     control = _control_plane()
     records = control.records()
-    ready, reason = _ready_to_mine_reason(records)
+    stratum = _stratum_status_payload(control, records)
+    ready, reason = _ready_to_mine_reason(records, stratum)
     total_hashrate = sum(record.hashrate for record in records)
     total_shares = sum(record.shares_accepted for record in records)
     worker_map = {record.worker_id: record.public() for record in records}
@@ -635,10 +859,7 @@ def status_payload() -> dict[str, Any]:
         },
         "gpu": gpu,
         "workers": worker_map,
-        "stratum": {
-            "connected": ready,
-            "status": reason,
-        },
+        "stratum": stratum,
         "identity": _identity_payload(),
         "ready_to_mine": {
             "ready": ready,
@@ -687,14 +908,21 @@ def audit_tail_payload(limit: int = 50) -> dict[str, Any]:
     }
 
 
-def _reason_metrics(records: list[WorkerRecord]) -> str:
-    ready, reason = _ready_to_mine_reason(records)
+def _reason_metrics(records: list[WorkerRecord], stratum: dict[str, Any]) -> str:
+    ready, reason = _ready_to_mine_reason(records, stratum)
     reasons = (
         "ok",
         "identity_hmac_missing",
         "identity_hmac_malformed",
         "supervisor_degraded",
         "worker_unavailable",
+        "stratum_disconnected",
+        "stratum_not_subscribed",
+        "stratum_not_authorized",
+        "stratum_auth_failed",
+        "stratum_waiting_job",
+        "stratum_target_unavailable",
+        "stratum_not_ready",
     )
     lines = [
         f'pythia_ready_to_mine{{reason="{name}"}} {1 if name == reason else 0}' for name in reasons
@@ -709,8 +937,10 @@ def _reason_metrics(records: list[WorkerRecord]) -> str:
 
 
 def metrics_payload() -> str:
-    records = _control_plane().records()
-    extra = _reason_metrics(records)
+    control = _control_plane()
+    records = control.records()
+    stratum = _stratum_status_payload(control, records)
+    extra = _reason_metrics(records, stratum)
     runtime = METRICS.prometheus().strip()
     chunks = [chunk for chunk in (runtime, extra) if chunk]
     return "\n".join(chunks) + ("\n" if chunks else "")
@@ -1083,6 +1313,12 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/api/v1/mla1517/status":
             self._json(HTTPStatus.OK, status_payload())
             return
+        if path == "/api/v1/mining/evidence":
+            self._json(HTTPStatus.OK, mining_evidence_payload())
+            return
+        if path == "/api/v1/knowledge":
+            self._json(HTTPStatus.OK, knowledge_payload())
+            return
         if path == "/api/v1/gpu":
             self._json(HTTPStatus.OK, gpu_payload())
             return
@@ -1114,6 +1350,21 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/api/v1/campaign/status":
             self._json(HTTPStatus.OK, system_fabric.campaign_status())
             return
+        if path == "/api/v1/security/status":
+            self._json(HTTPStatus.OK, pythia_guardian_api().public_status())
+            return
+        if path == "/api/v1/security/subscribe":
+            security = pythia_guardian_api().public_status()
+            self._json(
+                HTTPStatus.OK,
+                {
+                    "product": "HYBA Security",
+                    "capability": security["capability"],
+                    "subscription_required": True,
+                    "subscription_url": security["subscription_url"],
+                },
+            )
+            return
         self._static_or_404(path)
 
     _POST_TABLE: dict[str, Any] = {
@@ -1131,6 +1382,21 @@ class _Handler(BaseHTTPRequestHandler):
         "/api/v1/salamander/fault": _salamander_fault,
     }
 
+    def _drain(self, length: int) -> None:
+        """Discard a refused body, bounded so a hostile Content-Length cannot
+        force unbounded reads; past the cap the connection is closed."""
+        remaining = min(int(length), _TOE_MAX_BODY_BYTES * 4)
+        if length > remaining:
+            self.close_connection = True
+        try:
+            while remaining > 0:
+                chunk = self.rfile.read(min(remaining, 65536))
+                if not chunk:
+                    break
+                remaining -= len(chunk)
+        except (OSError, ValueError):
+            self.close_connection = True
+
     def _read_json_body(self) -> tuple[dict[str, Any] | None, str | None]:
         try:
             length = int(self.headers.get("Content-Length") or 0)
@@ -1139,6 +1405,9 @@ class _Handler(BaseHTTPRequestHandler):
         if length <= 0:
             return {}, None
         if length > _TOE_MAX_BODY_BYTES:
+            # Empty the socket before the 413 so the client reads the status
+            # instead of a connection reset mid-upload.
+            self._drain(length)
             return None, "body_too_large"
         raw = self.rfile.read(length)
         try:
@@ -1151,6 +1420,26 @@ class _Handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
+        if parsed.path == "/api/v1/security/evaluate":
+            body, err = self._read_json_body()
+            if body is None:
+                status = (
+                    HTTPStatus.REQUEST_ENTITY_TOO_LARGE
+                    if err == "body_too_large"
+                    else HTTPStatus.BAD_REQUEST
+                )
+                self._json(status, {"allowed": False, "reason": err})
+                return
+            code, payload = pythia_guardian_api().evaluate(
+                headers={
+                    "authorization": self.headers.get("Authorization", ""),
+                    "x-hyba-tenant": self.headers.get("X-HYBA-Tenant", ""),
+                    "x-hyba-actor": self.headers.get("X-HYBA-Actor", ""),
+                },
+                body=body,
+            )
+            self._json(HTTPStatus(code), payload)
+            return
         if parsed.path == "/api/v1/toe/collapse":
             body, err = self._read_json_body()
             if body is None:
@@ -1159,36 +1448,51 @@ class _Handler(BaseHTTPRequestHandler):
                     if err == "body_too_large"
                     else HTTPStatus.BAD_REQUEST
                 )
-                self._json(status, {"error": err})
+                self._json(status, {"allowed": False, "reason": err})
                 return
             if not body:
-                self._json(HTTPStatus.BAD_REQUEST, {"error": "empty_body"})
-                return
-            if err is not None:
-                status = (
-                    HTTPStatus.REQUEST_ENTITY_TOO_LARGE
-                    if err == "body_too_large"
-                    else HTTPStatus.BAD_REQUEST
+                self._json(
+                    HTTPStatus.BAD_REQUEST,
+                    {"allowed": False, "reason": "empty_body"},
                 )
-                self._json(status, {"error": err})
                 return
             data = body.get("data", body)
-            try:
-                self._json(HTTPStatus.OK, toe_collapse_payload(data))
-            except Exception as exc:
-                self._json(
-                    HTTPStatus.INTERNAL_SERVER_ERROR,
-                    {
-                        "schema_version": _TOE_SCHEMA_VERSION,
-                        "available": False,
-                        "error": f"{type(exc).__name__}: {exc}",
-                        "generated_at": now_iso(),
-                    },
-                )
+            observation = data if isinstance(data, dict) else {"value": data}
+            code, decision = pythia_guardian_api().evaluate(
+                headers={
+                    "authorization": self.headers.get("Authorization", ""),
+                    "x-hyba-tenant": self.headers.get("X-HYBA-Tenant", ""),
+                    "x-hyba-actor": self.headers.get("X-HYBA-Actor", ""),
+                },
+                body={
+                    "operation": "toe.collapse",
+                    "resource": "toe/collapse",
+                    "payload": {"data": data},
+                    "observation": observation,
+                },
+                include_evidence=True,
+            )
+            if code != HTTPStatus.OK:
+                self._json(HTTPStatus(code), decision)
+                return
+            evidence = decision.pop("intelligence_evidence")
+            result = evidence["result"]
+            self._json(
+                HTTPStatus.OK,
+                {
+                    "schema_version": _TOE_SCHEMA_VERSION,
+                    "generated_at": now_iso(),
+                    "guardian_receipt": decision,
+                    "execution_evidence": evidence["execution_evidence"],
+                    **result,
+                },
+            )
             return
         handler = self._POST_TABLE.get(parsed.path)
         if handler is None:
             self._json(HTTPStatus.NOT_FOUND, {"error": "not_found"})
+            return
+        if self._refuse_unauthorized():
             return
         body, err = self._read_json_body()
         if body is None:
@@ -1216,6 +1520,8 @@ class _Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path != "/api/v1/config":
             self._json(HTTPStatus.NOT_FOUND, {"error": "not_found"})
+            return
+        if self._refuse_unauthorized():
             return
         body, err = self._read_json_body()
         if body is None:
@@ -1270,6 +1576,15 @@ class _Handler(BaseHTTPRequestHandler):
         body = json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
         self._send(int(status), "application/json; charset=utf-8", body)
 
+    def _refuse_unauthorized(self) -> bool:
+        refusal = control_authorization(self.headers)
+        if refusal is None:
+            return False
+        status, reason = refusal
+        _audit().append("control_refused", path=urlparse(self.path).path, reason=reason)
+        self._json(status, {"ok": False, "error": reason})
+        return True
+
     def _method_not_allowed(self) -> None:
         self._json(HTTPStatus.METHOD_NOT_ALLOWED, {"error": "method_not_allowed"})
 
@@ -1323,6 +1638,7 @@ def serve(
     web_root: str | Path = "dist/public",
 ) -> None:
     _control_plane()
+    announce_skills()
     server = ThreadingHTTPServer((host, int(port)), _Handler)
     server.web_root = Path(web_root).resolve()
     try:

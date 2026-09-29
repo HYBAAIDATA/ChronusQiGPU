@@ -665,14 +665,41 @@ class ExactStateVector:
             out.append(acc * scale)
         return ExactStateVector(n, tuple(out), max_amplitudes=self.max_amplitudes)
 
-    def evolve_hamiltonian(self, hamiltonian: str, quarter_turns: int) -> "ExactStateVector":
-        if hamiltonian != "Z":
-            raise NotImplementedError(
-                "exact evolution is limited to declared Pauli-Z quarter-turns; arbitrary matrix exponentials fail closed"
-            )
+    def evolve_hamiltonian(
+        self, hamiltonian: str, quarter_turns: int, qubit: int = 0
+    ) -> "ExactStateVector":
+        """Exact Pauli-axis rotation by ``quarter_turns`` quarter-turns (pi/2
+        each) on ``qubit``.
+
+        Z applies diag(1, i^k) directly. X and Y are conjugations of the
+        same rotation by Clifford gates exact in F4: X^k = H Z^k H (H maps the
+        z-axis to x), and Y^k = (S H) Z^k (H S^dag) (S*H maps z to y).
+        Non-Pauli axes and non-integer turns still fail closed.
+        """
         if not isinstance(quarter_turns, int):
             raise TypeError("quarter_turns must be an integer")
-        return self.evolve_pauli_z(quarter_turns)
+        if not 0 <= qubit < self.num_qubits:
+            raise ValueError("qubit out of range")
+        if hamiltonian == "Z":
+            return self.evolve_pauli_z(quarter_turns, qubit)
+        if hamiltonian == "X":
+            return (
+                self.apply_single(qubit, GATE_H)
+                .evolve_pauli_z(quarter_turns, qubit)
+                .apply_single(qubit, GATE_H)
+            )
+        if hamiltonian == "Y":
+            return (
+                self.apply_single(qubit, GATE_S_DG)
+                .apply_single(qubit, GATE_H)
+                .evolve_pauli_z(quarter_turns, qubit)
+                .apply_single(qubit, GATE_H)
+                .apply_single(qubit, GATE_S)
+            )
+        raise NotImplementedError(
+            "exact evolution supports declared Pauli X/Y/Z quarter-turns; "
+            "arbitrary matrix exponentials fail closed"
+        )
 
 
 def density_trace(rho: Sequence[Sequence[F4]]) -> F4:

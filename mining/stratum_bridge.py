@@ -337,7 +337,14 @@ class StratumBridge:
             if self._listening:
                 await asyncio.sleep(0.05)
                 continue
-            line = await self._reader.readline()
+            # The deadline holds while reading too: a silent pool must not
+            # hold this call past its timeout.
+            try:
+                line = await asyncio.wait_for(
+                    self._reader.readline(), max(0.0, deadline - time.time())
+                )
+            except asyncio.TimeoutError:
+                break
             if not line:
                 raise ConnectionError("pool closed connection")
             try:
@@ -422,7 +429,10 @@ class StratumBridge:
         if writer is not None:
             writer.close()
             try:
-                await writer.wait_closed()
+                # A peer that never acknowledges the close must not hold us.
+                await asyncio.wait_for(writer.wait_closed(), 5.0)
+            except asyncio.TimeoutError:
+                writer.transport.abort()
             except Exception:
                 pass
 
