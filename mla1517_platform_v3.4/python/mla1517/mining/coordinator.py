@@ -83,7 +83,12 @@ from .policy_audit import PolicyAuditor
 from .world_model import MiningWorldModel
 from .toe_adapter import TOEUnavailable, TOEMiningAdapter
 from .toe_context import TOEContextBuilder, TOEContextUnavailable
-from .toe_signal import TOECausalSignal, build_toe_signal, lucas_ladder_status
+from .toe_signal import (
+    TOECausalSignal,
+    TOEConsensusBoundaryError,
+    build_toe_signal,
+    lucas_ladder_status,
+)
 from .toe_decision import (
     TOEDecisionFrameUnavailable,
     TOEMiningDecisionFrame,
@@ -872,12 +877,29 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             return None
         try:
             return build_toe_signal(self.last_toe_context)
+        except TOEConsensusBoundaryError as exc:
+            self._record_toe_boundary_violation(exc)
+            return None
         except (ValueError, TypeError) as exc:
             LOG.warning(
                 "TOE signal conversion failed; continuing without causal signal: %s",
                 exc,
             )
             return None
+
+    def _record_toe_boundary_violation(self, exc: TOEConsensusBoundaryError) -> None:
+        """Record a refused TOE output; the evidence is rejected, not sanitized."""
+        LOG.warning("TOE consensus boundary violation; evidence refused: %s", exc)
+        identity, _reason = self._resolve_work_identity()
+        self.causal.record(
+            "toe_boundary_violation",
+            CausalCoordinate(
+                pool_session_id=identity.pool_session_id if identity else None,
+                generation=identity.generation if identity else None,
+                job_fingerprint=identity.job_fingerprint if identity else None,
+            ),
+            reason=str(exc),
+        )
 
     def _apply_toe_signal(self, signal: TOECausalSignal | None) -> None:
         """Gate dispatch on a valid causal signal; never touches consensus.
@@ -2056,6 +2078,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         if self.last_toe_context is not None:
             try:
                 self.last_toe_frame = build_toe_decision_frame(self.last_toe_context)
+            except TOEConsensusBoundaryError as exc:
+                self._record_toe_boundary_violation(exc)
             except TOEDecisionFrameUnavailable as exc:
                 LOG.warning("TOE decision frame unavailable for %s: %s", record_id, exc)
 

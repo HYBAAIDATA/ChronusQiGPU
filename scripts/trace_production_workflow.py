@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import json
+import re
 import subprocess
 import sys
 import time
@@ -54,7 +55,128 @@ def _head() -> str | None:
         return None
 
 
-def run() -> dict:
+def parse_smoke_log(path: Path) -> dict:
+    """Extract the literal, measured facts from one stratum_bridge smoke log.
+
+    Nothing is inferred: every field comes from a line the bridge actually
+    emitted. A pool that never answers stays NOT_RUN rather than rejected.
+    """
+    text = path.read_text(encoding="utf-8", errors="replace")
+    evidence: dict = {"log": str(path), "file_exists": True}
+    connect = re.search(r"Connecting to Stratum pool (\S+) as (\S+)", text)
+    evidence["endpoint"] = connect.group(1) if connect else None
+    evidence["worker"] = connect.group(2) if connect else None
+    evidence["connected"] = connect is not None
+    authorized = re.search(
+        r"Authorized successfully\. extranonce1=(\S+) extranonce2_size=(\d+)", text
+    )
+    if authorized is not None:
+        evidence["authorize"] = "ACCEPTED"
+        evidence["extranonce1"] = authorized.group(1)
+        evidence["extranonce2_size"] = int(authorized.group(2))
+    elif "mining.authorize rejected" in text:
+        evidence["authorize"] = "REJECTED"
+    else:
+        evidence["authorize"] = "NOT_RUN"
+    pipeline = re.search(r"Pipeline active: backend=(\S+) device=(.+?)\s*$", text, re.M)
+    evidence["actual_backend"] = pipeline.group(1) if pipeline else None
+    evidence["device"] = pipeline.group(2) if pipeline else None
+    fallback = re.search(r"OpenCL init failed, using CPU fallback: (.+)", text)
+    evidence["fallback_reason"] = fallback.group(1).strip() if fallback else None
+    evidence["jobs"] = sorted(set(re.findall(r"\[NEW JOB\] ID=(\S+)", text)))
+    difficulty = re.findall(r"\[NEW JOB\] ID=\S+ difficulty=(\S+) nbits=(\S+)", text)
+    evidence["difficulty"] = difficulty[0][0] if difficulty else None
+    evidence["nbits"] = difficulty[0][1] if difficulty else None
+    orders = set(re.findall(r"order=(\S+)", text))
+    evidence["nonce_orders_observed"] = sorted(orders)
+    evidence["hash_windows"] = len(re.findall(r"batch: \S+ MH/s", text))
+    summary = re.search(
+        r"Session summary: ([\d,]+) hashes computed in ([\d.]+)s "
+        r"\(measured live rate ([\d.]+) MH/s\), (\d+) shares accepted, (\d+) shares rejected",
+        text,
+    )
+    if summary is not None:
+        evidence["hashes"] = int(summary.group(1).replace(",", ""))
+        evidence["elapsed_s"] = float(summary.group(2))
+        evidence["measured_rate_mhs"] = float(summary.group(3))
+        evidence["shares_accepted"] = int(summary.group(4))
+        evidence["shares_rejected"] = int(summary.group(5))
+    if "Pool submission verdict: *** ACCEPTED ***" in text:
+        evidence["share_verdict"] = "ACCEPTED"
+    elif "Pool submission verdict" in text:
+        evidence["share_verdict"] = "REJECTED"
+    else:
+        evidence["share_verdict"] = "NOT_RUN"
+    evidence["halt"] = (re.findall(r"\[HALT\] (.+)", text) or [None])[-1]
+    return evidence
+
+
+def _live_stages(live: list[dict]) -> list[dict]:
+    stages = []
+    for ev in live:
+        stages.append(
+            {
+                "stage": "live_stratum_transport",
+                "component": "stratum_bridge",
+                "function": "connect -> mining.subscribe",
+                "evidence_class": "LIVE_POOL_MEASURED",
+                "status": "PASS" if ev["connected"] else "NOT_RUN",
+                "endpoint": ev["endpoint"],
+                "worker": ev["worker"],
+            }
+        )
+        stages.append(
+            {
+                "stage": "live_authorize",
+                "component": "stratum_bridge",
+                "function": "mining.authorize",
+                "evidence_class": "LIVE_POOL_MEASURED",
+                "status": ev["authorize"],
+                "endpoint": ev["endpoint"],
+                "extranonce1": ev.get("extranonce1"),
+                "extranonce2_size": ev.get("extranonce2_size"),
+            }
+        )
+        stages.append(
+            {
+                "stage": "live_job_and_execution",
+                "component": "stratum_bridge",
+                "function": "mining.notify -> bounded sha256d search",
+                "evidence_class": "LIVE_POOL_MEASURED",
+                "status": "PASS" if ev.get("hashes") else "NOT_RUN",
+                "jobs": ev["jobs"],
+                "difficulty": ev.get("difficulty"),
+                "nbits": ev.get("nbits"),
+                "actual_backend": ev["actual_backend"],
+                "fallback_reason": ev.get("fallback_reason"),
+                "nonce_orders_observed": ev["nonce_orders_observed"],
+                "hashes": ev.get("hashes"),
+                "measured_rate_mhs": ev.get("measured_rate_mhs"),
+                "halt": ev.get("halt"),
+            }
+        )
+        stages.append(
+            {
+                "stage": "live_share_outcome",
+                "component": "stratum_bridge",
+                "function": "mining.submit literal verdict",
+                "evidence_class": "LIVE_POOL_MEASURED",
+                "status": ev["share_verdict"],
+                "endpoint": ev["endpoint"],
+                "shares_accepted": ev.get("shares_accepted", 0),
+                "shares_rejected": ev.get("shares_rejected", 0),
+                "reason": (
+                    "no candidate found at pool difficulty inside the bounded window"
+                    if ev["share_verdict"] == "NOT_RUN"
+                    else None
+                ),
+            }
+        )
+    return stages
+
+
+def run(smoke_logs: list[Path] | None = None) -> dict:
+    live = [parse_smoke_log(path) for path in smoke_logs or []]
     stages = []
 
     def stage(name, component, function, status="PASS", evidence="CONTROLLED_EXECUTION", **extra):
@@ -185,12 +307,20 @@ def run() -> dict:
     ledger.record("controlled_execution", coordinate, pool_outcome="NOT_SUBMITTED")
     assert ledger.trace(execution_id=execution_id)
 
+    stages.extend(_live_stages(live))
     return {
         "schema": "pythia.production_workflow_trace/1",
         "evidence_commit": _head(),
         "mode": "CONTROLLED_PROTOCOL_BOUNDARY",
-        "live_pool_claim": "NOT_RUN",
-        "physical_device_claim": "NOT_RUN",
+        "live_pool_claim": (
+            "MEASURED" if any(ev["authorize"] == "ACCEPTED" for ev in live) else "NOT_RUN"
+        ),
+        "physical_device_claim": (
+            "MEASURED"
+            if any(ev["actual_backend"] not in (None, "cpu") for ev in live)
+            else "NOT_RUN"
+        ),
+        "live_evidence": live,
         "correlation": coordinate.as_dict(),
         "outcome": "NOT_SUBMITTED",
         "stages": stages,
@@ -225,10 +355,20 @@ def run() -> dict:
             "sha256d_remains_proof_authority": "PASS",
             "candidate_correlation": "PASS",
             "learning_references_generating_plan": "PASS",
-            "live_subscribe_authorize": "NOT_RUN",
-            "literal_pool_response": "NOT_RUN",
-            "physical_device_execution": "NOT_RUN",
-            "live_pool_share_accepted": "NOT_RUN",
+            "live_subscribe_authorize": (
+                "PASS" if any(ev["authorize"] == "ACCEPTED" for ev in live) else "NOT_RUN"
+            ),
+            "literal_pool_response": (
+                "PASS" if any(ev["authorize"] != "NOT_RUN" for ev in live) else "NOT_RUN"
+            ),
+            "physical_device_execution": (
+                "PASS"
+                if any(ev["actual_backend"] not in (None, "cpu") for ev in live)
+                else "NOT_RUN"
+            ),
+            "live_pool_share_accepted": (
+                "PASS" if any(ev["share_verdict"] == "ACCEPTED" for ev in live) else "NOT_RUN"
+            ),
         },
         "invariants": {
             "same_toe_frame_plan_execution": record.toe_frame_id == plan.toe_frame_id,
@@ -245,8 +385,15 @@ def main() -> None:
     parser.add_argument(
         "--output", type=Path, default=ROOT / "reports" / "production_workflow_trace.json"
     )
+    parser.add_argument(
+        "--smoke-log",
+        type=Path,
+        action="append",
+        default=[],
+        help="stratum_bridge smoke log(s) whose literal output is measured into the report",
+    )
     args = parser.parse_args()
-    report = run()
+    report = run(smoke_logs=args.smoke_log)
     if not all(report["invariants"].values()):
         raise SystemExit(1)
     args.output.parent.mkdir(parents=True, exist_ok=True)
