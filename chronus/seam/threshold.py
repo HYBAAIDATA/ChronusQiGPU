@@ -10,11 +10,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Optional, Sequence
 
-from igpu.seam import store
-from igpu.seam.attest_compose import CompositeAttestation, attest_compose
-from igpu.seam.kernel import dispatch, poll
-from igpu.seam.probe import Capability
-from igpu.seam.types import (
+from . import store
+from .attest_compose import CompositeAttestation, attest_compose
+from .kernel import dispatch, poll
+from .probe import Capability
+from .types import (
     Err,
     KernelName,
     Ok,
@@ -40,9 +40,17 @@ def host_of(cap: Capability) -> str:
     return str(cap.vendor_extensions.get("host_id") or cap.vendor or cap.device_id)
 
 
-def select_independent(candidates: Sequence[str], fleet: Sequence[Capability], k: Optional[int]) -> List[str]:
-    by_id = {c.device_id: c for c in fleet}
-    live = [by_id[cid] for cid in candidates if cid in by_id and not store.is_quarantined(cid)]
+def select_independent(
+    candidates: Sequence[str],
+    fleet: Sequence[Capability],
+    k: Optional[int],
+) -> List[str]:
+    by_id = {cap.device_id: cap for cap in fleet}
+    live = [
+        by_id[cid]
+        for cid in candidates
+        if cid in by_id and not store.is_quarantined(cid)
+    ]
     selected: List[Capability] = []
     seen_vendor = set()
     seen_host = set()
@@ -53,7 +61,7 @@ def select_independent(candidates: Sequence[str], fleet: Sequence[Capability], k
             seen_vendor.add(cap.vendor)
             seen_host.add(host_of(cap))
         if k is not None and len(selected) >= k:
-            return [c.device_id for c in selected]
+            return [cap.device_id for cap in selected]
 
     for cap in live:
         if cap in selected:
@@ -62,20 +70,17 @@ def select_independent(candidates: Sequence[str], fleet: Sequence[Capability], k
             selected.append(cap)
             seen_host.add(host_of(cap))
         if k is not None and len(selected) >= k:
-            return [c.device_id for c in selected]
+            return [cap.device_id for cap in selected]
 
     for cap in live:
         if cap not in selected:
             selected.append(cap)
         if k is not None and len(selected) >= k:
             break
-    return [c.device_id for c in selected]
+    return [cap.device_id for cap in selected]
 
 
 def min_required(policy: ThresholdPolicy, k: Optional[int], n: int) -> int:
-    # k may only raise the requirement above the policy floor, never lower it —
-    # otherwise majority/unanimous votes pass on a lone agreeing link while the
-    # rest dissented.
     if policy is ThresholdPolicy.unanimous:
         return max(n, 1)
     if policy is ThresholdPolicy.at_least_k:
@@ -86,14 +91,20 @@ def min_required(policy: ThresholdPolicy, k: Optional[int], n: int) -> int:
     return floor
 
 
-def verify_threshold(req: VerificationRequest, fleet: Sequence[Capability]) -> Result[CompositeAttestation]:
+def verify_threshold(
+    req: VerificationRequest,
+    fleet: Sequence[Capability],
+) -> Result[CompositeAttestation]:
     k = req.k
     need = min_required(req.policy, k, len(req.candidates))
     verifiers = select_independent(req.candidates, fleet, max(need, k or 0))
     if len(verifiers) < need:
-        return Err(SeamError.verification_failed, f"independent verifiers {len(verifiers)} < {need}")
+        return Err(
+            SeamError.verification_failed,
+            f"independent verifiers {len(verifiers)} < {need}",
+        )
 
-    caps_by_id = {c.device_id: c for c in fleet}
+    caps_by_id = {cap.device_id: cap for cap in fleet}
     allowed_issuers: set[str] = set()
     for device_id in verifiers:
         allowed_issuers.add(f"result:{device_id}")
@@ -103,33 +114,53 @@ def verify_threshold(req: VerificationRequest, fleet: Sequence[Capability]) -> R
 
     links = []
     expected = list(req.outputs)
-    idem = digest_of("|".join([req.kernel.value] + list(req.inputs)).encode("utf-8"))
+    idem = digest_of(
+        "|".join([req.kernel.value] + list(req.inputs)).encode("utf-8")
+    )
     for device_id in verifiers:
-        dispatched = dispatch("threshold", device_id, req.kernel, {"inputs": req.inputs}, f"tv:{idem}:{device_id}")
+        dispatched = dispatch(
+            "threshold",
+            device_id,
+            req.kernel,
+            {"inputs": req.inputs},
+            f"tv:{idem}:{device_id}",
+        )
         if isinstance(dispatched, Err):
-            store.audit("threshold_dispatch_fail", device_id=device_id, detail=dispatched.detail)
+            store.audit(
+                "threshold_dispatch_fail",
+                device_id=device_id,
+                detail=dispatched.detail,
+            )
             continue
         pre_state = dispatched.value.state
         polled = poll("threshold", dispatched.value)
         if isinstance(polled, Ok) and polled.value is None:
-            # Already-complete handle: a repoll is not evidence of dissent.
             store.audit("threshold_repoll", device_id=device_id)
             continue
         if isinstance(polled, Err):
             if pre_state == "pending" and polled.error is SeamError.verification_failed:
-                # Fresh execution fault on this dispatch — device dissent.
                 store.quarantine(device_id, "threshold_poll")
                 store.audit("threshold_dissent", device_id=device_id, reason="poll")
             else:
-                # Stale failed/cancelled handle replayed by idempotency — already
-                # counted when it first failed; not new evidence against the device.
-                store.audit("threshold_skip", device_id=device_id, reason=polled.error.value)
+                store.audit(
+                    "threshold_skip",
+                    device_id=device_id,
+                    reason=polled.error.value,
+                )
             continue
         result = polled.value
-        got = list(result.handle.outputs) if result.handle.outputs else [digest_of(o) for o in result.outputs]
+        got = (
+            list(result.handle.outputs)
+            if result.handle.outputs
+            else [digest_of(output) for output in result.outputs]
+        )
         if expected and got != expected:
             store.quarantine(device_id, "threshold_mismatch")
-            store.audit("threshold_dissent", device_id=device_id, reason="output_mismatch")
+            store.audit(
+                "threshold_dissent",
+                device_id=device_id,
+                reason="output_mismatch",
+            )
             continue
         if result.attestation.issuer not in allowed_issuers:
             store.quarantine(device_id, "threshold_issuer")
@@ -143,5 +174,8 @@ def verify_threshold(req: VerificationRequest, fleet: Sequence[Capability]) -> R
         links.append(result.attestation)
 
     if len(links) < need:
-        return Err(SeamError.verification_failed, f"agreeing links {len(links)} < {need}")
+        return Err(
+            SeamError.verification_failed,
+            f"agreeing links {len(links)} < {need}",
+        )
     return attest_compose(links, req.policy, k, issuers=allowed_issuers)
