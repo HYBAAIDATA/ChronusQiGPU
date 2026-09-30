@@ -1,25 +1,26 @@
 {
   "schema": "igpu.contract_audit/v1",
-  "commit": "f57d1a9aea77088665063f842eb4538635fbe54c",
-  "branch": "main",
-  "timestamp": "2026-09-29T14:51:15.387181+00:00",
+  "commit": "af247e54cb9427871ae0113cc135962e3696083e",
+  "branch": "devin/1790764454-igpu-contracts",
+  "timestamp": "2026-09-30T11:30:15.720279+00:00",
   "environment": {
-    "python": "3.14.2",
-    "platform": "Windows-10-10.0.19045-SP0"
+    "python": "3.12.10",
+    "platform": "Windows-2022Server-10.0.20348-SP0"
   },
-  "spec_present": false,
+  "spec_present": true,
   "contracts": [
     {
       "contract": "SPEC",
       "title": "CONTRACTS.md present",
-      "status": "ABSENT",
-      "evidence": "absent from the working tree and from every commit (`git log --all -- CONTRACTS.md` -> '')"
+      "status": "PRESENT",
+      "evidence": "C:\\Users\\Administrator\\repos\\PYTHIPhiMiner\\CONTRACTS.md"
     },
     {
       "contract": "C2",
       "title": "AssemblyLock is immutable, versioned and signed",
       "status": "PRESENT",
       "evidence": "assertion passed",
+      "assertion": true,
       "fields": [
         "schema_version",
         "manifest_hash",
@@ -37,6 +38,7 @@
       "title": "lock verifies under its own key and fails under a foreign key",
       "status": "PRESENT",
       "evidence": "assertion passed",
+      "assertion": true,
       "verified_own_key": true,
       "verified_foreign_key": false
     },
@@ -45,6 +47,7 @@
       "title": "lock carries a named signature algorithm",
       "status": "PRESENT",
       "evidence": "assertion passed",
+      "assertion": true,
       "signature_algorithm": "HMAC-SHA256"
     },
     {
@@ -52,6 +55,7 @@
       "title": "all four fold modes declared (PRESERVE/TRANSFORM/REHYDRATE/REJECT)",
       "status": "PRESENT",
       "evidence": "assertion passed",
+      "assertion": true,
       "modes": [
         "PRESERVE",
         "REHYDRATE",
@@ -64,6 +68,7 @@
       "title": "fold contract carries family/exactness/invariants/residual bound",
       "status": "PRESENT",
       "evidence": "assertion passed",
+      "assertion": true,
       "fields": [
         "backend_requirements",
         "canonical_hash_rule",
@@ -83,6 +88,7 @@
       "title": "operator contract carries mode, accepted families and proof rule",
       "status": "PRESENT",
       "evidence": "assertion passed",
+      "assertion": true,
       "fields": [
         "accepted_fold_families",
         "backend_capabilities",
@@ -100,6 +106,7 @@
       "title": "FoldMode.REJECT refuses execution",
       "status": "PRESENT",
       "evidence": "assertion passed",
+      "assertion": true,
       "refused": true
     },
     {
@@ -107,6 +114,7 @@
       "title": "REHYDRATE runs the exact path and counts rehydration on the receipt",
       "status": "PRESENT",
       "evidence": "assertion passed",
+      "assertion": true,
       "rehydration_count": 1,
       "mode": "REHYDRATE"
     },
@@ -115,6 +123,7 @@
       "title": "ResultReceipt records mode, rehydration count, invariants and proof",
       "status": "PRESENT",
       "evidence": "assertion passed",
+      "assertion": true,
       "fields": [
         "backend_certificate",
         "bytes_moved",
@@ -137,6 +146,7 @@
       "title": "EvidenceObject binds payload hash, signature and a verify command",
       "status": "PRESENT",
       "evidence": "assertion passed",
+      "assertion": true,
       "fields": [
         "collected_at",
         "evidence_id",
@@ -153,32 +163,34 @@
       "title": "AssurancePack + starter packs + gap reporting exist",
       "status": "PRESENT",
       "evidence": "assertion passed",
+      "assertion": true,
       "starter_packs": 4,
       "gap_reporter": true
     },
     {
       "contract": "12.8",
       "title": "claims.yaml (release gate)",
-      "status": "ABSENT",
-      "evidence": "no claims.yaml (or .yml) anywhere in the repository"
+      "status": "PRESENT",
+      "evidence": "found: ['claims.yaml']; loader parsed 11 entries"
     },
     {
       "contract": "12.9",
       "title": "pairings.yaml (pairing admission)",
-      "status": "ABSENT",
-      "evidence": "no pairings.yaml (or .yml) anywhere in the repository"
+      "status": "PRESENT",
+      "evidence": "found: ['pairings.yaml']; loader parsed 10 entries"
     },
     {
       "contract": "12.10",
       "title": "signed, versioned deployment manifest",
-      "status": "ABSENT",
-      "evidence": "deployment is hand-composed (['docker-compose.cuda.yml', 'docker-compose.hybrid.yml', 'docker-compose.igpu-linux.yml', 'docker-compose.igpu-wsl2.yml', 'docker-compose.metal.yml', 'docker-compose.override.yml', 'docker-compose.pools.yml', 'docker-compose.rocm.yml', 'docker-compose.yml']) with no signed manifest binding them"
+      "status": "PRESENT",
+      "evidence": "manifests: {'pythia.platform.signed.json': True}"
     },
     {
       "contract": "SEAM",
       "title": "buffer.allocate() succeeds and audits without a field-name collision",
       "status": "PRESENT",
       "evidence": "assertion passed",
+      "assertion": true,
       "allocate_ok": true,
       "audit_kinds": [
         "buffer_allocate"
@@ -189,6 +201,7 @@
       "title": "kernel dispatch returns an attested handle",
       "status": "PRESENT",
       "evidence": "assertion passed",
+      "assertion": true,
       "error": null
     },
     {
@@ -196,6 +209,7 @@
       "title": "dispatch to an absent device fails closed (device_absent)",
       "status": "PRESENT",
       "evidence": "assertion passed",
+      "assertion": true,
       "error": "device_absent"
     },
     {
@@ -203,32 +217,33 @@
       "title": "pytest seam/iGPU passes",
       "status": "PRESENT",
       "evidence": "assertion passed",
+      "assertion": true,
       "command": "python -m pytest -q tests/test_igpu_seam.py tests/test_igpu_scan.py tests/test_seam_axioms.py tests/test_seam_v2.py tests/test_device_identity_contract.py",
       "exit_code": 0,
-      "result": "46 passed in 3.70s"
+      "result": "46 passed in 1.14s"
     },
     {
       "contract": "TESTS",
       "title": "pytest contract plane passes",
       "status": "PRESENT",
       "evidence": "assertion passed",
+      "assertion": true,
       "command": "python -m pytest -q tests/test_hyba_profiles.py tests/test_packs_versioning_observability.py",
       "exit_code": 0,
-      "result": "8 passed in 0.63s"
+      "result": "8 passed in 0.40s"
     },
     {
       "contract": "TESTS",
       "title": "pytest mining contracts passes",
       "status": "PRESENT",
       "evidence": "assertion passed",
+      "assertion": true,
       "command": "python -m pytest -q tests/test_mining_contracts.py tests/test_mining_defect_classes.py tests/test_startup_contract.py",
       "exit_code": 0,
-      "result": "19 passed in 4.59s"
+      "result": "19 passed in 1.76s"
     }
   ],
-  "notes": [
-    "C1-C10 / 12.x numbering is taken from the audit request prose. Statuses below are evidence about THIS repository and cannot be a conformance verdict against a canonical spec that is not present here."
-  ],
+  "notes": [],
   "summary": {
     "contracts_audited": 21,
     "failures": 0,
