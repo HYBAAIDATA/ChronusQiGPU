@@ -12,9 +12,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Callable, List, Optional, Sequence, Tuple
 
-from igpu.seam.signatures import CheckpointStrategy, DEFAULT_CHECKPOINT
-from igpu.seam.thermodynamics import Technology, ThermodynamicMeasurement, measure_thermodynamic
-from igpu.seam.types import Err, KernelName, Ok, Result, SeamError
+from .signatures import CheckpointStrategy, DEFAULT_CHECKPOINT
+from .thermodynamics import (
+    Technology,
+    ThermodynamicMeasurement,
+    measure_thermodynamic,
+)
+from .types import Err, KernelName, Ok, Result, SeamError
 
 
 @dataclass
@@ -38,7 +42,7 @@ def _xor_step(state: bytes, step: int) -> bytes:
     if not state:
         state = b"\x00"
     delta = (step * 17 + 3) & 0xFF
-    return bytes(b ^ delta for b in state)
+    return bytes(value ^ delta for value in state)
 
 
 def dispatch_reversible(
