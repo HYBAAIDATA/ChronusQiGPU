@@ -39,6 +39,9 @@ Pre-existing environment guards skip when no device/OpenCL is present
 | Live-submit env gate | `mining/stratum_bridge.py::is_live_submit_approved` + tests |
 | Proof-checked submit only | `manifold_pool_coordinator.submit_candidate` (SHA256d-checked before submit) |
 | No hashrate fabrication | `control_api.status_payload` + API tests |
+| Guardian absent/down → 503 never silent | `mla1517_platform_v3.4/python/test_telemetry_routes.py::test_privileged_routes_fail_closed_*` |
+| Bitcoin chain/network validation | `mla1517_platform_v3.4/python/test_bitcoin_chain_observer.py` (`assert_chain` via `PYTHIA_BITCOIN_NETWORK`) |
+| Live pool connectivity (never submits) | `scripts/pool_smoke.py` — see OPERATIONS.md; ran live against Braiins/ViaBTC/ckpool during the 2026-09 audit |
 
 ## CI parity
 

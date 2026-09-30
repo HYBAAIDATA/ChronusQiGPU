@@ -191,6 +191,25 @@ class TelemetryRouteTests(unittest.TestCase):
         self.assertFalse(body["available"])
         self.assertIn("audit lock unavailable", body["reason"])
 
+    def test_privileged_routes_fail_closed_when_guardian_is_down(self) -> None:
+        def broken():
+            raise RuntimeError("audit lock unavailable")
+
+        base = self._serve()
+        with patch.object(control_api, "pythia_guardian_api", broken):
+            code, body = self._get(base, "/api/v1/mining/evidence")
+        self.assertEqual(code, 503)
+        self.assertFalse(body["available"])
+        self.assertIn("audit lock unavailable", body["reason"])
+
+    def test_privileged_routes_fail_closed_when_guardian_is_absent(self) -> None:
+        base = self._serve()
+        with patch.object(control_api, "pythia_guardian_api", None):
+            code, body = self._get(base, "/api/v1/mining/evidence")
+        self.assertEqual(code, 503)
+        self.assertFalse(body["available"])
+        self.assertIn("guardian_dependency_unavailable", body["reason"])
+
     def test_a_failing_route_answers_500_json(self) -> None:
         base = self._serve()
         with patch.object(control_api, "telemetry_summary_payload", side_effect=KeyError("x")):

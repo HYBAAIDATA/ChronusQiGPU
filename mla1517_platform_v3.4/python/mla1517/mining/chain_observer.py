@@ -51,6 +51,28 @@ class BitcoinChainObserver:
             raise RuntimeError("Bitcoin RPC rejected chain observation")
         return data["result"]
 
+    def chain(self) -> str:
+        """The network the configured node is on: main/test/testnet4/signet/regtest.
+
+        ``getblockchaininfo`` is the only honest source — a node on the wrong
+        network reports a chain name, not a guess derived from the URL.
+        """
+        info = self._call("getblockchaininfo", [])
+        if not isinstance(info, dict):
+            raise RuntimeError("Bitcoin RPC returned no blockchain info")
+        chain = info.get("chain")
+        if not isinstance(chain, str) or not chain:
+            raise RuntimeError("Bitcoin RPC returned no chain name")
+        return chain
+
+    def assert_chain(self, expected: str) -> None:
+        """Refuse to run against the wrong network; fails closed."""
+        observed = self.chain()
+        if observed != expected:
+            raise RuntimeError(
+                f"Bitcoin RPC chain is {observed!r}; PYTHIA_BITCOIN_NETWORK={expected!r}"
+            )
+
     def confirmed_height(self, block_hash: str) -> int | None:
         try:
             info = self._call("getblockheader", [block_hash, True])

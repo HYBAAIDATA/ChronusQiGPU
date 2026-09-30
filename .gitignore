@@ -55,3 +55,6 @@ smoke-artifacts/
 
 # Lean 4 build output
 proofs/lean/.lake/
+
+# assurance-gate result artifacts (make gates / scripts/gate_runner.py)
+results/
