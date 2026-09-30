@@ -35,6 +35,13 @@ original toe.py monolith, and the substrate modules it runs on):
                                     (Cassini verifier + Zeckendorf codec;
                                     canonical implementation lives in aethel)
     toe.strict_quantum              strict quantum work-window certificates
+    toe.intelligence_state          IntelligenceState — one observation
+                                    bound to statistical/tensor/temporal/
+                                    algebraic/geometric/topological/
+                                    causal-graph views; digest-enforced
+                                    identity, no silent divergence
+    toe.representation              structural signature -> lens selection
+                                    with explicit rejection reasons
     toe.intelligences/              the five intelligences (causal,
                                     geometric, plastic, counterfactual,
                                     quantum)
@@ -70,6 +77,16 @@ from .bridge import (
     TOETrajectoryPrediction,
     create_toe_bridge,
 )
+from .intelligence_state import (
+    DivergenceError,
+    IntelligenceState,
+    LensView,
+)
+from .representation import (
+    choose,
+    select_views,
+    structural_signature,
+)
 from .expansion import (
     TOEExpansionEngine,
     TOEExpansionPolicy,
@@ -93,6 +110,12 @@ __all__ = [
     "TOECausalAnalysis",
     "CausalLadderResult",
     "create_toe_bridge",
+    "IntelligenceState",
+    "LensView",
+    "DivergenceError",
+    "choose",
+    "select_views",
+    "structural_signature",
     "TOEExpansionEngine",
     "TOEExpansionPolicy",
     "TOEExpansionResult",

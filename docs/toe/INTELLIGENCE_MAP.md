@@ -53,8 +53,8 @@ evidence for the status (test file, benchmark section, or honest gap).
 |---|---|---|---|
 | representation | IMPLEMENTED | `toe/operator_compilers.py` → `kellogg.quantum_tensor` / `kellogg.exact_tensor` | deterministic typed-operator compile → 32-dim Hilbert state + exact `Q(ζ8)` path; `toe_elevation_benchmark.json` state roundtrip 20/20 max_err 0.0 |
 | tensor state | IMPLEMENTED | `kellogg/{quantum_tensor,exact_tensor,exact_field}` | Born rule, QFI, Clifford+T exact fractions; tests `test_a_*` |
-| geometry | PARTIAL | `toe/poincare_golden_11d.py`, `toe/phi_klein.py`, `toe/geometric_contract.py` | metrics + 12-check contract exist; no operational geometric-reasoning tasks vs baselines (§32) |
-| topology | PARTIAL | `counterfactual_intelligence.topological_intelligence` (mining-bound); `millennium/poincare_cassini_search.py` (DISCONNECTED) | traversal machine exists but unwired; no ground-truth topological tasks |
+| geometry | PARTIAL | `toe/poincare_golden_11d.py`, `toe/phi_klein.py`, `toe/geometric_contract.py`; `millennium/yang_mills_data.SpectralGeometry` now wired as the `geometric` lens | metrics + 12-check contract + lens exist; no operational geometric-reasoning tasks vs baselines (§32) |
+| topology | PARTIAL | `counterfactual_intelligence.topological_intelligence` (mining-bound); `millennium/yang_mills_data.TopologicalAnalytics` (Vietoris-Rips Betti) now wired as the `topological` lens | real TDA reachable from TOE core; no ground-truth topological tasks (§33) |
 
 ### UNDERSTANDING
 
@@ -99,7 +99,7 @@ evidence for the status (test file, benchmark section, or honest gap).
 
 | Box | Status | Provider | Evidence / gap |
 |---|---|---|---|
-| operator selection | PARTIAL | `TOEBridge.reason` task-field dispatch | no structural-signature → representation/operator selection (§5, §27) |
+| operator selection | PARTIAL | `TOEBridge.reason` task-field dispatch + `toe/representation.py` (`structural_signature` → `select_views`/`choose`) | lens-level selection implemented with explicit rejections + per-lens admissible-operator lists; sensitivity/VOI-driven operator-level choice still open (§27-28) |
 | value of information | PARTIAL | `asi/discovery_engine` EIG (domain-bound) | no VOI on general reasoning tasks (§28) |
 | adaptive precision | UNAVAILABLE | exact `Q(φ)`/`F4` + float paths exist | no sensitivity-driven regime selection; no error-bound bookkeeping per decision (§30-31) |
 | self-test | PARTIAL | `Intelligence/self_test.py` (gate) | not an output-release gate inside the reasoning loop (§40) |
@@ -109,7 +109,7 @@ evidence for the status (test file, benchmark section, or honest gap).
 
 | Concern | Status | Note |
 |---|---|---|
-| multi-representation `IntelligenceState` | UNAVAILABLE | lenses exist (tensor/causal/geometric/topological) but share no bound observation identity (§4) |
+| multi-representation `IntelligenceState` | IMPLEMENTED | `toe/intelligence_state.py` + `toe/representation.py`: 7 lenses (statistical/tensor/temporal/algebraic/geometric/topological/causal_graph) bound to one sha256 observation digest; `DivergenceError` on foreign digest; receipt ledger verifies; probe `toe_representation_elevation.json` 15/15 (§4-5) |
 | cross-domain generality | UNMEASURED | toe core is domain-clean (asserted); no multi-domain capability matrix (§35-36) |
 | invariance under transformation | UNMEASURED | §37 suite absent |
 | adversarial intelligence | UNMEASURED | §39 suite absent (some causal negatives exist) |
@@ -121,7 +121,9 @@ evidence for the status (test file, benchmark section, or honest gap).
 The honest position: TOE has a strong **supplied-model** reasoning core
 (identify → intervene → counterfactual → explain → decide, all
 receipt-chained) and a strong **substrate** (exact arithmetic, 11D fold).
-The paradigm-relevant gaps are (1) no bound multi-representation state,
+The paradigm-relevant gaps are ~~(1) no bound multi-representation state~~
+(resolved §4-5: `IntelligenceState` binds all lens views to one observation
+identity; signature-driven selection with explicit rejections),
 (2) no identifiability oracle beyond backdoor adjustment, (3) no action
 *generation*, (4) no long-horizon memory evidence, (5) no model-revision
 states, (6) no meta-controller over its own operators, (7) no
