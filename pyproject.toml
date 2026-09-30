@@ -30,6 +30,7 @@ dependencies = [
 pythia = "main:main"
 pythia-api = "control_api:main"
 pythia-mine = "mining_runtime:main"
+pythia-gpu-readiness = "gpu.readiness:main"
 
 [project.optional-dependencies]
 hardware = [

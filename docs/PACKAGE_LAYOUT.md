@@ -8,6 +8,10 @@ gpu/
 ├── __init__.py          canonical GPU project API
 ├── backends/             lazy iGPU and ASIC compatibility facades
 ├── fleet.py              lazy heterogeneous fleet facade
+├── tensor.py             measured tensor accounting and VQC tensor loaders
+├── quantum.py            fail-closed Turing VQC facade
+├── manifold.py           production Aethel manifold facade
+├── readiness.py          software and physical-evidence release gates
 ├── reference.py         deterministic matrix/QFI/Grover/SHA-256d oracles
 ├── provenance.py        evidence validation
 └── BLUEPRINT_AUDIT.md   implementation and hardware status

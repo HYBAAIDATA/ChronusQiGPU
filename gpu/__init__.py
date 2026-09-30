@@ -6,6 +6,12 @@ remains in backend packages and must report its actual backend.
 """
 
 from .provenance import ProvenanceError, validate_provenance
+from .readiness import (
+    Gate,
+    ProductionEvidence,
+    audit_software_surfaces,
+    production_readiness,
+)
 from .reference import (
     grover_hendrix_iterate,
     grover_iterate,
@@ -21,6 +27,8 @@ from .reference import (
 
 __all__ = [
     "ProvenanceError",
+    "Gate",
+    "ProductionEvidence",
     "grover_hendrix_iterate",
     "grover_iterate",
     "matmul_f4",
@@ -31,5 +39,7 @@ __all__ = [
     "sha256d_merkle",
     "sha256d_scan",
     "sha256d_verify",
+    "audit_software_surfaces",
+    "production_readiness",
     "validate_provenance",
 ]

@@ -12,6 +12,10 @@ compute telemetry and never multiply SHA-256d hashrate.
 - `gpu.reference`: deterministic reference implementations for matrix, QFI,
   Grover and SHA-256d operations.
 - `gpu.provenance`: validation for source/software/hardware/pool evidence.
+- `gpu.tensor`: measured TFLOP accounting and exact-tensor loaders.
+- `gpu.quantum`: fail-closed access to the separately packaged Turing VQC.
+- `gpu.manifold`: lazy access to the production Aethel manifold.
+- `gpu.readiness`: software and external-evidence production gates.
 - `gpu.backends`: lazy compatibility entry points for iGPU and ASIC backends.
 - `gpu.fleet`: lazy compatibility entry points for inventory and `SuperGPU`.
 - `igpu`: existing physical integrated-GPU/OpenCL backend. This remains a
@@ -24,3 +28,6 @@ Advertised kernels without executable semantics fail closed with
 `kernel_unavailable`.
 
 See `BLUEPRINT_AUDIT.md` for implementation and hardware-verification status.
+
+Run `pythia-gpu-readiness` in the release image. It exits non-zero until every
+software surface and every physical-evidence gate is satisfied.

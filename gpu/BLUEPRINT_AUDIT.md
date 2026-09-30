@@ -15,6 +15,9 @@ executes the gate.
 | `qfi_pure` | `gpu.reference.qfi_pure` | software reference |
 | `grover_iterate` | `gpu.reference.grover_iterate` | software reference |
 | `grover_hendrix_iterate` | permutation-validated reference | software reference |
+| Exact tensor substrate | `gpu.tensor` → Turing VQC exact/quantum tensor modules | packaged separately; import-gated |
+| Virtual quantum computer | `gpu.quantum` → `turing_universal_quantum_computer` | substantial exact implementation; physical-quantum claims excluded |
+| Aethel manifold | `gpu.manifold` → `aethel.manifold` | software implemented; OpenCL punch 0x15 still falls back to CPU |
 | `sha256d_scan` | bounded exhaustive reference plus existing OpenCL path | software verified; target hardware required |
 | `sha256d_verify` | real double-SHA-256 equality | software verified |
 | `sha256d_midstate` | one-block SHA-256 compression state | software verified |
@@ -45,3 +48,6 @@ executes the gate.
    merge SHAs or empty change bundles cannot support production claims.
 8. Measure the built container. The proposed 100 GB allocation is a budget, not
    evidence that the image or cache currently fits.
+9. Promote the 32-face unified-manifold device from `legacy/`, rewire it to
+   canonical modules and move its tests into the normal CI suite. Documentation
+   now marks the legacy boundary explicitly.

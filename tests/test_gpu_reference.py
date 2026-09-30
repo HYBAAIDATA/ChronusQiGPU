@@ -5,6 +5,7 @@ import hashlib
 import pytest
 
 from gpu.provenance import ProvenanceError, validate_provenance
+from gpu.readiness import ProductionEvidence, production_readiness
 from gpu.reference import (
     grover_hendrix_iterate,
     grover_iterate,
@@ -18,6 +19,7 @@ from gpu.reference import (
     sha256d_verify,
 )
 from igpu.seam.types import KERNEL_CLASS, KernelName
+from gpu.tensor import TensorMeasurement
 
 
 def test_matrix_references():
@@ -70,3 +72,20 @@ def test_production_provenance_fails_closed_on_placeholders():
 def test_seam_advertises_reference_sha256d_operations():
     assert KernelName.sha256d_midstate in KERNEL_CLASS
     assert KernelName.sha256d_merkle in KERNEL_CLASS
+
+
+def test_tensor_measurement_never_claims_hashrate():
+    measurement = TensorMeasurement(5_000_000_000_000, 1_000_000_000, "test")
+    assert measurement.tflops == pytest.approx(5.0)
+    assert measurement.as_dict()["hashrate_hps"] is None
+
+
+def test_production_readiness_requires_external_evidence(monkeypatch):
+    monkeypatch.setattr(
+        "gpu.readiness.audit_software_surfaces",
+        lambda: (),
+    )
+    report = production_readiness(ProductionEvidence())
+    assert report["software_ready"] is True
+    assert report["production_ready"] is False
+    assert all(not gate["passed"] for gate in report["gates"])
