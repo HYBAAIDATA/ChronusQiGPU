@@ -1,32 +1,35 @@
-"""The consolidated iGPU device object.
+"""Chronus — HYBA's canonical iGPU offering device object.
 
-:class:`IGPU` is the single object that the whole package converges on: one
-handle over the census (:mod:`igpu.detect`), the resident OpenCL engine
-(:mod:`igpu.engine`), the memory model (:mod:`igpu.runtime`), the hardware
-contract (:mod:`igpu.spec`), the punch ISA host, the SHA-256d consensus
-grinder, and measured self-telemetry (:mod:`igpu.telemetry`).
+:class:`Chronus` is the single hardware-facing product object the package
+converges on: one handle over the device census (:mod:`chronus.detect`), the
+resident OpenCL engine (:mod:`chronus.engine`), the memory model
+(:mod:`chronus.runtime`), the hardware contract (:mod:`chronus.spec`), the
+punch ISA host, the SHA-256d consensus grinder, and measured self-telemetry
+(:mod:`chronus.telemetry`).
 
-The device it describes — the MLA1517-class iGPU — is not a shader array
-with a mining loop bolted on. Per its contract
-(:data:`igpu.spec.SPEC_NAME`), the native compute memory unit is
+Turing remains the computation substrate. Chronus does not absorb or rename
+Turing; it binds Turing's mathematical execution to measured iGPU/GPU/CPU
+backends and owns the product/runtime boundary around that execution.
+
+The device it describes — the MLA1517-class integrated-GPU offering — is not a
+shader array with a mining loop bolted on. Per its contract
+(:data:`chronus.spec.SPEC_NAME`), the native compute-memory unit is
 *mathematical state*: an 11-axis vector carried on the Poincaré-Golden
-manifold, driven by a 32-face icosahedral/dodecahedral execution frame
-whose C(32,2) = 496 pairwise channels are the addressable work of the
-fabric, executed through a 24-op punch ISA and a consensus-grade SHA-256d
-grind with on-device midstates, lane-order traversal, and atomic winner
-reduction.
+manifold, driven by a 32-face icosahedral/dodecahedral execution frame whose
+C(32,2) = 496 pairwise channels are addressable work of the fabric, executed
+through the punch ISA and consensus-grade SHA-256d grind with on-device
+midstates, lane-order traversal, and atomic winner reduction.
 
-Everything the device reports about itself is measured or explicitly
-labelled. ``backend`` names the execution surface that actually ran
-(``opencl:gpu`` / ``opencl:cpu`` / ``cpu`` / ``unavailable``), never the
-one that was hoped for. Projections carry ``projection_is_measured:
-False``. Consensus remains the sole accept authority — the 32-face frame
-orders probes; it does not predict winners.
+Everything Chronus reports about itself is measured or explicitly labelled.
+``backend`` names the execution surface that actually ran
+(``opencl:gpu`` / ``opencl:cpu`` / ``cpu`` / ``unavailable``), never the one
+that was hoped for. Projections carry ``projection_is_measured: False``.
+Consensus remains the sole mining accept authority — geometry orders probes;
+it does not predict winners.
 
-LUCAS WIRING: coordinator module — wires the device surfaces together.
-Each surface it composes keeps its own import boundary; this module only
-binds them lazily so ``import igpu`` never requires pyopencl and never
-touches hardware.
+LUCAS WIRING: coordinator module. Each composed surface keeps its own import
+boundary; construction remains hardware-free so ``import chronus`` never
+requires pyopencl and never touches hardware.
 """
 
 from __future__ import annotations
@@ -36,31 +39,32 @@ from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 
-from igpu import spec as _spec
-from igpu.detect import DetectionReport, DetectedDevice, detect_all
-from igpu.engine import IGPUOpenCLEngine
-from igpu.telemetry import IgpuTelemetry, attach_to_host, get_telemetry
+from chronus import spec as _spec
+from chronus.detect import DetectionReport, DetectedDevice, detect_all
+from chronus.engine import IGPUOpenCLEngine
+from chronus.telemetry import IgpuTelemetry, attach_to_host, get_telemetry
 
-logger = logging.getLogger("igpu.device")
+logger = logging.getLogger("chronus.device")
 
-DEVICE_ID = "pythia_igpu"
+DEVICE_ID = "chronus"
 
 #: The boundary every report restates: geometry orders and shards probes;
 #: consensus double-SHA256 is the sole accept authority; measured numbers are
 #: labelled measured and projections are labelled projections.
 CLAIM_BOUNDARY = (
+    "Chronus is HYBA's iGPU offering over the Turing compute substrate. "
     "The 32-face frame and the 11D Poincaré-golden manifold are a probe-"
     "ordering / state-composition front-end only. sha256d(header80) <= target "
-    "is the sole accept authority; no nonce prediction, nonce-probability "
-    "shift, or proof-of-work advantage is asserted. Throughput figures are "
-    "measured dispatches; any projected figure is labelled as such."
+    "is the sole mining accept authority; no nonce prediction, nonce-"
+    "probability shift, or proof-of-work advantage is asserted. Throughput "
+    "figures are measured dispatches; any projected figure is labelled as such."
 )
 
 
-class IGPU:
-    """One handle over the consolidated iGPU substrate.
+class Chronus:
+    """One handle over the complete Chronus iGPU offering.
 
-    Construction is cheap and hardware-free: no OpenCL work, no census, no
+    Construction is cheap and hardware-free: no OpenCL work, no census, and no
     spec read happens until the corresponding property is touched.
 
     - :attr:`spec` / :attr:`topology` — the device contract.
@@ -87,10 +91,6 @@ class IGPU:
         self._engine: Optional[IGPUOpenCLEngine] = None
         self._punch_host: Any = None
         self._hasher: Any = None
-
-    # ------------------------------------------------------------------
-    # Identity — the contract the device ships
-    # ------------------------------------------------------------------
 
     @property
     def spec(self) -> Dict[str, Any]:
@@ -134,13 +134,9 @@ class IGPU:
         try:
             return dict(self.punch_host.PUNCH_IDS)
         except Exception:  # pragma: no cover - host missing in stripped envs
-            from igpu.telemetry import PUNCH_NAMES
+            from chronus.telemetry import PUNCH_NAMES
 
             return {name: pid for pid, name in PUNCH_NAMES.items()}
-
-    # ------------------------------------------------------------------
-    # Census — what silicon is actually here
-    # ------------------------------------------------------------------
 
     def detect(self, *, refresh: bool = False) -> DetectionReport:
         """Cross-backend device census (CUDA, Metal, OpenCL), cached."""
@@ -154,26 +150,18 @@ class IGPU:
 
     @property
     def selected(self) -> Optional[DetectedDevice]:
-        """The device the census ranks as the substrate's default."""
+        """The device the census ranks as Chronus's default execution device."""
         return self.detect().default()
-
-    # ------------------------------------------------------------------
-    # Execution surfaces — lazy, honest about what actually ran
-    # ------------------------------------------------------------------
 
     @property
     def engine(self) -> IGPUOpenCLEngine:
-        """The process-wide resident OpenCL engine."""
+        """The process-wide resident OpenCL engine used by Chronus."""
         if self._engine is None:
             self._engine = IGPUOpenCLEngine.get()
         return self._engine
 
     def _pinned_opencl_device(self) -> Optional[str]:
-        """Device name the census ranked first — used to pin the execution
-        surfaces so the coordinator's schedule runs on the SAME per-device
-        selection instead of each component re-selecting (or falling back
-        to devices[0]). Returns None when the census has no OpenCL device —
-        components then select for themselves under the same gates."""
+        """Device name ranked first by the census, used to pin execution surfaces."""
         selected = self.selected
         if selected is None or selected.backend != "opencl":
             return None
@@ -181,12 +169,7 @@ class IGPU:
 
     @property
     def punch_host(self) -> Any:
-        """The unified-punch ISA host, built on first access.
-
-        Telemetry is injected via ``telemetry_hook`` — the host is an
-        algorithm module under the LUCAS WIRING purity rule and never
-        imports the collector; the coordinator reaches in instead.
-        """
+        """The unified-punch ISA host, built on first access."""
         if self._punch_host is None:
             from Intelligence.unified_punch import UnifiedPunchHost
 
@@ -206,7 +189,7 @@ class IGPU:
 
     @property
     def telemetry(self) -> IgpuTelemetry:
-        """This device's measured-facts collector."""
+        """This Chronus instance's measured-facts collector."""
         return self._telemetry
 
     @property
@@ -219,13 +202,7 @@ class IGPU:
 
     @property
     def backend(self) -> str:
-        """Honest execution surface label.
-
-        ``opencl:gpu``/``opencl:cpu`` when a punch host or hasher reports a
-        bound OpenCL device, ``opencl-engine`` when only the resident engine
-        bound, ``cpu`` when the substrate is executing on the host fallback,
-        ``unavailable`` when nothing bound at all.
-        """
+        """Honest execution surface label for the backend that actually ran."""
         host = self._punch_host
         if host is not None and getattr(host, "use_opencl", False):
             return str(host.backend)
@@ -251,10 +228,6 @@ class IGPU:
         except Exception:  # pragma: no cover - defensive
             return True
 
-    # ------------------------------------------------------------------
-    # ISA entry points — the work the fabric actually does
-    # ------------------------------------------------------------------
-
     def _punch_id(self, punch: Any) -> int:
         """Resolve a punch name or integer opcode to the opcode."""
         if isinstance(punch, str):
@@ -264,13 +237,14 @@ class IGPU:
             return int(table[punch])
         return int(punch)
 
-    def punch(self, punch: Any, *, n: Optional[int] = None, **channels: Any) -> Dict[str, np.ndarray]:
-        """Run one ISA punch over ``n`` work-items through the real backend.
-
-        ``punch`` is a name (``"poincare_fold"``) or opcode (``0x08``).
-        Channels map to :meth:`UnifiedPunchHost.run_punch_batch`
-        (``in_float`` / ``in_ulong`` / ``in_int`` / ``in_double``).
-        """
+    def punch(
+        self,
+        punch: Any,
+        *,
+        n: Optional[int] = None,
+        **channels: Any,
+    ) -> Dict[str, np.ndarray]:
+        """Run one ISA punch through the real backend."""
         return self.punch_host.run_punch_batch(self._punch_id(punch), n=n, **channels)
 
     def fold(self, x_11d: Any) -> np.ndarray:
@@ -312,27 +286,15 @@ class IGPU:
     ) -> Tuple[Optional[int], Optional[bytes], int]:
         """Bounded SHA-256d window grind on the bound backend.
 
-        Returns ``(winner_nonce | None, winner_digest | None, hashes)``.
         Every digest in the window is physically computed; a device-reported
-        hit is re-verified with hashlib before it is returned — consensus is
-        the sole accept authority, and this method never fabricates one.
+        hit is re-verified with hashlib before it is returned.
         """
         return self.hasher.grind_target_range(
             header80, target_be, base_nonce=base_nonce, count=count
         )
 
-    # ------------------------------------------------------------------
-    # The consolidated truth surface
-    # ------------------------------------------------------------------
-
     def report(self, *, census: bool = True) -> Dict[str, Any]:
-        """The device as one JSON-safe document — measured or labelled.
-
-        Every number in this report is either a geometric fact (topology,
-        channel count, ISA size), a contract clause (acceptance status), or
-        a measured quantity straight out of :mod:`igpu.telemetry`. Nothing
-        here is a projection wearing a measured label.
-        """
+        """Chronus as one JSON-safe, evidence-labelled truth document."""
         engine_info: Dict[str, Any] = {}
         try:
             engine_info = self.engine.as_dict()
@@ -367,7 +329,9 @@ class IGPU:
 
         return {
             "device": DEVICE_ID,
-            "product": _spec.product(self.spec),
+            "product": "Chronus",
+            "compute_substrate": "Turing",
+            "hardware_contract_product": _spec.product(self.spec),
             "contract_version": self.spec.get("contract_version", ""),
             "ontology": _spec.ontology(self.spec),
             "backend": self.backend,
@@ -433,21 +397,21 @@ class IGPU:
                 except Exception:  # pragma: no cover - defensive
                     logger.debug("surface close failed", exc_info=True)
 
-    def __enter__(self) -> "IGPU":
+    def __enter__(self) -> "Chronus":
         return self
 
     def __exit__(self, *exc_info: Any) -> None:
         self.close()
 
 
-def open_device(**kwargs: Any) -> IGPU:
-    """Open the consolidated iGPU substrate — one device object."""
-    return IGPU(**kwargs)
+def open_device(**kwargs: Any) -> Chronus:
+    """Open the Chronus offering as one device/runtime object."""
+    return Chronus(**kwargs)
 
 
 __all__ = [
     "CLAIM_BOUNDARY",
     "DEVICE_ID",
-    "IGPU",
+    "Chronus",
     "open_device",
 ]
