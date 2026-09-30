@@ -61,5 +61,34 @@ See `.env.example` (every variable there is read by live code):
 
 ## Live submit approval
 
-Live share submission requires the three `HYBA_*` gates (see `docs/SECURITY.md`).
-Before enabling in staging/mainnet, confirm the approval-id is recorded and audited.
+On the canonical path (`mla1517_platform_v3.4/python/mla1517/mining/coordinator.py`)
+live submission is permitted only by `--submit` on the miner CLI or the
+operator's runtime approval: `PUT /api/v1/config {"live_submit":{"enabled":true}}`
+binds an approval to the enabled pool's endpoint+worker
+(`SHA-256(endpoint|worker)`); the worker re-polls it every 5 s and submits
+only while connected to exactly that identity — switching pools revokes it.
+The three `HYBA_*` environment gates described in `docs/SECURITY.md` belong to
+the retired `legacy/` miner and are not read by the canonical path.
+
+## HTTP control boundary
+
+Two enforcement layers, both fail closed:
+
+- Non-privileged mutating routes (`PUT /api/v1/config`, `POST
+  /api/v1/agentic/*`, `POST /api/v1/campaign/*`, `POST /api/v1/salamander/fault`)
+  require `Authorization: Bearer $EUCLID_ADMIN_API_KEY`; with no key configured
+  the surface returns 403 for everything and with a bad/missing key 401.
+- Privileged prefixes (`mining/`, `policy/`, `worker/`, `recovery/`, `admin/`,
+  `toe/`, `quantum/`, `scale/`, `assembly/`, `security/`) are AL HARAS-mediated:
+  `X-HYBA-Tenant` + `X-HYBA-Actor` + `Authorization: Bearer <subscription>`,
+  mutating calls carry an `observation` object, and denials are evaluated
+  (400 tenant/actor required, 402 missing token, 403 evaluated deny). The
+  operator console (`frontend/`) drives this flow automatically; if the
+  guardian package is absent the routes fail closed with 503
+  `guardian_dependency_unavailable`.
+
+## Shutdown
+
+`SIGTERM` and `CTRL_BREAK` are handled gracefully: the control API records a
+`shutdown_signal` audit entry and runs its cleanup (`finally` in `serve()`).
+`SIGINT` exits 130 with the same cleanup.

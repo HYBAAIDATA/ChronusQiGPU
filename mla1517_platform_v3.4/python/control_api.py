@@ -1264,25 +1264,46 @@ def _retire_all_arms() -> list[str]:
         return []
 
 
-def _arm_counters() -> dict[str, float]:
-    """Aggregate measured counters across worker metrics sidecars."""
-    totals = {"hashrate_hs": 0.0, "shares_accepted": 0.0}
+def _arm_counters() -> dict[str, float | None]:
+    """Aggregate measured counters across live worker metrics sidecars.
+
+    A worker rewrites its sidecar on every heartbeat tick; a clean exit
+    removes the file, so a stale one belongs to a killed arm whose numbers
+    must not leak into the campaign record. ``hashrate_hs`` is ``None``
+    when no live arm reported one — a measured 0.0 stays distinguishable
+    from "nothing was measured".
+    """
+    totals: dict[str, float | None] = {"hashrate_hs": None, "shares_accepted": 0.0}
     heartbeat_dir = _heartbeat_dir()
     try:
         paths = list(heartbeat_dir.glob("*.metrics.json"))
     except OSError:
         return totals
+    try:
+        max_age = float(os.getenv("PYTHIA_METRICS_SIDECAR_TTL_S", "30"))
+    except ValueError:
+        max_age = 30.0
+    now = time.time()
     for path in paths:
         try:
+            if now - path.stat().st_mtime > max_age:
+                continue
             payload = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             continue
         counters = payload.get("counters")
         if not isinstance(counters, dict):
             continue
+        rate = counters.get("hashrate_hs")
+        if rate is not None:
+            try:
+                totals["hashrate_hs"] = (totals["hashrate_hs"] or 0.0) + float(rate)
+            except (TypeError, ValueError):
+                pass
         try:
-            totals["hashrate_hs"] += float(counters.get("hashrate_hs") or 0.0)
-            totals["shares_accepted"] += float(counters.get("shares_accepted") or 0)
+            totals["shares_accepted"] = (totals["shares_accepted"] or 0.0) + float(
+                counters.get("shares_accepted") or 0
+            )
         except (TypeError, ValueError):
             continue
     return totals
@@ -1483,6 +1504,12 @@ class _Handler(BaseHTTPRequestHandler):
 
     def _guardian_preflight(self, path: str, body: dict[str, Any] | None = None) -> bool:
         """Fail closed before any privileged handler is invoked."""
+        if pythia_guardian_api is None:
+            self._json(
+                HTTPStatus.SERVICE_UNAVAILABLE,
+                {"allowed": False, "reason": "guardian_dependency_unavailable"},
+            )
+            return False
         operation = path.removeprefix("/api/v1/").replace("/", ".")
         evaluate_body = {
             "operation": operation,
@@ -1713,6 +1740,12 @@ class _Handler(BaseHTTPRequestHandler):
     def _guardian_api(self):
         """Return the lazily-built guardian, or answer 503 instead of
         dropping the connection when it cannot be constructed."""
+        if pythia_guardian_api is None:
+            self._json(
+                HTTPStatus.SERVICE_UNAVAILABLE,
+                {"allowed": False, "reason": "guardian_dependency_unavailable"},
+            )
+            return None
         try:
             return pythia_guardian_api()
         except Exception:
@@ -2075,6 +2108,23 @@ def serve(
     bound = getattr(server, "server_address", None)
     if bound and bound[1]:
         publish_active_port(host, bound[1])
+    # SIGTERM/SIGBREAK land on the serving thread; the shutdown request must
+    # run on its own thread or serve_forever never leaves its poll loop.
+    # Cleanup stays single-path in the finally below.
+
+    def _graceful_stop(signum: int, _frame: Any) -> None:
+        _audit().append("shutdown_signal", signum=signum)
+        threading.Thread(target=server.shutdown, daemon=True).start()
+
+    for signum in (signal.SIGTERM, getattr(signal, "SIGBREAK", None)):
+        if signum is None:
+            continue
+        try:
+            signal.signal(signum, _graceful_stop)
+        except (OSError, ValueError):
+            # Not on the main thread (embedded/imported use) — the caller's
+            # own lifecycle governs shutdown.
+            break
     try:
         server.serve_forever()
     finally:
@@ -2104,7 +2154,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    signal.signal(
-        signal.SIGTERM, lambda *_: (_CONTROL.shutdown() if _CONTROL is not None else None)
-    )
     main()
