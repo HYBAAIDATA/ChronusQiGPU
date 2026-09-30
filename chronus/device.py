@@ -1,35 +1,8 @@
-"""Chronus — HYBA's canonical iGPU offering device object.
+"""Chronus — HYBA's canonical iGPU offering device/runtime object.
 
-:class:`Chronus` is the single hardware-facing product object the package
-converges on: one handle over the device census (:mod:`chronus.detect`), the
-resident OpenCL engine (:mod:`chronus.engine`), the memory model
-(:mod:`chronus.runtime`), the hardware contract (:mod:`chronus.spec`), the
-punch ISA host, the SHA-256d consensus grinder, and measured self-telemetry
-(:mod:`chronus.telemetry`).
-
-Turing remains the computation substrate. Chronus does not absorb or rename
-Turing; it binds Turing's mathematical execution to measured iGPU/GPU/CPU
-backends and owns the product/runtime boundary around that execution.
-
-The device it describes — the MLA1517-class integrated-GPU offering — is not a
-shader array with a mining loop bolted on. Per its contract
-(:data:`chronus.spec.SPEC_NAME`), the native compute-memory unit is
-*mathematical state*: an 11-axis vector carried on the Poincaré-Golden
-manifold, driven by a 32-face icosahedral/dodecahedral execution frame whose
-C(32,2) = 496 pairwise channels are addressable work of the fabric, executed
-through the punch ISA and consensus-grade SHA-256d grind with on-device
-midstates, lane-order traversal, and atomic winner reduction.
-
-Everything Chronus reports about itself is measured or explicitly labelled.
-``backend`` names the execution surface that actually ran
-(``opencl:gpu`` / ``opencl:cpu`` / ``cpu`` / ``unavailable``), never the one
-that was hoped for. Projections carry ``projection_is_measured: False``.
-Consensus remains the sole mining accept authority — geometry orders probes;
-it does not predict winners.
-
-LUCAS WIRING: coordinator module. Each composed surface keeps its own import
-boundary; construction remains hardware-free so ``import chronus`` never
-requires pyopencl and never touches hardware.
+Turing is the computation substrate. Chronus binds that computation to measured
+hardware, resident execution, the punch ISA, hashing, state operations and
+telemetry. Construction is lazy and does not touch hardware.
 """
 
 from __future__ import annotations
@@ -39,44 +12,25 @@ from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 
-from chronus import spec as _spec
-from chronus.detect import DetectionReport, DetectedDevice, detect_all
-from chronus.engine import IGPUOpenCLEngine
-from chronus.telemetry import IgpuTelemetry, attach_to_host, get_telemetry
+from . import spec as _spec
+from .detect import DetectionReport, DetectedDevice, detect_all
+from .engine import ChronusOpenCLEngine
+from .telemetry import IgpuTelemetry, PUNCH_NAMES, attach_to_host, get_telemetry
 
 logger = logging.getLogger("chronus.device")
 
 DEVICE_ID = "chronus"
-
-#: The boundary every report restates: geometry orders and shards probes;
-#: consensus double-SHA256 is the sole accept authority; measured numbers are
-#: labelled measured and projections are labelled projections.
 CLAIM_BOUNDARY = (
     "Chronus is HYBA's iGPU offering over the Turing compute substrate. "
-    "The 32-face frame and the 11D Poincaré-golden manifold are a probe-"
-    "ordering / state-composition front-end only. sha256d(header80) <= target "
-    "is the sole mining accept authority; no nonce prediction, nonce-"
-    "probability shift, or proof-of-work advantage is asserted. Throughput "
-    "figures are measured dispatches; any projected figure is labelled as such."
+    "The 32-face frame and 11D Poincaré-golden manifold order/compose work; "
+    "they do not bypass an operation's verification authority. For mining, "
+    "sha256d(header80) <= target is the sole accept authority. Throughput is "
+    "reported only from measured dispatches and projections remain labelled."
 )
 
 
 class Chronus:
-    """One handle over the complete Chronus iGPU offering.
-
-    Construction is cheap and hardware-free: no OpenCL work, no census, and no
-    spec read happens until the corresponding property is touched.
-
-    - :attr:`spec` / :attr:`topology` — the device contract.
-    - :meth:`detect` — the cross-backend census (cached after first call).
-    - :attr:`engine` — the process-wide resident OpenCL engine.
-    - :attr:`punch_host` — the unified-punch ISA host (lazy).
-    - :attr:`hasher` — the SHA-256d consensus grinder (lazy).
-    - :meth:`punch` / :meth:`fold` / :meth:`unfold` / :meth:`norm_sq` —
-      ISA-level entry points.
-    - :meth:`grind` — bounded SHA-256d window grind with hashlib recheck.
-    - :meth:`report` — the consolidated, JSON-safe truth surface.
-    """
+    """Single product handle for Chronus device, runtime and truth surfaces."""
 
     def __init__(
         self,
@@ -88,58 +42,48 @@ class Chronus:
         self._attach_telemetry = bool(attach_telemetry)
         self._detection: Optional[DetectionReport] = None
         self._spec: Optional[Dict[str, Any]] = None
-        self._engine: Optional[IGPUOpenCLEngine] = None
+        self._engine: Optional[ChronusOpenCLEngine] = None
         self._punch_host: Any = None
         self._hasher: Any = None
 
     @property
     def spec(self) -> Dict[str, Any]:
-        """The MLA1517 hardware contract, loaded on first access."""
         if self._spec is None:
             try:
                 self._spec = _spec.load_spec()
-            except Exception as exc:  # pragma: no cover - missing package data
+            except Exception as exc:
                 logger.debug("spec load failed: %s: %s", type(exc).__name__, exc)
                 self._spec = {}
         return self._spec
 
     @property
     def topology(self) -> Dict[str, Any]:
-        """Warp width, node shells, nonce rule, address space."""
         return _spec.topology(self.spec)
 
     @property
     def state_model(self) -> Dict[str, Any]:
-        """The 11-axis state model and its axis names."""
         return _spec.state_model(self.spec)
 
     @property
     def dimensions(self) -> int:
-        """State-space dimension — 11 in the shipping contract."""
         return _spec.dimensions(self.spec)
 
     @property
     def frame_faces(self) -> int:
-        """Execution + memory nodes: 12 icosahedral + 20 dodecahedral = 32."""
         return _spec.frame_faces(self.spec)
 
     @property
     def face_pairs(self) -> int:
-        """Addressable frame channels: C(faces, 2) — 496 at 32 faces."""
         return _spec.face_pairs(self.spec)
 
     @property
     def isa(self) -> Dict[str, int]:
-        """The punch ISA table (name -> opcode) the host dispatches."""
         try:
             return dict(self.punch_host.PUNCH_IDS)
-        except Exception:  # pragma: no cover - host missing in stripped envs
-            from chronus.telemetry import PUNCH_NAMES
-
+        except Exception:
             return {name: pid for pid, name in PUNCH_NAMES.items()}
 
     def detect(self, *, refresh: bool = False) -> DetectionReport:
-        """Cross-backend device census (CUDA, Metal, OpenCL), cached."""
         if refresh or self._detection is None:
             self._detection = detect_all()
         return self._detection
@@ -150,18 +94,15 @@ class Chronus:
 
     @property
     def selected(self) -> Optional[DetectedDevice]:
-        """The device the census ranks as Chronus's default execution device."""
         return self.detect().default()
 
     @property
-    def engine(self) -> IGPUOpenCLEngine:
-        """The process-wide resident OpenCL engine used by Chronus."""
+    def engine(self) -> ChronusOpenCLEngine:
         if self._engine is None:
-            self._engine = IGPUOpenCLEngine.get()
+            self._engine = ChronusOpenCLEngine.get()
         return self._engine
 
     def _pinned_opencl_device(self) -> Optional[str]:
-        """Device name ranked first by the census, used to pin execution surfaces."""
         selected = self.selected
         if selected is None or selected.backend != "opencl":
             return None
@@ -169,7 +110,6 @@ class Chronus:
 
     @property
     def punch_host(self) -> Any:
-        """The unified-punch ISA host, built on first access."""
         if self._punch_host is None:
             from Intelligence.unified_punch import UnifiedPunchHost
 
@@ -180,7 +120,6 @@ class Chronus:
 
     @property
     def hasher(self) -> Any:
-        """The SHA-256d consensus grinder, built on first access."""
         if self._hasher is None:
             from mining.bitcoin_hasher import BitcoinHasher
 
@@ -189,34 +128,31 @@ class Chronus:
 
     @property
     def telemetry(self) -> IgpuTelemetry:
-        """This Chronus instance's measured-facts collector."""
         return self._telemetry
 
     @property
     def available(self) -> bool:
-        """True only when the engine is bound to a real OpenCL device."""
         try:
             return self.engine.available
-        except Exception:  # pragma: no cover - defensive
+        except Exception:
             return False
 
     @property
     def backend(self) -> str:
-        """Honest execution surface label for the backend that actually ran."""
         host = self._punch_host
         if host is not None and getattr(host, "use_opencl", False):
             return str(host.backend)
         hasher = self._hasher
-        if hasher is not None and str(getattr(hasher, "backend", "cpu")).startswith("opencl"):
-            return str(hasher.backend)
+        if hasher is not None:
+            backend = str(getattr(hasher, "backend", "cpu"))
+            if backend.startswith("opencl"):
+                return backend
         try:
             if self.engine.available:
                 return "opencl:" + ("gpu" if self._engine_is_gpu() else "device")
-        except Exception:  # pragma: no cover - defensive
+        except Exception:
             pass
-        if host is not None or hasher is not None:
-            return "cpu"
-        return "unavailable"
+        return "cpu" if host is not None or hasher is not None else "unavailable"
 
     def _engine_is_gpu(self) -> bool:
         engine = self.engine
@@ -225,11 +161,10 @@ class Chronus:
         try:
             gpu_bit = int(getattr(cl.device_type, "GPU", 1 << 2))
             return bool(int(getattr(device, "type", 0) or 0) & gpu_bit)
-        except Exception:  # pragma: no cover - defensive
+        except Exception:
             return True
 
     def _punch_id(self, punch: Any) -> int:
-        """Resolve a punch name or integer opcode to the opcode."""
         if isinstance(punch, str):
             table = self.isa
             if punch not in table:
@@ -244,36 +179,41 @@ class Chronus:
         n: Optional[int] = None,
         **channels: Any,
     ) -> Dict[str, np.ndarray]:
-        """Run one ISA punch through the real backend."""
         return self.punch_host.run_punch_batch(self._punch_id(punch), n=n, **channels)
 
+    def _vectors(self, values: Any) -> Tuple[np.ndarray, bool]:
+        array = np.asarray(values, dtype=np.float32)
+        single = array.ndim == 1
+        array = array.reshape(1, -1) if single else array
+        if array.ndim != 2 or array.shape[1] != self.dimensions:
+            raise ValueError(
+                f"expected state shape ({self.dimensions},) or (n,{self.dimensions}), "
+                f"got {array.shape}"
+            )
+        return array, single
+
     def fold(self, x_11d: Any) -> np.ndarray:
-        """Poincaré fold of ``(n, 11)`` state vectors — punch 0x08."""
-        arr = np.asarray(x_11d, dtype=np.float32)
-        single = arr.ndim == 1
-        arr = arr.reshape(1, -1) if single else arr
-        out = self.punch("poincare_fold", n=arr.shape[0], in_float=arr.ravel())
-        folded = np.asarray(out["float"], dtype=np.float32)[: arr.shape[0] * self.dimensions]
-        folded = folded.reshape(arr.shape[0], self.dimensions)
-        return folded[0] if single else folded
+        array, single = self._vectors(x_11d)
+        out = self.punch("poincare_fold", n=array.shape[0], in_float=array.ravel())
+        values = np.asarray(out["float"], dtype=np.float32)[
+            : array.shape[0] * self.dimensions
+        ].reshape(array.shape[0], self.dimensions)
+        return values[0] if single else values
 
     def unfold(self, folded_11d: Any) -> np.ndarray:
-        """Inverse Poincaré fold — punch 0x09."""
-        arr = np.asarray(folded_11d, dtype=np.float32)
-        single = arr.ndim == 1
-        arr = arr.reshape(1, -1) if single else arr
-        out = self.punch("poincare_unfold", n=arr.shape[0], in_float=arr.ravel())
-        unfolded = np.asarray(out["float"], dtype=np.float32)[: arr.shape[0] * self.dimensions]
-        unfolded = unfolded.reshape(arr.shape[0], self.dimensions)
-        return unfolded[0] if single else unfolded
+        array, single = self._vectors(folded_11d)
+        out = self.punch("poincare_unfold", n=array.shape[0], in_float=array.ravel())
+        values = np.asarray(out["float"], dtype=np.float32)[
+            : array.shape[0] * self.dimensions
+        ].reshape(array.shape[0], self.dimensions)
+        return values[0] if single else values
 
     def norm_sq(self, x_11d: Any) -> np.ndarray:
-        """PHI-weighted squared norm of ``(n, 11)`` vectors — punch 0x15."""
-        arr = np.asarray(x_11d, dtype=np.float32)
-        single = arr.ndim == 1
-        arr = arr.reshape(1, -1) if single else arr
-        out = self.punch("manifold_compute", n=arr.shape[0], in_float=arr.ravel())
-        values = np.asarray(out["float"], dtype=np.float32)[:: self.dimensions][: arr.shape[0]]
+        array, single = self._vectors(x_11d)
+        out = self.punch("manifold_compute", n=array.shape[0], in_float=array.ravel())
+        values = np.asarray(out["float"], dtype=np.float32)[:: self.dimensions][
+            : array.shape[0]
+        ]
         return values[0] if single else values
 
     def grind(
@@ -284,47 +224,43 @@ class Chronus:
         base_nonce: int = 0,
         count: int = 1 << 20,
     ) -> Tuple[Optional[int], Optional[bytes], int]:
-        """Bounded SHA-256d window grind on the bound backend.
-
-        Every digest in the window is physically computed; a device-reported
-        hit is re-verified with hashlib before it is returned.
-        """
         return self.hasher.grind_target_range(
-            header80, target_be, base_nonce=base_nonce, count=count
+            header80,
+            target_be,
+            base_nonce=base_nonce,
+            count=count,
         )
 
     def report(self, *, census: bool = True) -> Dict[str, Any]:
-        """Chronus as one JSON-safe, evidence-labelled truth document."""
-        engine_info: Dict[str, Any] = {}
         try:
             engine_info = self.engine.as_dict()
-        except Exception as exc:  # pragma: no cover - defensive
+        except Exception as exc:
             engine_info = {"available": False, "reason": f"{type(exc).__name__}: {exc}"}
 
         census_info: Optional[Dict[str, Any]] = None
         if census:
             try:
                 census_info = self.detect().as_dict()
-            except Exception as exc:  # pragma: no cover - defensive
+            except Exception as exc:
                 census_info = {"error": f"{type(exc).__name__}: {exc}"}
 
-        host_info: Optional[Dict[str, Any]] = None
+        host_info = None
         if self._punch_host is not None:
             try:
                 host_info = self._punch_host.telemetry_snapshot()
-            except Exception:  # pragma: no cover - defensive
-                host_info = {"backend": self._punch_host.backend}
+            except Exception:
+                host_info = {"backend": getattr(self._punch_host, "backend", "unknown")}
 
-        hasher_info: Optional[Dict[str, Any]] = None
+        hasher_info = None
         if self._hasher is not None:
             try:
                 hasher_info = self._hasher.telemetry()
-            except Exception:  # pragma: no cover - defensive
+            except Exception:
                 hasher_info = {"backend": getattr(self._hasher, "backend", "unknown")}
 
         try:
             telemetry = self._telemetry.snapshot()
-        except Exception as exc:  # pragma: no cover - defensive
+        except Exception as exc:
             telemetry = {"error": f"{type(exc).__name__}: {exc}"}
 
         return {
@@ -371,16 +307,13 @@ class Chronus:
         }
 
     def status_line(self) -> str:
-        """One honest line: backend, bound device, ISA width, frame geometry."""
-        backend = self.backend
-        device = ""
         try:
             device = self.engine.device_name
-        except Exception:  # pragma: no cover - defensive
+        except Exception:
             device = ""
         detail = device or (self.engine.unavailable_reason if not self.available else "")
         return (
-            f"{DEVICE_ID}: backend={backend}"
+            f"{DEVICE_ID}: backend={self.backend}"
             + (f" device={device!r}" if device else "")
             + (f" reason={detail!r}" if detail and not device else "")
             + f" isa={len(self.isa)}-punch dim={self.dimensions}D"
@@ -388,13 +321,12 @@ class Chronus:
         )
 
     def close(self) -> None:
-        """Finish queues and release host-owned device buffers."""
         for surface in (self._punch_host, self._hasher):
             close = getattr(surface, "close", None)
             if callable(close):
                 try:
                     close()
-                except Exception:  # pragma: no cover - defensive
+                except Exception:
                     logger.debug("surface close failed", exc_info=True)
 
     def __enter__(self) -> "Chronus":
@@ -405,13 +337,7 @@ class Chronus:
 
 
 def open_device(**kwargs: Any) -> Chronus:
-    """Open the Chronus offering as one device/runtime object."""
     return Chronus(**kwargs)
 
 
-__all__ = [
-    "CLAIM_BOUNDARY",
-    "DEVICE_ID",
-    "Chronus",
-    "open_device",
-]
+__all__ = ["CLAIM_BOUNDARY", "DEVICE_ID", "Chronus", "open_device"]
