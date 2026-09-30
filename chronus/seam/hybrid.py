@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, List, Sequence
 
-from igpu.seam.probe import Capability
-from igpu.seam.types import KERNEL_CLASS, DeviceClass, KernelClass, KernelName
+from .probe import Capability
+from .types import KERNEL_CLASS, DeviceClass, KernelClass, KernelName
 
 
 @dataclass(frozen=True)
@@ -56,12 +56,15 @@ def supports_class(device: Capability, klass: KernelClass) -> bool:
     return True
 
 
-def fallback_candidates(fleet: Sequence[Capability], klass: KernelClass) -> List[Capability]:
+def fallback_candidates(
+    fleet: Sequence[Capability],
+    klass: KernelClass,
+) -> List[Capability]:
     if klass is KernelClass.hash_heavy:
         return [
-            d
-            for d in fleet
-            if d.device_class
+            device
+            for device in fleet
+            if device.device_class
             in {
                 DeviceClass.gpu_integrated,
                 DeviceClass.gpu_discrete,
@@ -70,11 +73,18 @@ def fallback_candidates(fleet: Sequence[Capability], klass: KernelClass) -> List
             }
         ]
     if klass is KernelClass.compute_heavy:
-        return [d for d in fleet if d.device_class is DeviceClass.cpu_reference]
+        return [
+            device
+            for device in fleet
+            if device.device_class is DeviceClass.cpu_reference
+        ]
     return []
 
 
-def partition(job_kernels: Sequence[KernelName], span: int = 1 << 20) -> Dict[KernelClass, List[Window]]:
+def partition(
+    job_kernels: Sequence[KernelName],
+    span: int = 1 << 20,
+) -> Dict[KernelClass, List[Window]]:
     out: Dict[KernelClass, List[Window]] = {}
     cursor = 0
     width = max(1, int(span) // max(1, len(job_kernels)))
