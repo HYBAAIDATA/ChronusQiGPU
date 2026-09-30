@@ -7,6 +7,7 @@ from typing import Any, Callable, Dict, Optional
 import numpy as np
 
 from .cassini import CassiniVerifier
+from .chronus import ChronusContext
 from .compute import (
     ComputeUnitPool,
     DependencyDAG,
@@ -15,14 +16,14 @@ from .compute import (
     MicroKernelLibrary,
     SPMDExecutor,
 )
-from .gpu import TensorCoreGPU_Context
 from .manifold import ManifoldCurvature, ManifoldSector, PrimeStorageManifold
 
 
 class UnifiedSubstrate:
     """The complete unified substrate.
 
-    Layers 1-5 + topological storage + all architectural fixes.
+    Turing remains the compute substrate; Chronus owns the hardware-facing
+    iGPU offering used by the projection/storage path.
     """
 
     def __init__(
@@ -37,11 +38,14 @@ class UnifiedSubstrate:
         self.microkernels = MicroKernelLibrary()
         self.cluster = DistributedDataflowGraph(n_actors=4)
         self.dag = DependencyDAG()
-        self.gpu = TensorCoreGPU_Context(punch_host=punch_host, require_gpu=require_gpu)
+        self.chronus = ChronusContext(
+            punch_host=punch_host,
+            require_gpu=require_gpu,
+        )
         self.manifold = PrimeStorageManifold(
-            self.gpu,
+            self.chronus,
             n_primes,
-            punch_host=self.gpu.punch_host,
+            punch_host=self.chronus.punch_host,
             require_gpu=require_gpu,
         )
 
@@ -82,16 +86,10 @@ class UnifiedSubstrate:
 
     def shutdown(self) -> None:
         self.cu_pool.shutdown()
-        self.gpu.shutdown()
+        self.chronus.shutdown()
 
     def overhead_report(self) -> Dict[str, Any]:
-        """Measured CPU/memory overhead of the substrate's metered layers.
-
-        The storage path (manifold ingest/read/query) is metered; the
-        virtual compute layers (cu_pool, spmd, cluster, dag) report
-        structural counts only — their thread footprints are OS-level and
-        not visible to ``sys.getsizeof``.
-        """
+        """Measured CPU/memory overhead of the substrate's metered layers."""
         return {
             "manifold": self.manifold.overhead_report(),
             "truth": "measured",
@@ -99,6 +97,8 @@ class UnifiedSubstrate:
 
     def stats(self) -> Dict[str, Any]:
         return {
+            "product": "Chronus",
+            "compute_substrate": "Turing",
             "manifold": self.manifold.stats(),
             "compute": self.cu_pool.stats(),
             "spmd": {"n_warps": len(self.spmd.warps)},
@@ -108,5 +108,4 @@ class UnifiedSubstrate:
         }
 
 
-# Historical alias kept for downstream imports.
 HardenedUnifiedSubstrate = UnifiedSubstrate
