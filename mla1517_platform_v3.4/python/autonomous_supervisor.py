@@ -53,7 +53,7 @@ class AutonomousSupervisor:
             return
         try:
             from Intelligence.autonomous_capabilities import (
-                AutonomousCapabilitySupervisor,
+                AutonomySupervisor,
                 CassiniCycleLedger,
                 CuopLearner,
                 CuopMeter,
@@ -65,7 +65,7 @@ class AutonomousSupervisor:
             return
 
         ledger = CassiniCycleLedger()
-        supervisor = AutonomousCapabilitySupervisor(engine=None, ledger=ledger)
+        supervisor = AutonomySupervisor(engine=None, ledger=ledger)
 
         # Register a subsystem probe for the local control plane.
         def control_plane_probe() -> str:
