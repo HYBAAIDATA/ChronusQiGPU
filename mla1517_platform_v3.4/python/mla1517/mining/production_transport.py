@@ -1,7 +1,7 @@
 """Production transport hardening for the canonical mining coordinator.
 
 This module deliberately wraps the existing, consensus-tested Stratum V1
-implementation instead of creating a second mining stack.  It adds two
+implementation instead of creating a second mining stack. It adds two
 operational properties required by the production runtime:
 
 * bounded, queue-backed socket writes so transport backpressure cannot grow
@@ -19,7 +19,10 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import json
+import logging
 import os
+from collections import deque
 from typing import Any
 
 from manifold_pool_coordinator import (
@@ -28,6 +31,8 @@ from manifold_pool_coordinator import (
 )
 
 from .coordinator import IntelligentPoolCoordinator
+
+LOG = logging.getLogger(__name__)
 
 
 def _positive_env(name: str, default: float) -> float:
@@ -60,10 +65,10 @@ class ProductionStratumClient(StratumClient):
     """Stratum V1 client with a bounded asynchronous outbound queue.
 
     ``StratumClient`` already owns protocol parsing, request correlation,
-    local job/target state and share outcome truth.  This subclass changes
-    only transport scheduling.  Callers enqueue a frame and wait only for a
+    local job/target state and share outcome truth. This subclass changes
+    only transport scheduling. Callers enqueue a frame and wait only for a
     bounded write acknowledgement; the dedicated writer task owns
-    ``StreamWriter.drain()``.  A wedged socket therefore becomes a controlled
+    ``StreamWriter.drain()``. A wedged socket therefore becomes a controlled
     connection failure instead of unbounded event-loop backpressure.
     """
 
@@ -77,6 +82,9 @@ class ProductionStratumClient(StratumClient):
         outbound_queue_size: int | None = None,
         **kwargs: Any,
     ) -> None:
+        # Base __init__ publishes an initial status snapshot and therefore may
+        # call our overridden _publish_status/status_snapshot immediately.
+        self._submit_rtt_ms: deque[float] = deque(maxlen=2048)
         super().__init__(
             *args,
             connect_timeout=(
@@ -120,6 +128,52 @@ class ProductionStratumClient(StratumClient):
     def connected(self) -> bool:
         writer_ok = self._writer_task is None or not self._writer_task.done()
         return super().connected and writer_ok and self._writer_error is None
+
+    def status_snapshot(self) -> dict[str, Any]:
+        """Return measured transport telemetry; unavailable values stay null."""
+        snapshot = self.runtime_state.snapshot()
+        counters = snapshot.get("counters", {})
+        submitted = int(counters.get("submitted", 0) or 0)
+        accepted = int(counters.get("accepted", 0) or 0)
+        rejected = int(counters.get("rejected", 0) or 0)
+        unknown = int(counters.get("unknown", 0) or 0)
+
+        samples = list(self._submit_rtt_ms)
+        ordered = sorted(samples)
+        p95 = None
+        if ordered:
+            p95 = ordered[min(len(ordered) - 1, int(0.95 * (len(ordered) - 1)))]
+        last = samples[-1] if samples else None
+        mean = (sum(samples) / len(samples)) if samples else None
+
+        submission = snapshot.setdefault("submission", {})
+        submission["rtt_ms"] = {
+            "last": round(last, 3) if last is not None else None,
+            "mean": round(mean, 3) if mean is not None else None,
+            "p95": round(p95, 3) if p95 is not None else None,
+            "samples": len(samples),
+        }
+        snapshot["protocol"] = "stratum_v1"
+        snapshot["outcomes"] = {
+            "accepted_ratio": accepted / submitted if submitted else None,
+            "rejected_ratio": rejected / submitted if submitted else None,
+            "unknown_ratio": unknown / submitted if submitted else None,
+            # Job invalidation is not the same thing as a stale share. Until
+            # the search layer reports an observed stale candidate/drop, do
+            # not manufacture a stale ratio from unrelated counters.
+            "stale_ratio": None,
+            "stale_dropped": None,
+        }
+        snapshot["effective_stratum_hashrate_hs"] = None
+        return snapshot
+
+    def _publish_status(self) -> None:
+        if self._status_sink is None:
+            return
+        try:
+            self._status_sink(self.status_snapshot())
+        except Exception:
+            LOG.exception("Stratum status sink failed")
 
     def _ensure_writer_task(self) -> None:
         if self.writer is None:
@@ -194,9 +248,6 @@ class ProductionStratumClient(StratumClient):
         loop = asyncio.get_running_loop()
         future: asyncio.Future[Any] = loop.create_future()
         self._pending[request_id] = future
-
-        import json
-
         payload = (
             json.dumps(
                 {"id": request_id, "method": method, "params": params},
@@ -220,6 +271,17 @@ class ProductionStratumClient(StratumClient):
             raise TimeoutError(
                 f"Stratum request {method!r} timed out after {limit:.1f}s"
             ) from exc
+
+    async def submit(self, params: list[Any]) -> Any:
+        result = await super().submit(params)
+        started = self.runtime_state.last_submit_at
+        finished = self.runtime_state.last_response_at
+        if started is not None and finished is not None and finished >= started:
+            self._submit_rtt_ms.append((finished - started) * 1000.0)
+            # Publish once more so this same accepted/rejected share carries its
+            # measured RTT rather than waiting for the next protocol event.
+            self._publish_status()
+        return result
 
     async def close(self) -> None:
         if self._writer_task is not None:
