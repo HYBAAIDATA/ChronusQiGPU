@@ -1,7 +1,7 @@
-"""The Seam — the only surface the substrate talks to.
+"""Chronus Seam — the vendor-neutral contract above Chronus device execution.
 
-Five layers fused over the existing iGPU / hyba silicon path.
-Kellogg, TOE, and Aethel never see vendor SDKs or driver handles.
+Turing remains compute. Chronus owns the iGPU offering and this seam prevents
+Kellogg, TOE, Aethel and other consumers from depending on vendor SDK handles.
 
 Public functions return Result[T]. Errors are values. Fail closed.
 """
@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from typing import Any, Sequence
 
-from igpu.seam.buffer import AccessPolicy, Buffer, allocate, read, release, write
-from igpu.seam.fleet import (
+from .buffer import AccessPolicy, Buffer, allocate, read, release, write
+from .fleet import (
     Bid,
     DeviceAssignment,
     JobResult,
@@ -21,18 +21,18 @@ from igpu.seam.fleet import (
     route,
     run_hybrid_stratum,
 )
-from igpu.seam.hybrid import (
+from .hybrid import (
     Window,
     fallback_candidates,
     kernel_class,
     partition,
     supports_class,
 )
-from igpu.seam.invariants import audit_hyba_hybrid, audit_igpu
-from igpu.seam.kernel import KernelHandle, KernelResult, cancel, dispatch, poll
-from igpu.seam.probe import Capability, lifecycle, probe_devices
-from igpu.seam.queue import QueueState, WorkItem, dequeue, enqueue, peek, queue_state
-from igpu.seam.types import (
+from .invariants import audit_chronus, audit_hyba_hybrid
+from .kernel import KernelHandle, KernelResult, cancel, dispatch, poll
+from .probe import Capability, lifecycle, probe_devices
+from .queue import QueueState, WorkItem, dequeue, enqueue, peek, queue_state
+from .types import (
     BufferBacking,
     DeviceClass,
     DeviceState,
@@ -48,14 +48,18 @@ from igpu.seam.types import (
 
 
 class Seam:
-    """Top-level contract object bound to one process-local store."""
+    """Top-level Chronus contract object bound to one process-local store."""
 
     @staticmethod
     def for_device(device: Any) -> "Seam":
         probe_devices()
         return Seam()
 
-    def run(self, job: dict, fleet: Sequence[Capability] | None = None) -> Result[JobResult]:
+    def run(
+        self,
+        job: dict,
+        fleet: Sequence[Capability] | None = None,
+    ) -> Result[JobResult]:
         if fleet is None:
             probed = probe_devices()
             if isinstance(probed, Err):
@@ -64,7 +68,10 @@ class Seam:
         return coordinate("seam", job, fleet)
 
 
-def run(job: dict, fleet: Sequence[Capability] | None = None) -> Result[JobResult]:
+def run(
+    job: dict,
+    fleet: Sequence[Capability] | None = None,
+) -> Result[JobResult]:
     return Seam().run(job, fleet)
 
 
@@ -93,8 +100,8 @@ __all__ = [
     "WorkItem",
     "Window",
     "allocate",
+    "audit_chronus",
     "audit_hyba_hybrid",
-    "audit_igpu",
     "bid",
     "cancel",
     "coordinate",
