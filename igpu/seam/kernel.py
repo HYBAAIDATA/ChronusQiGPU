@@ -2,11 +2,20 @@
 
 from __future__ import annotations
 
-import hashlib
 import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+from gpu.reference import (
+    grover_hendrix_iterate,
+    grover_iterate,
+    matmul_f4,
+    matvec_f4,
+    qfi_pure,
+    sha256_midstate,
+    sha256d_merkle,
+    sha256d_verify,
+)
 from igpu.seam import store
 from igpu.seam.probe import lifecycle
 from igpu.seam.types import (
@@ -20,6 +29,7 @@ from igpu.seam.types import (
     Result,
     SeamError,
     attest,
+    canonical_json,
     digest_of,
     new_id,
     now_iso,
@@ -83,7 +93,13 @@ def _input_digests(args: Any) -> List[str]:
     return [digest_of(payload)]
 
 
-def dispatch(caller: str, device_id: str, kernel: KernelName, args: Any, idempotency_key: str) -> Result[KernelHandle]:
+def dispatch(
+    caller: str,
+    device_id: str,
+    kernel: KernelName,
+    args: Any,
+    idempotency_key: str,
+) -> Result[KernelHandle]:
     cap = store.get_cap(device_id)
     if cap is None:
         return Err(SeamError.device_absent, device_id)
@@ -99,7 +115,10 @@ def dispatch(caller: str, device_id: str, kernel: KernelName, args: Any, idempot
         if existing is not None:
             return Ok(existing)
     inputs = _input_digests(args)
-    att = attest(f"{device_id}:{kernel.value}:{','.join(inputs)}:{idempotency_key}", issuer=f"dispatch:{device_id}")
+    att = attest(
+        f"{device_id}:{kernel.value}:{','.join(inputs)}:{idempotency_key}",
+        issuer=f"dispatch:{device_id}",
+    )
     handle = KernelHandle(
         id=new_id("k"),
         device_id=device_id,
@@ -124,6 +143,16 @@ def _host_verify(kernel: KernelName, outputs: List[bytes]) -> bool:
     return True
 
 
+def _encoded(value: Any) -> bytes:
+    return canonical_json(value).encode("utf-8")
+
+
+def _argument_error(handle: KernelHandle, detail: str) -> Err:
+    handle.state = "failed"
+    store.put_handle(handle)
+    return Err(SeamError.capability_mismatch, detail)
+
+
 def _execute(handle: KernelHandle) -> Result[KernelResult]:
     t0 = time.perf_counter_ns()
     outputs: List[bytes] = []
@@ -146,7 +175,10 @@ def _execute(handle: KernelHandle) -> Result[KernelResult]:
                     payload += int(nonce).to_bytes(4, "little")
                 outputs = [payload]
             else:
-                outputs = [b""]
+                return _argument_error(
+                    handle,
+                    "sha256d_scan requires header80 and target byte strings",
+                )
         elif kernel is KernelName.sha256d_verify:
             a = handle.args if isinstance(handle.args, dict) else {}
             payload = a.get("payload")
@@ -156,25 +188,87 @@ def _execute(handle: KernelHandle) -> Result[KernelResult]:
                 or not isinstance(claimed, (bytes, bytearray))
                 or len(claimed) != 32
             ):
-                handle.state = "failed"
-                store.put_handle(handle)
-                return Err(
-                    SeamError.capability_mismatch,
+                return _argument_error(
+                    handle,
                     "sha256d_verify requires args: payload (bytes) and claimed (32-byte digest)",
                 )
-            actual = hashlib.sha256(hashlib.sha256(bytes(payload)).digest()).digest()
-            outputs = [b"\x01" if actual == bytes(claimed) else b"\x00"]
-        elif kernel in (
-            KernelName.lucas_wind,
-            KernelName.pisot_wind,
-            KernelName.cassini_step,
-            KernelName.morton_step,
-            KernelName.korobov_point,
-        ):
-            face = int((handle.args or {}).get("face", 0)) if isinstance(handle.args, dict) else 0
-            outputs = [face.to_bytes(4, "little")]
+            outputs = [
+                b"\x01"
+                if sha256d_verify(bytes(payload), bytes(claimed))
+                else b"\x00"
+            ]
+        elif kernel is KernelName.sha256d_midstate:
+            block = handle.args.get("block64")
+            if not isinstance(block, (bytes, bytearray)) or len(block) != 64:
+                return _argument_error(
+                    handle,
+                    "sha256d_midstate requires block64 (exactly 64 bytes)",
+                )
+            outputs = [sha256_midstate(bytes(block))]
+        elif kernel is KernelName.sha256d_merkle:
+            left = handle.args.get("left")
+            right = handle.args.get("right")
+            if (
+                not isinstance(left, (bytes, bytearray))
+                or not isinstance(right, (bytes, bytearray))
+            ):
+                return _argument_error(
+                    handle,
+                    "sha256d_merkle requires left and right byte strings",
+                )
+            outputs = [sha256d_merkle(bytes(left), bytes(right))]
+        elif kernel is KernelName.matmul_f4:
+            outputs = [_encoded(matmul_f4(handle.args["a"], handle.args["b"]))]
+        elif kernel is KernelName.matvec_f4:
+            outputs = [_encoded(matvec_f4(handle.args["a"], handle.args["x"]))]
+        elif kernel is KernelName.qfi_pure:
+            outputs = [
+                _encoded(
+                    qfi_pure(
+                        handle.args["state"],
+                        handle.args["derivative"],
+                    )
+                )
+            ]
+        elif kernel is KernelName.grover_iterate:
+            outputs = [
+                _encoded(
+                    grover_iterate(
+                        handle.args["state"],
+                        handle.args["marked"],
+                    )
+                )
+            ]
+        elif kernel is KernelName.grover_hendrix_iterate:
+            outputs = [
+                _encoded(
+                    grover_hendrix_iterate(
+                        handle.args["state"],
+                        handle.args["marked"],
+                        handle.args["order"],
+                    )
+                )
+            ]
+        elif kernel is KernelName.attest_result:
+            subject = str(handle.args["subject"])
+            issuer = str(handle.args.get("issuer", "pythia.seam"))
+            outputs = [_encoded(attest(subject, issuer=issuer).as_dict())]
+        elif kernel is KernelName.attest_compose:
+            subjects = handle.args.get("subjects")
+            if not isinstance(subjects, list) or not subjects:
+                return _argument_error(
+                    handle,
+                    "attest_compose requires a non-empty subjects list",
+                )
+            subject = digest_of(canonical_json(subjects).encode("utf-8"))
+            outputs = [_encoded(attest(subject, issuer="pythia.seam.compose").as_dict())]
         else:
-            outputs = [digest_of(kernel.value.encode("utf-8")).encode("utf-8")[:16]]
+            handle.state = "failed"
+            store.put_handle(handle)
+            return Err(
+                SeamError.kernel_unavailable,
+                f"no executable implementation for {kernel.value}",
+            )
     except Exception as exc:
         handle.state = "failed"
         store.put_handle(handle)
@@ -188,7 +282,10 @@ def _execute(handle: KernelHandle) -> Result[KernelResult]:
     if not verified:
         lifecycle(handle.device_id, "quarantine")
         return Err(SeamError.verification_failed, handle.id)
-    result_att = attest(f"result:{handle.id}:{','.join(out_digests)}", issuer=f"result:{handle.device_id}")
+    result_att = attest(
+        f"result:{handle.id}:{','.join(out_digests)}",
+        issuer=f"result:{handle.device_id}",
+    )
     cap = store.get_cap(handle.device_id)
     if cap is not None and cap.privacy_mode is PrivacyMode.zero_knowledge:
         result_att = attest(f"zk:{handle.id}", issuer="zk")

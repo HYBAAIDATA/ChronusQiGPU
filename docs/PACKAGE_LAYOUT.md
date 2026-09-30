@@ -1,9 +1,17 @@
 # Python package layout
 
-The repository ships iGPU and L-HRAS as first-class packages in the main
+The repository ships GPU, iGPU and L-HRAS as first-class packages in the main
 `pythia-mla1517` distribution.
 
 ```text
+gpu/
+├── __init__.py          canonical GPU project API
+├── backends/             lazy iGPU and ASIC compatibility facades
+├── fleet.py              lazy heterogeneous fleet facade
+├── reference.py         deterministic matrix/QFI/Grover/SHA-256d oracles
+├── provenance.py        evidence validation
+└── BLUEPRINT_AUDIT.md   implementation and hardware status
+
 igpu/
 ├── __init__.py          lazy public API; safe on hosts without accelerators
 ├── detect.py            explicit hardware discovery
@@ -31,7 +39,7 @@ l_hras/
 
 ## Packaging rules
 
-1. Both roots and their Python subpackages are listed explicitly in
+1. All roots and their Python subpackages are listed explicitly in
    `pyproject.toml`.
 2. Both packages publish `py.typed` under PEP 561.
 3. OpenCL kernels, deployment templates and the L-HRAS example configuration
