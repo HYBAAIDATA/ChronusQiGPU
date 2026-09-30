@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, Optional
 
-from igpu.seam.types import KERNEL_CLASS, KernelClass, KernelName
+from .types import KERNEL_CLASS, KernelClass, KernelName
 
 
 @dataclass(frozen=True)
@@ -25,10 +25,18 @@ class CheckpointStrategy:
         return (2 * n - 1) ** k
 
     def as_dict(self) -> dict:
-        return {"interval": self.interval, "max_in_flight": self.max_in_flight, "epsilon": self.epsilon}
+        return {
+            "interval": self.interval,
+            "max_in_flight": self.max_in_flight,
+            "epsilon": self.epsilon,
+        }
 
 
-DEFAULT_CHECKPOINT = CheckpointStrategy(interval=8, max_in_flight=4, epsilon=0.5)
+DEFAULT_CHECKPOINT = CheckpointStrategy(
+    interval=8,
+    max_in_flight=4,
+    epsilon=0.5,
+)
 
 
 @dataclass(frozen=True)
@@ -51,27 +59,52 @@ class KernelSignature:
             "inverse": None if self.inverse is None else self.inverse.value,
             "uncomputable": self.uncomputable,
             "checkpointable": self.checkpointable,
-            "checkpoint_strategy": None if self.checkpoint_strategy is None else self.checkpoint_strategy.as_dict(),
+            "checkpoint_strategy": (
+                None
+                if self.checkpoint_strategy is None
+                else self.checkpoint_strategy.as_dict()
+            ),
             "landauer_bits": self.landauer_bits,
             "fault_tolerant": self.fault_tolerant,
         }
 
 
 def _irreversible(name: KernelName, bits: int = 1) -> KernelSignature:
-    return KernelSignature(name, KERNEL_CLASS.get(name, KernelClass.coordination), False, None, False, False, None, bits)
+    return KernelSignature(
+        name,
+        KERNEL_CLASS.get(name, KernelClass.coordination),
+        False,
+        None,
+        False,
+        False,
+        None,
+        bits,
+    )
 
 
 def _reversible(name: KernelName, inverse: KernelName) -> KernelSignature:
     klass = KERNEL_CLASS.get(name, KernelClass.compute_heavy)
-    return KernelSignature(name, klass, True, inverse, True, True, DEFAULT_CHECKPOINT, 0)
+    return KernelSignature(
+        name,
+        klass,
+        True,
+        inverse,
+        True,
+        True,
+        DEFAULT_CHECKPOINT,
+        0,
+    )
 
 
-SIGNATURES: Dict[KernelName, KernelSignature] = {}
-for _name in KernelName:
-    SIGNATURES[_name] = _irreversible(_name)
+SIGNATURES: Dict[KernelName, KernelSignature] = {
+    name: _irreversible(name) for name in KernelName
+}
 
-for _rev in (KernelName.reversible_matmul_f4, KernelName.reversible_qfi_pure):
-    SIGNATURES[_rev] = _reversible(_rev, _rev)
+for reversible in (
+    KernelName.reversible_matmul_f4,
+    KernelName.reversible_qfi_pure,
+):
+    SIGNATURES[reversible] = _reversible(reversible, reversible)
 
 
 def signature_of(kernel: KernelName) -> KernelSignature:
