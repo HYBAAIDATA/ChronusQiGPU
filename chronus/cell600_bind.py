@@ -1,13 +1,14 @@
-"""Bind the H4 600-cell frame to IGpuSku + Pathfinder + nonce partition."""
+"""Bind the H4 600-cell frame to a Chronus SKU, pathfinder and nonce partition."""
 
 from __future__ import annotations
 
 from typing import Any, Dict
 
-from igpu.h4_600 import build_600_frame
-from igpu.h4_coverage import coverage_certificate
-from igpu.h4_group import symmetry_report
 from Intelligence.search_crystal import partition_interval
+
+from .h4_600 import build_600_frame
+from .h4_coverage import coverage_certificate
+from .h4_group import symmetry_report
 
 
 def bind_600(sku=None, nonce_start: int = 0, nonce_size: int = 1_000_000) -> Dict[str, Any]:
@@ -35,5 +36,8 @@ def bind_600(sku=None, nonce_start: int = 0, nonce_size: int = 1_000_000) -> Dic
         "ticket": None if ticket is None else ticket.as_dict(),
         "coverage": sum(p.size for p in parts) == nonce_size,
         "certificate": cert,
-        "symmetry": symmetry_report((1.0, 0.0, 0.0, 0.0), (1.0, 0.0, 0.0, 0.0)),
+        "symmetry": symmetry_report(
+            (1.0, 0.0, 0.0, 0.0),
+            (1.0, 0.0, 0.0, 0.0),
+        ),
     }
