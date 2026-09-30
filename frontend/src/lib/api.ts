@@ -5,6 +5,10 @@ const OPERATOR_KEY = "pythia.operatorKey";
 const SUBSCRIPTION_TOKEN = "pythia.subscriptionToken";
 const HYBA_TENANT = "pythia.hybaTenant";
 const HYBA_ACTOR = "pythia.hybaActor";
+// Cancelled credential prompts are remembered for the session — otherwise
+// every denied poll would re-ask forever.
+const OPERATOR_KEY_DECLINED = "pythia.operatorKeyDeclined";
+const SUBSCRIPTION_DECLINED = "pythia.subscriptionDeclined";
 
 // Mirrors control_api._PRIVILEGED_PREFIXES: these routes are mediated by the
 // subscription guardian — X-HYBA tenant/actor headers plus the subscription
@@ -124,7 +128,8 @@ async function reasonIs(response: Response, wanted: string): Promise<boolean> {
  * on guardian-mediated routes, the subscription boundary (X-HYBA headers +
  * subscription bearer, and the POST body's `observation`). On the matching
  * denial the operator is asked for the missing credential once and the
- * request is retried with it.
+ * request is retried with it. Cancelling the prompt declines for the rest of
+ * the session — denied responses then surface honestly without re-asking.
  */
 export async function apiFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
   const target = typeof input === "string" ? apiUrl(input) : input;
@@ -147,10 +152,14 @@ export async function apiFetch(input: RequestInfo | URL, init: RequestInit = {})
       response.status === 402 ||
       response.status === 403 ||
       (response.status === 400 && (await reasonIs(response, "TENANT_AND_ACTOR_REQUIRED")));
-    if (!retryable) return response;
+    if (!retryable || sessionGet(SUBSCRIPTION_DECLINED) === "1") return response;
     if (creds) setSubscriptionCreds(null); // the stored creds were refused
     const entered = promptSubscriptionCreds();
-    if (!entered) return response;
+    if (!entered) {
+      sessionSet(SUBSCRIPTION_DECLINED, "1");
+      return response;
+    }
+    sessionSet(SUBSCRIPTION_DECLINED, null);
     setSubscriptionCreds(entered);
     applySubscriptionHeaders(headers, entered);
     const retryInit = mutating ? withObservation(init, entered.actor) : init;
@@ -160,12 +169,21 @@ export async function apiFetch(input: RequestInfo | URL, init: RequestInit = {})
   const key = mutating ? operatorKey() : null;
   if (key) headers.set("Authorization", `Bearer ${key}`);
   const response = await fetch(target, { ...init, headers });
-  if (!mutating || response.status !== 401 || typeof window.prompt !== "function") {
+  if (
+    !mutating ||
+    response.status !== 401 ||
+    typeof window.prompt !== "function" ||
+    sessionGet(OPERATOR_KEY_DECLINED) === "1"
+  ) {
     return response;
   }
   if (key) setOperatorKey(null); // the stored key was refused
   const entered = window.prompt("Operator key (EUCLID_ADMIN_API_KEY)")?.trim();
-  if (!entered) return response;
+  if (!entered) {
+    sessionSet(OPERATOR_KEY_DECLINED, "1");
+    return response;
+  }
+  sessionSet(OPERATOR_KEY_DECLINED, null);
   setOperatorKey(entered);
   headers.set("Authorization", `Bearer ${entered}`);
   return fetch(target, { ...init, headers });

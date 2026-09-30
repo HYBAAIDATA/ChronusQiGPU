@@ -13,6 +13,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   setOperatorKey(null);
   setSubscriptionCreds(null);
+  window.sessionStorage.clear();
 });
 
 describe("apiUrl", () => {
@@ -103,6 +104,17 @@ describe("operator key", () => {
     expect(response.status).toBe(401);
     expect(operatorKey()).toBeNull();
   });
+
+  it("does not re-prompt after the operator declines once", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      createMockResponse({ error: "operator key required" }, { status: 401 }),
+    );
+    const prompt = vi.spyOn(window, "prompt").mockReturnValue(null);
+    await apiFetch("/api/v1/config", { method: "PUT", body: "{}" });
+    const response = await apiFetch("/api/v1/config", { method: "PUT", body: "{}" });
+    expect(response.status).toBe(401);
+    expect(prompt).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("subscription boundary", () => {
@@ -163,5 +175,17 @@ describe("subscription boundary", () => {
     const response = await apiFetch("/api/v1/mining/evidence");
     expect(response.status).toBe(402);
     expect(subscriptionCreds()).toBeNull();
+  });
+
+  it("does not re-prompt on every denied poll after declining", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      createMockResponse({ allowed: false }, { status: 402 }),
+    );
+    const prompt = vi.spyOn(window, "prompt").mockReturnValue(null);
+    await apiFetch("/api/v1/mining/evidence");
+    await apiFetch("/api/v1/mining/evidence");
+    const response = await apiFetch("/api/v1/mining/evidence");
+    expect(response.status).toBe(402);
+    expect(prompt).toHaveBeenCalledTimes(1);
   });
 });
