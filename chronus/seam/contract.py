@@ -10,11 +10,11 @@ import logging
 import traceback
 from typing import Any, Callable, TypeVar
 
-from igpu.seam import store
-from igpu.seam.types import Err, Ok, Result, SeamError
+from . import store
+from .types import Err, Ok, Result, SeamError
 
 T = TypeVar("T")
-_LOG = logging.getLogger("igpu.seam.contract")
+_LOG = logging.getLogger("chronus.seam.contract")
 
 
 def _map_exception(exc: BaseException) -> SeamError:
@@ -49,9 +49,16 @@ def seam_guard(fn: Callable[..., T], *args: Any, **kwargs: Any) -> Result[T]:
     except Exception as exc:
         code = _map_exception(exc)
         detail = f"{type(exc).__name__}: {exc}"
-        store.audit("seam_unknown" if code is SeamError.unknown else "seam_error", detail=detail)
+        store.audit(
+            "seam_unknown" if code is SeamError.unknown else "seam_error",
+            detail=detail,
+        )
         if code is SeamError.unknown:
-            _LOG.error("unknown seam exception: %s\n%s", detail, traceback.format_exc())
+            _LOG.error(
+                "unknown Chronus seam exception: %s\n%s",
+                detail,
+                traceback.format_exc(),
+            )
         return Err(code, detail)
 
 
