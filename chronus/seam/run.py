@@ -1,4 +1,4 @@
-"""python -m igpu.seam.run --config config.toml"""
+"""``python -m chronus.seam.run --config config.toml``."""
 
 from __future__ import annotations
 
@@ -25,9 +25,10 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="config.toml")
     args = parser.parse_args(argv)
-    cfg = load_config(Path(args.config))
-    pool = cfg.get("pool") or {}
-    from igpu.seam.workflow import run_workflow
+    config = load_config(Path(args.config))
+    pool = config.get("pool") or {}
+
+    from .workflow import run_workflow
 
     result = asyncio.run(
         run_workflow(
@@ -35,7 +36,7 @@ def main(argv: list[str] | None = None) -> int:
             int(pool.get("port", 3333)),
             str(pool.get("worker", "pythia")),
             str(pool.get("password", "x")),
-            window=int(cfg.get("window", pool.get("window", 4096))),
+            window=int(config.get("window", pool.get("window", 4096))),
         )
     )
     print("accepted", result.accepted)
