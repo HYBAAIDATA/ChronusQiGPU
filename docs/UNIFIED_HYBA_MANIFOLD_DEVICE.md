@@ -1,13 +1,24 @@
 # Unified HYBA Manifold Hashing Device
 
-**Status:** authoritative. This document supersedes the three earlier drafts
-("HYBA 11D Poincaré-Golden Kernel Specification", the iGPU/hashrate "device"
-note, and "Dodecahedron/Icosahedron on the 11D Manifold compatibility"). Where
-those drafts and this document disagree, this document and the cited source
-files win.
+**Status:** historical design, not a production authority.
 
-Reference implementation: `Intelligence/unified_manifold_device.py`
-(`UnifiedManifoldHashingDevice`). Tests: `tests/test_unified_manifold_device.py`.
+The previously cited `Intelligence/unified_manifold_device.py` and
+`tests/test_unified_manifold_device.py` do not exist in the production tree;
+their implementations remain under `legacy/`. Several paths later in this
+document are therefore descriptive mappings, not deployable entry points.
+
+Production authority is split across:
+
+- `aethel.manifold` for integrity-checked storage, geodesic navigation and
+  self-healing;
+- `gpu.manifold` for the canonical lazy package facade;
+- `gpu.reference` and `igpu` for SHA-256d reference and OpenCL execution;
+- `turing_universal_quantum_computer` for the exact virtual-quantum substrate;
+- `gpu.readiness` for fail-closed software and physical-evidence gates.
+
+The 32-face `UnifiedManifoldHashingDevice` must not be advertised as a
+production feature until it is promoted from `legacy/`, its imports are
+rewired to canonical modules, and its tests run in the normal CI suite.
 
 ---
 
@@ -18,9 +29,8 @@ Reference implementation: `Intelligence/unified_manifold_device.py`
 > accept authority; no nonce prediction, nonce-probability shift, or
 > proof-of-work advantage is asserted.
 
-This is `CLAIM_BOUNDARY` in `Intelligence/unified_manifold_device.py` and is
-returned verbatim in every result dict. It restates boundaries the repository
-already enforces:
+This was `CLAIM_BOUNDARY` in the legacy unified-device implementation. It
+restates boundaries the production repository enforces elsewhere:
 
 * `Intelligence/search_crystal.py` (module docstring):
   > The 32 face normals define deterministic work shards and traversal order. A
@@ -71,10 +81,9 @@ exist** here and must not be cited.
 | Metal shaders | `HYBA_Phi-main/metal/*.metal` | **None.** There are no `.metal` files in this repository. The only GPU language is OpenCL C. |
 | Solutions / control API | `HYBA_Phi-main/solutions_api` | `mla1517_platform_v3.4/python/control_api.py` (`/api/health`, `/api/v1/readyz`, `/api/v1/mla1517/status`, `/api/v1/telemetry/summary`) served by `main.py` |
 
-Note: `mining/bitcoin_hasher.py` looks for `kernels/bitcoin_sha256d.cl`; that
-file is not currently checked in, so the standalone OpenCL hasher raises
-`FileNotFoundError` on this tree. The unified device does not depend on it —
-it grinds through `NearStateIGpu.mine`.
+Note: `kernels/bitcoin_sha256d.cl` is checked in, with packaged copies under
+`igpu/kernels/` and the Turing VQC package. Availability still requires a
+working OpenCL runtime and target device.
 
 ---
 
