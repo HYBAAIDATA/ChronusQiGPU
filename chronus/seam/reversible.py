@@ -8,7 +8,7 @@ distinction explicit:
 * 2LAL / S2LAL (Frank): fully static, fully adiabatic modulo leakage.
 * Caltech Seitz 1985: shared off-chip resonant inductance.
 
-On commodity iGPU/CPU the inverse schedule is real. Charge recovery is
+On commodity GPU/CPU hardware the inverse schedule is real. Charge recovery is
 a declared model, never a silicon claim.
 """
 
@@ -19,8 +19,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
-from igpu.seam.types import Err, KernelName, Ok, PhysicalMeasurement, Result, SeamError
-
+from .types import Err, KernelName, Ok, PhysicalMeasurement, Result, SeamError
 
 K_BOLTZMANN = 1.380649e-23
 LANDAUER_J_PER_BIT = K_BOLTZMANN * 300.0 * math.log(2.0)
@@ -37,11 +36,24 @@ class AdiabaticFamily(str, Enum):
 
 FAMILY_NOTES: Dict[AdiabaticFamily, str] = {
     AdiabaticFamily.none: "irreversible CMOS; full CV^2 dump per switch",
-    AdiabaticFamily.caltech_seitz_resonant: "Seitz et al. 1985 — shared off-chip LC, on-chip switching",
-    AdiabaticFamily.mit_crl: "Younis & Knight 1993 Charge Recovery Logic — first fully adiabatic sequential CMOS",
-    AdiabaticFamily.mit_scrl: "Younis & Knight 1994 Split-level Charge Recovery Logic — split rails, reversible pipeline",
-    AdiabaticFamily.mit_2lal: "Frank Two-Level Adiabatic Logic — dual-rail transmission gates",
-    AdiabaticFamily.mit_s2lal: "Frank Static 2-Level Adiabatic Logic — fully static, 8-phase trapezoidal clocks",
+    AdiabaticFamily.caltech_seitz_resonant: (
+        "Seitz et al. 1985 — shared off-chip LC, on-chip switching"
+    ),
+    AdiabaticFamily.mit_crl: (
+        "Younis & Knight 1993 Charge Recovery Logic — first fully adiabatic "
+        "sequential CMOS"
+    ),
+    AdiabaticFamily.mit_scrl: (
+        "Younis & Knight 1994 Split-level Charge Recovery Logic — split rails, "
+        "reversible pipeline"
+    ),
+    AdiabaticFamily.mit_2lal: (
+        "Frank Two-Level Adiabatic Logic — dual-rail transmission gates"
+    ),
+    AdiabaticFamily.mit_s2lal: (
+        "Frank Static 2-Level Adiabatic Logic — fully static, 8-phase "
+        "trapezoidal clocks"
+    ),
 }
 
 
@@ -67,7 +79,12 @@ class ReversibilityClaim:
         }
 
 
-def adiabatic_dissipation(c_farad: float, v_volt: float, r_ohm: float, t_s: float) -> float:
+def adiabatic_dissipation(
+    c_farad: float,
+    v_volt: float,
+    r_ohm: float,
+    t_s: float,
+) -> float:
     if t_s <= 0.0:
         return 0.5 * c_farad * v_volt * v_volt
     return ((2.0 * r_ohm * c_farad) / t_s) * (c_farad * v_volt * v_volt)
@@ -130,7 +147,7 @@ def _matmul(a: List[List[float]], b: List[List[float]]) -> List[List[float]]:
 
 
 def _sub(a: List[List[float]], b: List[List[float]]) -> List[List[float]]:
-    return [[x - y for x, y in zip(ra, rb)] for ra, rb in zip(a, b)]
+    return [[x - y for x, y in zip(row_a, row_b)] for row_a, row_b in zip(a, b)]
 
 
 @dataclass
@@ -156,21 +173,33 @@ def bennett_uncompute(
         charge_recovered=False,
         family=AdiabaticFamily.none,
         landauer_bits_erased=0,
-        modeled_energy_j=modeled_switch_energy(AdiabaticFamily.none, switches=len(garbage) + len(live)),
-        note="Bennett uncomputation on irreversible hardware; Landauer bits erased = 0; CV^2 not recovered",
+        modeled_energy_j=modeled_switch_energy(
+            AdiabaticFamily.none,
+            switches=len(garbage) + len(live),
+        ),
+        note=(
+            "Bennett uncomputation on irreversible hardware; Landauer bits "
+            "erased = 0; CV^2 not recovered"
+        ),
     )
     return Ok((restored if restored else live, claim))
 
 
-def reversible_matmul(a: List[List[float]], b: List[List[float]]) -> Result[Tuple[List[List[float]], ReversibilityClaim]]:
+def reversible_matmul(
+    a: List[List[float]],
+    b: List[List[float]],
+) -> Result[Tuple[List[List[float]], ReversibilityClaim]]:
     def compute() -> Tuple[List[bytes], List[bytes]]:
-        c = _matmul(a, b)
-        return [repr(c).encode("utf-8")], [repr(a).encode("utf-8"), repr(b).encode("utf-8")]
+        matrix = _matmul(a, b)
+        return [repr(matrix).encode("utf-8")], [
+            repr(a).encode("utf-8"),
+            repr(b).encode("utf-8"),
+        ]
 
     def uncompute(live: List[bytes], garbage: List[bytes]) -> List[bytes]:
-        c = _matmul(a, b)
-        zero = _sub(c, c)
-        if any(abs(v) > 1e-12 for row in zero for v in row):
+        matrix = _matmul(a, b)
+        zero = _sub(matrix, matrix)
+        if any(abs(value) > 1e-12 for row in zero for value in row):
             raise RuntimeError("uncompute failed to restore zero target")
         return live
 
@@ -181,17 +210,26 @@ def reversible_matmul(a: List[List[float]], b: List[List[float]]) -> Result[Tupl
     return Ok((_matmul(a, b), claim))
 
 
-def reversible_qfi(psi: Sequence[float], generator: Sequence[float]) -> Result[Tuple[float, ReversibilityClaim]]:
+def reversible_qfi(
+    psi: Sequence[float],
+    generator: Sequence[float],
+) -> Result[Tuple[float, ReversibilityClaim]]:
     if len(psi) != len(generator):
         return Err(SeamError.capability_mismatch, "psi/generator length")
-    norm = math.sqrt(sum(x * x for x in psi)) or 1.0
-    p = [x / norm for x in psi]
-    mean = sum(pr * g for pr, g in zip(p, generator))
-    var = sum(pr * (g - mean) ** 2 for pr, g in zip(p, generator))
-    qfi = 4.0 * var
+    norm = math.sqrt(sum(value * value for value in psi)) or 1.0
+    probabilities = [value / norm for value in psi]
+    mean = sum(prob * gen for prob, gen in zip(probabilities, generator))
+    variance = sum(
+        prob * (gen - mean) ** 2
+        for prob, gen in zip(probabilities, generator)
+    )
+    qfi = 4.0 * variance
 
     def compute() -> Tuple[List[bytes], List[bytes]]:
-        return [repr(qfi).encode("utf-8")], [repr(mean).encode("utf-8"), repr(var).encode("utf-8")]
+        return [repr(qfi).encode("utf-8")], [
+            repr(mean).encode("utf-8"),
+            repr(variance).encode("utf-8"),
+        ]
 
     def uncompute(live: List[bytes], garbage: List[bytes]) -> List[bytes]:
         _ = garbage
@@ -204,7 +242,10 @@ def reversible_qfi(psi: Sequence[float], generator: Sequence[float]) -> Result[T
     return Ok((qfi, claim))
 
 
-def claim_for_kernel(kernel: KernelName, family: AdiabaticFamily = AdiabaticFamily.none) -> ReversibilityClaim:
+def claim_for_kernel(
+    kernel: KernelName,
+    family: AdiabaticFamily = AdiabaticFamily.none,
+) -> ReversibilityClaim:
     injective = is_logically_reversible(kernel)
     return ReversibilityClaim(
         logically_injective=injective,
@@ -212,12 +253,24 @@ def claim_for_kernel(kernel: KernelName, family: AdiabaticFamily = AdiabaticFami
         charge_recovered=family is not AdiabaticFamily.none and injective,
         family=family,
         landauer_bits_erased=0 if injective else 1,
-        modeled_energy_j=modeled_switch_energy(family, switches=1, bits_erased=0 if injective else 1),
-        note=FAMILY_NOTES[family] if injective else "irreversible kernel; Landauer erasure applies",
+        modeled_energy_j=modeled_switch_energy(
+            family,
+            switches=1,
+            bits_erased=0 if injective else 1,
+        ),
+        note=(
+            FAMILY_NOTES[family]
+            if injective
+            else "irreversible kernel; Landauer erasure applies"
+        ),
     )
 
 
-def physical_measurement(time_ns: int, claim: ReversibilityClaim, temperature_c: float = 0.0) -> PhysicalMeasurement:
+def physical_measurement(
+    time_ns: int,
+    claim: ReversibilityClaim,
+    temperature_c: float = 0.0,
+) -> PhysicalMeasurement:
     return PhysicalMeasurement(
         time_ns=time_ns,
         energy_j=claim.modeled_energy_j,
