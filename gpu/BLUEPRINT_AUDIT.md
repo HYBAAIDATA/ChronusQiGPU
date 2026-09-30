@@ -17,7 +17,7 @@ executes the gate.
 | `grover_hendrix_iterate` | permutation-validated reference | software reference |
 | Exact tensor substrate | `gpu.tensor` → Turing VQC exact/quantum tensor modules | packaged separately; import-gated |
 | Virtual quantum computer | `gpu.quantum` → `turing_universal_quantum_computer` | substantial exact implementation; physical-quantum claims excluded |
-| Aethel manifold | `gpu.manifold` → `aethel.manifold` | software implemented; OpenCL punch 0x15 still falls back to CPU |
+| Aethel manifold | `gpu.manifold` → `aethel.manifold` | punch 0x15 CPU parity and OpenCL dispatch implemented; hardware conformance required |
 | `sha256d_scan` | bounded exhaustive reference plus existing OpenCL path | software verified; target hardware required |
 | `sha256d_verify` | real double-SHA-256 equality | software verified |
 | `sha256d_midstate` | one-block SHA-256 compression state | software verified |
@@ -27,7 +27,7 @@ executes the gate.
 | Traversal kernels | names exist in seam contract | fail closed; executable semantics not yet wired |
 | Reversible/uncompute kernels | names exist in seam contract | fail closed; no physical backend |
 | Zero-knowledge attestation | name exists in seam contract | fail closed; no prover implementation |
-| Tensor scheduling | advisory-only ordering boundary | implemented in PR #29; not merged |
+| Tensor scheduling | advisory-only ordering boundary | integrated; exact permutation enforced |
 | ASIC dispatch | `hyba.hybrid.ASICSolver` network protocol | physical hardware not verified |
 | Fleet aggregation | `hyba.inventory`, `hyba.virtual_gpu`, `hyba.multi_hasher` | implemented; fleet hardware not verified |
 | Provenance | `gpu.provenance.validate_provenance` | production records fail closed |
@@ -40,7 +40,8 @@ executes the gate.
    they now fail closed rather than returning synthetic success values.
 3. Complete the staged move from top-level `igpu/`, `kernels/` and hybrid GPU
    modules into `gpu/backends`, retaining compatibility shims for one release.
-4. Execute strict OpenCL tests on the target iGPU and discrete GPUs.
+4. Execute strict OpenCL tests, including punch 0x15 parity, on the target iGPU
+   and discrete GPUs.
 5. Execute ASIC protocol tests against a physical endpoint.
 6. Run a real job through hardware, host verification, pool submission and pool
    acknowledgement.

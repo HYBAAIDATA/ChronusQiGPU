@@ -27,6 +27,11 @@ attestation references instead of returning synthetic digest placeholders.
 Advertised kernels without executable semantics fail closed with
 `kernel_unavailable`.
 
+The installed distribution now includes `hyba` and its `hybrid`, `math_ir`
+and `operating_model` subpackages. The hybrid coordinator includes measured
+performance reporting and permits tensor advice only as an exact permutation
+of already-certified nonce windows.
+
 See `BLUEPRINT_AUDIT.md` for implementation and hardware-verification status.
 
 Run `pythia-gpu-readiness` in the release image. It exits non-zero until every

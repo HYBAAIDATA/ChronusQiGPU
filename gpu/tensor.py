@@ -10,6 +10,25 @@ from dataclasses import asdict, dataclass
 from importlib import import_module
 from typing import Any
 
+_HYBRID_EXPORTS = {
+    "IdentityWindowRanker": ("hyba.hybrid.tensor_advisor", "IdentityWindowRanker"),
+    "LayerSample": ("hyba.hybrid.performance", "LayerSample"),
+    "PerformanceReport": ("hyba.hybrid.performance", "PerformanceReport"),
+    "TensorAdviceEvidence": (
+        "hyba.hybrid.tensor_advisor",
+        "TensorAdviceEvidence",
+    ),
+    "TensorAdviceViolation": (
+        "hyba.hybrid.tensor_advisor",
+        "TensorAdviceViolation",
+    ),
+    "WindowRanker": ("hyba.hybrid.tensor_advisor", "WindowRanker"),
+    "apply_tensor_advice": (
+        "hyba.hybrid.tensor_advisor",
+        "apply_tensor_advice",
+    ),
+}
+
 
 @dataclass(frozen=True)
 class TensorMeasurement:
@@ -51,7 +70,17 @@ def load_quantum_tensor_module() -> Any:
     return import_module("turing_universal_quantum_computer.quantum_tensor")
 
 
+def __getattr__(name: str) -> Any:
+    """Resolve hybrid tensor policy and reporting symbols lazily."""
+    try:
+        module_name, attribute = _HYBRID_EXPORTS[name]
+    except KeyError as exc:
+        raise AttributeError(name) from exc
+    return getattr(import_module(module_name), attribute)
+
+
 __all__ = [
+    *_HYBRID_EXPORTS,
     "TensorMeasurement",
     "load_exact_tensor_module",
     "load_quantum_tensor_module",

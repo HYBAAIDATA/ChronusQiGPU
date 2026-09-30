@@ -19,6 +19,7 @@ from gpu.reference import (
     sha256d_verify,
 )
 from igpu.seam.types import KERNEL_CLASS, KernelName
+from igpu.opencl_host import OpenClPunchHost, PUNCH_MANIFOLD_COMPUTE
 from gpu.tensor import TensorMeasurement
 
 
@@ -89,3 +90,19 @@ def test_production_readiness_requires_external_evidence(monkeypatch):
     assert report["software_ready"] is True
     assert report["production_ready"] is False
     assert all(not gate["passed"] for gate in report["gates"])
+
+
+def test_manifold_punch_has_cpu_parity_reference():
+    host = OpenClPunchHost.__new__(OpenClPunchHost)
+    host.use_opencl = False
+    host._punch = None
+    host.last_dispatch_backend = "none"
+    vectors = [1.0] + [0.0] * 10
+    result = host.run_punch_batch(
+        PUNCH_MANIFOLD_COMPUTE,
+        n=1,
+        in_float=vectors,
+    )
+    phi = (1.0 + 5.0**0.5) / 2.0
+    assert result["float"][0] == pytest.approx(phi**-1, rel=1e-6)
+    assert host.last_dispatch_backend == "cpu"

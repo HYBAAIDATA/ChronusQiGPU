@@ -19,6 +19,10 @@ def test_igpu_and_l_hras_are_explicit_distribution_packages():
     assert {
         "gpu",
         "gpu.backends",
+        "hyba",
+        "hyba.hybrid",
+        "hyba.math_ir",
+        "hyba.operating_model",
         "igpu",
         "igpu.seam",
         "l_hras",

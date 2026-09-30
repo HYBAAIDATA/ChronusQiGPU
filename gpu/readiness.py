@@ -28,8 +28,12 @@ class ProductionEvidence:
 
 _SOFTWARE_SURFACES: dict[str, tuple[str, tuple[str, ...]]] = {
     "tensor": (
-        "gpu.tensor",
-        ("TensorMeasurement", "load_exact_tensor_module"),
+        "hyba.hybrid.tensor_advisor",
+        ("WindowRanker", "apply_tensor_advice"),
+    ),
+    "performance_accounting": (
+        "hyba.hybrid.performance",
+        ("LayerSample", "PerformanceReport"),
     ),
     "virtual_quantum_computer": (
         "turing_universal_quantum_computer",
