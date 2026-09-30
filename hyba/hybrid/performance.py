@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Iterable, Literal
 
 DEFAULT_HASHRATE_FLOOR_HPS = 10_000_000_000_000_000_000.0  # 10 EH/s
-LayerName = Literal["tensor", "igpu", "gpu", "asic", "cpu"]
+LayerName = Literal["tensor", "igpu", "gpu", "asic", "cpu", "hybrid"]
 
 
 @dataclass(frozen=True)
@@ -141,7 +141,7 @@ def job_performance_report(
         wall_ns,
         (
             LayerSample(
-                layer="gpu",
+                layer="hybrid",
                 device_id=device_id,
                 elapsed_ns=wall_ns,
                 protocol_hashes=protocol_hashes,
