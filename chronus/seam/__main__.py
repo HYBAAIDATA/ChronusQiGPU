@@ -1,3 +1,3 @@
-from igpu.seam.run import main
+from chronus.seam.run import main
 
 raise SystemExit(main())
