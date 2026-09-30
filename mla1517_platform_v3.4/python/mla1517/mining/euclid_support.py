@@ -1,12 +1,12 @@
 """EUCLID mining-support seam for the canonical production coordinator.
 
-EUCLID is allowed to influence bounded operating policy only.  This module is
+EUCLID is allowed to influence bounded operating policy only. This module is
 intentionally downstream of Stratum/job truth and upstream of search breadth;
 it cannot change Bitcoin headers, SHA256d, pool targets, proof validation,
 submission parameters, credentials, or pool acknowledgement semantics.
 
-The recovered EUCLID substrate is optional during the staged convergence.  A
-missing package is reported as UNAVAILABLE and produces a neutral policy.  It
+The recovered EUCLID substrate is optional during staged convergence. A
+missing package is reported as UNAVAILABLE and produces a neutral policy. It
 is never represented as active merely because configuration names it.
 """
 from __future__ import annotations
@@ -33,9 +33,9 @@ class EuclidMiningAdvice:
 class EuclidMiningSupport:
     """Evidence-first bridge from measured mining state to EUCLID learning.
 
-    The action space is deliberately tiny: HOLD, REDUCE, RESTORE.  All three
+    The action space is deliberately tiny: HOLD, REDUCE, RESTORE. All three
     affect only the number of already-valid candidate nonces considered in a
-    dispatch window.  REDUCE is fail-safe; RESTORE never exceeds the baseline
+    dispatch window. REDUCE is fail-safe; RESTORE never exceeds the baseline
     breadth declared by the canonical coordinator.
     """
 
@@ -48,6 +48,11 @@ class EuclidMiningSupport:
         self.state_path = state_path or os.getenv(
             "PYTHIA_EUCLID_MINING_STATE", "data/euclid_mining_policy.json"
         )
+        try:
+            interval = float(os.getenv("PYTHIA_EUCLID_DECISION_INTERVAL_S", "5"))
+        except ValueError:
+            interval = 5.0
+        self.decision_interval_s = max(0.1, interval)
         self.available = False
         self.unavailable_reason: str | None = None
         self.learner: Any = None
@@ -55,6 +60,8 @@ class EuclidMiningSupport:
         self._last_action: str | None = None
         self._last_reward_at = 0.0
         self._last_advice: EuclidMiningAdvice | None = None
+        self._last_decision_at = float("-inf")
+        self._last_outcome_key: tuple[int, int, int, int, int] | None = None
         self._load_runtime()
 
     def _load_runtime(self) -> None:
@@ -115,7 +122,9 @@ class EuclidMiningSupport:
         outcomes = dict(snap.get("outcomes") or {})
         submission = dict(snap.get("submission") or {})
         rtt = dict(submission.get("rtt_ms") or {})
-        retarget = dict(snap.get("retarget") or {})
+        # Production transport may expose the tracker as retarget_window while
+        # lower-level callers can provide retarget directly.
+        retarget = dict(snap.get("retarget_window") or snap.get("retarget") or {})
         return {
             "ready": bool(snap.get("ready", False)),
             "recovery": str(recovery_mode or "unknown"),
@@ -150,6 +159,24 @@ class EuclidMiningSupport:
         stale = float(values["stale_ratio"] or 0.0)
         return max(-1.0, min(1.0, accepted - rejected - unknown - stale))
 
+    @staticmethod
+    def _outcome_key(snapshot: Mapping[str, Any] | None) -> tuple[int, int, int, int, int] | None:
+        """Identity for a measured outcome generation; prevents replay learning."""
+        snap = dict(snapshot or {})
+        counters = dict(snap.get("counters") or {})
+        outcomes = dict(snap.get("outcomes") or {})
+        submitted = counters.get("submitted")
+        stale_dropped = outcomes.get("stale_dropped")
+        if submitted is None and stale_dropped is None:
+            return None
+        return (
+            int(submitted or 0),
+            int(counters.get("accepted") or 0),
+            int(counters.get("rejected") or 0),
+            int(counters.get("unknown") or 0),
+            int(stale_dropped or 0),
+        )
+
     def advise(
         self,
         snapshot: Mapping[str, Any] | None,
@@ -171,9 +198,13 @@ class EuclidMiningSupport:
             self._last_advice = advice
             return advice
 
+        now_wall = time.time()
+        outcome_key = self._outcome_key(snapshot)
         reward = self.reward(snapshot)
         if (
             reward is not None
+            and outcome_key is not None
+            and outcome_key != self._last_outcome_key
             and self._last_state is not None
             and self._last_action is not None
         ):
@@ -185,11 +216,21 @@ class EuclidMiningSupport:
                 state,
                 metadata={
                     "source": "measured-mining-transport",
-                    "observed_at": time.time(),
+                    "observed_at": now_wall,
+                    "outcome_key": outcome_key,
                     "claim_boundary": "operational policy only",
                 },
             )
-            self._last_reward_at = time.time()
+            self._last_reward_at = now_wall
+        if outcome_key is not None:
+            self._last_outcome_key = outcome_key
+
+        now = time.monotonic()
+        if (
+            self._last_advice is not None
+            and now - self._last_decision_at < self.decision_interval_s
+        ):
+            return self._last_advice
 
         action = str(self.learner.select_action(self.TASK_ID, state, explore=False))
         if action == "reduce":
@@ -205,6 +246,7 @@ class EuclidMiningSupport:
         self.current_breadth = breadth
         self._last_state = state
         self._last_action = action
+        self._last_decision_at = now
         advice = EuclidMiningAdvice(
             "ACTIVE",
             action,
@@ -213,6 +255,7 @@ class EuclidMiningSupport:
             {
                 "state": state,
                 "reward_observed": reward,
+                "outcome_key": outcome_key,
                 "last_reward_at": self._last_reward_at or None,
                 "claim_boundary": "bounded operating policy; no consensus authority",
             },
@@ -228,6 +271,8 @@ class EuclidMiningSupport:
             "unavailable_reason": self.unavailable_reason,
             "baseline_dispatch_breadth": self.baseline_breadth,
             "current_dispatch_breadth": self.current_breadth,
+            "decision_interval_s": self.decision_interval_s,
+            "last_outcome_key": self._last_outcome_key,
             "last_advice": asdict(advice) if advice is not None else None,
             "authority": "operational-only",
         }
@@ -260,7 +305,7 @@ class EuclidProductionMiningCoordinator(ProductionMiningCoordinator):
             recovery_mode=getattr(self.recovery, "mode", None),
             hashrate_hs=measured.get("hashrate_hs"),
         )
-        # This is the only causal actuator.  It is bounded by the baseline and
+        # This is the only causal actuator. It is bounded by the baseline and
         # cannot affect proof construction or submission truth.
         self._dispatch_breadth = advice.dispatch_breadth
         return permitted
