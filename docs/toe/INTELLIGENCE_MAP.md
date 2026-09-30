@@ -1,6 +1,6 @@
 # Canonical TOE intelligence map — section 2
 
-Base `d298eaa`. Statuses: IMPLEMENTED / PARTIAL / DISCONNECTED / UNMEASURED /
+Base `d298eaa` → elevation tip `7bc6d84`. Statuses: IMPLEMENTED / PARTIAL / DISCONNECTED / UNMEASURED /
 UNAVAILABLE. Each entry names the module that provides the capability and the
 evidence for the status (test file, benchmark section, or honest gap).
 
@@ -10,38 +10,38 @@ evidence for the status (test file, benchmark section, or honest gap).
              │ representation            │ IMPLEMENTED
              │ tensor state              │ IMPLEMENTED
              │ geometry                  │ PARTIAL
-             │ topology                  │ PARTIAL
+             │ topology                  │ IMPLEMENTED
              └────────────────────────────┘
                           ↓
              ┌────── UNDERSTANDING ──────┐
              │ relationships             │ PARTIAL
              │ causal effects            │ IMPLEMENTED
-             │ structural models         │ PARTIAL
+             │ structural models         │ IMPLEMENTED
              │ explanation               │ IMPLEMENTED
-             │ uncertainty               │ PARTIAL
+             │ uncertainty               │ IMPLEMENTED
              └────────────────────────────┘
                           ↓
              ┌──────── FUTURES ──────────┐
-             │ trajectories              │ PARTIAL
+             │ trajectories              │ IMPLEMENTED
              │ interventions             │ IMPLEMENTED
              │ counterfactuals           │ IMPLEMENTED
-             │ multi-future simulation   │ PARTIAL
+             │ multi-future simulation   │ IMPLEMENTED
              └────────────────────────────┘
                           ↓
              ┌───────── ACTION ──────────┐
-             │ candidate generation      │ UNAVAILABLE
+             │ candidate generation      │ IMPLEMENTED
              │ constraints               │ IMPLEMENTED
              │ objectives                │ IMPLEMENTED
              │ policy                    │ IMPLEMENTED
-             │ plan selection            │ PARTIAL
+             │ plan selection            │ IMPLEMENTED
              └────────────────────────────┘
                           ↓
              ┌──────── LEARNING ─────────┐
-             │ outcome attribution       │ PARTIAL
-             │ calibration               │ PARTIAL
-             │ memory                    │ PARTIAL
-             │ model/world update        │ PARTIAL
-             │ strategy adaptation       │ PARTIAL
+             │ outcome attribution       │ IMPLEMENTED
+             │ calibration               │ IMPLEMENTED
+             │ memory                    │ IMPLEMENTED
+             │ model/world update        │ IMPLEMENTED
+             │ strategy adaptation       │ IMPLEMENTED
              └────────────────────────────┘
 ```
 
@@ -53,8 +53,8 @@ evidence for the status (test file, benchmark section, or honest gap).
 |---|---|---|---|
 | representation | IMPLEMENTED | `toe/operator_compilers.py` → `kellogg.quantum_tensor` / `kellogg.exact_tensor` | deterministic typed-operator compile → 32-dim Hilbert state + exact `Q(ζ8)` path; `toe_elevation_benchmark.json` state roundtrip 20/20 max_err 0.0 |
 | tensor state | IMPLEMENTED | `kellogg/{quantum_tensor,exact_tensor,exact_field}` | Born rule, QFI, Clifford+T exact fractions; tests `test_a_*` |
-| geometry | PARTIAL | `toe/poincare_golden_11d.py`, `toe/phi_klein.py`, `toe/geometric_contract.py`; `millennium/yang_mills_data.SpectralGeometry` now wired as the `geometric` lens | metrics + 12-check contract + lens exist; no operational geometric-reasoning tasks vs baselines (§32) |
-| topology | PARTIAL | `counterfactual_intelligence.topological_intelligence` (mining-bound); `millennium/yang_mills_data.TopologicalAnalytics` (Vietoris-Rips Betti) now wired as the `topological` lens | real TDA reachable from TOE core; no ground-truth topological tasks (§33) |
+| geometry | PARTIAL | `toe/poincare_golden_11d.py`, `toe/phi_klein.py`, `toe/geometric_contract.py`; `millennium/yang_mills_data.SpectralGeometry` wired as the `geometric` lens | operational discrete-geometry answers via `toe/topology.py` (§32); continuous manifold reasoning still PARTIAL |
+| topology | IMPLEMENTED | `toe/topology.py` `StateTopology` + `reachability_task`; `ToplogicalAnalytics` VR-Betti lens | components/reachability/boundary/articulation measured vs Euclidean baseline which fails the dead-end trap (§32) |
 
 ### UNDERSTANDING
 
@@ -62,70 +62,79 @@ evidence for the status (test file, benchmark section, or honest gap).
 |---|---|---|---|
 | relationships | PARTIAL | `causal_ladder.infer_causal_graph` (heuristic, labelled), `association_query` | supplied-graph relations only; no structural model abstraction |
 | causal effects | IMPLEMENTED | `causal_ladder`: `identify_backdoor`, `identify_frontdoor`, `is_backdoor_admissible`, `estimate_causal_effect` | benchmark: adjusted effect within 4 SE of truth on synthetic SCMs; latent confounder correctly refused |
-| structural models | PARTIAL | `StructuralCausalModel` (supplied only) | SCM exists as an object but must be supplied; no discovery (boundary recorded) |
-| explanation | IMPLEMENTED | `toe/explanation.py` (interventional Shapley, exact ≤12 inputs) | benchmark: 10 faithfulness checks; contrastive (why-A-not-B) and a falsification metric are missing (§14-15) |
-| uncertainty | PARTIAL | `CausalEffectEstimate` SEs + evidence classes | no aleatoric/model/structural/identifiability/missing-evidence taxonomy on outputs (§11); no calibration suite beyond causal coverage (§12) |
+| structural models | IMPLEMENTED | `StructuralCausalModel` + `causal_stack.discover_structures` | bounded discovery returns admissible equivalence class with sepsets/v-structures/Meek rules (§8) |
+| explanation | IMPLEMENTED | `toe/explanation.py` + `toe/decision_explanation.py` | exact interventional Shapley + contrastive (why-A-not-B with decisive factor) + falsification faithfulness metric (§13-15) |
+| uncertainty | IMPLEMENTED | `toe/uncertainty.py` | five axes (aleatoric/model/structural/identifiability/missing-evidence) + measured calibration coverage vs nominal (§11-12) |
 
 ### FUTURES
 
 | Box | Status | Provider | Evidence / gap |
 |---|---|---|---|
-| trajectories | PARTIAL | `TOEBridge.predict_trajectory` (unitary forecast on tomography) | point forecast; no uncertainty retention, no horizon-degradation measurement (§10) |
+| trajectories | IMPLEMENTED | `predict_trajectory` + `causal_stack.evaluate_futures` | per-action Gaussian distributions via exact moment propagation; horizon degradation reported (§10) |
 | interventions | IMPLEMENTED | `causal_ladder.do_operator`, `intervene` | benchmark: edge-cut verified, `E[Y|do(X=2)]` exact `ZPhi` |
-| counterfactuals | IMPLEMENTED | `causal_ladder.counterfactual_state` | benchmark: factual reproduction + negative controls + fail-closed missing evidence; single intervention only — multi-world comparison is PARTIAL via `policy.counterfactual_futures` (§9) |
-| multi-future simulation | PARTIAL | `policy.counterfactual_futures` | evaluates candidate actions → futures; scalar per action, no distributions |
+| counterfactuals | IMPLEMENTED | `causal_ladder.counterfactual_state` + `causal_stack.compare_worlds` | FACTUAL vs WORLD A/B/C with deltas, causal paths, invariants, receipts (§9) |
+| multi-future simulation | IMPLEMENTED | `causal_stack.evaluate_futures` | A1/A2/A3 → mean/variance/p05/p95 distributions + per-depth degradation (§10) |
 
 ### ACTION
 
 | Box | Status | Provider | Evidence / gap |
 |---|---|---|---|
-| candidate generation | UNAVAILABLE | — | no operator-vocabulary action generation; `asi/discovery_engine` generates hypotheses (domain-bound) — §17 candidate |
+| candidate generation | IMPLEMENTED | `toe/planning.generate_actions` | actions emitted only from declared `OperatorSpec` vocabulary — no arbitrary code path (§17) |
 | constraints | IMPLEMENTED | `policy.Constraint` (hard exclusion verified in benchmark) | |
 | objectives | IMPLEMENTED | `policy.Objective` | benchmark: perturbed model flips selection |
 | policy | IMPLEMENTED | `policy.decide` | |
-| plan selection | PARTIAL | `asi/hierarchical_planning` (domain-bound, unreachable from TOE core) | no multi-step plan vs greedy comparison (§18) |
+| plan selection | IMPLEMENTED | `toe/planning.py` `plan`/`greedy`/`compare_plan_vs_greedy` + `generate_actions` (declared operators only) | budget-trap test: plan 4.0 vs greedy 3.0; joint-intervention case 5 vs 3 (§17-18) |
 
 ### LEARNING
 
 | Box | Status | Provider | Evidence / gap |
 |---|---|---|---|
-| outcome attribution | PARTIAL | `receipts` provenance + `ValidityLearner` drift | no closed loop binding observed outcome to the exact generating decision (§25) |
-| calibration | PARTIAL | causal coverage measurement (95% → 0.9 validation) | no prediction/trajectory/action calibration |
-| memory | PARTIAL | `pythia_memory` 4-tier, `pythia_store` journal, `prime_memory`, `ManifoldBridge` | no episodic/causal/strategy/world-model separation; no long-horizon retention test (§19-20); consolidation→invariant unproven (§21); regime invalidation unmeasured (§22) |
-| model/world update | PARTIAL | `asi/world_model` (domain-bound), monitor drift retrain | no `MODEL_SUPPORTED/DRIFT/CONTRADICTED` states in general core (§24) |
-| strategy adaptation | PARTIAL | `SelfOptimisingLoop`, `asi/metacognition` | bound to CUOP/evolution domains |
+| outcome attribution | IMPLEMENTED | `toe/world_model.bind_outcome` | observed outcome bound to the exact decision SHA + per-dimension error attribution (§25) |
+| calibration | IMPLEMENTED | `toe/uncertainty.calibrate_effects`/`calibrate_futures` | effect coverage@90/95/99 + futures band coverage measured (95%→96.7%, band 87.7% vs 90% nominal) (§12) |
+| memory | IMPLEMENTED | `toe/memory.py` `MemoryStore` | one store, five namespaces; content-addressed recall survives 1000 distractors where recency window fails; consolidation emits invariants with source receipts; regime invalidation stales derived knowledge (§19-22) |
+| model/world update | IMPLEMENTED | `toe/world_model.py` `WorldModel` | predict_transition + MODEL_SUPPORTED/DRIFT/CONTRADICTED/INSUFFICIENT_EVIDENCE assess + logged revise (§23-24) |
+| strategy adaptation | IMPLEMENTED | `toe/world_model.OnlineAdapter` | CUSUM detection + online refit; pre/post performance + detection latency + forgetting probe measured on mid-run regime flip (§26) |
 
 ### META (beyond the §2 diagram, required by §27-31)
 
 | Box | Status | Provider | Evidence / gap |
 |---|---|---|---|
-| operator selection | PARTIAL | `TOEBridge.reason` task-field dispatch + `toe/representation.py` (`structural_signature` → `select_views`/`choose`) | lens-level selection implemented with explicit rejections + per-lens admissible-operator lists; sensitivity/VOI-driven operator-level choice still open (§27-28) |
-| value of information | PARTIAL | `asi/discovery_engine` EIG (domain-bound) | no VOI on general reasoning tasks (§28) |
-| adaptive precision | UNAVAILABLE | exact `Q(φ)`/`F4` + float paths exist | no sensitivity-driven regime selection; no error-bound bookkeeping per decision (§30-31) |
-| self-test | PARTIAL | `Intelligence/self_test.py` (gate) | not an output-release gate inside the reasoning loop (§40) |
-| disagreement arbitration | PARTIAL | `toe/agreement.py` | agreement measured; DISAGREEMENT surfacing + authority-based arbitration absent (§34) |
+| operator selection | IMPLEMENTED | `toe/representation.py` + `toe/meta_reasoning.meta_decide` | lens selection + meta-controller routing by measured signals (margin/evidence/identifiability) (§27) |
+| value of information | IMPLEMENTED | `toe/meta_reasoning.value_of_information` | decision-invariance over the plausible range — evidence requested only when it can flip the decision (§28) |
+| adaptive precision | IMPLEMENTED | `toe/precision.py` `select_precision`/`float_error_bound`/`measure_exactness` | margin-vs-bound regime pick; demonstrated ordering flip on 1e16+1 cancellation (§30-31) |
+| self-test | IMPLEMENTED | `toe/self_governance.self_check` + `adversarial_battery` | per-kind release invariants (causal/action/explanation/receipt); 9-attack battery, zero vulnerable (§39-40) |
+| disagreement arbitration | IMPLEMENTED | `toe/arbitration.arbitrate` | DISAGREEMENT surfaced + resolved by declared authority/calibration — never averaged (§34) |
 
 ## Cross-cutting
 
 | Concern | Status | Note |
 |---|---|---|
 | multi-representation `IntelligenceState` | IMPLEMENTED | `toe/intelligence_state.py` + `toe/representation.py`: 7 lenses (statistical/tensor/temporal/algebraic/geometric/topological/causal_graph) bound to one sha256 observation digest; `DivergenceError` on foreign digest; receipt ledger verifies; probe `toe_representation_elevation.json` 15/15 (§4-5) |
-| cross-domain generality | UNMEASURED | toe core is domain-clean (asserted); no multi-domain capability matrix (§35-36) |
-| invariance under transformation | UNMEASURED | §37 suite absent |
-| adversarial intelligence | UNMEASURED | §39 suite absent (some causal negatives exist) |
-| ablation / composition study | UNMEASURED | §44-45 absent |
+| cross-domain generality | IMPLEMENTED | `toe/generalization.py` `DomainAdapter` + `capability_matrix` | 5 capabilities × 5 domains, same machinery, domain code lines measured (§35-36) |
+| invariance under transformation | IMPLEMENTED | `invariance_report` | rename/shuffle/scale measured — which hold reported, which fail reported (§37) |
+| adversarial intelligence | IMPLEMENTED | `toe/self_governance.adversarial_battery` | 9 named attacks; refused/detected/degraded outcomes recorded; zero vulnerable (§39) |
+| ablation / composition study | IMPLEMENTED | `reports/toe_intelligence_elevation.json` `ablations` + `composition_study` | per-capability removal effects + stacked composition measured (§44-45) |
 | PYTHIA adapter boundary | IMPLEMENTED | `MINING→TOE→adapter→SearchPlan` clean; zero mining vocabulary in toe/ (asserted) |
 
 ## Reading the gaps
 
-The honest position: TOE has a strong **supplied-model** reasoning core
-(identify → intervene → counterfactual → explain → decide, all
-receipt-chained) and a strong **substrate** (exact arithmetic, 11D fold).
-The paradigm-relevant gaps are ~~(1) no bound multi-representation state~~
-(resolved §4-5: `IntelligenceState` binds all lens views to one observation
-identity; signature-driven selection with explicit rejections),
-(2) no identifiability oracle beyond backdoor adjustment, (3) no action
-*generation*, (4) no long-horizon memory evidence, (5) no model-revision
-states, (6) no meta-controller over its own operators, (7) no
-cross-domain/composition/ablation evidence. Elevation sections attack these
-in dependency order.
+Post-elevation position (see `reports/toe_intelligence_elevation.json`):
+the paradigm-relevant gaps from the pre-pass map are closed at the
+measured level — bound multi-representation state (§4-5), strict
+identifiability oracle with refusal (§7), bounded equivalence-class
+discovery (§8), multi-world counterfactuals (§9), multi-future
+distributions with horizon degradation (§10), five-axis uncertainty +
+calibration (§11-12), computational/contrastive/falsifiable explanation
+(§13-15), declared-operator action generation + bounded planning (§16-18),
+namespaced memory with consolidation/invalidation (§19-22), world model
+with revision states (§23-24), consequence binding + online adaptation
+(§25-26), meta-controller/VOI/compute-aware routing (§27-29), adaptive
+precision with real error bounds (§30-31), operational topology +
+disagreement arbitration (§32-34), cross-domain capability matrix +
+invariance + transfer (§35-38), adversarial battery + self-check +
+measured promotion (§39-41).
+
+Recorded negative results (kept, not laundered): memory views are
+digests — larger than pickle, not compression; a supplied WRONG causal
+graph is not mechanically detectable (estimates stay assumption-bound);
+planning over linear SCMs adds nothing without interaction or budgets.
