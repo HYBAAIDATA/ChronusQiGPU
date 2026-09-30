@@ -1,4 +1,4 @@
-"""GPU scale enters TOE: Klein fold, certificate, bridge, two twelve-packs."""
+"""Chronus scale enters TOE: Klein fold, certificate, bridge, theorem packs."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from typing import Any, Dict
 
 import numpy as np
 
-from igpu.seam.gpu_scale import GpuScale, scale_job
+from .scale import ChronusScale, scale_job
 from toe.geometric_contract import check_twelve
 from toe.manifold_bridge import ManifoldBridge
 from toe.phi_klein import PUNCH_ISA, fold, phi_norm, unfold
@@ -15,12 +15,12 @@ from toe.system import TOESystem
 
 
 def realize(job_id: str, requested: int, payload: str = "") -> Dict[str, Any]:
-    scale: GpuScale = scale_job(job_id, requested, payload)
-    vec = np.asarray(scale.t11, dtype=np.float64)
-    folded, reflections = fold(vec)
+    scale: ChronusScale = scale_job(job_id, requested, payload)
+    vector = np.asarray(scale.t11, dtype=np.float64)
+    folded, reflections = fold(vector)
     unfolded = unfold(folded)
-    cert = compute_zeckendorf_certificate(folded, context_id=job_id)
-    nonce = int(cert.canonical_int & 0xFFFFFFFF)
+    certificate = compute_zeckendorf_certificate(folded, context_id=job_id)
+    nonce = int(certificate.canonical_int & 0xFFFFFFFF)
     bridge = ManifoldBridge()
     candidate = bridge.store_candidate(
         nonce=nonce,
@@ -31,30 +31,36 @@ def realize(job_id: str, requested: int, payload: str = "") -> Dict[str, Any]:
     toe = TOESystem(bridge=bridge)
     passed, theorems = toe.verify_12_theorems_candidate(candidate, n_anchor=7)
     record = toe.record_decision(
-        phase_name="gpu_scale_realize",
+        phase_name="chronus_scale_realize",
         intelligence_name="geometric",
         action="fold_certify_verify",
-        params={"job_id": job_id, "work_items": scale.work_items, "nonce": nonce},
+        params={
+            "job_id": job_id,
+            "work_items": scale.work_items,
+            "nonce": nonce,
+        },
         contract_no=2,
         verified=passed,
     )
     geometric = check_twelve(
-        seed=vec,
+        seed=vector,
         folded=folded,
         unfolded=unfolded,
-        certificate=cert.to_dict(),
+        certificate=certificate.to_dict(),
         candidate=candidate.to_dict(),
         theorems=theorems,
         ledger_ok=toe.verify_provenance(),
         n_anchor=7,
     )
     return {
+        "product": "Chronus",
+        "compute_substrate": "Turing",
         "scale": scale.as_dict(),
         "norm_phi_sq": phi_norm(folded),
         "reflections": reflections,
         "roundtrip_ok": geometric["G8_fold_unfold"],
-        "certificate": cert.to_dict(),
-        "gpu_punches": cert.gpu_dispatch_info(),
+        "certificate": certificate.to_dict(),
+        "device_punches": certificate.gpu_dispatch_info(),
         "punch_isa": PUNCH_ISA,
         "candidate": candidate.to_dict(),
         "theorems": theorems,
