@@ -576,12 +576,15 @@ class CuopLearner:
 class SelfOptimisingLoop:
     """Measure -> tune -> re-measure cycle for CUOP.
 
-    ``measure_fn()`` must return a fresh :class:`CuopReading` (measured).
+    ``measure_fn()`` returns a fresh measured :class:`CuopReading`, or
+    ``None`` when an input CUOP needs is Unavailable.
     Each optimisation step: the learner suggests a parameter value, it is
     applied, CUOP is re-measured, and the configuration is kept only when
     the measured CUOP is at least the running best — otherwise the previous
     best parameters are restored. The claimed delta is always the measured
-    delta of the active configuration versus the recorded baseline.
+    delta of the active configuration versus the recorded baseline. An
+    Unavailable reading is never scored: the cycle stops, the parameter under
+    test is restored, and the report carries no delta.
     """
 
     def __init__(
@@ -600,25 +603,30 @@ class SelfOptimisingLoop:
     def add_parameter(self, learner: CuopLearner) -> None:
         self.learners.append(learner)
 
-    def measure_baseline(self, measure_fn: Callable[[], CuopReading]) -> CuopReading:
-        self.baseline = measure_fn()
-        self.latest = self.baseline
+    def measure_baseline(
+        self, measure_fn: Callable[[], Optional[CuopReading]]
+    ) -> Optional[CuopReading]:
+        reading = measure_fn()
+        if reading is None:
+            return None
+        self.baseline = reading
+        self.latest = reading
         for learner in self.learners:
-            learner.record(self.baseline.cuop)
-        return self.baseline
+            learner.record(reading.cuop)
+        return reading
 
     def optimise_cycle(
         self,
-        measure_fn: Callable[[], CuopReading],
+        measure_fn: Callable[[], Optional[CuopReading]],
         steps_per_learner: int = 3,
     ) -> Dict[str, Any]:
         """Run one measured tuning cycle over all registered parameters."""
-        if self.baseline is None:
-            self.measure_baseline(measure_fn)
+        applied: List[Dict[str, Any]] = []
+        if self.baseline is None and self.measure_baseline(measure_fn) is None:
+            return self._record_unavailable(applied, reverted=False)
         assert self.baseline is not None
 
         best_cuop = max(self.baseline.cuop, self.latest.cuop if self.latest else 0.0)
-        applied: List[Dict[str, Any]] = []
         reverted = False
 
         for learner in self.learners:
@@ -627,6 +635,16 @@ class SelfOptimisingLoop:
                 suggestion = learner.suggest()
                 learner.apply(suggestion)
                 reading = measure_fn()
+                if reading is None:
+                    learner.apply(saved_value)
+                    applied.append(
+                        {
+                            "parameter": learner.name,
+                            "value": learner.value,
+                            "samples": len(learner.history),
+                        }
+                    )
+                    return self._record_unavailable(applied, reverted=True)
                 learner.record(reading.cuop)
                 if reading.cuop >= best_cuop:
                     best_cuop = reading.cuop
@@ -644,19 +662,46 @@ class SelfOptimisingLoop:
                 }
             )
 
-        self.latest = measure_fn()
+        latest = measure_fn()
+        if latest is None:
+            return self._record_unavailable(applied, reverted=reverted)
+        self.latest = latest
         delta = self.latest.cuop - self.baseline.cuop
-        report = {
-            "capability": "self_optimising",
-            "baseline_cuop": self.baseline.cuop,
-            "new_cuop": self.latest.cuop,
-            "delta_cuop": delta,
-            "improvement_measured": delta >= 0.0,
-            "reverted": reverted,
-            "applied": applied,
-            "usd_per_kwh": self.meter.usd_per_kwh,
-            "theorem_proven": False,
-        }
+        return self._record(
+            {
+                "capability": "self_optimising",
+                "evidence_class": "Measured",
+                "baseline_cuop": self.baseline.cuop,
+                "new_cuop": self.latest.cuop,
+                "delta_cuop": delta,
+                "improvement_measured": delta >= 0.0,
+                "reverted": reverted,
+                "applied": applied,
+                "usd_per_kwh": self.meter.usd_per_kwh,
+                "theorem_proven": False,
+            }
+        )
+
+    def _record_unavailable(
+        self, applied: List[Dict[str, Any]], *, reverted: bool
+    ) -> Dict[str, Any]:
+        return self._record(
+            {
+                "capability": "self_optimising",
+                "evidence_class": "Unavailable",
+                "reason": "cuop_unavailable",
+                "baseline_cuop": self.baseline.cuop if self.baseline else None,
+                "new_cuop": None,
+                "delta_cuop": None,
+                "improvement_measured": False,
+                "reverted": reverted,
+                "applied": applied,
+                "usd_per_kwh": self.meter.usd_per_kwh,
+                "theorem_proven": False,
+            }
+        )
+
+    def _record(self, report: Dict[str, Any]) -> Dict[str, Any]:
         entry = self.ledger.log("self_optimising", report)
         report["cassini_fingerprint"] = entry.cassini_fingerprint
         self.reports.append(report)
@@ -875,7 +920,7 @@ class AutonomySupervisor:
         self.heal_loop = heal_loop or SelfHealingLoop(engine=engine, ledger=self.ledger)
         self.workflow: Any = None
         self.optimiser: Optional[SelfOptimisingLoop] = None
-        self.measure_fn: Optional[Callable[[], CuopReading]] = None
+        self.measure_fn: Optional[Callable[[], Optional[CuopReading]]] = None
         self._last_telemetry_count = 0
 
     # -- attachment ----------------------------------------------------------
@@ -908,7 +953,7 @@ class AutonomySupervisor:
     def attach_optimiser(
         self,
         optimiser: SelfOptimisingLoop,
-        measure_fn: Callable[[], CuopReading],
+        measure_fn: Callable[[], Optional[CuopReading]],
     ) -> None:
         self.optimiser = optimiser
         self.measure_fn = measure_fn
@@ -937,11 +982,12 @@ class AutonomySupervisor:
                     ).to_dict()
                 )
 
-        # 2. CUOP drop -> re-optimise.
+        # 2. CUOP drop -> re-optimise. An Unavailable reading is not a drop,
+        # and it must never keep step 3 from running.
         if self.optimiser is not None and self.measure_fn is not None:
             baseline = self.optimiser.baseline
-            if baseline is not None and baseline.cuop > 0.0:
-                current = self.measure_fn()
+            current = self.measure_fn() if baseline is not None and baseline.cuop > 0.0 else None
+            if current is not None:
                 self.optimiser.latest = current
                 if current.cuop < baseline.cuop * CUOP_DROP_FRACTION:
                     report = self.optimiser.optimise_cycle(self.measure_fn)

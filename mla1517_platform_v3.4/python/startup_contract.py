@@ -267,7 +267,7 @@ class WorkerRecord:
     last_heartbeat: str | None = None
     liveness: bool = False
     readiness: bool = False
-    hashrate: float = 0.0
+    hashrate: float | None = None
     shares_accepted: int = 0
     last_error: dict[str, str] | None = None
 

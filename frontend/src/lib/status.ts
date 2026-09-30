@@ -73,7 +73,8 @@ export type WorkerPublic = {
   last_heartbeat: string | null;
   liveness: boolean;
   readiness: boolean;
-  effectiveness: { hashrate: number; shares_accepted: number };
+  // null = the worker has not published a measured hashrate.
+  effectiveness: { hashrate: number | null; shares_accepted: number };
   last_error: { kind: string; message: string } | null;
 };
 
@@ -292,7 +293,7 @@ export type TelemetrySummary = {
   schema_version?: string;
   generated_at?: string;
   backend?: string;
-  hashrate?: number;
+  hashrate?: number | null;
   shares_accepted?: number;
   session?: {
     supervisor_started_at?: string;

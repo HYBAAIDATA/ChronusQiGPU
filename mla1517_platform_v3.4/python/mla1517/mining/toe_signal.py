@@ -87,6 +87,10 @@ _FORBIDDEN_CONSENSUS_KEYS = frozenset(
         "ntime",
         "submission",
         "candidate",
+        "valid_hash",
+        "share_valid",
+        "pool_accepted",
+        "block_confirmed",
     }
 )
 

@@ -119,6 +119,19 @@ class TelemetryRouteTests(unittest.TestCase):
         self.assertEqual(hardware["opencl"]["device_count"], 1)
         self.assertEqual(hardware["workers"]["agentic-mining"]["state"], "disabled")
 
+    def test_unmeasured_hashrate_is_null_and_measured_zero_is_kept(self) -> None:
+        base = self._serve()
+        _code, summary = self._get(base, "/api/v1/telemetry/summary")
+        self.assertIsNone(summary["hashrate"])
+        self.assertIsNone(summary["workers"]["agentic-mining"]["effectiveness"]["hashrate"])
+        with urlopen(base + "/metrics", timeout=30) as response:
+            self.assertNotIn("pythia_worker_hashrate", response.read().decode("utf-8"))
+
+        self._metrics(hashrate_hs=0.0)
+        _code, summary = self._get(base, "/api/v1/telemetry/summary")
+        self.assertEqual(summary["hashrate"], 0.0)
+        self.assertEqual(summary["workers"]["agentic-mining"]["effectiveness"]["hashrate"], 0.0)
+
     def test_routes_carry_the_worker_telemetry(self) -> None:
         snapshot = {
             "state": "READY",

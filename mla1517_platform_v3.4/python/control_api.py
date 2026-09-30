@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import hmac
 import json
+import math
 import mimetypes
 import os
 import re
@@ -293,6 +294,21 @@ def _read_metrics(worker_id: str) -> dict[str, Any]:
     return counters if isinstance(counters, dict) else {}
 
 
+def _measured_hashrate(metrics: dict[str, Any]) -> float | None:
+    """Worker hashrate from its metrics sidecar; ``None`` when not measured."""
+    try:
+        value = float(metrics["hashrate_hs"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    return value if math.isfinite(value) and value >= 0.0 else None
+
+
+def _total_hashrate(records: list[WorkerRecord]) -> float | None:
+    """Sum of measured worker hashrates; ``None`` when no worker measured one."""
+    measured = [record.hashrate for record in records if record.hashrate is not None]
+    return sum(measured) if measured else None
+
+
 def _refresh_evidence(record: WorkerRecord) -> WorkerRecord:
     """Update a worker record from authenticated heartbeat and measured counters."""
     evidence = HeartbeatReader(record.worker_id).poll()
@@ -300,10 +316,7 @@ def _refresh_evidence(record: WorkerRecord) -> WorkerRecord:
     record.last_heartbeat = now_iso() if kind in {"fresh", "epoch_change", "stale"} else None
     record.liveness = kind in {"fresh", "epoch_change", "stale"}
     metrics = _read_metrics(record.worker_id)
-    try:
-        record.hashrate = float(metrics.get("hashrate_hs", record.hashrate) or 0.0)
-    except (TypeError, ValueError):
-        record.hashrate = 0.0
+    record.hashrate = _measured_hashrate(metrics)
     try:
         record.shares_accepted = int(metrics.get("shares_accepted", record.shares_accepted) or 0)
     except (TypeError, ValueError):
@@ -463,10 +476,7 @@ class ControlPlane:
         record.last_heartbeat = now_iso() if kind in {"fresh", "epoch_change", "stale"} else None
         record.liveness = kind in {"fresh", "epoch_change", "stale"}
         metrics = _read_metrics(record.worker_id)
-        try:
-            record.hashrate = float(metrics.get("hashrate_hs", record.hashrate) or 0.0)
-        except (TypeError, ValueError):
-            record.hashrate = 0.0
+        record.hashrate = _measured_hashrate(metrics)
         try:
             record.shares_accepted = int(
                 metrics.get("shares_accepted", record.shares_accepted) or 0
@@ -863,7 +873,7 @@ def status_payload() -> dict[str, Any]:
     records = control.records()
     stratum = _stratum_status_payload(control, records)
     ready, reason = _ready_to_mine_reason(records, stratum)
-    total_hashrate = sum(record.hashrate for record in records)
+    total_hashrate = _total_hashrate(records)
     total_shares = sum(record.shares_accepted for record in records)
     worker_map = {record.worker_id: record.public() for record in records}
     device_present = control.mining_device_bound()
@@ -1061,7 +1071,7 @@ def security_status_payload() -> tuple[HTTPStatus, dict[str, Any]]:
 def telemetry_summary_payload() -> dict[str, Any]:
     control = _control_plane()
     records = control.records()
-    total_hashrate = sum(record.hashrate for record in records)
+    total_hashrate = _total_hashrate(records)
     total_shares = sum(record.shares_accepted for record in records)
     return {
         "schema_version": _SCHEMA_VERSION,
@@ -1117,7 +1127,8 @@ def _reason_metrics(records: list[WorkerRecord], stratum: dict[str, Any]) -> str
     lines.append(f"pythia_identity_verify_ok {1 if identity['ok'] else 0}")
     for record in records:
         lines.append(f'pythia_worker_up{{name="{record.worker_id}"}} {1 if record.liveness else 0}')
-        lines.append(f'pythia_worker_hashrate{{name="{record.worker_id}"}} {record.hashrate}')
+        if record.hashrate is not None:
+            lines.append(f'pythia_worker_hashrate{{name="{record.worker_id}"}} {record.hashrate}')
     return "\n".join(lines)
 
 
