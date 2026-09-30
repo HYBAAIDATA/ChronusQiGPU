@@ -1,0 +1,93 @@
+name: Chronus namespace migration
+
+on:
+  push:
+    branches:
+      - feat/chronos-recovery
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/chronos-recovery
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply Chronus migration
+        run: python scripts/chronus_migrate_repo.py
+
+      - name: Remove one-shot migration machinery
+        run: |
+          rm scripts/chronus_migrate_repo.py
+          rm .github/workflows/chronus-migration.yml
+
+      - name: Static namespace gate
+        run: |
+          test ! -e igpu
+          test -e chronus/device.py
+          test -e chronus/fabric.py
+          if grep -RInE 'from igpu|import igpu|igpu\.|igpu/|IGPUOpenCL|IgpuTelemetry|ResidentIGPU|IGpuSku' \
+            --exclude-dir=.git --exclude-dir=legacy --exclude-dir=node_modules --exclude-dir=.venv .; then
+            echo 'Retired iGPU namespace remains in active tree.' >&2
+            exit 1
+          fi
+          git diff --check
+
+      - name: Install focused test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ./turing_universal_quantum_computer
+          python -m pip install -e '.[dev]'
+
+      - name: Compile migrated surfaces
+        run: python -m compileall -q chronus aethel hyba integrations mining Intelligence
+
+      - name: Run Chronus-focused tests
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          candidates = [
+              'tests/test_chronus_namespace.py',
+              'tests/test_chronus_seam.py',
+              'tests/test_chronus_scan.py',
+              'tests/test_chronus_gemv_launch.py',
+              'tests/test_chronus_contract_audit.py',
+              'tests/test_measure_chronus.py',
+              'tests/test_chronus_fabric.py',
+              'tests/test_seam_v2.py',
+              'tests/test_seam_axioms.py',
+              'tests/test_toe_loop.py',
+              'tests/test_gap_close.py',
+              'tests/test_gpu_scale.py',
+              'tests/test_aethel_device.py',
+              'tests/test_mining_workflow.py',
+              'tests/test_layer_verdicts.py',
+          ]
+          tests = [p for p in candidates if Path(p).exists()]
+          print('Chronus validation set:', tests)
+          raise SystemExit(subprocess.call([sys.executable, '-m', 'pytest', '-q', '--maxfail=1', *tests]))
+          PY
+
+      - name: Commit canonical Chronus tree
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No migration diff to commit.'
+            exit 0
+          fi
+          git commit -m 'refactor(chronus): make Chronus the canonical iGPU offering'
+          git push origin HEAD:feat/chronos-recovery
