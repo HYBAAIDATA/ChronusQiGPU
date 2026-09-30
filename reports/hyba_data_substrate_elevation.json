@@ -1,7 +1,7 @@
 {
   "version": "hyba.data-substrate/v1",
   "label": "SYNTHETIC workload evidence \u2014 no production mining data",
-  "base_commit": "52de55f142ff585e0b4fea184c1ade5d35e10017",
+  "base_commit": "67ab348444978ade22ab4611a13c44fecd5187e7",
   "representation": {
     "claim": "invertible working representation (Zeckendorf uniqueness)",
     "domain": "bytes 0..1048576",
@@ -64,7 +64,11 @@
       "what_dims_represent": "Klein-Poincare contraction of R^11 into B_phi^11 with phi-weighted norm + Lucas boundary reflection count",
       "in_process_max_abs_err": 0.0,
       "serialized_max_abs_err": 1.0516032489249483e-12,
-      "exactness": "bit-exact in-process (carried preimage); ~1e-12 closed-form after serialization"
+      "exactness": "bit-exact in-process (carried preimage); ~1e-12 closed-form after serialization",
+      "separability_raw": 10.807,
+      "separability_folded": 2.12,
+      "knn_neighborhood_agreement_k5": 0.692,
+      "retrieval_note": "NEGATIVE-BOUNDARY: separability degrades 10.8 -> 2.1 (contraction compresses magnitudes by design); kNN agreement 0.69 \u2014 local neighborhoods partially survive but the fold is NOT distance-preserving; use it as a bounded-manifold navigation layer, not a similarity index"
     },
     "binet_vs_recursive": true
   },
@@ -215,17 +219,17 @@
       "prefix_128_of_8192": {
         "correct": true,
         "materialized_bytes": 128,
-        "ns": 133300
+        "ns": 125300
       },
       "suffix_64_of_8192": {
         "correct": true,
         "materialized_bytes": 64
       },
       "full_unfold": {
-        "ns": 9578100,
+        "ns": 7914500,
         "bytes": 8192
       },
-      "partial_vs_full_ns_ratio": 0.014
+      "partial_vs_full_ns_ratio": 0.016
     }
   },
   "memory": {
@@ -238,7 +242,7 @@
     "reprocessing_avoided": "repeat reasoning on identical content resolves to the same digest -> one representation reused"
   },
   "toe_integration": {
-    "conversion_ns": 1712700,
+    "conversion_ns": 1715700,
     "signature_kind": "sequence",
     "lenses_selected": [
       [

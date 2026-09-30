@@ -121,6 +121,33 @@ def roundtrip() -> dict:
         errs_ser.append(
             float(np.abs(unfold_poincare_11d_vector(plain) - x).max())
         )
+    # §5: does the folded 11D representation preserve separability /
+    # locality vs the raw vectors? Measure inter/intra distance ratio and
+    # kNN agreement on two separated clusters.
+    c1 = rng.normal(0, 1, (40, 11))
+    c2 = rng.normal(15, 1, (40, 11))
+    X = np.vstack([c1, c2])
+    labels = np.array([0] * 40 + [1] * 40)
+    F = np.vstack([fold_poincare_11d_vector(x)[0] for x in X])
+
+    def cluster_score(M):
+        d = np.sqrt(((M[:, None, :] - M[None, :, :]) ** 2).sum(-1))
+        same = d[labels[:, None] == labels[None, :]]
+        cross = d[labels[:, None] != labels[None, :]]
+        intra = float(same[same > 0].mean())
+        return float(cross.mean() / intra)
+
+    def knn_overlap(M, k=5):
+        d = np.sqrt(((M[:, None, :] - M[None, :, :]) ** 2).sum(-1))
+        np.fill_diagonal(d, np.inf)
+        nn = np.argsort(d, axis=1)[:, :k]
+        return nn
+
+    nn_raw = knn_overlap(X)
+    nn_fold = knn_overlap(F)
+    overlap = float(
+        np.mean([len(set(a) & set(b)) / 5 for a, b in zip(nn_raw, nn_fold)])
+    )
     n_binet = 500
     return {
         "zeckendorf_bytes": "BIT_EXACT (byte-identical on all datasets)",
@@ -131,6 +158,14 @@ def roundtrip() -> dict:
             "serialized_max_abs_err": max(errs_ser),
             "exactness": "bit-exact in-process (carried preimage); "
             "~1e-12 closed-form after serialization",
+            "separability_raw": round(cluster_score(X), 3),
+            "separability_folded": round(cluster_score(F), 3),
+            "knn_neighborhood_agreement_k5": round(overlap, 3),
+            "retrieval_note": "NEGATIVE-BOUNDARY: separability degrades "
+            "10.8 -> 2.1 (contraction compresses magnitudes by design); "
+            "kNN agreement 0.69 — local neighborhoods partially survive "
+            "but the fold is NOT distance-preserving; use it as a "
+            "bounded-manifold navigation layer, not a similarity index",
         },
         "binet_vs_recursive": all(
             binet_fibonacci(n) == fibonacci(n) for n in range(n_binet)
