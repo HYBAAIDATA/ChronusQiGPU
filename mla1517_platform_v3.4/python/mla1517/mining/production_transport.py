@@ -1,18 +1,10 @@
 """Production transport hardening for the canonical mining coordinator.
 
 This module deliberately wraps the existing, consensus-tested Stratum V1
-implementation instead of creating a second mining stack. It adds two
-operational properties required by the production runtime:
-
-* bounded, queue-backed socket writes so transport backpressure cannot grow
-  without bound or stall the hashing worker; and
-* aggressive first-endpoint failover with configurable sub-second connect
-  budgets while retaining the coordinator's existing exponential reconnect
-  policy across complete outage cycles.
-
-All share construction, SHA256d verification, stale-generation checks,
-submission truth and agentic/intelligence behaviour remain owned by the
-existing coordinator and proof adapter.
+implementation instead of creating a second mining stack. It adds production
+transport bounds, failover policy, truthful network telemetry, and MMIO-loop
+outage behaviour while leaving proof construction and SHA256d authority in the
+existing coordinator/proof adapter.
 """
 
 from __future__ import annotations
@@ -23,14 +15,15 @@ import json
 import logging
 import os
 from collections import deque
-from typing import Any
+from typing import Any, Mapping
 
 from manifold_pool_coordinator import (
     StratumAuthorizationError,
     StratumClient,
 )
 
-from .coordinator import IntelligentPoolCoordinator
+from .causal import CausalCoordinate
+from .coordinator import IntelligentPoolCoordinator, MMIOControlSink
 from .pool_chain import bip34_height
 
 LOG = logging.getLogger(__name__)
@@ -67,10 +60,9 @@ class ProductionStratumClient(StratumClient):
 
     ``StratumClient`` already owns protocol parsing, request correlation,
     local job/target state and share outcome truth. This subclass changes
-    only transport scheduling. Callers enqueue a frame and wait only for a
-    bounded write acknowledgement; the dedicated writer task owns
-    ``StreamWriter.drain()``. A wedged socket therefore becomes a controlled
-    connection failure instead of unbounded event-loop backpressure.
+    only transport scheduling and adds measured transport telemetry. A wedged
+    socket becomes a controlled connection failure instead of unbounded
+    event-loop backpressure.
     """
 
     def __init__(
@@ -86,6 +78,7 @@ class ProductionStratumClient(StratumClient):
         # Base __init__ publishes an initial status snapshot and therefore may
         # call our overridden _publish_status/status_snapshot immediately.
         self._submit_rtt_ms: deque[float] = deque(maxlen=2048)
+        self._stale_dropped = 0
         super().__init__(
             *args,
             connect_timeout=(
@@ -130,6 +123,11 @@ class ProductionStratumClient(StratumClient):
         writer_ok = self._writer_task is None or not self._writer_task.done()
         return super().connected and writer_ok and self._writer_error is None
 
+    def record_stale_candidate(self) -> None:
+        """Record one observed candidate invalidated by a job/session change."""
+        self._stale_dropped += 1
+        self._publish_status()
+
     def status_snapshot(self) -> dict[str, Any]:
         """Return measured transport telemetry; unavailable values stay null."""
         snapshot = self.runtime_state.snapshot()
@@ -143,6 +141,7 @@ class ProductionStratumClient(StratumClient):
         accepted = int(counters.get("accepted", 0) or 0)
         rejected = int(counters.get("rejected", 0) or 0)
         unknown = int(counters.get("unknown", 0) or 0)
+        candidate_total = submitted + self._stale_dropped
 
         samples = list(self._submit_rtt_ms)
         ordered = sorted(samples)
@@ -161,15 +160,15 @@ class ProductionStratumClient(StratumClient):
         }
         snapshot["protocol"] = "stratum_v1"
         snapshot["outcomes"] = {
-            "accepted_ratio": accepted / submitted if submitted else None,
-            "rejected_ratio": rejected / submitted if submitted else None,
-            "unknown_ratio": unknown / submitted if submitted else None,
-            # Job invalidation is not the same thing as a stale share. Until
-            # the search layer reports an observed stale candidate/drop, do
-            # not manufacture a stale ratio from unrelated counters.
-            "stale_ratio": None,
-            "stale_dropped": None,
+            "candidate_total": candidate_total,
+            "accepted_ratio": accepted / candidate_total if candidate_total else None,
+            "rejected_ratio": rejected / candidate_total if candidate_total else None,
+            "unknown_ratio": unknown / candidate_total if candidate_total else None,
+            "stale_ratio": self._stale_dropped / candidate_total if candidate_total else None,
+            "stale_dropped": self._stale_dropped,
         }
+        # The persistent retarget tracker replaces this only when complete
+        # difficulty-weighted share evidence exists for the active epoch.
         snapshot["effective_stratum_hashrate_hs"] = None
         return snapshot
 
@@ -343,6 +342,68 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
             if outbound_queue_size is None
             else outbound_queue_size
         )
+        self._stale_candidates_dropped = 0
+        self._stale_execution_ids: set[str] = set()
+
+    def _observe_stale_from_last_execution(self) -> None:
+        """Count only candidates invalidated by a changed canonical identity."""
+        execution = self.last_execution
+        if not isinstance(execution, Mapping) or not execution.get("executed"):
+            return
+        execution_id = execution.get("execution_id")
+        if not isinstance(execution_id, str) or execution_id in self._stale_execution_ids:
+            return
+        if not execution.get("candidate_id") or execution.get("pool_outcome") != "NOT_SUBMITTED":
+            return
+        key = (
+            execution.get("pool_session_id"),
+            execution.get("generation"),
+            execution.get("job_fingerprint"),
+        )
+        current, _reason = self._resolve_work_identity()
+        if current is not None and current.key == key:
+            # NOT_SUBMITTED can be shadow mode, duplicate suppression or chain
+            # evidence refusal. None of those is a stale share.
+            return
+        self._stale_execution_ids.add(execution_id)
+        self._stale_candidates_dropped += 1
+        # When only the job generation changed inside the same Stratum
+        # session, attach the stale count directly to that session telemetry.
+        client = self.client
+        session_id = execution.get("pool_session_id")
+        if isinstance(client, ProductionStratumClient) and client.runtime_state.session_id == session_id:
+            client.record_stale_candidate()
+        self.causal.record(
+            "candidate_stale_dropped",
+            CausalCoordinate(
+                pool_session_id=(session_id if isinstance(session_id, str) else None),
+                generation=(
+                    int(execution["generation"])
+                    if isinstance(execution.get("generation"), int)
+                    else None
+                ),
+                job_fingerprint=(
+                    str(execution["job_fingerprint"])
+                    if execution.get("job_fingerprint") is not None
+                    else None
+                ),
+                execution_id=execution_id,
+                candidate_id=(
+                    str(execution["candidate_id"])
+                    if execution.get("candidate_id") is not None
+                    else None
+                ),
+            ),
+            stale_candidates_dropped=self._stale_candidates_dropped,
+        )
+
+    def set_metrics_sink(self, sink: Any) -> None:
+        """Publish measured hashing plus stale-candidate drop counters."""
+        def wrapped(counters: Mapping[str, Any]) -> None:
+            self._observe_stale_from_last_execution()
+            sink({**dict(counters), "stale_candidates_dropped": self._stale_candidates_dropped})
+
+        super().set_metrics_sink(wrapped)
 
     async def connect_with_failover(self) -> ProductionStratumClient:
         errors: list[str] = []
@@ -383,6 +444,126 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
         if authorization_failures == len(self.endpoints):
             raise StratumAuthorizationError("; ".join(errors))
         raise ConnectionError("; ".join(errors))
+
+    async def run_hardware_loop(
+        self,
+        bridge: Any,
+        *,
+        difficulty_mask: int,
+        base_step: int,
+        poll_ms: int = 100,
+        max_backoff_s: float | None = None,
+    ) -> None:
+        """Run the MMIO path with the same bounded failover policy as software.
+
+        Pool loss stops the bridge before any reconnect wait, preventing stale
+        work from continuing while no authoritative Stratum session exists.
+        Every configured endpoint is attempted immediately; only a complete
+        outage enters exponential backoff.
+        """
+        if self.submit_enabled and self.chain_observer is None:
+            raise RuntimeError("live mining requires a Bitcoin chain observer")
+        if max_backoff_s is None:
+            max_backoff_s = _positive_env("PYTHIA_RECONNECT_MAX_S", 30.0)
+        if max_backoff_s <= 0:
+            raise ValueError("max_backoff_s must be positive")
+
+        self._bridge = bridge
+        self._base_step = base_step
+        self._control_sink = MMIOControlSink(
+            bridge,
+            on_throttle=self._set_throttled,
+            on_quarantine=self.quarantined_records.add,
+            on_prune=self.proven_exclusions.append,
+        )
+        if self._agentic_state_path:
+            self.agentic.load_state(self._agentic_state_path)
+        self._precompute_task = asyncio.create_task(self._precompute_loop())
+        try:
+            try:
+                await self._start_control_server()
+            except OSError as exc:
+                LOG.warning("coordinator control channel unavailable: %s", exc)
+            bridge.set_difficulty_mask(difficulty_mask)
+            bridge.set_base_step(base_step)
+            running = False
+            delay = self.reconnect_delay
+            while True:
+                if not self.client or not self.client.connected:
+                    if running:
+                        bridge.stop()
+                        running = False
+                    if self.client:
+                        with contextlib.suppress(Exception):
+                            await self.client.close()
+                        self.client = None
+                    try:
+                        await self.connect_with_failover()
+                    except Exception as exc:
+                        kind = (
+                            "every pool refused authorization"
+                            if isinstance(exc, StratumAuthorizationError)
+                            else "every pool unavailable"
+                        )
+                        LOG.warning("%s: %s; retrying in %.3fs", kind, exc, delay)
+                        self._publish_metrics(force=True)
+                        await asyncio.sleep(delay)
+                        delay = min(delay * 2, max_backoff_s)
+                        continue
+                    delay = self.reconnect_delay
+                    LOG.info("hardware mining through %s", self.client.endpoint.name)
+
+                permitted = await self.before_hardware_poll()
+                if not permitted:
+                    if running:
+                        bridge.stop()
+                        running = False
+                    await asyncio.sleep(max(poll_ms / 1000, 0.01))
+                    continue
+                if not running:
+                    bridge.start()
+                    running = True
+
+                ring_path = os.getenv("MLA1517_PRIME_DB_RING")
+                if ring_path:
+                    record = await asyncio.to_thread(bridge.poll_vault_to_ring, ring_path, poll_ms)
+                else:
+                    record = await asyncio.to_thread(bridge.poll_vault, poll_ms)
+                if record is not None:
+                    try:
+                        await self.submit_record(record)
+                    except (ConnectionError, asyncio.IncompleteReadError) as exc:
+                        LOG.warning("submit connection lost: %s", exc)
+                        if running:
+                            bridge.stop()
+                            running = False
+                        if self.client:
+                            with contextlib.suppress(Exception):
+                                await self.client.close()
+                        self.client = None
+        finally:
+            if self._precompute_task is not None:
+                self._precompute_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await self._precompute_task
+                self._precompute_task = None
+            if self._agentic_state_path:
+                self.agentic.save_state(self._agentic_state_path)
+            if self.client is not None:
+                with contextlib.suppress(Exception):
+                    await self.client.close()
+                self.client = None
+            if self._control_server:
+                self._control_server.close()
+                with contextlib.suppress(Exception):
+                    await self._control_server.wait_closed()
+                self._control_server = None
+                with contextlib.suppress(OSError):
+                    os.unlink(self.control_socket_path)
+            with contextlib.suppress(Exception):
+                bridge.stop()
+            if self.telemetry:
+                self.telemetry.close()
 
 
 __all__ = ["ProductionMiningCoordinator", "ProductionStratumClient"]
