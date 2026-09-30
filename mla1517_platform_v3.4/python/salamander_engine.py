@@ -41,6 +41,7 @@ class SalamanderEngine:
         failover: Callable[[], Any] | None = None,
         governance_enabled: bool | None = None,
         governance_seed: int = 1517,
+        lane_self_test: Callable[[int], bool] | None = None,
     ) -> None:
         self.bridge, self.telemetry_path, self.data_dir = (
             bridge,
@@ -85,6 +86,14 @@ class SalamanderEngine:
         self.recovery_id: str | None = None
         self.reported_mode: str | None = None
         self._reported_at_ms: int | None = None
+        # Probationary self-test: injectable probe (a host with a lane
+        # self-test ABI supplies it); the default observes the lane's own
+        # cumulative fault counter across supervisory ticks.
+        self._self_test_lane = (
+            lane_self_test if lane_self_test is not None else self._telemetry_lane_self_test
+        )
+        self._last_sensed_faults: list[int] | None = None
+        self._prev_sensed_faults: list[int] | None = None
 
     def sense(self) -> dict[str, Any]:
         try:
@@ -151,6 +160,15 @@ class SalamanderEngine:
         )
         return bool(reply) and reply.get("status") == "ok"
 
+    def _telemetry_lane_self_test(self, lane: int) -> bool:
+        """Clean-probation observation: the quarantined lane's cumulative
+        fault counter must not have grown since the previous tick — a lane
+        that keeps faulting while masked out is still faulty."""
+        faults, prev = self._last_sensed_faults, self._prev_sensed_faults
+        if prev is None or lane >= len(faults) or lane >= len(prev):
+            return False
+        return int(faults[lane]) <= int(prev[lane])
+
     def _control_request(self, payload: dict[str, Any]) -> dict[str, Any] | None:
         """One JSON request/reply on the coordinator control socket."""
         try:
@@ -216,8 +234,15 @@ class SalamanderEngine:
                 "actions": actions,
                 "state": state,
             }
+        faults = state.get("faults") or []
+        self._prev_sensed_faults = self._last_sensed_faults
+        self._last_sensed_faults = [int(f) for f in faults]
         mclaren_actions = self.mclaren.step(
-            self.fault_bucket, self.ledger, now_ms, self._commit_lane_mask, lambda lane: True
+            self.fault_bucket,
+            self.ledger,
+            now_ms,
+            self._commit_lane_mask,
+            self._self_test_lane,
         )
         actions.extend(mclaren_actions)
         if not mclaren_actions and self.policy == "euclid":
