@@ -157,3 +157,30 @@ def test_causal_trace_resolves_toe_and_learning_axes():
     traced = ledger.trace(learning_record_id="learning")
     assert traced and traced[-1].coordinate.toe_frame_id == "toe"
     assert traced[-1].coordinate.execution_id == "execution"
+
+
+def test_new_stratum_identity_clears_stale_toe_evidence():
+    from types import SimpleNamespace
+
+    from mla1517.mining.coordinator import IntelligentPoolCoordinator
+
+    identity = WorkIdentity("session-new", 2, "job-new", "fp-new", 2, True, 2.0)
+    wake = SimpleNamespace(set=lambda: None)
+    events = []
+    coordinator = IntelligentPoolCoordinator.__new__(IntelligentPoolCoordinator)
+    coordinator._resolve_work_identity = lambda: (identity, None)
+    coordinator.agentic = SimpleNamespace(bind_work=lambda _identity: True)
+    coordinator.last_toe_context = object()
+    coordinator.last_toe_frame = object()
+    coordinator.last_toe_signal = object()
+    coordinator._bound_session = None
+    coordinator.world = SimpleNamespace(observe_bind=lambda *a, **k: None)
+    coordinator.loss = SimpleNamespace(observe_bind=lambda *a, **k: None)
+    coordinator.causal = SimpleNamespace(record=lambda *a, **k: events.append((a, k)))
+    coordinator._precompute_wake = wake
+
+    assert coordinator._refresh_work_identity() is identity
+    assert coordinator.last_toe_context is None
+    assert coordinator.last_toe_frame is None
+    assert coordinator.last_toe_signal is None
+    assert events and events[0][0][0] == "identity_bound"

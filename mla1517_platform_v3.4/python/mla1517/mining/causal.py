@@ -2,8 +2,9 @@
 
 Every meaningful transition is located by one ``CausalCoordinate``:
 
-    pool_session_id → generation → job_fingerprint → plan_id → lease_id
-    → execution_id → candidate_id → submission_id      (+ recovery_id)
+    pool_session_id → generation → job_fingerprint → toe_frame_id
+    → plan_id → lease_id → execution_id → candidate_id → submission_id
+    → learning_record_id                              (+ recovery_id)
 
 Upstream ids are always present when a downstream id is, so any id can be
 traced back to the Stratum session that authorised the work. The ledger is

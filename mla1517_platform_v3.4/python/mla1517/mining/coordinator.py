@@ -745,6 +745,12 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             self.agentic.clear_work(reason or "NO_WORK_IDENTITY")
             return None
         if self.agentic.bind_work(identity):
+            # TOE evidence belongs to one observed Stratum identity. Clear it
+            # before waking precompute so a new generation can never inherit
+            # the previous job's frame or steering signal.
+            self.last_toe_context = None
+            self.last_toe_frame = None
+            self.last_toe_signal = None
             now = time.monotonic()
             new_session = self._bound_session not in (None, identity.pool_session_id)
             self._bound_session = identity.pool_session_id
