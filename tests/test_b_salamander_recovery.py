@@ -153,6 +153,53 @@ def test_probationary_readmit_restores_lane(tmp_path, monkeypatch):
     assert engine.recovery_id is None
 
 
+def test_faulting_lane_fails_probation_self_test(tmp_path, monkeypatch):
+    """The probation self-test is a real observation, not a lambda-true:
+    a lane whose cumulative fault counter keeps growing while quarantined
+    must not be readmitted; only consecutive fault-free ticks count."""
+    bridge = _FakeBridge(ack=True)
+    engine, reader, _reports = _engine(tmp_path, monkeypatch, bridge=bridge)
+
+    reader.current = {"cassini_faults": _faults(3, 6), "total_tests": 5_000}
+    engine.step(now_ms=1_000)
+    engine.step(now_ms=1_050)  # quiet observation closes recovery #1
+    assert engine.mclaren.state.active[3] is False
+
+    probation_end = 1_000 + salamander_control.PROBATION_MS
+    # First probation tick: counter still flat -> observed pass 1.
+    reader.current = {"cassini_faults": _faults(3, 6), "total_tests": 6_000}
+    step = engine.step(now_ms=probation_end)
+    assert step["actions"] == []
+    assert engine.mclaren.state.passes[3] == 1
+
+    # The counter grows on the next observation -> fail, passes reset,
+    # probation restarts (quarantined_since moves to this tick).
+    reader.current = {"cassini_faults": _faults(3, 7), "total_tests": 6_100}
+    step = engine.step(now_ms=probation_end + 50)
+    assert "readmit:3" not in step["actions"]
+    assert engine.mclaren.state.passes[3] == 0
+    restart = engine.mclaren.state.quarantined_since[3] == probation_end + 50
+    assert restart
+
+    # It grows again on the next probation observation -> fails again.
+    reader.current = {"cassini_faults": _faults(3, 8), "total_tests": 6_200}
+    engine.step(now_ms=probation_end + 50 + salamander_control.PROBATION_MS)
+    assert engine.mclaren.state.passes[3] == 0
+
+    # Three consecutive fault-free observations then readmit.
+    ticks = (
+        probation_end + 50 + 2 * salamander_control.PROBATION_MS,
+        probation_end + 100 + 2 * salamander_control.PROBATION_MS,
+        probation_end + 150 + 2 * salamander_control.PROBATION_MS,
+    )
+    steps = []
+    for tick in ticks:
+        reader.current = {"cassini_faults": _faults(3, 8), "total_tests": 6_300}
+        steps.append(engine.step(now_ms=tick))
+    assert steps[2]["actions"] == ["readmit:3"]
+    assert engine.mclaren.state.active[3] is True
+
+
 def test_stratum_drops_trigger_failover_once(tmp_path, monkeypatch):
     calls: list[str] = []
     bridge = _FakeBridge(ack=True)
@@ -171,6 +218,18 @@ def test_stratum_drops_trigger_failover_once(tmp_path, monkeypatch):
     step2 = engine.step(now_ms=10_050)
     assert calls == ["f"]
     assert "request_failover" not in step2["actions"]
+
+    # Edge-triggered: the same cumulative count past cooldown does NOT
+    # re-fire — failover needs >3 NEW drops since the last switch.
+    reader.current = {"stratum_drops": 4, "total_tests": 2_100}
+    step3 = engine.step(now_ms=10_000 + salamander_control.FAILOVER_COOLDOWN_MS + 1)
+    assert calls == ["f"]
+    assert "request_failover" not in step3["actions"]
+
+    reader.current = {"stratum_drops": 8, "total_tests": 2_200}
+    step4 = engine.step(now_ms=10_000 + salamander_control.FAILOVER_COOLDOWN_MS + 2)
+    assert calls == ["f", "f"]
+    assert "request_failover" in step4["actions"]
 
     # A failed switch is cancelled, not latched.
     engine2 = SalamanderEngine(
