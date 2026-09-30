@@ -74,8 +74,35 @@ def default_config() -> dict[str, Any]:
     }
 
 
+def _persisted_section_ok(key: str, value: Any) -> bool:
+    """Shape check for a persisted section: consumers assume these container
+    types, so a section that breaks them is untrusted input (manual edit,
+    version skew) and must fall back to its default rather than crash
+    public_view or downstream readers. Semantic rules (bounds, pool
+    references) stay enforced at write time by validate()."""
+    if key == "pools":
+        return isinstance(value, list) and all(isinstance(p, dict) for p in value)
+    if key in ("solvers", "hashrate", "live_submit", "campaign"):
+        if not isinstance(value, dict):
+            return False
+        if key == "campaign":
+            return isinstance(value.get("phases", []), list)
+        if key == "hashrate":
+            target = value.get("target_hs", 0.0)
+            return isinstance(target, (int, float)) and not isinstance(target, bool)
+        if key == "solvers":
+            return isinstance(value.get("arms", 1), int) and isinstance(
+                value.get("workers", 32), int
+            )
+        return True
+    if key == "window":
+        return isinstance(value, int) and not isinstance(value, bool)
+    return False
+
+
 def load() -> dict[str, Any]:
-    """Read the runtime config; returns defaults when the file is absent."""
+    """Read the runtime config; absent or structurally invalid sections fall
+    back to defaults — a persisted file is untrusted input."""
     path = config_path()
     cfg = default_config()
     if not path.is_file():
@@ -87,7 +114,7 @@ def load() -> dict[str, Any]:
     if not isinstance(raw, dict):
         return cfg
     for key in ("pools", "solvers", "hashrate", "live_submit", "window", "campaign"):
-        if key in raw:
+        if key in raw and _persisted_section_ok(key, raw[key]):
             cfg[key] = raw[key]
     cfg["updated_at"] = raw.get("updated_at")
     return cfg

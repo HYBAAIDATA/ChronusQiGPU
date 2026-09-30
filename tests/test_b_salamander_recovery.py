@@ -219,6 +219,18 @@ def test_stratum_drops_trigger_failover_once(tmp_path, monkeypatch):
     assert calls == ["f"]
     assert "request_failover" not in step2["actions"]
 
+    # Edge-triggered: the same cumulative count past cooldown does NOT
+    # re-fire — failover needs >3 NEW drops since the last switch.
+    reader.current = {"stratum_drops": 4, "total_tests": 2_100}
+    step3 = engine.step(now_ms=10_000 + salamander_control.FAILOVER_COOLDOWN_MS + 1)
+    assert calls == ["f"]
+    assert "request_failover" not in step3["actions"]
+
+    reader.current = {"stratum_drops": 8, "total_tests": 2_200}
+    step4 = engine.step(now_ms=10_000 + salamander_control.FAILOVER_COOLDOWN_MS + 2)
+    assert calls == ["f", "f"]
+    assert "request_failover" in step4["actions"]
+
     # A failed switch is cancelled, not latched.
     engine2 = SalamanderEngine(
         bridge,

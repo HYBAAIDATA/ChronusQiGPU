@@ -275,7 +275,7 @@ class SalamanderEngine:
         if self.failover_state.should_switch(state["stratum_drops"], now_ms):
             ok = bool(self.failover() if self.failover else self._trigger_stratum_failover())
             if ok:
-                self.failover_state.mark_switch(now_ms)
+                self.failover_state.mark_switch(now_ms, state["stratum_drops"])
                 actions.append("request_failover")
             else:
                 self.failover_state.cancel_switch()

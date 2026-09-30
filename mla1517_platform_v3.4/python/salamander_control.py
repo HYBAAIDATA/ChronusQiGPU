@@ -134,18 +134,27 @@ class FailoverState:
     last_switch: int = -FAILOVER_COOLDOWN_MS
     secondary_since: int | None = None
     pending: bool = False
+    drops_at_switch: int = 0
 
     def should_switch(self, drops: int, now_ms: int) -> bool:
-        if drops <= 3 or self.pending or now_ms - self.last_switch < FAILOVER_COOLDOWN_MS:
+        # Edge-triggered: drops is cumulative telemetry, so a switch requires
+        # >3 NEW drops since the last one — otherwise a stale high counter
+        # re-fires failover every cooldown.
+        if (
+            drops - self.drops_at_switch <= 3
+            or self.pending
+            or now_ms - self.last_switch < FAILOVER_COOLDOWN_MS
+        ):
             return False
         self.pending = True
         self.secondary_since = now_ms
         return True
 
-    def mark_switch(self, now_ms: int) -> None:
+    def mark_switch(self, now_ms: int, drops: int) -> None:
         self.last_switch = now_ms
         self.secondary_since = now_ms
         self.pending = False
+        self.drops_at_switch = drops
 
     def cancel_switch(self) -> None:
         self.pending = False

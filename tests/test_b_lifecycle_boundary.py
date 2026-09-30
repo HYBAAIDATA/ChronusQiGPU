@@ -319,3 +319,18 @@ def test_persisted_session_state_survives_restore(tmp_path, monkeypatch):
     path.write_text("{not json", encoding="utf-8")
     fallback = runtime_config.load()
     assert fallback["solvers"]["arms"] == 1
+
+
+def test_schema_corrupt_persisted_config_loads_defaults(tmp_path, monkeypatch):
+    """Valid JSON that violates the schema is untrusted too: load() must not
+    hand unvalidated sections to public_view (e.g. {"solvers": null} would
+    crash dict(cfg["solvers"]) -> 500 on /api/v1/config)."""
+    path = _config_store(tmp_path, monkeypatch)
+    path.write_text(json.dumps({"solvers": None}), encoding="utf-8")
+    fallback = runtime_config.load()
+    assert fallback["solvers"]["arms"] == 1
+    view = runtime_config.public_view(fallback)
+    assert view["solvers"]["arms"] == 1
+
+    path.write_text(json.dumps({"window": "wide"}), encoding="utf-8")
+    assert runtime_config.load()["window"] == 200000
