@@ -1,4 +1,4 @@
-"""Layer 3 — named, signed kernels dispatched through the iGPU device."""
+"""Layer 3 — named, signed kernels dispatched through the Chronus device."""
 
 from __future__ import annotations
 
@@ -7,9 +7,9 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from igpu.seam import store
-from igpu.seam.probe import lifecycle
-from igpu.seam.types import (
+from . import store
+from .probe import lifecycle
+from .types import (
     AttestationLink,
     DeviceState,
     Err,
@@ -64,7 +64,7 @@ class KernelResult:
     def as_dict(self) -> Dict[str, Any]:
         return {
             "handle": self.handle.as_dict(),
-            "output_digests": [digest_of(o) for o in self.outputs],
+            "output_digests": [digest_of(output) for output in self.outputs],
             "attestation": self.attestation.as_dict(),
             "measurement": self.measurement.as_dict(),
             "host_verified": self.host_verified,
@@ -83,15 +83,21 @@ def _input_digests(args: Any) -> List[str]:
     return [digest_of(payload)]
 
 
-def dispatch(caller: str, device_id: str, kernel: KernelName, args: Any, idempotency_key: str) -> Result[KernelHandle]:
-    cap = store.get_cap(device_id)
-    if cap is None:
+def dispatch(
+    caller: str,
+    device_id: str,
+    kernel: KernelName,
+    args: Any,
+    idempotency_key: str,
+) -> Result[KernelHandle]:
+    capability = store.get_cap(device_id)
+    if capability is None:
         return Err(SeamError.device_absent, device_id)
-    if cap.state is DeviceState.quarantined or store.is_quarantined(device_id):
+    if capability.state is DeviceState.quarantined or store.is_quarantined(device_id):
         return Err(SeamError.device_quarantined, device_id)
-    if cap.state is not DeviceState.present:
-        return Err(SeamError.device_absent, cap.state.value)
-    if kernel not in cap.supported_kernels:
+    if capability.state is not DeviceState.present:
+        return Err(SeamError.device_absent, capability.state.value)
+    if kernel not in capability.supported_kernels:
         return Err(SeamError.kernel_unavailable, kernel.value)
     existing_id = store.lookup_idempotent(f"{device_id}:{idempotency_key}")
     if existing_id:
@@ -99,7 +105,10 @@ def dispatch(caller: str, device_id: str, kernel: KernelName, args: Any, idempot
         if existing is not None:
             return Ok(existing)
     inputs = _input_digests(args)
-    att = attest(f"{device_id}:{kernel.value}:{','.join(inputs)}:{idempotency_key}", issuer=f"dispatch:{device_id}")
+    attestation = attest(
+        f"{device_id}:{kernel.value}:{','.join(inputs)}:{idempotency_key}",
+        issuer=f"dispatch:{device_id}",
+    )
     handle = KernelHandle(
         id=new_id("k"),
         device_id=device_id,
@@ -108,34 +117,42 @@ def dispatch(caller: str, device_id: str, kernel: KernelName, args: Any, idempot
         outputs=[],
         idempotency_key=idempotency_key,
         dispatched_at=now_iso(),
-        attestation=att,
+        attestation=attestation,
         state="pending",
         args=args if isinstance(args, dict) else {"raw": args},
     )
     store.put_handle(handle)
     store.remember_idempotent(f"{device_id}:{idempotency_key}", handle.id)
-    store.audit("kernel_dispatch", handle_id=handle.id, kernel=kernel.value, caller=caller)
+    store.audit(
+        "kernel_dispatch",
+        handle_id=handle.id,
+        kernel=kernel.value,
+        caller=caller,
+    )
     return Ok(handle)
 
 
 def _host_verify(kernel: KernelName, outputs: List[bytes]) -> bool:
     if kernel is KernelName.sha256d_verify:
-        return bool(outputs) and all(o in (b"\x00", b"\x01") for o in outputs)
+        return bool(outputs) and all(output in (b"\x00", b"\x01") for output in outputs)
     return True
 
 
 def _execute(handle: KernelHandle) -> Result[KernelResult]:
-    t0 = time.perf_counter_ns()
+    started = time.perf_counter_ns()
     outputs: List[bytes] = []
     kernel = handle.kernel
     try:
         if kernel is KernelName.sha256d_scan:
-            from igpu.device import IGPU
+            from chronus import Chronus
 
             header = handle.args.get("header80") if isinstance(handle.args, dict) else None
             target = handle.args.get("target") if isinstance(handle.args, dict) else None
-            if isinstance(header, (bytes, bytearray)) and isinstance(target, (bytes, bytearray)):
-                nonce, digest, hashed = IGPU().grind(
+            if isinstance(header, (bytes, bytearray)) and isinstance(
+                target,
+                (bytes, bytearray),
+            ):
+                nonce, digest, hashed = Chronus().grind(
                     bytes(header),
                     bytes(target),
                     base_nonce=int(handle.args.get("base_nonce", 0)),
@@ -148,9 +165,9 @@ def _execute(handle: KernelHandle) -> Result[KernelResult]:
             else:
                 outputs = [b""]
         elif kernel is KernelName.sha256d_verify:
-            a = handle.args if isinstance(handle.args, dict) else {}
-            payload = a.get("payload")
-            claimed = a.get("claimed")
+            args = handle.args if isinstance(handle.args, dict) else {}
+            payload = args.get("payload")
+            claimed = args.get("claimed")
             if (
                 not isinstance(payload, (bytes, bytearray))
                 or not isinstance(claimed, (bytes, bytearray))
@@ -171,32 +188,43 @@ def _execute(handle: KernelHandle) -> Result[KernelResult]:
             KernelName.morton_step,
             KernelName.korobov_point,
         ):
-            face = int((handle.args or {}).get("face", 0)) if isinstance(handle.args, dict) else 0
+            face = (
+                int((handle.args or {}).get("face", 0))
+                if isinstance(handle.args, dict)
+                else 0
+            )
             outputs = [face.to_bytes(4, "little")]
         else:
             outputs = [digest_of(kernel.value.encode("utf-8")).encode("utf-8")[:16]]
     except Exception as exc:
         handle.state = "failed"
         store.put_handle(handle)
-        return Err(SeamError.verification_failed, f"{type(exc).__name__}: {exc}")
-    wall = time.perf_counter_ns() - t0
-    out_digests = [digest_of(o) for o in outputs]
-    handle.outputs = out_digests
+        return Err(
+            SeamError.verification_failed,
+            f"{type(exc).__name__}: {exc}",
+        )
+
+    wall = time.perf_counter_ns() - started
+    output_digests = [digest_of(output) for output in outputs]
+    handle.outputs = output_digests
     handle.state = "complete"
     store.put_handle(handle)
     verified = _host_verify(kernel, outputs)
     if not verified:
         lifecycle(handle.device_id, "quarantine")
         return Err(SeamError.verification_failed, handle.id)
-    result_att = attest(f"result:{handle.id}:{','.join(out_digests)}", issuer=f"result:{handle.device_id}")
-    cap = store.get_cap(handle.device_id)
-    if cap is not None and cap.privacy_mode is PrivacyMode.zero_knowledge:
-        result_att = attest(f"zk:{handle.id}", issuer="zk")
+    result_attestation = attest(
+        f"result:{handle.id}:{','.join(output_digests)}",
+        issuer=f"result:{handle.device_id}",
+    )
+    capability = store.get_cap(handle.device_id)
+    if capability is not None and capability.privacy_mode is PrivacyMode.zero_knowledge:
+        result_attestation = attest(f"zk:{handle.id}", issuer="zk")
     return Ok(
         KernelResult(
             handle=handle,
             outputs=outputs,
-            attestation=result_att,
+            attestation=result_attestation,
             measurement=PhysicalMeasurement(time_ns=wall),
             host_verified=True,
         )
