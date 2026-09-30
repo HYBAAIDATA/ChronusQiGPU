@@ -55,6 +55,9 @@ original toe.py monolith, and the substrate modules it runs on):
                                     calibration
     toe.decision_explanation        computational + contrastive explanation
                                     and explanation/decision falsification
+    toe.planning                    declared-operator action generation +
+                                    bounded multi-step planning vs the
+                                    one-step greedy baseline
     toe.intelligences/              the five intelligences (causal,
                                     geometric, plastic, counterfactual,
                                     quantum)
@@ -121,6 +124,15 @@ from .decision_explanation import (
     falsify_decision,
     falsify_explanation,
 )
+from .planning import (
+    OperatorSpec as PlanningOperatorSpec,
+    compare_plan_vs_greedy,
+    generate_actions,
+    greedy,
+    plan,
+    scm_env,
+)
+from .policy import decide_multiobjective
 from .expansion import (
     TOEExpansionEngine,
     TOEExpansionPolicy,
@@ -161,6 +173,13 @@ __all__ = [
     "explain_contrastive",
     "falsify_explanation",
     "falsify_decision",
+    "PlanningOperatorSpec",
+    "generate_actions",
+    "scm_env",
+    "plan",
+    "greedy",
+    "compare_plan_vs_greedy",
+    "decide_multiobjective",
     "IDENTIFIED",
     "NOT_IDENTIFIED",
     "PARTIALLY_IDENTIFIED",
