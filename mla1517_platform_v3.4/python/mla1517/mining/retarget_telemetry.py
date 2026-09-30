@@ -1,6 +1,6 @@
 """Evidence-first telemetry for Bitcoin's 2016-block retarget windows.
 
-The tracker consumes canonical Stratum status snapshots.  Pool-job BIP34
+The tracker consumes canonical Stratum status snapshots. Pool-job BIP34
 height is treated as pool-provided chain evidence (the same boundary used by
 ``PoolChainObserver``); no height is guessed when that evidence is absent.
 
@@ -43,6 +43,7 @@ class RetargetWindowTracker:
         self.keep_windows = keep_windows
         self.windows: OrderedDict[str, dict[str, Any]] = OrderedDict()
         self._last_counters: dict[str, dict[str, int]] = {}
+        self._last_stale: dict[str, int] = {}
         self._load()
 
     def _load(self) -> None:
@@ -90,8 +91,18 @@ class RetargetWindowTracker:
         }
 
     @staticmethod
+    def _stale_count(snapshot: Mapping[str, Any]) -> int:
+        outcomes = snapshot.get("outcomes", {})
+        if not isinstance(outcomes, Mapping):
+            return 0
+        try:
+            return max(0, int(outcomes.get("stale_dropped", 0) or 0))
+        except (TypeError, ValueError):
+            return 0
+
+    @staticmethod
     def _delta(current: int, previous: int) -> int:
-        # A new client/session resets its counters.  Session keys normally
+        # A new client/session resets its counters. Session keys normally
         # prevent this case; fail closed to the current count if one is reused.
         return current - previous if current >= previous else current
 
@@ -119,6 +130,7 @@ class RetargetWindowTracker:
                 "accepted": 0,
                 "rejected": 0,
                 "unknown": 0,
+                "stale": 0,
                 "accepted_difficulty_work": 0.0,
                 "accepted_without_difficulty": 0,
                 "difficulty_min": None,
@@ -175,9 +187,13 @@ class RetargetWindowTracker:
                 for name in counters
             }
             self._last_counters[session_key] = counters
-            if any(deltas.values()):
+            stale_now = self._stale_count(snapshot)
+            stale_delta = self._delta(stale_now, self._last_stale.get(session_key, 0))
+            self._last_stale[session_key] = stale_now
+            if any(deltas.values()) or stale_delta:
                 for name in ("submitted", "accepted", "rejected", "unknown"):
                     entry[name] = int(entry.get(name, 0)) + deltas[name]
+                entry["stale"] = int(entry.get("stale", 0)) + stale_delta
                 accepted_delta = deltas["accepted"]
                 if accepted_delta:
                     if difficulty is None:
@@ -218,7 +234,12 @@ class RetargetWindowTracker:
         accepted = int(entry.get("accepted", 0) or 0)
         rejected = int(entry.get("rejected", 0) or 0)
         unknown = int(entry.get("unknown", 0) or 0)
-        elapsed = max(0.0, float(entry.get("last_observed_at", 0)) - float(entry.get("first_observed_at", 0)))
+        stale = int(entry.get("stale", 0) or 0)
+        candidate_total = submitted + stale
+        elapsed = max(
+            0.0,
+            float(entry.get("last_observed_at", 0)) - float(entry.get("first_observed_at", 0)),
+        )
         unweighted = int(entry.get("accepted_without_difficulty", 0) or 0)
         difficulty_work = float(entry.get("accepted_difficulty_work", 0.0) or 0.0)
         effective = None
@@ -234,13 +255,16 @@ class RetargetWindowTracker:
             "next_retarget_height": next_retarget,
             "blocks_until_next_retarget": next_retarget - height,
             "observed_jobs": len(entry.get("jobs", [])),
+            "candidate_total": candidate_total,
             "submitted": submitted,
             "accepted": accepted,
             "rejected": rejected,
             "unknown": unknown,
-            "accepted_ratio": accepted / submitted if submitted else None,
-            "rejected_ratio": rejected / submitted if submitted else None,
-            "unknown_ratio": unknown / submitted if submitted else None,
+            "stale": stale,
+            "accepted_ratio": accepted / candidate_total if candidate_total else None,
+            "rejected_ratio": rejected / candidate_total if candidate_total else None,
+            "unknown_ratio": unknown / candidate_total if candidate_total else None,
+            "stale_ratio": stale / candidate_total if candidate_total else None,
             "difficulty_min": entry.get("difficulty_min"),
             "difficulty_max": entry.get("difficulty_max"),
             "difficulty_last": entry.get("difficulty_last"),

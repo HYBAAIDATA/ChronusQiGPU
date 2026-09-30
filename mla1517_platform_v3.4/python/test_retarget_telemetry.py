@@ -20,6 +20,7 @@ def _snapshot(
     accepted: int = 0,
     rejected: int = 0,
     unknown: int = 0,
+    stale: int = 0,
     fingerprint: str = "job-a",
     rtt: float | None = None,
 ) -> dict:
@@ -37,6 +38,7 @@ def _snapshot(
             "rejected": rejected,
             "unknown": unknown,
         },
+        "outcomes": {"stale_dropped": stale},
         "submission": {
             "rtt_ms": {"last": rtt},
         },
@@ -71,6 +73,25 @@ class RetargetTelemetryTests(unittest.TestCase):
         self.assertEqual(status["accepted_ratio"], 1.0)
         self.assertEqual(status["submit_rtt_last_ms"], 2.5)
 
+    def test_stale_candidates_are_persisted_in_candidate_ratios(self) -> None:
+        tracker = RetargetWindowTracker(None)
+        tracker.observe(_snapshot(height=900_001))
+        status = tracker.observe(
+            _snapshot(
+                height=900_001,
+                submitted=3,
+                accepted=2,
+                rejected=1,
+                stale=1,
+                fingerprint="job-b",
+            )
+        )
+        self.assertEqual(status["candidate_total"], 4)
+        self.assertEqual(status["stale"], 1)
+        self.assertEqual(status["accepted_ratio"], 0.5)
+        self.assertEqual(status["rejected_ratio"], 0.25)
+        self.assertEqual(status["stale_ratio"], 0.25)
+
     def test_unknown_difficulty_keeps_effective_hashrate_unavailable(self) -> None:
         tracker = RetargetWindowTracker(None)
         with patch("mla1517.mining.retarget_telemetry.time.time", return_value=100.0):
@@ -82,7 +103,7 @@ class RetargetTelemetryTests(unittest.TestCase):
                     difficulty=None,
                     submitted=1,
                     accepted=1,
-                    fingerprint="job-b",
+                    fingerprint="job-c",
                 )
             )
         self.assertIsNone(status["effective_stratum_hashrate_hs"])
@@ -93,7 +114,7 @@ class RetargetTelemetryTests(unittest.TestCase):
         tracker = RetargetWindowTracker(None)
         tracker.observe(_snapshot(height=900_001, session="old", submitted=4, accepted=3))
         status = tracker.observe(
-            _snapshot(height=900_001, session="new", submitted=1, accepted=1, fingerprint="job-c")
+            _snapshot(height=900_001, session="new", submitted=1, accepted=1, fingerprint="job-d")
         )
         self.assertEqual(status["submitted"], 5)
         self.assertEqual(status["accepted"], 4)
