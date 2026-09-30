@@ -49,6 +49,12 @@ original toe.py monolith, and the substrate modules it runs on):
                                     counterfactual world comparison, and
                                     multi-future evaluation with exact
                                     uncertainty propagation
+    toe.uncertainty                 native uncertainty axes (aleatoric /
+                                    model / structural / identifiability /
+                                    missing evidence) + measured
+                                    calibration
+    toe.decision_explanation        computational + contrastive explanation
+                                    and explanation/decision falsification
     toe.intelligences/              the five intelligences (causal,
                                     geometric, plastic, counterfactual,
                                     quantum)
@@ -104,6 +110,17 @@ from .causal_stack import (
     evaluate_futures,
     identifiability,
 )
+from .uncertainty import (
+    calibrate_effects,
+    calibrate_futures,
+    uncertainty_report,
+)
+from .decision_explanation import (
+    explain_contrastive,
+    explain_decision,
+    falsify_decision,
+    falsify_explanation,
+)
 from .expansion import (
     TOEExpansionEngine,
     TOEExpansionPolicy,
@@ -137,6 +154,13 @@ __all__ = [
     "discover_structures",
     "compare_worlds",
     "evaluate_futures",
+    "uncertainty_report",
+    "calibrate_effects",
+    "calibrate_futures",
+    "explain_decision",
+    "explain_contrastive",
+    "falsify_explanation",
+    "falsify_decision",
     "IDENTIFIED",
     "NOT_IDENTIFIED",
     "PARTIALLY_IDENTIFIED",
