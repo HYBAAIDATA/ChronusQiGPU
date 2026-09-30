@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Optional, Sequence, Set
 
-from igpu.seam.types import (
+from .types import (
     AttestationLink,
     Err,
     Ok,
@@ -24,21 +24,25 @@ from igpu.seam.types import (
 
 def merkle_root(subjects: Sequence[str]) -> str:
     """Order-independent Merkle root of constituent subjects."""
-    leaves = sorted(digest_of(s.encode("utf-8")) for s in subjects)
+    leaves = sorted(digest_of(subject.encode("utf-8")) for subject in subjects)
     if not leaves:
         return digest_of(b"empty")
     layer = leaves
     while len(layer) > 1:
-        nxt: List[str] = []
-        for i in range(0, len(layer), 2):
-            a = layer[i]
-            b = layer[i + 1] if i + 1 < len(layer) else a
-            nxt.append(digest_of(f"{a}|{b}".encode("utf-8")))
-        layer = nxt
+        next_layer: List[str] = []
+        for index in range(0, len(layer), 2):
+            left = layer[index]
+            right = layer[index + 1] if index + 1 < len(layer) else left
+            next_layer.append(digest_of(f"{left}|{right}".encode("utf-8")))
+        layer = next_layer
     return layer[0]
 
 
-def threshold_for(policy: ThresholdPolicy, n: int, k: Optional[int] = None) -> int:
+def threshold_for(
+    policy: ThresholdPolicy,
+    n: int,
+    k: Optional[int] = None,
+) -> int:
     if policy is ThresholdPolicy.unanimous:
         return n
     if policy is ThresholdPolicy.majority:
@@ -59,7 +63,7 @@ class CompositeAttestation:
 
     def as_dict(self) -> dict:
         return {
-            "links": [l.as_dict() for l in self.links],
+            "links": [link.as_dict() for link in self.links],
             "root": self.root,
             "threshold": self.threshold,
             "policy": self.policy.value,
@@ -72,18 +76,17 @@ def attest_compose(
     k: Optional[int] = None,
     issuers: Optional[Set[str]] = None,
 ) -> Result[CompositeAttestation]:
-    """Compose verified links. ``sign_digest`` is keyless, so integrity alone
-    cannot authenticate an issuer — callers that know which issuers are
-    legitimate (e.g. the devices a threshold request dispatched to) must pass
-    ``issuers`` so forged identities are rejected here, not trusted.
-    """
+    """Compose verified links, optionally constraining legitimate issuers."""
     if not links:
         return Err(SeamError.attestation_failure, "empty attestation set")
     for link in links:
         if not verify_link(link):
             return Err(SeamError.attestation_failure, f"link {link.subject}")
         if issuers is not None and link.issuer not in issuers:
-            return Err(SeamError.attestation_failure, f"issuer not allowed: {link.issuer}")
+            return Err(
+                SeamError.attestation_failure,
+                f"issuer not allowed: {link.issuer}",
+            )
     root = merkle_root([link.subject for link in links])
     return Ok(
         CompositeAttestation(
@@ -95,7 +98,10 @@ def attest_compose(
     )
 
 
-def weighted_sum(links: Sequence[AttestationLink], weights: Optional[Sequence[float]] = None) -> float:
+def weighted_sum(
+    links: Sequence[AttestationLink],
+    weights: Optional[Sequence[float]] = None,
+) -> float:
     if not links:
         return 0.0
     if weights is None:
@@ -110,7 +116,9 @@ def attest_verify(
 ) -> bool:
     if not all(verify_link(link) for link in composite.links):
         return False
-    if issuers is not None and not all(link.issuer in issuers for link in composite.links):
+    if issuers is not None and not all(
+        link.issuer in issuers for link in composite.links
+    ):
         return False
     if merkle_root([link.subject for link in composite.links]) != composite.root:
         return False
