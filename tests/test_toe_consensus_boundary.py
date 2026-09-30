@@ -116,7 +116,10 @@ def test_missing_or_tampered_token_fails_closed():
 
 
 def test_consensus_vocabulary_in_result_fails_closed():
-    for key in ("target", "nonce", "header", "sha256d", "share"):
+    for key in (
+        "target", "nonce", "header", "sha256d", "share",
+        "valid_hash", "share_valid", "pool_accepted", "block_confirmed",
+    ):
         result = _clean_result()
         result["state_tomography"][key] = "0xdeadbeef"
         with pytest.raises(TOEConsensusBoundaryError):
@@ -134,7 +137,8 @@ def test_signal_declares_no_consensus_fields():
         "target", "bits", "nonce", "header", "block_header", "share",
         "difficulty", "sha256", "sha256d", "pow", "proof", "merkle_root",
         "block_hash", "extranonce", "extranonce2", "coinbase", "ntime",
-        "submission", "candidate",
+        "submission", "candidate", "valid_hash", "share_valid",
+        "pool_accepted", "block_confirmed",
     }
     assert field_names.isdisjoint(forbidden)
 
