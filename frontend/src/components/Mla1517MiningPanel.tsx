@@ -153,7 +153,7 @@ const WorkerRow: React.FC<{ name: string; worker: WorkerPublic }> = ({ name, wor
       : worker.state === "failed" || worker.state === "stopped"
         ? "text-[#df1b41] border-[rgba(223,27,65,0.35)] bg-[rgba(223,27,65,0.08)]"
         : "text-[#b45309] border-[rgba(180,83,9,0.35)] bg-[rgba(180,83,9,0.08)]";
-  const hashrate = worker.effectiveness?.hashrate ?? 0;
+  const hashrate = worker.effectiveness?.hashrate ?? null;
   const shares = worker.effectiveness?.shares_accepted ?? 0;
   return (
     <div className="console-surface-inset px-4 py-3">
@@ -180,7 +180,7 @@ const WorkerRow: React.FC<{ name: string; worker: WorkerPublic }> = ({ name, wor
       <div className="mt-2 flex items-center gap-4 text-[12px] font-telemetry-mono">
         <span className="text-[#6b7c93]">
           hashrate{" "}
-          {hashrate > 0 ? (
+          {hashrate != null ? (
             <span className="text-[#0a2540]">{hashrate.toLocaleString()} H/s</span>
           ) : (
             <Empty />

@@ -30,10 +30,21 @@ _SUPERVISOR_GUARD = threading.Lock()
 
 
 class AutonomousSupervisor:
-    """Daemon that runs the consolidated autonomy plane."""
+    """Daemon that runs the consolidated autonomy plane.
 
-    def __init__(self, interval_s: float = 60.0) -> None:
+    ``power_meter`` is the only power authority CUOP accepts: a callable that
+    returns measured mean watts, or ``None`` when no reading exists. Without
+    it CUOP is Unavailable and the optimiser stays detached; healing runs
+    regardless.
+    """
+
+    def __init__(
+        self,
+        interval_s: float = 60.0,
+        power_meter: Optional[Callable[[], Optional[float]]] = None,
+    ) -> None:
         self.interval_s = max(5.0, float(interval_s))
+        self._power_meter = power_meter
         self._stop = threading.Event()
         self._thread: Optional[threading.Thread] = None
         self._lock = threading.Lock()
@@ -110,15 +121,23 @@ class AutonomousSupervisor:
         meter = CuopMeter(usd_per_kwh=float(os.getenv("PYTHIA_CUOP_USD_KWH", "0.10")))
 
         def measure_cuop() -> Any:
-            """Return measured CUOP, or ``None`` with explicit unavailable evidence."""
+            """Return measured CUOP, or ``None`` with explicit unavailable evidence.
+
+            An operator-set ``PYTHIA_CUOP_POWER_W`` is configuration, not a
+            measurement, so it never yields a CUOP reading.
+            """
             try:
                 import control_api as _ca
 
-                power_raw = os.getenv("PYTHIA_CUOP_POWER_W")
-                if not power_raw:
-                    raise RuntimeError("power_telemetry_unavailable")
+                power_raw = self._power_meter() if self._power_meter else None
+                if power_raw is None:
+                    raise RuntimeError(
+                        "power_configured_not_measured"
+                        if os.getenv("PYTHIA_CUOP_POWER_W")
+                        else "power_telemetry_unavailable"
+                    )
                 power_w = float(power_raw)
-                if power_w <= 0.0:
+                if not power_w > 0.0:
                     raise RuntimeError("power_telemetry_invalid")
                 records = list(_ca._control_plane().records())
                 measured_rates = [float(r.hashrate) for r in records if r.hashrate is not None]

@@ -323,6 +323,35 @@ class TestSelfOptimising:
         proj = learner.predict(learner.value)
         assert proj["is_projection"] is True and proj["projection_is_measured"] is False
 
+    def test_unavailable_reading_is_never_scored(self):
+        loop, learner, measure = self._make_loop(
+            kernel_ms_fn=lambda bs: 5.0 + bs * 0.0001,
+            power_fn=lambda bs: 100.0,
+        )
+        baseline = loop.measure_baseline(measure)
+        start, samples = learner.value, len(learner.history)
+
+        report = loop.optimise_cycle(lambda: None)
+
+        assert report["evidence_class"] == "Unavailable"
+        assert report["new_cuop"] is None and report["delta_cuop"] is None
+        assert report["improvement_measured"] is False
+        assert learner.value == start  # the parameter under test is restored
+        assert len(learner.history) == samples  # nothing was scored
+        assert loop.latest is baseline
+        assert loop.ledger.verify()
+
+    def test_no_baseline_without_a_reading(self):
+        loop, _learner, _measure = self._make_loop(
+            kernel_ms_fn=lambda bs: 5.0,
+            power_fn=lambda bs: 100.0,
+        )
+        assert loop.measure_baseline(lambda: None) is None
+        report = loop.optimise_cycle(lambda: None)
+        assert loop.baseline is None
+        assert report["evidence_class"] == "Unavailable"
+        assert report["baseline_cuop"] is None
+
 
 # =============================================================================
 # Agentic mining — ValidityLearner + CoolDownController

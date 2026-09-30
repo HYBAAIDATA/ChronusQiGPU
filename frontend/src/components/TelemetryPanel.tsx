@@ -11,8 +11,8 @@ const fmtUptime = (s: number | undefined): string => {
   return h > 0 ? `${h}h ${m}m ${sec}s` : m > 0 ? `${m}m ${sec}s` : `${sec}s`;
 };
 
-const fmtHs = (v: number | undefined): string => {
-  if (v == null || !Number.isFinite(v) || v <= 0) return "not reported";
+const fmtHs = (v: number | null | undefined): string => {
+  if (v == null || !Number.isFinite(v) || v < 0) return "not reported";
   const units = ["H/s", "kH/s", "MH/s", "GH/s", "TH/s", "PH/s", "EH/s"];
   let x = v;
   let i = 0;
