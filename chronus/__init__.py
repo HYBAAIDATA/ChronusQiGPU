@@ -6,11 +6,21 @@ state memory, kernel dispatch, telemetry, routing and attestation.
 """
 
 from .device import CLAIM_BOUNDARY, DEVICE_ID, Chronus, open_device
+from .engine import (
+    ChronusOpenCLEngine,
+    ChronusOpenCLUnavailable,
+    ResidentChronusEnsemble,
+    ResidentChronusState,
+)
 from .fabric import ChronusFabric, RouteDecision
 
 __all__ = [
     "Chronus",
     "ChronusFabric",
+    "ChronusOpenCLEngine",
+    "ChronusOpenCLUnavailable",
+    "ResidentChronusEnsemble",
+    "ResidentChronusState",
     "RouteDecision",
     "open_device",
     "CLAIM_BOUNDARY",
