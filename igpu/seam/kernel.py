@@ -7,10 +7,15 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 from gpu.reference import (
+    cassini_step,
     grover_hendrix_iterate,
     grover_iterate,
+    korobov_point,
+    lucas_wind,
     matmul_f4,
     matvec_f4,
+    morton_step,
+    pisot_wind,
     qfi_pure,
     sha256_midstate,
     sha256d_merkle,
@@ -246,6 +251,48 @@ def _execute(handle: KernelHandle) -> Result[KernelResult]:
                         handle.args["state"],
                         handle.args["marked"],
                         handle.args["order"],
+                    )
+                )
+            ]
+        elif kernel is KernelName.lucas_wind:
+            outputs = [_encoded(lucas_wind(handle.args["index"]))]
+        elif kernel is KernelName.pisot_wind:
+            outputs = [
+                _encoded(
+                    pisot_wind(
+                        handle.args["size"],
+                        handle.args.get("seed", 0),
+                    )
+                )
+            ]
+        elif kernel is KernelName.cassini_step:
+            outputs = [
+                _encoded(
+                    cassini_step(
+                        handle.args["index"],
+                        handle.args["modulus"],
+                        handle.args["stride"],
+                        handle.args.get("origin", 0),
+                    )
+                )
+            ]
+        elif kernel is KernelName.morton_step:
+            outputs = [
+                _encoded(
+                    morton_step(
+                        handle.args["x"],
+                        handle.args["y"],
+                        handle.args.get("bits", 16),
+                    )
+                )
+            ]
+        elif kernel is KernelName.korobov_point:
+            outputs = [
+                _encoded(
+                    korobov_point(
+                        handle.args["index"],
+                        handle.args["modulus"],
+                        handle.args["multipliers"],
                     )
                 )
             ]

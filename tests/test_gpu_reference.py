@@ -7,10 +7,16 @@ import pytest
 from gpu.provenance import ProvenanceError, validate_provenance
 from gpu.readiness import ProductionEvidence, production_readiness
 from gpu.reference import (
+    cassini_step,
+    fibonacci,
     grover_hendrix_iterate,
     grover_iterate,
+    korobov_point,
+    lucas_wind,
     matmul_f4,
     matvec_f4,
+    morton_step,
+    pisot_wind,
     qfi_pure,
     sha256_midstate,
     sha256d,
@@ -56,6 +62,22 @@ def test_scan_counts_only_executed_hashes():
     assert result.nonce == 0
     assert result.hashes_computed == 1
     assert result.digest == sha256d(b"\x00" * 80)
+
+
+def test_traversal_references_are_complete_and_deterministic():
+    assert fibonacci(10) == 55
+    assert lucas_wind(10) == 123
+    order = pisot_wind(257, seed=1517)
+    assert len(order) == 257
+    assert sorted(order) == list(range(257))
+    assert cassini_step(3, 11, 2, 1) == 7
+    assert morton_step(1, 1, bits=2) == 3
+    assert korobov_point(2, 5, [1, 2]) == pytest.approx((0.4, 0.8))
+
+
+def test_scan_rejects_wrapping_nonce_windows():
+    with pytest.raises(ValueError, match="must not wrap"):
+        sha256d_scan(b"\x00" * 80, b"\xff" * 32, base_nonce=0xFFFFFFFF, count=2)
 
 
 def test_production_provenance_fails_closed_on_placeholders():

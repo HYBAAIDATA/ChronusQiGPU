@@ -21,6 +21,92 @@ class ScanResult:
     hashes_computed: int
 
 
+def _bounded_non_negative(value: int, name: str, maximum: int = 1_000_000) -> int:
+    value = int(value)
+    if value < 0 or value > maximum:
+        raise ValueError(f"{name} must be between 0 and {maximum}")
+    return value
+
+
+def fibonacci(index: int) -> int:
+    """Return F(index) using exact fast doubling."""
+    index = _bounded_non_negative(index, "index")
+
+    def pair(n: int) -> tuple[int, int]:
+        if n == 0:
+            return 0, 1
+        a, b = pair(n // 2)
+        c = a * ((b << 1) - a)
+        d = a * a + b * b
+        return (d, c + d) if n & 1 else (c, d)
+
+    return pair(index)[0]
+
+
+def lucas_wind(index: int) -> int:
+    """Return the exact Lucas number L(index)."""
+    index = _bounded_non_negative(index, "index")
+    if index == 0:
+        return 2
+    return 2 * fibonacci(index + 1) - fibonacci(index)
+
+
+def cassini_step(index: int, modulus: int, stride: int, origin: int = 0) -> int:
+    """One coverage-preserving affine step in a finite nonce window."""
+    index = _bounded_non_negative(index, "index", 0xFFFFFFFF)
+    modulus = int(modulus)
+    stride = int(stride)
+    origin = int(origin)
+    if modulus <= 0 or modulus > 0x100000000:
+        raise ValueError("modulus must be in the uint32 nonce range")
+    if math.gcd(stride, modulus) != 1:
+        raise ValueError("stride must be coprime to modulus")
+    return (origin + index * stride) % modulus
+
+
+def pisot_wind(size: int, seed: int = 0) -> list[int]:
+    """Return a deterministic complete Lucas-derived permutation."""
+    size = _bounded_non_negative(size, "size")
+    if size == 0:
+        return []
+    stride = max(1, lucas_wind(abs(int(seed)) % 31 + 1) % size)
+    while math.gcd(stride, size) != 1:
+        stride = (stride + 1) % size or 1
+    origin = int(seed) % size
+    return [cassini_step(index, size, stride, origin) for index in range(size)]
+
+
+def morton_step(x: int, y: int, bits: int = 16) -> int:
+    """Interleave unsigned x/y bits into a two-dimensional Morton code."""
+    bits = _bounded_non_negative(bits, "bits", 32)
+    maximum = (1 << bits) - 1
+    x = _bounded_non_negative(x, "x", maximum)
+    y = _bounded_non_negative(y, "y", maximum)
+    result = 0
+    for bit in range(bits):
+        result |= ((x >> bit) & 1) << (2 * bit)
+        result |= ((y >> bit) & 1) << (2 * bit + 1)
+    return result
+
+
+def korobov_point(
+    index: int,
+    modulus: int,
+    multipliers: Sequence[int],
+) -> tuple[float, ...]:
+    """Return one deterministic Korobov lattice point."""
+    index = _bounded_non_negative(index, "index", 0xFFFFFFFF)
+    modulus = int(modulus)
+    if modulus <= 1:
+        raise ValueError("modulus must be > 1")
+    if not multipliers:
+        raise ValueError("multipliers must not be empty")
+    return tuple(
+        ((index * int(multiplier)) % modulus) / modulus
+        for multiplier in multipliers
+    )
+
+
 def _matrix_shape(matrix: Sequence[Sequence[Any]], name: str) -> tuple[int, int]:
     rows = len(matrix)
     cols = len(matrix[0]) if rows else 0
@@ -194,6 +280,8 @@ def sha256d_scan(
         raise ValueError("target must be exactly 32 bytes")
     if not 0 <= base_nonce <= 0xFFFFFFFF or not 0 <= count <= 0x100000000:
         raise ValueError("nonce window outside uint32 range")
+    if base_nonce + count > 0x100000000:
+        raise ValueError("nonce window must not wrap uint32")
     target_int = int.from_bytes(target, "big")
     prefix = bytes(header80[:76])
     attempted = 0

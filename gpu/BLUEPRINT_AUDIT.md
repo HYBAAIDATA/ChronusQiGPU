@@ -24,7 +24,7 @@ executes the gate.
 | `sha256d_merkle` | Bitcoin-style double-SHA-256 pair hash | software verified |
 | Seam dispatch | real reference execution for the capabilities above | software implemented; hardware identity remains explicit |
 | Host attestation | result and composition links | software implemented; not a TPM/TEE quote |
-| Traversal kernels | names exist in seam contract | fail closed; executable semantics not yet wired |
+| Traversal kernels | exact Lucas, Pisot permutation, Cassini affine step, Morton and Korobov references | software implemented; device conformance required |
 | Reversible/uncompute kernels | names exist in seam contract | fail closed; no physical backend |
 | Zero-knowledge attestation | name exists in seam contract | fail closed; no prover implementation |
 | Tensor scheduling | advisory-only ordering boundary | integrated; exact permutation enforced |
@@ -36,8 +36,8 @@ executes the gate.
 ## Remaining gaps
 
 1. Merge and run the sequential-contract changes from PR #30.
-2. Implement the traversal, reversible/uncompute and zero-knowledge kernels;
-   they now fail closed rather than returning synthetic success values.
+2. Implement the reversible/uncompute and zero-knowledge kernels; they fail
+   closed rather than returning synthetic success values.
 3. Complete the staged move from top-level `igpu/`, `kernels/` and hybrid GPU
    modules into `gpu/backends`, retaining compatibility shims for one release.
 4. Execute strict OpenCL tests, including punch 0x15 parity, on the target iGPU
