@@ -58,6 +58,12 @@ original toe.py monolith, and the substrate modules it runs on):
     toe.planning                    declared-operator action generation +
                                     bounded multi-step planning vs the
                                     one-step greedy baseline
+    toe.memory                      one store, five namespaces; content-
+                                    addressed recall, consolidation with
+                                    source receipts, regime invalidation
+    toe.world_model                 declared-structure world model with
+                                    revision states, decision->outcome
+                                    binding, online adaptation metrics
     toe.intelligences/              the five intelligences (causal,
                                     geometric, plastic, counterfactual,
                                     quantum)
@@ -133,6 +139,16 @@ from .planning import (
     scm_env,
 )
 from .policy import decide_multiobjective
+from .memory import MemoryStore
+from .world_model import (
+    MODEL_CONTRADICTED,
+    MODEL_DRIFT,
+    MODEL_SUPPORTED,
+    INSUFFICIENT_EVIDENCE,
+    OnlineAdapter,
+    WorldModel,
+    bind_outcome,
+)
 from .expansion import (
     TOEExpansionEngine,
     TOEExpansionPolicy,
@@ -180,6 +196,14 @@ __all__ = [
     "greedy",
     "compare_plan_vs_greedy",
     "decide_multiobjective",
+    "MemoryStore",
+    "WorldModel",
+    "OnlineAdapter",
+    "bind_outcome",
+    "MODEL_SUPPORTED",
+    "MODEL_DRIFT",
+    "MODEL_CONTRADICTED",
+    "INSUFFICIENT_EVIDENCE",
     "IDENTIFIED",
     "NOT_IDENTIFIED",
     "PARTIALLY_IDENTIFIED",
