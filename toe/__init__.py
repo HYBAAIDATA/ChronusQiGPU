@@ -42,6 +42,13 @@ original toe.py monolith, and the substrate modules it runs on):
                                     identity, no silent divergence
     toe.representation              structural signature -> lens selection
                                     with explicit rejection reasons
+    toe.causal_stack                causal capability stack: identifiability
+                                    oracle (IDENTIFIED / PARTIALLY / NOT /
+                                    UNAVAILABLE), bounded structure learning
+                                    returning equivalence classes, multi-
+                                    counterfactual world comparison, and
+                                    multi-future evaluation with exact
+                                    uncertainty propagation
     toe.intelligences/              the five intelligences (causal,
                                     geometric, plastic, counterfactual,
                                     quantum)
@@ -87,6 +94,16 @@ from .representation import (
     select_views,
     structural_signature,
 )
+from .causal_stack import (
+    IDENTIFIED,
+    NOT_IDENTIFIED,
+    PARTIALLY_IDENTIFIED,
+    UNAVAILABLE,
+    compare_worlds,
+    discover_structures,
+    evaluate_futures,
+    identifiability,
+)
 from .expansion import (
     TOEExpansionEngine,
     TOEExpansionPolicy,
@@ -116,6 +133,14 @@ __all__ = [
     "choose",
     "select_views",
     "structural_signature",
+    "identifiability",
+    "discover_structures",
+    "compare_worlds",
+    "evaluate_futures",
+    "IDENTIFIED",
+    "NOT_IDENTIFIED",
+    "PARTIALLY_IDENTIFIED",
+    "UNAVAILABLE",
     "TOEExpansionEngine",
     "TOEExpansionPolicy",
     "TOEExpansionResult",

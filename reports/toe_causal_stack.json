@@ -1,0 +1,204 @@
+{
+  "format": "toe.causal_stack_probe/v1",
+  "generated_at": "2026-09-30T11:01:36.050869+00:00",
+  "results": [
+    {
+      "section": "identifiability",
+      "check": "10-scenario battery incl. two refusals",
+      "status": "PASS",
+      "evidence": {
+        "scenarios": [
+          {
+            "scenario": "clean DAG x->y identified without adjustment",
+            "verdict": "IDENTIFIED",
+            "strategy": "no_adjustment",
+            "warnings": [],
+            "ok": true
+          },
+          {
+            "scenario": "observed confounder identified via backdoor {z}",
+            "verdict": "IDENTIFIED",
+            "strategy": "backdoor",
+            "warnings": [],
+            "ok": true
+          },
+          {
+            "scenario": "latent confounder REFUSED (not identified)",
+            "verdict": "NOT_IDENTIFIED",
+            "strategy": null,
+            "warnings": [],
+            "ok": true
+          },
+          {
+            "scenario": "mediator chain identified with empty set",
+            "verdict": "IDENTIFIED",
+            "strategy": "no_adjustment",
+            "warnings": [],
+            "ok": true
+          },
+          {
+            "scenario": "latent confounder + observed mediator -> frontdoor {m}",
+            "verdict": "IDENTIFIED",
+            "strategy": "frontdoor",
+            "warnings": [],
+            "ok": true
+          },
+          {
+            "scenario": "collider x->c<-y: effect identified, c flagged as trap",
+            "verdict": "IDENTIFIED",
+            "strategy": "no_adjustment",
+            "warnings": [
+              "c"
+            ],
+            "ok": true
+          },
+          {
+            "scenario": "M-bias: empty set admissible, z flagged as trap",
+            "verdict": "IDENTIFIED",
+            "strategy": "no_adjustment",
+            "warnings": [
+              "z"
+            ],
+            "ok": true
+          },
+          {
+            "scenario": "instrument z: PARTIALLY_IDENTIFIED (bounds/IV only)",
+            "verdict": "PARTIALLY_IDENTIFIED",
+            "strategy": "instrument",
+            "warnings": [],
+            "ok": true
+          },
+          {
+            "scenario": "insufficient variables REFUSED",
+            "verdict": "NOT_IDENTIFIED",
+            "strategy": null,
+            "warnings": [],
+            "ok": true
+          },
+          {
+            "scenario": "missing graph -> UNAVAILABLE",
+            "verdict": "UNAVAILABLE",
+            "strategy": null,
+            "warnings": [],
+            "ok": true
+          }
+        ]
+      }
+    },
+    {
+      "section": "identifiability",
+      "check": "collider and M-bias covariates flagged as adjustment traps",
+      "status": "PASS",
+      "evidence": {
+        "collider_warnings": [
+          "c"
+        ],
+        "mbias_warnings": [
+          "z"
+        ]
+      }
+    },
+    {
+      "section": "discovery",
+      "check": "planted chain recovered inside an equivalence class (not a unique DAG)",
+      "status": "PASS",
+      "evidence": {
+        "class_size": 3,
+        "undirected": [
+          [
+            "m",
+            "x"
+          ],
+          [
+            "m",
+            "y"
+          ]
+        ],
+        "planted_in_class": true,
+        "boundaries": [
+          "output is a Markov-equivalence class \u2014 observationally equivalent DAGs are indistinguishable from correlations alone",
+          "latent confounders and selection bias are not ruled out",
+          "gaussian partial correlation assumes (approximately) linear dependence and continuous variables",
+          "supplied-graph inference was not used; this is the learned path (CAUSAL_GRAPH_LEARNED)"
+        ]
+      }
+    },
+    {
+      "section": "worlds",
+      "check": "three counterfactual worlds: deltas, paths, invariants, receipts",
+      "status": "PASS",
+      "evidence": {
+        "world_outcomes": {
+          "A": {
+            "m": 3.0,
+            "y": 6.0
+          },
+          "B": {
+            "m": 0.0,
+            "y": 0.0
+          },
+          "C": {
+            "m": -2.0,
+            "y": -4.0
+          }
+        },
+        "invariant_variables": [],
+        "paths_A": {
+          "m": [
+            [
+              "x",
+              "m"
+            ]
+          ],
+          "y": [
+            [
+              "x",
+              "m",
+              "y"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "section": "worlds",
+      "check": "missing factual evidence refuses instead of fabricating",
+      "status": "PASS",
+      "evidence": {
+        "reason": "counterfactual prediction needs factual evidence for m, x, y"
+      }
+    },
+    {
+      "section": "futures",
+      "check": "3 actions -> distributions; intervention pins x (var=0); sd grows with depth",
+      "status": "PASS",
+      "evidence": {
+        "depth_sd": {
+          "x": [
+            0,
+            0.0
+          ],
+          "m": [
+            1,
+            1.618
+          ],
+          "y": [
+            2,
+            2.917
+          ]
+        },
+        "bands_y": [
+          -1.798,
+          3.0,
+          7.798
+        ],
+        "baseline_y_sd": 3.7946
+      }
+    }
+  ],
+  "summary": {
+    "checks": 6,
+    "passed": 6,
+    "failed": 0
+  }
+}
