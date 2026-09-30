@@ -14,6 +14,7 @@ from pathlib import Path
 from mla1517.hardware import MMIOBridge
 from mla1517.mining.coordinator import CpuReferenceHasher
 from mla1517.mining.production_transport import ProductionMiningCoordinator
+from mla1517.mining.retarget_telemetry import RetargetWindowTracker
 from manifold_pool_coordinator import _build_parser, parse_endpoint
 from worker_lifecycle import HeartbeatEmitter
 from mla1517.mining.chain_observer import BitcoinChainObserver
@@ -191,12 +192,22 @@ async def _main_async(args) -> None:
     try:
         with HeartbeatEmitter("agentic-mining") as heartbeat:
             stratum_events = StratumEventLog()
+            retarget = RetargetWindowTracker(
+                os.getenv("PYTHIA_RETARGET_TELEMETRY_PATH", "data/retarget_windows.json")
+            )
 
             def publish_stratum_status(snapshot: dict) -> None:
-                stratum_events.observe(snapshot)
+                enriched = dict(snapshot)
+                window = retarget.observe(enriched)
+                enriched["retarget_window"] = window
+                if window is not None:
+                    enriched["effective_stratum_hashrate_hs"] = window.get(
+                        "effective_stratum_hashrate_hs"
+                    )
+                stratum_events.observe(enriched)
                 heartbeat.report(
                     stratum_status=json.dumps(
-                        snapshot,
+                        enriched,
                         sort_keys=True,
                         separators=(",", ":"),
                     ),
