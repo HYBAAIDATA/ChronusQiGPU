@@ -1,7 +1,7 @@
 """Thermodynamic core — axioms A5, A6, T1–T6.
 
-Modeled accounting. Commodity silicon reports conventional CMOS
-unless a device explicitly declares an adiabatic technology.
+Modeled accounting. Commodity silicon reports conventional CMOS unless a
+device explicitly declares an adiabatic technology.
 """
 
 from __future__ import annotations
@@ -11,8 +11,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict
 
-from igpu.seam.types import KernelName, PhysicalMeasurement
-
+from .types import KernelName, PhysicalMeasurement
 
 K_B = 1.380649e-23
 T_ROOM = 300.0
@@ -76,7 +75,12 @@ def landauer_bound(bits_erased: int, temperature_k: float = T_ROOM) -> float:
     return float(bits_erased) * K_B * temperature_k * LN2
 
 
-def adiabatic_energy(c_farad: float, v_volt: float, r_ohm: float, t_s: float) -> float:
+def adiabatic_energy(
+    c_farad: float,
+    v_volt: float,
+    r_ohm: float,
+    t_s: float,
+) -> float:
     if t_s <= 0.0:
         return 0.5 * c_farad * v_volt * v_volt
     return c_farad * v_volt * v_volt * ((r_ohm * c_farad) / t_s)
@@ -106,22 +110,60 @@ def measure_thermodynamic(
     t_s: float = 1e-9,
 ) -> ThermodynamicMeasurement:
     conv = conventional_energy(c_farad, v_volt) * switches
-    if technology is Technology.conventional_cmos or technology is Technology.cpu_reference:
-        lb = landauer_bound(bits_erased)
-        return ThermodynamicMeasurement(conv, 0.0, lb, 0.0, conv, bits_erased, technology, time_ns)
+    if technology in (Technology.conventional_cmos, Technology.cpu_reference):
+        bound = landauer_bound(bits_erased)
+        return ThermodynamicMeasurement(
+            conv,
+            0.0,
+            bound,
+            0.0,
+            conv,
+            bits_erased,
+            technology,
+            time_ns,
+        )
     if technology is Technology.superconducting_aqfp:
-        lb = landauer_bound(bits_erased, T_CRYO)
+        bound = landauer_bound(bits_erased, T_CRYO)
         adia = 1e-21 * switches
-        savings = lb if reversible else 0.0
-        return ThermodynamicMeasurement(0.0, adia, lb, savings, adia, bits_erased, technology, time_ns, T_CRYO)
+        savings = bound if reversible else 0.0
+        return ThermodynamicMeasurement(
+            0.0,
+            adia,
+            bound,
+            savings,
+            adia,
+            bits_erased,
+            technology,
+            time_ns,
+            T_CRYO,
+        )
     adia = adiabatic_energy(c_farad, v_volt, r_ohm, t_s) * switches
-    lb = landauer_bound(bits_erased)
-    savings = lb if reversible else 0.0
-    return ThermodynamicMeasurement(conv, adia, lb, savings, max(0.0, adia + lb - savings), bits_erased, technology, time_ns)
+    bound = landauer_bound(bits_erased)
+    savings = bound if reversible else 0.0
+    return ThermodynamicMeasurement(
+        conv,
+        adia,
+        bound,
+        savings,
+        max(0.0, adia + bound - savings),
+        bits_erased,
+        technology,
+        time_ns,
+    )
 
 
-def predict_energy(technology: Technology, reversible: bool, switches: int = 1) -> float:
-    return measure_thermodynamic(technology, KernelName.sha256d_verify, 0 if reversible else 1, switches, reversible).net_energy
+def predict_energy(
+    technology: Technology,
+    reversible: bool,
+    switches: int = 1,
+) -> float:
+    return measure_thermodynamic(
+        technology,
+        KernelName.sha256d_verify,
+        0 if reversible else 1,
+        switches,
+        reversible,
+    ).net_energy
 
 
 def predict_landauer(reversible: bool, bits: int = 1) -> float:
