@@ -68,6 +68,14 @@ original toe.py monolith, and the substrate modules it runs on):
                                     information, compute-aware routing
     toe.precision                   adaptive precision selection +
                                     float-vs-exact consequence measurement
+    toe.topology                    operational discrete topology:
+                                    components, reachability, boundaries,
+                                    articulation bottlenecks
+    toe.arbitration                 disagreement between surfaces reported
+                                    as DISAGREEMENT + resolved by declared
+                                    authority/calibration, never averaged
+    toe.generalization              DomainAdapter boundary + capability
+                                    matrix + invariance + transfer probes
     toe.intelligences/              the five intelligences (causal,
                                     geometric, plastic, counterfactual,
                                     quantum)
@@ -163,6 +171,15 @@ from .precision import (
     measure_exactness,
     select_precision,
 )
+from .topology import StateTopology, reachability_task
+from .arbitration import arbitrate
+from .generalization import (
+    DomainAdapter,
+    capability_matrix,
+    invariance_report,
+    run_capability,
+    transfer_probe,
+)
 from .expansion import (
     TOEExpansionEngine,
     TOEExpansionPolicy,
@@ -224,6 +241,14 @@ __all__ = [
     "float_error_bound",
     "select_precision",
     "measure_exactness",
+    "StateTopology",
+    "reachability_task",
+    "arbitrate",
+    "DomainAdapter",
+    "capability_matrix",
+    "invariance_report",
+    "run_capability",
+    "transfer_probe",
     "IDENTIFIED",
     "NOT_IDENTIFIED",
     "PARTIALLY_IDENTIFIED",
