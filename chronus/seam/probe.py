@@ -1,7 +1,8 @@
-"""Layer 1 — statistical, attested, lifecycle-aware device probe.
+"""Layer 1 — statistical, attested, lifecycle-aware Chronus device probe.
 
-Wraps igpu.detect. Never labels CPU as iGPU.
-A device with measured_hps.mean == 0 is not returned (P1).
+Wraps :mod:`chronus.detect`. Device classes remain factual hardware classes;
+an integrated GPU is not inferred from branding. A device with
+``measured_hps.mean == 0`` is not returned (P1).
 """
 
 from __future__ import annotations
@@ -12,8 +13,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
 
-from igpu.seam import store
-from igpu.seam.types import (
+from . import store
+from .types import (
     DeviceClass,
     DeviceState,
     Distribution,
@@ -83,10 +84,10 @@ class Capability:
             "compute_units": self.compute_units,
             "max_work_group": self.max_work_group,
             "measured_hps": self.measured_hps.as_dict(),
-            "supported_kernels": sorted(k.value for k in self.supported_kernels),
-            "kernel_costs": {k: v.as_dict() for k, v in self.kernel_costs.items()},
+            "supported_kernels": sorted(kernel.value for kernel in self.supported_kernels),
+            "kernel_costs": {key: value.as_dict() for key, value in self.kernel_costs.items()},
             "features": self.features.as_dict(),
-            "attestation_chain": [a.as_dict() for a in self.attestation_chain],
+            "attestation_chain": [link.as_dict() for link in self.attestation_chain],
             "privacy_mode": self.privacy_mode.value,
             "state": self.state.value,
             "vendor_extensions": dict(self.vendor_extensions),
@@ -96,11 +97,11 @@ class Capability:
 def _classify(detected: Any) -> DeviceClass:
     vendor = str(getattr(detected, "vendor", "") or "").lower()
     name = str(getattr(detected, "name", "") or "").lower()
-    is_igpu = bool(getattr(detected, "is_igpu", False))
+    is_integrated = bool(getattr(detected, "is_igpu", False))
     is_gpu = bool(getattr(detected, "is_gpu", False))
     if any(tag in name for tag in ("h100", "a100", "mi300", "b200")):
         return DeviceClass.gpu_datacenter
-    if is_igpu:
+    if is_integrated:
         return DeviceClass.gpu_integrated
     if is_gpu:
         return DeviceClass.gpu_discrete
@@ -117,15 +118,23 @@ def _default_kernels(klass: DeviceClass) -> Set[KernelName]:
         KernelName.morton_step,
         KernelName.korobov_point,
     }
-    attest_set = {KernelName.attest_result, KernelName.attest_compose, KernelName.sha256d_verify}
+    attest_set = {
+        KernelName.attest_result,
+        KernelName.attest_compose,
+        KernelName.sha256d_verify,
+    }
     if klass in {
         DeviceClass.gpu_integrated,
         DeviceClass.gpu_discrete,
         DeviceClass.gpu_datacenter,
         DeviceClass.gpu_cloud_instance,
     }:
-        return traversal | attest_set | {KernelName.sha256d_scan, KernelName.matmul_f4, KernelName.matvec_f4}
-    if klass == DeviceClass.asic:
+        return traversal | attest_set | {
+            KernelName.sha256d_scan,
+            KernelName.matmul_f4,
+            KernelName.matvec_f4,
+        }
+    if klass is DeviceClass.asic:
         return {KernelName.sha256d_scan, KernelName.sha256d_verify} | attest_set
     return traversal | attest_set | {KernelName.sha256d_verify}
 
@@ -134,11 +143,11 @@ def _measure_host_hps(samples: int = 3, work: int = 1024) -> Distribution:
     rates: List[float] = []
     payload = b"\x00" * 80
     for _ in range(samples):
-        t0 = time.perf_counter()
+        started = time.perf_counter()
         digest = payload
-        for _n in range(work):
+        for _iteration in range(work):
             digest = hashlib.sha256(hashlib.sha256(digest).digest()).digest()
-        wall = time.perf_counter() - t0
+        wall = time.perf_counter() - started
         if wall > 0:
             rates.append(work / wall)
     if not rates:
@@ -157,15 +166,16 @@ def _firmware_digest(detected: Any) -> str:
 
 
 def _measure_from_telemetry(detected: Any) -> Optional[Distribution]:
+    _ = detected
     try:
-        from igpu.telemetry import get_telemetry
+        from chronus.telemetry import get_telemetry
 
-        snap = get_telemetry().snapshot()
+        snapshot = get_telemetry().snapshot()
     except Exception:
         return None
-    if not isinstance(snap, dict):
+    if not isinstance(snapshot, dict):
         return None
-    hps = snap.get("measured_hps") or snap.get("hashes_per_second")
+    hps = snapshot.get("measured_hps") or snapshot.get("hashes_per_second")
     if isinstance(hps, (int, float)) and float(hps) > 0.0:
         return Distribution(float(hps), 0.0, 1)
     return None
@@ -179,9 +189,14 @@ def _from_detected(detected: Any) -> Optional[Capability]:
     if measured.mean <= 0.0:
         return None
     firmware = _firmware_digest(detected)
-    device_id = digest_of(f"{klass.value}|{detected.vendor}|{detected.name}".encode("utf-8"))[:16]
+    device_id = digest_of(
+        f"{klass.value}|{detected.vendor}|{detected.name}".encode("utf-8")
+    )[:16]
     unified = bool(getattr(detected, "host_unified_memory", False))
-    chain = [attest(firmware, issuer=f"probe:{device_id}"), attest(device_id, issuer="pythia.seam", chain_root=firmware)]
+    chain = [
+        attest(firmware, issuer=f"probe:{device_id}"),
+        attest(device_id, issuer="chronus.seam", chain_root=firmware),
+    ]
     kernels = _default_kernels(klass)
     return Capability(
         device_id=device_id,
@@ -194,15 +209,22 @@ def _from_detected(detected: Any) -> Optional[Capability]:
         max_work_group=0,
         measured_hps=measured,
         supported_kernels=kernels,
-        kernel_costs={k.value: Distribution(1.0, 0.0, 1) for k in kernels},
-        features=CapabilityFeatures(unified_memory=unified, power_states={"unknown"}),
+        kernel_costs={
+            kernel.value: Distribution(1.0, 0.0, 1) for kernel in kernels
+        },
+        features=CapabilityFeatures(
+            unified_memory=unified,
+            power_states={"unknown"},
+        ),
         attestation_chain=chain,
         privacy_mode=PrivacyMode.none,
         state=DeviceState.present,
         vendor_extensions={
             "backend": str(getattr(detected, "backend", "") or ""),
-            "integrated_reason": str(getattr(detected, "integrated_reason", "") or ""),
-            "is_igpu": str(bool(getattr(detected, "is_igpu", False))),
+            "integrated_reason": str(
+                getattr(detected, "integrated_reason", "") or ""
+            ),
+            "is_integrated_gpu": str(bool(getattr(detected, "is_igpu", False))),
             "is_gpu": str(bool(getattr(detected, "is_gpu", False))),
         },
     )
@@ -223,7 +245,9 @@ def _cpu_reference_capability() -> Capability:
         max_work_group=1,
         measured_hps=measured,
         supported_kernels=kernels,
-        kernel_costs={k.value: Distribution(1.0, 0.0, 1) for k in kernels},
+        kernel_costs={
+            kernel.value: Distribution(1.0, 0.0, 1) for kernel in kernels
+        },
         features=CapabilityFeatures(),
         attestation_chain=[attest(firmware, issuer="probe:cpu_reference")],
         privacy_mode=PrivacyMode.none,
@@ -235,18 +259,23 @@ def _cpu_reference_capability() -> Capability:
 def probe_devices() -> Result[List[Capability]]:
     caps: List[Capability] = []
     try:
-        from igpu.detect import detect_all
+        from chronus.detect import detect_all
 
         report = detect_all()
         for detected in getattr(report, "devices", []) or []:
-            cap = _from_detected(detected)
-            if cap is None or cap.measured_hps.mean <= 0.0 or not cap.attestation_chain or not cap.firmware_digest:
+            capability = _from_detected(detected)
+            if (
+                capability is None
+                or capability.measured_hps.mean <= 0.0
+                or not capability.attestation_chain
+                or not capability.firmware_digest
+            ):
                 continue
-            store.put_cap(cap)
-            caps.append(cap)
+            store.put_cap(capability)
+            caps.append(capability)
     except Exception as exc:
         store.audit("probe_error", detail=f"{type(exc).__name__}: {exc}")
-    if not any(c.device_class == DeviceClass.cpu_reference for c in caps):
+    if not any(cap.device_class is DeviceClass.cpu_reference for cap in caps):
         cpu = _cpu_reference_capability()
         if cpu.measured_hps.mean > 0.0 and cpu.attestation_chain:
             store.put_cap(cpu)
@@ -268,16 +297,29 @@ _TRANSITIONS = {
 
 
 def lifecycle(device_id: str, transition: str) -> Result[Capability]:
-    cap = store.get_cap(device_id)
-    if cap is None:
+    capability = store.get_cap(device_id)
+    if capability is None:
         return Err(SeamError.device_absent, device_id)
-    nxt = _TRANSITIONS.get((cap.state.value, transition))
-    if nxt is None:
-        return Err(SeamError.capability_mismatch, f"illegal {cap.state.value}->{transition}")
-    cap.state = nxt
-    if nxt is DeviceState.quarantined:
+    next_state = _TRANSITIONS.get((capability.state.value, transition))
+    if next_state is None:
+        return Err(
+            SeamError.capability_mismatch,
+            f"illegal {capability.state.value}->{transition}",
+        )
+    capability.state = next_state
+    if next_state is DeviceState.quarantined:
         store.quarantine(device_id, transition)
-    cap.attestation_chain.append(attest(f"{device_id}:{transition}:{nxt.value}", issuer="lifecycle"))
-    store.put_cap(cap)
-    store.audit("lifecycle", device_id=device_id, transition=transition, state=nxt.value)
-    return Ok(cap)
+    capability.attestation_chain.append(
+        attest(
+            f"{device_id}:{transition}:{next_state.value}",
+            issuer="lifecycle",
+        )
+    )
+    store.put_cap(capability)
+    store.audit(
+        "lifecycle",
+        device_id=device_id,
+        transition=transition,
+        state=next_state.value,
+    )
+    return Ok(capability)
