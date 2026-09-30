@@ -1,0 +1,112 @@
+{
+  "product": "MLA1517 iGPU",
+  "storage_system": "Aethel",
+  "contract_version": "1.0.0",
+  "ontology": "mathematical_state_is_the_native_compute_memory_unit",
+  "topology": {
+    "warp_width": 32,
+    "logical_partitions": 32,
+    "icosahedral_execution_nodes": 12,
+    "dodecahedral_memory_nodes": 20,
+    "nonce_rule": "nonce = lane_id + 32 * step",
+    "memory_address_space": "UMA"
+  },
+  "state_model": {
+    "dimensions": 11,
+    "axes": [
+      "D1_payload_nonce",
+      "D2_lucas_scale",
+      "D3_pisot_fold",
+      "D4_fibonacci_exact",
+      "D5_zeckendorf_code",
+      "D6_binet_projection",
+      "D7_prime_address",
+      "D8_polyhedral_position",
+      "D9_transform_eigenbasis",
+      "D10_cassini_integrity",
+      "D11_lineage_time"
+    ],
+    "hot_transport_descriptor_bytes": 64,
+    "route_control_slot": true
+  },
+  "execution_pipeline": [
+    "D1_generate",
+    "D2_lucas_scale",
+    "D6_binet_projection",
+    "D5_zeckendorf_void_test",
+    "warp_ballot",
+    "prefix_rank_compaction",
+    "D3_pisot_fold",
+    "D4_fibonacci_exact",
+    "D10_cassini_verify",
+    "D7_prime_address",
+    "D8_route_to_aethel",
+    "D11_lineage_commit"
+  ],
+  "difficulty": {
+    "void_mask": "(1 << difficulty_bits) - 1",
+    "anchor_mask": "1 << difficulty_bits",
+    "predicate": "(D5 & void_mask) == 0 && (D5 & anchor_mask) != 0",
+    "polyhedral_mask": "optional",
+    "runtime_controls": [
+      "MLA1517_DIFFICULTY_BITS",
+      "MLA1517_POLYHEDRAL_MASK",
+      "MLA1517_POLYHEDRAL_TARGET"
+    ]
+  },
+  "execution_units": {
+    "warp_ballot": "32-bit acceptance mask",
+    "winner_compaction": "prefix_popcount_rank",
+    "projection_unit": "fixed_point_golden_or_bounded_lut",
+    "exact_unit": "fibonacci_q_matrix_or_fast_doubling",
+    "zeckendorf_unit": "exact_greedy_non_adjacent_encoder",
+    "integrity_unit": "cassini_determinant_seal",
+    "address_unit": "prime_address_plus_polyhedral_route",
+    "simd_host_reference": "AVX2_8_lane_runtime_dispatch"
+  },
+  "memory_system": {
+    "name": "Aethel",
+    "mode": "winner_proof_checkpoint_vault",
+    "failed_candidate_policy": "discard_in_execution_lane",
+    "transport": "UMA_atomic_sequence_publication",
+    "coherence": "explicit_publish_and_visibility_protocol",
+    "storage_nodes": 20
+  },
+  "supervision": {
+    "enabled_by_explicit_deployment_flag": true,
+    "registers": {
+      "polyhedral_mask": "0x028",
+      "lane_enable_mask": "0x02c"
+    },
+    "actions": [
+      "quarantine_lane",
+      "restore_lane",
+      "update_polyhedral_mask",
+      "request_network_failover"
+    ],
+    "default_mode": "observe_only"
+  },
+  "deployment": {
+    "native_container_workloads": [
+      "mathematical",
+      "structured_mining",
+      "simt_warp"
+    ],
+    "docker_controls": [
+      "--cpuset-cpus",
+      "--shm-size",
+      "MLA1517_PIN_THREADS"
+    ],
+    "host_gpu_role": "optional_scale_assist",
+    "cpu_reference_role": "conformance_only"
+  },
+  "acceptance_contract": {
+    "warp_ballot": "software_verified",
+    "progressive_mining": "software_verified",
+    "fibonacci_void_difficulty": "software_verified",
+    "uma_routing": "software_verified",
+    "exact_fibonacci_cassini": "software_verified",
+    "rtl_fpga": "next_implementation_stage",
+    "asic": "future_implementation_stage"
+  }
+}

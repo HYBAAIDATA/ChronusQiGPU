@@ -1,7 +1,8 @@
-"""iGPU SKU: Aethel rides with the device.
+"""Aethel Chronus SKU: storage and manifold execution ride with Chronus.
 
-standalone — this module is the box.
-nested     — VirtualSM pool sits inside a host GPU; Lucas/Pisot still snap the batch.
+``standalone`` binds the Aethel execution context directly to Chronus.
+``nested`` keeps the virtual-SM pool inside a host GPU while Chronus still owns
+the offering/runtime identity. Turing remains the compute substrate.
 """
 
 from __future__ import annotations
@@ -11,9 +12,9 @@ import json
 from dataclasses import dataclass
 from typing import Any, Dict, Literal, Optional
 
-from aethel.gpu import TensorCoreGPU_Context
+from aethel.chronus import ChronusContext
 from aethel.storage import AddressSpace, FibonacciAddress
-from igpu.seam.gpu_scale import GpuScale, scale_job
+from chronus.seam.scale import ChronusScale, scale_job
 
 Mode = Literal["standalone", "nested"]
 
@@ -37,6 +38,8 @@ class DeviceTicket:
 
     def as_dict(self) -> Dict[str, Any]:
         return {
+            "product": "Chronus",
+            "compute_substrate": "Turing",
             "mode": self.mode,
             "index": self.address.index,
             "fibonacci": self.address.value,
@@ -47,24 +50,36 @@ class DeviceTicket:
         }
 
 
-class IGpuSku:
-    """Sold unit: iGPU + Aethel store, scaled by the Lucas/Pisot ladder."""
+class ChronusSku:
+    """Aethel SKU bound to the Chronus iGPU offering."""
 
-    def __init__(self, mode: Mode = "standalone", punch_host=None, require_gpu: bool = False):
+    def __init__(
+        self,
+        mode: Mode = "standalone",
+        punch_host=None,
+        require_gpu: bool = False,
+    ):
         if mode not in ("standalone", "nested"):
             raise ValueError(mode)
         self.mode = mode
         self.space = AddressSpace()
-        self.ctx = TensorCoreGPU_Context(
+        self.ctx = ChronusContext(
             punch_host=punch_host,
             require_gpu=bool(require_gpu and mode == "standalone"),
         )
 
-    def ingest(self, job_id: str, requested: int, payload: str = "") -> DeviceTicket:
-        scale: GpuScale = scale_job(job_id, requested, payload)
+    def ingest(
+        self,
+        job_id: str,
+        requested: int,
+        payload: str = "",
+    ) -> DeviceTicket:
+        scale: ChronusScale = scale_job(job_id, requested, payload)
         body = json.dumps(
             {
                 "job_id": job_id,
+                "product": "Chronus",
+                "compute_substrate": "Turing",
                 "mode": self.mode,
                 "scale": scale.as_dict(),
                 "sms": getattr(self.ctx.cu_pool, "n_sms", 8),
@@ -83,7 +98,12 @@ class IGpuSku:
             ledger_ok=self.space.verify(),
         )
 
-    def scan_nonce(self, header76: bytes, target: int, window: int) -> Optional[int]:
+    def scan_nonce(
+        self,
+        header76: bytes,
+        target: int,
+        window: int,
+    ) -> Optional[int]:
         if not isinstance(header76, (bytes, bytearray)) or len(header76) != 76:
             raise ValueError("header76 must be 76 bytes")
         if not isinstance(target, int) or target < 0:
@@ -92,28 +112,34 @@ class IGpuSku:
         host = self.ctx.punch_host
         if self.ctx.gpu_active and hasattr(host, "scan_sha256d"):
             return host.scan_sha256d(bytes(header76), target, window)
-        header76b = bytes(header76)
+
+        header76_bytes = bytes(header76)
         n_sms = max(1, int(self.ctx.cu_pool.n_sms))
         chunk = max(1, (window + n_sms - 1) // n_sms)
         hits = []
 
         def work(start: int, end: int) -> Optional[int]:
             for nonce in range(start, end):
-                digest = _sha256d(header76b + nonce.to_bytes(4, "little"))
+                digest = _sha256d(
+                    header76_bytes + nonce.to_bytes(4, "little")
+                )
                 if _u256(digest) <= target:
                     return nonce
             return None
 
-        futs = []
-        for i in range(n_sms):
-            start = i * chunk
+        futures = []
+        for index in range(n_sms):
+            start = index * chunk
             end = min(window, start + chunk)
             if start >= end:
                 continue
-            futs.append(self.ctx.cu_pool.submit_workgroup(work, start, end))
+            futures.append(self.ctx.cu_pool.submit_workgroup(work, start, end))
         self.ctx.cu_pool.synchronize_all()
-        for fut in futs:
-            nonce = fut.result()
+        for future in futures:
+            nonce = future.result()
             if nonce is not None:
                 hits.append(int(nonce))
         return min(hits) if hits else None
+
+
+__all__ = ["ChronusSku", "DeviceTicket", "Mode"]
