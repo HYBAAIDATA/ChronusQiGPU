@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import importlib
+import subprocess
 import sys
 import tomllib
 from pathlib import Path
@@ -28,10 +28,18 @@ def test_package_roots_and_typing_markers_exist():
 
 
 def test_igpu_import_is_lazy_and_hardware_independent():
-    sys.modules.pop("igpu.detect", None)
-    module = importlib.import_module("igpu")
-    assert "detect_all" in module.__all__
-    assert "igpu.detect" not in sys.modules, "root import must not trigger probing"
+    code = (
+        "import sys, igpu; "
+        "assert 'detect_all' in igpu.__all__; "
+        "assert 'igpu.detect' not in sys.modules"
+    )
+    proc = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, proc.stderr
 
 
 def test_runtime_resources_are_declared_as_package_data():
