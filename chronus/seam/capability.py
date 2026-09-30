@@ -10,8 +10,7 @@ import math
 import statistics
 from typing import Iterable, List, Sequence
 
-from igpu.seam.types import Distribution, Err, Ok, Result, RoutingPolicy, SeamError
-
+from .types import Distribution, Err, Ok, Result, RoutingPolicy, SeamError
 
 UNSTABLE_CV = 0.25
 MIN_SAMPLES = 32
@@ -32,21 +31,30 @@ def _percentile(sorted_vals: Sequence[float], pct: float) -> float:
 
 
 def reject_measurement_errors(raw: Iterable[float]) -> List[float]:
-    """Drop non-positive samples and isolated zeros. Keep real variance."""
-    values = [float(x) for x in raw if x is not None and math.isfinite(float(x)) and float(x) > 0.0]
+    """Drop non-positive samples and extreme measurement errors; keep variance."""
+    values = [
+        float(value)
+        for value in raw
+        if value is not None
+        and math.isfinite(float(value))
+        and float(value) > 0.0
+    ]
     if len(values) < 3:
         return values
     mean = statistics.fmean(values)
     std = statistics.pstdev(values)
     if std <= 0.0:
         return values
-    return [v for v in values if abs(v - mean) <= 5.0 * std]
+    return [value for value in values if abs(value - mean) <= 5.0 * std]
 
 
 def distribution_from_samples(raw: Iterable[float]) -> Result[Distribution]:
     cleaned = reject_measurement_errors(raw)
     if len(cleaned) < MIN_SAMPLES:
-        return Err(SeamError.unknown, f"distribution samples {len(cleaned)} < {MIN_SAMPLES}")
+        return Err(
+            SeamError.unknown,
+            f"distribution samples {len(cleaned)} < {MIN_SAMPLES}",
+        )
     ordered = sorted(cleaned)
     mean = statistics.fmean(ordered)
     std = statistics.pstdev(ordered) if len(ordered) > 1 else 0.0
@@ -62,20 +70,27 @@ def distribution_from_samples(raw: Iterable[float]) -> Result[Distribution]:
     )
 
 
-def measure_hps_distribution(measure_once, samples: int = 64, warmup: int = 8) -> Result[Distribution]:
+def measure_hps_distribution(
+    measure_once,
+    samples: int = 64,
+    warmup: int = 8,
+) -> Result[Distribution]:
     raw: List[float] = []
     total = samples + warmup
-    for i in range(total):
+    for index in range(total):
         try:
             hps = float(measure_once())
         except Exception:
             continue
-        if i >= warmup:
+        if index >= warmup:
             raw.append(hps)
     return distribution_from_samples(raw)
 
 
-def effective_hps(measured: Distribution, policy: RoutingPolicy = RoutingPolicy.balanced) -> float:
+def effective_hps(
+    measured: Distribution,
+    policy: RoutingPolicy = RoutingPolicy.balanced,
+) -> float:
     if policy is RoutingPolicy.conservative:
         return float(measured.p50 or measured.mean)
     if policy is RoutingPolicy.aggressive:
@@ -89,7 +104,10 @@ def is_unstable(measured: Distribution) -> bool:
     return (measured.stddev / measured.mean) > UNSTABLE_CV
 
 
-def declared_policy_hps(measured: Distribution, policy: RoutingPolicy) -> float:
+def declared_policy_hps(
+    measured: Distribution,
+    policy: RoutingPolicy,
+) -> float:
     """P4a: every routing decision names a policy that selects a quantile."""
     if is_unstable(measured) and policy is not RoutingPolicy.conservative:
         policy = RoutingPolicy.conservative
