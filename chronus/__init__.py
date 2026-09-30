@@ -6,5 +6,13 @@ state memory, kernel dispatch, telemetry, routing and attestation.
 """
 
 from .device import CLAIM_BOUNDARY, DEVICE_ID, Chronus, open_device
+from .fabric import ChronusFabric, RouteDecision
 
-__all__ = ["Chronus", "open_device", "CLAIM_BOUNDARY", "DEVICE_ID"]
+__all__ = [
+    "Chronus",
+    "ChronusFabric",
+    "RouteDecision",
+    "open_device",
+    "CLAIM_BOUNDARY",
+    "DEVICE_ID",
+]
