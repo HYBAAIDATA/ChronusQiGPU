@@ -64,6 +64,10 @@ original toe.py monolith, and the substrate modules it runs on):
     toe.world_model                 declared-structure world model with
                                     revision states, decision->outcome
                                     binding, online adaptation metrics
+    toe.meta_reasoning              bounded meta-controller, value of
+                                    information, compute-aware routing
+    toe.precision                   adaptive precision selection +
+                                    float-vs-exact consequence measurement
     toe.intelligences/              the five intelligences (causal,
                                     geometric, plastic, counterfactual,
                                     quantum)
@@ -149,6 +153,16 @@ from .world_model import (
     WorldModel,
     bind_outcome,
 )
+from .meta_reasoning import (
+    meta_decide,
+    value_of_information,
+    choose_path,
+)
+from .precision import (
+    float_error_bound,
+    measure_exactness,
+    select_precision,
+)
 from .expansion import (
     TOEExpansionEngine,
     TOEExpansionPolicy,
@@ -204,6 +218,12 @@ __all__ = [
     "MODEL_DRIFT",
     "MODEL_CONTRADICTED",
     "INSUFFICIENT_EVIDENCE",
+    "meta_decide",
+    "value_of_information",
+    "choose_path",
+    "float_error_bound",
+    "select_precision",
+    "measure_exactness",
     "IDENTIFIED",
     "NOT_IDENTIFIED",
     "PARTIALLY_IDENTIFIED",
