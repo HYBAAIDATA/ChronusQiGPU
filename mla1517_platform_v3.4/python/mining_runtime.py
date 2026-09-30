@@ -13,7 +13,7 @@ from pathlib import Path
 
 from mla1517.hardware import MMIOBridge
 from mla1517.mining.coordinator import CpuReferenceHasher
-from mla1517.mining.production_transport import ProductionMiningCoordinator
+from mla1517.mining.euclid_support import EuclidProductionMiningCoordinator
 from mla1517.mining.retarget_telemetry import RetargetWindowTracker
 from manifold_pool_coordinator import _build_parser, parse_endpoint
 from worker_lifecycle import HeartbeatEmitter
@@ -225,7 +225,7 @@ async def _main_async(args) -> None:
 
             # Learned operating state persists in Aethel beside the causal log.
             os.environ.setdefault("PYTHIA_INTELLIGENCE_DIR", "data/intelligence")
-            coordinator = ProductionMiningCoordinator(
+            coordinator = EuclidProductionMiningCoordinator(
                 endpoints,
                 username=args.user or endpoints[0].username,
                 password=args.password,
