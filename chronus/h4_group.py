@@ -10,7 +10,12 @@ from __future__ import annotations
 
 from typing import Dict, List, Sequence, Tuple
 
-from igpu.h4_600 import cell_normals, generate_600cell_cells, generate_600cell_vertices, lift_fold_11d
+from .h4_600 import (
+    cell_normals,
+    generate_600cell_cells,
+    generate_600cell_vertices,
+    lift_fold_11d,
+)
 
 Quat = Tuple[float, float, float, float]
 
@@ -42,20 +47,20 @@ class H4Frame:
     def nearest_vertex(self, x: Quat) -> int:
         best_i = 0
         best = 1e9
-        for i, v in enumerate(self.vertices):
-            d = sum((a - b) ** 2 for a, b in zip(x, v))
-            if d < best:
-                best = d
+        for i, vertex in enumerate(self.vertices):
+            distance = sum((a - b) ** 2 for a, b in zip(x, vertex))
+            if distance < best:
+                best = distance
                 best_i = i
         return best_i
 
     def permute_vertices(self, p: Quat, q: Quat) -> List[int]:
-        return [self.nearest_vertex(act(p, v, q)) for v in self.vertices]
+        return [self.nearest_vertex(act(p, vertex, q)) for vertex in self.vertices]
 
     def permute_cells(self, p: Quat, q: Quat) -> List[int]:
         sigma = self.permute_vertices(p, q)
         lookup: Dict[Tuple[int, int, int, int], int] = {
-            tuple(sorted(c)): i for i, c in enumerate(self.cells)
+            tuple(sorted(cell)): i for i, cell in enumerate(self.cells)
         }
         out: List[int] = []
         for tet in self.cells:
@@ -80,7 +85,11 @@ def rotation_pair_count() -> int:
 def symmetry_report(p: Quat | None = None, q: Quat | None = None) -> dict:
     frame = H4Frame()
     p = p or (1.0, 0.0, 0.0, 0.0)
-    q = q or (frame.vertices[1] if len(frame.vertices) > 1 else (1.0, 0.0, 0.0, 0.0))
+    q = q or (
+        frame.vertices[1]
+        if len(frame.vertices) > 1
+        else (1.0, 0.0, 0.0, 0.0)
+    )
     vperm = frame.permute_vertices(p, q)
     cperm = frame.permute_cells(p, q)
     ident = p == (1.0, 0.0, 0.0, 0.0) and q == (1.0, 0.0, 0.0, 0.0)
