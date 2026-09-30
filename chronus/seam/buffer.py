@@ -1,12 +1,12 @@
-"""Layer 2 — digested, multi-tenant, audited buffers over igpu.runtime."""
+"""Layer 2 — digested, multi-tenant, audited buffers over Chronus runtime."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
 
-from igpu.seam import store
-from igpu.seam.types import (
+from . import store
+from .types import (
     BufferBacking,
     Err,
     Ok,
@@ -53,13 +53,13 @@ class Buffer:
         }
 
 
-def _authorized(caller: str, buf: Buffer, action: str) -> bool:
-    if caller == buf.policy.owner:
+def _authorized(caller: str, buffer: Buffer, action: str) -> bool:
+    if caller == buffer.policy.owner:
         return True
     if action == "read":
-        return caller in buf.policy.readers
+        return caller in buffer.policy.readers
     if action in ("write", "release"):
-        return caller in buf.policy.writers
+        return caller in buffer.policy.writers
     return False
 
 
@@ -69,54 +69,69 @@ def allocate(
     backing: BufferBacking = BufferBacking.host_mapped,
     policy: Optional[AccessPolicy] = None,
 ) -> Result[Buffer]:
-    cap = store.get_cap(device_id)
-    if cap is None:
+    capability = store.get_cap(device_id)
+    if capability is None:
         return Err(SeamError.device_absent, device_id)
     if store.is_quarantined(device_id):
         return Err(SeamError.device_quarantined, device_id)
     if size_bytes < 0:
         return Err(SeamError.unknown, "size_bytes < 0")
     if backing is BufferBacking.encrypted_at_rest:
-        # No cipher path exists below the seam; storing plaintext under an
-        # `encrypted=True` label is worse than refusing.
         return Err(
             SeamError.capability_mismatch,
             "encrypted_at_rest has no cipher path on this host",
         )
+
     payload = b"\x00" * int(size_bytes)
     kind = "host"
     try:
-        from igpu.runtime import KIND_BUFFER, allocate_device, allocate_host_mapped
+        from chronus.runtime import (
+            KIND_BUFFER,
+            allocate_device,
+            allocate_host_mapped,
+        )
 
         if backing in (BufferBacking.device_private, BufferBacking.unified):
-            alloc = allocate_device(size_bytes, mode=KIND_BUFFER)
-            kind = alloc.kind
+            allocation = allocate_device(size_bytes, mode=KIND_BUFFER)
+            kind = allocation.kind
         else:
             allocate_host_mapped(size_bytes)
             kind = "host_mapped"
     except Exception:
         kind = "host"
-    pol = policy or AccessPolicy(owner="seam")
-    buf = Buffer(
+
+    access_policy = policy or AccessPolicy(owner="seam")
+    buffer = Buffer(
         id=new_id("buf"),
         device_id=device_id,
         size_bytes=int(size_bytes),
         resident=kind not in ("unavailable", "host_fallback"),
         backing=backing,
         digest=digest_of(payload),
-        policy=pol,
+        policy=access_policy,
         encrypted=backing is BufferBacking.encrypted_at_rest,
         created_at=now_iso(),
         payload=payload,
     )
-    pol.audit_log.append({"action": "allocate", "caller": "seam", "at": now_iso(), "kind": kind})
-    store.put_buffer(buf)
-    store.audit("buffer_allocate", buffer_id=buf.id, device_id=device_id,
-                backing_kind=kind)
-    return Ok(buf)
+    access_policy.audit_log.append(
+        {"action": "allocate", "caller": "seam", "at": now_iso(), "kind": kind}
+    )
+    store.put_buffer(buffer)
+    store.audit(
+        "buffer_allocate",
+        buffer_id=buffer.id,
+        device_id=device_id,
+        backing_kind=kind,
+    )
+    return Ok(buffer)
 
 
-def write(caller: str, buffer: Buffer, data: bytes, offset: int = 0) -> Result[Buffer]:
+def write(
+    caller: str,
+    buffer: Buffer,
+    data: bytes,
+    offset: int = 0,
+) -> Result[Buffer]:
     live = store.get_buffer(buffer.id)
     if live is None:
         return Err(SeamError.unknown, "buffer gone")
@@ -127,20 +142,27 @@ def write(caller: str, buffer: Buffer, data: bytes, offset: int = 0) -> Result[B
     if offset < 0:
         return Err(SeamError.unknown, "offset < 0")
     raw = bytearray(live.payload)
-    need = offset + len(data)
-    if need > len(raw):
-        raw.extend(b"\x00" * (need - len(raw)))
+    required = offset + len(data)
+    if required > len(raw):
+        raw.extend(b"\x00" * (required - len(raw)))
     raw[offset : offset + len(data)] = data
     live.payload = bytes(raw)
     live.size_bytes = len(live.payload)
     live.digest = digest_of(live.payload)
-    live.policy.audit_log.append({"action": "write", "caller": caller, "at": now_iso()})
+    live.policy.audit_log.append(
+        {"action": "write", "caller": caller, "at": now_iso()}
+    )
     store.put_buffer(live)
     store.audit("buffer_write", buffer_id=live.id, caller=caller)
     return Ok(live)
 
 
-def read(caller: str, buffer: Buffer, offset: int = 0, length: Optional[int] = None) -> Result[bytes]:
+def read(
+    caller: str,
+    buffer: Buffer,
+    offset: int = 0,
+    length: Optional[int] = None,
+) -> Result[bytes]:
     live = store.get_buffer(buffer.id)
     if live is None:
         return Err(SeamError.unknown, "buffer gone")
@@ -150,12 +172,21 @@ def read(caller: str, buffer: Buffer, offset: int = 0, length: Optional[int] = N
         return Err(SeamError.privacy_violation, caller)
     if offset < 0 or (length is not None and length < 0):
         return Err(SeamError.unknown, "negative offset/length")
-    data = live.payload[offset:] if length is None else live.payload[offset : offset + length]
+    data = (
+        live.payload[offset:]
+        if length is None
+        else live.payload[offset : offset + length]
+    )
     actual = digest_of(live.payload)
     if actual != live.digest:
         store.audit("buffer_corruption", buffer_id=live.id)
-        return Err(SeamError.buffer_corruption, f"expected {live.digest} actual {actual}")
-    live.policy.audit_log.append({"action": "read", "caller": caller, "at": now_iso()})
+        return Err(
+            SeamError.buffer_corruption,
+            f"expected {live.digest} actual {actual}",
+        )
+    live.policy.audit_log.append(
+        {"action": "read", "caller": caller, "at": now_iso()}
+    )
     return Ok(data)
 
 
