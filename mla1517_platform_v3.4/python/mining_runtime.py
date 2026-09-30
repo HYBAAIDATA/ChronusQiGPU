@@ -3,14 +3,17 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
 import os
+import signal
 import sys
 from pathlib import Path
 
 from mla1517.hardware import MMIOBridge
-from mla1517.mining.coordinator import CpuReferenceHasher, IntelligentPoolCoordinator
+from mla1517.mining.coordinator import CpuReferenceHasher
+from mla1517.mining.production_transport import ProductionMiningCoordinator
 from manifold_pool_coordinator import _build_parser, parse_endpoint
 from worker_lifecycle import HeartbeatEmitter
 from mla1517.mining.chain_observer import BitcoinChainObserver
@@ -211,7 +214,7 @@ async def _main_async(args) -> None:
 
             # Learned operating state persists in Aethel beside the causal log.
             os.environ.setdefault("PYTHIA_INTELLIGENCE_DIR", "data/intelligence")
-            coordinator = IntelligentPoolCoordinator(
+            coordinator = ProductionMiningCoordinator(
                 endpoints,
                 username=args.user or endpoints[0].username,
                 password=args.password,
@@ -238,7 +241,8 @@ async def _main_async(args) -> None:
                     getattr(hasher, "backend", None),
                     getattr(hasher, "device", None),
                 )
-                await coordinator.run_execution_loop()
+                max_backoff = float(os.getenv("PYTHIA_RECONNECT_MAX_S", "30"))
+                await coordinator.run_execution_loop(max_backoff_s=max_backoff)
                 return
             with MMIOBridge(args.device, map_bytes=args.map_bytes) as bridge:
                 await coordinator.run_hardware_loop(
@@ -250,13 +254,46 @@ async def _main_async(args) -> None:
         session.close()
 
 
+async def _run_with_signals(args) -> None:
+    """Cancel the miner cooperatively on SIGINT/SIGTERM.
+
+    Cancellation enters the coordinator/session ``finally`` blocks, which
+    close pool sockets, persist agentic state, stop telemetry and close the
+    mining session. Unsupported event-loop signal APIs (notably Windows)
+    fall back to Python's normal KeyboardInterrupt/service behaviour.
+    """
+    loop = asyncio.get_running_loop()
+    task = asyncio.create_task(_main_async(args), name="pythia-mining-runtime")
+    installed: list[signal.Signals] = []
+
+    def request_shutdown(sig: signal.Signals) -> None:
+        LOG.info("received %s; shutting down mining runtime", sig.name)
+        task.cancel()
+
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        try:
+            loop.add_signal_handler(sig, request_shutdown, sig)
+        except (NotImplementedError, RuntimeError, ValueError):
+            continue
+        installed.append(sig)
+    try:
+        await task
+    except asyncio.CancelledError:
+        if not task.cancelled():
+            raise
+    finally:
+        for sig in installed:
+            with contextlib.suppress(NotImplementedError, RuntimeError, ValueError):
+                loop.remove_signal_handler(sig)
+
+
 def main() -> None:
     args = _build_parser().parse_args()
     logging.basicConfig(
         level=getattr(logging, args.log_level.upper(), logging.INFO),
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
-    asyncio.run(_main_async(args))
+    asyncio.run(_run_with_signals(args))
 
 
 if __name__ == "__main__":
