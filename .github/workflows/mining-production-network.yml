@@ -1,0 +1,53 @@
+name: Production Mining Network Gate
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-mining-network-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONPATH: ${{ github.workspace }}/mla1517_platform_v3.4/python:${{ github.workspace }}
+
+jobs:
+  protocol-and-transport:
+    name: Stratum protocol, failover, backpressure, and submission gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install project test dependencies
+        run: python -m pip install -e ./turing_universal_quantum_computer -e ".[dev]"
+      - name: Compile canonical mining runtime
+        run: >-
+          python -m py_compile
+          mla1517_platform_v3.4/python/mining_runtime.py
+          mla1517_platform_v3.4/python/mla1517/mining/production_transport.py
+      - name: Production transport hardening
+        run: >-
+          python -m unittest discover
+          -s mla1517_platform_v3.4/python
+          -p test_production_transport.py
+          -v
+      - name: Canonical Stratum V1 session
+        run: >-
+          python -m unittest discover
+          -s mla1517_platform_v3.4/python
+          -p test_stratum_session.py
+          -v
+      - name: Stratum V1 live-session harness
+        run: python -m pytest tests/test_stratum_live_session.py -q
+      - name: Stratum V2 Mining Protocol contracts
+        run: python -m pytest tests/test_stratum_v2.py tests/test_braiins_sv2.py -q
