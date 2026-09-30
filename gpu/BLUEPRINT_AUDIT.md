@@ -35,20 +35,25 @@ executes the gate.
 
 ## Remaining gaps
 
-1. Merge and run the sequential-contract changes from PR #30.
-2. Implement the reversible/uncompute and zero-knowledge kernels; they fail
-   closed rather than returning synthetic success values.
+### Mining release blockers
+
+1. Execute strict OpenCL tests, including punch 0x15 and traversal parity, on
+   the target iGPU and discrete GPUs.
+2. Execute ASIC protocol tests against a physical endpoint.
+3. Run a real job through hardware, host verification, pool submission and pool
+   acknowledgement.
+4. Regenerate provenance after human merge; existing sample records with null
+   merge SHAs or empty change bundles cannot support production claims.
+5. Measure the built container. The proposed 100 GB allocation is a budget, not
+   evidence that the image or cache currently fits.
+
+### Non-blocking follow-up work
+
+1. Merge and run the sequential-contract governance changes from PR #30.
+2. Implement reversible/uncompute and zero-knowledge kernels. They are outside
+   the mining consensus path and fail closed rather than fabricating success.
 3. Complete the staged move from top-level `igpu/`, `kernels/` and hybrid GPU
    modules into `gpu/backends`, retaining compatibility shims for one release.
-4. Execute strict OpenCL tests, including punch 0x15 parity, on the target iGPU
-   and discrete GPUs.
-5. Execute ASIC protocol tests against a physical endpoint.
-6. Run a real job through hardware, host verification, pool submission and pool
-   acknowledgement.
-7. Regenerate provenance after human merge; existing sample records with null
-   merge SHAs or empty change bundles cannot support production claims.
-8. Measure the built container. The proposed 100 GB allocation is a budget, not
-   evidence that the image or cache currently fits.
-9. Promote the 32-face unified-manifold device from `legacy/`, rewire it to
+4. Promote the 32-face unified-manifold device from `legacy/`, rewire it to
    canonical modules and move its tests into the normal CI suite. Documentation
-   now marks the legacy boundary explicitly.
+   marks it as optional ordering research, not a consensus dependency.
