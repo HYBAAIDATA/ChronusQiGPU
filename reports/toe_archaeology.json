@@ -1,0 +1,603 @@
+{
+  "schema": "toe.archaeology/v1",
+  "pass": "TOE / HYBA ANALYTICS intelligence elevation & paradigm capability pass, sections 1-2",
+  "base_sha": "d298eaa5ec261f6d7f4b6f4052a5dce417ef1ad9",
+  "verified_production_baseline_sha": "73a716d",
+  "verification": {
+    "pytest_tests": "1728 passed, 1 failed (test_import_audit IA02) -> fixed this branch",
+    "platform_unittest": "317 ran, OK (7 skipped)",
+    "method": "static import graph over all repo .py files; reachability = at least one non-self importer. Dynamic dispatch (registry probe_import, console scripts, subprocess) is a caveat and is noted per file."
+  },
+  "surfaces": {
+    "toe/engine.py": {
+      "lines": 5687,
+      "role": "PredictiveEngine + extended algebraic-family (Pisot) substrate; strict_quantum_work_certificate",
+      "classification": "ACTIVE_CANONICAL"
+    },
+    "toe/bridge.py": {
+      "lines": 1857,
+      "role": "TOEBridge: tomography, trajectory forecast, causal ranking, reason() task dispatcher over identify/estimate/intervene/counterfactual/explain/decide/agree/receipts",
+      "classification": "ACTIVE_CANONICAL"
+    },
+    "toe/causal_ladder.py": {
+      "lines": 1651,
+      "role": "Pearl ladder over supplied DAG/SCM: backdoor+frontdoor identification, do-operator, counterfactual_state, estimate_causal_effect (OLS + stratification), infer_causal_graph heuristic labelled NOT causal discovery",
+      "classification": "ACTIVE_CANONICAL"
+    },
+    "toe/explanation.py": {
+      "lines": 287,
+      "role": "interventional Shapley explanation, exact enumeration <=12 inputs, fails closed on missing evidence",
+      "classification": "ACTIVE_CANONICAL"
+    },
+    "toe/policy.py": {
+      "lines": 296,
+      "role": "action selection among supplied candidates via counterfactual futures + objectives + hard/soft constraints",
+      "classification": "ACTIVE_CANONICAL"
+    },
+    "toe/agreement.py": {
+      "lines": 116,
+      "role": "agreement metric across distinct evaluators",
+      "classification": "ACTIVE_CANONICAL"
+    },
+    "toe/receipts.py": {
+      "lines": 212,
+      "role": "hash-chained replayable provenance receipts",
+      "classification": "ACTIVE_CANONICAL"
+    },
+    "toe/operator_compilers.py": {
+      "lines": 170,
+      "role": "deterministic typed-operator compilation of arbitrary payloads (bytes, AST, graph, text)",
+      "classification": "ACTIVE_CANONICAL"
+    },
+    "toe/poincare_golden_11d.py": {
+      "lines": 554,
+      "role": "11D Poincare-golden fold/unfold + Zeckendorf certificates + metallic means",
+      "classification": "ACTIVE_CANONICAL"
+    },
+    "toe/system.py": {
+      "lines": 256,
+      "role": "TOESystem 12-theorem arbiter + provenance records for the agentic workflow",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "toe/expansion.py": {
+      "lines": 282,
+      "role": "proof-carrying collapse envelope (operator compile + 11D cert + Pisot/Lucas scale program + budget)",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "toe/manifold_bridge.py": {
+      "lines": 203,
+      "role": "Galois-persistent candidate store, O(1) lookup, random-sample verification",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "toe/strict_quantum.py": {
+      "lines": 231,
+      "role": "strict quantum work-window certification (QComplex/QMatrix/QState exact rationals)",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "toe/poincare_yangmills.py": {
+      "lines": 201,
+      "role": "finite SU(2) gap joined to TOE; capability_record/unlocked_capabilities",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "toe/phi_klein.py": {
+      "lines": 48,
+      "role": "phi-weighted Klein fold wrapper over poincare_golden_11d",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "toe/geometric_contract.py": {
+      "lines": 50,
+      "role": "twelve geometric checks on a realized candidate",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "toe/solovay_kitaev.py": {
+      "lines": 243,
+      "role": "SK approximation of U(t), phase_snap, synthesize",
+      "classification": "ACTIVE_SUPPORTING",
+      "note": "sole importer is tests/test_a_exact_algorithms.py - test-exercised boundary module"
+    },
+    "toe/hardened_unified_substrate.py": {
+      "lines": 15,
+      "role": "alias module",
+      "classification": "SUPERSEDED_BY_STRONGER_IMPLEMENTATION",
+      "note": "canonical implementation lives in aethel/hardened_unified_substrate.py"
+    },
+    "toe/intelligences/": {
+      "lines": 845,
+      "role": "five mining-domain authorities (causal pool selection, counterfactual share submission, geometric nonce navigation, plastic thermal, quantum payout)",
+      "classification": "ACTIVE_SUPPORTING",
+      "note": "mining-specific; deliberately outside domain-general TOE core per reports/toe_elevation_benchmark.json"
+    },
+    "toe/unified/": {
+      "lines": 3100,
+      "role": "enterprise analytics surface: connector catalog, data_layer ingest/dedup/zlib, exact-tensor train/retrain/rollback, monitor drift retrain, NL query, economics, phases gates",
+      "classification": "ACTIVE_SUPPORTING",
+      "note": "claim ledger reports/toe_unified_disposition.md; not the intelligence core"
+    },
+    "kellogg/": {
+      "lines": 4280,
+      "role": "tensor substrate: 32-dim Hilbert (quantum_tensor), Clifford+T exact over Q(zeta8) (exact_tensor), exact sqrt over F4 (exact_field), exact-tensor ML family + deterministic persistence (tensor_ml), scales/traversal/attestation",
+      "classification": "ACTIVE_CANONICAL"
+    },
+    "aethel/": {
+      "lines": 2600,
+      "role": "storage/compute substrate: overhead ledger, storage.py, shm SPSC ring, primes, zeckendorf codec, cassini verifier, geodesic, unified, hardened_unified_substrate, selftest",
+      "classification": "ACTIVE_SUPPORTING",
+      "note": "canonical home of hardened substrate; storage-facing modules feed the data-substrate pass"
+    },
+    "lucas/": {
+      "lines": 560,
+      "role": "canonical Lucas kernel family: algebra, bound, fold, ladder, pool (sole legal shared import), trace",
+      "classification": "ACTIVE_CANONICAL"
+    },
+    "Intelligence/__init__.py": {
+      "lines": 552,
+      "role": "aggregation surface re-exporting toe/kellogg/Intelligence symbols",
+      "classification": "ACTIVE_CANONICAL"
+    },
+    "Intelligence/orchestrator.py": {
+      "lines": 1504,
+      "role": "IntelligenceOrchestrator: mining-bound wiring of all modules incl. TOEBridge, memory, learning, agentic search, safety",
+      "classification": "ACTIVE_CANONICAL",
+      "note": "canonical for the mining adapter boundary, not the domain-general core"
+    },
+    "Intelligence/registry.py": {
+      "lines": 519,
+      "role": "honest wired-module registry (probe import, capability list, lazy factory)",
+      "classification": "ACTIVE_CANONICAL"
+    },
+    "Intelligence/pythia_memory.py": {
+      "lines": 1471,
+      "role": "four-tier dynamic memory (teach/recall/consolidate)",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/pythia_learning.py": {
+      "lines": 583,
+      "role": "pattern learning substrate (LearningResult, LearnedPattern)",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/pythia_store.py": {
+      "lines": 728,
+      "role": "persistent run journal + qudit memory traces + self-curation",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/prime_memory.py": {
+      "lines": 424,
+      "role": "prime-addressed exponent store",
+      "classification": "EXPERIMENTAL"
+    },
+    "Intelligence/pvsnp_memory.py": {
+      "lines": 474,
+      "role": "P-vs-NP framed memory",
+      "classification": "EXPERIMENTAL"
+    },
+    "Intelligence/counterfactual_intelligence.py": {
+      "lines": 754,
+      "role": "five mining-domain modalities (predictive/causal/counterfactual/topological/geometric) over Manifold11D + ExactFoldedStateEngine",
+      "classification": "ACTIVE_SUPPORTING",
+      "note": "honest header: exact counterfactuals only over already-computed nonces; modalities are reasoning frameworks, not established intelligence"
+    },
+    "Intelligence/predictive_solver.py": {
+      "lines": 333,
+      "role": "nonce solve attempt via structure (not search)",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/folded_state.py": {
+      "lines": 179,
+      "role": "exact folded-state execution engine",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/salamander.py": {
+      "lines": 1124,
+      "role": "self-healing/self-optimising substrate",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/salamander_agentic.py": {
+      "lines": 781,
+      "role": "agentic codebase scanner + autonomous optimizer",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/self_healing/": {
+      "lines": 2700,
+      "role": "governor, meta_optimizer, failure bus, wiring inspector, self_repair (1485L), veritas ledger",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/autonomous_capabilities.py": {
+      "lines": 1030,
+      "role": "three autonomies: ValidityLearner drift retrain, CuopMeter/Learner, SelfOptimisingLoop, AutonomySupervisor, CassiniCycleLedger",
+      "classification": "ACTIVE_SUPPORTING",
+      "note": "import defect (AutonomousCapabilitySupervisor typo) fixed this branch"
+    },
+    "Intelligence/meta_evolution.py": {
+      "lines": 781,
+      "role": "meta-evolutionary intelligence (mining analogue of PYTHAGORAS)",
+      "classification": "EXPERIMENTAL"
+    },
+    "Intelligence/agentic_mining.py": {
+      "lines": 895,
+      "role": "cold-start-to-cool-down mining workflow",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/agentic_controller.py": {
+      "lines": 712,
+      "role": "classical-quantum hybrid controller",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/quantum_stack.py": {
+      "lines": 706,
+      "role": "recovered HYBA intelligence layers, wired",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/search_crystal.py": {
+      "lines": 396,
+      "role": "verified 32-face search orchestration",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/chain_verification.py": {
+      "lines": 460,
+      "role": "JV gate-5 full-chain verification on live modules",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/igpu_telemetry.py": {
+      "lines": 914,
+      "role": "iGPU-on-11D self-telemetry",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/backend_binding.py": {
+      "lines": 556,
+      "role": "iGPU-first compute-backend binding",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/intelligence_integration.py": {
+      "lines": 603,
+      "role": "cross-scale coupling layer",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/intelligence_bus.py": {
+      "lines": 198,
+      "role": "module bus",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/mining_bridge.py": {
+      "lines": 313,
+      "role": "orchestrator <-> mining engine bridge",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/hardware_config.py": {
+      "lines": 455,
+      "role": "platform-aware hardware configuration",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/safety_constraints.py": {
+      "lines": 447,
+      "role": "safety gates incl. hashrate cap checks",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/lucas_scales.py": {
+      "lines": 428,
+      "role": "Lucas scale progression state",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/lucas_attractor.py": {
+      "lines": 116,
+      "role": "Lucas-15 fixed point of Poincare-Cassini ontology",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/pathfinder.py": {
+      "lines": 161,
+      "role": "Lucas-15 gradient navigation in 11D",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/pde_substrate.py": {
+      "lines": 656,
+      "role": "PDE/variational-calculus substrate",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/agi_substrate.py": {
+      "lines": 249,
+      "role": "canonical AGI substrate interface",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/layered_intelligence_substrate.py": {
+      "lines": 255,
+      "role": "layered substrate",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/requirements.py": {
+      "lines": 361,
+      "role": "AGI/ASI requirements evaluator + SchoolVerdict",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/pythia_knowledge.py": {
+      "lines": 408,
+      "role": "seed knowledge facts",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/pythia_tools.py": {
+      "lines": 481,
+      "role": "capability/tool registry for PYTHIA",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/repo_engineer.py": {
+      "lines": 582,
+      "role": "bounded repo-inspection assistant",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/skill_graft.py + skill_loader.py": {
+      "lines": 636,
+      "role": "skill grafting/loading",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/neural_plasticity*.py + apple_*.py": {
+      "lines": 654,
+      "role": "adaptive cognitive wiring + Apple Silicon probes",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/autonomy_governance.py": {
+      "lines": 183,
+      "role": "governance surface",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "Intelligence/self_test.py": {
+      "lines": 777,
+      "role": "intelligence self-test harness (gate-verified)",
+      "classification": "ACTIVE_CANONICAL"
+    },
+    "Intelligence/asi/discovery_engine.py": {
+      "lines": 534,
+      "role": "Active Discovery Engine: hypothesis->experiment->intervene->surprise->revise loop, Bayesian experimental design (EIG), replication gate",
+      "classification": "ACTIVE_SUPPORTING",
+      "note": "wired via mla1517_platform_v3.4/python/discovery_runtime.py + tests; capability is domain-bound to rule-composition experiments"
+    },
+    "Intelligence/asi/world_model.py": {
+      "lines": 130,
+      "role": "cumulative causal theory over rule compositions; ablation-based attribution (Pearl rung-2 on own experiment history)",
+      "classification": "EXPERIMENTAL",
+      "note": "real capability; bound to discovery domain, not the general state model"
+    },
+    "Intelligence/asi/metacognition.py": {
+      "lines": 116,
+      "role": "MetacognitiveMonitor: confidence/calibration tracking + strategy switching over evolution strategies",
+      "classification": "EXPERIMENTAL",
+      "note": "calibration concept present; bound to PYTHAGORAS evolution domain"
+    },
+    "Intelligence/asi/hierarchical_planning.py": {
+      "lines": 109,
+      "role": "goal->subgoal task-tree decomposition for code-refactoring domain",
+      "classification": "EXPERIMENTAL"
+    },
+    "Intelligence/asi/continual_learning.py": {
+      "lines": 114,
+      "role": "EWC anti-forgetting over learned parameter vectors",
+      "classification": "EXPERIMENTAL"
+    },
+    "Intelligence/asi/predictive_processing.py": {
+      "lines": 314,
+      "role": "prediction-error minimisation loop",
+      "classification": "EXPERIMENTAL"
+    },
+    "Intelligence/asi/causal_reasoning.py": {
+      "lines": 346,
+      "role": "causal reasoning over domain graphs",
+      "classification": "EXPERIMENTAL",
+      "note": "weaker than toe/causal_ladder (no identification/adjustment machinery)"
+    },
+    "Intelligence/asi/ (remaining 18 modules)": {
+      "lines": 1900,
+      "role": "analogical/bayesian reasoning, curiosity, developmental, global_workspace, information_integration, manifold_bridge, novelty_search, robustness, safety_alignment, self_referential, superintelligence_dimensions, theory_of_mind, universal_intelligence, framework, four_approaches, compositional_generalization, neural_plasticity",
+      "classification": "EXPERIMENTAL"
+    },
+    "Intelligence/consciousness/": {
+      "lines": 772,
+      "role": "consciousness_engine, emergence_metrics, quantum_consciousness_system",
+      "classification": "EXPERIMENTAL"
+    },
+    "Intelligence/nobel_fields_intelligence.py": {
+      "lines": 457,
+      "role": "domain intelligence",
+      "classification": "DUPLICATE",
+      "note": "parallel implementation of millennium/nobel_fields_intelligence.py (516L)"
+    },
+    "Intelligence/agentic_mining_evals.py": {
+      "lines": 320,
+      "role": "crawl/walk/run evals",
+      "classification": "DISCONNECTED",
+      "note": "no importers, no __main__"
+    },
+    "Intelligence/endpoint_wrapper.py": {
+      "lines": 290,
+      "role": "endpoint intelligence wrapper",
+      "classification": "DISCONNECTED"
+    },
+    "Intelligence/intelligent_wrappers.py": {
+      "lines": 501,
+      "role": "wrappers",
+      "classification": "DISCONNECTED"
+    },
+    "Intelligence/mining_api_intelligence.py": {
+      "lines": 349,
+      "role": "mining API intelligence",
+      "classification": "DISCONNECTED"
+    },
+    "millennium/millennium_suite.py + probes": {
+      "lines": 1546,
+      "role": "Clay-prize deterministic probe suite",
+      "classification": "ACTIVE_SUPPORTING",
+      "note": "test-wired"
+    },
+    "millennium/poincare_cassini_search.py": {
+      "lines": 467,
+      "role": "11D search topology as traversal machine (DodecaIcosahedron32, anchors, weighted distance)",
+      "classification": "DISCONNECTED",
+      "note": "TRAPPED: zero importers; candidate engine for topological/geometric reasoning and navigation"
+    },
+    "millennium/mathematical_discovery.py": {
+      "lines": 3108,
+      "role": "MathematicalFrontier/TheoreticalSpaceExplorer/MathematicalDiscoveryEngine",
+      "classification": "DISCONNECTED",
+      "note": "TRAPPED: largest single intelligence file; zero importers"
+    },
+    "millennium/nobel_fields_intelligence.py": {
+      "lines": 516,
+      "role": "domain intelligence",
+      "classification": "DUPLICATE",
+      "note": "parallel of Intelligence/nobel_fields_intelligence.py"
+    },
+    "millennium/poincare_golden_11d.py": {
+      "lines": 553,
+      "role": "11D fold",
+      "classification": "DUPLICATE",
+      "note": "parallel of toe/poincare_golden_11d.py"
+    },
+    "millennium (grover_exact_scale, hyba_golden_mass_gap, hyba_poincare_yangmills, quantum_algorithms, poincare...)": {
+      "role": "exact-algorithm probes consumed by tests + toe/poincare_yangmills",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "millennium (clay_checklist, millennium_reasoning_service, yang_mills_data, sl5_millennium_bridge, mathematical_discovery)": {
+      "role": "probe services/bridges",
+      "classification": "DISCONNECTED"
+    },
+    "agi/": {
+      "lines": 16000,
+      "role": "enterprise ASI surface: agency/autonomy frameworks, reasoning engine w/ MetaCognition, simulations (Nash/MCMC/MonteCarlo/MCDA), quantum processor, dashboards, enhanced_ai (NLP, KB, cache)",
+      "classification": "EXPERIMENTAL",
+      "note": "reachability is test-only; zero production importers; agi/simulations.py and agi/reasoning.py contain reusable decision/analysis machinery marked TRAPPED candidates"
+    },
+    "asi/ (top-level)": {
+      "lines": 2700,
+      "role": "ASI-as-a-service: core orchestrator, macro_simulation causal engine, problem solver, quantum creator",
+      "classification": "DISCONNECTED",
+      "note": "asi/api.py, macro_simulation.py have zero importers; macro_simulation is a second causal engine candidate"
+    },
+    "pythagoras/": {
+      "lines": 3500,
+      "role": "domain-evolution engine (circuit/code/market/molecule/network domains) - source of the Intelligence/asi ports",
+      "classification": "ACTIVE_SUPPORTING",
+      "note": "test-wired; domain-bound generality evidence"
+    },
+    "phi_rotation/": {
+      "lines": 1500,
+      "role": "exact math primitives: cassini, pisot, korobov, morton, ring, rotation, lucas",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "mtheory/": {
+      "lines": 1000,
+      "role": "duality, hilbert, kk_spectrum; runtime dep of toe.engine",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "omega/": {
+      "lines": 100,
+      "role": "axiom + catalog",
+      "classification": "EXPERIMENTAL"
+    },
+    "l_hras/": {
+      "lines": 2500,
+      "role": "foundations (complexity/entanglement/gauge/quantization), modes, substrates, topologies; 10 no-importer files",
+      "classification": "EXPERIMENTAL"
+    },
+    "al_haras/": {
+      "lines": 8000,
+      "role": "claim register, conformance, envelope, environment boundary, gate runner - evidence/security plane",
+      "classification": "ACTIVE_SUPPORTING"
+    },
+    "pci/": {
+      "lines": 4300,
+      "role": "post-quantum civilization api, qi, forensics, transparency dashboard",
+      "classification": "DISCONNECTED",
+      "note": "zero importers repo-wide"
+    },
+    "integrations/": {
+      "lines": 800,
+      "role": "attestation, compute, mining, standard_conformance",
+      "classification": "DISCONNECTED"
+    },
+    "distributed/, conformance/, standard/, seam/, observability/, thermo/, core_engine/, hyba_compat, hyba_contracts, hyba_profiles, hyba_services, igpu/, kernels/, asic/, bench/, benchmarks/": {
+      "role": "platform/conformance/hardware surfaces",
+      "classification": "ACTIVE_SUPPORTING",
+      "note": "not intelligence surfaces except where noted"
+    },
+    "legacy/": {
+      "lines": 255,
+      "role": "255 files incl. prior Intelligence/, AETHEL_Subsystem, iGPU_Accelerator_JV, euclid, pythagoras, core_engine",
+      "classification": "HISTORICAL",
+      "note": "184 no-importer files; salvage review required per brief before dismissal: legacy/Intelligence/{discovery,exact_tensor_bridge,first_principles_quantum,mathematical_discovery,phi_resonance,self_test_search}.py flagged for targeted comparison"
+    },
+    "experiments/": {
+      "role": "result JSONs + toe_enterprise_collapse.py",
+      "classification": "EXPERIMENTAL"
+    },
+    "enhanced_intelligence/": {
+      "lines": 1,
+      "role": "empty package stub",
+      "classification": "UNREACHABLE"
+    }
+  },
+  "trapped_capabilities": [
+    {
+      "path": "millennium/poincare_cassini_search.py",
+      "why": "11D traversal/search engine with anchors + weighted metrics; candidate substrate for topological reasoning, representation navigation, and multi-step planning",
+      "status": "DISCONNECTED"
+    },
+    {
+      "path": "millennium/mathematical_discovery.py",
+      "why": "largest single intelligence file (3108L): frontier exploration/hypothesis machinery",
+      "status": "DISCONNECTED"
+    },
+    {
+      "path": "agi/simulations.py",
+      "why": "NashEquilibriumSolver, MonteCarloSimulation, BayesianMCMC, MultiCriteriaDecisionAnalysis - reusable decision/uncertainty machinery",
+      "status": "DISCONNECTED"
+    },
+    {
+      "path": "agi/reasoning.py",
+      "why": "AutonomousReasoningEngine + MetaCognition: hypothesis/goal/knowledge structures",
+      "status": "DISCONNECTED"
+    },
+    {
+      "path": "asi/macro_simulation.py",
+      "why": "second causal engine (GlobalDataset, CausalVariable, Intervention, Forecast)",
+      "status": "DISCONNECTED"
+    },
+    {
+      "path": "Intelligence/asi/world_model.py",
+      "why": "working ablation-based world-model learner - strongest existing model-revision capability; reachable only via discovery_runtime domain path",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "Intelligence/asi/discovery_engine.py",
+      "why": "Bayesian experimental design (EIG) is an existing value-of-information mechanism; currently domain-bound",
+      "status": "ACTIVE_SUPPORTING"
+    },
+    {
+      "path": "pci/",
+      "why": "entire package unreachable",
+      "status": "DISCONNECTED"
+    },
+    {
+      "path": "integrations/",
+      "why": "entire package unreachable",
+      "status": "DISCONNECTED"
+    },
+    {
+      "path": "legacy/Intelligence/",
+      "why": "7 prior-generation intelligence modules unclassified for salvage",
+      "status": "HISTORICAL"
+    }
+  ],
+  "defects_found": [
+    {
+      "file": "mla1517_platform_v3.4/python/autonomous_supervisor.py:55",
+      "issue": "imports AutonomousCapabilitySupervisor which does not exist; ImportError swallowed by try/except -> supervisor silently runs without the three autonomous capabilities",
+      "fix": "AutonomySupervisor (actual class name); tests/test_import_audit.py now passes",
+      "commit": "this branch"
+    }
+  ],
+  "known_boundaries_from_prior_pass": [
+    "causal discovery NOT ESTABLISHED (infer_causal_graph is a labelled correlation heuristic)",
+    "adjusted-effect recovery measured on synthetic SCMs with supplied DAG only",
+    "counterfactuals assume supplied SCM + full evidence; missing evidence fails closed",
+    "explanation is faithful to the supplied model, exact <=12 inputs",
+    "action policy selects among supplied candidates; does not generate actions",
+    "prediction evidence is binary Iris setosa-vs-rest only",
+    "toe/intelligences/* is mining-specific by design"
+  ]
+}

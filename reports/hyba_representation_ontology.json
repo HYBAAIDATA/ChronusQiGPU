@@ -1,0 +1,138 @@
+{
+  "section": "\u00a72 data ontology",
+  "forms": {
+    "raw_bytes": {
+      "provider": "bytes payload input",
+      "input_domain": "arbitrary bytes len<=MAX_FOLD_LEN (1MiB declared)",
+      "output_domain": "ZeckendorfVector on fold; uint64 chunk int on encode",
+      "invertibility": "exact \u2014 unfold(fold(x))==x byte-identical",
+      "precision_regime": "bit-exact",
+      "identity": "sha256 digest (content identity)",
+      "canonical_encoding": "big-endian uint64 per 8-byte chunk",
+      "storage_form": "block files (aethel snapshot) / dict[int,bytes] resident",
+      "reconstruction_rule": "Zeckendorf decode masks \u2192 chunk ints \u2192 bytes"
+    },
+    "structured_record": {
+      "provider": "MLAObject / LogicalState",
+      "input_domain": "index, lucas_scale, masks, addresses, site, seal, version, payload",
+      "output_domain": "64-byte MLA1517State descriptor / JSONL journal line",
+      "invertibility": "exact \u2014 canonical JSON roundtrip",
+      "precision_regime": "bit-exact",
+      "identity": "digest() over canonical fields (content address)",
+      "canonical_encoding": "canonical_json sort_keys separators",
+      "storage_form": "SQLite object_json / journal objects.jsonl",
+      "reconstruction_rule": "replay journal \u2192 LogicalState \u2192 digest verify"
+    },
+    "exact_algebraic_state": {
+      "provider": "Quadratic5 / ZPhi / Q(\u03b68) tensors",
+      "input_domain": "rationals + sqrt5 components; exact ring elements",
+      "output_domain": "Fraction pairs; exact tensor amplitudes (32B)",
+      "invertibility": "mathematically exact (Q(\u221a5) field ops)",
+      "precision_regime": "arbitrary-precision rational \u2014 no float",
+      "identity": "algebraic value",
+      "canonical_encoding": "Fraction numerator/denominator pairs",
+      "storage_form": "exact_tensor_state BLOB (PrimeDB) / in-memory",
+      "reconstruction_rule": "re-read + checksum/length invariants"
+    },
+    "folded_representation": {
+      "provider": "aethel.encoding ZeckendorfVector",
+      "input_domain": "bytes \u22641MiB",
+      "output_domain": "tuple[(offset,mask)] masks \u226492 bits, non-adjacent",
+      "invertibility": "exact by Zeckendorf uniqueness theorem",
+      "precision_regime": "bit-exact",
+      "identity": "same sha256 as source payload",
+      "canonical_encoding": "sorted (offset,mask) pairs",
+      "storage_form": "sparse_topology dict on TopologicalTensor",
+      "reconstruction_rule": "reverse_zeckendorf_expansion \u2192 bytes",
+      "honest_note": "masks up to ~12B per 8B chunk \u2014 representation, NOT compression; physical bytes measured in \u00a73"
+    },
+    "tensor_state": {
+      "provider": "PrimeStorageManifold TopologicalTensor",
+      "input_domain": "payload bytes + curvature/sector",
+      "output_domain": "pv-lattice integer_anchor \u2208[0,90) + sparse topology",
+      "invertibility": "payload exact via sparse; anchor is lossy navigation",
+      "precision_regime": "payload bit-exact; anchor approximate",
+      "identity": "uuid (object) + digest (content) + anchor (position)",
+      "canonical_encoding": "uuid4 + integer_anchor + sparse blocks",
+      "storage_form": "tensors dict + curved_storage prime commit",
+      "reconstruction_rule": "digest-verify \u2192 self-heal \u2192 re-verify"
+    },
+    "graph_state": {
+      "provider": "toe.causal CausalGraph / SCM",
+      "input_domain": "edges, weights, structural equations",
+      "output_domain": "state dict per node",
+      "invertibility": "exact for evaluated states",
+      "precision_regime": "exact ZPhi or float64 per path",
+      "identity": "content hash of graph spec",
+      "canonical_encoding": "edge list + weights",
+      "storage_form": "in-memory; receipts carry digests",
+      "reconstruction_rule": "re-evaluate from interventions"
+    },
+    "causal_state": {
+      "provider": "toe world_model / counterfactual worlds",
+      "input_domain": "observations, interventions",
+      "output_domain": "predicted states, outcome distributions",
+      "invertibility": "factual\u2192counterfactual via mutilate surgery",
+      "precision_regime": "exact or bounded",
+      "identity": "decision_sha256 binding",
+      "canonical_encoding": "interventions dict + receipt",
+      "storage_form": "MemoryStore world_model namespace",
+      "reconstruction_rule": "re-evaluate SCM under recorded interventions"
+    },
+    "metadata": {
+      "provider": "TopologicalTensor fields / LedgerEntry",
+      "input_domain": "per-object provenance",
+      "output_domain": "seq/index/value/quadruple/digest/writer",
+      "invertibility": "exact",
+      "precision_regime": "bit-exact",
+      "identity": "sha256 digest of payload",
+      "canonical_encoding": "JSONL journal record",
+      "storage_form": "ledger.jsonl + blocks/*.blk",
+      "reconstruction_rule": "attach() replay + check_consistent"
+    },
+    "receipt": {
+      "provider": "toe.receipts ReceiptLedger",
+      "input_domain": "kind, inputs, config, output, evidence",
+      "output_domain": "Receipt with receipt_sha256",
+      "invertibility": "content-addressed; verify() re-derives chain",
+      "precision_regime": "bit-exact",
+      "identity": "receipt_sha256",
+      "canonical_encoding": "canonical JSON",
+      "storage_form": "in-memory ledger; export",
+      "reconstruction_rule": "verify() walks the chain"
+    },
+    "address": {
+      "provider": "FibonacciAddress / prime_at / integer_anchor",
+      "input_domain": "Fibonacci index n\u22651; uuid",
+      "output_domain": "F_n value; prime key; anchor\u2208[0,90)",
+      "invertibility": "index\u2192value injective (fibonacci_index inverse); anchor NOT injective (mod-90 projection \u2014 navigation only)",
+      "precision_regime": "exact integer",
+      "identity": "address \u2260 identity (\u00a77: content=digest, fold=Zeckendorf mask, logical=Fib index, physical=block file)",
+      "canonical_encoding": "(index,value) pair validated at construction",
+      "storage_form": "ledger entry",
+      "reconstruction_rule": "fibonacci_index / address_of"
+    },
+    "index": {
+      "provider": "anchor_index / composite_index / _by_index",
+      "input_domain": "anchor int / composite key / fib index",
+      "output_domain": "uuid lists / entries",
+      "invertibility": "navigation structure \u2014 rebuilt from store",
+      "precision_regime": "exact",
+      "identity": "derived, not authoritative",
+      "canonical_encoding": "dict",
+      "storage_form": "in-memory maps",
+      "reconstruction_rule": "rebuild from ledger/objects"
+    },
+    "execution_record": {
+      "provider": "OverheadMeter / stage_evidence / heal_log",
+      "input_domain": "operation timing+bytes, backend, repairs",
+      "output_domain": "overhead_report dicts",
+      "invertibility": "n/a (telemetry)",
+      "precision_regime": "measured (process_time_ns / perf_counter_ns)",
+      "identity": "per-session",
+      "canonical_encoding": "JSON report",
+      "storage_form": "in-memory; exported into reports",
+      "reconstruction_rule": "n/a"
+    }
+  }
+}

@@ -268,6 +268,125 @@ def decide(
     return decision
 
 
+def decide_multiobjective(
+    state: Mapping[str, float],
+    candidates: Mapping[str, Mapping[str, float]],
+    *,
+    futures: FuturesFn,
+    objectives: Sequence[Objective],
+    weights: Optional[Mapping[str, float]] = None,
+    constraints: Sequence[Constraint] = (),
+    model_id: Optional[str],
+) -> Dict[str, Any]:
+    """Multi-objective selection: Pareto front + weighted scalarisation.
+
+    Every candidate's future is evaluated once; hard constraints exclude.
+    The Pareto front (non-dominated set across all objectives) is reported
+    verbatim, and ``weights`` — a per-target importance — picks the chosen
+    action by normalised scalarisation. Without weights the first
+    objective is the tie-break hierarchy. No single fake scalar score is
+    hidden: the front, the weights and the margin are all in the output.
+    """
+    if not objectives:
+        return {"available": False, "reason": "no objectives supplied"}
+    if not candidates:
+        return {"available": False, "reason": "no candidate actions"}
+    if not model_id:
+        return {
+            "available": False,
+            "reason": "no model identifier: futures cannot be bound to a model",
+        }
+    w = {o.target: float((weights or {}).get(o.target, 1.0)) for o in objectives}
+
+    evaluated: List[Dict[str, Any]] = []
+    for name in sorted(candidates):
+        action = {str(k): float(v) for k, v in candidates[name].items()}
+        rec: Dict[str, Any] = {
+            "action": name,
+            "intervention": action,
+            "admissible": False,
+        }
+        try:
+            future = _finite_mapping(futures(state, action))
+        except Exception as exc:
+            rec["excluded_because"] = f"future unavailable: {exc}"
+            evaluated.append(rec)
+            continue
+        violated = [
+            c.name for c in constraints if c.check(future) is False
+        ]
+        unevaluable = [
+            c.name for c in constraints if c.check(future) is None
+        ]
+        rec.update(future=future, violated=violated, unevaluable=unevaluable)
+        if unevaluable or violated:
+            rec["excluded_because"] = (
+                "constraint not evaluable" if unevaluable else "violates constraint"
+            )
+        else:
+            values = {}
+            for o in objectives:
+                v = future.get(o.target)
+                if v is None:
+                    rec["excluded_because"] = f"objective {o.target!r} not in the future"
+                    break
+                values[o.target] = v
+            else:
+                rec["admissible"] = True
+                rec["objective_values"] = values
+        evaluated.append(rec)
+
+    admissible = [r for r in evaluated if r["admissible"]]
+    if not admissible:
+        return {
+            "available": False,
+            "reason": "no admissible candidates",
+            "evaluated": evaluated,
+        }
+
+    def score(rec: Dict[str, Any]) -> float:
+        total = 0.0
+        for o in objectives:
+            v = rec["objective_values"][o.target]
+            total += w[o.target] * (v if o.sense == "maximize" else -v)
+        return total
+
+    def dominates(p: Dict[str, Any], q: Dict[str, Any]) -> bool:
+        better = equal = 0
+        for o in objectives:
+            a, b = p["objective_values"][o.target], q["objective_values"][o.target]
+            if o.sense == "maximize":
+                d = a - b
+            else:
+                d = b - a
+            better += d > 0
+            equal += d == 0
+        return better > 0 and better + equal == len(objectives)
+
+    front = [
+        r["action"]
+        for r in admissible
+        if not any(dominates(o, r) for o in admissible if o is not r)
+    ]
+    ordered = sorted(admissible, key=lambda r: (-score(r), r["action"]))
+    best = ordered[0]
+    return {
+        "available": True,
+        "selected_action": best["action"],
+        "scalarisation_weights": w,
+        "pareto_front": front,
+        "pareto_dominated": sorted(set(r["action"] for r in admissible) - set(front)),
+        "evaluated": evaluated,
+        "model_id": model_id,
+        "state_sha256": _digest({"state": _finite_mapping(state)}),
+        "reason": (
+            f"{best['action']} wins the weighted scalarisation over "
+            f"{len(objectives)} objectives; {len(front)} action(s) on the "
+            "Pareto front"
+        ),
+    }
+
+
 def counterfactual_futures(
     scm: Any, *, outcomes: Optional[Sequence[str]] = None, arithmetic: str = "float64"
 ) -> FuturesFn:
@@ -293,4 +412,5 @@ __all__ = [
     "PolicyDecision",
     "counterfactual_futures",
     "decide",
+    "decide_multiobjective",
 ]

@@ -1,0 +1,369 @@
+{
+  "format": "toe.representation_elevation/v1",
+  "generated_at": "2026-09-30T10:49:03.320495+00:00",
+  "commit": "a1c1db3ad541664ee25f5d05c379527aa9579308",
+  "results": [
+    {
+      "section": "separability",
+      "check": "algebraic lens separates planted recurrence (noise=0.0)",
+      "status": "PASS",
+      "evidence": {
+        "noise": 0.0,
+        "accuracy_by_representation": {
+          "raw": {
+            "available": true,
+            "loo_accuracy": 0.375,
+            "n": 48
+          },
+          "tensor": {
+            "available": true,
+            "loo_accuracy": 0.9792,
+            "n": 48
+          },
+          "algebraic": {
+            "available": true,
+            "loo_accuracy": 1.0,
+            "n": 48
+          },
+          "topological": {
+            "available": true,
+            "loo_accuracy": 1.0,
+            "n": 48
+          },
+          "golden_butterfly": {
+            "available": true,
+            "loo_accuracy": 0.7292,
+            "n": 48
+          }
+        }
+      }
+    },
+    {
+      "section": "separability",
+      "check": "algebraic lens separates planted recurrence (noise=0.05)",
+      "status": "PASS",
+      "evidence": {
+        "noise": 0.05,
+        "accuracy_by_representation": {
+          "raw": {
+            "available": true,
+            "loo_accuracy": 0.2708,
+            "n": 48
+          },
+          "tensor": {
+            "available": true,
+            "loo_accuracy": 0.9792,
+            "n": 48
+          },
+          "algebraic": {
+            "available": true,
+            "loo_accuracy": 1.0,
+            "n": 48
+          },
+          "topological": {
+            "available": true,
+            "loo_accuracy": 1.0,
+            "n": 48
+          },
+          "golden_butterfly": {
+            "available": true,
+            "loo_accuracy": 0.75,
+            "n": 48
+          }
+        }
+      }
+    },
+    {
+      "section": "separability",
+      "check": "algebraic lens separates planted recurrence (noise=0.15)",
+      "status": "PASS",
+      "evidence": {
+        "noise": 0.15,
+        "accuracy_by_representation": {
+          "raw": {
+            "available": true,
+            "loo_accuracy": 0.625,
+            "n": 48
+          },
+          "tensor": {
+            "available": true,
+            "loo_accuracy": 0.9583,
+            "n": 48
+          },
+          "algebraic": {
+            "available": true,
+            "loo_accuracy": 0.9583,
+            "n": 48
+          },
+          "topological": {
+            "available": true,
+            "loo_accuracy": 1.0,
+            "n": 48
+          },
+          "golden_butterfly": {
+            "available": true,
+            "loo_accuracy": 0.75,
+            "n": 48
+          }
+        }
+      }
+    },
+    {
+      "section": "memory",
+      "check": "per-view byte counts are measured honestly",
+      "status": "PASS",
+      "evidence": {
+        "raw_pickle_bytes": 1212,
+        "view_summary_bytes_total": 3524,
+        "per_view_bytes": {
+          "statistical": {
+            "summary_bytes": 626,
+            "available": true
+          },
+          "tensor": {
+            "summary_bytes": 477,
+            "available": true
+          },
+          "temporal": {
+            "summary_bytes": 578,
+            "available": true
+          },
+          "algebraic": {
+            "summary_bytes": 669,
+            "available": true
+          },
+          "geometric": {
+            "summary_bytes": 559,
+            "available": true
+          },
+          "topological": {
+            "summary_bytes": 615,
+            "available": true
+          }
+        },
+        "verdict": "NEGATIVE for compression: full view summaries (3524 B) exceed the pickled observation (1212 B) \u2014 representation is not storage compression. The small handle is the 64-hex observation digest (64 B); physical-storage claims are Pass 2 scope.",
+        "observation_digest_bytes": 64
+      }
+    },
+    {
+      "section": "selection",
+      "check": "recurrence-structured series selects algebraic",
+      "status": "PASS",
+      "evidence": {
+        "signature": {
+          "kind": "mapping",
+          "n_fields": 20,
+          "vector_dim": 20,
+          "n_series": 1,
+          "series_len": 20,
+          "integral": true,
+          "supplied_graph": false,
+          "temporal_support": true,
+          "recurrence": {
+            "series": "s",
+            "family": "golden",
+            "confidence": 0.7129719740506792,
+            "residual_margin_over_runner_up": 0.1782429935126698
+          }
+        },
+        "selected": [
+          [
+            "statistical",
+            "baseline descriptive layer \u2014 always admissible"
+          ],
+          [
+            "tensor",
+            "vector_dim >= 2 supports a non-degenerate quantum state"
+          ],
+          [
+            "temporal",
+            ">=4 values support Schr\u00f6dinger propagation"
+          ],
+          [
+            "algebraic",
+            "recurrence detected: family='golden' conf=0.713 margin=0.178"
+          ],
+          [
+            "geometric",
+            "fold to the 11-ball is non-degenerate; spectral layer applies"
+          ],
+          [
+            "topological",
+            "univariate series >= 8 admits delay embedding dim=3"
+          ]
+        ]
+      }
+    },
+    {
+      "section": "selection",
+      "check": "scalar observation selects only statistical; others rejected with reasons",
+      "status": "PASS",
+      "evidence": {
+        "selected": [
+          "statistical"
+        ],
+        "rejected": {
+          "tensor": "single scalar \u2014 tomography on dim-1 state carries no structure",
+          "temporal": "fewer than 4 values \u2014 no dynamical support",
+          "algebraic": "no Pisot-family recurrence above the confidence/margin floor and no integral structure to transform",
+          "geometric": "no multivariate or >=4-dim structure to fold/spectralise",
+          "topological": "insufficient points for a Vietoris-Rips complex (need >=4 multivariate rows or >=8 univariate samples)",
+          "causal_graph": "no graph supplied; correlation inference is not causal discovery"
+        }
+      }
+    },
+    {
+      "section": "selection",
+      "check": "causal_graph selected iff a graph is supplied",
+      "status": "PASS",
+      "evidence": {
+        "with_graph": [
+          "statistical",
+          "tensor",
+          "algebraic",
+          "causal_graph"
+        ],
+        "without_graph_rejection": "no graph supplied; correlation inference is not causal discovery"
+      }
+    },
+    {
+      "section": "selection",
+      "check": "structureless iid series does not select algebraic",
+      "status": "PASS",
+      "evidence": {
+        "selected": [
+          "statistical",
+          "tensor",
+          "temporal",
+          "geometric",
+          "topological"
+        ],
+        "rejection": "no Pisot-family recurrence above the confidence/margin floor and no integral structure to transform"
+      }
+    },
+    {
+      "section": "identity",
+      "check": "all bound views carry the same observation digest",
+      "status": "PASS",
+      "evidence": {
+        "digest": "cd30d65ca798643498f069e4bba53f45a3e649763030134f3add9c2c15db7572",
+        "views": [
+          "algebraic",
+          "causal_graph",
+          "geometric",
+          "statistical",
+          "temporal",
+          "tensor",
+          "topological"
+        ]
+      }
+    },
+    {
+      "section": "identity",
+      "check": "receipt ledger verifies",
+      "status": "PASS",
+      "evidence": {
+        "ok": true,
+        "divergent_views": [],
+        "ledger": {
+          "ok": true,
+          "records": 7,
+          "failures": []
+        }
+      }
+    },
+    {
+      "section": "identity",
+      "check": "binding a foreign-digest view raises DivergenceError",
+      "status": "PASS",
+      "evidence": {}
+    },
+    {
+      "section": "causal_admit",
+      "check": "causal_graph unavailable without supplied structure, available with it",
+      "status": "PASS",
+      "evidence": {
+        "without_graph_reason": "no causal structure supplied; correlation-inferred graphs are not admitted (infer_causal_graph is a correlation heuristic, not causal discovery)",
+        "with_graph_summary": {
+          "n_nodes": 2,
+          "is_dag": true,
+          "graph_sha256": "cee83a802cd60d08e0c1b481533b8eadb6c8d49183a1182f65af596de551969c"
+        }
+      }
+    },
+    {
+      "section": "golden_contract",
+      "check": "supported-N invertibility table computed exactly (Bareiss det)",
+      "status": "PASS",
+      "evidence": {
+        "invertible_N": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40
+        ],
+        "singular_N": [
+          1
+        ],
+        "note": "det(M_phi^n)=\u00b11 does NOT imply the N-point butterfly is invertible; this table is the contract"
+      }
+    },
+    {
+      "section": "golden_contract",
+      "check": "spec precision_bound is the explicit i64-bounded contract",
+      "status": "PASS",
+      "evidence": {
+        "precision_bound": "i64-bounded"
+      }
+    },
+    {
+      "section": "golden_contract",
+      "check": "CPU emitter raises OverflowError on int64 overflow (never wraps)",
+      "status": "PASS",
+      "evidence": {
+        "behaviour": "raised"
+      }
+    }
+  ],
+  "summary": {
+    "checks": 15,
+    "passed": 15,
+    "failed": 0,
+    "unavailable": 0
+  }
+}

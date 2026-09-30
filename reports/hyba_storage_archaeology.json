@@ -1,0 +1,414 @@
+{
+  "section": "\u00a71 storage archaeology",
+  "classification_taxonomy": [
+    "CORE MATHEMATICAL SUBSTRATE",
+    "CONTROL-PLANE DATABASE",
+    "DURABLE EVIDENCE STORE",
+    "CACHE",
+    "MEMORY",
+    "ADDRESSING LAYER",
+    "COMPATIBILITY LAYER",
+    "LEGACY",
+    "EXPERIMENTAL",
+    "DISCONNECTED"
+  ],
+  "components": [
+    {
+      "component": "aethel.encoding (fold/unfold)",
+      "files": [
+        "aethel/encoding.py",
+        "aethel/zeckendorf.py",
+        "aethel/fibonacci.py"
+      ],
+      "classification": "CORE MATHEMATICAL SUBSTRATE",
+      "what_it_is": "Binet+Zeckendorf payload encoding: one non-adjacent Fibonacci mask per 8-byte chunk; unfold restores byte-identically; declared domain bound (MAX_FOLD_LEN=1MiB) fails closed.",
+      "status": "connected",
+      "evidence": "aethel/CONTRACT.md B1-B4; tests/test_aethel_encoding.py",
+      "files_present": [
+        "aethel/encoding.py",
+        "aethel/zeckendorf.py",
+        "aethel/fibonacci.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "aethel.storage (AddressSpace + CassiniLedger)",
+      "files": [
+        "aethel/storage.py"
+      ],
+      "classification": "CORE MATHEMATICAL SUBSTRATE",
+      "what_it_is": "Fibonacci-indexed block store; every transition appends a Cassini quadruple to an append-only ledger; forged/gapped/regressed streams raise before any read is served; atomic snapshot/attach with full replay-verify; multi-writer fork.",
+      "status": "connected",
+      "evidence": "aethel/CONTRACT.md A1-A6; tests/test_aethel_storage.py",
+      "files_present": [
+        "aethel/storage.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "aethel.primes (GaloisPrimeSubstrate)",
+      "files": [
+        "aethel/primes.py"
+      ],
+      "classification": "CORE MATHEMATICAL SUBSTRATE",
+      "what_it_is": "Composite keys = prime-power products in GF(2^61-1); one PrimeCell per uuid per prime lane holding a Zeckendorf exponent + Cassini parity.",
+      "status": "connected",
+      "evidence": "aethel/primes.py; tests/test_aethel_primes.py",
+      "files_present": [
+        "aethel/primes.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "aethel.manifold (PrimeStorageManifold)",
+      "files": [
+        "aethel/manifold.py",
+        "aethel/geodesic.py",
+        "aethel/gpu.py"
+      ],
+      "classification": "CORE MATHEMATICAL SUBSTRATE",
+      "what_it_is": "Topological tensor store: pv-lattice anchor, Zeckendorf sparse topology, prime-substrate commit, SHA-256 digest pinning, one-shot self-heal from redundant copies, geodesic navigation handoff to the proven search engine.",
+      "status": "connected",
+      "evidence": "aethel/CONTRACT.md; tests/test_aethel_manifold.py; tests/test_aethel_geodesic_handoff.py",
+      "files_present": [
+        "aethel/manifold.py",
+        "aethel/geodesic.py",
+        "aethel/gpu.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "aethel.shm (AethelQueue)",
+      "files": [
+        "aethel/shm.py"
+      ],
+      "classification": "CORE MATHEMATICAL SUBSTRATE",
+      "what_it_is": "mmap seqlock slot queue \u2014 pure-Python ABI v1 equivalent of mla1517_aethel.{c,h}; D10 seal \u00b11 gate at commit; attach fails closed (SegmentMissing / AbiVersionMismatch).",
+      "status": "connected",
+      "evidence": "tests/test_aethel_concurrency.py (incl. C header parse)",
+      "files_present": [
+        "aethel/shm.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "aethel.costs (OverheadMeter)",
+      "files": [
+        "aethel/costs.py"
+      ],
+      "classification": "CORE MATHEMATICAL SUBSTRATE",
+      "what_it_is": "Measured CPU/wall/payload-bytes accounting per instrumented op; structural_bytes floors; tracemalloc peaks.",
+      "status": "connected",
+      "evidence": "tests/test_aethel_overhead.py",
+      "files_present": [
+        "aethel/costs.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "mla1517.prime_db (reference object store)",
+      "files": [
+        "mla1517_platform_v3.4/python/mla1517/prime_db.py"
+      ],
+      "classification": "CORE MATHEMATICAL SUBSTRATE",
+      "what_it_is": "Reference algebraic object store: content-addressed objects, Cassini validation on write AND read, append-only lineage, idempotent duplicate writes, deterministic replay. Native lib explicitly absent \u2014 'physical capacity: NOT CLAIMED'.",
+      "status": "connected (reference semantics)",
+      "evidence": "CAPACITY_BOUNDARY constant; mla1517 tests",
+      "files_present": [
+        "mla1517_platform_v3.4/python/mla1517/prime_db.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "mla1517.state (LogicalState / MLA1517State)",
+      "files": [
+        "mla1517_platform_v3.4/python/mla1517/state.py",
+        "mla1517_platform_v3.4/python/mla1517/primedb_engine.py"
+      ],
+      "classification": "ADDRESSING LAYER",
+      "what_it_is": "The 12-dimension logical state vector (nonce, lucas, pisot, fib, zeckendorf, binet, prime_addr, route, eigen, cassini, time_state, gauge) \u2014 64-byte ctypes descriptor; digest() is the content identity.",
+      "status": "connected",
+      "evidence": "state.py digest(); primedb_engine.py ctypes layout",
+      "files_present": [
+        "mla1517_platform_v3.4/python/mla1517/state.py",
+        "mla1517_platform_v3.4/python/mla1517/primedb_engine.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "toe.poincare_golden_11d",
+      "files": [
+        "toe/poincare_golden_11d.py"
+      ],
+      "classification": "CORE MATHEMATICAL SUBSTRATE",
+      "what_it_is": "11D Poincar\u00e9-golden fold/unfold of vectors, Zeckendorf decoupling-mask certificates, GPU IO boundary (to_gpu_input/from_gpu_output), PoincareFoldedArray view.",
+      "status": "connected",
+      "evidence": "fold_poincare_11d_vector/unfold; compute_zeckendorf_certificate",
+      "files_present": [
+        "toe/poincare_golden_11d.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "toe.receipts (ReceiptLedger)",
+      "files": [
+        "toe/receipts.py"
+      ],
+      "classification": "DURABLE EVIDENCE STORE",
+      "what_it_is": "Hash-chained receipt ledger binding inputs/config/output to sha256 receipts; verify() re-checks the whole chain.",
+      "status": "connected",
+      "evidence": "507-record ledger verified in pass-1 elevation report",
+      "files_present": [
+        "toe/receipts.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "al_haras.audit (HashChainAudit)",
+      "files": [
+        "al_haras/audit.py"
+      ],
+      "classification": "DURABLE EVIDENCE STORE",
+      "what_it_is": "File-locked, hash-chained append-only audit log with quarantine-on-corruption; canonical JSON digests.",
+      "status": "connected",
+      "evidence": "al_haras/audit.py _file_lock/_quarantine_file_unlocked",
+      "files_present": [
+        "al_haras/audit.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "Intelligence.pythia_store",
+      "files": [
+        "Intelligence/pythia_store.py"
+      ],
+      "classification": "MEMORY",
+      "what_it_is": "Persistent run journal + memory stored three ways (Zeckendorf/prime indices, 32-dim qudit fidelity retrieval, JSON disk snapshots); self-curation with tombstones \u2014 nothing deleted silently.",
+      "status": "connected",
+      "evidence": "module docstring; artifacts/pythia snapshots",
+      "files_present": [
+        "Intelligence/pythia_store.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "Intelligence.pythia_memory",
+      "files": [
+        "Intelligence/pythia_memory.py"
+      ],
+      "classification": "MEMORY",
+      "what_it_is": "Four-tier memory (working/episodic/semantic/archival) on the Zeckendorf substrate; tri-factor retrieval (relevance\u00d7recency\u00d7salience); golden-symplectic archival fold.",
+      "status": "connected",
+      "evidence": "module docstring",
+      "files_present": [
+        "Intelligence/pythia_memory.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "Intelligence.prime_memory",
+      "files": [
+        "Intelligence/prime_memory.py"
+      ],
+      "classification": "MEMORY",
+      "what_it_is": "Prime-addressed exponent store \u2014 payload chunks as prime exponents; SHA-256 fingerprint as address (composite product deliberately not materialized \u2014 honesty documented).",
+      "status": "connected",
+      "evidence": "module docstring",
+      "files_present": [
+        "Intelligence/prime_memory.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "Intelligence.pvsnp_memory",
+      "files": [
+        "Intelligence/pvsnp_memory.py"
+      ],
+      "classification": "EXPERIMENTAL",
+      "what_it_is": "Lucas-structured memory block model \u2014 explicitly an 'operational model, not a proof of P vs NP'.",
+      "status": "connected (honest model)",
+      "evidence": "module docstring NOTE ON HONESTY",
+      "files_present": [
+        "Intelligence/pvsnp_memory.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "mla1517.mining.intelligence_memory",
+      "files": [
+        "mla1517_platform_v3.4/python/mla1517/mining/intelligence_memory.py"
+      ],
+      "classification": "MEMORY",
+      "what_it_is": "Mining-domain intelligence memory + checkpoints.",
+      "status": "connected (domain-bound)",
+      "evidence": "mining coordinator/session imports",
+      "files_present": [
+        "mla1517_platform_v3.4/python/mla1517/mining/intelligence_memory.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "python_backend.core_modules.math_folding",
+      "files": [
+        "python_backend/core_modules/math_folding.py"
+      ],
+      "classification": "CORE MATHEMATICAL SUBSTRATE",
+      "what_it_is": "Exact Zeckendorf/Binet/Cassini/PULVINI/Pisot-Lucas contracts \u2014 CPU exact-arithmetic reference (Fraction/Quadratic5), no IEEE-754 sequence generation, no hardware claim.",
+      "status": "connected",
+      "evidence": "tests/test_math_folding.py",
+      "files_present": [
+        "python_backend/core_modules/math_folding.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "python_backend.core_modules.fold_pipeline",
+      "files": [
+        "python_backend/core_modules/fold_pipeline.py"
+      ],
+      "classification": "COMPATIBILITY LAYER",
+      "what_it_is": "Persistent folded-object execution + HMAC proof boundary over sqlite3 \u2014 SQLite is the journal, not the substrate.",
+      "status": "connected",
+      "evidence": "tests/test_fold_pipeline.py",
+      "files_present": [
+        "python_backend/core_modules/fold_pipeline.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "mla1517.store.PrimeDB (SQLite)",
+      "files": [
+        "mla1517_platform_v3.4/python/mla1517/store.py"
+      ],
+      "classification": "COMPATIBILITY LAYER",
+      "what_it_is": "Durable PrimeDB on SQLite WAL: content-addressed objects + exact 32-byte tensor payloads with sha256/length invariants verified on read.",
+      "status": "connected",
+      "evidence": "store.py; mla1517 tests",
+      "files_present": [
+        "mla1517_platform_v3.4/python/mla1517/store.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "hyba_services catalogue/core",
+      "files": [
+        "hyba_services/catalogue.py",
+        "hyba_services/core.py"
+      ],
+      "classification": "CONTROL-PLANE DATABASE",
+      "what_it_is": "Service catalogue / registry \u2014 control plane, not the data substrate.",
+      "status": "connected",
+      "evidence": "SQL-backed service records",
+      "files_present": [
+        "hyba_services/catalogue.py",
+        "hyba_services/core.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "pci.engine / hyba_compat",
+      "files": [
+        "pci/engine.py",
+        "hyba_compat/__init__.py"
+      ],
+      "classification": "COMPATIBILITY LAYER",
+      "what_it_is": "Pulvini/PCI compatibility shims \u2014 ordinary interfaces onto the substrate.",
+      "status": "connected",
+      "evidence": "hyba_compat exports",
+      "files_present": [
+        "pci/engine.py",
+        "hyba_compat/__init__.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "legacy/AETHEL_Subsystem + hardened_unified_substrate",
+      "files": [
+        "legacy/",
+        "aethel/hardened_unified_substrate.py"
+      ],
+      "classification": "LEGACY",
+      "what_it_is": "Frozen pre-consolidation monolith; aethel package is canonical, hardened_unified_substrate.py is a flat fa\u00e7ade re-exporting the legacy import surface.",
+      "status": "frozen",
+      "evidence": "aethel/README.md layout table",
+      "files_present": [
+        "legacy/",
+        "aethel/hardened_unified_substrate.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "toe.memory (MemoryStore)",
+      "files": [
+        "toe/memory.py"
+      ],
+      "classification": "MEMORY",
+      "what_it_is": "Pass-1 namespaced intelligence memory (observation/episodic/causal/strategy/world_model/procedural) with content-addressed recall, consolidation, regime invalidation \u2014 in-memory, receipt-chained.",
+      "status": "connected",
+      "evidence": "tests/test_toe_memory_world.py",
+      "files_present": [
+        "toe/memory.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "kellogg tensor/exact persistence",
+      "files": [
+        "kellogg/exact_tensor.py",
+        "kellogg/attest.py"
+      ],
+      "classification": "CORE MATHEMATICAL SUBSTRATE",
+      "what_it_is": "Exact Q(\u03b68)/ZPhi tensor state \u2014 the precision substrate; attest bindings.",
+      "status": "connected",
+      "evidence": "elevation benchmark roundtrips",
+      "files_present": [
+        "kellogg/exact_tensor.py",
+        "kellogg/attest.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "winner memory (mining)",
+      "files": [
+        "Intelligence/lucas_attractor.py"
+      ],
+      "classification": "MEMORY",
+      "what_it_is": "Winning-trajectory attractor memory, domain-bound to mining outcomes.",
+      "status": "connected (domain-bound)",
+      "evidence": "mining wiring",
+      "files_present": [
+        "Intelligence/lucas_attractor.py"
+      ],
+      "files_missing": []
+    },
+    {
+      "component": "Intelligence.folded_state",
+      "files": [
+        "Intelligence/folded_state.py"
+      ],
+      "classification": "CORE MATHEMATICAL SUBSTRATE",
+      "what_it_is": "Folded-state carrier consumed by intelligence surfaces (feeds TOE observations).",
+      "status": "connected",
+      "evidence": "module file",
+      "files_present": [
+        "Intelligence/folded_state.py"
+      ],
+      "files_missing": []
+    }
+  ],
+  "classification_counts": {
+    "CORE MATHEMATICAL SUBSTRATE": 11,
+    "ADDRESSING LAYER": 1,
+    "DURABLE EVIDENCE STORE": 2,
+    "MEMORY": 6,
+    "EXPERIMENTAL": 1,
+    "COMPATIBILITY LAYER": 3,
+    "CONTROL-PLANE DATABASE": 1,
+    "LEGACY": 1
+  },
+  "notes": [
+    "No component is DISCONNECTED by inspection: aethel is canonical and wired; legacy monolith is frozen behind a fa\u00e7ade alias.",
+    "Two distinct PrimeDB implementations exist: mla1517.prime_db (reference semantics, in-memory+journal) and mla1517.store (SQLite WAL durable). Reference is authoritative for semantics; SQLite is the durable compatibility backend.",
+    "No tenant-isolation surface found in al_haras (audit/boundary modules exist; tenancy must reuse AL HARAS environment-boundary model, not a new framework \u2014 \u00a721)."
+  ]
+}
