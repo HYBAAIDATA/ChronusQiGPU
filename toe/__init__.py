@@ -76,6 +76,8 @@ original toe.py monolith, and the substrate modules it runs on):
                                     authority/calibration, never averaged
     toe.generalization              DomainAdapter boundary + capability
                                     matrix + invariance + transfer probes
+    toe.self_governance             adversarial battery, pre-release
+                                    self-checks, measured promotion
     toe.intelligences/              the five intelligences (causal,
                                     geometric, plastic, counterfactual,
                                     quantum)
@@ -180,6 +182,11 @@ from .generalization import (
     run_capability,
     transfer_probe,
 )
+from .self_governance import (
+    adversarial_battery,
+    promotion_decision,
+    self_check,
+)
 from .expansion import (
     TOEExpansionEngine,
     TOEExpansionPolicy,
@@ -249,6 +256,9 @@ __all__ = [
     "invariance_report",
     "run_capability",
     "transfer_probe",
+    "adversarial_battery",
+    "self_check",
+    "promotion_decision",
     "IDENTIFIED",
     "NOT_IDENTIFIED",
     "PARTIALLY_IDENTIFIED",
