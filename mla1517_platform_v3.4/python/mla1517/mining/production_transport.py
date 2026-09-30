@@ -31,6 +31,7 @@ from manifold_pool_coordinator import (
 )
 
 from .coordinator import IntelligentPoolCoordinator
+from .pool_chain import bip34_height
 
 LOG = logging.getLogger(__name__)
 
@@ -132,6 +133,11 @@ class ProductionStratumClient(StratumClient):
     def status_snapshot(self) -> dict[str, Any]:
         """Return measured transport telemetry; unavailable values stay null."""
         snapshot = self.runtime_state.snapshot()
+        snapshot["session_id"] = self.runtime_state.session_id
+        generation = self.runtime_state.current_job or self.runtime_state.last_job
+        block_height = bip34_height(generation.coinb1) if generation is not None else None
+        snapshot.setdefault("job", {})["block_height"] = block_height
+
         counters = snapshot.get("counters", {})
         submitted = int(counters.get("submitted", 0) or 0)
         accepted = int(counters.get("accepted", 0) or 0)
