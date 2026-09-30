@@ -25,6 +25,16 @@ from .packs import (
     emit_gap_report,
     financial_services_pack,
 )
+from .planning import (
+    AuthorizedQuery,
+    ExecutionPlan,
+    FallbackPolicy,
+    PlanningRejected,
+    QueryBudget,
+    QueryRequest,
+    authorize_query,
+    build_execution_plan,
+)
 from .versioning import (
     Change,
     ChangeLevel,

@@ -129,4 +129,4 @@ def test_reported_artifact_is_valid_json_with_claim_boundaries():
     data = json.loads(path.read_text(encoding="utf-8"))
     assert data["schema"] == "igpu.contract_audit/v1"
     assert "summary" in data and "status" in data["summary"]
-    assert data["spec_present"] is False, "CONTRACTS.md is absent; record that honestly"
+    assert data["spec_present"] is True, "CONTRACTS.md is vendored; record that honestly"

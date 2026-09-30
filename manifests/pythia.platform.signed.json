@@ -1,0 +1,73 @@
+{
+  "schema": "hyba.platform/v1",
+  "name": "pythia-reference-platform",
+  "profile": "developer",
+  "version": "1.0.0",
+  "modules": [
+    "core",
+    "mla1517",
+    "primedb",
+    "al_haras",
+    "proof_service",
+    "observe"
+  ],
+  "services": [
+    {
+      "name": "control-api",
+      "object_model": "prime-db",
+      "policy_engine": "hyba-policy",
+      "lineage_store": "cassini-ledger"
+    },
+    {
+      "name": "operator-ui",
+      "object_model": "prime-db",
+      "policy_engine": "hyba-policy",
+      "lineage_store": "cassini-ledger"
+    },
+    {
+      "name": "mla1517-worker",
+      "object_model": "prime-db",
+      "policy_engine": "hyba-policy",
+      "lineage_store": "cassini-ledger"
+    },
+    {
+      "name": "primedb",
+      "object_model": "prime-db",
+      "policy_engine": "hyba-policy",
+      "lineage_store": "cassini-ledger"
+    },
+    {
+      "name": "al-haras-gateway",
+      "object_model": "prime-db",
+      "policy_engine": "hyba-policy",
+      "lineage_store": "cassini-ledger"
+    },
+    {
+      "name": "proof-service",
+      "object_model": "prime-db",
+      "policy_engine": "hyba-policy",
+      "lineage_store": "cassini-ledger"
+    },
+    {
+      "name": "observe",
+      "object_model": "prime-db",
+      "policy_engine": "hyba-policy",
+      "lineage_store": "cassini-ledger"
+    }
+  ],
+  "compose_files": [
+    "docker-compose.cuda.yml",
+    "docker-compose.hybrid.yml",
+    "docker-compose.igpu-linux.yml",
+    "docker-compose.igpu-wsl2.yml",
+    "docker-compose.metal.yml",
+    "docker-compose.override.yml",
+    "docker-compose.pools.yml",
+    "docker-compose.rocm.yml",
+    "docker-compose.yml"
+  ],
+  "compile_hash": "daea7a3bc411ee15fc14ecc36c7f4166669a4d47d42d578e74d10f3b6e819a16",
+  "signature_algorithm": "HMAC-SHA256",
+  "key_id": "dev-signing",
+  "signature": "7461a33aec1afbd6f24644a0b8ac1eb103651940dfebef6719b7c147a53c6567"
+}

@@ -486,24 +486,68 @@ def section_assurance(a: Audit) -> None:
 
 def section_governance(a: Audit) -> None:
     print("\n=== 12.8 / 12.9 / 12.10 governance artifacts ===")
-    for rel, contract, title in (
-        ("claims.yaml", "12.8", "claims.yaml (release gate)"),
-        ("pairings.yaml", "12.9", "pairings.yaml (pairing admission)"),
+    for rel, contract, title, loader in (
+        ("claims.yaml", "12.8", "claims.yaml (release gate)", "al_haras.claims_yaml.load_claims"),
+        (
+            "pairings.yaml",
+            "12.9",
+            "pairings.yaml (pairing admission)",
+            "al_haras.pairings.load_pairings",
+        ),
     ):
         found = [p for p in ROOT.rglob(rel)] + [p for p in ROOT.rglob(rel.replace(".yaml", ".yml"))]
-        if found:
-            a.record(
-                contract, title, PRESENT, f"found: {[str(p.relative_to(ROOT)) for p in found]}"
-            )
-        else:
+        if not found:
             a.record(contract, title, ABSENT, f"no {rel} (or .yml) anywhere in the repository")
-    compose_files = sorted(p.name for p in ROOT.glob("docker-compose*.yml"))
-    a.record(
-        "12.10",
-        "signed, versioned deployment manifest",
-        ABSENT,
-        f"deployment is hand-composed ({compose_files}) with no signed manifest binding them",
-    )
+            continue
+        module_name, fn_name = loader.rsplit(".", 1)
+        try:
+            registry = getattr(_import(module_name), fn_name)(found[0])
+            count = len(getattr(registry, "claims", getattr(registry, "verified", ())))
+            a.record(
+                contract,
+                title,
+                PRESENT,
+                f"found: {[str(p.relative_to(ROOT)) for p in found]}; "
+                f"loader parsed {count} entries",
+            )
+        except Exception as exc:
+            a.record(
+                contract,
+                title,
+                ABSENT,
+                f"{rel} present but failed to load: {exc}",
+            )
+    signed = sorted(ROOT.glob("manifests/*.signed.json"))
+    if not signed:
+        compose_files = sorted(p.name for p in ROOT.glob("docker-compose*.yml"))
+        a.record(
+            "12.10",
+            "signed, versioned deployment manifest",
+            ABSENT,
+            f"deployment is hand-composed ({compose_files}) with no signed manifest binding them",
+        )
+    else:
+        import os
+
+        from al_haras.deployment_manifest import load_manifest
+        from al_haras.deployment_manifest import verify_manifest
+
+        key = os.environ.get("DEPLOYMENT_MANIFEST_KEY", "").encode()
+        dev_key = ROOT / "manifests" / "dev-signing.key"
+        if not key and dev_key.exists():
+            key = dev_key.read_bytes()
+        verdicts = {}
+        for path in signed:
+            try:
+                verdicts[path.name] = verify_manifest(load_manifest(path), key) if key else "NO_KEY"
+            except Exception as exc:
+                verdicts[path.name] = f"INVALID: {exc}"
+        a.record(
+            "12.10",
+            "signed, versioned deployment manifest",
+            PRESENT if all(v is True for v in verdicts.values()) else ABSENT,
+            f"manifests: {verdicts}",
+        )
 
 
 def main(argv: Optional[List[str]] = None) -> int:
