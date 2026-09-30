@@ -1,40 +1,18 @@
-"""Resident iGPU OpenCL engine.
+"""Chronus resident OpenCL execution engine.
 
 One process-wide context, queue, and program cache
 -------------------------------------------------
-:class:`IGPUOpenCLEngine` owns exactly one OpenCL context per process. The
-quantum kernels in this module and the SHA-256d scanner in
-:mod:`mining.bitcoin_hasher` both bind to this engine, so device
-selection, program build, and device residency are decided once instead of
-being re-derived by each caller. ``IGPUOpenCLEngine`` is a singleton guarded
-by a lock: two threads racing to build the first context must observe the
-same instance, because two contexts on one device defeat buffer sharing and
-double the driver's memory footprint.
+:class:`ChronusOpenCLEngine` owns exactly one OpenCL context per process. The
+mathematical kernels in this module and the SHA-256d scanner both bind to this
+engine, so device selection, program build, and residency are decided once.
 
-Device policy: the iGPU is the default
---------------------------------------
-Selection prefers, in order: a HYBA alias device, then any device that
-:class:`igpu.detect.classify_integrated` accepts on
-evidence, then the first GPU, then the first enumerated device. The reason
-for the choice is retained on the engine and surfaced in telemetry.
+Chronus is the iGPU offering; Turing remains the compute substrate. Device
+selection prefers a HYBA alias device, then evidence-based integrated GPUs,
+then the best measured GPU/device. The selected backend and reason are retained
+and surfaced rather than inferred later.
 
-Resident buffers are per instance
---------------------------------
-:class:`ResidentBufferSet` allocates device buffers for exactly one owner and
-keys them by a per-instance id. Shape is never used as a pool key, so two
-:class:`ResidentIGPUEnsemble` objects of identical dimensions never share a
-buffer and a write through one cannot corrupt the other.
-
-Local size
-----------
-``cgemv_lr`` and ``cgemv_batch`` require a power-of-two local size. The
-requirement is validated on the host before every enqueue rather than
-asserted, because a trailing partial group silently changes which lanes run
-and an ``assert`` disappears under ``python -O``.
-
-Canonical home: ``igpu.engine`` (the consolidated iGPU package). The
-pre-consolidation path ``legacy/hyba/quantum/igpu_opencl.py`` re-exports
-this module.
+Resident buffers are per instance. Shape is never used as a pool key, so two
+resident objects of identical dimensions never alias a device buffer.
 """
 
 from __future__ import annotations
@@ -54,8 +32,8 @@ MAX_LOCAL_SIZE = 1024
 _RESIDENT_IDS = itertools.count(1)
 
 
-class IGPUOpenCLUnavailable(RuntimeError):
-    """No usable OpenCL device or runtime is available."""
+class ChronusOpenCLUnavailable(RuntimeError):
+    """No usable OpenCL device or runtime is available to Chronus."""
 
 
 class LocalSizeError(ValueError):
@@ -76,12 +54,7 @@ def validate_local_size(
     kernel: str,
     max_size: Optional[int] = None,
 ) -> int:
-    """Return ``local_size`` as int, rejecting anything not a power of two.
-
-    A non-power-of-two local size leaves a masked tail in the final group, so
-    the lanes that execute stop matching the launch geometry the caller asked
-    for. Rejecting it here keeps the failure loud.
-    """
+    """Return ``local_size`` as int, rejecting anything not a power of two."""
     if isinstance(local_size, bool) or not isinstance(local_size, (int, np.integer)):
         raise LocalSizeError(
             f"{kernel}: local_size must be an integer, got {type(local_size).__name__}"
@@ -99,12 +72,7 @@ def validate_local_size(
 
 
 def _round_to_local(global_size: int, local_size: int) -> int:
-    """Pad ``global_size`` up to a multiple of ``local_size``.
-
-    OpenCL requires the global range to be an exact multiple of the local
-    range. ``cgemv_lr``/``cgemv_batch`` bound-check ``get_global_id`` against
-    the real problem size, so padded lanes exit without touching memory.
-    """
+    """Pad ``global_size`` up to a multiple of ``local_size``."""
     return -(-int(global_size) // int(local_size)) * int(local_size)
 
 
@@ -116,9 +84,6 @@ typedef double acc_t;
 typedef float acc_t;
 #endif
 
-// y[m] = A[m,k] * (B[k,n] * x[n]) -- low-rank factored matrix-vector product.
-// One row of y per work-item; the inner reduction is serial, so the launch
-// geometry is the row count and the local size only shapes lane masking.
 __kernel void cgemv_lr(__global const acc_t *A,
                        __global const acc_t *B,
                        __global const acc_t *x,
@@ -138,7 +103,6 @@ __kernel void cgemv_lr(__global const acc_t *A,
     y[row] = acc;
 }
 
-// Y[m,b] = A[m,k] * (B[k,n] * X[n,b]) -- column-batched, row-major.
 __kernel void cgemv_batch(__global const acc_t *A,
                           __global const acc_t *B,
                           __global const acc_t *X,
@@ -166,18 +130,13 @@ __kernel void cgemv_batch(__global const acc_t *A,
 """
 
 
-class IGPUOpenCLEngine:
-    """Process-wide OpenCL context, queue, and program cache.
-
-    Construction is lazy: instantiating the engine performs no OpenCL work,
-    so importing this module never requires pyopencl and never builds a
-    context as a side effect of test collection.
-    """
+class ChronusOpenCLEngine:
+    """Process-wide Chronus OpenCL context, queue and program cache."""
 
     _singleton_lock = threading.Lock()
-    _instance: Optional["IGPUOpenCLEngine"] = None
+    _instance: Optional["ChronusOpenCLEngine"] = None
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> "IGPUOpenCLEngine":
+    def __new__(cls, *args: Any, **kwargs: Any) -> "ChronusOpenCLEngine":
         instance = cls._instance
         if instance is not None:
             return instance
@@ -206,7 +165,7 @@ class IGPUOpenCLEngine:
         self._initialized = True
 
     @classmethod
-    def get(cls) -> "IGPUOpenCLEngine":
+    def get(cls) -> "ChronusOpenCLEngine":
         """Return the process-wide engine, creating it under the lock."""
         return cls()
 
@@ -220,28 +179,42 @@ class IGPUOpenCLEngine:
             instance.close()
 
     def _select_device(self, cl: Any) -> Tuple[Any, str]:
-        """HYBA alias, then evidence-based iGPU, then GPU, then anything."""
-        from igpu.detect import classify_integrated
+        """HYBA alias, then evidence-based integrated GPU, then GPU/device."""
+        from .detect import classify_integrated
         from hyba.device import is_hyba_name
 
-        devices = [d for p in cl.get_platforms() for d in p.get_devices()]
+        devices = [device for platform in cl.get_platforms() for device in platform.get_devices()]
         if not devices:
-            raise IGPUOpenCLUnavailable("no OpenCL device enumerated")
+            raise ChronusOpenCLUnavailable("no OpenCL device enumerated")
         gpu_bit = int(getattr(cl.device_type, "GPU", 1 << 2))
-        gpus = [d for d in devices if int(getattr(d, "type", 0) or 0) & gpu_bit]
+        gpus = [
+            device
+            for device in devices
+            if int(getattr(device, "type", 0) or 0) & gpu_bit
+        ]
 
-        for dev in devices:
-            alias = is_hyba_name(dev)
+        for device in devices:
+            alias = is_hyba_name(device)
             if alias:
-                return dev, f"hyba alias {alias!r}"
-        for dev in gpus or devices:
-            is_igpu, reason = classify_integrated(getattr(dev, "vendor", ""), dev)
-            if is_igpu:
-                return dev, f"integrated device ({reason})"
+                return device, f"hyba alias {alias!r}"
+        for device in gpus or devices:
+            is_integrated, reason = classify_integrated(
+                getattr(device, "vendor", ""), device
+            )
+            if is_integrated:
+                return device, f"integrated device ({reason})"
         if gpus:
-            best = max(gpus, key=lambda d: int(getattr(d, "max_compute_units", 0) or 0))
+            best = max(
+                gpus,
+                key=lambda device: int(
+                    getattr(device, "max_compute_units", 0) or 0
+                ),
+            )
             return best, "highest-compute-unit GPU (no integrated device present)"
-        best = max(devices, key=lambda d: int(getattr(d, "max_compute_units", 0) or 0))
+        best = max(
+            devices,
+            key=lambda device: int(getattr(device, "max_compute_units", 0) or 0),
+        )
         return best, "highest-compute-unit device (no GPU present)"
 
     def ensure(self) -> bool:
@@ -255,22 +228,23 @@ class IGPUOpenCLEngine:
                 import pyopencl as cl
             except Exception as exc:
                 self._unavailable = f"pyopencl unavailable: {type(exc).__name__}: {exc}"
-                LOG.debug("iGPU engine unavailable: %s", self._unavailable)
+                LOG.debug("Chronus engine unavailable: %s", self._unavailable)
                 return False
             try:
                 device, reason = self._select_device(cl)
             except Exception as exc:
                 self._unavailable = f"device selection failed: {type(exc).__name__}: {exc}"
-                LOG.debug("iGPU engine unavailable: %s", self._unavailable)
+                LOG.debug("Chronus engine unavailable: %s", self._unavailable)
                 return False
             try:
                 context = cl.Context([device])
                 queue = cl.CommandQueue(
-                    context, properties=cl.command_queue_properties.PROFILING_ENABLE
+                    context,
+                    properties=cl.command_queue_properties.PROFILING_ENABLE,
                 )
             except Exception as exc:
                 self._unavailable = f"context creation failed: {type(exc).__name__}: {exc}"
-                LOG.warning("iGPU engine could not create a context: %s", self._unavailable)
+                LOG.warning("Chronus could not create a context: %s", self._unavailable)
                 return False
             self._cl = cl
             self._context = context
@@ -278,9 +252,11 @@ class IGPUOpenCLEngine:
             self._device = device
             self._device_name = str(getattr(device, "name", "") or "")
             self._selection_reason = reason
-            self._use_fp64 = "cl_khr_fp64" in str(getattr(device, "extensions", "") or "")
+            self._use_fp64 = "cl_khr_fp64" in str(
+                getattr(device, "extensions", "") or ""
+            )
             LOG.info(
-                "iGPU engine bound to %r via %s (fp64=%s)",
+                "Chronus bound to %r via %s (fp64=%s)",
                 self._device_name,
                 reason,
                 self._use_fp64,
@@ -289,7 +265,9 @@ class IGPUOpenCLEngine:
 
     def _require(self) -> None:
         if not self.ensure():
-            raise IGPUOpenCLUnavailable(self._unavailable or "iGPU engine unavailable")
+            raise ChronusOpenCLUnavailable(
+                self._unavailable or "Chronus OpenCL engine unavailable"
+            )
 
     @property
     def available(self) -> bool:
@@ -329,25 +307,29 @@ class IGPUOpenCLEngine:
 
     @property
     def uses_fp64(self) -> bool:
-        """True when the bound device advertises ``cl_khr_fp64``."""
         return self._use_fp64
 
     def as_dict(self) -> Dict[str, Any]:
         device = self._device
         return {
+            "product": "Chronus",
+            "compute_substrate": "Turing",
             "available": self._context is not None,
             "reason": self._unavailable,
             "device_name": self._device_name,
             "selection_reason": self._selection_reason,
-            "vendor": str(getattr(device, "vendor", "") or "") if device is not None else "",
+            "vendor": str(getattr(device, "vendor", "") or "")
+            if device is not None
+            else "",
             "fp64": self._use_fp64,
-            "max_work_group_size": (
-                int(getattr(device, "max_work_group_size", 0) or 0) if device is not None else 0
-            ),
+            "max_work_group_size": int(
+                getattr(device, "max_work_group_size", 0) or 0
+            )
+            if device is not None
+            else 0,
         }
 
     def program(self, source: str, options: Sequence[str] = ()) -> Any:
-        """Build (or fetch from cache) a program on the shared context."""
         if not isinstance(source, str) or not source.strip():
             raise ValueError("kernel source is required")
         opts = list(options)
@@ -362,9 +344,9 @@ class IGPUOpenCLEngine:
             return program
 
     def default_local_size(self, kernel: str, requested: Any = None) -> int:
-        """Validate ``requested`` against the device, else pick a safe default."""
         max_size = (
-            int(getattr(self._device, "max_work_group_size", 0) or 0) or MAX_LOCAL_SIZE
+            int(getattr(self._device, "max_work_group_size", 0) or 0)
+            or MAX_LOCAL_SIZE
         )
         if requested is not None:
             return validate_local_size(requested, kernel=kernel, max_size=max_size)
@@ -374,7 +356,6 @@ class IGPUOpenCLEngine:
         return validate_local_size(size, kernel=kernel, max_size=max_size)
 
     def close(self) -> None:
-        """Release cached programs; the context dies with its handle."""
         with self._lock:
             self._programs.clear()
             self._cl = None
@@ -383,27 +364,16 @@ class IGPUOpenCLEngine:
             self._device = None
             self._initialized = False
 
-    # -- buffer transfers -------------------------------------------------
-    #
-    # The buffer transfer entry points differ across pyopencl generations:
-    #
-    #   legacy  enqueue_write_buffer(queue, mem, flags, offset, hostbuf)
-    #   modern  enqueue_write_buffer(queue, mem, hostbuf, dst_offset=0)
-    #
-    # The 2026 series also dropped the public unprefixed aliases, leaving
-    # only ``_enqueue_write_buffer``. Rather than pin one layout, the engine
-    # probes a scratch buffer once and caches which calling convention the
-    # installed binding accepts, so both generations work.
-
     @staticmethod
     def _resolve_enqueue(cl: Any, name: str) -> Any:
         fn = getattr(cl, name, None) or getattr(cl, f"_{name}", None)
         if fn is None:
-            raise IGPUOpenCLUnavailable(f"pyopencl exposes neither {name} nor _{name}")
+            raise ChronusOpenCLUnavailable(
+                f"pyopencl exposes neither {name} nor _{name}"
+            )
         return fn
 
     def _transfer_layout(self) -> str:
-        """Return ``"modern"`` or ``"legacy"`` for this binding, probing once."""
         if self._transfer_style is not None:
             return self._transfer_style
         self._require()
@@ -419,7 +389,7 @@ class IGPUOpenCLEngine:
                 fn(self._queue, scratch, cl.mem_flags.READ_ONLY, 0, probe)
                 self._transfer_style = "legacy"
             except Exception as exc:
-                raise IGPUOpenCLUnavailable(
+                raise ChronusOpenCLUnavailable(
                     f"unrecognized pyopencl buffer transfer signature: {exc}"
                 ) from exc
         LOG.debug("pyopencl buffer transfer layout: %s", self._transfer_style)
@@ -430,7 +400,8 @@ class IGPUOpenCLEngine:
         cl = self._cl
         write = direction == "write"
         fn = self._resolve_enqueue(
-            cl, "enqueue_write_buffer" if write else "enqueue_read_buffer"
+            cl,
+            "enqueue_write_buffer" if write else "enqueue_read_buffer",
         )
         offset = int(offset)
         if self._transfer_layout() == "modern":
@@ -440,25 +411,15 @@ class IGPUOpenCLEngine:
             fn(self._queue, buffer, flags, offset, host)
 
     def write_buffer(self, buffer: Any, host: Any, offset: int = 0) -> None:
-        """Blocking host-to-device copy into ``buffer``."""
         self._transfer("write", buffer, host, offset)
 
     def read_buffer(self, buffer: Any, host: Any, offset: int = 0) -> Any:
-        """Blocking device-to-host copy from ``buffer`` into ``host``."""
         self._transfer("read", buffer, host, offset)
         return host
 
 
 class ResidentBufferSet:
-    """Device buffers owned by exactly one resident instance.
-
-    Buffers are keyed ``"<owner>/<instance_id>/<name>"`` and allocated
-    directly on first request. Shape is deliberately *not* part of the key:
-    a shape-keyed pool would hand the same device buffer to a second
-    resident of identical dimensions, and the two would then overwrite each
-    other's state without any visible error. Per-instance keys make that
-    collision impossible rather than unlikely.
-    """
+    """Device buffers owned by exactly one Chronus resident instance."""
 
     def __init__(self, engine: Any, owner: str) -> None:
         self._engine = engine
@@ -480,9 +441,10 @@ class ResidentBufferSet:
         return f"{self._owner}/{self._instance_id}/{name}"
 
     def buffer(self, name: str, nbytes: int, *, read_only: bool = False) -> Any:
-        """Return this instance's buffer ``name``, allocating it on demand."""
         if self._closed:
-            raise RuntimeError(f"buffer set for {self._owner}#{self._instance_id} is closed")
+            raise RuntimeError(
+                f"buffer set for {self._owner}#{self._instance_id} is closed"
+            )
         if nbytes < 0:
             raise ValueError(f"nbytes must be >= 0, got {nbytes}")
         with self._lock:
@@ -515,11 +477,14 @@ class ResidentBufferSet:
 
 
 def _engine_or_default(engine: Any) -> Any:
-    return engine if engine is not None else IGPUOpenCLEngine.get()
+    return engine if engine is not None else ChronusOpenCLEngine.get()
 
 
 def _as_square(
-    matrix: np.ndarray, dim: int, name: str, dtype: Any = np.float64
+    matrix: np.ndarray,
+    dim: int,
+    name: str,
+    dtype: Any = np.float64,
 ) -> np.ndarray:
     array = np.ascontiguousarray(matrix, dtype=dtype)
     if array.shape != (dim, dim):
@@ -528,7 +493,10 @@ def _as_square(
 
 
 def _as_vector(
-    vector: np.ndarray, dim: int, name: str, dtype: Any = np.float64
+    vector: np.ndarray,
+    dim: int,
+    name: str,
+    dtype: Any = np.float64,
 ) -> np.ndarray:
     array = np.ascontiguousarray(vector, dtype=dtype)
     if array.shape != (dim,):
@@ -537,8 +505,6 @@ def _as_vector(
 
 
 class _ResidentBase:
-    """Shared plumbing: an engine, a private buffer set, and typed uploads."""
-
     _owner = "resident"
 
     def __init__(self, engine: Any = None, label: str = "") -> None:
@@ -552,7 +518,6 @@ class _ResidentBase:
 
     @property
     def buffer_keys(self) -> Tuple[str, ...]:
-        """Fully qualified keys of this instance's buffers."""
         return self._buffers.keys
 
     @property
@@ -564,11 +529,11 @@ class _ResidentBase:
 
     @property
     def _acc_dtype(self) -> Any:
-        """Element dtype matching the compiled ``acc_t``: float64 only when
-        the bound device advertises ``cl_khr_fp64``, else float32. Buffer
-        sizes and host arrays must agree with the kernel's element width or
-        every read/write lands mid-element and silently produces garbage."""
-        return np.float64 if getattr(self._engine, "uses_fp64", False) else np.float32
+        return (
+            np.float64
+            if getattr(self._engine, "uses_fp64", False)
+            else np.float32
+        )
 
     @property
     def _acc_bytes(self) -> int:
@@ -590,8 +555,8 @@ class _ResidentBase:
         self.close()
 
 
-class ResidentIGPUState(_ResidentBase):
-    """One resident state with private A/x/y device buffers."""
+class ResidentChronusState(_ResidentBase):
+    """One Chronus resident state with private A/x/y device buffers."""
 
     _owner = "res_m"
 
@@ -611,7 +576,6 @@ class ResidentIGPUState(_ResidentBase):
         self._upload("x", _as_vector(vector, self.dim, "x", self._acc_dtype))
 
     def apply(self, B: np.ndarray, *, local_size: Any = None) -> np.ndarray:
-        """Return ``A @ (B @ x)`` computed on the device."""
         factor = _as_square(B, self.dim, "B", self._acc_dtype)
         self._buffers.buffer("B", factor.nbytes, read_only=True)
         self._upload("B", factor)
@@ -634,27 +598,45 @@ class ResidentIGPUState(_ResidentBase):
         return self._download("y", out)
 
 
-class ResidentIGPUEnsemble(_ResidentBase):
-    """A batch of resident states, each with its own device buffers.
-
-    Two ensembles constructed with the same ``(members, dim)`` are fully
-    independent: they receive different buffer sets under different instance
-    ids, so concurrent evaluation of the same ensemble shape cannot alias.
-    """
+class ResidentChronusEnsemble(_ResidentBase):
+    """A batch of independent Chronus resident states."""
 
     _owner = "ensa"
 
-    def __init__(self, members: int, dim: int, *, engine: Any = None, label: str = "") -> None:
+    def __init__(
+        self,
+        members: int,
+        dim: int,
+        *,
+        engine: Any = None,
+        label: str = "",
+    ) -> None:
         for field_name, value in (("members", members), ("dim", dim)):
             if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
-                raise ValueError(f"{field_name} must be a positive int, got {value!r}")
+                raise ValueError(
+                    f"{field_name} must be a positive int, got {value!r}"
+                )
         self.members = int(members)
         self.dim = int(dim)
-        super().__init__(engine=engine, label=label or f"ensemble{self.members}x{self.dim}")
+        super().__init__(
+            engine=engine,
+            label=label or f"ensemble{self.members}x{self.dim}",
+        )
         self._buffers.buffer("A", self.members * self.dim * self._acc_bytes)
-        self._buffers.buffer("B", self.dim * self.dim * self._acc_bytes, read_only=True)
-        self._buffers.buffer("X", self.dim * self.members * self._acc_bytes, read_only=True)
-        self._buffers.buffer("Y", self.members * self.members * self._acc_bytes)
+        self._buffers.buffer(
+            "B",
+            self.dim * self.dim * self._acc_bytes,
+            read_only=True,
+        )
+        self._buffers.buffer(
+            "X",
+            self.dim * self.members * self._acc_bytes,
+            read_only=True,
+        )
+        self._buffers.buffer(
+            "Y",
+            self.members * self.members * self._acc_bytes,
+        )
 
     def _as_A(self, matrix: np.ndarray) -> np.ndarray:
         array = np.ascontiguousarray(matrix, dtype=self._acc_dtype)
@@ -682,7 +664,6 @@ class ResidentIGPUEnsemble(_ResidentBase):
         self._upload("X", self._as_X(matrix))
 
     def apply(self, *, local_size: Any = None) -> np.ndarray:
-        """Return the ``(members, members)`` batch ``A @ (B @ X)``."""
         program = self._engine.program(_CL_SOURCE, self._build_options())
         local = self._engine.default_local_size("cgemv_batch", local_size)
         out = np.empty((self.members, self.members), dtype=self._acc_dtype)
@@ -746,13 +727,13 @@ class ResidentFoldedBytes(_ResidentBase):
 
 __all__ = [
     "DEFAULT_LOCAL_SIZE",
-    "IGPUOpenCLEngine",
-    "IGPUOpenCLUnavailable",
+    "ChronusOpenCLEngine",
+    "ChronusOpenCLUnavailable",
     "LocalSizeError",
     "ResidentBufferSet",
     "ResidentFoldedBytes",
-    "ResidentIGPUEnsemble",
-    "ResidentIGPUState",
+    "ResidentChronusEnsemble",
+    "ResidentChronusState",
     "is_power_of_two",
     "validate_local_size",
 ]
