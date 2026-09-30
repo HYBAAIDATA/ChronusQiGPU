@@ -58,4 +58,5 @@ def test_runtime_resources_are_declared_as_package_data():
     assert "BLUEPRINT_AUDIT.md" in data["gpu"]
     assert "kernels/*.cl" in data["igpu"]
     assert "deploy/*.yml" in data["igpu"]
+    assert "spec/*.json" in data["igpu"]
     assert "config.example.toml" in data["l_hras"]
