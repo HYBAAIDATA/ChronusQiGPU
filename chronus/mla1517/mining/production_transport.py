@@ -518,7 +518,11 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
                     if running:
                         bridge.stop()
                         running = False
-                    await asyncio.sleep(max(poll_ms / 1000, 0.01))
+                    with contextlib.suppress(TimeoutError):
+                        await asyncio.wait_for(
+                            self._work_wake.wait(), max(poll_ms / 1000, 0.01)
+                        )
+                    self._work_wake.clear()
                     continue
                 if not running:
                     bridge.start()

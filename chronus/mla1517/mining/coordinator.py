@@ -119,6 +119,19 @@ _EVIDENCE_MIN_INTERVAL_S = 0.5
 _NONCE_ORDERS = {"m32": NONCE_ORDER_M32, "hendrix": NONCE_ORDER_HENDRIX}
 
 
+def _positive_env(name: str, default: float) -> float:
+    raw = os.getenv(name, "").strip()
+    if not raw:
+        return default
+    try:
+        value = float(raw)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be a number") from exc
+    if value <= 0:
+        raise ValueError(f"{name} must be positive")
+    return value
+
+
 def resolve_nonce_order(value: str) -> str:
     """The configured nonce order; an unknown or unloadable one fails startup.
 
@@ -370,6 +383,10 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self._pending_correlation: dict[str, Any] | None = None
         self._precompute_task: asyncio.Task | None = None
         self._precompute_wake = asyncio.Event()
+        # Wakes the execution/hardware loops the moment pool state, a fresh
+        # job, or a recovery edge may have made work available; idle waits
+        # stay bounded by their declared slices, never blind.
+        self._work_wake = asyncio.Event()
         self._agentic_state_path: str | None = None
         self._identity_block_logged: set[str] = set()
         self._last_pool_outcome = PoolOutcome.NOT_SUBMITTED
@@ -396,6 +413,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 self._refresh_work_identity()
             except Exception:
                 LOG.exception("agentic identity refresh from Stratum status failed")
+            self._work_wake.set()
 
         self.stratum_status_sink = _stratum_sink
 
@@ -446,7 +464,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self,
         *,
         idle_s: float = 0.05,
-        max_backoff_s: float = 300.0,
+        max_backoff_s: float | None = None,
     ) -> None:
         """Mine through the Execution Router alone, with no MMIO bridge.
 
@@ -455,8 +473,15 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         records. Pool loss is retried with exponential backoff across every
         configured endpoint (primary first, then failover); an authorization
         refusal from every pool is retried too, so the worker and its
-        telemetry stay up while the operator fixes the credentials.
+        telemetry stay up while the operator fixes the credentials. The
+        backoff cap defaults to ``PYTHIA_RECONNECT_MAX_S`` (30 s), the same
+        calibrated bound the hardware loop uses: lost hashrate is linear in
+        reconnect latency, so a multi-minute silent gap is not acceptable.
         """
+        if max_backoff_s is None:
+            max_backoff_s = _positive_env("PYTHIA_RECONNECT_MAX_S", 30.0)
+        if max_backoff_s <= 0:
+            raise ValueError("max_backoff_s must be positive")
         if self.submit_enabled and self.chain_observer is None:
             raise RuntimeError("live mining requires a Bitcoin chain observer")
         if self._agentic_state_path:
@@ -503,7 +528,9 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                         continue
                 self._publish_metrics()
                 if self._executions_total == executions_before:
-                    await asyncio.sleep(idle_s)
+                    with contextlib.suppress(TimeoutError):
+                        await asyncio.wait_for(self._work_wake.wait(), idle_s)
+                    self._work_wake.clear()
         finally:
             self._precompute_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -533,6 +560,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         # The handshake's first mining.notify arrives before self.client is set.
         self._refresh_work_identity()
         self._precompute_wake.set()
+        self._work_wake.set()
         return client
 
     def apply_salamander_mode(self, mode: str, recovery_id: str | None = None) -> None:
@@ -563,6 +591,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self.agentic.set_recovery_active(active)
         self.loss.observe_recovery(time.monotonic(), active)
         self._precompute_wake.set()
+        self._work_wake.set()
 
     def _on_recovery_event(self, kind: str, record: RecoveryRecord) -> None:
         if kind == "recovery_verified" and hasattr(self, "recovery_effects"):
@@ -773,6 +802,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 target_generation=identity.target_generation,
             )
             self._precompute_wake.set()
+            self._work_wake.set()
         return identity
 
     def _set_throttled(self, throttled: bool) -> None:
@@ -1720,6 +1750,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 except LeaseConflict:
                     plan, reserved, fallback_reason = None, None, "stale_plan"
             self._precompute_wake.set()
+            self._work_wake.set()
             if plan is None:
                 window = self._next_window()
                 try:

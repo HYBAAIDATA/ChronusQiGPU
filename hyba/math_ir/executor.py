@@ -152,7 +152,7 @@ class IRExecutor:
         elif self.spec.executor == "ladder_executor":
             from chronus.mla1517.scaling import OpenCLLadderExecutor
 
-            self._host = OpenCLLadderExecutor()
+            self._host = OpenCLLadderExecutor(device=name)
             self._runner = self._run_ladder_opencl
         elif self.spec.executor == "exact_accelerator":
             from chronus.mla1517.accelerator import ExactOpenCLAccelerator

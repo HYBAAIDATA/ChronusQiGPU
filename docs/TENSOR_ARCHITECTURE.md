@@ -192,7 +192,7 @@ hardware gates (a physical OpenCL device plus new Chronus tensor kernels).
 ## 9. Test commands run for this change
 
 ```
-PYTHONPATH=.:mla1517_platform_v3.4/python python3 -m pytest \
+PYTHONPATH=.:chronus/mla1517_platform/python python -m pytest \
   tests/test_tensor_package.py \
   tests/test_tensor_contracts.py \
   tests/test_tensor_backends.py \
@@ -209,8 +209,9 @@ PYTHONPATH=.:mla1517_platform_v3.4/python python3 -m pytest \
 
 `tests/test_import_audit.py::test_the_repository_has_no_broken_imports`
 was also run; it has pre-existing, unrelated failures on the base branch
-(`gpu/backends/asic.py`, `hyba_substrate/memory_preservation.py`,
-`igpu/seam/workflow.py`, `aethel.device.IGpuSku`) that are not touched by
+(`gpu/backends/asic.py`, `hyba_substrate/memory_preservation.py`, the
+pre-consolidation `seam/workflow.py` in the retired igpu package, and the
+iGPU SKU class in `aethel.device`) that are not touched by
 this change (verified by running the same test against the base commit).
 A full repository-wide test run was not attempted; this list is the
 focused set relevant to the tensor consolidation.

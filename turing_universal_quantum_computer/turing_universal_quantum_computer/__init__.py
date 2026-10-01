@@ -9,17 +9,25 @@ facade, bounded phi-VQC ranking and the four-layer production execution plane.
 Layers
 ------
 turing_core           exact Q[sqrt(5)] algebra, Zeckendorf, T_phi fold,
-                      dual-overlay frame, nonce schedule and sha256d engine
-hilbert               exact sparse state vector; bounded support, fail closed
-stabilizer            exact Clifford tableau at arbitrary n (incl. 10,000)
-phi_quantum_machine   production 1,000-qubit Clifford/QASM/PULVINI facade
-phi_verification      basis-invariant stabilizer evidence gates
-phi_vqc               bounded M32 candidate ranker + exact Clifford skeleton
-quantum_walk          exact sparse/closed-form quantum walks
-annealing             exact TFIM/free-fermion and adiabatic surfaces
-swarm                 agents sampling exact Born distributions
-turing_core.ten_thousand  universal large-scale dispatch system
-register_tensor       audited facade over QuantumRegister
+                      dual-overlay frame, complete nonce schedule, sha256d
+                      engine, and (optional) the mathematical discovery engine
+hilbert               QuantumRegister — canonical exact sparse state vector
+                      over Q(i, sqrt(2)) + exact cyclotomics; n is unlimited,
+                      support is bounded (fail-closed max_amplitudes)
+stabilizer            StabilizerState — exact Clifford tableau; superposition,
+                      entanglement and measurement at arbitrary n (incl. 10000)
+phi_machine           HYBA 1,000-qubit Clifford execution profile on Turing,
+                      QASM subset, exact T_phi checkpoint custody and bounded
+                      algorithm capability metadata
+midas_vqc             32-face variational nonce ranker + exact Clifford skeleton;
+                      candidate ordering only, never mining consensus authority
+quantum_walk          coined cycle walk (sparse-exact) + closed-form
+                      continuous-time hypercube walk (exact at any n)
+annealing             exact TFIM free-fermion spectrum, adiabatic gap,
+                      Landau-Zener tunnelling (symbolic, any n)
+swarm                 QuantumSwarm — agents sampling exact Born distributions
+turing_core.ten_thousand  TenThousandQubitSystem — the universal engine
+register_tensor       QuantumTensor — audited facade over QuantumRegister
 exact_tensor          canonical Q(sqrt(2)) + i Q(sqrt(2)) exact state vector
 exact_state_vector    MLA1517 exact state-vector algebra
 quantum_tensor        first-principles tensor layer over C^N
@@ -108,6 +116,7 @@ from .strict_quantum import (  # noqa: F401
     verify_certificate,
 )
 
+# Heavy and optional-dependency modules are lazy so a base import stays cheap.
 _LAZY_MODULES = {
     "hilbert",
     "register_tensor",
@@ -136,6 +145,8 @@ _LAZY_MODULES = {
     "quantum_walk",
     "annealing",
     "swarm",
+    "phi_machine",
+    "midas_vqc",
 }
 
 _LAZY_SYMBOLS = {
@@ -178,20 +189,19 @@ _LAZY_SYMBOLS = {
     "landau_zener": "annealing",
     "adiabatic_condition": "annealing",
     "QuantumSwarm": "swarm",
-    "PhiQuantumCircuit": "phi_quantum_machine",
-    "PhiQuantumMachine": "phi_quantum_machine",
-    "PhiQuantumMachine1000": "phi_quantum_machine",
-    "PhiCheckpoint": "phi_quantum_machine",
-    "PhiMachineValidationError": "phi_quantum_machine",
-    "run_1000_qubit_verification": "phi_verification",
-    "run_1000_qubit_demonstration": "phi_verification",
-    "stabilizer_contains": "phi_verification",
-    "verify_ghz_stabilizer_group": "phi_verification",
-    "PhiGroverVQC": "phi_vqc",
-    "VQCConfig": "phi_vqc",
+    # recovered HYBA 1,000-qubit machine surface
+    "PhiQuantumCircuit": "phi_machine",
+    "PhiQuantumMachine1000": "phi_machine",
+    "PhiCheckpoint": "phi_machine",
+    "run_1000_qubit_verification": "phi_machine",
+    "seeded_clifford_digest": "phi_machine",
+    "state_digest": "phi_machine",
+    # recovered MIDAS/VQC surface
+    "MidasPhiVQCRanker": "midas_vqc",
+    "VQCConfig": "midas_vqc",
 }
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 
 def __getattr__(name: str):

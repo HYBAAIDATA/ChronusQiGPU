@@ -5,7 +5,7 @@ description: How to boot and end-to-end test the PYTHIA operator app (control AP
 
 # Testing the PYTHIA operator app (post-chronus-fold)
 
-Supersedes the path references in the older `mla1517_platform_v3.4`-era notes. Everything
+Supersedes the path references in the older pre-fold platform notes. Everything
 below verified live on `devin/1790841083-chronus-consolidation` (PR #43, 2026-10-01).
 
 ## Environment on this box
@@ -80,7 +80,7 @@ env MLA1517_STRATUM_USER=$VIABTC_USERNAME MLA1517_STRATUM_PASSWORD=$VIABTC_PASSW
   "endpoint not implemented" — string drifted).
 - `GET /api/v1/knowledge` → 200 exercises the lazy `chronus.mla1517.knowledge` import
   (and `announce_skills()` → `Intelligence.skill_graft` — populated fabric facts at boot).
-- Old namespaces must FAIL LOUDLY: `import igpu` and `import mla1517` →
+- Old namespaces must FAIL LOUDLY: importing `igpu` or `mla1517` must raise
   ModuleNotFoundError (no compat aliases by design — assert this).
 - `python -X utf8 -m unittest discover -s chronus/mla1517_platform/python` from REPO ROOT
   → 348 tests, ~23 s, 1 fail + 1 error at main parity (envelope `allowed` vs `available`
@@ -100,8 +100,7 @@ env MLA1517_STRATUM_USER=$VIABTC_USERNAME MLA1517_STRATUM_PASSWORD=$VIABTC_PASSW
 - Kill API → within one poll red `API OFFLINE` chip + hero `Control plane unreachable.`
   (still-open tab auto-reconnects on reboot — visible as resumed 5 s GETs in the log).
 
-## Blueprint drift to fix post-fold
-`.devin` blueprint still references `mla1517_platform_v3.4/` for unittest discover,
-the startup boot path, `remote_gpu_agent`/`prime` PYTHONPATH+module names
-(`mla1517.remote_gpu_agent` → `chronus.mla1517.remote_gpu_agent`, `mla1517.prime` →
-`chronus.mla1517.prime`) — update or those steps break.
+## Blueprint (post-fold, already retargeted)
+`.devin` blueprint was retargeted post-fold to `chronus/mla1517_platform` for
+unittest discover and the startup boot path, and to `chronus.mla1517` module
+names (`chronus.mla1517.remote_gpu_agent`, `chronus.mla1517.prime`).
