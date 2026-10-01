@@ -1,6 +1,6 @@
-"""PYTHAGORAS v12 benchmark target: HTTP router."""
-
-
+"""
+Benchmark Target 5: http_router.py
+"""
 class HTTPRouter:
     def __init__(self):
         self.routes = {}

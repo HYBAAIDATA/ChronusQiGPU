@@ -1,95 +1,101 @@
-"""Executable verification and healing entry point for PYTHAGORAS v12."""
-
-from __future__ import annotations
-
-import argparse
-import json
-from pathlib import Path
-from typing import Any, Dict, Optional, Sequence
-
-from .adapter import PythagorasEngineAdapter
-from .agents.orchestrator import MultiAgentEntangledOrchestrator
-from .enterprise.roi_governance import EnterpriseROIGovernanceEngine
-from .healing import RepositoryHealingOrchestrator
-
-
-SAMPLE_CODE = """\
-class DataPipeline:
-    def process(self, items: list) -> list:
-        result: list = []
-        for item in items:
-            result.append(item * 0.618034)
-        return result
 """
+PYTHAGORAS Platform Verification Runner v12.2
+Executes Adapter Façade API, EUCLID Intelligence Engine, Multi-Agent Coordination, and V6.5 Engine.
+"""
+import sys
+import os
+import json
+
+sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
+
+from pythagoras.adapter import PythagorasEngineAdapter
+from pythagoras.enterprise.roi_governance import EnterpriseROIGovernanceEngine
 
 
-def run_verification(generations: int = 5) -> Dict[str, Any]:
-    """Exercise every public v12 subsystem without modifying the repository."""
+def main():
+    print("==========================================================================")
+    print("PYTHAGORAS: Meta-Evolutionary Code Intelligence Platform v12.2")
+    print("Embedded Computational Engine Payload & Host Integration Façade API Active")
+    print("==========================================================================")
+
     adapter = PythagorasEngineAdapter()
-    analysis = adapter.analyze("data_pipeline.py", SAMPLE_CODE, topological_time=1.0)
-    evolution = adapter.evolve(
-        "data_pipeline.py",
-        SAMPLE_CODE,
-        generations=generations,
-        seed=42,
+
+    # 1. Analyze Sample Target with EUCLID Intelligence
+    sample_code = """
+class DataPipeline:
+    def process(self, items: list, threshold, scale) -> list:
+        res = []
+        for i in items:
+            if i is not None:
+                if i > threshold:
+                    res.append(i * 0.618034)
+        return res
+
+    def summarise(self, data):
+        total = 0
+        count = 0
+        for d in data:
+            total += d
+            count += 1
+        mean = total / count if count else 0.0
+        spread = max(data) - min(data) if data else 0.0
+        label = f"{mean:.2f}"
+        return {"mean": mean, "spread": spread, "label": label}
+"""
+    analysis_res = adapter.analyze("data_pipeline.py", sample_code, topological_time=1.0)
+    print("\n=== 1. ADAPTER ANALYSIS & EUCLID INTELLIGENCE RESULT ===")
+    print(json.dumps(analysis_res, indent=2))
+
+    # 2. Evolve Sample Target
+    evolution_res = adapter.evolve(
+        file_path="data_pipeline.py",
+        code_content=sample_code,
+        generations=10,
+        seed=42
     )
-    invariants = adapter.verify_property_invariants(
-        SAMPLE_CODE,
-        str(evolution["final_code"]),
-        topological_time=1.0,
+    print("\n=== 2. UNCONSTRAINED EVOLUTIONARY SEARCH RESULT ===")
+    print(json.dumps({
+        "target": evolution_res["target"],
+        "initial_phi": evolution_res["initial_phi"],
+        "final_phi": evolution_res["final_phi"],
+        "total_delta_phi": evolution_res["total_delta_phi"],
+        "accepted_steps_count": evolution_res["accepted_steps_count"],
+        "evaluations_valid": evolution_res["total_evals_valid"],
+        "evaluations_attempted": evolution_res["total_evals_attempted"],
+        "euclid_intelligence_telemetry": evolution_res["euclid_intelligence_telemetry"]
+    }, indent=2))
+
+    # 3. Property Invariants Verification Check
+    inv_res = adapter.verify_property_invariants(sample_code, evolution_res.get("final_code", sample_code), topological_time=1.0)
+    print("\n=== 3. PROPERTY INVARIANTS VERIFICATION ===")
+    print(json.dumps(inv_res, indent=2))
+
+    # 4. Enterprise ROI Governance Calculation
+    roi_res = EnterpriseROIGovernanceEngine.calculate_technical_debt_reduction(
+        total_evaluations=evolution_res["total_evals_attempted"],
+        valid_evaluations=evolution_res["total_evals_valid"],
+        initial_phi=evolution_res["initial_phi"],
+        final_phi=evolution_res["final_phi"],
+        wall_time_ms=evolution_res["wall_time_ms"]
     )
-    roi = EnterpriseROIGovernanceEngine.calculate_technical_debt_reduction(
-        total_evaluations=evolution.get("total_evals_attempted"),
-        valid_evaluations=evolution.get("total_evals_valid"),
-        initial_phi=float(evolution["initial_phi"]),
-        final_phi=float(evolution["final_phi"]),
-        wall_time_ms=float(evolution["wall_time_ms"]),
-    )
-    orchestrator = MultiAgentEntangledOrchestrator(adapter=adapter)
-    multi_agent = orchestrator.run_multi_agent_cycle(
-        [{"name": "data_pipeline.py", "code_str": SAMPLE_CODE}],
-        generations=max(1, min(generations, 3)),
-        seed=43,
-    )
-    return {
-        "version": "12.0.0",
-        "analysis": analysis,
-        "evolution": evolution,
-        "invariants": invariants,
-        "governance": roi,
-        "multi_agent": multi_agent,
-        "snapshot": adapter.snapshot(),
-    }
+    print("\n=== 4. ENTERPRISE ROI & GOVERNANCE METRICS ===")
+    print(json.dumps(roi_res, indent=2))
 
+    # 5. Multi-Agent Orchestration on the adapter's shared manifold
+    orchestration_res = adapter.orchestrate([{"name": "data_pipeline.py", "code_str": sample_code}], generations=10)
+    print("\n=== 5. MULTI-AGENT CYCLE & 11D MANIFOLD SNAPSHOT ===")
+    for fname, r in orchestration_res["session_results"].items():
+        print(json.dumps({k: v for k, v in r.items() if k != "final_code"}, indent=2))
+    print(json.dumps(adapter.snapshot()["manifold_snapshot"], indent=2))
 
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="PYTHAGORAS v12 integration runner")
-    parser.add_argument("--generations", type=int, default=5)
-    parser.add_argument("--heal-file", action="append", default=[])
-    parser.add_argument("--repo-root", default=".")
-    parser.add_argument("--verify-cmd", default=None)
-    parser.add_argument("--persistent-state", default=None)
-    return parser
+    # 6. Evolved code
+    print("\n=== 6. EVOLVED CODE ===")
+    print(evolution_res["final_code"])
 
-
-def main(argv: Optional[Sequence[str]] = None) -> int:
-    args = build_parser().parse_args(argv)
-    if args.heal_file:
-        bridge = RepositoryHealingOrchestrator(
-            repo_root=Path(args.repo_root),
-            verify_cmd=args.verify_cmd,
-            persistent_repo_path=args.persistent_state,
-        )
-        result: Any = bridge.optimize_files(
-            args.heal_file,
-            generations=args.generations,
-        )
-    else:
-        result = run_verification(generations=args.generations)
-
-    print(json.dumps(result, indent=2, sort_keys=True, default=str))
-    return 0
+    print("\n==========================================================================")
+    print("PYTHAGORAS v12.2 RUN COMPLETE")
+    print("==========================================================================")
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()

@@ -1,19 +1,7 @@
-"""
-PYTHAGORAS — COMPREHENSIVE TEST SUITE
-Rigorous verification of the 4-layer meta-evolutionary code intelligence platform.
+"""Repository contracts for the wholesale PYTHAGORAS v12.2 implementation."""
+import pythagoras
+from pythagoras.engine.v6_5_manifold_escape import V65ManifoldEscapeEngine
 
-Covers:
-- Module 1: PhiResonanceCalculator & ENH-02 Manifold Diagnostic
-- Module 2: CGP DAG evolution & concrete AST primitives (ENH-01 split_function)
-- Module 3: PythagorasMutator, Surrogate Model & ENH-12 Adversarial Primitives
-- Module 4: MetaEvolutionController, ENH-04 Simulated Annealing, ENH-09 Phase Transitions, ENH-10 Provenance
-- Module 5: AutoPrimitiveDiscovery dynamic operator promotion
-- Module 6: GeometryEvolution, ENH-06 Trigger Decoupling, ENH-07 Levels-Back, ENH-14 Collective Geometry
-- Module 7: Orchestrator, FIX-01 (__future__), FIX-02 (UTF-8), FIX-03 (Git lock), FIX-04 (Timeout),
-            ENH-03 (Cross-file seeding), ENH-05 (Conditions A, B, C), ENH-08 (Rolling-window),
-            ENH-11 (Transfer learning), ENH-13 (Multi-session memory), Kellogg v7.0 Quantum Reflection
-- Module 8: CLI execution
-"""
 
 from __future__ import annotations
 

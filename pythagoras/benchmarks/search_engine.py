@@ -1,6 +1,6 @@
-"""PYTHAGORAS v12 benchmark target: in-memory search engine."""
-
-
+"""
+Benchmark Target 1: search_engine.py
+"""
 class SearchEngine:
     def __init__(self, index_name: str):
         self.index_name = index_name
@@ -11,7 +11,7 @@ class SearchEngine:
 
     def query(self, term: str):
         results = []
-        for document in self.documents:
-            if term in document["content"]:
-                results.append(document)
+        for doc in self.documents:
+            if term in doc["content"]:
+                results.append(doc)
         return results

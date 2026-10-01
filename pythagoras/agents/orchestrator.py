@@ -1,131 +1,195 @@
-"""PYTHAGORAS v12 measured multi-agent orchestration.
-
-EUCLID evaluates Intelligence, PYTHAGORAS evolves candidates, SALAMANDER owns
-optimization/healing publication, AL HARAS receives the candidate validity
-gate, and PYTHIA receives the measured search-state record.
+"""
+PYTHAGORAS Multi-Agent Orchestrator
+===================================
+Every payload is produced by the agent's own computation:
+  EUCLID      — repository Intelligence authority; measured structural hotspots and Lucas telemetry
+  AL HARAS    — static security audit (core.sandbox.al_haras_audit)
+  SALAMANDER  — transactional healing/optimization using the production evolution engine
+  PYTHIA      — surrogate operator ranking for the next search, with measured RMSE
 """
 
-from __future__ import annotations
+import ast
+from typing import Any, Callable, Dict, List, Optional
 
-from typing import Any, Dict, List, Optional
-
-from pythagoras.adapter import CandidateTestRunner, PythagorasEngineAdapter
 from pythagoras.agents.manifold import AgentID, PayloadType, SharedEntangledManifold
+from pythagoras.core.euclid_intelligence import EuclidIntelligenceEngine
+from pythagoras.core.phi_metric import PhiResonanceCalculator
+from pythagoras.core.sandbox import al_haras_audit
+from pythagoras.core.state import measure_state
+from pythagoras.core.structure import analyze_structure, ast_depth
+
+
+def _hotspots(code_str: str) -> List[Dict[str, Any]]:
+    report = analyze_structure(code_str)
+    if not report.parse_ok:
+        return [{"kind": "parse_error"}]
+    spots: List[Dict[str, Any]] = []
+    if report.redundancy:
+        spots.append(
+            {
+                "kind": "redundancy",
+                "nodes": report.redundant_nodes,
+                "breakdown": report.redundancy,
+            }
+        )
+    if report.contradictory_annotations:
+        spots.append(
+            {
+                "kind": "contradictory_annotations",
+                "count": report.contradictory_annotations,
+            }
+        )
+    unannotated = (
+        report.annotation_sites
+        - report.coherent_annotations
+        - report.contradictory_annotations
+    )
+    if unannotated > 0:
+        spots.append({"kind": "unannotated_sites", "count": unannotated})
+    funcs = [
+        node
+        for node in ast.walk(report.effective_tree)
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    ]
+    if funcs:
+        deepest = max(funcs, key=ast_depth)
+        spots.append(
+            {
+                "kind": "deepest_function",
+                "name": deepest.name,
+                "depth": ast_depth(deepest),
+                "statements": len(deepest.body),
+            }
+        )
+    return spots
 
 
 class MultiAgentEntangledOrchestrator:
-    """Coordinate one measured v12 evolution cycle across the four agents."""
+    """Coordinate measured agent payloads over the shared manifold."""
 
     def __init__(
         self,
-        adapter: Optional[PythagorasEngineAdapter] = None,
-        persistent_repo_path: Optional[str] = None,
-    ) -> None:
-        self.manifold = SharedEntangledManifold()
-        self.adapter = adapter or PythagorasEngineAdapter(
-            persistent_repo_path=persistent_repo_path,
-            manifold=self.manifold,
+        calculator: Optional[PhiResonanceCalculator] = None,
+        manifold: Optional[SharedEntangledManifold] = None,
+        engine=None,
+    ):
+        from pythagoras.engine.evolution import PythagorasEvolutionEngine
+
+        self.manifold = manifold or SharedEntangledManifold()
+        self.calculator = calculator or PhiResonanceCalculator()
+        self.engine = engine or PythagorasEvolutionEngine(
+            target_phi=self.calculator.target_phi
         )
-        self.adapter.manifold = self.manifold
+        self.euclid = EuclidIntelligenceEngine()
 
     def run_multi_agent_cycle(
         self,
         codebase_files: List[Dict[str, Any]],
-        generations: int = 5,
-        seed: int = 42,
-        external_test_runner: Optional[CandidateTestRunner] = None,
+        generations: int = 10,
+        external_test_runner: Optional[Callable[[str], bool]] = None,
     ) -> Dict[str, Any]:
-        """Analyze and evolve each supplied file without writing the repository."""
-        session_results: Dict[str, Any] = {}
+        session_results: Dict[str, Dict[str, Any]] = {}
+        for file_info in codebase_files:
+            fname = file_info["name"]
+            code = file_info["code_str"]
+            initial_phi = self.calculator.compute_phi(code)
+            initial_state = measure_state(code, self.calculator, self.euclid)
 
-        for index, file_info in enumerate(codebase_files):
-            name = str(file_info["name"])
-            code_content = str(file_info["code_str"])
-            analysis = self.adapter.analyze(name, code_content, topological_time=0.0)
-
-            evolution = self.adapter.evolve(
-                name,
-                code_content,
-                generations=generations,
-                seed=seed + index,
-                external_test_runner=external_test_runner,
+            self.manifold.broadcast(
+                AgentID.EUCLID,
+                PayloadType.DIRECTIVE,
+                {
+                    "target_file": fname,
+                    "initial_phi": initial_phi,
+                    "state_11d": initial_state["vector"],
+                    "structural_hotspots": _hotspots(code),
+                    "intelligence": self.euclid.compute_intelligence_scale(code, 0.0),
+                },
             )
-            final_code = str(evolution.get("final_code", code_content))
-            gate = dict(evolution["candidate_gate"])
-            failed_gates = [
-                gate_name
-                for gate_name in ("parse_valid", "compile_valid", "runtime_valid")
-                if gate.get(gate_name) is False
-            ]
-            checked_gates = 2 + int(gate.get("runtime_valid") is not None)
 
+            audit = al_haras_audit(code)
             self.manifold.broadcast(
                 AgentID.AL_HARAS,
                 PayloadType.SECURITY_AUDIT,
                 {
-                    "target_file": name,
-                    "initial_phi": analysis["phi_score"],
-                    "ast_mutation_approved": not failed_gates,
-                    "validity_gates_checked": checked_gates,
-                    "security_violations": failed_gates,
-                    "runtime_gate": gate["runtime_gate"],
+                    "target_file": fname,
+                    "state_11d": initial_state["vector"],
+                    **audit.to_dict(),
                 },
             )
 
-            substrate_initial = float(evolution.get("initial_phi", 0.0))
-            substrate_final = float(evolution.get("final_phi", substrate_initial))
-            discovered = evolution.get("discovered_primitives", {})
+            if not audit.approved:
+                result = None
+                final_code, final_phi = code, initial_phi
+            else:
+                result = self.engine.run_optimization(
+                    fname,
+                    code,
+                    generations,
+                    external_test_runner,
+                )
+                final_code, final_phi = result["final_code"], result["final_phi"]
+
+            final_state = measure_state(final_code, self.calculator, self.euclid)
             self.manifold.broadcast(
                 AgentID.SALAMANDER,
                 PayloadType.OPTIMIZATION,
                 {
-                    "target_file": name,
-                    "original_phi": substrate_initial,
-                    "optimized_phi": substrate_final,
-                    "delta_phi": round(substrate_final - substrate_initial, 6),
-                    "applied_primitives": sorted(discovered),
-                    "candidate_accepted": evolution["candidate_accepted"],
+                    "target_file": fname,
+                    "original_phi": initial_phi,
+                    "optimized_phi": final_phi,
+                    "delta_phi": round(final_phi - initial_phi, 6),
+                    "state_11d": final_state["vector"],
+                    "applied_primitives": (
+                        [step["winning_operator"] for step in result["accepted_steps"]]
+                        if result
+                        else []
+                    ),
+                    "skipped_reason": (
+                        None
+                        if result
+                        else "blocked by AL HARAS import-time findings"
+                    ),
                 },
             )
 
+            features = self.calculator.extract_features(final_code)
+            active = {
+                name
+                for name, _ in self.engine._active_operators(
+                    external_test_runner is not None
+                )
+            }
+            ranking = sorted(
+                (
+                    (self.engine.surrogate.predict_gain(features, name), name)
+                    for name in active
+                    if not self.engine.surrogate.is_anti_primitive(name)
+                ),
+                reverse=True,
+            )
             self.manifold.broadcast(
                 AgentID.PYTHIA,
                 PayloadType.SEARCH_STRATEGY,
                 {
-                    "target_file": name,
-                    "initial_phi": substrate_initial,
-                    "search_space_id": name,
-                    "condition": evolution.get("condition"),
-                    "geometry_state": evolution.get("geometry_state", {}),
-                    "phase_transitions": evolution.get("phase_transitions", []),
+                    "search_space_id": fname,
+                    "state_11d": final_state["vector"],
+                    "next_operator_ranking": [
+                        {"operator": name, "predicted_gain": gain}
+                        for gain, name in ranking[:5]
+                    ],
+                    "surrogate_rmse": self.engine.surrogate.compute_rmse(),
                 },
             )
 
-            final_analysis = self.adapter.analyze(
-                name,
-                final_code,
-                topological_time=float(max(0, generations)),
-            )
-            session_results[name] = {
-                "file": name,
-                "measured_initial_phi": analysis["phi_score"],
-                "measured_final_phi": final_analysis["phi_score"],
-                "total_delta_phi": round(
-                    final_analysis["phi_score"] - analysis["phi_score"],
-                    6,
-                ),
-                "substrate_initial_phi": substrate_initial,
-                "substrate_final_phi": substrate_final,
-                "candidate_gate": gate,
-                "candidate_accepted": evolution["candidate_accepted"],
-                "euclid_intelligence_telemetry": evolution[
-                    "euclid_intelligence_telemetry"
-                ],
-                "11d_projection": self.manifold.agent_11d_states.get(
-                    AgentID.SALAMANDER.value,
-                    [],
-                ),
+            session_results[fname] = {
+                "file": fname,
+                "measured_initial_phi": initial_phi,
+                "measured_final_phi": final_phi,
+                "total_delta_phi": round(final_phi - initial_phi, 6),
+                "accepted_steps": len(result["accepted_steps"]) if result else 0,
                 "final_code": final_code,
+                "11d_state": final_state["axes"],
             }
 
         return {
