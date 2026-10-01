@@ -55,6 +55,14 @@ class ChronusContext:
             )
         return "cpu"
 
+    def _record_backend(self, backend: str, stage: str) -> None:
+        self._last_projection_backend = backend
+        used_cpu = not str(backend).startswith("opencl:")
+        if used_cpu and (self.require_gpu or not self.allow_cpu_fallback):
+            raise RuntimeError(
+                f"{stage} used {backend!r} while CPU fallback is disabled"
+            )
+
     def project_and_collapse_pv(self, data_tensor: np.ndarray, pv_base: float = PHI) -> int:
         self.fallback_reason = None
         flat = np.nan_to_num(
@@ -78,9 +86,11 @@ class ChronusContext:
                     else f"opencl_error:{type(exc).__name__}"
                 )
             else:
-                self._last_projection_backend = getattr(
-                    self.punch_host, "last_dispatch_backend", None
-                ) or getattr(self.punch_host, "backend", "cpu")
+                self._record_backend(
+                    getattr(self.punch_host, "last_dispatch_backend", None)
+                    or getattr(self.punch_host, "backend", "cpu"),
+                    "manifold projection",
+                )
                 norm_sq = float(out["float"][0])
                 if (
                     not np.isfinite(norm_sq)

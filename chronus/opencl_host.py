@@ -363,7 +363,7 @@ class OpenClPunchHost:
                 raise ValueError("punch batch size must be positive")
             # Reject an opcode we cannot compute BEFORE attempting a dispatch,
             # so an unimplemented operation can never be reported as a run.
-            self._require_supported(opcode)
+            self._require_channel(opcode, "ulong")
             if self.use_opencl and self._punch is not None:
                 try:
                     out = self._dispatch_punch(opcode, count, values)
@@ -377,7 +377,7 @@ class OpenClPunchHost:
                 self.last_dispatch_backend = "cpu"
             return {"ulong": self._cpu_punch(opcode, count, values)}
         if in_float is not None:
-            self._require_supported(opcode)
+            self._require_channel(opcode, "float")
             values = np.asarray(in_float, dtype=np.float32).reshape(-1)
             count = int(n) if n is not None else values.size // _DIM
             if count <= 0:
@@ -427,6 +427,19 @@ class OpenClPunchHost:
                 f"Supported: {['0x%02x' % o for o in cls.SUPPORTED_PUNCHES]}"
             )
         return int(opcode)
+
+    @classmethod
+    def _require_channel(cls, opcode: int, channel: str) -> int:
+        opcode = cls._require_supported(opcode)
+        allowed = {
+            "ulong": {PUNCH_ZECKENDORF_ENCODE, PUNCH_ZECKENDORF_DECODE},
+            "float": {PUNCH_MANIFOLD_COMPUTE},
+        }
+        if opcode not in allowed.get(channel, set()):
+            raise PunchUnsupported(
+                f"punch opcode {opcode:#04x} is incompatible with {channel} input"
+            )
+        return opcode
 
     def _cpu_punch(self, opcode: int, count: int, values):
         """CPU reference for the punch opcodes this host implements.

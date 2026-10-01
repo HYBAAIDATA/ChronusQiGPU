@@ -122,6 +122,8 @@ def _default_kernels(klass: DeviceClass) -> Set[KernelName]:
         KernelName.attest_result,
         KernelName.attest_compose,
         KernelName.sha256d_verify,
+        KernelName.sha256d_midstate,
+        KernelName.sha256d_merkle,
     }
     if klass in {
         DeviceClass.gpu_integrated,
