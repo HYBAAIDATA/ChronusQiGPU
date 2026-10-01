@@ -1,8 +1,9 @@
+"""V6.2 Engine: dynamic CGP-inspired search geometry.
+
+``n_cols`` is the number of ranked operators evaluated per generation.
+``levels_back`` is the maximum composite-recipe length.  No DAG population is
+represented or evolved.
 """
-V6.2 Engine: Dynamic CGP Geometry Evolution
-"""
-import ast
-import time
 from typing import Dict, List, Tuple, Any, Optional, Callable
 from pythagoras.core.phi_metric import PhiResonanceCalculator
 from pythagoras.core import sandbox
@@ -13,7 +14,7 @@ class CGPGeometryState:
     def __init__(self, initial_n_cols: int = 12, initial_levels_back: int = 3, pop_size: int = 10):
         self.n_cols: int = initial_n_cols
         self.levels_back: int = initial_levels_back
-        self.pop_size: int = pop_size
+        _ = pop_size  # retained only for constructor compatibility; search has no population
         self.total_expansions: int = 0
         self.total_contractions: int = 0
         self.stall_counter: int = 0
@@ -41,7 +42,6 @@ class CGPGeometryState:
         return {
             "n_cols": self.n_cols,
             "levels_back": self.levels_back,
-            "pop_size": self.pop_size,
             "total_expansions": self.total_expansions,
             "total_contractions": self.total_contractions
         }
@@ -52,7 +52,6 @@ class CGPGeometryState:
         obj = cls(
             initial_n_cols=int(state.get("n_cols", 12)),
             initial_levels_back=int(state.get("levels_back", 3)),
-            pop_size=int(state.get("pop_size", 10)),
         )
         obj.total_expansions = int(state.get("total_expansions", 0))
         obj.total_contractions = int(state.get("total_contractions", 0))
@@ -75,12 +74,10 @@ class CollectiveGeometryCoordinator:
             return CGPGeometryState()
         cols = sorted(int(x["n_cols"]) for x in self.observations)
         levels = sorted(int(x["levels_back"]) for x in self.observations)
-        pops = sorted(int(x.get("pop_size", 10)) for x in self.observations)
         mid = len(cols) // 2
         return CGPGeometryState(
             initial_n_cols=max(8, min(32, cols[mid])),
             initial_levels_back=max(2, min(8, levels[mid])),
-            pop_size=max(4, min(64, pops[mid])),
         )
 
     def observe(self, target: str, geometry: CGPGeometryState, delta_phi: float) -> None:
@@ -88,7 +85,6 @@ class CollectiveGeometryCoordinator:
             "target": target,
             "n_cols": geometry.n_cols,
             "levels_back": geometry.levels_back,
-            "pop_size": geometry.pop_size,
             "delta_phi": round(float(delta_phi), 6),
         })
         self.observations = self.observations[-100:]
