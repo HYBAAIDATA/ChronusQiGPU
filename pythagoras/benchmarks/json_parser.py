@@ -1,9 +1,9 @@
-"""PYTHAGORAS v12 benchmark target: JSON parser primitives."""
-
-
+"""
+Benchmark Target 6: json_parser.py
+"""
 class SimpleJSONParser:
-    def parse_number(self, value: str) -> float:
-        return float(value.strip())
+    def parse_number(self, s: str) -> float:
+        return float(s.strip())
 
-    def parse_string(self, value: str) -> str:
-        return value.strip().strip('"')
+    def parse_string(self, s: str) -> str:
+        return s.strip().strip('"')

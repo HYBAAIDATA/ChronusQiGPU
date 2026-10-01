@@ -1,6 +1,6 @@
-"""PYTHAGORAS v12 benchmark target: resonance calculation."""
-
-
+"""
+Benchmark Target 2: phi_resonance.py
+"""
 def calculate_resonance(val_a, val_b, val_c):
     res1 = val_a * 0.618034 + val_b
     res2 = val_b * 0.618034 + val_c
