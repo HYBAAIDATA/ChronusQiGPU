@@ -117,6 +117,6 @@ class NIST_Benchmark:
         cost0 = 0.5
         cost1 = float(np.sum(np.abs(state) ** 2 * cost_values))
         timings["qaoa_p1_maxcut"] = time.time() - t0
-        scores["qaoa_cost_reduction"] = float(cost0 - cost1)
+        scores["qaoa_cost_reduction"] = float(cost1 - cost0)
 
         return BenchmarkReport(scores=scores, timings_s=timings, average_score=float(np.mean(list(scores.values()))))

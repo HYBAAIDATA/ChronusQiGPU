@@ -338,16 +338,20 @@ class PrimeStorageManifold:
         self.punch_host = (
             punch_host if punch_host is not None else getattr(gpu, "punch_host", None)
         )
-        self.require_gpu = require_gpu
-        self.allow_cpu_fallback = allow_cpu_fallback
-        if (require_gpu or not allow_cpu_fallback) and not (
+        # The bound context's policy cannot be weakened from here: the
+        # effective policy is the stricter of the caller's and the context's.
+        self.require_gpu = require_gpu or bool(getattr(gpu, "require_gpu", False))
+        self.allow_cpu_fallback = allow_cpu_fallback and bool(
+            getattr(gpu, "allow_cpu_fallback", True)
+        )
+        if (self.require_gpu or not self.allow_cpu_fallback) and not (
             self.punch_host is not None and getattr(self.punch_host, "use_opencl", False)
         ):
             raise RuntimeError(
                 "OpenCL device required by execution policy but none is available"
             )
-        self.gpu.require_gpu = require_gpu
-        self.gpu.allow_cpu_fallback = allow_cpu_fallback
+        self.gpu.require_gpu = self.require_gpu
+        self.gpu.allow_cpu_fallback = self.allow_cpu_fallback
 
         # Per-stage execution provenance: which backend physically ran each
         # supported computational stage ("opencl:gpu" / "opencl:cpu" / "cpu").

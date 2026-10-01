@@ -107,7 +107,10 @@ def _contract_violations(
                 artifact = root / claim.artifact
                 if not artifact.exists():
                     violations.append(f"{claim.claim_id}: artifact {claim.artifact} absent")
-                elif hashlib.sha256(artifact.read_bytes()).hexdigest() != claim.artifact_hash:
+                elif (
+                    hashlib.sha256(artifact.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+                    != claim.artifact_hash
+                ):
                     violations.append(f"{claim.claim_id}: artifact_hash mismatch (C3)")
             elif claim.artifact or claim.artifact_hash:
                 violations.append(

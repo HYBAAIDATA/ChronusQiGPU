@@ -19,11 +19,11 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # Import enhanced AI components
-from hyba_backend.services.agi.enhanced_ai.conversational_interface import (
+from .conversational_interface import (
     EnhancedConversationalInterface,
 )
-from hyba_backend.services.agi.enhanced_ai.knowledge_base import EnhancedKnowledgeBase
-from hyba_backend.services.agi.enhanced_ai.nlp_processor import EnhancedNLPProcessor
+from .knowledge_base import EnhancedKnowledgeBase
+from .nlp_processor import EnhancedNLPProcessor
 
 logger = logging.getLogger(__name__)
 

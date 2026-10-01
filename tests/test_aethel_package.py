@@ -8,6 +8,7 @@ Pins the promotion contract: canonical package location, single-source
 import importlib
 from importlib.metadata import PackageNotFoundError, version
 import json
+import os
 import stat
 import subprocess
 import sys
@@ -156,7 +157,9 @@ class AethelPackagingTests(unittest.TestCase):
                 text=True,
             )
             self.assertEqual(folded.returncode, 0, folded.stderr)
-            self.assertEqual(stat.S_IMODE(store.stat().st_mode) & 0o077, 0)
+            if os.name != "nt":
+                # Windows reports synthetic mode bits; privacy is ACL-governed.
+                self.assertEqual(stat.S_IMODE(store.stat().st_mode) & 0o077, 0)
             unfolded = subprocess.run(
                 [
                     sys.executable,

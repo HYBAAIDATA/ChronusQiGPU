@@ -35,7 +35,7 @@ class _Process:
 @pytest.fixture
 def control(tmp_path, monkeypatch):
     env = {
-        "MLA1517_STRATUM_USER": "PYTHIA.001",
+        "MLA1517_STRATUM_USER": "rig.discovery",
         "PYTHIA_AUTOSTART_WORKERS": "1",
         "PYTHIA_BOOT_AUDIT": str(tmp_path / "BOOT_AUDIT.log"),
         "PYTHIA_WORKER_HEARTBEAT_DIR": str(tmp_path / "hb"),

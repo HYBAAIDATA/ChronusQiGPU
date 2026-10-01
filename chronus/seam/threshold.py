@@ -117,12 +117,18 @@ def verify_threshold(
     idem = digest_of(
         "|".join([req.kernel.value] + list(req.inputs)).encode("utf-8")
     )
+    if req.kernel is KernelName.attest_compose:
+        kernel_args = {"subjects": list(req.inputs)}
+    elif req.kernel is KernelName.attest_result:
+        kernel_args = {"subject": req.inputs[0] if req.inputs else ""}
+    else:
+        kernel_args = {"inputs": req.inputs}
     for device_id in verifiers:
         dispatched = dispatch(
             "threshold",
             device_id,
             req.kernel,
-            {"inputs": req.inputs},
+            kernel_args,
             f"tv:{idem}:{device_id}",
         )
         if isinstance(dispatched, Err):

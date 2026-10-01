@@ -3,7 +3,9 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-import aethel.phi_fold as phi_fold_module
+import importlib
+
+phi_fold_module = importlib.import_module("aethel.phi_fold")
 from aethel import (
     KernelBoundary,
     MemoryTier,
@@ -12,7 +14,6 @@ from aethel import (
     fold_result,
     phi_fold,
     phi_unfold,
-    unfold_partial,
     unfold_partial_with_stats,
 )
 from chronus.gpu_reference import get_gpu_spec, list_available_gpus
@@ -25,6 +26,12 @@ from chronus.phi_gpu import (
     PhiGPU,
 )
 from kellogg.phi_tensor_core import MetricTensor, PhiTensorCore, PrecisionMode
+from tensor import (
+    ExactnessMode,
+    Precision,
+    TensorOperationSpec,
+    TensorShape,
+)
 from tensor.backends.chronus_backend import ChronusBackend
 from turing_universal_quantum_computer.enhanced_classics import EnhancedGroverAlgorithm
 from turing_universal_quantum_computer.next_gen_2025 import QuantumSimulation2025
@@ -193,9 +200,18 @@ def test_july_gpu_reference_is_dated_reference_not_telemetry():
 
 def test_current_chronus_physical_backend_declares_tensor_ops_fail_closed():
     backend = ChronusBackend()
+    declared = backend.capabilities()["operations"]
     for operation in ("matmul", "add", "scale", "kron", "hadamard"):
-        assert backend.supports(operation)
-    assert not backend.supports("unknown-operation")
+        assert operation in declared
+    unknown = TensorOperationSpec(
+        name="unknown-operation",
+        input_shapes=(TensorShape((4, 4)), TensorShape((4, 4))),
+        output_shape=TensorShape((4, 4)),
+        dtype=Precision.FLOAT32,
+        exactness_mode=ExactnessMode.EXACT,
+        op_count=64,
+    )
+    assert not backend.supports(unknown)
 
 
 def test_completed_qsim_trotterization_retains_full_hilbert_dimension():

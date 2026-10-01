@@ -1499,7 +1499,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
 
     def _execution_route(self) -> str:
         hasher = self.execution_hasher
-        if str(getattr(hasher, "backend", "")).startswith("opencl") and (
+        backend = str(getattr(hasher, "backend", ""))
+        if backend.startswith(("opencl", "remote_opencl")) and (
             getattr(hasher, "k_m32", None) is not None
         ):
             return "opencl_m32"

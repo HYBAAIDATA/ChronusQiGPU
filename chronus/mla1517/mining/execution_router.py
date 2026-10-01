@@ -769,7 +769,9 @@ class ExecutionRouter:
             hash_count=completed_items,
             elapsed_seconds=elapsed,
             kernel_ms=kernel_ms,
-            temperature_c=None,  # not measured by the runtime
+            # Only a hasher that truly sampled device temperature (e.g. a
+            # remote agent's probe) may fill this; otherwise None.
+            temperature_c=getattr(self._hasher, "last_temperature_c", None),
             locally_valid_shares=locally_valid,
             pool_accepted=0,
             pool_rejected=0,

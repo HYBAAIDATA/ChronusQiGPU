@@ -73,7 +73,7 @@ def pool_endpoints(args, config: dict | None = None) -> list[PoolEndpoint]:
         if isinstance(p, dict) and p.get("enabled", True) is not False
     ]
     if configured:
-        ordered = configured
+        ordered = sorted(configured, key=lambda p: not p.get("enabled"))
         return [
             _endpoint(
                 f"pool{index}",
@@ -118,9 +118,9 @@ def _execution_hasher(backend: str):
         repo_root = str(Path(__file__).resolve().parents[3])
         if repo_root not in sys.path:
             sys.path.insert(0, repo_root)
-        from mining.remote_hasher import RemoteOpenCLHasher
+        from mining.remote_hasher import hasher_for_env
 
-        return RemoteOpenCLHasher.from_env()
+        return hasher_for_env()
     repo_root = str(Path(__file__).resolve().parents[3])
     if repo_root not in sys.path:
         sys.path.insert(0, repo_root)
