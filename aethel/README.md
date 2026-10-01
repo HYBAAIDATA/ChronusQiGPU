@@ -4,8 +4,9 @@
 storage, encoding, and shared-memory ABI do not depend on mining or search
 engines. Compatibility façades and narrow adapters expose selected APIs to
 legacy consumers; they do not own Aethel's data model. The package includes a
-pure-Python implementation of the shared-memory ingestion ABI
-(`mla1517_platform_v3.4/host/mla1517_aethel.{c,h}`).
+pure-Python implementation of the shared-memory ingestion ABI; its native
+counterpart is maintained under
+`chronus/mla1517_platform/host/mla1517_aethel.{c,h}`.
 
 The package is deliberately decoupled from mining operations. It requires
 only NumPy; OpenCL punch hosts are optional and resolved lazily or
@@ -20,7 +21,7 @@ injected via `punch_host=`.
 | `aethel.zeckendorf` | `HardenedZeckendorfCodec` (F_93, full uint64), `SparseTopology`, `apply_zeckendorf_compression` / `reverse_zeckendorf_expansion`, punch opcodes |
 | `aethel.primes` | `GaloisPrimeSubstrate`, `PrimeCell` — composite keys in `GF(2⁶¹−1)` |
 | `aethel.compute` | `VirtualSM`, `ComputeUnitPool`, `VirtualWarp`, `SPMDExecutor`, `OptimizedTensorMicroKernel`, `RTCoreMicroKernel`, `MicroKernelLibrary`, `DistributedActor`, `CollectiveOps`, `DistributedDataflowGraph`, `DAGNode`, `DependencyDAG` |
-| `aethel.gpu` | `TensorCoreGPU_Context` — pv-lattice projection, GPU or identical CPU path |
+| `aethel.gpu` | `ChronusContext` — pv-lattice projection, GPU or identical CPU path |
 | `aethel.manifold` | `PrimeStorageManifold`, `TopologicalTensor`, `ManifoldCurvature`, `ManifoldSector`, `GeodesicNavigator`, `SelfHealingSubstrate` |
 | `aethel.unified` | `UnifiedSubstrate` (alias `HardenedUnifiedSubstrate`) |
 | `aethel.shm` | `AethelQueue`, `AethelRecord` — mmap seqlock slot queue, ABI v1, `attach()` fails closed with `SegmentMissing` |

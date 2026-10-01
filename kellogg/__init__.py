@@ -153,6 +153,13 @@ __version__ = "3.5.0"
 # sys.modules through the ML import chain).
 _LAZY_SUBMODULE_ATTRS = {
     "exact_field": ("sqrt_f",),
+    "phi_tensor_core": (
+        "ManifoldType",
+        "MetricTensor",
+        "PhiTensorCore",
+        "TensorCoreError",
+        "TensorOpRecord",
+    ),
     "tensor_ml": (
         "CANONICAL",
         "FIELD_ID",
@@ -315,5 +322,6 @@ __all__ = [
     "attest",
     "verify_version",
     # tensor data plane + ML (lazy)
+    *_LAZY_SUBMODULE_ATTRS["phi_tensor_core"],
     *_LAZY_SUBMODULE_ATTRS["tensor_ml"],
 ]

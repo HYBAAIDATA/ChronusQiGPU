@@ -5,8 +5,11 @@
 //
 // Golden Quantum Ontology Transform in OpenCL:
 // Exact OpenCL GPU kernel matching hardware/rtl/golden_ontology_transform.sv.
-// Replaces FFT trigonometric twiddle factors (e^{i*omega*t}) with the exact discrete
-// Fibonacci recurrence basis F_{(n+k) mod N}.
+// N-point circular transform over the Fibonacci recurrence basis F_{(n+k) mod N}.
+// This is NOT an FFT replacement: no frequency decomposition is performed.
+// Arithmetic contract: i64-bounded — exact only while intermediate sums fit
+// in signed long; overflow wraps silently. Invertibility per N is a separate
+// contract (supported-N table), not implied by the 2x2 Cassini determinant.
 //
 // Computes dual-limb real & imaginary butterfly transformation:
 //   y_re[k] = sum_{n=0}^{N-1} x_re[n] * fib_basis[(n + k) % N]

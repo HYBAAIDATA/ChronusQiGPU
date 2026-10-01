@@ -17,12 +17,12 @@ compute telemetry and never multiply SHA-256d hashrate.
 - `gpu.manifold`: lazy access to the production Aethel manifold.
 - `gpu.readiness`: software and external-evidence production gates.
 - `gpu.backends`: lazy compatibility entry points for iGPU and ASIC backends.
-- `gpu.fleet`: lazy compatibility entry points for inventory and `SuperGPU`.
-- `igpu`: existing physical integrated-GPU/OpenCL backend. This remains a
-  compatibility package during staged migration into `gpu.backends.igpu`.
+- `gpu.fleet`: lazy compatibility entry points for inventory and `ChronusFabric`.
+- `chronus`: existing physical integrated-GPU/OpenCL backend. This remains a
+  compatibility package during staged migration into `gpu.backends.chronus`.
 - `hyba.hybrid`: current GPU/ASIC nonce coordination and host verification.
 
-`igpu.seam` now executes the available matrix, QFI, Grover, SHA-256d and host
+`chronus.seam` now executes the available matrix, QFI, Grover, SHA-256d and host
 attestation references instead of returning synthetic digest placeholders.
 Advertised kernels without executable semantics fail closed with
 `kernel_unavailable`.

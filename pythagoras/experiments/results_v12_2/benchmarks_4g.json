@@ -1,0 +1,592 @@
+{
+  "protocol": {
+    "seeds": 10,
+    "generations": 4,
+    "metric": "v12_1",
+    "euclid_gate": true,
+    "corpus": "benchmarks",
+    "files": [
+      "data_processor.py",
+      "http_router.py",
+      "json_parser.py",
+      "matrix_math.py",
+      "phi_resonance.py",
+      "search_engine.py"
+    ]
+  },
+  "reported_21_march": {
+    "A": {
+      "total_delta_phi": 0.1493,
+      "avg_final_phi": 0.6665,
+      "auto_discovered_primitives": 0,
+      "geometry_evolution_steps": 0,
+      "surrogate_rmse": 0.0817,
+      "accept_rate": 0.0,
+      "meta_steps": 0
+    },
+    "B": {
+      "total_delta_phi": 0.1949,
+      "avg_final_phi": 0.6779,
+      "auto_discovered_primitives": 1,
+      "geometry_evolution_steps": 2,
+      "surrogate_rmse": 0.0803,
+      "accept_rate": 0.4,
+      "meta_steps": 2
+    }
+  },
+  "conditions": {
+    "A_meta_off": {
+      "total_delta_phi": {
+        "mean": 0.184996,
+        "sd": 0.0,
+        "ci95": [
+          0.184996,
+          0.184996
+        ]
+      },
+      "avg_final_phi": {
+        "mean": 0.716634,
+        "sd": 0.0,
+        "ci95": [
+          0.716634,
+          0.716634
+        ]
+      },
+      "auto_discovered_primitives": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "geometry_evolution_steps": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "surrogate_rmse": {
+        "mean": 0.01249,
+        "sd": 0.0,
+        "ci95": [
+          0.01249,
+          0.01249
+        ]
+      },
+      "accept_rate": {
+        "mean": 0.2917,
+        "sd": 0.0,
+        "ci95": [
+          0.2917,
+          0.2917
+        ]
+      },
+      "meta_steps": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "evaluations": {
+        "mean": 12,
+        "sd": 0.0,
+        "ci95": [
+          12.0,
+          12.0
+        ]
+      },
+      "gain_per_100_evaluations": {
+        "mean": 1.541633,
+        "sd": 0.0,
+        "ci95": [
+          1.541633,
+          1.541633
+        ]
+      },
+      "rolling_3_win_gain": {
+        "mean": 0.02997,
+        "sd": 0.0,
+        "ci95": [
+          0.02997,
+          0.02997
+        ]
+      },
+      "phase_transitions": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "barrier_crossings": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "B_meta_on": {
+      "total_delta_phi": {
+        "mean": 0.202953,
+        "sd": 0.0,
+        "ci95": [
+          0.202953,
+          0.202953
+        ]
+      },
+      "avg_final_phi": {
+        "mean": 0.719627,
+        "sd": 0.0,
+        "ci95": [
+          0.719627,
+          0.719627
+        ]
+      },
+      "auto_discovered_primitives": {
+        "mean": 3,
+        "sd": 0.0,
+        "ci95": [
+          3.0,
+          3.0
+        ]
+      },
+      "geometry_evolution_steps": {
+        "mean": 14,
+        "sd": 0.0,
+        "ci95": [
+          14.0,
+          14.0
+        ]
+      },
+      "surrogate_rmse": {
+        "mean": 0.012563,
+        "sd": 0.0,
+        "ci95": [
+          0.012563,
+          0.012563
+        ]
+      },
+      "accept_rate": {
+        "mean": 0.2917,
+        "sd": 0.0,
+        "ci95": [
+          0.2917,
+          0.2917
+        ]
+      },
+      "meta_steps": {
+        "mean": 14,
+        "sd": 0.0,
+        "ci95": [
+          14.0,
+          14.0
+        ]
+      },
+      "evaluations": {
+        "mean": 24,
+        "sd": 0.0,
+        "ci95": [
+          24.0,
+          24.0
+        ]
+      },
+      "gain_per_100_evaluations": {
+        "mean": 0.845638,
+        "sd": 0.0,
+        "ci95": [
+          0.845638,
+          0.845638
+        ]
+      },
+      "rolling_3_win_gain": {
+        "mean": 0.032536,
+        "sd": 0.0,
+        "ci95": [
+          0.032536,
+          0.032536
+        ]
+      },
+      "phase_transitions": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "barrier_crossings": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "C_budget_matched_off": {
+      "total_delta_phi": {
+        "mean": 0.202953,
+        "sd": 0.0,
+        "ci95": [
+          0.202953,
+          0.202953
+        ]
+      },
+      "avg_final_phi": {
+        "mean": 0.719627,
+        "sd": 0.0,
+        "ci95": [
+          0.719627,
+          0.719627
+        ]
+      },
+      "auto_discovered_primitives": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "geometry_evolution_steps": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "surrogate_rmse": {
+        "mean": 0.012731,
+        "sd": 0.0,
+        "ci95": [
+          0.012731,
+          0.012731
+        ]
+      },
+      "accept_rate": {
+        "mean": 0.169,
+        "sd": 0.0,
+        "ci95": [
+          0.169,
+          0.169
+        ]
+      },
+      "meta_steps": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "evaluations": {
+        "mean": 17,
+        "sd": 0.0,
+        "ci95": [
+          17.0,
+          17.0
+        ]
+      },
+      "gain_per_100_evaluations": {
+        "mean": 1.193841,
+        "sd": 0.0,
+        "ci95": [
+          1.193841,
+          1.193841
+        ]
+      },
+      "rolling_3_win_gain": {
+        "mean": 0.028469,
+        "sd": 0.0,
+        "ci95": [
+          0.028469,
+          0.028469
+        ]
+      },
+      "phase_transitions": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "barrier_crossings": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      }
+    }
+  },
+  "identical_final_phi_A_vs_B": 0,
+  "sensitivity_diagnostic": {
+    "data_processor.py": {
+      "phi": 0.648056,
+      "distinct_variants": 2,
+      "distinct_scores": 2,
+      "plateau_fraction": 0.0,
+      "verdict": "search_problem"
+    },
+    "http_router.py": {
+      "phi": 0.738774,
+      "distinct_variants": 2,
+      "distinct_scores": 2,
+      "plateau_fraction": 0.0,
+      "verdict": "local_optimum"
+    },
+    "json_parser.py": {
+      "phi": 0.806418,
+      "distinct_variants": 2,
+      "distinct_scores": 1,
+      "plateau_fraction": 0.0,
+      "verdict": "local_optimum"
+    },
+    "matrix_math.py": {
+      "phi": 0.572008,
+      "distinct_variants": 6,
+      "distinct_scores": 3,
+      "plateau_fraction": 0.0,
+      "verdict": "search_problem"
+    },
+    "phi_resonance.py": {
+      "phi": 0.601631,
+      "distinct_variants": 8,
+      "distinct_scores": 4,
+      "plateau_fraction": 0.25,
+      "verdict": "search_problem"
+    },
+    "search_engine.py": {
+      "phi": 0.747923,
+      "distinct_variants": 3,
+      "distinct_scores": 3,
+      "plateau_fraction": 0.3333,
+      "verdict": "search_problem"
+    }
+  },
+  "example_session_seed0": {
+    "A": {
+      "data_processor.py": {
+        "initial_phi": 0.648056,
+        "final_phi": 0.699658,
+        "evals": 1,
+        "generation_reached_final": 1,
+        "steps": [
+          [
+            1,
+            "ADD:AnnAssign",
+            0.051602,
+            false,
+            null
+          ]
+        ]
+      },
+      "http_router.py": {
+        "initial_phi": 0.738774,
+        "final_phi": 0.738774,
+        "evals": 0,
+        "generation_reached_final": 0,
+        "steps": []
+      },
+      "json_parser.py": {
+        "initial_phi": 0.806418,
+        "final_phi": 0.806418,
+        "evals": 0,
+        "generation_reached_final": 0,
+        "steps": []
+      },
+      "matrix_math.py": {
+        "initial_phi": 0.572008,
+        "final_phi": 0.657776,
+        "evals": 5,
+        "generation_reached_final": 4,
+        "steps": [
+          [
+            1,
+            "NON_LOCAL:function_split_refactor",
+            0.033188,
+            false,
+            null
+          ],
+          [
+            2,
+            "ADD:AnnAssign",
+            0.01728,
+            false,
+            null
+          ],
+          [
+            3,
+            "ADD:AnnAssign",
+            0.017538,
+            false,
+            null
+          ],
+          [
+            4,
+            "ADD:AnnAssign",
+            0.017762,
+            false,
+            null
+          ]
+        ]
+      },
+      "phi_resonance.py": {
+        "initial_phi": 0.601631,
+        "final_phi": 0.625676,
+        "evals": 1,
+        "generation_reached_final": 1,
+        "steps": [
+          [
+            1,
+            "NON_LOCAL:function_split_refactor",
+            0.024045,
+            false,
+            null
+          ]
+        ]
+      },
+      "search_engine.py": {
+        "initial_phi": 0.747923,
+        "final_phi": 0.771504,
+        "evals": 5,
+        "generation_reached_final": 1,
+        "steps": [
+          [
+            1,
+            "ADD:AnnAssign",
+            0.023581,
+            false,
+            null
+          ]
+        ]
+      }
+    },
+    "B": {
+      "data_processor.py": {
+        "initial_phi": 0.648056,
+        "final_phi": 0.699658,
+        "evals": 1,
+        "generation_reached_final": 1,
+        "steps": [
+          [
+            1,
+            "ADD:AnnAssign",
+            0.051602,
+            false,
+            null
+          ]
+        ]
+      },
+      "http_router.py": {
+        "initial_phi": 0.738774,
+        "final_phi": 0.738774,
+        "evals": 0,
+        "generation_reached_final": 0,
+        "steps": []
+      },
+      "json_parser.py": {
+        "initial_phi": 0.806418,
+        "final_phi": 0.806418,
+        "evals": 0,
+        "generation_reached_final": 0,
+        "steps": []
+      },
+      "matrix_math.py": {
+        "initial_phi": 0.572008,
+        "final_phi": 0.675733,
+        "evals": 11,
+        "generation_reached_final": 4,
+        "steps": [
+          [
+            1,
+            "NON_LOCAL:function_split_refactor",
+            0.033188,
+            false,
+            null
+          ],
+          [
+            2,
+            "ADD:AnnAssign",
+            0.01728,
+            false,
+            null
+          ],
+          [
+            3,
+            "ADD:AnnAssign",
+            0.017538,
+            false,
+            null
+          ],
+          [
+            4,
+            "AUTO:Composite[ADD:AnnAssign+ADD:AnnAssign]",
+            0.035719,
+            false,
+            false
+          ]
+        ]
+      },
+      "phi_resonance.py": {
+        "initial_phi": 0.601631,
+        "final_phi": 0.625676,
+        "evals": 3,
+        "generation_reached_final": 1,
+        "steps": [
+          [
+            1,
+            "NON_LOCAL:function_split_refactor",
+            0.024045,
+            false,
+            null
+          ]
+        ]
+      },
+      "search_engine.py": {
+        "initial_phi": 0.747923,
+        "final_phi": 0.771504,
+        "evals": 9,
+        "generation_reached_final": 1,
+        "steps": [
+          [
+            1,
+            "ADD:AnnAssign",
+            0.023581,
+            false,
+            null
+          ]
+        ]
+      }
+    }
+  },
+  "primary_B_vs_C": {
+    "total_delta_phi": {
+      "mean": 0.0,
+      "sd": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ]
+    },
+    "gain_per_100_evaluations": {
+      "mean": -0.348203,
+      "sd": 0.0,
+      "ci95": [
+        -0.348203,
+        -0.348203
+      ]
+    }
+  }
+}

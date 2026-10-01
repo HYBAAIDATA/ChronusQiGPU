@@ -24,6 +24,10 @@ from __future__ import annotations
 
 import json
 import math
+import os
+import subprocess
+import sys
+import tempfile
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
@@ -102,14 +106,42 @@ def run_isolated_execution(
     FIX-04: Pytest / execution timeout isolation.
     Compiles and dry-runs source in isolated scope to verify non-halting/crash safety.
     """
+    if timeout_seconds <= 0:
+        raise ValueError("timeout_seconds must be positive")
     try:
-        compiled = compile(source, "<pythagoras_isolated>", "exec")
-        # Run in empty global dict to isolate namespace
-        exec_globals: Dict[str, Any] = {"__builtins__": __builtins__}
-        exec(compiled, exec_globals)
-        return True, "Execution succeeded"
-    except Exception as e:
-        return False, str(e)
+        compile(source, "<pythagoras_isolated>", "exec")
+    except Exception as exc:
+        return False, str(exc)
+
+    # Separate interpreter + wall-clock timeout. This is process isolation,
+    # not an OS security sandbox for hostile code with ambient I/O authority.
+    path: str | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".py", encoding="utf-8", delete=False
+        ) as handle:
+            handle.write(source)
+            path = handle.name
+        completed = subprocess.run(
+            [sys.executable, "-I", path],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=timeout_seconds,
+            check=False,
+        )
+        if completed.returncode == 0:
+            return True, "Execution succeeded"
+        detail = (completed.stderr or completed.stdout).strip()
+        return False, detail or f"isolated execution exited {completed.returncode}"
+    except subprocess.TimeoutExpired:
+        return False, f"execution timed out after {timeout_seconds}s (timeout)"
+    except Exception as exc:
+        return False, str(exc)
+    finally:
+        if path is not None:
+            Path(path).unlink(missing_ok=True)
 
 
 def rolling_window_normalize(series: List[float], window: int = 3) -> List[float]:
@@ -188,23 +220,29 @@ class Pythagoras:
 
             # 1. CGP Step
             best_genome, cgp_fitness, cgp_transformed = self.cgp.evolve(current, generations=1)
+            cgp_transformed = self.domain.normalize(cgp_transformed)
             cgp_phi = self.domain.coherence(cgp_transformed)
-            if cgp_phi > prev_phi:
+            cgp_valid = self.domain.is_valid(cgp_transformed) and self.domain.tests(cgp_transformed)
+            if cgp_valid and cgp_phi > prev_phi:
                 current = cgp_transformed
                 prev_phi = cgp_phi
 
-            # 2. Directed / Surrogate Mutation Step
+            # 2. Directed / Surrogate Mutation Step. Fitness never overrides
+            # domain correctness: invalid candidates are transactionally rejected.
             mutated, step_gains = self.mutator.mutate(current, n_mutations=3)
             mutated = self.domain.normalize(mutated)
             mutated_phi = self.domain.coherence(mutated)
             gain = mutated_phi - prev_phi
+            candidate_valid = self.domain.is_valid(mutated) and self.domain.tests(mutated)
 
-            # ENH-04: Simulated annealing check for accepting mutants
+            # ENH-04: Simulated annealing may accept a lower-scoring candidate,
+            # but it may never accept a candidate that violates domain tests.
             accept = False
-            if adaptation_enabled:
-                accept = self.meta.should_accept(gain)
-            else:
-                accept = gain > 0.0
+            if candidate_valid:
+                if adaptation_enabled:
+                    accept = self.meta.should_accept(gain)
+                else:
+                    accept = gain > 0.0
 
             if accept:
                 current = mutated
@@ -256,6 +294,9 @@ class Pythagoras:
             "generations": generations,
             "fitness_history": fitness_history,
             "rolling_fitness": rolling_fit,
+            "gain_per_generation": (
+                (final_phi - initial_phi) / generations if generations else 0.0
+            ),
             "discovered_primitives": self.discovery.get_discovered(),
             "meta_state": self.meta.get_state(),
             "geometry_state": self.geometry.get_state(),
@@ -289,6 +330,10 @@ class Pythagoras:
 
         # ENH-14: Collective geometry consensus across corpus
         consensus_geometry = GeometryEvolution.compute_consensus(all_geometries)
+        self.geometry.load_state(consensus_geometry)
+        self.cgp.n_cols = self.geometry.n_cols
+        self.cgp.levels_back = self.geometry.levels_back
+        self.cgp.pop_size = self.geometry.pop_size
 
         total_delta = sum(r["delta_phi"] for r in results.values())
         avg_final = float(np.mean([r["final_phi"] for r in results.values()]))
@@ -326,7 +371,9 @@ class Pythagoras:
             "phase_transitions": self.meta.phase_transitions,
             "provenance_log": self.meta.provenance_log,
         }
-        p.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        temporary = p.with_suffix(p.suffix + ".tmp")
+        temporary.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        os.replace(temporary, p)
 
     def load_session(self, filepath: Path | str) -> None:
         """
@@ -346,6 +393,17 @@ class Pythagoras:
             self.mutator.surrogate.weights = np.array(data["surrogate_weights"], dtype=float)
             self.mutator.surrogate.bias = float(data.get("surrogate_bias", 0.0))
             self.mutator.surrogate.sample_count = int(data.get("surrogate_samples", 0))
+        if "meta_state" in data:
+            self.meta.load_state(
+                data["meta_state"],
+                phase_transitions=data.get("phase_transitions", []),
+                provenance_log=data.get("provenance_log", []),
+            )
+        if "geometry_state" in data:
+            self.geometry.load_state(data["geometry_state"])
+            self.cgp.n_cols = self.geometry.n_cols
+            self.cgp.levels_back = self.geometry.levels_back
+            self.cgp.pop_size = self.geometry.pop_size
 
     # =========================================================================
     # Kellogg v7.0 Stack Quantum Reflection Integration

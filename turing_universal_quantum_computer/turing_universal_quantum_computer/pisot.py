@@ -91,7 +91,7 @@ def operation_record(
 # ---------------------------------------------------------------------------
 # Physical execution ladder: the rungs hardware dispatch may admit.  Index 7
 # is an algebraic-only rung; it is deliberately excluded here — identical to
-# the MLA1517 platform gate in ``mla1517.mining.pow``.
+# the MLA1517 platform gate in ``chronus.mla1517.mining.pow``.
 
 LUCAS_EXECUTION_SCALE_INDICES: Tuple[int, ...] = (10, 12, 15, 18, 20, 31, 50, 76)
 

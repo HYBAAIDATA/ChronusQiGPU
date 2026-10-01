@@ -9,7 +9,7 @@ python_backend/core_modules/math_folding.py
 The canonical mining import is:
 
 ```text
-mla1517_platform_v3.4/python/mla1517/math_folding.py
+chronus/mla1517/math_folding.py
 ```
 
 The mining module re-exports the repository-local implementation; it does not
@@ -17,7 +17,7 @@ call another repository.
 
 ## Implemented mathematical contracts
 
-- Exact Fibonacci and Lucas generation through existing `mla1517.core`
+- Exact Fibonacci and Lucas generation through existing `chronus.mla1517.core`
 - Exact Binet evaluation in \(Q(\sqrt5)\), represented as rational coefficient
   pairs
 - Fibonacci and Lucas Cassini witnesses using arbitrary-precision integers

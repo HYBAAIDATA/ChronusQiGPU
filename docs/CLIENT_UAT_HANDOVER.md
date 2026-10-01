@@ -99,13 +99,13 @@ UAT:
 docker compose \
   -f docker-compose.yml \
   -f docker-compose.override.yml \
-  -f docker-compose.igpu-wsl2.yml \
+  -f docker-compose.chronus-wsl2.yml \
   config --quiet
 
 docker compose \
   -f docker-compose.yml \
   -f docker-compose.override.yml \
-  -f docker-compose.igpu-wsl2.yml \
+  -f docker-compose.chronus-wsl2.yml \
   up -d
 
 docker compose ps
@@ -118,8 +118,8 @@ Then prove visibility independently:
 docker compose \
   -f docker-compose.yml \
   -f docker-compose.override.yml \
-  -f docker-compose.igpu-wsl2.yml \
-  --profile probe run --rm igpu-probe
+  -f docker-compose.chronus-wsl2.yml \
+  --profile probe run --rm chronus-probe
 ```
 
 Expected Gate A evidence:

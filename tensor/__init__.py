@@ -1,0 +1,89 @@
+"""``tensor`` — the canonical, backend-neutral logical Tensor layer.
+
+Layering (see ``docs/TENSOR_ARCHITECTURE.md`` for the full policy):
+
+* ``tensor`` (this package) is the logical layer: typed contracts, backend
+  protocol/registry, deterministic router, and production runtime behaviour
+  (timing, cancellation, memory preflight, telemetry).
+* ``gpu``/``chronus`` are execution backends only. ``gpu.tensor`` is a
+  deprecated thin re-export of this package.
+* ``kellogg`` (and the in-tree VQC package,
+  ``turing_universal_quantum_computer``) remain the exact mathematical
+  substrates; this package bridges to them lazily instead of re-implementing
+  them (``tensor.kellogg_bridge``).
+* Mining is a consumer/advisory use case only: ``tensor.advisor`` re-exports
+  the existing, independently-tested permutation-only advisory boundary in
+  ``hyba.hybrid.tensor_advisor``.
+
+Public API re-exported here is intentionally small; deeper surfaces
+(backends, router internals, kellogg bridges, the advisor, the capability
+manifest) are imported from their own submodules.
+"""
+
+from __future__ import annotations
+
+from .contracts import (
+    BackendIdentity,
+    DEFAULT_MAX_TENSOR_BYTES,
+    ExactnessMode,
+    MemoryBudget,
+    ModelIdentity,
+    Precision,
+    ProvenanceRecord,
+    ResidualBounds,
+    TensorMeasurement,
+    TensorOperationSpec,
+    TensorRequest,
+    TensorResult,
+    TensorShape,
+    TruthClass,
+    estimate_bytes,
+)
+from .engine import execute
+from .errors import (
+    TensorBackendUnavailableError,
+    TensorCancelledError,
+    TensorError,
+    TensorExactnessError,
+    TensorMemoryError,
+    TensorTimeoutError,
+    TensorValidationError,
+)
+from .router import RouteDecision, default_registry, route
+from .runtime import CancellationToken, Deadline, preflight_memory, telemetry_record, timed_execute
+
+__all__ = [
+    "BackendIdentity",
+    "CancellationToken",
+    "DEFAULT_MAX_TENSOR_BYTES",
+    "Deadline",
+    "ExactnessMode",
+    "MemoryBudget",
+    "ModelIdentity",
+    "Precision",
+    "ProvenanceRecord",
+    "ResidualBounds",
+    "RouteDecision",
+    "TensorBackendUnavailableError",
+    "TensorCancelledError",
+    "TensorError",
+    "TensorExactnessError",
+    "TensorMeasurement",
+    "TensorMemoryError",
+    "TensorOperationSpec",
+    "TensorRequest",
+    "TensorResult",
+    "TensorShape",
+    "TensorTimeoutError",
+    "TensorValidationError",
+    "TruthClass",
+    "default_registry",
+    "estimate_bytes",
+    "execute",
+    "preflight_memory",
+    "route",
+    "telemetry_record",
+    "timed_execute",
+]
+
+__version__ = "0.1.0"

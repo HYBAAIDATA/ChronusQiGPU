@@ -270,7 +270,7 @@ class UnifiedPunchHost:
     # OpenCL setup
     # ------------------------------------------------------------------
 
-    # HYBA iGPU identity. Duplicated from scripts/igpu_diag.py on purpose:
+    # HYBA iGPU identity. Duplicated from scripts/chronus_diag.py on purpose:
     # importing a sibling would breach the LUCAS WIRING purity rule for this
     # algorithm module. Overridable via HYBA_DEVICE_ALIAS (comma-separated).
     DEFAULT_HYBA_ALIASES = ("hyba-mla1517", "hyba_mla1517", "mla1517", "hyba")
@@ -430,7 +430,7 @@ class UnifiedPunchHost:
         """Report one completed dispatch to an injected telemetry hook.
 
         The hook is a plain callable installed by a *coordinator* module
-        (see ``Intelligence/igpu_telemetry.py``); it is never imported here
+        (see ``Intelligence/chronus_telemetry.py``); it is never imported here
         because this module is an algorithm module under the LUCAS WIRING
         purity rule. When no hook is installed this is a no-op, so behaviour
         without telemetry is bit-identical to before.

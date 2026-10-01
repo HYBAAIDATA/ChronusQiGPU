@@ -90,7 +90,7 @@ class ManifoldBridge:
         self.galois_storage = GaloisPrimeSubstrate()
         self.md_memory: Dict[int, PrecomputedCandidate] = {}
         self.sector_buckets: Dict[int, List[int]] = {i: [] for i in range(7)}
-        self.igpu_hot_vram_cache: Dict[int, bytes] = {}
+        self.chronus_hot_vram_cache: Dict[int, bytes] = {}
         self.total_candidates_stored = 0
         self.total_healed_entries = 0
 
@@ -135,7 +135,7 @@ class ManifoldBridge:
         self.sector_buckets[sector_id].append(nonce)
 
         # 6. iGPU hot VRAM preservation (Substrate 11)
-        self.igpu_hot_vram_cache[nonce] = payload
+        self.chronus_hot_vram_cache[nonce] = payload
         self.total_candidates_stored += 1
 
         return candidate

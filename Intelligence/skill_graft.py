@@ -337,7 +337,7 @@ def graft_next(
 
 
 def _fabric() -> Any:
-    from mla1517.knowledge import KnowledgeFabric, default_journal_path
+    from chronus.mla1517.knowledge import KnowledgeFabric, default_journal_path
 
     return KnowledgeFabric(default_journal_path())
 

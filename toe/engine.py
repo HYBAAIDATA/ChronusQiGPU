@@ -1,8 +1,8 @@
 """TOE algebraic substrate (Pisot families) + PredictiveEngine application.
 
 STATUS: Application/analytics surface on the canonical stack.
-The canonical mining path is main.py + mla1517_platform_v3.4/python
-(control_api → mining_runtime → mla1517.mining.*): it owns the pool
+The canonical mining path is main.py + chronus/mla1517_platform/python
+(control_api → mining_runtime → chronus.mla1517.mining.*): it owns the pool
 socket, the SHA256d consensus check, and share submission. This module
 is exercised by the Intelligence stack (orchestrator, agentic_mining,
 toe.system) and tests only.

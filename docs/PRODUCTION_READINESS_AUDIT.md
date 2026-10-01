@@ -1,8 +1,8 @@
 # PYTHIA Production-Readiness Audit
 
 > Date: 2026-09-29. Auditor: Devin (automated). Scope: full repository,
-> canonical path `main.py` → `control_api.py` → `mla1517_platform_v3.4/python`
-> → `mining/` → `python_backend/` → `igpu/`/`hyba/` device layer. Supersedes the
+> canonical path `main.py` → `control_api.py` → `chronus/mla1517_platform/python`
+> → `mining/` → `python_backend/` → `chronus/`/`hyba/` device layer. Supersedes the
 > 2026-09-23 audit, which was written before the AL HARAS / HYBA-service merges
 > and the `turing_universal_quantum_computer` graft.
 
@@ -63,7 +63,7 @@ present but honestly labeled and off the production call graph.**
 | `python scripts/import_audit.py` | Every local import resolves; none hidden | PASS — 0 findings, 0 swallowed |
 | `python scripts/import_graph.py cycles && layers` | No new cycles/layer violations | PASS — 12 known cycles, 6 known violations, 0 new vs baseline |
 | `python -m pytest tests/ -x -q` | Root suite | **PASS — 1640 passed, 16 skipped** |
-| `python -m unittest discover -s mla1517_platform_v3.4/python` | Platform suite | **PASS — 317 passed, 7 skipped** |
+| `python -m unittest discover -s chronus/mla1517_platform/python` | Platform suite | **PASS — 317 passed, 7 skipped** |
 | `python -m pytest tests -q` (in `turing_universal_quantum_computer/`) | VQC suite | PASS — 55 |
 | `python -m compileall -q` (8 dirs per CI) | Byte-compile | PASS |
 | `python -m scripts.deploy_sentry` | Config/dependency/CI wiring | PASS — 0 errors, 0 warnings |
@@ -93,13 +93,13 @@ all commands still pass).
 | Component | Behavior | Notes |
 |---|---|---|
 | `main.py` → `control_api.py` | Operator HTTP API; never fabricates hashrate; `canonicalEngine` reports measured/pool-accepted only | Guardian preflight now fails closed (503) when the AL HARAS mediator is unreachable |
-| `mla1517_platform_v3.4/python/mining_runtime.py` | Hardware loop, bounded backoff, env identity via `startup_contract.py` | Lazily loads `mining.bitcoin_hasher`; fails closed without device/job/proof adapter |
-| `mla1517_platform_v3.4/python/manifold_pool_coordinator.py` | Stratum V1 client, failover, job→submit, proof-check before submit | TLS via scheme/`--tls`/`MLA1517_STRATUM_TLS` |
-| `mla1517_platform_v3.4/python/headless_miner.py` | Hardware miner entrypoint | Requires device + creds + explicit `--submit` |
-| `mla1517/mining/*` (geometry, lane, chooser, solver, pow, coordinator, execution_router, hyba_bridge, toe_adapter, promotion) | M32 structured work allocation + real SHA256d boundary; chooser learns only from real pool outcomes; TOE advisory-only | A label never becomes a share |
+| `chronus/mla1517_platform/python/mining_runtime.py` | Hardware loop, bounded backoff, env identity via `startup_contract.py` | Lazily loads `mining.bitcoin_hasher`; fails closed without device/job/proof adapter |
+| `chronus/mla1517_platform/python/manifold_pool_coordinator.py` | Stratum V1 client, failover, job→submit, proof-check before submit | TLS via scheme/`--tls`/`MLA1517_STRATUM_TLS` |
+| `chronus/mla1517_platform/python/headless_miner.py` | Hardware miner entrypoint | Requires device + creds + explicit `--submit` |
+| `chronus/mla1517/mining/*` (geometry, lane, chooser, solver, pow, coordinator, execution_router, hyba_bridge, toe_adapter, promotion) | M32 structured work allocation + real SHA256d boundary; chooser learns only from real pool outcomes; TOE advisory-only | A label never becomes a share |
 | `mining/` (stratum_bridge, stratum_v2, braiins_sv2, bitcoin_hasher, hash_pipeline, difficulty, nonce_scheduler, safety_fsm, search) | Real Stratum V1/V2 wire protocols + bounded SHA256d batches with backend provenance | Production-reachable via `mining_runtime`/`execution_router`; declares it must not claim pool acceptance itself |
 | `python_backend/` (math_folding, hilbert_manifold_solver, phi_grover_v4, pythia_mining) | `hyba_core_v1` — exact arithmetic + structured search folded into `mla1517` via `hyba_bridge`/`math_folding` shim | `core_modules/fold_pipeline` sqlite leak closed |
-| `igpu/` (opencl_host, engine, device, telemetry) | OpenCL device binding + execution; identity gate refuses non-HYBA devices | Fail-closed |
+| `chronus/` (opencl_host, engine, device, telemetry) | OpenCL device binding + execution; identity gate refuses non-HYBA devices | Fail-closed |
 | `hyba/` (verifiers, inventory, executor, lemma, operating_model) | Device identity, capability census, read-only verdicts | `require_lemma` paper-before-code gate |
 | `al_haras/` | Guardian/mediation/envelope/claim-register security boundary behind privileged routes | Signed mediation manifest requires `MEDIATION_MANIFEST_KEY` |
 | `l_hras/` | Guardian math (heuristic by name/design — see 4d) | |
@@ -112,8 +112,8 @@ all commands still pass).
 
 | Component | Classification | Evidence |
 |---|---|---|
-| `mla1517_platform_v3.4/python/policy_bench.py`, `discovery_runtime.py` | Offline simulator | Declared-seed policy simulator; findings emitted with `evidence="simulated"` |
-| `mla1517/mining/promotion.py` | Offline simulator | Twin/parallel-seed promotion evidence — labeled |
+| `chronus/mla1517_platform/python/policy_bench.py`, `discovery_runtime.py` | Offline simulator | Declared-seed policy simulator; findings emitted with `evidence="simulated"` |
+| `chronus/mla1517/mining/promotion.py` | Offline simulator | Twin/parallel-seed promotion evidence — labeled |
 | `pci/` (engine, api, forensics, transparency_dashboard) | Offline simulator + heuristic | "full-amplitude simulator for up to ~15 qubits" — declared simulator; grandiose docstring framing, honest labels |
 | `Intelligence/` (orchestrator, pythia_memory, self_repair, unified_punch, strict_quantum, …) | Experimental / heuristic | Salamander self-repair is opt-in (`HYBA_STARTUP_SELF_HEALING_ENABLED=false` default); `unified_punch` declares itself classical GPU compute; self-test reports NOT EMERGED |
 | `agi/`, `asi/`, `enhanced_intelligence/` | Experimental (enterprise AI surface) | Not on mining path; reached only via `Intelligence`/compat shims; `agi/simulations.py` explicitly disclaims mocks |
@@ -127,7 +127,7 @@ all commands still pass).
 | Component | Classification |
 |---|---|
 | `soak_voyage.py` | Test fixture — soak harness over `FakeChain`/`FakePool` |
-| `mla1517/connectors.py` | External adapter — offline conformance harness; "never retried silently and never faked" |
+| `chronus/mla1517/connectors.py` | External adapter — offline conformance harness; "never retried silently and never faked" |
 | `integrations/`, `conformance/`, `standard/`, `distributed/`, `thermo/`, `omega/`, `bench/` | External adapter / conformance-proof suite — seam contract tests and invariant checkers |
 | `hyba_compat/` | External adapter — legacy-namespace shims; unknown names raise `LegacyNamespaceRemoved`, never return placeholders |
 
@@ -195,7 +195,7 @@ pip install -e ./turing_universal_quantum_computer -e ".[ml,dev]"
 python -m flake8 --count
 python scripts/import_audit.py
 python -m pytest tests/ -x -q
-python -m unittest discover -s mla1517_platform_v3.4/python
+python -m unittest discover -s chronus/mla1517_platform/python
 MEDIATION_MANIFEST_KEY=<dev-key> make gates && python scripts/assert_gate_rollup.py
 cd frontend && npm ci && npm run lint && npm run test:ts && npm run build
 ```

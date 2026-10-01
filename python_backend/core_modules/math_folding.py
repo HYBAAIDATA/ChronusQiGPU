@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from fractions import Fraction
 from typing import Iterable
 
-from mla1517.core import fib, lucas, zeckendorf, zeckendorf_decode
+from chronus.mla1517.core import fib, lucas, zeckendorf, zeckendorf_decode
 
 
 @dataclass(frozen=True)

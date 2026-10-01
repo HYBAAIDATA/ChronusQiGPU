@@ -1,4 +1,4 @@
-/** Payload contract of the Python control API (mla1517.status/1). */
+/** Payload contract of the Python control API (chronus.mla1517.status/1). */
 
 export type StratumIdentity = {
   profile: string;
@@ -33,6 +33,16 @@ export type DeviceInfo = {
 export type GpuSection = {
   available?: boolean;
   count?: number;
+  /** The Chronus contract device — the system's declared GPU identity,
+      enumerated from the loaded spec, never probed silicon. */
+  contract_device?: {
+    name?: string;
+    vendor?: string;
+    backend?: string;
+    is_gpu?: boolean;
+    is_integrated?: boolean;
+    platform?: string;
+  } | null;
   opencl_device_count?: number;
   physical_gpu_available?: boolean;
   physical_gpu_count?: number;

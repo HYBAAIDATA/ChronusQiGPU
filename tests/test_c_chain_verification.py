@@ -117,7 +117,7 @@ def test_overlay_geometry_is_internally_consistent(report):
 
 
 def test_telemetry_stage_reports_measured_not_fabricated(report):
-    stage = report["stages"]["igpu_11d_telemetry"]
+    stage = report["stages"]["chronus_11d_telemetry"]
     assert stage["passed"] is True
     assert stage["measured_not_projected"] is True
     assert stage["dispatches"] > 0  # probe dispatch is mandatory when idle

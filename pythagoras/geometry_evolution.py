@@ -107,6 +107,30 @@ class GeometryEvolution:
             "pop_size": self.pop_size,
         }
 
+    def load_state(self, state: Dict[str, Any]) -> None:
+        """Restore bounded geometry state from a prior session or corpus consensus."""
+        self.n_cols = int(
+            np.clip(
+                state.get("n_cols", self.n_cols),
+                self.min_cols,
+                self.max_cols,
+            )
+        )
+        self.levels_back = int(
+            np.clip(
+                state.get("levels_back", self.levels_back),
+                self.min_levels_back,
+                self.max_levels_back,
+            )
+        )
+        self.pop_size = int(
+            np.clip(
+                state.get("pop_size", self.pop_size),
+                self.min_pop_size,
+                self.max_pop_size,
+            )
+        )
+
     @staticmethod
     def compute_consensus(file_geometries: List[Dict[str, Any]]) -> Dict[str, int]:
         """

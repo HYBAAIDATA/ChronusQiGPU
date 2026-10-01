@@ -1,7 +1,7 @@
 [project]
 name = "turing-universal-quantum-computer"
-version = "1.0.0"
-description = "Turing Virtual Quantum Computer — consolidated exact-quantum substrate: universal n-qubit engine (default 10,000) with stabilizer/sparse/closed-form exact backends, Q[sqrt(5)]/Pisot algebra, strict-quantum certificates, Hendrix schedule, and the four-layer production execution plane."
+version = "1.1.0"
+description = "Turing Virtual Quantum Computer — consolidated exact-quantum substrate: universal n-qubit engine with stabilizer/sparse/closed-form exact backends, HYBA 1,000-qubit Clifford profile, MIDAS 32-face VQC ranker, Q[sqrt(5)]/Pisot algebra, strict-quantum certificates, Hendrix schedule, and the four-layer production execution plane."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]

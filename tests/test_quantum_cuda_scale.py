@@ -177,9 +177,9 @@ def test_grover_style_search_rejects_off_ladder():
 
 
 def test_gpu_route_scales_grover_depth():
-    from hyba.virtual_gpu import SuperGPU
+    from chronus.fabric import ChronusFabric
 
-    g = SuperGPU.compose()
+    g = ChronusFabric.compose()
     d = g.route("grover_search", {"space": 1 << 20, "scale_index": 18})
     assert d.lucas_dispatch["grover_depth"] == _k_star((1 << 20) * 5778)
     assert d.lucas_dispatch["scale_index"] == 18

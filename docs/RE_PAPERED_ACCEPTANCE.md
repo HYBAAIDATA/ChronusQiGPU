@@ -20,7 +20,7 @@ The test must prove that the M32 allocator:
 - preserves the negotiated job template;
 - checks every visited candidate using the real SHA256d target predicate.
 
-`mla1517_platform_v3.4/python/mla1517/mining/solver.py` and
+`chronus/mla1517/mining/solver.py` and
 `scripts/re_paper_gate.py` exercise these properties.
 
 ### 2. Corpus observation

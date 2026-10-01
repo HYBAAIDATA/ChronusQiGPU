@@ -1,4 +1,4 @@
-"""TensorCoreGPU_Context — compute context with hardened Cassini checks.
+"""ChronusContext — compute context with hardened Cassini checks.
 
 Wraps the compute-unit pool, SPMD executor and micro-kernel library, and
 projects data tensors onto pv-lattice anchors.  When a punch host is bound
@@ -17,7 +17,7 @@ from .punch import resolve_punch_host
 from .zeckendorf import PUNCH_MANIFOLD_COMPUTE
 
 
-class TensorCoreGPU_Context:
+class ChronusContext:
     def __init__(
         self,
         punch_host=None,
@@ -119,3 +119,6 @@ class TensorCoreGPU_Context:
 
     def shutdown(self) -> None:
         self.cu_pool.shutdown()
+
+
+TensorCoreGPU_Context = ChronusContext

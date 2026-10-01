@@ -33,8 +33,8 @@ from .storage import MAX_ADDRESS_INDEX, AddressSpace
 
 logger = logging.getLogger("aethel.selftest")
 
-_HEADER_REL = Path("mla1517_platform_v3.4") / "host" / "mla1517_aethel.h"
-_MMIO_REL = Path("mla1517_platform_v3.4") / "host" / "mla1517_mmio.h"
+_HEADER_REL = Path("chronus/mla1517_platform") / "host" / "mla1517_aethel.h"
+_MMIO_REL = Path("chronus/mla1517_platform") / "host" / "mla1517_mmio.h"
 
 _DEFINE_RE = re.compile(r"#define\s+(MLA1517_\w+)\s+([^/\s]+)")
 

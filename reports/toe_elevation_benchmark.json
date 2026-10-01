@@ -1257,7 +1257,7 @@
     },
     {
       "section": "tests",
-      "name": "pytest mla1517_platform_v3.4/python: no failures",
+      "name": "pytest chronus/mla1517_platform/python: no failures",
       "passed": true,
       "evidence": {
         "n_passed": 3,
@@ -1281,7 +1281,7 @@
       },
       {
         "command": "python -m pytest -q test_toe_mining_integration.py test_structured_observed_context.py",
-        "cwd": "mla1517_platform_v3.4/python",
+        "cwd": "chronus/mla1517_platform/python",
         "exit_code": 0,
         "passed": 3,
         "failed": 0,

@@ -150,12 +150,12 @@ class IRExecutor:
             self._host = hasher
             self._runner = self._run_hasher_opencl
         elif self.spec.executor == "ladder_executor":
-            from mla1517.scaling import OpenCLLadderExecutor
+            from chronus.mla1517.scaling import OpenCLLadderExecutor
 
-            self._host = OpenCLLadderExecutor()
+            self._host = OpenCLLadderExecutor(device=name)
             self._runner = self._run_ladder_opencl
         elif self.spec.executor == "exact_accelerator":
-            from mla1517.accelerator import ExactOpenCLAccelerator
+            from chronus.mla1517.accelerator import ExactOpenCLAccelerator
 
             self._host = ExactOpenCLAccelerator()
             self._runner = self._run_accelerator_opencl
@@ -272,7 +272,7 @@ class IRExecutor:
         """
         import os
 
-        from mla1517.hardware import MMIOBridge
+        from chronus.mla1517.hardware import MMIOBridge
 
         device_path = inputs.get("device_path") or os.environ.get(
             "MLA1517_MMIO_DEVICE"

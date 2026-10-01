@@ -1,5 +1,16 @@
 # Tensor → Mining Integration Plan
 
+> **Canonical-rule correction (see `docs/TENSOR_ARCHITECTURE.md` §5):** this
+> document describes a TypeScript bridge (`src/lib/*.ts`) that does not
+> exist in this repository. In this repository's actual Python mining
+> stack, the tensor advisory boundary
+> (`hyba.hybrid.tensor_advisor.apply_tensor_advice`, re-exported as
+> `tensor.advisor`) is **exact-permutation-only**: it rejects any pruning,
+> resizing, or count change of certified nonce windows, not only retargeting.
+> The "prunes candidates" language below does not apply to this repository
+> unless a separate, independently executed and verified coverage path is
+> added here; until then, the Python exact-permutation rule is canonical.
+
 ## Purpose
 
 Wire the Kellogg Tensor into the live mining path as a **navigator**, not a

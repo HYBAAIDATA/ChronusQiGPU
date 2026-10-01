@@ -86,7 +86,7 @@ writer occupies index `n_k` and is addressed by `F_{n_k}`
 ### A-ABI. Shared-memory region (`aethel.shm`)
 
 - **MEASURED**: `AethelQueue` is byte-compatible with
-  `mla1517_platform_v3.4/host/mla1517_aethel.{c,h}` — all seven constants
+  `chronus/mla1517_platform/host/mla1517_aethel.{c,h}` — all seven constants
   are parsed out of the C headers at test time and compared
   (`tests/test_aethel_concurrency.py::test_t6e_c_abi_agreement_parses_header`).
 - **MEASURED**: seqlock semantics — odd sequence = write in flight, even

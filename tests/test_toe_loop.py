@@ -1,4 +1,4 @@
-from igpu.seam.toe_loop import realize
+from chronus.seam.toe_loop import realize
 from toe.poincare_golden_11d import cassini_unimodular_det
 
 
@@ -15,5 +15,5 @@ def test_realize_runs_the_twelve_theorems():
     assert "T1_cassini_identity" in out["theorems"]
     assert "T4_lucas_pisot_scaling" in out["theorems"]
     assert "T5_zeckendorf_spacing" in out["theorems"]
-    assert out["gpu_punches"]["punch_ids"]["phi_filter_score"] == 0x1A
-    assert out["gpu_punches"]["punch_ids"]["poincare_fold"] == 0x08
+    assert out["device_punches"]["punch_ids"]["phi_filter_score"] == 0x1A
+    assert out["device_punches"]["punch_ids"]["poincare_fold"] == 0x08
