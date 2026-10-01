@@ -1,0 +1,14 @@
+{
+  "component": "hyba_db",
+  "schema_version": 1,
+  "layers": {
+    "0": ["physical_blocks", "fibonacci_addresses"],
+    "1": ["folds", "zeckendorf_certificates", "lucas_witnesses"],
+    "2": ["mps", "tt", "mpo", "safe_binary_payloads"],
+    "3": ["typed_nodes", "typed_edges", "betti", "persistence", "traversal"],
+    "4": ["hmac_attestation_dag", "content_addresses", "certificate_replay"],
+    "5": ["invariants", "contracts", "ontology", "materialized_computations"]
+  },
+  "security": ["tenant_scoped_queries", "composite_foreign_keys", "parameterized_sql", "transactional_quotas", "no_deserialization_execution"],
+  "initial_projection": ["mining_pools", "jobs", "shares", "targets"]
+}
