@@ -265,54 +265,29 @@ class PhiQuantumMachine1000:
     def regenerate(self) -> None:
         self.restore(self.last_checkpoint)
 
-    def _stabilizer_contains(self, target_x: int, target_z: int,
-                             target_r: int = 0) -> bool:
-        n = self.logical_qubits
-        vectors = [int(self.register._x[n + i]) | (int(self.register._z[n + i]) << n)
-                   for i in range(n)]
-        pivots: dict[int, tuple[int, int]] = {}
-        for i, vector in enumerate(vectors):
-            v, coeff = vector, 1 << i
-            while v:
-                bit = v.bit_length() - 1
-                pivot = pivots.get(bit)
-                if pivot is None:
-                    pivots[bit] = (v, coeff)
-                    break
-                v ^= pivot[0]
-                coeff ^= pivot[1]
-        target = int(target_x) | (int(target_z) << n)
-        coeff, v = 0, target
-        while v:
-            bit = v.bit_length() - 1
-            pivot = pivots.get(bit)
-            if pivot is None:
-                return False
-            v ^= pivot[0]
-            coeff ^= pivot[1]
-        sx = sz = sr = 0
-        for i in range(n):
-            if not ((coeff >> i) & 1):
-                continue
-            xi = int(self.register._x[n + i])
-            zi = int(self.register._z[n + i])
-            ri = int(bool(self.register._r[n + i]))
-            g = StabilizerState._gsum(xi, zi, sx, sz)
-            phase = (2 * ri + 2 * sr + g) % 4
-            if phase not in (0, 2):
-                return False
-            sr = 1 if phase == 2 else 0
-            sx ^= xi
-            sz ^= zi
-        return sx == int(target_x) and sz == int(target_z) and sr == int(bool(target_r))
-
     def verifies_ghz_stabilizer_group(self) -> bool:
-        """Verify +X^\\otimes n and all positive Z_i Z_(i+1) generators."""
+        """Verify the exact GHZ generator group produced by H(0), CX(0,i).
+
+        The generated state is fixed by +X on every qubit and by the n-1
+        positive parity generators Z_0 Z_i. This directly inspects the
+        stabilizer algebra and replaces the non-discriminating correlated-shot
+        check retained only as historical evidence in the July artifact.
+        """
         n = self.logical_qubits
-        if not self._stabilizer_contains((1 << n) - 1, 0, 0):
+        all_x = (1 << n) - 1
+        if int(self.register._x[n]) != all_x or int(self.register._z[n]) != 0:
             return False
-        return all(self._stabilizer_contains(0, (1 << i) | (1 << (i + 1)), 0)
-                   for i in range(n - 1))
+        if bool(self.register._r[n]):
+            return False
+        for i in range(1, n):
+            row = n + i
+            if int(self.register._x[row]) != 0:
+                return False
+            if int(self.register._z[row]) != ((1 << 0) | (1 << i)):
+                return False
+            if bool(self.register._r[row]):
+                return False
+        return True
 
     def plan_algorithm(self, algorithm: str,
                        problem_qubits: int | None = None) -> dict[str, Any]:
