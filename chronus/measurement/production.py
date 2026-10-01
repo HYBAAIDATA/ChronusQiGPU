@@ -8,12 +8,13 @@ host, mining, topology, stability, or efficiency measurement.
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 from ._common import canonical_json, to_payload, unavailable
 from .attestation.artifact import MeasurementArtifact, build_artifact
-from .attestation.hmac import attest_artifact, load_hmac_key
+from .attestation.hmac import ENV_KEY, attest_artifact, load_hmac_key
 from .attestation.replay import replay_artifact
 from .run import measure_chronus
 from .store.evidence import EvidenceStore
@@ -64,6 +65,7 @@ def measure_chronus_production(
     store: Optional[EvidenceStore] = None,
 ) -> Tuple[MeasurementArtifact, Dict[str, bool]]:
     """Return a production evidence artifact without changing existing paths."""
+    persistent_attestation = hmac_key is not None or bool(os.environ.get(ENV_KEY, "").strip())
     base_artifact, availability = measure_chronus(
         quick=quick,
         hmac_key=hmac_key,
@@ -113,6 +115,7 @@ def measure_chronus_production(
     )
     result["artifact.replay"] = replay_artifact(artifact)
     result["artifact.execution_device_bound"] = bool(execution_fp)
+    result["artifact.persistent_attestation_key"] = persistent_attestation
     return artifact, result
 
 
@@ -133,6 +136,11 @@ def main(argv: Optional[list[str]] = None) -> int:
         action="store_true",
         help="return non-zero unless physical Chronus tensor execution was measured",
     )
+    parser.add_argument(
+        "--require-persistent-attestation",
+        action="store_true",
+        help="return non-zero unless attestation uses an explicit durable key",
+    )
     args = parser.parse_args(argv)
 
     artifact, availability = measure_chronus_production(quick=not args.full)
@@ -152,6 +160,10 @@ def main(argv: Optional[list[str]] = None) -> int:
         return 2
     if args.require_device and not availability.get("artifact.execution_device_bound", False):
         return 3
+    if args.require_persistent_attestation and not availability.get(
+        "artifact.persistent_attestation_key", False
+    ):
+        return 4
     return 0
 
 
