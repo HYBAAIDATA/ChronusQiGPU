@@ -16,6 +16,7 @@ import asyncio
 import hashlib
 import ipaddress
 import json
+import math
 import os
 import sys
 import time
@@ -506,6 +507,31 @@ def _linear_nonces(base_nonce: int, count: int) -> List[int]:
     return [(base_nonce + i) & 0xFFFFFFFF for i in range(count)]
 
 
+def _lucas15_schedule_nonces(base_nonce: int, count: int) -> List[int]:
+    """Coverage-complete Lucas-15 schedule-only ablation arm.
+
+    ``M^15 = [[987, 610], [610, 377]]`` and ``trace(M^15) = 1364``.  The
+    first coefficient coprime to the current window defines an affine
+    permutation.  This changes candidate order only; SHA-256d remains the
+    protocol acceptance authority and no quantum speedup is claimed.
+    """
+    if count <= 0:
+        return []
+    for candidate in (987, 610, 377, 1364):
+        stride = candidate % count or 1
+        if math.gcd(stride, count) == 1:
+            break
+    else:
+        stride = 1
+        while math.gcd(stride, count) != 1:
+            stride += 2
+    offset = 610 % count
+    return [
+        (base_nonce + ((offset + i * stride) % count)) & 0xFFFFFFFF
+        for i in range(count)
+    ]
+
+
 def _poincare_11d_nonces(
     base_nonce: int, count: int, header80: Optional[bytes]
 ) -> Optional[List[int]]:
@@ -537,6 +563,8 @@ def _lane_nonces(
 
     PYTHIA_NONCE_ORDER (or the ``order`` argument) selects the order:
       linear/flat — base + i; the counterfactual control arm.
+      lucas15/operator — a coverage-complete affine permutation derived from
+          the exact M^15 coefficients; schedule-only experimental arm.
       11d/poincare11d/manifold — Poincaré–Cassini 11D shard order driven
           by header80 (defaults to a zero header when not supplied).
       m32 (default) — the canonical solver's equal partition across the
@@ -546,6 +574,8 @@ def _lane_nonces(
     mode = nonce_order_name(order)
     if mode in ("linear", "flat"):
         return _linear_nonces(base_nonce, count)
+    if mode in ("lucas15", "lucas_15", "operator"):
+        return _lucas15_schedule_nonces(base_nonce, count)
     if mode in ("11d", "poincare11d", "poincare", "manifold"):
         nonces = _poincare_11d_nonces(base_nonce, count, header80)
         return nonces if nonces is not None else _linear_nonces(base_nonce, count)
@@ -588,8 +618,15 @@ def device_status() -> Dict[str, object]:
         "compass_faces": 32,  # M32 lanes = 32-face routing (12+20 dual overlay)
         "manifold_dimensions": 0,
         "intelligence_types_active": 0,
+        "hash_execution_model": "physical_sha256d",
+        "hash_acceptance_authority": "pool_target",
+        "physical_quantum_hardware_active": False,
+        "quantum_simulation_in_hash_path": False,
+        "candidate_order_model": nonce_order_name(),
         "kellogg_operator_active": False,  # no operator in the mining path
         "lucas_15_attractor_active": False,  # ladder used in rate metadata, not scoring
+        "lucas_15_schedule_active": nonce_order_name()
+        in ("lucas15", "lucas_15", "operator"),
         "pisot_collapse_active": False,  # punch 0x03 exists, not invoked per epoch
         "cassini_invariant_active": False,  # punch 0x0E exists, not invoked per epoch
         "klein_poincare_bijection_active": False,  # not implemented in the codebase
@@ -618,14 +655,15 @@ def device_status() -> Dict[str, object]:
             status["intelligence_types_active"] += 1  # 11D geodesic ordering
         except Exception as exc:
             status["notes"].append(f"poincare 11d order unavailable: {exc}")
-    try:
-        from Intelligence.unified_punch import DIM
-
-        status["manifold_dimensions"] = DIM  # 11D scoring manifold in grind path
-        status["phi_filter_scoring_active"] = True
-        status["intelligence_types_active"] += 1  # geometric scoring
-    except Exception as exc:
-        status["notes"].append(f"unified_punch unavailable: {exc}")
+    if status["lucas_15_schedule_active"]:
+        status["intelligence_types_active"] += 1
+        status["notes"].append(
+            "Lucas-15 changes candidate order only; exact SHA-256d remains the "
+            "acceptance authority."
+        )
+    status["notes"].append(
+        "Quantum-algorithm simulation is evaluated separately from live mining."
+    )
     return status
 
 
