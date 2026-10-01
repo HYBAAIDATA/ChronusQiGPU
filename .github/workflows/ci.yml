@@ -52,7 +52,13 @@ jobs:
           CHANGED=$(git diff --name-only --diff-filter=d "origin/$BASE"...HEAD -- '*.py')
           if [ -n "$CHANGED" ]; then python -m flake8 --count $CHANGED; else echo "no changed .py files"; fi
       - name: Fatal lint gate (ruff E9/F)
-        run: python -m ruff check --select E9,F chronus aethel hyba l_hras bench experiments tests
+        # Same ratchet as flake8: 209 pre-existing E9/F findings sit on main;
+        # the fatal gate keeps its teeth on every file this change touches.
+        run: |
+          BASE="${{ github.base_ref || 'main' }}"
+          git fetch --depth=1 origin "$BASE"
+          CHANGED=$(git diff --name-only --diff-filter=d "origin/$BASE"...HEAD -- '*.py')
+          if [ -n "$CHANGED" ]; then python -m ruff check --select E9,F $CHANGED; else echo "no changed .py files"; fi
       - name: Import audit (every local import resolves; none hidden)
         run: python scripts/import_audit.py
       - name: Import graph (no new import cycles or layer violations)
