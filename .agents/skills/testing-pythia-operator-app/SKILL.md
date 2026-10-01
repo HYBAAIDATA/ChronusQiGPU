@@ -104,3 +104,30 @@ env MLA1517_STRATUM_USER=$VIABTC_USERNAME MLA1517_STRATUM_PASSWORD=$VIABTC_PASSW
 `.devin` blueprint was retargeted post-fold to `chronus/mla1517_platform` for
 unittest discover and the startup boot path, and to `chronus.mla1517` module
 names (`chronus.mla1517.remote_gpu_agent`, `chronus.mla1517.prime`).
+
+## Exercising the real mining loop on a GPU-less box (verified live)
+- `PYTHIA_EXECUTION_DEVICE=cpu` — un-gates `agentic-mining` → supervisor spawns
+  `mining_runtime.py` → `EuclidProductionMiningCoordinator.run_execution_loop`.
+  **Prerequisite on this box:** `pip install -e turing_universal_quantum_computer --no-deps`
+  (nested editable package, blueprint maintenance step — it may not have run).
+  Without it the worker crash-loops at `resolve_nonce_order("hendrix")` →
+  `No module named 'turing_universal_quantum_computer.pisot'`; retries burn the
+  5/600s respawn budget → `failed` → `supervisor_degraded`.
+- Windows heartbeat dir: `control_api._heartbeat_dir` now uses
+  `worker_lifecycle._default_heartbeat_dir()` (fixed on the chronus-surface PR) —
+  the earlier Windows-only bug (default `/run/pythia/hb` → `C:\run\pythia\hb`)
+  made every metrics-derived surface silently unavailable while liveness read
+  green. If a pre-fix build is ever under test, set
+  `PYTHIA_WORKER_HEARTBEAT_DIR=%LOCALAPPDATA%\pythia\hb` as the workaround.
+- With real ViaBTC creds + submit gate disarmed: connected/authorized/subscribed,
+  jobs stream ~1/20s, CPU hasher ~450-650 kH/s, `ready-to-mine` →
+  `ready:true reason:"ok"` — grind-only, safe.
+
+## Chronus contract device — where it surfaces (post-chronus-surface PR)
+`chronus.detect.detect_all()` enumerates the MLA1517 iGPU contract device FIRST
+(vendor `hyba`, integrated, `mla1517_simt`; `default` = `hyba: MLA1517 iGPU`).
+Served surfaces: `/api/v1/gpu.contract_device` carries the record ALONGSIDE the
+physical counts (`opencl_device_count`/`physical_gpu_available` deliberately
+exclude it — declared identity, not probed silicon); the header chip shows
+`Chronus · MLA1517 iGPU` (amber) when no OpenCL hardware is present.
+`status.device.devices` + `hardware/status.opencl` remain OpenCL-only by design.
