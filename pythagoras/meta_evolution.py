@@ -13,7 +13,6 @@ Features:
 from __future__ import annotations
 
 import math
-import random
 from typing import Any, Dict, List, Optional
 import numpy as np
 
@@ -36,11 +35,15 @@ class MetaEvolutionController:
         stall_threshold: int = 3,
         initial_temperature: float = 0.5,
         cooling_rate: float = 0.85,
+        random_seed: Optional[int] = None,
     ):
         self.mutation_rate = float(initial_mutation_rate)
         self.primitive_weights: Dict[str, float] = {}
         self.operator_distribution: Dict[str, float] = {}
         self.history: List[Dict[str, Any]] = []
+        # Local RNG makes acceptance decisions reproducible when a seed is
+        # supplied and prevents unrelated global random calls changing a run.
+        self._rng = np.random.default_rng(random_seed)
 
         # ENH-04: Simulated Annealing Escape
         self.stall_threshold = stall_threshold
@@ -158,7 +161,7 @@ class MetaEvolutionController:
             return False
 
         acceptance_prob = math.exp(delta_phi / max(1e-4, self.temperature))
-        return random.random() < acceptance_prob
+        return float(self._rng.random()) < acceptance_prob
 
     def get_state(self) -> Dict[str, Any]:
         """Return snapshot of current meta-evolutionary state."""
