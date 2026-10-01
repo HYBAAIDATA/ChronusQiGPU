@@ -12,7 +12,7 @@ stay labelled.
 | `pythia-api` (console script) | same as above via installed package | [verified: wheel --help] |
 | `pythia-mine` → `mining_runtime:main` | headless Stratum miner (fail-closed) | [verified: wheel --help] |
 | `headless_miner.py --device … --submit` | hardware miner, MMIO required | NOT_RUN (no device) |
-| `python -m chronus.mla1517.remote_gpu_agent` | remote OpenCL agent (remote_opencl_v1) | NOT_RUN locally; blueprint documents |
+| `python -m chronus.mla1517.remote_gpu_agent` | remote OpenCL agent (remote_opencl_v1: `/v1/health`, `/v1/devices`, `/v1/ladder`, `/v1/sha256d`) | NOT_RUN locally; blueprint documents |
 | `python -m chronus.mla1517.prime …` | PRIME CLI (deploy/ingest/audit/reproduce real; feature/train/evaluate/promote/serve intentionally not_implemented, exit 2) | blueprint-documented |
 
 ## Backend call graph (verified by reading + import checks)
