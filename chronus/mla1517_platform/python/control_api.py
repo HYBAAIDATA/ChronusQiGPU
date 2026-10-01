@@ -82,10 +82,11 @@ _WORKER_SPECS = {
 # simulated twin, so it runs (and learns) on a host with no device bound.
 _DEVICE_WORKERS = frozenset({"agentic-mining", "salamander"})
 # With PYTHIA_EXECUTION_DEVICE declared, the mining worker drives the
-# Execution Router directly (OpenCL or the labelled CPU reference) and needs
-# no MMIO bridge. Salamander supervises the bridge, so it still waits for one.
+# Execution Router directly (OpenCL, the labelled CPU reference, or a remote
+# GPU agent) and needs no MMIO bridge. Salamander supervises the bridge, so
+# it still waits for one.
 _EXECUTION_DEVICE_WORKERS = frozenset({"agentic-mining"})
-_EXECUTION_DEVICES = ("opencl", "cpu")
+_EXECUTION_DEVICES = ("opencl", "cpu", "remote")
 _LOCK_HELD = False
 _LOCK_GUARD = threading.Lock()
 _AUDIT: AppendOnlyAudit | None = None
