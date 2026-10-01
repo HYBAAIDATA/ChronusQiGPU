@@ -27,6 +27,8 @@ def test_chronus_and_l_hras_are_explicit_distribution_packages():
         "chronus.seam",
         "l_hras",
         "l_hras.foundations",
+        "tensor",
+        "tensor.backends",
     } <= packages
 
 
@@ -59,3 +61,4 @@ def test_runtime_resources_are_declared_as_package_data():
     assert "kernels/*.cl" in data["chronus"]
     assert "deploy/*.yml" in data["chronus"]
     assert "config.example.toml" in data["l_hras"]
+    assert "CAPABILITY_MANIFEST.md" in data["tensor"]
