@@ -40,8 +40,10 @@ from hyba.hybrid.nonce_scheduler import (
 )
 from hyba.hybrid.performance import (
     DEFAULT_HASHRATE_FLOOR_HPS,
+    HashrateFloorViolation,
     LayerSample,
     PerformanceReport,
+    enforce_floor,
     job_performance_report,
 )
 from hyba.hybrid.tensor_advisor import (
@@ -50,6 +52,7 @@ from hyba.hybrid.tensor_advisor import (
     TensorAdviceViolation,
     WindowRanker,
     apply_tensor_advice,
+    verify_tensor_advice_replay,
 )
 
 __all__ = [
@@ -65,6 +68,7 @@ __all__ = [
     "ExecutionAttestation",
     "FACE_COUNT",
     "GPUSolver",
+    "HashrateFloorViolation",
     "HybridCoordinator",
     "IdentityWindowRanker",
     "JobResult",
@@ -82,9 +86,11 @@ __all__ = [
     "TensorAdviceViolation",
     "WindowRanker",
     "apply_tensor_advice",
+    "enforce_floor",
     "job_performance_report",
     "lucas_alignment",
     "lucas_weight",
     "partition",
     "verify_share",
+    "verify_tensor_advice_replay",
 ]
