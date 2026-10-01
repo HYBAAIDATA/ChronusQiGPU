@@ -9,9 +9,9 @@ import pytest
 import mining.bitcoin_hasher as hasher_module
 
 
-def test_kernel_resolution_uses_jv_package(tmp_path, monkeypatch):
+def test_kernel_resolution_uses_chronus_package(tmp_path, monkeypatch):
     monkeypatch.setattr(hasher_module, "__file__", str(tmp_path / "mining" / "bitcoin_hasher.py"))
-    packaged = tmp_path / "iGPU_Accelerator_JV" / "kernels" / "bitcoin_sha256d.cl"
+    packaged = tmp_path / "chronus" / "kernels" / "bitcoin_sha256d.cl"
     packaged.parent.mkdir(parents=True)
     packaged.write_text("// packaged kernel", encoding="utf-8")
     assert hasher_module._resolve_kernel_path() == packaged
@@ -20,7 +20,7 @@ def test_kernel_resolution_uses_jv_package(tmp_path, monkeypatch):
 def test_kernel_resolution_prefers_root_layout(tmp_path, monkeypatch):
     monkeypatch.setattr(hasher_module, "__file__", str(tmp_path / "mining" / "bitcoin_hasher.py"))
     canonical = tmp_path / "kernels" / "bitcoin_sha256d.cl"
-    packaged = tmp_path / "iGPU_Accelerator_JV" / "kernels" / "bitcoin_sha256d.cl"
+    packaged = tmp_path / "chronus" / "kernels" / "bitcoin_sha256d.cl"
     for path in (canonical, packaged):
         path.parent.mkdir(parents=True)
         path.write_text("// kernel", encoding="utf-8")
@@ -32,7 +32,7 @@ def test_missing_kernel_reports_checked_paths(tmp_path, monkeypatch):
     with pytest.raises(FileNotFoundError, match="SHA-256d kernel not found") as exc:
         hasher_module._resolve_kernel_path()
     assert str(tmp_path / "kernels" / "bitcoin_sha256d.cl") in str(exc.value)
-    assert str(tmp_path / "iGPU_Accelerator_JV" / "kernels" / "bitcoin_sha256d.cl") in str(
+    assert str(tmp_path / "chronus" / "kernels" / "bitcoin_sha256d.cl") in str(
         exc.value
     )
 

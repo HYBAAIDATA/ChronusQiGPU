@@ -355,7 +355,7 @@ class NearStateIGpu:
         if winner_nonce is not None:
             blob = header80[:76] + struct.pack("<I", int(winner_nonce) & 0xFFFFFFFF)
             digest = _double_sha256(blob)
-            recheck_ok = digest == result.winning_hash and digest[::-1] < target_be
+            recheck_ok = digest == result.winning_hash and digest[::-1] <= target_be  # consensus: <= target
             cassini_ok = CassiniVerifier.verify(7)
 
         elapsed = time.perf_counter() - t0
@@ -398,7 +398,7 @@ class FourLayerMiningStack:
         self.aethel = AethelStore()
         self.tensor = TensorFoldEngine()
         self.turing = TuringLayer(n_qubits=n_qubits)
-        self.igpu = NearStateIGpu(self.aethel, self.tensor)
+        self.chronus = NearStateIGpu(self.aethel, self.tensor)
 
     def mine_block(
         self,
@@ -433,7 +433,7 @@ class FourLayerMiningStack:
         fold_ok = self.tensor.decompress(folded_header) == header80
 
         # Layer 4: execute — score, reorder, real sha256d grind.
-        result = self.igpu.mine(header80, target_be, schedule, max_hashes=max_hashes)
+        result = self.chronus.mine(header80, target_be, schedule, max_hashes=max_hashes)
 
         # Integrity: Cassini on the golden anchor.
         cassini_ok = self.turing.cassini_holds(7)
@@ -465,7 +465,7 @@ class FourLayerMiningStack:
                     "bond_dimension_effective": result["schmidt"]["bond_dimension_effective"],
                 },
                 "turing": self.turing.status(),
-                "igpu": {
+                "chronus": {
                     k: result[k]
                     for k in (
                         "winning_nonce",

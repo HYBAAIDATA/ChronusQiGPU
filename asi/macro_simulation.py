@@ -400,18 +400,14 @@ class MacroCausalSimulationEngine:
                 predicted_value = self._calculate_forecast(variable, scenario, year)
 
                 # Calculate confidence interval
-                uncertainty = variable.uncertainty * np.sqrt(
-                    year
-                )  # Uncertainty grows with time
+                uncertainty = variable.uncertainty * np.sqrt(year)  # Uncertainty grows with time
                 confidence_interval = (
                     predicted_value - 1.96 * uncertainty,
                     predicted_value + 1.96 * uncertainty,
                 )
 
                 # Determine Yang-Mills confidence (0.999945 for mathematically proven)
-                yang_mills_confidence = self._calculate_yang_mills_confidence(
-                    variable, scenario
-                )
+                yang_mills_confidence = self._calculate_yang_mills_confidence(variable, scenario)
 
                 # Build causal chain
                 causal_chain = self._build_causal_chain(variable)
@@ -547,9 +543,7 @@ class MacroCausalSimulationEngine:
                     yang_mills_forecasts.append(forecast)
 
         forecast_accuracy = (
-            len(yang_mills_forecasts) / sum(len(f) for f in forecasts.values())
-            if forecasts
-            else 0
+            len(yang_mills_forecasts) / sum(len(f) for f in forecasts.values()) if forecasts else 0
         )
 
         # Build zero-error demonstrations
@@ -601,9 +595,7 @@ class MacroCausalSimulationEngine:
             forecast_accuracy=forecast_accuracy,
             zero_error_demonstrations=zero_error_demos,
             mathematical_proofs=mathematical_proofs,
-            data_sources_verified=list(
-                set(v.data_source for v in self.variables.values())
-            ),
+            data_sources_verified=list(set(v.data_source for v in self.variables.values())),
             peer_review_status="Ready for submission",
             recommendations=recommendations,
             contact_information=contact_info,

@@ -397,9 +397,7 @@ class StatusIntelligence(IntelligentEndpoint):
 
             health_score = max(0.0, min(1.0, health_score))
 
-            self.health_history.append(
-                {"timestamp": time.time(), "health_score": health_score}
-            )
+            self.health_history.append({"timestamp": time.time(), "health_score": health_score})
 
             # Keep only recent history
             if len(self.health_history) > 1000:

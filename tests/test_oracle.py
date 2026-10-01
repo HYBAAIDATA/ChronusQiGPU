@@ -59,14 +59,23 @@ def _mine_block(height, timestamp, nonce, bits=0x201C3CFF):
 
 
 def test_oracle_uses_the_canonical_ladder_not_an_invented_one():
-    assert LUCAS_LADDER == tuple(FULL_LADDER) == (10, 12, 15, 18, 20)
-    assert 15 in LUCAS_LADDER and 20 in LUCAS_LADDER
+    assert LUCAS_LADDER == tuple(FULL_LADDER) == (10, 12, 15, 18, 20, 31, 50, 76)
+    assert 15 in LUCAS_LADDER and 76 in LUCAS_LADDER
 
 
 def test_ladder_values_are_exact_and_monotonic():
     v = verify_ladder()
     assert v["valid"] and v["monotonic"]
-    assert ladder_values() == [123, 322, 1364, 5778, 15127]
+    assert ladder_values() == [
+        123,
+        322,
+        1364,
+        5778,
+        15127,
+        3010349,
+        28143753123,
+        7639424778862807,
+    ]
 
 
 # === TOE scale program =====================================================

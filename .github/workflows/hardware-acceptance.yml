@@ -1,0 +1,22 @@
+name: Hardware Acceptance
+on:
+  workflow_dispatch:
+    inputs:
+      device_id: {required: true, type: string}
+      commit_sha: {required: true, type: string}
+permissions:
+  contents: read
+  checks: write
+  statuses: write
+jobs:
+  strict-hardware:
+    runs-on: [self-hosted, opencl, '${{ inputs.device_id }}']
+    environment: hardware-acceptance
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ inputs.commit_sha }}'}
+      - run: MLA1517_STRICT_HARDWARE_CI=1 MLA1517_GPU_BACKEND=opencl make strict-hardware-gate
+      - uses: actions/upload-artifact@v4
+        with: {name: 'strict-hardware-report-${{ inputs.device_id }}', path: results/strict_hardware_report.json}
+      - run: python scripts/publish_check_runs.py
+        env: {GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'}

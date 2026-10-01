@@ -1,7 +1,7 @@
 
 ## Exact state-vector API
 
-`mla1517.quantum.ExactStateVector` is the finite-dimensional exact algebra
+`chronus.mla1517.quantum.ExactStateVector` is the finite-dimensional exact algebra
 used by the strict mathematical plane. Amplitudes live in
 `Q(sqrt(2)) + i Q(sqrt(2))`, represented by `Fraction` coefficients. The
 implementation now exposes:
@@ -18,6 +18,6 @@ fallback is used. Unsupported Hamiltonian exponentials continue to fail
 closed with `NotImplementedError`, and state-vector resource bounds continue
 to fail closed rather than degrade.
 
-These tests certify algebraic invariants only. They do not license claims of
-physical quantum hardware, quantum advantage, exponential speedup, accepted
-pool shares, or measured iGPU throughput.
+These tests certify algebraic invariants only. Physical quantum hardware,
+quantum advantage, accepted pool shares, measured iGPU throughput, and
+exponential speedup all remain unclaimed.

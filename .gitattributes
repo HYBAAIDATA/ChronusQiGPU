@@ -1,3 +1,7 @@
 # Fixture data is verified by checksum/content digest in tests/ — EOL
 # translation on Windows checkouts corrupts the recorded measurements.
 tests/fixtures/** -text
+
+# Skill grafts are verified byte-for-byte against PROVENANCE.json
+# (Intelligence/skill_graft.py): EOL translation would reject every graft.
+Intelligence/skills/** -text

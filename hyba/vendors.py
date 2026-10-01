@@ -157,7 +157,7 @@ def _container_hint(probes: List[VendorProbe]) -> str:
     if by["rocm"].present:
         return "docker-compose.rocm.yml (ROCm devices)"
     if by["opencl"].present:
-        return "docker-compose.igpu-linux.yml or igpu-wsl2.yml"
+        return "docker-compose.chronus-linux.yml or chronus-wsl2.yml"
     return "cpu-only (pocl-opencl-icd for OpenCL CPU fallback)"
 
 

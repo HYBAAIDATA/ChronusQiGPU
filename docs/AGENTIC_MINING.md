@@ -147,3 +147,30 @@ stateDiagram-v2
 In strict accordance with Section 9 (Failure Protocol):
 1. **Physical QPU Hardware Execution**: Offloaded to exact complex linear algebra in classical host memory registers via `UnifiedPunchHost` CPU/GPU drivers in accordance with `AGENTS.md` ("Quantum Comes From Maths").
 2. **Live ASIC Tapeout Telemetry**: The Q5 ASIC is modeled via SystemVerilog RTL and exact Python/TypeScript simulation engines pending high-NA EUV physical manufacturing.
+
+---
+
+## 9. Runtime Wiring Status (Verified on `main`)
+
+Sections 1–8 are the architecture specification. This section records what is
+*actually wired and verified* in `chronus/mla1517_platform/` today — each entry
+was checked against running code, not inferred.
+
+| Path | Status | Evidence |
+|------|--------|----------|
+| `main.py` → `control_api.serve()` → worker supervision (`agentic-mining`, `salamander`, `discovery`) | WIRED | `/api/v1/mla1517/status` reports per-worker state/liveness from heartbeat sidecars; stale sidecars are excluded from counters |
+| HTTP control boundary | WIRED, fail-closed | Non-privileged mutating routes require `EUCLID_ADMIN_API_KEY` Bearer (403 closed when unset, 401 on bad/missing); privileged prefixes `mining/,policy/,worker/,recovery/,admin/,toe/,quantum/,scale/,assembly/,security/` are evaluated by the AL HARAS guardian (400 tenant/actor required, 402 missing token, 403 evaluated deny); guardian package absent → 503 `guardian_dependency_unavailable`, never silent allow |
+| Campaign lifecycle `POST /api/v1/campaign/{start,stop}` → `system_fabric.start_campaign` | WIRED | Verified live: `running` → operator `stop` → terminal `"stopped"` (never `"error"`), `retired` lists all arms on every exit path incl. phase failure; `measured_hs_avg` is `null` when nothing was measured — an observed `0.0` stays a measurement |
+| Salamander fault→repair→verify-recovery | WIRED (engine level) | `step()` drives sense→`FaultBucket`→`McLaren`→staged CSR commit; a lane faults past trip → ack-gated `retire:N` with `mode=RECOVERING` under an open `recovery_id`; only a later observation with no pending actions reports `NORMAL`/`DE_RATE` and closes it; quarantined lanes re-enter after `PROBATION_MS` + 3 passing self-tests (`readmit:N`); unacknowledged commits count as no repair; at `MIN_LANES` the floor reports `degraded_mode`/`DE_RATE` instead of retiring further |
+| Pool failover (coordinator + salamander) | WIRED | `connect_with_failover` round-robins endpoints: all-auth-failure → hard `StratumAuthorizationError`, transport errors → `reconnect_delay` retry; salamander `stratum_drops > 3` → `request_failover` via the coordinator control socket (cooldown 30 s, dwell 10 s); failed switches cancel, never latch |
+| Pool outcome counters | WIRED, distinct | `submitted/accepted/rejected/unknown` in the published stratum snapshot: literal `result:true` → accepted, `false` → rejected, timeout/disconnect/non-boolean → `OUTCOME_UNKNOWN`; no invented acknowledgements; submit on a stale job generation raises |
+| Work identity | WIRED | `mining.submit` binds to the active job generation/fingerprint; the live-submit approval is `SHA-256(endpoint|worker)` — re-polled every 5 s and revoked on pool identity change |
+| Persistence/restore | WIRED (config + share session) | `runtime_config` writes are durable and validated; corrupt files fall back to defaults; `MiningSession` restores state + share log across restart (crash mid-share resolves `OUTCOME_UNKNOWN`) |
+| Live share submission | GATED — NOT_RUN | Permitted only by `--submit` or the identity-bound runtime approval; never exercised here (no pool, no authorization) |
+| Device compute path (start→device ready→SHA256d→pool accept) | BLOCKED | No bound mining device on this host (`gates.mmio_device: false`); CPU is never reported as device execution — `execution_backend.route` and `measured_hardware` truth classes stay honest |
+| Browser operator journeys | WIRED | `frontend/` console polls real backend evidence and drives the subscription credential flow (prompt → `X-HYBA-*` + Bearer + `observation` → retry); offline/degraded panels render unavailable truth states, never fabricated data; unauthorized direct requests are denied independently of the UI |
+
+**MAP-01 note:** `system_fabric.forensic_map()` labels a subsystem `wired` only
+when its module both exists *and* imports cleanly; present-but-unimportable
+modules degrade to `wired="parked"` with a `parked_reason`, so the map can no
+longer claim wiring that a real import contradicts.

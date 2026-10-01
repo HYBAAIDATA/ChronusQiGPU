@@ -1,0 +1,102 @@
+# 12.9 Pairings <-> Architecture — pairing admission registry.
+# A pairing enters the architecture only VERIFIED, carrying a PairingTest
+# record (test command, matched baseline, reproducibility command).
+# PROHIBITED pairings and REFUTED results may never re-enter.
+version: 1
+verified_pairings:
+  - name: fibonacci_cassini
+    pair: [fibonacci, cassini]
+    status: VERIFIED
+    pairing_test:
+      test_command: "python -m pytest tests/test_aethel_storage.py -x -q"
+      baseline: "aethel.storage.CassiniLedger"
+      reproduce_command: "python -m pytest tests/test_aethel_storage.py -x -q"
+  - name: fibonacci_lucas
+    pair: [fibonacci, lucas]
+    status: VERIFIED
+    pairing_test:
+      test_command: "python -m pytest tests/test_aethel_storage.py -x -q"
+      baseline: "aethel.fibonacci lucas identities"
+      reproduce_command: "python -m pytest tests/test_aethel_storage.py -x -q"
+  - name: fibonacci_zeckendorf
+    pair: [fibonacci, zeckendorf]
+    status: VERIFIED
+    pairing_test:
+      test_command: "python -m pytest tests/test_aethel_storage.py -x -q"
+      baseline: "aethel.zeckendorf.HardenedZeckendorfCodec"
+      reproduce_command: "python -m pytest tests/test_aethel_storage.py -x -q"
+  - name: binet_exact_fibonacci_lucas
+    pair: [binet, exact_fibonacci_lucas]
+    status: VERIFIED
+    pairing_test:
+      test_command: "python scripts/audit_chronus_contracts.py --only 12.2"
+      baseline: "exact fold contracts (12.2)"
+      reproduce_command: "python scripts/audit_chronus_contracts.py --only 12.2"
+  - name: pisot_lucas
+    pair: [pisot, lucas]
+    status: VERIFIED
+    pairing_test:
+      test_command: "python scripts/audit_chronus_contracts.py --only 12.2"
+      baseline: "exact fold contracts (12.2)"
+      reproduce_command: "python scripts/audit_chronus_contracts.py --only 12.2"
+  - name: q_matrix_fibonacci_lucas_cassini
+    pair: [q_matrix, fibonacci_lucas_cassini]
+    status: VERIFIED
+    pairing_test:
+      test_command: "python -m pytest tests/test_aethel_storage.py -x -q"
+      baseline: "cassini quadruple verification"
+      reproduce_command: "python -m pytest tests/test_aethel_storage.py -x -q"
+  - name: m32_graph_laplacian
+    pair: [m32, graph_laplacian]
+    status: VERIFIED
+    pairing_test:
+      test_command: "python scripts/audit_chronus_contracts.py --only 12.2b"
+      baseline: "M32 transport behaviour"
+      reproduce_command: "python scripts/audit_chronus_contracts.py --only 12.2b"
+  - name: m32_h_equals_l_plus_v
+    pair: [m32, "H = L + V"]
+    status: VERIFIED
+    pairing_test:
+      test_command: "python scripts/audit_chronus_contracts.py --only 12.2b"
+      baseline: "M32 Hamiltonian decomposition"
+      reproduce_command: "python scripts/audit_chronus_contracts.py --only 12.2b"
+  - name: m32_engine_cassini_zeckendorf_seals
+    pair: [m32_engine, cassini_zeckendorf_seals]
+    status: VERIFIED
+    pairing_test:
+      test_command: "python -m pytest tests/test_aethel_storage.py -x -q"
+      baseline: "Cassini/Zeckendorf seal verification"
+      reproduce_command: "python -m pytest tests/test_aethel_storage.py -x -q"
+  - name: quantum_core_substrate_agnostic_backends
+    pair: [quantum_core, substrate_agnostic_backends]
+    status: VERIFIED
+    pairing_test:
+      test_command: "python scripts/audit_chronus_contracts.py --only C2,seam"
+      baseline: "substrate-agnostic backend certificates"
+      reproduce_command: "python scripts/audit_chronus_contracts.py --only C2,seam"
+prohibited_pairings:
+  - name: lucas_pisot_quantum_speedup
+    pair: [lucas, pisot, quantum_speedup]
+    status: PROHIBITED
+  - name: prime_addressing_as_physical_capacity
+    pair: [prime_addressing, physical_capacity]
+    status: PROHIBITED
+  - name: universal_binet_compression
+    pair: [binet, universal_compression]
+    status: PROHIBITED
+  - name: spectral_gap_as_binding_energy
+    pair: [spectral_gap, binding_energy]
+    status: PROHIBITED
+  - name: metallic_ratios_as_zero_resonance
+    pair: [metallic_ratios, zero_resonance]
+    status: PROHIBITED
+  - name: unvalidated_packing_forecasting_turbine_docking
+    pair: [packing_forecasting, turbine_docking]
+    status: PROHIBITED
+refuted_results:
+  - zeckendorf_reduces_generic_address_bits
+  - float64_binet_lossless_storage
+  - lucas_pisot_phase_quantum_speedup
+  - global_phase_changes_probabilities
+  - plastic_identity_rho5_equals_rho2_plus_1
+  - spectral_gap_proves_drug_binding_affinity

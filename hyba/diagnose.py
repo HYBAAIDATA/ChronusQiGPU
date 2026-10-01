@@ -19,29 +19,27 @@ def _kernel_path() -> Dict[str, Any]:
     path = Path(UnifiedPunchHost().kernel_path)
     root = Path(__file__).resolve().parent.parent
     canonical = root / "kernels"
-    mirror = root / "igpu" / "kernels"
+    mirror = root / "chronus" / "kernels"
     dupes: Dict[str, Any] = {}
     if mirror.is_dir():
-        # Byte-identity assertion: a mirrored kernel that diverged silently
-        # is worse than a missing mirror — report it, never hide it.
         import hashlib
 
-        for k in sorted(mirror.glob("*.cl")):
-            canon = canonical / k.name
+        for kernel in sorted(mirror.glob("*.cl")):
+            canon = canonical / kernel.name
             if not canon.is_file():
-                dupes[k.name] = "no_canonical"
+                dupes[kernel.name] = "no_canonical"
             else:
-                same = hashlib.md5(k.read_bytes()).digest() == hashlib.md5(
+                same = hashlib.md5(kernel.read_bytes()).digest() == hashlib.md5(
                     canon.read_bytes()
                 ).digest()
-                dupes[k.name] = "identical" if same else "DIVERGED"
+                dupes[kernel.name] = "identical" if same else "DIVERGED"
     return {
         "resolved": str(path),
         "exists": path.is_file(),
         "canonical_dir": str(canonical),
-        "mirror_dir": str(mirror),
-        "mirror_dir_exists": mirror.is_dir(),
-        "mirror_kernels": sorted(x.name for x in mirror.glob("*.cl"))
+        "chronus_mirror_dir": str(mirror),
+        "chronus_mirror_exists": mirror.is_dir(),
+        "chronus_mirror_kernels": sorted(x.name for x in mirror.glob("*.cl"))
         if mirror.is_dir()
         else [],
         "mirror_byte_check": dupes,
@@ -93,14 +91,14 @@ def _hyba_alias() -> Dict[str, Any]:
             "platform_error": report.get("platform_error"),
         }
     hits = []
-    for plat in report["platforms"]:
-        for dev in plat["devices"]:
+    for platform in report["platforms"]:
+        for device in platform["devices"]:
             for alias in aliases():
-                if alias.lower() in str(dev["name"]).lower():
+                if alias.lower() in str(device["name"]).lower():
                     hits.append(
                         {
-                            "platform": plat["platform"],
-                            "device": dev["name"],
+                            "platform": platform["platform"],
+                            "device": device["name"],
                             "alias": alias,
                         }
                     )
@@ -136,17 +134,19 @@ def _hasher() -> Dict[str, Any]:
     }
 
 
-def _super_gpu() -> Dict[str, Any]:
-    """The composed substrate view: inventory + capability map + routes."""
+def _chronus() -> Dict[str, Any]:
+    """Chronus composed device view: inventory + capability map + routes."""
+    from chronus import ChronusFabric
     from hyba.inventory import ClusterInventory
-    from hyba.virtual_gpu import SuperGPU
 
     inventory = ClusterInventory.collect()
-    composed = SuperGPU.compose(inventory)
+    fabric = ChronusFabric.compose(inventory)
     return {
-        "composed": composed.as_dict(),
+        "product": "Chronus",
+        "compute_substrate": "Turing",
+        "fabric": fabric.as_dict(),
         "routes": {
-            op: composed.route(op).as_dict()
+            op: fabric.route(op).as_dict()
             for op in (
                 "sha256d_grind",
                 "m32_grind",
@@ -159,14 +159,17 @@ def _super_gpu() -> Dict[str, Any]:
 
 
 def diagnose() -> Dict[str, Any]:
-    """Collect observed-fact sections (kernel, OpenCL, alias, host, hasher, super-gpu)."""
+    """Collect observed kernel, backend and Chronus facts without projections."""
     report: Dict[str, Any] = {}
     _collect(report, "kernel_path", _kernel_path)
     _collect(report, "opencl", _opencl)
     _collect(report, "hyba_alias", _hyba_alias)
     _collect(report, "punch_host", _punch_host)
     _collect(report, "hasher", _hasher)
-    _collect(report, "super_gpu", _super_gpu)
+    _collect(report, "chronus_fabric", _chronus)
+    # The elevation spec's name for the fabric section — the same composed
+    # record, aliased so both names stay honest about the same facts.
+    report["super_gpu"] = report["chronus_fabric"]
     return report
 
 

@@ -276,8 +276,8 @@ def cassini_store(k: int) -> List[Tuple[int, int, int, int]]:
 # Pisot winding on the 11-torus — DECLARED FLOAT BOUNDARY
 # ---------------------------------------------------------------------------
 
-# phi^15 - L_15 is the drift used by the repo's historical winding step.
-_DRIFT15 = pisot_drift(15)
+# The winding step is frac(delta_15 * L_m), delta_15 = phi^15 - L_15 =
+# pisot_drift(15), evaluated exactly in _drift_step.
 
 
 def pisot_wind(state: Sequence[float], n: int) -> Tuple[float, ...]:
@@ -291,9 +291,19 @@ def pisot_wind(state: Sequence[float], n: int) -> Tuple[float, ...]:
     """
     if len(state) != 11:
         raise ValueError("pisot_wind operates on T^11: exactly 11 coordinates")
-    delta = _DRIFT15.to_float()
-    out = []
-    for i, coordinate in enumerate(state):
-        step = delta * lucas(n + i)
-        out.append((float(coordinate) + step) % 1.0)
-    return tuple(out)
+    return tuple(
+        (float(coordinate) + _drift_step(n + i)) % 1.0 for i, coordinate in enumerate(state)
+    )
+
+
+def _drift_step(m: int, k: int = 15) -> float:
+    """frac(delta_k * L_m) without forming L_m as a float.
+
+    delta_k = phi^k - L_k = phi^-k, and phi^j = L_j - psi^j for every
+    integer j, so delta_k * L_m = L_{m-k} - psi^(m-k) - psi^(m+k). L_{m-k}
+    is an integer; the step is the fractional part of the bounded rest.
+    (Multiplying the float drift by L_m overflows near m = 1475 and has
+    lost every fractional digit long before, near m = 70.)
+    """
+    psi = (1.0 - 5.0**0.5) / 2.0
+    return (-(psi ** (m - k) + psi ** (m + k))) % 1.0

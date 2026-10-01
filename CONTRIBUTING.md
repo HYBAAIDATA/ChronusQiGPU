@@ -37,7 +37,7 @@ npm run build
 python -m flake8 --count
 python -m black --check .
 python -m pytest tests/ -x -q
-python -m unittest discover -s mla1517_platform_v3.4/python
+python -m unittest discover -s chronus/mla1517_platform/python
 python3 scripts/re_paper_gate.py
 ```
 

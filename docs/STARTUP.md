@@ -4,17 +4,21 @@
 ## Startup architecture and finite state contract
 
 `main.py` acquires the boot lock, resolves canonical Stratum identity, starts
-the control API, and supervises exactly two production workers:
+the control API, and supervises three production workers:
 
 ```text
 main.py -> control_api.serve
        -> mining_runtime.py     (agentic-mining)
        -> salamander_engine.py  (salamander)
+       -> discovery_runtime.py  (discovery: experiments on a simulated twin only)
 ```
 
 The production worker topology is process-based inside `pythia-main`:
-`control_api.py` starts `mining_runtime.py` and `salamander_engine.py` as local
-child processes. It does not mount `docker.sock` and cannot start, stop, or
+`control_api.py` starts `mining_runtime.py`, `salamander_engine.py` and
+`discovery_runtime.py` as local child processes (`PYTHIA_CONTROL_WORKERS`
+selects them). The workers share what they learn through the knowledge
+fabric journal (`$PYTHIA_INTELLIGENCE_DIR/knowledge.jsonl`), served at
+`/api/v1/knowledge`. It does not mount `docker.sock` and cannot start, stop, or
 signal another container. Docker's `on-failure:5` policy watches only the
 `pythia-main` supervisor process. The optional `pythia-braiins` and
 `pythia-viabtc` Compose profile services are dry-run integration sidecars, not

@@ -13,7 +13,7 @@ This document records PYTHIA's production security controls. See
 - `main.py` auto-loads a repo-root `.env` (process env wins; `.env` fills gaps).
   `.env`, `.env.braiins`, `.env.viabtc` are gitignored; only `.env.example`
   templates are committed.
-- `StratumIdentity` (see `mla1517_platform_v3.4/python/startup_contract.py`)
+- `StratumIdentity` (see `chronus/mla1517_platform/python/startup_contract.py`)
   stores only `sha256(password)`; alias-conflict errors mask values `[:2]***`.
 - `firebase-applet-config.json` contains a committed Firebase web apiKey that is
   unused by code. `firestore.rules` is default-deny + auth-required. Treat as
@@ -43,6 +43,12 @@ refused.
 - Missing MMIO/OpenCL device → unavailable/failed-closed, never a pass.
 - Missing credentials → refused, never default credentials.
 - Conflicting canonical/alias env values → `ConfigConflict`.
+- Guardian dependency unavailable or raising → privileged routes answer
+  `503 {"available": false, ...}`, never a dropped connection or silent allow
+  (`control_api._guardian_preflight`).
+- `PYTHIA_BITCOIN_NETWORK` set but node absent or reporting a different chain →
+  startup aborts (`mining_runtime.assert_declared_chain`), never mines on an
+  unverified network.
 - Non-bool `mining.submit` result or rejected share → not reported as accepted.
 - Proof of work is only real SHA256d; no synthetic acceptance, fixed hashrate,
   or theoretical multiplier is ever reported.

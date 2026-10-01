@@ -26,10 +26,7 @@ for p in (_PYTHIA_DIR, _INTEL_DIR, os.path.abspath("."), os.path.abspath("Intell
 
 import pytest
 
-try:
-    from Intelligence.agentic_mining import AgenticMiningWorkflow
-except ImportError:
-    from agentic_mining import AgenticMiningWorkflow
+from Intelligence.agentic_mining import AgenticMiningWorkflow
 
 
 class TestEightContracts:

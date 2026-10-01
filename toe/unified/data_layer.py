@@ -83,6 +83,10 @@ class UnifiedDataLayer:
         self.index_visits = 0
         self.scan_visits = 0
         self.row_audit: list[str] = []
+        # Every payload a batch presented — duplicates included. Batch
+        # quality (null rate) is a property of what was received, not just
+        # of the novel rows that landed.
+        self._batch_payloads: dict[str, list[dict]] = {}
 
     def set_policy(self, policy: Policy) -> Policy:
         with self._lock:
@@ -113,8 +117,10 @@ class UnifiedDataLayer:
             inserted = 0
             duplicates = 0
             now = time.time()
+            batch_received = self._batch_payloads.setdefault(batch_id, [])
             for row in rows:
                 payload = dict(row)
+                batch_received.append(payload)
                 digest = _digest({"source": source, "entity": entity, "payload": payload})
                 if digest in self._records:
                     duplicates += 1
@@ -147,6 +153,19 @@ class UnifiedDataLayer:
                 operator_digest=operator_digest,
                 operator_kind=operator_kind,
             )
+
+    def quarantine_payloads(self, rows: list[tuple[str, str, dict]]) -> int:
+        """Mark already-ingested records quarantined by (source, entity, payload)."""
+        with self._lock:
+            count = 0
+            for source, entity, payload in rows:
+                digest = _digest({"source": source, "entity": entity, "payload": dict(payload)})
+                record = self._records.get(digest)
+                if record is not None and not record.quarantined:
+                    record.quarantined = True
+                    count += 1
+            self._audit("quarantine", "payloads", {"rows": count})
+            return count
 
     def quarantine(self, batch_id: str) -> int:
         with self._lock:
@@ -186,21 +205,25 @@ class UnifiedDataLayer:
     def rows(self, entity: str, *, include_quarantined: bool = False) -> list[Record]:
         self._audit("read", entity, {})
         key = entity.casefold()
-        digests = self._by_entity.get(key, [])
-        self.index_visits += len(digests)
-        return [
-            self._records[digest]
-            for digest in digests
-            if include_quarantined or not self._records[digest].quarantined
-        ]
+        # Iterate under _lock — the monitor thread calls in while ingest
+        # mutates _records/_by_entity on the caller's thread.
+        with self._lock:
+            digests = list(self._by_entity.get(key, []))
+            self.index_visits += len(digests)
+            return [
+                self._records[digest]
+                for digest in digests
+                if include_quarantined or not self._records[digest].quarantined
+            ]
 
     def scan_rows(self, entity: str) -> list[Record]:
-        self.scan_visits += len(self._records)
-        return [
-            record
-            for record in self._records.values()
-            if _same(record.entity, entity) and not record.quarantined
-        ]
+        with self._lock:
+            self.scan_visits += len(self._records)
+            return [
+                record
+                for record in self._records.values()
+                if _same(record.entity, entity) and not record.quarantined
+            ]
 
     def storage_ratio(self) -> float:
         if self.stored_bytes == 0:
@@ -212,11 +235,12 @@ class UnifiedDataLayer:
         return json.loads(raw.decode("utf-8"))
 
     def quality(self, entity: str | None = None) -> QualityReport:
-        chosen = [
-            record
-            for record in self._records.values()
-            if entity is None or _same(record.entity, entity)
-        ]
+        with self._lock:
+            chosen = [
+                record
+                for record in self._records.values()
+                if entity is None or _same(record.entity, entity)
+            ]
         if not chosen:
             return QualityReport(entity, 0, 0, 0.0, 0.0, {})
         fields: dict[str, dict] = {}
@@ -278,11 +302,18 @@ class UnifiedDataLayer:
         return results
 
     def batch_null_rate(self, batch_id: str) -> float:
-        chosen = [record for record in self._records.values() if record.batch_id == batch_id]
+        # Score every payload the batch carried — a duplicate row still
+        # counts toward the receiving batch's quality even though it lands
+        # under its original batch id.
+        with self._lock:
+            payloads = self._batch_payloads.get(batch_id)
+            if payloads is None:
+                chosen = [record for record in self._records.values() if record.batch_id == batch_id]
+                payloads = [record.payload for record in chosen]
         cells = 0
         nulls = 0
-        for record in chosen:
-            for value in record.payload.values():
+        for payload in payloads:
+            for value in payload.values():
                 cells += 1
                 if value is None or value == "":
                     nulls += 1
@@ -308,6 +339,14 @@ def _matches(payload: Mapping[str, Any], where: tuple[tuple[str, str, Any], ...]
         if op in (">", ">=", "<", "<="):
             if not isinstance(actual, (int, float)) or isinstance(actual, bool):
                 return False
+            # A non-numeric bound would compare float against str — the query
+            # contract is a QueryError, not an uncaught TypeError.  Deferred
+            # import: bi.py depends on this module, so the name resolves at
+            # call time.
+            if not isinstance(expected, (int, float)) or isinstance(expected, bool):
+                from .bi import QueryError
+
+                raise QueryError(f"ordered comparison {op} requires a numeric bound, got {expected!r}")
             if op == ">" and not actual > expected:
                 return False
             if op == ">=" and not actual >= expected:

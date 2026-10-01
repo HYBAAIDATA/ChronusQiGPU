@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
-_PLATFORM = _REPO_ROOT / "mla1517_platform_v3.4" / "python"
+_PLATFORM = _REPO_ROOT / "chronus/mla1517_platform" / "python"
 
 # Re-home first so the repo root lands at sys.path[0]: the platform tree
 # carries its own bare ``turing_core`` shim which must NOT shadow the root
@@ -46,4 +46,3 @@ while _INTELLIGENCE_DIR in sys.path:
 import hyba_compat  # noqa: E402
 
 hyba_compat.install()
-

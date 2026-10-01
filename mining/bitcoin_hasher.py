@@ -1,6 +1,7 @@
 """Bounded SHA-256d batches with explicit CPU/OpenCL backend provenance."""
 
 import hashlib
+import math
 import os
 import struct
 from pathlib import Path
@@ -15,8 +16,7 @@ def _resolve_kernel_path():
     root = Path(__file__).resolve().parent.parent
     candidates = (
         root / "kernels" / "bitcoin_sha256d.cl",
-        root / "igpu" / "kernels" / "bitcoin_sha256d.cl",
-        root / "iGPU_Accelerator_JV" / "kernels" / "bitcoin_sha256d.cl",
+        root / "chronus" / "kernels" / "bitcoin_sha256d.cl",
     )
     for candidate in candidates:
         if candidate.is_file():
@@ -356,12 +356,11 @@ class BitcoinHasher:
                     # hashlib reference. A kernel that disagrees with the
                     # oracle refuses to bind — the elevation rule.
                     gold_win, gold_dig, gold_n, _ = self.grind_target_gold(
-                        header, b"\xff" * 32, 4, seed=0)
+                        header, b"\xff" * 32, 4, seed=0
+                    )
                     exp_nonce = (0 + 0 * self.GOLDEN_STRIDE) & 0xFFFFFFFF
-                    if gold_win != exp_nonce or gold_dig != expected[0] \
-                            or gold_n != 4:
-                        raise RuntimeError(
-                            "OpenCL golden-stride kernel self-check failed")
+                    if gold_win != exp_nonce or gold_dig != expected[0] or gold_n != 4:
+                        raise RuntimeError("OpenCL golden-stride kernel self-check failed")
                     self._gold_device_run = "PASS"
                 else:
                     self._gold_device_run = "NOT_RUN"
@@ -421,9 +420,7 @@ class BitcoinHasher:
         # Batch path items: each item costs 4B nonce + 1B hit; the nonce
         # buffer itself must fit one allocation.
         batch_items = min(max_alloc // 4, mem_floor // 5)
-        self.grind_batch = _snap_ladder_index(
-            min(GRIND_BATCH, batch_items), 320, GRIND_BATCH
-        )
+        self.grind_batch = _snap_ladder_index(min(GRIND_BATCH, batch_items), 320, GRIND_BATCH)
         # m32 paths: bound the EPOCH count by the spec floor, then snap it —
         # nonce totals stay multiples of 32, so launch boundaries land on
         # lane boundaries exactly as the serial solver walks them.
@@ -461,6 +458,7 @@ class BitcoinHasher:
         self.k_range = getattr(self.program, "bitcoin_sha256d_range", None)
         self.k_m32 = getattr(self.program, "bitcoin_sha256d_m32", None)
         self.k_gold = getattr(self.program, "bitcoin_sha256d_gold", None)
+        self.k_hendrix = getattr(self.program, "bitcoin_sha256d_hendrix", None)
         self._buf_lanes = cl.Buffer(self.ctx, mf.READ_ONLY, 32) if self.k_m32 is not None else None
         if self.k_gold is not None:
             # scratch[0] = winner probe-index sentinel (scratch[1] is unused;
@@ -606,11 +604,7 @@ class BitcoinHasher:
         hits = np.empty(n, dtype=np.uint8)
         cl.enqueue_copy(self.queue, hits, self._buf_hits).wait()
         idx = int(np.argmax(hits))
-        flagged = (
-            [int(nonce_array[i]) for i in np.flatnonzero(hits)[:hit_cap]]
-            if hit_cap
-            else []
-        )
+        flagged = [int(nonce_array[i]) for i in np.flatnonzero(hits)[:hit_cap]] if hit_cap else []
         if hits[idx]:
             nonce = int(nonce_array[idx])
             blob = header80[:76] + struct.pack("<I", np.uint32(nonce))
@@ -858,6 +852,101 @@ class BitcoinHasher:
             done += take
         return None, None, count
 
+    @property
+    def hendrix_on_device(self) -> bool:
+        """True when this device executes the Hendrix order itself."""
+        return self.backend != "cpu" and getattr(self, "k_hendrix", None) is not None
+
+    def grind_target_hendrix(
+        self, header80, target_be, base_nonce, window, stride, position, count
+    ):
+        """Hendrix structured-search grind: positions ``[position, position +
+        count)`` of the coprime-stride schedule over ``[base, base + window)``.
+
+        Position ``p`` visits ``base + (p * stride) % window``; with ``stride``
+        coprime to ``window`` the full schedule is a bijection of the window,
+        so the grind never leaves the lease. The device derives every nonce
+        itself; the first winning position (``atomic_min``, as the serial
+        scan) is re-verified with hashlib, and a device hit that fails the
+        recheck raises. Returns ``(winner_nonce | None, winner_digest | None,
+        hashes)``.
+        """
+        if len(header80) != 80:
+            raise ValueError("header must be exactly 80 bytes")
+        if len(target_be) != 32:
+            raise ValueError("target must be 32 bytes")
+        window, stride, position, count = int(window), int(stride), int(position), int(count)
+        if not 0 < window <= 1 << 32:
+            raise ValueError("window must be in (0, 2^32]")
+        if math.gcd(stride, window) != 1:
+            raise ValueError("stride must be coprime to the window")
+        if position < 0 or count < 0 or position + count > window:
+            raise ValueError("positions must lie inside the window's schedule")
+        if count == 0:
+            return None, None, 0
+        base_nonce = int(base_nonce) & 0xFFFFFFFF
+
+        def nonce_at(p: int) -> int:
+            return (base_nonce + (p * stride) % window) & 0xFFFFFFFF
+
+        if not self.hendrix_on_device:
+            hashes = 0
+            target_int = int.from_bytes(target_be, "big")
+            blob = bytearray(header80)
+            for p in range(position, position + count):
+                nonce = nonce_at(p)
+                digest = self._cpu_hash_into(blob, nonce)
+                hashes += 1
+                if int.from_bytes(digest, "little") <= target_int:
+                    return nonce, digest, hashes
+            return None, None, hashes
+        cl = self.cl
+        if header80 != self._cached_header:
+            mid = sha256_midstate(header80[:64])
+            cl.enqueue_copy(self.queue, self._buf_mid, np.frombuffer(mid, np.uint8)).wait()
+            cl.enqueue_copy(self.queue, self._buf_header, np.frombuffer(header80, np.uint8)).wait()
+            self._cached_header = header80
+        if target_be != self._cached_target:
+            cl.enqueue_copy(self.queue, self._buf_target, np.frombuffer(target_be, np.uint8)).wait()
+            self._cached_target = target_be
+        NO_HIT = 0xFFFFFFFF
+        done = 0
+        while done < count:
+            take = min(self.m32_launch, count - done)
+            cl.enqueue_copy(self.queue, self._buf_scratch, np.array([NO_HIT], dtype=np.uint32))
+            evt = self.k_hendrix(
+                self.queue,
+                (take,),
+                None,
+                self._buf_mid,
+                self._buf_header,
+                self._buf_target,
+                np.uint32(base_nonce),
+                np.uint32(window & 0xFFFFFFFF),
+                np.uint32(stride % window),
+                np.uint32(position + done),
+                self._buf_scratch,
+                np.uint32(take),
+            )
+            evt.wait()
+            self.kernel_ms += (evt.profile.end - evt.profile.start) / 1e6
+            self.launches += 1
+            scratch = np.empty(1, dtype=np.uint32)
+            cl.enqueue_copy(self.queue, scratch, self._buf_scratch).wait()
+            gid = int(scratch[0])
+            if gid != NO_HIT:
+                nonce = nonce_at(position + done + gid)
+                blob = header80[:76] + struct.pack("<I", np.uint32(nonce))
+                digest = hashlib.sha256(hashlib.sha256(blob).digest()).digest()
+                if digest[::-1] <= target_be:
+                    return nonce, digest, done + take
+                raise RuntimeError(
+                    "device reported a hit that fails the hashlib recheck "
+                    f"(nonce {nonce}) — refusing to accept"
+                )
+            done += take
+        return None, None, count
+
     GOLDEN_STRIDE = 0x9E3779B9  # floor(2**32 / phi); odd → stride walk is a bijection mod 2^32
     # Hit-FIFO depth is derived, not magic: fib(6) = 8 — the kernel's
     # GOLD_FIFO_DEPTH literal must equal this or init refuses to bind it.
@@ -917,8 +1006,7 @@ class BitcoinHasher:
             # Stale build: fall back to the batch grind, collecting the same
             # bounded hit telemetry the gold kernel's FIFO would report.
             nonces = (
-                (np.arange(count, dtype=np.uint64) * stride + seed)
-                & np.uint64(0xFFFFFFFF)
+                (np.arange(count, dtype=np.uint64) * stride + seed) & np.uint64(0xFFFFFFFF)
             ).astype(np.uint32)
             winner, digest, hashed, hits = self._grind_batch_collect(
                 header80, target_be, nonces, self.GOLD_FIFO_DEPTH
@@ -965,9 +1053,7 @@ class BitcoinHasher:
         flags = np.empty(count, dtype=np.uint8)
         cl.enqueue_copy(self.queue, flags, self._buf_gold_fifo).wait()
         hit_gids = np.flatnonzero(flags)[: self.GOLD_FIFO_DEPTH]
-        hit_nonces = [
-            int((seed + int(g) * stride) & 0xFFFFFFFF) for g in hit_gids
-        ]
+        hit_nonces = [int((seed + int(g) * stride) & 0xFFFFFFFF) for g in hit_gids]
         gid = int(scratch[0])
         if gid != NO_HIT:
             nonce = (seed + gid * stride) & 0xFFFFFFFF

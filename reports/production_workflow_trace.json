@@ -1,0 +1,305 @@
+{
+  "authority_table": {
+    "autonomy": "autonomous_supervisor.AutonomousSupervisor",
+    "control_api": "control_api.serve",
+    "execution_router": "ExecutionRouter",
+    "learning": "AgenticMiningController.record_outcome",
+    "mining_coordinator": "IntelligentPoolCoordinator",
+    "mining_runtime": "mining_runtime._main_async",
+    "production_entrypoint": "main.main",
+    "proof_authority": "StratumProofAdapter + host SHA256d recheck",
+    "recovery": "SelfHealingAgent/RecoveryGovernor",
+    "search_planner": "AgenticMiningController/SearchPlan",
+    "stratum_transport": "manifold_pool_coordinator.StratumClient",
+    "toe_adapter": "TOEMiningAdapter"
+  },
+  "correlation": {
+    "candidate_id": "candidate:8639e563-9202-474c-ab4e-0ea2fe6ed4eb",
+    "execution_id": "execution:6758c5d2-6194-4a1e-adb8-3ade73d639da",
+    "generation": 1,
+    "job_fingerprint": "fingerprint-controlled",
+    "lease_id": "plan:f9ea87a9-6047-4682-a898-faa4da151a80",
+    "plan_id": "plan:f9ea87a9-6047-4682-a898-faa4da151a80",
+    "pool_session_id": "session-controlled",
+    "toe_frame_id": "155deaa0db2b90c17a2a01ad0f3e2961b1e94c891defcb3770a5063082eb4390"
+  },
+  "evidence_commit": "4a8ba0a463ae4d931b9bfd43a3d1812abc879d75",
+  "invariants": {
+    "same_plan_lease_execution": true,
+    "same_toe_frame_plan_execution": true,
+    "sha256d_local_authority": true,
+    "unknown_outcome_no_reward": true
+  },
+  "live_evidence": [
+    {
+      "actual_backend": "cpu",
+      "authorize": "ACCEPTED",
+      "connected": true,
+      "device": "CPU (hashlib)",
+      "difficulty": "16384.0",
+      "elapsed_s": 240.0,
+      "endpoint": "btc.viabtc.top:3333",
+      "extranonce1": "f3838060",
+      "extranonce2_size": 8,
+      "fallback_reason": "clGetPlatformIDs failed: PLATFORM_NOT_FOUND_KHR",
+      "file_exists": true,
+      "halt": "Reached max runtime limit (240.0s).",
+      "hash_windows": 563,
+      "hashes": 112600000,
+      "jobs": [
+        "b0da",
+        "b0db",
+        "b0dc",
+        "b0dd",
+        "b0de",
+        "b0e0",
+        "b0e2",
+        "b0e3",
+        "b0e4",
+        "b0e5",
+        "b0e6",
+        "b0e7",
+        "b0e8",
+        "b0ea",
+        "b0eb",
+        "b0ec",
+        "b0ed",
+        "b0ef",
+        "b0f0",
+        "b0f1"
+      ],
+      "log": "smoke-artifacts\\live-pool-viabtc-20260930-062746.log",
+      "measured_rate_mhs": 0.47,
+      "nbits": "17021ec5",
+      "nonce_orders_observed": [
+        "m32"
+      ],
+      "share_verdict": "NOT_RUN",
+      "shares_accepted": 0,
+      "shares_rejected": 0,
+      "worker": "PYTHIA.001"
+    },
+    {
+      "actual_backend": null,
+      "authorize": "REJECTED",
+      "connected": true,
+      "device": null,
+      "difficulty": null,
+      "endpoint": "stratum.braiins.com:3333",
+      "fallback_reason": null,
+      "file_exists": true,
+      "halt": null,
+      "hash_windows": 0,
+      "jobs": [],
+      "log": "smoke-artifacts\\live-pool-braiins-20260930-062733.log",
+      "nbits": null,
+      "nonce_orders_observed": [],
+      "share_verdict": "NOT_RUN",
+      "worker": "PYTHGOROS.pythiA"
+    }
+  ],
+  "live_pool_claim": "MEASURED",
+  "mode": "CONTROLLED_PROTOCOL_BOUNDARY",
+  "outcome": "NOT_SUBMITTED",
+  "physical_device_claim": "NOT_RUN",
+  "schema": "pythia.production_workflow_trace/1",
+  "stages": [
+    {
+      "component": "WorkIdentity",
+      "correlation_ids": {
+        "generation": 1,
+        "pool_session_id": "session-controlled"
+      },
+      "evidence_class": "CONTROLLED_PROTOCOL_BOUNDARY",
+      "function": "controlled protocol fixture",
+      "stage": "stratum_boundary",
+      "status": "PASS"
+    },
+    {
+      "component": "TOEMiningAdapter",
+      "correlation_ids": {
+        "toe_frame_id": "155deaa0db2b90c17a2a01ad0f3e2961b1e94c891defcb3770a5063082eb4390"
+      },
+      "evidence_class": "CONTROLLED_EXECUTION",
+      "function": "analyse -> build_toe_decision_frame",
+      "stage": "toe_decision_frame",
+      "status": "PASS"
+    },
+    {
+      "component": "AgenticMiningController",
+      "correlation_ids": {
+        "lease_id": "plan:f9ea87a9-6047-4682-a898-faa4da151a80",
+        "plan_id": "plan:f9ea87a9-6047-4682-a898-faa4da151a80",
+        "toe_frame_id": "155deaa0db2b90c17a2a01ad0f3e2961b1e94c891defcb3770a5063082eb4390"
+      },
+      "evidence_class": "CONTROLLED_EXECUTION",
+      "function": "submit_plan -> consume_plan -> begin_execution",
+      "stage": "plan_and_lease",
+      "status": "PASS"
+    },
+    {
+      "actual_backend": "cpu_reference",
+      "actual_order": "m32_turing_complete",
+      "component": "ExecutionRouter",
+      "correlation_ids": {
+        "candidate_id": "candidate:8639e563-9202-474c-ab4e-0ea2fe6ed4eb",
+        "execution_id": "execution:6758c5d2-6194-4a1e-adb8-3ade73d639da"
+      },
+      "evidence_class": "CONTROLLED_EXECUTION",
+      "function": "execute_plan",
+      "hashes_completed": 1,
+      "requested_backend": "cpu_reference",
+      "requested_order": "m32_turing_complete",
+      "stage": "execution",
+      "status": "PASS"
+    },
+    {
+      "applied": false,
+      "component": "AgenticMiningController",
+      "correlation_ids": {
+        "execution_id": "execution:6758c5d2-6194-4a1e-adb8-3ade73d639da",
+        "plan_id": "plan:f9ea87a9-6047-4682-a898-faa4da151a80"
+      },
+      "evidence_class": "CONTROLLED_EXECUTION",
+      "function": "record_outcome",
+      "reason": "NOT_SUBMITTED has no external reward authority",
+      "stage": "learning",
+      "status": "PASS"
+    },
+    {
+      "component": "stratum_bridge",
+      "endpoint": "btc.viabtc.top:3333",
+      "evidence_class": "LIVE_POOL_MEASURED",
+      "function": "connect -> mining.subscribe",
+      "stage": "live_stratum_transport",
+      "status": "PASS",
+      "worker": "PYTHIA.001"
+    },
+    {
+      "component": "stratum_bridge",
+      "endpoint": "btc.viabtc.top:3333",
+      "evidence_class": "LIVE_POOL_MEASURED",
+      "extranonce1": "f3838060",
+      "extranonce2_size": 8,
+      "function": "mining.authorize",
+      "stage": "live_authorize",
+      "status": "ACCEPTED"
+    },
+    {
+      "actual_backend": "cpu",
+      "component": "stratum_bridge",
+      "difficulty": "16384.0",
+      "evidence_class": "LIVE_POOL_MEASURED",
+      "fallback_reason": "clGetPlatformIDs failed: PLATFORM_NOT_FOUND_KHR",
+      "function": "mining.notify -> bounded sha256d search",
+      "halt": "Reached max runtime limit (240.0s).",
+      "hashes": 112600000,
+      "jobs": [
+        "b0da",
+        "b0db",
+        "b0dc",
+        "b0dd",
+        "b0de",
+        "b0e0",
+        "b0e2",
+        "b0e3",
+        "b0e4",
+        "b0e5",
+        "b0e6",
+        "b0e7",
+        "b0e8",
+        "b0ea",
+        "b0eb",
+        "b0ec",
+        "b0ed",
+        "b0ef",
+        "b0f0",
+        "b0f1"
+      ],
+      "measured_rate_mhs": 0.47,
+      "nbits": "17021ec5",
+      "nonce_orders_observed": [
+        "m32"
+      ],
+      "stage": "live_job_and_execution",
+      "status": "PASS"
+    },
+    {
+      "component": "stratum_bridge",
+      "endpoint": "btc.viabtc.top:3333",
+      "evidence_class": "LIVE_POOL_MEASURED",
+      "function": "mining.submit literal verdict",
+      "reason": "no candidate found at pool difficulty inside the bounded window",
+      "shares_accepted": 0,
+      "shares_rejected": 0,
+      "stage": "live_share_outcome",
+      "status": "NOT_RUN"
+    },
+    {
+      "component": "stratum_bridge",
+      "endpoint": "stratum.braiins.com:3333",
+      "evidence_class": "LIVE_POOL_MEASURED",
+      "function": "connect -> mining.subscribe",
+      "stage": "live_stratum_transport",
+      "status": "PASS",
+      "worker": "PYTHGOROS.pythiA"
+    },
+    {
+      "component": "stratum_bridge",
+      "endpoint": "stratum.braiins.com:3333",
+      "evidence_class": "LIVE_POOL_MEASURED",
+      "extranonce1": null,
+      "extranonce2_size": null,
+      "function": "mining.authorize",
+      "stage": "live_authorize",
+      "status": "REJECTED"
+    },
+    {
+      "actual_backend": null,
+      "component": "stratum_bridge",
+      "difficulty": null,
+      "evidence_class": "LIVE_POOL_MEASURED",
+      "fallback_reason": null,
+      "function": "mining.notify -> bounded sha256d search",
+      "halt": null,
+      "hashes": null,
+      "jobs": [],
+      "measured_rate_mhs": null,
+      "nbits": null,
+      "nonce_orders_observed": [],
+      "stage": "live_job_and_execution",
+      "status": "NOT_RUN"
+    },
+    {
+      "component": "stratum_bridge",
+      "endpoint": "stratum.braiins.com:3333",
+      "evidence_class": "LIVE_POOL_MEASURED",
+      "function": "mining.submit literal verdict",
+      "reason": "no candidate found at pool difficulty inside the bounded window",
+      "shares_accepted": 0,
+      "shares_rejected": 0,
+      "stage": "live_share_outcome",
+      "status": "NOT_RUN"
+    }
+  ],
+  "startup_command": "PYTHIA_EXECUTION_DEVICE=cpu pythia --mine --user <worker> --password <password>",
+  "workflow_matrix": {
+    "actual_backend_recorded": "PASS",
+    "candidate_correlation": "PASS",
+    "canonical_coordinator_identified": "PASS",
+    "execution_record_produced": "PASS",
+    "execution_router_receives_plan": "PASS",
+    "learning_references_generating_plan": "PASS",
+    "literal_pool_response": "PASS",
+    "live_pool_share_accepted": "NOT_RUN",
+    "live_subscribe_authorize": "PASS",
+    "nonce_lease_produced": "PASS",
+    "observed_state_enters_toe": "PASS",
+    "physical_device_execution": "NOT_RUN",
+    "requested_backend_recorded": "PASS",
+    "search_plan_references_toe_frame": "PASS",
+    "sha256d_remains_proof_authority": "PASS",
+    "toe_decision_frame_produced": "PASS",
+    "work_identity_immutable": "PASS"
+  }
+}

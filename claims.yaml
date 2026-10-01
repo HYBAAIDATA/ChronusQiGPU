@@ -1,0 +1,60 @@
+# 12.8 Claims <-> Release Gate — the machine-checked claim register.
+# Rules (see CONTRACTS.md §12.8): VERIFIED requires a passing test_command,
+# matching artifact_hash, and a baseline; REFUTED requires a negative
+# results log; PROHIBITED must be absent from external material; HYPOTHESIS
+# stays isolated under experiments/.
+version: 1
+claims:
+  - id: c-abi-64
+    text: "HotDescriptor v1 packs to exactly 64 bytes under schema v2"
+    status: VERIFIED
+    test_command: "python scripts/schema_freeze_gate.py"
+    artifact: "scripts/schema_freeze_gate.py"
+    artifact_hash: "d841a3a991a04286e7dd08eb903ccf680ac09e8bdb5c90b93c1d5be67325fb01"
+    baseline: "SCHEMA_VERSION=2, HOT_DESCRIPTOR_V1.size=64"
+  - id: c-assembly-lock
+    text: "AssemblyLock is immutable, versioned and signed"
+    status: VERIFIED
+    test_command: "python scripts/audit_chronus_contracts.py --only C2"
+    artifact: "scripts/audit_chronus_contracts.py"
+    artifact_hash: "c71bd1a76eb128a1b2575f6df874fbe1c60ba8cc3c4c47a973bff472b5ffe6b7"
+    baseline: "AssemblyLock{schema_version,manifest_hash,policy_hash,evidence_hash,signature} frozen"
+  - id: c-receipt-mode
+    text: "ResultReceipt enforces the rehydration-count/FoldMode pairing"
+    status: VERIFIED
+    test_command: "python scripts/audit_chronus_contracts.py --only receipts"
+    artifact: "scripts/audit_chronus_contracts.py"
+    artifact_hash: "c71bd1a76eb128a1b2575f6df874fbe1c60ba8cc3c4c47a973bff472b5ffe6b7"
+    baseline: "rehydration_count>0 iff mode==REHYDRATE"
+  - id: c-runtime-config
+    text: "runtime config contract loads declared sections"
+    status: VERIFIED
+    test_command: "python -m pytest tests/test_runtime_config.py -x -q"
+    artifact: "tests/test_runtime_config.py"
+    artifact_hash: "a71860b2168d7a8182d0266e5f38e7f01bbb438baa9d117c78d8a040fe4b64e9"
+    baseline: "27 config-contract assertions"
+  - id: r-lucas-pisot-speedup
+    text: "Lucas/Pisot quantum speedup"
+    status: REFUTED
+    negative_results_log: "al_haras/refuted_claims.py"
+  - id: r-float64-binet
+    text: "Float64 Binet is lossless at high indices"
+    status: REFUTED
+    negative_results_log: "al_haras/refuted_claims.py"
+  - id: r-prime-capacity
+    text: "Prime addressing creates physical storage"
+    status: REFUTED
+    negative_results_log: "al_haras/refuted_claims.py"
+  - id: p-throughput-eh
+    text: "10 EH/s"
+    status: PROHIBITED
+  - id: p-gpu-equivalence
+    text: "One device equals 20,000 NVIDIA GPUs"
+    status: PROHIBITED
+  - id: p-exponential-speed
+    text: "Exponential speedup"
+    status: PROHIBITED
+  - id: h-remote-fabric
+    text: "remote OpenCL fabric reaches multi-device quorum at production scale"
+    status: HYPOTHESIS
+    isolated_under: "experiments/"

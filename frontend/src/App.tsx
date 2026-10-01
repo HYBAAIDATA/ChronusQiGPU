@@ -38,19 +38,16 @@ export default function App() {
 
   const poll = React.useCallback(async () => {
     try {
-      const [statusResponse, readyResponse] = await Promise.all([
-        apiFetch("/api/v1/mla1517/status"),
-        apiFetch("/api/v1/ready-to-mine"),
-      ]);
+      // The status payload carries ready_to_mine. /ready-to-mine stays a
+      // readiness probe that answers 503 until mining is ready, so the
+      // dashboard reads the same verdict here instead of polling the probe.
+      const statusResponse = await apiFetch("/api/v1/mla1517/status");
       if (statusResponse.ok) {
-        setStatus((await statusResponse.json()) as MlaStatus);
-      }
-      // ready-to-mine answers 503 with a JSON body when mining is not ready;
-      // the body is the signal, not an error.
-      try {
-        setReady((await readyResponse.json()) as ReadyToMine);
-      } catch {
-        setReady(null);
+        const body = (await statusResponse.json()) as MlaStatus & {
+          ready_to_mine?: ReadyToMine;
+        };
+        setStatus(body);
+        setReady(body.ready_to_mine ?? null);
       }
       setOffline(false);
     } catch {
@@ -108,7 +105,7 @@ export default function App() {
           </span>
           <span>
             Python control plane · {status?.backend ?? "Python/C/OpenCL"} ·{" "}
-            {status?.schema_version ?? "mla1517.status/1"}
+            {status?.schema_version ?? "chronus.mla1517.status/1"}
           </span>
         </div>
       </footer>

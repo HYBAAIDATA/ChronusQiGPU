@@ -408,19 +408,26 @@ class IntelligenceOrchestrator:
         sim = self._instances.get("quantum_cuda")
         if sim is not None and turing_core is not None:
             try:
+                window = min(nonce_window, 10_000)
                 # Use the simulator's Zeckendorf schedule directly.
                 schedule = sim._zeckendorf_schedule(
-                    min(nonce_window, 10_000),
+                    window,
                     seed=_header_seed(header),
                 )
-                k_star = sim._optimal_grover_iterations(min(nonce_window, 10_000))
+                # The GPU engine scales the space by its Lucas rung
+                # (10/12/15/18/20): report both so the caller sees what
+                # the engine would search.
+                scaled = sim.scaled_space(window) if hasattr(sim, "scaled_space") else window
+                k_star = sim._optimal_grover_iterations(scaled)
                 diagnostics["grover_k_star"] = k_star
-                diagnostics["schedule_source"] = "quantum_cuda_igpu"
+                diagnostics["lucas_scale_index"] = getattr(sim, "scale_index", None)
+                diagnostics["scaled_space"] = scaled
+                diagnostics["schedule_source"] = "quantum_cuda_chronus"
                 # A schedule existing is not evidence it predicts winners —
                 # confidence stays at whatever the AGI substrate honestly
                 # reported (0.0 when silent).
                 if confidence == 0.0:
-                    source = "quantum_cuda_igpu"
+                    source = "quantum_cuda_chronus"
             except Exception as e:  # pragma: no cover - defensive
                 diagnostics["quantum_cuda_error"] = str(e)
 
@@ -939,6 +946,15 @@ class IntelligenceOrchestrator:
         engine is unavailable (missing dependencies).
         """
         return self.toe.predict(data)
+
+    def toe_reason(self, task: Dict[str, Any]) -> Dict[str, Any]:
+        """Run TOE's structural reasoning sequence on a supplied causal model.
+
+        Adjustment, effect estimate, intervention, counterfactual,
+        outcome-specific explanation, action selection and receipts, each
+        section reporting its own availability. See ``TOEBridge.reason``.
+        """
+        return self.toe.reason(task)
 
     def toe_guide_mining(
         self,

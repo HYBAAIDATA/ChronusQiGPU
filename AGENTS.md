@@ -461,7 +461,7 @@ c:\Users\USER\Downloads\PYTHIA-main\PYTHIA-main\
 2. **Consensus Immutability**: Intelligence models reorder and prune search space, but **NEVER bypass double-SHA256 hashing or target comparisons**. Every candidate block must verify:
    $$\operatorname{SHA-256}(\operatorname{SHA-256}(\text{BlockHeader})) \le \text{Target}$$
 3. **Stratum State Machine Integrity**: `MiningLifecycleController` (`src/lib/stratum_protocol.ts`) transitions only through its declared edge table. Ad-hoc state jumps are strictly prohibited.
-4. **Fail-Closed Operations**: In production mode, administrative control endpoints require `EUCLID_ADMIN_API_KEY`. Missing keys fail closed.
+4. **Fail-Closed Operations**: In production mode, non-privileged mutating endpoints require `Authorization: Bearer $EUCLID_ADMIN_API_KEY`; missing or wrong keys fail closed. Privileged routes (`/api/v1/mining/`, `/api/v1/policy/`, `/api/v1/worker/`, `/api/v1/recovery/`, `/api/v1/admin/`, `/api/v1/toe/`, `/api/v1/quantum/`, `/api/v1/scale/`, `/api/v1/assembly/`, `/api/v1/security/`) are AL HARAS-mediated instead: the Bearer slot carries a signed subscription entitlement plus `X-HYBA-Tenant`/`X-HYBA-Actor` headers (denial ladder 400→402→403; `guardian_dependency_unavailable` 503 is non-retryable). A request bearing neither credential is denied before any handler runs.
 
 ---
 

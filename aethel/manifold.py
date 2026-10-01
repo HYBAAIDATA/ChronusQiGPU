@@ -21,10 +21,9 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 
-from .cassini import CassiniVerifier
 from .constants import DIM, PHI, SQRT5
 from .costs import OverheadMeter, container_bytes, metered
-from .gpu import TensorCoreGPU_Context
+from .gpu import ChronusContext
 from .primes import GaloisPrimeSubstrate
 from .zeckendorf import (
     PUNCH_MANIFOLD_COMPUTE,
@@ -156,9 +155,15 @@ class SelfHealingSubstrate:
         return None
 
     def _find_nearest_valid(self, anchor: int) -> int:
+        """Nearest anchor inside the 90-slot manifold domain.
+
+        ``CassiniVerifier.verify`` is a theorem identity that holds for
+        every fresh input, so it cannot select anything; the real
+        constraint on an anchor is the manifold's own domain ``[0, 90)``.
+        """
         for offset in range(1, 100):
             for candidate in (anchor - offset, anchor + offset):
-                if candidate > 0 and CassiniVerifier.verify(candidate):
+                if 0 < candidate < 90:
                     return candidate
         return anchor
 
@@ -166,19 +171,22 @@ class SelfHealingSubstrate:
 class GeodesicNavigator:
     def __init__(self, manifold: "PrimeStorageManifold"):
         self.manifold = manifold
-        self.hop_count = 0
+        self.hop_count = 0  # hops used by the current/last query
+        self.total_hops = 0  # lifetime hops across all queries
 
     def query(self, search_vector: np.ndarray) -> Optional[bytes]:
         current = self.manifold.get_root_node()
         target_anchor = self._project_to_pv_lattice(search_vector)
-        max_hops = 1000
+        max_hops = 1000  # per-query budget; hop_count resets each query
+        self.hop_count = 0
         while current.integer_anchor != target_anchor and self.hop_count < max_hops:
             self.hop_count += 1
+            self.total_hops += 1
             next_anchor = self._steepest_gradient(current.integer_anchor, target_anchor)
             next_node = self.manifold.get_by_anchor(next_anchor)
             if next_node is None:
                 next_node = self.manifold.expand_manifold(next_anchor)
-            if not CassiniVerifier.verify(next_node.integer_anchor):
+            if not 0 <= next_node.integer_anchor < 90:
                 self.manifold.self_healing.trigger(next_node)
             current = next_node
         return self.manifold.read_payload(current)
@@ -204,13 +212,20 @@ class GeodesicNavigator:
             in_float = np.zeros((n, DIM), dtype=np.float32)
             in_float[:, : min(vectors.shape[1], DIM)] = vectors.reshape(n, -1)[:, :DIM]
             in_float = in_float.reshape(-1)
-            res = host.run_punch_batch(PUNCH_MANIFOLD_COMPUTE, n=n, in_float=in_float)
-            norm_sq = res["float"].reshape(n, DIM)[:, 0]
-            anchors = np.rint(np.sqrt(np.maximum(norm_sq, 0.0))).astype(np.int64) % 90
-            self.manifold.stage_evidence["index"] = getattr(
-                host, "last_dispatch_backend", "opencl"
-            )
-            return anchors
+            try:
+                res = host.run_punch_batch(PUNCH_MANIFOLD_COMPUTE, n=n, in_float=in_float)
+            except NotImplementedError:
+                # 0x15 is not in OpenClPunchHost's opcode set (0x02/0x1C);
+                # fall through to the identical CPU computation instead
+                # of crashing with PunchUnsupported.
+                pass
+            else:
+                norm_sq = res["float"].reshape(n, DIM)[:, 0]
+                anchors = np.rint(np.sqrt(np.maximum(norm_sq, 0.0))).astype(np.int64) % 90
+                self.manifold.stage_evidence["index"] = getattr(
+                    host, "last_dispatch_backend", "opencl"
+                )
+                return anchors
         self.manifold.stage_evidence["index"] = "cpu"
         return np.array([self._project_to_pv_lattice(v) for v in vectors], dtype=np.int64)
 
@@ -250,7 +265,7 @@ class GeodesicNavigator:
 class PrimeStorageManifold:
     def __init__(
         self,
-        gpu: TensorCoreGPU_Context,
+        gpu: ChronusContext,
         n_primes: int = 25,
         punch_host=None,
         require_gpu: bool = False,
@@ -370,8 +385,10 @@ class PrimeStorageManifold:
         tensor.integer_anchor = self.gpu.project_and_collapse_pv(data_array, pv_root)
         self.stage_evidence["index"] = self.gpu.projection_backend
 
-        if not CassiniVerifier.verify(tensor.integer_anchor):
-            raise RuntimeError("Cassini validation failed")
+        # CassiniVerifier.verify is a theorem identity on fresh values, so
+        # it can never fail; the real ingest gate is the 90-slot domain.
+        if not 0 <= tensor.integer_anchor < 90:
+            raise RuntimeError("anchor outside the 90-slot manifold domain")
 
         tensor.cassini_parity = (-1) ** tensor.integer_anchor
         tensor.spectral_gap = SQRT5
@@ -502,5 +519,6 @@ class PrimeStorageManifold:
             "prime_substrate": self.curved_storage.stats(),
             "heal_events": len(self.self_healing.heal_log),
             "geodesic_hops": self.geodesic.hop_count,
+            "geodesic_total_hops": self.geodesic.total_hops,
             "overhead_bytes": self.structural_bytes(),
         }

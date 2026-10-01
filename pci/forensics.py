@@ -22,6 +22,7 @@ from datetime import datetime
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass, asdict
 from collections import defaultdict
+
 # Optional HTTP client: the forensic live-chain fetches need it, but the
 # module's analysis and hashing functions do not. Absent client -> live
 # blockchain queries are unavailable, analysis still works.
@@ -133,9 +134,9 @@ def calculate_phi_resonance_advanced(value: int, base: str = "nonce") -> float:
     pi_resonance = 1 - abs(pi_mod - (1 / PI))
 
     # Combined resonance with quantum weighting
-    combined = (
-        primary_resonance * PHI + euler_resonance * EULER + pi_resonance * PI
-    ) / (PHI + EULER + PI)
+    combined = (primary_resonance * PHI + euler_resonance * EULER + pi_resonance * PI) / (
+        PHI + EULER + PI
+    )
 
     return round(combined, 8)
 
@@ -296,9 +297,7 @@ def analyze_transactions(transactions: List[Dict]) -> Tuple[float, float, float]
 
     for tx in transactions:
         # Calculate inputs and outputs
-        inputs = sum(
-            inp.get("prev_out", {}).get("value", 0) for inp in tx.get("inputs", [])
-        )
+        inputs = sum(inp.get("prev_out", {}).get("value", 0) for inp in tx.get("inputs", []))
         outputs = sum(out.get("value", 0) for out in tx.get("out", []))
 
         # Convert from satoshis to BTC
@@ -357,9 +356,7 @@ def analyze_block_comprehensive(
     # Pattern Analysis
     leading_zeros = len(block_hash) - len(block_hash.lstrip("0"))
     entropy = calculate_hash_entropy(block_hash)
-    pattern_sig = (
-        f"LZ{leading_zeros}_PHI{int(phi_nonce * 1000)}_QC{int(coherence * 1000)}"
-    )
+    pattern_sig = f"LZ{leading_zeros}_PHI{int(phi_nonce * 1000)}_QC{int(coherence * 1000)}"
 
     # Transaction Analysis
     total_vol, avg_fee, coinbase = analyze_transactions(block_data.get("tx", []))
@@ -469,15 +466,11 @@ def generate_report(
     avg_phi_nonce = np.mean([a.phi_resonance_nonce for a in analyses])
     avg_coherence = np.mean([a.quantum_coherence for a in analyses])
     avg_consciousness = np.mean([a.consciousness_amplification for a in analyses])
-    avg_block_time = np.mean(
-        [a.block_time_delta for a in analyses if a.block_time_delta > 0]
-    )
+    avg_block_time = np.mean([a.block_time_delta for a in analyses if a.block_time_delta > 0])
 
     # Find top performers
     top_phi = sorted(analyses, key=lambda x: x.phi_resonance_nonce, reverse=True)[:10]
-    top_coherence = sorted(analyses, key=lambda x: x.quantum_coherence, reverse=True)[
-        :10
-    ]
+    top_coherence = sorted(analyses, key=lambda x: x.quantum_coherence, reverse=True)[:10]
 
     report = {
         "metadata": {
@@ -494,9 +487,7 @@ def generate_report(
             "average_consciousness_amplification": round(avg_consciousness, 8),
             "average_block_time_seconds": round(avg_block_time, 2),
             "total_volume_btc": round(sum(a.total_volume_btc for a in analyses), 8),
-            "total_fees_btc": round(
-                sum(a.avg_fee_btc * a.num_transactions for a in analyses), 8
-            ),
+            "total_fees_btc": round(sum(a.avg_fee_btc * a.num_transactions for a in analyses), 8),
         },
         "top_performers": {
             "highest_phi_resonance": [

@@ -21,8 +21,23 @@ const Chip: React.FC<{
 );
 
 export const Header: React.FC<HeaderProps> = ({ status, ready, offline }) => {
-  const deviceAvailable = Boolean(status?.device?.available);
   const readyToMine = ready?.ready === true;
+  const openclDeviceCount = status?.gpu?.opencl_device_count ?? 0;
+  const logicalSubstrateAvailable = Boolean(status?.gpu?.logical_substrate?.available);
+  const hostBackend = status?.gpu?.logical_substrate?.host_backend ?? "none";
+  const contractDeviceName = status?.gpu?.contract_device?.name ?? null;
+  const deviceTone = openclDeviceCount > 0
+    ? "green"
+    : logicalSubstrateAvailable || contractDeviceName
+      ? "amber"
+      : "dim";
+  const deviceLabel = openclDeviceCount > 0
+    ? `OpenCL ×${openclDeviceCount}`
+    : contractDeviceName
+      ? `Chronus · ${contractDeviceName}`
+      : logicalSubstrateAvailable
+        ? `Super-GPU · ${hostBackend === "cpu" ? "CPU host" : hostBackend}`
+        : "no device";
 
   return (
     <header className="sticky top-0 z-50 border-b border-[rgba(10,37,64,0.13)] bg-[rgba(255,255,255,0.86)] backdrop-blur-md">
@@ -60,12 +75,8 @@ export const Header: React.FC<HeaderProps> = ({ status, ready, offline }) => {
                   icon={<Wifi className="w-3 h-3" />}
                 />
                 <Chip
-                  tone={deviceAvailable ? "green" : "dim"}
-                  label={
-                    deviceAvailable
-                      ? `OpenCL ×${status?.device?.count ?? 0}`
-                      : "no device"
-                  }
+                  tone={deviceTone}
+                  label={deviceLabel}
                   icon={<Cpu className="w-3 h-3" />}
                 />
               </>

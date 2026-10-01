@@ -99,13 +99,13 @@ UAT:
 docker compose \
   -f docker-compose.yml \
   -f docker-compose.override.yml \
-  -f docker-compose.igpu-wsl2.yml \
+  -f docker-compose.chronus-wsl2.yml \
   config --quiet
 
 docker compose \
   -f docker-compose.yml \
   -f docker-compose.override.yml \
-  -f docker-compose.igpu-wsl2.yml \
+  -f docker-compose.chronus-wsl2.yml \
   up -d
 
 docker compose ps
@@ -118,8 +118,8 @@ Then prove visibility independently:
 docker compose \
   -f docker-compose.yml \
   -f docker-compose.override.yml \
-  -f docker-compose.igpu-wsl2.yml \
-  --profile probe run --rm igpu-probe
+  -f docker-compose.chronus-wsl2.yml \
+  --profile probe run --rm chronus-probe
 ```
 
 Expected Gate A evidence:
@@ -132,51 +132,38 @@ Expected Gate A evidence:
 ## 7. Pool walkthrough
 
 Configure credentials only through the ignored environment file or secret
-manager. Do not place them in this document.
-
-Set:
+manager. Do not place them in this document. Set, besides
+`MLA1517_STRATUM_USER` and `EUCLID_ADMIN_API_KEY`:
 
 ```bash
-export PYTHIA_EXECUTION_PATH=aethel
-export PYTHIA_HASH_BACKEND=opencl
+export PYTHIA_EXECUTION_BACKEND=opencl
 export HYBA_REQUIRE_HYBA=1
 export HYBA_DEVICE_VENDOR=Intel
 export HYBA_DEVICE_PCI_IDS=0x5917
 ```
 
-Dry run first:
+Start the supervisor and mining; it mines in shadow first:
 
 ```bash
-python -m mining.production_miner --dry-run --max-runtime 120
+python main.py
+curl -X POST -H "Authorization: Bearer $EUCLID_ADMIN_API_KEY" \
+     http://127.0.0.1:3000/api/v1/mining/start
 ```
 
-The operator must capture redacted logs containing:
+The operator must capture redacted evidence from `/api/v1/mining/evidence`
+showing `"submission": "shadow"`, `execution_backend.route` = `opencl_m32`,
+executed windows, and the Stratum session authorized with jobs received. In
+shadow no `mining.submit` is ever written.
 
-```text
-Execution path=AETHEL->Tensor->TURING->iGPU
-Stratum authorized
-Job received
-Hasher backend=opencl
-```
-
-Dry run must not contain a `mining.submit` request.
-
-Only after UAT-08 and UAT-09 pass may the approved operator enable the existing
-live-submit gates and run:
-
-```bash
-python -m mining.production_miner --submit --max-runtime 3600 --max-shares 1
-```
-
-Final acceptance requires:
-
-```text
-Share result accepted=True
-```
+Only after UAT-08 and UAT-09 pass may the approved operator approve live
+submission in the operator UI (the approval binds to the enabled pool's
+endpoint and worker). Final acceptance requires a pool `mining.submit`
+response with `result=true`, visible in the session share log.
 
 The accepted response must be retained in a redacted evidence file with the
 commit SHA, timestamp, pool label, job ID redacted or pseudonymized, device,
-backend, accepted/rejected counters, and exit reason.
+backend, accepted/rejected counters, and exit reason. See
+`docs/PRODUCTION_MINING_RUNBOOK.md` for the full procedure.
 
 ## 8. Rollback and stop conditions
 

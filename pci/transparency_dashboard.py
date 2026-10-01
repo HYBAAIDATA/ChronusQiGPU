@@ -242,9 +242,7 @@ class PCITransparencyDashboard:
                 "mathematical physics."
             )
             reliability = "This is as certain as the laws of physics."
-            action_guidance = (
-                "Proceed with full confidence. This outcome is inevitable."
-            )
+            action_guidance = "Proceed with full confidence. This outcome is inevitable."
 
         elif confidence >= 0.95:
             level = ConfidenceLevel.VERY_HIGH
@@ -254,9 +252,7 @@ class PCITransparencyDashboard:
                 "The outcome is highly probable."
             )
             reliability = "Comparable to well-established scientific theories."
-            action_guidance = (
-                "Proceed with high confidence. Minimal risk of unexpected outcomes."
-            )
+            action_guidance = "Proceed with high confidence. Minimal risk of unexpected outcomes."
 
         elif confidence >= 0.85:
             level = ConfidenceLevel.HIGH
@@ -318,9 +314,7 @@ class PCITransparencyDashboard:
             Strategic recommendation
         """
         # Calculate overall confidence (average of path confidences)
-        overall_confidence = sum(p.overall_confidence for p in causal_paths) / len(
-            causal_paths
-        )
+        overall_confidence = sum(p.overall_confidence for p in causal_paths) / len(causal_paths)
 
         # Extract risks from paths
         risks = []
@@ -580,9 +574,7 @@ if __name__ == "__main__":
 
     # Explain confidence
     if paths:
-        confidence_explanation = dashboard.explain_confidence(
-            paths[0].overall_confidence
-        )
+        confidence_explanation = dashboard.explain_confidence(paths[0].overall_confidence)
         print("Confidence Explanation:")
         print(f"  Level: {confidence_explanation['level'].upper()}")
         print(f"  Percentage: {confidence_explanation['percentage']}")

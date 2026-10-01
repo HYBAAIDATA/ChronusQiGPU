@@ -24,6 +24,10 @@ exclude =
     artifacts,
     build,
     legacy,
-    PYTHIA-main
+    PYTHIA-main,
+    # vendored skill grafts, kept byte-exact (Intelligence/skill_graft.py)
+    Intelligence/skills
 per-file-ignores =
-    __init__.py:F401
+    __init__.py:F401,
+    # assurance tests import the whole surface under test via star imports
+    tests/test_*.py:F403,F405

@@ -29,6 +29,7 @@ from hyba.hybrid.lucas_partition import (
     TraversalHistory,
     partition,
 )
+from hyba.hybrid.performance import job_performance_report
 from hyba.hybrid.nonce_scheduler import (
     AttestationRegistry,
     AttestationViolation,
@@ -39,6 +40,7 @@ from hyba.hybrid.nonce_scheduler import (
     Share,
     verify_share,
 )
+from hyba.hybrid.tensor_advisor import WindowRanker, apply_tensor_advice
 
 
 @dataclass(frozen=True)
@@ -78,8 +80,14 @@ class JobResult:
     wall_ns: int
     total_nonces_tried: int
     winner_probe_index: Optional[int] = None
+    tensor_advice: Optional[Dict[str, Any]] = None
 
     def as_dict(self) -> Dict[str, Any]:
+        performance = job_performance_report(
+            wall_ns=max(1, self.wall_ns),
+            protocol_hashes=max(0, self.total_nonces_tried),
+            accepted_shares=1 if self.share is not None else 0,
+        )
         return {
             "mode": self.mode,
             "share": (
@@ -101,15 +109,23 @@ class JobResult:
             "attestations": list(self.attestations),
             "wall_ns": self.wall_ns,
             "total_nonces_tried": self.total_nonces_tried,
+            "performance": performance.as_dict(),
+            "tensor_advice": dict(self.tensor_advice) if self.tensor_advice else None,
         }
 
 
 class HybridCoordinator:
     """Dispatch partitioned windows to GPU and (when present) ASIC."""
 
-    def __init__(self, gpu: NonceScheduler, asic: Optional[NonceScheduler] = None) -> None:
+    def __init__(
+        self,
+        gpu: NonceScheduler,
+        asic: Optional[NonceScheduler] = None,
+        tensor_ranker: Optional[WindowRanker] = None,
+    ) -> None:
         self.gpu = gpu
         self.asic = asic
+        self.tensor_ranker = tensor_ranker
         self.history = TraversalHistory()
         self._registry = AttestationRegistry.get()
         if asic is None:
@@ -153,6 +169,10 @@ class HybridCoordinator:
                 prepare(job.job_id, job.header80)
 
         spans, cert = partition(job.nonce_space, devices, history, strategy=strategy)
+        tensor_advice: Optional[Dict[str, Any]] = None
+        if self.tensor_ranker is not None:
+            spans, evidence = apply_tensor_advice(self.tensor_ranker, job, spans)
+            tensor_advice = evidence.as_dict()
 
         device_by_id: Dict[str, NonceScheduler] = {
             d.capability().device_id: d for d in devices
@@ -251,8 +271,11 @@ class HybridCoordinator:
             counter = getattr(scheduler, "hashed_count", None) if scheduler else None
             if callable(counter):
                 total_tried += int(counter(handle))
-        if total_tried == 0:
-            total_tried = winner.nonces_tried if winner is not None else job.nonce_space
+        if total_tried == 0 and winner is not None:
+            # A winning share proves at least the winning scheduler's count.
+            # Never infer that the entire nonce space ran when counters are
+            # unavailable: that would fabricate measured hashrate.
+            total_tried = winner.nonces_tried
 
         attestations = self._registry.snapshot()
         return JobResult(
@@ -264,6 +287,7 @@ class HybridCoordinator:
             wall_ns=time.monotonic_ns() - t0,
             total_nonces_tried=int(total_tried),
             winner_probe_index=winner_probe_index,
+            tensor_advice=tensor_advice,
         )
 
 

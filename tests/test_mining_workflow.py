@@ -1,7 +1,8 @@
 import asyncio
+import io
 import json
 
-from igpu.seam.workflow import LAYER_IDS, PASS_MEANS, run_workflow
+from chronus.seam.workflow import LAYER_IDS, PASS_MEANS, run_workflow
 
 
 async def _pool(host="127.0.0.1"):
@@ -28,7 +29,9 @@ async def _pool(host="127.0.0.1"):
                 )
                 await writer.drain()
             elif method == "mining.authorize":
-                writer.write((json.dumps({"id": mid, "result": True, "error": None}) + "\n").encode())
+                writer.write(
+                    (json.dumps({"id": mid, "result": True, "error": None}) + "\n").encode()
+                )
                 await writer.drain()
                 writer.write(
                     (
@@ -66,7 +69,9 @@ async def _pool(host="127.0.0.1"):
                 )
                 await writer.drain()
             elif method == "mining.submit":
-                writer.write((json.dumps({"id": mid, "result": True, "error": None}) + "\n").encode())
+                writer.write(
+                    (json.dumps({"id": mid, "result": True, "error": None}) + "\n").encode()
+                )
                 await writer.drain()
         writer.close()
         try:
@@ -79,13 +84,28 @@ async def _pool(host="127.0.0.1"):
     return server, port
 
 
+async def _bounded(coro, seconds: float):
+    """Run ``coro``; if it stalls, fail with the stack of every pending task."""
+    task = asyncio.ensure_future(coro)
+    done, _ = await asyncio.wait({task}, timeout=seconds)
+    if not done:
+        stacks = io.StringIO()
+        for pending in asyncio.all_tasks():
+            if pending is not asyncio.current_task():
+                print(f"--- {pending.get_coro()}", file=stacks)
+                pending.print_stack(file=stacks)
+        task.cancel()
+        raise AssertionError(f"workflow stalled for {seconds}s; pending:\n{stacks.getvalue()}")
+    return task.result()
+
+
 def test_full_workflow_one_job():
     async def _run():
         server, port = await _pool()
         async with server:
             return await run_workflow("127.0.0.1", port, "pythia", "x", window=64, heal=True)
 
-    result = asyncio.run(_run())
+    result = asyncio.run(_bounded(_run(), 60.0))
     result.assert_all()
     assert result.accepted is True
     assert set(PASS_MEANS) == set(LAYER_IDS)
@@ -99,3 +119,29 @@ def test_full_workflow_one_job():
     payload = result.to_dict()
     assert payload["layers"] == list(LAYER_IDS)
     assert all(payload["verdicts"][name]["passed"] for name in LAYER_IDS)
+
+
+def test_waiting_for_a_job_honours_its_timeout_when_the_pool_is_silent():
+    from mining.stratum_bridge import StratumBridge
+
+    async def silent(reader, writer):
+        await reader.read()  # accept, then say nothing until the client leaves
+        # On Python 3.12 an unclosed handler connection holds `async with server`.
+        writer.close()
+
+    async def _run():
+        server = await asyncio.start_server(silent, "127.0.0.1", 0)
+        async with server:
+            bridge = StratumBridge("127.0.0.1", server.sockets[0].getsockname()[1])
+            await bridge.connect()
+            started = asyncio.get_running_loop().time()
+            try:
+                await bridge.wait_for_job(timeout=0.3)
+            except TimeoutError:
+                return asyncio.get_running_loop().time() - started
+            finally:
+                await bridge.disconnect()
+        return None
+
+    waited = asyncio.run(_bounded(_run(), 10.0))
+    assert waited is not None and waited < 2.0

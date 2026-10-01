@@ -62,9 +62,7 @@ class MiningAPIIntelligence(IntelligentEndpoint):
 
             # Calculate connection stability
             if self.connection_attempts > 0:
-                self.connection_stability = (
-                    self.successful_connections / self.connection_attempts
-                )
+                self.connection_stability = self.successful_connections / self.connection_attempts
 
             return Observation(
                 timestamp=time.time(),
@@ -246,9 +244,7 @@ class ShareSubmissionIntelligence(IntelligentEndpoint):
 
             # Calculate acceptance rate
             if self.total_shares_submitted > 0:
-                self.acceptance_rate = (
-                    self.accepted_shares / self.total_shares_submitted
-                )
+                self.acceptance_rate = self.accepted_shares / self.total_shares_submitted
 
             return Observation(
                 timestamp=time.time(),

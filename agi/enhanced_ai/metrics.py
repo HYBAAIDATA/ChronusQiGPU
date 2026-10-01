@@ -11,6 +11,7 @@ Provides comprehensive monitoring and observability:
 import logging
 import time
 from functools import wraps
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -166,9 +167,7 @@ class AGIMetrics:
             buckets=[0.01, 0.05, 0.1, 0.5, 1.0, 2.0],
         )
 
-        self.nlp_intents = Counter(
-            "agi_nlp_intents_total", "NLP intents detected", ["intent"]
-        )
+        self.nlp_intents = Counter("agi_nlp_intents_total", "NLP intents detected", ["intent"])
 
         # Quantum metrics
         self.quantum_computations = Counter(
@@ -187,14 +186,10 @@ class AGIMetrics:
         # Cache metrics
         self.cache_hits = Counter("agi_cache_hits_total", "Cache hits", ["cache_type"])
 
-        self.cache_misses = Counter(
-            "agi_cache_misses_total", "Cache misses", ["cache_type"]
-        )
+        self.cache_misses = Counter("agi_cache_misses_total", "Cache misses", ["cache_type"])
 
         # Error metrics
-        self.errors_total = Counter(
-            "agi_errors_total", "Total errors", ["error_type", "component"]
-        )
+        self.errors_total = Counter("agi_errors_total", "Total errors", ["error_type", "component"])
 
         # System info
         self.system_info = Info("agi_system", "AGI system information")
@@ -220,9 +215,7 @@ class AGIMetrics:
 
     def record_response_time(self, endpoint: str, query_type: str, duration: float):
         """Record response time"""
-        self.response_time.labels(endpoint=endpoint, query_type=query_type).observe(
-            duration
-        )
+        self.response_time.labels(endpoint=endpoint, query_type=query_type).observe(duration)
 
     def record_confidence(self, query_type: str, confidence: float):
         """Record confidence score"""
@@ -309,7 +302,7 @@ def track_performance(endpoint: str, query_type: str = "general"):
 
             try:
                 # Execute function
-                # result = await func(*args, **kwargs)
+                result = await func(*args, **kwargs)
 
                 # Record metrics
                 duration = time.time() - start_time

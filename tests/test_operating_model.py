@@ -6,6 +6,7 @@ no approx on exact surfaces."""
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -82,8 +83,12 @@ def test_suite_non_tautological():
 
 # ---------------------------------------------------------------- substrate
 
-def test_substrate_freeze_writes_signoff():
-    out = freeze_substrate(ROOT)
+def test_the_committed_substrate_freeze_is_what_the_code_computes():
+    # Computed, never written: a changed substrate must fail here, not be
+    # silently re-frozen by the test suite.
+    out = freeze_substrate(ROOT, write=False)
+    committed = json.loads((ROOT / "docs" / "substrate_freeze.json").read_text())
+    assert out == committed
     assert out["theorem_proven"] is False
     assert out["sweep"]["vectors_total"] == 8192
     assert out["sweep"]["max_len"] == 511
@@ -97,8 +102,10 @@ def test_substrate_freeze_writes_signoff():
 
 # ---------------------------------------------------------------- lemma
 
-def test_lemma_doc_signed():
-    out = require_lemma(ROOT)
+def test_the_committed_lemma_signoff_is_what_the_code_computes():
+    out = require_lemma(ROOT, write=False)
+    committed = json.loads((ROOT / "docs" / "lemma_signoff.json").read_text())
+    assert out == committed
     assert out["theorem_proven"] is False
     assert out["lines"] <= 200
     assert lemma_signed(ROOT)
@@ -189,8 +196,9 @@ def test_ast_scope_check_clean_and_catches_bypass(tmp_path):
 
 # ---------------------------------------------------------------- failure modes
 
-def test_failure_modes_documented_with_tests():
-    out = write_failure_modes(ROOT)
+def test_the_committed_failure_modes_are_what_the_code_computes():
+    out = write_failure_modes(ROOT, write=False)
+    assert out == json.loads((ROOT / "docs" / "failure_modes.json").read_text())
     assert len(out["modes"]) == 10
     assert failure_modes_documented(ROOT)
     data = json.loads((ROOT / "docs" / "failure_modes.json").read_text())
@@ -243,8 +251,8 @@ def test_replay_across_cycle_boundary():
 
 def test_integer_overflow_at_L20():
     import sys
-    if str(ROOT / "mla1517_platform_v3.4" / "python") not in sys.path:
-        sys.path.insert(0, str(ROOT / "mla1517_platform_v3.4" / "python"))
+    if str(ROOT / "chronus/mla1517_platform" / "python") not in sys.path:
+        sys.path.insert(0, str(ROOT / "chronus/mla1517_platform" / "python"))
     import turing_core
     assert turing_core.lucas(20) == 15127
     for n in range(0, 77):
@@ -427,27 +435,24 @@ def test_remediator_caps():
 
 # ---------------------------------------------------------------- pipeline
 
-def test_run_pipeline_end_to_end():
-    if not substrate_frozen(ROOT):
-        freeze_substrate(ROOT)
-    if not lemma_signed(ROOT):
-        require_lemma(ROOT)
-    if not failure_modes_documented(ROOT):
-        write_failure_modes(ROOT)
-    out = run_pipeline(ROOT, label="test", write_provenance=True)
+def test_run_pipeline_end_to_end(tmp_path):
+    # The committed records are the preconditions; the test never writes them.
+    assert substrate_frozen(ROOT) and lemma_signed(ROOT) and failure_modes_documented(ROOT)
+    out = run_pipeline(ROOT, label="test", write_provenance=True, provenance_dir=tmp_path)
     assert out["verdict"] in {"PASS", "FAIL", "NOT_PROVABLE"}
     assert out["theorem_proven"] is False
-    prov = ROOT / out["provenance"]
+    prov = Path(out["provenance"])
+    assert prov.parent == tmp_path  # the repository's own records are untouched
     assert prov.is_file()
     rec = json.loads(prov.read_text(encoding="utf-8"))
     assert rec["replay"]["seed"] == 1517
     assert rec["theorem_proven"] is False
 
 
-def test_provenance_replayable():
+def test_provenance_replayable(tmp_path):
     from hyba.operating_model.pipeline import provenance
     v = {"verdict": "PASS", "reason": "r"}
-    p1 = provenance(ROOT, "replay-test", v, [], write=True)
-    p2 = provenance(ROOT, "replay-test", v, [], write=True)
+    p1 = provenance(ROOT, "replay-test", v, [], write=True, out_dir=tmp_path)
+    p2 = provenance(ROOT, "replay-test", v, [], write=True, out_dir=tmp_path)
     assert p1 == p2
     assert p1.read_bytes() == p2.read_bytes()

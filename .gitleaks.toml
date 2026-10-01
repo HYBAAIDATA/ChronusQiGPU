@@ -1,0 +1,26 @@
+title = "gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlist for known false positives, test fixtures, and documentation"
+paths = [
+  '''\.env\.example''',
+  '''frontend/package-lock\.json''',
+  '''turing_universal_quantum_computer/tests/.*''',
+  '''tests/.*''',
+  '''\.gitlab-ci\.yml''',
+  '''Dockerfile''',
+  '''Dockerfile\.hybrid''',
+  # legacy/ ships dev fixtures: a preview-auth constant and a Firebase
+  # client-side apiKey (public identifier, not a credential).
+  '''legacy/''',
+  # folded-store probe fixture key, not a credential.
+  '''Intelligence/self_test\.py''',
+  # empty MLA1517_* placeholders in the env template it writes.
+  '''mla1517_platform_v3\.4/build_pythia_layout\.sh''',
+  # development-only HMAC key for the reference platform manifest; production
+  # deploys re-sign via DEPLOYMENT_MANIFEST_KEY (dev-signing.key.README).
+  '''manifests/dev-signing\.key''',
+]

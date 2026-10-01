@@ -20,13 +20,13 @@ Version: 1.0.0-GoldenRatioEnhanced
 import asyncio
 import logging
 import time
-from enterprise_asi_agency import (
+from agi.agency import (
     create_enterprise_asi_agency,
     EnterpriseAgencyLevel,
     DecisionMethodology,
 )
-from enterprise_asi_autonomy import create_enterprise_asi_autonomy
-from golden_ratio_scaler import create_golden_ratio_scaler
+from agi.autonomy import create_enterprise_asi_autonomy
+from agi.golden_ratio_scaler import create_golden_ratio_scaler
 
 # Configure enterprise logging
 logging.basicConfig(
@@ -59,9 +59,7 @@ async def demonstrate_golden_ratio_asi():
     # Create enterprise ASI frameworks
     print("\n🚀 Initializing Enterprise ASI Frameworks...")
 
-    agency = create_enterprise_asi_agency(
-        EnterpriseAgencyLevel.SUPERINTELLIGENT
-    )
+    agency = create_enterprise_asi_agency(EnterpriseAgencyLevel.SUPERINTELLIGENT)
     autonomy_engine = create_enterprise_asi_autonomy()
 
     print("✅ Enterprise ASI Agency Framework initialized")
@@ -79,20 +77,14 @@ async def demonstrate_golden_ratio_asi():
     for scale_type in ["micro", "macro", "mega", "giga", "tera"]:
         scaled_utility = golden_scaler.scale_decision_utility(base_utility, scale_type)
         scaled_utilities[scale_type] = scaled_utility
-        print(
-            f"📊 {scale_type.capitalize()} Scale: {base_utility:.3f} → {scaled_utility:.6f}"
-        )
+        print(f"📊 {scale_type.capitalize()} Scale: {base_utility:.3f} → {scaled_utility:.6f}")
 
     # Test consciousness amplification
     print("\n🧠 Consciousness Amplification:")
     base_consciousness = 0.8
     for amp_level in ["standard", "enhanced", "transcendent", "enterprise", "quantum"]:
-        amplified = golden_scaler.scale_consciousness_amplification(
-            base_consciousness, amp_level
-        )
-        print(
-            f"   {amp_level.capitalize()}: {base_consciousness:.3f} → {amplified:.6f}"
-        )
+        amplified = golden_scaler.scale_consciousness_amplification(base_consciousness, amp_level)
+        print(f"   {amp_level.capitalize()}: {base_consciousness:.3f} → {amplified:.6f}")
 
     # Test optimization parameter scaling
     print("\n⚙️ Optimization Parameter Scaling:")
@@ -104,9 +96,7 @@ async def demonstrate_golden_ratio_asi():
     }
 
     for opt_level in ["standard", "enterprise", "quantum"]:
-        scaled_params = golden_scaler.scale_optimization_parameters(
-            base_params, opt_level
-        )
+        scaled_params = golden_scaler.scale_optimization_parameters(base_params, opt_level)
         print(f"\n   {opt_level.capitalize()} Scaling:")
         for param, value in scaled_params.items():
             print(f"     {param}: {base_params[param]:.6f} → {value:.6f}")
@@ -115,7 +105,7 @@ async def demonstrate_golden_ratio_asi():
     print("\n📊 Enhanced McKinsey AHP Decision with Golden Ratio")
     print("-" * 50)
 
-    from enterprise_asi_agency import EnterpriseDecisionContext, ASIStateVector
+    from agi.agency import EnterpriseDecisionContext, ASIStateVector
     import numpy as np
 
     # Enterprise decision context
@@ -150,7 +140,7 @@ async def demonstrate_golden_ratio_asi():
 
     # Execute enhanced AHP decision
     start_time = time.time()
-    result = await agency_framework.make_enterprise_decision(
+    result = await agency.make_enterprise_decision(
         context, state, DecisionMethodology.MCDA_ANALYTIC_HIERARCHY_PROCESS
     )
     execution_time = time.time() - start_time
@@ -179,17 +169,13 @@ async def demonstrate_golden_ratio_asi():
     }
 
     start_time = time.time()
-    action, decision_metadata = await autonomy_engine.autonomous_decision_cycle(
-        test_context
-    )
+    action, decision_metadata = await autonomy_engine.autonomous_decision_cycle(test_context)
     execution_time = time.time() - start_time
 
     print(f"✅ Enhanced Autonomous Decision completed in {execution_time:.3f}s")
     print(f"🎯 Selected Action: {action}")
     print(f"🧠 Solver Used: {decision_metadata.get('solver_used', 'unknown')}")
-    print(
-        f"⚡ Golden Ratio Enhanced Confidence: {decision_metadata.get('confidence', 0):.4f}"
-    )
+    print(f"⚡ Golden Ratio Enhanced Confidence: {decision_metadata.get('confidence', 0):.4f}")
     print(
         f"🔬 Consciousness Amplification: {decision_metadata.get('consciousness_amplification', 1.0):.4f}"
     )
@@ -239,9 +225,7 @@ async def demonstrate_golden_ratio_asi():
     print("   Enterprise Scaled Metrics:")
     for metric, scaled in scaled_metrics.items():
         improvement = (scaled - base_metrics[metric]) / base_metrics[metric] * 100
-        print(
-            f"     {metric}: {base_metrics[metric]:.3f} → {scaled:.3f} (+{improvement:.1f}%)"
-        )
+        print(f"     {metric}: {base_metrics[metric]:.3f} → {scaled:.3f} (+{improvement:.1f}%)")
 
     # Golden Ratio optimization demonstration
     print("\n🔱 Golden Ratio Optimization Algorithm")
@@ -256,15 +240,13 @@ async def demonstrate_golden_ratio_asi():
     print(f"   Current Value: {current_value:.3f}")
     print(f"   Target Value: {target_value:.3f}")
     print(f"   Golden Ratio Optimized: {optimized_value:.6f}")
-    print(
-        f"   Improvement: {((optimized_value - current_value) / current_value * 100):.1f}%"
-    )
+    print(f"   Improvement: {((optimized_value - current_value) / current_value * 100):.1f}%")
 
     # Final enterprise status
     print("\n📋 Golden Ratio Enhanced Enterprise Status")
     print("-" * 50)
 
-    agency_metrics = agency_framework.get_enterprise_metrics()
+    agency_metrics = agency.get_enterprise_metrics()
     autonomy_status = autonomy_engine.get_enterprise_autonomy_status()
 
     print("🏢 Enhanced Agency Framework:")

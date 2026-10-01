@@ -1,8 +1,14 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { BrainCircuit, FlaskConical, RefreshCw } from "lucide-react";
+import { ArrowUpRight, BrainCircuit, FlaskConical, Play, RefreshCw, Square, Wrench } from "lucide-react";
 import { apiFetch } from "../lib/api";
 import { TruthChip } from "../components/TruthChip";
-import type { AgenticStatus, RunnerStatus, SelftestStatus } from "../lib/status";
+import type {
+  AgenticStatus,
+  MaintenanceStatus,
+  RepoEngineerStatus,
+  RunnerStatus,
+  SelftestStatus,
+} from "../lib/status";
 
 type SelftestReport = Record<string, { passed?: boolean } & Record<string, unknown>>;
 
@@ -12,12 +18,21 @@ export const IntelligenceView: React.FC = () => {
   const [agentic, setAgentic] = useState<AgenticStatus | null>(null);
   const [intel, setIntel] = useState<RunnerStatus | null>(null);
   const [busy, setBusy] = useState(false);
+  const [maintenance, setMaintenance] = useState<MaintenanceStatus | null>(null);
+  const [maintenanceBusy, setMaintenanceBusy] = useState(false);
+  const [maintenanceError, setMaintenanceError] = useState<string | null>(null);
+  const [engineer, setEngineer] = useState<RepoEngineerStatus | null>(null);
+  const [engineerPrompt, setEngineerPrompt] = useState("");
+  const [engineerBusy, setEngineerBusy] = useState(false);
+  const [engineerError, setEngineerError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     const pulls: Array<[string, (v: unknown) => void]> = [
       ["/api/v1/intelligence/selftest", (v) => setSelftest(v as SelftestStatus)],
       ["/api/v1/agentic/status", (v) => setAgentic(v as AgenticStatus)],
       ["/api/v1/intelligence/status", (v) => setIntel(v as RunnerStatus)],
+      ["/api/v1/intelligence/maintenance", (v) => setMaintenance(v as MaintenanceStatus)],
+      ["/api/v1/intelligence/engineer/status", (v) => setEngineer(v as RepoEngineerStatus)],
     ];
     for (const [path, setter] of pulls) {
       try {
@@ -49,11 +64,74 @@ export const IntelligenceView: React.FC = () => {
     }
   };
 
+  const controlMaintenance = async (action: "run" | "start" | "stop") => {
+    setMaintenanceBusy(true);
+    setMaintenanceError(null);
+    try {
+      const response = await apiFetch(`/api/v1/intelligence/maintenance/${action}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as { error?: string };
+        setMaintenanceError(payload.error ?? `request failed (${response.status})`);
+      }
+    } catch (error) {
+      setMaintenanceError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setMaintenanceBusy(false);
+      refresh();
+    }
+  };
+
+  const askEngineer = async () => {
+    const prompt = engineerPrompt.trim();
+    if (!prompt || prompt.length > 2_000) return;
+    setEngineerBusy(true);
+    setEngineerError(null);
+    try {
+      const response = await apiFetch("/api/v1/intelligence/engineer/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as {
+          error?: string;
+          readiness?: RepoEngineerStatus;
+        };
+        if (payload.readiness) setEngineer(payload.readiness);
+        setEngineerError(payload.error ?? `request failed (${response.status})`);
+      } else {
+        setEngineerPrompt("");
+      }
+    } catch (error) {
+      setEngineerError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setEngineerBusy(false);
+      refresh();
+    }
+  };
+
   const summary = selftest?.summary;
   const report = (selftest?.result as { report?: SelftestReport } | undefined)?.report;
   const reportEntries = report ? Object.entries(report) : [];
   const agenticResult = agentic?.result as Record<string, unknown> | undefined;
   const phases = (agenticResult?.phases ?? {}) as Record<string, unknown>;
+  const maintenancePhase =
+    typeof maintenance?.progress?.phase === "string"
+      ? maintenance.progress.phase
+      : maintenance?.state ?? "loading";
+  const maintenanceTruth =
+    maintenance?.state === "running"
+      ? "live"
+      : maintenance?.state === "done"
+        ? "measured"
+        : "unavailable";
+  const engineerResult = engineer?.runner?.result as
+    | { text?: string; tool_calls?: Array<{ tool: string; ok: boolean }> }
+    | undefined;
 
   return (
     <div className="space-y-6 pt-8">
@@ -70,6 +148,161 @@ export const IntelligenceView: React.FC = () => {
           record — nothing is inferred in the browser.
         </p>
       </div>
+
+      <section className="console-surface">
+        <header className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4 pb-3 border-b border-[rgba(10,37,64,0.10)]">
+          <h2 className="text-[11px] font-telemetry-mono uppercase tracking-[0.2em] text-[#42566f] flex items-center gap-2">
+            <BrainCircuit className="w-4 h-4 text-[#067647]" />
+            Repository engineer
+          </h2>
+          <div className="flex items-center gap-2 text-[10px] font-telemetry-mono text-[#6b7c93]">
+            <TruthChip value={engineer?.ready ? "live" : "unavailable"} />
+            <span>{engineer?.provider ?? "agent"} · {engineer?.model ?? "not configured"}</span>
+          </div>
+        </header>
+        <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_220px]">
+          <div className="min-w-0">
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                askEngineer();
+              }}
+              className="space-y-2"
+            >
+              <textarea
+                value={engineerPrompt}
+                onChange={(event) => setEngineerPrompt(event.target.value.slice(0, 2_000))}
+                rows={3}
+                maxLength={2_000}
+                placeholder="Ask for a grounded repo improvement or investigation"
+                aria-label="Repository engineering task"
+                className="w-full resize-y rounded-[3px] border border-[rgba(10,37,64,0.16)] bg-white/70 px-3 py-2 text-sm text-[#0a2540] placeholder:text-[#8898aa] focus:outline-none focus:border-[rgba(4,120,87,0.55)]"
+              />
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[10px] font-telemetry-mono text-[#6b7c93]">
+                  {engineer?.runner?.state ?? "idle"} · read-only tools · no changes applied
+                </p>
+                <button
+                  type="submit"
+                  disabled={!engineer?.ready || engineerBusy || engineer?.runner?.state === "running" || !engineerPrompt.trim()}
+                  title="Ask the repo-aware engineering agent"
+                  className="inline-flex items-center gap-2 rounded-[3px] border border-[rgba(4,120,87,0.35)] bg-[rgba(4,120,87,0.08)] px-3 py-1.5 text-[11px] font-telemetry-mono uppercase tracking-wider text-[#067647] hover:bg-[rgba(4,120,87,0.15)] disabled:opacity-40"
+                >
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                  {engineer?.runner?.state === "running" ? "working" : "ask"}
+                </button>
+              </div>
+            </form>
+            {!engineer?.ready && (
+              <p className="mt-3 text-[11px] leading-5 font-telemetry-mono text-[#6b7c93]">
+                The in-repo engineer has not reported ready; check the control API log. Asking it needs EUCLID_ADMIN_API_KEY.
+              </p>
+            )}
+            {(engineerError || engineer?.runner?.error) && (
+              <p className="mt-3 text-[11px] font-telemetry-mono text-[#df1b41]">
+                {engineerError ?? engineer?.runner?.error}
+              </p>
+            )}
+            {engineerResult?.text && (
+              <pre className="mt-4 max-h-[30rem] overflow-auto whitespace-pre-wrap rounded-[3px] border border-[rgba(10,37,64,0.10)] bg-white/60 p-4 text-[12px] leading-5 text-[#0a2540]">
+                {engineerResult.text}
+              </pre>
+            )}
+          </div>
+          <aside className="border-t border-[rgba(10,37,64,0.10)] pt-4 text-[10px] font-telemetry-mono lg:border-t-0 lg:border-l lg:pt-0 lg:pl-5">
+            <p className="uppercase tracking-wider text-[#42566f]">Repository grounding</p>
+            <p className="mt-3 text-[#6b7c93]">
+              {engineer?.context_files?.length ?? 0} architecture and engineering documents loaded at startup.
+            </p>
+            <ul className="mt-3 space-y-1 text-[#0a2540]">
+              {(engineer?.tools ?? []).map((tool) => <li key={tool}>{tool}</li>)}
+            </ul>
+            {engineerResult?.tool_calls && engineerResult.tool_calls.length > 0 && (
+              <p className="mt-4 text-[#067647]">
+                inspected with {engineerResult.tool_calls.map((call) => call.tool).join(", ")}
+              </p>
+            )}
+          </aside>
+        </div>
+      </section>
+
+      <section className="console-surface">
+        <header className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4 pb-3 border-b border-[rgba(10,37,64,0.10)]">
+          <h2 className="text-[11px] font-telemetry-mono uppercase tracking-[0.2em] text-[#42566f] flex items-center gap-2">
+            <Wrench className="w-4 h-4 text-[#067647]" />
+            Codebase maintenance
+          </h2>
+          <div className="flex items-center gap-2">
+            <TruthChip value={maintenanceTruth} />
+            <button
+              className="px-3 py-1 rounded-md border border-[rgba(4,120,87,0.35)] bg-[rgba(4,120,87,0.08)] text-[11px] font-telemetry-mono uppercase tracking-wider text-[#067647] hover:bg-[rgba(4,120,87,0.15)] disabled:opacity-40 transition-colors"
+              disabled={maintenanceBusy}
+              onClick={() => controlMaintenance("run")}
+              title="Run a diagnosis now or queue one after the active cycle"
+            >
+              <Play className="w-3 h-3 inline mr-1" />
+              run now
+            </button>
+            {maintenance?.state === "running" ? (
+              <button
+                className="px-3 py-1 rounded-md border border-[rgba(223,27,65,0.3)] text-[11px] font-telemetry-mono uppercase tracking-wider text-[#df1b41] hover:bg-[rgba(223,27,65,0.06)] disabled:opacity-40 transition-colors"
+                disabled={maintenanceBusy || maintenance.progress?.stop_requested === true}
+                onClick={() => controlMaintenance("stop")}
+                title="Stop after the current full diagnosis cycle"
+              >
+                <Square className="w-3 h-3 inline mr-1" />
+                {maintenance.progress?.stop_requested === true ? "pausing" : "pause loop"}
+              </button>
+            ) : (
+              <button
+                className="px-3 py-1 rounded-md border border-[rgba(10,37,64,0.18)] text-[11px] font-telemetry-mono uppercase tracking-wider text-[#42566f] hover:bg-[rgba(10,37,64,0.04)] disabled:opacity-40 transition-colors"
+                disabled={maintenanceBusy}
+                onClick={() => controlMaintenance("start")}
+                title="Start the supervised maintenance loop"
+              >
+                <Play className="w-3 h-3 inline mr-1" />
+                start loop
+              </button>
+            )}
+          </div>
+        </header>
+        <div className="grid gap-4 p-5 md:grid-cols-[minmax(0,1fr)_auto]">
+          <div className="min-w-0">
+            <p className="text-sm font-telemetry-mono text-[#0a2540]">
+              {maintenancePhase}
+              {maintenance?.interval_s
+                ? ` · next cycle every ${Math.round(maintenance.interval_s / 3600)}h`
+                : " · one-shot"}
+            </p>
+            {maintenance?.result?.summary ? (
+              <pre className="mt-3 max-h-40 overflow-auto whitespace-pre-wrap rounded-[3px] border border-[rgba(10,37,64,0.10)] bg-white/60 p-3 text-[11px] leading-5 font-telemetry-mono text-[#42566f]">
+                {maintenance.result.summary}
+              </pre>
+            ) : (
+              <p className="mt-2 text-[11px] font-telemetry-mono text-[#6b7c93]">
+                No completed diagnosis recorded yet.
+              </p>
+            )}
+            {(maintenance?.error || maintenanceError) && (
+              <p className="mt-2 text-[11px] font-telemetry-mono text-[#df1b41]">
+                {maintenanceError ?? maintenance?.error}
+              </p>
+            )}
+          </div>
+          <dl className="grid grid-cols-2 gap-x-5 gap-y-2 self-start text-[10px] font-telemetry-mono md:min-w-48">
+            <dt className="text-[#6b7c93]">failures</dt>
+            <dd className="text-right text-[#0a2540]">{maintenance?.result?.failure_count ?? "—"}</dd>
+            <dt className="text-[#6b7c93]">proposals</dt>
+            <dd className="text-right text-[#0a2540]">{maintenance?.result?.proposal_count ?? "—"}</dd>
+            <dt className="text-[#6b7c93]">LLM gate</dt>
+            <dd className="text-right text-[#0a2540]">{maintenance?.llm_enabled ? "on" : "off"}</dd>
+            <dt className="text-[#6b7c93]">apply gate</dt>
+            <dd className="text-right text-[#0a2540]">
+              {maintenance?.auto_apply_enabled ? "verified" : "review only"}
+            </dd>
+          </dl>
+        </div>
+      </section>
 
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Self-test */}

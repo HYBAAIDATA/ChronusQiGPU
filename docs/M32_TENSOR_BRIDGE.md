@@ -1,5 +1,13 @@
 # M32 Walker → Kellogg Tensor Bridge Specification
 
+> **Canonical-rule correction (see `docs/TENSOR_ARCHITECTURE.md` §5):** the
+> `src/lib/*.ts` paths referenced below do not exist in this repository.
+> This document describes a separate (TypeScript) codebase surface. This
+> repository's actual Python tensor advisory boundary
+> (`hyba.hybrid.tensor_advisor`, re-exported as `tensor.advisor`) is
+> exact-permutation-only and does not support pruning; do not treat this
+> document as describing the Python mining stack in this repository.
+
 ## Purpose
 
 Define the precise mapping from the M32 icosahedral quantum walker's geometry
@@ -8,8 +16,10 @@ to the Kellogg Tensor's structured search space S = (X, G, M, g, χ, H*).
 The bridge allows the Tensor to navigate the M32 search space efficiently
 while preserving SHA-256d as the sole accept authority.
 
-**Implementation:** `src/lib/m32_tensor_bridge.ts`
+**Implementation:** `src/lib/m32_tensor_bridge.ts` (not present in this
+repository checkout; see correction above)
 **Consumer:** `src/lib/mining_runtime.ts` → `src/lib/mining_service.ts`
+(not present in this repository checkout; see correction above)
 
 ## 1. The M32 Walker (Current State)
 

@@ -665,6 +665,16 @@ def _is_safe_rule_target(rel_path: str) -> bool:
     )
 
 
+def _is_test_file(rel_path: str) -> bool:
+    name = rel_path.replace("\\", "/").rsplit("/", 1)[-1]
+    return (
+        name.startswith("test_")
+        or name.endswith("_test.py")
+        or name == "conftest.py"
+        or "/tests/" in "/" + rel_path.replace("\\", "/")
+    )
+
+
 def _rel_target(repo_root: Path, target_path: Path) -> str:
     try:
         return str(target_path.relative_to(repo_root))
@@ -942,6 +952,32 @@ class LLMRepairOutcome:
     raw_response: str = ""
 
 
+_DISCIPLINE_CHARS = 10_000
+
+
+def _repair_discipline() -> str:
+    """The grafted skills that apply to repair, with their provenance.
+
+    Salamander's LLM stage follows the same discipline its grafts teach:
+    root cause before any fix, and evidence before any claim of success.
+    """
+    from ..skill_loader import skills_for
+
+    sections = []
+    for skill in skills_for("repair"):
+        origin = skill.provenance or {}
+        body = skill.instructions
+        if len(body) > _DISCIPLINE_CHARS:
+            body = body[:_DISCIPLINE_CHARS] + "\n[... truncated]"
+        sections.append(
+            f"### Skill: {skill.name} (from {origin.get('repo')}@"
+            f"{str(origin.get('commit'))[:12]}, {origin.get('licence')})\n{body}"
+        )
+    if not sections:
+        return ""
+    return "Follow this repair discipline:\n\n" + "\n\n".join(sections)
+
+
 def _build_repair_prompt(
     cf: ClassifiedFailure, source_file_content: Optional[str], source_file_path: str
 ) -> str:
@@ -959,6 +995,9 @@ def _build_repair_prompt(
         parts.append(
             f"The referenced source file ({source_file_path}) could not be read for inclusion here."
         )
+    discipline = _repair_discipline()
+    if discipline:
+        parts.append(discipline)
     parts.append(
         "Respond in exactly two parts:\n"
         "1. A section starting with 'DIAGNOSIS:' containing your root-cause analysis in plain text.\n"
@@ -1205,6 +1244,18 @@ def apply_and_verify(
 
     if not proposal.proposed_content or not proposal.target_file:
         msg = f"Proposal {proposal.id} has no proposed patch to apply (diagnostic-only)."
+        if memory_db is not None:
+            memory_db.update_self_repair_proposal_status(proposal.id, "pending_review", msg)
+        return ApplyResult(applied=False, verified=False, reverted=False, message=msg)
+
+    # Tests are the specification: a heal changes code to meet them. A patch
+    # that edits a test (wider tolerances, relaxed assertions) turns the rerun
+    # green by construction, so it never applies without a human.
+    if _is_test_file(proposal.target_file):
+        msg = (
+            f"Proposal {proposal.id} edits {proposal.target_file}, a test; changes to the "
+            "specification always wait for human review."
+        )
         if memory_db is not None:
             memory_db.update_self_repair_proposal_status(proposal.id, "pending_review", msg)
         return ApplyResult(applied=False, verified=False, reverted=False, message=msg)

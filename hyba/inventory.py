@@ -28,7 +28,7 @@ _LADDER_KERNEL = "mla1517_lucas_pisot_scale"
 
 def _kernel_source_has(entry: str) -> bool:
     """True when a canonical .cl source actually defines ``entry``."""
-    for base in (_REPO_ROOT / "kernels", _REPO_ROOT / "igpu" / "kernels"):
+    for base in (_REPO_ROOT / "kernels", _REPO_ROOT / "chronus" / "kernels"):
         if not base.is_dir():
             continue
         for path in base.glob("*.cl"):
@@ -38,7 +38,7 @@ def _kernel_source_has(entry: str) -> bool:
             except OSError:
                 continue
     # Platform kernel dir (mla1517) is canonical for the ladder executor.
-    plat = _REPO_ROOT / "mla1517_platform_v3.4" / "kernels"
+    plat = _REPO_ROOT / "chronus/mla1517_platform" / "kernels"
     if plat.is_dir():
         for path in plat.glob("*.cl"):
             try:
@@ -60,7 +60,7 @@ class DeviceInfo:
     name: str
     vendor: str
     backend: str  # opencl | cuda | metal | rocm | mlx | asic | rtl | cpu
-    type: str  # gpu | igpu | cpu | asic | rtl
+    type: str  # gpu | chronus | cpu | asic | rtl
     compute_units: Optional[int]
     global_mem_mb: Optional[int]
     capabilities: Tuple[Tuple[str, Any], ...] = ()
@@ -98,6 +98,7 @@ class ClusterInventory:
         inv = cls(detected_at=time.time())
         for tier, fn in (
             ("opencl", _probe_opencl),
+            ("opencl_remote", _probe_remote_opencl),
             ("cuda", _probe_cuda),
             ("metal", _probe_metal),
             ("rocm", _probe_rocm),
@@ -146,7 +147,7 @@ def _opencl_type(cl: Any, device: Any) -> str:
             unified = False
         vendor = str(getattr(device, "vendor", "") or "").lower()
         if unified or vendor.startswith(("intel", "apple")):
-            return "igpu"
+            return "chronus"
         return "gpu"
     if dtype & cpu_bit:
         return "cpu"
@@ -333,7 +334,7 @@ def _probe_metal() -> List[DeviceInfo]:
             name=name,
             vendor="Apple",
             backend="metal",
-            type="igpu",
+            type="chronus",
             compute_units=int(getattr(info, "gpu_cores", 0)) or None,
             global_mem_mb=None,
             capabilities=tuple(sorted(caps.items())),
@@ -384,7 +385,7 @@ def _probe_mlx() -> List[DeviceInfo]:
             name="Apple MLX device",
             vendor="Apple",
             backend="mlx",
-            type="igpu",
+            type="chronus",
             compute_units=None,
             global_mem_mb=None,
             capabilities=tuple(sorted(caps.items())),
@@ -398,17 +399,17 @@ def _probe_asic() -> List[DeviceInfo]:
     if not lib:
         return []
     try:
-        from mla1517.hardware import _load_library  # noqa: PLC0415
+        from chronus.mla1517.hardware import _load_library  # noqa: PLC0415
     except Exception:
         try:
             import sys
 
-            plat = _REPO_ROOT / "mla1517_platform_v3.4" / "python"
+            plat = _REPO_ROOT / "chronus/mla1517_platform" / "python"
             if str(plat) not in sys.path:
                 sys.path.append(str(plat))
-            from mla1517.hardware import _load_library  # noqa: PLC0415
+            from chronus.mla1517.hardware import _load_library  # noqa: PLC0415
         except Exception as exc:
-            raise RuntimeError(f"mla1517.hardware import failed: {exc}") from exc
+            raise RuntimeError(f"chronus.mla1517.hardware import failed: {exc}") from exc
     library = _load_library(lib)
     if not hasattr(library, "mla1517_open"):
         raise RuntimeError(f"{lib} loaded but exposes no mla1517_open")
@@ -429,7 +430,7 @@ def _probe_rtl() -> List[DeviceInfo]:
     """RTL design artifacts — truth_class 'design', never hardware."""
     out: List[DeviceInfo] = []
     for label, rel in (
-        ("mla1517_rtl", "mla1517_platform_v3.4/rtl"),
+        ("mla1517_rtl", "chronus/mla1517_platform/rtl"),
         ("legacy_rtl", "legacy/hardware/rtl"),
     ):
         d = _REPO_ROOT / rel
@@ -452,6 +453,62 @@ def _probe_rtl() -> List[DeviceInfo]:
                 ),
             )
         )
+    return out
+
+
+def _remote_opencl_endpoints() -> List[str]:
+    raw = os.environ.get("HYBA_REMOTE_OPENCL_ENDPOINTS", "")
+    out = [part.strip() for part in raw.split(",") if part.strip()]
+    single = os.environ.get("MLA1517_REMOTE_GPU_ENDPOINT", "").strip()
+    if single and single not in out:
+        out.append(single)
+    return out
+
+
+def _probe_remote_opencl() -> List[DeviceInfo]:
+    """Devices measured by remote GPU agents — a GPU anywhere counts.
+
+    Endpoints come from ``HYBA_REMOTE_OPENCL_ENDPOINTS`` (comma list) or
+    ``MLA1517_REMOTE_GPU_ENDPOINT``. Each agent is a real OpenCL host —
+    a local box, another PC, or a cloud VM. Unreachable or deviceless
+    endpoints degrade explicitly in ``errors``; they are never faked.
+    """
+    endpoints = _remote_opencl_endpoints()
+    if not endpoints:
+        return []
+    try:
+        from chronus.mla1517.remote_gpu import RemoteGPUClient
+    except Exception:
+        import sys
+
+        plat = _REPO_ROOT / "chronus/mla1517_platform" / "python"
+        if str(plat) not in sys.path:
+            sys.path.append(str(plat))
+        from chronus.mla1517.remote_gpu import RemoteGPUClient
+    out: List[DeviceInfo] = []
+    errors: List[str] = []
+    for endpoint in endpoints:
+        try:
+            devices = RemoteGPUClient(endpoint).devices()
+        except Exception as exc:
+            errors.append(f"{endpoint}: {exc}")
+            continue
+        for d in devices:
+            caps = dict(d.capabilities)
+            caps["remote_endpoint"] = endpoint
+            out.append(
+                DeviceInfo(
+                    name=d.name,
+                    vendor=d.vendor,
+                    backend="opencl_remote",
+                    type=d.device_type,
+                    compute_units=d.compute_units,
+                    global_mem_mb=d.global_mem_mb,
+                    capabilities=tuple(sorted(caps.items())),
+                )
+            )
+    if errors and not out:
+        raise RuntimeError("; ".join(errors))
     return out
 
 

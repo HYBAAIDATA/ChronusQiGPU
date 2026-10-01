@@ -203,6 +203,35 @@ async def test_job_notify_ingestion_and_template_cache():
         await server.stop()
 
 
+def test_clean_job_generation_invalidates_only_superseded_work():
+    bridge = StratumBridge("localhost", 3333, worker_name="worker_test.01", worker_pass="x")
+
+    def notify(job_id: str, clean_jobs: bool):
+        bridge._handle_server_message(
+            {
+                "method": "mining.notify",
+                "params": [
+                    job_id,
+                    "00" * 32,
+                    "00",
+                    "00",
+                    [],
+                    "00000001",
+                    "1d00ffff",
+                    "00000001",
+                    clean_jobs,
+                ],
+            }
+        )
+
+    notify("job_a", True)
+    generation = bridge.clean_job_generation
+    notify("job_b", False)
+    assert bridge.is_job_valid(generation)
+    notify("job_c", True)
+    assert not bridge.is_job_valid(generation)
+
+
 @pytest.mark.asyncio
 async def test_sub_millisecond_share_submission():
     """Ensure submission socket dispatch operates without blocking on post-mortems."""

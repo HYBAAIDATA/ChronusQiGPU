@@ -713,10 +713,10 @@ class Oracle:
 # LUCAS EXPONENTIAL INTELLIGENCE SCALING
 # ------------------------------------------------------------------ #
 
-# The canonical ladder is ``lucas.ladder.FULL_LADDER`` = [10, 12, 15, 18, 20].
+# The canonical ladder is ``lucas.ladder.FULL_LADDER``: the curriculum rungs
+# plus the restored mining rungs 31, 50 and 76.
 # It is imported, never restated: an Oracle that hardcodes its own rungs would
-# drift from the substrate the orchestrator actually climbs. ``L_15 = 1364``
-# and ``L_20 = 15127`` are the rungs the ladder already contains.
+# drift from the substrate the orchestrator actually climbs.
 from lucas.ladder import FULL_LADDER
 
 LUCAS_LADDER: Tuple[int, ...] = tuple(FULL_LADDER)

@@ -1,0 +1,122 @@
+# L-HRAS — The Guardian. Example configuration (Part XVII step 3–4).
+# Every threshold has provenance: the [provenance] section is REQUIRED —
+# validate_config fails closed on any threshold without it (TP1).
+#
+# TOML note: every key before the first [table] header is top-level, so
+# all flat scalars live up front; [table] and [[array-of-tables]]
+# sections follow.
+
+instance_id = "l-hras-0"
+
+# ─── Seven topology constants (each provenance declared below) ────
+
+mass_gap = 0.5
+viscosity = 5.0
+pnp_ratio = "1/2"
+critical_lines = { benign = 0.05, apt = 0.9, insider = 0.9, script_kiddie = 0.9, botnet = 0.9, state_actor = 0.95, unknown = 0.9 }
+rank_bounds = { benign = 32, apt = 4, insider = 4, script_kiddie = 8, botnet = 8, state_actor = 4, unknown = 2 }
+hodge_basis = ["recon", "delivery", "exploit", "install", "c2", "exfil"]
+
+# ─── Detection thresholds ─────────────────────────────────────────
+
+entropy_threshold = 1.0
+purity_threshold = 0.5
+fidelity_threshold = 0.75
+
+# ─── Storage ──────────────────────────────────────────────────────
+
+aethel_root = "./aethel_store"
+backup_root = "./aethel_backup"
+
+# ─── Integration ──────────────────────────────────────────────────
+
+siem_endpoint = ""   # empty = no SIEM (blueprint: IF siem is null: RETURN)
+soar_endpoint = ""
+ti_feeds = []
+
+# ─── Governance ───────────────────────────────────────────────────
+
+compliance_mappings = { soc2 = ["CC6.1", "CC7.2"], iso27001 = ["A.12.6"] }
+
+# ─── Observability ────────────────────────────────────────────────
+
+metrics_endpoint = ""
+health_endpoint = ""
+
+# ─── Throttle defaults ────────────────────────────────────────────
+
+default_throttle_factor = 0.5
+throttle_duration = 300
+
+# ─── Preconditions ────────────────────────────────────────────────
+
+[threat_model]
+adversaries = ["apt", "insider", "script_kiddie", "botnet", "state_actor"]
+attck_techniques = ["T1059", "T1078", "T1046"]
+capabilities = { apt = ["c2", "lateral"], insider = ["exfil"], script_kiddie = ["scan"], botnet = ["flood"], state_actor = ["supply_chain"] }
+responses = { T1059 = ["monitor", "block"], T1078 = ["attest"], T1046 = ["throttle"] }
+# Declared adversary construction cost per class (P vs NP evaluator).
+cost_map = { apt = 500, insider = 200, script_kiddie = 50, botnet = 300, state_actor = 1000, benign = 1000000, unknown = 1 }
+
+[trust_root]
+key_id = "root-1"
+# The root secret. Replace with a provisioned secret in production —
+# this example value exists so `cp config.example.toml config.toml`
+# stands on first run.
+secret = "replace-me-root-secret"
+
+[policy_bundle]
+version = "1.0.0"
+default_allow = true
+# Signed with the trust root: `bundle.sign_with(trust_root)` or accept
+# `signatures_verified = true` only after verification at load.
+signature = ""
+rules = [
+  { effect = "allow", kind = "benign" },
+  { effect = "deny", kind = "adversarial", scope = "restricted" },
+]
+throttle_modes = { purity_gate = { type = "rate_reduction", factor = 0.25 } }
+compliance_mappings = { soc2 = ["CC6.1", "CC7.2"], iso27001 = ["A.12.6"] }
+
+# ─── Standing ─────────────────────────────────────────────────────
+
+[standing]
+swarm_size = 3
+swarm_threshold = "2/3"
+max_counterfactuals = 10000
+declared_threshold = 0.05
+fold_tolerance = 1e-14
+state_dim = 3
+
+[sso_provider]
+issuer = "l-hras-sso"
+secret = "replace-me-sso-secret"
+open = false
+
+[break_glass_policy]
+allowed_actors = ["soc-lead"]
+allowed_reasons = ["active-breach", "forensics"]
+duration_seconds = 900
+
+# ─── Provenance (TP1 — every threshold names its source) ──────────
+
+[provenance]
+mass_gap = "toe.poincare_yangmills.finite_gauge_gap"
+viscosity = "measured: flow containment ceiling on declared channels"
+pnp_ratio = "declared: verification must cost strictly less than construction"
+entropy_threshold = "measured: TOE causal throttle bound"
+purity_threshold = "declared: Tr(rho^2) floor for admissible requests"
+fidelity_threshold = "measured: anomaly drift bound on baseline traffic"
+critical_lines = { benign = "measured: benign fidelity floor", apt = "measured: APT signal floor", insider = "measured: insider signal floor", script_kiddie = "measured: low-tier signal floor", botnet = "measured: botnet signal floor", state_actor = "measured: state signal floor", unknown = "measured: default floor" }
+rank_bounds = { benign = "measured: benign reach on 32-frame", apt = "measured: APT reach bound", insider = "measured: insider reach bound", script_kiddie = "measured: low-tier reach bound", botnet = "measured: botnet reach bound", state_actor = "measured: state reach bound", unknown = "measured: default bound" }
+
+# ─── Array-of-tables sections come last ───────────────────────────
+
+[[escalation_contacts]]
+name = "soc-oncall"
+channel = "pager"
+target = "soc@example.com"
+
+[[alert_channels]]
+kind = "webhook"
+target = "https://alerts.example.com/l-hras"

@@ -8,7 +8,7 @@ import sys
 import unittest
 
 sys.path.insert(0, "/data/pythia_real")
-sys.path.insert(0, "/data/pythia_real/mla1517_platform_v3.4/python")
+sys.path.insert(0, "/data/pythia_real/chronus/mla1517_platform/python")
 
 from toe.causal_ladder import CausalGraph
 from toe.operator_compilers import compile_operator
@@ -72,7 +72,7 @@ class TOEExpansionContractTests(unittest.TestCase):
         result = engine.collapse({"series": [1, 2, 3]}, domain="budget")
         self.assertFalse(result.available)
         self.assertEqual([item["accepted"] for item in result.scale_program], [True, False])
-        self.assertEqual(result.scale_program[-1]["reason"], "physical_budget_exceeded")
+        self.assertEqual(result.scale_program[-1]["reason"], "output_budget_exceeded")
 
     def test_full_pisot_scale_program_and_receipt(self):
         result = self.engine.collapse(

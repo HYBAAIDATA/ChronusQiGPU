@@ -12,19 +12,10 @@ from typing import Any, Dict, List, Optional
 
 from lucas.ladder import FULL_LADDER
 
-try:
-    from .quantum_tensor import Complex, ComplexMatrix, QuantumState
-    from lucas import core as lucas_core
-    from lucas import pool as lucas_pool
-except (ImportError, SystemError, Exception):  # pragma: no cover
-    # Canonical finite-precision substrate ships in the kellogg package.
-    from kellogg.quantum_tensor import (  # type: ignore[no-redef]
-        Complex,
-        ComplexMatrix,
-        QuantumState,
-    )
-    import lucas.core as lucas_core  # type: ignore[no-redef]
-    import lucas.pool as lucas_pool  # type: ignore[no-redef]
+# The finite-precision substrate's canonical home is the kellogg package.
+from kellogg.quantum_tensor import Complex, ComplexMatrix, QuantumState
+from lucas import core as lucas_core
+from lucas import pool as lucas_pool
 
 
 # ---------------------------------------------------------------------------

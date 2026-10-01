@@ -7,8 +7,8 @@ import time
 from dataclasses import asdict, dataclass
 from typing import Any, Dict, List
 
-from igpu.seam.capability import measure_hps_distribution
-from igpu.seam.types import KernelName
+from chronus.seam.capability import measure_hps_distribution
+from chronus.seam.types import KernelName
 
 
 @dataclass
@@ -57,7 +57,7 @@ def bench_kernel(kernel: str = KernelName.sha256d_verify.value, trials: int = 32
         fallback_rate=0.0,
         p99_latency_ms=0.0,
         hardware={"class": "cpu_reference", "note": "host reference, not discrete GPU silicon"},
-        commit="feat/igpu-seam",
+        commit="feat/chronus-seam",
         timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         reproducible=raw["samples"] >= 32 and seam["samples"] >= 32,
     )

@@ -46,7 +46,7 @@ def resolve_punch_host_class() -> Optional[type]:
         if host_cls is not None:
             return host_cls
     try:
-        from igpu.opencl_host import OpenClPunchHost
+        from chronus.opencl_host import OpenClPunchHost
 
         return OpenClPunchHost
     except Exception:
@@ -62,6 +62,4 @@ def resolve_punch_host() -> Optional[Any]:
         host = host_cls()
     except Exception:
         return None
-    if getattr(host, "use_opencl", False):
-        return host
     return host

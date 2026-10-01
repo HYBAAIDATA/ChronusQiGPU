@@ -10,7 +10,7 @@ from typing import Any, Dict, Mapping
 
 import numpy as np
 
-from kellogg.scales import cassini_verify, lucas, pisot_drift
+from kellogg.scales import cassini_verify, lucas
 from toe.phi_klein import HOROSPHERES, klein_identity, phi_norm
 from toe.poincare_golden_11d import cassini_unimodular_det
 

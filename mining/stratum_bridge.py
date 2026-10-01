@@ -196,6 +196,7 @@ class StratumBridge:
         self.extranonce2_size = 4
         self.difficulty = 1.0
         self.last_job: Optional[LiveJob] = None
+        self.clean_job_generation = 0
         self.shares_accepted = 0
         self.shares_rejected = 0
         self.submit_calls = 0
@@ -309,6 +310,9 @@ class StratumBridge:
                 self.last_job.difficulty = self.difficulty
         elif method == "mining.notify" and isinstance(params, list):
             if len(params) >= 9:
+                clean_jobs = bool(params[8])
+                if clean_jobs:
+                    self.clean_job_generation += 1
                 self.last_job = LiveJob(
                     job_id=str(params[0]),
                     prev_hash=str(params[1]),
@@ -318,9 +322,12 @@ class StratumBridge:
                     version=str(params[5]),
                     nbits=str(params[6]),
                     ntime=str(params[7]),
-                    clean_jobs=bool(params[8]),
+                    clean_jobs=clean_jobs,
                     difficulty=self.difficulty,
                 )
+
+    def is_job_valid(self, clean_job_generation: int) -> bool:
+        return clean_job_generation == self.clean_job_generation
 
     async def wait_for_job(self, timeout: float = 30.0) -> LiveJob:
         deadline = time.time() + timeout
@@ -330,7 +337,14 @@ class StratumBridge:
             if self._listening:
                 await asyncio.sleep(0.05)
                 continue
-            line = await self._reader.readline()
+            # The deadline holds while reading too: a silent pool must not
+            # hold this call past its timeout.
+            try:
+                line = await asyncio.wait_for(
+                    self._reader.readline(), max(0.0, deadline - time.time())
+                )
+            except asyncio.TimeoutError:
+                break
             if not line:
                 raise ConnectionError("pool closed connection")
             try:
@@ -415,7 +429,10 @@ class StratumBridge:
         if writer is not None:
             writer.close()
             try:
-                await writer.wait_closed()
+                # A peer that never acknowledges the close must not hold us.
+                await asyncio.wait_for(writer.wait_closed(), 5.0)
+            except asyncio.TimeoutError:
+                writer.transport.abort()
             except Exception:
                 pass
 
@@ -532,11 +549,11 @@ def _lane_nonces(
     if mode in ("11d", "poincare11d", "poincare", "manifold"):
         nonces = _poincare_11d_nonces(base_nonce, count, header80)
         return nonces if nonces is not None else _linear_nonces(base_nonce, count)
-    platform_py = os.path.join(_PROJECT_ROOT, "mla1517_platform_v3.4", "python")
+    platform_py = os.path.join(_PROJECT_ROOT, "chronus/mla1517_platform", "python")
     try:
         if platform_py not in sys.path:
             sys.path.append(platform_py)
-        from mla1517.mining.solver import M32SearchSolver
+        from chronus.mla1517.mining.solver import M32SearchSolver
 
         solver = M32SearchSolver()
         return [n for n, _lane in solver.candidates(base_nonce, count)]
@@ -552,10 +569,10 @@ def _m32_lane_order(base_nonce: int):
     order ``M32SearchSolver.candidates`` walks, cached on the solver."""
     global _M32_SOLVER
     if _M32_SOLVER is None:
-        platform_py = os.path.join(_PROJECT_ROOT, "mla1517_platform_v3.4", "python")
+        platform_py = os.path.join(_PROJECT_ROOT, "chronus/mla1517_platform", "python")
         if platform_py not in sys.path:
             sys.path.append(platform_py)
-        from mla1517.mining.solver import M32SearchSolver
+        from chronus.mla1517.mining.solver import M32SearchSolver
 
         _M32_SOLVER = M32SearchSolver()
     return _M32_SOLVER.turing.lane_order(base_nonce)
@@ -566,7 +583,7 @@ def device_status() -> Dict[str, object]:
     the live grind path. Fields reflect real code paths — a component listed
     in the unified-punch device but not invoked per epoch is reported false.
     """
-    platform_py = os.path.join(_PROJECT_ROOT, "mla1517_platform_v3.4", "python")
+    platform_py = os.path.join(_PROJECT_ROOT, "chronus/mla1517_platform", "python")
     status: Dict[str, object] = {
         "compass_faces": 32,  # M32 lanes = 32-face routing (12+20 dual overlay)
         "manifold_dimensions": 0,
@@ -585,7 +602,7 @@ def device_status() -> Dict[str, object]:
     try:
         if platform_py not in sys.path:
             sys.path.append(platform_py)
-        from mla1517.mining.geometry import M32Topology
+        from chronus.mla1517.mining.geometry import M32Topology
 
         topo = M32Topology()
         if topo.connected() and topo.lanes == 32:
@@ -830,7 +847,9 @@ async def _amain(argv=None) -> int:
                     f"nbits={job.nbits} prev={job.prev_hash[:16]}..."
                 )
 
-            out = mine_job(
+            clean_job_generation = bridge.clean_job_generation
+            out = await asyncio.to_thread(
+                mine_job,
                 job,
                 bridge.extranonce1,
                 bridge.extranonce2_size,
@@ -839,6 +858,9 @@ async def _amain(argv=None) -> int:
                 base_nonce=base_nonce,
                 extranonce2_int=extranonce2_counter,
             )
+            if not bridge.is_job_valid(clean_job_generation):
+                print(f"[STALE JOB] Discarded completed work for {job.job_id}")
+                continue
             res = out["result"]
             total_hashes += res.hashes_computed
             total_batches += 1
@@ -910,6 +932,9 @@ async def _amain(argv=None) -> int:
                     if not args.continuous:
                         return 0
                 else:
+                    if not bridge.is_job_valid(clean_job_generation):
+                        print(f"[STALE JOB] Refusing submission for {job.job_id}")
+                        continue
                     submission = bridge.submit_share(
                         job.job_id, out["extranonce2"], out["ntime"], nonce_hex
                     )

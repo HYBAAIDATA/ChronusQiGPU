@@ -1,4 +1,4 @@
-/** Payload contract of the Python control API (mla1517.status/1). */
+/** Payload contract of the Python control API (chronus.mla1517.status/1). */
 
 export type StratumIdentity = {
   profile: string;
@@ -33,9 +33,30 @@ export type DeviceInfo = {
 export type GpuSection = {
   available?: boolean;
   count?: number;
+  /** The Chronus contract device — the system's declared GPU identity,
+      enumerated from the loaded spec, never probed silicon. */
+  contract_device?: {
+    name?: string;
+    vendor?: string;
+    backend?: string;
+    is_gpu?: boolean;
+    is_integrated?: boolean;
+    platform?: string;
+  } | null;
+  opencl_device_count?: number;
+  physical_gpu_available?: boolean;
+  physical_gpu_count?: number;
   devices?: DeviceInfo[];
-  running_backend?: string;
-  running_device?: string;
+  backend_active?: boolean;
+  detected_backend?: string;
+  detected_device?: string;
+  logical_substrate?: {
+    name: string;
+    available: boolean;
+    active: boolean;
+    host_backend: string;
+    fallback_used: boolean;
+  };
   hasher?: { backend?: string; device?: string; fallback_reason?: string | null };
   punch?: { use_opencl?: boolean; backend?: string; gpu_error?: string | null };
   vendors?: {
@@ -62,7 +83,8 @@ export type WorkerPublic = {
   last_heartbeat: string | null;
   liveness: boolean;
   readiness: boolean;
-  effectiveness: { hashrate: number; shares_accepted: number };
+  // null = the worker has not published a measured hashrate.
+  effectiveness: { hashrate: number | null; shares_accepted: number };
   last_error: { kind: string; message: string } | null;
 };
 
@@ -171,6 +193,7 @@ export type MlaStatus = {
   solvers?: SolverManifold;
   runtime?: RuntimeConfig;
   device?: { available?: boolean; count?: number; devices?: DeviceInfo[] };
+  gpu?: GpuSection;
   workers?: Record<string, WorkerPublic>;
   stratum?: StratumStatus;
   measurement?: string;
@@ -229,6 +252,34 @@ export type SelftestStatus = RunnerStatus & {
   summary?: { passed?: boolean; checks?: { passed: number; total: number }; failures?: string[] };
 };
 
+export type MaintenanceStatus = RunnerStatus & {
+  interval_s?: number;
+  llm_enabled?: boolean;
+  auto_apply_enabled?: boolean;
+  result?: {
+    session_id?: string;
+    failure_count?: number;
+    proposal_count?: number;
+    applied_count?: number;
+    summary?: string;
+    error?: string;
+  };
+};
+
+export type RepoEngineerStatus = {
+  schema?: string;
+  provider?: string;
+  model?: string;
+  ready?: boolean;
+  sdk_available?: boolean;
+  credential_available?: boolean;
+  context_loaded?: boolean;
+  context_files?: string[];
+  tools?: string[];
+  write_access?: boolean;
+  runner?: RunnerStatus;
+};
+
 export type AgenticStatus = RunnerStatus;
 
 export type CampaignPhaseRecord = {
@@ -252,7 +303,7 @@ export type TelemetrySummary = {
   schema_version?: string;
   generated_at?: string;
   backend?: string;
-  hashrate?: number;
+  hashrate?: number | null;
   shares_accepted?: number;
   session?: {
     supervisor_started_at?: string;

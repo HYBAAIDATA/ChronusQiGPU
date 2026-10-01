@@ -1,4 +1,4 @@
-"""TensorCoreGPU_Context — compute context with hardened Cassini checks.
+"""ChronusContext — compute context with hardened Cassini checks.
 
 Wraps the compute-unit pool, SPMD executor and micro-kernel library, and
 projects data tensors onto pv-lattice anchors.  When a punch host is bound
@@ -17,7 +17,7 @@ from .punch import resolve_punch_host
 from .zeckendorf import PUNCH_MANIFOLD_COMPUTE
 
 
-class TensorCoreGPU_Context:
+class ChronusContext:
     def __init__(self, punch_host=None, require_gpu: bool = False):
         self.cu_pool = ComputeUnitPool(n_sms=8, threads_per_sm=256)
         self.spmd = SPMDExecutor(n_lanes=32)
@@ -25,6 +25,8 @@ class TensorCoreGPU_Context:
         self.cassini = CassiniVerifier()
         self.require_gpu = require_gpu
         self.punch_host = punch_host
+        # Backend that physically ran the last projection; None until one has.
+        self._last_projection_backend = None
         if self.punch_host is None:
             self.punch_host = resolve_punch_host()
         if require_gpu and not self.gpu_active:
@@ -39,6 +41,8 @@ class TensorCoreGPU_Context:
 
     @property
     def projection_backend(self) -> str:
+        if self._last_projection_backend is not None:
+            return self._last_projection_backend
         if self.gpu_active:
             return getattr(self.punch_host, "last_dispatch_backend", None) or getattr(
                 self.punch_host, "backend", "cpu"
@@ -54,16 +58,27 @@ class TensorCoreGPU_Context:
         if self.gpu_active and pv_base == PHI:
             vec = np.zeros(DIM, dtype=np.float32)
             vec[: len(flat)] = flat
-            out = self.punch_host.run_punch_batch(
-                PUNCH_MANIFOLD_COMPUTE,
-                n=1,
-                in_float=vec,
-            )
-            norm_sq = float(out["float"][0])
-            if not np.isfinite(norm_sq) or norm_sq < 0:
-                return 0
-            anchor = int(round(float(np.sqrt(norm_sq)))) % 90
-            return max(0, anchor)
+            try:
+                out = self.punch_host.run_punch_batch(
+                    PUNCH_MANIFOLD_COMPUTE,
+                    n=1,
+                    in_float=vec,
+                )
+            except NotImplementedError:
+                # OpenClPunchHost supports only 0x02/0x1C; 0x15 falls back
+                # to the exact CPU projection below instead of crashing.
+                self._last_projection_backend = "cpu"
+            else:
+                self._last_projection_backend = getattr(
+                    self.punch_host, "last_dispatch_backend", None
+                ) or getattr(self.punch_host, "backend", "cpu")
+                norm_sq = float(out["float"][0])
+                if not np.isfinite(norm_sq) or norm_sq < 0:
+                    return 0
+                anchor = int(round(float(np.sqrt(norm_sq)))) % 90
+                return max(0, anchor)
+        else:
+            self._last_projection_backend = "cpu"
         norm_sq = float(
             sum((pv_base ** -(i + 1)) * (float(flat[i]) ** 2) for i in range(len(flat)))
         )

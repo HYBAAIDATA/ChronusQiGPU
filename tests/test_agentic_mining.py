@@ -23,26 +23,15 @@ import hashlib
 import time
 import pytest
 
-try:
-    from Intelligence.agentic_mining import (
-        AgenticMiningWorkflow,
-    )
-    from toe.intelligences.causal import CausalIntelligence
-    from toe.intelligences.geometric import GeometricIntelligence
-    from toe.intelligences.plastic import PlasticIntelligence
-    from toe.intelligences.counterfactual import CounterfactualIntelligence
-    from toe.intelligences.quantum import QuantumIntelligence
-    from toe.system import TOESystem
-except ImportError:
-    from agentic_mining import (
-        AgenticMiningWorkflow,
-    )
-    from toe.intelligences.causal import CausalIntelligence
-    from toe.intelligences.geometric import GeometricIntelligence
-    from toe.intelligences.plastic import PlasticIntelligence
-    from toe.intelligences.counterfactual import CounterfactualIntelligence
-    from toe.intelligences.quantum import QuantumIntelligence
-    from toe.system import TOESystem
+from Intelligence.agentic_mining import (
+    AgenticMiningWorkflow,
+)
+from toe.intelligences.causal import CausalIntelligence
+from toe.intelligences.geometric import GeometricIntelligence
+from toe.intelligences.plastic import PlasticIntelligence
+from toe.intelligences.counterfactual import CounterfactualIntelligence
+from toe.intelligences.quantum import QuantumIntelligence
+from toe.system import TOESystem
 
 
 # =============================================================================
@@ -155,7 +144,7 @@ class TestHold:
         assert stats["total_held_candidates"] == 32
         assert stats["md_memory_entries"] == 32
         assert stats["galois_prime_entries"] >= 1
-        assert stats["igpu_vram_cached"] == 32
+        assert stats["chronus_vram_cached"] == 32
         assert stats["cassini_sample_passed"] >= 1
         assert stats["cassini_sample_failed"] == 0
 
@@ -226,14 +215,31 @@ class TestSteadyState:
                 "fee_sat_vb": 12.0,
             }
 
-        ticks = wf.phase5_steady_state(cycles=3, telemetry_provider=provider)
+        ticks = wf.phase5_steady_state(
+            cycles=3, telemetry_provider=provider, telemetry_source="fixture"
+        )
         assert len(ticks) == 3
         for tick in ticks:
-            assert tick["truth_class"] == "measured"
+            assert tick["truth_class"] == "simulated"
+            assert tick["telemetry_source"] == "fixture"
             assert tick["hashrate_ehs"] >= wf.start_ehs
             assert tick["thermal_c"] < wf.thermal_throttle_c
             assert tick["plasticity_active"] is True
             assert tick["invariants_verified"] is True
+
+    def test_steady_state_requires_explicit_measured_telemetry_attestation(self):
+        wf = AgenticMiningWorkflow()
+        wf.phase1_cold_start()
+        wf.phase2_precompute(count=2, n_anchor=7)
+
+        ticks = wf.phase5_steady_state(
+            cycles=1,
+            telemetry_provider=lambda _: {"thermal_c": 50.0},
+            telemetry_source="measured",
+        )
+
+        assert ticks[0]["truth_class"] == "measured"
+        assert ticks[0]["telemetry_source"] == "measured"
 
     def test_steady_state_unmeasured_channels_are_honest(self):
         """No telemetry provider -> unmeasured channels report None, not

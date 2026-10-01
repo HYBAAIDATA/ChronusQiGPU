@@ -1,7 +1,7 @@
 """Aethel shared-memory ingestion queue — pure-Python ABI v1.
 
 Byte-compatible implementation of the native ``mla1517_aethel`` region
-(``mla1517_platform_v3.4/host/mla1517_aethel.{c,h}``).  A region is an
+(``chronus/mla1517_platform/host/mla1517_aethel.{c,h}``).  A region is an
 mmap-backed file laid out as::
 
     header (0x40 bytes)

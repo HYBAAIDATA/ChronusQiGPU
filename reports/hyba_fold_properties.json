@@ -1,0 +1,215 @@
+{
+  "section": "\u00a73-4 fold claim + exact fold/unfold",
+  "representation_property": {
+    "supported_domain": "0 <= len <= 1048576 bytes",
+    "cases": {
+      "random_incompressible": {
+        "input_bytes": 4096,
+        "roundtrip_identical": true,
+        "error": 0,
+        "exactness_class": "BIT_EXACT",
+        "folded_units": 512
+      },
+      "structured_numeric": {
+        "input_bytes": 4096,
+        "roundtrip_identical": true,
+        "error": 0,
+        "exactness_class": "BIT_EXACT",
+        "folded_units": 512
+      },
+      "sparse_zeros": {
+        "input_bytes": 8192,
+        "roundtrip_identical": true,
+        "error": 0,
+        "exactness_class": "BIT_EXACT",
+        "folded_units": 1024
+      },
+      "repeating": {
+        "input_bytes": 6144,
+        "roundtrip_identical": true,
+        "error": 0,
+        "exactness_class": "BIT_EXACT",
+        "folded_units": 768
+      },
+      "high_entropy": {
+        "input_bytes": 8192,
+        "roundtrip_identical": true,
+        "error": 0,
+        "exactness_class": "BIT_EXACT",
+        "folded_units": 1024
+      },
+      "low_entropy": {
+        "input_bytes": 8192,
+        "roundtrip_identical": true,
+        "error": 0,
+        "exactness_class": "BIT_EXACT",
+        "folded_units": 1024
+      },
+      "text": {
+        "input_bytes": 6144,
+        "roundtrip_identical": true,
+        "error": 0,
+        "exactness_class": "BIT_EXACT",
+        "folded_units": 768
+      },
+      "time_series": {
+        "input_bytes": 16384,
+        "roundtrip_identical": true,
+        "error": 0,
+        "exactness_class": "BIT_EXACT",
+        "folded_units": 2048
+      },
+      "high_dimensional": {
+        "input_bytes": 16384,
+        "roundtrip_identical": true,
+        "error": 0,
+        "exactness_class": "BIT_EXACT",
+        "folded_units": 2048
+      },
+      "boundary_0": {
+        "input_bytes": 0,
+        "roundtrip_identical": true,
+        "exactness_class": "BIT_EXACT"
+      },
+      "boundary_1": {
+        "input_bytes": 1,
+        "roundtrip_identical": true,
+        "exactness_class": "BIT_EXACT"
+      },
+      "boundary_7": {
+        "input_bytes": 7,
+        "roundtrip_identical": true,
+        "exactness_class": "BIT_EXACT"
+      },
+      "boundary_8": {
+        "input_bytes": 8,
+        "roundtrip_identical": true,
+        "exactness_class": "BIT_EXACT"
+      },
+      "boundary_9": {
+        "input_bytes": 9,
+        "roundtrip_identical": true,
+        "exactness_class": "BIT_EXACT"
+      },
+      "boundary_1048575": {
+        "input_bytes": 1048575,
+        "roundtrip_identical": true,
+        "exactness_class": "BIT_EXACT"
+      },
+      "fold_unfold_idempotent": {
+        "roundtrip_identical": true,
+        "exactness_class": "BIT_EXACT"
+      }
+    },
+    "failure_conditions": {
+      "oversize_fold": "FoldDomainOverflow (fail-closed)",
+      "adjacent_mask": "ZeckendorfInvariantError (fail-closed)"
+    },
+    "invertibility": "exact by Zeckendorf uniqueness + non-adjacency gate"
+  },
+  "physical_storage": {
+    "datasets": {
+      "random_incompressible": {
+        "raw_bytes": 4096,
+        "folded_payload_bytes": 6061,
+        "folded_metadata_bytes": 5128,
+        "folded_total_bytes": 11189,
+        "zlib_baseline_bytes": 4107,
+        "folded_vs_raw_ratio": 2.7317,
+        "zlib_vs_raw_ratio": 1.0027
+      },
+      "structured_numeric": {
+        "raw_bytes": 4096,
+        "folded_payload_bytes": 6052,
+        "folded_metadata_bytes": 5128,
+        "folded_total_bytes": 11180,
+        "zlib_baseline_bytes": 815,
+        "folded_vs_raw_ratio": 2.7295,
+        "zlib_vs_raw_ratio": 0.199
+      },
+      "sparse_zeros": {
+        "raw_bytes": 8192,
+        "folded_payload_bytes": 1024,
+        "folded_metadata_bytes": 10248,
+        "folded_total_bytes": 11272,
+        "zlib_baseline_bytes": 31,
+        "folded_vs_raw_ratio": 1.376,
+        "zlib_vs_raw_ratio": 0.0038
+      },
+      "repeating": {
+        "raw_bytes": 6144,
+        "folded_payload_bytes": 9216,
+        "folded_metadata_bytes": 7688,
+        "folded_total_bytes": 16904,
+        "zlib_baseline_bytes": 51,
+        "folded_vs_raw_ratio": 2.7513,
+        "zlib_vs_raw_ratio": 0.0083
+      },
+      "high_entropy": {
+        "raw_bytes": 8192,
+        "folded_payload_bytes": 12130,
+        "folded_metadata_bytes": 10248,
+        "folded_total_bytes": 22378,
+        "zlib_baseline_bytes": 8203,
+        "folded_vs_raw_ratio": 2.7317,
+        "zlib_vs_raw_ratio": 1.0013
+      },
+      "low_entropy": {
+        "raw_bytes": 8192,
+        "folded_payload_bytes": 11264,
+        "folded_metadata_bytes": 10248,
+        "folded_total_bytes": 21512,
+        "zlib_baseline_bytes": 32,
+        "folded_vs_raw_ratio": 2.626,
+        "zlib_vs_raw_ratio": 0.0039
+      },
+      "text": {
+        "raw_bytes": 6144,
+        "folded_payload_bytes": 9216,
+        "folded_metadata_bytes": 7688,
+        "folded_total_bytes": 16904,
+        "zlib_baseline_bytes": 83,
+        "folded_vs_raw_ratio": 2.7513,
+        "zlib_vs_raw_ratio": 0.0135
+      },
+      "time_series": {
+        "raw_bytes": 16384,
+        "folded_payload_bytes": 22978,
+        "folded_metadata_bytes": 20488,
+        "folded_total_bytes": 43466,
+        "zlib_baseline_bytes": 2037,
+        "folded_vs_raw_ratio": 2.653,
+        "zlib_vs_raw_ratio": 0.1243
+      },
+      "high_dimensional": {
+        "raw_bytes": 16384,
+        "folded_payload_bytes": 24254,
+        "folded_metadata_bytes": 20488,
+        "folded_total_bytes": 44742,
+        "zlib_baseline_bytes": 16397,
+        "folded_vs_raw_ratio": 2.7308,
+        "zlib_vs_raw_ratio": 1.0008
+      }
+    },
+    "verdict": "folded representation is LARGER than raw on every dataset class (Zeckendorf masks are up to 92 bits per 64-bit chunk plus block overhead) \u2014 it is an invertible representation, not physical compression. zlib beats it on compressible data; on incompressible data zlib also expands."
+  },
+  "exactness_classes": {
+    "BIT_EXACT": {
+      "evidence": "unfold(fold(x))==x on 1024B byte-range probe",
+      "holds": true
+    },
+    "MATHEMATICALLY_EXACT": {
+      "evidence": "binet_fibonacci(n)==fibonacci(n) for n<200 (Q(sqrt5) closed form vs recursion)",
+      "holds": true
+    },
+    "WITHIN_TOLERANCE": {
+      "evidence": "pv-lattice anchor projection deterministic",
+      "holds": true
+    },
+    "LOSSY": {
+      "evidence": "integer_anchor = mod-90 projection is many-to-one; navigation only, never canonical identity",
+      "holds": true
+    }
+  },
+  "claim_discipline": "ZeckendorfVector measured bytes >= raw bytes on all datasets; 'compression' is rejected vocabulary here."
+}

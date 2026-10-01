@@ -40,23 +40,10 @@ import numpy as np
 
 import turing_core
 
-try:
-    # Canonical home of the substrate (aethel package).
-    from aethel.hardened_unified_substrate import (
-        CassiniVerifier,
-        apply_zeckendorf_compression,
-    )
-except ImportError:  # pragma: no cover - alternate layouts
-    try:
-        from .hardened_unified_substrate import (
-            CassiniVerifier,
-            apply_zeckendorf_compression,
-        )
-    except ImportError:  # pragma: no cover - top-level script use
-        from hardened_unified_substrate import (
-            CassiniVerifier,
-            apply_zeckendorf_compression,
-        )
+from aethel.hardened_unified_substrate import (  # the substrate's canonical home
+    CassiniVerifier,
+    apply_zeckendorf_compression,
+)
 
 
 DIM = 11
@@ -85,7 +72,7 @@ def anchor_of(v: np.ndarray) -> int:
     """Project an R^11 position onto the integer anchor lattice.
 
     Identical quadratic form to ``GeodesicNavigator._project_to_pv_lattice``
-    and ``TensorCoreGPU_Context.project_and_collapse_pv``: the anchor is the
+    and ``ChronusContext.project_and_collapse_pv``: the anchor is the
     rounded golden norm modulo 90.
     """
     return int(round(weighted_norm(v))) % ANCHOR_MODULUS

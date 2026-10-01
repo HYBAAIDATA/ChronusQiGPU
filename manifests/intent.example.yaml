@@ -1,0 +1,49 @@
+# C1 — IntentManifest (CONTRACTS.md §C1): User -> Assembly Compiler.
+# Feeds hyba_profiles.intent_manifest.load_intent_manifest -> compile_assembly.
+apiVersion: hyba.ai/v1
+kind: PlatformAssembly
+metadata:
+  name: pythia-reference
+  deploymentSeed: developer-local
+intent:
+  industry: engineering
+  useCases: [core, mla1517, primedb, al_haras, proof_service, observe]
+  # Assembly-gate evidence (source/tests verified per module) — mirrors
+  # manifests/deployment-candidate.json; a promotable manifest must carry it.
+  moduleEvidence:
+    - {module: core, version: "1", source_verified: true, tests_passed: true}
+    - {module: mla1517, version: "3.4", source_verified: true, tests_passed: true}
+    - {module: primedb, version: "3.4", source_verified: true, tests_passed: true}
+    - {module: al_haras, version: "1.0.1", source_verified: true, tests_passed: true}
+    - {module: proof_service, version: reference, source_verified: true, tests_passed: false}
+    - {module: observe, version: reference, source_verified: true, tests_passed: false}
+  scale:
+    profile: developer
+    eventsPerSecond: 1
+    retainedData: 1GiB
+    regions: 1
+  risk:
+    level: experimental
+    importantBusinessService: false
+  data:
+    classes: [telemetry, receipts]
+    residency: [local]
+    exactness: exact
+  compliance:
+    packs: []
+  availability:
+    target: "99.0"
+    recoveryTime: 1h
+    recoveryPoint: 5m
+  execution:
+    prefer: [cpu_exact, mla1517]
+    silentFallback: false
+  security:
+    customerManagedKeys: false
+    privateNetworking: false
+    humanApprovalForHighRiskActions: false
+  economics:
+    optimiseFor: [bytes_moved, verified_result_cost]
+  operations:
+    automaticScaling: false
+    automaticRemediation: none

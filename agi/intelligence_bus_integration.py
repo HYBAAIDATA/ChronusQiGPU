@@ -53,9 +53,7 @@ class MassGapIntelligenceBusAdapter:
         if not topic or coherence is None:
             return
 
-        logger.info(
-            f"📥 Received coherence feedback: {topic} = {coherence:.3f} from {source}"
-        )
+        logger.info(f"📥 Received coherence feedback: {topic} = {coherence:.3f} from {source}")
 
         # Record in auto-tuner if available
         if self.engine.auto_tuner:
@@ -203,9 +201,7 @@ class AutonomousMassGapOrchestrator:
             # Check if threshold is too high
             if threshold > self.auto_relax_threshold:
                 topics_needing_relaxation.append(topic)
-                logger.info(
-                    f"🎯 Topic '{topic}' needs relaxation (threshold: {threshold:.6f})"
-                )
+                logger.info(f"🎯 Topic '{topic}' needs relaxation (threshold: {threshold:.6f})")
 
         # Check auto-tuner metrics for low coherence
         if self.engine.auto_tuner:
@@ -254,9 +250,7 @@ _bus_adapter = None
 _orchestrator = None
 
 
-def get_bus_adapter(
-    mass_gap_engine: Any, intelligence_bus: Any
-) -> MassGapIntelligenceBusAdapter:
+def get_bus_adapter(mass_gap_engine: Any, intelligence_bus: Any) -> MassGapIntelligenceBusAdapter:
     """Get global IntelligenceBus adapter instance."""
     global _bus_adapter
     if _bus_adapter is None:
@@ -264,9 +258,7 @@ def get_bus_adapter(
     return _bus_adapter
 
 
-def get_orchestrator(
-    mass_gap_engine: Any, intelligence_bus: Any
-) -> AutonomousMassGapOrchestrator:
+def get_orchestrator(mass_gap_engine: Any, intelligence_bus: Any) -> AutonomousMassGapOrchestrator:
     """Get global autonomous orchestrator instance."""
     global _orchestrator
     if _orchestrator is None:

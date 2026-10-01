@@ -9,7 +9,7 @@ abstraction + topological storage) and the shared-memory ingestion ABI:
     aethel.primes         Galois-field prime substrate (MODULUS_Q = 2^61-1)
     aethel.compute        layers 1-5: virtual SMs, SPMD warps, micro-kernels,
                           distributed actors, dependency DAG
-    aethel.gpu            TensorCoreGPU_Context pv-lattice projection
+    aethel.gpu            ChronusContext pv-lattice projection
     aethel.manifold       PrimeStorageManifold: curvature/sector tensors,
                           geodesic navigation, self-healing
     aethel.unified        UnifiedSubstrate facade across all layers
@@ -67,7 +67,7 @@ from .constants import (
     PSI,
     SQRT5,
 )
-from .gpu import TensorCoreGPU_Context
+from .gpu import ChronusContext
 from .manifold import (
     GeodesicNavigator,
     ManifoldCurvature,
@@ -119,6 +119,24 @@ from .encoding import (
     unfold,
 )
 from .geodesic import GeodesicHandoff, ManifoldPoint
+from .phi_fold import (
+    KernelBoundary,
+    NumericFoldState,
+    PhiFoldError,
+    phi_fold,
+    phi_unfold,
+    reconstruction_error,
+    unfold_partial,
+    working_set_ratio,
+)
+from .phi_memory import (
+    IntegrityVerdict,
+    MemoryHierarchyError,
+    MemoryTier,
+    PhiMemoryHierarchy,
+    TierResident,
+    TopologicalIntegrityGate,
+)
 from .storage import (
     DEFAULT_MAX_STEP,
     AddressSpace,
@@ -165,7 +183,7 @@ __all__ = [
     # Layer 5: DAG
     "DAGNode", "DependencyDAG",
     # GPU context
-    "TensorCoreGPU_Context",
+    "ChronusContext",
     # Manifold
     "ManifoldCurvature", "ManifoldSector", "TopologicalTensor",
     "GeodesicNavigator", "SelfHealingSubstrate", "PrimeStorageManifold",
@@ -194,6 +212,12 @@ __all__ = [
     "CassiniLedger", "AddressSpace", "DEFAULT_MAX_STEP",
     # Geodesic handoff (adapter — the engine lives in Intelligence)
     "GeodesicHandoff", "ManifoldPoint",
+    # Numeric phi fold + folded memory hierarchy
+    "KernelBoundary", "NumericFoldState", "PhiFoldError",
+    "phi_fold", "phi_unfold", "unfold_partial",
+    "reconstruction_error", "working_set_ratio",
+    "MemoryTier", "TierResident", "PhiMemoryHierarchy",
+    "TopologicalIntegrityGate", "IntegrityVerdict", "MemoryHierarchyError",
     # Overhead accounting (measured CPU + structural memory)
     "OpCost", "OverheadMeter",
     "container_bytes", "measure_alloc", "metered",

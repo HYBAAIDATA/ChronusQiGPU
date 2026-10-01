@@ -256,3 +256,89 @@ def test_salamander_scans_production_directories_clean():
         f"{[(str(d.file_path), d.line_number, d.issue_type.value) for d in report.diagnostics]}"
     )
     assert report.substrate_health_index > 0.5
+
+
+# ── healing never outruns its evidence ───────────────────────────────── #
+
+
+def test_a_repair_without_verification_is_never_applied(tmp_path):
+    target_file = tmp_path / "module.py"
+    original_text = "def compute():\n    return 42\n"
+    target_file.write_text(original_text, encoding="utf-8")
+    optimizer = SalamanderAgenticOptimizer(repo_root=tmp_path)
+
+    success, msg = optimizer.apply_repair_sandboxed(
+        target_file=target_file, replacement="def compute():\n    return 0\n"
+    )
+
+    assert success is False
+    assert "never applied unverified" in msg
+    assert target_file.read_text(encoding="utf-8") == original_text
+    assert not target_file.with_suffix(".py.bak").exists()
+
+
+def test_the_verification_command_decides_commit_or_rollback(tmp_path):
+    target_file = tmp_path / "module.py"
+    original_text = "def compute():\n    return 42\n"
+    target_file.write_text(original_text, encoding="utf-8")
+    failing = SalamanderAgenticOptimizer(
+        repo_root=tmp_path, verify_cmd=f'"{sys.executable}" -c "raise SystemExit(1)"'
+    )
+    replacement = "def compute():\n    return 84\n"
+
+    success, _ = failing.apply_repair_sandboxed(
+        target_file=target_file, replacement=replacement, test_cmd=failing.verify_cmd
+    )
+    assert success is False
+    assert target_file.read_text(encoding="utf-8") == original_text
+
+    passing = SalamanderAgenticOptimizer(
+        repo_root=tmp_path, verify_cmd=f'"{sys.executable}" -c "import module"'
+    )
+    success, _ = passing.apply_repair_sandboxed(
+        target_file=target_file, replacement=replacement, test_cmd=passing.verify_cmd
+    )
+    assert success is True
+    assert target_file.read_text(encoding="utf-8") == replacement
+
+
+def test_the_codebase_healing_skill_is_opt_in(monkeypatch):
+    seen = {}
+
+    def record(self, auto_heal=False, subdirs=None):
+        seen["auto_heal"] = auto_heal
+        return {}
+
+    monkeypatch.setattr(SalamanderAgenticController, "run_autonomic_cycle", record)
+    SalamanderEngine().execute_skill("codebase-healing")
+    assert seen == {"auto_heal": False}
+
+
+def test_self_repair_never_auto_applies_a_change_to_a_test(tmp_path, monkeypatch):
+    from Intelligence.self_healing.self_repair import RepairProposal, apply_and_verify
+
+    monkeypatch.setenv("HYBA_SELF_REPAIR_AUTO_APPLY", "true")
+    test_file = tmp_path / "tests" / "test_physics.py"
+    test_file.parent.mkdir()
+    original = "def test_energy():\n    assert abs(1.0 - 1.001) < 1e-6\n"
+    test_file.write_text(original, encoding="utf-8")
+    widened = original.replace("1e-6", "0.01")  # what tolerance "repair" proposes
+    proposal = RepairProposal(
+        id="repair_test",
+        session_id="s",
+        suite_label="tests",
+        test_node_id="tests/test_physics.py::test_energy",
+        category="numeric_tolerance_drift",
+        confidence="high",
+        diagnosis="numeric drift",
+        evidence={"abs_delta": 0.001},
+        source="llm",
+        target_file="tests/test_physics.py",
+        proposed_content=widened,
+    )
+
+    result = apply_and_verify(proposal, tmp_path, tmp_path)
+
+    assert result.applied is False
+    assert "a test" in result.message
+    assert test_file.read_text(encoding="utf-8") == original

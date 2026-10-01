@@ -19,22 +19,41 @@ classifiers = [
 dependencies = [
     "numpy>=1.26,<3",
     "pyyaml>=6.0,<7",
+    "sympy>=1.12,<2",
+    # The virtual quantum computer (in-tree: turing_universal_quantum_computer/)
+    # is part of the miner: the Hendrix nonce order and the VQC policy audit.
+    # Install it beside this package: pip install ./turing_universal_quantum_computer .
+    "turing-universal-quantum-computer>=1.0",
 ]
 
 [project.scripts]
 pythia = "main:main"
 pythia-api = "control_api:main"
 pythia-mine = "mining_runtime:main"
+pythia-gpu-readiness = "gpu.readiness:main"
+pythagoras-v12 = "pythagoras.run_pythagoras:main"
 
 [project.optional-dependencies]
 hardware = [
     "pyopencl>=2024.1",
 ]
+# Salamander's opt-in LLM repair stage (HYBA_SELF_REPAIR_LLM_ENABLED=true).
+llm = [
+    "anthropic>=0.45",
+]
+# Apple silicon accelerators (Intelligence/apple_features.py, hyba/inventory.py); macOS only.
+apple = [
+    "coremltools>=7.0; sys_platform == 'darwin'",
+    "metalcompute>=0.2; sys_platform == 'darwin'",
+    "mlx>=0.18; sys_platform == 'darwin' and platform_machine == 'arm64'",
+]
+# Intelligence.asi.manifold_bridge.adjacency_to_digraph's networkx view.
+graph = [
+    "networkx>=3.0",
+]
 ml = [
     "nltk>=3.8",
     "scikit-learn>=1.3",
-    "xgboost>=1.7",
-    "lightgbm>=4.0",
     # millennium.millennium_reasoning_service imports fastapi at module load.
     "fastapi>=0.110",
 ]
@@ -44,6 +63,11 @@ dev = [
     "hypothesis>=6.0,<7",
     "black>=24.0,<27",
     "flake8>=7.0,<8",
+    # self_repair measures coverage when pytest-cov is present.
+    "pytest-cov>=6.1",
+    "ruff>=0.8",
+    "radon>=6.0",
+    "mypy>=1.11",
 ]
 
 [build-system]
@@ -51,17 +75,23 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-package-dir = {"" = "mla1517_platform_v3.4/python", "aethel" = "aethel", "kellogg" = "kellogg", "toe" = "toe", "python_backend" = "python_backend", "lucas" = "lucas", "millennium" = "millennium"}
-packages = ["lucas", "millennium", "mla1517", "mla1517.mining", "aethel", "kellogg", "toe", "toe.intelligences", "toe.unified", "python_backend", "python_backend.pythia_mining", "python_backend.mathematical_foundation", "python_backend.hyba", "python_backend.hyba.runtime"]
+include-package-data = false
+package-dir = {"" = "chronus/mla1517_platform/python", "aethel" = "aethel", "gpu" = "gpu", "hyba" = "hyba", "kellogg" = "kellogg", "toe" = "toe", "python_backend" = "python_backend", "al_haras" = "al_haras", "chronus" = "chronus", "l_hras" = "l_hras", "lucas" = "lucas", "millennium" = "millennium", "tensor" = "tensor", "hyba_profiles" = "hyba_profiles", "hyba_contracts" = "hyba_contracts", "hyba_services" = "hyba_services"}
+packages = ["lucas", "millennium", "aethel", "gpu", "gpu.backends", "hyba", "hyba.hybrid", "hyba.math_ir", "hyba.operating_model", "kellogg", "toe", "toe.intelligences", "toe.unified", "python_backend", "python_backend.pythia_mining", "python_backend.mathematical_foundation", "python_backend.hyba", "python_backend.hyba.runtime", "python_backend.core_modules", "al_haras", "chronus", "chronus.seam", "chronus.mla1517", "chronus.mla1517.mining", "l_hras", "l_hras.foundations", "tensor", "tensor.backends", "hyba_profiles", "hyba_contracts", "hyba_services"]
 py-modules = [
+    "al_haras_pythia",
+    "autonomous_supervisor",
     "control_api",
     "coordinator",
+    "discovery_runtime",
     "euclid_core",
     "extended_algebra",
     "headless_miner",
     "main",
     "manifold_pool_coordinator",
     "mining_runtime",
+    "policy_bench",
+    "pool_catalog",
     "worker_lifecycle",
     "runtime_config",
     "turing_core",
@@ -77,18 +107,26 @@ py-modules = [
 ]
 
 [tool.setuptools.package-data]
+"chronus.mla1517" = ["seeds/*.yaml"]
 aethel = ["py.typed", "*.md"]
+gpu = ["py.typed", "README.md", "BLUEPRINT_AUDIT.md"]
+chronus = ["py.typed", "README.md", "kernels/*.cl", "deploy/*.yml"]
 kellogg = ["py.typed"]
+tensor = ["py.typed", "README.md", "CAPABILITY_MANIFEST.md"]
+l_hras = ["py.typed", "README.md", "config.example.toml"]
 toe = ["py.typed", "default_propagators.json"]
 millennium = ["*.ts", "rtl/*.sv", "docs/*.md"]
 python_backend = ["*.csv"]
+pythagoras = ["README.md"]
 
 [tool.pytest.ini_options]
-testpaths = ["mla1517_platform_v3.4/python", "tests"]
+testpaths = ["chronus/mla1517_platform/python", "tests"]
 
 [tool.black]
 line-length = 100
 target-version = ["py312"]
+# Vendored skill grafts are kept byte-exact (Intelligence/skill_graft.py).
+extend-exclude = "Intelligence/skills/"
 exclude = '''
-/(\n    \\.git\n  | \\.pytest_cache\n  | __pycache__\n  | node_modules\n  | dist\n  | models\n  | logs\n  | legacy\n  | \\.venv\n  | venv\n)/
+/(\n    \.git\n  | \.pytest_cache\n  | __pycache__\n  | node_modules\n  | dist\n  | models\n  | logs\n  | legacy\n  | \.venv\n  | venv\n)/
 '''

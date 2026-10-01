@@ -141,7 +141,7 @@ class AutonomousLearningLoop:
         logger.info(f"✓ Learned {knowledge_items} items about: {next_goal.topic}")
 
         # Step 4: Reason about what was learned
-        reasoning_result = await self.reasoning_engine.reason_about(
+        await self.reasoning_engine.reason_about(
             f"What are the implications of what I learned about {next_goal.topic}?",
             {"research_results": research_results},
         )
@@ -193,14 +193,12 @@ class AutonomousLearningLoop:
         logger.info("🎯 Generating new learning goals...")
 
         # Ask reasoning engine what PYTHAGORAS should learn
-        # reasoning_result = await self.reasoning_engine.reason_about(
-        #     "Based on my current knowledge and millennium problem goals, what should I learn next?",
-        #     {"current_topics": self.topics_mastered},
-        # )
-        reasoning_result = {}  # Placeholder
+        await self.reasoning_engine.reason_about(
+            "Based on my current knowledge and millennium problem goals, what should I learn next?",
+            {"current_topics": self.topics_mastered},
+        )
 
         # Extract learning goals from reasoning
-        conclusion = reasoning_result.get("conclusion", "")
 
         # Generate goals based on areas we haven't covered
         potential_topics = [
@@ -234,9 +232,7 @@ class AutonomousLearningLoop:
             # Look for related topics mentioned
             if "related" in finding_text.lower() or "also" in finding_text.lower():
                 # This is a simplification - could use NLP here
-                follow_ups.append(
-                    f"Deep dive: {finding.get('source', 'related topic')}"
-                )
+                follow_ups.append(f"Deep dive: {finding.get('source', 'related topic')}")
 
         return follow_ups[:2]  # Limit to 2 follow-ups
 
@@ -247,9 +243,7 @@ class AutonomousLearningLoop:
             "total_learning_goals": len(self.learning_goals),
             "completed_goals": sum(1 for g in self.learning_goals if g.completed),
             "topics_mastered": len(self.topics_mastered),
-            "total_knowledge_gained": sum(
-                g.knowledge_gained for g in self.learning_goals
-            ),
+            "total_knowledge_gained": sum(g.knowledge_gained for g in self.learning_goals),
             "learning_history_size": len(self.learning_history),
             "pending_goals": [
                 {"topic": g.topic, "priority": g.priority}
