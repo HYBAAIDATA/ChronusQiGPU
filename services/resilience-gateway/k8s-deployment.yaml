@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pythia-resilience-gateway
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: pythia-resilience-gateway
+  template:
+    metadata:
+      labels:
+        app: pythia-resilience-gateway
+    spec:
+      terminationGracePeriodSeconds: 35
+      containers:
+        - name: gateway
+          image: pythia-resilience-gateway:latest
+          ports:
+            - containerPort: 3000
+          livenessProbe:
+            httpGet: { path: /healthz, port: 3000 }
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /readyz, port: 3000 }
+            periodSeconds: 5
+          resources:
+            requests: { cpu: 250m, memory: 256Mi }
+            limits: { cpu: "1", memory: 512Mi }
