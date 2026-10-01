@@ -229,6 +229,23 @@ class _StubDeviceHandler(BaseHTTPRequestHandler):
                     "opencl_error": None,
                 },
             )
+        if self.path == "/v1/telemetry":
+            return self._send(
+                200,
+                {
+                    "protocol": PROTOCOL_VERSION,
+                    "devices": [
+                        {
+                            "name": "AirGPU iGPU-0",
+                            "vendor": "Intel",
+                            "temperature_c": 55.0,
+                            "power_w": 20.5,
+                            "utilization_pct": 88.0,
+                        }
+                    ],
+                    "sources": [{"tool": "nvidia-smi", "status": "measured"}],
+                },
+            )
         if self.path == "/v1/devices":
             return self._send(
                 200,
@@ -393,6 +410,33 @@ class StubAgentClientTests(_EnvGuard):
             RemoteGPUClient(self.endpoint).execute_sha256d(
                 bytes(80), b"\xff" * 32, base_nonce=0, count=SHA256D_MAX_WINDOW + 1
             )
+
+    def test_telemetry_parses_only_measured_fields(self):
+        rows = RemoteGPUClient(self.endpoint).telemetry()
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0].device, "AirGPU iGPU-0")
+        self.assertEqual(rows[0].temperature_c, 55.0)
+        self.assertEqual(rows[0].power_w, 20.5)
+        self.assertEqual(rows[0].utilization_pct, 88.0)
+        self.assertEqual([s.get("tool") for s in rows[0].sources], ["nvidia-smi"])
+
+
+class AgentTelemetryHonestyTests(_EnvGuard):
+    """_telemetry() on this box: no vendor probes exist, so every field
+    must come back None and the sources list must say why — measured
+    telemetry is reported or absent, never invented."""
+
+    def test_unprobed_fields_stay_null(self):
+        from chronus.mla1517 import remote_gpu_agent
+
+        payload = remote_gpu_agent._telemetry()
+        self.assertIn("devices", payload)
+        self.assertIn("sources", payload)
+        self.assertIsInstance(payload["sources"], list)
+        for dev in payload["devices"]:
+            self.assertIsNone(dev["temperature_c"])
+            self.assertIsNone(dev["power_w"])
+            self.assertIsNone(dev["utilization_pct"])
 
 
 class StubAgentSha256dTests(_EnvGuard):

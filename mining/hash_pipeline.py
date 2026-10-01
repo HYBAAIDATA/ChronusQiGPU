@@ -92,9 +92,9 @@ class HashPipeline:
         """Lazily constructed so non-mining use pays no OpenCL init cost."""
         if self._hasher is None:
             if self._hasher_backend == "remote":
-                from mining.remote_hasher import RemoteOpenCLHasher
+                from mining.remote_hasher import hasher_for_env
 
-                self._hasher = RemoteOpenCLHasher.from_env()
+                self._hasher = hasher_for_env()
             else:
                 if BitcoinHasher is None:
                     raise RuntimeError("mining.bitcoin_hasher unavailable")

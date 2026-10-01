@@ -14,6 +14,10 @@ Endpoints:
                          ladder on the real device and returns the rows
                          plus measured wall time. The client re-verifies
                          every row against exact integer arithmetic.
+    GET  /v1/telemetry -> device temperature/power/utilization — every
+                         field null unless a vendor probe on this host
+                         really measured it; ``sources`` records which
+                         probes ran, failed, or were absent.
     POST /v1/sha256d  -> {"header":<160-hex>, "target":<64-hex>,
                          "order":...} grinds a bounded nonce window on the
                          real device in contiguous, m32, or explicit-batch
@@ -38,7 +42,9 @@ import argparse
 import hashlib
 import json
 import os
+import shutil
 import struct
+import subprocess
 import sys
 import threading
 import time
@@ -149,6 +155,137 @@ def enumerate_devices() -> Tuple[List[Dict[str, Any]], Optional[str]]:
                 pass
             out.append(rec)
     return out, None
+
+
+def _probe_nvidia_smi() -> Optional[List[Dict[str, Any]]]:
+    """NVIDIA device telemetry via nvidia-smi, or None when absent."""
+    exe = shutil.which("nvidia-smi")
+    if not exe:
+        return None
+    try:
+        out = subprocess.run(
+            [
+                exe,
+                "--query-gpu=name,temperature.gpu,power.draw,utilization.gpu",
+                "--format=csv,noheader,nounits",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except Exception:
+        return None
+    if out.returncode != 0 or not out.stdout.strip():
+        return None
+    rows: List[Dict[str, Any]] = []
+    for line in out.stdout.strip().splitlines():
+        parts = [p.strip() for p in line.split(",")]
+        if len(parts) < 4:
+            continue
+
+        def _num(value: str) -> Optional[float]:
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return None
+
+        rows.append(
+            {
+                "name": parts[0],
+                "vendor": "NVIDIA",
+                "temperature_c": _num(parts[1]),
+                "power_w": _num(parts[2]),
+                "utilization_pct": _num(parts[3]),
+            }
+        )
+    return rows or None
+
+
+def _probe_rocm_smi() -> Optional[List[Dict[str, Any]]]:
+    """AMD device telemetry via rocm-smi JSON, or None when absent."""
+    exe = shutil.which("rocm-smi")
+    if not exe:
+        return None
+    try:
+        out = subprocess.run(
+            [exe, "--showtemp", "--showpower", "--showuse", "--json"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except Exception:
+        return None
+    if out.returncode != 0 or not out.stdout.strip():
+        return None
+    try:
+        payload = json.loads(out.stdout)
+    except ValueError:
+        return None
+    rows: List[Dict[str, Any]] = []
+    for card, fields in payload.items():
+        if not isinstance(fields, dict):
+            continue
+
+        def _first(substr: str) -> Optional[float]:
+            for key, value in fields.items():
+                if substr in str(key).lower():
+                    try:
+                        return float(str(value).split()[0])
+                    except (TypeError, ValueError, IndexError):
+                        continue
+            return None
+
+        rows.append(
+            {
+                "name": str(card),
+                "vendor": "AMD",
+                "temperature_c": _first("temperature"),
+                "power_w": _first("power"),
+                "utilization_pct": _first("gpu use"),
+            }
+        )
+    return rows or None
+
+
+#: Vendor probes the agent actually attempts, in order. OpenCL itself
+#: carries no standard power/temperature query — a device with no vendor
+#: tool installed reports nulls, never estimates.
+_TELEMETRY_PROBES = (
+    ("nvidia-smi", _probe_nvidia_smi),
+    ("rocm-smi", _probe_rocm_smi),
+)
+
+
+def _telemetry() -> Dict[str, Any]:
+    """Physical telemetry for the reply — measured fields or honest nulls."""
+    devices, _ = enumerate_devices()
+    rows: List[Dict[str, Any]] = [
+        {
+            "name": str(d.get("name", "")),
+            "vendor": str(d.get("vendor", "")),
+            "temperature_c": None,
+            "power_w": None,
+            "utilization_pct": None,
+        }
+        for d in devices
+    ]
+    sources: List[Dict[str, Any]] = []
+    for tool, probe in _TELEMETRY_PROBES:
+        try:
+            measured = probe()
+        except Exception as exc:
+            sources.append({"tool": tool, "status": "error", "reason": str(exc)})
+            continue
+        if measured is None:
+            sources.append({"tool": tool, "status": "unavailable"})
+            continue
+        sources.append({"tool": tool, "status": "measured"})
+        for i, row in enumerate(measured):
+            if i < len(rows):
+                rows[i]["temperature_c"] = row.get("temperature_c")
+                rows[i]["power_w"] = row.get("power_w")
+                rows[i]["utilization_pct"] = row.get("utilization_pct")
+    return {"devices": rows, "sources": sources}
 
 
 def _run_ladder(scales: List[int]) -> Dict[str, Any]:
@@ -363,13 +500,18 @@ class _Handler(BaseHTTPRequestHandler):
                     "opencl_error": error,
                     # Routes this agent actually serves — the client binds
                     # only what is advertised here, never an assumed arm.
-                    "endpoints": ["ladder", "sha256d"],
+                    "endpoints": ["ladder", "sha256d", "telemetry"],
                 },
             )
             return
         if self.path == "/v1/devices":
             devices, error = enumerate_devices()
             self._send(200, {"protocol": PROTOCOL_VERSION, "devices": devices, "error": error})
+            return
+        if self.path == "/v1/telemetry":
+            payload = _telemetry()
+            payload["protocol"] = PROTOCOL_VERSION
+            self._send(200, payload)
             return
         self._send(404, {"error": f"unknown path {self.path}"})
 

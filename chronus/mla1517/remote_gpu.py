@@ -64,6 +64,7 @@ __all__ = [
     "RemoteGPUVerificationError",
     "RemoteDevice",
     "LadderResult",
+    "RemoteTelemetry",
     "Sha256dResult",
     "sha256d_share_attestation",
     "RemoteGPUClient",
@@ -135,6 +136,24 @@ class LadderResult:
             "measured_ns": self.measured_ns,
             "verified_against_exact_reference": True,
         }
+
+
+@dataclass(frozen=True)
+class RemoteTelemetry:
+    """One honest sample of the agent's physical telemetry.
+
+    Every field is ``None`` unless the agent actually measured it — a
+    device without a power/temperature probe reports ``None``, never an
+    estimate. ``sources`` records which probes the agent attempted and
+    why each produced or withheld a value.
+    """
+
+    device: str
+    vendor: str
+    temperature_c: Optional[float]
+    power_w: Optional[float]
+    utilization_pct: Optional[float]
+    sources: Tuple[Dict[str, Any], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -302,6 +321,24 @@ class RemoteGPUClient:
     def usable_devices(self) -> List[RemoteDevice]:
         """Devices that can actually execute — gpu/chronus/accelerator only."""
         return [d for d in self.devices() if d.device_type in ("gpu", "chronus", "accelerator")]
+
+    def telemetry(self) -> List[RemoteTelemetry]:
+        """Sample the agent's physical telemetry. Empty = no devices."""
+        reply = self._request("GET", "/v1/telemetry")
+        out: List[RemoteTelemetry] = []
+        sources = reply.get("sources") or []
+        for d in reply.get("devices", []):
+            out.append(
+                RemoteTelemetry(
+                    device=str(d.get("name", "")),
+                    vendor=str(d.get("vendor", "")),
+                    temperature_c=d.get("temperature_c"),
+                    power_w=d.get("power_w"),
+                    utilization_pct=d.get("utilization_pct"),
+                    sources=tuple(sources),
+                )
+            )
+        return out
 
     def execute_ladder(
         self, scales: Tuple[int, ...] = LUCAS_PISOT_LADDER

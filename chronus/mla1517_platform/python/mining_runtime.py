@@ -114,9 +114,9 @@ def _execution_hasher(backend: str):
         repo_root = str(Path(__file__).resolve().parents[3])
         if repo_root not in sys.path:
             sys.path.insert(0, repo_root)
-        from mining.remote_hasher import RemoteOpenCLHasher
+        from mining.remote_hasher import hasher_for_env
 
-        return RemoteOpenCLHasher.from_env()
+        return hasher_for_env()
     repo_root = str(Path(__file__).resolve().parents[3])
     if repo_root not in sys.path:
         sys.path.insert(0, repo_root)
