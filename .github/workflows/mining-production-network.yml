@@ -3,6 +3,8 @@ name: Production Mining Network Gate
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -13,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PYTHONPATH: ${{ github.workspace }}/mla1517_platform_v3.4/python:${{ github.workspace }}
+  PYTHONPATH: ${{ github.workspace }}/chronus/mla1517_platform/python:${{ github.workspace }}
 
 jobs:
   protocol-and-transport:
@@ -33,35 +35,39 @@ jobs:
       - name: Compile canonical mining runtime
         run: >-
           python -m py_compile
-          mla1517_platform_v3.4/python/mining_runtime.py
-          mla1517_platform_v3.4/python/mla1517/mining/production_transport.py
-          mla1517_platform_v3.4/python/mla1517/mining/retarget_telemetry.py
-          mla1517_platform_v3.4/python/mla1517/mining/euclid_support.py
+          chronus/mla1517_platform/python/mining_runtime.py
+          chronus/mla1517/mining/production_transport.py
+          chronus/mla1517/mining/retarget_telemetry.py
+          chronus/mla1517/mining/euclid_support.py
       - name: Production transport hardening
         run: >-
           python -m unittest discover
-          -s mla1517_platform_v3.4/python
+          -s chronus/mla1517_platform/python
           -p test_production_transport.py
           -v
       - name: EUCLID mining authority boundary
         run: >-
           python -m unittest discover
-          -s mla1517_platform_v3.4/python
+          -s chronus/mla1517_platform/python
           -p test_euclid_mining_support.py
           -v
       - name: Retarget-window telemetry truth boundaries
         run: >-
           python -m unittest discover
-          -s mla1517_platform_v3.4/python
+          -s chronus/mla1517_platform/python
           -p test_retarget_telemetry.py
           -v
       - name: Canonical Stratum V1 session
         run: >-
           python -m unittest discover
-          -s mla1517_platform_v3.4/python
+          -s chronus/mla1517_platform/python
           -p test_stratum_session.py
           -v
       - name: Stratum V1 live-session harness
         run: python -m pytest tests/test_stratum_live_session.py -q
       - name: Stratum V2 Mining Protocol contracts
         run: python -m pytest tests/test_stratum_v2.py tests/test_braiins_sv2.py -q
+      - name: Deterministic mining transport chaos
+        run: python -m pytest tests/test_mining_transport_chaos.py -q
+      - name: PYTHAGORAS transactional meta-evolution
+        run: python -m pytest tests/test_pythagoras.py -q

@@ -237,7 +237,7 @@
       "role": "JV gate-5 full-chain verification on live modules",
       "classification": "ACTIVE_SUPPORTING"
     },
-    "Intelligence/igpu_telemetry.py": {
+    "Intelligence/chronus_telemetry.py": {
       "lines": 914,
       "role": "iGPU-on-11D self-telemetry",
       "classification": "ACTIVE_SUPPORTING"
@@ -346,7 +346,7 @@
       "lines": 534,
       "role": "Active Discovery Engine: hypothesis->experiment->intervene->surprise->revise loop, Bayesian experimental design (EIG), replication gate",
       "classification": "ACTIVE_SUPPORTING",
-      "note": "wired via mla1517_platform_v3.4/python/discovery_runtime.py + tests; capability is domain-bound to rule-composition experiments"
+      "note": "wired via chronus/mla1517_platform/python/discovery_runtime.py + tests; capability is domain-bound to rule-composition experiments"
     },
     "Intelligence/asi/world_model.py": {
       "lines": 130,
@@ -510,7 +510,7 @@
       "role": "attestation, compute, mining, standard_conformance",
       "classification": "DISCONNECTED"
     },
-    "distributed/, conformance/, standard/, seam/, observability/, thermo/, core_engine/, hyba_compat, hyba_contracts, hyba_profiles, hyba_services, igpu/, kernels/, asic/, bench/, benchmarks/": {
+    "distributed/, conformance/, standard/, seam/, observability/, thermo/, core_engine/, hyba_compat, hyba_contracts, hyba_profiles, hyba_services, chronus/, kernels/, asic/, bench/, benchmarks/": {
       "role": "platform/conformance/hardware surfaces",
       "classification": "ACTIVE_SUPPORTING",
       "note": "not intelligence surfaces except where noted"
@@ -585,7 +585,7 @@
   ],
   "defects_found": [
     {
-      "file": "mla1517_platform_v3.4/python/autonomous_supervisor.py:55",
+      "file": "chronus/mla1517_platform/python/autonomous_supervisor.py:55",
       "issue": "imports AutonomousCapabilitySupervisor which does not exist; ImportError swallowed by try/except -> supervisor silently runs without the three autonomous capabilities",
       "fix": "AutonomySupervisor (actual class name); tests/test_import_audit.py now passes",
       "commit": "this branch"

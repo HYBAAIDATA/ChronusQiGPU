@@ -130,7 +130,7 @@ class Tests(unittest.TestCase):
                 reg.promote("t", sha, "APPROVED", ())
 
     def test_extraction_environment_and_api_audit(self):
-        self.assertEqual(route_path("mla1517_platform_v3.4/python/mla1517/core.py"), "CORE")
+        self.assertEqual(route_path("chronus/mla1517/core.py"), "CORE")
         self.assertEqual(len(STAGES), 4)
         self.assertEqual(
             classify_failure("x", ModuleNotFoundError("fastapi"), "linux"),

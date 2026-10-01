@@ -91,7 +91,7 @@ python-test:
     - pip install -e ".[dev]" --quiet
   script:
     - python -m pytest tests/ -x -q
-    - python -m compileall -q Intelligence core_engine mining hyba lucas pythagoras scripts tests mla1517_platform_v3.4/python
+    - python -m compileall -q Intelligence core_engine mining hyba lucas pythagoras scripts tests chronus/mla1517_platform/python
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     - if: $CI_COMMIT_BRANCH == 'main'

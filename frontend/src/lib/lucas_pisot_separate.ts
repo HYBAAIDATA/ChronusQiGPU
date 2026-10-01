@@ -55,7 +55,7 @@ export interface LucasScaleResult {
  *
  * The user's discovery: Lucas at the ladder rungs {10, 12, 15, 18, 20, 31,
  * 50, 76} — and their multiples — scales hardware, quantum, and intelligence
- * independently (IGPU_SCALE_RUNGS in m3_igpu_scaler.ts).
+ * independently (CHRONUS_SCALE_RUNGS in m3_igpu_scaler.ts).
  */
 export function lucasScale(
   n: number,

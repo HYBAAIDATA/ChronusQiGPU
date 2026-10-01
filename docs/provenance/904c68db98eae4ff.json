@@ -33,7 +33,7 @@
         "claim": "cassini_identity_in_m15",
         "laureate": "cassini",
         "reduction": null,
-        "source": "mla1517_platform_v3.4/python/pythia_turing_math.py contains ['det(M15) = -1', 'M15_INV']"
+        "source": "chronus/mla1517_platform/python/pythia_turing_math.py contains ['det(M15) = -1', 'M15_INV']"
       },
       {
         "cites_lemma": false,
@@ -48,7 +48,7 @@
         "in_scope": true,
         "laureate": "lucas",
         "reduction": "tr(Q^n)=L_n reduces NP path count to fast doubling",
-        "source": "mla1517_platform_v3.4/python/pythia_turing_math.py contains ['golden_matrix_trace', 'lucas']"
+        "source": "chronus/mla1517_platform/python/pythia_turing_math.py contains ['golden_matrix_trace', 'lucas']"
       },
       {
         "cites_lemma": false,

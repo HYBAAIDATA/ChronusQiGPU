@@ -163,9 +163,9 @@ def exactness_classes() -> dict:
     # within-tolerance: pv-lattice anchor projection (float navigation)
     rng = np.random.default_rng(1)
     v = rng.random(11)
-    from aethel.gpu import TensorCoreGPU_Context
+    from aethel.gpu import ChronusContext
 
-    gpu = TensorCoreGPU_Context()
+    gpu = ChronusContext()
     a1 = gpu.project_and_collapse_pv(v.astype(np.float32), (1 + 5 ** 0.5) / 2)
     a2 = gpu.project_and_collapse_pv(v.astype(np.float32), (1 + 5 ** 0.5) / 2)
     within_tol = a1 == a2  # deterministic projection

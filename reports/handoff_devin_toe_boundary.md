@@ -19,7 +19,7 @@
         (aethel/__init__.py modified locally AND changed by incoming
         commits). Per protocol, unsure → branch.
     (b) branch `agent/toe-consensus-boundary`:
-        - mla1517_platform_v3.4/python/mla1517/mining/toe_signal.py
+        - chronus/mla1517_platform/python/mla1517/mining/toe_signal.py
           (TOEConsensusBoundaryError, _assert_no_consensus_fields,
           boundary_token attestation, is_valid() token check)
         - tests/test_toe_consensus_boundary.py (new, 7 tests)
@@ -36,7 +36,7 @@
         - test_toe_chooser_wiring.py -1 line import cleanup (their edit)
 
   COMMITS CREATED:
-    f69d6d0 mla1517/mining: harden TOE→consensus boundary in toe_signal → agent/toe-consensus-boundary
+    f69d6d0 chronus/mla1517/mining: harden TOE→consensus boundary in toe_signal → agent/toe-consensus-boundary
     <report-sha> handoff report for this run → agent/toe-consensus-boundary
 
   STASHES:

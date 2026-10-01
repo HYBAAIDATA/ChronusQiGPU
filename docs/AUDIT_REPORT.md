@@ -6,7 +6,7 @@
 > resolved: `src/lib/gpu_topology.ts` now models a real GPC→SM→SIMD→lane
 > hierarchy (`EUCLID_VGPU`, 10,240 ALU lanes), the benchmark endpoint serves
 > topology-derived throughput, and the Lucas ladder {10,12,15,18,20,31,50,76}
-> + multiples drives all scale indices. See `docs/IGPU_SUBSYSTEM.md` §2.3–2.6
+> + multiples drives all scale indices. See `docs/CHRONUS_SUBSYSTEM.md` §2.3–2.6
 > for the current architecture.
 
 **Auditor:** Independent review (McKinsey-grade rigor, evidence-based)

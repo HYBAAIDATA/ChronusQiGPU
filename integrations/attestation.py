@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from igpu.seam import Result, run
-from igpu.seam.attest_compose import CompositeAttestation, attest_compose
-from igpu.seam.types import Err, ThresholdPolicy
+from chronus.seam import Result, run
+from chronus.seam.attest_compose import CompositeAttestation, attest_compose
+from chronus.seam.types import Err, ThresholdPolicy
 
 
 def run_and_attest(job: dict, fleet=None, policy: ThresholdPolicy = ThresholdPolicy.majority) -> Result[CompositeAttestation]:

@@ -2,7 +2,7 @@ import asyncio
 import io
 import json
 
-from igpu.seam.workflow import LAYER_IDS, PASS_MEANS, run_workflow
+from chronus.seam.workflow import LAYER_IDS, PASS_MEANS, run_workflow
 
 
 async def _pool(host="127.0.0.1"):

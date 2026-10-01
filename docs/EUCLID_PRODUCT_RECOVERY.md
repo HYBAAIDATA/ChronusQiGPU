@@ -41,7 +41,7 @@ No implementation credit is given to the mining branch for a package merely beca
 
 The recovered archive must not overwrite newer product owners that already exist in the mining repository.
 
-- **Mining / Stratum / SHA256d authority:** current `mla1517_platform_v3.4/python/mla1517/mining/` and `mining/` surfaces.
+- **Mining / Stratum / SHA256d authority:** current `chronus/mla1517/mining/` and `mining/` surfaces.
 - **Aethel:** current first-class `aethel/` package. Recovered enterprise copies must not replace it wholesale.
 - **Turing:** current packaged `turing_universal_quantum_computer/` compute/mathematical substrate. Chronus is not Turing and must not absorb it.
 - **Chronus:** iGPU product/offering boundary. Historical Chronos graphics research is provenance material, not the current product identity.
@@ -51,7 +51,7 @@ The recovered archive must not overwrite newer product owners that already exist
 
 The branch now contains:
 
-`mla1517_platform_v3.4/python/mla1517/mining/euclid_support.py`
+`chronus/mla1517/mining/euclid_support.py`
 
 and the canonical `mining_runtime.py` instantiates `EuclidProductionMiningCoordinator`.
 

@@ -29,7 +29,7 @@ The two "assumed landed" preconditions are **not present in this tree**:
 
 ## Call sites changed
 
-- `mla1517_platform_v3.4/python/mla1517/mining/solver.py`
+- `chronus/mla1517_platform/python/mla1517/mining/solver.py`
   - `M32SearchSolver.__init__` gains `self._lane_start_offset: int | None = None`.
   - New `set_lane_start_offset(preferred_face)` — validates `[0, 31]`, raises
     `ValueError` outside it (fail-closed), idempotent, stores only a start
@@ -38,7 +38,7 @@ The two "assumed landed" preconditions are **not present in this tree**:
   - `candidates()` rotates `turing.lane_order(start_nonce)` to pivot on the
     offset when set; the start-lane alignment invariant now checks the
     rotated first lane.
-- `mla1517_platform_v3.4/python/mla1517/mining/chooser.py`
+- `chronus/mla1517_platform/python/mla1517/mining/chooser.py`
   - `choose()` accepts `toe_signal` and `solver` kwargs. When
     `isinstance(toe_signal, TOECausalSignal) and toe_signal.is_valid()` and a
     solver is supplied, it calls `solver.set_lane_start_offset(signal.face_bias)`
@@ -48,7 +48,7 @@ The two "assumed landed" preconditions are **not present in this tree**:
     `face_bias` never enters the lead-selection branches.
   - New `self.throttle` latch on `MiningIntelligenceChooser`; it feeds
     `SearchDecision.throttle` so a latched throttle gates dispatch.
-- `mla1517_platform_v3.4/python/mla1517/mining/coordinator.py`
+- `chronus/mla1517_platform/python/mla1517/mining/coordinator.py`
   - New `_build_toe_signal()` — converts `last_toe_context` (the measured
     `TOEMiningContext` from `toe.analyse`) into a `TOECausalSignal`; returns
     `None` fail-closed when TOE is absent or conversion raises.
@@ -107,7 +107,7 @@ The two "assumed landed" preconditions were recreated/verified:
   `default_propagators.json` artifact, `_propagator` fast path,
   `_verify_propagator_integrity` sentinel). Measured `TOEBridge()` cold start
   ≈ 0.01 ms; `tests/test_toe_propagator_cache.py` pins the contract.
-- Boundary hardening in `mla1517/mining/toe_signal.py`:
+- Boundary hardening in `chronus/mla1517/mining/toe_signal.py`:
   - `TOEConsensusBoundaryError` + `_assert_no_consensus_fields` —
     `build_toe_signal` recursively rejects any TOE result carrying
     consensus-domain keys (target, nonce, header, sha256d, share, ...) —
@@ -135,9 +135,9 @@ The two "assumed landed" preconditions were recreated/verified:
 
 ## Note on file placement
 
-The mission's `tests/test_*.py` paths assume a top-level `mla1517/` layout.
-The real package is `mla1517_platform_v3.4/python/mla1517/` and its test
+The mission's `tests/test_*.py` paths assume a top-level `chronus/mla1517/` layout.
+The real package is `chronus/mla1517_platform/python/mla1517/` and its test
 convention is flat files in `python/` (pytest `testpaths` +
 `make python-regression` unittest discovery), so the new test files live at
-`mla1517_platform_v3.4/python/test_toe_chooser_wiring.py` and
+`chronus/mla1517_platform/python/test_toe_chooser_wiring.py` and
 `.../test_toe_face_geometry.py` where CI actually collects them.

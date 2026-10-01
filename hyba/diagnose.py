@@ -166,7 +166,7 @@ def diagnose() -> Dict[str, Any]:
     _collect(report, "hyba_alias", _hyba_alias)
     _collect(report, "punch_host", _punch_host)
     _collect(report, "hasher", _hasher)
-    _collect(report, "chronus", _chronus)
+    _collect(report, "chronus_fabric", _chronus)
     return report
 
 

@@ -11,10 +11,10 @@ applies. Machine-readable form: `reports/toe_archaeology.json`.
 
 Baseline re-verified on this base before any change:
 `pytest tests/ -q` → 1728 passed, 1 failed, 16 skipped;
-`unittest discover -s mla1517_platform_v3.4/python` → 317 ran, OK.
+`unittest discover -s chronus/mla1517_platform/python` → 317 ran, OK.
 
 The one failure — `test_import_audit` IA02 on
-`mla1517_platform_v3.4/python/autonomous_supervisor.py` — was a genuine defect
+`chronus/mla1517_platform/python/autonomous_supervisor.py` — was a genuine defect
 in `d298eaa` itself (`AutonomousCapabilitySupervisor` is not a name in
 `Intelligence.autonomous_capabilities`; the real class is `AutonomySupervisor`;
 the `try/except` swallowed it, silently disabling the supervisor's three

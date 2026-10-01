@@ -13,7 +13,7 @@ npm run test:py
 ```
 
 That command runs `python -m pytest tests/`. Backend modules under `tests/` and
-`mla1517_platform_v3.4/python/` are not covered by Vitest.
+`chronus/mla1517_platform/python/` are not covered by Vitest.
 
 ## Tooling and commands
 

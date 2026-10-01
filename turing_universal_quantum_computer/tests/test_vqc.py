@@ -66,7 +66,7 @@ class VQCPackageTests(unittest.TestCase):
         result = adapter.execute(header, target=(1 << 256) - 1, base_nonce=0, count=256)
         self.assertEqual(result.hashes, 1)
         self.assertIsNotNone(result.winner)
-        self.assertTrue(result.metadata["igpu"]["recheck_bit_exact"])
+        self.assertTrue(result.metadata["chronus"]["recheck_bit_exact"])
 
 
 if __name__ == "__main__":

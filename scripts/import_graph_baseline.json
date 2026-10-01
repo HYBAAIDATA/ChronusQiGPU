@@ -33,13 +33,13 @@
       "hyba/operating_model/verifiers.py"
     ],
     [
-      "igpu/seam/__init__.py",
-      "igpu/seam/buffer.py",
-      "igpu/seam/fleet.py",
-      "igpu/seam/hybrid.py",
-      "igpu/seam/kernel.py",
-      "igpu/seam/probe.py",
-      "igpu/seam/queue.py"
+      "chronus/seam/__init__.py",
+      "chronus/seam/buffer.py",
+      "chronus/seam/fleet.py",
+      "chronus/seam/hybrid.py",
+      "chronus/seam/kernel.py",
+      "chronus/seam/probe.py",
+      "chronus/seam/queue.py"
     ],
     [
       "l_hras/__init__.py",
@@ -85,7 +85,7 @@
     "agi/enhanced_ai/__init__.py:36: imports test module agi/enhanced_ai/test_enhanced_agi.py",
     "hyba/operating_model/failure_modes.py:15: imports test module tests/test_operating_model.py",
     "millennium/clay_checklist.py:68: imports test module tests/test_millennium_package.py",
-    "mla1517_platform_v3.4/python/soak_voyage.py:31: imports test module mla1517_platform_v3.4/python/test_agentic_voyages.py",
-    "mla1517_platform_v3.4/python/system_fabric.py:835: imports test module Intelligence/self_test.py"
+    "chronus/mla1517_platform/python/soak_voyage.py:31: imports test module chronus/mla1517_platform/python/test_agentic_voyages.py",
+    "chronus/mla1517_platform/python/system_fabric.py:835: imports test module Intelligence/self_test.py"
   ]
 }

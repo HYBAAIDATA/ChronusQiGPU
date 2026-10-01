@@ -31,5 +31,5 @@ gate-rollup:
 	python3 scripts/assert_gate_rollup.py
 strict-hardware-gate:
 	@if [ "$${MLA1517_STRICT_HARDWARE_CI:-0}" = "1" ]; then \
-		python3 mla1517_platform_v3.4/scripts/strict_hardware_gate.py; \
+		python3 chronus/mla1517_platform/scripts/strict_hardware_gate.py; \
 	else echo 'SKIPPED: strict hardware CI not enabled'; fi

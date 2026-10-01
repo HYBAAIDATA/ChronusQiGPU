@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from igpu.seam import Result, run
-from igpu.seam.fleet import JobResult, run_hybrid_stratum
-from igpu.seam.types import KernelName
+from chronus.seam import Result, run
+from chronus.seam.fleet import JobResult, run_hybrid_stratum
+from chronus.seam.types import KernelName
 
 
 def run_stratum(job: dict, fleet=None) -> Result[JobResult]:

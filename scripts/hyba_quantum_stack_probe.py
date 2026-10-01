@@ -42,10 +42,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(
-    0, str(Path(__file__).resolve().parents[1] / "mla1517_platform_v3.4" / "python")
+    0, str(Path(__file__).resolve().parents[1] / "chronus/mla1517_platform" / "python")
 )
 
-from mla1517.mining.pow import build_header, check_pow  # noqa: E402
+from chronus.mla1517.mining.pow import build_header, check_pow  # noqa: E402
 
 # ---------------------------------------------------------------- phi_engine
 PHI = (1.0 + math.sqrt(5.0)) / 2.0
