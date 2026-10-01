@@ -108,6 +108,25 @@ class StratumAdapterTests(unittest.TestCase):
                 nonce=0,
             )
 
+    def test_set_difficulty_applies_only_to_the_next_job(self) -> None:
+        old_target = self.adapter.current_job.target
+        self.adapter.handle_message({"method": "mining.set_difficulty", "params": [1024]})
+        self.assertEqual(self.adapter.current_job.target, old_target)
+        next_job = list(self.job_params)
+        next_job[0] = "job-next-difficulty"
+        next_job[8] = False
+        self.adapter.handle_message({"method": "mining.notify", "params": next_job})
+        self.assertEqual(self.adapter.current_job.target, self.adapter.target)
+        self.assertNotEqual(self.adapter.current_job.target, old_target)
+
+    def test_non_clean_notify_preserves_the_previous_job(self) -> None:
+        next_job = list(self.job_params)
+        next_job[0] = "job-2"
+        next_job[8] = False
+        self.adapter.handle_message({"method": "mining.notify", "params": next_job})
+        header = self.adapter.build_header("job-1", "00000001", "65abcdef", 0)
+        self.assertEqual(len(header), 80)
+
     def test_clean_job_rejects_old_job(self) -> None:
         next_job = list(self.job_params)
         next_job[0] = "job-2"
@@ -130,6 +149,9 @@ class StratumAdapterTests(unittest.TestCase):
         self.assertEqual(self.adapter.subscription.extranonce1, "eeff")
         self.assertEqual(self.adapter.subscription.extranonce2_size, 2)
         self.assertEqual(self.adapter.next_extranonce2(), "0000")
+        self.assertIsNone(self.adapter.current_job)
+        with self.assertRaises(StaleJobError):
+            self.adapter.build_header("job-1", "0000", "65abcdef", 0)
 
     def test_digest_is_independently_recomputable(self) -> None:
         proof = self.adapter.validate_candidate(

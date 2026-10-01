@@ -520,7 +520,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 if permitted:
                     try:
                         await self.search_current_job()
-                    except (ConnectionError, asyncio.IncompleteReadError) as exc:
+                    except (ConnectionError, TimeoutError, asyncio.IncompleteReadError) as exc:
                         LOG.warning("pool connection lost during search: %s", exc)
                         with contextlib.suppress(Exception):
                             await self.client.close()
