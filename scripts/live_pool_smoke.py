@@ -1,9 +1,8 @@
 """Run one bounded, live Stratum share-acceptance smoke test.
 
-The script is intentionally the only convenience layer: it delegates hashing,
-submission, and pool verdict handling to ``mining/stratum_bridge.py``. It
-writes local setup to the ignored ``.env`` and uses a separate ignored runtime
-config for the smoke process.
+The script delegates hashing, submission, and pool verdict handling to
+``mining/stratum_bridge.py``. Credentials remain in the parent environment or
+secure prompt, never in argv, ``.env``, logs, or a retained runtime config.
 """
 
 from __future__ import annotations
@@ -11,9 +10,9 @@ from __future__ import annotations
 import argparse
 import getpass
 import os
-import secrets
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -23,41 +22,12 @@ if str(PLATFORM_PYTHON) not in sys.path:
     sys.path.insert(0, str(PLATFORM_PYTHON))
 
 import runtime_config
+from startup_contract import validate_worker_identity
 
 POOLS = {
     "viabtc": "btc.viabtc.top:3333",
     "braiins": "stratum.braiins.com:3333",
 }
-
-
-def _load_env(path: Path) -> dict[str, str]:
-    values: dict[str, str] = {}
-    if not path.is_file():
-        return values
-    for line in path.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, _, value = line.partition("=")
-        values[key.strip()] = value.strip().strip("'\"")
-    return values
-
-
-def _write_env(path: Path, updates: dict[str, str]) -> None:
-    existing = path.read_text(encoding="utf-8").splitlines() if path.is_file() else []
-    remaining = dict(updates)
-    rendered: list[str] = []
-    for line in existing:
-        key, separator, _ = line.partition("=")
-        if separator and key.strip() in remaining:
-            rendered.append(f"{key.strip()}={remaining.pop(key.strip())}")
-        else:
-            rendered.append(line)
-    if remaining:
-        if rendered and rendered[-1]:
-            rendered.append("")
-        rendered.extend(f"{key}={value}" for key, value in sorted(remaining.items()))
-    path.write_text("\n".join(rendered) + "\n", encoding="utf-8")
 
 
 def _password(args: argparse.Namespace) -> str:
@@ -88,7 +58,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--disarm-after",
         action="store_true",
-        help="Disable live submission in the smoke runtime config when the test exits",
+        help=argparse.SUPPRESS,
     )
     return parser
 
@@ -100,8 +70,48 @@ def _validate(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None
         parser.error(f"--window must be in [1,{runtime_config.WINDOW_MAX}]")
     if not 1 <= args.max_runtime <= 600:
         parser.error("--max-runtime must be in [1,600]")
-    if any(character.isspace() for character in args.worker) or len(args.worker) > 128:
-        parser.error("--worker must be a non-empty account.worker identity without whitespace")
+    try:
+        validate_worker_identity(args.worker)
+    except ValueError as exc:
+        parser.error(str(exc))
+
+
+def _bridge_command(args: argparse.Namespace, endpoint: str) -> list[str]:
+    """Build a command line that contains no credentials."""
+    return [
+        sys.executable,
+        str(ROOT / "mining" / "stratum_bridge.py"),
+        "--pool",
+        endpoint,
+        "--worker",
+        args.worker,
+        "--submit-test",
+        "--continuous",
+        "--backend",
+        args.backend,
+        "--window",
+        str(args.window),
+        "--max-shares",
+        "1",
+        "--max-runtime",
+        str(args.max_runtime),
+    ]
+
+
+def _save_ephemeral_config(path: Path, config: dict[str, object]) -> None:
+    """Persist live-smoke configuration with owner-only permissions."""
+    previous_path = os.environ.get("PYTHIA_RUNTIME_CONFIG")
+    previous_umask = os.umask(0o077)
+    os.environ["PYTHIA_RUNTIME_CONFIG"] = str(path)
+    try:
+        runtime_config.save(config)
+        path.chmod(0o600)
+    finally:
+        os.umask(previous_umask)
+        if previous_path is None:
+            os.environ.pop("PYTHIA_RUNTIME_CONFIG", None)
+        else:
+            os.environ["PYTHIA_RUNTIME_CONFIG"] = previous_path
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -114,23 +124,14 @@ def main(argv: list[str] | None = None) -> int:
     if not password:
         parser.error("a non-empty pool password is required")
 
-    env_path = ROOT / ".env"
-    existing_env = _load_env(env_path)
-    admin_key = existing_env.get("EUCLID_ADMIN_API_KEY") or secrets.token_hex(32)
-    identity_secret = existing_env.get("PYTHIA_IDENTITY_HMAC_SECRET") or secrets.token_hex(32)
-    _write_env(
-        env_path,
-        {
-            "EUCLID_ADMIN_API_KEY": admin_key,
-            "MLA1517_STRATUM_ENDPOINT": endpoint,
-            "MLA1517_STRATUM_PASSWORD": password,
-            "MLA1517_STRATUM_USER": args.worker,
-            "PYTHIA_IDENTITY_HMAC_SECRET": identity_secret,
-            "PYTHIA_POOL_PROFILE": args.pool,
-        },
+    data_dir = ROOT / "data"
+    data_dir.mkdir(exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix="live-pool-smoke-", suffix=".json", dir=data_dir
     )
-
-    smoke_config = ROOT / "data" / "live_pool_smoke_config.json"
+    os.close(descriptor)
+    smoke_config = Path(temporary_name)
+    smoke_config.chmod(0o600)
     config = runtime_config.default_config()
     config["pools"] = [
         {
@@ -146,15 +147,7 @@ def main(argv: list[str] | None = None) -> int:
         "approval_id": runtime_config.identity_commit(endpoint, args.worker),
     }
 
-    previous_config_path = os.environ.get("PYTHIA_RUNTIME_CONFIG")
-    os.environ["PYTHIA_RUNTIME_CONFIG"] = str(smoke_config)
-    try:
-        runtime_config.save(config)
-    finally:
-        if previous_config_path is None:
-            os.environ.pop("PYTHIA_RUNTIME_CONFIG", None)
-        else:
-            os.environ["PYTHIA_RUNTIME_CONFIG"] = previous_config_path
+    _save_ephemeral_config(smoke_config, config)
 
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     log_dir = ROOT / "smoke-artifacts"
@@ -167,28 +160,11 @@ def main(argv: list[str] | None = None) -> int:
             "HYBA_ENABLE_LIVE_SHARE_SUBMIT": "true",
             "HYBA_LIVE_SHARE_APPROVAL_ID": config["live_submit"]["approval_id"],
             "PYTHIA_RUNTIME_CONFIG": str(smoke_config),
+            "PYTHIA_STRATUM_PASSWORD": password,
+            "STRATUM_PASSWORD": password,
         }
     )
-    command = [
-        sys.executable,
-        str(ROOT / "mining" / "stratum_bridge.py"),
-        "--pool",
-        endpoint,
-        "--worker",
-        args.worker,
-        "--password",
-        password,
-        "--submit-test",
-        "--continuous",
-        "--backend",
-        args.backend,
-        "--window",
-        str(args.window),
-        "--max-shares",
-        "1",
-        "--max-runtime",
-        str(args.max_runtime),
-    ]
+    command = _bridge_command(args, endpoint)
     print(f"Starting one-share live smoke against {endpoint} as {args.worker}.")
     print(f"Bridge log: {log_path}")
     try:
@@ -203,19 +179,9 @@ def main(argv: list[str] | None = None) -> int:
         print("FAIL: no accepted share before the bounded smoke run ended.", file=sys.stderr)
         return result.returncode or 1
     finally:
-        if args.disarm_after:
-            previous_config_path = os.environ.get("PYTHIA_RUNTIME_CONFIG")
-            os.environ["PYTHIA_RUNTIME_CONFIG"] = str(smoke_config)
-            try:
-                current = runtime_config.load()
-                current["live_submit"] = {"enabled": False, "approval_id": ""}
-                runtime_config.save(current)
-                print("Live-submit smoke config disarmed.")
-            finally:
-                if previous_config_path is None:
-                    os.environ.pop("PYTHIA_RUNTIME_CONFIG", None)
-                else:
-                    os.environ["PYTHIA_RUNTIME_CONFIG"] = previous_config_path
+        smoke_config.unlink(missing_ok=True)
+        smoke_config.with_suffix(".json.tmp").unlink(missing_ok=True)
+        print("Ephemeral live-submit config removed.")
 
 
 if __name__ == "__main__":

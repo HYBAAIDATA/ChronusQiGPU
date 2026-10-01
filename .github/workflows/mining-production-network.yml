@@ -78,6 +78,12 @@ jobs:
           -q
       - name: Stratum V1 live-session harness
         run: python -m pytest tests/test_stratum_live_session.py -q
+      - name: Production identity and live-smoke safety
+        run: >-
+          python -m pytest
+          tests/test_startup_contract.py
+          tests/test_live_pool_smoke_safety.py
+          -q
       - name: Stratum V2 Mining Protocol contracts
         run: python -m pytest tests/test_stratum_v2.py tests/test_braiins_sv2.py -q
       - name: Deterministic mining transport chaos

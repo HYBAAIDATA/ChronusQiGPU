@@ -8,8 +8,10 @@ from startup_contract import (
     AppendOnlyAudit,
     ConfigConflict,
     StateViolation,
+    StartupConfigError,
     WorkerRecord,
     resolve_stratum_identity,
+    validate_worker_identity,
 )
 
 
@@ -46,6 +48,19 @@ def test_identity_public_view_contains_no_password(monkeypatch):
     assert public["user_redacted"] == "ca***"
     assert "secret-value" not in str(public)
     assert len(public["identity_commit"]) == 64
+
+
+@pytest.mark.parametrize(
+    "worker",
+    ["account.worker", "YOUR_WORKER", "PYTHIA.001", "worker", "test.worker"],
+)
+def test_placeholder_worker_identities_fail_closed(worker):
+    with pytest.raises(StartupConfigError, match="real pool worker identity"):
+        validate_worker_identity(worker)
+
+
+def test_real_worker_identity_is_preserved():
+    assert validate_worker_identity("actual-account.rig-01") == "actual-account.rig-01"
 
 
 def test_epoch_change_resets_sequence_without_regression(tmp_path, monkeypatch):
