@@ -5,7 +5,7 @@ import hashlib
 import pytest
 
 from gpu.provenance import ProvenanceError, validate_provenance
-from gpu.readiness import ProductionEvidence, production_readiness
+from gpu.readiness import EvidenceReceipt, ProductionEvidence, production_readiness
 from gpu.reference import (
     cassini_step,
     fibonacci,
@@ -101,6 +101,71 @@ def test_tensor_measurement_never_claims_hashrate():
     measurement = TensorMeasurement(5_000_000_000_000, 1_000_000_000, "test")
     assert measurement.tflops == pytest.approx(5.0)
     assert measurement.as_dict()["hashrate_hps"] is None
+
+
+def _receipt(kind: str) -> EvidenceReceipt:
+    return EvidenceReceipt(
+        kind=kind,
+        artifact_sha256="a" * 64,
+        observed_at="2026-09-30T23:00:00Z",
+        subject="test-subject",
+        producer="test-suite",
+    )
+
+
+def test_production_readiness_rejects_boolean_evidence(monkeypatch):
+    monkeypatch.setattr("gpu.readiness.audit_software_surfaces", lambda: ())
+    report = production_readiness(
+        {
+            "opencl_conformance": True,
+            "asic_protocol": True,
+            "pool_acknowledgement": True,
+            "provenance_valid": True,
+            "container_measured": True,
+        }
+    )
+    assert report["production_ready"] is False
+    assert all(not gate["passed"] for gate in report["gates"])
+    assert all("boolean assertions are not evidence" in gate["detail"] for gate in report["gates"])
+
+
+def test_production_readiness_accepts_validated_receipts(monkeypatch):
+    monkeypatch.setattr("gpu.readiness.audit_software_surfaces", lambda: ())
+    provenance = {
+        "repo_sha": "b" * 40,
+        "pr": "32",
+        "human_merge_sha": "c" * 40,
+        "change_bundles": [{"name": "release-gates"}],
+        "replay": {"agent_versions": {}, "seed": 1517, "substrate_freeze_sha": "d" * 40},
+        "truth_class": "source_verified",
+    }
+    report = production_readiness(
+        ProductionEvidence(
+            opencl_conformance=_receipt("opencl_conformance"),
+            asic_protocol=_receipt("asic_protocol"),
+            pool_acknowledgement=_receipt("pool_acknowledgement"),
+            provenance_valid=provenance,
+            container_measured=_receipt("container_measurement"),
+        )
+    )
+    assert report["production_ready"] is True
+    assert all(gate["passed"] for gate in report["gates"])
+
+
+def test_evidence_receipt_requires_digest_and_utc_timestamp(monkeypatch):
+    monkeypatch.setattr("gpu.readiness.audit_software_surfaces", lambda: ())
+    bad = {
+        "kind": "opencl_conformance",
+        "artifact_sha256": "not-a-digest",
+        "observed_at": "2026-09-30T23:00:00",
+        "subject": "device",
+        "producer": "operator",
+    }
+    report = production_readiness({"opencl_conformance": bad})
+    gate = report["gates"][0]
+    assert gate["passed"] is False
+    assert "SHA-256" in gate["detail"]
+    assert "UTC" in gate["detail"]
 
 
 def test_production_readiness_requires_external_evidence(monkeypatch):
