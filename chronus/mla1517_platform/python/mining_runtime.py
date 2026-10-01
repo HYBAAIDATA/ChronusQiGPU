@@ -13,7 +13,7 @@ from pathlib import Path
 
 from chronus.mla1517.hardware import MMIOBridge
 from chronus.mla1517.mining.coordinator import CpuReferenceHasher
-from chronus.mla1517.mining.euclid_support import EuclidProductionMiningCoordinator
+from chronus.mla1517.mining.geodesic_support import GeodesicProductionMiningCoordinator
 from chronus.mla1517.mining.retarget_telemetry import RetargetWindowTracker
 from manifold_pool_coordinator import _build_parser, parse_endpoint
 from worker_lifecycle import HeartbeatEmitter
@@ -58,14 +58,7 @@ def _endpoint(name: str, address: str, user: str, password: str, tls: bool) -> P
 
 
 def pool_endpoints(args, config: dict | None = None) -> list[PoolEndpoint]:
-    """Primary first, then failover, each with its own worker credentials.
-
-    The operator config (``runtime_config`` pools, written by the control
-    API) wins: the enabled pool is primary and the other configured pools
-    follow in order. Without it, ``pool_catalog`` resolves ``PYTHIA_POOLS``
-    and each pool's ``MLA1517_*`` settings, the same resolution the control
-    API reports; failover pools fall back to ``--user`` / ``--password``.
-    """
+    """Primary first, then failover, each with its own worker credentials."""
     if config is None:
         try:
             import runtime_config
@@ -139,12 +132,7 @@ EXECUTION_DEVICES = ("opencl", "cpu")
 
 
 def execution_device() -> str | None:
-    """Bridge-free mining device from ``PYTHIA_EXECUTION_DEVICE``, if declared.
-
-    ``opencl`` mines on the OpenCL device the hasher binds and self-checks
-    against hashlib, and refuses to start without one; ``cpu`` mines on the
-    labelled CPU reference. Unset keeps the MMIO bridge as the only device.
-    """
+    """Bridge-free mining device from ``PYTHIA_EXECUTION_DEVICE``, if declared."""
     value = os.getenv("PYTHIA_EXECUTION_DEVICE", "").strip().lower()
     if not value:
         return None
@@ -154,12 +142,7 @@ def execution_device() -> str | None:
 
 
 def assert_declared_chain(observer: BitcoinChainObserver | None) -> None:
-    """Startup validation: a declared network must match the configured node.
-
-    ``PYTHIA_BITCOIN_NETWORK`` set without ``PYTHIA_BITCOIN_RPC_URL``, or a
-    node on a different chain, fails closed at boot — a testnet node can never
-    masquerade as mainnet chain evidence.
-    """
+    """Startup validation: a declared network must match the configured node."""
     expected = os.getenv("PYTHIA_BITCOIN_NETWORK", "").strip().lower()
     if not expected:
         return
@@ -181,8 +164,6 @@ async def _main_async(args) -> None:
         )
     backend = device if not args.device else os.getenv("PYTHIA_EXECUTION_BACKEND", "auto")
     endpoints = pool_endpoints(args)
-    # Pool-only mining needs no local node: the pool's own jobs are the chain
-    # evidence. A configured bitcoind (PYTHIA_BITCOIN_RPC_URL) still wins.
     observer = BitcoinChainObserver.from_environment()
     assert_declared_chain(observer)
     session = MiningSession(
@@ -223,9 +204,8 @@ async def _main_async(args) -> None:
                     )
                 )
 
-            # Learned operating state persists in Aethel beside the causal log.
             os.environ.setdefault("PYTHIA_INTELLIGENCE_DIR", "data/intelligence")
-            coordinator = EuclidProductionMiningCoordinator(
+            coordinator = GeodesicProductionMiningCoordinator(
                 endpoints,
                 username=args.user or endpoints[0].username,
                 password=args.password,
@@ -266,13 +246,7 @@ async def _main_async(args) -> None:
 
 
 async def _run_with_signals(args) -> None:
-    """Cancel the miner cooperatively on SIGINT/SIGTERM.
-
-    Cancellation enters the coordinator/session ``finally`` blocks, which
-    close pool sockets, persist agentic state, stop telemetry and close the
-    mining session. Unsupported event-loop signal APIs (notably Windows)
-    fall back to Python's normal KeyboardInterrupt/service behaviour.
-    """
+    """Cancel the miner cooperatively on SIGINT/SIGTERM."""
     loop = asyncio.get_running_loop()
     task = asyncio.create_task(_main_async(args), name="pythia-mining-runtime")
     installed: list[signal.Signals] = []
