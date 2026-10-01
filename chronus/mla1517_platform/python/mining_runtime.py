@@ -73,7 +73,7 @@ def pool_endpoints(args, config: dict | None = None) -> list[PoolEndpoint]:
         if isinstance(p, dict) and p.get("enabled", True) is not False
     ]
     if configured:
-        ordered = configured
+        ordered = sorted(configured, key=lambda p: not p.get("enabled"))
         return [
             _endpoint(
                 f"pool{index}",
