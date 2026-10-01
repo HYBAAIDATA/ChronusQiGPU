@@ -6,10 +6,7 @@ import unittest
 
 from pythagoras.adapter import PythagorasEngineAdapter
 from pythagoras.core.primitives import inject_docstring
-from pythagoras.engine.evolution import (
-    AnnealingConfig,
-    V65ManifoldEscapeEngine as PythagorasEvolutionEngine,
-)
+from pythagoras.engine.evolution import AnnealingConfig, PythagorasEvolutionEngine
 from pythagoras.engine.geometry import CGPGeometryState, CollectiveGeometryCoordinator
 from pythagoras.engine.primitive_repository import CrossFilePrimitiveRepository
 from pythagoras.engine.surrogate import NeuralSurrogateEvaluator
