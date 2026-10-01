@@ -4,11 +4,13 @@ import numpy as np
 from dataclasses import dataclass
 import time
 
+
 @dataclass
 class ChronusMeasurement:
     hps: float
     folds_per_second: float
     attestation: str
+
 
 def measure_chronus() -> ChronusMeasurement:
     """Measure chronus (iGPU) H/s and folds/s."""
