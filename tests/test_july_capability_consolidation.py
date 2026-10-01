@@ -26,9 +26,9 @@ from chronus.phi_gpu import (
 )
 from kellogg.phi_tensor_core import MetricTensor, PhiTensorCore, PrecisionMode
 from tensor.backends.chronus_backend import ChronusBackend
-from turing_universal_quantum_computer.enhanced_classics import EnhancedGroverAlgorithm
-from turing_universal_quantum_computer.next_gen_2025 import QuantumSimulation2025
 from turing_universal_quantum_computer.property_invariants import InvariantTestSuite
+from turing_universal_quantum_computer.quantum_algorithms import GroverSearch
+from turing_universal_quantum_computer.trotter_simulation import TrotterHamiltonianSimulator
 
 
 def test_selective_unfold_does_not_call_full_unfold(monkeypatch):
@@ -204,7 +204,7 @@ def test_completed_qsim_trotterization_retains_full_hilbert_dimension():
          [0.0, 0.2, 3.0, 0.3], [0.0, 0.0, 0.3, 4.0]],
         dtype=complex,
     )
-    qsim = QuantumSimulation2025(num_qubits=2, hamiltonian=h)
+    qsim = TrotterHamiltonianSimulator(num_qubits=2, hamiltonian=h)
     propagator = qsim.improved_trotterization(0.05, trotter_order=2)
     assert propagator.shape == (4, 4)
     initial = np.array([1, 0, 0, 0], dtype=complex)
@@ -214,10 +214,9 @@ def test_completed_qsim_trotterization_retains_full_hilbert_dimension():
 
 
 def test_completed_grover_and_cptp_fixes_remain_live():
-    grover = EnhancedGroverAlgorithm(4)
-    result = grover.multi_marked_search([1, 3])
-    assert result["marked_items"] == [1, 3]
-    assert result["total_marked_probability"] > 0.0
+    grover = GroverSearch(4)
+    result = grover.run([1, 3])
+    assert result["peak_success_probability"] > 0.0
 
     suite = InvariantTestSuite(tolerance=1e-10)
     suite.test_cptp(n_dim=4)

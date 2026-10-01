@@ -109,6 +109,7 @@ The production mining plane keeps `VIRTUAL_QUANTUM_QUBITS = 11` as its
 | — (new) | `annealing` — exact TFIM free-fermion + Landau-Zener |
 | — (new) | `swarm` — exact-distribution agent swarm |
 | — (new, ontology §4 `TenThousandQubitSystem`) | `turing_core.ten_thousand` |
+| — (new) | `trotter_simulation` — Trotter-Suzuki Hamiltonian evolution (explicit, honestly-approximate; see module docstring) |
 
 `toe/exact_tensor.py`, `toe/quantum_tensor.py`, `toe/exact_field.py`,
 `Intelligence/quantum_tensor.py`, `Intelligence/exact_tensor.py`, and
