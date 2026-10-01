@@ -141,9 +141,9 @@ class _StubAgent(BaseHTTPRequestHandler):
                 "hashes": len(window) if winner is None else window.index(winner["nonce"]) + 1,
                 "window": {"base_nonce": base, "count": len(window)},
                 "measured_ns": 999,
-                "share": None
-                if winner is None
-                else {"nonce": winner["nonce"], "hash": winner["digest"]},
+                "share": (
+                    None if winner is None else {"nonce": winner["nonce"], "hash": winner["digest"]}
+                ),
                 "attestation": attestation,
             },
         )
