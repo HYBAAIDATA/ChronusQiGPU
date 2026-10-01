@@ -4,7 +4,7 @@ Replication of the 21 March 2026 A/B experiment (Executive Impact Report, HYBA R
 Conditions (one engine per condition per seed; files processed in sequence as one
 session, so discovered primitives and surrogate state carry across files under meta=ON):
 
-    A  meta=OFF   fixed base operators, frozen surrogate priors, fixed CGP geometry
+    A  meta=OFF   fixed base operators, frozen surrogate priors, fixed CGP-inspired geometry
     B  meta=ON    surrogate learning, geometry evolution, discovery/promotion, transfer
     C  meta=OFF, budget-matched (ENH-05 interpretation): A given at least as many
                   evaluated candidates as B, to separate "adaptation" from "more search"
@@ -100,9 +100,44 @@ def _summary(sessions: List[Dict[str, Any]]) -> Dict[str, Any]:
     out = {}
     for k in keys:
         vals = [s[k] for s in sessions]
+        mean = statistics.mean(vals)
+        sd = statistics.stdev(vals) if len(vals) > 1 else 0.0
+        margin = (
+            _t95(len(vals) - 1) * sd / (len(vals) ** 0.5)
+            if len(vals) > 1
+            else 0.0
+        )
         out[k] = {"mean": round(statistics.mean(vals), 6),
-                  "sd": round(statistics.stdev(vals), 6) if len(vals) > 1 else 0.0}
+                  "sd": round(sd, 6),
+                  "ci95": [round(mean - margin, 6), round(mean + margin, 6)]}
     return out
+
+
+def _paired_summary(left: List[Dict[str, Any]], right: List[Dict[str, Any]],
+                    key: str) -> Dict[str, Any]:
+    vals = [a[key] - b[key] for a, b in zip(left, right)]
+    mean = statistics.mean(vals)
+    sd = statistics.stdev(vals) if len(vals) > 1 else 0.0
+    margin = (
+        _t95(len(vals) - 1) * sd / (len(vals) ** 0.5)
+        if len(vals) > 1
+        else 0.0
+    )
+    return {"mean": round(mean, 6), "sd": round(sd, 6),
+            "ci95": [round(mean - margin, 6), round(mean + margin, 6)]}
+
+
+def _t95(df: int) -> float:
+    """Two-sided 95% Student-t critical values; normal approximation above 30."""
+    table = {
+        1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571,
+        6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262, 10: 2.228,
+        11: 2.201, 12: 2.179, 13: 2.160, 14: 2.145, 15: 2.131,
+        16: 2.120, 17: 2.110, 18: 2.101, 19: 2.093, 20: 2.086,
+        21: 2.080, 22: 2.074, 23: 2.069, 24: 2.064, 25: 2.060,
+        26: 2.056, 27: 2.052, 28: 2.048, 29: 2.045, 30: 2.042,
+    }
+    return table.get(df, 1.96)
 
 
 def load_corpus(corpus: str) -> Dict[str, str]:
@@ -143,7 +178,7 @@ def replicate(seeds: int = 10, generations: int = 10, metric: str = "v12_1", gat
         if budget_matched:
             C.append(run_session(files, False, sd, budget, metric, gate))
 
-    return {
+    result = {
         "protocol": {"seeds": seeds, "generations": generations, "metric": metric, "euclid_gate": gate,
                      "corpus": corpus, "files": list(files)},
         "reported_21_march": REPORTED,
@@ -155,6 +190,14 @@ def replicate(seeds: int = 10, generations: int = 10, metric: str = "v12_1", gat
         "sensitivity_diagnostic": diagnostics,
         "example_session_seed0": {"A": A[0]["per_file"], "B": B[0]["per_file"]},
     }
+    if C:
+        result["primary_B_vs_C"] = {
+            "total_delta_phi": _paired_summary(B, C, "total_delta_phi"),
+            "gain_per_100_evaluations": _paired_summary(
+                B, C, "gain_per_100_evaluations"
+            ),
+        }
+    return result
 
 
 def main():

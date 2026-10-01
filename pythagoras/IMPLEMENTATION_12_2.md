@@ -1,44 +1,73 @@
-# PYTHAGORAS v12.2 — Roadmap Gap Closure
+# PYTHAGORAS v12.2 — Merge Closure Matrix
 
-## Implemented
+This continues the delivered v12.2 implementation. φ, EUCLID, Lucas/Pisot,
+`PHI_WEIGHTS`, and their formulas are unchanged.
 
-| ID | Implementation |
-|---|---|
-| FIX-01 | Module-docstring insertion preserves shebang and PEP 263 preamble while keeping `__future__` imports legal. |
-| FIX-02 | Repository source reads/writes detect and preserve PEP 263 encodings. |
-| FIX-03 | Superseded by private-copy integration and patch output; the engine never acquires the host Git index lock. |
-| FIX-04 | Existing subprocess timeout isolation retained. |
-| ENH-01 | Existing non-local function split retained. |
-| ENH-02 | Added standalone φ-sensitivity CLI. |
-| ENH-03 | Existing cross-file recipe seeding retained. |
-| ENH-04 | Added opt-in, deterministic simulated-annealing escape with cooling and telemetry. |
-| ENH-05 | Existing budget-matched Condition C retained. |
-| ENH-06 | Added selectable surrogate-velocity geometry trigger. |
-| ENH-07 | Existing `levels_back` evolution retained. |
-| ENH-08 | Added gain-per-100-evaluations and rolling-three-win normalization to the A/B harness. |
-| ENH-09 | Existing phase-transition and barrier tagging retained. |
-| ENH-10 | Added hash-chained primitive registration and reuse provenance. |
-| ENH-11 | Existing within-session surrogate transfer retained. |
-| ENH-12 | Added generated, non-executable anti-primitive models as explicit negative examples. |
-| ENH-13 | Persisted surrogate weights, anti-primitives, adversarial catalog, and collective geometry. |
-| ENH-14 | Added bounded median-consensus geometry shared across sequential files and sessions. |
+| Item | Status | Reproduction evidence |
+|---|---|---|
+| 1. Ruff E9/F | Done | `ruff check --select E9,F pythagoras` → `All checks passed!` (`RUFF_E9_F_RAW.txt`) |
+| 2. Annealing EUCLID gate | Done | `python -m unittest pythagoras.tests.test_v12_2_gap_closures.TestSearchGapClosures.test_annealing_respects_euclid_gate` → `OK`; result reports `initial_euclid_intelligence` and `best_euclid_intelligence` |
+| 3. Version 12.2.0 | Done | `python -c "import pythagoras; print(pythagoras.__version__)"` → `12.2.0`; runner banner also prints v12.2 |
+| 4. v12.1 preservation | Done | Separate `pythagoras-engine-v12.1-preserved-20261001.zip`, SHA-256 in `V12_1_BASELINE.sha256`, and `git diff v12.1..v12.2 --stat` in `V12_1_TO_V12_2_DIFFSTAT.txt` |
+| 5. Unused `pop_size` | Done | Decision: remove from effective state and collective consensus; constructor argument retained only for compatibility. `python -m unittest ...test_pop_size_is_not_reported_as_effective_search_state` → `OK` |
+| 6. CGP description | Done | README and engine docstrings now say “CGP-inspired geometry”; `n_cols` is ranked operators evaluated per generation and `levels_back` is maximum composite-recipe length; no DAG population claim |
+| 7. φ validation | Done | `python -m pythagoras.experiments.phi_validation --seeds 3 --generations 4 --bootstrap 2000 --out-json pythagoras/experiments/phi_validation_v12_2.json --out-md pythagoras/experiments/PHI_VALIDATION_v12_2.md` |
+| 8. Tononi/Penrose audit | Done | Removed unused `calculate_integrated_information`; `core/tononi_penrose.py` now documents and exposes only measured `graph_integration` |
+| 9. Corpus-dependent A/B/C | Done | Six raw 10-seed runs committed under `experiments/results_v12_2/`; `experiments/RESULTS_v12_2.md` reports 3/4/12 generations, mean and 95% CI, with paired B−C primary |
 
-## Compatibility and safety
+## Required interpretation
 
-- Default search remains greedy; annealing is opt-in.
-- The host repository remains untouched unless `--apply` is explicitly provided.
-- Behaviour-changing transforms still require a host test runner.
-- Collective geometry is bounded and retains at most 100 observations.
-- Anti-primitives are training records and are never executed as transforms.
+The held-out experiment does **not** validate φ as an independent universal
+quality measure. Overall Δφ is negatively associated with maintainability-index
+change, cyclomatic complexity has no monotonic association, and mypy errors do
+not vary. ADD:AnnAssign variants show a positive complexity association, but
+the AST-node control is also strong and maintainability is inconclusive.
+See `experiments/PHI_VALIDATION_v12_2.md`.
 
-## Verification
+The A/B/C matrix is corpus- and budget-dependent. On stdlib4, B beats
+budget-matched C in total Δφ at 3, 4, and 12 generations. On the bundled
+benchmarks, C beats B at 3 generations and ties it at 4 and 12. These are
+internal φ-objective results, not external quality validation.
 
-- Python compilation: passed.
-- Unit tests: 53 passed.
-- Diagnostics CLI: passed.
-- Host façade demo: passed.
-- Two-seed/three-generation A/B smoke replication: passed.
+## Raw acceptance outputs
 
-The normalized experiment output is intentionally reported alongside raw Δφ. In the smoke
-run, A and B reached the same Δφ while B used more evaluations, demonstrating why ENH-08
-must remain visible rather than treating raw short-budget gain as the only outcome.
+Command:
+
+```bash
+ruff check --select E9,F pythagoras
+```
+
+Output:
+
+```text
+All checks passed!
+```
+
+Command:
+
+```bash
+python -m unittest discover -s pythagoras/tests -t .
+```
+
+Output:
+
+```text
+.......................................................
+----------------------------------------------------------------------
+Ran 55 tests in 8.299s
+
+OK
+```
+
+Repository-style command:
+
+```bash
+PYTHONPATH=. python -m pytest -q repo_tests pythagoras/tests
+```
+
+Output:
+
+```text
+............................................................             [100%]
+60 passed in 8.62s
+```
