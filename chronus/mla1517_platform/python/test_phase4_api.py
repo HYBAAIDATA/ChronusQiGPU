@@ -19,7 +19,7 @@ class Phase4ApiTests(unittest.TestCase):
         self.tempdir = tempfile.TemporaryDirectory()
         root = Path(self.tempdir.name)
         self.env = {
-            "MLA1517_STRATUM_USER": "PYTHIA.001",
+            "MLA1517_STRATUM_USER": "rig.phase4",
             "MLA1517_STRATUM_PASSWORD": "x",
             "MLA1517_VIABTC_ENDPOINT": "btc.viabtc.io:3333",
             "PYTHIA_POOL_PROFILE": "viabtc",
