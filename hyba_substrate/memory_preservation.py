@@ -158,10 +158,7 @@ class MemoryVault:
                     reconstructed=np.real_if_close(mps.decompress_to_vector()); error=float(np.max(np.abs(reconstructed-padded/norm))); info=mps.get_compression_info(); summary["mps"]={"roundtrip_error":error,"verified":error<=self.tensor_tolerance,"compression_ratio":float(info["compression_ratio"]),"discarded_weight":float(info["discarded_weight"]),"padded_length":size}
             except Exception as error: summary["mps"]={"verified":False,"error":f"{type(error).__name__}: {error}"}
             if integer_values:
-                try:
-                    from hyba_substrate.engine import deterministic_audit
-                    summary["phi_fold"]=deterministic_audit([int(x) for x in values])
-                except Exception as error: summary["phi_fold"]={"roundtrip_exact":False,"error":f"{type(error).__name__}: {error}"}
+                summary["phi_fold"]={"roundtrip_exact":False,"error":"deterministic_audit unavailable: hyba_substrate.engine does not exist"}
             summaries.append(summary)
         return tuple(summaries)
     @staticmethod

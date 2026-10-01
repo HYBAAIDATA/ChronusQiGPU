@@ -7,9 +7,10 @@ import unittest
 
 from pythagoras.core.diagnostics import phi_sensitivity
 from pythagoras.core.phi_metric import PhiResonanceCalculator
-from pythagoras.engine.v6_4_cross_file_reuse import CrossFilePrimitiveRepository
-from pythagoras.engine.v6_5_manifold_escape import (PHASE_TRANSITION_RATIO, V65ManifoldEscapeEngine,
-                                                    phase_transition_ratio)
+from pythagoras.engine.primitive_repository import CrossFilePrimitiveRepository
+from pythagoras.engine.evolution import (
+    PHASE_TRANSITION_RATIO, PythagorasEvolutionEngine, phase_transition_ratio)
+
 from pythagoras.experiments.reference_metrics import phi_v12_0
 from pythagoras.experiments.replicate_march_2026 import replicate
 
@@ -23,7 +24,7 @@ def _read(name):
 
 class TestMetaSwitch(unittest.TestCase):
     def test_meta_off_freezes_adaptive_layers(self):
-        eng = V65ManifoldEscapeEngine(repository=CrossFilePrimitiveRepository(), meta_evolution=False)
+        eng = PythagorasEvolutionEngine(repository=CrossFilePrimitiveRepository(), meta_evolution=False)
         before = {k: list(v) for k, v in eng.surrogate.operator_weights.items()}
         r = eng.run_optimization("mm", _read("matrix_math.py"), 8)
         self.assertEqual(r["promoted_primitives"], [])
@@ -34,7 +35,7 @@ class TestMetaSwitch(unittest.TestCase):
         self.assertGreater(len(eng.surrogate.prediction_history), 0)  # RMSE still measured
 
     def test_meta_on_runs_adaptive_layers(self):
-        r = V65ManifoldEscapeEngine(repository=CrossFilePrimitiveRepository(), meta_evolution=True) \
+        r = PythagorasEvolutionEngine(repository=CrossFilePrimitiveRepository(), meta_evolution=True) \
             .run_optimization("mm", _read("matrix_math.py"), 8)
         self.assertGreater(len(r["geometry_evolution_steps"]), 0)
         self.assertGreater(r["discovery_events_count"], 0)
