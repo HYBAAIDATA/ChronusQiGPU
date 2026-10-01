@@ -34,8 +34,8 @@ import time
 import tokenize
 from typing import Any, Dict, List, Optional
 
-from pythagoras.engine.v6_4_cross_file_reuse import CrossFilePrimitiveRepository
-from pythagoras.engine.v6_5_manifold_escape import V65ManifoldEscapeEngine
+from pythagoras.engine.primitive_repository import CrossFilePrimitiveRepository
+from pythagoras.engine.evolution import PythagorasEvolutionEngine
 
 _IGNORED_DIRS = {".git", ".hg", ".venv", "venv", "env", "node_modules", "__pycache__", ".tox", ".nox",
                  ".pytest_cache", ".mypy_cache", ".ruff_cache", "build", "dist", "site-packages", ".eggs"}
@@ -141,10 +141,13 @@ def run_on_repo(root: str, files: Optional[List[str]] = None, max_files: int = 5
             report["status"] = "stopped: baseline tests fail, so they cannot gate behaviour"
             return _write(report, {}, root, out_dir)
 
-        engines = {cond: V65ManifoldEscapeEngine(repository=CrossFilePrimitiveRepository(), seed=seed,
-                                                 meta_evolution=(cond == "B"),
-                                                 allow_behaviour_changing=allow_behaviour_changing)
-                   for cond in ("A", "B")}
+        engines = {
+            cond: PythagorasEvolutionEngine(
+                repository=CrossFilePrimitiveRepository(), seed=seed,
+                meta_evolution=(cond == "B"),
+                allow_behaviour_changing=allow_behaviour_changing)
+            for cond in ("A", "B")
+        }
         evolved: Dict[str, str] = {}
         source_encodings: Dict[str, str] = {}
         for rel in targets:

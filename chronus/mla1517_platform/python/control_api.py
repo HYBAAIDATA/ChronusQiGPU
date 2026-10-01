@@ -1518,7 +1518,7 @@ class _Handler(BaseHTTPRequestHandler):
         if pythia_guardian_api is None:
             self._json(
                 HTTPStatus.SERVICE_UNAVAILABLE,
-                {"allowed": False, "reason": "guardian_dependency_unavailable"},
+                {"available": False, "reason": "guardian_dependency_unavailable"},
             )
             return False
         operation = path.removeprefix("/api/v1/").replace("/", ".")

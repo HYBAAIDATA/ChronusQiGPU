@@ -145,6 +145,7 @@ _LAZY_MODULES = {
     "quantum_walk",
     "annealing",
     "swarm",
+    "variational",
     "phi_machine",
     "midas_vqc",
 }

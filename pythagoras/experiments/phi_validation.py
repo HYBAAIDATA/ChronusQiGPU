@@ -31,7 +31,7 @@ import numpy as np
 from radon.complexity import cc_visit
 from radon.metrics import mi_visit
 
-from pythagoras.engine.v6_5_manifold_escape import V65ManifoldEscapeEngine
+from pythagoras.engine.evolution import PythagorasEvolutionEngine
 
 
 HELD_OUT = ("bisect.py", "heapq.py", "fractions.py", "tokenize.py")
@@ -119,7 +119,7 @@ def run_validation(
         source = (stdlib / module).read_text(encoding="utf-8")
         baseline = _metrics(source)
         for seed in range(seeds):
-            engine = V65ManifoldEscapeEngine(seed=seed)
+            engine = PythagorasEvolutionEngine(seed=seed)
             result = engine.run_optimization(module, source, generations)
             final = _metrics(result["final_code"])
             operators = [s["winning_operator"] for s in result["accepted_steps"]]

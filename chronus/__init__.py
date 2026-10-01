@@ -19,6 +19,19 @@ if TYPE_CHECKING:
     from .device import Chronus
     from .engine import ChronusOpenCLEngine, ChronusOpenCLUnavailable, ResidentChronusEnsemble, ResidentChronusState
     from .fabric import ChronusFabric, RouteDecision
+    from .phi_gpu import (
+        EnergyComparison,
+        EnergyModel,
+        GeodesicScheduler,
+        HybridGPU,
+        KernelLaunchConfig,
+        KernelResult,
+        KernelTask,
+        PhiGPU,
+        PhiGPUError,
+        RouteDecisionRecord,
+        phi_log_distance,
+    )
     from .telemetry import ChronusTelemetry
     from .tensor_compute import ChronusTensorRuntime, ChronusTensorUnavailable, TensorDeviceProbe
 
@@ -32,9 +45,20 @@ _EXPORTS = {
     "ChronusTelemetry": ("chronus.telemetry", "ChronusTelemetry"),
     "DetectedDevice": ("chronus.detect", "DetectedDevice"),
     "DetectionReport": ("chronus.detect", "DetectionReport"),
+    "EnergyComparison": ("chronus.phi_gpu", "EnergyComparison"),
+    "EnergyModel": ("chronus.phi_gpu", "EnergyModel"),
+    "GeodesicScheduler": ("chronus.phi_gpu", "GeodesicScheduler"),
+    "HybridGPU": ("chronus.phi_gpu", "HybridGPU"),
+    "KernelLaunchConfig": ("chronus.phi_gpu", "KernelLaunchConfig"),
+    "KernelResult": ("chronus.phi_gpu", "KernelResult"),
+    "KernelTask": ("chronus.phi_gpu", "KernelTask"),
+    "PHI_GPU_CORES": ("chronus.phi_gpu", "PHI_GPU_CORES"),
+    "PhiGPU": ("chronus.phi_gpu", "PhiGPU"),
+    "PhiGPUError": ("chronus.phi_gpu", "PhiGPUError"),
     "ResidentChronusEnsemble": ("chronus.engine", "ResidentChronusEnsemble"),
     "ResidentChronusState": ("chronus.engine", "ResidentChronusState"),
     "RouteDecision": ("chronus.fabric", "RouteDecision"),
+    "RouteDecisionRecord": ("chronus.phi_gpu", "RouteDecisionRecord"),
     "attach_to_host": ("chronus.telemetry", "attach_to_host"),
     "detect_all": ("chronus.detect", "detect_all"),
     "get_telemetry": ("chronus.telemetry", "get_telemetry"),

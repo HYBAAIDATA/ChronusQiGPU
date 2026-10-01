@@ -164,7 +164,7 @@ class ProductionStratumClient(StratumClient):
             "accepted_ratio": accepted / candidate_total if candidate_total else None,
             "rejected_ratio": rejected / candidate_total if candidate_total else None,
             "unknown_ratio": unknown / candidate_total if candidate_total else None,
-            "stale_ratio": self._stale_dropped / candidate_total if candidate_total else None,
+            "stale_ratio": self._stale_dropped / candidate_total if self._stale_dropped else None,
             "stale_dropped": self._stale_dropped,
         }
         # The persistent retarget tracker replaces this only when complete
