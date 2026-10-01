@@ -212,7 +212,7 @@ def test_phi_gpu_launch_kernel_matches_host():
     )
     np.testing.assert_allclose(result, x * 2.0)
     report = gpu.get_system_report()
-    assert report["truth_class"] == "internal"
+    assert report["truth_class"] == "internal_control_plane"
     assert report["integrity_pass_rate"] == 1.0
     assert gpu.launch_log[-1].cores_used == gpu.cores
 

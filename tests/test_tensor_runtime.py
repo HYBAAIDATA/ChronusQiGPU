@@ -65,8 +65,12 @@ def test_timed_execute_honours_cancellation_before_running():
 
 def test_timed_execute_raises_timeout_if_already_expired():
     with pytest.raises(TensorTimeoutError):
-        time.sleep(0.01)
-        timed_execute(lambda: 1, operations=1, backend="numpy-cpu", timeout_ns=1)
+        timed_execute(
+            lambda: time.sleep(0.01),
+            operations=1,
+            backend="numpy-cpu",
+            timeout_ns=1,
+        )
 
 
 def test_timed_execute_records_fallback_evidence():

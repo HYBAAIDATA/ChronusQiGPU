@@ -92,7 +92,7 @@ measured_tensor_tflops =
     measured_tensor_operations / measured_wall_seconds / 10^12
 ```
 
-A 10 EH/s floor is unclaimed unless measured physical work reaches `10^19 H/s`. Folds, geometric projections, classifier scores, expected search
+A `10^19 H/s` floor is unclaimed unless measured physical work reaches it. Folds, geometric projections, classifier scores, expected search
 uplift, parallelism factors and hardware inventory do not multiply H/s. They
 may be reported separately as experimental or projected evidence, never as
 production hashrate.

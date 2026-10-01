@@ -17,14 +17,14 @@ claims:
     status: VERIFIED
     test_command: "python scripts/audit_chronus_contracts.py --only C2"
     artifact: "scripts/audit_chronus_contracts.py"
-    artifact_hash: "c71bd1a76eb128a1b2575f6df874fbe1c60ba8cc3c4c47a973bff472b5ffe6b7"
+    artifact_hash: "c7d76876843ff7cea353663abb5f5e8d9f773a98e402e116fd5da978c81c9631"
     baseline: "AssemblyLock{schema_version,manifest_hash,policy_hash,evidence_hash,signature} frozen"
   - id: c-receipt-mode
     text: "ResultReceipt enforces the rehydration-count/FoldMode pairing"
     status: VERIFIED
     test_command: "python scripts/audit_chronus_contracts.py --only receipts"
     artifact: "scripts/audit_chronus_contracts.py"
-    artifact_hash: "c71bd1a76eb128a1b2575f6df874fbe1c60ba8cc3c4c47a973bff472b5ffe6b7"
+    artifact_hash: "c7d76876843ff7cea353663abb5f5e8d9f773a98e402e116fd5da978c81c9631"
     baseline: "rehydration_count>0 iff mode==REHYDRATE"
   - id: c-runtime-config
     text: "runtime config contract loads declared sections"

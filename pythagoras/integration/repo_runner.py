@@ -119,7 +119,9 @@ def discover_targets(root: str, max_files: int) -> List[str]:
                     or f in ("conftest.py", "setup.py", "__init__.py"):
                 continue
             p = os.path.join(d, f)
-            found.append((os.path.getsize(p), os.path.relpath(p, root)))
+            found.append(
+                (os.path.getsize(p), os.path.relpath(p, root).replace(os.sep, "/"))
+            )
     return [rel for _, rel in sorted(found, reverse=True)[:max_files]]
 
 

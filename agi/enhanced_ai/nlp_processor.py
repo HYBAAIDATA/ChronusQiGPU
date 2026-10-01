@@ -13,11 +13,11 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 # Import existing HYBA components
-from hyba_backend.platform.quantum_core.processor import (
+from agi.quantum_processor import (
     ProblemDomain,
     UniversalQuantumProcessor,
 )
-from hyba_backend.platform.resonance import PhiResonanceScorer
+from agi.resonance import PhiResonanceScorer
 
 logger = logging.getLogger(__name__)
 
