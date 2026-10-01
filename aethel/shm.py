@@ -37,7 +37,10 @@ from __future__ import annotations
 
 import mmap
 import os
+import stat
 import struct
+import threading
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Optional, Union
 
@@ -57,6 +60,8 @@ _HEADER = struct.Struct("<QII6Q")
 _SEQ = struct.Struct("<Q")
 _D7 = struct.Struct("<I")
 _D10 = struct.Struct("<i")
+MAX_SLOT_COUNT = 65_536
+_MAX_READ_RETRIES = 1_024
 
 PathLike = Union[str, os.PathLike]
 
@@ -80,26 +85,56 @@ class AethelQueue:
     """
 
     def __init__(self, path: PathLike, slot_count: int, *, create: bool = True):
-        if slot_count <= 0:
-            raise ValueError("slot_count must be positive")
+        if (
+            not isinstance(slot_count, int)
+            or isinstance(slot_count, bool)
+            or not 1 <= slot_count <= MAX_SLOT_COUNT
+        ):
+            raise ValueError(f"slot_count must be in [1, {MAX_SLOT_COUNT}]")
         self._path = os.fspath(path)
         self._slot_count = int(slot_count)
         self._bytes = AETHEL_HEADER_BYTES + self._slot_count * AETHEL_SLOT_STRIDE
 
-        if not create and not os.path.exists(self._path):
+        if not create and not os.path.lexists(self._path):
             raise SegmentMissing(f"aethel region {self._path!r} does not exist")
 
-        flags = os.O_RDWR | (os.O_CREAT if create else 0)
+        flags = (
+            os.O_RDWR
+            | (os.O_CREAT if create else 0)
+            | getattr(os, "O_NOFOLLOW", 0)
+        )
+        if os.path.islink(self._path):
+            raise AethelError("aethel region path must not be a symlink")
         self._costs = OverheadMeter()
-        self._fd = os.open(self._path, flags, 0o600)
+        self._thread_lock = threading.RLock()
+        self._closed = False
+        self._metrics = {
+            "writes": 0,
+            "reads": 0,
+            "rejections": 0,
+            "bytes_written": 0,
+            "bytes_read": 0,
+        }
         try:
-            size = os.fstat(self._fd).st_size
+            self._fd = os.open(self._path, flags, 0o600)
+        except FileNotFoundError as exc:
+            raise SegmentMissing(f"aethel region {self._path!r} does not exist") from exc
+        try:
+            info = os.fstat(self._fd)
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_mode & 0o077
+                or (hasattr(os, "geteuid") and info.st_uid != os.geteuid())
+            ):
+                raise AethelError("aethel region must be a private regular file")
+            size = info.st_size
             if size == 0:
                 if not create:
                     raise SegmentMissing(
                         f"aethel region {self._path!r} is an empty segment"
                     )
                 os.ftruncate(self._fd, self._bytes)
+                os.fsync(self._fd)
             elif size != self._bytes:
                 raise AethelError(
                     f"aethel region {self._path!r} is {size} bytes; "
@@ -111,31 +146,76 @@ class AethelQueue:
             raise
 
         try:
-            magic, version, stored_slots = struct.unpack_from("<QII", self._mmap, 0)
-            if magic == 0:
-                _HEADER.pack_into(
-                    self._mmap, 0, AETHEL_MAGIC, AETHEL_ABI_VERSION, self._slot_count,
-                    0, 0, 0, 0, 0, 0,
+            with self._process_lock():
+                magic, version, stored_slots = struct.unpack_from(
+                    "<QII", self._mmap, 0
                 )
-                self._mmap.flush(0, AETHEL_HEADER_BYTES)
-            elif magic != AETHEL_MAGIC:
-                raise AethelError(
-                    f"aethel region magic mismatch: 0x{magic:016X} != "
-                    f"0x{AETHEL_MAGIC:016X}"
-                )
-            elif version != AETHEL_ABI_VERSION:
-                raise AbiVersionMismatch(
-                    f"aethel ABI version {version} != {AETHEL_ABI_VERSION}"
-                )
-            elif stored_slots != self._slot_count:
-                raise AethelError(
-                    f"aethel region slot_count {stored_slots} != "
-                    f"{self._slot_count}"
-                )
+                if magic == 0:
+                    _HEADER.pack_into(
+                        self._mmap,
+                        0,
+                        AETHEL_MAGIC,
+                        AETHEL_ABI_VERSION,
+                        self._slot_count,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                    )
+                    self._mmap.flush(0, AETHEL_HEADER_BYTES)
+                    os.fsync(self._fd)
+                elif magic != AETHEL_MAGIC:
+                    raise AethelError(
+                        f"aethel region magic mismatch: 0x{magic:016X} != "
+                        f"0x{AETHEL_MAGIC:016X}"
+                    )
+                elif version != AETHEL_ABI_VERSION:
+                    raise AbiVersionMismatch(
+                        f"aethel ABI version {version} != {AETHEL_ABI_VERSION}"
+                    )
+                elif stored_slots != self._slot_count:
+                    raise AethelError(
+                        f"aethel region slot_count {stored_slots} != "
+                        f"{self._slot_count}"
+                    )
         except Exception:
             self._mmap.close()
             os.close(self._fd)
             raise
+
+    @contextmanager
+    def _process_lock(self):
+        """Serialize cooperating processes; this ABI is not lock-free."""
+        with self._thread_lock:
+            self._ensure_open()
+            if os.name == "nt":
+                import msvcrt
+
+                self._fd_seek(0)
+                msvcrt.locking(self._fd, msvcrt.LK_LOCK, 1)
+                try:
+                    yield
+                finally:
+                    self._fd_seek(0)
+                    msvcrt.locking(self._fd, msvcrt.LK_UNLCK, 1)
+            else:
+                import fcntl
+
+                fcntl.flock(self._fd, fcntl.LOCK_EX)
+                try:
+                    yield
+                finally:
+                    fcntl.flock(self._fd, fcntl.LOCK_UN)
+
+    def _fd_seek(self, offset: int) -> None:
+        if hasattr(os, "lseek"):
+            os.lseek(self._fd, offset, os.SEEK_SET)
+
+    def _ensure_open(self) -> None:
+        if self._closed or self._fd < 0:
+            raise AethelError("aethel region is closed")
 
     @classmethod
     def attach(cls, path: PathLike, slot_count: int) -> "AethelQueue":
@@ -184,24 +264,31 @@ class AethelQueue:
         malformed input.  Thread-safe under the seqlock protocol; readers
         never observe a torn record.
         """
-        state = bytes(state)
-        if len(state) != STATE_BYTES:
+        self._ensure_open()
+        if not isinstance(state, (bytes, bytearray, memoryview)):
+            raise ValueError("state must be bytes-like")
+        size = state.nbytes if isinstance(state, memoryview) else len(state)
+        if size != STATE_BYTES:
             raise ValueError(f"state must be {STATE_BYTES} bytes")
+        state = bytes(state)
         if not self.cassini_valid(state):
+            self._metrics["rejections"] += 1
             return None
-        slot_id = self.slot_for(state)
-        base = AETHEL_HEADER_BYTES + slot_id * AETHEL_SLOT_STRIDE
-        current = _SEQ.unpack_from(self._mmap, base)[0]
-        # Recovery: an odd sequence means a previous writer died mid-commit;
-        # its torn record is discarded and the sequence is advanced past it.
-        in_flight = current + 1 if current % 2 == 0 else current + 2
-        stable = in_flight + 1
-        if stable > 0xFFFFFFFFFFFFFFFF:
-            in_flight, stable = 1, 2  # wrap; sequence 0 stays "empty"
-        _SEQ.pack_into(self._mmap, base, in_flight)  # odd: write in flight
-        self._mmap[base + 8 : base + 8 + STATE_BYTES] = state
-        _SEQ.pack_into(self._mmap, base, stable)  # even: stable
-        return slot_id
+        with self._process_lock():
+            slot_id = self.slot_for(state)
+            base = AETHEL_HEADER_BYTES + slot_id * AETHEL_SLOT_STRIDE
+            current = _SEQ.unpack_from(self._mmap, base)[0]
+            # An odd sequence is abandoned work; the next publication skips it.
+            in_flight = current + 1 if current % 2 == 0 else current + 2
+            stable = in_flight + 1
+            if stable > 0xFFFFFFFFFFFFFFFF:
+                in_flight, stable = 1, 2
+            _SEQ.pack_into(self._mmap, base, in_flight)
+            self._mmap[base + 8 : base + 8 + STATE_BYTES] = state
+            _SEQ.pack_into(self._mmap, base, stable)
+            self._metrics["writes"] += 1
+            self._metrics["bytes_written"] += len(state)
+            return slot_id
 
     @metered("shm.read")
     def read(self, slot_id: int, *, retries: int = 8) -> Optional[AethelRecord]:
@@ -211,19 +298,35 @@ class AethelQueue:
         within ``retries`` attempts — a torn record is always discarded,
         never surfaced.  ``ValueError`` for an out-of-range slot.
         """
-        if not 0 <= slot_id < self._slot_count:
+        self._ensure_open()
+        if (
+            not isinstance(slot_id, int)
+            or isinstance(slot_id, bool)
+            or not 0 <= slot_id < self._slot_count
+        ):
+            self._metrics["rejections"] += 1
             raise ValueError(f"slot_id must be in [0, {self._slot_count})")
-        base = AETHEL_HEADER_BYTES + slot_id * AETHEL_SLOT_STRIDE
-        for _ in range(max(1, retries)):
-            seq1 = _SEQ.unpack_from(self._mmap, base)[0]
-            if seq1 == 0:
-                return None
-            if seq1 & 1:
-                continue
-            snapshot = bytes(self._mmap[base + 8 : base + 8 + STATE_BYTES])
-            seq2 = _SEQ.unpack_from(self._mmap, base)[0]
-            if seq1 == seq2 and not (seq2 & 1):
-                return AethelRecord(slot_id=slot_id, sequence=seq2, state=snapshot)
+        if (
+            not isinstance(retries, int)
+            or isinstance(retries, bool)
+            or not 1 <= retries <= _MAX_READ_RETRIES
+        ):
+            self._metrics["rejections"] += 1
+            raise ValueError(f"retries must be in [1, {_MAX_READ_RETRIES}]")
+        with self._process_lock():
+            self._metrics["reads"] += 1
+            base = AETHEL_HEADER_BYTES + slot_id * AETHEL_SLOT_STRIDE
+            for _ in range(retries):
+                seq1 = _SEQ.unpack_from(self._mmap, base)[0]
+                if seq1 == 0:
+                    return None
+                if seq1 & 1:
+                    continue
+                snapshot = bytes(self._mmap[base + 8 : base + 8 + STATE_BYTES])
+                seq2 = _SEQ.unpack_from(self._mmap, base)[0]
+                if seq1 == seq2 and not (seq2 & 1):
+                    self._metrics["bytes_read"] += len(snapshot)
+                    return AethelRecord(slot_id=slot_id, sequence=seq2, state=snapshot)
         return None
 
     # -- overhead ------------------------------------------------------------
@@ -239,22 +342,27 @@ class AethelQueue:
             "region_bytes": self._bytes,
             "structural_bytes": self.structural_bytes(),
             "slot_count": self._slot_count,
+            "metrics": dict(self._metrics),
             "truth": "measured",
         }
 
     # -- lifecycle ------------------------------------------------------------
 
     def flush(self) -> None:
-        self._mmap.flush()
+        with self._process_lock():
+            self._mmap.flush()
+            os.fsync(self._fd)
 
     def close(self) -> None:
-        if getattr(self, "_mmap", None) is not None:
-            self._mmap.flush()
-            self._mmap.close()
-            self._mmap = None  # type: ignore[assignment]
-        if getattr(self, "_fd", None) is not None and self._fd >= 0:
-            os.close(self._fd)
-            self._fd = -1
+        if getattr(self, "_mmap", None) is not None and not self._closed:
+            with self._thread_lock:
+                self._mmap.flush()
+                os.fsync(self._fd)
+                self._mmap.close()
+                self._mmap = None  # type: ignore[assignment]
+                os.close(self._fd)
+                self._fd = -1
+                self._closed = True
 
     def __enter__(self) -> "AethelQueue":
         return self

@@ -6,6 +6,8 @@ Pins the promotion contract: canonical package location, single-source
 """
 
 import importlib
+from importlib.metadata import PackageNotFoundError, version
+import json
 import sys
 import tomllib
 import unittest
@@ -52,6 +54,16 @@ class AethelPackageSurfaceTests(unittest.TestCase):
             )
         self.assertRegex(aethel.__version__, r"^\d+\.\d+\.\d+$")
 
+    def test_installed_version_metadata_or_source_fallback(self) -> None:
+        try:
+            installed = version("aethel")
+        except PackageNotFoundError:
+            self.assertEqual(aethel.__version_source__, "source_fallback")
+            self.assertEqual(aethel.__version__, "1.0.0")
+        else:
+            self.assertEqual(aethel.__version_source__, "distribution_metadata")
+            self.assertEqual(aethel.__version__, installed)
+
 
 class AethelWiringTests(unittest.TestCase):
     def test_toe_path_is_identity_alias(self) -> None:
@@ -86,6 +98,30 @@ class AethelPackagingTests(unittest.TestCase):
         self.assertEqual(package_dir["aethel"], "aethel")
         data = meta["tool"]["setuptools"]["package-data"].get("aethel", [])
         self.assertIn("py.typed", data)
+        self.assertIn("capabilities.json", data)
+
+    def test_capability_manifest_keeps_external_gates_unverified(self) -> None:
+        manifest = json.loads(
+            (_ROOT / "aethel" / "capabilities.json").read_text(encoding="utf-8")
+        )
+        valid_statuses = {
+            "implemented+tested",
+            "external-evidence-required",
+            "provisional",
+            "not-implemented",
+        }
+        self.assertFalse(manifest["production_ready"])
+        self.assertTrue(manifest["claims"])
+        for claim in manifest["claims"]:
+            self.assertIn(claim["status"], valid_statuses)
+            self.assertIn("implementation", claim)
+            self.assertIn("tests", claim)
+        self.assertTrue(
+            any(
+                claim["status"] == "external-evidence-required"
+                for claim in manifest["claims"]
+            )
+        )
 
     def test_no_standalone_search_engine(self) -> None:
         """aethel.geodesic must import the engine, never reimplement it:

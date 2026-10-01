@@ -103,7 +103,7 @@ py-modules = [
 
 [tool.setuptools.package-data]
 mla1517 = ["seeds/*.yaml"]
-aethel = ["py.typed", "*.md"]
+aethel = ["py.typed", "*.md", "capabilities.json"]
 gpu = ["py.typed", "README.md", "BLUEPRINT_AUDIT.md"]
 igpu = ["py.typed", "README.md", "kernels/*.cl", "deploy/*.yml"]
 kellogg = ["py.typed"]
@@ -123,4 +123,3 @@ extend-exclude = "Intelligence/skills/"
 exclude = '''
 /(\n    \\.git\n  | \\.pytest_cache\n  | __pycache__\n  | node_modules\n  | dist\n  | models\n  | logs\n  | legacy\n  | \\.venv\n  | venv\n)/
 '''
-

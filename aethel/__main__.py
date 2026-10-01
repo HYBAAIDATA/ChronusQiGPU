@@ -27,6 +27,7 @@ import logging
 import os
 import sys
 from pathlib import Path
+from importlib import resources
 
 from .encoding import fold as fold_bytes
 from .errors import AethelError, SegmentMissing
@@ -151,6 +152,100 @@ def _cmd_selftest(args: argparse.Namespace) -> int:
     return 0 if verdict["overall"] == "PASS" else 1
 
 
+def _cmd_health(_args: argparse.Namespace) -> int:
+    import aethel
+
+    sys.stdout.write(
+        json.dumps(
+            {
+                "health": "healthy",
+                "package": "aethel",
+                "version": aethel.__version__,
+            },
+            sort_keys=True,
+        )
+        + "\n"
+    )
+    return 0
+
+
+def _cmd_readiness(_args: argparse.Namespace) -> int:
+    from .selftest import run_selftest
+
+    manifest = json.loads(
+        resources.files("aethel")
+        .joinpath("capabilities.json")
+        .read_text(encoding="utf-8")
+    )
+    selftest = run_selftest()
+    blockers = [
+        claim["id"]
+        for claim in manifest["claims"]
+        if claim["status"] == "external-evidence-required"
+    ]
+    ready = (
+        selftest["overall"] == "PASS"
+        and manifest["production_ready"]
+        and not blockers
+    )
+    sys.stdout.write(
+        json.dumps(
+            {
+                "health": "healthy" if selftest["overall"] != "FAIL" else "unhealthy",
+                "readiness": "ready" if ready else "not_ready",
+                "production_ready": ready,
+                "blocking_evidence": blockers,
+                "selftest": selftest,
+            },
+            sort_keys=True,
+        )
+        + "\n"
+    )
+    return 0 if ready else 2
+
+
+def _cmd_backup(args: argparse.Namespace) -> int:
+    space = _attach(_store_path(args))
+    destination = Path(args.destination)
+    space.snapshot(destination)
+    sys.stdout.write(
+        json.dumps(
+            {"status": "backup_created", "entries": len(space.ledger.entries)}
+        )
+        + "\n"
+    )
+    return 0
+
+
+def _cmd_restore(args: argparse.Namespace) -> int:
+    space = AddressSpace.attach(Path(args.source))
+    space.snapshot(_store_path(args))
+    sys.stdout.write(
+        json.dumps(
+            {"status": "restore_committed", "entries": len(space.ledger.entries)}
+        )
+        + "\n"
+    )
+    return 0
+
+
+def _cmd_recover(args: argparse.Namespace) -> int:
+    if not args.truncate_to_last_consistent_prefix:
+        raise ValueError("select --truncate-to-last-consistent-prefix explicitly")
+    count = AddressSpace.truncate_to_last_consistent_prefix(_store_path(args))
+    sys.stdout.write(
+        json.dumps(
+            {
+                "status": "journal_truncated",
+                "verified_prefix_entries": count,
+                "journal_backup_created": True,
+            }
+        )
+        + "\n"
+    )
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="aethel", description=__doc__)
     parser.add_argument("--store", help="aethel store directory (or AETHEL_STORE)")
@@ -179,6 +274,28 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--full", action="store_true", help="run the full soak scale")
     p.set_defaults(func=_cmd_selftest)
 
+    p = sub.add_parser("health", help="report process health")
+    p.set_defaults(func=_cmd_health)
+
+    p = sub.add_parser("readiness", help="report software and production readiness")
+    p.set_defaults(func=_cmd_readiness)
+
+    p = sub.add_parser("backup", help="create a verified store backup")
+    p.add_argument("--destination", required=True)
+    p.set_defaults(func=_cmd_backup)
+
+    p = sub.add_parser("restore", help="restore a verified store backup")
+    p.add_argument("--source", required=True)
+    p.set_defaults(func=_cmd_restore)
+
+    p = sub.add_parser("recover", help="run explicit journal recovery")
+    p.add_argument(
+        "--truncate-to-last-consistent-prefix",
+        action="store_true",
+        help="back up and truncate the journal to its verified prefix",
+    )
+    p.set_defaults(func=_cmd_recover)
+
     return parser
 
 
@@ -196,6 +313,9 @@ def main(argv=None) -> int:
     except FileNotFoundError as exc:
         sys.stderr.write(f"not found: {exc}\n")
         return 3
+    except (OSError, ValueError, TypeError) as exc:
+        sys.stderr.write(f"aethel operation failed: {type(exc).__name__}\n")
+        return 1
 
 
 if __name__ == "__main__":

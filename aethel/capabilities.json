@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "package": "aethel",
+  "software_readiness": "not_production_ready",
+  "production_ready": false,
+  "claims": [
+    {
+      "id": "storage.address_and_cassini",
+      "claim": "Bounded Fibonacci address streams and Cassini-certified journal entries reject forgery and regression.",
+      "implementation": ["aethel/storage.py"],
+      "tests": ["tests/test_aethel_storage.py"],
+      "status": "implemented+tested"
+    },
+    {
+      "id": "storage.durable_snapshot_replay",
+      "claim": "Block files are atomically flushed before the journal commit; replay checks sequence, schema, address, block size and SHA-256 before exposing payloads.",
+      "implementation": ["aethel/storage.py"],
+      "tests": ["tests/test_aethel_concurrency.py", "tests/test_aethel_fault_injection.py"],
+      "status": "implemented+tested"
+    },
+    {
+      "id": "storage.operator_recovery",
+      "claim": "A backup, restore and explicit truncate-to-verified-prefix path is available; recovery preserves a journal backup.",
+      "implementation": ["aethel/storage.py", "aethel/__main__.py"],
+      "tests": ["tests/test_aethel_fault_injection.py"],
+      "status": "implemented+tested"
+    },
+    {
+      "id": "storage.resource_and_path_bounds",
+      "claim": "Payloads, address indices, journal entries, queue slots and files are bounded and symlinked storage entries are rejected.",
+      "implementation": ["aethel/storage.py", "aethel/shm.py", "mla1517_platform_v3.4/host/mla1517_aethel.c"],
+      "tests": ["tests/test_aethel_fault_injection.py", "tests/test_aethel_concurrency.py"],
+      "status": "implemented+tested"
+    },
+    {
+      "id": "encoding.zeckendorf_roundtrip",
+      "claim": "The declared bounded payload encoding round-trips without truncation.",
+      "implementation": ["aethel/encoding.py", "aethel/zeckendorf.py"],
+      "tests": ["tests/test_aethel_encoding.py"],
+      "status": "implemented+tested"
+    },
+    {
+      "id": "shm.python_native_abi",
+      "claim": "Python and native queue writers/readers coordinate with an advisory process lock; readers reject unstable sequence records.",
+      "implementation": ["aethel/shm.py", "mla1517_platform_v3.4/host/mla1517_aethel.c"],
+      "tests": ["tests/test_aethel_concurrency.py"],
+      "status": "implemented+tested"
+    },
+    {
+      "id": "manifold.heal_and_fail_closed",
+      "claim": "Manifold repair candidates must match an ingest-time digest; unrecoverable corruption returns no payload.",
+      "implementation": ["aethel/manifold.py"],
+      "tests": ["tests/test_aethel_fault_injection.py"],
+      "status": "implemented+tested"
+    },
+    {
+      "id": "geodesic.fallback",
+      "claim": "Pathfinder fallback is configurable, records a bounded reason and delegates exactly to the existing bisection query; output equivalence between engines is not claimed.",
+      "implementation": ["aethel/manifold.py"],
+      "tests": ["tests/test_aethel_fault_injection.py"],
+      "status": "provisional"
+    },
+    {
+      "id": "backend.opencl_chronus",
+      "claim": "CPU fallback is policy-gated and explicit GPU requirements reject unavailable, unsupported or non-GPU execution.",
+      "implementation": ["aethel/gpu.py", "aethel/chronus.py", "aethel/manifold.py", "aethel/punch.py"],
+      "tests": ["tests/test_aethel_fault_injection.py"],
+      "status": "implemented+tested"
+    },
+    {
+      "id": "backend.hardware_validation",
+      "claim": "OpenCL device execution, Chronus integration and CPU/OpenCL parity on deployed hardware.",
+      "implementation": ["aethel/gpu.py", "aethel/chronus.py"],
+      "tests": [],
+      "status": "external-evidence-required"
+    },
+    {
+      "id": "soak.million_write",
+      "claim": "A configurable harness supports up to one million writes; full-scale runtime, resource and recovery behavior have not been run here.",
+      "implementation": ["aethel/selftest.py", "tests/test_aethel_storage.py"],
+      "tests": ["tests/test_aethel_storage.py"],
+      "status": "external-evidence-required"
+    },
+    {
+      "id": "packaging.installed_wheel",
+      "claim": "The root project includes Aethel sources, py.typed and documentation; isolated wheel/sdist install validation remains a deployment gate.",
+      "implementation": ["pyproject.toml", "aethel/py.typed"],
+      "tests": ["tests/test_aethel_package.py"],
+      "status": "provisional"
+    },
+    {
+      "id": "deployment.container",
+      "claim": "The deployment image and target container have not been built and exercised as part of this software audit.",
+      "implementation": ["Dockerfile", "deploy/"],
+      "tests": [],
+      "status": "external-evidence-required"
+    },
+    {
+      "id": "payload.authenticity",
+      "claim": "SHA-256 detects accidental or unauthorized payload changes relative to the local journal but is not a keyed authenticity mechanism.",
+      "implementation": ["aethel/storage.py", "aethel/manifold.py"],
+      "tests": ["tests/test_aethel_fault_injection.py"],
+      "status": "not-implemented"
+    },
+    {
+      "id": "quantum_speedup",
+      "claim": "Aethel makes no quantum-speedup or unlimited-storage claim.",
+      "implementation": [],
+      "tests": [],
+      "status": "not-implemented"
+    }
+  ]
+}

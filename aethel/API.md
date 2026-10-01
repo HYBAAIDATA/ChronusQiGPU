@@ -75,7 +75,7 @@ schema validation (header length, interval bounds) is the engine's own.
 
 | Symbol | Notes |
 | --- | --- |
-| `GeodesicNavigator` | `query`/`query_geodesic`/`batch_project`; prefers `Intelligence.pathfinder.Pathfinder`, falls back to bisection |
+| `GeodesicNavigator` | `query`/`query_geodesic`/`batch_project`; `query_geodesic(..., allow_fallback=False)` fails closed, default fallback is recorded and is not equivalent-engine evidence |
 | `SelfHealingSubstrate` | `trigger(node)` — re-anchor to nearest Cassini-valid integer |
 | `ManifoldCurvature` / `ManifoldSector` | curvature/sector enums |
 | compute layers | `VirtualSM`, `ComputeUnitPool`, `VirtualWarp`, `SPMDExecutor`, micro-kernel library, distributed actors, `DependencyDAG` |
@@ -89,6 +89,8 @@ schema validation (header length, interval bounds) is the engine's own.
 - `aethel.punch` — lazy punch-host binding.
 - `AddressSpace._blocks`, `CassiniLedger.entries` — same-package-trust
   internals used by `geodesic.py` and tests.
+- `aethel/capabilities.json` — machine-readable implementation and evidence
+  status; it deliberately does not represent external evidence as PASS.
 
 ## Explicitly not part of this package
 

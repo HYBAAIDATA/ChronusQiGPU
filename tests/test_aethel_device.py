@@ -1,11 +1,10 @@
 import numpy as np
-import pytest
 
 from aethel.device import IGpuSku
 from aethel.punch import resolve_punch_host, resolve_punch_host_class
 from aethel.storage import FibonacciAddress
 from aethel.zeckendorf import apply_zeckendorf_compression, reverse_zeckendorf_expansion
-from igpu.opencl_host import OpenClPunchHost, PunchUnsupported
+from igpu.opencl_host import OpenClPunchHost
 
 
 def test_aethel_prefers_complete_unified_punch_contract():
@@ -35,10 +34,14 @@ def test_legacy_host_infers_encode_width_and_decodes_full_batch():
     assert [int(decoded[index * 121]) for index in range(len(values))] == list(range(1, 11))
 
 
-def test_legacy_host_rejects_float_punches_it_cannot_execute_exactly():
+def test_legacy_host_executes_0x15_and_reports_the_actual_backend():
     host = OpenClPunchHost()
-    with pytest.raises(PunchUnsupported):
-        host.run_punch_batch(0x15, n=1, in_float=np.ones(11, dtype=np.float32))
+    result = host.run_punch_batch(0x15, n=1, in_float=np.ones(11, dtype=np.float32))
+    assert result["float"].shape == (11,)
+    assert np.isfinite(result["float"][0])
+    assert host.last_dispatch_backend in ("cpu", "cpu_fallback") or (
+        host.last_dispatch_backend.startswith("opencl:")
+    )
 
 
 def test_standalone_writes_fibonacci_address():

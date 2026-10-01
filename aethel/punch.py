@@ -1,8 +1,8 @@
 """Optional OpenCL punch-host resolution.
 
 Resolution order: the complete unified-punch host, then filesystem siblings,
-then the legacy iGPU SHA256d host.  A SHA-capable host is not necessarily a
-complete punch host, so it must not shadow the canonical implementation.
+then the Chronus OpenCL host. A SHA-capable host is not necessarily a complete
+punch host, so it must not shadow the canonical implementation.
 """
 
 from __future__ import annotations
@@ -46,7 +46,7 @@ def resolve_punch_host_class() -> Optional[type]:
         if host_cls is not None:
             return host_cls
     try:
-        from igpu.opencl_host import OpenClPunchHost
+        from chronus.opencl_host import OpenClPunchHost
 
         return OpenClPunchHost
     except Exception:
