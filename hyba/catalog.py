@@ -58,7 +58,7 @@ APPLE_SILICON = (
     ),
 )
 
-INTEL_IGPU = (
+INTEL_Chronus = (
     DeviceSpec(
         "intel-uhd-620",
         "Intel",
@@ -189,7 +189,7 @@ HYBA_FABRIC = (
 CATALOG: Tuple[DeviceSpec, ...] = (
     *HYBA_FABRIC,
     *APPLE_SILICON,
-    *INTEL_IGPU,
+    *INTEL_Chronus,
     *NVIDIA_GPU,
     *AMD_GPU,
 )

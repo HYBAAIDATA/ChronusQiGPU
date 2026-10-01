@@ -16,7 +16,7 @@ gpu/
 ├── provenance.py        evidence validation
 └── BLUEPRINT_AUDIT.md   implementation and hardware status
 
-igpu/
+chronus/
 ├── __init__.py          lazy public API; safe on hosts without accelerators
 ├── detect.py            explicit hardware discovery
 ├── device.py            iGPU facade
@@ -48,7 +48,7 @@ l_hras/
 2. Both packages publish `py.typed` under PEP 561.
 3. OpenCL kernels, deployment templates and the L-HRAS example configuration
    are package data rather than undeclared repository files.
-4. Importing `igpu` must not probe hardware or require optional drivers.
+4. Importing `chronus` must not probe hardware or require optional drivers.
 5. L-HRAS repository coupling remains isolated in `l_hras.substrates`.
 6. New Python subpackages must include `__init__.py`, tests and a package-data
    declaration when they contain runtime resources.

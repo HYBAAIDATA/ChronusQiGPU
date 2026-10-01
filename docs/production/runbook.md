@@ -39,7 +39,7 @@ via `live_mine.py`/`live_handshake.py`.
 
 ```bash
 python main.py --host 127.0.0.1 --port 3000 --web-root dist/public   # control API + UI [help verified]
-python -u mla1517_platform_v3.4/python/main.py ...                   # same entry, direct path
+python -u chronus/mla1517_platform/python/main.py ...                   # same entry, direct path
 ```
 
 Boot writes `BOOT_AUDIT.log` + `pythia-main.lock` to the boot-work dir
@@ -68,7 +68,7 @@ Restart: runtime_config + heartbeat sidecars reload — persistence verification
 ## Release gates (before calling a build releasable)
 
 1. `pytest tests/ -x -q` green [baseline: 1221/8skip]
-2. `unittest discover -s mla1517_platform_v3.4/python` green [baseline: 203/6skip]
+2. `unittest discover -s chronus/mla1517_platform/python` green [baseline: 203/6skip]
 3. `cd turing_universal_quantum_computer && pytest tests -q` green [baseline: 44/1FAIL — `test_vqc_execution_certifies_window` open → Owner A]
 4. `flake8`/`black` on the 9 gated platform files clean [verified]
 5. Frontend: `npm run test:ts` (25/25), `lint`, `build` [verified]

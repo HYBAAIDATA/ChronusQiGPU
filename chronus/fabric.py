@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 from Intelligence.lucas_scales import (
-    IGPU_SCALE_RUNGS,
+    CHRONUS_SCALE_RUNGS,
     LUCAS_SCALE_LADDER,
     is_ladder_index,
     nearest_ladder_index,
@@ -86,7 +86,7 @@ class ChronusFabric:
         pool = [
             d
             for d in self.devices
-            if d.type in ("gpu", "igpu") and d.backend != "rtl"
+            if d.type in ("gpu", "chronus") and d.backend != "rtl"
         ]
         if required is not None:
             pool = [d for d in pool if d.capability(required) not in (None, False, 0)]
@@ -110,7 +110,7 @@ class ChronusFabric:
         items = max(1, int(work_items))
         chunk = nearest_ladder_index(min(items, chunk_cap), 1, max(1, chunk_cap))
         rung = next(
-            (r for r in sorted(IGPU_SCALE_RUNGS, reverse=True) if chunk % r == 0),
+            (r for r in sorted(CHRONUS_SCALE_RUNGS, reverse=True) if chunk % r == 0),
             None,
         )
         max_wg = int(device.capability("max_workgroup", 0) or 0)
@@ -157,7 +157,7 @@ class ChronusFabric:
                     lucas["lucas_rung"] = next(
                         (
                             r
-                            for r in sorted(IGPU_SCALE_RUNGS, reverse=True)
+                            for r in sorted(CHRONUS_SCALE_RUNGS, reverse=True)
                             if epochs % r == 0
                         ),
                         None,

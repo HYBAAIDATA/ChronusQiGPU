@@ -44,7 +44,7 @@ def test_chain_stages_declared():
         "yang_mills_gap",
         "ricci_einstein",
         "mining_consensus",
-        "igpu_11d_telemetry",
+        "chronus_11d_telemetry",
     )
 
 
@@ -92,7 +92,7 @@ def test_storage_hold_o1_lookup(report):
     assert stage["correct"] is True
     assert stage["lookup_ms"] < 1.0
     assert stage["md_memory_entries"] == 1
-    assert stage["igpu_vram_cached"] == 1
+    assert stage["chronus_vram_cached"] == 1
 
 
 def test_search_projection_batch(report):

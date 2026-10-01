@@ -3,12 +3,12 @@
 from importlib import import_module
 from typing import Any
 
-__all__ = ["ASICSolver"]
+__all__ = ["ASICSolver"]  # noqa: F822
 
 
 def __getattr__(name: str) -> Any:
     """Resolve the ASIC implementation without eager optional imports."""
     if name != "ASICSolver":
         raise AttributeError(name)
-    module = import_module("python_backend.hyba.hybrid")
+    module = import_module("hyba.hybrid")
     return getattr(module, name)

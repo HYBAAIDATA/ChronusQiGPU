@@ -9,7 +9,7 @@ and are not imported, tested, or described as part of this product.
 
 ## Canonical implementation
 
-The only active MLA1517 implementation is `mla1517_platform_v3.4`:
+The only active MLA1517 implementation is `chronus/mla1517_platform`:
 
 - exact Python reference and control plane;
 - C/C++ host, MMIO, shared-memory transport, telemetry, and persistence;

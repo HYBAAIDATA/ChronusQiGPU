@@ -4,4 +4,4 @@ Imports are deliberately lazy so importing :mod:`gpu.backends` never probes
 hardware or requires an optional OpenCL runtime.
 """
 
-__all__ = ["asic", "igpu"]
+__all__ = ["asic", "chronus"]

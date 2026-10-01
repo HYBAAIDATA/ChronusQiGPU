@@ -9,7 +9,7 @@ abstraction + topological storage) and the shared-memory ingestion ABI:
     aethel.primes         Galois-field prime substrate (MODULUS_Q = 2^61-1)
     aethel.compute        layers 1-5: virtual SMs, SPMD warps, micro-kernels,
                           distributed actors, dependency DAG
-    aethel.gpu            TensorCoreGPU_Context pv-lattice projection
+    aethel.gpu            ChronusContext pv-lattice projection
     aethel.manifold       PrimeStorageManifold: curvature/sector tensors,
                           geodesic navigation, self-healing
     aethel.unified        UnifiedSubstrate facade across all layers
@@ -67,7 +67,7 @@ from .constants import (
     PSI,
     SQRT5,
 )
-from .gpu import TensorCoreGPU_Context
+from .gpu import ChronusContext
 from .manifold import (
     GeodesicNavigator,
     ManifoldCurvature,
@@ -165,7 +165,7 @@ __all__ = [
     # Layer 5: DAG
     "DAGNode", "DependencyDAG",
     # GPU context
-    "TensorCoreGPU_Context",
+    "ChronusContext",
     # Manifold
     "ManifoldCurvature", "ManifoldSector", "TopologicalTensor",
     "GeodesicNavigator", "SelfHealingSubstrate", "PrimeStorageManifold",

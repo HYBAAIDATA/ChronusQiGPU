@@ -24,8 +24,8 @@ from gpu.reference import (
     sha256d_scan,
     sha256d_verify,
 )
-from igpu.seam.types import KERNEL_CLASS, KernelName
-from igpu.opencl_host import OpenClPunchHost, PUNCH_MANIFOLD_COMPUTE
+from chronus.seam.types import KERNEL_CLASS, KernelName
+from chronus.opencl_host import OpenClPunchHost, PUNCH_MANIFOLD_COMPUTE
 from gpu.tensor import TensorMeasurement
 
 

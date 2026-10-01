@@ -2,7 +2,7 @@
 
 ## Canonical path
 
-What the canonical miner (`mla1517_platform_v3.4/python/mla1517/mining/coordinator.py`)
+What the canonical miner (`chronus/mla1517/mining/coordinator.py`)
 does for every window:
 
 ```text

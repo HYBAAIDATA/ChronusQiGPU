@@ -96,7 +96,7 @@ Lucas family, the five-intelligence measured workflow, and the SHA256d-checked
 structured lane. [^https://app.notion.com/p/0d6bfd9f2ba142a6b346411869ae09cb]
 
 The defect is call-graph integration, not absence: the canonical
-`mla1517_platform_v3.4/python/mining_runtime.py` currently instantiates
+`chronus/mla1517_platform/python/mining_runtime.py` currently instantiates
 `IntelligentPoolCoordinator` directly and does not invoke the Python TOE bridge
 or root registry. The TOE therefore cannot yet be credited with influencing a
 live mining decision. The required closure test must show measured mining input

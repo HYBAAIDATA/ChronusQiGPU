@@ -17,7 +17,7 @@ from .neural_plasticity import NeuralPlasticity
 
 try:
     from .unified_punch import UnifiedPhiRuntime, MTheoryManifold
-except ImportError:  # unified_punch retired; canonical OpenCL is mla1517_platform_v3.4
+except ImportError:  # unified_punch retired; canonical OpenCL is chronus/mla1517_platform
     UnifiedPhiRuntime = None  # type: ignore[assignment]
     MTheoryManifold = None  # type: ignore[assignment]
 
@@ -29,7 +29,7 @@ class PlasticUnifiedRuntime:
         if UnifiedPhiRuntime is None or MTheoryManifold is None:
             raise RuntimeError(
                 "PlasticUnifiedRuntime requires unified_punch, which was retired; "
-                "the canonical OpenCL payload is mla1517_platform_v3.4"
+                "the canonical OpenCL payload is chronus/mla1517_platform"
             )
         self.classical = UnifiedPhiRuntime()
         self.manifold = MTheoryManifold()

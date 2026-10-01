@@ -11,7 +11,7 @@ mathematical/computational capability; Owner B rows concern mining/workflows.
 
 | key | capability (module) | fabric label | gate | verified status @ baseline | evidence / remaining |
 |---|---|---|---|---|---|
-| igpu | Bespoke iGPU substrate (`mining.bitcoin_hasher`) | production | opencl | NOT_RUN | no OpenCL device here; host CPU mirror exercised via tests |
+| chronus | Bespoke Chronus substrate (`mining.bitcoin_hasher`) | production | opencl | NOT_RUN | no OpenCL device here; host CPU mirror exercised via tests |
 | unified_punch | Phi-filter nonce scoring (`Intelligence.unified_punch`) | production | — | PASS | covered by `tests/` suite + `Intelligence.self_test` PASS |
 | manifold_iid | IID manifold device 32-face (`Intelligence.search_crystal`) | fabric | — | **PASS** (#23) | D: `enumerate_nonces` ≡ `_candidate_stream` ordering, coverage/`faces_exhausted` accounting, winner re-verified vs sha256d, cassini_permutation bijective, partition gapless; `tests/test_c_search_crystal.py` |
 | poincare_11d | 11D Poincare golden fold/unfold (`toe.poincare_golden_11d`) | orchestrator | — | **PASS** (#23) | D: fold/unfold bit-exact preimage roundtrip + documented closed-form fallback, Zeckendorf encode/slot/mask exact, Beatty disjointness+coverage, cassini det (−1)^k, certificate honesty; `tests/test_c_poincare_golden_11d.py` |
@@ -27,7 +27,7 @@ mathematical/computational capability; Owner B rows concern mining/workflows.
 | agentic_workflow | 6-phase autonomous mining (`Intelligence.agentic_mining`) | fabric | — | **PASS** (#22) | B: campaign start→running→stop→`stopped` terminal, `retire_all` on every exit incl. failure, operator-stop `stop_detail`; `tests/test_b_*` |
 | chain_verification | 11-stage chain (`Intelligence.chain_verification`) | fabric | — | **PASS** (#23) | D: 11-stage envelope + `_recheck_winner` boundaries (see ricci row); `tests/test_c_chain_verification.py` |
 | hash_pipeline | sha256d sole accept authority (`mining.hash_pipeline`) | production | — | PASS | `re_paper_gate` PASS; proof-boundary unittests |
-| m32_solver | M32 lane solver (`mla1517.mining.solver`) | production | — | PASS | unittest discover 203 OK |
+| m32_solver | M32 lane solver (`chronus.mla1517.mining.solver`) | production | — | PASS | unittest discover 203 OK |
 | stratum_bridge | Stratum arms (`mining.stratum_bridge`) | production | opencl+creds | PARTIAL | dry-run/CPU path exercised; live pool NOT_RUN (authorization) |
 | strict_quantum | Work-window certificates (`toe.strict_quantum`) | production | — | **PASS** @73a716d | A: exact Q(i) work-window certification, `consensus_authority=False` honored; `tests/test_a_exact_algorithms.py` |
 | agentic_controller | Solver dispatch (`Intelligence.agentic_controller`) | orchestrator | — | PASS | self_test `agentic_controller PASS (jobs=5, winners=1)` |

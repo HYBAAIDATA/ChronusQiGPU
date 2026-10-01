@@ -35,7 +35,7 @@ from benchmarks.common import (
 )
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "mla1517_platform_v3.4" / "python"))
+sys.path.insert(0, str(ROOT / "chronus/mla1517_platform" / "python"))
 
 NONCE_SPACE = 1 << 32
 LAMBDA = 4.0
@@ -49,7 +49,7 @@ CONTROL_WINDOW = 1 << 17
 
 def toe_rank_map(start_nonce: int = 0, face_bias: int | None = None) -> dict[int, int]:
     """rank(nonce) under M32SearchSolver.candidates ordering."""
-    from mla1517.mining.turing_adapter import TuringMiningSubstrate
+    from chronus.mla1517.mining.turing_adapter import TuringMiningSubstrate
 
     order = list(TuringMiningSubstrate().lane_order(start_nonce))
     if face_bias is not None:

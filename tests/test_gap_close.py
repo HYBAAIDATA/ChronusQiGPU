@@ -1,8 +1,8 @@
 from distributed.linearizability import check_q3
-from igpu.seam.job_thermo import prefer_reversible, summarize_kernels
-from igpu.seam.thermodynamics import ThermoPolicy
-from igpu.seam.types import KernelName
-from igpu.seam.zk import attest_zk_prove, attest_zk_verify, proof_leaks_witness
+from chronus.seam.job_thermo import prefer_reversible, summarize_kernels
+from chronus.seam.thermodynamics import ThermoPolicy
+from chronus.seam.types import KernelName
+from chronus.seam.zk import attest_zk_prove, attest_zk_verify, proof_leaks_witness
 
 
 def test_q3_model():

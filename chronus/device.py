@@ -15,7 +15,7 @@ import numpy as np
 from . import spec as _spec
 from .detect import DetectionReport, DetectedDevice, detect_all
 from .engine import ChronusOpenCLEngine
-from .telemetry import IgpuTelemetry, PUNCH_NAMES, attach_to_host, get_telemetry
+from .telemetry import ChronusTelemetry, PUNCH_NAMES, attach_to_host, get_telemetry
 
 logger = logging.getLogger("chronus.device")
 
@@ -35,7 +35,7 @@ class Chronus:
     def __init__(
         self,
         *,
-        telemetry: Optional[IgpuTelemetry] = None,
+        telemetry: Optional[ChronusTelemetry] = None,
         attach_telemetry: bool = True,
     ) -> None:
         self._telemetry = telemetry if telemetry is not None else get_telemetry()
@@ -127,7 +127,7 @@ class Chronus:
         return self._hasher
 
     @property
-    def telemetry(self) -> IgpuTelemetry:
+    def telemetry(self) -> ChronusTelemetry:
         return self._telemetry
 
     @property

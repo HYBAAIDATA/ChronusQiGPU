@@ -82,7 +82,7 @@ KERNEL_SPECS: Dict[str, KernelSpec] = {
         lucas_dispatch="epoch32",
         entry="bitcoin_sha256d_m32",
         canonical_source="kernels/bitcoin_sha256d.cl",
-        oracle="mla1517.mining.solver:M32SearchSolver.candidates",
+        oracle="chronus.mla1517.mining.solver:M32SearchSolver.candidates",
         executor="bitcoin_hasher",
     ),
     "sha256d_gold": KernelSpec(
@@ -133,8 +133,8 @@ KERNEL_SPECS: Dict[str, KernelSpec] = {
         precision_bound="exact",
         lucas_dispatch="serial",
         entry="mla1517_lucas_pisot_scale",
-        canonical_source="mla1517_platform_v3.4/kernels/mla1517_lucas_pisot_scale.cl",
-        oracle="mla1517.core:fib",
+        canonical_source="chronus/mla1517_platform/kernels/mla1517_lucas_pisot_scale.cl",
+        oracle="chronus.mla1517.core:fib",
         executor="ladder_executor",
     ),
     "exact_hadamard": KernelSpec(
@@ -148,8 +148,8 @@ KERNEL_SPECS: Dict[str, KernelSpec] = {
         precision_bound="exact",
         lucas_dispatch="serial",
         entry="exact_hadamard_lucas_pisot_scale",
-        canonical_source="mla1517_platform_v3.4/kernels/exact_quantum_kernel.cl",
-        oracle="mla1517.quantum:ExactStateVector.apply_single",
+        canonical_source="chronus/mla1517_platform/kernels/exact_quantum_kernel.cl",
+        oracle="chronus.mla1517.quantum:ExactStateVector.apply_single",
         executor="exact_accelerator",
     ),
     "poincare_fold": KernelSpec(
@@ -209,7 +209,7 @@ KERNEL_SPECS: Dict[str, KernelSpec] = {
         lucas_dispatch="ladder",
         entry="fibonacci_butterfly_kernel",
         canonical_source="kernels/golden_ontology_transform.cl",
-        oracle="mla1517.core:fib",
+        oracle="chronus.mla1517.core:fib",
         executor="unified_punch_host",
     ),
     "grover_iterate": KernelSpec(

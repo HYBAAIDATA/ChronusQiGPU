@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Tuple
 
 from aethel.encoding import ZeckendorfVector, fold, unfold
 from aethel.storage import AddressSpace, FibonacciAddress
-from igpu.seam.gpu_scale import scale_job
+from chronus.seam.scale import scale_job
 
 INVARIANTS = ("H1", "H2", "H3", "H4", "H5")
 

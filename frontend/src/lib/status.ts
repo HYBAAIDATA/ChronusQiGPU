@@ -1,4 +1,4 @@
-/** Payload contract of the Python control API (mla1517.status/1). */
+/** Payload contract of the Python control API (chronus.mla1517.status/1). */
 
 export type StratumIdentity = {
   profile: string;

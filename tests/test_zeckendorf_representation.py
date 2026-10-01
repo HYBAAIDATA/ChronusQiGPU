@@ -11,7 +11,7 @@ if str(_ROOT) not in sys.path:
 
 from millennium.poincare_golden_11d import FIB_TABLE, encode_zeckendorf
 
-_CORE_PATH = _ROOT / "mla1517_platform_v3.4/python/mla1517/core.py"
+_CORE_PATH = _ROOT / "chronus" / "mla1517" / "core.py"
 _spec = importlib.util.spec_from_file_location("zeckendorf_core", _CORE_PATH)
 _core = importlib.util.module_from_spec(_spec)
 sys.modules["zeckendorf_core"] = _core

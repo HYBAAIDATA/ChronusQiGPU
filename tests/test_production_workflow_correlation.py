@@ -7,12 +7,12 @@ import time
 import uuid
 
 from manifold_pool_coordinator import StratumJob
-from mla1517.mining.agentic_controller import AgenticMiningController
-from mla1517.mining.causal import CausalCoordinate, CausalLedger
-from mla1517.mining.execution_router import ExecutionRouter, sha256d_scan
-from mla1517.mining.search_plan import PoolOutcome, SearchPlan, WorkIdentity
-from mla1517.mining.toe_adapter import TOEMiningAdapter
-from mla1517.mining.toe_decision import build_toe_decision_frame
+from chronus.mla1517.mining.agentic_controller import AgenticMiningController
+from chronus.mla1517.mining.causal import CausalCoordinate, CausalLedger
+from chronus.mla1517.mining.execution_router import ExecutionRouter, sha256d_scan
+from chronus.mla1517.mining.search_plan import PoolOutcome, SearchPlan, WorkIdentity
+from chronus.mla1517.mining.toe_adapter import TOEMiningAdapter
+from chronus.mla1517.mining.toe_decision import build_toe_decision_frame
 from toe.bridge import TOEBridge
 
 
@@ -127,7 +127,7 @@ def test_unknown_outcome_never_inherits_a_previous_learning_update():
         pool_outcome=PoolOutcome.ACCEPTED,
         toe_frame_id=frame.frame_digest,
     )
-    from mla1517.mining.search_plan import ExecutionRecord
+    from chronus.mla1517.mining.search_plan import ExecutionRecord
 
     accepted = ExecutionRecord(**base)
     agentic.record_outcome(accepted)
@@ -162,7 +162,7 @@ def test_causal_trace_resolves_toe_and_learning_axes():
 def test_new_stratum_identity_clears_stale_toe_evidence():
     from types import SimpleNamespace
 
-    from mla1517.mining.coordinator import IntelligentPoolCoordinator
+    from chronus.mla1517.mining.coordinator import IntelligentPoolCoordinator
 
     identity = WorkIdentity("session-new", 2, "job-new", "fp-new", 2, True, 2.0)
     wake = SimpleNamespace(set=lambda: None)

@@ -1,7 +1,7 @@
 # Production mining runbook
 
 The canonical path is one supervisor per host: `main.py` starts the control
-API (`mla1517_platform_v3.4/python/control_api.py`), which supervises three
+API (`chronus/mla1517_platform/python/control_api.py`), which supervises three
 workers: `agentic-mining` (`mining_runtime.py`), `salamander` and
 `discovery`. The retired `mining/production_miner.py` flow lives in
 `legacy/` and is not used.
@@ -11,7 +11,7 @@ workers: `agentic-mining` (`mining_runtime.py`), `salamander` and
 ```bash
 python -m flake8 --count
 python -m pytest tests/ -q
-(cd mla1517_platform_v3.4/python && python -m pytest -q)
+(cd chronus/mla1517_platform/python && python -m pytest -q)
 python -m scripts.deploy_sentry
 python scripts/import_audit.py
 ```

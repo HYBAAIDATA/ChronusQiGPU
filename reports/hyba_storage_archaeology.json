@@ -106,32 +106,32 @@
       "files_missing": []
     },
     {
-      "component": "mla1517.prime_db (reference object store)",
+      "component": "chronus.mla1517.prime_db (reference object store)",
       "files": [
-        "mla1517_platform_v3.4/python/mla1517/prime_db.py"
+        "chronus/mla1517_platform/python/mla1517/prime_db.py"
       ],
       "classification": "CORE MATHEMATICAL SUBSTRATE",
       "what_it_is": "Reference algebraic object store: content-addressed objects, Cassini validation on write AND read, append-only lineage, idempotent duplicate writes, deterministic replay. Native lib explicitly absent \u2014 'physical capacity: NOT CLAIMED'.",
       "status": "connected (reference semantics)",
       "evidence": "CAPACITY_BOUNDARY constant; mla1517 tests",
       "files_present": [
-        "mla1517_platform_v3.4/python/mla1517/prime_db.py"
+        "chronus/mla1517_platform/python/mla1517/prime_db.py"
       ],
       "files_missing": []
     },
     {
-      "component": "mla1517.state (LogicalState / MLA1517State)",
+      "component": "chronus.mla1517.state (LogicalState / MLA1517State)",
       "files": [
-        "mla1517_platform_v3.4/python/mla1517/state.py",
-        "mla1517_platform_v3.4/python/mla1517/primedb_engine.py"
+        "chronus/mla1517_platform/python/mla1517/state.py",
+        "chronus/mla1517_platform/python/mla1517/primedb_engine.py"
       ],
       "classification": "ADDRESSING LAYER",
       "what_it_is": "The 12-dimension logical state vector (nonce, lucas, pisot, fib, zeckendorf, binet, prime_addr, route, eigen, cassini, time_state, gauge) \u2014 64-byte ctypes descriptor; digest() is the content identity.",
       "status": "connected",
       "evidence": "state.py digest(); primedb_engine.py ctypes layout",
       "files_present": [
-        "mla1517_platform_v3.4/python/mla1517/state.py",
-        "mla1517_platform_v3.4/python/mla1517/primedb_engine.py"
+        "chronus/mla1517_platform/python/mla1517/state.py",
+        "chronus/mla1517_platform/python/mla1517/primedb_engine.py"
       ],
       "files_missing": []
     },
@@ -234,16 +234,16 @@
       "files_missing": []
     },
     {
-      "component": "mla1517.mining.intelligence_memory",
+      "component": "chronus.mla1517.mining.intelligence_memory",
       "files": [
-        "mla1517_platform_v3.4/python/mla1517/mining/intelligence_memory.py"
+        "chronus/mla1517_platform/python/mla1517/mining/intelligence_memory.py"
       ],
       "classification": "MEMORY",
       "what_it_is": "Mining-domain intelligence memory + checkpoints.",
       "status": "connected (domain-bound)",
       "evidence": "mining coordinator/session imports",
       "files_present": [
-        "mla1517_platform_v3.4/python/mla1517/mining/intelligence_memory.py"
+        "chronus/mla1517_platform/python/mla1517/mining/intelligence_memory.py"
       ],
       "files_missing": []
     },
@@ -276,16 +276,16 @@
       "files_missing": []
     },
     {
-      "component": "mla1517.store.PrimeDB (SQLite)",
+      "component": "chronus.mla1517.store.PrimeDB (SQLite)",
       "files": [
-        "mla1517_platform_v3.4/python/mla1517/store.py"
+        "chronus/mla1517_platform/python/mla1517/store.py"
       ],
       "classification": "COMPATIBILITY LAYER",
       "what_it_is": "Durable PrimeDB on SQLite WAL: content-addressed objects + exact 32-byte tensor payloads with sha256/length invariants verified on read.",
       "status": "connected",
       "evidence": "store.py; mla1517 tests",
       "files_present": [
-        "mla1517_platform_v3.4/python/mla1517/store.py"
+        "chronus/mla1517_platform/python/mla1517/store.py"
       ],
       "files_missing": []
     },
@@ -408,7 +408,7 @@
   },
   "notes": [
     "No component is DISCONNECTED by inspection: aethel is canonical and wired; legacy monolith is frozen behind a fa\u00e7ade alias.",
-    "Two distinct PrimeDB implementations exist: mla1517.prime_db (reference semantics, in-memory+journal) and mla1517.store (SQLite WAL durable). Reference is authoritative for semantics; SQLite is the durable compatibility backend.",
+    "Two distinct PrimeDB implementations exist: chronus.mla1517.prime_db (reference semantics, in-memory+journal) and chronus.mla1517.store (SQLite WAL durable). Reference is authoritative for semantics; SQLite is the durable compatibility backend.",
     "No tenant-isolation surface found in al_haras (audit/boundary modules exist; tenancy must reuse AL HARAS environment-boundary model, not a new framework \u2014 \u00a721)."
   ]
 }

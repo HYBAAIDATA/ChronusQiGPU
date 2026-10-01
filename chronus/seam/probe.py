@@ -97,7 +97,7 @@ class Capability:
 def _classify(detected: Any) -> DeviceClass:
     vendor = str(getattr(detected, "vendor", "") or "").lower()
     name = str(getattr(detected, "name", "") or "").lower()
-    is_integrated = bool(getattr(detected, "is_igpu", False))
+    is_integrated = bool(getattr(detected, "is_integrated", False))
     is_gpu = bool(getattr(detected, "is_gpu", False))
     if any(tag in name for tag in ("h100", "a100", "mi300", "b200")):
         return DeviceClass.gpu_datacenter
@@ -224,7 +224,7 @@ def _from_detected(detected: Any) -> Optional[Capability]:
             "integrated_reason": str(
                 getattr(detected, "integrated_reason", "") or ""
             ),
-            "is_integrated_gpu": str(bool(getattr(detected, "is_igpu", False))),
+            "is_integrated_gpu": str(bool(getattr(detected, "is_integrated", False))),
             "is_gpu": str(bool(getattr(detected, "is_gpu", False))),
         },
     )
