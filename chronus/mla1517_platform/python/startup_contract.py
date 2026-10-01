@@ -69,6 +69,32 @@ class StartupConfigError(ValueError):
     pass
 
 
+_PLACEHOLDER_WORKERS = {
+    "account.worker",
+    "your_worker",
+    "your.worker",
+    "worker",
+    "pythia.001",
+    "test.worker",
+}
+
+
+def validate_worker_identity(value: str) -> str:
+    """Reject examples and malformed identities before any pool connection."""
+    worker = value.strip()
+    if (
+        not worker
+        or worker.casefold() in _PLACEHOLDER_WORKERS
+        or worker.casefold().startswith(("example.", "changeme", "replace_me"))
+        or any(character.isspace() for character in worker)
+        or len(worker) > 128
+    ):
+        raise StartupConfigError(
+            "MLA1517_STRATUM_USER must be a real pool worker identity, not a placeholder"
+        )
+    return worker
+
+
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -138,6 +164,7 @@ def resolve_stratum_identity() -> StratumIdentity:
     password = settings.password
     if not user:
         raise StartupConfigError("MLA1517_STRATUM_USER is required")
+    user = validate_worker_identity(user)
     alias_policy = os.getenv("PYTHIA_ALIAS_POLICY", "compat").strip().lower()
     if alias_policy not in {"compat", "strict", "ignore"}:
         raise StartupConfigError("PYTHIA_ALIAS_POLICY must be compat, strict, or ignore")

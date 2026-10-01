@@ -713,6 +713,11 @@ def _default_pool_env() -> tuple[str, str | None, str]:
     return pool, worker, password
 
 
+def submission_exit_code(submit_test: bool, shares_accepted: int) -> int:
+    """Automation must fail when a requested live test proves no acceptance."""
+    return 0 if not submit_test or shares_accepted > 0 else 2
+
+
 async def _amain(argv=None) -> int:
     default_pool, default_worker, default_pass = _default_pool_env()
 
@@ -759,6 +764,22 @@ async def _amain(argv=None) -> int:
             "--worker or PYTHIA_STRATUM_WORKER/VIABTC_ACCOUNT/BRAIINS_ACCOUNT is required; "
             "no default account is assumed"
         )
+    try:
+        from startup_contract import validate_worker_identity
+
+        validate_worker_identity(args.worker)
+    except ImportError:
+        if args.worker.strip().casefold() in {
+            "account.worker",
+            "your_worker",
+            "your.worker",
+            "worker",
+            "pythia.001",
+            "test.worker",
+        }:
+            parser.error("--worker must be a real pool identity, not a placeholder")
+    except ValueError as exc:
+        parser.error(str(exc))
 
     raw_pool = args.pool
     for prefix in ("stratum+tcp://", "tcp://", "stratum://"):
@@ -964,7 +985,7 @@ async def _amain(argv=None) -> int:
 
             await asyncio.sleep(0.001)
 
-        return 0 if bridge.shares_accepted > 0 else 0
+        return submission_exit_code(args.submit_test, bridge.shares_accepted)
 
     except KeyboardInterrupt:
         print("\nMining stopped by operator (Ctrl+C).")
