@@ -1,8 +1,6 @@
 """
 V6.4 Engine: Cross-File Primitive Reuse & Transfer Learning
 """
-import ast
-import time
 import json
 import os
 import hashlib
@@ -12,7 +10,7 @@ from pythagoras.core import sandbox
 from pythagoras.core.primitives import ASTPrimitives, compose
 from pythagoras.engine.v6_1_surrogate import NeuralSurrogateEvaluator
 from pythagoras.engine.v6_2_geometry import CGPGeometryState
-from pythagoras.engine.v6_3_primitive_discovery import DiscoveredPrimitiveCandidate, PrimitiveDiscoveryEngine
+from pythagoras.engine.v6_3_primitive_discovery import PrimitiveDiscoveryEngine
 
 class CrossFilePrimitiveRepository:
     def __init__(self, storage_path: Optional[str] = None):

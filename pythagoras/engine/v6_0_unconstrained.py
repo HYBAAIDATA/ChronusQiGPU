@@ -1,8 +1,7 @@
 """
 V6.0 Minimal Unconstrained Research Engine
 """
-import ast
-from typing import Dict, List, Tuple, Any, Optional, Callable
+from typing import Dict, Tuple, Any, Optional, Callable
 from pythagoras.core.phi_metric import PhiResonanceCalculator
 from pythagoras.core import sandbox
 from pythagoras.core.primitives import ASTPrimitives

@@ -1,8 +1,6 @@
 """
 V6.3 Engine: Auto-Primitive Discovery & Operator-Space Exploration
 """
-import ast
-import time
 from typing import Dict, List, Tuple, Any, Optional, Callable
 from pythagoras.core.phi_metric import PhiResonanceCalculator
 from pythagoras.core import sandbox
@@ -42,7 +40,7 @@ class PrimitiveDiscoveryEngine:
     """
     Discovers macro-operators from the search trajectory: when consecutive generations are
     won by operators A then B, the composite A+B (and longer chains, up to `max_recipe_len`,
-    which the CGP geometry's levels_back controls) enters the sandbox pool. A composite is
+    which the CGP-inspired geometry's levels_back recipe-depth limit controls) enters the sandbox pool. A composite is
     promoted once it has produced a real φ gain. Composites are recipes over the operator
     registry, so they persist and restore exactly.
     """

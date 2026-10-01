@@ -28,7 +28,7 @@ duplicated or unreferenced code does not raise it.
 
 import ast
 import math
-from typing import Dict, Any, Tuple, List, Optional
+from typing import Dict, Any, Tuple, Optional
 
 from pythagoras.core.structure import analyze_structure, StructureReport
 

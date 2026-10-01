@@ -2,7 +2,6 @@
 Integrity tests: the metric cannot be raised by unused code, evolution preserves behaviour,
 and SALAMANDER (HEAL) repairs v12.0 output.
 """
-import ast
 import glob
 import os
 import unittest

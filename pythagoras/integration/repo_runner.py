@@ -223,7 +223,7 @@ def _write(report: Dict[str, Any], evolved: Dict[str, str], root: str, out_dir: 
 
 
 def _markdown(r: Dict[str, Any]) -> str:
-    lines = [f"# PYTHAGORAS integration run", "", f"Repository: `{r['repository']}`",
+    lines = ["# PYTHAGORAS integration run", "", f"Repository: `{r['repository']}`",
              f"Test command: `{' '.join(r['test_command'])}`", "",
              f"Baseline tests: **{'pass' if r['baseline']['passed'] else 'FAIL'}** ({r['baseline']['seconds']} s)"]
     if "integrated_tests" in r:

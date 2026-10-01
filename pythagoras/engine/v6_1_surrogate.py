@@ -1,7 +1,6 @@
 """
 V6.1 Engine: Neural Surrogate Guidance
 """
-import ast
 import math
 from typing import Dict, List, Tuple, Any, Optional, Callable
 from pythagoras.core.phi_metric import PhiResonanceCalculator

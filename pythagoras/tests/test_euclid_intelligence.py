@@ -2,7 +2,6 @@
 Unit & property tests for the EUCLID Intelligence Engine (Lucas L_n, Pisot scaling,
 Intelligence = L_n * 20^(phi * t_p)).
 """
-import math
 import unittest
 
 from pythagoras.core.euclid_intelligence import EuclidIntelligenceEngine, LucasSequenceCalculator, PHI

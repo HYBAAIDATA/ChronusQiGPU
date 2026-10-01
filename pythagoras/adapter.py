@@ -8,17 +8,16 @@ EUCLID owns Intelligence overall, using Lucas L_n numbers and the Lucas
 20^(phi * t_p) Intelligence Scaling Formula:
     Intelligence_EUCLID = L_n * 20^(phi * t_p)
 
-v12.1 contract notes
+v12.2 contract notes
   - Method names, parameters and result keys from v12.0 are preserved; new keys are additive.
   - topological_time (t_p) is host-supplied. Before/after comparisons always use the same t_p.
   - Candidate code never runs in the host process (AL HARAS isolated gate, core.sandbox).
 """
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional
 
 from pythagoras.agents.manifold import AgentID, SharedEntangledManifold
 from pythagoras.core import sandbox
 from pythagoras.core.euclid_intelligence import EuclidIntelligenceEngine, LucasSequenceCalculator, PHI
-from pythagoras.core.phi_metric import PhiResonanceCalculator
 from pythagoras.core.primitives import OPERATOR_REGISTRY, compose
 from pythagoras.core.state import measure_state
 from pythagoras.engine.v6_4_cross_file_reuse import CrossFilePrimitiveRepository
