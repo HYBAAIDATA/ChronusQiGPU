@@ -35,7 +35,7 @@ copy and emits a patch, so it does not acquire the host repository's Git index l
 | AL HARAS | Security guard | Static audit (9 rules, AH001–AH009) + isolated `python -I` execution with timeout and rlimits. Import-time findings block execution. |
 | SALAMANDER | Self-healer | Runs the V6.5 engine; `HEAL:dead_code_elimination` removes dead / shadowed / repeated code. |
 | PYTHIA | Search oracle | Surrogate ranking of applicable operators, with RMSE. |
-| CGP geometry | Search topology | `n_cols` = operators evaluated per generation; `levels_back` = max composite length. |
+| CGP-inspired geometry | Search controls, not a DAG population | `n_cols` = ranked operators evaluated per generation; `levels_back` = maximum composite-recipe length. |
 | Primitive discovery | Emergent operators | Composites (recipes) of consecutive winning operators; promoted on real φ gain; persisted as recipes and restored exactly. |
 | Tononi substrate | Integration | `graph_integration()`: λ₂/n of the module's reference graph (IIT-inspired proxy, not Φ). Penrose term left unwired. |
 | 11D manifold | Dodecahedron–icosahedron dual overlay | 11 measured axes (`STATE_AXES`); dual coherence measured against the real 12 icosahedral / 20 dodecahedral φ-vertices. |
