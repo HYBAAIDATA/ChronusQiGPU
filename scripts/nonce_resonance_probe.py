@@ -8,7 +8,7 @@ search problems".
 This probe pulls N nonces through the repo's real NonceScheduler (the
 Zeckendorf/golden-limb ordering that replaced phi-scrambling), scores each
 with the doc's formula, runs the real sha256d PoW predicate
-(``mla1517.mining.pow.check_pow``) against a fixed target, and reports
+(``chronus.mla1517.mining.pow.check_pow``) against a fixed target, and reports
 whether high-resonance nonces actually win more often than low-resonance
 ones. A uniform-random control group gives the baseline.
 
@@ -29,10 +29,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(
-    0, str(Path(__file__).resolve().parents[1] / "mla1517_platform_v3.4" / "python")
+    0, str(Path(__file__).resolve().parents[1] / "chronus/mla1517_platform" / "python")
 )
 
-from mla1517.mining.pow import build_header, check_pow  # noqa: E402
+from chronus.mla1517.mining.pow import build_header, check_pow  # noqa: E402
 from mining.nonce_scheduler import NonceScheduler  # noqa: E402
 
 PHI_INV = (5.0**0.5 - 1.0) / 2.0  # 1/phi = 0.6180339887498949

@@ -29,7 +29,7 @@ executes the gate.
 | Zero-knowledge attestation | name exists in seam contract | fail closed; no prover implementation |
 | Tensor scheduling | advisory-only ordering boundary | integrated; exact permutation enforced |
 | ASIC dispatch | `hyba.hybrid.ASICSolver` network protocol | physical hardware not verified |
-| Fleet aggregation | `hyba.inventory`, `hyba.virtual_gpu`, `hyba.multi_hasher` | implemented; fleet hardware not verified |
+| Fleet aggregation | `hyba.inventory`, `chronus.fabric`, `hyba.multi_hasher` | implemented; fleet hardware not verified |
 | Provenance | `gpu.provenance.validate_provenance` | production records fail closed |
 | 10 EH/s floor | measured physical hashes only | not demonstrated |
 
@@ -52,7 +52,7 @@ executes the gate.
 1. Merge and run the sequential-contract governance changes from PR #30.
 2. Implement reversible/uncompute and zero-knowledge kernels. They are outside
    the mining consensus path and fail closed rather than fabricating success.
-3. Complete the staged move from top-level `igpu/`, `kernels/` and hybrid GPU
+3. Complete the staged move from top-level `chronus/`, `kernels/` and hybrid GPU
    modules into `gpu/backends`, retaining compatibility shims for one release.
 4. Promote the 32-face unified-manifold device from `legacy/`, rewire it to
    canonical modules and move its tests into the normal CI suite. Documentation

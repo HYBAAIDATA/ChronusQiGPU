@@ -2,7 +2,7 @@
 name = "The Seam"
 version = "1.0"
 status = "draft"
-reference = "igpu/seam"
+reference = "chronus/seam"
 license = "Apache-2.0"
 
 [layers]
@@ -72,7 +72,7 @@ full = ["all"]
 
 [reference_implementation]
 language = "python"
-module = "igpu.seam"
+module = "chronus.seam"
 repo = "QUANTUMDATA2/PYTHIAPhiMiner"
 
 [narrative]

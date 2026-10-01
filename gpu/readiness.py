@@ -4,8 +4,14 @@ from __future__ import annotations
 
 import importlib
 import json
-from dataclasses import asdict, dataclass
+import re
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
 from typing import Any, Mapping
+
+from gpu.provenance import ProvenanceError, validate_provenance
+
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
 
 @dataclass(frozen=True)
@@ -16,14 +22,26 @@ class Gate:
 
 
 @dataclass(frozen=True)
-class ProductionEvidence:
-    """External evidence that cannot be manufactured by software tests."""
+class EvidenceReceipt:
+    """Digest-bound reference to externally produced release evidence."""
 
-    opencl_conformance: bool = False
-    asic_protocol: bool = False
-    pool_acknowledgement: bool = False
-    provenance_valid: bool = False
-    container_measured: bool = False
+    kind: str
+    artifact_sha256: str
+    observed_at: str
+    subject: str
+    producer: str
+    metadata: Mapping[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class ProductionEvidence:
+    """Evidence inputs for the five release gates; booleans are never evidence."""
+
+    opencl_conformance: EvidenceReceipt | Mapping[str, Any] | None = None
+    asic_protocol: EvidenceReceipt | Mapping[str, Any] | None = None
+    pool_acknowledgement: EvidenceReceipt | Mapping[str, Any] | None = None
+    provenance_valid: Mapping[str, Any] | None = None
+    container_measured: EvidenceReceipt | Mapping[str, Any] | None = None
 
 
 _SOFTWARE_SURFACES: dict[str, tuple[str, tuple[str, ...]]] = {
@@ -52,8 +70,8 @@ _SOFTWARE_SURFACES: dict[str, tuple[str, tuple[str, ...]]] = {
             "sha256d_merkle",
         ),
     ),
-    "igpu_seam": (
-        "igpu.seam.types",
+    "chronus_seam": (
+        "chronus.seam.types",
         ("KernelName", "KERNEL_CLASS"),
     ),
 }
@@ -76,6 +94,70 @@ def audit_software_surfaces() -> tuple[Gate, ...]:
     return tuple(gates)
 
 
+
+_REQUIRED_EXTERNAL = {
+    "opencl_conformance": "opencl_conformance",
+    "asic_protocol": "asic_protocol",
+    "pool_acknowledgement": "pool_acknowledgement",
+    "container_measured": "container_measurement",
+}
+
+
+def _receipt_gate(name: str, value: Any) -> Gate:
+    expected_kind = _REQUIRED_EXTERNAL[name]
+    if value is None:
+        return Gate(name, False, "required external evidence")
+    if isinstance(value, bool):
+        return Gate(name, False, "boolean assertions are not evidence")
+    try:
+        receipt = value if isinstance(value, EvidenceReceipt) else EvidenceReceipt(**dict(value))
+    except (TypeError, ValueError):
+        return Gate(name, False, "invalid evidence receipt")
+    problems = []
+    if receipt.kind != expected_kind:
+        problems.append(f"kind must be {expected_kind!r}")
+    if not _SHA256.fullmatch(receipt.artifact_sha256):
+        problems.append("artifact_sha256 must be a lowercase SHA-256 digest")
+    if not receipt.subject.strip():
+        problems.append("subject is required")
+    if not receipt.producer.strip():
+        problems.append("producer is required")
+    try:
+        stamp = datetime.fromisoformat(receipt.observed_at.replace("Z", "+00:00"))
+        if stamp.tzinfo is None or stamp.utcoffset() != timezone.utc.utcoffset(stamp):
+            problems.append("observed_at must be an RFC3339 UTC timestamp")
+    except (AttributeError, TypeError, ValueError):
+        problems.append("observed_at must be an RFC3339 UTC timestamp")
+    if not isinstance(receipt.metadata, Mapping):
+        problems.append("metadata must be a mapping")
+    if problems:
+        return Gate(name, False, "; ".join(problems))
+    return Gate(name, True, f"verified receipt kind={receipt.kind} subject={receipt.subject} artifact_sha256={receipt.artifact_sha256}")
+
+
+def _provenance_gate(value: Any) -> Gate:
+    if value is None:
+        return Gate("provenance_valid", False, "required post-merge provenance record")
+    if isinstance(value, bool):
+        return Gate("provenance_valid", False, "boolean assertions are not evidence")
+    if not isinstance(value, Mapping):
+        return Gate("provenance_valid", False, "provenance evidence must be a mapping")
+    try:
+        normalized = validate_provenance(value, production=True)
+    except ProvenanceError as exc:
+        return Gate("provenance_valid", False, f"invalid provenance: {exc}")
+    return Gate("provenance_valid", True, f"validated production provenance repo_sha={normalized['repo_sha']} human_merge_sha={normalized['human_merge_sha']}")
+
+
+def _coerce_evidence(evidence: ProductionEvidence | Mapping[str, Any] | None) -> ProductionEvidence:
+    if evidence is None:
+        return ProductionEvidence()
+    if isinstance(evidence, ProductionEvidence):
+        return evidence
+    if not isinstance(evidence, Mapping):
+        raise TypeError("evidence must be ProductionEvidence, a mapping, or None")
+    return ProductionEvidence(**{name: evidence.get(name) for name in ProductionEvidence.__dataclass_fields__})
+
 def production_readiness(
     evidence: ProductionEvidence | Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -84,21 +166,14 @@ def production_readiness(
     Software availability and external physical evidence are separate gates.
     Missing evidence remains visible and can never be inferred from imports.
     """
-    if evidence is None:
-        physical = ProductionEvidence()
-    elif isinstance(evidence, ProductionEvidence):
-        physical = evidence
-    else:
-        physical = ProductionEvidence(
-            **{
-                field: bool(evidence.get(field, False))
-                for field in ProductionEvidence.__dataclass_fields__
-            }
-        )
+    physical = _coerce_evidence(evidence)
     software = audit_software_surfaces()
-    physical_gates = tuple(
-        Gate(name, passed, "provided" if passed else "required external evidence")
-        for name, passed in asdict(physical).items()
+    physical_gates = (
+        _receipt_gate("opencl_conformance", physical.opencl_conformance),
+        _receipt_gate("asic_protocol", physical.asic_protocol),
+        _receipt_gate("pool_acknowledgement", physical.pool_acknowledgement),
+        _provenance_gate(physical.provenance_valid),
+        _receipt_gate("container_measured", physical.container_measured),
     )
     all_gates = (*software, *physical_gates)
     return {
@@ -123,6 +198,7 @@ if __name__ == "__main__":
 
 
 __all__ = [
+    "EvidenceReceipt",
     "Gate",
     "ProductionEvidence",
     "audit_software_surfaces",

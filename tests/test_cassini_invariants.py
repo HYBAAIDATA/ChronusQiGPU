@@ -1,4 +1,4 @@
-from mla1517.core import fib, lucas
+from chronus.mla1517.core import fib, lucas
 from python_backend.core_modules.math_folding import (
     fibonacci_binet,
     fibonacci_cassini,

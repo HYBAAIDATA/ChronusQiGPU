@@ -741,7 +741,7 @@ if __name__ == "__main__":
 
 
 # Deterministic complete nonce-window schedule — package-internal module
-# (consolidated from mla1517_platform_v3.4/python/turing_core.py).
+# (consolidated from chronus/mla1517_platform/python/turing_core.py).
 # Re-exported here so the historical ``core`` namespace keeps resolving; the
 # package __init__ imports them from .schedule directly.
 from .schedule import (  # noqa: E402,F401

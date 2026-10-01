@@ -12,17 +12,25 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "mla1517_platform_v3.4" / "python"))
+sys.path.insert(
+    0, str(Path(__file__).resolve().parent.parent / "chronus/mla1517_platform" / "python")
+)
 
-# NB: mla1517.core also exports a `cassini()` FUNCTION, so importing
-# `from mla1517 import cassini` binds whichever name won the package
+# NB: chronus.mla1517.core also exports a `cassini()` FUNCTION, so importing
+# `from chronus.mla1517 import cassini` binds whichever name won the package
 # namespace. Import the module explicitly to avoid that collision.
-import mla1517.cassini as cassini_mod  # noqa: E402
-from mla1517 import binet_view, constants, fibonacci_store as fs  # noqa: E402
-from mla1517 import lucas_scale, m32_geometry, pisot_fold, prime_address, query  # noqa: E402
-from mla1517 import zeckendorf_codec as zc  # noqa: E402
-from mla1517.prime_db import PrimeDB, VerificationError  # noqa: E402
-from mla1517.state import MLA1517State, LogicalState, descriptor_size  # noqa: E402
+import chronus.mla1517.cassini as cassini_mod  # noqa: E402
+from chronus.mla1517 import binet_view, constants, fibonacci_store as fs  # noqa: E402
+from chronus.mla1517 import (
+    lucas_scale,
+    m32_geometry,
+    pisot_fold,
+    prime_address,
+    query,
+)  # noqa: E402
+from chronus.mla1517 import zeckendorf_codec as zc  # noqa: E402
+from chronus.mla1517.prime_db import PrimeDB, VerificationError  # noqa: E402
+from chronus.mla1517.state import MLA1517State, LogicalState, descriptor_size  # noqa: E402
 
 # === exact Fibonacci / Lucas ===============================================
 
@@ -186,7 +194,7 @@ def test_descriptor_is_exactly_64_bytes():
 
 
 def test_descriptor_matches_the_native_abi():
-    from mla1517.primedb_engine import MLA1517State as Native
+    from chronus.mla1517.primedb_engine import MLA1517State as Native
 
     assert [f[0] for f in MLA1517State._fields_] == [f[0] for f in Native._fields_]
 
@@ -207,7 +215,7 @@ def test_state_digest_is_stable_with_signed_seal():
 
 
 def test_site_routing_is_bounded():
-    from mla1517.state import m32_site_for
+    from chronus.mla1517.state import m32_site_for
 
     assert 0 <= m32_site_for(59) < 32
 
@@ -299,7 +307,7 @@ def test_prime_addressing_is_a_location_scheme_not_capacity():
     assert b["physical_capacity_gain"].startswith("NOT CLAIMED")
     assert "many-to-one" in b["injectivity"]
     # The store-level boundary is where the reference/native split lives.
-    from mla1517.prime_db import CAPACITY_BOUNDARY
+    from chronus.mla1517.prime_db import CAPACITY_BOUNDARY
 
     assert CAPACITY_BOUNDARY["reference_implementation"] is True
     assert CAPACITY_BOUNDARY["native_library_present"] is False

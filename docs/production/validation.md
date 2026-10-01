@@ -10,7 +10,7 @@ Install: `uv pip install -e ".[ml,dev]" -e ./turing_universal_quantum_computer`.
 | Gate | Command (cwd) | Result | Evidence |
 |---|---|---|---|
 | Repo pytest | `pytest tests/ -x -q` (root) | PASS — 1221 passed, 8 skipped, 92 subtests | pytest_full.log |
-| Platform unittest | `unittest discover -s mla1517_platform_v3.4/python` | PASS — 203 tests, 6 skipped | baseline_bottom.log |
+| Platform unittest | `unittest discover -s chronus/mla1517_platform/python` | PASS — 203 tests, 6 skipped | baseline_bottom.log |
 | TUQC pytest | `pytest tests -q` (from `turing_universal_quantum_computer/`) | **FAIL — 44 pass / 1 fail**: `test_vqc_execution_certifies_window` — `LucasScaledAethelExecutionAdapter.execute` returns `hashes=1` not 256 (early-exit bug) | local run |
 | flake8 (declared CI gate) | `flake8 --count` on the 9 gated platform files | PASS — 0 | local run |
 | flake8 repo-wide | `flake8 --count` | **FAIL — 744 findings** (audit doc claims 0 → stale claim; CI never enforced repo-wide) | baseline_top.log |
@@ -44,7 +44,7 @@ Install: `uv pip install -e ".[ml,dev]" -e ./turing_universal_quantum_computer`.
 ## Packaging verification (Coordinator, executed)
 
 - `uv build` → `pythia_mla1517-0.1.0` + `turing_universal_quantum_computer-1.0.0` wheels + sdists: **PASS**.
-- Fresh venv (`~/dist_verify/clean_venv`), wheel-only install: **PASS** — `mla1517`, `mla1517.mining.coordinator`, `main`, `control_api`, `mining_runtime`, `system_fabric`, `salamander_engine`, `worker_lifecycle`, `toe`, `kellogg`, `lucas`, `aethel`, `turing_universal_quantum_computer` all import.
+- Fresh venv (`~/dist_verify/clean_venv`), wheel-only install: **PASS** — `mla1517`, `chronus.mla1517.mining.coordinator`, `main`, `control_api`, `mining_runtime`, `system_fabric`, `salamander_engine`, `worker_lifecycle`, `toe`, `kellogg`, `lucas`, `aethel`, `turing_universal_quantum_computer` all import.
 - Console scripts from the delivered artifact: `pythia-api --help`, `pythia-mine --help` **PASS** — fail-closed help text, no fabricated state.
 - TUQC wheel contains all declared subpackages (`turing_core`, `intelligences`, `lucas`) + `kernels/*.cl` via package-data.
 
@@ -53,7 +53,7 @@ Install: `uv pip install -e ".[ml,dev]" -e ./turing_universal_quantum_computer`.
 | Gate | Command | Result @ 73a716d |
 |---|---|---|
 | pytest (repo suite) | `.venv/Scripts/python.exe -m pytest tests/ -q` | **1702 passed, 16 skipped, 92 subtests** in 206s — includes Owner A's 62 new `test_a_*` tests |
-| unittest (platform) | `python -m unittest discover -s mla1517_platform_v3.4/python` | **317 ran, OK (7 skipped)** |
+| unittest (platform) | `python -m unittest discover -s chronus/mla1517_platform/python` | **317 ran, OK (7 skipped)** |
 | TUQC suite | `pytest tests -q` inside `turing_universal_quantum_computer/` | **55 passed** (Owner A, incl. `test_vqc.py` 8/8 after the early-exit fix) |
 | flake8 | `flake8 --count` repo-wide | **0** — upstream #16 repaired all findings |
 | IR-2 sqlite tempfile lock | 4 tests (`test_enterprise_v2_tranches`, `test_fold_pipeline`, `test_promotion_evidence`, `test_promotion_release_catalogue`) | **FAIL→FIXED** — `NamedTemporaryFile()` (exclusive lock) → `delete=False` + `addCleanup(os.unlink)`; verified 21/21 |

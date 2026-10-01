@@ -1,6 +1,6 @@
 import numpy as np
 
-from igpu.seam.toe_loop import realize
+from chronus.seam.toe_loop import realize
 from toe.geometric_contract import cassini_table_ok
 from toe.phi_klein import HOROSPHERES, klein_identity, phi_norm
 

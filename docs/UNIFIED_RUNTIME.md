@@ -3,7 +3,7 @@
 ## Scope
 
 PYTHIA is the operational mining product. Its runtime has one active
-accelerated implementation: `mla1517_platform_v3.4`. Enterprise PRIME-DB,
+accelerated implementation: `chronus/mla1517_platform`. Enterprise PRIME-DB,
 treasury, storage, and customer-service systems are separate products and are
 not part of this runtime.
 
@@ -19,7 +19,7 @@ React/Vite operator UI
         ⇅
 TypeScript Express control + Stratum API
         ⇅
-mla1517_platform_v3.4
+chronus/mla1517_platform
   Python exact reference/control
   C/C++ host, MMIO, transport, telemetry, persistence
   exact OpenCL payload and ladder

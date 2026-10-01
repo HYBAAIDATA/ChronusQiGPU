@@ -65,7 +65,7 @@ from lucas.ladder import SCALE_RUNGS as _SCALE_RUNGS
 LUCAS_SCALE_LADDER: Dict[int, int] = {i: _lucas_value(i) for i in _FULL_LADDER}
 
 # Ordered scale indices (ascending) — the five intelligence curriculum
-# rungs. Mining rungs (31/50/76) live on IGPU_SCALE_RUNGS, not this profile.
+# rungs. Mining rungs (31/50/76) live on CHRONUS_SCALE_RUNGS, not this profile.
 SCALE_ORDER: Tuple[int, ...] = tuple(_CURRICULUM_RUNGS)
 
 # Human-readable names for each scale level.
@@ -82,18 +82,18 @@ SCALE_NAMES: Dict[int, str] = {
 
 # Extended iGPU/mining scale rungs — sourced once from
 # lucas.ladder.SCALE_RUNGS.
-IGPU_SCALE_RUNGS: Tuple[int, ...] = tuple(_SCALE_RUNGS)
+CHRONUS_SCALE_RUNGS: Tuple[int, ...] = tuple(_SCALE_RUNGS)
 PISOT_EXACT_N: int = _PISOT_EXACT_N
 
 
 def is_ladder_index(n: int) -> bool:
     """True iff n is a rung or a multiple of a rung (n = k·r)."""
-    return n > 0 and any(n % r == 0 for r in IGPU_SCALE_RUNGS)
+    return n > 0 and any(n % r == 0 for r in CHRONUS_SCALE_RUNGS)
 
 
 def ladder_multiples_of(n: int) -> List[int]:
     """Which rungs divide n (empty when n is off-ladder)."""
-    return [r for r in IGPU_SCALE_RUNGS if n % r == 0]
+    return [r for r in CHRONUS_SCALE_RUNGS if n % r == 0]
 
 
 def nearest_ladder_index(n: int, lo: int, hi: int) -> int:
@@ -399,7 +399,7 @@ __all__ = [
     "LUCAS_SCALE_LADDER",
     "SCALE_ORDER",
     "SCALE_NAMES",
-    "IGPU_SCALE_RUNGS",
+    "CHRONUS_SCALE_RUNGS",
     "PISOT_EXACT_N",
     "is_ladder_index",
     "ladder_multiples_of",

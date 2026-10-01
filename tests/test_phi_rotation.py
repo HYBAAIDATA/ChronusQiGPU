@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from igpu.seam.types import KernelName
+from chronus.seam.types import KernelName
 from phi_rotation.cassini import cassini_identity, det_power
 from phi_rotation.functor import kernel_to_invariant
 from phi_rotation.korobov import fibonacci_lattice, three_distance_gaps

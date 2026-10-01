@@ -8,12 +8,12 @@ stay labelled.
 
 | Entry | Kind | Verified |
 |---|---|---|
-| `python main.py --host … --web-root dist/public` | control API + static UI (root shim → `mla1517_platform_v3.4/python/control_api.py`) | [verified: wheel + source boot contract] |
+| `python main.py --host … --web-root dist/public` | control API + static UI (root shim → `chronus/mla1517_platform/python/control_api.py`) | [verified: wheel + source boot contract] |
 | `pythia-api` (console script) | same as above via installed package | [verified: wheel --help] |
 | `pythia-mine` → `mining_runtime:main` | headless Stratum miner (fail-closed) | [verified: wheel --help] |
 | `headless_miner.py --device … --submit` | hardware miner, MMIO required | NOT_RUN (no device) |
-| `python -m mla1517.remote_gpu_agent` | remote OpenCL agent (remote_opencl_v1) | NOT_RUN locally; blueprint documents |
-| `python -m mla1517.prime …` | PRIME CLI (deploy/ingest/audit/reproduce real; feature/train/evaluate/promote/serve intentionally not_implemented, exit 2) | blueprint-documented |
+| `python -m chronus.mla1517.remote_gpu_agent` | remote OpenCL agent (remote_opencl_v1) | NOT_RUN locally; blueprint documents |
+| `python -m chronus.mla1517.prime …` | PRIME CLI (deploy/ingest/audit/reproduce real; feature/train/evaluate/promote/serve intentionally not_implemented, exit 2) | blueprint-documented |
 
 ## Backend call graph (verified by reading + import checks)
 
@@ -23,7 +23,7 @@ browser ─HTTP→ control_api.main (/api/* + statics)
                  ├─ system_fabric  (SUBSYSTEMS map, verification/selftest runners)
                  ├─ worker_lifecycle (arms spawn/retire/restart)
                  ├─ runtime_config (GET/PUT /api/v1/config, bounds-checked)
-                 ├─ mining_runtime/coordinator → mla1517.mining.*
+                 ├─ mining_runtime/coordinator → chronus.mla1517.mining.*
                  │     ├─ chooser (evidence→order) → solver (lane enum) → pow (sha256d)
                  │     ├─ toe_adapter (advisory context; fails closed per record)
                  │     └─ stratum client (negotiated job; only target accepts share)
@@ -54,6 +54,6 @@ browser ─HTTP→ control_api.main (/api/* + statics)
 - `Intelligence.self_optimizing_agent` — tuner (unittest gate exists)
 - `Intelligence.self_healing_agent` — repair loop (unittest gate exists)
 - `Intelligence.salamander` / `salamander_engine`/`salamander_control` — engine + transaction layer (engine in platform py-modules; transaction layer idle)
-- `mla1517.mining.chooser` — evidence-driven order selection
+- `chronus.mla1517.mining.chooser` — evidence-driven order selection
 - `toe.bridge` → `IntelligenceController` — advisory analysis on vault records
 - `registry` — 45-module registry

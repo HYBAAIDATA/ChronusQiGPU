@@ -25,7 +25,7 @@ from aethel.constants import (
     STATE_BYTES,
 )
 from aethel.manifold import ManifoldCurvature, PrimeStorageManifold
-from aethel.gpu import TensorCoreGPU_Context
+from aethel.gpu import ChronusContext
 from aethel.shm import AethelQueue
 from aethel.storage import AddressSpace, CassiniLedger
 
@@ -106,7 +106,7 @@ def test_queue_commit_read_metered(tmp_path):
 
 
 def test_manifold_ingest_and_read_metered():
-    gpu = TensorCoreGPU_Context(require_gpu=False)
+    gpu = ChronusContext(require_gpu=False)
     manifold = PrimeStorageManifold(gpu)
     uid = manifold.ingest_sync(b"payload", ManifoldCurvature.EUCLIDEAN_FLAT)
     tensor = manifold.tensors[uid]

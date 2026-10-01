@@ -1,7 +1,7 @@
 
 ## Exact state-vector API
 
-`mla1517.quantum.ExactStateVector` is the finite-dimensional exact algebra
+`chronus.mla1517.quantum.ExactStateVector` is the finite-dimensional exact algebra
 used by the strict mathematical plane. Amplitudes live in
 `Q(sqrt(2)) + i Q(sqrt(2))`, represented by `Fraction` coefficients. The
 implementation now exposes:

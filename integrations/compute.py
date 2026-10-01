@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from igpu.seam import Result, run
-from igpu.seam.types import Err, KernelName, Ok, SeamError
+from chronus.seam import Result, run
+from chronus.seam.types import Err, KernelName, Ok, SeamError
 
 
 def run_matmul(a, b, fleet=None) -> Result[bytes]:

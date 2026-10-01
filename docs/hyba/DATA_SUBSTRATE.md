@@ -12,12 +12,12 @@ ontology map: `reports/hyba_representation_ontology.json`.
 (exact, byte-identical, domain-bounded, fail-closed), a Fibonacci-indexed
 `AddressSpace` whose every transition is Cassini-attested in an append-only
 ledger, Galois prime-substrate composite keys, a pv-lattice manifold with
-digest-pinned self-heal, and a seqlock shared-memory ABI. `mla1517.prime_db`
+digest-pinned self-heal, and a seqlock shared-memory ABI. `chronus.mla1517.prime_db`
 is the reference object-store semantics (content-addressed, verified on
 write AND read, append-only lineage). `hyba.substrate.HybaSubstrate` is the
 §12 facade — PUT/GET/FOLD/UNFOLD/ADDRESS/QUERY/NAVIGATE/TRANSFORM/VERSION/
 ATTEST/DELETE designed from the state model, not SQL. `toe.receipts` is the
-evidence chain. SQLite (`mla1517.store`), file snapshots, and
+evidence chain. SQLite (`chronus.mla1517.store`), file snapshots, and
 `fold_pipeline` are compatibility adapters — they carry no authority.
 
 ## Measured truths (not claims)

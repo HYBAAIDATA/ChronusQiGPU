@@ -1,6 +1,6 @@
 # Two SKUs, one substrate
 
-Mining GPU: `aethel.device.IGpuSku`
+Mining GPU: `aethel.device.ChronusSku`
 Hyperscaler: `aethel.hyperscaler.HyperscalerSku`
 
 Folded form is the working form. Unfold is egress.

@@ -9,8 +9,8 @@ does not name, and ``acceptance_contract`` keeps the honest boundary between
 
 Resolution order (first existing wins):
 
-1. ``igpu/spec/mla1517_igpu_v1.json`` — the consolidated package copy.
-2. ``<repo>/mla1517_platform_v3.4/hardware/mla1517_igpu_v1.json`` — the
+1. ``chronus/spec/mla1517_chronus_v1.json`` — the consolidated package copy.
+2. ``<repo>/chronus/mla1517_platform/hardware/mla1517_chronus_v1.json`` — the
    platform tree copy, for checkouts where the package data was stripped.
 """
 
@@ -23,10 +23,10 @@ from typing import Any, Dict, List, Optional
 _PKG_ROOT = Path(__file__).resolve().parent
 _REPO_ROOT = _PKG_ROOT.parent
 
-SPEC_NAME = "mla1517_igpu_v1.json"
+SPEC_NAME = "mla1517_chronus_v1.json"
 _SPEC_CANDIDATES = (
     _PKG_ROOT / "spec" / SPEC_NAME,
-    _REPO_ROOT / "mla1517_platform_v3.4" / "hardware" / SPEC_NAME,
+    _REPO_ROOT / "chronus/mla1517_platform" / "hardware" / SPEC_NAME,
 )
 
 # Geometric facts derivable from the contract, with documented defaults so

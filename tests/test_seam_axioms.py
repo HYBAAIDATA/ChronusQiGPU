@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from igpu.seam.axioms import AXIOMS
-from igpu.seam.bennett import dispatch_reversible, pebble_bounds
-from igpu.seam.signatures import signature_of
-from igpu.seam.thermodynamics import (
+from chronus.seam.axioms import AXIOMS
+from chronus.seam.bennett import dispatch_reversible, pebble_bounds
+from chronus.seam.signatures import signature_of
+from chronus.seam.thermodynamics import (
     Technology,
     ThermoPolicy,
     advantage_factor,
@@ -13,7 +13,7 @@ from igpu.seam.thermodynamics import (
     landauer_bound,
     measure_thermodynamic,
 )
-from igpu.seam.types import KernelName, Ok
+from chronus.seam.types import KernelName, Ok
 
 
 def test_axioms_are_named():
@@ -34,7 +34,7 @@ def test_a5_landauer_positive():
 
 
 def test_a6_adiabatic_beats_conventional_when_slow():
-    from igpu.seam.thermodynamics import adiabatic_energy
+    from chronus.seam.thermodynamics import adiabatic_energy
 
     conv = conventional_energy(1e-15, 0.8)
     slow = adiabatic_energy(1e-15, 0.8, 1e3, 1e-3)

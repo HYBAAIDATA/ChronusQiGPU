@@ -105,7 +105,7 @@ export default function App() {
           </span>
           <span>
             Python control plane · {status?.backend ?? "Python/C/OpenCL"} ·{" "}
-            {status?.schema_version ?? "mla1517.status/1"}
+            {status?.schema_version ?? "chronus.mla1517.status/1"}
           </span>
         </div>
       </footer>

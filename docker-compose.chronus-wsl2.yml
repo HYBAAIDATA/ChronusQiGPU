@@ -1,0 +1,25 @@
+# `docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.chronus-linux.yml up -d` (Linux host, /dev/dri)
+# `docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.chronus-wsl2.yml up -d` (Docker Desktop / WSL2, /dev/dxg)
+# Probe: `docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.chronus-wsl2.yml --profile probe run --rm chronus-probe`
+# HYBA_REQUIRE_HYBA=1 is the default: if no device whose OpenCL name matches a HYBA alias (HYBA_DEVICE_ALIAS, default hyba-chronus/mla1517/hyba_mla1517/mla1517/hyba) is enumerated, the miner reports unavailable rather than substituting another GPU/CPU.
+services:
+  pythia:
+    devices:
+      - "/dev/dxg:/dev/dxg"
+    volumes:
+      - "/usr/lib/wsl:/usr/lib/wsl:ro"
+    environment:
+      LD_LIBRARY_PATH: /usr/lib/wsl/lib
+
+  chronus-probe:
+    build: .
+    profiles:
+      - "probe"
+    devices:
+      - "/dev/dxg:/dev/dxg"
+    volumes:
+      - "/usr/lib/wsl:/usr/lib/wsl:ro"
+    environment:
+      LD_LIBRARY_PATH: /usr/lib/wsl/lib
+    command: ["clinfo"]
+    restart: "no"

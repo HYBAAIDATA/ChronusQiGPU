@@ -11,7 +11,7 @@ _EXPORTS = {
     "ManifoldSector": ("aethel.manifold", "ManifoldSector"),
     "PrimeStorageManifold": ("aethel.manifold", "PrimeStorageManifold"),
     "SelfHealingSubstrate": ("aethel.manifold", "SelfHealingSubstrate"),
-    "TensorCoreGPU_Context": ("aethel.gpu", "TensorCoreGPU_Context"),
+    "ChronusContext": ("aethel.gpu", "ChronusContext"),
     "TopologicalTensor": ("aethel.manifold", "TopologicalTensor"),
 }
 

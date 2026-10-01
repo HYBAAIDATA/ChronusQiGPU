@@ -12,7 +12,7 @@ Production authority is split across:
 - `aethel.manifold` for integrity-checked storage, geodesic navigation and
   self-healing;
 - `gpu.manifold` for the canonical lazy package facade;
-- `gpu.reference` and `igpu` for SHA-256d reference and OpenCL execution;
+- `gpu.reference` and `chronus` for SHA-256d reference and OpenCL execution;
 - `turing_universal_quantum_computer` for the exact virtual-quantum substrate;
 - `gpu.readiness` for fail-closed software and physical-evidence gates.
 
@@ -50,7 +50,7 @@ Consequences that the code enforces, not merely states:
    prune a shard, or declare a nonce valid. `ManifoldShardOrder.faces_pruned`
    is always `0`, and `iter_nonces()` is a complete permutation of the interval.
 2. `accepted is True` requires all of: a winning nonce from the real grind, the
-   four-layer bit-exact recheck, and `mla1517.mining.pow.check_pow(header80,
+   four-layer bit-exact recheck, and `chronus.mla1517.mining.pow.check_pow(header80,
    target)` — i.e. `int.from_bytes(sha256d(header80), "little") <= target`.
 3. Hashrate is only ever the value measured by the hasher that actually ran.
    When no hasher runs the result carries `hashes_computed = 0`,
@@ -73,16 +73,16 @@ exist** here and must not be cited.
 | 11D Poincaré ball, fold / unfold, geodesic, Zeckendorf certificate | `HYBA_Phi-main/native_kernels/...` | `Intelligence/poincare_golden_11d.py` → `compute_poincare_norm_sq`, `poincare_golden_distance`, `fold_poincare_11d_vector`, `unfold_poincare_11d_vector`, `compute_zeckendorf_certificate` (**read-only substrate**, see `docs/ASI_INTERFACE_MAP.md`) |
 | Golden metric weights | `g_ii = φ^(i/11)` (wrong) | `φ^{-(i+1)}`, i = 0..10 — `PHI_POWERS` in `poincare_golden_11d.py`, `GOLDEN_WEIGHTS` in `poincare_cassini_search.py` (§2) |
 | Storage + fold + Turing schedule + score/reorder/grind pipeline | "kernel specification" | `Intelligence/four_layer_stack.py` → `FourLayerMiningStack`, `NearStateIGpu.mine` (calls the real hasher and rechecks the winner with sha256d) |
-| "Device" / iGPU hashrate | `HYBA_Phi-main/solutions_api`, "Metal shader" | `mla1517_platform_v3.4/python/mla1517/mining/opencl_driver.py` → `OpenCLDriver.execute_kernel` (fails closed without pyopencl / device); standalone `mining/bitcoin_hasher.py` |
+| "Device" / iGPU hashrate | `HYBA_Phi-main/solutions_api`, "Metal shader" | `chronus/mla1517/mining/opencl_driver.py` → `OpenCLDriver.execute_kernel` (fails closed without pyopencl / device); standalone `mining/bitcoin_hasher.py` |
 | Bespoke HYBA iGPU identity / selection | — | `hyba/device.py` (`DEFAULT_HYBA_ALIASES`, `HYBA_DEVICE_ALIAS`, `HYBA_REQUIRE_HYBA`), `hyba/select.py`, `mining/bitcoin_hasher.py::_select_opencl_device` |
-| Accept authority | "solutions API" | `mla1517_platform_v3.4/python/mla1517/mining/pow.py` → `sha256d`, `check_pow` |
-| Native kernels | `HYBA_Phi-main/native_kernels` | OpenCL sources under `mla1517_platform_v3.4/kernels/*.cl` (`exact_quantum_kernel.cl`, `mla1517_lucas_pisot_scale.cl`); `Intelligence/mining_native.py` documents which "native targets" exist |
+| Accept authority | "solutions API" | `chronus/mla1517/mining/pow.py` → `sha256d`, `check_pow` |
+| Native kernels | `HYBA_Phi-main/native_kernels` | OpenCL sources under `chronus/mla1517_platform/kernels/*.cl` (`exact_quantum_kernel.cl`, `mla1517_lucas_pisot_scale.cl`); `Intelligence/mining_native.py` documents which "native targets" exist |
 | Salamander | `HYBA_Phi-main/salamander` | `Intelligence/salamander.py`, `salamander_agentic.py`, `salamander_transaction.py` — self-healing / self-optimising substrate; **not part of the hashing path** |
 | Metal shaders | `HYBA_Phi-main/metal/*.metal` | **None.** There are no `.metal` files in this repository. The only GPU language is OpenCL C. |
-| Solutions / control API | `HYBA_Phi-main/solutions_api` | `mla1517_platform_v3.4/python/control_api.py` (`/api/health`, `/api/v1/readyz`, `/api/v1/mla1517/status`, `/api/v1/telemetry/summary`) served by `main.py` |
+| Solutions / control API | `HYBA_Phi-main/solutions_api` | `chronus/mla1517_platform/python/control_api.py` (`/api/health`, `/api/v1/readyz`, `/api/v1/mla1517/status`, `/api/v1/telemetry/summary`) served by `main.py` |
 
 Note: `kernels/bitcoin_sha256d.cl` is checked in, with packaged copies under
-`igpu/kernels/` and the Turing VQC package. Availability still requires a
+`chronus/kernels/` and the Turing VQC package. Availability still requires a
 working OpenCL runtime and target device.
 
 ---
@@ -184,7 +184,7 @@ different order over the **same** nonce set.
 
 ## 4. Hardware boundary and the bespoke HYBA iGPU
 
-`OpenCLDriver` (`mla1517/mining/opencl_driver.py`) enumerates devices via
+`OpenCLDriver` (`chronus/mla1517/mining/opencl_driver.py`) enumerates devices via
 pyopencl; missing pyopencl or zero devices gives `available = False`, and
 `execute_kernel` raises rather than falling back to CPU. The unified device
 adds the HYBA identity contract from `hyba/device.py` on top:
@@ -212,12 +212,12 @@ matched, or `None`), `require_hyba`, `hardware_execution`, `fallback_used`,
   `HYBA_DEVICE_ALIAS` from the host environment.
 * `docker-compose.override.yml` (auto-loaded by plain `docker compose up`) keeps
   the container device-less → fail-closed `unavailable`.
-* `docker-compose.igpu-linux.yml` binds `/dev/dri` (+ `video`/`render` groups)
+* `docker-compose.chronus-linux.yml` binds `/dev/dri` (+ `video`/`render` groups)
   on a Linux host.
-* `docker-compose.igpu-wsl2.yml` binds `/dev/dxg` and mounts `/usr/lib/wsl`
+* `docker-compose.chronus-wsl2.yml` binds `/dev/dxg` and mounts `/usr/lib/wsl`
   for Docker Desktop on Windows (WSL2 backend).
 * Probe: `docker compose -f docker-compose.yml -f docker-compose.override.yml
-  -f docker-compose.igpu-wsl2.yml --profile probe run --rm igpu-probe` runs
+  -f docker-compose.chronus-wsl2.yml --profile probe run --rm chronus-probe` runs
   `clinfo` inside the container.
 
 What is **not** verified by this repository: that Intel's Linux OpenCL runtime
@@ -250,9 +250,9 @@ substring of its OpenCL name; the strict rule still applies to that list.
   "truth_class": "unavailable" | "measured_hardware" | "measured_cpu_reference",
   "measured_hashrate": float,             # 0.0 when NOT_RUN
   "hashes_computed": int,                 # 0 when NOT_RUN
-  "igpu": NearStateIGpu.mine(...) dict | None,
+  "chronus": NearStateIGpu.mine(...) dict | None,
   "header_store": ...,
-  "consensus_rule": "sha256d(header80[:76] + LE(nonce)) <= target (mla1517.mining.pow.check_pow)",
+  "consensus_rule": "sha256d(header80[:76] + LE(nonce)) <= target (chronus.mla1517.mining.pow.check_pow)",
   "claim_boundary": CLAIM_BOUNDARY,
   "theorem_proven": False
 }

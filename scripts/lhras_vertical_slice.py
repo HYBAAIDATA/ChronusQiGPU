@@ -113,7 +113,7 @@ def build_evidence_pack(out_dir: Path) -> dict:
     api = GuardianAPI(guardian, settings, evidence_provider=lambda obs: {"schema_version": "slice"})
     body = {
         "operation": "toe.collapse",
-        "resource": "mla1517.toe",
+        "resource": "chronus.mla1517.toe",
         "payload": {"evidence": {}},
         "observation": {"baseline": 0.12, "spread": 0.05},
         "request_id": "req-slice-0001",
@@ -155,7 +155,7 @@ def build_evidence_pack(out_dir: Path) -> dict:
         attestation=RequestAttestation(token="", payload_digest=""),
         actor=actor,
         action="toe.collapse",
-        resource="mla1517.toe",
+        resource="chronus.mla1517.toe",
         payload={"request_id": "req-slice-0001"},
         telemetry=[0.1, 0.2, 0.15, 0.18, 0.12, 0.11, 0.09],
         observation={"baseline": 0.12, "spread": 0.05},

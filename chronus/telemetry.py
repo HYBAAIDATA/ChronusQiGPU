@@ -26,9 +26,9 @@ therefore *injected* — `attach_to_host` sets a ``telemetry_hook`` attribute on
 the host, and the host calls it if present. The algorithm module never imports
 this one.
 
-Canonical home: ``igpu.telemetry`` (the consolidated iGPU package). The
-pre-consolidation path ``Intelligence/igpu_telemetry.py`` re-exports this
-module so existing ``from .igpu_telemetry import ...`` call sites keep
+Canonical home: ``chronus.telemetry`` (the Chronus package). The
+pre-consolidation path ``Intelligence/chronus_telemetry.py`` re-exports this
+module so existing ``from chronus.telemetry import ...`` call sites keep
 working unchanged.
 
 LUCAS WIRING: coordinator module (same class as toe.system/orchestrator).
@@ -48,7 +48,7 @@ import os
 import time
 from typing import Any, Dict, Optional
 
-logger = logging.getLogger("igpu.telemetry")
+logger = logging.getLogger("chronus.telemetry")
 
 THEOREM_PROVEN = False
 
@@ -61,7 +61,7 @@ __all__ = [
     "HETEROTIC_GAUGE_DIMENSION",
     "ICOSAHEDRAL_FACES",
     "ICOSAHEDRAL_ISOTROPIC_SHARE",
-    "IgpuTelemetry",
+    "ChronusTelemetry",
     "MANIFOLD_PUNCHES",
     "PERFECT_NUMBER_496",
     "PUNCH_NAMES",
@@ -158,7 +158,7 @@ HETEROTIC_GAUGE_DIMENSION = 496
 PERFECT_NUMBER_496 = 496
 
 
-def _env_enabled(var: str = "EUCLID_IGPU_TELEMETRY", default: bool = True) -> bool:
+def _env_enabled(var: str = "EUCLID_CHRONUS_TELEMETRY", default: bool = True) -> bool:
     """Telemetry is on by default; set the var to 'false'/'0' to silence it."""
     raw = os.environ.get(var)
     if raw is None:
@@ -166,7 +166,7 @@ def _env_enabled(var: str = "EUCLID_IGPU_TELEMETRY", default: bool = True) -> bo
     return raw.strip().lower() not in ("0", "false", "no", "off")
 
 
-class IgpuTelemetry:
+class ChronusTelemetry:
     """Accumulates measured facts about iGPU-on-11D execution.
 
     Every public method records an *observation*. Nothing here extrapolates.
@@ -875,25 +875,25 @@ class FrameTelemetry:
 
 # -- module-level singleton + purity-safe host injection --------------------
 
-_TELEMETRY: Optional[IgpuTelemetry] = None
+_TELEMETRY: Optional[ChronusTelemetry] = None
 
 
-def get_telemetry() -> IgpuTelemetry:
+def get_telemetry() -> ChronusTelemetry:
     """Process-wide telemetry singleton."""
     global _TELEMETRY
     if _TELEMETRY is None:
-        _TELEMETRY = IgpuTelemetry()
+        _TELEMETRY = ChronusTelemetry()
     return _TELEMETRY
 
 
-def reset_telemetry(enabled: Optional[bool] = None) -> IgpuTelemetry:
+def reset_telemetry(enabled: Optional[bool] = None) -> ChronusTelemetry:
     """Replace the singleton (tests, scenario boundaries)."""
     global _TELEMETRY
-    _TELEMETRY = IgpuTelemetry(enabled=enabled)
+    _TELEMETRY = ChronusTelemetry(enabled=enabled)
     return _TELEMETRY
 
 
-def attach_to_host(host: Any, telemetry: Optional[IgpuTelemetry] = None) -> IgpuTelemetry:
+def attach_to_host(host: Any, telemetry: Optional[ChronusTelemetry] = None) -> ChronusTelemetry:
     """Inject a ``telemetry_hook`` into a punch host without importing it.
 
     ``Intelligence/unified_punch.py`` is a LUCAS WIRING algorithm module and

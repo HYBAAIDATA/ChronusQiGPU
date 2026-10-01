@@ -24,7 +24,6 @@ from __future__ import annotations
 
 import json
 import math
-import os
 import subprocess
 import sys
 import tempfile
@@ -106,30 +105,42 @@ def run_isolated_execution(
     FIX-04: Pytest / execution timeout isolation.
     Compiles and dry-runs source in isolated scope to verify non-halting/crash safety.
     """
+    if timeout_seconds <= 0:
+        raise ValueError("timeout_seconds must be positive")
     try:
         compile(source, "<pythagoras_isolated>", "exec")
     except Exception as exc:
         return False, str(exc)
 
-    with tempfile.TemporaryDirectory(prefix="pythagoras_isolated_") as tmp:
-        candidate = Path(tmp) / "candidate.py"
-        candidate.write_text(source, encoding="utf-8")
-        try:
-            completed = subprocess.run(
-                [sys.executable, "-I", str(candidate)],
-                cwd=tmp,
-                capture_output=True,
-                text=True,
-                timeout=timeout_seconds,
-                env={"PATH": os.environ.get("PATH", ""), "PYTHONHASHSEED": "0"},
-                check=False,
-            )
-        except subprocess.TimeoutExpired:
-            return False, f"timeout after {timeout_seconds}s"
-        if completed.returncode != 0:
-            detail = (completed.stderr or completed.stdout).strip()
-            return False, detail[-1000:] or f"exit code {completed.returncode}"
-    return True, "Execution succeeded"
+    # Separate interpreter + wall-clock timeout. This is process isolation,
+    # not an OS security sandbox for hostile code with ambient I/O authority.
+    path: str | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".py", encoding="utf-8", delete=False
+        ) as handle:
+            handle.write(source)
+            path = handle.name
+        completed = subprocess.run(
+            [sys.executable, "-I", path],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=timeout_seconds,
+            check=False,
+        )
+        if completed.returncode == 0:
+            return True, "Execution succeeded"
+        detail = (completed.stderr or completed.stdout).strip()
+        return False, detail or f"isolated execution exited {completed.returncode}"
+    except subprocess.TimeoutExpired:
+        return False, f"Execution timed out after {timeout_seconds:.3f}s"
+    except Exception as exc:
+        return False, str(exc)
+    finally:
+        if path is not None:
+            Path(path).unlink(missing_ok=True)
 
 
 def rolling_window_normalize(series: List[float], window: int = 3) -> List[float]:
@@ -208,23 +219,29 @@ class Pythagoras:
 
             # 1. CGP Step
             best_genome, cgp_fitness, cgp_transformed = self.cgp.evolve(current, generations=1)
+            cgp_transformed = self.domain.normalize(cgp_transformed)
             cgp_phi = self.domain.coherence(cgp_transformed)
-            if cgp_phi > prev_phi:
+            cgp_valid = self.domain.is_valid(cgp_transformed) and self.domain.tests(cgp_transformed)
+            if cgp_valid and cgp_phi > prev_phi:
                 current = cgp_transformed
                 prev_phi = cgp_phi
 
-            # 2. Directed / Surrogate Mutation Step
+            # 2. Directed / Surrogate Mutation Step. Fitness never overrides
+            # domain correctness: invalid candidates are transactionally rejected.
             mutated, step_gains = self.mutator.mutate(current, n_mutations=3)
             mutated = self.domain.normalize(mutated)
             mutated_phi = self.domain.coherence(mutated)
             gain = mutated_phi - prev_phi
+            candidate_valid = self.domain.is_valid(mutated) and self.domain.tests(mutated)
 
-            # ENH-04: Simulated annealing check for accepting mutants
+            # ENH-04: Simulated annealing may accept a lower-scoring candidate,
+            # but it may never accept a candidate that violates domain tests.
             accept = False
-            if adaptation_enabled:
-                accept = self.meta.should_accept(gain)
-            else:
-                accept = gain > 0.0
+            if candidate_valid:
+                if adaptation_enabled:
+                    accept = self.meta.should_accept(gain)
+                else:
+                    accept = gain > 0.0
 
             if accept:
                 current = mutated

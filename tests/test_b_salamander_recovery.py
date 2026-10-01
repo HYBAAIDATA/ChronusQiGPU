@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-PY_DIR = REPO_ROOT / "mla1517_platform_v3.4" / "python"
+PY_DIR = REPO_ROOT / "chronus/mla1517_platform" / "python"
 sys.path.insert(0, str(PY_DIR))
 
 import salamander_control
