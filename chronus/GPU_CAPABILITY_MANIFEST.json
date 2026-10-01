@@ -1,0 +1,29 @@
+{
+  "schema": "chronus.gpu-capabilities/v1",
+  "branch_base": "feat/kellogg-july-tensor-convergence",
+  "capabilities": {
+    "geodesic_scheduling": {"status": "present", "owner": "chronus.phi_gpu"},
+    "memory_hierarchy": {"status": "present_and_extended", "owner": "chronus.v33.memory + chronus.gpu_capabilities"},
+    "gpu_topology_specs": {"status": "present_and_extended", "owner": "chronus.gpu_reference + chronus.gpu_capabilities"},
+    "integrity_gates": {"status": "added", "owner": "chronus.gpu_capabilities"},
+    "tensor_network_decomposition": {"status": "adapter_added", "owner": "kellogg; executed by chronus"},
+    "mps_tt_mpo": {"status": "public_pipeline_added", "owner": "kellogg; executed by chronus"},
+    "compression": {"status": "error_budget_adapter_added", "owner": "kellogg + chronus.v33.compression"},
+    "serialization": {"status": "safe_adapter_added", "owner": "kellogg persistence; transferred by chronus"},
+    "invariant_verification": {"status": "added", "owner": "chronus.gpu_capabilities"}
+  },
+  "truth_boundaries": {
+    "unknown_hardware_fields": "null, never inferred",
+    "historical_specs": "not measured by Chronus",
+    "host_execution": "not GPU execution",
+    "device_execution": "must be compared with Kellogg",
+    "consensus_authority": false
+  },
+  "rejected": [
+    "pickle serialization",
+    "guessed tensor-core counts",
+    "guessed PCIe or NVLink bandwidth",
+    "representation ratios labelled as physical compression",
+    "silent device-to-host fallback when device execution is required"
+  ]
+}
