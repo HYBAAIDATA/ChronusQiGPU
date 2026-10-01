@@ -24,6 +24,10 @@ from __future__ import annotations
 
 import json
 import math
+import os
+import subprocess
+import sys
+import tempfile
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
@@ -103,13 +107,29 @@ def run_isolated_execution(
     Compiles and dry-runs source in isolated scope to verify non-halting/crash safety.
     """
     try:
-        compiled = compile(source, "<pythagoras_isolated>", "exec")
-        # Run in empty global dict to isolate namespace
-        exec_globals: Dict[str, Any] = {"__builtins__": __builtins__}
-        exec(compiled, exec_globals)
-        return True, "Execution succeeded"
-    except Exception as e:
-        return False, str(e)
+        compile(source, "<pythagoras_isolated>", "exec")
+    except Exception as exc:
+        return False, str(exc)
+
+    with tempfile.TemporaryDirectory(prefix="pythagoras_isolated_") as tmp:
+        candidate = Path(tmp) / "candidate.py"
+        candidate.write_text(source, encoding="utf-8")
+        try:
+            completed = subprocess.run(
+                [sys.executable, "-I", str(candidate)],
+                cwd=tmp,
+                capture_output=True,
+                text=True,
+                timeout=timeout_seconds,
+                env={"PATH": os.environ.get("PATH", ""), "PYTHONHASHSEED": "0"},
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            return False, f"timeout after {timeout_seconds}s"
+        if completed.returncode != 0:
+            detail = (completed.stderr or completed.stdout).strip()
+            return False, detail[-1000:] or f"exit code {completed.returncode}"
+    return True, "Execution succeeded"
 
 
 def rolling_window_normalize(series: List[float], window: int = 3) -> List[float]:
@@ -256,6 +276,9 @@ class Pythagoras:
             "generations": generations,
             "fitness_history": fitness_history,
             "rolling_fitness": rolling_fit,
+            "gain_per_generation": (
+                (final_phi - initial_phi) / generations if generations else 0.0
+            ),
             "discovered_primitives": self.discovery.get_discovered(),
             "meta_state": self.meta.get_state(),
             "geometry_state": self.geometry.get_state(),
@@ -289,6 +312,10 @@ class Pythagoras:
 
         # ENH-14: Collective geometry consensus across corpus
         consensus_geometry = GeometryEvolution.compute_consensus(all_geometries)
+        self.geometry.load_state(consensus_geometry)
+        self.cgp.n_cols = self.geometry.n_cols
+        self.cgp.levels_back = self.geometry.levels_back
+        self.cgp.pop_size = self.geometry.pop_size
 
         total_delta = sum(r["delta_phi"] for r in results.values())
         avg_final = float(np.mean([r["final_phi"] for r in results.values()]))
@@ -326,7 +353,9 @@ class Pythagoras:
             "phase_transitions": self.meta.phase_transitions,
             "provenance_log": self.meta.provenance_log,
         }
-        p.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        temporary = p.with_suffix(p.suffix + ".tmp")
+        temporary.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        os.replace(temporary, p)
 
     def load_session(self, filepath: Path | str) -> None:
         """
@@ -346,6 +375,17 @@ class Pythagoras:
             self.mutator.surrogate.weights = np.array(data["surrogate_weights"], dtype=float)
             self.mutator.surrogate.bias = float(data.get("surrogate_bias", 0.0))
             self.mutator.surrogate.sample_count = int(data.get("surrogate_samples", 0))
+        if "meta_state" in data:
+            self.meta.load_state(
+                data["meta_state"],
+                phase_transitions=data.get("phase_transitions", []),
+                provenance_log=data.get("provenance_log", []),
+            )
+        if "geometry_state" in data:
+            self.geometry.load_state(data["geometry_state"])
+            self.cgp.n_cols = self.geometry.n_cols
+            self.cgp.levels_back = self.geometry.levels_back
+            self.cgp.pop_size = self.geometry.pop_size
 
     # =========================================================================
     # Kellogg v7.0 Stack Quantum Reflection Integration
