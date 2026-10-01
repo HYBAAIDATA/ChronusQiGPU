@@ -75,6 +75,8 @@ jobs:
       - run: pip install pyyaml
       - name: Scan for deploy pitfalls (errors fail; warnings are reported)
         run: python -m scripts.deploy_sentry
+      - name: Enforce deployment claims boundary
+        run: python -m scripts.deployment_claims_gate
 
   python-selftest:
     name: Python — Intelligence self-test (ML stack)

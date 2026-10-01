@@ -11,8 +11,9 @@ Stratum TCP/TLS -> subscribe -> authorize -> mining.notify
   -> operating policy: window size (Lucas ladder, within the responsiveness
      envelope and the thermal de-rate) and precompute depth (job churn)
   -> SearchPlan + nonce lease (no overlap, no resurrection of old work)
-  -> hashrate governor: admit the window only within the cap
-     (operator target, 1 EH/s ceiling, 1% of the network rate from nbits)
+  -> policy governor: admit the window only within configured scheduling limits
+     (operator target and network-relative policy derived from nbits; these
+     limits are not executed-hash measurements)
   -> Execution Router: the bound route executes the leased interval, in the
      Hendrix structured-search order (PYTHIA_NONCE_ORDER, default hendrix):
      position p visits base + (p * stride) mod window, every nonce once
