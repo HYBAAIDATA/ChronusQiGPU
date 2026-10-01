@@ -45,7 +45,7 @@ def _open_or_create(store: Path) -> AddressSpace:
     journal = store / "ledger.jsonl"
     if journal.is_file():
         return AddressSpace.attach(store)
-    store.mkdir(parents=True, exist_ok=True)
+    store.mkdir(mode=0o700, parents=True, exist_ok=True)
     return AddressSpace()
 
 
@@ -88,8 +88,6 @@ def _cmd_unfold(args: argparse.Namespace) -> int:
     address = _resolve_address(space, args.index)
     block = space.read(address)
     sys.stdout.buffer.write(block)
-    if not block.endswith(b"\n"):
-        sys.stdout.buffer.write(b"\n")
     return 0
 
 
