@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pythagoras
-
 import ast
 import math
 import os

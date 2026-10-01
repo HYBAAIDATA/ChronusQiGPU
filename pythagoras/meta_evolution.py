@@ -200,8 +200,6 @@ class MetaEvolutionController:
             "phase_transition_threshold": self.phase_transition_threshold,
             "stall_threshold": self.stall_threshold,
             "cooling_rate": self.cooling_rate,
-            "primitive_weights": dict(self.primitive_weights),
-            "operator_distribution": dict(self.operator_distribution),
         }
 
     def load_state(
