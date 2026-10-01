@@ -16,7 +16,7 @@ def _resolve_kernel_path():
     root = Path(__file__).resolve().parent.parent
     candidates = (
         root / "kernels" / "bitcoin_sha256d.cl",
-        root / "igpu" / "kernels" / "bitcoin_sha256d.cl",
+        root / "chronus" / "kernels" / "bitcoin_sha256d.cl",
         root / "iGPU_Accelerator_JV" / "kernels" / "bitcoin_sha256d.cl",
     )
     for candidate in candidates:

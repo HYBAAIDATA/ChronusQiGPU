@@ -11,7 +11,7 @@ RUN npm run lint && npm run test:ts && npm run build
 # The full bookworm image already carries gcc and make, and shares glibc
 # with the slim runtime below.
 FROM python:3.12-bookworm AS native
-COPY mla1517_platform_v3.4/host /src/host
+COPY chronus/mla1517_platform/host /src/host
 RUN make -C /src/host all aethel-test primedb-storage-test primedb-boundary-test
 
 FROM python:3.12-slim-bookworm AS runtime
@@ -19,7 +19,7 @@ FROM python:3.12-slim-bookworm AS runtime
 # register block; the control app itself needs only MLA1517_STRATUM_USER.
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app:/app/mla1517_platform_v3.4/python \
+    PYTHONPATH=/app:/app/chronus/mla1517_platform/python \
     MLA1517_MMIO_LIBRARY=/usr/local/lib/libmla1517_mmio.so \
     MLA1517_PRIMEDB_LIBRARY=/usr/local/lib/libprimedb_storage.so \
     PYTHIA_HOST=0.0.0.0 \

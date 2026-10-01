@@ -4,8 +4,8 @@ from importlib import import_module
 from typing import Any
 
 _EXPORTS = {
-    "ClusterInventory": ("python_backend.hyba.inventory", "ClusterInventory"),
-    "SuperGPU": ("python_backend.hyba.virtual_gpu", "SuperGPU"),
+    "ClusterInventory": ("hyba.inventory", "ClusterInventory"),
+    "ChronusFabric": ("chronus.fabric", "ChronusFabric"),
 }
 
 __all__ = sorted(_EXPORTS)

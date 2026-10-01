@@ -16,7 +16,7 @@ def test_measured_hashrate_uses_only_protocol_hashes():
         1_000_000_000,
         [
             LayerSample("asic", "asic-1", 1_000_000_000, protocol_hashes=2_000_000),
-            LayerSample("igpu", "igpu-1", 1_000_000_000, protocol_hashes=1_000_000),
+            LayerSample("chronus", "chronus-1", 1_000_000_000, protocol_hashes=1_000_000),
             LayerSample("tensor", "gpu-1", 1_000_000_000, tensor_operations=5_000_000_000_000),
         ],
     )

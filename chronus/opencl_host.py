@@ -2,7 +2,7 @@
 
 Binds one device. Prefers HYBA / integrated GPU names, then any GPU.
 use_opencl is true only after a context and kernel compile succeed.
-IGpuSku.scan_nonce already calls scan_sha256d when gpu_active.
+ChronusSku.scan_nonce already calls scan_sha256d when gpu_active.
 
 Honesty contract
 ----------------
@@ -20,9 +20,12 @@ from typing import Optional
 
 LOG = logging.getLogger(__name__)
 
-# Punch opcodes mirrored from igpu/kernels/unified_punch_kernel.cl.
+# Punch opcodes mirrored from chronus/kernels/unified_punch_kernel.cl.
 PUNCH_ZECKENDORF_ENCODE = 0x02
+PUNCH_MANIFOLD_COMPUTE = 0x15
 PUNCH_ZECKENDORF_DECODE = 0x1C
+_DIM = 11
+_PHI = (1.0 + 5.0**0.5) / 2.0
 
 # DIM * DIM: the per-work-item output stride the kernel reserves.
 _PUNCH_OUT_BLOCK = 121
@@ -76,7 +79,7 @@ def _fib_join(lo: int, hi: int) -> int:
     return total
 
 
-_IGPU_HINTS = (
+_CHRONUS_HINTS = (
     "hyba",
     "mla1517",
     "iris",
@@ -89,7 +92,7 @@ _IGPU_HINTS = (
 )
 
 
-# SHA-256d scanner kernel loaded from igpu/kernels/scan_sha256d.cl — single
+# SHA-256d scanner kernel loaded from chronus/kernels/scan_sha256d.cl — single
 # source of truth for the standalone scanner. Previously duplicated inline;
 # now loaded from the file to keep kernels and host in sync.
 def _load_scan_kernel_source() -> str:
@@ -101,8 +104,6 @@ def _load_scan_kernel_source() -> str:
     # is not present, e.g. a pyz or frozen distribution).
     return _SHA256D_SRC_FALLBACK
 
-
-SHA256D_SRC = _load_scan_kernel_source()
 
 # Inline fallback — only used if the .cl file is unavailable.
 _SHA256D_SRC_FALLBACK = r"""
@@ -188,6 +189,8 @@ __kernel void scan_sha256d(__global const uchar *header76,
 }
 """
 
+SHA256D_SRC = _load_scan_kernel_source()
+
 
 def _sha256d(data: bytes) -> bytes:
     return hashlib.sha256(hashlib.sha256(data).digest()).digest()
@@ -207,7 +210,7 @@ def _score_device(dev) -> int:
             score += 100
     except Exception:
         pass
-    if any(h in name for h in _IGPU_HINTS):
+    if any(h in name for h in _CHRONUS_HINTS):
         score += 50
     if "cpu" in name:
         score -= 80
@@ -375,12 +378,40 @@ class OpenClPunchHost:
             return {"ulong": self._cpu_punch(opcode, count, values)}
         if in_float is not None:
             self._require_supported(opcode)
+            values = np.asarray(in_float, dtype=np.float32).reshape(-1)
+            count = int(n) if n is not None else values.size // _DIM
+            if count <= 0:
+                raise ValueError("punch batch size must be positive")
+            required = count * _DIM
+            if values.size < required:
+                raise ValueError(
+                    f"manifold input requires {required} float values; " f"received {values.size}"
+                )
+            if self.use_opencl and self._punch is not None:
+                try:
+                    out = self._dispatch_punch_float(opcode, count, values)
+                    self.last_dispatch_backend = self.backend
+                    return {"float": out}
+                except Exception as exc:  # pragma: no cover - device-specific
+                    LOG.warning(
+                        "float punch dispatch failed on %s: %s",
+                        self.backend,
+                        exc,
+                    )
+                    self.last_dispatch_backend = "cpu_fallback"
+            else:
+                self.last_dispatch_backend = "cpu"
+            return {"float": self._cpu_punch_float(opcode, count, values)}
         raise ValueError("run_punch_batch requires an input channel")
 
-    # -- punch reference (mirrors igpu/kernels/unified_punch_kernel.cl) -----
+    # -- punch reference (mirrors chronus/kernels/unified_punch_kernel.cl) -----
 
     #: Punch opcodes this host can actually compute, on either backend.
-    SUPPORTED_PUNCHES = (PUNCH_ZECKENDORF_ENCODE, PUNCH_ZECKENDORF_DECODE)
+    SUPPORTED_PUNCHES = (
+        PUNCH_ZECKENDORF_ENCODE,
+        PUNCH_MANIFOLD_COMPUTE,
+        PUNCH_ZECKENDORF_DECODE,
+    )
 
     @classmethod
     def _require_supported(cls, opcode: int) -> int:
@@ -426,6 +457,23 @@ class OpenClPunchHost:
             f"punch opcode {opcode:#04x} has no CPU reference implementation; "
             f"refusing to fabricate a result"
         )
+
+    def _cpu_punch_float(self, opcode: int, count: int, values):
+        """CPU parity implementation for supported float-channel punches."""
+        import numpy as np
+
+        if opcode != PUNCH_MANIFOLD_COMPUTE:
+            raise PunchUnsupported(
+                f"punch opcode {opcode:#04x} has no float reference implementation"
+            )
+        out = np.zeros(count * _DIM, dtype=np.float32)
+        weights = np.asarray(
+            [_PHI ** -(index + 1) for index in range(_DIM)],
+            dtype=np.float32,
+        )
+        vectors = values[: count * _DIM].reshape(count, _DIM)
+        out[::_DIM] = np.sum(weights * vectors * vectors, axis=1, dtype=np.float32)
+        return out
 
     def _dispatch_punch(self, opcode: int, count: int, values):
         """Run the unified punch kernel on the bound device.
@@ -481,6 +529,56 @@ class OpenClPunchHost:
         cl.enqueue_copy(self._queue, out_np, out_u)
         self._queue.finish()
         return out_np
+
+    def _dispatch_punch_float(self, opcode: int, count: int, values):
+        """Run a float-channel punch with correctly sized device buffers."""
+        import numpy as np
+
+        cl = self._cl
+        output = np.zeros(count * _DIM, dtype=np.float32)
+        punches = np.full(count, np.uint32(opcode), dtype=np.uint32)
+        dummy_u = np.zeros(1, dtype=np.uint64)
+        dummy_i = np.zeros(1, dtype=np.uint32)
+        dummy_d = np.zeros(1, dtype=np.float64)
+
+        def buf(array, flags):
+            return cl.Buffer(
+                self._ctx,
+                flags | cl.mem_flags.COPY_HOST_PTR,
+                hostbuf=array,
+            )
+
+        input_float = buf(values, cl.mem_flags.READ_ONLY)
+        punch_ids = buf(punches, cl.mem_flags.READ_ONLY)
+        output_float = buf(output, cl.mem_flags.WRITE_ONLY)
+        input_ulong = buf(dummy_u, cl.mem_flags.READ_ONLY)
+        input_int = buf(dummy_i, cl.mem_flags.READ_ONLY)
+        input_double = buf(dummy_d, cl.mem_flags.READ_ONLY)
+        output_ulong = buf(dummy_u, cl.mem_flags.WRITE_ONLY)
+        output_int = buf(np.zeros(1, dtype=np.int32), cl.mem_flags.WRITE_ONLY)
+        output_long = buf(np.zeros(1, dtype=np.int64), cl.mem_flags.WRITE_ONLY)
+        output_double = buf(dummy_d, cl.mem_flags.WRITE_ONLY)
+
+        self._punch(
+            self._queue,
+            (count,),
+            None,
+            input_float,
+            input_ulong,
+            input_int,
+            input_double,
+            punch_ids,
+            output_float,
+            output_ulong,
+            output_int,
+            output_long,
+            output_double,
+            np.uint32(count),
+            np.uint32(count),
+        )
+        cl.enqueue_copy(self._queue, output, output_float)
+        self._queue.finish()
+        return output
 
 
 def resolve_opencl_host() -> Optional[OpenClPunchHost]:

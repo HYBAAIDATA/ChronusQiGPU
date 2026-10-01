@@ -1,17 +1,17 @@
-from Intelligence.lucas_scales import IGPU_SCALE_RUNGS
-from igpu.seam.gpu_scale import DIM, scale_job, snap_work_items, toe_t4_lucas_pisot
+from Intelligence.lucas_scales import CHRONUS_SCALE_RUNGS
+from chronus.seam.scale import DIM, scale_job, snap_work_items, toe_t4_lucas_pisot
 from kellogg.scales import lucas
 
 
 def test_snap_is_a_rung_or_multiple():
     n = snap_work_items(17)
     assert n > 0
-    assert any(n % r == 0 for r in IGPU_SCALE_RUNGS)
+    assert any(n % r == 0 for r in CHRONUS_SCALE_RUNGS)
 
 
 def test_default_collapse_rung():
     s = scale_job("job-a", 0)
-    assert any(s.work_items % r == 0 for r in IGPU_SCALE_RUNGS)
+    assert any(s.work_items % r == 0 for r in CHRONUS_SCALE_RUNGS)
     assert len(s.t11) == DIM
 
 

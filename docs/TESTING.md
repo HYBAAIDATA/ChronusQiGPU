@@ -9,9 +9,9 @@ actually executed — never inferred from source. See the baseline matrix in
 ```bash
 pip install -e ".[ml,dev]"        # deps (needs sympy for [ml])
 python -m pytest tests/ -x -q     # root suite: 593 passed, 1 skipped
-python -m unittest discover -s mla1517_platform_v3.4/python  # platform: 130 tests
+python -m unittest discover -s chronus/mla1517_platform/python  # platform: 130 tests
 python -m flake8 --count          # lint (.flake8 config): 0 findings
-python -m compileall Intelligence core_engine legacy/python_backend experiments scripts tests mla1517_platform_v3.4
+python -m compileall Intelligence core_engine legacy/python_backend experiments scripts tests chronus/mla1517_platform
 npm ci && npm run lint && npm run build   # tsc + vite
 ```
 
@@ -39,8 +39,8 @@ Pre-existing environment guards skip when no device/OpenCL is present
 | Live-submit env gate | `mining/stratum_bridge.py::is_live_submit_approved` + tests |
 | Proof-checked submit only | `manifold_pool_coordinator.submit_candidate` (SHA256d-checked before submit) |
 | No hashrate fabrication | `control_api.status_payload` + API tests |
-| Guardian absent/down → 503 never silent | `mla1517_platform_v3.4/python/test_telemetry_routes.py::test_privileged_routes_fail_closed_*` |
-| Bitcoin chain/network validation | `mla1517_platform_v3.4/python/test_bitcoin_chain_observer.py` (`assert_chain` via `PYTHIA_BITCOIN_NETWORK`) |
+| Guardian absent/down → 503 never silent | `chronus/mla1517_platform/python/test_telemetry_routes.py::test_privileged_routes_fail_closed_*` |
+| Bitcoin chain/network validation | `chronus/mla1517_platform/python/test_bitcoin_chain_observer.py` (`assert_chain` via `PYTHIA_BITCOIN_NETWORK`) |
 | Live pool connectivity (never submits) | `scripts/pool_smoke.py` — see OPERATIONS.md; ran live against Braiins/ViaBTC/ckpool during the 2026-09 audit |
 
 ## CI parity

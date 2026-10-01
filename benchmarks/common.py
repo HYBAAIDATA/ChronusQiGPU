@@ -31,7 +31,7 @@ DATA = REPORTS / "data"
 for _extra in (
     str(ROOT),
     str(ROOT / "turing_universal_quantum_computer"),
-    str(ROOT / "mla1517_platform_v3.4" / "python"),
+    str(ROOT / "chronus/mla1517_platform" / "python"),
 ):
     if _extra not in sys.path:
         sys.path.insert(0, _extra)

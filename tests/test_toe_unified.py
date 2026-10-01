@@ -12,9 +12,11 @@ import numpy as np
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "mla1517_platform_v3.4" / "python"))
+sys.path.insert(
+    0, str(Path(__file__).resolve().parent.parent / "chronus/mla1517_platform" / "python")
+)
 
-from mla1517.mining.toe_unified import (  # noqa: E402
+from chronus.mla1517.mining.toe_unified import (  # noqa: E402
     REFUSALS,
     ActionPolicy,
     UnifiedTOE,

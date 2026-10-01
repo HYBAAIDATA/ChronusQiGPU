@@ -15,16 +15,16 @@ claims:
   - id: c-assembly-lock
     text: "AssemblyLock is immutable, versioned and signed"
     status: VERIFIED
-    test_command: "python scripts/audit_igpu_contracts.py --only C2"
-    artifact: "scripts/audit_igpu_contracts.py"
-    artifact_hash: "2c7799345666f1bc8c7145d3e97f4b0af88f4cd81f4a71a756b3936a0b21d0ff"
+    test_command: "python scripts/audit_chronus_contracts.py --only C2"
+    artifact: "scripts/audit_chronus_contracts.py"
+    artifact_hash: "c71bd1a76eb128a1b2575f6df874fbe1c60ba8cc3c4c47a973bff472b5ffe6b7"
     baseline: "AssemblyLock{schema_version,manifest_hash,policy_hash,evidence_hash,signature} frozen"
   - id: c-receipt-mode
     text: "ResultReceipt enforces the rehydration-count/FoldMode pairing"
     status: VERIFIED
-    test_command: "python scripts/audit_igpu_contracts.py --only receipts"
-    artifact: "scripts/audit_igpu_contracts.py"
-    artifact_hash: "2c7799345666f1bc8c7145d3e97f4b0af88f4cd81f4a71a756b3936a0b21d0ff"
+    test_command: "python scripts/audit_chronus_contracts.py --only receipts"
+    artifact: "scripts/audit_chronus_contracts.py"
+    artifact_hash: "c71bd1a76eb128a1b2575f6df874fbe1c60ba8cc3c4c47a973bff472b5ffe6b7"
     baseline: "rehydration_count>0 iff mode==REHYDRATE"
   - id: c-runtime-config
     text: "runtime config contract loads declared sections"

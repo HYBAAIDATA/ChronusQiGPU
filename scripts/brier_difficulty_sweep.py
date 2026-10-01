@@ -19,7 +19,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(
-    0, str(Path(__file__).resolve().parents[1] / "mla1517_platform_v3.4" / "python"))
+    0, str(Path(__file__).resolve().parents[1] / "chronus/mla1517_platform" / "python"))
 
 from Intelligence.intelligence_integration import IntegratedIntelligence
 from Intelligence.mining_bridge import is_wired, wire_intelligence_into_mining

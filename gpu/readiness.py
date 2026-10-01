@@ -52,8 +52,8 @@ _SOFTWARE_SURFACES: dict[str, tuple[str, tuple[str, ...]]] = {
             "sha256d_merkle",
         ),
     ),
-    "igpu_seam": (
-        "igpu.seam.types",
+    "chronus_seam": (
+        "chronus.seam.types",
         ("KernelName", "KERNEL_CLASS"),
     ),
 }

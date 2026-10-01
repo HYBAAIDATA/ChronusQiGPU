@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "modules": [
     "core",
-    "mla1517",
+    "chronus.mla1517",
     "primedb",
     "al_haras",
     "proof_service",
@@ -58,16 +58,16 @@
   "compose_files": [
     "docker-compose.cuda.yml",
     "docker-compose.hybrid.yml",
-    "docker-compose.igpu-linux.yml",
-    "docker-compose.igpu-wsl2.yml",
+    "docker-compose.chronus-linux.yml",
+    "docker-compose.chronus-wsl2.yml",
     "docker-compose.metal.yml",
     "docker-compose.override.yml",
     "docker-compose.pools.yml",
     "docker-compose.rocm.yml",
     "docker-compose.yml"
   ],
-  "compile_hash": "daea7a3bc411ee15fc14ecc36c7f4166669a4d47d42d578e74d10f3b6e819a16",
+  "compile_hash": "13393806713a875821e49d67dc3f0d37fcaa1496fc97caca756c42571fb7c033",
   "signature_algorithm": "HMAC-SHA256",
   "key_id": "dev-signing",
-  "signature": "7461a33aec1afbd6f24644a0b8ac1eb103651940dfebef6719b7c147a53c6567"
+  "signature": "8cb753a0c26b76741bf28be87ad353f714a1f09627afdbc848b08b4a9cc39387"
 }

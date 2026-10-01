@@ -51,7 +51,7 @@ import yaml
 from scripts.import_audit import source_roots
 
 ROOT = Path(__file__).resolve().parents[1]
-PLATFORM = "mla1517_platform_v3.4/python"
+PLATFORM = "chronus/mla1517_platform/python"
 SKIP_DIRS = {
     ".git",
     "node_modules",
@@ -541,7 +541,7 @@ def check_python_deps(root: Path) -> list[Finding]:
 # In-tree distributions: a folder with its own pyproject.toml that CI or an
 # image installs on its own (``cd DIR && pip install -e ".[test]"``) gets only
 # what THAT pyproject declares, not the root one. The push gate failed at
-# collection for five pushes because mla1517/learning.py imports yaml and only
+# collection for five pushes because chronus/mla1517/learning.py imports yaml and only
 # the root pyproject declared pyyaml.
 
 _PIP_INSTALL = re.compile(r"\bpip3?\s+install\s+(.*)")

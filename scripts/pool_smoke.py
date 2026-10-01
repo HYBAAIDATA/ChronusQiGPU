@@ -14,7 +14,7 @@ Authorize behavior:
   server that enforces authorization, not an accept-everything honeypot.
 
 Usage:
-    PYTHONPATH=mla1517_platform_v3.4/python python scripts/pool_smoke.py \
+    PYTHONPATH=chronus/mla1517_platform/python python scripts/pool_smoke.py \
         --endpoint stratum.braiins.com:3333 [--endpoint stratum+ssl://...] \
         [--wait-for-job SECONDS]
 
@@ -31,7 +31,7 @@ import sys
 from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parents[1]
-_PYTHON_ROOT = _ROOT / "mla1517_platform_v3.4" / "python"
+_PYTHON_ROOT = _ROOT / "chronus/mla1517_platform" / "python"
 if str(_PYTHON_ROOT) not in sys.path:
     sys.path.insert(0, str(_PYTHON_ROOT))
 

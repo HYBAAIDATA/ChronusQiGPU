@@ -326,13 +326,13 @@
     "substrate attests integrity but cannot recover content lost when ALL copies corrupt \u2014 quarantine evidence, not invention"
   ],
   "unavailable": [
-    "native libprimedb_storage (C library) \u2014 absent from this tree; reference semantics only (declared in mla1517.prime_db)",
+    "native libprimedb_storage (C library) \u2014 absent from this tree; reference semantics only (declared in chronus.mla1517.prime_db)",
     "GPU-persistence/zero-copy device path \u2014 no HYBA device on this VM",
     "semantic/vector embedding navigation \u2014 no embedding store exists in the substrate (anchor buckets are the geometric lens)",
     "physical compression \u2014 does not exist; fold is representation"
   ],
   "acceptance": {
-    "what_is_the_substrate": "aethel (Binet+Zeckendorf encoding, Fibonacci+Cassini address space with integrity ledger, prime substrate keys, geodesic handoff) + mla1517.prime_db reference semantics + hyba.substrate facade + toe.receipts evidence chain",
+    "what_is_the_substrate": "aethel (Binet+Zeckendorf encoding, Fibonacci+Cassini address space with integrity ledger, prime substrate keys, geodesic handoff) + chronus.mla1517.prime_db reference semantics + hyba.substrate facade + toe.receipts evidence chain",
     "mathematical_properties": [
       "Zeckendorf uniqueness (exact invertible fold)",
       "Cassini identity on every address transition",

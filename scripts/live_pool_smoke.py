@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PLATFORM_PYTHON = ROOT / "mla1517_platform_v3.4" / "python"
+PLATFORM_PYTHON = ROOT / "chronus/mla1517_platform" / "python"
 if str(PLATFORM_PYTHON) not in sys.path:
     sys.path.insert(0, str(PLATFORM_PYTHON))
 

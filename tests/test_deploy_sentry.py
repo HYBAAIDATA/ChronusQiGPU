@@ -265,7 +265,7 @@ def test_entry_points_must_exist(tmp_path):
 
 
 def test_an_in_tree_distribution_ci_installs_alone_must_declare_its_imports(tmp_path):
-    # The push gate installs mla1517_platform_v3.4 by itself; learning.py
+    # The push gate installs chronus/mla1517_platform by itself; learning.py
     # imported yaml, which only the root pyproject declared.
     root = _repo(tmp_path)
     platform = """

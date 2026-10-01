@@ -79,7 +79,7 @@ class Tests(unittest.TestCase):
         o = Observability(t)
         now = int(time.time())
         m = Metric(
-            "mla1517.bytes.moved",
+            "chronus.mla1517.bytes.moved",
             MetricKind.COUNTER,
             "bytes",
             {},

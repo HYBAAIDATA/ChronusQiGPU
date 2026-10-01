@@ -147,6 +147,8 @@ class KernelName(str, Enum):
     korobov_point = "korobov_point"
     sha256d_scan = "sha256d_scan"
     sha256d_verify = "sha256d_verify"
+    sha256d_midstate = "sha256d_midstate"
+    sha256d_merkle = "sha256d_merkle"
     attest_result = "attest_result"
     attest_compose = "attest_compose"
     attest_zk_prove = "attest_zk_prove"
@@ -183,6 +185,8 @@ KERNEL_CLASS: Dict[KernelName, KernelClass] = {
     KernelName.grover_hendrix_iterate: KernelClass.compute_heavy,
     KernelName.sha256d_scan: KernelClass.hash_heavy,
     KernelName.sha256d_verify: KernelClass.hash_heavy,
+    KernelName.sha256d_midstate: KernelClass.hash_heavy,
+    KernelName.sha256d_merkle: KernelClass.hash_heavy,
     KernelName.lucas_wind: KernelClass.traversal,
     KernelName.pisot_wind: KernelClass.traversal,
     KernelName.cassini_step: KernelClass.traversal,

@@ -29,16 +29,16 @@ verified_pairings:
     pair: [binet, exact_fibonacci_lucas]
     status: VERIFIED
     pairing_test:
-      test_command: "python scripts/audit_igpu_contracts.py --only 12.2"
+      test_command: "python scripts/audit_chronus_contracts.py --only 12.2"
       baseline: "exact fold contracts (12.2)"
-      reproduce_command: "python scripts/audit_igpu_contracts.py --only 12.2"
+      reproduce_command: "python scripts/audit_chronus_contracts.py --only 12.2"
   - name: pisot_lucas
     pair: [pisot, lucas]
     status: VERIFIED
     pairing_test:
-      test_command: "python scripts/audit_igpu_contracts.py --only 12.2"
+      test_command: "python scripts/audit_chronus_contracts.py --only 12.2"
       baseline: "exact fold contracts (12.2)"
-      reproduce_command: "python scripts/audit_igpu_contracts.py --only 12.2"
+      reproduce_command: "python scripts/audit_chronus_contracts.py --only 12.2"
   - name: q_matrix_fibonacci_lucas_cassini
     pair: [q_matrix, fibonacci_lucas_cassini]
     status: VERIFIED
@@ -50,16 +50,16 @@ verified_pairings:
     pair: [m32, graph_laplacian]
     status: VERIFIED
     pairing_test:
-      test_command: "python scripts/audit_igpu_contracts.py --only 12.2b"
+      test_command: "python scripts/audit_chronus_contracts.py --only 12.2b"
       baseline: "M32 transport behaviour"
-      reproduce_command: "python scripts/audit_igpu_contracts.py --only 12.2b"
+      reproduce_command: "python scripts/audit_chronus_contracts.py --only 12.2b"
   - name: m32_h_equals_l_plus_v
     pair: [m32, "H = L + V"]
     status: VERIFIED
     pairing_test:
-      test_command: "python scripts/audit_igpu_contracts.py --only 12.2b"
+      test_command: "python scripts/audit_chronus_contracts.py --only 12.2b"
       baseline: "M32 Hamiltonian decomposition"
-      reproduce_command: "python scripts/audit_igpu_contracts.py --only 12.2b"
+      reproduce_command: "python scripts/audit_chronus_contracts.py --only 12.2b"
   - name: m32_engine_cassini_zeckendorf_seals
     pair: [m32_engine, cassini_zeckendorf_seals]
     status: VERIFIED
@@ -71,9 +71,9 @@ verified_pairings:
     pair: [quantum_core, substrate_agnostic_backends]
     status: VERIFIED
     pairing_test:
-      test_command: "python scripts/audit_igpu_contracts.py --only C2,seam"
+      test_command: "python scripts/audit_chronus_contracts.py --only C2,seam"
       baseline: "substrate-agnostic backend certificates"
-      reproduce_command: "python scripts/audit_igpu_contracts.py --only C2,seam"
+      reproduce_command: "python scripts/audit_chronus_contracts.py --only C2,seam"
 prohibited_pairings:
   - name: lucas_pisot_quantum_speedup
     pair: [lucas, pisot, quantum_speedup]

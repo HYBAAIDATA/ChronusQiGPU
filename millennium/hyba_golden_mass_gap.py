@@ -182,10 +182,7 @@ def verify_algebra(N: int = 200) -> list[tuple[str, bool]]:
 
 def _geometry():
     """Load the miner's exact frame without importing the mining package."""
-    path = (
-        Path(__file__).resolve().parents[1]
-        / "mla1517_platform_v3.4/python/mla1517/mining/geometry.py"
-    )
+    path = Path(__file__).resolve().parents[1] / "chronus/mla1517/mining/geometry.py"
     name = "pythia_m32_geometry"
     module = sys.modules.get(name)
     if module is None:

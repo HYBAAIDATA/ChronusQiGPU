@@ -8,7 +8,7 @@ resource measurements those objects actually produce.
 
 Run from the repository root:
 
-    PYTHONPATH=.:mla1517_platform_v3.4/python \\
+    PYTHONPATH=.:chronus/mla1517_platform/python \\
         python3 tests/explore_toe_implementation.py
 """
 
@@ -24,7 +24,7 @@ from typing import Any
 
 # Repository root on path when the file is launched as a script.
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_MLA = os.path.join(_ROOT, "mla1517_platform_v3.4", "python")
+_MLA = os.path.join(_ROOT, "chronus/mla1517_platform", "python")
 for _p in (_ROOT, _MLA):
     if _p not in sys.path:
         sys.path.insert(0, _p)
@@ -83,7 +83,7 @@ def _scrub(value: Any, *, depth: int = 0) -> Any:
 
 
 def _preload_scale_controller() -> None:
-    """Load ``mla1517.scale`` without executing ``mla1517/__init__.py``.
+    """Load ``chronus.mla1517.scale`` without executing ``chronus/mla1517/__init__.py``.
 
     The package initializer imports the mining stack, and that stack requires
     ``enum.StrEnum`` (Python 3.11+). The scale controller does not. Preloading
@@ -94,21 +94,21 @@ def _preload_scale_controller() -> None:
     import types
     from pathlib import Path
 
-    if getattr(sys.modules.get("mla1517.scale"), "ScaleController", None) is not None:
+    if getattr(sys.modules.get("chronus.mla1517.scale"), "ScaleController", None) is not None:
         return
-    root = Path(_MLA) / "mla1517"
+    root = Path(_ROOT) / "chronus" / "mla1517"
     pkg = types.ModuleType("mla1517")
     pkg.__path__ = [str(root)]  # type: ignore[attr-defined]
     pkg.__package__ = "mla1517"
     sys.modules["mla1517"] = pkg
     for name in ("core", "scale"):
         path = root / f"{name}.py"
-        spec = importlib.util.spec_from_file_location(f"mla1517.{name}", path)
+        spec = importlib.util.spec_from_file_location(f"chronus.mla1517.{name}", path)
         if spec is None or spec.loader is None:
             raise ImportError(f"cannot load {path}")
         module = importlib.util.module_from_spec(spec)
         module.__package__ = "mla1517"
-        sys.modules[f"mla1517.{name}"] = module
+        sys.modules[f"chronus.mla1517.{name}"] = module
         spec.loader.exec_module(module)
 
 
@@ -520,7 +520,7 @@ def main() -> None:
     print("  expand() is what the mining adapter calls. Absence means that call fails closed.")
 
     _banner("1. STATE TOMOGRAPHY  (32-dimensional encoding, not the mining M32 lanes)")
-    print("  Mining M32 is a 32-lane nonce partition in mla1517.mining.geometry.")
+    print("  Mining M32 is a 32-lane nonce partition in chronus.mla1517.mining.geometry.")
     print("  This frame is hilbert_dim=32 inside TOEBridge. They are different objects.")
     cascade = _cascading_failure()
     _print_tomography(bridge, "cascading_failure", cascade)
@@ -578,7 +578,7 @@ def main() -> None:
     print("  * exact_tensor is a 5-qubit basis state indexed by a digest, then a Z quarter-turn.")
     print("  * effective_dimension is 1/sum(p^2) after projecting only the first three")
     print("    Born weights onto a fixed 32-direction frame. It is not the rank of the state.")
-    print("  * Full `import mla1517` fails on Python 3.10 (enum.StrEnum). The scale")
+    print("  * Full `import chronus.mla1517` fails on Python 3.10 (enum.StrEnum). The scale")
     print("    controller is loaded directly so the ladder still executes.")
     print("  * theorem_proven is false on the exact tensor and on the expansion envelope.")
     print("  * TOESystem flags T6, T7, T9, and T10 do not read the candidate.")
