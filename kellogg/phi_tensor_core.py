@@ -103,8 +103,30 @@ class PhiTensorCore:
     def last_metrics(self) -> Optional[TensorOpRecord]:
         return self.op_log[-1] if self.op_log else None
 
+    @staticmethod
+    def _max_foldable_depth(size: int, requested: int) -> int:
+        """Return the deepest legal fold for ``size`` values.
+
+        ``phi_fold`` requires every retained segment entering a fold step to
+        contain at least two values.  Tensor reductions legitimately produce a
+        single scalar, so the evidence/result representation automatically
+        falls back to depth zero rather than failing an otherwise valid op.
+        """
+        if size < 1:
+            raise TensorCoreError("tensor operation produced an empty result")
+        depth = 0
+        retained = int(size)
+        phi_sq = (1.0 + math.sqrt(5.0)) / 2.0 + 1.0
+        while depth < requested and retained >= 2:
+            complement = max(1, int(np.rint(retained / phi_sq)))
+            retained -= complement
+            depth += 1
+        return depth
+
     def _fold_result(self, result: np.ndarray) -> NumericFoldState:
-        return phi_fold(np.asarray(result, dtype=np.float64), depth=self.result_depth)
+        array = np.asarray(result, dtype=np.float64)
+        depth = self._max_foldable_depth(array.size, self.result_depth)
+        return phi_fold(array, depth=depth)
 
     def _record(
         self,
@@ -130,7 +152,7 @@ class PhiTensorCore:
             output_norm=out_norm,
             reconstruction_error=error,
             boundary=(boundary.offset, boundary.length) if boundary else None,
-            result_depth=self.result_depth,
+            result_depth=result_state.depth,
             elapsed_ns=elapsed_ns,
             flops=max(0, int(flops)),
             throughput_tflops=(max(0, int(flops)) / elapsed_ns) * 1e-3,
@@ -141,8 +163,6 @@ class PhiTensorCore:
         self.total_flops += record.flops
         self.total_time_ns += record.elapsed_ns
         return record
-
-    # -- arithmetic ----------------------------------------------------------
 
     def fma(
         self,
@@ -253,7 +273,6 @@ class PhiTensorCore:
         started = time.perf_counter_ns()
         operand = _boundary_slice(a, boundary)
         value = float(fn(operand))
-        # A scalar evidence state lets reconstruction error remain measured.
         result = np.array([value], dtype=np.float64)
         state = self._fold_result(result)
         self._record(
@@ -294,9 +313,6 @@ class PhiTensorCore:
             "operations_by_type": operations,
             "truth_class": "measured_host_execution",
         }
-
-
-# -- MetricTensor -------------------------------------------------------------
 
 
 class ManifoldType(Enum):
