@@ -10,14 +10,17 @@ original — measured, never asserted: :func:`working_set_ratio` returns the
 actual ratio of element counts, matching the documented depth-3 value of
 ~phi^3 = 4.236x.
 
-Honest limitations (evidence quality):
-  * ``unfold_partial`` currently performs a full reconstruction and then
-    slices the requested ``KernelBoundary``. True partial unfold —
-    addressing a single fold level without reconstructing the rest — is a
-    research target, not a shipped capability.
-  * The fold runs in software (NumPy). Any "effective bandwidth" number
-    derived by multiplying a physical bandwidth by the working-set ratio
-    is accounting arithmetic, not a measured device property.
+``unfold_partial`` is a true addressed reconstruction.  The logical array is
+represented by the final retained segment followed by complements in reverse
+fold order.  A boundary read intersects only those resident segments touched by
+the requested logical interval; it does not build the complete original array
+as an intermediate.  ``unfold_partial_with_stats`` exposes the amount of source
+state actually visited so this property remains regression-testable.
+
+The fold runs in software unless a caller dispatches arithmetic through the
+Tensor/Chronus hardware backend. Any effective-bandwidth number derived by
+multiplying a physical bandwidth by a working-set ratio is accounting
+arithmetic, not a measured device property.
 """
 
 from __future__ import annotations
@@ -84,6 +87,26 @@ class NumericFoldState:
         return int(self.retained.size)
 
 
+@dataclass(frozen=True)
+class PartialUnfoldStats:
+    """Measured work performed by a selective unfold."""
+
+    requested_values: int
+    source_values_read: int
+    source_segments_touched: int
+    source_segments_total: int
+    full_length: int
+    depth: int
+
+    @property
+    def reconstructed_fraction(self) -> float:
+        return self.requested_values / self.full_length if self.full_length else 0.0
+
+    @property
+    def source_fraction(self) -> float:
+        return self.source_values_read / self.full_length if self.full_length else 0.0
+
+
 def _fibonacci_split(dim: int) -> int:
     """Dominant-segment length for one fold level: ~dim/phi.
 
@@ -130,18 +153,23 @@ def phi_fold(array: np.ndarray, depth: int = 1) -> NumericFoldState:
     )
 
 
-def phi_unfold(state: NumericFoldState) -> np.ndarray:
-    """Reconstruct the original array element-exactly.
-
-    Precondition: ``state`` came from :func:`phi_fold` (complement count
-    equals depth). Postcondition: output shape is ``original_shape``.
-    """
+def _validate_state(state: NumericFoldState) -> None:
     if not isinstance(state, NumericFoldState):
-        raise PhiFoldError("phi_unfold requires a NumericFoldState")
+        raise PhiFoldError("operation requires a NumericFoldState")
     if len(state.complements) != state.depth:
         raise PhiFoldError(
             f"fold state has {len(state.complements)} complements for depth {state.depth}"
         )
+    represented = state.retained_size + sum(int(part.size) for part in state.complements)
+    if represented != state.original_size:
+        raise PhiFoldError(
+            f"fold state represents {represented} elements; expected {state.original_size}"
+        )
+
+
+def phi_unfold(state: NumericFoldState) -> np.ndarray:
+    """Reconstruct the original array element-exactly."""
+    _validate_state(state)
     flat = state.retained
     for level in range(state.depth - 1, -1, -1):
         flat = np.concatenate([flat, state.complements[level]])
@@ -150,21 +178,113 @@ def phi_unfold(state: NumericFoldState) -> np.ndarray:
     return flat.reshape(state.original_shape)
 
 
-def unfold_partial(state: NumericFoldState, boundary: KernelBoundary) -> np.ndarray:
-    """Return ``boundary`` of the unfolded array.
+def _logical_segments(state: NumericFoldState) -> Tuple[np.ndarray, ...]:
+    """Return resident segments in their logical unfolded order.
 
-    LIMITATION: this reconstructs the full array and then slices — the
-    boundary defines the region returned, not the work performed. True
-    partial unfold is declared research scope, not shipped.
+    This returns references to the existing retained/complement arrays.  It does
+    not concatenate or copy them.
+    """
+    _validate_state(state)
+    return (state.retained,) + tuple(reversed(state.complements))
+
+
+def unfold_partial_with_stats(
+    state: NumericFoldState, boundary: KernelBoundary
+) -> Tuple[np.ndarray, PartialUnfoldStats]:
+    """Reconstruct only ``boundary`` without materialising the full tensor.
+
+    Because the numeric fold retains every complement as a contiguous resident
+    segment, the unfolded flat array is exactly ``retained + reversed(complements)``.
+    The addressed read walks segment extents, copies only intersecting spans and
+    concatenates at most ``depth + 1`` small pieces.
     """
     if not isinstance(boundary, KernelBoundary):
         raise PhiFoldError("unfold_partial requires a KernelBoundary")
-    flat = phi_unfold(state).ravel()
-    if boundary.stop > flat.size:
+    _validate_state(state)
+    if boundary.stop > state.original_size:
         raise PhiFoldError(
-            f"boundary [{boundary.offset}, {boundary.stop}) exceeds unfolded size {flat.size}"
+            f"boundary [{boundary.offset}, {boundary.stop}) exceeds unfolded size "
+            f"{state.original_size}"
         )
-    return flat[boundary.slice]
+
+    requested_start = boundary.offset
+    requested_stop = boundary.stop
+    logical_offset = 0
+    pieces = []
+    source_values_read = 0
+    segments_touched = 0
+    segments = _logical_segments(state)
+
+    for segment in segments:
+        segment_size = int(segment.size)
+        segment_start = logical_offset
+        segment_stop = logical_offset + segment_size
+        logical_offset = segment_stop
+        if requested_stop <= segment_start:
+            break
+        if requested_start >= segment_stop:
+            continue
+        local_start = max(requested_start, segment_start) - segment_start
+        local_stop = min(requested_stop, segment_stop) - segment_start
+        if local_stop > local_start:
+            piece = np.asarray(segment).ravel()[local_start:local_stop]
+            pieces.append(piece)
+            source_values_read += int(piece.size)
+            segments_touched += 1
+
+    if source_values_read != boundary.length:
+        raise PhiFoldError(
+            f"partial unfold reconstructed {source_values_read} values; expected {boundary.length}"
+        )
+    if not pieces:
+        result = np.empty(0, dtype=np.float64)
+    elif len(pieces) == 1:
+        result = pieces[0].copy()
+    else:
+        result = np.concatenate(pieces)
+
+    stats = PartialUnfoldStats(
+        requested_values=boundary.length,
+        source_values_read=source_values_read,
+        source_segments_touched=segments_touched,
+        source_segments_total=len(segments),
+        full_length=state.original_size,
+        depth=state.depth,
+    )
+    return result, stats
+
+
+def unfold_partial(state: NumericFoldState, boundary: KernelBoundary) -> np.ndarray:
+    """Return ``boundary`` using the true addressed reconstruction path."""
+    return unfold_partial_with_stats(state, boundary)[0]
+
+
+def fold_result(
+    result_slice: np.ndarray,
+    boundary: KernelBoundary,
+    original_state: NumericFoldState,
+    *,
+    depth: int | None = None,
+) -> NumericFoldState:
+    """Write a computed logical slice back into a folded state losslessly.
+
+    Updating a folded resident necessarily changes the representation of the
+    containing tensor, so this operation reconstructs the full logical payload,
+    applies the bounded write, then re-folds at the requested/original depth.
+    Reads remain truly partial; writes are explicitly full-state re-folds.
+    """
+    _validate_state(original_state)
+    values = np.asarray(result_slice, dtype=np.float64).ravel()
+    if values.size != boundary.length:
+        raise PhiFoldError(
+            f"result slice has {values.size} values; boundary requires {boundary.length}"
+        )
+    if boundary.stop > original_state.original_size:
+        raise PhiFoldError("result slice exceeds original tensor bounds")
+    full = phi_unfold(original_state).ravel().copy()
+    full[boundary.slice] = values
+    target_depth = original_state.depth if depth is None else int(depth)
+    return phi_fold(full.reshape(original_state.original_shape), depth=target_depth)
 
 
 def working_set_ratio(state: NumericFoldState) -> float:
@@ -175,12 +295,7 @@ def working_set_ratio(state: NumericFoldState) -> float:
 
 
 def reconstruction_error(original: np.ndarray, state: NumericFoldState) -> float:
-    """Measured max-abs error between ``original`` and ``phi_unfold(state)``.
-
-    The value is always computed against the supplied original, never
-    assumed — an exact fold reports 0.0 and any corruption in the retained
-    or complement segments shows up directly.
-    """
+    """Measured max-abs error between ``original`` and ``phi_unfold(state)``."""
     expected = np.asarray(original, dtype=np.float64).ravel()
     got = phi_unfold(state).ravel()
     if expected.size != got.size:
@@ -193,10 +308,13 @@ __all__ = [
     "PHI_SQ",
     "KernelBoundary",
     "NumericFoldState",
+    "PartialUnfoldStats",
     "PhiFoldError",
+    "fold_result",
     "phi_fold",
     "phi_unfold",
     "reconstruction_error",
     "unfold_partial",
+    "unfold_partial_with_stats",
     "working_set_ratio",
 ]
