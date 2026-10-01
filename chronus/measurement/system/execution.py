@@ -13,6 +13,12 @@ def _norm(value: Any) -> str:
     return " ".join(str(value or "").strip().lower().split())
 
 
+def _field(value: Any, name: str, default: Any = "") -> Any:
+    if isinstance(value, dict):
+        return value.get(name, default)
+    return getattr(value, name, default)
+
+
 def bind_execution_device(
     baseline: Any,
     *,
@@ -25,17 +31,18 @@ def bind_execution_device(
     Matching is evidence-based: the workload must expose a device identity that
     names a censused device. A logical ``chronus`` contract record is never
     silently substituted for an OpenCL/CUDA/Metal execution device.
+    ``baseline`` may be the live ``SystemBaseline`` or its attested dictionary.
     """
     backend_norm = _norm(backend)
     device_norm = _norm(device_id)
-    devices = list(getattr(baseline, "devices", ()) or ())
-    fingerprints = list(getattr(baseline, "fingerprints", ()) or ())
+    devices = list(_field(baseline, "devices", ()) or ())
+    fingerprints = list(_field(baseline, "fingerprints", ()) or ())
 
     best_index = -1
     best_score = 0
     for index, device in enumerate(devices):
-        name = _norm(getattr(device, "name", ""))
-        candidate_backend = _norm(getattr(device, "backend", ""))
+        name = _norm(_field(device, "name", ""))
+        candidate_backend = _norm(_field(device, "backend", ""))
 
         if candidate_backend == "chronus" and not backend_norm.startswith("chronus"):
             continue
@@ -63,10 +70,10 @@ def bind_execution_device(
     matched_backend = ""
     if matched:
         device = devices[best_index]
-        matched_device = str(getattr(device, "name", "") or "")
-        matched_backend = str(getattr(device, "backend", "") or "")
+        matched_device = str(_field(device, "name", "") or "")
+        matched_backend = str(_field(device, "backend", "") or "")
         if best_index < len(fingerprints):
-            fingerprint = str(getattr(fingerprints[best_index], "digest", "") or "")
+            fingerprint = str(_field(fingerprints[best_index], "digest", "") or "")
 
     return {
         "workload": str(workload),
