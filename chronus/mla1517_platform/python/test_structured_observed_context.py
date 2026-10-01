@@ -1,4 +1,5 @@
 """Behavioural tests for complete Turing ordering and observed TOE context."""
+
 from __future__ import annotations
 
 import unittest
@@ -19,7 +20,17 @@ class FakeTuringCore:
 @dataclass(frozen=True)
 class Job:
     job_id: str = "live-job"
-    params: tuple = ("live-job", "00" * 32, "01", "02", [], "20000000", "1d00ffff", "65abcdef", True)
+    params: tuple = (
+        "live-job",
+        "00" * 32,
+        "01",
+        "02",
+        [],
+        "20000000",
+        "1d00ffff",
+        "65abcdef",
+        True,
+    )
 
 
 class FakeTOE:
@@ -57,9 +68,10 @@ class StructuredObservedContextTests(unittest.TestCase):
         adapter = TOEMiningAdapter(bridge=bridge)
         context = adapter.analyse(job=Job(), state=bytes(range(64)), node_id=7, sequence=19)
         self.assertEqual(context.job_id, "live-job")
-        self.assertEqual(bridge.observed["node_id"], 7)
-        self.assertEqual(bridge.observed["sequence"], 19)
-        self.assertEqual(bridge.observed["mla1517_state_bytes"], list(range(64)))
+        self.assertEqual(bridge.observed["0"], list(range(64)))
+        self.assertEqual(bridge.observed["1"], list(b"live-job"))
+        self.assertEqual(bridge.observed["3"], 7)
+        self.assertEqual(bridge.observed["4"], 19)
         self.assertFalse(context.execution_evidence["synthetic"])
 
 

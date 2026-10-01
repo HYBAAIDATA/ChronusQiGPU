@@ -51,6 +51,7 @@ class CausalCoordinate:
     submission_id: str | None = None
     recovery_id: str | None = None
     learning_record_id: str | None = None
+    job_id: str | None = None
 
     def extend(self, **axes: Any) -> "CausalCoordinate":
         unknown = set(axes) - set(_AXES)

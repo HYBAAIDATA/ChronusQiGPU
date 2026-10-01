@@ -384,6 +384,8 @@ class ExecutionRouter:
             preferred_face=plan.preferred_face,
             plan_source=plan.source,
             toe_frame_id=plan.toe_frame_id,
+            search_plan_id=plan.plan_id,
+            toe_advice_reason=plan.evidence_refs.get("toe_advice_reason"),
             # The plan did not run at all, so this is a PLAN fallback (no
             # plan_id), distinct from a route fallback.
             plan_fallback_reason=(
@@ -745,6 +747,8 @@ class ExecutionRouter:
             plan_source=plan_source,
             plan_fallback_reason=plan_fallback_reason,
             toe_frame_id=plan.toe_frame_id,
+            search_plan_id=plan.plan_id,
+            toe_advice_reason=plan.evidence_refs.get("toe_advice_reason"),
             fallback_reason=route_fallback_reason,
             pool_outcome=PoolOutcome.NOT_SUBMITTED,
             generation=plan.generation,

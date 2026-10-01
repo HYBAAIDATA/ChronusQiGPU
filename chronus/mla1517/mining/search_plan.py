@@ -167,6 +167,7 @@ class PoolOutcome(str, Enum):
 
     NO_CANDIDATE = "NO_CANDIDATE"
     NOT_SUBMITTED = "NOT_SUBMITTED"
+    STALE = "STALE"
     ACCEPTED = "ACCEPTED"
     REJECTED = "REJECTED"
     OUTCOME_UNKNOWN = "OUTCOME_UNKNOWN"
@@ -350,6 +351,12 @@ class ExecutionRecord:
     candidate_id: str | None = None
     submission_id: str | None = None
     learning_record_id: str | None = None
+    search_plan_id: str | None = None
+    job_id: str | None = None
+    candidate_nonce: int | None = None
+    candidate_host_verified: bool | None = None
+    recovery_id: str | None = None
+    toe_advice_reason: str | None = None
 
     def __post_init__(self) -> None:
         source = PlanSource(self.plan_source)
@@ -426,7 +433,27 @@ class ExecutionRecord:
             raise ValueError("pool_accepted requires a literal ACCEPTED outcome")
         if self.pool_rejected and self.pool_outcome is not PoolOutcome.REJECTED:
             raise ValueError("pool_rejected requires a literal REJECTED outcome")
+        if self.pool_stale and self.pool_outcome is not PoolOutcome.STALE:
+            raise ValueError("pool_stale requires a literal STALE outcome")
+        if self.pool_outcome is PoolOutcome.STALE and not self.pool_stale:
+            raise ValueError("STALE requires a literal stale-work counter")
+        if self.candidate_nonce is not None and not 0 <= self.candidate_nonce <= 0xFFFFFFFF:
+            raise ValueError("candidate_nonce must be a uint32")
+        if self.candidate_host_verified and (
+            self.candidate_nonce is None or self.locally_valid_shares <= 0
+        ):
+            raise ValueError("host-verified candidates require a nonce and a local proof result")
         if len(self.lane_order) != _LANES or sorted(self.lane_order) != list(range(_LANES)):
             raise ValueError("lane_order must contain every M32 lane exactly once")
         if not (0 <= self.preferred_face < _LANES):
             raise ValueError("preferred_face must be in [0, 31]")
+
+    @property
+    def truth_class(self) -> str:
+        """Evidence tier using explicit software/hardware/pool verification names."""
+        return {
+            EvidenceClass.SOFTWARE_VERIFIED: "SOFTWARE_EXECUTION_VERIFIED",
+            EvidenceClass.DEVICE_AVAILABLE: "DEVICE_AVAILABLE",
+            EvidenceClass.HARDWARE_EXECUTED: "HARDWARE_EXECUTION_VERIFIED",
+            EvidenceClass.POOL_CONFIRMED: "POOL_VERIFIED",
+        }[self.evidence_class]
