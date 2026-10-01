@@ -73,9 +73,7 @@ class MultiAgentEntangledOrchestrator:
         manifold: Optional[SharedEntangledManifold] = None,
         engine=None,
     ):
-        from pythagoras.engine.evolution import (
-            V65ManifoldEscapeEngine as PythagorasEvolutionEngine,
-        )
+        from pythagoras.engine.evolution import PythagorasEvolutionEngine
 
         self.manifold = manifold or SharedEntangledManifold()
         self.calculator = calculator or PhiResonanceCalculator()
