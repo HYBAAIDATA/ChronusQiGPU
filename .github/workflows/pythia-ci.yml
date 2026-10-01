@@ -150,7 +150,7 @@ jobs:
         run: python -m compileall -q chronus/mla1517_platform/python
       - name: Verify installed canonical entrypoints
         run: >-
-          python -c "import control_api, coordinator, main, mining_runtime, mla1517;
+          python -c "import control_api, coordinator, main, mining_runtime, chronus.mla1517;
           print('PASS — installed canonical modules resolve')"
       - name: Run dependency-scoped canonical smoke tests
         run: >-
