@@ -28,8 +28,8 @@ from typing import Any, Dict, List
 
 from pythagoras.core.diagnostics import phi_sensitivity
 from pythagoras.core.phi_metric import PhiResonanceCalculator
-from pythagoras.engine.v6_4_cross_file_reuse import CrossFilePrimitiveRepository
-from pythagoras.engine.v6_5_manifold_escape import V65ManifoldEscapeEngine
+from pythagoras.engine.evolution import PythagorasEvolutionEngine
+from pythagoras.engine.primitive_repository import CrossFilePrimitiveRepository
 from pythagoras.experiments.reference_metrics import phi_v12_0
 
 BENCH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "benchmarks")
@@ -50,9 +50,9 @@ class _V12_0Calculator(PhiResonanceCalculator):
         return phi_v12_0(code_str)
 
 
-def _engine(meta: bool, seed: int, metric: str, gate: bool) -> V65ManifoldEscapeEngine:
-    eng = V65ManifoldEscapeEngine(repository=CrossFilePrimitiveRepository(), seed=seed,
-                                  euclid_gate=gate, meta_evolution=meta)
+def _engine(meta: bool, seed: int, metric: str, gate: bool) -> PythagorasEvolutionEngine:
+    eng = PythagorasEvolutionEngine(repository=CrossFilePrimitiveRepository(), seed=seed,
+                                    euclid_gate=gate, meta_evolution=meta)
     if metric == "v12_0":
         eng.calculator = _V12_0Calculator()
     return eng
