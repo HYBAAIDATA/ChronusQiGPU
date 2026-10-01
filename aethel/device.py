@@ -120,9 +120,7 @@ class ChronusSku:
 
         def work(start: int, end: int) -> Optional[int]:
             for nonce in range(start, end):
-                digest = _sha256d(
-                    header76_bytes + nonce.to_bytes(4, "little")
-                )
+                digest = _sha256d(header76_bytes + nonce.to_bytes(4, "little"))
                 if _u256(digest) <= target:
                     return nonce
             return None

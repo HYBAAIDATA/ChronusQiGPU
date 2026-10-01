@@ -519,31 +519,43 @@ class ExecutionRouter:
         winner_digest: Optional[bytes] = None
         hit_sample: List[int] = []
         invalidated_midway = False
+        device_error: Optional[str] = None
 
         for chunk in chunks:
             if is_still_fresh is not None and not is_still_fresh():
                 invalidated_midway = True
                 break
-            if schedule is not None and on_device:
-                position = (chunk.start - plan.base_step) & 0xFFFFFFFF
-                nonce, digest, done = self._hasher.grind_target_hendrix(
-                    header,
-                    bytes(target)[::-1],
-                    plan.base_step,
-                    plan.window,
-                    schedule.stride,
-                    position,
-                    chunk.count,
-                )
-            elif schedule is not None:
-                position = (chunk.start - plan.base_step) & 0xFFFFFFFF
-                nonce, digest, done = self._cpu_nonces(
-                    header,
-                    target,
-                    hendrix_nonces(plan.base_step, schedule, position, chunk.count),
-                )
-            else:
-                nonce, digest, done = self._run_chunk(plan, header, target, chunk, decision)
+            try:
+                if schedule is not None and on_device:
+                    position = (chunk.start - plan.base_step) & 0xFFFFFFFF
+                    nonce, digest, done = self._hasher.grind_target_hendrix(
+                        header,
+                        bytes(target)[::-1],
+                        plan.base_step,
+                        plan.window,
+                        schedule.stride,
+                        position,
+                        chunk.count,
+                    )
+                elif schedule is not None:
+                    position = (chunk.start - plan.base_step) & 0xFFFFFFFF
+                    nonce, digest, done = self._cpu_nonces(
+                        header,
+                        target,
+                        hendrix_nonces(plan.base_step, schedule, position, chunk.count),
+                    )
+                else:
+                    nonce, digest, done = self._run_chunk(plan, header, target, chunk, decision)
+            except Exception as exc:
+                # The CPU reference is the proof oracle: its failure is a
+                # defect, never a device condition, so it propagates.
+                if decision.executed_route is ExecutionRoute.cpu_reference:
+                    raise
+                # A device chunk that raised (OpenCL error, or the hasher's
+                # own recheck refusing a false hit) fails closed as an
+                # explicit DEVICE_ERROR record carrying the cause verbatim.
+                device_error = f"{type(exc).__name__}: {exc}"
+                break
             completed += int(done)
             if nonce is not None and winner_nonce is None:
                 winner_nonce, winner_digest = nonce, digest
@@ -588,9 +600,31 @@ class ExecutionRouter:
                         hit_sample=hit_sample,
                         winner_nonce=None,
                         locally_valid=0,
+                        device_error=DEVICE_RESULT_MISMATCH,
                     ),
                     None,
                 )
+
+        if device_error is not None:
+            return (
+                self._build_record(
+                    plan,
+                    decision,
+                    requested_order,
+                    state=CompletionState.DEVICE_ERROR,
+                    actual_window=completed,
+                    completed_items=completed,
+                    elapsed=elapsed,
+                    kernel_ms=kernel_ms,
+                    launches=launches,
+                    chunk_count=len(chunks),
+                    hit_sample=hit_sample,
+                    winner_nonce=None,
+                    locally_valid=0,
+                    device_error=device_error,
+                ),
+                None,
+            )
 
         if invalidated_midway:
             state = CompletionState.INVALIDATED
@@ -679,6 +713,7 @@ class ExecutionRouter:
         hit_sample: Sequence[int],
         winner_nonce: Optional[int],
         locally_valid: int,
+        device_error: Optional[str] = None,
     ) -> ExecutionRecord:
         """Assemble the evidence-backed record for work that did run.
 
@@ -771,6 +806,7 @@ class ExecutionRouter:
             planned_lane_order=plan.lane_order,
             planned_window_start=plan.base_step,
             chunk_count=chunk_count,
+            device_error=device_error,
         )
         # hit_sample is telemetry on the returned record, kept out of the
         # evidence fields: it is NOT window-completion evidence.
