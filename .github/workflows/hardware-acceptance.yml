@@ -26,6 +26,7 @@ jobs:
           python -m chronus.measurement.production
           --full
           --require-device
+          --require-persistent-attestation
           --output results/chronus_production_measurement.json
         env:
           CHRONUS_MEASUREMENT_HMAC_KEY: '${{ secrets.CHRONUS_MEASUREMENT_HMAC_KEY }}'
