@@ -1,10 +1,12 @@
-"""
-PYTHAGORAS — META-EVOLUTIONARY ENGINE
+"""PYTHAGORAS — META-EVOLUTIONARY ENGINE
 Self-improving evolution and structural resonance platform.
 
 The engine is domain-agnostic. Domains are pluggable via the Domain ABC:
 code (Python AST), circuit, molecule, market, network. Code was the first
 domain — not the only one.
+
+v12 integrates EUCLID as the owner of repository-level Intelligence evaluation
+while preserving PYTHAGORAS as the mathematical/meta-evolution substrate.
 """
 
 from .phi_resonance import PhiResonanceCalculator, PHI
@@ -33,6 +35,10 @@ from .orchestrator import (
     run_isolated_execution,
     rolling_window_normalize,
 )
+from .core.euclid_intelligence import EuclidIntelligenceEngine, LucasSequenceCalculator
+from .adapter import PythagorasEngineAdapter
+
+__version__ = "12.0.0"
 
 __all__ = [
     "PHI",
@@ -55,6 +61,9 @@ __all__ = [
     "AutoPrimitiveDiscovery",
     "GeometryEvolution",
     "Pythagoras",
+    "PythagorasEngineAdapter",
+    "EuclidIntelligenceEngine",
+    "LucasSequenceCalculator",
     "normalize_future_imports",
     "read_source_utf8",
     "write_source_utf8",
