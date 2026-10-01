@@ -13,16 +13,42 @@ from .engine import (
     ResidentChronusState,
 )
 from .fabric import ChronusFabric, RouteDecision
+from .phi_gpu import (
+    PHI_GPU_CORES,
+    EnergyComparison,
+    EnergyModel,
+    GeodesicScheduler,
+    HybridGPU,
+    KernelLaunchConfig,
+    KernelResult,
+    KernelTask,
+    PhiGPU,
+    PhiGPUError,
+    RouteDecisionRecord,
+    phi_log_distance,
+)
 
 __all__ = [
     "Chronus",
     "ChronusFabric",
     "ChronusOpenCLEngine",
     "ChronusOpenCLUnavailable",
+    "EnergyComparison",
+    "EnergyModel",
+    "GeodesicScheduler",
+    "HybridGPU",
+    "KernelLaunchConfig",
+    "KernelResult",
+    "KernelTask",
+    "PHI_GPU_CORES",
+    "PhiGPU",
+    "PhiGPUError",
     "ResidentChronusEnsemble",
     "ResidentChronusState",
     "RouteDecision",
+    "RouteDecisionRecord",
     "open_device",
+    "phi_log_distance",
     "CLAIM_BOUNDARY",
     "DEVICE_ID",
 ]

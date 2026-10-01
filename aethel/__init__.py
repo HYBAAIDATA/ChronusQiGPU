@@ -119,6 +119,24 @@ from .encoding import (
     unfold,
 )
 from .geodesic import GeodesicHandoff, ManifoldPoint
+from .phi_fold import (
+    KernelBoundary,
+    NumericFoldState,
+    PhiFoldError,
+    phi_fold,
+    phi_unfold,
+    reconstruction_error,
+    unfold_partial,
+    working_set_ratio,
+)
+from .phi_memory import (
+    IntegrityVerdict,
+    MemoryHierarchyError,
+    MemoryTier,
+    PhiMemoryHierarchy,
+    TierResident,
+    TopologicalIntegrityGate,
+)
 from .storage import (
     DEFAULT_MAX_STEP,
     AddressSpace,
@@ -194,6 +212,12 @@ __all__ = [
     "CassiniLedger", "AddressSpace", "DEFAULT_MAX_STEP",
     # Geodesic handoff (adapter — the engine lives in Intelligence)
     "GeodesicHandoff", "ManifoldPoint",
+    # Numeric phi fold + folded memory hierarchy
+    "KernelBoundary", "NumericFoldState", "PhiFoldError",
+    "phi_fold", "phi_unfold", "unfold_partial",
+    "reconstruction_error", "working_set_ratio",
+    "MemoryTier", "TierResident", "PhiMemoryHierarchy",
+    "TopologicalIntegrityGate", "IntegrityVerdict", "MemoryHierarchyError",
     # Overhead accounting (measured CPU + structural memory)
     "OpCost", "OverheadMeter",
     "container_bytes", "measure_alloc", "metered",

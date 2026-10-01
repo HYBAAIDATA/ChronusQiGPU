@@ -142,6 +142,7 @@ _LAZY_MODULES = {
     "quantum_walk",
     "annealing",
     "swarm",
+    "variational",
 }
 
 _LAZY_SYMBOLS = {
@@ -180,6 +181,13 @@ _LAZY_SYMBOLS = {
     "EntanglementRegistration": "turing_core.ten_thousand",
     "DEFAULT_UNIVERSAL_QUBITS": "turing_core.ten_thousand",
     "zeckendorf_valid": "turing_core.ten_thousand",
+    # variational phi-Grover circuit (numpy backend)
+    "VQCConfig": "variational",
+    "VQCError": "variational",
+    "VariationalQuantumCircuit": "variational",
+    "VQCTrainingDataGenerator": "variational",
+    "VQCPhiGroverIntegration": "variational",
+    "demonstrate_vqc": "variational",
     # exact large-scale backends
     "StabilizerState": "stabilizer",
     "StabilizerDomainError": "stabilizer",

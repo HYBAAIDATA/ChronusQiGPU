@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from fractions import Fraction
 from typing import Any, Dict, List, Optional
 
-from aethel.device import IGpuSku
+from aethel.device import ChronusSku
 from aethel.hyperscaler import HyperscalerSku
 from aethel.storage import FibonacciAddress
 from igpu.seam.gpu_scale import scale_job
@@ -280,7 +280,7 @@ async def run_workflow(host, port, worker, password, *, window=4096, heal=True, 
 
 async def _run_workflow(bridge, host, port, *, window, heal, fail_fast):
     out = WorkflowResult(fail_fast=fail_fast)
-    sku = IGpuSku("standalone")
+    sku = ChronusSku("standalone")
     store = HyperscalerSku()
     t0 = time.perf_counter_ns()
     await bridge.connect()

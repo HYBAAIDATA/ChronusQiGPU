@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from aethel.device import IGpuSku
+from aethel.device import ChronusSku
 from aethel.punch import resolve_punch_host, resolve_punch_host_class
 from aethel.storage import FibonacciAddress
 from aethel.zeckendorf import apply_zeckendorf_compression, reverse_zeckendorf_expansion
@@ -38,11 +38,11 @@ def test_legacy_host_infers_encode_width_and_decodes_full_batch():
 def test_legacy_host_rejects_float_punches_it_cannot_execute_exactly():
     host = OpenClPunchHost()
     with pytest.raises(PunchUnsupported):
-        host.run_punch_batch(0x15, n=1, in_float=np.ones(11, dtype=np.float32))
+        host.run_punch_batch(0x99, n=1, in_float=np.ones(11, dtype=np.float32))
 
 
 def test_standalone_writes_fibonacci_address():
-    sku = IGpuSku("standalone")
+    sku = ChronusSku("standalone")
     t = sku.ingest("job-solo", 15)
     assert t.mode == "standalone"
     assert isinstance(t.address, FibonacciAddress)
@@ -51,7 +51,7 @@ def test_standalone_writes_fibonacci_address():
 
 
 def test_nested_sits_in_host_pool_same_ladder():
-    sku = IGpuSku("nested")
+    sku = ChronusSku("nested")
     t = sku.ingest("job-host", 12)
     assert t.mode == "nested"
     assert t.work_items > 0
