@@ -536,7 +536,7 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
                 if record is not None:
                     try:
                         await self.submit_record(record)
-                    except (ConnectionError, asyncio.IncompleteReadError) as exc:
+                    except (ConnectionError, TimeoutError, asyncio.IncompleteReadError) as exc:
                         LOG.warning("submit connection lost: %s", exc)
                         if running:
                             bridge.stop()

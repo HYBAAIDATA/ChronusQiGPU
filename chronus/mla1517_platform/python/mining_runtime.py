@@ -67,9 +67,13 @@ def pool_endpoints(args, config: dict | None = None) -> list[PoolEndpoint]:
         except Exception:
             LOG.debug("runtime_config unavailable", exc_info=True)
             config = {}
-    configured = [p for p in config.get("pools", []) if isinstance(p, dict)]
+    configured = [
+        p
+        for p in config.get("pools", [])
+        if isinstance(p, dict) and p.get("enabled", True) is not False
+    ]
     if configured:
-        ordered = sorted(configured, key=lambda p: not p.get("enabled"))
+        ordered = configured
         return [
             _endpoint(
                 f"pool{index}",

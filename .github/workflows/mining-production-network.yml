@@ -63,6 +63,19 @@ jobs:
           -s chronus/mla1517_platform/python
           -p test_stratum_session.py
           -v
+      - name: Stratum proof and target-transition contracts
+        run: >-
+          python -m unittest discover
+          -s chronus/mla1517_platform/python
+          -p test_stratum_adapter.py
+          -v
+      - name: Share lifecycle and pool-only production contracts
+        run: >-
+          python -m pytest
+          chronus/mla1517_platform/python/test_share_lifecycle.py
+          chronus/mla1517_platform/python/test_pool_only_mining.py
+          tests/test_mining_contract_audit.py
+          -q
       - name: Stratum V1 live-session harness
         run: python -m pytest tests/test_stratum_live_session.py -q
       - name: Stratum V2 Mining Protocol contracts
