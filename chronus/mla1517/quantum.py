@@ -9,7 +9,27 @@ from __future__ import annotations
 from dataclasses import dataclass
 from fractions import Fraction
 import os
-from typing import Iterable
+from typing import Any, Iterable
+
+# Provenance class of every quantum-circuit result computed in this runtime:
+# state-vector algebra evaluated on the host CPU. It is a classical
+# simulation (exact where exact arithmetic is used), never quantum hardware
+# and never a cloud quantum service.
+CLASSICAL_SIMULATION = "CLASSICAL_SIMULATION"
+
+
+def classical_simulation_provenance(
+    backend: str, *, arithmetic: str, sampling: str
+) -> dict[str, Any]:
+    """The provenance record attached to a classically simulated quantum result."""
+    return {
+        "execution": CLASSICAL_SIMULATION,
+        "backend": backend,
+        "arithmetic": arithmetic,
+        "sampling": sampling,
+        "quantum_hardware": False,
+        "cloud_quantum": False,
+    }
 
 
 @dataclass(frozen=True)
@@ -175,6 +195,15 @@ class ExactStateVector:
         self.amplitudes = amplitudes
         self.max_amplitudes = limit
 
+    @staticmethod
+    def provenance() -> dict[str, Any]:
+        """Every state and weight here is exact classical simulation."""
+        return classical_simulation_provenance(
+            "mla1517.quantum.ExactStateVector",
+            arithmetic="exact Q(sqrt2) + iQ(sqrt2)",
+            sampling="none: deterministic exact Born weights",
+        )
+
     @classmethod
     def basis(
         cls, num_qubits: int, index: int = 0, *, max_amplitudes: int | None = None
@@ -229,9 +258,7 @@ class ExactStateVector:
             raise ValueError("measurement index out of range")
         if self.amplitudes[index] == C0:
             raise ValueError("cannot collapse onto a zero-amplitude outcome")
-        return ExactStateVector.basis(
-            self.num_qubits, index, max_amplitudes=self.max_amplitudes
-        )
+        return ExactStateVector.basis(self.num_qubits, index, max_amplitudes=self.max_amplitudes)
 
     def expectation_z_exact(self) -> Qsqrt2:
         """Exact Z expectation on the least-significant computational qubit."""
@@ -298,11 +325,7 @@ class ExactStateVector:
         if hamiltonian == "Z":
             return self.evolve_pauli_z(quarter_turns)
         if hamiltonian == "X":
-            return (
-                self.apply_single(0, H)
-                .evolve_pauli_z(quarter_turns)
-                .apply_single(0, H)
-            )
+            return self.apply_single(0, H).evolve_pauli_z(quarter_turns).apply_single(0, H)
         if hamiltonian == "Y":
             return (
                 self.apply_single(0, S_DG)

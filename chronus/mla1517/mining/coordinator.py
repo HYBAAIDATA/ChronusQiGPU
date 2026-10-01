@@ -273,6 +273,10 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         session = kwargs.pop("mining_session", None)
         observer = kwargs.pop("chain_observer", None)
         hasher = kwargs.pop("execution_hasher", None)
+        # Rebuilds the execution device (and re-runs its hashlib self-check)
+        # when Salamander restarts it after a DEVICE_ERROR; None means no
+        # restart is available and such a recovery fails honestly.
+        self._execution_hasher_factory = kwargs.pop("execution_hasher_factory", None)
         causal_log_path = kwargs.pop("causal_log_path", None)
         super().__init__(*args, **kwargs)
         # A started worker hashes; whether it may submit is a separate,
@@ -402,6 +406,11 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self._hashes_total = 0
         self._executions_total = 0
         self._shares_accepted = 0
+        # Concurrency evidence: the executor hashes in a worker thread while
+        # the planner task keeps building leased plans on the event loop.
+        self._execution_in_flight = False
+        self._plans_built_during_execution = 0
+        self._device_error_streak = 0
         upstream_sink = self.stratum_status_sink
 
         def _stratum_sink(snapshot: dict[str, Any]) -> None:
@@ -531,6 +540,12 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     with contextlib.suppress(TimeoutError):
                         await asyncio.wait_for(self._work_wake.wait(), idle_s)
                     self._work_wake.clear()
+                elif self._device_error_streak:
+                    # A failing device is retried, never spun on: back off
+                    # exponentially while its windows keep ending DEVICE_ERROR.
+                    await asyncio.sleep(
+                        min(idle_s * 2 ** min(self._device_error_streak, 32), max_backoff_s)
+                    )
         finally:
             self._precompute_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -721,10 +736,55 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 else None
             ),
             "hashing": self.measured_hashing(),
+            "agents": self.agents_snapshot(),
         }
 
     def agentic_status(self) -> dict[str, Any]:
         return {**self.evidence_snapshot(), "salamander_mode": self.recovery.mode}
+
+    def agents_snapshot(self) -> dict[str, Any]:
+        """The miner's concurrent actors, read from live state only.
+
+        Stratum reader, planner and executor run concurrently; submission
+        waits for the executor's host recheck (a real data dependency) and
+        is serialized by the MiningSession lifecycle.
+        """
+        client = self.client
+        task = self._precompute_task
+        return {
+            "schema": "pythia.mining_agents/1",
+            "stratum_session": {
+                "concurrency": "asyncio_task",
+                "running": bool(client is not None and client.connected),
+                "pool": client.endpoint.name if client is not None else None,
+            },
+            "planner": {
+                "concurrency": "asyncio_task",
+                "running": task is not None and not task.done(),
+                "plans_created": self.agentic.telemetry.plans_created,
+                "plans_built_during_execution": self._plans_built_during_execution,
+                "queue_depth": self.agentic.queue_depth(),
+            },
+            "executor": {
+                "concurrency": "worker_thread",
+                "in_flight": self._execution_in_flight,
+                "executions_total": self._executions_total,
+                "route": self._execution_route(),
+                "device_error_streak": self._device_error_streak,
+            },
+            "submitter": {
+                "concurrency": "after_executor_recheck",
+                "mode": "live" if self.submission_permitted() else "shadow",
+                "session_state": self.session.state,
+            },
+            "salamander": {
+                "concurrency": "external_supervisor_and_in_process_governor",
+                "mode": self.recovery.mode,
+                "supervisor_alive": self.recovery.salamander_alive(),
+                "observes": "vault_records" if self._bridge is not None else "execution_records",
+                "device_restart_available": self._execution_hasher_factory is not None,
+            },
+        }
 
     def _resolve_work_identity(self) -> tuple[WorkIdentity | None, str | None]:
         """Project Stratum's canonical job generation; never invent one."""
@@ -1032,6 +1092,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             plan = self._build_plan(identity)
             if plan is None or not self.agentic.submit_plan(plan):
                 break
+            if self._execution_in_flight:
+                self._plans_built_during_execution += 1
             # What a plan costs to build: the precompute depth is set from it.
             self.world.observe_plan_latency(time.perf_counter() - started)
             self._commit_forecasts(plan)
@@ -1124,6 +1186,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 decided_window=audit["decided_window"],
                 classical_window=audit["classical_window"],
                 vqc_window=audit["vqc"].get("window"),
+                vqc_execution=(audit["vqc"].get("provenance") or {}).get("execution"),
                 agree=audit["agree"],
                 digest=audit["attestation"]["digest"],
             )
@@ -1802,15 +1865,20 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     }
                     self._publish_evidence(force=True)
                     return False
-                record, candidate = await asyncio.to_thread(
-                    self._router_for(plan).execute_plan,
-                    plan,
-                    header,
-                    target_le,
-                    identity=identity,
-                    lease=reserved.contract(),
-                    is_still_fresh=lambda: self._identity_is(identity.key),
-                )
+                record, candidate = None, None
+                self._execution_in_flight = True
+                try:
+                    record, candidate = await asyncio.to_thread(
+                        self._router_for(plan).execute_plan,
+                        plan,
+                        header,
+                        target_le,
+                        identity=identity,
+                        lease=reserved.contract(),
+                        is_still_fresh=lambda: self._identity_is(identity.key),
+                    )
+                finally:
+                    self._execution_in_flight = False
                 current = self._refresh_work_identity()
                 stale = (
                     client is not self.client
@@ -1854,6 +1922,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                         shares=int(candidate is not None),
                     )
                     self._record_execution(identity, plan, lease, record, outcome, coordinate)
+            if record is not None and self._bridge is None:
+                await self._observe_execution_health(record)
             return outcome is PoolOutcome.ACCEPTED
 
     def _record_execution(
@@ -1966,6 +2036,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             "kernel_ms": final.kernel_ms,
             "pool_outcome": outcome.value,
             "tuning_action": decision.action,
+            "device_error": final.device_error,
         }
         self._executions_total += 1
         if final.hash_count > 0:
@@ -1974,6 +2045,70 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self._shares_accepted += int(outcome is PoolOutcome.ACCEPTED)
         self._publish_evidence()
         self._publish_metrics(force=True)
+
+    async def _observe_execution_health(self, record: ExecutionRecord) -> None:
+        """Bridge-free Salamander observation: one executed window, one look.
+
+        With no MMIO bridge there are no vault records, so the executed
+        window is the only fresh observation of the device. It advances open
+        recoveries (healthy verifies, repeated failure fails them), and a
+        DEVICE_ERROR opens a RESTART_LANE recovery that rebuilds the device.
+        Work that never ran (stale or refused) observes nothing.
+        """
+        if record.executed_route is None:
+            return
+        healthy = record.completion_state is not CompletionState.DEVICE_ERROR
+        self._device_error_streak = 0 if healthy else self._device_error_streak + 1
+        closed = self.recovery.observe(healthy)
+        if (
+            not healthy
+            and self.recovery.active_recovery_id() is None
+            and self.recovery.mode != "FAULTED"
+        ):
+            await self._restart_execution_device(record.device_error or "DEVICE_ERROR")
+        if closed or not healthy:
+            self._sync_recovery_gate()
+            self._publish_evidence(force=True)
+
+    async def _restart_execution_device(self, cause: str) -> None:
+        """RESTART_LANE for the execution device, under Salamander's governor.
+
+        The replacement hasher is built off the event loop and re-runs its
+        own hashlib self-check; only a hasher that passes is swapped in. No
+        factory, or a factory that fails, closes the recovery as FAILED.
+        """
+        command = RecoveryCommand.RESTART_LANE.value
+        record = self.recovery.propose([command], f"execution device error: {cause}")
+        if record is None:
+            return
+        factory = self._execution_hasher_factory
+        rebuilt: Any = None
+        failure: Exception | None = None
+        if factory is not None:
+            try:
+                rebuilt = await asyncio.to_thread(factory)
+            except Exception as exc:
+                failure = exc
+
+        def restart() -> str:
+            if factory is None:
+                raise RuntimeError("no execution device factory is wired; restart unavailable")
+            if failure is not None:
+                raise failure
+            self.execution_hasher = rebuilt
+            return command
+
+        try:
+            self.recovery.dispatch(record, [(command, restart)])
+        except Exception as exc:
+            LOG.error("Salamander could not restart the execution device: %s", exc)
+            return
+        LOG.warning(
+            "Salamander restarted the execution device (%s): backend=%s device=%s",
+            record.recovery_id,
+            getattr(self.execution_hasher, "backend", None),
+            getattr(self.execution_hasher, "device", None),
+        )
 
     async def submit_record(self, record: VaultRecord) -> bool:
         if not self.client:
