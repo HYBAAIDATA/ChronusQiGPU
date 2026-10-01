@@ -4,6 +4,18 @@ Production resilience and sovereign-control envelope for PYTHIA. It is isolated
 under `services/resilience-gateway` so the existing Python mining control plane
 and root container remain unchanged.
 
+## Invariants
+
+1. Every fallback is explicit, named, and observable.
+2. Duplicate side effects are prevented by an atomic pending/done idempotency
+   state machine.
+3. Event-loop saturation removes the process from service.
+4. Distributed trace context follows W3C `traceparent`.
+5. WebSockets are unauthorized until a five-second, short-lived ticket
+   handshake succeeds.
+6. Database schemas remain compatible with application versions N and N-1
+   through the expand-and-contract sequence in `SCHEMA-MIGRATIONS.md`.
+
 ## State topology
 
 | Subsystem | State |
@@ -24,11 +36,13 @@ healthy.
 ## Controls
 
 - Circuit breaker with bounded half-open probes and explicit fallback results.
+- Atomic idempotency ownership with `pending`, `done`, and expiry states.
+- Event-loop p99 shedding at 500 ms on liveness and readiness.
 - Retry with capped exponential backoff and non-negative jitter.
 - Separate liveness/readiness endpoints and a 30-second graceful drain.
 - WebSocket heartbeat, backpressure, stale-session termination, and jittered
-  client reconnection.
-- Structured logs, trace correlation, and Prometheus text metrics.
+  client reconnection after a fail-closed ticket handshake.
+- Structured logs, W3C trace propagation, and Prometheus text metrics.
 - Deterministic feature rollout.
 - Hash-chained CQRS events with Ed25519 actor-signature verification.
 - Out-of-band outcome billing projection with strict physical, theoretical, and
@@ -49,7 +63,8 @@ npm run check
 ## Production integration requirements
 
 1. Replace the in-memory idempotency adapter with Redis using an atomic
-   `SET NX EX`.
+   Lua script or transaction that claims `pending`, publishes `done`, and
+   preserves ownership across all replicas.
 2. Implement dependency adapters with bounded SDK timeouts.
 3. Back `EventJournal.appendIfLatest` with a serializable Postgres transaction
    and a unique `(tenant_id, sequence)` constraint.
@@ -62,6 +77,10 @@ npm run check
    must allow only the isolated shadow event sink and observability endpoints.
 7. Never make theoretical metrics billable. Only signed
    `OUTCOME_VERIFIED` events can create charges.
+8. Provision `WS_TICKET_SECRET` through the workload secret manager and rotate
+   it with an overlap window shorter than the ticket lifetime.
+9. Enforce the N/N-1 schema contract and expand-and-contract gates described in
+   `SCHEMA-MIGRATIONS.md`.
 
 ## CQRS journal schema
 

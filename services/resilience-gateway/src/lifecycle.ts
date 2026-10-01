@@ -4,7 +4,10 @@ import { initializeDependencies, type Dependencies } from "./dependencies.js";
 import { initializeFeatureFlags } from "./feature-flags.js";
 import { createRouter, type Readiness } from "./http.js";
 import { logEvent } from "./observability.js";
-import { attachWebSocket } from "./websocket.js";
+import {
+  attachWebSocket,
+  HmacWebSocketTicketVerifier,
+} from "./websocket.js";
 
 export interface Runtime {
   server: Server;
@@ -33,7 +36,11 @@ export async function boot(port = Number(process.env.PORT ?? 3000)): Promise<Run
     void router(request, response);
   });
   const webSockets = new WebSocketServer({ server, path: "/ws" });
-  attachWebSocket(webSockets, dependencies);
+  attachWebSocket(
+    webSockets,
+    dependencies,
+    new HmacWebSocketTicketVerifier(process.env.WS_TICKET_SECRET ?? ""),
+  );
   await new Promise<void>((resolve, reject) => {
     server.once("error", reject);
     server.listen(port, "0.0.0.0", () => {

@@ -1,4 +1,8 @@
-import { randomUUID } from "node:crypto";
+import {
+  createHmac,
+  randomUUID,
+  timingSafeEqual,
+} from "node:crypto";
 import type { IncomingMessage } from "node:http";
 import type { RawData, WebSocket, WebSocketServer } from "ws";
 import type { Dependencies } from "./dependencies.js";
@@ -11,6 +15,56 @@ interface SessionState {
   inFlight: number;
 }
 
+export interface WebSocketIdentity {
+  subject: string;
+  tenantId: string;
+}
+
+export interface WebSocketTicketVerifier {
+  verify(ticket: string): Promise<WebSocketIdentity | null>;
+}
+
+export class HmacWebSocketTicketVerifier implements WebSocketTicketVerifier {
+  constructor(private readonly secret: string) {}
+
+  async verify(ticket: string): Promise<WebSocketIdentity | null> {
+    if (!this.secret) return null;
+    const [encodedPayload, encodedSignature] = ticket.split(".");
+    if (!encodedPayload || !encodedSignature) return null;
+    const expected = createHmac("sha256", this.secret)
+      .update(encodedPayload)
+      .digest();
+    let provided: Buffer;
+    try {
+      provided = Buffer.from(encodedSignature, "base64url");
+    } catch {
+      return null;
+    }
+    if (
+      expected.length !== provided.length ||
+      !timingSafeEqual(expected, provided)
+    ) {
+      return null;
+    }
+    try {
+      const payload = JSON.parse(
+        Buffer.from(encodedPayload, "base64url").toString("utf8"),
+      ) as Record<string, unknown>;
+      if (
+        typeof payload.sub !== "string" ||
+        typeof payload.tenantId !== "string" ||
+        typeof payload.exp !== "number" ||
+        payload.exp * 1000 <= Date.now()
+      ) {
+        return null;
+      }
+      return { subject: payload.sub, tenantId: payload.tenantId };
+    } catch {
+      return null;
+    }
+  }
+}
+
 export class WebSocketSession {
   private readonly state: SessionState = {
     id: randomUUID(),
@@ -19,11 +73,14 @@ export class WebSocketSession {
     inFlight: 0,
   };
   private heartbeat?: NodeJS.Timeout;
+  private authDeadline?: NodeJS.Timeout;
   private closed = false;
+  private identity?: WebSocketIdentity;
 
   constructor(
     private readonly socket: WebSocket,
     private readonly dependencies: Dependencies,
+    private readonly ticketVerifier: WebSocketTicketVerifier,
   ) {}
 
   start(): void {
@@ -34,7 +91,9 @@ export class WebSocketSession {
     });
     this.socket.once("close", () => this.close());
     this.socket.once("error", () => this.close());
-    this.heartbeat = setInterval(() => this.pulse(), 25_000);
+    this.authDeadline = setTimeout(() => {
+      if (!this.identity) this.socket.close(4001, "unauthorized");
+    }, 5_000);
   }
 
   private async onMessage(raw: RawData): Promise<void> {
@@ -52,7 +111,25 @@ export class WebSocketSession {
         this.send({ type: "error", code: "invalid_json", retryable: false });
         return;
       }
-      if (message.type === "pong") {
+      if (!this.identity) {
+        if (message.type !== "auth" || typeof message.token !== "string") {
+          this.socket.close(4001, "unauthorized");
+          return;
+        }
+        const identity = await this.ticketVerifier.verify(message.token);
+        if (!identity) {
+          this.socket.close(4001, "unauthorized");
+          return;
+        }
+        this.identity = identity;
+        if (this.authDeadline) clearTimeout(this.authDeadline);
+        this.heartbeat = setInterval(() => this.pulse(), 25_000);
+        this.send({ type: "authenticated", tenantId: identity.tenantId });
+        return;
+      }
+      if (message.type === "auth") {
+        this.send({ type: "error", code: "already_authenticated", retryable: false });
+      } else if (message.type === "pong") {
         this.state.lastPong = Date.now();
         this.state.missedPongs = 0;
       } else if (message.type === "ping") {
@@ -93,6 +170,7 @@ export class WebSocketSession {
   private close(): void {
     if (this.closed) return;
     this.closed = true;
+    if (this.authDeadline) clearTimeout(this.authDeadline);
     if (this.heartbeat) clearInterval(this.heartbeat);
   }
 }
@@ -100,10 +178,11 @@ export class WebSocketSession {
 export function attachWebSocket(
   server: WebSocketServer,
   dependencies: Dependencies,
+  ticketVerifier: WebSocketTicketVerifier,
 ): void {
   server.on(
     "connection",
     (socket: WebSocket, _request: IncomingMessage) =>
-      new WebSocketSession(socket, dependencies).start(),
+      new WebSocketSession(socket, dependencies, ticketVerifier).start(),
   );
 }

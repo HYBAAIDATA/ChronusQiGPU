@@ -9,6 +9,9 @@
 - billing records without `OUTCOME_VERIFIED` evidence
 - shadow egress denial and strategic-asset authorization denial
 - A/B/C/E output drift above the tenant SLA
+- event-loop p99 lag above 500 ms
+- idempotency keys stuck in `pending`
+- WebSocket authentication failures or ticket-expiry spikes
 
 ## Dependency circuit open
 
@@ -23,6 +26,22 @@
 2. Confirm clients use capped exponential backoff with jitter.
 3. Rate-limit upgrades at the load balancer if connection pressure threatens
    healthy traffic.
+
+## Event-loop saturation
+
+1. Confirm `/healthz` reports `drowning` and the pod has left readiness.
+2. Capture CPU profiles and inspect synchronous parsing, regular expressions,
+   compression, crypto, and oversized payload paths.
+3. Do not raise the 500 ms threshold to restore traffic. Shed load, bound input,
+   or move CPU work to worker threads.
+
+## Idempotency pending
+
+1. Check whether the original owner is still executing.
+2. Return `425 Too Early` while a valid pending lease exists.
+3. Allow lease expiry only after the maximum operation deadline.
+4. Never manually convert `pending` to `done` without the original response
+   evidence.
 
 ## Provenance failure
 

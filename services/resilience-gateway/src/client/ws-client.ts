@@ -1,5 +1,6 @@
 export interface ResilientWebSocketOptions {
   url: string;
+  ticket: () => Promise<string>;
   onMessage: (message: unknown) => void;
   onStateChange?: (
     state: "connecting" | "open" | "reconnecting" | "closed",
@@ -38,13 +39,20 @@ export class ResilientWebSocketClient {
     const socket = new WebSocket(this.options.url);
     this.socket = socket;
     socket.onopen = () => {
-      this.attempts = 0;
-      this.options.onStateChange("open");
+      void this.options
+        .ticket()
+        .then((token) => {
+          socket.send(JSON.stringify({ type: "auth", token }));
+        })
+        .catch(() => socket.close(4001, "ticket unavailable"));
     };
     socket.onmessage = ({ data }) => {
       try {
         const message = JSON.parse(String(data)) as Record<string, unknown>;
-        if (message.type === "ping") {
+        if (message.type === "authenticated") {
+          this.attempts = 0;
+          this.options.onStateChange("open");
+        } else if (message.type === "ping") {
           this.send({ type: "pong", timestamp: message.timestamp });
         } else {
           this.options.onMessage(message);

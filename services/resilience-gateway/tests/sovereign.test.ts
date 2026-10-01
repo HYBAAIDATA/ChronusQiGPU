@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { generateKeyPairSync, sign } from "node:crypto";
+import { createHmac, generateKeyPairSync, sign } from "node:crypto";
 import test from "node:test";
 import { projectUsage } from "../src/sovereign/billing-projector.js";
 import {
@@ -9,6 +9,7 @@ import {
 } from "../src/sovereign/event-store.js";
 import { evaluateExperiment } from "../src/sovereign/governance.js";
 import { ShadowTenant } from "../src/sovereign/shadow-tenant.js";
+import { HmacWebSocketTicketVerifier } from "../src/websocket.js";
 
 function signedInput(
   overrides: Partial<CommandEventInput> = {},
@@ -76,4 +77,26 @@ test("governance blocks output drift outside SLA", () => {
   });
   assert.equal(decision.authorized, false);
   assert.ok(decision.reasons.some((reason) => reason.includes("B output drift")));
+});
+
+test("short-lived WebSocket ticket is authenticated and expiration enforced", async () => {
+  const secret = "test-only-secret";
+  const verifier = new HmacWebSocketTicketVerifier(secret);
+  const issue = (exp: number) => {
+    const payload = Buffer.from(
+      JSON.stringify({ sub: "operator-1", tenantId: "tenant-1", exp }),
+    ).toString("base64url");
+    const signature = createHmac("sha256", secret)
+      .update(payload)
+      .digest("base64url");
+    return `${payload}.${signature}`;
+  };
+  assert.deepEqual(
+    await verifier.verify(issue(Math.floor(Date.now() / 1000) + 30)),
+    { subject: "operator-1", tenantId: "tenant-1" },
+  );
+  assert.equal(
+    await verifier.verify(issue(Math.floor(Date.now() / 1000) - 1)),
+    null,
+  );
 });
