@@ -21,6 +21,7 @@ class _StubAgent(BaseHTTPRequestHandler):
 
     protocol_version = "HTTP/1.1"
     tamper = False
+    advertise_sha256d = True
 
     def log_message(self, *args):
         return
@@ -44,6 +45,7 @@ class _StubAgent(BaseHTTPRequestHandler):
                 },
             )
         if self.path == "/v1/health":
+            endpoints = ["sha256d"] if type(self).advertise_sha256d else ["ladder"]
             return self._reply(
                 200,
                 {
@@ -51,6 +53,7 @@ class _StubAgent(BaseHTTPRequestHandler):
                     "protocol": "remote_opencl_v1",
                     "device_count": 1,
                     "opencl_error": None,
+                    "endpoints": endpoints,
                 },
             )
         return self._reply(404, {"error": "unknown"})
@@ -165,3 +168,93 @@ def test_pipeline_grinds_through_the_remote_hasher(stub_agent):
     assert result.device == "Stub iGPU-0"
     blob = bytes(76) + result.winning_nonce.to_bytes(4, "little")
     assert hashlib.sha256(hashlib.sha256(blob).digest()).digest() == result.winning_hash
+
+
+def _plan(route, window=64):
+    from mla1517.mining.search_plan import PlanSource, SearchPlan
+
+    return SearchPlan(
+        job_fingerprint="fp-1",
+        pool_session_id="sess-1",
+        generation=1,
+        base_step=0,
+        window=window,
+        extranonce2="00000001",
+        lane_order=tuple(range(32)),
+        preferred_face=0,
+        dispatch_breadth=32,
+        executor_route=route,
+        policy_id="test",
+        evidence_refs={},
+        created_at=1.0,
+        source=PlanSource.AGENTIC_PRECOMPUTED,
+    )
+
+
+def _cpu_sweep(header, target, start, count):
+    return None, None, count
+
+
+def _router(hasher):
+    from mla1517.mining.execution_router import ExecutionRouter
+
+    return ExecutionRouter(hasher, _cpu_sweep)
+
+
+def test_router_decides_opencl_routes_on_the_remote_hasher(stub_agent):
+    hasher = RemoteOpenCLHasher.from_env()
+    router = _router(hasher)
+    for route in ("opencl_m32", "opencl_range"):
+        decision = router.decide_route(_plan(route))
+        assert decision.executed_route.value == route
+        assert decision.device_backend == "remote_opencl"
+        assert decision.kernel_build_status == "compiled"
+
+
+def test_router_executes_an_m32_window_remotely(stub_agent):
+    hasher = RemoteOpenCLHasher.from_env()
+    router = _router(hasher)
+    record, candidate = router.execute_plan(_plan("opencl_m32"), bytes(80), b"\xff" * 32)
+    assert record.device_backend == "remote_opencl"
+    assert record.hash_count > 0
+    # Target maxed: first m32-traversed nonce (base + lane 0 = 0) wins.
+    assert candidate is not None and candidate["nonce"] == 0
+    assert candidate["independently_rechecked"]
+
+
+def test_router_refuses_gold_stride_honestly(stub_agent):
+    # k_gold is absent on the remote hasher — hendrix is not implemented
+    # over the wire, so the route falls back with KERNEL_UNAVAILABLE,
+    # never silently executing a different traversal.
+    from mla1517.mining.search_plan import FallbackReason
+
+    hasher = RemoteOpenCLHasher.from_env()
+    decision = _router(hasher).decide_route(_plan("opencl_gold"))
+    assert decision.executed_route.value == "cpu_reference"
+    assert decision.fallback_reason == FallbackReason.KERNEL_UNAVAILABLE
+
+
+def test_unadvertised_sha256d_has_no_route_arms(stub_agent):
+    _StubAgent.advertise_sha256d = False
+    hasher = RemoteOpenCLHasher.from_env()
+    assert getattr(hasher, "k_range", None) is None
+    assert getattr(hasher, "k_m32", None) is None
+    from mla1517.mining.search_plan import FallbackReason
+
+    decision = _router(hasher).decide_route(_plan("opencl_m32"))
+    assert decision.fallback_reason == FallbackReason.KERNEL_UNAVAILABLE
+
+
+def test_execution_device_accepts_remote(monkeypatch):
+    import mining_runtime
+
+    monkeypatch.setenv("PYTHIA_EXECUTION_DEVICE", "remote")
+    assert mining_runtime.execution_device() == "remote"
+
+
+def test_execution_hasher_binds_remote(stub_agent):
+    import mining_runtime
+
+    hasher = mining_runtime._execution_hasher("remote")
+    assert hasher.backend == "remote_opencl"
+    assert hasher.device == "Stub iGPU-0"

@@ -306,6 +306,9 @@ class _Handler(BaseHTTPRequestHandler):
                     "protocol": PROTOCOL_VERSION,
                     "device_count": len(devices),
                     "opencl_error": error,
+                    # Routes this agent actually serves — the client binds
+                    # only what is advertised here, never an assumed arm.
+                    "endpoints": ["ladder", "sha256d"],
                 },
             )
             return
