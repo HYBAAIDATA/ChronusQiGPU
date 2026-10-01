@@ -11,6 +11,7 @@ re-verify before returning bytes.
 from __future__ import annotations
 
 import hashlib
+import logging
 import os
 import threading
 import time
@@ -23,6 +24,7 @@ import numpy as np
 
 from .constants import DIM, PHI, SQRT5
 from .costs import OverheadMeter, container_bytes, metered
+from .errors import EngineUnavailable
 from .gpu import ChronusContext
 from .primes import GaloisPrimeSubstrate
 from .zeckendorf import (
@@ -31,6 +33,9 @@ from .zeckendorf import (
     reverse_zeckendorf_expansion,
     sparse_from_blocks,
 )
+
+logger = logging.getLogger("aethel.manifold")
+MAX_MANIFOLD_PAYLOAD_BYTES = 16 * 1024 * 1024
 
 
 class ManifoldCurvature(Enum):
@@ -92,6 +97,10 @@ class SelfHealingSubstrate:
             else None
         )
 
+        if corrupted_node.digest is None:
+            self._record_unrecoverable(corrupted_node, valid_anchor)
+            return None
+
         candidates: List[tuple] = []
         if corrupted_node.sparse_topology:
             sparse = sparse_from_blocks(
@@ -113,7 +122,7 @@ class SelfHealingSubstrate:
             )
         except Exception:
             candidates.append(("prime_exponent", None))
-        if corrupted_node.raw_payload:
+        if corrupted_node.raw_payload is not None:
             candidates.append(("raw_payload", corrupted_node.raw_payload))
 
         for source, data in candidates:
@@ -124,7 +133,12 @@ class SelfHealingSubstrate:
                 and hashlib.sha256(data).digest() != corrupted_node.digest
             ):
                 continue
-            sparse = apply_zeckendorf_compression(data, host=self.manifold.punch_host)
+            try:
+                sparse = apply_zeckendorf_compression(
+                    data, host=self.manifold.punch_host
+                )
+            except Exception:
+                continue
             corrupted_node.sparse_topology = sparse.blocks
             corrupted_node.total_bytes = len(data)
             corrupted_node.raw_payload = None
@@ -144,6 +158,12 @@ class SelfHealingSubstrate:
             )
             return corrupted_node.uuid
 
+        self._record_unrecoverable(corrupted_node, valid_anchor)
+        return None
+
+    def _record_unrecoverable(
+        self, corrupted_node: TopologicalTensor, valid_anchor: Optional[int]
+    ) -> None:
         self.heal_log.append(
             {
                 "kind": "unrecoverable",
@@ -152,7 +172,6 @@ class SelfHealingSubstrate:
                 "timestamp": time.time(),
             }
         )
-        return None
 
     def _find_nearest_valid(self, anchor: int) -> int:
         """Nearest anchor inside the 90-slot manifold domain.
@@ -214,20 +233,35 @@ class GeodesicNavigator:
             in_float = in_float.reshape(-1)
             try:
                 res = host.run_punch_batch(PUNCH_MANIFOLD_COMPUTE, n=n, in_float=in_float)
-            except NotImplementedError as exc:
-                self.manifold._record_stage(
-                    "index", "cpu_fallback", f"device rejected manifold punch: {exc}"
+            except Exception as exc:
+                reason = (
+                    "opcode_0x15_unsupported"
+                    if isinstance(exc, NotImplementedError)
+                    else f"opencl_error:{type(exc).__name__}"
                 )
+                if self.require_gpu or not self.allow_cpu_fallback:
+                    raise RuntimeError(
+                        f"CPU fallback denied by execution policy ({reason})"
+                    ) from exc
+                self.stage_fallback_reasons["index"] = reason
             else:
+                backend = getattr(host, "last_dispatch_backend", None) or getattr(
+                    host, "backend", "cpu"
+                )
+                if self.require_gpu and "gpu" not in str(backend).lower():
+                    raise RuntimeError(
+                        "OpenCL-required projection did not execute on a GPU"
+                    )
                 norm_sq = res["float"].reshape(n, DIM)[:, 0]
                 anchors = np.rint(np.sqrt(np.maximum(norm_sq, 0.0))).astype(np.int64) % 90
-                self.manifold._record_stage(
-                    "index", getattr(host, "last_dispatch_backend", "opencl")
-                )
+                self.manifold.stage_evidence["index"] = backend
                 return anchors
-        self.manifold._record_stage(
-            "index", "cpu", "no usable OpenCL manifold projection"
-        )
+        if self.manifold.stage_fallback_reasons["index"] is None:
+            self.manifold.stage_fallback_reasons["index"] = (
+                "opencl_unavailable_or_not_selected"
+            )
+        self.manifold.stage_evidence["index"] = "cpu"
+        self.manifold._metrics["backend_fallbacks"] += 1
         return np.array([self._project_to_pv_lattice(v) for v in vectors], dtype=np.int64)
 
     def _steepest_gradient(self, current: int, target: int) -> int:
@@ -237,12 +271,16 @@ class GeodesicNavigator:
             return current - max(1, (current - target) // 2)
         return current
 
-    def query_geodesic(self, search_vector: np.ndarray) -> Optional[bytes]:
+    def query_geodesic(
+        self, search_vector: np.ndarray, *, allow_fallback: bool = True
+    ) -> Optional[bytes]:
         """32-face frame geodesic query with Lucas-15 attractor bias.
 
-        Uses the Pathfinder for 11-D navigation, then falls back to the
-        original 1-D bisection ``query()`` if the pathfinder is unavailable.
+        Uses the Pathfinder for 11-D navigation. If it is unavailable or
+        cannot resolve a stored payload, ``allow_fallback`` selects the
+        original 1-D bisection query. Fallback is not an equivalence claim.
         """
+        reason = "no_geodesic_result"
         try:
             from Intelligence.pathfinder import Pathfinder
 
@@ -251,15 +289,39 @@ class GeodesicNavigator:
             r0 = np.zeros(min(len(search_vector), DIM), dtype=np.float64)
             r0[0] = float(target_anchor) * np.sqrt(PHI)
             result = pf.navigate(r0, float(target_anchor), max_iter=20, tol=1e-8)
-            if result["converged"]:
+            if not result["converged"]:
+                reason = "navigation_not_converged"
+            else:
                 final_anchor = int(round(result["final_vector"][0] / np.sqrt(PHI))) % 90
                 node = self.manifold.get_by_anchor(final_anchor)
-                if node is not None:
+                if node is None:
+                    reason = "target_node_missing"
+                else:
                     payload = self.manifold.read_payload(node)
                     if payload is not None:
+                        self.manifold.query_evidence = {
+                            "backend": "pathfinder",
+                            "fallback": False,
+                            "reason": None,
+                        }
                         return payload
-        except Exception:
-            pass
+                    reason = "target_payload_unavailable"
+        except Exception as exc:
+            reason = f"pathfinder_error:{type(exc).__name__}"
+        if not allow_fallback:
+            self.manifold.query_evidence = {
+                "backend": "none",
+                "fallback": False,
+                "reason": reason,
+            }
+            raise EngineUnavailable(f"geodesic navigation unavailable: {reason}")
+        self.manifold.query_fallbacks += 1
+        self.manifold.query_evidence = {
+            "backend": "bisection",
+            "fallback": True,
+            "reason": reason,
+        }
+        logger.warning("geodesic query used bisection fallback: %s", reason)
         return self.query(search_vector)
 
 
@@ -269,26 +331,23 @@ class PrimeStorageManifold:
         gpu: ChronusContext,
         n_primes: int = 25,
         punch_host=None,
-        require_gpu: Optional[bool] = None,
-        allow_cpu_fallback: Optional[bool] = None,
+        require_gpu: bool = False,
+        allow_cpu_fallback: bool = True,
     ):
         self.gpu = gpu
         self.punch_host = (
             punch_host if punch_host is not None else getattr(gpu, "punch_host", None)
         )
-        context_requires_gpu = bool(getattr(gpu, "require_gpu", False))
-        context_allows_cpu = bool(getattr(gpu, "allow_cpu_fallback", True))
-        self.require_gpu = context_requires_gpu or bool(require_gpu)
-        requested_allow = True if allow_cpu_fallback is None else bool(allow_cpu_fallback)
-        self.allow_cpu_fallback = context_allows_cpu and requested_allow
-        if (self.require_gpu or not self.allow_cpu_fallback) and not (
+        self.require_gpu = require_gpu
+        self.allow_cpu_fallback = allow_cpu_fallback
+        if (require_gpu or not allow_cpu_fallback) and not (
             self.punch_host is not None and getattr(self.punch_host, "use_opencl", False)
         ):
             raise RuntimeError(
-                "GPU-only execution policy is active but no OpenCL device is available; "
-                "storage encode/index/reconstruction refuse silent CPU "
-                "fallback."
+                "OpenCL device required by execution policy but none is available"
             )
+        self.gpu.require_gpu = require_gpu
+        self.gpu.allow_cpu_fallback = allow_cpu_fallback
 
         # Per-stage execution provenance: which backend physically ran each
         # supported computational stage ("opencl:gpu" / "opencl:cpu" / "cpu").
@@ -297,6 +356,26 @@ class PrimeStorageManifold:
             "encode": "none",
             "index": "none",
             "decode": "none",
+        }
+        self.stage_fallback_reasons: Dict[str, Optional[str]] = {
+            "encode": None,
+            "index": None,
+            "decode": None,
+        }
+        self.query_evidence: Dict[str, Any] = {
+            "backend": "none",
+            "fallback": False,
+            "reason": None,
+        }
+        self.query_fallbacks = 0
+        self._metrics = {
+            "writes": 0,
+            "reads": 0,
+            "corruptions": 0,
+            "heal_events": 0,
+            "backend_fallbacks": 0,
+            "bytes_written": 0,
+            "bytes_read": 0,
         }
 
         self.flat_storage: Dict[str, TopologicalTensor] = {}
@@ -344,7 +423,6 @@ class PrimeStorageManifold:
             "kernel_ms_total": float(getattr(host, "kernel_ms_total", 0.0) or 0.0),
             "last_kernel_ms": getattr(host, "last_kernel_ms", None),
             "gpu_required": self.require_gpu,
-            "allow_cpu_fallback": self.allow_cpu_fallback,
             "fallback_reasons": dict(self.stage_fallback_reasons),
         }
 
@@ -380,8 +458,13 @@ class PrimeStorageManifold:
         curvature: ManifoldCurvature,
         sector: ManifoldSector = ManifoldSector.P_VS_NP,
     ) -> str:
+        if not isinstance(payload, (bytes, bytearray, memoryview)):
+            raise TypeError("payload must be bytes-like")
+        payload_size = payload.nbytes if isinstance(payload, memoryview) else len(payload)
+        if payload_size > MAX_MANIFOLD_PAYLOAD_BYTES:
+            raise ValueError("payload size limit exceeded")
+        payload = bytes(payload)
         self._tick += 1
-        self._costs.record_bytes("manifold.ingest", len(payload))
         tensor_uuid = str(uuid.uuid4())
         tensor = TopologicalTensor(
             uuid=tensor_uuid,
@@ -396,6 +479,9 @@ class PrimeStorageManifold:
             self.curved_storage.commit(0, tensor_uuid, payload)
             self.flat_storage[tensor_uuid] = tensor
             self.tensors[tensor_uuid] = tensor
+            self._costs.record_bytes("manifold.ingest", payload_size)
+            self._metrics["writes"] += 1
+            self._metrics["bytes_written"] += payload_size
             return tensor_uuid
 
         sparse = apply_zeckendorf_compression(payload, host=self.punch_host)
@@ -425,6 +511,9 @@ class PrimeStorageManifold:
         self.curved_storage.commit(tensor.integer_anchor, tensor_uuid, payload)
         self.tensors[tensor_uuid] = tensor
         self.anchor_index.setdefault(tensor.integer_anchor, []).append(tensor_uuid)
+        self._costs.record_bytes("manifold.ingest", payload_size)
+        self._metrics["writes"] += 1
+        self._metrics["bytes_written"] += payload_size
         return tensor_uuid
 
     async def ingest_and_map(
@@ -468,9 +557,9 @@ class PrimeStorageManifold:
         ]
 
     def decode_payload(self, tensor: TopologicalTensor) -> Optional[bytes]:
-        if tensor.raw_payload:
+        if tensor.raw_payload is not None:
             return tensor.raw_payload
-        if tensor.sparse_topology:
+        if tensor.sparse_topology is not None:
             sparse = sparse_from_blocks(
                 tensor.sparse_topology, getattr(tensor, "total_bytes", 0)
             )
@@ -489,17 +578,22 @@ class PrimeStorageManifold:
         committed at ingest.
         """
         data = self.decode_payload(tensor)
+        self._metrics["reads"] += 1
         if tensor.digest is None or data is None:
             return data
         if hashlib.sha256(data).digest() == tensor.digest:
+            self._metrics["bytes_read"] += len(data)
             return data
+        self._metrics["corruptions"] += 1
         try:
             healed = self.self_healing.trigger(tensor)
         except Exception:
             healed = None
+        self._metrics["heal_events"] += 1
         if healed is not None:
             repaired = self.decode_payload(tensor)
             if repaired is not None and hashlib.sha256(repaired).digest() == tensor.digest:
+                self._metrics["bytes_read"] += len(repaired)
                 return repaired
         return None
 
@@ -553,4 +647,7 @@ class PrimeStorageManifold:
             "geodesic_hops": self.geodesic.hop_count,
             "geodesic_total_hops": self.geodesic.total_hops,
             "overhead_bytes": self.structural_bytes(),
+            "query": dict(self.query_evidence),
+            "query_fallbacks": self.query_fallbacks,
+            "metrics": dict(self._metrics),
         }

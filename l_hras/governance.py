@@ -32,7 +32,7 @@ class AuditLog:
         self.path = Path(path) if path else None
         self.entries: list[dict[str, Any]] = []
         if self.path:
-            self.path.parent.mkdir(parents=True, exist_ok=True)
+            self.path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
 
     def append(self, action: str, subject: str, detail: dict[str, Any]) -> dict[str, Any]:
         entry = {

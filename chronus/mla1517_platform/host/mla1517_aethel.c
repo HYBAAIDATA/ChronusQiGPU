@@ -9,8 +9,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/file.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#define MLA1517_AETHEL_MAX_SLOTS 65536u
 
 struct aethel_header {
     uint64_t magic;
@@ -27,6 +30,9 @@ struct mla1517_aethel_queue {
 };
 
 static size_t region_bytes(uint32_t slot_count) {
+    if (slot_count == 0 || slot_count > MLA1517_AETHEL_MAX_SLOTS) {
+        return 0;
+    }
     return MLA1517_AETHEL_HEADER_BYTES +
            (size_t)slot_count * MLA1517_AETHEL_SLOT_STRIDE;
 }
@@ -49,22 +55,31 @@ mla1517_aethel_queue_t *mla1517_aethel_open(
     const char *path,
     uint32_t slot_count
 ) {
-    if (!path || slot_count == 0) return NULL;
+    if (!path) return NULL;
     size_t bytes = region_bytes(slot_count);
-    int fd = open(path, O_RDWR | O_CREAT | O_CLOEXEC, 0600);
+    if (bytes == 0) return NULL;
+    int fd = open(path, O_RDWR | O_CREAT | O_CLOEXEC | O_NOFOLLOW, 0600);
     if (fd < 0) return NULL;
-    if (ftruncate(fd, (off_t)bytes) != 0) {
+    struct stat info;
+    if (fstat(fd, &info) != 0 || !S_ISREG(info.st_mode) ||
+        (info.st_mode & 0077) != 0 || info.st_uid != getuid() ||
+        (info.st_size != 0 && (uint64_t)info.st_size != (uint64_t)bytes) ||
+        (info.st_size == 0 &&
+         (ftruncate(fd, (off_t)bytes) != 0 || fsync(fd) != 0)) ||
+        flock(fd, LOCK_EX) != 0) {
         close(fd);
         return NULL;
     }
     void *mapped = mmap(NULL, bytes, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if (mapped == MAP_FAILED) {
+        (void)flock(fd, LOCK_UN);
         close(fd);
         return NULL;
     }
     mla1517_aethel_queue_t *queue = calloc(1, sizeof(*queue));
     if (!queue) {
         munmap(mapped, bytes);
+        (void)flock(fd, LOCK_UN);
         close(fd);
         return NULL;
     }
@@ -77,15 +92,24 @@ mla1517_aethel_queue_t *mla1517_aethel_open(
         queue->header->magic = MLA1517_AETHEL_MAGIC;
         queue->header->version = MLA1517_AETHEL_ABI_VERSION;
         queue->header->slot_count = slot_count;
-        (void)msync(queue->mapping, MLA1517_AETHEL_HEADER_BYTES, MS_SYNC);
+        if (msync(queue->mapping, MLA1517_AETHEL_HEADER_BYTES, MS_SYNC) != 0 ||
+            fsync(fd) != 0) {
+            munmap(queue->mapping, queue->bytes);
+            (void)flock(fd, LOCK_UN);
+            close(queue->fd);
+            free(queue);
+            return NULL;
+        }
     } else if (queue->header->magic != MLA1517_AETHEL_MAGIC ||
                queue->header->version != MLA1517_AETHEL_ABI_VERSION ||
                queue->header->slot_count != slot_count) {
         munmap(queue->mapping, queue->bytes);
+        (void)flock(fd, LOCK_UN);
         close(queue->fd);
         free(queue);
         return NULL;
     }
+    (void)flock(fd, LOCK_UN);
     return queue;
 }
 
@@ -105,13 +129,22 @@ int mla1517_aethel_commit(
     memcpy(&d7, state + MLA1517_AETHEL_D7_OFFSET, sizeof(d7));
     uint32_t slot_id = d7 % queue->header->slot_count;
     uint8_t *base = slot_base(queue, slot_id);
+    if (flock(queue->fd, LOCK_EX) != 0) return -1;
     volatile uint64_t *sequence = (volatile uint64_t *)base;
     uint64_t current = __atomic_load_n(sequence, __ATOMIC_ACQUIRE);
-    uint64_t next = current + 2u;
-    if (next == 0) next = 2u;
-    __atomic_store_n(sequence, next - 1u, __ATOMIC_RELEASE);
+    uint64_t in_flight;
+    uint64_t stable;
+    if (current >= UINT64_MAX - 2u) {
+        in_flight = 1u;
+        stable = 2u;
+    } else {
+        in_flight = (current & 1u) ? current + 2u : current + 1u;
+        stable = in_flight + 1u;
+    }
+    __atomic_store_n(sequence, in_flight, __ATOMIC_RELEASE);
     memcpy(base + sizeof(uint64_t), state, MLA1517_STATE_BYTES);
-    __atomic_store_n(sequence, next, __ATOMIC_RELEASE);
+    __atomic_store_n(sequence, stable, __ATOMIC_RELEASE);
+    (void)flock(queue->fd, LOCK_UN);
     return 1;
 }
 
@@ -121,17 +154,25 @@ int mla1517_aethel_read(
     mla1517_aethel_record_t *record
 ) {
     if (!queue || !record || slot_id >= queue->header->slot_count) return -1;
+    if (flock(queue->fd, LOCK_EX) != 0) return -1;
     uint8_t *base = slot_base(queue, slot_id);
     volatile uint64_t *sequence = (volatile uint64_t *)base;
     uint64_t seq1 = __atomic_load_n(sequence, __ATOMIC_ACQUIRE);
-    if (seq1 == 0 || (seq1 & 1u)) return 0;
+    if (seq1 == 0 || (seq1 & 1u)) {
+        (void)flock(queue->fd, LOCK_UN);
+        return 0;
+    }
     uint8_t snapshot[MLA1517_STATE_BYTES];
     memcpy(snapshot, base + sizeof(uint64_t), MLA1517_STATE_BYTES);
     uint64_t seq2 = __atomic_load_n(sequence, __ATOMIC_ACQUIRE);
-    if (seq1 != seq2 || (seq2 & 1u)) return 0;
+    if (seq1 != seq2 || (seq2 & 1u)) {
+        (void)flock(queue->fd, LOCK_UN);
+        return 0;
+    }
     record->slot_id = slot_id;
     record->sequence = seq2;
     memcpy(record->state, snapshot, MLA1517_STATE_BYTES);
+    (void)flock(queue->fd, LOCK_UN);
     return 1;
 }
 

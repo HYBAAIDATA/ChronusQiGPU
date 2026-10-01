@@ -8,20 +8,33 @@ serves measured rows.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import struct
 import threading
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from chronus.mla1517.core import fib, lucas
 from chronus.mla1517.remote_gpu import (
     PROTOCOL_VERSION,
+    SHA256D_MAX_WINDOW,
     RemoteGPUClient,
     RemoteGPUUnavailable,
     RemoteGPUVerificationError,
     probe_first_reachable,
+    sha256d_share_attestation,
 )
 from chronus.mla1517.scaling import LUCAS_PISOT_LADDER, padovan
+
+
+def _cpu_sha256d(header: bytes, nonce: int) -> bytes:
+    blob = header[:76] + struct.pack("<I", nonce & 0xFFFFFFFF)
+    return hashlib.sha256(hashlib.sha256(blob).digest()).digest()
+
+
+def _meets_target(digest: bytes, target_be: bytes) -> bool:
+    return int.from_bytes(digest, "little") <= int.from_bytes(target_be, "big")
 
 
 def _serve(handler_cls):
@@ -56,7 +69,7 @@ class _EnvGuard(unittest.TestCase):
 
 
 class RealAgentTests(_EnvGuard):
-    """The real agent, GPU-less host: honest empty inventory + 503 ladder."""
+    """The real agent, GPU-less host: honest empty inventory + 503 work."""
 
     @classmethod
     def setUpClass(cls):
@@ -80,13 +93,51 @@ class RealAgentTests(_EnvGuard):
         with self.assertRaises(RemoteGPUUnavailable):
             RemoteGPUClient(self.endpoint).execute_ladder()
 
+    def test_sha256d_fails_closed_without_device(self):
+        with self.assertRaises(RemoteGPUUnavailable):
+            RemoteGPUClient(self.endpoint).execute_sha256d(
+                bytes(range(80)), b"\xff" * 32, count=32
+            )
+
+    def test_sha256d_rejects_malformed_job_client_side(self):
+        client = RemoteGPUClient(self.endpoint)
+        with self.assertRaises(ValueError):
+            client.execute_sha256d(b"short", b"\xff" * 32, count=32)
+        with self.assertRaises(ValueError):
+            client.execute_sha256d(bytes(80), b"\x00" * 16, count=32)
+        with self.assertRaises(ValueError):
+            client.execute_sha256d(bytes(80), b"\xff" * 32, count=0)
+        with self.assertRaises(ValueError):
+            client.execute_sha256d(
+                bytes(80), b"\xff" * 32, count=SHA256D_MAX_WINDOW + 1
+            )
+        with self.assertRaises(ValueError):
+            client.execute_sha256d(
+                bytes(80), b"\xff" * 32, base_nonce=0x100000000, count=32
+            )
+
 
 class _StubDeviceHandler(BaseHTTPRequestHandler):
-    """An agent that has one iGPU and answers ladder rows correctly."""
+    """An agent that has one iGPU and answers ladder rows correctly.
+
+    For /v1/sha256d it runs the serial-order window scan on the host CPU
+    and returns a well-formed, correctly attested verdict — so the client
+    exercises its real verification path. The ``*_sha256d`` flags flip
+    individual honesty failures.
+    """
 
     protocol_version = "HTTP/1.1"
     tampered = False
     require_token = False
+    tampered_sha256d = False
+    bad_attestation = False
+    out_of_window_nonce = False
+
+    @classmethod
+    def _reset_sha256d_flags(cls):
+        cls.tampered_sha256d = False
+        cls.bad_attestation = False
+        cls.out_of_window_nonce = False
 
     def log_message(self, *args):
         return
@@ -103,6 +154,51 @@ class _StubDeviceHandler(BaseHTTPRequestHandler):
         if not type(self).require_token:
             return True
         return self.headers.get("Authorization") == "Bearer s3cret"
+
+    def _sha256d(self, body):
+        header = bytes.fromhex(body["header"])
+        target = bytes.fromhex(body["target"])
+        base = int(body.get("base_nonce", 0))
+        count = int(body["count"])
+        winner, digest, hashes = None, None, 0
+        for i in range(count):
+            nonce = (base + i) & 0xFFFFFFFF
+            d = _cpu_sha256d(header, nonce)
+            hashes += 1
+            if _meets_target(d, target):
+                winner, digest = nonce, d
+                break
+        device_name = "AirGPU iGPU-0"
+        if winner is not None and type(self).out_of_window_nonce:
+            winner = (base + count) & 0xFFFFFFFF
+        if digest is not None and type(self).tampered_sha256d:
+            digest = bytes([digest[0] ^ 0x01]) + digest[1:]
+        digest_hex = digest.hex() if digest is not None else None
+        attest_nonce = winner
+        if type(self).bad_attestation and winner is not None:
+            attest_nonce = (winner + 1) & 0xFFFFFFFF
+        attestation = sha256d_share_attestation(
+            header_hex=header.hex(),
+            target_hex=target.hex(),
+            base_nonce=base,
+            count=count,
+            hashes=hashes,
+            nonce=attest_nonce,
+            digest_hex=digest_hex,
+            device=device_name,
+        )
+        return {
+            "protocol": PROTOCOL_VERSION,
+            "device": {"name": device_name, "vendor": "Intel"},
+            "execution_backend": "opencl:gpu",
+            "measured_ns": 4321,
+            "window": {"base_nonce": base, "count": count},
+            "hashes": hashes,
+            "share": None
+            if winner is None
+            else {"nonce": winner, "hash": digest_hex},
+            "attestation": attestation,
+        }
 
     def do_GET(self):
         if not self._auth_ok():
@@ -141,9 +237,11 @@ class _StubDeviceHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self._auth_ok():
             return self._send(401, {"error": "unauthorized"})
-        if self.path != "/v1/ladder":
+        if self.path not in ("/v1/ladder", "/v1/sha256d"):
             return self._send(404, {"error": "unknown"})
         body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+        if self.path == "/v1/sha256d":
+            return self._send(200, self._sha256d(body))
         scales = body.get("scales", [])
         bad = [s for s in scales if s not in LUCAS_PISOT_LADDER]
         if bad:
@@ -214,6 +312,86 @@ class StubAgentClientTests(_EnvGuard):
         finally:
             _StubDeviceHandler.require_token = False
             os.environ.pop("MLA1517_REMOTE_GPU_TOKEN", None)
+
+
+class StubAgentSha256dTests(_EnvGuard):
+    """Remote SHA-256d scans: verified shares, honest misses, hard rejects."""
+
+    HEADER = bytes(range(80))
+
+    @classmethod
+    def setUpClass(cls):
+        _StubDeviceHandler._reset_sha256d_flags()
+        cls.server, cls.endpoint = _serve(_StubDeviceHandler)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.shutdown()
+
+    def tearDown(self):
+        _StubDeviceHandler._reset_sha256d_flags()
+
+    def test_max_target_share_is_verified_byte_for_byte(self):
+        # Max target: every digest wins, so nonce=base wins deterministically.
+        result = RemoteGPUClient(self.endpoint).execute_sha256d(
+            self.HEADER, b"\xff" * 32, base_nonce=0, count=64
+        )
+        self.assertTrue(result.found)
+        self.assertTrue(result.share_verified)
+        self.assertEqual(result.nonce, 0)
+        self.assertEqual(result.digest, _cpu_sha256d(self.HEADER, 0))
+        self.assertEqual(result.hashes, 1)
+        self.assertEqual(result.device, "AirGPU iGPU-0")
+        self.assertEqual(result.execution_backend, "opencl:gpu")
+        self.assertTrue(result.attestation.startswith("RSHA256D-"))
+        self.assertTrue(result.as_dict()["share_verified_against_exact_reference"])
+
+    def test_share_found_later_in_window(self):
+        # Tightest possible accepting target: the largest digest value in
+        # the window (little-endian int, the CPU-path convention). At least
+        # one nonce is guaranteed to win, and probably not nonce 0.
+        target = max(
+            int.from_bytes(_cpu_sha256d(self.HEADER, n), "little") for n in range(64)
+        ).to_bytes(32, "big")
+        result = RemoteGPUClient(self.endpoint).execute_sha256d(
+            self.HEADER, target, base_nonce=0, count=64
+        )
+        self.assertTrue(result.found)
+        self.assertEqual(result.digest, _cpu_sha256d(self.HEADER, result.nonce))
+        self.assertTrue(_meets_target(result.digest, target))
+        self.assertLessEqual(result.hashes, 64)
+
+    def test_miss_reports_measured_hash_count(self):
+        # Target zero: nothing wins — honest miss, full-window hash count.
+        result = RemoteGPUClient(self.endpoint).execute_sha256d(
+            self.HEADER, b"\x00" * 32, base_nonce=7, count=64
+        )
+        self.assertFalse(result.found)
+        self.assertIsNone(result.nonce)
+        self.assertEqual(result.hashes, 64)
+        self.assertFalse(result.share_verified)
+
+    def test_tampered_digest_is_rejected(self):
+        _StubDeviceHandler.tampered_sha256d = True
+        with self.assertRaises(RemoteGPUVerificationError):
+            RemoteGPUClient(self.endpoint).execute_sha256d(
+                self.HEADER, b"\xff" * 32, base_nonce=0, count=64
+            )
+
+    def test_attestation_mismatch_is_rejected(self):
+        # The stub signs a different nonce — replay/binding must fail.
+        _StubDeviceHandler.bad_attestation = True
+        with self.assertRaises(RemoteGPUVerificationError):
+            RemoteGPUClient(self.endpoint).execute_sha256d(
+                self.HEADER, b"\xff" * 32, base_nonce=0, count=64
+            )
+
+    def test_out_of_window_nonce_is_rejected(self):
+        _StubDeviceHandler.out_of_window_nonce = True
+        with self.assertRaises(RemoteGPUVerificationError):
+            RemoteGPUClient(self.endpoint).execute_sha256d(
+                self.HEADER, b"\xff" * 32, base_nonce=0, count=64
+            )
 
 
 class ConnectorRemoteBindingTests(_EnvGuard):

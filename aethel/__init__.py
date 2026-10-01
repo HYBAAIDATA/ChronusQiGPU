@@ -34,6 +34,11 @@ identity-preserving alias of ``aethel.hardened_unified_substrate`` —
 every toe/Intelligence consumer binds to this package through it.
 """
 
+import re as _re
+
+from importlib.metadata import PackageNotFoundError as _PackageNotFoundError
+from importlib.metadata import version as _metadata_version
+
 from .cassini import CassiniVerifier
 from .compute import (
     CollectiveOps,
@@ -156,7 +161,20 @@ from .zeckendorf import (
     reverse_zeckendorf_expansion,
 )
 
-__version__ = "1.0.0"
+_SOURCE_VERSION = "1.0.0"
+
+
+def _resolve_version() -> tuple[str, str]:
+    try:
+        installed = _metadata_version("aethel")
+    except _PackageNotFoundError:
+        return _SOURCE_VERSION, "source_fallback"
+    if _re.fullmatch(r"\d+\.\d+\.\d+", installed):
+        return installed, "distribution_metadata"
+    return _SOURCE_VERSION, "source_fallback"
+
+
+__version__, __version_source__ = _resolve_version()
 
 __all__ = [
     "__version__",
