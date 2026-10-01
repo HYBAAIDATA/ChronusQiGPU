@@ -22,7 +22,7 @@ from pythagoras.core import sandbox
 from pythagoras.core.euclid_intelligence import EuclidIntelligenceEngine, LucasSequenceCalculator, PHI
 from pythagoras.core.primitives import OPERATOR_REGISTRY, compose
 from pythagoras.core.state import measure_state
-from pythagoras.engine.evolution import AnnealingConfig, V65ManifoldEscapeEngine as PythagorasEvolutionEngine
+from pythagoras.engine.evolution import AnnealingConfig, PythagorasEvolutionEngine
 from pythagoras.engine.geometry import CollectiveGeometryCoordinator
 from pythagoras.engine.primitive_repository import CrossFilePrimitiveRepository
 
