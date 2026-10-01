@@ -1,10 +1,10 @@
 """Turing Universal Quantum Computer — consolidated exact-quantum substrate.
 
 This package consolidates every PYTHIA/MLA1517 module that constitutes the
-Turing virtual quantum computer: the canonical 11-qubit exact register, the
-Q[sqrt(5)] / Pisot algebraic substrate, the exact tensor witnesses, the
-strict-quantum work certificates, the Lucas/Pisot Hendrix schedule, and the
-four-layer Aethel -> Tensor -> TURING -> iGPU production execution plane.
+Turing virtual quantum computer: the canonical exact register, Q[sqrt(5)] /
+Pisot algebra, exact tensor witnesses, strict work certificates, Lucas/Pisot
+Hendrix schedule, large-scale stabilizer execution, the production phi-machine
+facade, bounded phi-VQC ranking and the four-layer production execution plane.
 
 Layers
 ------
@@ -29,15 +29,15 @@ swarm                 QuantumSwarm — agents sampling exact Born distributions
 turing_core.ten_thousand  TenThousandQubitSystem — the universal engine
 register_tensor       QuantumTensor — audited facade over QuantumRegister
 exact_tensor          canonical Q(sqrt(2)) + i Q(sqrt(2)) exact state vector
-exact_state_vector    MLA1517 exact state-vector algebra (predecessor surface)
-quantum_tensor        first-principles tensor layer over C^N (H, U, M, x, C)
+exact_state_vector    MLA1517 exact state-vector algebra
+quantum_tensor        first-principles tensor layer over C^N
 strict_quantum        strict Q(i) work-window certificates
 pisot / hendrix       Lucas/Pisot scale contracts + Hendrix schedule
 search                Grover-exact / Merkle / preimage search primitives
-turing_adapter        Turing-derived deterministic lane/nonce ordering
+turing_adapter        deterministic lane/nonce ordering
 quantum_cuda          iGPU / Turing exact-math accelerator facade
 
-Production plane (11-qubit VQC pipeline):
+Production plane:
 backend_binding, hardened_unified_substrate, unified_punch, bitcoin_hasher,
 hash_pipeline, manifold_bridge, intelligences, toe_system, four_layer_stack,
 scaled_execution (LucasScaledAethelExecutionAdapter).
@@ -45,8 +45,8 @@ scaled_execution (LucasScaledAethelExecutionAdapter).
 
 from __future__ import annotations
 
-from . import turing_core  # noqa: F401  — always available (stdlib only)
-from . import (  # noqa: F401 — light stdlib-only surfaces
+from . import turing_core  # noqa: F401
+from . import (  # noqa: F401
     duality,
     exact_field,
     exact_state_vector,
@@ -57,7 +57,7 @@ from . import (  # noqa: F401 — light stdlib-only surfaces
     quantum_tensor,
     strict_quantum,
 )
-from .turing_core import (  # noqa: F401 — canonical TURING core surface
+from .turing_core import (  # noqa: F401
     FAMILY_COEFFS,
     PHI,
     PSI,
@@ -90,7 +90,7 @@ from .turing_core import (  # noqa: F401 — canonical TURING core surface
     zeckendorf_decode,
     zeckendorf_encode,
 )
-from .pisot import (  # noqa: F401 — VQC control-plane contracts
+from .pisot import (  # noqa: F401
     DOMAIN_SCALE_INDEX,
     LUCAS_EXECUTION_SCALE_INDICES,
     SUPPORTED_SCALE_INDICES,
@@ -139,6 +139,9 @@ _LAZY_MODULES = {
     "quantum_algorithms",
     "grover_exact_scale",
     "stabilizer",
+    "phi_quantum_machine",
+    "phi_verification",
+    "phi_vqc",
     "quantum_walk",
     "annealing",
     "swarm",
@@ -147,17 +150,14 @@ _LAZY_MODULES = {
 }
 
 _LAZY_SYMBOLS = {
-    # hilbert (requires sympy)
     "QuantumRegister": "hilbert",
     "GroverExact": "hilbert",
     "ExactComplex": "hilbert",
     "QSqrt": "hilbert",
     "QSqrt2": "hilbert",
     "qft": "hilbert",
-    # register_tensor (requires sympy + numpy)
     "QuantumTensor": "register_tensor",
     "QuantumTensorAudit": "register_tensor",
-    # production plane
     "FourLayerMiningStack": "four_layer_stack",
     "TuringLayer": "four_layer_stack",
     "NearStateIGpu": "four_layer_stack",
@@ -177,12 +177,10 @@ _LAZY_SYMBOLS = {
     "ExtendedAlgebra": "extended_algebra",
     "GroverSearch": "quantum_algorithms",
     "run_folded": "grover_exact_scale",
-    # universal n-qubit engine (default 10_000 qubits)
     "TenThousandQubitSystem": "turing_core.ten_thousand",
     "EntanglementRegistration": "turing_core.ten_thousand",
     "DEFAULT_UNIVERSAL_QUBITS": "turing_core.ten_thousand",
     "zeckendorf_valid": "turing_core.ten_thousand",
-    # exact large-scale backends
     "StabilizerState": "stabilizer",
     "StabilizerDomainError": "stabilizer",
     "CoinedCycleWalk": "quantum_walk",
