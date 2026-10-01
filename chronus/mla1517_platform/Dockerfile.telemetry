@@ -3,8 +3,8 @@
 FROM python:3.13-slim
 WORKDIR /app
 COPY turing_universal_quantum_computer /src/turing_universal_quantum_computer
-COPY mla1517_platform_v3.4/pyproject.toml .
-COPY mla1517_platform_v3.4/python ./python
+COPY chronus/mla1517_platform/pyproject.toml .
+COPY chronus/mla1517_platform/python ./python
 RUN pip install --no-cache-dir /src/turing_universal_quantum_computer '.[telemetry]'
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

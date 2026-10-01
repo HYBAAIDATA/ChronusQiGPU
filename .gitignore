@@ -24,9 +24,9 @@ artifacts/
 *.lib
 *.pdb
 *.so
-mla1517_platform_v3.4/host/primedb_ingest_daemon
-mla1517_platform_v3.4/host/mla1517_producer
-mla1517_platform_v3.4/host/*_test
+chronus/mla1517_platform/host/primedb_ingest_daemon
+chronus/mla1517_platform/host/mla1517_producer
+chronus/mla1517_platform/host/*_test
 data/
 PYTHIA-main/
 full_prompt.md
@@ -40,7 +40,7 @@ scripts/_inspect.py
 *.zip
 .kilo/
 # release packaging output (archives, manifests, checksums)
-mla1517_platform_v3.4/results/
+chronus/mla1517_platform/results/
 
 # PredictiveEngine trained-model artifacts (toe.engine persists here)
 models/

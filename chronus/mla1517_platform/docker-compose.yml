@@ -63,7 +63,7 @@ services:
 
   telemetry:
     build:
-      context: ..
+      context: ../..
       dockerfile: chronus/mla1517_platform/Dockerfile.telemetry
     container_name: mla1517-telemetry
     restart: unless-stopped
