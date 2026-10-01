@@ -24,6 +24,9 @@ from __future__ import annotations
 
 import json
 import math
+import subprocess
+import sys
+import tempfile
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
@@ -102,14 +105,42 @@ def run_isolated_execution(
     FIX-04: Pytest / execution timeout isolation.
     Compiles and dry-runs source in isolated scope to verify non-halting/crash safety.
     """
+    if timeout_seconds <= 0:
+        raise ValueError("timeout_seconds must be positive")
     try:
-        compiled = compile(source, "<pythagoras_isolated>", "exec")
-        # Run in empty global dict to isolate namespace
-        exec_globals: Dict[str, Any] = {"__builtins__": __builtins__}
-        exec(compiled, exec_globals)
-        return True, "Execution succeeded"
-    except Exception as e:
-        return False, str(e)
+        compile(source, "<pythagoras_isolated>", "exec")
+    except Exception as exc:
+        return False, str(exc)
+
+    # Separate interpreter + wall-clock timeout. This is process isolation,
+    # not an OS security sandbox for hostile code with ambient I/O authority.
+    path: str | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".py", encoding="utf-8", delete=False
+        ) as handle:
+            handle.write(source)
+            path = handle.name
+        completed = subprocess.run(
+            [sys.executable, "-I", path],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=timeout_seconds,
+            check=False,
+        )
+        if completed.returncode == 0:
+            return True, "Execution succeeded"
+        detail = (completed.stderr or completed.stdout).strip()
+        return False, detail or f"isolated execution exited {completed.returncode}"
+    except subprocess.TimeoutExpired:
+        return False, f"Execution timed out after {timeout_seconds:.3f}s"
+    except Exception as exc:
+        return False, str(exc)
+    finally:
+        if path is not None:
+            Path(path).unlink(missing_ok=True)
 
 
 def rolling_window_normalize(series: List[float], window: int = 3) -> List[float]:
