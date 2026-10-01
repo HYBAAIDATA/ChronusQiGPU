@@ -54,7 +54,7 @@ class TensorTrain:
             core = U[:, :r_new].reshape(self.ranks[-2], shape[k], r_new)
             self.cores.append(core)
             current = np.diag(S[:r_new]) @ Vh[:r_new, :]
-            current = current.reshape(r_new, -1)
+            current = current.reshape(r_new * shape[k + 1], -1)
         self.cores.append(current.reshape(self.ranks[-1], shape[-1], 1))
         self.ranks.append(1)
 
