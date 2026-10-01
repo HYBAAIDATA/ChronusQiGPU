@@ -71,8 +71,13 @@ class QuantumGPUSystem:
         "status": "ARCHITECTURE_TARGET — not achieved on classical hardware",
     }
 
-    def __init__(self, num_cores: int = 8, core_dim: int = 4096,
-                 lattice_size: int = 8, nn_dims: Optional[list] = None):
+    def __init__(
+        self,
+        num_cores: int = 8,
+        core_dim: int = 4096,
+        lattice_size: int = 8,
+        nn_dims: Optional[list] = None,
+    ):
         """
         Initialise the integrated system with configurable (testable) sizes.
 
@@ -165,34 +170,34 @@ class QuantumGPUSystem:
             "part_16_hp": self.hp_advances.get_specs(),
             "cross_vendor_comparisons": {
                 "nvidia_vs_rubin_r100": self.nvidia_advances.compare_to_hyba(
-                    'rubin_r100',
+                    "rubin_r100",
                     {
-                        'tensor_cores': 8192,
-                        'fp4_eflops': 500,
-                        'memory_tb': 512,
-                        'bandwidth_pbs': 2,
-                        'streaming_processors': 65536
-                    }
+                        "tensor_cores": 8192,
+                        "fp4_eflops": 500,
+                        "memory_tb": 512,
+                        "bandwidth_pbs": 2,
+                        "streaming_processors": 65536,
+                    },
                 ),
                 "apple_vs_m5_ultra": self.apple_advances.compare_to_hyba(
-                    'm5_ultra',
+                    "m5_ultra",
                     {
-                        'tensor_cores': 8192,
-                        'memory_tb': 512,
-                        'bandwidth_pbs': 2,
-                        'int8_tops': 500e6,
-                        'fp16_eflops': 15
-                    }
+                        "tensor_cores": 8192,
+                        "memory_tb": 512,
+                        "bandwidth_pbs": 2,
+                        "int8_tops": 500e6,
+                        "fp16_eflops": 15,
+                    },
                 ),
                 "hp_vs_cray_ex4000": self.hp_advances.compare_to_hyba(
-                    'cray_ex4000',
+                    "cray_ex4000",
                     {
-                        'streaming_processors': 65536,
-                        'memory_tb': 512,
-                        'bandwidth_pbs': 2,
-                        'fp64_eflops': 2.5,
-                        'fp32_eflops': 5
-                    }
+                        "streaming_processors": 65536,
+                        "memory_tb": 512,
+                        "bandwidth_pbs": 2,
+                        "fp64_eflops": 2.5,
+                        "fp32_eflops": 5,
+                    },
                 ),
             },
             "honest_assessment": (
@@ -217,12 +222,16 @@ class QuantumGPUSystem:
 
         print("\nInitialising memory hierarchy...")
         for tier in self.memory.tiers:
-            print(f"  ✓ {tier.name} (depth={tier.depth}, capacity={tier.capacity}, "
-                  f"compression={tier.compression_factor:.3f}x)")
+            print(
+                f"  ✓ {tier.name} (depth={tier.depth}, capacity={tier.capacity}, "
+                f"compression={tier.compression_factor:.3f}x)"
+            )
 
         print("\nInitialising error correction...")
-        print(f"  ✓ Surface code L={self.error_correction.L}, "
-              f"distance={self.error_correction.code_distance}")
+        print(
+            f"  ✓ Surface code L={self.error_correction.L}, "
+            f"distance={self.error_correction.code_distance}"
+        )
 
         print("\nInitialising neural network...")
         print(f"  ✓ {self.neural_network.parameter_count():,} parameters")
@@ -235,42 +244,46 @@ class QuantumGPUSystem:
         print(f"  ✓ Part 3: Density Operators (dim={self.density_processor.dim})")
         print(f"  ✓ Part 4: Natural Gradient (params={self.natural_gradient.num_params})")
         mps_specs = self.mps_processor.get_specs()
-        print(
-            f"  ✓ Part 5: Tensor Networks MPS (sites={
+        print(f"  ✓ Part 5: Tensor Networks MPS (sites={
                 mps_specs['num_sites']}, bond={
                 mps_specs['bond_dim']})")
         amp_specs = self.amplification_processor.get_specs()
-        print(
-            f"  ✓ Part 6: Amplitude Amplification (N={
+        print(f"  ✓ Part 6: Amplitude Amplification (N={
                 amp_specs['search_space']}, speedup={
                 amp_specs['theoretical_speedup']:.1f}x)")
         print(f"  ✓ Part 7: Quantum Fourier Transform (N={self.fourier_processor.N})")
         topo_specs = self.topological_protector.get_specs()
-        print(
-            f"  ✓ Part 8: Topological Protection (lattice={
+        print(f"  ✓ Part 8: Topological Protection (lattice={
                 topo_specs['lattice_size']}, target={
                 topo_specs['target_lattice_size']})")
         print(f"  ✓ Part 9: Quantum Kernel (feature_dim={self.kernel_processor.feature_dim})")
         vqe_specs = self.vqe_optimizer.get_specs()
-        print(
-            f"  ✓ Part 10: VQE (qubits={
+        print(f"  ✓ Part 10: VQE (qubits={
                 vqe_specs['num_qubits']}, target={
                 vqe_specs['target_num_qubits']}, layers={
                 vqe_specs['layers']})")
 
         print("\nCross-vendor advances (Parts 14-16):")
         nvidia_specs = self.nvidia_advances.get_specs()
-        print(f"  ✓ Part 14 — NVIDIA: {', '.join(nvidia_specs['gpus_modelled'])} "
-              f"({nvidia_specs['latest_gen']})")
+        print(
+            f"  ✓ Part 14 — NVIDIA: {', '.join(nvidia_specs['gpus_modelled'])} "
+            f"({nvidia_specs['latest_gen']})"
+        )
         apple_specs = self.apple_advances.get_specs()
-        print(f"  ✓ Part 15 — Apple: {', '.join(apple_specs['chips_modelled'])} "
-              f"(UMA {apple_specs['unified_memory']['capacity_gb']} GB, "
-              f"Neural Engine {apple_specs['neural_engine_tops']} TOPS)")
+        print(
+            f"  ✓ Part 15 — Apple: {', '.join(apple_specs['chips_modelled'])} "
+            f"(UMA {apple_specs['unified_memory']['capacity_gb']} GB, "
+            f"Neural Engine {apple_specs['neural_engine_tops']} TOPS)"
+        )
         hp_specs = self.hp_advances.get_specs()
-        print(f"  ✓ Part 16 — HP/HPE: {', '.join(hp_specs['systems_modelled'])} "
-              f"({hp_specs['latest_gen']})")
-        print(f"  ✓ Total: {len(GPUComparisonTable.generate())} architectures compared "
-              f"across 3 vendors (NVIDIA, Apple, HP/HPE)")
+        print(
+            f"  ✓ Part 16 — HP/HPE: {', '.join(hp_specs['systems_modelled'])} "
+            f"({hp_specs['latest_gen']})"
+        )
+        print(
+            f"  ✓ Total: {len(GPUComparisonTable.generate())} architectures compared "
+            f"across 3 vendors (NVIDIA, Apple, HP/HPE)"
+        )
 
         print("\nRunning benchmarks...")
         results = self.run_full_benchmark()

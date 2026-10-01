@@ -4,6 +4,7 @@ GHZ state |GHZ_N> gives QFI = N^2 for phase encoding U = exp(-i theta sum_j Z_j)
 saturating the Heisenberg limit. Product state gives QFI = N (standard quantum
 limit). These are hard, exact facts.
 """
+
 from __future__ import annotations
 import numpy as np
 from typing import Dict
@@ -37,11 +38,8 @@ class ModernQSense:
             "quantum_fisher_information": qfi,
             "classical_std": float(classical_std),
             "quantum_std": float(quantum_std),
-            "quantum_advantage": float(
-                classical_std /
-                quantum_std),
-            "heisenberg_scaling": 1.0 /
-            self.num_qubits if use_ghz else 1.0 /
-            np.sqrt(
-                self.num_qubits),
+            "quantum_advantage": float(classical_std / quantum_std),
+            "heisenberg_scaling": (
+                1.0 / self.num_qubits if use_ghz else 1.0 / np.sqrt(self.num_qubits)
+            ),
         }

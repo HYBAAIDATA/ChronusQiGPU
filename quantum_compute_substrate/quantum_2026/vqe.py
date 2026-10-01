@@ -9,13 +9,13 @@ Corrections vs the 2025 draft:
   - ZNE with Richardson polynomial AND exponential extrapolators
     (Endo-Benjamin-Li 2018).
 """
+
 from __future__ import annotations
 import numpy as np
 from typing import Callable, List, Dict, Any, Sequence
 
 
-def parameter_shift_gradient(f: Callable[[np.ndarray], float],
-                             theta: np.ndarray) -> np.ndarray:
+def parameter_shift_gradient(f: Callable[[np.ndarray], float], theta: np.ndarray) -> np.ndarray:
     """Standard parameter-shift rule: df/dtheta_i = (f(t+pi/2) - f(t-pi/2)) / 2."""
     grad = np.zeros_like(theta, dtype=float)
     for i in range(len(theta)):
@@ -25,9 +25,9 @@ def parameter_shift_gradient(f: Callable[[np.ndarray], float],
     return grad
 
 
-def quantum_fisher_information_matrix(state_fn: Callable[[np.ndarray], np.ndarray],
-                                      theta: np.ndarray,
-                                      eps: float = 1e-4) -> np.ndarray:
+def quantum_fisher_information_matrix(
+    state_fn: Callable[[np.ndarray], np.ndarray], theta: np.ndarray, eps: float = 1e-4
+) -> np.ndarray:
     """QFIM_{ij} = 4 * Re( <d_i psi | d_j psi> - <d_i psi | psi><psi | d_j psi> ).
 
     This IS the true quantum Fisher information for pure states. Finite-difference
@@ -61,9 +61,9 @@ def adapt_operator_pool(num_qubits: int) -> List[str]:
     return pool
 
 
-def zero_noise_extrapolate(noise_factors: Sequence[float],
-                           results: Sequence[float],
-                           method: str = "richardson") -> float:
+def zero_noise_extrapolate(
+    noise_factors: Sequence[float], results: Sequence[float], method: str = "richardson"
+) -> float:
     """Zero-noise extrapolation. method in {richardson, exponential, linear}."""
     xs = np.asarray(noise_factors, dtype=float)
     ys = np.asarray(results, dtype=float)
@@ -126,11 +126,14 @@ class ModernVQE:
             return 0.05
         return 0.01
 
-    def optimize(self, objective: Callable[[np.ndarray], float],
-                 state_fn: Callable[[np.ndarray], np.ndarray],
-                 theta0: np.ndarray,
-                 max_iterations: int = 60,
-                 tol: float = 1e-5) -> Dict[str, Any]:
+    def optimize(
+        self,
+        objective: Callable[[np.ndarray], float],
+        state_fn: Callable[[np.ndarray], np.ndarray],
+        theta0: np.ndarray,
+        max_iterations: int = 60,
+        tol: float = 1e-5,
+    ) -> Dict[str, Any]:
         theta = theta0.astype(float).copy()
         e_hist: List[float] = []
         g_hist: List[float] = []

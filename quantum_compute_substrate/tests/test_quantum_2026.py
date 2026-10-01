@@ -1,18 +1,32 @@
 """Property and invariant tests for the 2026 quantum algorithm suite."""
+
 import math
 import numpy as np
 from quantum_compute_substrate.quantum_2026._linalg import expm
 
 from quantum_compute_substrate.quantum_2026 import (
-    ModernVQE, adapt_operator_pool, parameter_shift_gradient,
-    quantum_fisher_information_matrix, zero_noise_extrapolate,
-    ModernQAOA, egger_warm_start_angles, multi_angle_qaoa_params,
-    quantum_kernel_matrix, projected_quantum_kernel, ModernQSim,
-    suzuki_trotter_4th_order, qdrift_channel, ModernQWalk,
-    szegedy_walk_operator, ModernQSense,
-    ghz_qfi, product_state_qfi, ModernQAnneal,
+    ModernVQE,
+    adapt_operator_pool,
+    parameter_shift_gradient,
+    quantum_fisher_information_matrix,
+    zero_noise_extrapolate,
+    ModernQAOA,
+    egger_warm_start_angles,
+    multi_angle_qaoa_params,
+    quantum_kernel_matrix,
+    projected_quantum_kernel,
+    ModernQSim,
+    suzuki_trotter_4th_order,
+    qdrift_channel,
+    ModernQWalk,
+    szegedy_walk_operator,
+    ModernQSense,
+    ghz_qfi,
+    product_state_qfi,
+    ModernQAnneal,
     ModernQEC,
-    surface_code_logical_error_rate, ModernHybrid,
+    surface_code_logical_error_rate,
+    ModernHybrid,
     QuantumAlgorithmType,
     QuantumCircuitMetrics,
 )
@@ -22,13 +36,17 @@ from quantum_compute_substrate.quantum_2026 import (
 class TestVQEParameterShift:
     def test_matches_analytical_gradient_of_cos(self):
         # f(t) = cos(t_0) has df/dt_0 = -sin(t_0)
-        def f(t): return float(np.cos(t[0]))
+        def f(t):
+            return float(np.cos(t[0]))
+
         for t0 in np.linspace(-1.0, 1.0, 8):
             g = parameter_shift_gradient(f, np.array([t0]))
             assert abs(g[0] - (-math.sin(t0))) < 1e-9
 
     def test_two_parameter_gradient(self):
-        def f(t): return float(np.cos(t[0]) + np.sin(t[1]))
+        def f(t):
+            return float(np.cos(t[0]) + np.sin(t[1]))
+
         t = np.array([0.3, 0.7])
         g = parameter_shift_gradient(f, t)
         assert abs(g[0] - (-math.sin(0.3))) < 1e-9
@@ -38,17 +56,33 @@ class TestVQEParameterShift:
 class TestVQEQFIM:
     def test_qfim_symmetric(self):
         def state(theta):
-            s = np.array([math.cos(theta[0] / 2), math.sin(theta[0] / 2) * math.cos(theta[1]),
-                          math.sin(theta[0] / 2) * math.sin(theta[1]), 0.0], dtype=complex)
+            s = np.array(
+                [
+                    math.cos(theta[0] / 2),
+                    math.sin(theta[0] / 2) * math.cos(theta[1]),
+                    math.sin(theta[0] / 2) * math.sin(theta[1]),
+                    0.0,
+                ],
+                dtype=complex,
+            )
             return s / np.linalg.norm(s)
+
         F = quantum_fisher_information_matrix(state, np.array([0.5, 0.7]))
         assert np.allclose(F, F.T, atol=1e-8)
 
     def test_qfim_positive_semidefinite(self):
         def state(theta):
-            s = np.array([math.cos(theta[0]), math.sin(theta[0]) * math.cos(theta[1]),
-                          math.sin(theta[0]) * math.sin(theta[1]), 0.0], dtype=complex)
+            s = np.array(
+                [
+                    math.cos(theta[0]),
+                    math.sin(theta[0]) * math.cos(theta[1]),
+                    math.sin(theta[0]) * math.sin(theta[1]),
+                    0.0,
+                ],
+                dtype=complex,
+            )
             return s / np.linalg.norm(s)
+
         F = quantum_fisher_information_matrix(state, np.array([0.4, 0.9]))
         eigs = np.linalg.eigvalsh(F)
         assert (eigs >= -1e-6).all(), f"QFIM has negative eigenvalue: {eigs}"
@@ -57,6 +91,7 @@ class TestVQEQFIM:
         # |psi(t)> = cos(t/2)|0> - i sin(t/2)|1>. QFI on this state should be 1.
         def state(theta):
             return np.array([math.cos(theta[0] / 2), -1j * math.sin(theta[0] / 2)], dtype=complex)
+
         F = quantum_fisher_information_matrix(state, np.array([0.3]))
         assert abs(F[0, 0] - 1.0) < 1e-3
 
@@ -217,6 +252,7 @@ class TestSuzukiTrotter:
         dt = 0.05
         exact = expm(-1j * dt * (H1 + H2))
         from quantum_compute_substrate.quantum_2026.qsim import _second_order
+
         U2 = _second_order(dt, H1, H2)
         U4 = suzuki_trotter_4th_order(dt, H1, H2)
         e2 = float(np.linalg.norm(U2 - exact))
@@ -329,8 +365,9 @@ class TestQAnneal:
         H = rng.standard_normal((4, 4))
         H = 0.5 * (H + H.T)
         a = ModernQAnneal(H.astype(complex))
-        r = a.reverse_anneal(np.array([1, 0, 0, 0], dtype=complex),
-                             annealing_time=0.3, schedule_steps=30)
+        r = a.reverse_anneal(
+            np.array([1, 0, 0, 0], dtype=complex), annealing_time=0.3, schedule_steps=30
+        )
         assert r["norm_residual"] < 1e-5
 
     def test_pause_quench_returns_state(self):
@@ -373,8 +410,10 @@ class TestQEC:
 
     def test_gate_costs(self):
         q = ModernQEC(3)
-        assert q.fault_tolerant_gate_cost("T")["physical_gates"] > q.fault_tolerant_gate_cost("H")[
-            "physical_gates"]
+        assert (
+            q.fault_tolerant_gate_cost("T")["physical_gates"]
+            > q.fault_tolerant_gate_cost("H")["physical_gates"]
+        )
 
 
 # ==================== Hybrid ====================
@@ -413,5 +452,6 @@ class TestCircuitMetrics:
             "QANNEAL",
             "QNEURON",
             "HYBRID",
-                "ADAPTIVE"):
+            "ADAPTIVE",
+        ):
             assert expected in keys

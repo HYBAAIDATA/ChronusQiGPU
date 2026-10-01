@@ -14,6 +14,7 @@ returns (compressed_state, metrics) where metrics has:
   * fidelity (in [0, 1]; higher = less loss)
   * lossless (True iff no singular values were dropped)
 """
+
 from __future__ import annotations
 import math
 import numpy as np
@@ -33,9 +34,11 @@ class CompressionMetrics:
     per_bond: List[dict]
 
     def summary(self) -> str:
-        return (f"phi-fold: {self.original_bytes:,} -> {self.compressed_bytes:,} bytes "
-                f"({self.ratio * 100:.2f}% compression, fidelity {self.fidelity:.6f}, "
-                f"lossless={self.lossless})")
+        return (
+            f"phi-fold: {self.original_bytes:,} -> {self.compressed_bytes:,} bytes "
+            f"({self.ratio * 100:.2f}% compression, fidelity {self.fidelity:.6f}, "
+            f"lossless={self.lossless})"
+        )
 
 
 class PhiFoldCompressor:
@@ -76,8 +79,8 @@ class PhiFoldCompressor:
         # Sweep left-to-right: for each bond k (between site k and site k+1),
         # merge, SVD, truncate.
         for k in range(n - 1):
-            A = new_sites[k]        # (chiL, 2, chiM)
-            B = new_sites[k + 1]    # (chiM, 2, chiR)
+            A = new_sites[k]  # (chiL, 2, chiM)
+            B = new_sites[k + 1]  # (chiM, 2, chiR)
             chiL, _, chiM = A.shape
             _, _, chiR = B.shape
             theta = np.einsum("lam,mbr->labr", A, B)
@@ -109,12 +112,14 @@ class PhiFoldCompressor:
             U_t = U[:, :target_rank]
             S_t = S[:target_rank]
             Vh_t = Vh[:target_rank, :]
-            per_bond.append({
-                "bond": k,
-                "original_rank": len(S),
-                "retained_rank": target_rank,
-                "weight_retained": float(np.sum(S_t * S_t) / max(total_weight, 1e-30)),
-            })
+            per_bond.append(
+                {
+                    "bond": k,
+                    "original_rank": len(S),
+                    "retained_rank": target_rank,
+                    "weight_retained": float(np.sum(S_t * S_t) / max(total_weight, 1e-30)),
+                }
+            )
             new_sites[k] = (U_t * S_t).reshape(chiL, 2, target_rank)
             new_sites[k + 1] = Vh_t.reshape(target_rank, 2, chiR)
 

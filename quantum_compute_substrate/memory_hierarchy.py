@@ -28,9 +28,10 @@ from .phi_tensor_core import FoldState, PHI
 @dataclass
 class MemoryTier:
     """A single tier in the φ-folded memory hierarchy."""
+
     name: str
-    depth: int          # φ-compression depth (0 = unfolded)
-    capacity: int       # Number of elements this tier can hold
+    depth: int  # φ-compression depth (0 = unfolded)
+    capacity: int  # Number of elements this tier can hold
     data: Optional[dict] = None  # {key: FoldState}
 
     def __post_init__(self):
@@ -38,7 +39,7 @@ class MemoryTier:
 
     @property
     def compression_factor(self) -> float:
-        return PHI ** self.depth
+        return PHI**self.depth
 
     @property
     def effective_capacity(self) -> int:
@@ -76,8 +77,9 @@ class QuantumMemoryHierarchy:
     All bandwidth is MEASURED.
     """
 
-    def __init__(self, register_cap: int = 64, sram_cap: int = 256,
-                 l2_cap: int = 1024, hbm_cap: int = 4096):
+    def __init__(
+        self, register_cap: int = 64, sram_cap: int = 256, l2_cap: int = 1024, hbm_cap: int = 4096
+    ):
         self.register = MemoryTier("Register", depth=0, capacity=register_cap)
         self.sram = MemoryTier("SRAM", depth=1, capacity=sram_cap)
         self.l2 = MemoryTier("L2", depth=2, capacity=l2_cap)
@@ -96,8 +98,7 @@ class QuantumMemoryHierarchy:
     def store(self, key: str, state: FoldState, tier: str = "register") -> bool:
         """Store data in the specified tier."""
         t0 = time.perf_counter()
-        tier_map = {"register": self.register, "sram": self.sram,
-                    "l2": self.l2, "hbm": self.hbm}
+        tier_map = {"register": self.register, "sram": self.sram, "l2": self.l2, "hbm": self.hbm}
         t = tier_map.get(tier, self.register)
         success = t.store(key, state)
         self._write_ops += 1
@@ -108,8 +109,7 @@ class QuantumMemoryHierarchy:
     def load(self, key: str, tier: str = "register") -> Optional[FoldState]:
         """Load data from the specified tier."""
         t0 = time.perf_counter()
-        tier_map = {"register": self.register, "sram": self.sram,
-                    "l2": self.l2, "hbm": self.hbm}
+        tier_map = {"register": self.register, "sram": self.sram, "l2": self.l2, "hbm": self.hbm}
         t = tier_map.get(tier, self.register)
         state = t.load(key)
         if state is not None:
@@ -205,14 +205,16 @@ class QuantumMemoryHierarchy:
             else:
                 error = float("inf")
                 rel_error = float("inf")
-            results.append({
-                "depth": depth,
-                "compression_factor": PHI ** depth,
-                "folded_dim": folded.dim,
-                "reconstruction_error": error,
-                "relative_error": rel_error,
-                "lossless": rel_error < 1e-10,
-            })
+            results.append(
+                {
+                    "depth": depth,
+                    "compression_factor": PHI**depth,
+                    "folded_dim": folded.dim,
+                    "reconstruction_error": error,
+                    "relative_error": rel_error,
+                    "lossless": rel_error < 1e-10,
+                }
+            )
 
         return {
             "original_dim": dim,
@@ -228,18 +230,21 @@ class QuantumMemoryHierarchy:
         """Return honest, measured specifications."""
         return {
             "tiers": [
-                {"name": t.name, "depth": t.depth,
-                 "capacity": t.capacity,
-                 "compression_factor": t.compression_factor,
-                 "effective_capacity": t.effective_capacity,
-                 "usage": t.usage()}
+                {
+                    "name": t.name,
+                    "depth": t.depth,
+                    "capacity": t.capacity,
+                    "compression_factor": t.compression_factor,
+                    "effective_capacity": t.effective_capacity,
+                    "usage": t.usage(),
+                }
                 for t in self.tiers
             ],
             "architecture_target": {
                 "hbm4": "512 TB",
                 "quantum_cache": "2 PB",
                 "bandwidth": "2 PB/s",
-                "note": "Architecture targets from spec. Actual sizes are configurable."
+                "note": "Architecture targets from spec. Actual sizes are configurable.",
             },
             "measured": {
                 "read_ops": self._read_ops,

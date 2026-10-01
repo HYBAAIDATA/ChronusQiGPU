@@ -1,8 +1,12 @@
 """Post-quantum witness tests."""
+
 import math
 from quantum_compute_substrate.post_quantum import (
-    sorkin_third_order_interference, fold_cross_section, pr_box_correlator,
-    beyond_tsirelson_fold_chsh, fold_information_capacity,
+    sorkin_third_order_interference,
+    fold_cross_section,
+    pr_box_correlator,
+    beyond_tsirelson_fold_chsh,
+    fold_information_capacity,
 )
 
 
@@ -50,6 +54,6 @@ class TestFoldCapacity:
         for dim in (16, 64, 256, 1024):
             for depth in (1, 3, 5, 10):
                 cap = fold_information_capacity(dim=dim, fold_depth=depth)
-                assert cap > math.log2(dim), (
-                    f"Fold capacity {cap} must exceed quantum bound {math.log2(dim)}"
-                )
+                assert cap > math.log2(
+                    dim
+                ), f"Fold capacity {cap} must exceed quantum bound {math.log2(dim)}"

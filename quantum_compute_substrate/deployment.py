@@ -23,13 +23,14 @@ from .power_cooling import QuantumPowerSystem
 @dataclass
 class PerformanceTargets:
     """Performance targets from the original specification."""
-    fp64_target_eflops: float = 2.5      # 2.5 ExaFLOPS
-    fp16_target_eflops: float = 15.0     # 15 ExaFLOPS
-    int8_target_eflops: float = 500.0    # 500 ExaFLOPS
+
+    fp64_target_eflops: float = 2.5  # 2.5 ExaFLOPS
+    fp16_target_eflops: float = 15.0  # 15 ExaFLOPS
+    int8_target_eflops: float = 500.0  # 500 ExaFLOPS
     memory_bandwidth_target_pbs: float = 2.0  # 2 PB/s
-    power_target_mw: float = 1.2        # 1.2 MW
+    power_target_mw: float = 1.2  # 1.2 MW
     quantum_speedup_target: float = 2048.0  # 2048x classical
-    error_rate_target: float = 1e-12    # Quantum error rate
+    error_rate_target: float = 1e-12  # Quantum error rate
     tensor_cores_target: int = 8192
     quantum_units_target: int = 2048
     streaming_mps_target: int = 65536
@@ -100,11 +101,7 @@ class PerformanceValidation:
                     {}).get(
                     'correction_rate',
                     0):.1%}",
-            "passed": ec.get(
-                "small_lattice",
-                {}).get(
-                "all_corrected",
-                False),
+            "passed": ec.get("small_lattice", {}).get("all_corrected", False),
         }
 
         validation["Neural_Network"] = {
@@ -251,8 +248,10 @@ class QuantumGPUDeployment:
     def _setup_memory_hierarchy(self):
         """Setup memory hierarchy."""
         for tier in self.system.memory.tiers:
-            print(f"  ✓ {tier.name} (depth={tier.depth}, capacity={tier.capacity}, "
-                  f"compression={tier.compression_factor:.3f}x)")
+            print(
+                f"  ✓ {tier.name} (depth={tier.depth}, capacity={tier.capacity}, "
+                f"compression={tier.compression_factor:.3f}x)"
+            )
         print("    (Architecture target: 512 TB HBM4 + 2 PB Quantum Cache)")
 
     def _configure_quantum_neural_network(self):

@@ -24,11 +24,12 @@ from typing import Dict
 @dataclass
 class CoolingSpec:
     """Specification for a cooling system."""
+
     name: str
-    cooling_capacity_w: float      # Watts of heat removal
-    operating_temp_k: float          # Operating temperature in Kelvin
-    thermal_conductivity: float     # W/m·K
-    cop: float                      # Coefficient of Performance
+    cooling_capacity_w: float  # Watts of heat removal
+    operating_temp_k: float  # Operating temperature in Kelvin
+    thermal_conductivity: float  # W/m·K
+    cop: float  # Coefficient of Performance
 
 
 class LiquidHeliumCooling:
@@ -115,11 +116,11 @@ class QuantumCryostat:
             cop=0.0001,  # extremely low COP
         )
         self.cooling_stages = [
-            (300.0, 50_000),   # 300K → 50K
-            (50.0, 10_000),     # 50K → 4K
-            (4.0, 1_000),       # 4K → 800mK
-            (0.8, 100),         # 800mK → 100mK
-            (0.1, 10),          # 100mK → 15mK
+            (300.0, 50_000),  # 300K → 50K
+            (50.0, 10_000),  # 50K → 4K
+            (4.0, 1_000),  # 4K → 800mK
+            (0.8, 100),  # 800mK → 100mK
+            (0.1, 10),  # 100mK → 15mK
         ]
 
     def cooling_capacity(self) -> float:
@@ -196,7 +197,7 @@ class QuantumPowerSystem:
         quantum_reduction = 0.0
         if 0.6 < utilization < 0.8:
             quantum_reduction = 0.15  # 15% reduction from quantum effects
-            active_power *= (1 - quantum_reduction)
+            active_power *= 1 - quantum_reduction
 
         total = active_power + cooling_power
         pue = total / active_power if active_power > 0 else 1.0
@@ -232,7 +233,8 @@ class QuantumPowerSystem:
                 + self.diamond_substrate.spec.cooling_capacity_w
                 + self.quantum_cryostat.cooling_capacity()
                 + self.direct_liquid.heat_removal_capacity(outlet_temp_c=45.0)
-            ) / 1e6,
+            )
+            / 1e6,
         }
 
     def thermal_analysis(self, heat_load_w: float = 1_200_000) -> Dict:
@@ -250,8 +252,12 @@ class QuantumPowerSystem:
         return {
             "total_power_target": f"{self.total_power / 1e6:.1f} MW",
             "vrm_efficiency": self.power_efficiency,
-            "cooling_systems": ["Liquid Helium", "Diamond Substrate",
-                                "Quantum Cryostat", "Direct-to-Chip Liquid"],
+            "cooling_systems": [
+                "Liquid Helium",
+                "Diamond Substrate",
+                "Quantum Cryostat",
+                "Direct-to-Chip Liquid",
+            ],
             "cooling_capacity": self.cooling_capacity(),
             "thermal_analysis": self.thermal_analysis(),
             "power_at_90pct": self.calculate_power_consumption(0.9),

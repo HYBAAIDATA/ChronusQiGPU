@@ -1,11 +1,19 @@
 """Real-machinery tests: 1000 qubits, gate application, sampling, phi-fold compression."""
+
 import math
 import numpy as np
 
 from quantum_compute_substrate.phi_infinity_tensor import (
-    QubitMPS, bell_pair, uniform_superposition, ghz_state,
-    H_GATE, X_GATE, CNOT_TENSOR, PhiFoldCompressor,
-    benchmark_on, demonstrate_n_qubits,
+    QubitMPS,
+    bell_pair,
+    uniform_superposition,
+    ghz_state,
+    H_GATE,
+    X_GATE,
+    CNOT_TENSOR,
+    PhiFoldCompressor,
+    benchmark_on,
+    demonstrate_n_qubits,
 )
 from quantum_compute_substrate.phi_infinity_tensor.phi_identities import fib
 
@@ -94,8 +102,8 @@ class TestNamedStates:
     def test_uniform_superposition_all_amplitudes_equal(self):
         n = 6
         mps = uniform_superposition(n, chi_max=4)
-        expected = 1.0 / math.sqrt(2 ** n)
-        for k in range(2 ** n):
+        expected = 1.0 / math.sqrt(2**n)
+        for k in range(2**n):
             bits = [(k >> i) & 1 for i in range(n)]
             amp = mps.amplitude(bits)
             assert abs(abs(amp) - expected) < 1e-12
@@ -264,6 +272,7 @@ class TestSubstrateIntegration:
     def test_apply_gates_on_1000_qubits_completes_quickly(self):
         """1000 single-qubit gates on 1000 qubits.  Should finish in seconds."""
         import time
+
         mps = QubitMPS(n_qubits=1000, chi_max=64)
         start = time.time()
         for k in range(1000):

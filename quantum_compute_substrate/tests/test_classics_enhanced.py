@@ -1,14 +1,23 @@
 """Property + invariant tests for enhanced Grover, Shor, QFT."""
+
 import math
 import time
 import numpy as np
 
 from quantum_compute_substrate.quantum_2026.classics import (
-    EnhancedGrover, optimal_grover_iterations, apply_diffusion, apply_oracle,
-    quantum_counting_estimate, EnhancedShor,
-    continued_fraction_convergents, extract_period_from_phase, quantum_period_finding_matrix,
+    EnhancedGrover,
+    optimal_grover_iterations,
+    apply_diffusion,
+    apply_oracle,
+    quantum_counting_estimate,
+    EnhancedShor,
+    continued_fraction_convergents,
+    extract_period_from_phase,
+    quantum_period_finding_matrix,
     EnhancedQFT,
-    exact_qft_matrix, banded_qft_matrix, coppersmith_error_bound,
+    exact_qft_matrix,
+    banded_qft_matrix,
+    coppersmith_error_bound,
 )
 
 
@@ -55,7 +64,7 @@ class TestGroverPrimitives:
 
     def test_diffusion_o_n_not_o_n_squared(self):
         # Confirm large N runs in linear time; a 2^18 vector should apply in << 1s.
-        N = 2 ** 18
+        N = 2**18
         psi = np.ones(N, dtype=complex) / math.sqrt(N)
         t0 = time.perf_counter()
         for _ in range(50):
@@ -98,12 +107,12 @@ class TestFixedPointGrover:
         r = g.fixed_point_search(marked=[5], delta=0.05)
         history = r["amplification_history"]
         # For our capped implementation, once we hit >= 1 - delta^2 we stop.
-        assert history[-1] >= 1 - 0.05 ** 2 - 1e-9 or len(history) >= 3
+        assert history[-1] >= 1 - 0.05**2 - 1e-9 or len(history) >= 3
 
     def test_terminates_at_target(self):
         g = EnhancedGrover(num_qubits=8, num_marked=1)
         r = g.fixed_point_search(marked=[100], delta=0.01)
-        assert r["success_probability"] >= 1 - 0.01 ** 2 - 1e-3
+        assert r["success_probability"] >= 1 - 0.01**2 - 1e-3
 
 
 class TestQuantumCounting:
@@ -190,18 +199,19 @@ class TestQFTUnitarity:
     def test_exact_qft_is_unitary(self):
         for n in (2, 3, 4, 5):
             Q = exact_qft_matrix(n)
-            dim = 2 ** n
+            dim = 2**n
             assert np.allclose(Q @ Q.conj().T, np.eye(dim), atol=1e-9)
 
     def test_banded_qft_is_unitary_for_all_bands(self):
         """THE key correction vs the 2025 draft: approx QFT is unitary."""
         n = 4
-        dim = 2 ** n
+        dim = 2**n
         for band in range(1, n + 1):
             Q = banded_qft_matrix(n, band=band)
             product = Q @ Q.conj().T
             assert np.allclose(
-                product, np.eye(dim), atol=1e-9), f"banded QFT with band={band} not unitary; max deviation {
+                product, np.eye(dim), atol=1e-9
+            ), f"banded QFT with band={band} not unitary; max deviation {
                 np.max(
                     np.abs(
                         product - np.eye(dim)))}"
@@ -216,9 +226,8 @@ class TestQFTUnitarity:
     def test_banded_full_band_is_none_equivalent(self):
         n = 3
         assert np.allclose(
-            banded_qft_matrix(
-                n, band=None), banded_qft_matrix(
-                n, band=n), atol=1e-10)
+            banded_qft_matrix(n, band=None), banded_qft_matrix(n, band=n), atol=1e-10
+        )
 
 
 class TestQFTErrorBound:
@@ -235,8 +244,10 @@ class TestQFTErrorBound:
     def test_error_decreases_with_band(self):
         n = 5
         Q_exact = exact_qft_matrix(n)
-        errors = [float(np.linalg.norm(banded_qft_matrix(n, band=b) - Q_exact, ord=2))
-                  for b in (1, 2, 3, 4, 5)]
+        errors = [
+            float(np.linalg.norm(banded_qft_matrix(n, band=b) - Q_exact, ord=2))
+            for b in (1, 2, 3, 4, 5)
+        ]
         # Non-increasing in band
         assert all(errors[i] >= errors[i + 1] - 1e-12 for i in range(len(errors) - 1))
 
@@ -245,17 +256,17 @@ class TestQFTApplication:
     def test_qft_of_basis_state_is_uniform_amplitude(self):
         n = 3
         Q = exact_qft_matrix(n)
-        for k in range(2 ** n):
-            e = np.zeros(2 ** n, dtype=complex)
+        for k in range(2**n):
+            e = np.zeros(2**n, dtype=complex)
             e[k] = 1.0
             out = Q @ e
             probs = np.abs(out) ** 2
-            assert np.allclose(probs, 1.0 / (2 ** n), atol=1e-10)
+            assert np.allclose(probs, 1.0 / (2**n), atol=1e-10)
 
     def test_qft_inverse_recovers_input(self):
         n = 4
         rng = np.random.default_rng(0)
-        v = rng.standard_normal(2 ** n) + 1j * rng.standard_normal(2 ** n)
+        v = rng.standard_normal(2**n) + 1j * rng.standard_normal(2**n)
         v = v / np.linalg.norm(v)
         Q = exact_qft_matrix(n)
         assert np.allclose(Q.conj().T @ (Q @ v), v, atol=1e-10)
@@ -274,7 +285,7 @@ class TestQFTIntegration:
         # QFT is the DFT / sqrt(N) - i.e. numpy fft with 'ortho' norm and no bit-reversal.
         # Compare pointwise probability distributions (both should match after conversion).
         n = 4
-        N = 2 ** n
+        N = 2**n
         v = np.zeros(N, dtype=complex)
         v[3] = 1.0
         Q = exact_qft_matrix(n)

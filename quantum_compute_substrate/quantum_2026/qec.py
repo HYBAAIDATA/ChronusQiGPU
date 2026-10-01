@@ -3,14 +3,14 @@
 p_L(d) = A * (p / p_th) ** ((d + 1) / 2)   [Fowler et al. 2012]
 for p < p_th, where p_th ~ 0.01 for the standard surface code.
 """
+
 from __future__ import annotations
 from typing import Dict
 
 
-def surface_code_logical_error_rate(physical_error_rate: float,
-                                    code_distance: int,
-                                    threshold: float = 0.01,
-                                    prefactor: float = 0.03) -> float:
+def surface_code_logical_error_rate(
+    physical_error_rate: float, code_distance: int, threshold: float = 0.01, prefactor: float = 0.03
+) -> float:
     if physical_error_rate <= 0:
         return 0.0
     if physical_error_rate >= threshold:
@@ -25,10 +25,12 @@ class ModernQEC:
         self.code_distance = code_distance
         self.physical_qubits = 2 * code_distance * code_distance - 1
 
-    def surface_code_metrics(self, physical_error_rate: float = 1e-3,
-                             threshold: float = 0.01) -> Dict:
-        pL = surface_code_logical_error_rate(physical_error_rate, self.code_distance,
-                                             threshold=threshold)
+    def surface_code_metrics(
+        self, physical_error_rate: float = 1e-3, threshold: float = 0.01
+    ) -> Dict:
+        pL = surface_code_logical_error_rate(
+            physical_error_rate, self.code_distance, threshold=threshold
+        )
         return {
             "code_distance": self.code_distance,
             "physical_qubits": self.physical_qubits,
@@ -36,7 +38,8 @@ class ModernQEC:
             "threshold_error_rate": threshold,
             "physical_error_rate": physical_error_rate,
             "logical_error_rate": pL,
-            "error_suppression_factor": (physical_error_rate / threshold) ** ((self.code_distance + 1) / 2.0),
+            "error_suppression_factor": (physical_error_rate / threshold)
+            ** ((self.code_distance + 1) / 2.0),
             "correctable_errors": (self.code_distance - 1) // 2,
         }
 

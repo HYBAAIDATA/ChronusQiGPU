@@ -77,8 +77,7 @@ def run_all_tests():
             if isinstance(obj, type) and name.startswith("Test"):
                 # Check if it has test methods
                 has_tests = any(
-                    callable(getattr(obj, m, None)) and m.startswith("test_")
-                    for m in dir(obj)
+                    callable(getattr(obj, m, None)) and m.startswith("test_") for m in dir(obj)
                 )
                 if has_tests:
                     test_classes.append(obj)
@@ -103,8 +102,7 @@ def run_all_tests():
 
             # Find all test methods
             test_methods = [
-                m for m in dir(instance)
-                if m.startswith("test_") and callable(getattr(instance, m))
+                m for m in dir(instance) if m.startswith("test_") and callable(getattr(instance, m))
             ]
 
             for method_name in test_methods:

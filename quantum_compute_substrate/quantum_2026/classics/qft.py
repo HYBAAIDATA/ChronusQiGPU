@@ -5,6 +5,7 @@ References:
   * Griffiths & Niu 1996 - semiclassical QFT.
   * Nielsen & Chuang - standard exposition.
 """
+
 from __future__ import annotations
 import math
 import numpy as np
@@ -21,10 +22,9 @@ def _kron_at(op: np.ndarray, qubit: int, num_qubits: int) -> np.ndarray:
     return m
 
 
-def _controlled_phase(control: int, target: int, phase: float,
-                      num_qubits: int) -> np.ndarray:
+def _controlled_phase(control: int, target: int, phase: float, num_qubits: int) -> np.ndarray:
     """Controlled-phase gate |11> -> e^{i phase} |11>, identity elsewhere."""
-    dim = 2 ** num_qubits
+    dim = 2**num_qubits
     U = np.eye(dim, dtype=complex)
     for x in range(dim):
         bits = [(x >> (num_qubits - 1 - i)) & 1 for i in range(num_qubits)]
@@ -34,7 +34,7 @@ def _controlled_phase(control: int, target: int, phase: float,
 
 
 def _swap(i: int, j: int, num_qubits: int) -> np.ndarray:
-    dim = 2 ** num_qubits
+    dim = 2**num_qubits
     U = np.zeros((dim, dim), dtype=complex)
     for x in range(dim):
         bits = [(x >> (num_qubits - 1 - k)) & 1 for k in range(num_qubits)]
@@ -53,7 +53,7 @@ def _hadamard_on(qubit: int, num_qubits: int) -> np.ndarray:
 
 def exact_qft_matrix(num_qubits: int) -> np.ndarray:
     """Exact QFT via direct DFT matrix. Verified unitary."""
-    n = 2 ** num_qubits
+    n = 2**num_qubits
     j = np.arange(n).reshape(-1, 1)
     k = np.arange(n).reshape(1, -1)
     return np.exp(2j * np.pi * j * k / n) / math.sqrt(n)
@@ -74,7 +74,7 @@ def banded_qft_matrix(num_qubits: int, band: Optional[int] = None) -> np.ndarray
       swap qubit i with qubit n-1-i (bit reversal)
     """
     n = num_qubits
-    dim = 2 ** n
+    dim = 2**n
     U = np.eye(dim, dtype=complex)
     for i in range(n):
         U = _hadamard_on(i, n) @ U
@@ -82,7 +82,7 @@ def banded_qft_matrix(num_qubits: int, band: Optional[int] = None) -> np.ndarray
             k = j - i
             if band is not None and k > band:
                 continue
-            angle = math.pi / (2 ** k)
+            angle = math.pi / (2**k)
             U = _controlled_phase(j, i, angle, n) @ U
     # Bit-reversal swaps
     for i in range(n // 2):
@@ -100,7 +100,7 @@ class EnhancedQFT:
         if num_qubits < 1:
             raise ValueError("num_qubits must be >= 1")
         self.num_qubits = num_qubits
-        self.dimension = 2 ** num_qubits
+        self.dimension = 2**num_qubits
 
     def exact_qft(self, state: np.ndarray) -> Dict[str, Any]:
         Q = exact_qft_matrix(self.num_qubits)
@@ -128,8 +128,9 @@ class EnhancedQFT:
             "band": band,
         }
 
-    def adaptive_precision_qft(self, state: np.ndarray, target_error: float = 1e-4,
-                               max_band: Optional[int] = None) -> Dict[str, Any]:
+    def adaptive_precision_qft(
+        self, state: np.ndarray, target_error: float = 1e-4, max_band: Optional[int] = None
+    ) -> Dict[str, Any]:
         """Pick smallest band with |QFT - AQFT_band| * ||state|| <= target_error."""
         max_band = max_band or self.num_qubits
         best = self.exact_qft(state)

@@ -50,10 +50,9 @@ class LHCEventClassifier:
         preds = []
         for x in X:
             # Compute kernel similarity to every support vector
-            sims = np.array([
-                self.kernel.compute_quantum_kernel(x, sv)
-                for sv in self.support_vectors
-            ])
+            sims = np.array(
+                [self.kernel.compute_quantum_kernel(x, sv) for sv in self.support_vectors]
+            )
             # Weighted majority vote
             score = np.sum(sims * self.support_labels)
             preds.append(1 if score > 0 else -1)

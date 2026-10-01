@@ -79,10 +79,18 @@ class BenchmarkSuite:
         core = PhiTensorCore(core_id=0, dim=4096, seed=42)
 
         # Tensor product benchmark
-        a = FoldState(np.random.default_rng(1).standard_normal(64) +
-                      1j * np.random.default_rng(2).standard_normal(64), 0, 64)
-        b = FoldState(np.random.default_rng(3).standard_normal(64) +
-                      1j * np.random.default_rng(4).standard_normal(64), 0, 64)
+        a = FoldState(
+            np.random.default_rng(1).standard_normal(64)
+            + 1j * np.random.default_rng(2).standard_normal(64),
+            0,
+            64,
+        )
+        b = FoldState(
+            np.random.default_rng(3).standard_normal(64)
+            + 1j * np.random.default_rng(4).standard_normal(64),
+            0,
+            64,
+        )
 
         core.reset_counters()
         t0 = time.perf_counter()

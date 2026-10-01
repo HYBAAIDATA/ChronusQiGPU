@@ -1,4 +1,5 @@
 """Tests for LiH VQE."""
+
 from quantum_compute_substrate.applications.lih_vqe import LiHVQE
 
 

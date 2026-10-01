@@ -1,4 +1,5 @@
 """Tests for visualization module."""
+
 import math
 
 import numpy as np

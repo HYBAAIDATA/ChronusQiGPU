@@ -8,6 +8,7 @@ Computation is physical. Reversible computation is free (of Landauer cost);
 irreversible erasure costs at least kT ln 2 per bit. Fredkin and Toffoli
 gates realise reversible universal computation.
 """
+
 from __future__ import annotations
 import math
 import numpy as np

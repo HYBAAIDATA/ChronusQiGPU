@@ -6,6 +6,7 @@ Universal computation. In 2026:
   * BQP witness: Deutsch-Jozsa distinguishes constant from balanced in 1 query,
     vs classical Omega(2^{n-1}) worst case.
 """
+
 from __future__ import annotations
 import math
 import numpy as np
@@ -13,12 +14,15 @@ import numpy as np
 H_GATE = np.array([[1, 1], [1, -1]], dtype=complex) / math.sqrt(2.0)
 S_GATE = np.array([[1, 0], [0, 1j]], dtype=complex)
 T_GATE = np.array([[1, 0], [0, np.exp(1j * math.pi / 4)]], dtype=complex)
-CNOT_GATE = np.array([
-    [1, 0, 0, 0],
-    [0, 1, 0, 0],
-    [0, 0, 0, 1],
-    [0, 0, 1, 0],
-], dtype=complex)
+CNOT_GATE = np.array(
+    [
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 0, 1],
+        [0, 0, 1, 0],
+    ],
+    dtype=complex,
+)
 
 
 def universal_gate_set():

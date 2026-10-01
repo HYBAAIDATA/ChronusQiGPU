@@ -1,4 +1,5 @@
 """Custom ASIC architecture exploration for φ-scaled tensor cores."""
+
 from dataclasses import dataclass
 from typing import Dict
 
@@ -8,6 +9,7 @@ from ..phi_tensor_core import PHI
 @dataclass
 class PhiScaledTensorCoreASIC:
     """ASIC architecture exploration."""
+
     process_node_nm: int = 3
     die_area_mm2: float = 800.0
     transistors_billion: float = 336.0
@@ -28,7 +30,7 @@ class PhiScaledTensorCoreASIC:
 
     def phi_scaled_pe_count(self, base_pe: int = 8192, phi_exponent: int = 0) -> Dict:
         """How many PEs would a φ^n-scaled design require? (Info-density bound.)"""
-        scaled = int(base_pe * PHI ** phi_exponent)
+        scaled = int(base_pe * PHI**phi_exponent)
         return {
             "base_pe": base_pe,
             "phi_exponent": phi_exponent,

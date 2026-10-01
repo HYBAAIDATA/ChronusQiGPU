@@ -7,6 +7,7 @@ Bra-ket notation, gamma matrices, and the Dirac equation:
 2026 elevation: gamma matrices as substrate primitives, Clifford algebra
 verified by tests, bra/ket/inner/outer as first-class operations.
 """
+
 from __future__ import annotations
 import numpy as np
 

@@ -6,6 +6,7 @@ from quantum states.
 
     chi = S(sum p_i rho_i) - sum p_i S(rho_i) >= I(X;Y_accessible)
 """
+
 from __future__ import annotations
 import numpy as np
 from typing import Sequence

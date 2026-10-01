@@ -15,9 +15,9 @@ class UnitaryHashTransform:
         self.num_qubits = num_qubits
         self.dim = 2 ** min(num_qubits, 12)
         self.tensor_core_config = {
-            'sparsity': 0.5,
-            'precision': 'fp8',
-            'transform_engine': True,
+            "sparsity": 0.5,
+            "precision": "fp8",
+            "transform_engine": True,
         }
 
     def hadamard_transform(self, state: QuantumComputeState) -> QuantumComputeState:
@@ -28,7 +28,7 @@ class UnitaryHashTransform:
         transformed = np.zeros(N, dtype=np.complex128)
         for y in range(N):
             for x in range(N):
-                bit_parity = bin(x & y).count('1') % 2
+                bit_parity = bin(x & y).count("1") % 2
                 transformed[y] += amplitudes[x] * ((-1) ** bit_parity) / np.sqrt(N)
         return QuantumComputeState(transformed, self.dim, state.coherence_time)
 
@@ -48,7 +48,7 @@ class UnitaryHashTransform:
         """P(phi) = diag(1, e^{i*phi}) applied per qubit."""
         amplitudes = state.amplitudes.copy()
         for i in range(self.dim):
-            bit_count = bin(i).count('1')
+            bit_count = bin(i).count("1")
             amplitudes[i] *= np.exp(1j * angle * bit_count)
         return QuantumComputeState(amplitudes, self.dim, state.coherence_time)
 
@@ -69,12 +69,14 @@ class UnitaryHashTransform:
 
     def compute_hash_unitary(self, input_data: bytes) -> callable:
         """Construct full unitary hash operator."""
+
         def hash_operator(state: QuantumComputeState):
             state = self.hadamard_transform(state)
             phase = self.header_to_phase(input_data)
             state = self.phase_shift(state, phase)
             state = self.hadamard_transform(state)
             return state
+
         return hash_operator
 
     def header_to_phase(self, header: bytes) -> float:

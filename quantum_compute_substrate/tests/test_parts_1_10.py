@@ -124,7 +124,8 @@ class TestPart4NaturalGradient:
         ng = QuantumNaturalGradientOptimizer(num_params=4)
 
         def loss_fn(theta):
-            return float(np.sum(theta ** 2))
+            return float(np.sum(theta**2))
+
         result = ng.optimize(loss_fn, max_iterations=10)
         assert result["iterations"] > 0
         assert result["final_loss"] <= result["initial_loss"]
@@ -301,15 +302,19 @@ class TestPart9QuantumKernel:
 
     def test_adaptive_strategy(self):
         processor = QuantumKernelProcessor(num_qubits=4)
-        conditions = {'difficulty': 100, 'time': 0}
+        conditions = {"difficulty": 100, "time": 0}
         result = processor.adaptive_compute_strategy(conditions)
-        assert 'nonce' in result
-        assert 'difficulty' in result
+        assert "nonce" in result
+        assert "difficulty" in result
 
     def test_kernel_pca(self):
         processor = QuantumKernelProcessor(num_qubits=4)
-        data = [np.array([1.0, 2.0]), np.array([3.0, 4.0]),
-                np.array([5.0, 6.0]), np.array([7.0, 8.0])]
+        data = [
+            np.array([1.0, 2.0]),
+            np.array([3.0, 4.0]),
+            np.array([5.0, 6.0]),
+            np.array([7.0, 8.0]),
+        ]
         components = processor.quantum_kernel_pca(data, n_components=2)
         assert components.shape[0] == 4
         assert components.shape[1] == 2
@@ -341,8 +346,8 @@ class TestPart10VQE:
     def test_find_optimal_config(self):
         vqe = VQEOptimizer(num_qubits=2, layers=2)
         config = vqe.find_optimal_config()
-        assert 'optimal_config' in config
-        assert 'energy' in config
+        assert "optimal_config" in config
+        assert "energy" in config
 
     def test_apply_cnot(self):
         vqe = VQEOptimizer(num_qubits=2, layers=1)

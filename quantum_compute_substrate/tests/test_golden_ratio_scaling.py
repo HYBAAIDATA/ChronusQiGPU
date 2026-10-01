@@ -1,8 +1,14 @@
 """Tests for golden ratio scaling module."""
 
 from quantum_compute_substrate.golden_ratio_scaling import (
-    GoldenRatioScaler, PHI_10, PHI_12,
-    PHI_15, PHI_37, phi_power, fibonacci, phi_power_decomposition,
+    GoldenRatioScaler,
+    PHI_10,
+    PHI_12,
+    PHI_15,
+    PHI_37,
+    phi_power,
+    fibonacci,
+    phi_power_decomposition,
 )
 from quantum_compute_substrate.phi_tensor_core import PHI
 
@@ -18,8 +24,8 @@ class TestPhiPowers:
         assert abs(PHI_15 - 1364.000737) < 0.001
 
     def test_phi_37_value(self):
-        assert PHI_37 > 50e6   # > 50 million
-        assert PHI_37 < 60e6   # < 60 million
+        assert PHI_37 > 50e6  # > 50 million
+        assert PHI_37 < 60e6  # < 60 million
 
     def test_phi_power_general(self):
         assert abs(phi_power(0) - 1.0) < 1e-10
@@ -79,8 +85,9 @@ class TestPhiDecomposition:
         # φ^n = F(n)·φ + F(n-1) — the self-similar identity
         for n in [5, 10, 12, 15, 20, 37]:
             d = phi_power_decomposition(n)
-            assert abs(d["value"] - d["verification"]) < 1e-6, \
-                f"Failed for n={n}: {d['value']} != {d['verification']}"
+            assert (
+                abs(d["value"] - d["verification"]) < 1e-6
+            ), f"Failed for n={n}: {d['value']} != {d['verification']}"
 
 
 class TestGoldenRatioScaler:
@@ -183,4 +190,4 @@ class TestGoldenRatioScaler:
         scaler = GoldenRatioScaler()
         arch = scaler.scale_tier(37)
         assert arch.tensor_cores > 1e11  # > 100 billion (8192 × 54M ≈ 442B)
-        assert arch.fp64_eflops > 1e8   # > 100 million EFLOPS (2.5 × 54M ≈ 135M)
+        assert arch.fp64_eflops > 1e8  # > 100 million EFLOPS (2.5 × 54M ≈ 135M)

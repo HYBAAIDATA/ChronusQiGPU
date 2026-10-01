@@ -10,6 +10,7 @@ gradient descent is deterministic given the seed.
 Exact ground state of the 4-dim toy Hamiltonian used here: ~-7.85 Ha.
 We assert convergence to within 1.0 Ha of that reference.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -47,10 +48,12 @@ class LiHVQE:
 
         def state(t):
             v = np.array(
-                [np.cos(t[0]) * np.cos(t[1]),
-                 np.sin(t[0]) * np.cos(t[2]),
-                 np.cos(t[3]) * np.sin(t[1]),
-                 np.sin(t[3]) * np.sin(t[2])],
+                [
+                    np.cos(t[0]) * np.cos(t[1]),
+                    np.sin(t[0]) * np.cos(t[2]),
+                    np.cos(t[3]) * np.sin(t[1]),
+                    np.sin(t[3]) * np.sin(t[2]),
+                ],
                 dtype=np.complex128,
             )
             n = np.linalg.norm(v)

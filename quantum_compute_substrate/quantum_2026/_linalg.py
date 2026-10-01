@@ -3,6 +3,7 @@
 The substrate is hardware-agnostic; scipy is optional. We provide a pure-numpy
 Hermitian-Pade matrix exponential to keep quantum_2026 usable without scipy.
 """
+
 from __future__ import annotations
 import numpy as np
 
@@ -36,10 +37,10 @@ def expm(A: np.ndarray) -> np.ndarray:
     # General Pade scaling-and-squaring (order 6).
     norm = float(np.linalg.norm(A, ord=np.inf))
     s = max(0, int(np.ceil(np.log2(max(norm, 1e-12)))))
-    B = A / (2.0 ** s)
+    B = A / (2.0**s)
     I = np.eye(A.shape[0], dtype=complex)
     # Pade order 6 coefficients
-    b = [1., 1. / 2, 5. / 44, 1. / 66, 1. / 792, 1. / 15840, 1. / 665280]
+    b = [1.0, 1.0 / 2, 5.0 / 44, 1.0 / 66, 1.0 / 792, 1.0 / 15840, 1.0 / 665280]
     B2 = B @ B
     B4 = B2 @ B2
     B6 = B4 @ B2

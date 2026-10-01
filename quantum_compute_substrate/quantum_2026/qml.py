@@ -1,4 +1,5 @@
 """Modern quantum machine learning: data re-uploading and projected kernels."""
+
 from __future__ import annotations
 import numpy as np
 
@@ -10,7 +11,7 @@ def _feature_map(x: np.ndarray, layers: int = 2) -> np.ndarray:
     """
     x = np.asarray(x, dtype=float)
     n_qubits_needed = max(1, int(np.ceil(np.log2(max(2, len(x) + 1)))))
-    dim = 2 ** n_qubits_needed
+    dim = 2**n_qubits_needed
     v = np.zeros(dim, dtype=complex)
     v[0] = 1.0
     for layer in range(layers):
@@ -39,8 +40,7 @@ def quantum_kernel_matrix(X: np.ndarray, layers: int = 2) -> np.ndarray:
     return K
 
 
-def projected_quantum_kernel(X: np.ndarray, layers: int = 2,
-                             gamma: float = 1.0) -> np.ndarray:
+def projected_quantum_kernel(X: np.ndarray, layers: int = 2, gamma: float = 1.0) -> np.ndarray:
     """Projected quantum kernel (Huang et al. 2021).
 
     K_ij = exp(-gamma * || rho_i^(1) - rho_j^(1) ||_F^2 ) where rho^(1) is the
@@ -55,6 +55,7 @@ def projected_quantum_kernel(X: np.ndarray, layers: int = 2,
         half = d // 2
         mat = psi.reshape(2, half)
         return mat @ mat.conj().T
+
     rhos = [rho1(f) for f in features]
     n = len(rhos)
     K = np.empty((n, n), dtype=float)
@@ -72,8 +73,9 @@ class ModernQML:
         self.num_qubits = num_qubits
         self.num_features = num_features
 
-    def fit_kernel_ridge(self, X: np.ndarray, y: np.ndarray,
-                         reg: float = 1e-4, layers: int = 2) -> np.ndarray:
+    def fit_kernel_ridge(
+        self, X: np.ndarray, y: np.ndarray, reg: float = 1e-4, layers: int = 2
+    ) -> np.ndarray:
         K = quantum_kernel_matrix(X, layers=layers)
         A = K + reg * np.eye(K.shape[0])
         return np.linalg.solve(A, y.astype(float))

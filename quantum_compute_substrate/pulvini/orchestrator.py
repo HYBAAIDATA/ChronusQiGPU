@@ -3,6 +3,7 @@
 Routes computational payloads through the appropriate solver pipeline based
 on dimensionality and problem type. Same substrate, one entry point.
 """
+
 from __future__ import annotations
 import numpy as np
 from typing import Dict, Any, Optional
@@ -26,9 +27,13 @@ QUANTUM_ROUTING_THRESHOLD = 10_000
 class PythagorasOrchestrator:
     """Auto-routing master agent for the substrate."""
 
-    def __init__(self, tolerance: float = 1e-5, max_tt_rank: int = 64,
-                 mpo_bond_dim: int = 8,
-                 quantum_threshold: int = QUANTUM_ROUTING_THRESHOLD) -> None:
+    def __init__(
+        self,
+        tolerance: float = 1e-5,
+        max_tt_rank: int = 64,
+        mpo_bond_dim: int = 8,
+        quantum_threshold: int = QUANTUM_ROUTING_THRESHOLD,
+    ) -> None:
         self.tolerance = tolerance
         self.max_tt_rank = max_tt_rank
         self.mpo_bond_dim = mpo_bond_dim
@@ -39,10 +44,13 @@ class PythagorasOrchestrator:
             return 1
         return min(5, max(1, int(np.log10(size / 100))))
 
-    def solve(self, tensor: np.ndarray,
-              strategy: SolverStrategy = SolverStrategy.AUTO,
-              mpo: Optional[MatrixProductOperator] = None,
-              num_time_steps: int = 1) -> Dict[str, Any]:
+    def solve(
+        self,
+        tensor: np.ndarray,
+        strategy: SolverStrategy = SolverStrategy.AUTO,
+        mpo: Optional[MatrixProductOperator] = None,
+        num_time_steps: int = 1,
+    ) -> Dict[str, Any]:
         size = tensor.size
 
         if strategy == SolverStrategy.AUTO:
@@ -101,17 +109,24 @@ class PythagorasOrchestrator:
         }
 
     def _pulvini_tt_solve(self, tensor: np.ndarray) -> Dict[str, Any]:
-        hybrid = TTPulviniHybrid(max_tt_rank=self.max_tt_rank,
-                                 tolerance=self.tolerance, fold_depth=1)
+        hybrid = TTPulviniHybrid(
+            max_tt_rank=self.max_tt_rank, tolerance=self.tolerance, fold_depth=1
+        )
         result = hybrid.process(tensor)
         return {"solution": result["reconstructed"], **result}
 
-    def _mpo_pulvini_tt_solve(self, tensor: np.ndarray,
-                              mpo: Optional[MatrixProductOperator],
-                              num_time_steps: int, fold_depth: int) -> Dict[str, Any]:
-        pipeline = MPOPulviniTTHybrid(max_tt_rank=self.max_tt_rank,
-                                      mpo_bond_dim=self.mpo_bond_dim,
-                                      tolerance=self.tolerance,
-                                      fold_depth=fold_depth)
+    def _mpo_pulvini_tt_solve(
+        self,
+        tensor: np.ndarray,
+        mpo: Optional[MatrixProductOperator],
+        num_time_steps: int,
+        fold_depth: int,
+    ) -> Dict[str, Any]:
+        pipeline = MPOPulviniTTHybrid(
+            max_tt_rank=self.max_tt_rank,
+            mpo_bond_dim=self.mpo_bond_dim,
+            tolerance=self.tolerance,
+            fold_depth=fold_depth,
+        )
         result = pipeline.process(tensor, mpo=mpo, num_time_steps=num_time_steps)
         return {"solution": result["reconstructed"], **result}

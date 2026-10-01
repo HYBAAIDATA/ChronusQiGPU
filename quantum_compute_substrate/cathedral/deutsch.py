@@ -8,6 +8,7 @@ classical for structured problems.
     Classical: 2^{n-1} + 1 queries in the worst case.
     Quantum:   1 query. Full stop.
 """
+
 from __future__ import annotations
 import numpy as np
 from typing import Callable
@@ -44,7 +45,7 @@ def deutsch_algorithm(f: Callable[[int], int]) -> str:
 def deutsch_jozsa(f: Callable[[int], int], num_bits: int) -> str:
     """n-bit Deutsch-Jozsa in one query."""
     n = num_bits
-    N = 2 ** n
+    N = 2**n
     dim = 2 * N
     Uf = np.zeros((dim, dim), dtype=complex)
     for x in range(N):

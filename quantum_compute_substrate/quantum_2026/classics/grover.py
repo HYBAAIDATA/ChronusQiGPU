@@ -5,6 +5,7 @@ References:
   * Brassard-Hoyer-Mosca 2002 - amplitude amplification and quantum counting.
   * Yoder, Low, Chuang 2014 - fixed-point amplitude amplification.
 """
+
 from __future__ import annotations
 import math
 import numpy as np
@@ -52,9 +53,9 @@ def amplitude_amplification_step(state: np.ndarray, marked: Sequence[int]) -> np
     return apply_diffusion(apply_oracle(state, marked))
 
 
-def fixed_point_amplitude_amplification(state: np.ndarray, marked: Sequence[int],
-                                        max_iterations: int,
-                                        delta: float = 0.05) -> Dict[str, Any]:
+def fixed_point_amplitude_amplification(
+    state: np.ndarray, marked: Sequence[int], max_iterations: int, delta: float = 0.05
+) -> Dict[str, Any]:
     """Fixed-point AA (Yoder-Chuang 2014): monotone probability, no over-rotation.
 
     We implement a simplified fixed-point loop: at each step, cap the rotation
@@ -81,8 +82,9 @@ def fixed_point_amplitude_amplification(state: np.ndarray, marked: Sequence[int]
     }
 
 
-def quantum_counting_estimate(state: np.ndarray, marked_oracle_indices: Sequence[int],
-                              qpe_bits: int = 8) -> Dict[str, Any]:
+def quantum_counting_estimate(
+    state: np.ndarray, marked_oracle_indices: Sequence[int], qpe_bits: int = 8
+) -> Dict[str, Any]:
     """Estimate the number of marked items M via QPE on Grover operator G.
 
     G has eigenvalues e^{+/- 2i theta} where sin^2(theta) = M/N. Simulate QPE on
@@ -94,7 +96,7 @@ def quantum_counting_estimate(state: np.ndarray, marked_oracle_indices: Sequence
     M_true = len(list(marked_oracle_indices))
     theta = math.asin(math.sqrt(max(0.0, min(1.0, M_true / N))))
     # Quantized theta as if measured on qpe_bits register (nearest lattice point).
-    grid = 2 ** qpe_bits
+    grid = 2**qpe_bits
     theta_q = round(theta / math.pi * grid) / grid * math.pi
     M_est = N * (math.sin(theta_q) ** 2)
     return {
@@ -112,13 +114,14 @@ class EnhancedGrover:
     def __init__(self, num_qubits: int, num_marked: int = 1) -> None:
         self.num_qubits = num_qubits
         self.num_marked = num_marked
-        self.database_size = 2 ** num_qubits
+        self.database_size = 2**num_qubits
 
     def optimal_iterations(self) -> int:
         return optimal_grover_iterations(self.database_size, self.num_marked)
 
-    def amplitude_amplification(self, marked: Sequence[int],
-                                num_iterations: int | None = None) -> Dict[str, Any]:
+    def amplitude_amplification(
+        self, marked: Sequence[int], num_iterations: int | None = None
+    ) -> Dict[str, Any]:
         if num_iterations is None:
             num_iterations = self.optimal_iterations()
         psi = np.ones(self.database_size) / math.sqrt(self.database_size)
@@ -144,8 +147,9 @@ class EnhancedGrover:
             "average_probability_per_item": r["success_probability"] / max(1, len(marked)),
         }
 
-    def fixed_point_search(self, marked: Sequence[int],
-                           delta: float = 0.05, max_iter: int | None = None) -> Dict[str, Any]:
+    def fixed_point_search(
+        self, marked: Sequence[int], delta: float = 0.05, max_iter: int | None = None
+    ) -> Dict[str, Any]:
         max_iter = max_iter or self.optimal_iterations() * 3
         psi0 = np.ones(self.database_size) / math.sqrt(self.database_size)
         return fixed_point_amplitude_amplification(psi0, marked, max_iter, delta)

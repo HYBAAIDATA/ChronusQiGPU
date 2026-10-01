@@ -6,6 +6,7 @@ The uncertainty principle in its Robertson-Schrodinger form, plus the
 Maassen-Uffink entropic strengthening -- the modern, basis-independent
 uncertainty relation.
 """
+
 from __future__ import annotations
 import math
 import numpy as np
@@ -15,7 +16,7 @@ def standard_deviation(A: np.ndarray, psi: np.ndarray) -> float:
     mean = np.real(psi.conj() @ A @ psi)
     A2 = A @ A
     mean2 = np.real(psi.conj() @ A2 @ psi)
-    return float(math.sqrt(max(0.0, mean2 - mean ** 2)))
+    return float(math.sqrt(max(0.0, mean2 - mean**2)))
 
 
 def robertson_schrodinger_bound(A: np.ndarray, B: np.ndarray, psi: np.ndarray) -> float:

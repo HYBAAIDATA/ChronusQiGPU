@@ -2,12 +2,26 @@
 
 import numpy as np
 from quantum_compute_substrate.gpu_advances_2026 import (
-    PrecisionMode, PRECISION_THROUGHPUT, PRECISION_BITS,
-    GPUComparisonTable, RUBIN_R100, BLACKWELL_ULTRA_B300, HOPPER_H100,
-    HYBA_QUANTUM_TITAN, ALL_GPUS, FP4Precision, SparseTensorCore,
-    TransformerEngine, NVLink6Interconnect, ChipletArchitecture,
-    HBM4Memory, DynamicPrecisionManager, MIGPartitioning,
-    ConfidentialComputing, OpticalInterconnect, TensorMemory,
+    PrecisionMode,
+    PRECISION_THROUGHPUT,
+    PRECISION_BITS,
+    GPUComparisonTable,
+    RUBIN_R100,
+    BLACKWELL_ULTRA_B300,
+    HOPPER_H100,
+    HYBA_QUANTUM_TITAN,
+    ALL_GPUS,
+    FP4Precision,
+    SparseTensorCore,
+    TransformerEngine,
+    NVLink6Interconnect,
+    ChipletArchitecture,
+    HBM4Memory,
+    DynamicPrecisionManager,
+    MIGPartitioning,
+    ConfidentialComputing,
+    OpticalInterconnect,
+    TensorMemory,
 )
 
 

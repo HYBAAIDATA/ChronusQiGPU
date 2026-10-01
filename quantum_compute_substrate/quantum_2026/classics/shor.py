@@ -6,6 +6,7 @@ References:
   * Ekera & Hastad 2017 - reduced-qubit order finding.
   * Regev 2023 - lattice-based factoring reduction (poly-log qubit improvement).
 """
+
 from __future__ import annotations
 import math
 import time
@@ -26,8 +27,9 @@ class ShorMetrics:
     classical_verification_time: float
 
 
-def continued_fraction_convergents(x: float, max_denominator: int,
-                                   max_terms: int = 50) -> List[Tuple[int, int]]:
+def continued_fraction_convergents(
+    x: float, max_denominator: int, max_terms: int = 50
+) -> List[Tuple[int, int]]:
     """Convergents p_k / q_k of x with q_k <= max_denominator.
 
     Standard Euclidean expansion:
@@ -83,7 +85,7 @@ def quantum_period_finding_matrix(base: int, N: int, num_counting_qubits: int) -
     s = 0, 1, ..., r-1 where r is the multiplicative order of `base` modulo N.
     """
     t = num_counting_qubits
-    T = 2 ** t
+    T = 2**t
     # Orbit of 1 under x -> base*x mod N gives the period r directly.
     r = 1
     y = base % N
@@ -117,8 +119,9 @@ class EnhancedShor:
     def __init__(self, num_qubits: int = 15) -> None:
         self.num_qubits = num_qubits
 
-    def optimized_modular_exponentiation(self, base: int, exponent: int,
-                                         modulus: int) -> Dict[str, Any]:
+    def optimized_modular_exponentiation(
+        self, base: int, exponent: int, modulus: int
+    ) -> Dict[str, Any]:
         result = pow(base, exponent, modulus)
         num_bits = max(1, exponent.bit_length())
         # Circuit depth for controlled modular exponentiation is O(n^2) with n = log N.
@@ -131,26 +134,38 @@ class EnhancedShor:
             "exponent_bits": num_bits,
         }
 
-    def period_finding(self, base: int, modulus: int,
-                       counting_qubits: int = 10,
-                       max_attempts: int = 20) -> Dict[str, Any]:
+    def period_finding(
+        self, base: int, modulus: int, counting_qubits: int = 10, max_attempts: int = 20
+    ) -> Dict[str, Any]:
         if math.gcd(base, modulus) != 1:
-            return {"period": None, "verified": False, "attempts": 0,
-                    "success_probability": 0.0, "reason": "base not coprime to modulus"}
+            return {
+                "period": None,
+                "verified": False,
+                "attempts": 0,
+                "success_probability": 0.0,
+                "reason": "base not coprime to modulus",
+            }
         probs = quantum_period_finding_matrix(base, modulus, counting_qubits)
         # QPE peaks give estimates of s/r; sample the top peaks and try continued fractions.
-        T = 2 ** counting_qubits
+        T = 2**counting_qubits
         # Top peaks by probability
         top = np.argsort(-probs)[: min(2 * max_attempts, T)]
         for k in top:
             phase = float(k) / T
             candidate = extract_period_from_phase(phase, modulus, base)
             if candidate:
-                return {"period": candidate, "verified": True,
-                        "attempts": int(np.where(top == k)[0][0]) + 1,
-                        "success_probability": float(probs[k])}
-        return {"period": None, "verified": False, "attempts": max_attempts,
-                "success_probability": 0.0}
+                return {
+                    "period": candidate,
+                    "verified": True,
+                    "attempts": int(np.where(top == k)[0][0]) + 1,
+                    "success_probability": float(probs[k]),
+                }
+        return {
+            "period": None,
+            "verified": False,
+            "attempts": max_attempts,
+            "success_probability": 0.0,
+        }
 
     def factorize(self, n: int) -> Dict[str, Any]:
         """Full Shor factorisation: gcd handling, order finding, factor extraction."""
@@ -158,14 +173,23 @@ class EnhancedShor:
         if n <= 1:
             return {"factors": None, "n": n, "method": "invalid", "time": 0.0}
         if n % 2 == 0:
-            return {"factors": (2, n // 2), "n": n, "method": "classical_even",
-                    "time": time.perf_counter() - t0}
+            return {
+                "factors": (2, n // 2),
+                "n": n,
+                "method": "classical_even",
+                "time": time.perf_counter() - t0,
+            }
         # Try small bases a=2..min(N-1, 15) deterministically for reproducibility.
         for base in range(2, min(n - 1, 20)):
             g = math.gcd(base, n)
             if g > 1:
-                return {"factors": (g, n // g), "n": n, "method": "classical_gcd",
-                        "time": time.perf_counter() - t0, "base": base}
+                return {
+                    "factors": (g, n // g),
+                    "n": n,
+                    "method": "classical_gcd",
+                    "time": time.perf_counter() - t0,
+                    "base": base,
+                }
             r = _find_period_by_orbit(base, n)
             if r == 0 or r % 2 == 1:
                 continue
@@ -175,12 +199,21 @@ class EnhancedShor:
             f1 = math.gcd(x - 1, n)
             f2 = math.gcd(x + 1, n)
             if 1 < f1 < n:
-                return {"factors": (f1, n // f1), "n": n, "method": "shor",
-                        "period": r, "base": base,
-                        "time": time.perf_counter() - t0}
+                return {
+                    "factors": (f1, n // f1),
+                    "n": n,
+                    "method": "shor",
+                    "period": r,
+                    "base": base,
+                    "time": time.perf_counter() - t0,
+                }
             if 1 < f2 < n:
-                return {"factors": (f2, n // f2), "n": n, "method": "shor",
-                        "period": r, "base": base,
-                        "time": time.perf_counter() - t0}
-        return {"factors": None, "n": n, "method": "shor_failed",
-                "time": time.perf_counter() - t0}
+                return {
+                    "factors": (f2, n // f2),
+                    "n": n,
+                    "method": "shor",
+                    "period": r,
+                    "base": base,
+                    "time": time.perf_counter() - t0,
+                }
+        return {"factors": None, "n": n, "method": "shor_failed", "time": time.perf_counter() - t0}

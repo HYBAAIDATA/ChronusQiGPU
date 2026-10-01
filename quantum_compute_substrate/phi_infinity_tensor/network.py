@@ -7,6 +7,7 @@ which is a compression of chi^2 / N^{rank-1} relative to the full tensor.
 For phi^37 sites and bond chi = phi^k, we get astronomical compression while
 keeping the entire tensor structure representable.
 """
+
 from __future__ import annotations
 import math
 from dataclasses import dataclass
@@ -15,8 +16,8 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class MPSNetwork:
     physical_dim: int
-    rank: int          # number of tensor legs (sites)
-    bond_dim: int      # bond dimension chi
+    rank: int  # number of tensor legs (sites)
+    bond_dim: int  # bond dimension chi
 
     def __post_init__(self) -> None:
         if self.physical_dim < 2:
@@ -33,7 +34,7 @@ class MPSNetwork:
         """
         interior = max(0, self.rank - 2)
         end_scalars = 2 * (self.physical_dim * self.bond_dim)
-        interior_scalars = interior * (self.bond_dim ** 2) * self.physical_dim
+        interior_scalars = interior * (self.bond_dim**2) * self.physical_dim
         return (end_scalars + interior_scalars) * bytes_per_element
 
     def compression_ratio(self) -> float:

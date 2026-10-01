@@ -77,8 +77,9 @@ class TestMemoryHierarchy:
 
     def test_store_and_load_sram_with_folding(self):
         mem = QuantumMemoryHierarchy()
-        data = np.random.default_rng(42).standard_normal(1024) + 1j * \
-            np.random.default_rng(43).standard_normal(1024)
+        data = np.random.default_rng(42).standard_normal(1024) + 1j * np.random.default_rng(
+            43
+        ).standard_normal(1024)
         state = FoldState(data, 0, 1024)
         assert mem.store("test", state, "sram")
         loaded = mem.load("test", "sram")
@@ -88,8 +89,9 @@ class TestMemoryHierarchy:
 
     def test_promote_and_demote(self):
         mem = QuantumMemoryHierarchy()
-        data = np.random.default_rng(42).standard_normal(
-            256) + 1j * np.random.default_rng(43).standard_normal(256)
+        data = np.random.default_rng(42).standard_normal(256) + 1j * np.random.default_rng(
+            43
+        ).standard_normal(256)
         state = FoldState(data, 0, 256)
         mem.store("test", state, "hbm")
         assert mem.promote("test", "hbm", "l2")

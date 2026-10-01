@@ -2,14 +2,26 @@
 
 Every test is an invariant the honoree's proof would demand of the code.
 """
+
 import math
 import numpy as np
 
 from quantum_compute_substrate.cathedral import (
-    Great, GREATS, find, schrodinger,
-    heisenberg, dirac, pauli, von_neumann, einstein,
-    bell, feynman, turing,
-    shannon, landauer, deutsch,
+    Great,
+    GREATS,
+    find,
+    schrodinger,
+    heisenberg,
+    dirac,
+    pauli,
+    von_neumann,
+    einstein,
+    bell,
+    feynman,
+    turing,
+    shannon,
+    landauer,
+    deutsch,
 )
 
 
@@ -323,7 +335,7 @@ class TestLandauer:
         assert np.allclose(T @ T, np.eye(8), atol=1e-12)
 
     def test_reversible_computation_costs_zero(self):
-        assert landauer.reversible_computation_cost(300, 10 ** 9) == 0.0
+        assert landauer.reversible_computation_cost(300, 10**9) == 0.0
 
 
 # ==================== Deutsch ====================
@@ -349,4 +361,4 @@ class TestDeutsch:
 
     def test_advantage_grows_exponentially(self):
         w = deutsch.deutsch_query_advantage(20)
-        assert w["speedup"] == 2 ** 19
+        assert w["speedup"] == 2**19

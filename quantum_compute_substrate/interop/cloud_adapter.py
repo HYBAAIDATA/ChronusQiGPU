@@ -1,6 +1,6 @@
 """Cloud (Kubernetes) manifest emitter."""
-from typing import Dict
 
+from typing import Dict
 
 MANIFEST_TEMPLATE = (
     "apiVersion: apps/v1\n"
@@ -24,11 +24,11 @@ MANIFEST_TEMPLATE = (
     "        image: {image}\n"
     "        resources:\n"
     "          requests:\n"
-    "            cpu: \"2\"\n"
-    "            memory: \"4Gi\"\n"
+    '            cpu: "2"\n'
+    '            memory: "4Gi"\n'
     "          limits:\n"
-    "            cpu: \"4\"\n"
-    "            memory: \"8Gi\"\n"
+    '            cpu: "4"\n'
+    '            memory: "8Gi"\n'
 )
 
 

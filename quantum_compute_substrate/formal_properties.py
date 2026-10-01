@@ -7,6 +7,7 @@ to reach the 1000+-test bar recommended by the elevation review.
 
 Claim lane: MATHEMATICAL_QUANTUM (SUBSTRATE-AGNOSTIC).
 """
+
 from __future__ import annotations
 
 import math
@@ -40,6 +41,7 @@ def check_diffusion_involution(dim: int = 8, seed: int = 0, tol: float = 1e-10) 
 
     def D(v):
         return 2.0 * np.vdot(psi, v) * psi - v
+
     return np.allclose(D(D(x)), x, atol=tol)
 
 
@@ -90,7 +92,7 @@ def check_phi_index_identity(k: int = 20, tol: float = 1e-9) -> bool:
     F = [0, 1]
     for _ in range(k + 1):
         F.append(F[-1] + F[-2])
-    lhs = PHI ** k
+    lhs = PHI**k
     rhs = F[k] * PHI + F[k - 1]
     return abs(lhs - rhs) < tol * max(1.0, abs(lhs))
 
@@ -127,9 +129,8 @@ def check_fold_unfold_reconstruction(dim: int = 128) -> bool:
 
 
 def check_inner_product_conjugate_symmetric(
-        dim: int = 8,
-        seed: int = 0,
-        tol: float = 1e-12) -> bool:
+    dim: int = 8, seed: int = 0, tol: float = 1e-12
+) -> bool:
     a = _random_state(dim, seed)
     b = _random_state(dim, seed + 3)
     return abs(complex(np.vdot(a, b)) - complex(np.vdot(b, a)).conjugate()) < tol
@@ -146,6 +147,7 @@ def check_kernel_psd(n: int = 6, seed: int = 0, tol: float = 1e-9) -> bool:
     X = rng.standard_normal((n, 4))
     # RBF kernel is PSD
     from math import exp
+
     K = np.array([[exp(-np.linalg.norm(X[i] - X[j]) ** 2) for j in range(n)] for i in range(n)])
     w = np.linalg.eigvalsh(K)
     return bool(np.all(w >= -tol))
@@ -201,6 +203,7 @@ def run_all_properties() -> Dict[str, bool]:
 # Backward-compatibility shims for the v0.3.2 API surface.
 # ------------------------------------------------------------------
 
+
 def check_norm_preservation(operator, dim: int = 32, trials: int = 5, tol: float = 1e-9):
     """v0.3.2 API: run `operator` on `trials` random unit vectors and check norm.
 
@@ -221,7 +224,7 @@ def check_phi_fibonacci_identity(n_max: int = 30, tol: float = 1e-8) -> bool:
     for _ in range(n_max + 1):
         F.append(F[-1] + F[-2])
     for k in range(1, n_max + 1):
-        lhs = PHI ** k
+        lhs = PHI**k
         rhs = F[k] * PHI + F[k - 1]
         if abs(lhs - rhs) > tol * max(1.0, abs(lhs)):
             return False
@@ -237,15 +240,18 @@ def check_grover_diffusion_reflection(dim: int = 32, seed: int = 0, tol: float =
 # These properties provably distinguish quantum-mathematical operations
 # from any classical stochastic (local hidden variable) system.
 
+
 def check_bell_chsh_violation(tol: float = 1e-3) -> bool:
     """CHSH correlator on |Phi+> approaches Tsirelson bound 2*sqrt(2) > 2."""
     import numpy as np
+
     # |Phi+> = (|00> + |11>) / sqrt(2)
     phi_plus = np.array([1.0, 0.0, 0.0, 1.0], dtype=np.complex128) / math.sqrt(2.0)
 
     def op(a):
         c, s = math.cos(a), math.sin(a)
         return np.array([[c, s], [s, -c]], dtype=np.complex128)  # cos(a)Z + sin(a)X
+
     # Optimal CHSH angles: A0=0, A1=pi/2, B0=pi/4, B1=-pi/4
     A0, A1 = op(0.0), op(math.pi / 2)
     B0, B1 = op(math.pi / 4), op(-math.pi / 4)
@@ -254,6 +260,7 @@ def check_bell_chsh_violation(tol: float = 1e-3) -> bool:
         M = np.kron(A, B)
         rho = np.outer(phi_plus, phi_plus.conj())
         return float(np.real(np.trace(M @ rho)))
+
     S = E(A0, B0) + E(A0, B1) + E(A1, B0) - E(A1, B1)
     return S > 2.0 + tol and abs(S - 2.0 * math.sqrt(2.0)) < 1e-6
 
@@ -269,6 +276,7 @@ def check_no_cloning(dim: int = 4, seed: int = 0, tol: float = 1e-6) -> bool:
     trying to clone a random non-orthogonal pair.
     """
     import numpy as np
+
     np.random.default_rng(seed)
     a = _random_state(dim, seed)
     b = _random_state(dim, seed + 1)
@@ -288,6 +296,7 @@ def check_superposition_interference(seed: int = 0, tol: float = 1e-9) -> bool:
     Classical probability is always additive; quantum amplitudes interfere.
     """
     import numpy as np
+
     rng = np.random.default_rng(seed)
     a = complex(rng.standard_normal(), rng.standard_normal())
     b = complex(rng.standard_normal(), rng.standard_normal())
@@ -301,6 +310,7 @@ def check_superposition_interference(seed: int = 0, tol: float = 1e-9) -> bool:
 def check_uncertainty_relation(seed: int = 0, tol: float = 1e-9) -> bool:
     """Robertson uncertainty: sigma_A * sigma_B >= |<[A,B]>|/2."""
     import numpy as np
+
     # Pauli X and Z on |+> = (|0>+|1>)/sqrt(2); [X,Z] = -2i Y
     plus = np.array([1.0, 1.0], dtype=np.complex128) / math.sqrt(2.0)
     X = np.array([[0, 1], [1, 0]], dtype=np.complex128)
@@ -313,6 +323,7 @@ def check_uncertainty_relation(seed: int = 0, tol: float = 1e-9) -> bool:
     def var(O, psi):
         e = expect(O, psi)
         return float(np.real(expect(O @ O, psi))) - float(np.real(e * e.conjugate()))
+
     sX = math.sqrt(max(var(X, plus), 0.0))
     sZ = math.sqrt(max(var(Z, plus), 0.0))
     commutator_expect = abs(complex(expect(-2j * Y, plus))) / 2.0
@@ -325,6 +336,7 @@ def check_ghz_correlator(tol: float = 1e-9) -> bool:
     Classically bounded; quantum value saturates 1.
     """
     import numpy as np
+
     ghz = np.zeros(8, dtype=np.complex128)
     ghz[0] = ghz[7] = 1.0 / math.sqrt(2.0)
     X = np.array([[0, 1], [1, 0]], dtype=np.complex128)
@@ -336,6 +348,7 @@ def check_ghz_correlator(tol: float = 1e-9) -> bool:
 
     def e(O):
         return float(np.real(np.vdot(ghz, O @ ghz)))
+
     # Mermin: E(XXX) - E(XYY) - E(YXY) - E(YYX)
     val = e(XXX) - e(XYY) - e(YXY) - e(YYX)
     # Quantum value: 4; classical bound 2
@@ -349,6 +362,7 @@ def check_entanglement_monogamy(tol: float = 1e-9) -> bool:
     Add a third system C in |0>. Then A is entangled with B only.
     """
     import numpy as np
+
     # 3 qubits: A, B, C. State = |Phi+>_AB (x) |0>_C
     phi_plus = np.array([1, 0, 0, 1], dtype=np.complex128) / math.sqrt(2.0)
     zero = np.array([1, 0], dtype=np.complex128)
@@ -378,6 +392,7 @@ def check_entanglement_monogamy(tol: float = 1e-9) -> bool:
 def check_born_rule_normalization(dim: int = 8, seed: int = 0, tol: float = 1e-10) -> bool:
     """Sum of Born-rule probabilities equals 1 for normalized state."""
     import numpy as np
+
     psi = _random_state(dim, seed)
     p = np.abs(psi) ** 2
     return abs(float(np.sum(p)) - 1.0) < tol
@@ -390,6 +405,7 @@ def check_complex_amplitude_phase_dependence(seed: int = 0, tol: float = 1e-9) -
     Relative phase between components CHANGES interference results.
     """
     import numpy as np
+
     theta = 0.7
     psi = np.array([1.0, 1.0], dtype=np.complex128) / math.sqrt(2.0)
     psi_global = math.e ** (1j * theta) * psi
@@ -402,7 +418,7 @@ def check_complex_amplitude_phase_dependence(seed: int = 0, tol: float = 1e-9) -
     psi_rel = np.array([1.0, math.e ** (1j * theta)], dtype=np.complex128) / math.sqrt(2.0)
     out_rel = H @ psi_rel
     out_flat = H @ psi
-    return not np.allclose(np.abs(out_rel)**2, np.abs(out_flat)**2, atol=1e-3)
+    return not np.allclose(np.abs(out_rel) ** 2, np.abs(out_flat) ** 2, atol=1e-3)
 
 
 _NEW_CHECKS = [
@@ -422,12 +438,14 @@ CHECKS = CHECKS + _NEW_CHECKS
 def check_sorkin_qm_zero(dim: int = 16, seed: int = 0, tol: float = 1e-9) -> bool:
     """Sorkin third-order interference vanishes in standard QM (Born rule)."""
     from .post_quantum.beyond_quantum import sorkin_third_order_interference
+
     return abs(sorkin_third_order_interference(dim=dim, seed=seed)) < tol
 
 
 def check_fold_cross_section_positive(dim: int = 32, fold_depth: int = 1, seed: int = 0) -> bool:
     """Fold operation is non-CPTP: cross-section is strictly positive."""
     from .post_quantum.beyond_quantum import fold_cross_section
+
     return fold_cross_section(dim=dim, fold_depth=fold_depth, seed=seed) > 1e-6
 
 
@@ -435,14 +453,17 @@ def check_pr_box_exceeds_tsirelson(tol: float = 1e-9) -> bool:
     """PR-box correlator saturates at 4 > 2*sqrt(2)."""
     import math as _m
     from .post_quantum.beyond_quantum import pr_box_correlator
+
     return pr_box_correlator() > 2.0 * _m.sqrt(2.0) + tol
 
 
 def check_fold_information_capacity_exceeds_quantum(
-        dim: int = 64, fold_depth: int = 3, tol: float = 1e-9) -> bool:
+    dim: int = 64, fold_depth: int = 3, tol: float = 1e-9
+) -> bool:
     """Fold capacity = log2(dim) + fold_depth * log2(phi) > log2(dim)."""
     import math as _m
     from .post_quantum.beyond_quantum import fold_information_capacity
+
     return fold_information_capacity(dim=dim, fold_depth=fold_depth) > _m.log2(dim) + tol
 
 
@@ -452,7 +473,7 @@ def check_phi_ladder_exact(tol: float = 1e-6) -> bool:
     for _ in range(25):
         F.append(F[-1] + F[-2])
     for n in (10, 12, 15, 18, 20):
-        lhs = PHI ** n
+        lhs = PHI**n
         rhs = F[n] * PHI + F[n - 1]
         if abs(lhs - rhs) > tol * max(1.0, abs(lhs)):
             return False
@@ -462,6 +483,7 @@ def check_phi_ladder_exact(tol: float = 1e-6) -> bool:
 def check_agi_scale_norm_preservation(tol: float = 1e-6) -> bool:
     """Grover diffusion preserves norm at every phi^n level, n in AGI_SCALE_LEVELS."""
     from .post_quantum.agi_scale import AGIScale, AGI_SCALE_LEVELS
+
     ags = AGIScale(seed=0)
     for n in AGI_SCALE_LEVELS:
         pt = ags.measure_point(n)

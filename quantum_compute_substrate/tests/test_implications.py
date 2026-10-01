@@ -1,7 +1,12 @@
 """Tests for the implications manifest."""
+
 from quantum_compute_substrate.implications import (
-    IMPLICATIONS, all_implications, category_names, implication_count,
-    PARADIGM_ANALOGS, PARADIGM_SHIFT_STATEMENT,
+    IMPLICATIONS,
+    all_implications,
+    category_names,
+    implication_count,
+    PARADIGM_ANALOGS,
+    PARADIGM_SHIFT_STATEMENT,
 )
 
 
@@ -37,11 +42,20 @@ class TestImplicationsManifest:
     def test_key_headline_topics_present(self):
         keys = {imp.key for imp in all_implications()}
         for required in (
-            "quantum_democratization", "memory_revolution", "algorithm_renaissance",
-            "scientific_acceleration", "education_workforce", "geopolitical_equity",
-            "ethical_considerations", "immediate_roi", "competitive_advantages",
-            "new_business_models", "industry_transformation",
-            "redefinition_of_quantum", "new_research_directions", "investment_and_funding",
+            "quantum_democratization",
+            "memory_revolution",
+            "algorithm_renaissance",
+            "scientific_acceleration",
+            "education_workforce",
+            "geopolitical_equity",
+            "ethical_considerations",
+            "immediate_roi",
+            "competitive_advantages",
+            "new_business_models",
+            "industry_transformation",
+            "redefinition_of_quantum",
+            "new_research_directions",
+            "investment_and_funding",
         ):
             assert required in keys, f"missing implication key: {required}"
 
@@ -56,6 +70,7 @@ class TestImplicationsManifest:
     def test_immutability(self):
         # frozen dataclasses -> attribute assignment raises
         import dataclasses
+
         imp = all_implications()[0]
         try:
             imp.title = "x"  # type: ignore[misc]

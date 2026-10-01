@@ -36,26 +36,27 @@ import time
 
 class PrecisionMode(Enum):
     """All precision modes supported by 2026 GPU tensor cores."""
-    FP4 = "fp4"       # 4-bit floating point (2x FP8 throughput)
-    FP6 = "fp6"       # 6-bit floating point (new in 2026)
-    FP8 = "fp8"       # 8-bit floating point
-    BF16 = "bf16"     # Brain float 16
-    FP16 = "fp16"     # Half precision
-    TF32 = "tf32"     # Tensor float 32
-    FP32 = "fp32"     # Single precision
-    FP64 = "fp64"     # Double precision
+
+    FP4 = "fp4"  # 4-bit floating point (2x FP8 throughput)
+    FP6 = "fp6"  # 6-bit floating point (new in 2026)
+    FP8 = "fp8"  # 8-bit floating point
+    BF16 = "bf16"  # Brain float 16
+    FP16 = "fp16"  # Half precision
+    TF32 = "tf32"  # Tensor float 32
+    FP32 = "fp32"  # Single precision
+    FP64 = "fp64"  # Double precision
 
 
 # Precision throughput multipliers relative to FP64 (based on 2026 GPU specs)
 PRECISION_THROUGHPUT = {
-    PrecisionMode.FP4: 200.0,    # 500 EFLOPS target → 200x FP64
-    PrecisionMode.FP6: 100.0,    # ~100x FP64
-    PrecisionMode.FP8: 50.0,     # ~50x FP64
-    PrecisionMode.BF16: 30.0,   # ~30x FP64
-    PrecisionMode.FP16: 30.0,    # ~30x FP64
-    PrecisionMode.TF32: 15.0,    # ~15x FP64
-    PrecisionMode.FP32: 8.0,     # ~8x FP64
-    PrecisionMode.FP64: 1.0,     # baseline
+    PrecisionMode.FP4: 200.0,  # 500 EFLOPS target → 200x FP64
+    PrecisionMode.FP6: 100.0,  # ~100x FP64
+    PrecisionMode.FP8: 50.0,  # ~50x FP64
+    PrecisionMode.BF16: 30.0,  # ~30x FP64
+    PrecisionMode.FP16: 30.0,  # ~30x FP64
+    PrecisionMode.TF32: 15.0,  # ~15x FP64
+    PrecisionMode.FP32: 8.0,  # ~8x FP64
+    PrecisionMode.FP64: 1.0,  # baseline
 }
 
 # Bits per element for each precision mode
@@ -74,13 +75,14 @@ PRECISION_BITS = {
 @dataclass
 class GPUArchitectureSpec:
     """Complete specification of a 2026-era GPU."""
+
     name: str
     process_node_nm: int
-    transistor_count_b: int          # billions
+    transistor_count_b: int  # billions
     memory_type: str
     memory_capacity_gb: int
-    memory_bandwidth_tbs: float       # TB/s
-    num_sms: int                       # streaming multiprocessors
+    memory_bandwidth_tbs: float  # TB/s
+    num_sms: int  # streaming multiprocessors
     num_tensor_cores: int
     tensor_core_gen: int
     transformer_engine_gen: int
@@ -92,10 +94,10 @@ class GPUArchitectureSpec:
     fp16_tflops: float
     fp64_tflops: float
     tdp_watts: int
-    tensor_memory_kb: int             # per-SM tensor memory
-    chiplet: bool                     # multi-die design
-    sparsity: bool                    # 2:4 structured sparsity support
-    mig: bool                         # multi-instance GPU
+    tensor_memory_kb: int  # per-SM tensor memory
+    chiplet: bool  # multi-die design
+    sparsity: bool  # 2:4 structured sparsity support
+    mig: bool  # multi-instance GPU
     confidential_computing: bool
 
 
@@ -216,28 +218,30 @@ class GPUComparisonTable:
     def generate() -> List[Dict]:
         rows = []
         for gpu in ALL_GPUS:
-            rows.append({
-                "name": gpu.name,
-                "process_nm": gpu.process_node_nm,
-                "transistors_b": gpu.transistor_count_b,
-                "memory": f"{gpu.memory_capacity_gb} GB {gpu.memory_type}",
-                "bandwidth_tbs": gpu.memory_bandwidth_tbs,
-                "sms": gpu.num_sms,
-                "tensor_cores": gpu.num_tensor_cores,
-                "tc_gen": gpu.tensor_core_gen,
-                "te_gen": gpu.transformer_engine_gen,
-                "nvlink": f"{gpu.nvlink_version} ({gpu.nvlink_bandwidth_tbs} TB/s)",
-                "fp4_pflops": gpu.fp4_pflops,
-                "fp8_tflops": gpu.fp8_tflops,
-                "fp16_tflops": gpu.fp16_tflops,
-                "fp64_tflops": gpu.fp64_tflops,
-                "tdp_w": gpu.tdp_watts,
-                "tensor_mem_kb": gpu.tensor_memory_kb,
-                "chiplet": gpu.chiplet,
-                "sparsity": gpu.sparsity,
-                "mig": gpu.mig,
-                "confidential": gpu.confidential_computing,
-            })
+            rows.append(
+                {
+                    "name": gpu.name,
+                    "process_nm": gpu.process_node_nm,
+                    "transistors_b": gpu.transistor_count_b,
+                    "memory": f"{gpu.memory_capacity_gb} GB {gpu.memory_type}",
+                    "bandwidth_tbs": gpu.memory_bandwidth_tbs,
+                    "sms": gpu.num_sms,
+                    "tensor_cores": gpu.num_tensor_cores,
+                    "tc_gen": gpu.tensor_core_gen,
+                    "te_gen": gpu.transformer_engine_gen,
+                    "nvlink": f"{gpu.nvlink_version} ({gpu.nvlink_bandwidth_tbs} TB/s)",
+                    "fp4_pflops": gpu.fp4_pflops,
+                    "fp8_tflops": gpu.fp8_tflops,
+                    "fp16_tflops": gpu.fp16_tflops,
+                    "fp64_tflops": gpu.fp64_tflops,
+                    "tdp_w": gpu.tdp_watts,
+                    "tensor_mem_kb": gpu.tensor_memory_kb,
+                    "chiplet": gpu.chiplet,
+                    "sparsity": gpu.sparsity,
+                    "mig": gpu.mig,
+                    "confidential": gpu.confidential_computing,
+                }
+            )
         return rows
 
     @staticmethod
@@ -246,17 +250,32 @@ class GPUComparisonTable:
         print("\n" + "=" * 120)
         print("2026 GPU Architecture Comparison")
         print("=" * 120)
-        headers = ["GPU", "nm", "Transistors", "Memory", "BW (TB/s)", "SMs",
-                   "TCs", "TC Gen", "TE Gen", "FP4 (PFLOPS)", "TDP (W)"]
-        print(f"{headers[0]:<35} {headers[1]:>4} {headers[2]:>12} {headers[3]:<25} "
-              f"{headers[4]:>10} {headers[5]:>8} {headers[6]:>8} {headers[7]:>6} "
-              f"{headers[8]:>6} {headers[9]:>14} {headers[10]:>10}")
+        headers = [
+            "GPU",
+            "nm",
+            "Transistors",
+            "Memory",
+            "BW (TB/s)",
+            "SMs",
+            "TCs",
+            "TC Gen",
+            "TE Gen",
+            "FP4 (PFLOPS)",
+            "TDP (W)",
+        ]
+        print(
+            f"{headers[0]:<35} {headers[1]:>4} {headers[2]:>12} {headers[3]:<25} "
+            f"{headers[4]:>10} {headers[5]:>8} {headers[6]:>8} {headers[7]:>6} "
+            f"{headers[8]:>6} {headers[9]:>14} {headers[10]:>10}"
+        )
         print("-" * 120)
         for r in rows:
-            print(f"{r['name']:<35} {r['process_nm']:>4} {r['transistors_b']:>12} "
-                  f"{r['memory']:<25} {r['bandwidth_tbs']:>10.1f} {r['sms']:>8} "
-                  f"{r['tensor_cores']:>8} {r['tc_gen']:>6} {r['te_gen']:>6} "
-                  f"{r['fp4_pflops']:>14.1f} {r['tdp_w']:>10}")
+            print(
+                f"{r['name']:<35} {r['process_nm']:>4} {r['transistors_b']:>12} "
+                f"{r['memory']:<25} {r['bandwidth_tbs']:>10.1f} {r['sms']:>8} "
+                f"{r['tensor_cores']:>8} {r['tc_gen']:>6} {r['te_gen']:>6} "
+                f"{r['fp4_pflops']:>14.1f} {r['tdp_w']:>10}"
+            )
         print("=" * 120)
 
 
@@ -318,7 +337,7 @@ class SparseTensorCore:
         metadata = np.zeros((n_groups, 2), dtype=np.int32)
 
         for i in range(n_groups):
-            group = flat[i * 4:(i + 1) * 4]
+            group = flat[i * 4 : (i + 1) * 4]
             # Keep 2 largest-magnitude elements
             indices = np.argsort(np.abs(group))[-2:]
             indices.sort()
@@ -394,7 +413,7 @@ class TransformerEngine:
         scale = 1.0 / np.sqrt(self.head_dim)
 
         # Compute attention scores
-        scores = np.einsum('shd,thd->hst', q, k) * scale  # (num_heads, seq, seq)
+        scores = np.einsum("shd,thd->hst", q, k) * scale  # (num_heads, seq, seq)
 
         # FlashAttention-style blockwise softmax (memory-efficient)
         block_size = min(128, seq_len)
@@ -408,7 +427,7 @@ class TransformerEngine:
             block_sum = np.sum(exp_scores, axis=-1, keepdims=True)
             attn_weights = exp_scores / block_sum
             # Weighted sum of values
-            output[i:end_i] = np.einsum('hst,thd->shd', attn_weights, v)
+            output[i:end_i] = np.einsum("hst,thd->shd", attn_weights, v)
 
         return output
 
@@ -419,7 +438,7 @@ class TransformerEngine:
         """
         # GELU activation
         hidden = x @ w1
-        gelu = 0.5 * hidden * (1 + np.tanh(np.sqrt(2 / np.pi) * (hidden + 0.044715 * hidden ** 3)))
+        gelu = 0.5 * hidden * (1 + np.tanh(np.sqrt(2 / np.pi) * (hidden + 0.044715 * hidden**3)))
         return gelu @ w2
 
     def set_precision(self, mode: PrecisionMode):
@@ -614,7 +633,7 @@ class ConfidentialComputing:
         tensor.dtype.itemsize
         key_repeated = key * (tensor.nbytes // len(key) + 1)
         # Truncate to exact byte count, ensuring multiple of elem_size
-        key_bytes = key_repeated[:tensor.nbytes]
+        key_bytes = key_repeated[: tensor.nbytes]
         key_array = np.frombuffer(key_bytes, dtype=tensor.dtype).reshape(tensor.shape)
         return tensor ^ key_array
 

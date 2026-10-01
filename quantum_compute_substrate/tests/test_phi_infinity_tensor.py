@@ -1,17 +1,33 @@
 """Property + invariant tests for the HYBA Quantum Tensor X-Infinity."""
+
 import math
 
 from quantum_compute_substrate.phi_infinity_tensor import (
-    PHI, fib, lucas, phi_power_identity_holds,
-    TensorDimension, AXIS_NAMES, make_default_tensor,
-    PhiCharacterRule, RankOneRule,
-    MPSNetwork, tensor_product, contract,
-    phi_scaling_transform, quantum_fourier_transform_all_axes, topological_decomposition,
-    compare_to_universe, compare_to_storage,
-    honest_size_context, svd_metadata,
-    cp_decomposition_metadata, tucker_decomposition_metadata,
-    tensor_train_metadata, create_base_tensor,
-    create_scaled_tensor, create_n_dimensional_tensor,
+    PHI,
+    fib,
+    lucas,
+    phi_power_identity_holds,
+    TensorDimension,
+    AXIS_NAMES,
+    make_default_tensor,
+    PhiCharacterRule,
+    RankOneRule,
+    MPSNetwork,
+    tensor_product,
+    contract,
+    phi_scaling_transform,
+    quantum_fourier_transform_all_axes,
+    topological_decomposition,
+    compare_to_universe,
+    compare_to_storage,
+    honest_size_context,
+    svd_metadata,
+    cp_decomposition_metadata,
+    tucker_decomposition_metadata,
+    tensor_train_metadata,
+    create_base_tensor,
+    create_scaled_tensor,
+    create_n_dimensional_tensor,
     create_quantum_state_tensor,
 )
 
@@ -20,7 +36,7 @@ from quantum_compute_substrate.phi_infinity_tensor import (
 class TestPhiIdentities:
     def test_phi_first_50_digits(self):
         expected_prefix = "1.61803398874989484820458683436563811772030917980576"
-        assert str(PHI)[:len(expected_prefix)] == expected_prefix
+        assert str(PHI)[: len(expected_prefix)] == expected_prefix
 
     def test_fibonacci_37(self):
         assert fib(37) == 24157817
@@ -42,8 +58,9 @@ class TestPhiIdentities:
 
     def test_lucas_equals_round_phi_power(self):
         for n in (2, 3, 5, 10, 20, 37, 50):
-            assert lucas(n) == round(float(PHI ** n)) or abs(lucas(n) -
-                                                             float(PHI ** n)) < 1e-6 * lucas(n)
+            assert lucas(n) == round(float(PHI**n)) or abs(
+                lucas(n) - float(PHI**n)
+            ) < 1e-6 * lucas(n)
 
     def test_fib_recurrence(self):
         for n in range(2, 40):
@@ -61,8 +78,12 @@ class TestDimensions:
 
     def test_axis_names_are_the_six(self):
         assert set(AXIS_NAMES) == {
-            "Time", "Space", "QuantumState",
-            "Entanglement", "Coherence", "Topology",
+            "Time",
+            "Space",
+            "QuantumState",
+            "Entanglement",
+            "Coherence",
+            "Topology",
         }
 
     def test_dimension_immutable(self):
@@ -88,7 +109,7 @@ class TestTensorCore:
 
     def test_total_elements_exact(self):
         T = make_default_tensor()
-        assert T.total_elements() == 54018521 ** 6
+        assert T.total_elements() == 54018521**6
 
     def test_log10_elements_range(self):
         T = make_default_tensor()
@@ -222,6 +243,7 @@ class TestTopology:
     def test_torus_betti_binomial_coefficients(self):
         """Kunneth: H_k(T^n) has rank C(n, k)."""
         from math import comb
+
         T = make_default_tensor()
         r = topological_decomposition(T)
         expected = [comb(T.rank, k) for k in range(T.rank + 1)]

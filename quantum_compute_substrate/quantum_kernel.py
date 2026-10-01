@@ -34,10 +34,13 @@ class QuantumKernelProcessor:
 
     def rotation_gate(self, angle: float) -> np.ndarray:
         """R_y rotation gate."""
-        return np.array([
-            [np.cos(angle / 2), -np.sin(angle / 2)],
-            [np.sin(angle / 2), np.cos(angle / 2)],
-        ], dtype=np.complex128)
+        return np.array(
+            [
+                [np.cos(angle / 2), -np.sin(angle / 2)],
+                [np.sin(angle / 2), np.cos(angle / 2)],
+            ],
+            dtype=np.complex128,
+        )
 
     def apply_gate(self, state: np.ndarray, gate: np.ndarray, qubit: int) -> np.ndarray:
         """Apply single-qubit gate to state vector."""
@@ -100,8 +103,9 @@ class QuantumKernelProcessor:
 
     def conditions_to_vector(self, conditions: Dict) -> np.ndarray:
         """Convert pool conditions to feature vector."""
-        return np.array([conditions.get('difficulty', 100),
-                        conditions.get('time', 0)], dtype=np.float64)
+        return np.array(
+            [conditions.get("difficulty", 100), conditions.get("time", 0)], dtype=np.float64
+        )
 
     def get_historical_patterns(self) -> List[np.ndarray]:
         """Get historical compute patterns."""
@@ -114,9 +118,9 @@ class QuantumKernelProcessor:
     def adapt_parameters(self, pattern: np.ndarray) -> Dict:
         """Adapt parameters based on pattern."""
         return {
-            'nonce': int(pattern[0]) if len(pattern) > 0 else 0,
-            'difficulty': float(pattern[0]) if len(pattern) > 0 else 100,
-            'time': float(pattern[1]) if len(pattern) > 1 else 0,
+            "nonce": int(pattern[0]) if len(pattern) > 0 else 0,
+            "difficulty": float(pattern[0]) if len(pattern) > 0 else 100,
+            "time": float(pattern[1]) if len(pattern) > 1 else 0,
         }
 
     def quantum_kernel_pca(self, data: List[np.ndarray], n_components: int) -> np.ndarray:

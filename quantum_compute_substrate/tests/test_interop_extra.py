@@ -1,4 +1,5 @@
 """Tests for OpenMP and serverless adapters."""
+
 from quantum_compute_substrate.interop.openmp_adapter import OpenMPAdapter
 from quantum_compute_substrate.interop.serverless_adapter import ServerlessAdapter
 

@@ -1,4 +1,5 @@
 """FPGA kernel specification for the φ-fold operator."""
+
 from dataclasses import dataclass
 from typing import Dict
 
@@ -6,6 +7,7 @@ from typing import Dict
 @dataclass
 class FPGAKernelSpec:
     """Architecture spec for an FPGA implementation of φ-fold."""
+
     target_device: str = "Xilinx Alveo U280"
     logic_cells: int = 1_100_000
     dsp48_blocks: int = 9024

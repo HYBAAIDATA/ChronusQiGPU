@@ -18,8 +18,7 @@ class QuantumNaturalGradientOptimizer:
         self.learning_rate = 0.01
         self.epsilon = 1e-8
 
-    def compute_quantum_fisher(self, rho: np.ndarray,
-                               derivatives: List[np.ndarray]) -> np.ndarray:
+    def compute_quantum_fisher(self, rho: np.ndarray, derivatives: List[np.ndarray]) -> np.ndarray:
         """F_ij = (1/2) * Tr(rho {L_i, L_j})"""
         L = self.compute_sld(rho, derivatives)
         F = np.zeros((self.num_params, self.num_params), dtype=np.complex128)
@@ -92,24 +91,20 @@ class QuantumNaturalGradientOptimizer:
         """Construct density matrix from parameters."""
         n_qubits = max(1, int(np.log2(min(len(theta), 64))) if len(theta) > 0 else 1)
         n_qubits = min(n_qubits, 4)  # Practical limit
-        dim = 2 ** n_qubits
+        dim = 2**n_qubits
         psi = np.zeros(dim, dtype=np.complex128)
         psi[0] = 1.0
 
         for i in range(min(n_qubits, len(theta))):
             t = theta[i]
-            Rz = np.array([[np.exp(-1j * t / 2), 0],
-                           [0, np.exp(1j * t / 2)]])
+            Rz = np.array([[np.exp(-1j * t / 2), 0], [0, np.exp(1j * t / 2)]])
             psi = self.apply_gate(psi, Rz, i, n_qubits)
 
         return np.outer(psi, np.conj(psi))
 
     def apply_gate(
-            self,
-            state: np.ndarray,
-            gate: np.ndarray,
-            qubit: int,
-            n_qubits: int) -> np.ndarray:
+        self, state: np.ndarray, gate: np.ndarray, qubit: int, n_qubits: int
+    ) -> np.ndarray:
         """Apply single-qubit gate."""
         dim = len(state)
         if dim == 2:

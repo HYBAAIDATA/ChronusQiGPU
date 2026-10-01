@@ -10,6 +10,7 @@ Path integrals: amplitudes as sums over paths.
 2026 elevation: discretised path integral for finite-dim systems agrees with
 Schrodinger evolution (they are equivalent formulations of QM).
 """
+
 from __future__ import annotations
 import math
 import numpy as np
@@ -31,14 +32,16 @@ def discretised_propagator(H: np.ndarray, t: float, num_slices: int) -> np.ndarr
     return U
 
 
-def feynman_amplitude(psi_initial: np.ndarray, psi_final: np.ndarray,
-                      H: np.ndarray, t: float, num_slices: int = 100) -> complex:
+def feynman_amplitude(
+    psi_initial: np.ndarray, psi_final: np.ndarray, H: np.ndarray, t: float, num_slices: int = 100
+) -> complex:
     K = discretised_propagator(H, t, num_slices)
     return complex(psi_final.conj() @ K @ psi_initial)
 
 
-def path_integral_matches_schrodinger(H: np.ndarray, psi0: np.ndarray, t: float,
-                                      num_slices: int = 200) -> float:
+def path_integral_matches_schrodinger(
+    H: np.ndarray, psi0: np.ndarray, t: float, num_slices: int = 200
+) -> float:
     """Returns || K psi0 - exp(-iHt) psi0 || -- should be ~ 0."""
     K = discretised_propagator(H, t, num_slices)
     exact = expm(-1j * H * t) @ psi0

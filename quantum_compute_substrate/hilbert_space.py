@@ -13,9 +13,10 @@ from typing import Optional
 @dataclass
 class QuantumComputeState:
     """Hilbert space representation with 4,096-dimensional Hilbert space (≈12 qubit equivalent)."""
-    amplitudes: np.ndarray   # Complex amplitudes
-    basis_dim: int           # 2^n dimensional space
-    coherence_time: float    # T2 coherence in microseconds
+
+    amplitudes: np.ndarray  # Complex amplitudes
+    basis_dim: int  # 2^n dimensional space
+    coherence_time: float  # T2 coherence in microseconds
 
     def __post_init__(self):
         norm = np.linalg.norm(self.amplitudes)

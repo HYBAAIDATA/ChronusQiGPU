@@ -7,6 +7,7 @@ v2 features:
   - TTPulviniHybrid: multi-level recursive fold support (fold_depth)
   - Richer audit dict from process()
 """
+
 from __future__ import annotations
 import numpy as np
 from typing import List, Tuple, Optional, Dict, Any
@@ -25,9 +26,9 @@ class TensorTrain:
     (r_{k-1}, n_k, r_k). Relative SVD threshold guards against rank collapse.
     """
 
-    def __init__(self, tensor: np.ndarray,
-                 max_rank: Optional[int] = None,
-                 tolerance: float = 1e-5) -> None:
+    def __init__(
+        self, tensor: np.ndarray, max_rank: Optional[int] = None, tolerance: float = 1e-5
+    ) -> None:
         self.original_shape = tensor.shape
         self.original_size = tensor.size
         self.ndim = tensor.ndim
@@ -90,9 +91,9 @@ class TensorTrain:
 class TTPulviniHybrid:
     """PULVINI folding -> TT compression pipeline."""
 
-    def __init__(self, max_tt_rank: Optional[int] = None,
-                 tolerance: float = 1e-5,
-                 fold_depth: int = 1) -> None:
+    def __init__(
+        self, max_tt_rank: Optional[int] = None, tolerance: float = 1e-5, fold_depth: int = 1
+    ) -> None:
         self.max_tt_rank = max_tt_rank
         self.tolerance = tolerance
         self.fold_depth = fold_depth
@@ -122,12 +123,12 @@ class TTPulviniHybrid:
         pulvini_ratio = original_size / max(1, len(folded_flat))
 
         max_rank = self.max_tt_rank or phi_guided_rank(len(folded_flat))
-        tt = TensorTrain(folded_flat.reshape(-1, 1),
-                         max_rank=max_rank, tolerance=self.tolerance)
+        tt = TensorTrain(folded_flat.reshape(-1, 1), max_rank=max_rank, tolerance=self.tolerance)
 
         reconstructed_folded = tt.reconstruct().flatten()
-        recon_error = float(np.linalg.norm(
-            folded_flat - reconstructed_folded) / max(1, len(folded_flat)))
+        recon_error = float(
+            np.linalg.norm(folded_flat - reconstructed_folded) / max(1, len(folded_flat))
+        )
 
         reconstructed_flat = np.zeros(original_size)
         copy_len = min(len(reconstructed_folded), original_size)

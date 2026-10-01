@@ -1,4 +1,5 @@
 """The tensor itself -- implicit, never materialized."""
+
 from __future__ import annotations
 import math
 from typing import Sequence, Tuple, Optional
@@ -16,18 +17,21 @@ class HYBAQuantumTensorXInfinity:
     Never materialized. Elements are computed lazily via generative rules.
     """
 
-    def __init__(self, scaling_exp: int = 37,
-                 rule: Optional[PhiCharacterRule] = None,
-                 mps_bond_dim: int = 128) -> None:
+    def __init__(
+        self,
+        scaling_exp: int = 37,
+        rule: Optional[PhiCharacterRule] = None,
+        mps_bond_dim: int = 128,
+    ) -> None:
         if scaling_exp < 2:
             raise ValueError("scaling_exp must be >= 2")
         self.scaling_exp = scaling_exp
         self.dimensions: Tuple[TensorDimension, ...] = default_dimensions(scaling_exp)
         self._per_axis = self.dimensions[0].size
         self.rule = rule or PhiCharacterRule(N=self._per_axis, rank=len(self.dimensions))
-        self.mps = MPSNetwork(physical_dim=self._per_axis,
-                              rank=len(self.dimensions),
-                              bond_dim=mps_bond_dim)
+        self.mps = MPSNetwork(
+            physical_dim=self._per_axis, rank=len(self.dimensions), bond_dim=mps_bond_dim
+        )
 
     # ---- shape / rank ----
     @property
@@ -40,7 +44,7 @@ class HYBAQuantumTensorXInfinity:
 
     def total_elements(self) -> int:
         """Exact bigint: L(scaling_exp)^rank."""
-        return self._per_axis ** self.rank
+        return self._per_axis**self.rank
 
     def log10_elements(self) -> float:
         return self.rank * math.log10(self._per_axis)

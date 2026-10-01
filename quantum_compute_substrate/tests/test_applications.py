@@ -1,7 +1,11 @@
 """Tests for scientific application kernels."""
+
 import numpy as np
 from quantum_compute_substrate.applications import (
-    LHCEventClassifier, H2VQE, AdvectionKernel, QuantumSequenceAligner,
+    LHCEventClassifier,
+    H2VQE,
+    AdvectionKernel,
+    QuantumSequenceAligner,
 )
 
 

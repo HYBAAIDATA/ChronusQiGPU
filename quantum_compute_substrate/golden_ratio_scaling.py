@@ -43,24 +43,25 @@ from .phi_tensor_core import PHI
 
 class ScalingTier(Enum):
     """Information-density regimes defined by φ-scaling (mathematical bounds)."""
-    BASE = 0        # Measured baseline (no scaling — actual hardware)
-    TIER_I = 10     # φ^10  ≈ 122.99× (information-theoretic bound)
-    TIER_II = 12     # φ^12  ≈ 321.99× (information-theoretic bound)
-    TIER_III = 15    # φ^15  ≈ 1364.00× (information-theoretic bound)
+
+    BASE = 0  # Measured baseline (no scaling — actual hardware)
+    TIER_I = 10  # φ^10  ≈ 122.99× (information-theoretic bound)
+    TIER_II = 12  # φ^12  ≈ 321.99× (information-theoretic bound)
+    TIER_III = 15  # φ^15  ≈ 1364.00× (information-theoretic bound)
 
 
 # Pre-computed scaling factors (exact)
-PHI_10 = PHI ** 10    # ≈ 122.991869381244
-PHI_12 = PHI ** 12    # ≈ 321.996893735335
-PHI_15 = PHI ** 15    # ≈ 1364.000736560461
+PHI_10 = PHI**10  # ≈ 122.991869381244
+PHI_12 = PHI**12  # ≈ 321.996893735335
+PHI_15 = PHI**15  # ≈ 1364.000736560461
 
 # Cascaded scaling (all tiers combined)
-PHI_37 = PHI ** 37   # ≈ 54,018,074 (F(37)=24,157,817)
+PHI_37 = PHI**37  # ≈ 54,018,074 (F(37)=24,157,817)
 
 
 def phi_power(n: int) -> float:
     """Compute φ^n exactly using the closed-form: φ^n = F(n)·φ + F(n-1)."""
-    return PHI ** n
+    return PHI**n
 
 
 def fibonacci(n: int) -> int:
@@ -88,7 +89,7 @@ def phi_power_decomposition(n: int) -> Dict:
         "fibonacci_n": fn,
         "fibonacci_n_minus_1": fn1,
         "decomposition": f"φ^{n} = {fn}·φ + {fn1}",
-        "value": PHI ** n,
+        "value": PHI**n,
         "verification": fn * PHI + fn1,
     }
 
@@ -96,6 +97,7 @@ def phi_power_decomposition(n: int) -> Dict:
 @dataclass
 class ArchitectureTargets:
     """Base architecture targets (from the original specification)."""
+
     tensor_cores: int = 8_192
     quantum_units: int = 2_048
     streaming_multiprocessors: int = 65_536
@@ -117,6 +119,7 @@ class ArchitectureTargets:
 @dataclass
 class ScaledArchitecture:
     """Architecture targets scaled by golden ratio powers."""
+
     tier_name: str
     phi_exponent: int
     scaling_factor: float
@@ -181,7 +184,7 @@ class GoldenRatioScaler:
 
     def scale_tier(self, exponent: int, tier_name: str = None) -> ScaledArchitecture:
         """Scale all architecture targets by φ^exponent."""
-        factor = PHI ** exponent
+        factor = PHI**exponent
         if tier_name is None:
             tier_name = f"Tier φ^{exponent}"
 
@@ -340,26 +343,24 @@ class GoldenRatioScaler:
         for decomp in self.get_fibonacci_chain():
             print(f"  {decomp['decomposition']} = {decomp['value']:.6f}")
             # Use relative tolerance for large exponents (floating point precision)
-            rel_err = abs(decomp['value'] - decomp['verification']) / max(abs(decomp['value']), 1.0)
+            rel_err = abs(decomp["value"] - decomp["verification"]) / max(abs(decomp["value"]), 1.0)
             assert rel_err < 1e-6, f"Decomposition failed for n={decomp['n']}: rel_err={rel_err}"
         print("  ✓ All decompositions verified (F(n)·φ + F(n-1) = φ^n)")
 
         print("\n" + "=" * 80)
-        print("COMPARISON: φ-Scaled Information-Density Bounds vs NVIDIA Rubin R100 (Physical Hardware)")
+        print(
+            "COMPARISON: φ-Scaled Information-Density Bounds vs NVIDIA Rubin R100 (Physical Hardware)"
+        )
         print("=" * 80)
         tier3 = tiers["tier_iii"]
         print(f"  Tensor cores:    HYBA φ^15: {tier3.tensor_cores:,}  vs  Rubin R100: 896")
-        print(
-            f"  FP4:             HYBA φ^15: {
+        print(f"  FP4:             HYBA φ^15: {
                 tier3.fp4_eflops:.0f} PFLOPS  vs  Rubin R100: 50 PFLOPS")
-        print(
-            f"  Memory:          HYBA φ^15: {
+        print(f"  Memory:          HYBA φ^15: {
                 tier3.memory_hbm4_tb:.0f} TB  vs  Rubin R100: 288 GB")
-        print(
-            f"  Bandwidth:       HYBA φ^15: {
+        print(f"  Bandwidth:       HYBA φ^15: {
                 tier3.bandwidth_pbs:.0f} PB/s  vs  Rubin R100: 22 TB/s")
-        print(
-            f"  SMs:             HYBA φ^15: {
+        print(f"  SMs:             HYBA φ^15: {
                 tier3.streaming_multiprocessors:,    }  vs  Rubin R100: 224")
         print("\n  The difference is not incremental. It is exponential.")
         print("  Quantum comes from maths. The scaling is substrate-agnostic.")

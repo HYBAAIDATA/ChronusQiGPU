@@ -1,4 +1,5 @@
 """Neuromorphic hybrid model (Loihi 2 / SpiNNaker)."""
+
 from dataclasses import dataclass
 from typing import Dict
 
@@ -6,6 +7,7 @@ from typing import Dict
 @dataclass
 class NeuromorphicHybrid:
     """Model of a neuromorphic co-processor paired with the φ-substrate."""
+
     target: str = "Intel Loihi 2"
     neurons: int = 1_000_000
     synapses: int = 120_000_000

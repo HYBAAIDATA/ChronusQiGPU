@@ -4,6 +4,7 @@ Works without a GUI backend. If matplotlib is available, saves PNG plots;
 otherwise emits ASCII bar charts and Bloch-vector summaries. Every function
 is pure and deterministic.
 """
+
 from __future__ import annotations
 
 import math

@@ -9,6 +9,7 @@ Quantum (Tsirelson) bound: |S| <= 2 sqrt(2) ~ 2.8284.
 
 Mermin-GHZ inequality: on |GHZ_n>, |<M>| = 2^(n-1), classical bound 2^((n-1)/2).
 """
+
 from __future__ import annotations
 import math
 import numpy as np
@@ -18,10 +19,15 @@ from .einstein import correlator, singlet_state
 TSIRELSON = 2.0 * math.sqrt(2.0)
 
 
-def chsh_value(state: np.ndarray, A0: np.ndarray, A1: np.ndarray,
-               B0: np.ndarray, B1: np.ndarray) -> float:
-    return (correlator(A0, B0, state) + correlator(A0, B1, state)
-            + correlator(A1, B0, state) - correlator(A1, B1, state))
+def chsh_value(
+    state: np.ndarray, A0: np.ndarray, A1: np.ndarray, B0: np.ndarray, B1: np.ndarray
+) -> float:
+    return (
+        correlator(A0, B0, state)
+        + correlator(A0, B1, state)
+        + correlator(A1, B0, state)
+        - correlator(A1, B1, state)
+    )
 
 
 def optimal_chsh_settings():
@@ -44,7 +50,7 @@ def tsirelson_witness(state: np.ndarray | None = None) -> float:
 
 
 def ghz_state(num_qubits: int) -> np.ndarray:
-    n = 2 ** num_qubits
+    n = 2**num_qubits
     v = np.zeros(n, dtype=complex)
     v[0] = 1.0 / math.sqrt(2.0)
     v[-1] = 1.0 / math.sqrt(2.0)
@@ -69,7 +75,7 @@ def mermin_ghz_operator(num_qubits: int) -> np.ndarray:
             m = np.kron(m, o)
         return m
 
-    dim = 2 ** num_qubits
+    dim = 2**num_qubits
     M = np.zeros((dim, dim), dtype=complex)
     for mask in range(dim):
         bits = [(mask >> (num_qubits - 1 - i)) & 1 for i in range(num_qubits)]

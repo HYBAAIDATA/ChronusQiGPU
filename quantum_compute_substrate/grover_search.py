@@ -63,7 +63,7 @@ class GroverSearch:
             probabilities.append(self.core.measure_probability(state, target))
 
         measured = self.core.measure(state)
-        found = (measured == target)
+        found = measured == target
 
         return {
             "found": found,
@@ -121,14 +121,16 @@ class GroverSearch:
             target = N // 3
             searcher = GroverSearch(dim=N, seed=42)
             result = searcher.search(target)
-            results.append({
-                "N": N,
-                "sqrt_N": np.sqrt(N),
-                "iterations_used": result["iterations"],
-                "found": result["found"],
-                "target_probability": result["probability"],
-                "classical_trials": N / 2,
-            })
+            results.append(
+                {
+                    "N": N,
+                    "sqrt_N": np.sqrt(N),
+                    "iterations_used": result["iterations"],
+                    "found": result["found"],
+                    "target_probability": result["probability"],
+                    "classical_trials": N / 2,
+                }
+            )
 
         return {
             "results": results,

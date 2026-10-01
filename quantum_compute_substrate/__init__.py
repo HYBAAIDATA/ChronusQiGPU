@@ -68,13 +68,27 @@ from .memory_hierarchy import QuantumMemoryHierarchy
 from .nvidia_advances import NVIDIAAdvances, NVIDIAGPU
 
 from .gpu_advances_2026 import (
-    PrecisionMode, PRECISION_THROUGHPUT, PRECISION_BITS,
-    GPUArchitectureSpec, GPUComparisonTable,
-    RUBIN_R100, BLACKWELL_ULTRA_B300, HOPPER_H100, HYBA_QUANTUM_TITAN, ALL_GPUS,
-    FP4Precision, SparseTensorCore, TransformerEngine,
-    NVLink6Interconnect, ChipletArchitecture, HBM4Memory,
-    DynamicPrecisionManager, MIGPartitioning, ConfidentialComputing,
-    OpticalInterconnect, TensorMemory,
+    PrecisionMode,
+    PRECISION_THROUGHPUT,
+    PRECISION_BITS,
+    GPUArchitectureSpec,
+    GPUComparisonTable,
+    RUBIN_R100,
+    BLACKWELL_ULTRA_B300,
+    HOPPER_H100,
+    HYBA_QUANTUM_TITAN,
+    ALL_GPUS,
+    FP4Precision,
+    SparseTensorCore,
+    TransformerEngine,
+    NVLink6Interconnect,
+    ChipletArchitecture,
+    HBM4Memory,
+    DynamicPrecisionManager,
+    MIGPartitioning,
+    ConfidentialComputing,
+    OpticalInterconnect,
+    TensorMemory,
 )
 
 # Part 15: Apple Silicon advances
@@ -84,38 +98,64 @@ from .apple_advances import AppleAdvances, AppleSilicon
 from .hp_advances import HPAdvances, HPEArchitecture
 
 from .power_cooling import (
-    QuantumPowerSystem, LiquidHeliumCooling, DiamondSubstrateCooling,
-    QuantumCryostat, DirectToChipLiquidCooling,
+    QuantumPowerSystem,
+    LiquidHeliumCooling,
+    DiamondSubstrateCooling,
+    QuantumCryostat,
+    DirectToChipLiquidCooling,
 )
 from .golden_ratio_scaling import (
-    GoldenRatioScaler, ArchitectureTargets, ScaledArchitecture,
-    ScalingTier, PHI_10, PHI_12, PHI_15, PHI_37,
-    phi_power, fibonacci, phi_power_decomposition,
+    GoldenRatioScaler,
+    ArchitectureTargets,
+    ScaledArchitecture,
+    ScalingTier,
+    PHI_10,
+    PHI_12,
+    PHI_15,
+    PHI_37,
+    phi_power,
+    fibonacci,
+    phi_power_decomposition,
 )
 from .benchmark import BenchmarkSuite
 from .system import QuantumGPUSystem
 from .deployment import QuantumGPUDeployment, PerformanceValidation, PerformanceTargets
-
 
 # ==================================================================
 # v0.3.2 elevation: formal verification, applications, hardware co-
 # design, interop, comparative benchmarks.
 # ==================================================================
 from .formal_properties import (
-    check_norm_preservation, check_phi_fibonacci_identity,
-    check_grover_diffusion_reflection, check_fold_unfold_reconstruction,
+    check_norm_preservation,
+    check_phi_fibonacci_identity,
+    check_grover_diffusion_reflection,
+    check_fold_unfold_reconstruction,
     run_all_properties,
 )
 from .benchmarks_comparative import (
-    QiskitAdapter, CirqAdapter, PennyLaneAdapter, RigettiAdapter,
-    ScalingStudy, ComparativeBenchmarks,
+    QiskitAdapter,
+    CirqAdapter,
+    PennyLaneAdapter,
+    RigettiAdapter,
+    ScalingStudy,
+    ComparativeBenchmarks,
 )
 from .applications import (
-    LHCEventClassifier, H2VQE, AdvectionKernel, QuantumSequenceAligner,
+    LHCEventClassifier,
+    H2VQE,
+    AdvectionKernel,
+    QuantumSequenceAligner,
 )
 from .hardware_codesign import (
-    FPGAKernelSpec, PhiScaledTensorCoreASIC, PhotonicPhiFold, NeuromorphicHybrid,
+    FPGAKernelSpec,
+    PhiScaledTensorCoreASIC,
+    PhotonicPhiFold,
+    NeuromorphicHybrid,
 )
 from .interop import (
-    TorchAdapter, TensorFlowAdapter, MPIAdapter, KubernetesManifest, EdgeDeployment,
+    TorchAdapter,
+    TensorFlowAdapter,
+    MPIAdapter,
+    KubernetesManifest,
+    EdgeDeployment,
 )

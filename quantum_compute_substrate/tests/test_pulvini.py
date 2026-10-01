@@ -11,15 +11,20 @@ Proves the substrate's PULVINI wing satisfies:
   8. Edge cases and numerical stability
   9. Golden ratio geometric invariants
 """
+
 import numpy as np
 from quantum_compute_substrate.pulvini import (
     PHI,
-    PulviniOperator, TensorTrain,
-    TTPulviniHybrid, phi_guided_rank, IsingHamiltonianMPO,
-    HeisenbergHamiltonianMPO, MPOPulviniTTHybrid, PythagorasOrchestrator,
+    PulviniOperator,
+    TensorTrain,
+    TTPulviniHybrid,
+    phi_guided_rank,
+    IsingHamiltonianMPO,
+    HeisenbergHamiltonianMPO,
+    MPOPulviniTTHybrid,
+    PythagorasOrchestrator,
     SolverStrategy,
 )
-
 
 RNG = np.random.default_rng(42)
 
@@ -183,7 +188,7 @@ class TestQuantumDynamics:
     def test_ising_norm_preserved_4_1(self):
         mpo = IsingHamiltonianMPO(num_sites=4, coupling=1.0, field=0.5)
         pipeline = MPOPulviniTTHybrid(max_tt_rank=16, tolerance=1e-4)
-        result = pipeline.process(RNG.standard_normal(2 ** 4), mpo=mpo, num_time_steps=1)
+        result = pipeline.process(RNG.standard_normal(2**4), mpo=mpo, num_time_steps=1)
         assert result["mpo_applied"]
         for n in result["norm_trajectory"][1:]:
             assert abs(n - 1.0) < 0.05
@@ -350,15 +355,15 @@ class TestEdgeCasesAndStability:
 # ==================== Suite 6: golden ratio invariants ====================
 class TestGoldenRatioInvariants:
     def test_phi_squared_identity(self):
-        assert abs(PHI ** 2 - (PHI + 1)) < 1e-12
+        assert abs(PHI**2 - (PHI + 1)) < 1e-12
 
     def test_phi_reciprocal_identity(self):
-        w1, w2 = 1.0 / PHI, 1.0 / (PHI ** 2)
+        w1, w2 = 1.0 / PHI, 1.0 / (PHI**2)
         assert abs(w1 + w2 - 1.0) < 1e-14
 
     def test_phi_weight_orthogonality(self):
-        w1, w2 = 1.0 / PHI, 1.0 / (PHI ** 2)
-        norm_sq = w1 ** 2 + w2 ** 2
+        w1, w2 = 1.0 / PHI, 1.0 / (PHI**2)
+        norm_sq = w1**2 + w2**2
         assert 0.4 < norm_sq < 1.0
 
     def test_fibonacci_ratio_converges_to_phi(self):
@@ -399,6 +404,7 @@ class TestSubstrateIntegration:
         from quantum_compute_substrate.phi_infinity_tensor import (
             uniform_superposition,
         )
+
         mps = uniform_superposition(8, chi_max=4)
         # Compute all 2^8 amplitudes into a real vector (uniform is real).
         amps = np.zeros(256, dtype=float)
@@ -413,6 +419,7 @@ class TestSubstrateIntegration:
     def test_orchestrator_hamiltonian_from_cathedral_pauli(self):
         """Orchestrator routes a Cathedral Pauli-string Hamiltonian."""
         from quantum_compute_substrate.cathedral.pauli import pauli_string
+
         H = pauli_string("XX") + pauli_string("ZZ")
         orch = PythagorasOrchestrator()
         result = orch.solve(H.real if np.iscomplexobj(H) else H)

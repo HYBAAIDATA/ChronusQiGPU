@@ -123,9 +123,7 @@ class QuantumNeuralNetwork:
         self.layers = []
         for i in range(len(layer_dims) - 1):
             layer_seed = (seed + i) if seed is not None else None
-            self.layers.append(
-                QuantumNeuralLayer(layer_dims[i], layer_dims[i + 1], layer_seed)
-            )
+            self.layers.append(QuantumNeuralLayer(layer_dims[i], layer_dims[i + 1], layer_seed))
         self.training_history: List[Dict] = []
 
     def forward(self, x: np.ndarray) -> np.ndarray:
@@ -151,8 +149,14 @@ class QuantumNeuralNetwork:
 
         return loss
 
-    def train(self, X: np.ndarray, Y: np.ndarray, epochs: int = 100,
-              lr: float = 0.01, verbose: bool = False) -> Dict:
+    def train(
+        self,
+        X: np.ndarray,
+        Y: np.ndarray,
+        epochs: int = 100,
+        lr: float = 0.01,
+        verbose: bool = False,
+    ) -> Dict:
         """
         Train the network and MEASURE performance.
 
@@ -199,6 +203,7 @@ class QuantumNeuralNetwork:
         # params ≈ L * W^2
         # To reach 10^12: e.g., L=4, W=sqrt(10^12/4) = 500,000
         import math
+
         for num_layers in [4, 8, 16, 32]:
             width = int(math.sqrt(target / num_layers))
             actual = num_layers * width * width

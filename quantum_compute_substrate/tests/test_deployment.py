@@ -2,7 +2,9 @@
 
 from quantum_compute_substrate.system import QuantumGPUSystem
 from quantum_compute_substrate.deployment import (
-    QuantumGPUDeployment, PerformanceValidation, PerformanceTargets,
+    QuantumGPUDeployment,
+    PerformanceValidation,
+    PerformanceTargets,
 )
 
 
@@ -23,15 +25,15 @@ class TestPerformanceValidation:
     def test_validate(self):
         # Create mock benchmark results
         benchmarks = {
-            "linpack": {
-                "measured_gflops": 10.0, "verified": True}, "matmul": {
-                "measured_gflops": 80.0, "verified": True}, "memory_bandwidth": {
-                "triad_bandwidth_gbps": 20.0}, "grover_search": {
-                    "found": True, "speedup_ratio": 10.7}, "error_correction": {
-                        "small_lattice": {
-                            "correction_rate": 1.0, "all_corrected": True}}, "neural_network": {
-                                "training_result": {
-                                    "parameter_count": 2162, "loss_reduction_pct": 84.1}}, }
+            "linpack": {"measured_gflops": 10.0, "verified": True},
+            "matmul": {"measured_gflops": 80.0, "verified": True},
+            "memory_bandwidth": {"triad_bandwidth_gbps": 20.0},
+            "grover_search": {"found": True, "speedup_ratio": 10.7},
+            "error_correction": {"small_lattice": {"correction_rate": 1.0, "all_corrected": True}},
+            "neural_network": {
+                "training_result": {"parameter_count": 2162, "loss_reduction_pct": 84.1}
+            },
+        }
         specs = {"system_name": "test"}
         validator = PerformanceValidation(benchmarks, specs)
         result = validator.validate()
@@ -58,17 +60,13 @@ class TestPerformanceValidation:
 
 class TestQuantumGPUDeployment:
     def test_deployment_initializes(self):
-        system = QuantumGPUSystem(
-            num_cores=4, core_dim=512, lattice_size=4, nn_dims=[8, 16, 4]
-        )
+        system = QuantumGPUSystem(num_cores=4, core_dim=512, lattice_size=4, nn_dims=[8, 16, 4])
         deployment = QuantumGPUDeployment(system)
         assert deployment.system is system
         assert deployment.power is not None
 
     def test_deployment_runs(self):
-        system = QuantumGPUSystem(
-            num_cores=4, core_dim=512, lattice_size=4, nn_dims=[8, 16, 4]
-        )
+        system = QuantumGPUSystem(num_cores=4, core_dim=512, lattice_size=4, nn_dims=[8, 16, 4])
         deployment = QuantumGPUDeployment(system)
         report = deployment.deploy()
         assert report["status"] == "OPERATIONAL_RESEARCH_PROTOTYPE"

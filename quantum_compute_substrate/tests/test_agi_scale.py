@@ -1,4 +1,5 @@
 """phi^n scaling study tests."""
+
 import math
 from quantum_compute_substrate.post_quantum import AGIScale, AGI_SCALE_LEVELS
 

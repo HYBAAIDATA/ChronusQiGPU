@@ -3,6 +3,7 @@
 Claim lane: MATHEMATICAL_QUANTUM (SUBSTRATE-AGNOSTIC). All numbers are measured wall-clock time
 on the host CPU. No hardware-quantum claim is made.
 """
+
 from __future__ import annotations
 
 import math
@@ -50,9 +51,7 @@ class ScalingStudy:
     def __init__(self, claim_lane: str = "MATHEMATICAL_QUANTUM (SUBSTRATE-AGNOSTIC)") -> None:
         self.claim_lane = claim_lane
 
-    def diffusion_scaling(
-        self, dims: List[int] | None = None, seed: int = 0
-    ) -> ScalingResult:
+    def diffusion_scaling(self, dims: List[int] | None = None, seed: int = 0) -> ScalingResult:
         """Measure Grover diffusion time & norm-preservation error over dims.
 
         Chooses dims spanning phi^k for k=10..37 by default. Diffusion is
@@ -60,7 +59,7 @@ class ScalingStudy:
         """
         if dims is None:
             ks = list(range(10, 38))
-            dims = sorted({max(4, int(PHI ** k) & ~1) for k in ks})
+            dims = sorted({max(4, int(PHI**k) & ~1) for k in ks})
             dims = [d for d in dims if d <= 4096]  # cap for CPU sanity
         rng = np.random.default_rng(seed)
         times: List[float] = []
@@ -103,7 +102,7 @@ class ScalingStudy:
             F.append(F[-1] + F[-2])
         residuals: List[Tuple[int, float]] = []
         for k in range(0, k_max + 1):
-            lhs = PHI ** k
+            lhs = PHI**k
             rhs = F[k] * PHI + F[k - 1] if k >= 1 else 1.0
             residuals.append((k, abs(lhs - rhs)))
         return residuals

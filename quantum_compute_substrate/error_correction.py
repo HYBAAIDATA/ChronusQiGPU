@@ -22,8 +22,9 @@ from dataclasses import dataclass
 @dataclass
 class SyndromeResult:
     """Result of a stabilizer syndrome measurement."""
-    x_syndrome: List[Tuple[int, int]]   # Positions with X errors (bit flips)
-    z_syndrome: List[Tuple[int, int]]   # Positions with Z errors (phase flips)
+
+    x_syndrome: List[Tuple[int, int]]  # Positions with X errors (bit flips)
+    z_syndrome: List[Tuple[int, int]]  # Positions with Z errors (phase flips)
     total_errors: int
     detected: bool
 
@@ -231,9 +232,11 @@ class SurfaceCodeQEC:
                     _, _, success = qec.correct_errors(corrupted)
                     if success:
                         successes += 1
-                results.append({
-                    "lattice_size": L,
-                    "noise_level": noise,
-                    "correction_rate": successes / num_trials,
-                })
+                results.append(
+                    {
+                        "lattice_size": L,
+                        "noise_level": noise,
+                        "correction_rate": successes / num_trials,
+                    }
+                )
         return {"results": results}

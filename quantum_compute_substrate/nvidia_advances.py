@@ -17,6 +17,7 @@ from typing import Dict, List, Optional
 @dataclass
 class NVIDIAGPU:
     """NVIDIA GPU specification data class."""
+
     name: str
     process_node: str
     tensor_cores: int
@@ -43,9 +44,9 @@ class NVIDIAAdvances:
 
     def __init__(self):
         self.gpus = {
-            'rubin_r100': NVIDIAGPU(
-                name='NVIDIA Rubin R100',
-                process_node='3nm EUV',
+            "rubin_r100": NVIDIAGPU(
+                name="NVIDIA Rubin R100",
+                process_node="3nm EUV",
                 tensor_cores=896,
                 memory_capacity_gb=288,
                 memory_bandwidth_tbps=22.0,
@@ -57,15 +58,21 @@ class NVIDIAAdvances:
                 pcie_generation=6,
                 power_watts=700,
                 features=[
-                    'FP4/FP6 Precision', 'HBM4', 'NVLink 6', 'PCIe Gen 6',
-                    '2:4 Structured Sparsity', 'Transformer Engine v3',
-                    'Co-Packaged Optics', 'MIG Partitioning',
-                    'Confidential Computing', 'Tensor Memory'
-                ]
+                    "FP4/FP6 Precision",
+                    "HBM4",
+                    "NVLink 6",
+                    "PCIe Gen 6",
+                    "2:4 Structured Sparsity",
+                    "Transformer Engine v3",
+                    "Co-Packaged Optics",
+                    "MIG Partitioning",
+                    "Confidential Computing",
+                    "Tensor Memory",
+                ],
             ),
-            'blackwell_b300': NVIDIAGPU(
-                name='NVIDIA Blackwell Ultra B300',
-                process_node='5nm EUV',
+            "blackwell_b300": NVIDIAGPU(
+                name="NVIDIA Blackwell Ultra B300",
+                process_node="5nm EUV",
                 tensor_cores=592,
                 memory_capacity_gb=288,
                 memory_bandwidth_tbps=18.0,
@@ -77,14 +84,19 @@ class NVIDIAAdvances:
                 pcie_generation=5,
                 power_watts=600,
                 features=[
-                    'FP4/FP6 Precision', 'HBM3e', 'NVLink 5', 'PCIe Gen 5',
-                    '2:4 Structured Sparsity', 'Transformer Engine v2',
-                    'MIG Partitioning', 'Confidential Computing'
-                ]
+                    "FP4/FP6 Precision",
+                    "HBM3e",
+                    "NVLink 5",
+                    "PCIe Gen 5",
+                    "2:4 Structured Sparsity",
+                    "Transformer Engine v2",
+                    "MIG Partitioning",
+                    "Confidential Computing",
+                ],
             ),
-            'hopper_h100': NVIDIAGPU(
-                name='NVIDIA Hopper H100',
-                process_node='4nm EUV',
+            "hopper_h100": NVIDIAGPU(
+                name="NVIDIA Hopper H100",
+                process_node="4nm EUV",
                 tensor_cores=528,
                 memory_capacity_gb=80,
                 memory_bandwidth_tbps=3.35,
@@ -96,10 +108,14 @@ class NVIDIAAdvances:
                 pcie_generation=5,
                 power_watts=350,
                 features=[
-                    'FP8 Precision', 'HBM3', 'NVLink 4', 'PCIe Gen 5',
-                    'Transformer Engine', 'MIG Partitioning'
-                ]
-            )
+                    "FP8 Precision",
+                    "HBM3",
+                    "NVLink 4",
+                    "PCIe Gen 5",
+                    "Transformer Engine",
+                    "MIG Partitioning",
+                ],
+            ),
         }
 
     def get_gpu(self, name: str) -> Optional[NVIDIAGPU]:
@@ -120,17 +136,21 @@ class NVIDIAAdvances:
         """
         gpu = self.get_gpu(gpu_name)
         if not gpu:
-            return {'error': f'GPU {gpu_name} not found'}
+            return {"error": f"GPU {gpu_name} not found"}
 
         return {
-            'gpu': gpu.name,
-            'ratios': {
-                'tensor_cores': hyba_specs.get('tensor_cores', 8192) / max(gpu.tensor_cores, 1),
-                'fp4': hyba_specs.get('fp4_eflops', 500) / max(gpu.fp4_performance_pflops / 1000, 1e-10),
-                'memory': hyba_specs.get('memory_tb', 512) / max(gpu.memory_capacity_gb / 1024, 1e-10),
-                'bandwidth': hyba_specs.get('bandwidth_pbs', 2) / max(gpu.memory_bandwidth_tbps, 1e-10),
-                'sm': hyba_specs.get('streaming_processors', 65536) / max(gpu.streaming_multiprocessors, 1)
-            }
+            "gpu": gpu.name,
+            "ratios": {
+                "tensor_cores": hyba_specs.get("tensor_cores", 8192) / max(gpu.tensor_cores, 1),
+                "fp4": hyba_specs.get("fp4_eflops", 500)
+                / max(gpu.fp4_performance_pflops / 1000, 1e-10),
+                "memory": hyba_specs.get("memory_tb", 512)
+                / max(gpu.memory_capacity_gb / 1024, 1e-10),
+                "bandwidth": hyba_specs.get("bandwidth_pbs", 2)
+                / max(gpu.memory_bandwidth_tbps, 1e-10),
+                "sm": hyba_specs.get("streaming_processors", 65536)
+                / max(gpu.streaming_multiprocessors, 1),
+            },
         }
 
     def get_all_gpus(self) -> List[NVIDIAGPU]:
@@ -140,9 +160,9 @@ class NVIDIAAdvances:
     def get_specs(self) -> Dict:
         """Return summary specifications for all GPUs."""
         return {
-            'gpus_modelled': [g.name for g in self.get_all_gpus()],
-            'latest_gen': 'Rubin R100 (3nm, 896 TCs, HBM4)',
-            'fp4_capable': ['Rubin R100', 'Blackwell Ultra B300'],
+            "gpus_modelled": [g.name for g in self.get_all_gpus()],
+            "latest_gen": "Rubin R100 (3nm, 896 TCs, HBM4)",
+            "fp4_capable": ["Rubin R100", "Blackwell Ultra B300"],
         }
 
     def to_dict(self) -> Dict:

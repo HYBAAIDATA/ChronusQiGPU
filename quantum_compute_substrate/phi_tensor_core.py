@@ -37,9 +37,10 @@ class FoldState:
     via linear interpolation. Reconstruction is approximate (not lossless)
     at depth > 0, with error tracked for integrity verification.
     """
-    data: np.ndarray          # Complex state vector
-    depth: int = 0            # Compression depth (0 = unfolded)
-    original_dim: int = 0      # Dimension before folding (for reconstruction)
+
+    data: np.ndarray  # Complex state vector
+    depth: int = 0  # Compression depth (0 = unfolded)
+    original_dim: int = 0  # Dimension before folding (for reconstruction)
     _reconstruction_error: float = 0.0
 
     @property
@@ -58,8 +59,7 @@ class FoldState:
         """Return a normalised copy."""
         n = self.norm
         if n > 0:
-            return FoldState(self.data / n, self.depth,
-                             self.original_dim or self.dim)
+            return FoldState(self.data / n, self.depth, self.original_dim or self.dim)
         return self
 
     def fold(self, target_depth: int = 1) -> "FoldState":
@@ -79,8 +79,7 @@ class FoldState:
         trim = target_dim * (src_dim // target_dim)
         reshaped = src[:trim].reshape(target_dim, src_dim // target_dim)
         folded = np.mean(reshaped, axis=1)
-        return FoldState(folded, target_depth,
-                         self.original_dim or src_dim)
+        return FoldState(folded, target_depth, self.original_dim or src_dim)
 
     def unfold(self) -> "FoldState":
         """Reconstruct from folded state via interpolation."""
@@ -185,7 +184,7 @@ class PhiTensorCore:
         s = state.data
         n = len(s)
         psi = np.ones(n, dtype=np.complex128) / np.sqrt(n)
-        inner = np.vdot(psi, s)       # ⟨ψ|φ⟩ — complex inner product
+        inner = np.vdot(psi, s)  # ⟨ψ|φ⟩ — complex inner product
         result = 2.0 * inner * psi - s  # D|φ⟩ = 2⟨ψ|φ⟩|ψ⟩ - |φ⟩
         self._compute_time += time.perf_counter() - t0
         self._ops_count += 3 * n

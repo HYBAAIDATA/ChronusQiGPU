@@ -37,9 +37,7 @@ class AdvectionKernel:
         for _ in range(n_steps):
             u = self.step(u, dt)
         # Analytical solution: u(x, T) = u₀(x - cT)
-        exact = np.interp(
-            (self.x - self.c * T) % self.L, self.x, u0
-        )
+        exact = np.interp((self.x - self.c * T) % self.L, self.x, u0)
         l2_error = float(np.linalg.norm(u - exact) / np.linalg.norm(exact))
         return {
             "final_state": u,

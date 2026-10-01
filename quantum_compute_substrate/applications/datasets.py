@@ -4,6 +4,7 @@ Each entry is a citation-quality reference to a public dataset that maps
 into one of the four application case studies. Populated lazily; no network
 calls are made at import time.
 """
+
 from dataclasses import dataclass
 from typing import Dict, List
 

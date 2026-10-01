@@ -16,7 +16,6 @@ Claim lane: MATHEMATICAL_QUANTUM (SUBSTRATE-AGNOSTIC). Reference-textbook VQE.
 import numpy as np
 from typing import Dict
 
-
 # Pauli matrices
 _I = np.eye(2, dtype=np.complex128)
 _X = np.array([[0, 1], [1, 0]], dtype=np.complex128)

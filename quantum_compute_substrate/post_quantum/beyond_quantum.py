@@ -6,6 +6,7 @@ Each witness is a mathematical quantity that separates:
 See Barrett, Popescu-Rohrlich, Sorkin, and generalized probabilistic
 theories for the underlying mathematics.
 """
+
 from __future__ import annotations
 import math
 import numpy as np
@@ -53,9 +54,7 @@ def sorkin_third_order_interference(dim: int = 16, seed: int = 0) -> float:
         S = P + Q + R
         return float(np.real(np.vdot(psi, S @ S @ psi)))
 
-    I3 = (p3(P_A, P_B, P_C)
-          - p2(P_A, P_B) - p2(P_A, P_C) - p2(P_B, P_C)
-          + p(P_A) + p(P_B) + p(P_C))
+    I3 = p3(P_A, P_B, P_C) - p2(P_A, P_B) - p2(P_A, P_C) - p2(P_B, P_C) + p(P_A) + p(P_B) + p(P_C)
     return I3
 
 
@@ -71,13 +70,13 @@ def fold_cross_section(dim: int = 32, fold_depth: int = 1, seed: int = 0) -> flo
     A = rng.standard_normal((dim, dim)) + 1j * rng.standard_normal((dim, dim))
     A = A.astype(np.complex128) / math.sqrt(dim)
     # Fold matrix: linear compression by factor phi
-    target = max(2, int(round(dim / (PHI ** fold_depth))))
+    target = max(2, int(round(dim / (PHI**fold_depth))))
     # Random isometry: pick first `target` rows of unitary
     Q, _ = np.linalg.qr(A)
-    F = Q[:target, :]                 # target x dim (compression)
+    F = Q[:target, :]  # target x dim (compression)
     # Unfold: apply F^dagger (isometric embed back to dim)
-    U = F.conj().T                    # dim x target
-    C = U @ F                         # dim x dim  (projector onto fold image)
+    U = F.conj().T  # dim x target
+    C = U @ F  # dim x dim  (projector onto fold image)
     I = np.eye(dim, dtype=np.complex128)
     return float(np.linalg.norm(C - I, ord="fro")) / math.sqrt(dim)
 
@@ -97,9 +96,9 @@ def pr_box_correlator(seed: int = 0) -> float:
         for y in (0, 1):
             # Perfect PR correlation: a xor b = x AND y
             if (x & y) == 0:
-                E_xy = 1.0     # a = b
+                E_xy = 1.0  # a = b
             else:
-                E_xy = -1.0    # a xor b = 1
+                E_xy = -1.0  # a xor b = 1
             # CHSH sign convention: S = E00 + E01 + E10 - E11
             sign = -1.0 if (x == 1 and y == 1) else 1.0
             S += sign * E_xy

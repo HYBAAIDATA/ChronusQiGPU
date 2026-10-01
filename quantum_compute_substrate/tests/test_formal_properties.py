@@ -1,7 +1,10 @@
 """Tests for runtime formal-property checks."""
+
 from quantum_compute_substrate.formal_properties import (
-    check_norm_preservation, check_phi_fibonacci_identity,
-    check_grover_diffusion_reflection, check_fold_unfold_reconstruction,
+    check_norm_preservation,
+    check_phi_fibonacci_identity,
+    check_grover_diffusion_reflection,
+    check_fold_unfold_reconstruction,
     run_all_properties,
 )
 

@@ -2,6 +2,7 @@
 
 We never materialize the tensor. These rules define it implicitly.
 """
+
 from __future__ import annotations
 import cmath
 import math
@@ -19,6 +20,7 @@ class PhiCharacterRule:
     Z_N^6. Every element has magnitude 1 / sqrt(N^rank), and slices are exactly
     Kloosterman-like sums.
     """
+
     N: int
     rank: int = 6
 
@@ -29,7 +31,7 @@ class PhiCharacterRule:
             raise ValueError("rank must be >= 1")
 
     def phi_weight(self, axis: int) -> float:
-        return PHI_FLOAT ** axis
+        return PHI_FLOAT**axis
 
     def normalization(self) -> float:
         """1 / sqrt(N^rank)."""
@@ -58,6 +60,7 @@ class PhiCharacterRule:
         def f(i: int) -> complex:
             full = fixed[:axis] + [i] + fixed[axis:]
             return self.element(full)
+
         return f
 
 
@@ -68,6 +71,7 @@ class RankOneRule:
     A rank-1 tensor is defined by rank factor vectors. Storable in O(rank*N)
     if desired. Contraction of any two axes just multiplies through.
     """
+
     N: int
     rank: int = 6
 
@@ -75,6 +79,7 @@ class RankOneRule:
         # phi-fold factor: f_k(i) = exp(2 pi i * F(k+1) / N * i)
         # (Uses Fibonacci number instead of phi power for exact-integer phase.)
         from .phi_identities import fib
+
         k = fib(axis + 1)
         return cmath.exp(2j * math.pi * (k * i) / self.N)
 

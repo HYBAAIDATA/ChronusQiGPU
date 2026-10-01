@@ -16,7 +16,7 @@ class VQEOptimizer:
         self.target_num_qubits = 4096  # Architecture target (always 4096)
         self.layers = min(layers, 5)  # Practical limit
         self.target_layers = layers
-        self.dim = 2 ** self.num_qubits
+        self.dim = 2**self.num_qubits
         self.params = self.initialize_parameters()
         self.ansatz = self.build_ansatz()
         self.H = self.build_hamiltonian()
@@ -28,6 +28,7 @@ class VQEOptimizer:
 
     def build_ansatz(self) -> callable:
         """Build parameterized circuit ansatz."""
+
         def ansatz(params: np.ndarray) -> np.ndarray:
             state = np.zeros(self.dim, dtype=np.complex128)
             state[0] = 1.0
@@ -38,20 +39,26 @@ class VQEOptimizer:
                     if param_idx >= len(params):
                         break
                     theta = params[param_idx]
-                    Ry = np.array([
-                        [np.cos(theta / 2), -np.sin(theta / 2)],
-                        [np.sin(theta / 2), np.cos(theta / 2)],
-                    ], dtype=np.complex128)
+                    Ry = np.array(
+                        [
+                            [np.cos(theta / 2), -np.sin(theta / 2)],
+                            [np.sin(theta / 2), np.cos(theta / 2)],
+                        ],
+                        dtype=np.complex128,
+                    )
                     state = self.apply_gate(state, Ry, qubit)
                     param_idx += 1
 
                     if param_idx >= len(params):
                         break
                     phi = params[param_idx]
-                    Rz = np.array([
-                        [np.exp(-1j * phi / 2), 0],
-                        [0, np.exp(1j * phi / 2)],
-                    ], dtype=np.complex128)
+                    Rz = np.array(
+                        [
+                            [np.exp(-1j * phi / 2), 0],
+                            [0, np.exp(1j * phi / 2)],
+                        ],
+                        dtype=np.complex128,
+                    )
                     state = self.apply_gate(state, Rz, qubit)
                     param_idx += 1
 
@@ -109,8 +116,9 @@ class VQEOptimizer:
                 params_plus[i] += epsilon
                 params_minus = params.copy()
                 params_minus[i] -= epsilon
-                grad[i] = (self.expectation_value(params_plus) -
-                           self.expectation_value(params_minus)) / (2 * epsilon)
+                grad[i] = (
+                    self.expectation_value(params_plus) - self.expectation_value(params_minus)
+                ) / (2 * epsilon)
 
             params -= learning_rate * grad
             loss = self.expectation_value(params)
@@ -134,11 +142,11 @@ class VQEOptimizer:
         config = int(np.argmax(probabilities))
         energy = float(np.real(np.conj(state).T @ self.H @ state))
         return {
-            'optimal_config': config,
-            'energy': energy,
-            'params': params.tolist() if params is not None else [],
-            'num_qubits': self.num_qubits,
-            'layers': self.layers,
+            "optimal_config": config,
+            "energy": energy,
+            "params": params.tolist() if params is not None else [],
+            "num_qubits": self.num_qubits,
+            "layers": self.layers,
         }
 
     def apply_gate(self, state: np.ndarray, gate: np.ndarray, qubit: int) -> np.ndarray:

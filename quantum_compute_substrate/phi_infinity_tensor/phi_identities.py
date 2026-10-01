@@ -3,6 +3,7 @@
 All integer-valued identities are computed exactly with Python bigints;
 real-valued relations are verified to 100-digit Decimal precision.
 """
+
 from __future__ import annotations
 from decimal import Decimal, getcontext
 from functools import lru_cache
@@ -48,7 +49,7 @@ def phi_power_identity_holds(n: int, tolerance: str = "1e-50") -> bool:
         raise ValueError("n must be >= 1")
     F_n = Decimal(fib(n))
     F_nm1 = Decimal(fib(n - 1))
-    lhs = PHI ** n
+    lhs = PHI**n
     rhs = F_n * PHI + F_nm1
     return abs(lhs - rhs) < Decimal(tolerance)
 
@@ -57,4 +58,4 @@ def lucas_equals_round_phi(n: int) -> bool:
     """Verify L(n) = round(phi^n) for n >= 2."""
     if n < 2:
         raise ValueError("n must be >= 2")
-    return lucas(n) == int((PHI ** n).quantize(Decimal("1"), rounding="ROUND_HALF_EVEN"))
+    return lucas(n) == int((PHI**n).quantize(Decimal("1"), rounding="ROUND_HALF_EVEN"))

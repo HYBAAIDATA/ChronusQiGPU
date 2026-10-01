@@ -21,6 +21,7 @@ Invariants covered (see quantum_compute_substrate.formal_properties):
  14. Quantum kernel PSD
  15. Amplitude-amplification success >= 0.5
 """
+
 from __future__ import annotations
 
 from quantum_compute_substrate import formal_properties as fp
@@ -29,6 +30,7 @@ from quantum_compute_substrate import formal_properties as fp
 def _make_test(fn, kwargs):
     def test(self):
         assert fn(**kwargs)
+
     return test
 
 
@@ -54,14 +56,10 @@ GRIDS = {
     "density_matrix_hermitian": [
         {"dim": d, "seed": s} for d in (2, 4, 8, 16, 32) for s in range(10)
     ],
-    "von_neumann_entropy_nonneg": [
-        {"dim": d, "seed": s} for d in (2, 4, 8, 16) for s in range(10)
-    ],
+    "von_neumann_entropy_nonneg": [{"dim": d, "seed": s} for d in (2, 4, 8, 16) for s in range(10)],
     "fibonacci_recurrence": [{"k": k} for k in range(5, 41)],
     "phi_index_identity": [{"k": k} for k in range(1, 31)],
-    "grover_reflection": [
-        {"dim": d, "seed": s} for d in (4, 8, 16, 32, 64) for s in range(10)
-    ],
+    "grover_reflection": [{"dim": d, "seed": s} for d in (4, 8, 16, 32, 64) for s in range(10)],
     "fold_unfold_reconstruction": [{"dim": d} for d in (64, 96, 128, 192, 256)],
     "inner_product_conjugate_symmetric": [
         {"dim": d, "seed": s} for d in (2, 4, 8, 16, 32, 64) for s in range(10)
@@ -69,9 +67,7 @@ GRIDS = {
     "triangle_inequality": [
         {"dim": d, "seed": s} for d in (2, 4, 8, 16, 32, 64) for s in range(10)
     ],
-    "kernel_psd": [
-        {"n": n, "seed": s} for n in (3, 5, 7, 9, 12) for s in range(10)
-    ],
+    "kernel_psd": [{"n": n, "seed": s} for n in (3, 5, 7, 9, 12) for s in range(10)],
     "amplitude_amplification_probability": [
         {"dim": d, "seed": s} for d in (8, 16, 32, 64, 128) for s in range(6)
     ],
@@ -110,7 +106,9 @@ _EXTRA_GRIDS = {
     "uncertainty_relation": [{"seed": s} for s in range(20)],
     "ghz_correlator": [{} for _ in range(15)],
     "entanglement_monogamy": [{} for _ in range(15)],
-    "born_rule_normalization": [{"dim": d, "seed": s} for d in (2, 4, 8, 16, 32, 64) for s in range(10)],
+    "born_rule_normalization": [
+        {"dim": d, "seed": s} for d in (2, 4, 8, 16, 32, 64) for s in range(10)
+    ],
     "complex_amplitude_phase_dependence": [{"seed": s} for s in range(20)],
 }
 

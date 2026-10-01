@@ -2,6 +2,7 @@
 
 Emits deployment manifests. No cloud SDK required.
 """
+
 from __future__ import annotations
 
 import json

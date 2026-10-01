@@ -1,4 +1,5 @@
 """Matrix Product Operator (MPO) with Ising, Heisenberg, and PULVINI hybrid."""
+
 from __future__ import annotations
 import numpy as np
 from typing import List, Dict, Any, Optional
@@ -40,10 +41,10 @@ class MatrixProductOperator:
 
     def to_full_matrix(self) -> np.ndarray:
         """Convert MPO to full matrix. Use only for small chains (validation)."""
-        W0 = self.cores[0]              # (1, d, d, D1)
-        result = W0[0]                  # (d, d, D1)
+        W0 = self.cores[0]  # (1, d, d, D1)
+        result = W0[0]  # (d, d, D1)
         for k in range(1, self.num_sites):
-            W = self.cores[k]           # (D_l, d, d, D_r)
+            W = self.cores[k]  # (D_l, d, d, D_r)
             tmp = np.tensordot(result, W, axes=([2], [0]))
             # tmp: (R, C, d_out, d_in, D_r)
             tmp = tmp.transpose(0, 2, 1, 3, 4)
@@ -61,8 +62,13 @@ class MatrixProductOperator:
 class IsingHamiltonianMPO(MatrixProductOperator):
     """Transverse-field Ising: H = -J sum sz_i sz_{i+1} - h sum sx_i."""
 
-    def __init__(self, num_sites: int, coupling: float = 1.0,
-                 field: float = 0.5, bond_dim: Optional[int] = None) -> None:
+    def __init__(
+        self,
+        num_sites: int,
+        coupling: float = 1.0,
+        field: float = 0.5,
+        bond_dim: Optional[int] = None,
+    ) -> None:
         self.num_sites = num_sites
         self.coupling = coupling
         self.field = field
@@ -146,16 +152,24 @@ class HeisenbergHamiltonianMPO(MatrixProductOperator):
 class MPOPulviniTTHybrid:
     """Full three-stage pipeline: PULVINI fold -> TT compress -> MPO dynamics."""
 
-    def __init__(self, max_tt_rank: int = 32, mpo_bond_dim: int = 8,
-                 tolerance: float = 1e-5, fold_depth: int = 1) -> None:
+    def __init__(
+        self,
+        max_tt_rank: int = 32,
+        mpo_bond_dim: int = 8,
+        tolerance: float = 1e-5,
+        fold_depth: int = 1,
+    ) -> None:
         self.max_tt_rank = max_tt_rank
         self.mpo_bond_dim = mpo_bond_dim
         self.tolerance = tolerance
         self.fold_depth = fold_depth
 
-    def process(self, input_tensor: np.ndarray,
-                mpo: Optional[MatrixProductOperator] = None,
-                num_time_steps: int = 1) -> Dict[str, Any]:
+    def process(
+        self,
+        input_tensor: np.ndarray,
+        mpo: Optional[MatrixProductOperator] = None,
+        num_time_steps: int = 1,
+    ) -> Dict[str, Any]:
         original_shape = input_tensor.shape
         original_size = input_tensor.size
 
@@ -168,8 +182,9 @@ class MPOPulviniTTHybrid:
             kernels = [kernel]
             sizes = [len(flat), len(folded_flat)]
 
-        tt = TensorTrain(folded_flat.reshape(-1, 1),
-                         max_rank=self.max_tt_rank, tolerance=self.tolerance)
+        tt = TensorTrain(
+            folded_flat.reshape(-1, 1), max_rank=self.max_tt_rank, tolerance=self.tolerance
+        )
 
         current_state = folded_flat.copy()
         norm_trajectory: List[float] = [float(np.linalg.norm(current_state))]
@@ -181,8 +196,9 @@ class MPOPulviniTTHybrid:
                 norm_trajectory.append(float(np.linalg.norm(current_state)))
 
         reconstructed_folded = tt.reconstruct().flatten()
-        recon_error = float(np.linalg.norm(
-            folded_flat - reconstructed_folded) / max(1, len(folded_flat)))
+        recon_error = float(
+            np.linalg.norm(folded_flat - reconstructed_folded) / max(1, len(folded_flat))
+        )
 
         reconstructed = np.zeros(original_size)
         copy_len = min(len(reconstructed_folded), original_size)
@@ -191,18 +207,23 @@ class MPOPulviniTTHybrid:
         mpo_error = 0.0
         if mpo is not None:
             cmp_len = min(len(current_state), len(folded_flat))
-            mpo_error = float(np.linalg.norm(
-                current_state[:cmp_len] - folded_flat[:cmp_len]) / max(1, cmp_len))
+            mpo_error = float(
+                np.linalg.norm(current_state[:cmp_len] - folded_flat[:cmp_len]) / max(1, cmp_len)
+            )
 
         memory = tt.get_memory_bytes()
-        norm_drift = float(max(abs(n - 1.0)
-                           for n in norm_trajectory[1:])) if len(norm_trajectory) > 1 else 0.0
+        norm_drift = (
+            float(max(abs(n - 1.0) for n in norm_trajectory[1:]))
+            if len(norm_trajectory) > 1
+            else 0.0
+        )
 
         return {
             "original_state": input_tensor,
             "folded_state": folded_flat,
-            "mpo_applied_state": (current_state.reshape(original_shape)
-                                  if mpo is not None else input_tensor),
+            "mpo_applied_state": (
+                current_state.reshape(original_shape) if mpo is not None else input_tensor
+            ),
             "reconstructed": reconstructed.reshape(original_shape),
             "pulvini_kernels": kernels,
             "pulvini_sizes": sizes,

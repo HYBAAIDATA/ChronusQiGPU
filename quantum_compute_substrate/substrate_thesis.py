@@ -5,6 +5,7 @@ the quantum-mathematical invariants, the substrate is performing quantum
 computation, regardless of whether the substrate is silicon, photonic,
 superconducting, or paper-and-pencil.
 """
+
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict
@@ -29,9 +30,12 @@ class Thesis:
     )
 
     def summary(self) -> str:
-        lines = [f"HYBA Substrate Thesis v{self.version}",
-                 f"Author: {self.author}",
-                 f"Claim lane: {self.claim_lane}", ""]
+        lines = [
+            f"HYBA Substrate Thesis v{self.version}",
+            f"Author: {self.author}",
+            f"Claim lane: {self.claim_lane}",
+            "",
+        ]
         for i, s in enumerate(self.statements, 1):
             lines.append(f"  {i}. {s}")
         return "\n".join(lines)
@@ -59,9 +63,9 @@ def quantum_witnesses() -> Dict[str, str]:
 
 def assert_thesis_alignment(package_version: str) -> None:
     """Raise AssertionError if the substrate is not thesis-aligned."""
-    assert package_version.startswith("0.3.4") or package_version >= "0.3.4", (
-        f"Substrate thesis alignment requires v0.3.4+; got {package_version}"
-    )
+    assert (
+        package_version.startswith("0.3.4") or package_version >= "0.3.4"
+    ), f"Substrate thesis alignment requires v0.3.4+; got {package_version}"
 
 
 THESIS = Thesis()

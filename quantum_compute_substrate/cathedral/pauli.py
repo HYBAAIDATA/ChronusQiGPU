@@ -7,6 +7,7 @@ Pauli matrices, spin-1/2 algebra, and the exclusion principle.
 
 The entire Pauli group P_1 = {+/- I, +/- iI, +/- X, +/- iX, ...} lives here.
 """
+
 from __future__ import annotations
 import numpy as np
 from typing import List, Tuple

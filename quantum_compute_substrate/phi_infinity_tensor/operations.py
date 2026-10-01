@@ -1,4 +1,5 @@
 """Symbolic tensor operations that preserve algebraic structure."""
+
 from __future__ import annotations
 import math
 from typing import Any, Dict
@@ -6,8 +7,7 @@ from .tensor import HYBAQuantumTensorXInfinity
 from .phi_identities import lucas
 
 
-def tensor_product(A: HYBAQuantumTensorXInfinity,
-                   B: HYBAQuantumTensorXInfinity) -> Dict[str, Any]:
+def tensor_product(A: HYBAQuantumTensorXInfinity, B: HYBAQuantumTensorXInfinity) -> Dict[str, Any]:
     """A tensor B: shape becomes shape(A) + shape(B), rank sums."""
     new_shape = A.shape + B.shape
     new_rank = A.rank + B.rank
@@ -39,13 +39,12 @@ def contract(T: HYBAQuantumTensorXInfinity, axis_i: int, axis_j: int) -> Dict[st
     }
 
 
-def phi_scaling_transform(T: HYBAQuantumTensorXInfinity,
-                          new_scaling_exp: int) -> Dict[str, Any]:
+def phi_scaling_transform(T: HYBAQuantumTensorXInfinity, new_scaling_exp: int) -> Dict[str, Any]:
     """Rescale every axis to phi^{new_scaling_exp}. Returns metadata."""
     if new_scaling_exp < 2:
         raise ValueError("new_scaling_exp must be >= 2")
     new_axis_size = lucas(new_scaling_exp)
-    new_total = new_axis_size ** T.rank
+    new_total = new_axis_size**T.rank
     return {
         "old_scaling_exp": T.scaling_exp,
         "new_scaling_exp": new_scaling_exp,
@@ -80,6 +79,7 @@ def topological_decomposition(T: HYBAQuantumTensorXInfinity) -> Dict[str, Any]:
     Kunneth: H_k(T^6) has rank C(6, k). Sum with sign = 0 = chi(T^6).
     """
     from math import comb
+
     betti_torus = [comb(T.rank, k) for k in range(T.rank + 1)]
     euler_torus = sum(((-1) ** k) * betti_torus[k] for k in range(T.rank + 1))
     betti_cube = [1] + [0] * T.rank

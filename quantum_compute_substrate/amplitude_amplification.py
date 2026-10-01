@@ -20,7 +20,7 @@ class AmplitudeAmplificationProcessor:
     def estimate_solutions(self) -> float:
         """Estimate number of solutions from difficulty."""
         difficulty = 10  # Simplified
-        return max(1.0, self.N / (2 ** difficulty))
+        return max(1.0, self.N / (2**difficulty))
 
     def grover_search(self, target: int) -> Optional[int]:
         """Grover search with parallelism."""

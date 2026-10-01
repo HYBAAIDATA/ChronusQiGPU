@@ -93,9 +93,7 @@ class ScalingStudy:
         results = {}
         for N in sizes:
             tc = PhiTensorCore(core_id=0, dim=N)
-            state = FoldState(
-                np.ones(N, dtype=np.complex128) / np.sqrt(N), 0, N
-            )
+            state = FoldState(np.ones(N, dtype=np.complex128) / np.sqrt(N), 0, N)
             # Warmup
             tc.amplitude_amplification(state)
             # Timed run
@@ -125,8 +123,8 @@ class ScalingStudy:
             "prefactor": float(np.exp(intercept)),
             "interpretation": (
                 "exponent ≈ 1.0 confirms O(N) classical Grover diffusion"
-                if 0.7 < slope < 1.3 else
-                f"unexpected scaling exponent {slope:.2f}"
+                if 0.7 < slope < 1.3
+                else f"unexpected scaling exponent {slope:.2f}"
             ),
             "sample_sizes": sizes.tolist(),
             "latencies_us": latencies.tolist(),

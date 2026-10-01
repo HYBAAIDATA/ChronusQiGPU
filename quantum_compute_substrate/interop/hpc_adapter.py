@@ -1,4 +1,5 @@
 """HPC integration — MPI/OpenMP for supercomputer deployment."""
+
 import importlib
 from typing import Any, Dict, Optional
 

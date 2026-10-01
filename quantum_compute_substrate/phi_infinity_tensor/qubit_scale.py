@@ -10,12 +10,12 @@ At uniform chi and n sites: ~ n * chi^2 * 2 * 16 bytes.
 For n=1000, chi=128: 1000 * 16384 * 2 * 16 = ~ 524 MB (uniform interior);
 for a fresh product state chi=1 everywhere: ~ 32 KB.
 """
+
 from __future__ import annotations
 import math
 import numpy as np
 from dataclasses import dataclass, field
 from typing import List, Sequence, Optional
-
 
 # Standard 1-qubit gates.
 I2 = np.eye(2, dtype=complex)
@@ -28,12 +28,15 @@ T_GATE = np.array([[1, 0], [0, np.exp(1j * math.pi / 4)]], dtype=complex)
 
 # 2-qubit CNOT with control on the left, target on the right.
 # Reshaped to (2,2,2,2) with axes (c_out, t_out, c_in, t_in).
-CNOT_MAT = np.array([
-    [1, 0, 0, 0],
-    [0, 1, 0, 0],
-    [0, 0, 0, 1],
-    [0, 0, 1, 0],
-], dtype=complex)
+CNOT_MAT = np.array(
+    [
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 0, 1],
+        [0, 0, 1, 0],
+    ],
+    dtype=complex,
+)
 CNOT_TENSOR = CNOT_MAT.reshape(2, 2, 2, 2)
 
 
@@ -44,6 +47,7 @@ class QubitMPS:
     Initialised in |0...0>: every site is (1, 2, 1) with A[k][0, 0, 0] = 1,
     A[k][0, 1, 0] = 0. Product state, chi=1 everywhere.
     """
+
     n_qubits: int
     chi_max: int = 128
     sites: List[np.ndarray] = field(default_factory=list)
@@ -94,8 +98,8 @@ class QubitMPS:
         if not 0 <= site < self.n_qubits - 1:
             raise IndexError("site out of range for two-qubit gate")
 
-        A = self.sites[site]        # (chiL, 2, chiM)
-        B = self.sites[site + 1]    # (chiM, 2, chiR)
+        A = self.sites[site]  # (chiL, 2, chiM)
+        B = self.sites[site + 1]  # (chiM, 2, chiR)
         chiL, _, chiM = A.shape
         _, _, chiR = B.shape
 
@@ -118,8 +122,17 @@ class QubitMPS:
         # preserved to leading order (norm-preserving truncation).
         norm_before = float(np.linalg.norm(S)) if len(S) else 1.0
         if norm_before > 0:
-            S = S * (float(np.linalg.norm(np.concatenate(
-                [S, np.zeros(len(np.linalg.svd(M, compute_uv=False)) - len(S))])) or 1.0) / norm_before)
+            S = S * (
+                float(
+                    np.linalg.norm(
+                        np.concatenate(
+                            [S, np.zeros(len(np.linalg.svd(M, compute_uv=False)) - len(S))]
+                        )
+                    )
+                    or 1.0
+                )
+                / norm_before
+            )
         # (In practice: this branch does nothing when we do not truncate; when
         # we do truncate it makes the state a re-normalised approximation.)
 
@@ -140,7 +153,7 @@ class QubitMPS:
             if bit not in (0, 1):
                 raise ValueError("bit must be 0 or 1")
             A_slice = self.sites[k][:, bit, :]  # (chi_L, chi_R)
-            v = v @ A_slice                       # (1, chi_R)
+            v = v @ A_slice  # (1, chi_R)
         return complex(v[0, 0])
 
     def norm_squared(self) -> float:
@@ -149,7 +162,7 @@ class QubitMPS:
         # doubled space).
         E = np.array([[1.0 + 0j]])  # (chiL_top, chiL_bot) = (1, 1)
         for k in range(self.n_qubits):
-            A = self.sites[k]                 # (chiL, 2, chiR)
+            A = self.sites[k]  # (chiL, 2, chiR)
             # E' = sum_{s} A^dagger_{r', s, l'} * E_{l', l} * A_{l, s, r}
             E = np.einsum("lsr,lm,mst->rt", A.conj(), E, A)
         return float(E[0, 0].real)
@@ -185,8 +198,8 @@ class QubitMPS:
             # Full right-environment norm assuming bit s: proj_s
             probs = np.zeros(2, dtype=float)
             for s in (0, 1):
-                A_s = A[:, s, :]      # (chiL, chiR)
-                v = L @ A_s            # (1, chiR)
+                A_s = A[:, s, :]  # (chiL, chiR)
+                v = L @ A_s  # (1, chiR)
                 # Contract v with its conjugate: <v|v>
                 probs[s] = float((v.conj() @ v.T).real[0, 0])
             total = probs.sum()

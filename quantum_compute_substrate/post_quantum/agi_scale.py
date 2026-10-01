@@ -5,6 +5,7 @@ Grover diffusion, QFT, and post-quantum witnesses (Sorkin third-order
 interference and fold cross-section). Wall-clock measured on host CPU;
 quantum content is substrate-invariant.
 """
+
 from __future__ import annotations
 import math
 import time
@@ -32,21 +33,21 @@ def _fibonacci(n: int) -> int:
 
 @dataclass
 class AGIScalePoint:
-    n: int                         # exponent n in phi^n
-    dim: int                       # round(phi^n)
-    F_n: int                       # Fibonacci F(n)
-    F_n_minus_1: int               # Fibonacci F(n-1)
-    phi_exact_residual: float      # |phi^n - (F_n*phi + F_{n-1})|
-    memory_bytes_dense: int        # dim * 16 (complex128)
-    memory_bytes_fold: int         # F_{n-1} * 16 (compressed one fold)
+    n: int  # exponent n in phi^n
+    dim: int  # round(phi^n)
+    F_n: int  # Fibonacci F(n)
+    F_n_minus_1: int  # Fibonacci F(n-1)
+    phi_exact_residual: float  # |phi^n - (F_n*phi + F_{n-1})|
+    memory_bytes_dense: int  # dim * 16 (complex128)
+    memory_bytes_fold: int  # F_{n-1} * 16 (compressed one fold)
     compression_ratio: float
     grover_diffusion_time_s: float
     qft_time_s: float
     norm_preservation_residual: float
     unitarity_residual: float
-    sorkin_I3: float               # 0 in pure QM; nonzero in post-quantum
-    fold_cross_section: float      # 0 for CPTP; > 0 for post-quantum
-    pr_box_correlator: float       # up to 4 (PR bound), 2*sqrt(2) is Tsirelson
+    sorkin_I3: float  # 0 in pure QM; nonzero in post-quantum
+    fold_cross_section: float  # 0 for CPTP; > 0 for post-quantum
+    pr_box_correlator: float  # up to 4 (PR bound), 2*sqrt(2) is Tsirelson
     information_capacity_bits: float
 
     def as_dict(self) -> Dict:
@@ -85,10 +86,10 @@ class AGIScale:
         return elapsed, residual
 
     def measure_point(self, n: int) -> AGIScalePoint:
-        dim = int(round(PHI ** n))
+        dim = int(round(PHI**n))
         F_n = _fibonacci(n)
         F_nm1 = _fibonacci(n - 1)
-        phi_residual = abs(PHI ** n - (F_n * PHI + F_nm1))
+        phi_residual = abs(PHI**n - (F_n * PHI + F_nm1))
 
         psi = self._random_state(dim, self.seed)
         x = self._random_state(dim, self.seed + 1)
@@ -108,7 +109,10 @@ class AGIScale:
         comp_ratio = float(mem_dense) / max(1.0, float(mem_fold))
 
         return AGIScalePoint(
-            n=n, dim=dim, F_n=F_n, F_n_minus_1=F_nm1,
+            n=n,
+            dim=dim,
+            F_n=F_n,
+            F_n_minus_1=F_nm1,
             phi_exact_residual=phi_residual,
             memory_bytes_dense=mem_dense,
             memory_bytes_fold=mem_fold,

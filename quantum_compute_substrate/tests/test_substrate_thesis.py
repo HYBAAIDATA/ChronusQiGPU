@@ -4,11 +4,15 @@ Each test asserts a piece of the mathematical definition of quantum
 computation. Passing these certifies the substrate performs quantum
 mathematics, regardless of hardware realisation.
 """
+
 import math
 import numpy as np
 from quantum_compute_substrate import formal_properties as fp
 from quantum_compute_substrate.substrate_thesis import (
-    THESIS, CLAIM_LANE, quantum_witnesses, assert_thesis_alignment,
+    THESIS,
+    CLAIM_LANE,
+    quantum_witnesses,
+    assert_thesis_alignment,
 )
 from quantum_compute_substrate import __version__
 
@@ -24,8 +28,14 @@ class TestThesisMetadata:
 
     def test_witnesses_registered(self):
         w = quantum_witnesses()
-        for key in ("bell_chsh_violation", "no_cloning", "superposition_interference",
-                    "uncertainty_relation", "ghz_correlator", "entanglement_monogamy"):
+        for key in (
+            "bell_chsh_violation",
+            "no_cloning",
+            "superposition_interference",
+            "uncertainty_relation",
+            "ghz_correlator",
+            "entanglement_monogamy",
+        ):
             assert key in w
 
     def test_thesis_alignment_version(self):
@@ -43,12 +53,14 @@ class TestHardWitnesses:
         def op(a):
             c, s = math.cos(a), math.sin(a)
             return np.array([[c, s], [s, -c]], dtype=np.complex128)
+
         A0, A1 = op(0), op(math.pi / 2)
         B0, B1 = op(math.pi / 4), op(-math.pi / 4)
 
         def E(A, B):
             rho = np.outer(phi_plus, phi_plus.conj())
             return float(np.real(np.trace(np.kron(A, B) @ rho)))
+
         S = E(A0, B0) + E(A0, B1) + E(A1, B0) - E(A1, B1)
         assert 2.828 < S < 2.829, f"CHSH = {S}, expected ~2*sqrt(2)"
 

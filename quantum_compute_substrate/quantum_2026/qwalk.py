@@ -1,4 +1,5 @@
 """Continuous-time and Szegedy discrete-time quantum walks."""
+
 from __future__ import annotations
 import numpy as np
 from ._linalg import expm
@@ -23,7 +24,7 @@ def szegedy_walk_operator(P: np.ndarray) -> np.ndarray:
     for x in range(n):
         for y in range(n):
             A[x * n + y, x] = np.sqrt(P[x, y])
-    Pi_A = A @ A.T   # projector onto span{|psi_x>}
+    Pi_A = A @ A.T  # projector onto span{|psi_x>}
     I = np.eye(n * n)
     R = 2 * Pi_A - I
     # Swap operator S: |x>|y> -> |y>|x>

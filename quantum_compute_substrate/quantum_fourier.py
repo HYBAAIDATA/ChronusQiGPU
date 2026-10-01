@@ -36,10 +36,8 @@ class QuantumFourierProcessor:
         return float(phase)
 
     def apply_controlled_unitary(
-            self,
-            state: np.ndarray,
-            unitary: np.ndarray,
-            control: int) -> np.ndarray:
+        self, state: np.ndarray, unitary: np.ndarray, control: int
+    ) -> np.ndarray:
         """Apply controlled unitary on qubit at position `control`."""
         result = state.copy()
         n = int(np.log2(len(state)))
@@ -51,12 +49,12 @@ class QuantumFourierProcessor:
 
     def qft_frequency_analysis(self, input_data: bytes) -> int:
         """Hash search in frequency domain."""
-        data = np.frombuffer(input_data[:min(len(input_data), self.N)], dtype=np.uint8)
+        data = np.frombuffer(input_data[: min(len(input_data), self.N)], dtype=np.uint8)
         if len(data) == 0:
             return 0
         # Pad to N
         padded = np.zeros(self.N, dtype=np.complex128)
-        padded[:len(data)] = data
+        padded[: len(data)] = data
         header_fft = np.fft.fft(padded)
         hash_fft = self.frequency_domain_transform(header_fft)
         result = np.fft.ifft(hash_fft)

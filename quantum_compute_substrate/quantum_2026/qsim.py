@@ -5,6 +5,7 @@ Suzuki 4th-order formula:
     s = 1 / (4 - 4^{1/3})
 Achieves O(dt^5) local error per step, vs O(dt^3) for standard second-order.
 """
+
 from __future__ import annotations
 import numpy as np
 from typing import Sequence, List
@@ -28,8 +29,9 @@ def suzuki_trotter_4th_order(dt: float, H1: np.ndarray, H2: np.ndarray) -> np.nd
     return U
 
 
-def qdrift_channel(terms: Sequence[np.ndarray], weights: Sequence[float],
-                   time: float, samples: int, seed: int = 0) -> np.ndarray:
+def qdrift_channel(
+    terms: Sequence[np.ndarray], weights: Sequence[float], time: float, samples: int, seed: int = 0
+) -> np.ndarray:
     """qDRIFT (Campbell 2019): random-sample importance from sum-of-terms Hamiltonian.
 
     U_qDRIFT(t) = product over N samples of exp(-i * h_i * lambda * t / N * sign_i)
@@ -70,8 +72,7 @@ class ModernQSim:
         self.H1 = self.H1 + 0.5 * off
         self.H2 = self.H2 + 0.5 * off
 
-    def evolve(self, state: np.ndarray, time: float, steps: int = 10,
-               order: int = 4) -> np.ndarray:
+    def evolve(self, state: np.ndarray, time: float, steps: int = 10, order: int = 4) -> np.ndarray:
         dt = time / max(1, steps)
         psi = np.asarray(state, dtype=complex)
         for _ in range(steps):
@@ -84,8 +85,9 @@ class ModernQSim:
             psi = U @ psi
         return psi
 
-    def adaptive_time_stepping(self, initial_state: np.ndarray, target_time: float,
-                               error_threshold: float = 1e-6) -> dict:
+    def adaptive_time_stepping(
+        self, initial_state: np.ndarray, target_time: float, error_threshold: float = 1e-6
+    ) -> dict:
         state = np.asarray(initial_state, dtype=complex)
         t = 0.0
         dt = min(0.1, target_time)

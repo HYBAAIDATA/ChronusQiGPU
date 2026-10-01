@@ -13,6 +13,7 @@ v2 features:
   - Parallelism-ready: stateless methods, no hidden state
   - PulviniAuditEnvelope extended with condition_number and fold_depth
 """
+
 from __future__ import annotations
 import numpy as np
 from typing import Dict, Any, Tuple, List
@@ -25,6 +26,7 @@ PHI = (1.0 + np.sqrt(5.0)) / 2.0
 @dataclass
 class PulviniAuditEnvelope:
     """Deterministic audit record for the PULVINI projection."""
+
     original_dimension: int
     folded_dimension: int
     reconstruction_error_bound: float
@@ -85,26 +87,27 @@ class PulviniOperator:
         x_n2_padded = np.zeros(dim_n1)
         x_n2_padded[:dim_n2] = x_n2
         # Golden superposition weights (1/phi) + (1/phi^2) = 1
-        w1, w2 = 1.0 / PHI, 1.0 / (PHI ** 2)
+        w1, w2 = 1.0 / PHI, 1.0 / (PHI**2)
         folded_tensor = w1 * x_n1 + w2 * x_n2_padded
         projection_kernel = w2 * x_n1 - w1 * x_n2_padded
         return folded_tensor, projection_kernel
 
-    def unfold(self, folded_tensor: np.ndarray,
-               projection_kernel: np.ndarray,
-               original_dim: int) -> np.ndarray:
+    def unfold(
+        self, folded_tensor: np.ndarray, projection_kernel: np.ndarray, original_dim: int
+    ) -> np.ndarray:
         """Reversible projection map: inverse Phi-transform."""
         dim_n1, dim_n2 = self._get_fibonacci_split(original_dim)
-        w1, w2 = 1.0 / PHI, 1.0 / (PHI ** 2)
-        norm_sq = w1 ** 2 + w2 ** 2
+        w1, w2 = 1.0 / PHI, 1.0 / (PHI**2)
+        norm_sq = w1**2 + w2**2
         x_n1_rec = (w1 * folded_tensor + w2 * projection_kernel) / norm_sq
         x_n2_pad_rec = (w2 * folded_tensor - w1 * projection_kernel) / norm_sq
         x_n2_rec = x_n2_pad_rec[:dim_n2]
         return np.concatenate([x_n1_rec, x_n2_rec])
 
     # ---- multi-level recursive fold ----
-    def fold_recursive(self, tensor: np.ndarray, depth: int = 3
-                       ) -> Tuple[np.ndarray, List[np.ndarray], List[int]]:
+    def fold_recursive(
+        self, tensor: np.ndarray, depth: int = 3
+    ) -> Tuple[np.ndarray, List[np.ndarray], List[int]]:
         """Apply fold() `depth` times. Returns (folded, kernels, sizes).
 
         Exponential compression: O(N / phi^depth).
@@ -120,17 +123,16 @@ class PulviniOperator:
             sizes.append(len(current))
         return current, kernels, sizes
 
-    def unfold_recursive(self, folded: np.ndarray,
-                         kernels: List[np.ndarray],
-                         sizes: List[int]) -> np.ndarray:
+    def unfold_recursive(
+        self, folded: np.ndarray, kernels: List[np.ndarray], sizes: List[int]
+    ) -> np.ndarray:
         current = folded.copy()
         for kernel, orig_dim in zip(reversed(kernels), reversed(sizes[:-1])):
             current = self.unfold(current, kernel, orig_dim)
         return current
 
     # ---- Hamiltonian reduction ----
-    def hamiltonian_reduction(self, H: np.ndarray
-                              ) -> Tuple[np.ndarray, PulviniAuditEnvelope]:
+    def hamiltonian_reduction(self, H: np.ndarray) -> Tuple[np.ndarray, PulviniAuditEnvelope]:
         """SVD-optimal Phi-sized reduction. Supports complex Hermitian."""
         H = np.asarray(H)
         if H.ndim != 2 or H.shape[0] != H.shape[1]:
@@ -153,8 +155,7 @@ class PulviniOperator:
         gap_red = float(eigvals_red[1] - eigvals_red[0]) if dim_n1 > 1 else 0.0
         gap_delta = abs(gap_orig - gap_red)
 
-        adaptive_tol = self.tolerance * max(1.0,
-                                            np.log10(max(condition_number, 1.0 + 1e-10)))
+        adaptive_tol = self.tolerance * max(1.0, np.log10(max(condition_number, 1.0 + 1e-10)))
         topology_preserved = bool(gap_delta < adaptive_tol)
 
         H_reconstructed = V @ H_reduced @ V.T.conj()

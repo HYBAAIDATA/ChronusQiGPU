@@ -3,6 +3,7 @@
 Egger et al. 2020: theta_i = 2 * arcsin(sqrt(p_i)) rotates the initial
 superposition to bias towards the classical relaxation solution p_i in [0, 1].
 """
+
 from __future__ import annotations
 import numpy as np
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -50,10 +51,13 @@ class ModernQAOA:
                 recipe.extend(["RY", "RZ", "CNOT"] * 3)
         return recipe
 
-    def optimize(self, cost_fn: Callable[[np.ndarray, np.ndarray], float],
-                 classical_solution: Optional[np.ndarray] = None,
-                 problem_structure: Optional[Dict[str, Any]] = None,
-                 max_iter: int = 100) -> Dict[str, Any]:
+    def optimize(
+        self,
+        cost_fn: Callable[[np.ndarray, np.ndarray], float],
+        classical_solution: Optional[np.ndarray] = None,
+        problem_structure: Optional[Dict[str, Any]] = None,
+        max_iter: int = 100,
+    ) -> Dict[str, Any]:
         depth = self.adaptive_depth(self.num_qubits, problem_structure or {})
         if classical_solution is not None:
             init_beta = egger_warm_start_angles(np.asarray(classical_solution))

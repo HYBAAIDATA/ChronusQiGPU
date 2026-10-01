@@ -1,4 +1,5 @@
 """Silicon-photonic φ-fold model."""
+
 from dataclasses import dataclass
 from typing import Dict
 
@@ -6,6 +7,7 @@ from typing import Dict
 @dataclass
 class PhotonicPhiFold:
     """Model of a silicon-photonic implementation of the φ-fold."""
+
     wavelength_nm: int = 1550
     num_channels: int = 64
     modulator_bandwidth_ghz: float = 100.0

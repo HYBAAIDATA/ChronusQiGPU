@@ -1,4 +1,5 @@
 """The six named axes of the tensor."""
+
 from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
@@ -9,8 +10,8 @@ from .phi_identities import lucas
 @dataclass(frozen=True)
 class TensorDimension:
     name: str
-    size: int              # length along this axis
-    scaling_exp: int       # this axis carries phi^scaling_exp scale
+    size: int  # length along this axis
+    scaling_exp: int  # this axis carries phi^scaling_exp scale
     physical_meaning: str
 
     def log10_size(self) -> Decimal:
@@ -18,7 +19,12 @@ class TensorDimension:
 
 
 AXIS_NAMES: Tuple[str, ...] = (
-    "Time", "Space", "QuantumState", "Entanglement", "Coherence", "Topology",
+    "Time",
+    "Space",
+    "QuantumState",
+    "Entanglement",
+    "Coherence",
+    "Topology",
 )
 
 AXIS_MEANINGS: Tuple[str, ...] = (

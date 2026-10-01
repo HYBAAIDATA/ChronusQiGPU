@@ -1,6 +1,10 @@
 """Tests for hardware co-design specifications."""
+
 from quantum_compute_substrate.hardware_codesign import (
-    FPGAKernelSpec, PhiScaledTensorCoreASIC, PhotonicPhiFold, NeuromorphicHybrid,
+    FPGAKernelSpec,
+    PhiScaledTensorCoreASIC,
+    PhotonicPhiFold,
+    NeuromorphicHybrid,
 )
 
 

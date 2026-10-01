@@ -1,4 +1,5 @@
 """Tests for scaling_study module."""
+
 from quantum_compute_substrate.scaling_study import ScalingStudy
 
 

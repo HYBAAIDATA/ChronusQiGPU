@@ -1,4 +1,5 @@
 """Circuit-level metrics and algorithm taxonomy."""
+
 from dataclasses import dataclass
 from enum import Enum
 
@@ -27,5 +28,7 @@ class QuantumCircuitMetrics:
     quantum_volume_requirement: int
 
     def is_nisq_feasible(self, coherence_budget: float, error_budget: float) -> bool:
-        return (self.coherence_time_required <= coherence_budget
-                and self.estimated_error_rate <= error_budget)
+        return (
+            self.coherence_time_required <= coherence_budget
+            and self.estimated_error_rate <= error_budget
+        )

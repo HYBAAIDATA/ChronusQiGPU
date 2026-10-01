@@ -2,6 +2,7 @@
 
 No materialization; we describe the decomposition structure and its cost.
 """
+
 from __future__ import annotations
 import math
 from typing import Any, Dict, List
@@ -40,8 +41,9 @@ def cp_decomposition_metadata(T: HYBAQuantumTensorXInfinity, cp_rank: int = 128)
     }
 
 
-def tucker_decomposition_metadata(T: HYBAQuantumTensorXInfinity,
-                                  core_dims: List[int] | None = None) -> Dict[str, Any]:
+def tucker_decomposition_metadata(
+    T: HYBAQuantumTensorXInfinity, core_dims: List[int] | None = None
+) -> Dict[str, Any]:
     """Tucker: T = G x_1 U_1 x_2 U_2 ... x_r U_r  with core G of shape core_dims."""
     if core_dims is None:
         core_dims = [32] * T.rank

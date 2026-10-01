@@ -21,6 +21,7 @@ from typing import Dict, List, Optional
 @dataclass
 class HPEArchitecture:
     """HP/HPE enterprise system specification."""
+
     name: str
     cores_per_node: int
     memory_per_node_tb: float
@@ -44,38 +45,44 @@ class HPAdvances:
 
     def __init__(self):
         self.systems = {
-            'cray_ex4000': HPEArchitecture(
-                name='HPE Cray EX4000',
+            "cray_ex4000": HPEArchitecture(
+                name="HPE Cray EX4000",
                 cores_per_node=2048,
                 memory_per_node_tb=4.0,
                 interconnect_bandwidth_tbps=4.0,
                 fp64_performance_pflops=1.2,
                 fp32_performance_pflops=2.4,
-                process_node='3nm EUV',
+                process_node="3nm EUV",
                 power_kw=120,
-                cooling_type='Direct Liquid Cooling',
+                cooling_type="Direct Liquid Cooling",
                 features=[
-                    'Memory-Driven Computing', 'Slingshot Interconnect',
-                    'Composable Infrastructure', 'Direct Liquid Cooling',
-                    'HPC/AI Convergence', 'System Software Stack',
-                    'Programming Environment', 'Application Acceleration'
-                ]
+                    "Memory-Driven Computing",
+                    "Slingshot Interconnect",
+                    "Composable Infrastructure",
+                    "Direct Liquid Cooling",
+                    "HPC/AI Convergence",
+                    "System Software Stack",
+                    "Programming Environment",
+                    "Application Acceleration",
+                ],
             ),
-            'superdome_flex': HPEArchitecture(
-                name='HPE Superdome Flex',
+            "superdome_flex": HPEArchitecture(
+                name="HPE Superdome Flex",
                 cores_per_node=1024,
                 memory_per_node_tb=2.0,
                 interconnect_bandwidth_tbps=2.0,
                 fp64_performance_pflops=0.6,
                 fp32_performance_pflops=1.2,
-                process_node='5nm EUV',
+                process_node="5nm EUV",
                 power_kw=60,
-                cooling_type='Direct Liquid Cooling',
+                cooling_type="Direct Liquid Cooling",
                 features=[
-                    'Memory-Driven Computing', 'Composable Infrastructure',
-                    'Direct Liquid Cooling', 'Mission-Critical Computing'
-                ]
-            )
+                    "Memory-Driven Computing",
+                    "Composable Infrastructure",
+                    "Direct Liquid Cooling",
+                    "Mission-Critical Computing",
+                ],
+            ),
         }
 
     def get_system(self, name: str) -> Optional[HPEArchitecture]:
@@ -96,17 +103,21 @@ class HPAdvances:
         """
         system = self.get_system(system_name)
         if not system:
-            return {'error': f'System {system_name} not found'}
+            return {"error": f"System {system_name} not found"}
 
         return {
-            'system': system.name,
-            'ratios': {
-                'cores': hyba_specs.get('streaming_processors', 65536) / max(system.cores_per_node, 1),
-                'memory': hyba_specs.get('memory_tb', 512) / max(system.memory_per_node_tb, 1e-10),
-                'bandwidth': hyba_specs.get('bandwidth_pbs', 2) / max(system.interconnect_bandwidth_tbps, 1e-10),
-                'fp64': hyba_specs.get('fp64_eflops', 2.5) / max(system.fp64_performance_pflops / 1000, 1e-10),
-                'fp32': hyba_specs.get('fp32_eflops', 5) / max(system.fp32_performance_pflops / 1000, 1e-10)
-            }
+            "system": system.name,
+            "ratios": {
+                "cores": hyba_specs.get("streaming_processors", 65536)
+                / max(system.cores_per_node, 1),
+                "memory": hyba_specs.get("memory_tb", 512) / max(system.memory_per_node_tb, 1e-10),
+                "bandwidth": hyba_specs.get("bandwidth_pbs", 2)
+                / max(system.interconnect_bandwidth_tbps, 1e-10),
+                "fp64": hyba_specs.get("fp64_eflops", 2.5)
+                / max(system.fp64_performance_pflops / 1000, 1e-10),
+                "fp32": hyba_specs.get("fp32_eflops", 5)
+                / max(system.fp32_performance_pflops / 1000, 1e-10),
+            },
         }
 
     def get_all_systems(self) -> List[HPEArchitecture]:
@@ -116,9 +127,9 @@ class HPAdvances:
     def get_specs(self) -> Dict:
         """Return summary specifications for all systems."""
         return {
-            'systems_modelled': [s.name for s in self.get_all_systems()],
-            'latest_gen': 'Cray EX4000 (2,048 cores/node, Slingshot, Direct Liquid Cooling)',
-            'cooling_efficiency': 'PUE < 1.05 (direct liquid cooling)',
+            "systems_modelled": [s.name for s in self.get_all_systems()],
+            "latest_gen": "Cray EX4000 (2,048 cores/node, Slingshot, Direct Liquid Cooling)",
+            "cooling_efficiency": "PUE < 1.05 (direct liquid cooling)",
         }
 
     def to_dict(self) -> Dict:

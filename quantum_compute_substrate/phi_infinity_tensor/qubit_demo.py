@@ -1,7 +1,11 @@
 """Concrete demonstration at 1000 qubits."""
+
 from __future__ import annotations
 from .qubit_scale import (
-    QubitMPS, uniform_superposition, ghz_state, H_GATE,
+    QubitMPS,
+    uniform_superposition,
+    ghz_state,
+    H_GATE,
 )
 from .phi_fold_compression import PhiFoldCompressor
 
@@ -34,13 +38,15 @@ def demonstrate_compression_across_scales() -> list:
             mps = factory(n)
             comp = PhiFoldCompressor(fib_index=12, lossless_tolerance=1e-9)
             _, metrics = comp.compress(mps)
-            results.append({
-                "n": n,
-                "state": name,
-                "original_bytes": metrics.original_bytes,
-                "compressed_bytes": metrics.compressed_bytes,
-                "ratio": metrics.ratio,
-                "fidelity": metrics.fidelity,
-                "lossless": metrics.lossless,
-            })
+            results.append(
+                {
+                    "n": n,
+                    "state": name,
+                    "original_bytes": metrics.original_bytes,
+                    "compressed_bytes": metrics.compressed_bytes,
+                    "ratio": metrics.ratio,
+                    "fidelity": metrics.fidelity,
+                    "lossless": metrics.lossless,
+                }
+            )
     return results

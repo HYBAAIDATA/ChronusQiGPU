@@ -7,6 +7,7 @@ The EPR argument -- and the singlet state that carries it:
 Perfect anticorrelation across any shared axis. Einstein called it spooky;
 the substrate calls it invariant.
 """
+
 from __future__ import annotations
 import math
 import numpy as np

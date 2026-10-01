@@ -34,14 +34,14 @@ class ComputeEngine:
         self.num_cores = num_cores
         self.core_dim = core_dim
         self.cores = [
-            PhiTensorCore(core_id=i, dim=core_dim, seed=seed + i)
-            for i in range(num_cores)
+            PhiTensorCore(core_id=i, dim=core_dim, seed=seed + i) for i in range(num_cores)
         ]
         self._total_ops = 0
         self._total_time = 0.0
 
-    def parallel_tensor_product(self, matrices_a: List[FoldState],
-                                matrices_b: List[FoldState]) -> List[FoldState]:
+    def parallel_tensor_product(
+        self, matrices_a: List[FoldState], matrices_b: List[FoldState]
+    ) -> List[FoldState]:
         """
         Distribute tensor product computations across cores.
         Each core processes its chunk of the workload.
@@ -96,10 +96,11 @@ class ComputeEngine:
         Each core searches for a different target.
         """
         from .grover_search import GroverSearch
+
         t0 = time.perf_counter()
         results = []
 
-        for i, target in enumerate(targets[:self.num_cores]):
+        for i, target in enumerate(targets[: self.num_cores]):
             core_idx = i % self.num_cores
             searcher = GroverSearch(dim=dim, seed=42 + core_idx)
             result = searcher.search(target)
@@ -136,7 +137,7 @@ class ComputeEngine:
         elapsed = time.perf_counter() - t0
 
         # FLOPS for solving n×n system: (2/3)n³ + 2n²
-        flops = (2.0 / 3.0) * matrix_size ** 3 + 2 * matrix_size ** 2
+        flops = (2.0 / 3.0) * matrix_size**3 + 2 * matrix_size**2
         measured_flops = flops / elapsed if elapsed > 0 else 0
 
         # Verify solution
@@ -168,7 +169,7 @@ class ComputeEngine:
         elapsed = time.perf_counter() - t0
 
         # FLOPS for n×n matrix multiply: 2n³
-        flops = 2 * matrix_size ** 3
+        flops = 2 * matrix_size**3
         measured_flops = flops / elapsed if elapsed > 0 else 0
 
         return {

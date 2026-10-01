@@ -13,7 +13,7 @@ class MatrixProductStateProcessor:
 
     def __init__(self, num_sites: int = 4096, bond_dim: int = 128):
         self.num_sites = min(num_sites, 16)  # Practical limit for testing
-        self.bond_dim = min(bond_dim, 32)   # Practical limit
+        self.bond_dim = min(bond_dim, 32)  # Practical limit
         self.target_num_sites = num_sites
         self.target_bond_dim = bond_dim
         self.tensors = self.initialize_mps()
@@ -111,8 +111,9 @@ class MatrixProductStateProcessor:
         Uses logarithms to avoid overflow for large num_sites.
         """
         import math
+
         log_full = self.target_num_sites * math.log(2)
-        log_mps = math.log(self.target_num_sites * self.target_bond_dim ** 2 * 2 + 1)
+        log_mps = math.log(self.target_num_sites * self.target_bond_dim**2 * 2 + 1)
         # Return the ratio as exp(log_mps - log_full) if it's representable, else 0
         log_ratio = log_mps - log_full
         if log_ratio < -700:

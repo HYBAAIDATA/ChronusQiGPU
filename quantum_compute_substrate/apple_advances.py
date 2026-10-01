@@ -21,6 +21,7 @@ from typing import Dict, List, Optional
 @dataclass
 class AppleSilicon:
     """Apple Silicon chip specification."""
+
     name: str
     cpu_cores: int
     gpu_cores: int
@@ -46,8 +47,8 @@ class AppleAdvances:
 
     def __init__(self):
         self.chips = {
-            'm5_ultra': AppleSilicon(
-                name='Apple M5 Ultra',
+            "m5_ultra": AppleSilicon(
+                name="Apple M5 Ultra",
                 cpu_cores=32,
                 gpu_cores=160,
                 neural_engine_cores=32,
@@ -56,17 +57,20 @@ class AppleAdvances:
                 fp32_performance_tflops=45.0,
                 fp16_performance_tflops=90.0,
                 int8_performance_tops=100.0,
-                process_node='3nm EUV',
+                process_node="3nm EUV",
                 power_watts=400,
                 features=[
-                    'Unified Memory Architecture', 'Dynamic Caching',
-                    'Tile-Based Deferred Rendering', 'Neural Engine',
-                    'Media Engine', 'ProRes/ProRes RAW',
-                    'Hardware-Accelerated Ray Tracing'
-                ]
+                    "Unified Memory Architecture",
+                    "Dynamic Caching",
+                    "Tile-Based Deferred Rendering",
+                    "Neural Engine",
+                    "Media Engine",
+                    "ProRes/ProRes RAW",
+                    "Hardware-Accelerated Ray Tracing",
+                ],
             ),
-            'm5_max': AppleSilicon(
-                name='Apple M5 Max',
+            "m5_max": AppleSilicon(
+                name="Apple M5 Max",
                 cpu_cores=16,
                 gpu_cores=80,
                 neural_engine_cores=32,
@@ -75,15 +79,18 @@ class AppleAdvances:
                 fp32_performance_tflops=22.5,
                 fp16_performance_tflops=45.0,
                 int8_performance_tops=50.0,
-                process_node='3nm EUV',
+                process_node="3nm EUV",
                 power_watts=200,
                 features=[
-                    'Unified Memory Architecture', 'Dynamic Caching',
-                    'Tile-Based Deferred Rendering', 'Neural Engine',
-                    'Media Engine', 'ProRes/ProRes RAW',
-                    'Hardware-Accelerated Ray Tracing'
-                ]
-            )
+                    "Unified Memory Architecture",
+                    "Dynamic Caching",
+                    "Tile-Based Deferred Rendering",
+                    "Neural Engine",
+                    "Media Engine",
+                    "ProRes/ProRes RAW",
+                    "Hardware-Accelerated Ray Tracing",
+                ],
+            ),
         }
 
     def get_chip(self, name: str) -> Optional[AppleSilicon]:
@@ -104,17 +111,20 @@ class AppleAdvances:
         """
         chip = self.get_chip(chip_name)
         if not chip:
-            return {'error': f'Chip {chip_name} not found'}
+            return {"error": f"Chip {chip_name} not found"}
 
         return {
-            'chip': chip.name,
-            'ratios': {
-                'gpu_cores': hyba_specs.get('tensor_cores', 8192) / max(chip.gpu_cores, 1),
-                'memory': hyba_specs.get('memory_tb', 512) / max(chip.unified_memory_gb / 1024, 1e-10),
-                'bandwidth': hyba_specs.get('bandwidth_pbs', 2) / max(chip.memory_bandwidth_gbps / 1000, 1e-10),
-                'int8': hyba_specs.get('int8_tops', 500e6) / max(chip.int8_performance_tops, 1e-10),
-                'fp16': hyba_specs.get('fp16_eflops', 15) / max(chip.fp16_performance_tflops / 1e6, 1e-10)
-            }
+            "chip": chip.name,
+            "ratios": {
+                "gpu_cores": hyba_specs.get("tensor_cores", 8192) / max(chip.gpu_cores, 1),
+                "memory": hyba_specs.get("memory_tb", 512)
+                / max(chip.unified_memory_gb / 1024, 1e-10),
+                "bandwidth": hyba_specs.get("bandwidth_pbs", 2)
+                / max(chip.memory_bandwidth_gbps / 1000, 1e-10),
+                "int8": hyba_specs.get("int8_tops", 500e6) / max(chip.int8_performance_tops, 1e-10),
+                "fp16": hyba_specs.get("fp16_eflops", 15)
+                / max(chip.fp16_performance_tflops / 1e6, 1e-10),
+            },
         }
 
     def get_all_chips(self) -> List[AppleSilicon]:
@@ -124,13 +134,13 @@ class AppleAdvances:
     def get_specs(self) -> Dict:
         """Return summary specifications for all chips."""
         return {
-            'chips_modelled': [c.name for c in self.get_all_chips()],
-            'latest_gen': 'M5 Ultra (3nm, 160 GPU cores, 32 Neural Engine cores)',
-            'unified_memory': {
-                'capacity_gb': self.chips['m5_ultra'].unified_memory_gb,
-                'bandwidth_gbps': self.chips['m5_ultra'].memory_bandwidth_gbps,
+            "chips_modelled": [c.name for c in self.get_all_chips()],
+            "latest_gen": "M5 Ultra (3nm, 160 GPU cores, 32 Neural Engine cores)",
+            "unified_memory": {
+                "capacity_gb": self.chips["m5_ultra"].unified_memory_gb,
+                "bandwidth_gbps": self.chips["m5_ultra"].memory_bandwidth_gbps,
             },
-            'neural_engine_tops': self.chips['m5_ultra'].int8_performance_tops,
+            "neural_engine_tops": self.chips["m5_ultra"].int8_performance_tops,
         }
 
     def to_dict(self) -> Dict:

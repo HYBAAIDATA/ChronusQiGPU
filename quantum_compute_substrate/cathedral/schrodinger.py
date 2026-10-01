@@ -6,6 +6,7 @@ Wave mechanics, entanglement ("Verschraenkung"), and the cat -- all here.
 2026 elevation: exact unitary evolution via the substrate's numpy expm,
 cat states of arbitrary size, and phi-cat states that live on the fold.
 """
+
 from __future__ import annotations
 import math
 import numpy as np
@@ -14,8 +15,9 @@ from ..quantum_2026._linalg import expm
 PHI = (1.0 + math.sqrt(5.0)) / 2.0
 
 
-def schrodinger_evolution(H: np.ndarray, psi0: np.ndarray, t: float,
-                          hbar: float = 1.0) -> np.ndarray:
+def schrodinger_evolution(
+    H: np.ndarray, psi0: np.ndarray, t: float, hbar: float = 1.0
+) -> np.ndarray:
     """|psi(t)> = exp(-i H t / hbar) |psi(0)>."""
     if not np.allclose(H, H.conj().T, atol=1e-10):
         raise ValueError("H must be Hermitian")
@@ -33,7 +35,7 @@ def cat_state(dim: int, alpha: complex) -> np.ndarray:
     Fock-basis coherent state |alpha> = e^{-|alpha|^2/2} sum_n alpha^n/sqrt(n!) |n>.
     """
     n = np.arange(dim)
-    coeff = np.exp(-abs(alpha) ** 2 / 2.0) * (alpha ** n) / np.sqrt(_factorials(dim))
+    coeff = np.exp(-abs(alpha) ** 2 / 2.0) * (alpha**n) / np.sqrt(_factorials(dim))
     plus = coeff
     minus = np.exp(-abs(alpha) ** 2 / 2.0) * ((-alpha) ** n) / np.sqrt(_factorials(dim))
     cat = plus + minus

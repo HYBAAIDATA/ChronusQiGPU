@@ -1,4 +1,5 @@
 """Honest comparisons of the tensor to known quantities."""
+
 from __future__ import annotations
 import math
 from typing import Dict, Any
@@ -27,17 +28,19 @@ def compare_to_universe(T: HYBAQuantumTensorXInfinity) -> Dict[str, Any]:
         "log10_seconds_since_big_bang": 17.6,
         "exceeds_neurons_in_brain": log_elements > 11.0,
         "exceeds_seconds_since_big_bang": log_elements > 17.6,
-        "exceeds_atoms_in_universe": log_elements > 80.0,   # False for phi^37
-        "exceeds_planck_volumes": log_elements > 185.0,      # False
-        "note": ("At phi^37 the tensor has ~10^46 elements. This exceeds "
-                 "neurons, seconds since the Big Bang, and cells in the universe, "
-                 "but is far less than atoms in the observable universe (~10^80). "
-                 "For > 10^80 elements you need scaling_exp > ~63 (phi^63 ~ 10^13 per axis)."),
+        "exceeds_atoms_in_universe": log_elements > 80.0,  # False for phi^37
+        "exceeds_planck_volumes": log_elements > 185.0,  # False
+        "note": (
+            "At phi^37 the tensor has ~10^46 elements. This exceeds "
+            "neurons, seconds since the Big Bang, and cells in the universe, "
+            "but is far less than atoms in the observable universe (~10^80). "
+            "For > 10^80 elements you need scaling_exp > ~63 (phi^63 ~ 10^13 per axis)."
+        ),
     }
 
 
 def compare_to_storage(T: HYBAQuantumTensorXInfinity) -> Dict[str, Any]:
-    global_storage_bytes = 100 * (10 ** 21)  # 100 ZB
+    global_storage_bytes = 100 * (10**21)  # 100 ZB
     tensor_materialized = T.memory_bytes_if_materialized()
     tensor_actual = T.memory_bytes_actual()
     return {
@@ -46,11 +49,13 @@ def compare_to_storage(T: HYBAQuantumTensorXInfinity) -> Dict[str, Any]:
         "log10_substrate_tensor_bytes": math.log10(tensor_actual),
         "materialization_infeasible": tensor_materialized > global_storage_bytes,
         # 1 PB (data-center scale)
-        "substrate_representation_fits_in_ram": tensor_actual < 10 ** 15,
-        "substrate_dramatically_smaller_than_materialised":
-            math.log10(tensor_actual) < math.log10(tensor_materialized) - 20,
-        "note": ("Materialization is physically impossible. The MPS-network representation "
-                 "is small enough to hold in system memory while preserving structure."),
+        "substrate_representation_fits_in_ram": tensor_actual < 10**15,
+        "substrate_dramatically_smaller_than_materialised": math.log10(tensor_actual)
+        < math.log10(tensor_materialized) - 20,
+        "note": (
+            "Materialization is physically impossible. The MPS-network representation "
+            "is small enough to hold in system memory while preserving structure."
+        ),
     }
 
 
@@ -61,10 +66,12 @@ def compare_to_computational_limits(T: HYBAQuantumTensorXInfinity) -> Dict[str, 
         "log10_bremermann_universe_ops_per_second": 103.0,
         "log10_landauer_universe_ops_total": 92.0,
         "materialisation_ops_below_landauer": log_elements < 92.0,
-        "note": ("A single pass over the tensor requires ~10^46 operations. "
-                 "That is below the Landauer bound for total universe computation (~10^92) "
-                 "but well above any practical machine. The substrate never does a full pass; "
-                 "it computes on the MPS."),
+        "note": (
+            "A single pass over the tensor requires ~10^46 operations. "
+            "That is below the Landauer bound for total universe computation (~10^92) "
+            "but well above any practical machine. The substrate never does a full pass; "
+            "it computes on the MPS."
+        ),
     }
 
 

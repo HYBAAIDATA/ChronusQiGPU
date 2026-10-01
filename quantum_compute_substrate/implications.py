@@ -4,13 +4,18 @@ Committed alongside docs/IMPLICATIONS.md so downstream tooling (grant apps,
 investor decks, policy briefs) can render the taxonomy from a single source
 of truth.
 """
+
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 
 __all__ = [
-    "Implication", "ImplicationCategory", "IMPLICATIONS",
-    "all_implications", "category_names", "implication_count",
+    "Implication",
+    "ImplicationCategory",
+    "IMPLICATIONS",
+    "all_implications",
+    "category_names",
+    "implication_count",
 ]
 
 
@@ -29,10 +34,12 @@ class ImplicationCategory:
 
 
 _COMPUTATIONAL = ImplicationCategory(
-    key="computational", title="Computational Implications",
+    key="computational",
+    title="Computational Implications",
     subcategories=(
         Implication(
-            key="quantum_democratization", title="Quantum Democratization",
+            key="quantum_democratization",
+            title="Quantum Democratization",
             bullets=(
                 "Hardware Independence: Quantum algorithms run on any substrate (GPU, CPU, FPGA, ASIC, cloud, edge).",
                 "Immediate Deployment: No waiting for physical quantum computers to mature.",
@@ -41,7 +48,8 @@ _COMPUTATIONAL = ImplicationCategory(
             ),
         ),
         Implication(
-            key="memory_revolution", title="Memory Revolution",
+            key="memory_revolution",
+            title="Memory Revolution",
             bullets=(
                 "Exponential Compression: phi-fold reduces 2^4096 -> 4096*128^2*2 (~54M x compression factor).",
                 "Quantum State Storage: Previously intractable quantum states become tractable.",
@@ -50,7 +58,8 @@ _COMPUTATIONAL = ImplicationCategory(
             ),
         ),
         Implication(
-            key="algorithm_renaissance", title="Algorithm Renaissance",
+            key="algorithm_renaissance",
+            title="Algorithm Renaissance",
             bullets=(
                 "Quantum Speedup Today: Grover sqrt(N), Shor exponential, quantum ML advantages available now.",
                 "Hybrid Algorithms: Seamless quantum-classical integration without hardware constraints.",
@@ -62,10 +71,12 @@ _COMPUTATIONAL = ImplicationCategory(
 )
 
 _SOCIETAL = ImplicationCategory(
-    key="societal", title="Societal Implications",
+    key="societal",
+    title="Societal Implications",
     subcategories=(
         Implication(
-            key="scientific_acceleration", title="Scientific Acceleration",
+            key="scientific_acceleration",
+            title="Scientific Acceleration",
             bullets=(
                 "Drug Discovery: Quantum chemistry VQE on classical hardware accelerates molecular simulation.",
                 "Climate Modeling: Exascale quantum-enhanced climate models on existing supercomputers.",
@@ -74,7 +85,8 @@ _SOCIETAL = ImplicationCategory(
             ),
         ),
         Implication(
-            key="education_workforce", title="Education and Workforce",
+            key="education_workforce",
+            title="Education and Workforce",
             bullets=(
                 "Quantum Literacy: Remove hardware barrier to quantum education.",
                 "Universal Curriculum: Quantum computing taught on standard university compute clusters.",
@@ -83,7 +95,8 @@ _SOCIETAL = ImplicationCategory(
             ),
         ),
         Implication(
-            key="geopolitical_equity", title="Geopolitical Equity",
+            key="geopolitical_equity",
+            title="Geopolitical Equity",
             bullets=(
                 "Technology Access: Nations without quantum hardware programs can still develop quantum expertise.",
                 "Reduced Arms Race: Less pressure to build physical quantum computers for strategic advantage.",
@@ -92,7 +105,8 @@ _SOCIETAL = ImplicationCategory(
             ),
         ),
         Implication(
-            key="ethical_considerations", title="Ethical Considerations",
+            key="ethical_considerations",
+            title="Ethical Considerations",
             bullets=(
                 "Cryptography Impact: Post-quantum cryptography urgency remains (Shor's algorithm works).",
                 "AI Safety: Quantum ML advantages accelerate AI development, requiring enhanced safety measures.",
@@ -104,10 +118,12 @@ _SOCIETAL = ImplicationCategory(
 )
 
 _ENTERPRISE = ImplicationCategory(
-    key="enterprise", title="Enterprise Implications",
+    key="enterprise",
+    title="Enterprise Implications",
     subcategories=(
         Implication(
-            key="immediate_roi", title="Immediate ROI",
+            key="immediate_roi",
+            title="Immediate ROI",
             bullets=(
                 "No CapEx Investment: Quantum advantages without $10M+ quantum computer purchases.",
                 "Existing Infrastructure: Quantum algorithms run on current GPU/CPU clusters.",
@@ -116,7 +132,8 @@ _ENTERPRISE = ImplicationCategory(
             ),
         ),
         Implication(
-            key="competitive_advantages", title="Competitive Advantages",
+            key="competitive_advantages",
+            title="Competitive Advantages",
             bullets=(
                 "Financial Services: Quantum portfolio optimization, Monte Carlo acceleration, fraud detection.",
                 "Pharmaceuticals: Quantum molecular simulation for drug discovery on existing HPC.",
@@ -125,7 +142,8 @@ _ENTERPRISE = ImplicationCategory(
             ),
         ),
         Implication(
-            key="new_business_models", title="New Business Models",
+            key="new_business_models",
+            title="New Business Models",
             bullets=(
                 "Quantum-as-a-Service: Mathematical quantum APIs on cloud infrastructure.",
                 "Quantum Software Market: Algorithm development becomes a pure software business.",
@@ -134,7 +152,8 @@ _ENTERPRISE = ImplicationCategory(
             ),
         ),
         Implication(
-            key="industry_transformation", title="Industry Transformation",
+            key="industry_transformation",
+            title="Industry Transformation",
             bullets=(
                 "Semiconductor Industry: Shift from quantum hardware to quantum-optimized classical hardware.",
                 "Cloud Providers: Quantum capabilities become a standard feature, not a specialized service.",
@@ -146,10 +165,12 @@ _ENTERPRISE = ImplicationCategory(
 )
 
 _STRATEGIC = ImplicationCategory(
-    key="strategic", title="Strategic Implications",
+    key="strategic",
+    title="Strategic Implications",
     subcategories=(
         Implication(
-            key="redefinition_of_quantum", title="Redefinition of Quantum Computing",
+            key="redefinition_of_quantum",
+            title="Redefinition of Quantum Computing",
             bullets=(
                 "From Physical to Mathematical: Quantum becomes a computational paradigm, not a hardware category.",
                 "From Niche to Mainstream: Quantum advantages available to all computing workloads.",
@@ -158,7 +179,8 @@ _STRATEGIC = ImplicationCategory(
             ),
         ),
         Implication(
-            key="new_research_directions", title="New Research Directions",
+            key="new_research_directions",
+            title="New Research Directions",
             bullets=(
                 "Substrate Optimization: Hardware optimized for mathematical quantum operations.",
                 "phi-Scaling Applications: Golden ratio compression applied beyond quantum states.",
@@ -167,7 +189,8 @@ _STRATEGIC = ImplicationCategory(
             ),
         ),
         Implication(
-            key="investment_and_funding", title="Investment and Funding",
+            key="investment_and_funding",
+            title="Investment and Funding",
             bullets=(
                 "Software Focus: Investment shifts from quantum hardware to quantum software.",
                 "Infrastructure Investment: Classical infrastructure optimized for quantum workloads.",
@@ -179,7 +202,10 @@ _STRATEGIC = ImplicationCategory(
 )
 
 IMPLICATIONS: Tuple[ImplicationCategory, ...] = (
-    _COMPUTATIONAL, _SOCIETAL, _ENTERPRISE, _STRATEGIC,
+    _COMPUTATIONAL,
+    _SOCIETAL,
+    _ENTERPRISE,
+    _STRATEGIC,
 )
 
 PARADIGM_ANALOGS: Tuple[Tuple[str, str], ...] = (

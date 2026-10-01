@@ -22,14 +22,14 @@ class TopologicalProtector:
         for i in range(self.lattice_size):
             for j in range(self.lattice_size):
                 stabilizers[(i, j)] = {
-                    'X_stabilizer': self.generate_x_stabilizer(i, j),
-                    'Z_stabilizer': self.generate_z_stabilizer(i, j),
+                    "X_stabilizer": self.generate_x_stabilizer(i, j),
+                    "Z_stabilizer": self.generate_z_stabilizer(i, j),
                 }
         return stabilizers
 
     def generate_x_stabilizer(self, i: int, j: int) -> np.ndarray:
         """X-type stabilizer for bit flip detection."""
-        size = self.lattice_size ** 2
+        size = self.lattice_size**2
         stabilizer = np.zeros(size, dtype=np.complex128)
         indices = [(i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1)]
         for idx in indices:
@@ -39,7 +39,7 @@ class TopologicalProtector:
 
     def generate_z_stabilizer(self, i: int, j: int) -> np.ndarray:
         """Z-type stabilizer for phase flip detection."""
-        size = self.lattice_size ** 2
+        size = self.lattice_size**2
         stabilizer = np.zeros(size, dtype=np.complex128)
         indices = [(i - 1, j - 1), (i - 1, j + 1), (i + 1, j - 1), (i + 1, j + 1)]
         for idx in indices:
@@ -59,8 +59,8 @@ class TopologicalProtector:
         for (i, j), stabilizer in self.qubit_stabilizers.items():
             # Use real part after verifying imaginary contribution is negligible
             # (surface code stabilizers are real-valued by construction)
-            x_raw = np.dot(stabilizer['X_stabilizer'], state[:len(stabilizer['X_stabilizer'])])
-            z_raw = np.dot(stabilizer['Z_stabilizer'], state[:len(stabilizer['Z_stabilizer'])])
+            x_raw = np.dot(stabilizer["X_stabilizer"], state[: len(stabilizer["X_stabilizer"])])
+            z_raw = np.dot(stabilizer["Z_stabilizer"], state[: len(stabilizer["Z_stabilizer"])])
             x_syndrome = float(np.real(x_raw))
             z_syndrome = float(np.real(z_raw))
             # Verify imaginary part is negligible (phase preservation check)
@@ -94,8 +94,9 @@ class TopologicalProtector:
         """Euclidean distance on lattice."""
         return float(np.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2))
 
-    def apply_corrections(self, state: np.ndarray,
-                          corrections: List[Tuple[int, int]]) -> np.ndarray:
+    def apply_corrections(
+        self, state: np.ndarray, corrections: List[Tuple[int, int]]
+    ) -> np.ndarray:
         """Apply corrections to quantum state."""
         corrected = state.copy()
         for correction in corrections:

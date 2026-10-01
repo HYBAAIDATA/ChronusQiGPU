@@ -1,7 +1,12 @@
 """Tests for the comparative-benchmark scaffolding."""
+
 from quantum_compute_substrate.benchmarks_comparative import (
-    QiskitAdapter, CirqAdapter, PennyLaneAdapter, RigettiAdapter,
-    ScalingStudy, ComparativeBenchmarks,
+    QiskitAdapter,
+    CirqAdapter,
+    PennyLaneAdapter,
+    RigettiAdapter,
+    ScalingStudy,
+    ComparativeBenchmarks,
 )
 
 

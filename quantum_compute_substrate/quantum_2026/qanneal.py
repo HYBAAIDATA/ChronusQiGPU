@@ -1,4 +1,5 @@
 """Reverse annealing and pause-quench protocols."""
+
 from __future__ import annotations
 import numpy as np
 from ._linalg import expm
@@ -16,8 +17,9 @@ class ModernQAnneal:
             self.H_d[i, (i + 1) % d] = 1.0
             self.H_d[(i + 1) % d, i] = 1.0
 
-    def reverse_anneal(self, initial_state: np.ndarray, annealing_time: float = 1.0,
-                       schedule_steps: int = 100) -> Dict[str, Any]:
+    def reverse_anneal(
+        self, initial_state: np.ndarray, annealing_time: float = 1.0, schedule_steps: int = 100
+    ) -> Dict[str, Any]:
         state = np.asarray(initial_state, dtype=complex)
         state = state / max(1e-12, np.linalg.norm(state))
         times = np.linspace(0.0, annealing_time, schedule_steps)
@@ -32,10 +34,13 @@ class ModernQAnneal:
             "norm_residual": float(abs(np.linalg.norm(state) - 1.0)),
         }
 
-    def pause_and_quench(self, initial_state: np.ndarray,
-                         pause_fraction: float = 0.5,
-                         annealing_time: float = 1.0,
-                         steps: int = 100) -> Dict[str, Any]:
+    def pause_and_quench(
+        self,
+        initial_state: np.ndarray,
+        pause_fraction: float = 0.5,
+        annealing_time: float = 1.0,
+        steps: int = 100,
+    ) -> Dict[str, Any]:
         state = np.asarray(initial_state, dtype=complex)
         state = state / max(1e-12, np.linalg.norm(state))
         pause_steps = int(steps * pause_fraction)
