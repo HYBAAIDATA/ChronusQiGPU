@@ -1,0 +1,591 @@
+[
+  {
+    "file": "__init__.py",
+    "classes": [],
+    "functions": []
+  },
+  {
+    "file": "academic/__init__.py",
+    "classes": [],
+    "functions": []
+  },
+  {
+    "file": "academic/caltech.py",
+    "classes": [
+      "Caltech_Ising_Anyons",
+      "Caltech_Topological_Quantum",
+      "SurfaceCodeResult",
+      "Caltech_Surface_Code"
+    ],
+    "functions": []
+  },
+  {
+    "file": "academic/cambridge.py",
+    "classes": [
+      "TinyMLP",
+      "PINNTrainingResult",
+      "Cambridge_PINN",
+      "GQNTrainingResult",
+      "Cambridge_GQN",
+      "RLTrainingResult",
+      "Cambridge_RL_EC"
+    ],
+    "functions": []
+  },
+  {
+    "file": "academic/cern.py",
+    "classes": [
+      "CavityQEDResult",
+      "CERN_CavityQED",
+      "CERN_QFT_Enhancement",
+      "LHCIntegration"
+    ],
+    "functions": [
+      "lamb_shift_hz",
+      "anomalous_magnetic_moment",
+      "vacuum_polarization_fraction",
+      "casimir_force",
+      "schwinger_critical_field"
+    ]
+  },
+  {
+    "file": "academic/integration.py",
+    "classes": [
+      "DistributionResidualCorrector",
+      "AcademicRenderOutput",
+      "AcademicChronosEngine"
+    ],
+    "functions": [
+      "apply_qed_diagonal_corrections",
+      "surface_code_correct_distribution"
+    ]
+  },
+  {
+    "file": "academic/jaynes_cummings.py",
+    "classes": [
+      "JCSpectrumReport",
+      "JCDynamicsReport"
+    ],
+    "functions": [
+      "analytic_resonant_gaps",
+      "verify_resonant_spectrum",
+      "evolve_jc",
+      "vacuum_rabi_dynamics",
+      "coherent_collapse_revival"
+    ]
+  },
+  {
+    "file": "academic/mit.py",
+    "classes": [
+      "KalmanState",
+      "MIT_FaultTolerant_Control"
+    ],
+    "functions": []
+  },
+  {
+    "file": "academic/nist.py",
+    "classes": [
+      "NIST_Standards",
+      "BenchmarkReport",
+      "NIST_Benchmark"
+    ],
+    "functions": []
+  },
+  {
+    "file": "academic/report.py",
+    "classes": [],
+    "functions": [
+      "run_academic_enhancements"
+    ]
+  },
+  {
+    "file": "academic/tensor_compression.py",
+    "classes": [
+      "CompressionAudit",
+      "MatrixProductState"
+    ],
+    "functions": []
+  },
+  {
+    "file": "academic/tokyotech.py",
+    "classes": [
+      "TokyoTech_Metrology"
+    ],
+    "functions": []
+  },
+  {
+    "file": "compression/__init__.py",
+    "classes": [],
+    "functions": []
+  },
+  {
+    "file": "compression/large_space.py",
+    "classes": [
+      "LargeSpaceReport",
+      "LargeHilbertSpace"
+    ],
+    "functions": []
+  },
+  {
+    "file": "compression/mps_tools.py",
+    "classes": [
+      "MPSStructureReport"
+    ],
+    "functions": [
+      "bond_dimensions",
+      "structure_report",
+      "local_expectation_contracted",
+      "build_ghz_mps"
+    ]
+  },
+  {
+    "file": "compression/phi_fold.py",
+    "classes": [
+      "FoldReport"
+    ],
+    "functions": [
+      "binary_tensor_fold",
+      "binary_tensor_unfold",
+      "fibonacci_blocks",
+      "phi_block_fold",
+      "phi_block_unfold",
+      "fold_compress",
+      "unfold_decompress",
+      "fold_compress_mps_product"
+    ]
+  },
+  {
+    "file": "compression/tebd.py",
+    "classes": [
+      "TEBDStepReport",
+      "TEBDRunReport",
+      "DTStudyEntry",
+      "DTStudyReport"
+    ],
+    "functions": [
+      "tebd_step",
+      "run_tebd",
+      "adaptive_dt_tebd",
+      "adaptive_chi_tebd",
+      "imaginary_tebd",
+      "convergence_study_dt",
+      "tebd_solver",
+      "large_space_run_tebd"
+    ]
+  },
+  {
+    "file": "control/__init__.py",
+    "classes": [],
+    "functions": []
+  },
+  {
+    "file": "control/controller.py",
+    "classes": [
+      "Pulse",
+      "ControlResult",
+      "QuantumController"
+    ],
+    "functions": []
+  },
+  {
+    "file": "control/feedback.py",
+    "classes": [
+      "FeedbackStep",
+      "ClosedLoopController"
+    ],
+    "functions": []
+  },
+  {
+    "file": "emp.py",
+    "classes": [
+      "MeasurementPoint",
+      "EMPReport",
+      "ScalarKalman",
+      "ErrorMitigationProcessor"
+    ],
+    "functions": []
+  },
+  {
+    "file": "engine.py",
+    "classes": [
+      "RenderOutput",
+      "ChronosEngine"
+    ],
+    "functions": []
+  },
+  {
+    "file": "environment/__init__.py",
+    "classes": [],
+    "functions": []
+  },
+  {
+    "file": "environment/decoherence.py",
+    "classes": [],
+    "functions": [
+      "lindblad_step",
+      "amplitude_damping_channel"
+    ]
+  },
+  {
+    "file": "environment/thermal.py",
+    "classes": [
+      "ThermalNoise",
+      "CryogenicEnvironment"
+    ],
+    "functions": []
+  },
+  {
+    "file": "evolution_engine.py",
+    "classes": [
+      "RenderResult",
+      "EvolutionEngine"
+    ],
+    "functions": [
+      "build_time_dependent_schedule"
+    ]
+  },
+  {
+    "file": "fields/__init__.py",
+    "classes": [],
+    "functions": []
+  },
+  {
+    "file": "fields/laser.py",
+    "classes": [
+      "CoherentLaser"
+    ],
+    "functions": [
+      "coherent_state",
+      "annihilation",
+      "displacement_operator"
+    ]
+  },
+  {
+    "file": "fields/microwave.py",
+    "classes": [
+      "MicrowaveField"
+    ],
+    "functions": [
+      "rabi_evolve"
+    ]
+  },
+  {
+    "file": "graphics/__init__.py",
+    "classes": [],
+    "functions": []
+  },
+  {
+    "file": "graphics/pipeline.py",
+    "classes": [
+      "QuantumGraphicsPipeline"
+    ],
+    "functions": [
+      "quantum_shader"
+    ]
+  },
+  {
+    "file": "hamiltonian.py",
+    "classes": [
+      "HamiltonianTerms",
+      "HamiltonianLibrary"
+    ],
+    "functions": []
+  },
+  {
+    "file": "manifold.py",
+    "classes": [
+      "M32Manifold"
+    ],
+    "functions": [
+      "fibonacci_sphere",
+      "icosahedron_vertices",
+      "icosahedron_face_centroids",
+      "dodecahedron_face_centroids_from_dual",
+      "verify_cube_inscribed_in_dodecahedron",
+      "build_m32"
+    ]
+  },
+  {
+    "file": "memory/__init__.py",
+    "classes": [],
+    "functions": []
+  },
+  {
+    "file": "memory/block_encode.py",
+    "classes": [
+      "Structure",
+      "BlockEnc"
+    ],
+    "functions": [
+      "prepare_select",
+      "block_encode"
+    ]
+  },
+  {
+    "file": "memory/hierarchy.py",
+    "classes": [
+      "HierarchyReport",
+      "MemoryHierarchy"
+    ],
+    "functions": []
+  },
+  {
+    "file": "memory/mps_store.py",
+    "classes": [
+      "MemoryAudit",
+      "MPSStore"
+    ],
+    "functions": []
+  },
+  {
+    "file": "memory/neural_combine.py",
+    "classes": [
+      "TinyRouter",
+      "NeuralIndexReport",
+      "NeuralCombineMemory"
+    ],
+    "functions": []
+  },
+  {
+    "file": "memory/qram.py",
+    "classes": [
+      "QRAM"
+    ],
+    "functions": [
+      "qram_apply"
+    ]
+  },
+  {
+    "file": "memory/qsvt.py",
+    "classes": [
+      "Poly",
+      "QSVTResult"
+    ],
+    "functions": [
+      "qsp_phases_from_poly",
+      "apply_qsvt",
+      "qsvt_from_block_enc"
+    ]
+  },
+  {
+    "file": "memory/report.py",
+    "classes": [],
+    "functions": [
+      "run_memory_self_tests",
+      "memory_status"
+    ]
+  },
+  {
+    "file": "memory/table.py",
+    "classes": [
+      "Table"
+    ],
+    "functions": []
+  },
+  {
+    "file": "phi_scaling.py",
+    "classes": [
+      "PhiTierResult",
+      "PhiScalingReport"
+    ],
+    "functions": [
+      "phi_power_exact",
+      "run_phi_power_scaling_benchmark"
+    ]
+  },
+  {
+    "file": "qsdl_compiler.py",
+    "classes": [
+      "QSDLCompileError",
+      "ManifoldConfig",
+      "QScene",
+      "QSDLCompiler"
+    ],
+    "functions": []
+  },
+  {
+    "file": "qsdl_parser.py",
+    "classes": [
+      "QSDLSyntaxError",
+      "Token",
+      "Expr",
+      "ManifoldDecl",
+      "QuantumStateDecl",
+      "MaterialDecl",
+      "GeometryDecl",
+      "TransformOp",
+      "AnimationDecl",
+      "ObjectDecl",
+      "LightDecl",
+      "ReadoutSpec",
+      "CameraDecl",
+      "QualityDecl",
+      "SceneAST",
+      "QSDLParser"
+    ],
+    "functions": [
+      "tokenize",
+      "parse_qsdl"
+    ]
+  },
+  {
+    "file": "reconstruction.py",
+    "classes": [
+      "Frame8K",
+      "ReconstructionEngine"
+    ],
+    "functions": []
+  },
+  {
+    "file": "test_harness.py",
+    "classes": [
+      "ChronosTestHarness"
+    ],
+    "functions": []
+  },
+  {
+    "file": "theory/__init__.py",
+    "classes": [],
+    "functions": []
+  },
+  {
+    "file": "theory/anyons.py",
+    "classes": [],
+    "functions": [
+      "sigma_generator",
+      "braid_word_representation",
+      "verify_braid_relations",
+      "markov_trace",
+      "writhe",
+      "normalized_invariant"
+    ]
+  },
+  {
+    "file": "theory/chemistry.py",
+    "classes": [
+      "SCFResult"
+    ],
+    "functions": [
+      "run_scf"
+    ]
+  },
+  {
+    "file": "theory/control.py",
+    "classes": [
+      "KalmanBucyFilter"
+    ],
+    "functions": [
+      "solve_continuous_riccati",
+      "integrate_differential_riccati"
+    ]
+  },
+  {
+    "file": "theory/cryogenics.py",
+    "classes": [],
+    "functions": [
+      "bose_occupation",
+      "carnot_cascade",
+      "dilution_fridge_stage_powers",
+      "cooling_power_thermodynamic"
+    ]
+  },
+  {
+    "file": "theory/error_correction.py",
+    "classes": [],
+    "functions": [
+      "pauli_string_operator",
+      "build_stabilizer_operators",
+      "verify_stabilizer_algebra"
+    ]
+  },
+  {
+    "file": "theory/euclid.py",
+    "classes": [],
+    "functions": [
+      "euclid_gcd",
+      "extended_euclid",
+      "phi_exact",
+      "binet_fibonacci",
+      "phi_power_via_lucas",
+      "euclidean_distance",
+      "euclidean_angle",
+      "unit_vector"
+    ]
+  },
+  {
+    "file": "theory/metrology.py",
+    "classes": [],
+    "functions": [
+      "quantum_fisher_information",
+      "cramer_rao_bound",
+      "qfi_squeezed_light"
+    ]
+  },
+  {
+    "file": "theory/oscillator_array.py",
+    "classes": [
+      "NormalModeResult"
+    ],
+    "functions": [
+      "coupling_matrix_from_point_currents",
+      "diagonalize_oscillator_array",
+      "bogoliubov_transform_squeezed"
+    ]
+  },
+  {
+    "file": "theory/photonics.py",
+    "classes": [],
+    "functions": [
+      "propagation_constant",
+      "gaussian_mode_overlap_coupling",
+      "coupling_exponential_fit"
+    ]
+  },
+  {
+    "file": "theory/qcd.py",
+    "classes": [],
+    "functions": [
+      "running_coupling",
+      "debye_screening_mass_squared"
+    ]
+  },
+  {
+    "file": "theory/report.py",
+    "classes": [],
+    "functions": [
+      "self_test_all",
+      "run_unbuilt_maths"
+    ]
+  },
+  {
+    "file": "theory/superconductivity.py",
+    "classes": [],
+    "functions": [
+      "bcs_gap",
+      "bcs_gap_self_consistent",
+      "surface_resistance",
+      "quality_factor",
+      "penetration_depth",
+      "coherence_length"
+    ]
+  },
+  {
+    "file": "weak_measurement.py",
+    "classes": [
+      "WeakMeasurementRecord",
+      "WeakMeasurementResult",
+      "WeakMeasurementSession"
+    ],
+    "functions": [
+      "pure_state_to_density",
+      "density_to_distribution",
+      "project_to_psd_hermitian",
+      "weak_measurement_operator",
+      "apply_weak_measurement",
+      "bayesian_inversion",
+      "project_state_to_field",
+      "face_probe_observables",
+      "uhlmann_fidelity"
+    ]
+  }
+]

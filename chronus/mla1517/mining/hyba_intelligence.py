@@ -96,6 +96,16 @@ def _default_profile(fn: Callable[[], Any]) -> tuple[Any, float]:
     return measured.result, float(measured.wall_seconds)
 
 
+def _default_memory_custody(values: Sequence[int]) -> Any:
+    table = _load_symbol(("chronus.v33.memory.table",), "Table")
+    domain_bits = max(1, (len(values) - 1).bit_length())
+    return table.sparse_from_dict(
+        {index: nonce for index, nonce in enumerate(values)},
+        domain_bits=domain_bits,
+        value_bits=32,
+    )
+
+
 def _header_features(header: bytes | Mapping[str, Any]) -> dict[str, Any]:
     if isinstance(header, Mapping):
         return {str(key): value for key, value in header.items() if key != "nonce"}
@@ -155,6 +165,7 @@ class HYBAIntelligencePipeline:
         enable_vqc: bool = True,
         fail_open: bool = True,
         fold: Callable[[Sequence[int], int], Any] | None = None,
+        memory_custody: Callable[[Sequence[int]], Any] | None = None,
         geodesic: Any = None,
         vqc: Any = None,
         profiler: Callable[[Callable[[], Any]], tuple[Any, float]] | None = None,
@@ -169,6 +180,7 @@ class HYBAIntelligencePipeline:
         self.enable_vqc = bool(enable_vqc)
         self.fail_open = bool(fail_open)
         self._fold = fold or _default_fold
+        self._memory_custody = memory_custody or _default_memory_custody
         self._geodesic = geodesic
         self._vqc = vqc
         self._profiler = profiler or _default_profile
@@ -200,6 +212,30 @@ class HYBAIntelligencePipeline:
         current = _validate_candidates(candidates, self.max_candidates)
         features = _header_features(header)
         stages: list[IntelligenceStage] = []
+
+        try:
+            table, elapsed = self._profiler(
+                lambda: self._memory_custody(tuple(current))
+            )
+            restored = tuple(table.lookup_int(index) for index in range(len(current)))
+            if restored != tuple(current):
+                raise CandidateBoundaryError(
+                    "Chronus v3.3 memory custody changed candidate order"
+                )
+            stages.append(
+                IntelligenceStage(
+                    "chronus_v33_memory",
+                    "ACTIVE",
+                    elapsed,
+                    len(current),
+                    True,
+                    "32-bit sparse table custody",
+                )
+            )
+        except CandidateBoundaryError:
+            raise
+        except Exception as exc:
+            stages.append(self._stage_failure("chronus_v33_memory", current, exc))
 
         try:
             folded, elapsed = self._profiler(

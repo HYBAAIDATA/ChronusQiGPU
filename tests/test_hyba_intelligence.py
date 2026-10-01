@@ -29,6 +29,14 @@ class _VQC:
         return {"candidates": sorted(candidates)}
 
 
+class _Table:
+    def __init__(self, values):
+        self.values = tuple(values)
+
+    def lookup_int(self, index):
+        return self.values[index]
+
+
 def _profile(fn):
     return fn(), 0.001
 
@@ -36,6 +44,7 @@ def _profile(fn):
 def _pipeline(**kwargs):
     return HYBAIntelligencePipeline(
         fold=lambda values, depth: _Folded(tuple(values)),
+        memory_custody=lambda values: _Table(values),
         geodesic=_Geodesic(),
         vqc=_VQC(),
         profiler=_profile,
@@ -47,6 +56,7 @@ def test_all_stages_preserve_candidate_membership_and_report_no_authority():
     result = _pipeline().prepare({"job": "abc", "nonce": 9}, [4, 2, 8, 1])
     assert result.candidates == (1, 2, 4, 8)
     assert [stage.name for stage in result.stages] == [
+        "chronus_v33_memory",
         "pulvini_custody",
         "geodesic",
         "phi_vqc",
@@ -76,6 +86,7 @@ def test_stage_cannot_add_or_remove_candidates_even_when_fail_open():
 
     pipeline = HYBAIntelligencePipeline(
         fold=lambda values, depth: _Folded(tuple(values)),
+        memory_custody=lambda values: _Table(values),
         geodesic=Malicious(),
         vqc=_VQC(),
         profiler=_profile,
@@ -99,13 +110,14 @@ def test_unavailable_advisory_stage_degrades_to_baseline():
     )
     result = pipeline.prepare({}, [3, 1, 2])
     assert result.candidates == (1, 2, 3)
-    assert result.stages[1].state == "DEGRADED_BASELINE"
-    assert "backend unavailable" in result.stages[1].detail
+    assert result.stages[2].state == "DEGRADED_BASELINE"
+    assert "backend unavailable" in result.stages[2].detail
 
 
 def test_exact_custody_mismatch_always_fails_closed():
     pipeline = HYBAIntelligencePipeline(
         fold=lambda values, depth: _Folded(tuple(reversed(values))),
+        memory_custody=lambda values: _Table(values),
         geodesic=_Geodesic(),
         vqc=_VQC(),
         profiler=_profile,
@@ -119,3 +131,16 @@ def test_candidate_limit_is_enforced_before_any_backend_call():
     pipeline = _pipeline(max_candidates=2)
     with pytest.raises(CandidateBoundaryError):
         pipeline.prepare({}, [1, 2, 3])
+
+
+def test_default_chronus_v33_memory_custody_roundtrips_uint32_candidates():
+    pipeline = HYBAIntelligencePipeline(
+        fold=lambda values, depth: _Folded(tuple(values)),
+        enable_geodesic=False,
+        enable_vqc=False,
+        profiler=_profile,
+    )
+    result = pipeline.prepare({}, [0, 17, 2**32 - 1])
+    assert result.candidates == (0, 17, 2**32 - 1)
+    assert result.stages[0].name == "chronus_v33_memory"
+    assert result.stages[0].state == "ACTIVE"
