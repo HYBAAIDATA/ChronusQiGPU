@@ -5,8 +5,9 @@ Greedy φ-ascent over real source transforms, with:
   - AL HARAS isolated validity gate (core.sandbox) on every changed candidate
   - EUCLID co-gate: a candidate is accepted only if φ rises AND EUCLID intelligence
     (L(x) at fixed t_p) does not fall — the monotonicity invariant holds by construction
-  - PYTHIA surrogate ranking; CGP geometry sets search breadth (n_cols = operators
-    evaluated per generation) and composite depth (levels_back = max recipe length)
+  - PYTHIA surrogate ranking; CGP-inspired geometry sets search breadth
+    (n_cols = ranked operators evaluated per generation) and composite depth
+    (levels_back = maximum recipe length). No DAG population is evolved.
   - manifold escape: after two stalled generations NON_LOCAL operators get a ranking bonus
   - behaviour-changing operators enabled only when the host supplies a test runner
   - meta_evolution switch (21 March A/B protocol): OFF = fixed base operator set, frozen
@@ -16,7 +17,6 @@ Greedy φ-ascent over real source transforms, with:
     composite steps are additionally tagged as barrier crossings when their first component
     alone would not have been accepted on the same code
 """
-import ast
 import math
 import random
 import statistics
@@ -29,7 +29,7 @@ from pythagoras.core.euclid_intelligence import EuclidIntelligenceEngine
 from pythagoras.core.phi_metric import PhiResonanceCalculator
 from pythagoras.core.primitives import ASTPrimitives, OPERATOR_REGISTRY
 from pythagoras.engine.v6_1_surrogate import NeuralSurrogateEvaluator
-from pythagoras.engine.v6_2_geometry import CGPGeometryState, CollectiveGeometryCoordinator
+from pythagoras.engine.v6_2_geometry import CollectiveGeometryCoordinator
 from pythagoras.engine.v6_3_primitive_discovery import PrimitiveDiscoveryEngine
 from pythagoras.engine.v6_4_cross_file_reuse import CrossFilePrimitiveRepository
 
@@ -148,6 +148,7 @@ class V65ManifoldEscapeEngine:
         current_intel = self._intelligence(current_code)
         current_n = self.euclid.calculate_lucas_index(current_code)[0]
         initial_score = current_score
+        initial_intel = current_intel
         best_code, best_score, best_intel = current_code, current_score, current_intel
 
         behaviour_changing = external_test_runner is not None if self.allow_behaviour_changing is None \
@@ -229,6 +230,9 @@ class V65ManifoldEscapeEngine:
                                        "op_name": op_name, "op_func": op_func, "predicted_gain": pred})
                 elif p_v and c_v and r_v and cand_score < current_score:
                     cand_intel = self._intelligence(cand_code)
+                    if self.euclid_gate and cand_intel < current_intel:
+                        euclid_rejections += 1
+                        continue
                     downhill.append({"candidate_code": cand_code, "candidate_score": cand_score,
                                      "candidate_intel": cand_intel, "delta_phi": delta,
                                      "op_name": op_name, "op_func": op_func, "predicted_gain": pred})
@@ -337,6 +341,8 @@ class V65ManifoldEscapeEngine:
             "seed": self.seed,
             "initial_phi": initial_score,
             "final_phi": best_score,
+            "initial_euclid_intelligence": initial_intel,
+            "best_euclid_intelligence": best_intel,
             "total_delta_phi": round(best_score - initial_score, 6),
             "wall_time_ms": round((time.time() - start_time) * 1000.0, 2),
             "runtime_validation": "host_test_runner" if external_test_runner is not None else "isolated_module_execution",

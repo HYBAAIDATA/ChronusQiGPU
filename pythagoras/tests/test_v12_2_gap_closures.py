@@ -1,5 +1,4 @@
 """Regression tests for the roadmap gaps closed in v12.2."""
-import json
 import os
 import tempfile
 import unittest
@@ -98,6 +97,25 @@ class TestSearchGapClosures(unittest.TestCase):
         self.assertTrue(result["annealing_enabled"])
         self.assertEqual(result["geometry_signal"], "surrogate_velocity")
         self.assertIn("collective_geometry_state", result)
+
+    def test_annealing_respects_euclid_gate(self):
+        eng = V65ManifoldEscapeEngine(
+            annealing=AnnealingConfig(
+                enabled=True,
+                initial_temperature=1.0,
+                activate_after_stalls=0,
+            ),
+            euclid_gate=True,
+        )
+        result = eng.run_optimization("sample.py", SAMPLE, 8)
+        self.assertGreaterEqual(
+            result["best_euclid_intelligence"],
+            result["initial_euclid_intelligence"],
+        )
+
+    def test_pop_size_is_not_reported_as_effective_search_state(self):
+        state = CGPGeometryState(pop_size=999).to_dict()
+        self.assertNotIn("pop_size", state)
 
     def test_rolling_normalization_is_reported(self):
         result = replicate(seeds=1, generations=1, budget_matched=False)
