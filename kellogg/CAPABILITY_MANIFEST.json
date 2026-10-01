@@ -1,0 +1,42 @@
+{
+  "schema": "kellogg.tensor-capabilities/v1",
+  "version": "3.6.0",
+  "canonical_owner": "kellogg",
+  "integrated": {
+    "tensor_network": [
+      "TensorTrain", "tt_decompose", "tt_reconstruct", "tt_compress_with_budget",
+      "mps_decompose", "mps_reconstruct", "MatrixProductOperator",
+      "IsingHamiltonianMPO", "HeisenbergHamiltonianMPO",
+      "hamiltonian_with_tensor_network", "topology_signature",
+      "topology_preserved", "persistent_homology_comparison",
+      "quantum_fisher_metric", "natural_gradient_step"
+    ],
+    "compressed_tensor": [
+      "CompressedTensor", "QuantumCompressedTensorEngine", "QuantumOperator",
+      "ExpertRouter", "apply_quantum_operator", "interfere_states", "measure_state"
+    ],
+    "persistence": ["save_pv", "load_pv", "validate_pv"]
+  },
+  "delegated": {
+    "aethel": ["phi_fold custody", "memory tiers", "integrity gate"],
+    "chronus": ["geodesic scheduling", "virtual GPU control", "physical execution evidence"],
+    "tensor": ["device backend dispatch"],
+    "mining": ["SHA-256d", "target validation", "pool outcomes"]
+  },
+  "excluded_as_non_tensor": [
+    "cloud deployment", "HTTP API", "predictive engine", "mining orchestration",
+    "Grover/VQC policy", "Shor demonstrations", "benchmark report rendering"
+  ],
+  "rejected_behaviors": [
+    "silent vector padding", "complex-to-real truncation",
+    "representation ratio reported as physical compression",
+    "zero padding in place of inverse reconstruction", "unbounded MPO expansion",
+    "non-trace-preserving Kraus maps", "phase-insensitive density-matrix interference",
+    "pickle-based artifact loading"
+  ],
+  "claim_boundary": {
+    "consensus_authority": false,
+    "physical_hardware_claim": false,
+    "compression_ratios": "representation accounting only"
+  }
+}

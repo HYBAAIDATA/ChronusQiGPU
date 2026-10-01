@@ -36,6 +36,24 @@ if TYPE_CHECKING:
     from .tensor_compute import ChronusTensorRuntime, ChronusTensorUnavailable, TensorDeviceProbe
 
 _EXPORTS = {
+    "BufferAttestation": ("chronus.gpu_capabilities", "BufferAttestation"),
+    "BufferIntegrityGate": ("chronus.gpu_capabilities", "BufferIntegrityGate"),
+    "ChronusTensorPipeline": ("chronus.gpu_capabilities", "ChronusTensorPipeline"),
+    "GPUCapabilityError": ("chronus.gpu_capabilities", "GPUCapabilityError"),
+    "GPUDeviceTopology": ("chronus.gpu_capabilities", "GPUDeviceTopology"),
+    "GPUMemoryHierarchyProfile": ("chronus.gpu_capabilities", "GPUMemoryHierarchyProfile"),
+    "GPUMemoryLevel": ("chronus.gpu_capabilities", "GPUMemoryLevel"),
+    "TensorExecutionEvidence": ("chronus.gpu_capabilities", "TensorExecutionEvidence"),
+    "TensorInvariantReport": ("chronus.gpu_capabilities", "TensorInvariantReport"),
+    "TensorInvariantVerifier": ("chronus.gpu_capabilities", "TensorInvariantVerifier"),
+    "TopologyLink": ("chronus.gpu_capabilities", "TopologyLink"),
+    "gpu_capability_status": ("chronus.gpu_capabilities", "gpu_capability_status"),
+    "memory_hierarchy_from_topology": (
+        "chronus.gpu_capabilities",
+        "memory_hierarchy_from_topology",
+    ),
+    "probe_opencl_topology": ("chronus.gpu_capabilities", "probe_opencl_topology"),
+    "reference_gpu_topology": ("chronus.gpu_capabilities", "reference_gpu_topology"),
     "CLAIM_BOUNDARY": ("chronus.device", "CLAIM_BOUNDARY"),
     "DEVICE_ID": ("chronus.device", "DEVICE_ID"),
     "Chronus": ("chronus.device", "Chronus"),
