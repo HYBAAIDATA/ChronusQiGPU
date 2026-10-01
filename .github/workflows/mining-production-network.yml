@@ -3,6 +3,8 @@ name: Production Mining Network Gate
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -65,3 +67,7 @@ jobs:
         run: python -m pytest tests/test_stratum_live_session.py -q
       - name: Stratum V2 Mining Protocol contracts
         run: python -m pytest tests/test_stratum_v2.py tests/test_braiins_sv2.py -q
+      - name: Deterministic mining transport chaos
+        run: python -m pytest tests/test_mining_transport_chaos.py -q
+      - name: PYTHAGORAS transactional meta-evolution
+        run: python -m pytest tests/test_pythagoras.py -q
