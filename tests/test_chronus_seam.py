@@ -105,8 +105,15 @@ def test_poll_marks_host_verified():
     probe_devices()
     cap = store.all_caps()[0]
     kernels = sorted(cap.supported_kernels, key=lambda k: k.value)
-    kernel = next(k for k in kernels if k is not KernelName.sha256d_verify)
-    handle = dispatch("seam", cap.device_id, kernel, {}, "verify-1")
+    kernel = next(
+        k for k in kernels if k in {KernelName.attest_compose, KernelName.attest_result}
+    )
+    args = (
+        {"subjects": ["verify-1"]}
+        if kernel is KernelName.attest_compose
+        else {"subject": "verify-1"}
+    )
+    handle = dispatch("seam", cap.device_id, kernel, args, "verify-1")
     assert isinstance(handle, Ok)
     result = poll("seam", handle.value)
     assert isinstance(result, Ok)
@@ -198,10 +205,12 @@ def _cap(device_id: str, vendor: str, kernels) -> "object":
     )
 
 
-def _traversal_caps(n: int):
+def _traversal_caps(n: int, kernels=None):
     caps = []
     for i in range(n):
-        cap = _cap(f"dev-{i}", f"vendor-{i}", {KernelName.lucas_wind})
+        cap = _cap(
+            f"dev-{i}", f"vendor-{i}", kernels or {KernelName.lucas_wind}
+        )
         store.put_cap(cap)
         caps.append(cap)
     return caps
@@ -212,11 +221,11 @@ def _lucas_expected() -> list:
 
 
 def test_threshold_k_cannot_undercut_majority_floor():
-    caps = _traversal_caps(3)
+    caps = _traversal_caps(3, kernels={KernelName.attest_compose})
     req = VerificationRequest(
-        kernel=KernelName.lucas_wind,
-        inputs=[],
-        outputs=_lucas_expected(),
+        kernel=KernelName.attest_compose,
+        inputs=["lucas-wind-window"],
+        outputs=[],
         candidates=[c.device_id for c in caps],
         policy=ThresholdPolicy.majority,
         k=1,
@@ -232,7 +241,7 @@ def test_threshold_repoll_does_not_quarantine_healthy_verifier():
     cap = caps[0]
     kernel, inputs = KernelName.lucas_wind, []
     idem = digest_of("|".join([kernel.value] + inputs).encode("utf-8"))
-    handle = dispatch("t", cap.device_id, kernel, {"inputs": inputs}, f"tv:{idem}:{cap.device_id}")
+    handle = dispatch("t", cap.device_id, kernel, {"index": 0}, f"tv:{idem}:{cap.device_id}")
     assert isinstance(handle, Ok)
     first = poll("t", handle.value)
     assert isinstance(first, Ok) and first.value is not None
