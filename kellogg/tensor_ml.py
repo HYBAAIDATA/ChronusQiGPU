@@ -29,7 +29,7 @@ import numpy as np
 from .exact_tensor import ExactTOETensor, F4, ONE, Qsqrt2, ZERO
 
 FIELD_ID = "Q(sqrt2)+iQ(sqrt2)"
-MLA1517_VERSION = "mla1517.1"
+MLA1517_VERSION = "chronus.mla1517.1"
 TOE_VERSION = "3.5.0"
 
 

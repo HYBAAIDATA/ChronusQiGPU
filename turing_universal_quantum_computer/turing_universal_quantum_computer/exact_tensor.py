@@ -16,7 +16,7 @@ state vectors.  It hosts:
   through declared operations.
 
 It is the canonical in-repo replacement for the platform's
-``mla1517.quantum`` surface and is importable by every subsystem.
+``chronus.mla1517.quantum`` surface and is importable by every subsystem.
 """
 
 from __future__ import annotations

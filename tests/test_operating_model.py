@@ -251,8 +251,8 @@ def test_replay_across_cycle_boundary():
 
 def test_integer_overflow_at_L20():
     import sys
-    if str(ROOT / "mla1517_platform_v3.4" / "python") not in sys.path:
-        sys.path.insert(0, str(ROOT / "mla1517_platform_v3.4" / "python"))
+    if str(ROOT / "chronus/mla1517_platform" / "python") not in sys.path:
+        sys.path.insert(0, str(ROOT / "chronus/mla1517_platform" / "python"))
     import turing_core
     assert turing_core.lucas(20) == 15127
     for n in range(0, 77):

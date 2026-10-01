@@ -19,17 +19,17 @@ import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PYTHON = ROOT / "mla1517_platform_v3.4" / "python"
+PYTHON = ROOT / "chronus/mla1517_platform" / "python"
 if str(PYTHON) not in sys.path:
     sys.path.insert(0, str(PYTHON))
 
 from manifold_pool_coordinator import StratumJob  # noqa: E402
-from mla1517.mining.agentic_controller import AgenticMiningController  # noqa: E402
-from mla1517.mining.causal import CausalCoordinate, CausalLedger  # noqa: E402
-from mla1517.mining.execution_router import ExecutionRouter, sha256d_scan  # noqa: E402
-from mla1517.mining.search_plan import PoolOutcome, SearchPlan, WorkIdentity  # noqa: E402
-from mla1517.mining.toe_adapter import TOEMiningAdapter  # noqa: E402
-from mla1517.mining.toe_decision import build_toe_decision_frame  # noqa: E402
+from chronus.mla1517.mining.agentic_controller import AgenticMiningController  # noqa: E402
+from chronus.mla1517.mining.causal import CausalCoordinate, CausalLedger  # noqa: E402
+from chronus.mla1517.mining.execution_router import ExecutionRouter, sha256d_scan  # noqa: E402
+from chronus.mla1517.mining.search_plan import PoolOutcome, SearchPlan, WorkIdentity  # noqa: E402
+from chronus.mla1517.mining.toe_adapter import TOEMiningAdapter  # noqa: E402
+from chronus.mla1517.mining.toe_decision import build_toe_decision_frame  # noqa: E402
 from toe.bridge import TOEBridge  # noqa: E402
 
 

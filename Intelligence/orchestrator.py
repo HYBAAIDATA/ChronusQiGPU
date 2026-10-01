@@ -422,12 +422,12 @@ class IntelligenceOrchestrator:
                 diagnostics["grover_k_star"] = k_star
                 diagnostics["lucas_scale_index"] = getattr(sim, "scale_index", None)
                 diagnostics["scaled_space"] = scaled
-                diagnostics["schedule_source"] = "quantum_cuda_igpu"
+                diagnostics["schedule_source"] = "quantum_cuda_chronus"
                 # A schedule existing is not evidence it predicts winners —
                 # confidence stays at whatever the AGI substrate honestly
                 # reported (0.0 when silent).
                 if confidence == 0.0:
-                    source = "quantum_cuda_igpu"
+                    source = "quantum_cuda_chronus"
             except Exception as e:  # pragma: no cover - defensive
                 diagnostics["quantum_cuda_error"] = str(e)
 

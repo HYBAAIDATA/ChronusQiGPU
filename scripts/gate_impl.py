@@ -119,8 +119,8 @@ def no_float(root):
 
     candidates = []
     for pattern in (
-        "mla1517_platform_v3.4/python/mla1517/core.py",
-        "mla1517_platform_v3.4/python/mla1517/math_folding.py",
+        "chronus/mla1517/core.py",
+        "chronus/mla1517/math_folding.py",
         "python_backend/core_modules/math_folding.py",
     ):
         p = root / pattern

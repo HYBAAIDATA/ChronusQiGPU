@@ -393,7 +393,7 @@ lattice it started on. Implementations:
 - Hardware: `det(M15) = −1 mod 256` on the T_φ fold (§4.3); the same
   check is a punch opcode (`cassini_det = 0x0E`,
   `unified_punch.py::PUNCH_IDS`) and an SVA assertion in
-  `mla1517_platform_v3.4/rtl/mla1517_cassini_dsp.sv`.
+  `chronus/mla1517_platform/rtl/mla1517_cassini_dsp.sv`.
 
 **Certificate asymmetry.** Verifying `det = ±1` is O(1); generating the
 matrix power it certifies is O(log n) by fast doubling — and replaying

@@ -122,53 +122,53 @@ export const euclidSharesStale = new Gauge({
 // ---------------------------------------------------------------------------
 
 export const euclidIgpuDispatchTotal = new Counter({
-  name: "euclid_igpu_dispatch_total",
+  name: "euclid_chronus_dispatch_total",
   help: "iGPU dispatch batches that actually executed",
   labelNames: ["backend", "device_type", "gpu"],
   registers: [register],
 });
 
 export const euclidIgpuWorkItemsTotal = new Counter({
-  name: "euclid_igpu_work_items_total",
+  name: "euclid_chronus_work_items_total",
   help: "Work items (candidates/slots) processed by iGPU dispatches",
   labelNames: ["backend"],
   registers: [register],
 });
 
 export const euclidIgpuKernelSecondsTotal = new Counter({
-  name: "euclid_igpu_kernel_seconds_total",
+  name: "euclid_chronus_kernel_seconds_total",
   help: "Measured kernel time accumulated across iGPU dispatches",
   labelNames: ["backend"],
   registers: [register],
 });
 
 export const euclidIgpuGpuDispatchRatio = new Gauge({
-  name: "euclid_igpu_gpu_dispatch_ratio",
+  name: "euclid_chronus_gpu_dispatch_ratio",
   help: "Fraction of iGPU dispatches that genuinely ran on a device (1 = all GPU)",
   registers: [register],
 });
 
 export const euclidIgpuThroughputPerSecond = new Gauge({
-  name: "euclid_igpu_measured_throughput_per_second",
+  name: "euclid_chronus_measured_throughput_per_second",
   help: "Measured work items per second (busy kernel time only, never projected)",
   labelNames: ["backend"],
   registers: [register],
 });
 
 export const euclidIgpuManifoldPunchesTotal = new Counter({
-  name: "euclid_igpu_manifold_punches_total",
+  name: "euclid_chronus_manifold_punches_total",
   help: "Work items dispatched to 11D manifold punches (dim = 11)",
   registers: [register],
 });
 
 export const euclidIgpuManifoldIntegrity = new Gauge({
-  name: "euclid_igpu_manifold_integrity_ok",
+  name: "euclid_chronus_manifold_integrity_ok",
   help: "1 when the 11D fold roundtrip and ball containment held, 0 otherwise",
   registers: [register],
 });
 
 export const euclidIgpuDevicePresent = new Gauge({
-  name: "euclid_igpu_device_present",
+  name: "euclid_chronus_device_present",
   help: "1 when a real compute device is bound, 0 when on the CPU fallback",
   labelNames: ["device_name", "device_type"],
   registers: [register],
@@ -185,49 +185,49 @@ export const euclidIgpuDevicePresent = new Gauge({
 // Honesty: the geometry (32/12/20/496) is a FACT and is reported as such.
 // The channel OCCUPANCY is MEASURED. Any 496-based throughput figure is a
 // labelled PROJECTION and is exposed only on `_projected_` series, never on
-// the measured `euclid_igpu_measured_throughput_per_second` series.
+// the measured `euclid_chronus_measured_throughput_per_second` series.
 // ---------------------------------------------------------------------------
 
 export const euclidIgpuOverlayFaces = new Gauge({
-  name: "euclid_igpu_overlay_faces",
+  name: "euclid_chronus_overlay_faces",
   help: "Faces in the M32 overlay (12 icosahedral + 20 dodecahedral = 32)",
   labelNames: ["shell"],
   registers: [register],
 });
 
 export const euclidIgpuOverlayChannelsOccupied = new Gauge({
-  name: "euclid_igpu_overlay_channels_occupied",
+  name: "euclid_chronus_overlay_channels_occupied",
   help: "Face-pair channels exercised so far, out of C(32,2) = 496",
   registers: [register],
 });
 
 export const euclidIgpuOverlayChannelOccupancyRatio = new Gauge({
-  name: "euclid_igpu_overlay_channel_occupancy_ratio",
+  name: "euclid_chronus_overlay_channel_occupancy_ratio",
   help: "Occupied face-pair channels / 496 (measured, 1 = full frame observed)",
   registers: [register],
 });
 
 export const euclidIgpuOverlayChannelUsesTotal = new Counter({
-  name: "euclid_igpu_overlay_channel_uses_total",
+  name: "euclid_chronus_overlay_channel_uses_total",
   help: "Total face-pair channel activations across all frame steps",
   registers: [register],
 });
 
 export const euclidIgpuFrameStepsTotal = new Counter({
-  name: "euclid_igpu_frame_steps_total",
+  name: "euclid_chronus_frame_steps_total",
   help: "Overlay frame steps executed (all faces fired together)",
   labelNames: ["fallback"],
   registers: [register],
 });
 
 export const euclidIgpuShellEnergyShare = new Gauge({
-  name: "euclid_igpu_shell_energy_share_icosahedral",
+  name: "euclid_chronus_shell_energy_share_icosahedral",
   help: "Share of frame energy carried by the 12 icosahedral faces (isotropic = 0.375)",
   registers: [register],
 });
 
 export const euclidIgpuEffectiveThroughputProjected = new Gauge({
-  name: "euclid_igpu_effective_throughput_projected_per_second",
+  name: "euclid_chronus_effective_throughput_projected_per_second",
   help: "PROJECTION ONLY: measured throughput x 496. Never a measurement.",
   registers: [register],
 });

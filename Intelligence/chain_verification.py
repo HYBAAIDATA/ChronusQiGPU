@@ -6,14 +6,14 @@ evidence record:
     1.  backend_binding      Intelligence.backend_binding (iGPU-first, fail-explicit)
     2.  storage_encoding     hardened_unified_substrate.apply_zeckendorf_compression
     3.  storage_reconstruction  reverse_zeckendorf_expansion (lossless roundtrip)
-    4.  storage_indexing     TensorCoreGPU_Context.project_and_collapse_pv (11D anchor)
+    4.  storage_indexing     ChronusContext.project_and_collapse_pv (11D anchor)
     5.  search_projection    PrimeStorageManifold geodesic batch projection (32-face frame)
     6.  storage_hold         ManifoldBridge live hold: Galois persistence + O(1) lookup
     7.  toe_arbiter          TOESystem.verify_12_theorems_candidate (Contract 2 matrix)
     8.  yang_mills_gap       finite 2I Laplacian gap (not √5, not continuum YM)
     9.  ricci_einstein       exact hyperbolic Einstein relation Ric_ij = -(n-1) g_ij
     10. mining_consensus      mining.hash_pipeline real sha256d grind + bit-exact recheck
-    11. igpu_11d_telemetry    the substrate's own measured self-report (device,
+    11. chronus_11d_telemetry    the substrate's own measured self-report (device,
                               dispatches, GPU dispatch ratio, work items, measured
                               throughput on the 11D manifold path)
 
@@ -66,7 +66,7 @@ CHAIN_STAGES = (
     "yang_mills_gap",
     "ricci_einstein",
     "mining_consensus",
-    "igpu_11d_telemetry",
+    "chronus_11d_telemetry",
 )
 
 __all__ = [
@@ -136,7 +136,7 @@ def verify_full_chain(backend: Optional[Any] = None) -> Dict[str, Any]:
     # iGPU-on-11D self-telemetry: inject the hook (purity-safe — the host never
     # imports the coordinator) and reset so this run's numbers are its own.
     try:
-        from .igpu_telemetry import (
+        from chronus.telemetry import (
             DODECAHEDRAL_FACES,
             FACE_PAIRS,
             FRAME_FACES,
@@ -170,7 +170,7 @@ def verify_full_chain(backend: Optional[Any] = None) -> Dict[str, Any]:
 
     from toe.hardened_unified_substrate import (
         PrimeStorageManifold,
-        TensorCoreGPU_Context,
+        ChronusContext,
         apply_zeckendorf_compression,
         reverse_zeckendorf_expansion,
     )
@@ -201,7 +201,7 @@ def verify_full_chain(backend: Optional[Any] = None) -> Dict[str, Any]:
     )
 
     # -- 4. storage_indexing --------------------------------------------------
-    ctx = TensorCoreGPU_Context(punch_host=host, require_gpu=False)
+    ctx = ChronusContext(punch_host=host, require_gpu=False)
     manifold = PrimeStorageManifold(ctx, punch_host=host)
     vec = np.arange(11, dtype=np.float32) * 0.5
     anchor = ctx.project_and_collapse_pv(vec)
@@ -241,7 +241,7 @@ def verify_full_chain(backend: Optional[Any] = None) -> Dict[str, Any]:
         lookup_ms=elapsed_ms,
         md_memory_entries=len(bridge.md_memory),
         galois_prime_entries=len(bridge.galois_storage.cells),
-        igpu_vram_cached=len(bridge.igpu_hot_vram_cache),
+        chronus_vram_cached=len(bridge.chronus_hot_vram_cache),
     )
 
     # -- 7. toe_arbiter (Contract 2: 12-theorem verification matrix) -----------
@@ -353,7 +353,7 @@ def verify_full_chain(backend: Optional[Any] = None) -> Dict[str, Any]:
         )
     ok = ok and consensus_ok
 
-    # -- 11. igpu_11d_telemetry (self-report, measured only) -------------------
+    # -- 11. chronus_11d_telemetry (self-report, measured only) -------------------
     device: Dict[str, Any] = {}
     measured_throughput = 0.0
     gpu_ratio = 0.0
@@ -408,8 +408,8 @@ def verify_full_chain(backend: Optional[Any] = None) -> Dict[str, Any]:
         snap = {}
         telemetry_ok = False
     ok = ok and telemetry_ok
-    stages["igpu_11d_telemetry"] = _stage(
-        "igpu_11d_telemetry",
+    stages["chronus_11d_telemetry"] = _stage(
+        "chronus_11d_telemetry",
         gpu,
         getattr(host, "backend", "unavailable"),
         passed=telemetry_ok,

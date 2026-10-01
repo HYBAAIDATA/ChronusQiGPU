@@ -59,8 +59,8 @@ Honest framing, per this repository's own reporting rules:
 
 | Path | Mechanism | Precision property |
 | :- | :- | :- |
-| `mla1517/mining/pow.py::compact_target` | Bitcoin compact (`nbits`) decode in pure integer shifts | No floating arithmetic anywhere in the decode |
-| `mla1517/mining/pow.py::check_pow` | `int.from_bytes(sha256d(header), "little") <= target` | Exact 256-bit integer comparison |
+| `chronus/mla1517/mining/pow.py::compact_target` | Bitcoin compact (`nbits`) decode in pure integer shifts | No floating arithmetic anywhere in the decode |
+| `chronus/mla1517/mining/pow.py::check_pow` | `int.from_bytes(sha256d(header), "little") <= target` | Exact 256-bit integer comparison |
 | `scripts/measure_lucas_scaling.py::effective_hashrate` | Returns `fractions.Fraction`; pool-announced `Decimal` difficulty is converted via `Fraction(difficulty)` | `Fraction(Decimal)` is **lossless** — the decimal expansion becomes an exact numerator/denominator, bypassing `decimal` context precision entirely |
 | `stratum_adapter.py::StratumProofAdapter.validate_candidate` | Independent SHA256d ≤ negotiated-target check before any `mining.submit` | Consensus is the sole accept authority; geometry cannot admit a share |
 
@@ -79,7 +79,7 @@ The `Fraction` path emits the mathematically exact integer target/rate; the Deci
 
 ### 2.3 Test evidence
 
-- `mla1517_platform_v3.4/python/test_measure_lucas_scaling.py` — **7/7 PASS** (fresh run, `PYTHONPATH=python;.`), including `test_hashrate_uses_announced_difficulty_as_exact_rational` (`rate == Fraction(DIFF1_TARGET, 2)`) and `test_target_path_is_exact`.
+- `chronus/mla1517_platform/python/test_measure_lucas_scaling.py` — **7/7 PASS** (fresh run, `PYTHONPATH=python;.`), including `test_hashrate_uses_announced_difficulty_as_exact_rational` (`rate == Fraction(DIFF1_TARGET, 2)`) and `test_target_path_is_exact`.
 - `test_production_script_has_no_simulation_delay_or_acceptance_increment` additionally guards that the live harness contains no `time.sleep`, no `Simulated` markers, and requires `response is True` from the pool.
 
 ### 2.4 Residual paths — resolved post-audit
@@ -89,7 +89,7 @@ At first verification two secondary paths still performed context-precision or f
 | Path | Before | After |
 | :- | :- | :- |
 | `mining/stratum_bridge.py::difficulty_to_target` | `int(diff1 // max(difficulty, 1e-12))` — float64 | `Fraction(str(difficulty))` parsed at the announced decimal value; `floor` via `numerator // denominator`; same 1e-12 floor semantics |
-| `mla1517/mining/stratum_adapter.py::_target_from_difficulty` | `int(Decimal(DIFF1_TARGET) / value)` at `prec=28` | `Fraction(str(difficulty))` → `Fraction(DIFF1_TARGET) / value` → exact floor; identical `TargetError` semantics and `0 < target <= MAX_UINT256` range check |
+| `chronus/mla1517/mining/stratum_adapter.py::_target_from_difficulty` | `int(Decimal(DIFF1_TARGET) / value)` at `prec=28` | `Fraction(str(difficulty))` → `Fraction(DIFF1_TARGET) / value` → exact floor; identical `TargetError` semantics and `0 < target <= MAX_UINT256` range check |
 
 Post-change numeric check: new path equals the exact rational on every probe; the old float64 path was wrong at `d = 65535.125` by **−2.86 × 10^42** in target units. Note also that the correct consensus formula is `floor(DIFF1_TARGET / difficulty)` — not `floor((2^256 − 1) / difficulty)`; difficulty 1 must map to the compact `0x1D00FFFF` target, not `MAX_UINT256`.
 
@@ -158,7 +158,7 @@ Executes seven gates in order; OVERALL passes only if all pass. Result after the
 
 At first run, `self_test.py` was **not green**: the failures were import-discipline declarations, not runtime defects. Resolution applied during this audit:
 
-- `Intelligence/empirical_state_controller.py` (`import yaml`) and `mining/stratum_bridge.py` (`from mla1517.mining.solver import M32SearchSolver`) — declared in `FILE_ALLOWED_DEPS`; `pyyaml>=6.0,<7` added to `pyproject.toml` dependencies.
+- `Intelligence/empirical_state_controller.py` (`import yaml`) and `mining/stratum_bridge.py` (`from chronus.mla1517.mining.solver import M32SearchSolver`) — declared in `FILE_ALLOWED_DEPS`; `pyyaml>=6.0,<7` added to `pyproject.toml` dependencies.
 - `mining/order_counterfactual.py` (new counterfactual harness importing `mining.hash_pipeline` + `mining.stratum_bridge`) — declared in `WIRING_FILES` as a composer, the same class as the other mining wiring files.
 
 **Re-verified after the declarations: `OVERALL: PASS`, 7/7 gates** (wire_discipline checked 58 files, purity clean, registry 20 subsystems).
@@ -198,7 +198,7 @@ python scripts/verify_agentic_healing.py
 python self_test.py
 
 # Exact-rational hashrate/target tests
-cd mla1517_platform_v3.4 && PYTHONPATH="python;." python -m unittest python.test_measure_lucas_scaling -v
+cd chronus/mla1517_platform && PYTHONPATH="python;." python -m unittest python.test_measure_lucas_scaling -v
 
 # Corroborating chaos/healing unit tests
 python -m pytest tests/test_lucas_attractor_mining.py tests/test_search_ontology.py -q

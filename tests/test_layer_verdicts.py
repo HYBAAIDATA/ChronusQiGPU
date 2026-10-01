@@ -1,6 +1,6 @@
 import pytest
 
-from igpu.seam.workflow import (
+from chronus.seam.workflow import (
     LAYER_IDS,
     PASS_MEANS,
     WorkflowResult,

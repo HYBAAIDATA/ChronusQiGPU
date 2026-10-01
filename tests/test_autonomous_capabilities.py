@@ -81,7 +81,7 @@ class DispatchTelemetry:
         self.busy_seconds += max(0.0, float(kernel_ms)) / 1000.0
 
 
-IgpuTelemetry = DispatchTelemetry
+ChronusTelemetry = DispatchTelemetry
 
 # ---------------------------------------------------------------------------
 # Shared offline doubles — simulated fault injection, measured CUOP windows
@@ -237,7 +237,7 @@ class TestSelfHealing:
 
 
 def _run_dispatch_window(
-    telemetry: IgpuTelemetry, batch_size: int, kernel_ms_fn, items_fn=None
+    telemetry: ChronusTelemetry, batch_size: int, kernel_ms_fn, items_fn=None
 ) -> None:
     """Simulate a measured work window: 8 dispatches at the given batch size."""
     for _ in range(8):
@@ -252,7 +252,7 @@ def _run_dispatch_window(
 class TestSelfOptimising:
     def _make_loop(self, kernel_ms_fn, power_fn, start_batch=2048, items_fn=None):
         """Build a measured-CUOP rig: telemetry + meter + batch-size learner."""
-        telemetry = IgpuTelemetry(enabled=True)
+        telemetry = ChronusTelemetry(enabled=True)
         meter = CuopMeter(usd_per_kwh=0.10)
         state = {"batch": float(start_batch)}
 
@@ -530,7 +530,7 @@ class TestSupervisedIntegration:
 
     def test_cuop_drop_triggers_reoptimisation(self):
         _, supervisor = self._rig()
-        telemetry = IgpuTelemetry(enabled=True)
+        telemetry = ChronusTelemetry(enabled=True)
         meter = CuopMeter(usd_per_kwh=0.10)
         state = {"batch": 2048.0, "degraded": False}
 

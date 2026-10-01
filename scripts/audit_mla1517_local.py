@@ -14,7 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "mla1517_platform_v3.4" / "python"))
+sys.path.insert(0, str(ROOT / "chronus/mla1517_platform" / "python"))
 
 # Phase 1 reference runtime, as declared in the build programme.
 PHASE1 = [
@@ -45,17 +45,17 @@ GATES = [
     "Dockerfile.native",
 ]
 NATIVE = [
-    "mla1517.quantum",
-    "mla1517.accelerator",
-    "mla1517.rings",
-    "mla1517.scaling",
-    "mla1517.primedb_engine",
+    "chronus.mla1517.quantum",
+    "chronus.mla1517.accelerator",
+    "chronus.mla1517.rings",
+    "chronus.mla1517.scaling",
+    "chronus.mla1517.primedb_engine",
 ]
 
 
 def report_presence():
     print("=== DECLARED vs PRESENT ===")
-    pkg = ROOT / "mla1517_platform_v3.4" / "python" / "mla1517"
+    pkg = ROOT / "chronus" / "mla1517"
     print("  -- Phase 1 reference runtime --")
     for m in PHASE1:
         print(f"    {m:<18} {'PRESENT' if (pkg / f'{m}.py').is_file() else 'ABSENT'}")
@@ -107,7 +107,7 @@ def report_exactness():
     checked = 0
     dirty = []
     for m in ("rings", "quantum", "scaling"):
-        p = ROOT / "mla1517_platform_v3.4" / "python" / "mla1517" / f"{m}.py"
+        p = ROOT / "chronus" / "mla1517" / f"{m}.py"
         if not p.is_file():
             continue
         tree = ast.parse(p.read_text(encoding="utf-8"))
@@ -132,7 +132,7 @@ def report_behaviour():
 
     # 1. Exact quantum path: Q(sqrt2) arithmetic, no floats.
     try:
-        from mla1517.quantum import ExactComplex, Qsqrt2
+        from chronus.mla1517.quantum import ExactComplex, Qsqrt2
 
         a = ExactComplex(Qsqrt2(1, 0), Qsqrt2(0, 0))  # 1
         b = ExactComplex(Qsqrt2(0, 1), Qsqrt2(0, 0))  # sqrt(2)
@@ -145,7 +145,7 @@ def report_behaviour():
 
     # 2. Exact quotient rings: ZPhi must be a ring, not a float wrapper.
     try:
-        from mla1517.rings import ZPhi
+        from chronus.mla1517.rings import ZPhi
 
         a, b = ZPhi(1, 0), ZPhi(0, 1)  # 1 and sqrt5
         s = a + b
@@ -173,7 +173,7 @@ def report_behaviour():
     try:
         import ctypes
 
-        from mla1517.primedb_engine import STATE_BYTES, MLA1517State, NativePrimeDB
+        from chronus.mla1517.primedb_engine import STATE_BYTES, MLA1517State, NativePrimeDB
 
         size = ctypes.sizeof(MLA1517State)
         print(f"    MLA1517State size       : {size} bytes (declared {STATE_BYTES})")
@@ -195,7 +195,7 @@ def report_behaviour():
 
     # 6. The canonical accelerator: does it ever fall back silently?
     try:
-        from mla1517.accelerator import CanonicalAccelerator, ExactOpenCLAccelerator
+        from chronus.mla1517.accelerator import CanonicalAccelerator, ExactOpenCLAccelerator
 
         acc = CanonicalAccelerator()
         print(f"    CanonicalAccelerator    : backend={acc.backend!r}")

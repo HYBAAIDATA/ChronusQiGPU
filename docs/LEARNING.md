@@ -2,8 +2,8 @@
 
 This is the formal learning system: what counts as learning, how it is
 judged, where the intelligences' questions come from, and what each learner
-has actually learned. The code is `mla1517_platform_v3.4/python/mla1517/learning.py`;
-the curriculum is `mla1517_platform_v3.4/python/mla1517/seeds/questions.yaml`.
+has actually learned. The code is `chronus/mla1517/learning.py`;
+the curriculum is `chronus/mla1517/seeds/questions.yaml`.
 
 ## What counts as learning
 
@@ -134,7 +134,7 @@ evidence:
 A self-improving player keeps its current best version until a candidate
 beats it in play (Silver et al., 2017). Here a candidate is a set of
 operating levers the discovery worker found in the twin, and it must win
-twice (`mla1517/mining/promotion.py`):
+twice (`chronus/mla1517/mining/promotion.py`):
 
 1. **Twin round** (discovery worker): replayed on eight fresh paired seeds,
    never the seeds it was found on (a finding chosen as the best of many is

@@ -549,11 +549,11 @@ def _lane_nonces(
     if mode in ("11d", "poincare11d", "poincare", "manifold"):
         nonces = _poincare_11d_nonces(base_nonce, count, header80)
         return nonces if nonces is not None else _linear_nonces(base_nonce, count)
-    platform_py = os.path.join(_PROJECT_ROOT, "mla1517_platform_v3.4", "python")
+    platform_py = os.path.join(_PROJECT_ROOT, "chronus/mla1517_platform", "python")
     try:
         if platform_py not in sys.path:
             sys.path.append(platform_py)
-        from mla1517.mining.solver import M32SearchSolver
+        from chronus.mla1517.mining.solver import M32SearchSolver
 
         solver = M32SearchSolver()
         return [n for n, _lane in solver.candidates(base_nonce, count)]
@@ -569,10 +569,10 @@ def _m32_lane_order(base_nonce: int):
     order ``M32SearchSolver.candidates`` walks, cached on the solver."""
     global _M32_SOLVER
     if _M32_SOLVER is None:
-        platform_py = os.path.join(_PROJECT_ROOT, "mla1517_platform_v3.4", "python")
+        platform_py = os.path.join(_PROJECT_ROOT, "chronus/mla1517_platform", "python")
         if platform_py not in sys.path:
             sys.path.append(platform_py)
-        from mla1517.mining.solver import M32SearchSolver
+        from chronus.mla1517.mining.solver import M32SearchSolver
 
         _M32_SOLVER = M32SearchSolver()
     return _M32_SOLVER.turing.lane_order(base_nonce)
@@ -583,7 +583,7 @@ def device_status() -> Dict[str, object]:
     the live grind path. Fields reflect real code paths — a component listed
     in the unified-punch device but not invoked per epoch is reported false.
     """
-    platform_py = os.path.join(_PROJECT_ROOT, "mla1517_platform_v3.4", "python")
+    platform_py = os.path.join(_PROJECT_ROOT, "chronus/mla1517_platform", "python")
     status: Dict[str, object] = {
         "compass_faces": 32,  # M32 lanes = 32-face routing (12+20 dual overlay)
         "manifold_dimensions": 0,
@@ -602,7 +602,7 @@ def device_status() -> Dict[str, object]:
     try:
         if platform_py not in sys.path:
             sys.path.append(platform_py)
-        from mla1517.mining.geometry import M32Topology
+        from chronus.mla1517.mining.geometry import M32Topology
 
         topo = M32Topology()
         if topo.connected() and topo.lanes == 32:

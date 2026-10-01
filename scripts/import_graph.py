@@ -280,7 +280,7 @@ def _entry_files(root: Path, commands: list[str], graph: Graph) -> set[Path]:
                     if main.is_file():
                         out.add(main.resolve())
             elif script:
-                for base in (root, root / "mla1517_platform_v3.4"):
+                for base in (root, root / "chronus/mla1517_platform"):
                     candidate = (base / script).resolve()
                     if candidate in known:
                         out.add(candidate)
@@ -298,7 +298,7 @@ def _pyproject_scripts(root: Path, graph: Graph) -> set[Path]:
     out: set[Path] = set()
     for base in source_roots(root):
         project = base / "pyproject.toml"
-        if base == root / "mla1517_platform_v3.4" / "python":
+        if base == root / "chronus/mla1517_platform" / "python":
             project = base.parent / "pyproject.toml"
         if not project.is_file():
             continue

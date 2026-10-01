@@ -43,6 +43,6 @@ produce that evidence.
 
 ## Migration rule
 
-The former active `igpu` product namespace is being removed, not retained as a
+The former active `chronus` product namespace is being removed, not retained as a
 compatibility alias. Active code must import `chronus` when it addresses the
 HYBA iGPU offering. Historical files under `legacy/` remain provenance only.

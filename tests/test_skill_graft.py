@@ -122,7 +122,7 @@ def test_a_local_skill_is_never_replaced_by_a_graft(upstream, tmp_path):
 
 
 def test_grafts_are_taken_one_at_a_time_and_halt_on_a_rejected_one(upstream, tmp_path, monkeypatch):
-    from mla1517.knowledge import KnowledgeFabric
+    from chronus.mla1517.knowledge import KnowledgeFabric
 
     repo, commit = upstream
     monkeypatch.setattr(skill_graft, "GRAFT_PLAN", (_spec(commit), _spec(commit, "beta")))

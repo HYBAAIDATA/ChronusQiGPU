@@ -966,7 +966,7 @@ def run_pytest(h: Harness) -> Dict[str, Any]:
 
     runs = [
         one(PYTEST_FILES, ROOT),
-        one(PLATFORM_PYTEST_FILES, ROOT / "mla1517_platform_v3.4" / "python"),
+        one(PLATFORM_PYTEST_FILES, ROOT / "chronus/mla1517_platform" / "python"),
     ]
     for r in runs:
         h.check(

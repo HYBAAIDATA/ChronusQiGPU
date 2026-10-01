@@ -7,7 +7,7 @@ fabricated. Verdicts: **present** | **absent** | **renamed/relocated**.
 | EHS task | Verdict | Evidence |
 |---|---|---|
 | T1 — 11D manifold navigator | **present (relocated)** | `toe/poincare_golden_11d.py` — canonical Klein–Poincaré diffeomorphism on the φ-weighted 11-ball (`HYBA-SPEC-POINCARE-11D-GOLDEN-001`). Not inside `hyba/hybrid/`; it lives in the canonical `toe/` package. |
-| T2 — 32-face frame builder | **present (relocated)** | `kellogg.quantum_tensor.dual_overlay_frame` (20 icosa + 12 dodeca normals) consumed by `kellogg/traversal.py`; independent exact-copy in `mla1517/mining/geometry.py::truncated_icosahedron_frame` (spherical-5-design-verified). |
+| T2 — 32-face frame builder | **present (relocated)** | `kellogg.quantum_tensor.dual_overlay_frame` (20 icosa + 12 dodeca normals) consumed by `kellogg/traversal.py`; independent exact-copy in `chronus/mla1517/mining/geometry.py::truncated_icosahedron_frame` (spherical-5-design-verified). |
 | T3 — geodesic partitioner | **present** | `hyba/hybrid/lucas_partition.py::partition` — 32-face winding partition with Lucas weights from `kellogg.scales` (exact integers), largest-remainder span assignment. |
 | T4 — NonceScheduler protocol | **present** | `hyba/hybrid/nonce_scheduler.py` — `NonceScheduler` Protocol, `NonceWindow`, `DeviceCapability`, `DispatchHandle`, `Share`, `verify_share` (double-SHA256). |
 | T5 — GPUSolver | **present** | `hyba/hybrid/gpu_solver.py::GPUSolver` — dispatch/poll/cancel, `hashed_count`, attestation per event. |

@@ -24,7 +24,7 @@ def test_forensic_map_marks_every_named_subsystem():
     # The operator's named technology all appears — the map is the answer
     # to "where is my manifold / tensor / VQC / Salamander / …".
     assert {
-        "igpu",
+        "chronus",
         "manifold_iid",
         "poincare_11d",
         "yang_mills",
@@ -45,7 +45,7 @@ def test_forensic_map_marks_every_named_subsystem():
     )
     # OpenCL-gated rows report the gate closed with zero devices.
     gated = {s["key"]: s for s in m["subsystems"] if s["gate"]}
-    assert gated["igpu"]["gate_state"] == "closed"
+    assert gated["chronus"]["gate_state"] == "closed"
     # Canonical subsystems are present; parked (unwired) subsystems are
     # absent and demoted — the map must name exactly this set, no more.
     # manifold_iid, structured_search, unstructured_search, tensor, vqc,
@@ -77,7 +77,7 @@ def test_forensic_map_gates_open_on_hardware():
 
     m = system_fabric.forensic_map(opencl_count=2, have_mmio=True, have_credentials=True)
     gated = {s["key"]: s for s in m["subsystems"] if s["gate"]}
-    assert gated["igpu"]["gate_state"] == "open"
+    assert gated["chronus"]["gate_state"] == "open"
     assert m["gates"]["opencl_devices"] == 2
 
 

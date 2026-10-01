@@ -27,7 +27,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "mla1517_platform_v3.4" / "python"))
+sys.path.insert(0, str(ROOT / "chronus/mla1517_platform" / "python"))
 
 import numpy as np  # noqa: E402
 
@@ -508,7 +508,7 @@ def _movement_workload() -> dict:
 
 def compatibility() -> dict:
     # SQLite-backed durable PrimeDB is the existing compatibility adapter
-    from mla1517.store import PrimeDB as SqlitePrimeDB
+    from chronus.mla1517.store import PrimeDB as SqlitePrimeDB
 
     d = Path(tempfile.mkdtemp()) / "ref.db"
     db = SqlitePrimeDB(d)
@@ -554,7 +554,7 @@ def negative_and_unavailable() -> dict:
     ]
     unavailable = [
         "native libprimedb_storage (C library) — absent from this tree; "
-        "reference semantics only (declared in mla1517.prime_db)",
+        "reference semantics only (declared in chronus.mla1517.prime_db)",
         "GPU-persistence/zero-copy device path — no HYBA device on this VM",
         "semantic/vector embedding navigation — no embedding store exists "
         "in the substrate (anchor buckets are the geometric lens)",
@@ -568,7 +568,7 @@ def acceptance() -> dict:
     return {
         "what_is_the_substrate": "aethel (Binet+Zeckendorf encoding, "
         "Fibonacci+Cassini address space with integrity ledger, prime "
-        "substrate keys, geodesic handoff) + mla1517.prime_db reference "
+        "substrate keys, geodesic handoff) + chronus.mla1517.prime_db reference "
         "semantics + hyba.substrate facade + toe.receipts evidence chain",
         "mathematical_properties": [
             "Zeckendorf uniqueness (exact invertible fold)",

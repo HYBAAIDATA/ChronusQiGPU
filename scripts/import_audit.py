@@ -44,7 +44,7 @@ def source_roots(root: Path = ROOT) -> tuple[Path, ...]:
     (a top-level folder with its own pyproject.toml, whose package is inside
     it and is put on ``sys.path`` by the code and tests that use it)."""
     dists = sorted(d for d in root.iterdir() if d.is_dir() and (d / "pyproject.toml").is_file())
-    return (root, root / "mla1517_platform_v3.4" / "python", *dists)
+    return (root, root / "chronus/mla1517_platform" / "python", *dists)
 
 
 EXCLUDE = ("legacy/", "Intelligence/skills/", "build/", "node_modules/", "PYTHIA-main/")

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Dict
 
-from igpu.seam.types import KernelName
+from chronus.seam.types import KernelName
 
 INVARIANT_OF: Dict[KernelName, str] = {
     KernelName.lucas_wind: "Lucas",

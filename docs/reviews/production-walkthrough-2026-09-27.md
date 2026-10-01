@@ -22,7 +22,7 @@ deleted. The Intelligence package is preserved.
 3. `manifold_pool_coordinator.py` authorizes the Stratum identity, consumes jobs and vault
    records, and calls the lifecycle gate before polling hardware. Device polling runs
    outside the async event-loop thread. Only literal boolean pool acknowledgements count.
-4. `mla1517/mining/coordinator.py` obtains TOE context from the real job/vault record,
+4. `chronus/mla1517/mining/coordinator.py` obtains TOE context from the real job/vault record,
    applies control/recovery decisions, and invokes the bounded SHA256d CPU reference
    search on an actual negotiated header. This search currently remains CPU reference;
    it is **not** evidence that the iGPU ran SHA256d.
@@ -48,9 +48,9 @@ deleted. The Intelligence package is preserved.
 
 | Severity | Finding / location | Disposition and required next step |
 |---|---|---|
-| Critical | Canonical live path lacked the required durable lifecycle. `mla1517/mining/coordinator.py`, `session.py`, `mining_runtime.py` | Implemented for this path; historical-header tests cover restart, exclusive ownership, external-block gating and cooldown. Audit every other direct submission path before releasing the whole repository. |
+| Critical | Canonical live path lacked the required durable lifecycle. `chronus/mla1517/mining/coordinator.py`, `session.py`, `mining_runtime.py` | Implemented for this path; historical-header tests cover restart, exclusive ownership, external-block gating and cooldown. Audit every other direct submission path before releasing the whole repository. |
 | Critical | No independently verified external-block observation in that path. `chain_observer.py` | Added Bitcoin Core observation with header/hash/target/active-chain checks. Live RPC and chain-reorganization acceptance testing remain outstanding. |
-| High | `submit_record` collected context but did not search. `mla1517/mining/coordinator.py` | Now invokes real bounded SHA256d search using the negotiated job; stale job results are discarded. Search is CPU reference pending verified hardware integration. |
+| High | `submit_record` collected context but did not search. `chronus/mla1517/mining/coordinator.py` | Now invokes real bounded SHA256d search using the negotiated job; stale job results are discarded. Search is CPU reference pending verified hardware integration. |
 | High | Fixed Lucas contract differed across runtime layers. `pow.py`, `scaling.py`, `toe_signal.py`, `control_api.py` | Those layers now share `lucas.ladder.FULL_LADDER`. Other research/UI ladder declarations still need consolidation and the entire-system budget audit is open. |
 | High | Winner memory did not feed the canonical search. `session.py`, `coordinator.py` | Folded, validated and persistent germ-line winners now determine complete lane ordering. Episodic, semantic and curriculum integration across all six intelligence types remains open. |
 | High | Raw-buffer claim was false in folded hashing. `Intelligence/folded_state.py` | Hash queries stream bytes. Explicit restore operations increment the materialization count and reject integrity failures even under Python optimization. |
