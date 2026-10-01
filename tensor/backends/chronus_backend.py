@@ -1,102 +1,102 @@
-"""Optional Chronus hardware accelerator adapter.
+"""Chronus OpenCL tensor backend.
 
-This adapter uses lazy, dynamic imports so that importing ``tensor`` (or
-even this module) never requires Chronus, OpenCL, or any GPU driver to be
-installed. Availability is reported honestly: when Chronus or a usable
-device is absent, :meth:`ChronusBackend.is_available` returns ``False``
-rather than raising, and :meth:`execute` raises
-:class:`tensor.errors.TensorBackendUnavailableError` rather than silently
-falling back to the CPU reference backend.
-
-No Chronus namespace migration happens here — this module only calls the
-existing public ``chronus`` package surface via ``importlib``, so it has no
-import-time coupling to that package's internal layout.
+The adapter is import-light and fail-closed. ``chronus.tensor_compute`` is
+loaded only when probed/executed; no OpenCL dependency is required to import
+:mod:`tensor`. A result is reported as ``chronus-opencl`` only after physical
+GPU/accelerator execution. CPU fallback remains Tensor-router policy.
 """
-
 from __future__ import annotations
 
 from importlib import import_module
 from typing import Any, Dict, Sequence
 
-from ..contracts import TensorOperationSpec
+from ..contracts import Precision, TensorOperationSpec
 from ..errors import TensorBackendUnavailableError, TensorValidationError
 
-#: Chronus does not currently expose generic tensor compute kernels (it is
-#: specialised for SHA-256d search). No operation is executable yet; this is
-#: tracked honestly in the capability manifest as hardware-evidence-required.
-SUPPORTED_OPERATIONS: tuple[str, ...] = ()
+SUPPORTED_OPERATIONS=("matmul","add","scale","kron","hadamard")
+SUPPORTED_DTYPES=(Precision.FLOAT32,)
 
 
 class ChronusBackend:
-    """Lazy adapter over the optional ``chronus`` hardware package."""
-
     def __init__(self) -> None:
-        self._name = "chronus-opencl"
-        self._device_id = "unknown"
+        self._name="chronus-opencl"; self._device_id="unprobed"; self._last_probe=None
 
     @property
-    def name(self) -> str:
-        return self._name
-
+    def name(self): return self._name
     @property
-    def backend_class(self) -> str:
-        return "hardware"
-
+    def backend_class(self): return "hardware"
     @property
-    def device_id(self) -> str:
+    def device_id(self):
+        if self._last_probe is None: self._probe()
         return self._device_id
 
-    def _detect(self) -> Any:
-        """Dynamically import chronus.detect and run device detection.
+    def _module(self): return import_module("chronus.tensor_compute")
 
-        Returns ``None`` (never raises) when chronus, pyopencl, or a device
-        is unavailable, so callers can report honest unavailability.
-        """
+    def _probe(self) -> dict[str,Any]:
         try:
-            detect = import_module("chronus.detect")
-            report = detect.detect_all()
-        except Exception:  # noqa: BLE001 - any failure means "no evidence of hardware"
-            return None
-        devices = getattr(report, "devices", None)
-        if not devices:
-            return None
-        return report
+            report=self._module().probe()
+            data=report.as_dict() if hasattr(report,"as_dict") else dict(report)
+        except Exception as exc:
+            data={"available":False,"device_id":"unavailable","device_name":"",
+                  "platform_name":"","reason":f"{type(exc).__name__}: {exc}"}
+        self._last_probe=data; self._device_id=str(data.get("device_id") or "unavailable")
+        return data
 
-    def is_available(self) -> bool:
-        return self._detect() is not None
+    def is_available(self) -> bool: return bool(self._probe().get("available",False))
 
-    def capabilities(self) -> Dict[str, object]:
-        report = self._detect()
-        device_count = len(getattr(report, "devices", ())) if report is not None else 0
-        return {
-            "operations": SUPPORTED_OPERATIONS,
-            "device_count": device_count,
-            "deterministic": False,
-            "status": "hardware-evidence-required",
-        }
+    def capabilities(self) -> Dict[str,object]:
+        report=self._probe()
+        return {"operations":SUPPORTED_OPERATIONS,"dtypes":tuple(p.value for p in SUPPORTED_DTYPES),
+                "deterministic_device_execution":True,"device_name":report.get("device_name",""),
+                "platform_name":report.get("platform_name",""),"status":"hardware-evidence-required",
+                "available":bool(report.get("available",False)),"reason":report.get("reason","")}
+
+    @staticmethod
+    def _shape_supported(operation: TensorOperationSpec) -> bool:
+        shapes=operation.input_shapes
+        if operation.name in {"add","hadamard"}:
+            return len(shapes)==2 and shapes[0].dims==shapes[1].dims
+        if operation.name=="scale": return len(shapes)==2 and shapes[1].size==1
+        if operation.name=="matmul":
+            return (len(shapes)==2 and len(shapes[0].dims)==2 and len(shapes[1].dims)==2
+                    and shapes[0].dims[1]==shapes[1].dims[0]
+                    and operation.output_shape.dims==(shapes[0].dims[0],shapes[1].dims[1]))
+        if operation.name=="kron":
+            if len(shapes)!=2 or len(shapes[0].dims)!=len(shapes[1].dims): return False
+            if len(shapes[0].dims)==1:
+                return operation.output_shape.dims==(shapes[0].dims[0]*shapes[1].dims[0],)
+            if len(shapes[0].dims)==2:
+                return operation.output_shape.dims==(
+                    shapes[0].dims[0]*shapes[1].dims[0],shapes[0].dims[1]*shapes[1].dims[1])
+        return False
 
     def supports(self, operation: TensorOperationSpec) -> bool:
-        return operation.name in SUPPORTED_OPERATIONS
+        return (operation.name in SUPPORTED_OPERATIONS and operation.dtype in SUPPORTED_DTYPES
+                and self._shape_supported(operation))
 
-    def execute(
-        self, operation: TensorOperationSpec, inputs: Sequence[Any], *, deterministic: bool
-    ):
-        del inputs, deterministic
-        if not self.is_available():
+    def execute(self, operation: TensorOperationSpec, inputs: Sequence[Any], *, deterministic: bool):
+        del deterministic
+        if not self.supports(operation):
+            raise TensorValidationError(
+                f"chronus-opencl does not support {operation.name!r} at {operation.dtype.value} "
+                "for the declared shapes")
+        report=self._probe()
+        if not report.get("available",False):
             raise TensorBackendUnavailableError(
-                "chronus-opencl backend is unavailable on this host "
-                "(no chronus-detectable OpenCL device); no silent CPU fallback"
-            )
-        raise TensorValidationError(
-            f"chronus-opencl backend has no tensor kernel for operation "
-            f"'{operation.name}' yet; this is tracked as "
-            "hardware-evidence-required in the tensor capability manifest"
-        )
+                "chronus-opencl tensor backend is unavailable on this host: "
+                f"{report.get('reason','no physical OpenCL GPU')}; no silent CPU fallback")
+        try:
+            runtime=self._module().get_runtime(); self._device_id=str(runtime.device_id)
+            return runtime.execute(operation.name,inputs,
+                                   tuple(shape.dims for shape in operation.input_shapes),
+                                   operation.output_shape.dims)
+        except ValueError as exc:
+            raise TensorValidationError(str(exc)) from exc
+        except RuntimeError as exc:
+            raise TensorBackendUnavailableError(
+                f"chronus-opencl tensor execution failed closed: {exc}") from exc
 
 
-def create() -> ChronusBackend:
-    """Factory used by the default backend registry. Does not touch hardware."""
-    return ChronusBackend()
+def create() -> ChronusBackend: return ChronusBackend()
 
-
-__all__ = ["ChronusBackend", "SUPPORTED_OPERATIONS", "create"]
+__all__=["ChronusBackend","SUPPORTED_DTYPES","SUPPORTED_OPERATIONS","create"]
