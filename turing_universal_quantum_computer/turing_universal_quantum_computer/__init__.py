@@ -13,6 +13,7 @@ turing_core           exact Q[sqrt(5)] algebra, Zeckendorf, T_phi fold,
 hilbert               exact sparse state vector; bounded support, fail closed
 stabilizer            exact Clifford tableau at arbitrary n (incl. 10,000)
 phi_quantum_machine   production 1,000-qubit Clifford/QASM/PULVINI facade
+phi_verification      basis-invariant stabilizer evidence gates
 phi_vqc               bounded M32 candidate ranker + exact Clifford skeleton
 quantum_walk          exact sparse/closed-form quantum walks
 annealing             exact TFIM/free-fermion and adiabatic surfaces
@@ -130,6 +131,7 @@ _LAZY_MODULES = {
     "grover_exact_scale",
     "stabilizer",
     "phi_quantum_machine",
+    "phi_verification",
     "phi_vqc",
     "quantum_walk",
     "annealing",
@@ -137,17 +139,14 @@ _LAZY_MODULES = {
 }
 
 _LAZY_SYMBOLS = {
-    # hilbert
     "QuantumRegister": "hilbert",
     "GroverExact": "hilbert",
     "ExactComplex": "hilbert",
     "QSqrt": "hilbert",
     "QSqrt2": "hilbert",
     "qft": "hilbert",
-    # register_tensor
     "QuantumTensor": "register_tensor",
     "QuantumTensorAudit": "register_tensor",
-    # production plane
     "FourLayerMiningStack": "four_layer_stack",
     "TuringLayer": "four_layer_stack",
     "NearStateIGpu": "four_layer_stack",
@@ -167,12 +166,10 @@ _LAZY_SYMBOLS = {
     "ExtendedAlgebra": "extended_algebra",
     "GroverSearch": "quantum_algorithms",
     "run_folded": "grover_exact_scale",
-    # universal n-qubit engine
     "TenThousandQubitSystem": "turing_core.ten_thousand",
     "EntanglementRegistration": "turing_core.ten_thousand",
     "DEFAULT_UNIVERSAL_QUBITS": "turing_core.ten_thousand",
     "zeckendorf_valid": "turing_core.ten_thousand",
-    # exact large-scale backends
     "StabilizerState": "stabilizer",
     "StabilizerDomainError": "stabilizer",
     "CoinedCycleWalk": "quantum_walk",
@@ -181,14 +178,15 @@ _LAZY_SYMBOLS = {
     "landau_zener": "annealing",
     "adiabatic_condition": "annealing",
     "QuantumSwarm": "swarm",
-    # consolidated July phi-machine surface
     "PhiQuantumCircuit": "phi_quantum_machine",
     "PhiQuantumMachine": "phi_quantum_machine",
     "PhiQuantumMachine1000": "phi_quantum_machine",
     "PhiCheckpoint": "phi_quantum_machine",
     "PhiMachineValidationError": "phi_quantum_machine",
-    "run_1000_qubit_verification": "phi_quantum_machine",
-    "run_1000_qubit_demonstration": "phi_quantum_machine",
+    "run_1000_qubit_verification": "phi_verification",
+    "run_1000_qubit_demonstration": "phi_verification",
+    "stabilizer_contains": "phi_verification",
+    "verify_ghz_stabilizer_group": "phi_verification",
     "PhiGroverVQC": "phi_vqc",
     "VQCConfig": "phi_vqc",
 }
