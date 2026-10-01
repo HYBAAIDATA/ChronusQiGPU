@@ -38,23 +38,29 @@ jobs:
       matrix:
         include:
           - module: hashrate_governor
-            tests: test_hashrate_governor.py
+            tests: chronus/mla1517_platform/python/test_hashrate_governor.py
             floor: "0.85"
           - module: world_model
-            tests: test_world_model_logic.py test_mining_intelligence.py
+            tests: >-
+              chronus/mla1517_platform/python/test_world_model_logic.py
+              chronus/mla1517_platform/python/test_mining_intelligence.py
             floor: "0.85"
           - module: operating_policy
-            tests: test_operating_policy_logic.py test_mining_intelligence.py
+            tests: >-
+              chronus/mla1517_platform/python/test_operating_policy_logic.py
+              chronus/mla1517_platform/python/test_mining_intelligence.py
             floor: "0.85"
           - module: loss_ledger
-            tests: test_loss_ledger_logic.py test_mining_intelligence.py
+            tests: >-
+              chronus/mla1517_platform/python/test_loss_ledger_logic.py
+              chronus/mla1517_platform/python/test_mining_intelligence.py
             floor: "0.85"
           - module: promotion
-            tests: test_promotion_gate.py
+            tests: chronus/mla1517_platform/python/test_promotion_gate.py
             floor: "0.85"
           - module: learning
             path: chronus/mla1517/learning.py
-            tests: test_learning.py
+            tests: chronus/mla1517_platform/python/test_learning.py
             floor: "0.85"
     steps:
       - uses: actions/checkout@v4
@@ -70,8 +76,9 @@ jobs:
       - name: Mutate ${{ matrix.module }}
         run: >-
           python scripts/mutation_check.py
-          chronus/mla1517_platform/python/${{ matrix.path || format('chronus/mla1517/mining/{0}.py', matrix.module) }}
+          ${{ matrix.path || format('chronus/mla1517/mining/{0}.py', matrix.module) }}
           --tests ${{ matrix.tests }}
+          --pythonpath chronus/mla1517_platform/python turing_universal_quantum_computer
           --workers 4
           --min-score ${{ matrix.floor }}
           --json mutation-${{ matrix.module }}.json
