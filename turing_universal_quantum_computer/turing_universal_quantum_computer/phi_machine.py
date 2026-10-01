@@ -158,9 +158,12 @@ def _restore_tableau(payload: bytes) -> StabilizerState:
     zs: list[int] = []
     rs: list[int] = []
     for _ in range(2 * n):
-        xs.append(int.from_bytes(payload[pos:pos + width], "little")); pos += width
-        zs.append(int.from_bytes(payload[pos:pos + width], "little")); pos += width
-        r = payload[pos]; pos += 1
+        xs.append(int.from_bytes(payload[pos:pos + width], "little"))
+        pos += width
+        zs.append(int.from_bytes(payload[pos:pos + width], "little"))
+        pos += width
+        r = payload[pos]
+        pos += 1
         if r not in (0, 1):
             raise ValueError("invalid tableau phase bit")
         rs.append(r)
@@ -349,7 +352,7 @@ class PhiQuantumMachine1000:
 
 
 def seeded_clifford_digest(n_qubits: int = 64, gates: int = 256,
-                            seed: int = 20260802) -> str:
+                           seed: int = 20260802) -> str:
     rng = random.Random(seed)
     circuit = PhiQuantumCircuit(n_qubits)
     singles = ("h", "s", "sdg", "x", "y", "z")

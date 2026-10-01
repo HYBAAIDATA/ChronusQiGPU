@@ -12,7 +12,6 @@ from aethel import (
     fold_result,
     phi_fold,
     phi_unfold,
-    unfold_partial,
     unfold_partial_with_stats,
 )
 from chronus.gpu_reference import get_gpu_spec, list_available_gpus
