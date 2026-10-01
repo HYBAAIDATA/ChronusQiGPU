@@ -69,7 +69,7 @@ def _validate_directory(path: Path, *, create: bool = False) -> None:
         raise SegmentMissing("storage directory does not exist") from exc
     if not stat.S_ISDIR(info.st_mode):
         raise StorageCorruption("storage path is not a directory")
-    if info.st_mode & 0o077:
+    if os.name != "nt" and info.st_mode & 0o077:
         raise StorageCorruption("storage directory must be private to its owner")
     if hasattr(os, "geteuid") and info.st_uid != os.geteuid():
         raise StorageCorruption("storage directory is not owned by this user")
@@ -84,7 +84,7 @@ def _validate_regular_file(path: Path, *, required: bool = True) -> Optional[os.
         return None
     if not stat.S_ISREG(info.st_mode):
         raise StorageCorruption("storage entry is not a regular file")
-    if info.st_mode & 0o077:
+    if os.name != "nt" and info.st_mode & 0o077:
         raise StorageCorruption("storage file must be private to its owner")
     if hasattr(os, "geteuid") and info.st_uid != os.geteuid():
         raise StorageCorruption("storage file is not owned by this user")
@@ -92,6 +92,10 @@ def _validate_regular_file(path: Path, *, required: bool = True) -> Optional[os.
 
 
 def _fsync_directory(path: Path) -> None:
+    if os.name == "nt":
+        # Windows does not permit opening directories via os.open; directory
+        # durability relies on the file-level fsync in _atomic_write.
+        return
     fd = os.open(path, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
     try:
         os.fsync(fd)

@@ -142,7 +142,4 @@ class ChronusSku:
         return min(hits) if hits else None
 
 
-# Compatibility name for existing callers; Chronus remains the owner.
-IGpuSku = ChronusSku
-
-__all__ = ["ChronusSku", "DeviceTicket", "IGpuSku", "Mode"]
+__all__ = ["ChronusSku", "DeviceTicket", "Mode"]
