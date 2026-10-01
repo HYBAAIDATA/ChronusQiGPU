@@ -13,11 +13,11 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PYTHON_ROOT = ROOT / "mla1517_platform_v3.4" / "python"
+PYTHON_ROOT = ROOT / "chronus/mla1517_platform" / "python"
 if str(PYTHON_ROOT) not in sys.path:
     sys.path.insert(0, str(PYTHON_ROOT))
 
-from mla1517.mining import (  # noqa: E402
+from chronus.mla1517.mining import (  # noqa: E402
     M32SearchSolver,
     M32Topology,
     MiningIntelligenceChooser,
@@ -32,12 +32,12 @@ ACTIVE_FILES = (
     PYTHON_ROOT / "control_api.py",
     PYTHON_ROOT / "mining_runtime.py",
     PYTHON_ROOT / "manifold_pool_coordinator.py",
-    PYTHON_ROOT / "mla1517" / "mining" / "chooser.py",
-    PYTHON_ROOT / "mla1517" / "mining" / "coordinator.py",
-    PYTHON_ROOT / "mla1517" / "mining" / "geometry.py",
-    PYTHON_ROOT / "mla1517" / "mining" / "lane.py",
-    PYTHON_ROOT / "mla1517" / "mining" / "pow.py",
-    PYTHON_ROOT / "mla1517" / "mining" / "solver.py",
+    ROOT / "chronus" / "mla1517" / "mining" / "chooser.py",
+    ROOT / "chronus" / "mla1517" / "mining" / "coordinator.py",
+    ROOT / "chronus" / "mla1517" / "mining" / "geometry.py",
+    ROOT / "chronus" / "mla1517" / "mining" / "lane.py",
+    ROOT / "chronus" / "mla1517" / "mining" / "pow.py",
+    ROOT / "chronus" / "mla1517" / "mining" / "solver.py",
 )
 FORBIDDEN_ACTIVE_TEXT = (
     "TypeScript server",

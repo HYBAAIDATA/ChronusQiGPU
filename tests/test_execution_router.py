@@ -14,9 +14,11 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "mla1517_platform_v3.4" / "python"))
+sys.path.insert(
+    0, str(Path(__file__).resolve().parent.parent / "chronus/mla1517_platform" / "python")
+)
 
-from mla1517.mining.execution_router import (  # noqa: E402
+from chronus.mla1517.mining.execution_router import (  # noqa: E402
     NONCE_ORDER_KLEIN,
     NONCE_ORDER_M32,
     ChunkSpec,
@@ -24,7 +26,7 @@ from mla1517.mining.execution_router import (  # noqa: E402
     chunks_cover_exactly,
     partition_window,
 )
-from mla1517.mining.search_plan import (  # noqa: E402
+from chronus.mla1517.mining.search_plan import (  # noqa: E402
     CompletionState,
     EvidenceClass,
     FallbackReason,
@@ -357,7 +359,7 @@ def test_cpu_reference_route_never_reports_device_kernel_time():
 
 
 def test_record_refuses_invented_work():
-    from mla1517.mining.search_plan import ExecutionRecord
+    from chronus.mla1517.mining.search_plan import ExecutionRecord
 
     with pytest.raises(ValueError, match="invent work"):
         ExecutionRecord(
@@ -387,7 +389,7 @@ def test_record_refuses_invented_work():
 
 
 def test_silent_fallback_is_impossible():
-    from mla1517.mining.search_plan import ExecutionRecord
+    from chronus.mla1517.mining.search_plan import ExecutionRecord
 
     with pytest.raises(ValueError, match="no silent fallback"):
         ExecutionRecord(
@@ -415,7 +417,7 @@ def test_silent_fallback_is_impossible():
 
 
 def test_complete_requires_full_completion():
-    from mla1517.mining.search_plan import ExecutionRecord
+    from chronus.mla1517.mining.search_plan import ExecutionRecord
 
     with pytest.raises(ValueError, match="COMPLETE requires"):
         ExecutionRecord(
@@ -443,7 +445,7 @@ def test_complete_requires_full_completion():
 
 
 def test_hardware_executed_requires_measured_device_work():
-    from mla1517.mining.search_plan import ExecutionRecord
+    from chronus.mla1517.mining.search_plan import ExecutionRecord
 
     with pytest.raises(ValueError, match="HARDWARE_EXECUTED"):
         ExecutionRecord(
@@ -472,7 +474,7 @@ def test_hardware_executed_requires_measured_device_work():
 
 
 def test_pool_confirmed_requires_literal_accept():
-    from mla1517.mining.search_plan import ExecutionRecord
+    from chronus.mla1517.mining.search_plan import ExecutionRecord
 
     with pytest.raises(ValueError, match="POOL_CONFIRMED"):
         ExecutionRecord(

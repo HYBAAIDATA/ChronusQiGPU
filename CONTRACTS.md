@@ -979,7 +979,7 @@ measure → geometry → topology → observed-support lookup
 - B1: Exact quantum mathematics is available now
 - B2: Simulation is distinct from physical execution
 - B3: Physical QRAM/QDC unavailable until backend conforms
-- B4: `mla1517_igpu` quantum selection raises `AcceleratorUnavailable`
+- B4: `mla1517_chronus` quantum selection raises `AcceleratorUnavailable`
 - B5: **NEVER** fall back to approximation
 - B6: **NEVER** claim quantum advantage without device certificate
 

@@ -7,17 +7,17 @@ name: Mutation check
 on:
   pull_request:
     paths:
-      - "mla1517_platform_v3.4/python/mla1517/mining/world_model.py"
-      - "mla1517_platform_v3.4/python/mla1517/mining/promotion.py"
-      - "mla1517_platform_v3.4/python/test_promotion_gate.py"
-      - "mla1517_platform_v3.4/python/mla1517/mining/operating_policy.py"
-      - "mla1517_platform_v3.4/python/mla1517/mining/loss_ledger.py"
-      - "mla1517_platform_v3.4/python/mla1517/mining/hashrate_governor.py"
-      - "mla1517_platform_v3.4/python/mla1517/learning.py"
-      - "mla1517_platform_v3.4/python/test_learning.py"
-      - "mla1517_platform_v3.4/python/test_*_logic.py"
-      - "mla1517_platform_v3.4/python/test_hashrate_governor.py"
-      - "mla1517_platform_v3.4/python/test_mining_intelligence.py"
+      - "chronus/mla1517/mining/world_model.py"
+      - "chronus/mla1517/mining/promotion.py"
+      - "chronus/mla1517_platform/python/test_promotion_gate.py"
+      - "chronus/mla1517/mining/operating_policy.py"
+      - "chronus/mla1517/mining/loss_ledger.py"
+      - "chronus/mla1517/mining/hashrate_governor.py"
+      - "chronus/mla1517/learning.py"
+      - "chronus/mla1517_platform/python/test_learning.py"
+      - "chronus/mla1517_platform/python/test_*_logic.py"
+      - "chronus/mla1517_platform/python/test_hashrate_governor.py"
+      - "chronus/mla1517_platform/python/test_mining_intelligence.py"
       - "scripts/mutation_check.py"
       - "turing_universal_quantum_computer/**"
       - ".github/workflows/mutation.yml"
@@ -53,7 +53,7 @@ jobs:
             tests: test_promotion_gate.py
             floor: "0.85"
           - module: learning
-            path: mla1517/learning.py
+            path: chronus/mla1517/learning.py
             tests: test_learning.py
             floor: "0.85"
     steps:
@@ -70,7 +70,7 @@ jobs:
       - name: Mutate ${{ matrix.module }}
         run: >-
           python scripts/mutation_check.py
-          mla1517_platform_v3.4/python/${{ matrix.path || format('mla1517/mining/{0}.py', matrix.module) }}
+          chronus/mla1517_platform/python/${{ matrix.path || format('chronus/mla1517/mining/{0}.py', matrix.module) }}
           --tests ${{ matrix.tests }}
           --workers 4
           --min-score ${{ matrix.floor }}

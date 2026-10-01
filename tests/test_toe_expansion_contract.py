@@ -8,7 +8,7 @@ import sys
 import unittest
 
 sys.path.insert(0, "/data/pythia_real")
-sys.path.insert(0, "/data/pythia_real/mla1517_platform_v3.4/python")
+sys.path.insert(0, "/data/pythia_real/chronus/mla1517_platform/python")
 
 from toe.causal_ladder import CausalGraph
 from toe.operator_compilers import compile_operator

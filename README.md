@@ -11,7 +11,7 @@ React/Vite operator frontend
         ⇅  HTTP status/control requests
 main.py → control_api.py
         ⇅
-mla1517_platform_v3.4/python
+chronus/mla1517_platform/python
   Python orchestration and exact reference
   C/C++ MMIO, transport, telemetry, persistence
   exact OpenCL payload
@@ -27,8 +27,8 @@ There is no Node/TypeScript backend in the canonical runtime. The frontend is a 
 python3 main.py --host 0.0.0.0 --port 3000 --web-root dist/public
 
 # Hardware miner; requires the actual MMIO device and pool credentials
-PYTHONPATH=mla1517_platform_v3.4/python \
-  python3 mla1517_platform_v3.4/python/headless_miner.py \
+PYTHONPATH=chronus/mla1517_platform/python \
+  python3 chronus/mla1517_platform/python/headless_miner.py \
   --device /dev/uio0 \
   --user <stratum-user.worker> \
   --password x \
@@ -41,7 +41,7 @@ The miner fails closed when the device, negotiated job, proof adapter, credentia
 
 ## Canonical structured mining path
 
-The canonical mining package is `mla1517_platform_v3.4/python/mla1517/mining`:
+The canonical mining package is `chronus/mla1517/mining`:
 
 - `geometry.py` defines the connected 32-lane M32 allocation and complete lane order.
 - `lane.py` declares the structured M32 and flat exhaustive work contracts.
@@ -57,7 +57,7 @@ The M32/manifold layer is therefore a **structured search and work-allocation me
 
 TOE is a first-class top-level package (`toe/`), shipped in the distribution alongside `mla1517` and the `kellogg/` tensor substrate it consumes. `toe.bridge` exposes state tomography, trajectory propagation, causal analysis, causal-ladder processing, and algebraic-family detection over the Kellogg tensor. The tensor implementation lives only in `kellogg/`: the former `toe.quantum_tensor`/`toe.exact_tensor`/`toe.exact_field`/`toe.tensor_ml` and `Intelligence/quantum_tensor.py`/`Intelligence/exact_tensor.py` alias modules were retired — importing a retired path fails loudly rather than silently aliasing.
 
-The canonical coordinator invokes TOE through `mla1517.mining.toe_adapter`: each observed vault record (real Stratum job + real hardware state) is analysed, and the resulting context feeds the `IntelligenceController` control-plane signals. This is advisory context, not a proof mechanism: when TOE is absent or incomplete the coordinator fails closed on that record and continues — and only the negotiated SHA256d target can accept a share.
+The canonical coordinator invokes TOE through `chronus.mla1517.mining.toe_adapter`: each observed vault record (real Stratum job + real hardware state) is analysed, and the resulting context feeds the `IntelligenceController` control-plane signals. This is advisory context, not a proof mechanism: when TOE is absent or incomplete the coordinator fails closed on that record and continues — and only the negotiated SHA256d target can accept a share.
 
 The declared Lucas ladder is exactly `10, 12, 15, 18, 20, 31, 50, 76`. Device execution is accepted only when its result agrees with the exact reference and the strict hardware gate passes.
 
@@ -87,9 +87,9 @@ The declared Lucas ladder is exactly `10, 12, 15, 18, 20, 31, 50, 76`. Device ex
 ```bash
 python3 scripts/re_paper_gate.py
 python3 -m pytest tests/ -x -q
-python3 -m unittest discover -s mla1517_platform_v3.4/python
+python3 -m unittest discover -s chronus/mla1517_platform/python
 
-cd mla1517_platform_v3.4
+cd chronus/mla1517_platform
 python3 -m unittest discover
 MLA1517_STRICT_HARDWARE_CI=1 MLA1517_GPU_BACKEND=opencl make test
 ```

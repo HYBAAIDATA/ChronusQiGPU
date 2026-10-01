@@ -58,7 +58,7 @@ The production mining plane keeps `VIRTUAL_QUANTUM_QUBITS = 11` as its
 | Original file | Package module |
 | --- | --- |
 | `turing_core.py` (root) | `turing_core.core` (re-exported by `turing_core`) |
-| `mla1517_platform_v3.4/python/turing_core.py` | `turing_core.schedule` |
+| `chronus/mla1517_platform/python/turing_core.py` | `turing_core.schedule` |
 | `legacy/Intelligence/mathematical_discovery.py` | `turing_core.discovery` (optional deps) |
 | `mtheory/hilbert.py` | `hilbert` — `QuantumRegister`, `GroverExact`, exact gates/QFT |
 | `mtheory/duality.py` | `duality` |
@@ -68,11 +68,11 @@ The production mining plane keeps `VIRTUAL_QUANTUM_QUBITS = 11` as its
 | `kellogg/quantum_tensor.py` | `quantum_tensor` — first-principles C^N layer |
 | `legacy/src/euclid/pythagoras/quantum/quantum_tensor.py` | `register_tensor` — audited `QuantumTensor` |
 | `legacy/lucas/pisot.py` | `pisot` — scale contracts, Hendrix schedule, Hilbert coverage |
-| `legacy/src/euclid/pythagoras/quantum/hendrix.py` | `hendrix` — `HendrixIGPUSearch` |
+| `legacy/src/euclid/pythagoras/quantum/hendrix.py` | `hendrix` — `HendrixChronusSearch` |
 | `toe/strict_quantum.py` | `strict_quantum` — Q(i) work-window certificates |
-| `mla1517/.../mla1517/quantum.py` | `exact_state_vector` |
+| `chronus/mla1517/.../mla1517/quantum.py` | `exact_state_vector` |
 | `mining/search.py` | `search` — Grover-exact / Merkle / preimage |
-| `mla1517/.../mining/turing_adapter.py` | `turing_adapter` — `TuringMiningSubstrate` |
+| `chronus/mla1517/.../mining/turing_adapter.py` | `turing_adapter` — `TuringMiningSubstrate` |
 | `legacy/core_engine/quantum_cuda.py` | `quantum_cuda` — iGPU/Turing simulator facade |
 | `Intelligence/backend_binding.py` | `backend_binding` |
 | `toe/hardened_unified_substrate.py` | `hardened_unified_substrate` |
@@ -84,8 +84,8 @@ The production mining plane keeps `VIRTUAL_QUANTUM_QUBITS = 11` as its
 | `toe/system.py` | `toe_system` — `TOESystem` provenance arbiter |
 | `legacy/Intelligence/four_layer_stack.py` | `four_layer_stack` — Aethel→Tensor→TURING→iGPU |
 | `legacy/mining/scaled_execution.py` | `scaled_execution` — `LucasScaledAethelExecutionAdapter` (the VQC executor) |
-| `mla1517/.../mla1517/rings.py` | `rings` |
-| `mla1517_platform_v3.4/python/extended_algebra.py` | `extended_algebra` |
+| `chronus/mla1517/.../mla1517/rings.py` | `rings` |
+| `chronus/mla1517_platform/python/extended_algebra.py` | `extended_algebra` |
 | `Intelligence/grover_exact_scale.py` | `grover_exact_scale` — folded run helper |
 | `Intelligence/quantum_algorithms.py` | `quantum_algorithms` |
 | `lucas/` (root package) | `lucas/` — exact Lucas limbs + pool kernels |

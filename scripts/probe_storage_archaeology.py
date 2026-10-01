@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "mla1517_platform_v3.4" / "python"))
+sys.path.insert(0, str(ROOT / "chronus/mla1517_platform" / "python"))
 
 REPORTS = ROOT / "reports"
 
@@ -97,8 +97,8 @@ def archaeology() -> dict:
             "evidence": "tests/test_aethel_overhead.py",
         },
         {
-            "component": "mla1517.prime_db (reference object store)",
-            "files": ["mla1517_platform_v3.4/python/mla1517/prime_db.py"],
+            "component": "chronus.mla1517.prime_db (reference object store)",
+            "files": ["chronus/mla1517/prime_db.py"],
             "classification": "CORE MATHEMATICAL SUBSTRATE",
             "what_it_is": "Reference algebraic object store: content-addressed "
             "objects, Cassini validation on write AND read, append-only "
@@ -108,9 +108,9 @@ def archaeology() -> dict:
             "evidence": "CAPACITY_BOUNDARY constant; mla1517 tests",
         },
         {
-            "component": "mla1517.state (LogicalState / MLA1517State)",
-            "files": ["mla1517_platform_v3.4/python/mla1517/state.py",
-                      "mla1517_platform_v3.4/python/mla1517/primedb_engine.py"],
+            "component": "chronus.mla1517.state (LogicalState / MLA1517State)",
+            "files": ["chronus/mla1517/state.py",
+                      "chronus/mla1517/primedb_engine.py"],
             "classification": "ADDRESSING LAYER",
             "what_it_is": "The 12-dimension logical state vector (nonce, lucas, "
             "pisot, fib, zeckendorf, binet, prime_addr, route, eigen, "
@@ -188,8 +188,8 @@ def archaeology() -> dict:
             "evidence": "module docstring NOTE ON HONESTY",
         },
         {
-            "component": "mla1517.mining.intelligence_memory",
-            "files": ["mla1517_platform_v3.4/python/mla1517/mining/intelligence_memory.py"],
+            "component": "chronus.mla1517.mining.intelligence_memory",
+            "files": ["chronus/mla1517/mining/intelligence_memory.py"],
             "classification": "MEMORY",
             "what_it_is": "Mining-domain intelligence memory + checkpoints.",
             "status": "connected (domain-bound)",
@@ -215,8 +215,8 @@ def archaeology() -> dict:
             "evidence": "tests/test_fold_pipeline.py",
         },
         {
-            "component": "mla1517.store.PrimeDB (SQLite)",
-            "files": ["mla1517_platform_v3.4/python/mla1517/store.py"],
+            "component": "chronus.mla1517.store.PrimeDB (SQLite)",
+            "files": ["chronus/mla1517/store.py"],
             "classification": "COMPATIBILITY LAYER",
             "what_it_is": "Durable PrimeDB on SQLite WAL: content-addressed "
             "objects + exact 32-byte tensor payloads with sha256/length "
@@ -310,8 +310,8 @@ def archaeology() -> dict:
         "notes": [
             "No component is DISCONNECTED by inspection: aethel is canonical "
             "and wired; legacy monolith is frozen behind a façade alias.",
-            "Two distinct PrimeDB implementations exist: mla1517.prime_db "
-            "(reference semantics, in-memory+journal) and mla1517.store "
+            "Two distinct PrimeDB implementations exist: chronus.mla1517.prime_db "
+            "(reference semantics, in-memory+journal) and chronus.mla1517.store "
             "(SQLite WAL durable). Reference is authoritative for semantics; "
             "SQLite is the durable compatibility backend.",
             "No tenant-isolation surface found in al_haras (audit/boundary "

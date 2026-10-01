@@ -72,7 +72,7 @@ def anchor_of(v: np.ndarray) -> int:
     """Project an R^11 position onto the integer anchor lattice.
 
     Identical quadratic form to ``GeodesicNavigator._project_to_pv_lattice``
-    and ``TensorCoreGPU_Context.project_and_collapse_pv``: the anchor is the
+    and ``ChronusContext.project_and_collapse_pv``: the anchor is the
     rounded golden norm modulo 90.
     """
     return int(round(weighted_norm(v))) % ANCHOR_MODULUS

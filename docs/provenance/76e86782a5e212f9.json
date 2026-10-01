@@ -188,62 +188,62 @@
         {
           "for": {
             "detail": "attach_to_host() declares exactness",
-            "file": "Intelligence/igpu_telemetry.py",
+            "file": "Intelligence/chronus_telemetry.py",
             "line": 901,
             "verdict": "float_leak"
           },
           "mode": "known_answer",
-          "spec": "assert the pinned constant/output for float_leak at Intelligence/igpu_telemetry.py:901"
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/chronus_telemetry.py:901"
         },
         {
           "for": {
             "detail": "record_step() declares exactness",
-            "file": "Intelligence/igpu_telemetry.py",
+            "file": "Intelligence/chronus_telemetry.py",
             "line": 623,
             "verdict": "float_leak"
           },
           "mode": "known_answer",
-          "spec": "assert the pinned constant/output for float_leak at Intelligence/igpu_telemetry.py:623"
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/chronus_telemetry.py:623"
         },
         {
           "for": {
             "detail": "record_step() declares exactness",
-            "file": "Intelligence/igpu_telemetry.py",
+            "file": "Intelligence/chronus_telemetry.py",
             "line": 640,
             "verdict": "float_leak"
           },
           "mode": "known_answer",
-          "spec": "assert the pinned constant/output for float_leak at Intelligence/igpu_telemetry.py:640"
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/chronus_telemetry.py:640"
         },
         {
           "for": {
             "detail": "record_step() declares exactness",
-            "file": "Intelligence/igpu_telemetry.py",
+            "file": "Intelligence/chronus_telemetry.py",
             "line": 643,
             "verdict": "float_leak"
           },
           "mode": "known_answer",
-          "spec": "assert the pinned constant/output for float_leak at Intelligence/igpu_telemetry.py:643"
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/chronus_telemetry.py:643"
         },
         {
           "for": {
             "detail": "record_step() declares exactness",
-            "file": "Intelligence/igpu_telemetry.py",
+            "file": "Intelligence/chronus_telemetry.py",
             "line": 646,
             "verdict": "float_leak"
           },
           "mode": "known_answer",
-          "spec": "assert the pinned constant/output for float_leak at Intelligence/igpu_telemetry.py:646"
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/chronus_telemetry.py:646"
         },
         {
           "for": {
             "detail": "record_step() declares exactness",
-            "file": "Intelligence/igpu_telemetry.py",
+            "file": "Intelligence/chronus_telemetry.py",
             "line": 604,
             "verdict": "float_leak"
           },
           "mode": "known_answer",
-          "spec": "assert the pinned constant/output for float_leak at Intelligence/igpu_telemetry.py:604"
+          "spec": "assert the pinned constant/output for float_leak at Intelligence/chronus_telemetry.py:604"
         },
         {
           "for": {
@@ -1078,22 +1078,22 @@
         {
           "for": {
             "detail": "floor() declares exactness",
-            "file": "mla1517_platform_v3.4/python/mla1517/mining/geometry.py",
+            "file": "chronus/mla1517_platform/python/mla1517/mining/geometry.py",
             "line": 112,
             "verdict": "float_leak"
           },
           "mode": "known_answer",
-          "spec": "assert the pinned constant/output for float_leak at mla1517_platform_v3.4/python/mla1517/mining/geometry.py:112"
+          "spec": "assert the pinned constant/output for float_leak at chronus/mla1517_platform/python/mla1517/mining/geometry.py:112"
         },
         {
           "for": {
             "detail": "floor() declares exactness",
-            "file": "mla1517_platform_v3.4/python/mla1517/mining/geometry.py",
+            "file": "chronus/mla1517_platform/python/mla1517/mining/geometry.py",
             "line": 112,
             "verdict": "float_leak"
           },
           "mode": "known_answer",
-          "spec": "assert the pinned constant/output for float_leak at mla1517_platform_v3.4/python/mla1517/mining/geometry.py:112"
+          "spec": "assert the pinned constant/output for float_leak at chronus/mla1517_platform/python/mla1517/mining/geometry.py:112"
         },
         {
           "for": {
@@ -1288,7 +1288,7 @@
         {
           "for": {
             "detail": "attach_to_host() declares exactness",
-            "file": "Intelligence/igpu_telemetry.py",
+            "file": "Intelligence/chronus_telemetry.py",
             "line": 901,
             "verdict": "float_leak"
           },
@@ -1298,7 +1298,7 @@
         {
           "for": {
             "detail": "record_step() declares exactness",
-            "file": "Intelligence/igpu_telemetry.py",
+            "file": "Intelligence/chronus_telemetry.py",
             "line": 623,
             "verdict": "float_leak"
           },
@@ -1308,7 +1308,7 @@
         {
           "for": {
             "detail": "record_step() declares exactness",
-            "file": "Intelligence/igpu_telemetry.py",
+            "file": "Intelligence/chronus_telemetry.py",
             "line": 640,
             "verdict": "float_leak"
           },
@@ -1318,7 +1318,7 @@
         {
           "for": {
             "detail": "record_step() declares exactness",
-            "file": "Intelligence/igpu_telemetry.py",
+            "file": "Intelligence/chronus_telemetry.py",
             "line": 643,
             "verdict": "float_leak"
           },
@@ -1328,7 +1328,7 @@
         {
           "for": {
             "detail": "record_step() declares exactness",
-            "file": "Intelligence/igpu_telemetry.py",
+            "file": "Intelligence/chronus_telemetry.py",
             "line": 646,
             "verdict": "float_leak"
           },
@@ -1338,7 +1338,7 @@
         {
           "for": {
             "detail": "record_step() declares exactness",
-            "file": "Intelligence/igpu_telemetry.py",
+            "file": "Intelligence/chronus_telemetry.py",
             "line": 604,
             "verdict": "float_leak"
           },
@@ -2178,7 +2178,7 @@
         {
           "for": {
             "detail": "floor() declares exactness",
-            "file": "mla1517_platform_v3.4/python/mla1517/mining/geometry.py",
+            "file": "chronus/mla1517_platform/python/mla1517/mining/geometry.py",
             "line": 112,
             "verdict": "float_leak"
           },
@@ -2188,7 +2188,7 @@
         {
           "for": {
             "detail": "floor() declares exactness",
-            "file": "mla1517_platform_v3.4/python/mla1517/mining/geometry.py",
+            "file": "chronus/mla1517_platform/python/mla1517/mining/geometry.py",
             "line": 112,
             "verdict": "float_leak"
           },
@@ -2388,7 +2388,7 @@
         {
           "for": {
             "detail": "attach_to_host() declares exactness",
-            "file": "Intelligence/igpu_telemetry.py",
+            "file": "Intelligence/chronus_telemetry.py",
             "line": 901,
             "verdict": "float_leak"
           },
@@ -2398,7 +2398,7 @@
         {
           "for": {
             "detail": "record_step() declares exactness",
-            "file": "Intelligence/igpu_telemetry.py",
+            "file": "Intelligence/chronus_telemetry.py",
             "line": 623,
             "verdict": "float_leak"
           },
@@ -2408,7 +2408,7 @@
         {
           "for": {
             "detail": "record_step() declares exactness",
-            "file": "Intelligence/igpu_telemetry.py",
+            "file": "Intelligence/chronus_telemetry.py",
             "line": 640,
             "verdict": "float_leak"
           },
@@ -2418,7 +2418,7 @@
         {
           "for": {
             "detail": "record_step() declares exactness",
-            "file": "Intelligence/igpu_telemetry.py",
+            "file": "Intelligence/chronus_telemetry.py",
             "line": 643,
             "verdict": "float_leak"
           },
@@ -2428,7 +2428,7 @@
         {
           "for": {
             "detail": "record_step() declares exactness",
-            "file": "Intelligence/igpu_telemetry.py",
+            "file": "Intelligence/chronus_telemetry.py",
             "line": 646,
             "verdict": "float_leak"
           },
@@ -2438,7 +2438,7 @@
         {
           "for": {
             "detail": "record_step() declares exactness",
-            "file": "Intelligence/igpu_telemetry.py",
+            "file": "Intelligence/chronus_telemetry.py",
             "line": 604,
             "verdict": "float_leak"
           },
@@ -3278,7 +3278,7 @@
         {
           "for": {
             "detail": "floor() declares exactness",
-            "file": "mla1517_platform_v3.4/python/mla1517/mining/geometry.py",
+            "file": "chronus/mla1517_platform/python/mla1517/mining/geometry.py",
             "line": 112,
             "verdict": "float_leak"
           },
@@ -3288,7 +3288,7 @@
         {
           "for": {
             "detail": "floor() declares exactness",
-            "file": "mla1517_platform_v3.4/python/mla1517/mining/geometry.py",
+            "file": "chronus/mla1517_platform/python/mla1517/mining/geometry.py",
             "line": 112,
             "verdict": "float_leak"
           },
@@ -3441,37 +3441,37 @@
       },
       {
         "detail": "attach_to_host() declares exactness",
-        "file": "Intelligence/igpu_telemetry.py",
+        "file": "Intelligence/chronus_telemetry.py",
         "line": 901,
         "verdict": "float_leak"
       },
       {
         "detail": "record_step() declares exactness",
-        "file": "Intelligence/igpu_telemetry.py",
+        "file": "Intelligence/chronus_telemetry.py",
         "line": 623,
         "verdict": "float_leak"
       },
       {
         "detail": "record_step() declares exactness",
-        "file": "Intelligence/igpu_telemetry.py",
+        "file": "Intelligence/chronus_telemetry.py",
         "line": 640,
         "verdict": "float_leak"
       },
       {
         "detail": "record_step() declares exactness",
-        "file": "Intelligence/igpu_telemetry.py",
+        "file": "Intelligence/chronus_telemetry.py",
         "line": 643,
         "verdict": "float_leak"
       },
       {
         "detail": "record_step() declares exactness",
-        "file": "Intelligence/igpu_telemetry.py",
+        "file": "Intelligence/chronus_telemetry.py",
         "line": 646,
         "verdict": "float_leak"
       },
       {
         "detail": "record_step() declares exactness",
-        "file": "Intelligence/igpu_telemetry.py",
+        "file": "Intelligence/chronus_telemetry.py",
         "line": 604,
         "verdict": "float_leak"
       },
@@ -3975,13 +3975,13 @@
       },
       {
         "detail": "floor() declares exactness",
-        "file": "mla1517_platform_v3.4/python/mla1517/mining/geometry.py",
+        "file": "chronus/mla1517_platform/python/mla1517/mining/geometry.py",
         "line": 112,
         "verdict": "float_leak"
       },
       {
         "detail": "floor() declares exactness",
-        "file": "mla1517_platform_v3.4/python/mla1517/mining/geometry.py",
+        "file": "chronus/mla1517_platform/python/mla1517/mining/geometry.py",
         "line": 112,
         "verdict": "float_leak"
       },

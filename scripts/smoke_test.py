@@ -18,7 +18,7 @@ import urllib.request
 from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
-_CANONICAL_PYTHON = _PROJECT_ROOT / "mla1517_platform_v3.4" / "python"
+_CANONICAL_PYTHON = _PROJECT_ROOT / "chronus/mla1517_platform" / "python"
 if str(_CANONICAL_PYTHON) not in sys.path:
     sys.path.insert(0, str(_CANONICAL_PYTHON))
 

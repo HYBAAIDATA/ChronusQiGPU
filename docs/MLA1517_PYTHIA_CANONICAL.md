@@ -13,7 +13,7 @@ React/Vite UI
     ⇅
 TypeScript Express control and Stratum API
     ⇅
-mla1517_platform_v3.4
+chronus/mla1517_platform
     ├── Python exact reference/control plane
     ├── C/C++ host, ring, telemetry, and persistence path
     ├── exact OpenCL kernel path
@@ -41,7 +41,7 @@ missing hardware, mismatch, overflow, or unsupported scale.
 The composed substrate (`hyba/inventory.py` + `hyba/virtual_gpu.py`) reports a
 capability only when a probe measured it on the device. The table below is the
 contract: the *claimed* column is what the inventory may report, the
-*measured* column is the only thing `SuperGPU.route` will route on.
+*measured* column is the only thing `ChronusFabric.route` will route on.
 
 | capability | claimed when | measured when |
 | --- | --- | --- |
@@ -55,8 +55,8 @@ contract: the *claimed* column is what the inventory may report, the
 | `metal` / `unified_memory` | — | `AppleSiliconRuntime.metal.available` on Darwin |
 | `mmio` (ASIC) | — | `MLA1517_MMIO_LIBRARY` loaded and `mla1517_open` resolved |
 | `hashlib_sha256d` / `exact_math` | always on CPU | always on CPU |
-| `truth_class="design"` (RTL) | `.sv` files present under `mla1517_platform_v3.4/rtl/` or `legacy/hardware/rtl/` | design artifacts only — never hardware |
+| `truth_class="design"` (RTL) | `.sv` files present under `chronus/mla1517_platform/rtl/` or `legacy/hardware/rtl/` | design artifacts only — never hardware |
 
 A capability not in the device's map was not measured and is treated as absent
 — routing never guesses. A dispatch that ran without a derived Lucas config
-attests `truth_class="unconfigured"` (see `docs/SUPER_GPU_SUBSTRATE.md`).
+attests `truth_class="unconfigured"` (see `docs/CHRONUS_FABRIC_SUBSTRATE.md`).

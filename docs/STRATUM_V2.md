@@ -44,6 +44,6 @@ subprotocols with separate roles and message families. PYTHIA does not claim
 those roles are implemented merely because Mining Protocol frames exist.
 
 V1 remains available through the platform coordinator
-(`mla1517_platform_v3.4/python/mla1517/mining/coordinator.py`) for pools that
+(`chronus/mla1517/mining/coordinator.py`) for pools that
 have not enabled V2. No live credentials or pool-accepted share is fabricated by the
 contract tests; live acceptance requires a real pool response.

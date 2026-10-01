@@ -6,7 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(
     0,
-    str(Path(__file__).resolve().parent.parent / "mla1517_platform_v3.4" / "python"),
+    str(Path(__file__).resolve().parent.parent / "chronus/mla1517_platform" / "python"),
 )
 
 from benchmarks.common import corpus_digest, synthetic_header
@@ -33,7 +33,7 @@ def test_toe_rank_is_permutation_of_window():
 
 
 def test_toe_rank_matches_solver_traversal():
-    from mla1517.mining.solver import M32SearchSolver
+    from chronus.mla1517.mining.solver import M32SearchSolver
 
     rank = toe_rank_map(0)
     solver = M32SearchSolver()

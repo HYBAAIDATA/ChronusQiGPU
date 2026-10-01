@@ -2,18 +2,18 @@
 
 from __future__ import annotations
 
-from igpu.seam import store
-from igpu.seam.attest_compose import attest_compose, attest_verify, merkle_root
-from igpu.seam.capability import (
+from chronus.seam import store
+from chronus.seam.attest_compose import attest_compose, attest_verify, merkle_root
+from chronus.seam.capability import (
     MIN_SAMPLES,
     declared_policy_hps,
     distribution_from_samples,
     is_unstable,
 )
-from igpu.seam.contract import seam_guard
-from igpu.seam.invariants import score
-from igpu.seam.probe import probe_devices
-from igpu.seam.reversible import (
+from chronus.seam.contract import seam_guard
+from chronus.seam.invariants import score
+from chronus.seam.probe import probe_devices
+from chronus.seam.reversible import (
     AdiabaticFamily,
     FAMILY_NOTES,
     bennett_uncompute,
@@ -23,7 +23,7 @@ from igpu.seam.reversible import (
     reversible_matmul,
     reversible_qfi,
 )
-from igpu.seam.types import (
+from chronus.seam.types import (
     Err,
     KernelName,
     Ok,

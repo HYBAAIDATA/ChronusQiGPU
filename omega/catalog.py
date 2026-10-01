@@ -67,8 +67,8 @@ def live_checks() -> Dict[str, dict]:
         "t11_token": zeckendorf_11d(100) < (1 << 11),
     }
     out["Ω13"] = {"status": "tested", "artifact": "phi_rotation.korobov", "ok": True}
-    out["Ω18"] = {"status": "tested", "artifact": "igpu.seam + phi_rotation.functor", "ok": True}
-    out["Ω20"] = {"status": "tested", "artifact": "igpu.seam.bennett", "ok": True}
+    out["Ω18"] = {"status": "tested", "artifact": "chronus.seam + phi_rotation.functor", "ok": True}
+    out["Ω20"] = {"status": "tested", "artifact": "chronus.seam.bennett", "ok": True}
     out["Ω21"] = {"status": "tested", "artifact": "standard.certificate", "ok": True}
     out["YM"] = {
         "status": "gap",

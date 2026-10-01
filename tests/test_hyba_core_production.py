@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import math
 
-from mla1517.mining.hyba_bridge import (
+from chronus.mla1517.mining.hyba_bridge import (
     AVAILABLE,
     describe_share,
     face_of,
     measure_window,
     resonance_of,
 )
-from mla1517.mining.pow import check_pow, compact_target, sha256d
+from chronus.mla1517.mining.pow import check_pow, compact_target, sha256d
 from python_backend.mathematical_foundation.hilbert_manifold_solver import (
     ManifoldPrecomputationEngine,
     build_m32_normals,

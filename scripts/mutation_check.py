@@ -13,7 +13,7 @@ tree is never touched, and the check aborts unless the copy is what the
 tests import.
 
     python scripts/mutation_check.py \\
-        mla1517_platform_v3.4/python/mla1517/mining/hashrate_governor.py \\
+        chronus/mla1517/mining/hashrate_governor.py \\
         --tests test_hashrate_governor.py --workers 4
 """
 
@@ -34,7 +34,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_COPY_ROOT = ROOT / "mla1517_platform_v3.4" / "python"
+DEFAULT_COPY_ROOT = ROOT / "chronus/mla1517_platform" / "python"
 
 _COMPARE = {
     ast.Lt: ast.LtE,

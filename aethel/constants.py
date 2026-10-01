@@ -22,7 +22,7 @@ PRIMES_25 = [
 
 # ---------------------------------------------------------------------------
 # Shared-memory ingestion ABI v1 — the canonical constants mirrored from
-# mla1517_platform_v3.4/host/mla1517_aethel.h and mla1517_mmio.h.
+# chronus/mla1517_platform/host/mla1517_aethel.h and mla1517_mmio.h.
 # tests/test_aethel_concurrency.py parses the C headers at test time and
 # asserts these values match exactly; do not diverge.
 # ---------------------------------------------------------------------------
