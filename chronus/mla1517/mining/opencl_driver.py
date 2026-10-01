@@ -232,11 +232,15 @@ class OpenCLDriver:
         args: Sequence[Any] = (),
         hashes_computed: int,
         build_options: Sequence[str] = (),
+        device_index: int | None = None,
     ) -> OpenCLExecutionResult:
         """Build, dispatch, and finish one actual OpenCL kernel.
 
         ``hashes_computed`` must be supplied by the caller from the kernel's
         real work contract; this method never estimates it from work-group size.
+        ``device_index`` dispatches on a specific ranked device (per the
+        driver's enumeration order); omitted it runs on the top-ranked
+        selection — composition beyond first-match is explicit, not global.
         """
         if not self.available:
             raise OpenCLUnavailable("no OpenCL device discovered; refusing CPU fallback")
@@ -247,10 +251,18 @@ class OpenCLDriver:
         if hashes_computed < 0 or not global_size or any(int(size) <= 0 for size in global_size):
             raise OpenCLExecutionRejected("invalid kernel work contract")
         assert self._cl is not None
-        device = self._selected_device
-        if device is None:
+        if device_index is None:
+            device = self._selected_device
+            index = self._cl_devices.index(device) if device is not None else -1
+        else:
+            index = int(device_index)
+            if not 0 <= index < len(self._cl_devices):
+                raise OpenCLExecutionRejected(
+                    f"device_index {index} out of range ({len(self._cl_devices)} devices)"
+                )
+            device = self._cl_devices[index]
+        if device is None or index < 0:
             raise OpenCLUnavailable("selected OpenCL device disappeared before dispatch")
-        index = self._cl_devices.index(device)
         queue = self._queue_for(index)
         program = self._program_for(index, source, build_options)
         kernel = getattr(program, kernel_name)

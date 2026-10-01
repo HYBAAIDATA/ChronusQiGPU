@@ -8,7 +8,6 @@ from .euclid_intelligence import (
 )
 from .phi_metric import PHI_TARGET, PhiResonanceCalculator
 from .primitives import ASTPrimitives
-from .tononi_penrose import TononiPenroseSubstrate
 
 __all__ = [
     "PHI",
@@ -18,5 +17,4 @@ __all__ = [
     "EuclidIntelligenceEngine",
     "LucasSequenceCalculator",
     "PhiResonanceCalculator",
-    "TononiPenroseSubstrate",
 ]

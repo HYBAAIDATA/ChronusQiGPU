@@ -1,9 +1,10 @@
 """iGPU telemetry surface for the HYBA composition layer.
 
 The canonical collector lives at :mod:`chronus.telemetry` (the consolidated iGPU
-package). ``Intelligence/chronus_telemetry.py`` is a historical duplicate kept for
-back-compat imports; this module re-exports the canonical names so operator
-code under ``hyba`` never has to guess which surface is live.
+package; the pre-consolidation iGPU telemetry and
+``Intelligence/igpu_telemetry.py`` surfaces are retired). This module
+re-exports the canonical names so operator code under ``hyba`` never has
+to guess which surface is live.
 
 Operator-facing aliases are provided for the names the elevation spec uses:
 ``IGpuTelemetryCollector`` = :class:`ChronusTelemetry`,
@@ -41,6 +42,8 @@ from chronus.telemetry import (
 )
 
 # The environment variable the collector honors (default on; "0"/"false" off).
+# (Renamed at the chronus consolidation: the pre-fold name was
+# EUCLID_IGPU_TELEMETRY — only this canonical name is read.)
 EUCLID_CHRONUS_TELEMETRY = "EUCLID_CHRONUS_TELEMETRY"
 
 # -- operator-facing aliases -------------------------------------------------

@@ -125,10 +125,40 @@ def _select_device(cl, devices):
     return devices[0]
 
 
-class OpenCLLadderExecutor:
-    """Execute the declared ladder on a real OpenCL host device."""
+def _resolve_device_pin(devices, pin):
+    """Resolve a coordinator-supplied device pin, or use preference order.
 
-    def __init__(self, kernel_path: str | Path | None = None):
+    ``pin`` is a pyopencl device handle or a case-insensitive name substring
+    from the composing census — the same contract as
+    ``mining/bitcoin_hasher.py::_pick_device``. A pin that matches nothing
+    fails explicitly; it never silently re-selects.
+    """
+    if pin is None:
+        return None
+    if isinstance(pin, str):
+        needle = pin.strip().casefold()
+        for dev in devices:
+            if needle and needle in str(getattr(dev, "name", "")).casefold():
+                return dev
+        raise GPUExecutionUnavailable(
+            f"pinned OpenCL device {pin!r} did not match any enumerated device"
+        )
+    if pin not in devices:
+        raise GPUExecutionUnavailable(
+            "pinned OpenCL device handle is not enumerated on this host"
+        )
+    return pin
+
+
+class OpenCLLadderExecutor:
+    """Execute the declared ladder on a real OpenCL host device.
+
+    ``device`` optionally pins a specific enumerated device (handle or name
+    substring) so a composing substrate dispatches the device it selected
+    rather than whichever one preference order happens to pick first.
+    """
+
+    def __init__(self, kernel_path: str | Path | None = None, device=None):
         try:
             import pyopencl as cl
         except ImportError as exc:
@@ -143,7 +173,8 @@ class OpenCLLadderExecutor:
         devices = [device for platform in platforms for device in platform.get_devices()]
         if not devices:
             raise GPUExecutionUnavailable("no OpenCL device discovered")
-        self.device = _select_device(cl, devices)
+        pinned = _resolve_device_pin(devices, device)
+        self.device = pinned if pinned is not None else _select_device(cl, devices)
         if self.device.type & cl.device_type.GPU:
             self.execution_backend = "opencl:gpu"
         elif self.device.type & int(getattr(cl.device_type, "CPU", 0) or 0):
