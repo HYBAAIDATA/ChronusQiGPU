@@ -748,7 +748,7 @@ async def _amain(argv=None) -> int:
     parser.add_argument(
         "--backend",
         default="auto",
-        choices=["auto", "gpu", "opencl", "cpu"],
+        choices=["auto", "gpu", "opencl", "cpu", "remote"],
         help="hasher backend",
     )
     parser.add_argument("--max-shares", type=int, default=None, help="halt after N accepted shares")

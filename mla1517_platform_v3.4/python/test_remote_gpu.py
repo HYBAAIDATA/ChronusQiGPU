@@ -16,6 +16,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from mla1517.core import fib, lucas
 from mla1517.remote_gpu import (
     PROTOCOL_VERSION,
+    SHA256D_MAX_WINDOW,
     RemoteGPUClient,
     RemoteGPUUnavailable,
     RemoteGPUVerificationError,
@@ -80,8 +81,66 @@ class RealAgentTests(_EnvGuard):
         with self.assertRaises(RemoteGPUUnavailable):
             RemoteGPUClient(self.endpoint).execute_ladder()
 
+    def test_sha256d_executes_on_the_honest_backend(self):
+        """No OpenCL here — the endpoint still runs, on CPU, and says so."""
+        try:
+            result = RemoteGPUClient(self.endpoint).execute_sha256d(
+                bytes(80), b"\xff" * 32, base_nonce=0, count=4
+            )
+        except RemoteGPUUnavailable as exc:
+            self.skipTest(f"agent sha256d unavailable in this env: {exc}")
+        self.assertEqual(result.nonce, 0)
+        self.assertEqual(result.hashes, 4)
+        self.assertEqual(result.execution_backend, "cpu")
 
-class _StubDeviceHandler(BaseHTTPRequestHandler):
+
+class _Sha256dMixin:
+    """Honest /v1/sha256d answers computed with hashlib (used by stub agents)."""
+
+    sha256d_tamper = False
+    sha256d_underreport = False
+
+    def _sha256d_reply(self, body):
+        import hashlib as _hl
+
+        header = bytes.fromhex(body.get("header", ""))
+        target = bytes.fromhex(body.get("target", ""))
+        order = body.get("order", "contiguous")
+        nonces = body.get("nonces")
+        base = int(body.get("base_nonce", 0))
+        count = int(body.get("count", 0))
+        if nonces is not None:
+            order = "batch"
+            window = [int(n) & 0xFFFFFFFF for n in nonces]
+        elif order == "m32":
+            lanes = [int(l) for l in body.get("lane_order", [])]
+            window = [(base + lanes[i % 32] + 32 * (i // 32)) & 0xFFFFFFFF for i in range(count)]
+        else:
+            order = "contiguous"
+            window = [(base + i) & 0xFFFFFFFF for i in range(count)]
+        hashes = len(window) if not type(self).sha256d_underreport else max(0, len(window) - 1)
+        blob = bytearray(header)
+        winner = None
+        for i, nonce in enumerate(window):
+            blob[76:80] = nonce.to_bytes(4, "little")
+            digest = _hl.sha256(_hl.sha256(bytes(blob)).digest()).digest()
+            if digest[::-1] <= target:
+                winner = {"nonce": nonce, "digest": digest.hex()}
+                if type(self).sha256d_tamper:
+                    winner = {"nonce": nonce, "digest": ("00" * 32)}
+                break
+        return {
+            "device": {"name": "AirGPU iGPU-0", "vendor": "Intel"},
+            "execution_backend": "opencl:gpu",
+            "order": order,
+            "hashes": hashes,
+            "window": len(window),
+            "measured_ns": 4321,
+            "winner": winner,
+        }
+
+
+class _StubDeviceHandler(BaseHTTPRequestHandler, _Sha256dMixin):
     """An agent that has one iGPU and answers ladder rows correctly."""
 
     protocol_version = "HTTP/1.1"
@@ -141,9 +200,11 @@ class _StubDeviceHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self._auth_ok():
             return self._send(401, {"error": "unauthorized"})
+        body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+        if self.path == "/v1/sha256d":
+            return self._send(200, self._sha256d_reply(body))
         if self.path != "/v1/ladder":
             return self._send(404, {"error": "unknown"})
-        body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
         scales = body.get("scales", [])
         bad = [s for s in scales if s not in LUCAS_PISOT_LADDER]
         if bad:
@@ -214,6 +275,71 @@ class StubAgentClientTests(_EnvGuard):
         finally:
             _StubDeviceHandler.require_token = False
             os.environ.pop("MLA1517_REMOTE_GPU_TOKEN", None)
+
+    def test_sha256d_contiguous_window_verified(self):
+        result = RemoteGPUClient(self.endpoint).execute_sha256d(
+            bytes(80), b"\xff" * 32, base_nonce=0, count=4
+        )
+        self.assertEqual(result.nonce, 0)
+        self.assertEqual(result.hashes, 4)
+        self.assertEqual(result.execution_backend, "opencl:gpu")
+        self.assertTrue(result.as_dict()["verified_against_exact_reference"])
+
+    def test_sha256d_m32_window_reports_the_m32_winner(self):
+        # The lane permutation changes traversal order, not the covered
+        # set: base + lane[i%32] + 32*(i//32) covers [base, base+count).
+        lanes = list(range(32))
+        result = RemoteGPUClient(self.endpoint).execute_sha256d(
+            bytes(80),
+            b"\x7f" + b"\xff" * 31,
+            base_nonce=100,
+            count=64,
+            lane_order=lanes,
+        )
+        self.assertIsNotNone(result.nonce)
+        self.assertLess((result.nonce - 100) & 0xFFFFFFFF, 64)
+
+    def test_sha256d_batch_list_executes_only_those_nonces(self):
+        nonces = [7, 11, 13]
+        result = RemoteGPUClient(self.endpoint).execute_sha256d(
+            bytes(80), b"\xff" * 32, order="batch", nonces=nonces
+        )
+        self.assertEqual(result.nonce, 7)
+        self.assertEqual(result.hashes, 3)
+
+    def test_sha256d_tampered_winner_is_rejected(self):
+        _StubDeviceHandler.sha256d_tamper = True
+        try:
+            with self.assertRaises(RemoteGPUVerificationError):
+                RemoteGPUClient(self.endpoint).execute_sha256d(
+                    bytes(80), b"\xff" * 32, base_nonce=0, count=4
+                )
+        finally:
+            _StubDeviceHandler.sha256d_tamper = False
+
+    def test_sha256d_no_winner_requires_full_window(self):
+        # Tiny target: no winner is fine only if every window nonce ran.
+        result = RemoteGPUClient(self.endpoint).execute_sha256d(
+            bytes(80), b"\x00" * 32, base_nonce=0, count=4
+        )
+        self.assertIsNone(result.nonce)
+        self.assertEqual(result.hashes, 4)
+
+    def test_sha256d_underreported_window_is_rejected(self):
+        _StubDeviceHandler.sha256d_underreport = True
+        try:
+            with self.assertRaises(RemoteGPUVerificationError):
+                RemoteGPUClient(self.endpoint).execute_sha256d(
+                    bytes(80), b"\x00" * 32, base_nonce=0, count=4
+                )
+        finally:
+            _StubDeviceHandler.sha256d_underreport = False
+
+    def test_sha256d_rejects_oversized_window(self):
+        with self.assertRaises(ValueError):
+            RemoteGPUClient(self.endpoint).execute_sha256d(
+                bytes(80), b"\xff" * 32, base_nonce=0, count=SHA256D_MAX_WINDOW + 1
+            )
 
 
 class ConnectorRemoteBindingTests(_EnvGuard):
