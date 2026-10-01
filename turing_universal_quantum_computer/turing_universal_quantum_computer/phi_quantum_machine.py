@@ -291,7 +291,7 @@ class PhiQuantumMachine:
         """Digest the n stabilizer generators only (destabilizers excluded)."""
         n = self.logical_qubits
         canonical = tuple(
-            (int(self.register._x[n + i]), int(self.register._z[m + i]), int(bool(self.register._r[n + i])))
+            (int(self.register._x[n + i]), int(self.register._z[n + i]), int(bool(self.register._r[n + i])))
             for i in range(n)
         )
         blob = json.dumps(canonical, separators=(",", ":")).encode("utf-8")
@@ -311,8 +311,8 @@ class PhiQuantumMachine:
                 f"checkpoint width {encoded_n} does not match machine width {n}"
             )
         mask = (1 << n) - 1
-       x_rows: list[int] = []
-       z_rows: list[int] = []
+        x_rows: list[int] = []
+        z_rows: list[int] = []
         phases: list[int] = []
         cursor = 8
         for _ in range(2 * n):
