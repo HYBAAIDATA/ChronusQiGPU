@@ -31,9 +31,11 @@ The following package hashes are deterministic hashes over sorted relative path 
 | Package | Files | Python files | Bytes | Recovered tree SHA-256 | Mining-branch status |
 |---|---:|---:|---:|---|---|
 | `euclid/` | 80 | 55 | 709,547 | `83ea6892e836cf49e05fb4e1f7ee8b2ceef5c899aa651115f77eaa69b82401c8` | **RECOVERED / NOT YET COPIED** |
-| `hyba_substrate/` | 8 | 8 | 95,157 | `71501e675f2bbb6a2076344d1f09e70abce003f28343eab4764b9461778bee72` | **RECOVERED / NOT YET COPIED** |
-| `resonance_intelligence/` | 34 | 34 | 278,914 | `d99ebc6bc1d4268cd44aea508131228b4de5466a711520390cdc0d203f3ac4a4` | **RECOVERED / NOT YET COPIED** |
+| `hyba_substrate/` | 8 | 8 | 95,157 | `71501e675f2bbb6a2076344d1f09e70abce003f28343eab4764b9461778bee72` | **PRESENT — CONVERGENCE EDITION / BRANCH EXECUTION UNVERIFIED** |
+| `resonance_intelligence/` | 34 | 34 | 278,914 | `d99ebc6bc1d4268cd44aea508131228b4de5466a711520390cdc0d203f3ac4a4` | **RECOVERED / IMPORT IN PROGRESS** |
 | `quantum_core/` | 7 | 7 | 70,557 | `00955267b2b3c5342c464869a8f4ce5a9f717a0a8a76d29740ac1eaf649d2fd6` | **RECOVERED / NOT YET COPIED** |
+
+`hyba_substrate/` is now physically present as eight source modules. The convergence edition is not byte-for-byte identical to the recovered archive: implementation files were normalized during import. A semantic surface audit confirmed the learning-system classes and public methods needed for seed knowledge, experience lineage, claim evidence, curriculum, consolidation, persistence and chain validation remain present. Any future divergence must be judged by capability/evidence parity rather than by filename presence alone.
 
 No implementation credit is given to the mining branch for a package merely because it is listed here.
 
@@ -49,7 +51,7 @@ The recovered archive must not overwrite newer product owners that already exist
 
 ## Production mining integration seam
 
-The branch now contains:
+The branch contains:
 
 `chronus/mla1517/mining/euclid_support.py`
 
@@ -66,7 +68,9 @@ The seam has one deliberately bounded actuator: **candidate dispatch breadth**. 
 - submission parameters; or
 - pool acknowledgement truth.
 
-Until `hyba_substrate.euclid_experience_superlearner` is physically present and importable, the seam publishes `UNAVAILABLE` and performs a neutral HOLD. This is intentional evidence-first behaviour, not a simulated fallback.
+`hyba_substrate.euclid_experience_superlearner` is now physically present, so the package-absence condition that previously forced `UNAVAILABLE` has been removed at source level. **This is not yet a runtime-success claim:** the branch still requires import/startup execution against the converged tree. If runtime initialization fails, the seam must continue to publish `UNAVAILABLE` rather than fabricate active intelligence.
+
+The seam learns only from observed mining outcomes, de-duplicates outcome generations so repeated telemetry polls do not multiply one result, and cadence-limits policy evaluation. Missing submission evidence produces no invented reward.
 
 ## Recovered capability classification
 
