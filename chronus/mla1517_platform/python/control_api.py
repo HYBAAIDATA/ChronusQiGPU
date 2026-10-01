@@ -47,7 +47,7 @@ except ModuleNotFoundError as exc:
     if exc.name != "al_haras":
         raise
     pythia_guardian_api = None
-from worker_lifecycle import HeartbeatReader
+from worker_lifecycle import HeartbeatReader, _default_heartbeat_dir
 
 _SCHEMA_VERSION = "chronus.mla1517.status/1"
 _READY_SCHEMA_VERSION = "chronus.mla1517.ready/1"
@@ -120,6 +120,7 @@ def gpu_payload() -> dict[str, Any]:
     payload: dict[str, Any] = {
         "available": False,
         "count": 0,
+        "contract_device": None,
         "opencl_device_count": 0,
         "physical_gpu_available": False,
         "physical_gpu_count": 0,
@@ -151,9 +152,23 @@ def gpu_payload() -> dict[str, Any]:
         substrate_available = detected_backend == "cpu" or detected_backend.startswith("opencl:")
         fallback_used = bool(hasher.get("fallback_reason"))
         member_count = len(devices) + int(detected_backend == "cpu")
+        # The Chronus contract device is the system's declared GPU identity —
+        # enumerated from the loaded spec, not probed silicon. It is reported
+        # alongside (never inside) the physical device counts so hardware
+        # absence stays honest.
+        contract_device: dict[str, Any] | None = None
+        try:
+            from chronus.detect import detect_chronus as _detect_chronus
+
+            chronus_devices = _detect_chronus()
+            if chronus_devices:
+                contract_device = chronus_devices[0].as_dict()
+        except Exception:
+            contract_device = None
         payload = {
             "available": substrate_available,
             "count": member_count,
+            "contract_device": contract_device,
             "opencl_device_count": len(devices),
             "physical_gpu_available": bool(gpu_devices),
             "physical_gpu_count": len(gpu_devices),
@@ -248,7 +263,7 @@ def _boot_lock() -> BootLock:
 
 
 def _heartbeat_dir() -> Path:
-    raw = os.getenv("PYTHIA_WORKER_HEARTBEAT_DIR", "/run/pythia/hb")
+    raw = os.getenv("PYTHIA_WORKER_HEARTBEAT_DIR", _default_heartbeat_dir())
     return Path(raw)
 
 
