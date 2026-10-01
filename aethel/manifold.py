@@ -351,6 +351,7 @@ class PrimeStorageManifold:
 
         # Per-stage execution provenance: which backend physically ran each
         # supported computational stage ("opencl:gpu" / "opencl:cpu" / "cpu").
+        self.stage_fallback_reasons: Dict[str, str] = {}
         self.stage_evidence: Dict[str, str] = {
             "encode": "none",
             "index": "none",
@@ -393,6 +394,23 @@ class PrimeStorageManifold:
         return getattr(self.punch_host, "last_dispatch_backend", None) or getattr(
             self.punch_host, "backend", "cpu"
         )
+
+    def _record_stage(
+        self, stage: str, backend: str, fallback_reason: Optional[str] = None
+    ) -> None:
+        backend = str(backend or "cpu")
+        self.stage_evidence[stage] = backend
+        used_cpu = not backend.startswith("opencl:")
+        if used_cpu:
+            self.stage_fallback_reasons[stage] = fallback_reason or (
+                "no OpenCL execution was reported"
+            )
+            if self.require_gpu or not self.allow_cpu_fallback:
+                raise RuntimeError(
+                    f"{stage} used {backend!r} while CPU fallback is disabled"
+                )
+        else:
+            self.stage_fallback_reasons.pop(stage, None)
 
     def execution_evidence(self) -> Dict[str, Any]:
         """Per-stage provenance plus device/telemetry from the bound host."""
@@ -467,7 +485,9 @@ class PrimeStorageManifold:
             return tensor_uuid
 
         sparse = apply_zeckendorf_compression(payload, host=self.punch_host)
-        self.stage_evidence["encode"] = self._host_backend()
+        self._record_stage(
+            "encode", self._host_backend(), "Zeckendorf encode used CPU fallback"
+        )
         tensor.sparse_topology = sparse.blocks
         tensor.total_bytes = len(payload)
 
@@ -477,7 +497,9 @@ class PrimeStorageManifold:
             payload[: DIM * 4].ljust(DIM * 4, b"\x00"), dtype=np.float32
         )
         tensor.integer_anchor = self.gpu.project_and_collapse_pv(data_array, pv_root)
-        self.stage_evidence["index"] = self.gpu.projection_backend
+        self._record_stage(
+            "index", self.gpu.projection_backend, "projection used CPU fallback"
+        )
 
         # CassiniVerifier.verify is a theorem identity on fresh values, so
         # it can never fail; the real ingest gate is the 90-slot domain.
@@ -542,7 +564,9 @@ class PrimeStorageManifold:
                 tensor.sparse_topology, getattr(tensor, "total_bytes", 0)
             )
             data = reverse_zeckendorf_expansion(sparse, host=self.punch_host)
-            self.stage_evidence["decode"] = self._host_backend()
+            self._record_stage(
+                "decode", self._host_backend(), "Zeckendorf decode used CPU fallback"
+            )
             return data
         return None
 

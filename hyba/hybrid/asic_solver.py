@@ -40,6 +40,10 @@ from hyba.hybrid.nonce_scheduler import (
 )
 
 _PROBE_TIMEOUT_S = 2.0
+ASIC_HASH_KERNEL = "sha256d_scan"
+OPTIONAL_ASIC_KERNELS = frozenset({
+    "sha256d_midstate", "sha256d_merkle", "fold_certificate", "attest_result"
+})
 
 
 class ASICSolver:
@@ -129,6 +133,16 @@ class ASICSolver:
                 reply = sock.makefile("rb").readline()
             info = json.loads(reply.decode("utf-8", "replace"))
             hps = float(info.get("measured_hashes_per_sec", 0.0))
+            advertised = {str(k) for k in info.get("kernels", [ASIC_HASH_KERNEL])}
+            if ASIC_HASH_KERNEL not in advertised:
+                return DeviceCapability(
+                    device_id=str(info.get("device_id", f"asic:{endpoint}")),
+                    device_class="asic",
+                    measured_hashes_per_sec=0.0,
+                    supported=False,
+                    reason_if_unsupported="ASIC does not advertise sha256d_scan",
+                    detail={"channel": "network", "advertised_kernels": sorted(advertised)},
+                )
             return DeviceCapability(
                 device_id=str(info.get("device_id", f"asic:{endpoint}")),
                 device_class="asic",
@@ -139,6 +153,9 @@ class ASICSolver:
                     "endpoint": endpoint,
                     "serial": info.get("serial"),
                     "firmware": info.get("firmware"),
+                    "protocol_version": info.get("protocol_version", "legacy-v1"),
+                    "advertised_kernels": sorted(advertised),
+                    "optional_kernels": sorted(advertised & OPTIONAL_ASIC_KERNELS),
                 },
             )
         except Exception as exc:
@@ -200,6 +217,14 @@ class ASICSolver:
             measured_hashes_per_sec=0.0,
             supported=False,
             reason_if_unsupported=f"PCIe node {node} not present or unreadable",
+        )
+
+    def supports_kernel(self, kernel: str) -> bool:
+        """Return only capabilities explicitly advertised by responsive hardware."""
+        cap = self.capability()
+        return bool(
+            cap.supported
+            and kernel in set(cap.detail.get("advertised_kernels", []))
         )
 
     # -- NonceScheduler ------------------------------------------------------
@@ -309,4 +334,4 @@ class ASICSolver:
         return record
 
 
-__all__ = ["ASICSolver"]
+__all__ = ["ASIC_HASH_KERNEL", "OPTIONAL_ASIC_KERNELS", "ASICSolver"]

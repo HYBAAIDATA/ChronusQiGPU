@@ -54,13 +54,7 @@ from .compute import (
     VirtualSM,
     VirtualWarp,
 )
-from .costs import (
-    OpCost,
-    OverheadMeter,
-    container_bytes,
-    measure_alloc,
-    metered,
-)
+from .costs import OpCost, OverheadMeter, container_bytes, measure_alloc, metered
 from .constants import (
     DIM,
     LUCAS_15,
@@ -116,22 +110,19 @@ from .fibonacci import (
     is_fibonacci,
     lucas,
 )
-from .encoding import (
-    MAX_FOLD_LEN,
-    ZeckendorfVector,
-    encoding_domain,
-    fold,
-    unfold,
-)
+from .encoding import MAX_FOLD_LEN, ZeckendorfVector, encoding_domain, fold, unfold
 from .geodesic import GeodesicHandoff, ManifoldPoint
 from .phi_fold import (
     KernelBoundary,
     NumericFoldState,
+    PartialUnfoldStats,
     PhiFoldError,
+    fold_result,
     phi_fold,
     phi_unfold,
     reconstruction_error,
     unfold_partial,
+    unfold_partial_with_stats,
     working_set_ratio,
 )
 from .phi_memory import (
@@ -178,65 +169,36 @@ __version__, __version_source__ = _resolve_version()
 
 __all__ = [
     "__version__",
-    # constants
     "DIM", "PHI", "PSI", "SQRT5",
-    "LUCAS_15", "LUCAS_20", "LUCAS_31",
-    "MODULUS_Q", "PRIMES_25",
-    # Cassini invariant
+    "LUCAS_15", "LUCAS_20", "LUCAS_31", "MODULUS_Q", "PRIMES_25",
     "CassiniVerifier",
-    # Zeckendorf codec + sparse topology
     "HardenedZeckendorfCodec", "SparseTopology",
     "apply_zeckendorf_compression", "reverse_zeckendorf_expansion",
     "PUNCH_MANIFOLD_COMPUTE", "PUNCH_ZECKENDORF_ENCODE", "PUNCH_ZECKENDORF_DECODE",
-    # Galois prime substrate
     "GaloisPrimeSubstrate", "PrimeCell",
-    # Layer 1: compute units
-    "VirtualSM", "ComputeUnitPool",
-    # Layer 2: SPMD / SIMT
-    "VirtualWarp", "SPMDExecutor",
-    # Layer 3: micro-kernels
+    "VirtualSM", "ComputeUnitPool", "VirtualWarp", "SPMDExecutor",
     "OptimizedTensorMicroKernel", "RTCoreMicroKernel", "MicroKernelLibrary",
-    # Layer 4: distributed
     "DistributedActor", "CollectiveOps", "DistributedDataflowGraph",
-    # Layer 5: DAG
-    "DAGNode", "DependencyDAG",
-    # GPU context
-    "ChronusContext",
-    # Manifold
+    "DAGNode", "DependencyDAG", "ChronusContext",
     "ManifoldCurvature", "ManifoldSector", "TopologicalTensor",
     "GeodesicNavigator", "SelfHealingSubstrate", "PrimeStorageManifold",
-    # Unified substrate
     "UnifiedSubstrate", "HardenedUnifiedSubstrate",
-    # Overhead ledger — declared cost, not a device measurement
     "OverheadLedger", "price_addresses", "price_exact_generator",
-    # Shared-memory ingestion ABI
     "AethelQueue", "AethelRecord", "AethelError",
     "STATE_BYTES", "AETHEL_ABI_VERSION", "AETHEL_MAGIC",
-    "AETHEL_HEADER_BYTES", "AETHEL_SLOT_STRIDE",
-    "AETHEL_D7_OFFSET", "AETHEL_D10_OFFSET",
-    # Contract errors
+    "AETHEL_HEADER_BYTES", "AETHEL_SLOT_STRIDE", "AETHEL_D7_OFFSET", "AETHEL_D10_OFFSET",
     "AbiVersionMismatch", "EncodingError", "EngineUnavailable",
     "FoldDomainOverflow", "GapDetected", "HandoffRejection",
     "InvalidAddress", "SegmentMissing", "ZeckendorfInvariantError",
-    # Fibonacci/Binet/Cassini address arithmetic
     "BinetIndex", "binet_approx", "binet_fibonacci", "fibonacci",
-    "fibonacci_index", "is_fibonacci", "lucas",
-    "cassini_quadruple", "cassini_holds",
-    # Encoding (Binet + Zeckendorf)
-    "ZeckendorfVector", "fold", "unfold",
-    "encoding_domain", "MAX_FOLD_LEN",
-    # Storage (Fibonacci + Cassini)
-    "FibonacciAddress", "LedgerEntry",
-    "CassiniLedger", "AddressSpace", "DEFAULT_MAX_STEP",
-    # Geodesic handoff (adapter — the engine lives in Intelligence)
+    "fibonacci_index", "is_fibonacci", "lucas", "cassini_quadruple", "cassini_holds",
+    "ZeckendorfVector", "fold", "unfold", "encoding_domain", "MAX_FOLD_LEN",
+    "FibonacciAddress", "LedgerEntry", "CassiniLedger", "AddressSpace", "DEFAULT_MAX_STEP",
     "GeodesicHandoff", "ManifoldPoint",
-    # Numeric phi fold + folded memory hierarchy
-    "KernelBoundary", "NumericFoldState", "PhiFoldError",
-    "phi_fold", "phi_unfold", "unfold_partial",
+    "KernelBoundary", "NumericFoldState", "PartialUnfoldStats", "PhiFoldError",
+    "phi_fold", "phi_unfold", "unfold_partial", "unfold_partial_with_stats", "fold_result",
     "reconstruction_error", "working_set_ratio",
     "MemoryTier", "TierResident", "PhiMemoryHierarchy",
     "TopologicalIntegrityGate", "IntegrityVerdict", "MemoryHierarchyError",
-    # Overhead accounting (measured CPU + structural memory)
-    "OpCost", "OverheadMeter",
-    "container_bytes", "measure_alloc", "metered",
+    "OpCost", "OverheadMeter", "container_bytes", "measure_alloc", "metered",
 ]

@@ -52,6 +52,7 @@ class DeviceAssignment:
     deadline: Optional[str]
     cost_estimate: Distribution
     fallback: bool
+    args: Dict[str, Any] = None
     job_id: str = ""
     idempotency_key: str = ""
 
@@ -64,6 +65,7 @@ class DeviceAssignment:
             "deadline": self.deadline,
             "cost_estimate": self.cost_estimate.as_dict(),
             "fallback": self.fallback,
+            "args": dict(self.args or {}),
             "job_id": self.job_id,
         }
 
@@ -166,6 +168,7 @@ def route(
                     deadline=job.get("deadline"),
                     cost_estimate=winner.cost,
                     fallback=used_fallback,
+                    args=dict(job.get("args", {}) or {}),
                     job_id=str(job.get("job_id", "")),
                     idempotency_key=(
                         f"{job.get('job_id', '')}:{kernel.value}:{window.start}"
@@ -197,7 +200,7 @@ def execute(
             caller,
             assignment.device_id,
             assignment.kernel,
-            {"window": assignment.window.as_dict()},
+            {**dict(assignment.args or {}), "window": assignment.window.as_dict()},
             assignment.idempotency_key,
         )
         if isinstance(dispatched, Err):

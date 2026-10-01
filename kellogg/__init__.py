@@ -23,6 +23,9 @@ Package layout:
     kellogg.scales           Layer-0/1 algebraic scales: the exact Z[phi]
                              ring, Lucas/Binet/Pisot drift, Zeckendorf
                              folds, and the Cassini integrity ledger.
+    kellogg.tensor_network   MPS, TT and MPO decomposition/operator algebra.
+    kellogg.compressed_tensor Compression-aware quantum operator execution.
+    kellogg.tensor_serialization Safe checksummed tensor artifact persistence.
     kellogg.tensor_ml        Exact-tensor ML family (canonical
                              ``exact_linear``), plane-separated
                              preprocessing, commitments/Merkle roots,
@@ -170,7 +173,7 @@ from .attest import (
     verify_version,
 )
 
-__version__ = "3.5.0"
+__version__ = "3.6.0"
 
 # Lazy surfaces: tensor_ml requires numpy; exact_field.sqrt_f is kept out
 # of the training path by contract (tests assert it never enters
@@ -257,6 +260,45 @@ _LAZY_SUBMODULE_ATTRS = {
         "PhiTensorCore",
         "TensorCoreError",
         "TensorOpRecord",
+    ),
+    "tensor_network": (
+        "HeisenbergHamiltonianMPO",
+        "IsingHamiltonianMPO",
+        "MatrixProductOperator",
+        "TensorNetworkAudit",
+        "TensorNetworkError",
+        "TensorTrain",
+        "hamiltonian_with_tensor_network",
+        "mps_decompose",
+        "mps_reconstruct",
+        "natural_gradient_step",
+        "persistent_homology_comparison",
+        "phi_guided_rank",
+        "quantum_fisher_metric",
+        "topology_preserved",
+        "topology_signature",
+        "tt_compress_with_budget",
+        "tt_decompose",
+        "tt_reconstruct",
+    ),
+    "compressed_tensor": (
+        "CompressedQuantumState",
+        "CompressedTensor",
+        "CompressedTensorError",
+        "CompressionScheme",
+        "EngineConfig",
+        "ExpertRouter",
+        "MeasurementResult",
+        "OperatorType",
+        "Precision",
+        "QuantumCompressedTensorEngine",
+        "QuantumOperator",
+    ),
+    "tensor_serialization": (
+        "TensorSerializationError",
+        "load_pv",
+        "save_pv",
+        "validate_pv",
     ),
     "tensor_ml": (
         "CANONICAL",
@@ -428,5 +470,8 @@ __all__ = [
     *_LAZY_SUBMODULE_ATTRS["phi_renormalizer"],
     *_LAZY_SUBMODULE_ATTRS["phi_stability"],
     *_LAZY_SUBMODULE_ATTRS["phi_tensor_core"],
+    *_LAZY_SUBMODULE_ATTRS["tensor_network"],
+    *_LAZY_SUBMODULE_ATTRS["compressed_tensor"],
+    *_LAZY_SUBMODULE_ATTRS["tensor_serialization"],
     *_LAZY_SUBMODULE_ATTRS["tensor_ml"],
 ]

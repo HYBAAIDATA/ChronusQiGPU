@@ -29,8 +29,9 @@ from hyba.hybrid.lucas_partition import (
     TraversalHistory,
     partition,
 )
-from hyba.hybrid.performance import job_performance_report
+from hyba.hybrid.performance import LayerSample, job_performance_report
 from hyba.hybrid.nonce_scheduler import (
+    ASICNotPresent,
     AttestationRegistry,
     AttestationViolation,
     DispatchHandle,
@@ -81,12 +82,14 @@ class JobResult:
     total_nonces_tried: int
     winner_probe_index: Optional[int] = None
     tensor_advice: Optional[Dict[str, Any]] = None
+    layer_samples: tuple[LayerSample, ...] = ()
 
     def as_dict(self) -> Dict[str, Any]:
         performance = job_performance_report(
             wall_ns=max(1, self.wall_ns),
             protocol_hashes=max(0, self.total_nonces_tried),
             accepted_shares=1 if self.share is not None else 0,
+            samples=self.layer_samples or None,
         )
         return {
             "mode": self.mode,
@@ -122,13 +125,17 @@ class HybridCoordinator:
         gpu: NonceScheduler,
         asic: Optional[NonceScheduler] = None,
         tensor_ranker: Optional[WindowRanker] = None,
+        require_asic: bool = False,
     ) -> None:
         self.gpu = gpu
         self.asic = asic
         self.tensor_ranker = tensor_ranker
+        self.require_asic = bool(require_asic)
         self.history = TraversalHistory()
         self._registry = AttestationRegistry.get()
         if asic is None:
+            if self.require_asic:
+                raise ASICNotPresent("ASIC-required policy is active but no ASIC solver was provided")
             self.mode = "gpu_only"
             self._registry.record_gap(
                 "asic_absent", detail_note="no ASIC solver was provided"
@@ -138,6 +145,10 @@ class HybridCoordinator:
             if cap.supported:
                 self.mode = "hybrid"
             else:
+                if self.require_asic:
+                    raise ASICNotPresent(
+                        cap.reason_if_unsupported or "ASIC-required policy probe failed"
+                    )
                 self.mode = "gpu_only"
                 self._registry.record_gap(
                     "asic_present_but_unsupported",
@@ -263,19 +274,39 @@ class HybridCoordinator:
             prior = sum(w.span for _, _, w in queue[:winner_pos])
             winner_probe_index = prior + winner.probe_index
 
-        # Total physical hashes = sum over every handle, including cancelled
-        # and exhausted windows — the device did the work even when it lost.
-        total_tried = 0
+        # Total physical hashes remain attributed to the device that executed
+        # them. All device samples share this job's concurrent wall window.
+        per_device: Dict[str, int] = {device_id: 0 for device_id in device_by_id}
         for _, handle, _ in all_handles:
             scheduler = device_by_id.get(handle.device_id)
             counter = getattr(scheduler, "hashed_count", None) if scheduler else None
             if callable(counter):
-                total_tried += int(counter(handle))
+                per_device[handle.device_id] += max(0, int(counter(handle)))
+        total_tried = sum(per_device.values())
         if total_tried == 0 and winner is not None:
-            # A winning share proves at least the winning scheduler's count.
-            # Never infer that the entire nonce space ran when counters are
-            # unavailable: that would fabricate measured hashrate.
-            total_tried = winner.nonces_tried
+            per_device[winner.device_id] = max(0, int(winner.nonces_tried))
+            total_tried = per_device[winner.device_id]
+
+        wall_ns = max(1, time.monotonic_ns() - t0)
+        layer_samples: List[LayerSample] = []
+        for device_id, scheduler in device_by_id.items():
+            cap = scheduler.capability()
+            raw_class = str(cap.device_class).lower()
+            if "asic" in raw_class:
+                layer = "asic"
+            elif "integrated" in raw_class or "igpu" in raw_class or "chronus" in raw_class:
+                layer = "chronus"
+            elif "gpu" in raw_class:
+                layer = "gpu"
+            else:
+                layer = "cpu"
+            layer_samples.append(LayerSample(
+                layer=layer,
+                device_id=device_id,
+                elapsed_ns=wall_ns,
+                protocol_hashes=per_device.get(device_id, 0),
+                accepted_shares=int(winner is not None and winner.device_id == device_id),
+            ))
 
         attestations = self._registry.snapshot()
         return JobResult(
@@ -284,10 +315,11 @@ class HybridCoordinator:
             certificate=cert,
             handles=handle_records,
             attestations=attestations,
-            wall_ns=time.monotonic_ns() - t0,
+            wall_ns=wall_ns,
             total_nonces_tried=int(total_tried),
             winner_probe_index=winner_probe_index,
             tensor_advice=tensor_advice,
+            layer_samples=tuple(layer_samples),
         )
 
 

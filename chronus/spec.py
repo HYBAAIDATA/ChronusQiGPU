@@ -24,8 +24,10 @@ _PKG_ROOT = Path(__file__).resolve().parent
 _REPO_ROOT = _PKG_ROOT.parent
 
 SPEC_NAME = "mla1517_chronus_v1.json"
+LEGACY_SPEC_NAME = "mla1517_igpu_v1.json"
 _SPEC_CANDIDATES = (
     _PKG_ROOT / "spec" / SPEC_NAME,
+    _PKG_ROOT / "spec" / LEGACY_SPEC_NAME,
     _REPO_ROOT / "chronus/mla1517_platform" / "hardware" / SPEC_NAME,
 )
 
@@ -166,6 +168,7 @@ def summary(spec: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
 
 __all__ = [
     "SPEC_NAME",
+    "LEGACY_SPEC_NAME",
     "acceptance_contract",
     "deployment",
     "dimensions",
