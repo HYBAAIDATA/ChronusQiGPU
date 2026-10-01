@@ -1,5 +1,5 @@
 """
-PYTHAGORAS Platform Verification Runner v12.1
+PYTHAGORAS Platform Verification Runner v12.2
 Executes Adapter Façade API, EUCLID Intelligence Engine, Multi-Agent Coordination, and V6.5 Engine.
 """
 import sys
@@ -14,7 +14,7 @@ from pythagoras.enterprise.roi_governance import EnterpriseROIGovernanceEngine
 
 def main():
     print("==========================================================================")
-    print("PYTHAGORAS: Meta-Evolutionary Code Intelligence Platform v12.1")
+    print("PYTHAGORAS: Meta-Evolutionary Code Intelligence Platform v12.2")
     print("Embedded Computational Engine Payload & Host Integration Façade API Active")
     print("==========================================================================")
 
@@ -93,7 +93,7 @@ class DataPipeline:
     print(evolution_res["final_code"])
 
     print("\n==========================================================================")
-    print("PYTHAGORAS v12.1 RUN COMPLETE")
+    print("PYTHAGORAS v12.2 RUN COMPLETE")
     print("==========================================================================")
 
 
