@@ -1,8 +1,9 @@
-# l_hras/layers/igpu.py
+# integrated GPU measurement layer
 
 import numpy as np
 from dataclasses import dataclass
 import time
+
 
 @dataclass
 class IGPUMesurement:
@@ -10,11 +11,13 @@ class IGPUMesurement:
     folds_per_second: float
     attestation: str
 
+
 def measure_igpu() -> IGPUMesurement:
     """Measure iGPU H/s and folds/s."""
     # Measure fold performance
     from l_hras.experimental.blueprint.fold.vector11d import Vector11D, DIM
     from l_hras.experimental.blueprint.fold.klein import fold_11d
+
     x = Vector11D(np.random.randn(DIM))
     n_iter = 10000
     start = time.time()
