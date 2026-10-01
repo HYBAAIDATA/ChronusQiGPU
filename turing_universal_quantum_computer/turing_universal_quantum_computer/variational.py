@@ -514,11 +514,17 @@ def demonstrate_vqc() -> Dict[str, Any]:
     }
 
 
+# Alias for the package-level lazy export: tqc exports this class as
+# ``PhiGroverVQCConfig`` because ``VQCConfig`` resolves to midas_vqc's config.
+PhiGroverVQCConfig = VQCConfig
+
+
 __all__ = [
     "DEFAULT_NONCE_WINDOW",
     "NUM_FACES",
     "PARAMETER_SHIFT",
     "PHI",
+    "PhiGroverVQCConfig",
     "VQCConfig",
     "VQCError",
     "VQCPhiGroverIntegration",

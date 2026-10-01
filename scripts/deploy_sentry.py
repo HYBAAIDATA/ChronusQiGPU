@@ -77,7 +77,7 @@ ENTRY_SCRIPTS = (
 # Distributions whose import name differs from the distribution name.
 IMPORT_NAMES = {"pyyaml": "yaml", "scikit-learn": "sklearn", "pytest-asyncio": "pytest_asyncio"}
 # Distributions used as tools or plugins rather than imported.
-TOOL_DISTS = {"black", "flake8", "pytest", "pytest-asyncio", "setuptools", "wheel"}
+TOOL_DISTS = {"black", "flake8", "mypy", "pytest", "pytest-asyncio", "ruff", "setuptools", "wheel"}
 SHELL_WORDS = {
     "cd",
     "echo",

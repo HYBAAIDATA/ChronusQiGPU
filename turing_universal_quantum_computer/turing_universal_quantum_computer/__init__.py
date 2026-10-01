@@ -16,6 +16,11 @@ hilbert               QuantumRegister — canonical exact sparse state vector
                       support is bounded (fail-closed max_amplitudes)
 stabilizer            StabilizerState — exact Clifford tableau; superposition,
                       entanglement and measurement at arbitrary n (incl. 10000)
+phi_machine           HYBA 1,000-qubit Clifford execution profile on Turing,
+                      QASM subset, exact T_phi checkpoint custody and bounded
+                      algorithm capability metadata
+midas_vqc             32-face variational nonce ranker + exact Clifford skeleton;
+                      candidate ordering only, never mining consensus authority
 quantum_walk          coined cycle walk (sparse-exact) + closed-form
                       continuous-time hypercube walk (exact at any n)
 annealing             exact TFIM free-fermion spectrum, adiabatic gap,
@@ -111,12 +116,7 @@ from .strict_quantum import (  # noqa: F401
     verify_certificate,
 )
 
-# ---------------------------------------------------------------------------
-# Lazy surface: heavier or optional-dependency modules are resolved on first
-# attribute access so `import turing_universal_quantum_computer` stays fast
-# and never fails on a missing optional extra (sympy / scipy / networkx).
-# ---------------------------------------------------------------------------
-
+# Heavy and optional-dependency modules are lazy so a base import stays cheap.
 _LAZY_MODULES = {
     "hilbert",
     "register_tensor",
@@ -143,6 +143,8 @@ _LAZY_MODULES = {
     "annealing",
     "swarm",
     "variational",
+    "phi_machine",
+    "midas_vqc",
 }
 
 _LAZY_SYMBOLS = {
@@ -181,8 +183,9 @@ _LAZY_SYMBOLS = {
     "EntanglementRegistration": "turing_core.ten_thousand",
     "DEFAULT_UNIVERSAL_QUBITS": "turing_core.ten_thousand",
     "zeckendorf_valid": "turing_core.ten_thousand",
-    # variational phi-Grover circuit (numpy backend)
-    "VQCConfig": "variational",
+    # variational phi-Grover circuit (numpy backend); its config is exported as
+    # PhiGroverVQCConfig — "VQCConfig" belongs to midas_vqc (below)
+    "PhiGroverVQCConfig": "variational",
     "VQCError": "variational",
     "VariationalQuantumCircuit": "variational",
     "VQCTrainingDataGenerator": "variational",
@@ -197,9 +200,19 @@ _LAZY_SYMBOLS = {
     "landau_zener": "annealing",
     "adiabatic_condition": "annealing",
     "QuantumSwarm": "swarm",
+    # recovered HYBA 1,000-qubit machine surface
+    "PhiQuantumCircuit": "phi_machine",
+    "PhiQuantumMachine1000": "phi_machine",
+    "PhiCheckpoint": "phi_machine",
+    "run_1000_qubit_verification": "phi_machine",
+    "seeded_clifford_digest": "phi_machine",
+    "state_digest": "phi_machine",
+    # recovered MIDAS/VQC surface
+    "MidasPhiVQCRanker": "midas_vqc",
+    "VQCConfig": "midas_vqc",
 }
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 
 def __getattr__(name: str):
