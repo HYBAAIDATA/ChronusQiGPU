@@ -277,6 +277,47 @@ def detect_metal() -> List[DetectedDevice]:
 #: CL_DEVICE_TYPE_GPU, used when no binding is available to ask.
 _GPU_TYPE_BIT = 1 << 2
 
+#: The Chronus contract device is the system's GPU identity: the MLA1517
+#: contract defines an integrated, host-unified-memory SIMT accelerator whose
+#: warp lanes the resident substrate executes. Enumerating it is contract
+#: evidence, not a hardware guess — it appears only when the contract loads,
+#: and the physical devices found beside it are execution backends.
+_CHRONUS_BACKEND = "chronus"
+
+
+def detect_chronus() -> List[DetectedDevice]:
+    """Enumerate the Chronus contract device.
+
+    Returns one integrated GPU-class record whose fields all come from the
+    machine-readable contract (product name, contract version, UMA memory
+    model). An absent or unreadable contract returns no device — the record
+    exists only while the artifact it describes exists.
+    """
+    try:
+        from . import spec as _spec
+
+        contract = _spec.load_spec()
+    except Exception:
+        return []
+    topo = _spec.topology(contract)
+    version = str(contract.get("contract_version", "") or "")
+    return [
+        DetectedDevice(
+            backend=_CHRONUS_BACKEND,
+            name=_spec.product(contract),
+            vendor="hyba",
+            is_gpu=True,
+            is_integrated=True,
+            integrated_reason="contract:simt_host_unified_memory",
+            type_bits=_GPU_TYPE_BIT,
+            platform="mla1517_simt",
+            driver_version=version,
+            version=version,
+            host_unified_memory=str(topo.get("memory_address_space", "")).upper()
+            == "UMA",
+        )
+    ]
+
 
 def find_prior(
     already: Sequence[DetectedDevice], identity: Tuple[str, str]
@@ -349,7 +390,11 @@ def detect_all() -> DetectionReport:
     """Census every backend in preference order and deduplicate across them."""
     report = DetectionReport()
     already: List[DetectedDevice] = []
-    for name, probe in (("cuda", detect_cuda), ("metal", detect_metal)):
+    for name, probe in (
+        ("chronus", detect_chronus),
+        ("cuda", detect_cuda),
+        ("metal", detect_metal),
+    ):
         try:
             found = probe()
         except Exception as exc:
@@ -394,6 +439,7 @@ __all__ = [
     "classify_integrated",
     "default_device",
     "detect_all",
+    "detect_chronus",
     "detect_cuda",
     "detect_metal",
     "device_identity",
