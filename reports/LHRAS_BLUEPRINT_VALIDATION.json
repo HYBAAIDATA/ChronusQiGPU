@@ -1,0 +1,352 @@
+{
+  "functional_tests": {
+    "l_hras.experimental.blueprint.blueprint_tests.test_all::test_anyonic": {
+      "elapsed_ms": 1.1043780000363768,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_all::test_cassini": {
+      "elapsed_ms": 0.02791499991872115,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_all::test_cavity": {
+      "elapsed_ms": 0.010602999964248738,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_all::test_certificate": {
+      "elapsed_ms": 0.11474899997665489,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_all::test_chemistry": {
+      "elapsed_ms": 3.688716999931785,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_all::test_control": {
+      "elapsed_ms": 0.32818400018186367,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_all::test_cryostat": {
+      "elapsed_ms": 0.011200000017197453,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_all::test_error_correction": {
+      "elapsed_ms": 6.474492000052123,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_all::test_fold_roundtrip": {
+      "elapsed_ms": 3.5823010000513023,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_all::test_lucas": {
+      "elapsed_ms": 0.03872900015267078,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_all::test_metrology": {
+      "elapsed_ms": 0.04871700002695434,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_all::test_oscillator": {
+      "elapsed_ms": 0.09839499989539036,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_all::test_phi_rotation": {
+      "elapsed_ms": 0.030944999934945372,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_all::test_photonic": {
+      "elapsed_ms": 0.16014500010896882,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_all::test_pisot": {
+      "elapsed_ms": 0.03984799991485488,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_all::test_qcd": {
+      "elapsed_ms": 0.01036000003296067,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_all::test_zeckendorf_roundtrip": {
+      "elapsed_ms": 3.7494139999125764,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_asic_blueprint::test_attestation_and_coordinated_forgery_detection": {
+      "elapsed_ms": 0.2850230000603915,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_asic_blueprint::test_boundary_is_explicit": {
+      "elapsed_ms": 0.06142000006548187,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_asic_blueprint::test_complete_workflow_classic_and_fold": {
+      "elapsed_ms": 0.9430509999219794,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_asic_blueprint::test_five_modes_stand_and_execute": {
+      "elapsed_ms": 0.15279299987014383,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_asic_blueprint::test_fold_roundtrip_and_limits": {
+      "elapsed_ms": 0.10576399995443353,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_asic_blueprint::test_hash_is_double_sha_and_target_checked": {
+      "elapsed_ms": 0.017924000076163793,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_asic_blueprint::test_probe_measures_and_declares_fold": {
+      "elapsed_ms": 6.199390999881871,
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests.test_asic_blueprint::test_six_intelligences_and_measurement": {
+      "elapsed_ms": 0.22657599993181066,
+      "status": "pass"
+    }
+  },
+  "modules": {
+    "l_hras.experimental.blueprint.aethel": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.aethel.read": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.aethel.store": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.aethel.write": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.asic": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.asic.attestation": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.asic.boundary": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.asic.capability": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.asic.fold": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.asic.hash": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.asic.intelligences": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.asic.modes": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.asic.probe": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.asic.types": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.asic.workflow": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.blueprint_tests": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.core": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.core.types": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.floor": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.floor.fork": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.floor.gate": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.floor.hashrate": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.fold": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.fold.certificate": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.fold.klein": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.fold.vector11d": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.fold.zeckendorf": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.guardian": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.guardian.guardian": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.guardian.stand": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.guardian.verify": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.intelligences": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.intelligences.causal": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.intelligences.counterfactual": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.intelligences.entangled": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.intelligences.geometric": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.intelligences.predictive": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.intelligences.quantum": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.intelligences.topological": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.layers": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.layers.asic": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.layers.gpu": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.layers.igpu": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.layers.tensor": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.mining": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.mining.candidate": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.mining.job": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.mining.pool": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.mining.search": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.mining.share": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.mining.submit": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.modes": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.modes.entangle": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.modes.honey_pot": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.modes.multiply": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.modes.swarm": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.modes.willow_expose": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.modules": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.modules.anyonic": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.modules.cavity": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.modules.chemistry": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.modules.control": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.modules.cryostat": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.modules.error_correction": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.modules.metrology": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.modules.oscillator": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.modules.photonic": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.modules.qcd": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.run": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.security": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.security.contracts": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.security.invariants": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.security.l_hras": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.substrate": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.substrate.cassini": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.substrate.korobov": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.substrate.lucas": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.substrate.morton": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.substrate.phi_rotation": {
+      "status": "pass"
+    },
+    "l_hras.experimental.blueprint.substrate.pisot": {
+      "status": "pass"
+    }
+  },
+  "summary": {
+    "module_fail": 0,
+    "module_pass": 80,
+    "test_fail": 0,
+    "test_pass": 25
+  }
+}
