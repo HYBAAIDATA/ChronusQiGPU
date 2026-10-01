@@ -6,7 +6,12 @@ Pins the promotion contract: canonical package location, single-source
 """
 
 import importlib
+from importlib.metadata import PackageNotFoundError, version
+import json
+import stat
+import subprocess
 import sys
+import tempfile
 import tomllib
 import unittest
 from pathlib import Path
@@ -52,6 +57,16 @@ class AethelPackageSurfaceTests(unittest.TestCase):
             )
         self.assertRegex(aethel.__version__, r"^\d+\.\d+\.\d+$")
 
+    def test_installed_version_metadata_or_source_fallback(self) -> None:
+        try:
+            installed = version("aethel")
+        except PackageNotFoundError:
+            self.assertEqual(aethel.__version_source__, "source_fallback")
+            self.assertEqual(aethel.__version__, "1.0.0")
+        else:
+            self.assertEqual(aethel.__version_source__, "distribution_metadata")
+            self.assertEqual(aethel.__version__, installed)
+
 
 class AethelWiringTests(unittest.TestCase):
     def test_toe_path_is_identity_alias(self) -> None:
@@ -86,6 +101,30 @@ class AethelPackagingTests(unittest.TestCase):
         self.assertEqual(package_dir["aethel"], "aethel")
         data = meta["tool"]["setuptools"]["package-data"].get("aethel", [])
         self.assertIn("py.typed", data)
+        self.assertIn("capabilities.json", data)
+
+    def test_capability_manifest_keeps_external_gates_unverified(self) -> None:
+        manifest = json.loads(
+            (_ROOT / "aethel" / "capabilities.json").read_text(encoding="utf-8")
+        )
+        valid_statuses = {
+            "implemented+tested",
+            "external-evidence-required",
+            "provisional",
+            "not-implemented",
+        }
+        self.assertFalse(manifest["production_ready"])
+        self.assertTrue(manifest["claims"])
+        for claim in manifest["claims"]:
+            self.assertIn(claim["status"], valid_statuses)
+            self.assertIn("implementation", claim)
+            self.assertIn("tests", claim)
+        self.assertTrue(
+            any(
+                claim["status"] == "external-evidence-required"
+                for claim in manifest["claims"]
+            )
+        )
 
     def test_no_standalone_search_engine(self) -> None:
         """aethel.geodesic must import the engine, never reimplement it:
@@ -94,6 +133,114 @@ class AethelPackagingTests(unittest.TestCase):
         self.assertIn("Intelligence.search_crystal", src)
         self.assertNotRegex(src, r"def\s+double_sha256")
         self.assertNotRegex(src, r"def\s+search\(")
+
+    def test_cli_creates_private_storage_root_and_unfolds_exact_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            payload = root / "payload.bin"
+            store = root / "store"
+            original = b"\x00\xffprivate-store"
+            payload.write_bytes(original)
+            folded = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "aethel",
+                    "--store",
+                    str(store),
+                    "fold",
+                    str(payload),
+                ],
+                cwd=_ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(folded.returncode, 0, folded.stderr)
+            self.assertEqual(stat.S_IMODE(store.stat().st_mode) & 0o077, 0)
+            unfolded = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "aethel",
+                    "--store",
+                    str(store),
+                    "unfold",
+                    "1",
+                ],
+                cwd=_ROOT,
+                capture_output=True,
+            )
+            self.assertEqual(unfolded.returncode, 0, unfolded.stderr.decode())
+            self.assertEqual(unfolded.stdout, original)
+
+            backup = root / "backup"
+            backup_result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "aethel",
+                    "--store",
+                    str(store),
+                    "backup",
+                    "--destination",
+                    str(backup),
+                ],
+                cwd=_ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(backup_result.returncode, 0, backup_result.stderr)
+
+            restored = root / "restored"
+            restore_result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "aethel",
+                    "--store",
+                    str(restored),
+                    "restore",
+                    "--source",
+                    str(backup),
+                ],
+                cwd=_ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(restore_result.returncode, 0, restore_result.stderr)
+
+            with (restored / "ledger.jsonl").open("ab") as journal:
+                journal.write(b'{"seq":1')
+            recovered = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "aethel",
+                    "--store",
+                    str(restored),
+                    "recover",
+                    "--truncate-to-last-consistent-prefix",
+                ],
+                cwd=_ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(recovered.returncode, 0, recovered.stderr)
+            self.assertTrue((restored / "ledger.jsonl.bak").is_file())
+            verified = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "aethel",
+                    "--store",
+                    str(restored),
+                    "verify-ledger",
+                ],
+                cwd=_ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(verified.returncode, 0, verified.stderr)
 
 
 if __name__ == "__main__":

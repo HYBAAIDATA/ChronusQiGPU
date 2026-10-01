@@ -201,8 +201,7 @@ class GeodesicHandoff:
             )
         if self.block_key(entry.index, entry.digest) != point.key:
             raise HandoffRejection("point key does not match ledger digest")
-        block = self._blocks()[entry.index]
-        return block
+        return self.space.read(FibonacciAddress(entry.index, entry.value))
 
     def _blocks(self) -> Dict[int, bytes]:
         return self.space._blocks  # storage-layer internal, same package trust

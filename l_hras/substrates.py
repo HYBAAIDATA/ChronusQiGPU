@@ -574,7 +574,7 @@ class AethelStore:
 
     def commit(self) -> None:
         if self.path and self._pending:
-            self.path.mkdir(parents=True, exist_ok=True)
+            self.path.mkdir(mode=0o700, parents=True, exist_ok=True)
             self.space.snapshot(self.path)
             self._pending = False
 

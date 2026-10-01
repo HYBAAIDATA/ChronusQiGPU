@@ -2,14 +2,16 @@ from __future__ import annotations
 
 import pytest
 
-from turing_universal_quantum_computer import (
-    PhiGroverVQC,
+from turing_universal_quantum_computer.phi_quantum_machine import (
     PhiQuantumCircuit,
     PhiQuantumMachine,
     PhiQuantumMachine1000,
+)
+from turing_universal_quantum_computer.phi_verification import (
     run_1000_qubit_verification,
     verify_ghz_stabilizer_group,
 )
+from turing_universal_quantum_computer.phi_vqc import PhiGroverVQC
 
 
 def test_qasm_clifford_surface_and_non_clifford_rejection():
