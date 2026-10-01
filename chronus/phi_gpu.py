@@ -1,18 +1,15 @@
-"""Chronus phi GPU — the virtual phi-native device model.
+"""Chronus phi GPU — the virtual phi-native device control plane.
 
-The GPU plane of the geodesic engine: :class:`GeodesicScheduler` orders
-kernel work by hyperbolic manifold proximity ``d_phi = log_phi(max(|a|,|b|))``
-and drives fold-depth promote/demote on the ``aethel.phi_memory`` tiers;
-:class:`PhiGPU` launches kernels across 32 cores (one per M_32 face) through
-:class:`kellogg.phi_tensor_core.PhiTensorCore`; :class:`HybridGPU` routes
-structured workloads to the phi-native path and irregular ones to the
-traditional path; :class:`EnergyModel` compares the declared energy
-coefficients.
+The GPU plane of the Geodesic Tensor Engine. ``GeodesicScheduler`` orders
+kernel work by phi-manifold proximity and drives fold-depth residency policy;
+``PhiGPU`` launches generic kernels across 32 logical cores; ``HybridGPU``
+routes structured workloads to the phi-native path and irregular workloads to
+the traditional path; ``EnergyModel`` preserves the July declared-coefficient
+comparison.
 
-Claim discipline: every report carries ``truth_class`` — ``internal`` for
-software-emulated execution on the host, ``model`` for energy arithmetic.
-Nothing here asserts a physical-device property; measured hardware numbers
-come from ``chronus.telemetry`` on real devices only.
+This is a software control-plane model. Physical tensor execution and measured
+TFLOPS live in ``tensor.backends.chronus_backend`` / ``chronus.tensor_compute``.
+Reports here therefore carry explicit internal/model truth classes.
 """
 
 from __future__ import annotations
@@ -21,6 +18,7 @@ import heapq
 import logging
 import math
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -32,7 +30,7 @@ from kellogg.phi_tensor_core import PhiTensorCore
 logger = logging.getLogger("chronus.phi_gpu")
 
 PHI = (1.0 + math.sqrt(5.0)) / 2.0
-PHI_GPU_CORES = 32  # one core per M_32 face
+PHI_GPU_CORES = 32
 
 
 class PhiGPUError(RuntimeError):
@@ -40,19 +38,11 @@ class PhiGPUError(RuntimeError):
 
 
 def phi_log_distance(a: float, b: float) -> float:
-    """Scheduler distance ``d_phi = log_phi(max(|a|, |b|))``.
-
-    This is the simplified hyperbolic distance declared in the engine
-    record — the full Riemannian metric tensor is
-    ``kellogg.phi_tensor_core.MetricTensor.hyperbolic``.
-    """
+    """Simplified scheduler distance ``log_phi(max(|a|, |b|))``."""
     m = max(abs(float(a)), abs(float(b)))
     if m <= 0:
         return 0.0
     return math.log(m) / math.log(PHI)
-
-
-# -- GeodesicScheduler ---------------------------------------------------------
 
 
 @dataclass(order=True)
@@ -64,69 +54,177 @@ class _ScheduledItem:
 
 @dataclass
 class KernelTask:
-    """One schedulable unit: a callable over a manifold position."""
+    """One schedulable unit over a manifold position."""
 
     name: str
     position: float
     payload: Any = None
     resident: Optional[str] = None
+    completed: bool = False
+    result: Any = None
+    assigned_core: int = -1
+    geodesic_distance: float = 0.0
+
+
+# July public name retained in the modern Chronus owner.
+GeodesicTask = KernelTask
 
 
 class GeodesicScheduler:
-    """Warp-scheduler analogue: orders queued kernels by manifold
-    proximity to the reference position and promotes/demotes fold depths
-    so near work rides shallow folds and far work sinks toward HBM."""
+    """Geodesic work scheduler with July + modern interfaces.
+
+    The modern ``schedule()`` drains the queue and returns all tasks nearest
+    first. ``schedule_next()`` and ``schedule_batch()`` provide the July-style
+    incremental dispatch capability without changing existing callers.
+    """
 
     def __init__(
         self,
         memory: Optional[PhiMemoryHierarchy] = None,
         near_depth: int = 1,
         far_depth: int = 3,
+        num_cores: int = PHI_GPU_CORES,
     ) -> None:
+        if num_cores < 1:
+            raise PhiGPUError("num_cores must be positive")
         self.memory = memory if memory is not None else PhiMemoryHierarchy()
         self.near_depth = int(near_depth)
         self.far_depth = int(far_depth)
+        self.num_cores = int(num_cores)
         self._queue: List[_ScheduledItem] = []
         self._sequence = 0
         self.scheduled_log: List[str] = []
+        self.completed_tasks: List[KernelTask] = []
+        self.scheduling_decisions = 0
+        self.total_geodesic_distance = 0.0
+        self.current_position = np.array([1.0], dtype=np.float64)
 
-    def submit(self, task: KernelTask, reference: float = 0.0) -> float:
-        """Queue ``task`` ordered by ``d_phi`` proximity to ``reference``."""
+    def compute_geodesic_distance(
+        self, boundary: KernelBoundary, current_pos: Optional[np.ndarray] = None
+    ) -> float:
+        """July boundary-distance API over the current scheduler metric."""
+        if not isinstance(boundary, KernelBoundary):
+            raise PhiGPUError("compute_geodesic_distance requires KernelBoundary")
+        center = float(boundary.offset + boundary.length / 2.0)
+        pos = self.current_position if current_pos is None else np.asarray(current_pos, dtype=float)
+        reference = float(pos.ravel()[0]) if pos.size else 1.0
+        if center <= 0 or reference <= 0:
+            return float("inf")
+        return abs(math.log(center / reference) / math.log(PHI))
+
+    def submit(
+        self,
+        task: KernelTask | KernelBoundary,
+        reference: float = 0.0,
+        *,
+        operands: Any = None,
+        operation: str = "fma",
+        resident: Optional[str] = None,
+    ) -> float:
+        """Queue either a modern ``KernelTask`` or a July ``KernelBoundary``.
+
+        Boundary submission synthesizes a task whose position is the boundary
+        centre and preserves the supplied operands in ``payload``.
+        """
+        if isinstance(task, KernelBoundary):
+            task = KernelTask(
+                name=f"{operation}:{self._sequence}",
+                position=float(task.offset + task.length / 2.0),
+                payload={"boundary": task, "operands": operands, "operation": operation},
+                resident=resident,
+            )
         if not isinstance(task, KernelTask):
-            raise PhiGPUError("submit requires a KernelTask")
+            raise PhiGPUError("submit requires a KernelTask or KernelBoundary")
         distance = phi_log_distance(task.position, reference)
+        task.geodesic_distance = distance
         heapq.heappush(self._queue, _ScheduledItem(distance, self._sequence, task))
         self._sequence += 1
         return distance
 
+    def _apply_depth_policy(self, item: _ScheduledItem, median: float) -> None:
+        task = item.task
+        if task.resident is None:
+            return
+        try:
+            if item.distance <= median:
+                self._settle_depth(task.resident, self.near_depth)
+            else:
+                self._settle_depth(task.resident, self.far_depth)
+        except Exception as exc:
+            logger.debug("depth settle for %r skipped: %s", task.resident, exc)
+
     def schedule(self) -> List[KernelTask]:
-        """Drain the queue nearest-first, applying depth policy: tasks at
-        or below the median queued distance are promoted toward the near
-        tier; the rest are demoted toward the far tier."""
-        ordered: List[KernelTask] = []
+        """Drain all pending tasks nearest-first (modern live contract)."""
         drained: List[_ScheduledItem] = []
         while self._queue:
             drained.append(heapq.heappop(self._queue))
         if not drained:
-            return ordered
+            return []
         median = drained[len(drained) // 2].distance
-        for item in drained:
+        ordered = []
+        for index, item in enumerate(drained):
             task = item.task
+            task.assigned_core = index % self.num_cores
+            task.geodesic_distance = item.distance
             ordered.append(task)
             self.scheduled_log.append(task.name)
-            if task.resident is None:
-                continue
-            try:
-                if item.distance <= median:
-                    self._settle_depth(task.resident, self.near_depth)
-                else:
-                    self._settle_depth(task.resident, self.far_depth)
-            except Exception as exc:  # memory policy is advisory, never fatal
-                logger.debug("depth settle for %r skipped: %s", task.resident, exc)
+            self.scheduling_decisions += 1
+            self.total_geodesic_distance += item.distance
+            self.current_position = np.array([task.position], dtype=np.float64)
+            self._apply_depth_policy(item, median)
         return ordered
 
+    def schedule_next(self) -> Optional[KernelTask]:
+        """Schedule only the nearest pending task."""
+        if not self._queue:
+            return None
+        item = heapq.heappop(self._queue)
+        task = item.task
+        task.assigned_core = self.scheduling_decisions % self.num_cores
+        task.geodesic_distance = item.distance
+        self.scheduled_log.append(task.name)
+        self.scheduling_decisions += 1
+        self.total_geodesic_distance += item.distance
+        self.current_position = np.array([task.position], dtype=np.float64)
+        self._apply_depth_policy(item, item.distance)
+        return task
+
+    def schedule_batch(self, batch_size: Optional[int] = None) -> List[KernelTask]:
+        """Schedule up to ``batch_size`` tasks; defaults to ``num_cores``."""
+        limit = self.num_cores if batch_size is None else int(batch_size)
+        if limit < 1:
+            raise PhiGPUError("batch_size must be positive")
+        batch = []
+        for _ in range(min(limit, len(self._queue))):
+            task = self.schedule_next()
+            if task is not None:
+                batch.append(task)
+        return batch
+
+    def mark_completed(self, task: KernelTask, result: Any = None) -> None:
+        """Record completion and optional result for July task accounting."""
+        if not isinstance(task, KernelTask):
+            raise PhiGPUError("mark_completed requires KernelTask")
+        task.completed = True
+        task.result = result
+        self.completed_tasks.append(task)
+
+    def get_metrics(self) -> Dict[str, Any]:
+        return {
+            "num_cores": self.num_cores,
+            "pending_tasks": len(self._queue),
+            "completed_tasks": len(self.completed_tasks),
+            "scheduling_decisions": self.scheduling_decisions,
+            "total_geodesic_distance": self.total_geodesic_distance,
+            "avg_geodesic_distance": (
+                self.total_geodesic_distance / self.scheduling_decisions
+                if self.scheduling_decisions
+                else 0.0
+            ),
+            "current_position": float(self.current_position[0]),
+        }
+
     def _settle_depth(self, name: str, depth: int) -> None:
-        """Walk the resident toward the target depth via promote/demote."""
         resident = self.memory._residents.get(name)
         if resident is None:
             return
@@ -138,12 +236,9 @@ class GeodesicScheduler:
             resident = self.memory._residents[name]
 
 
-# -- PhiGPU --------------------------------------------------------------------
-
-
 @dataclass(frozen=True)
 class KernelLaunchConfig:
-    """One kernel launch: work partitioned across the 32 cores."""
+    """One kernel launch partitioned across logical cores."""
 
     name: str
     work_items: int
@@ -156,11 +251,17 @@ class KernelLaunchConfig:
         if not callable(self.kernel):
             raise PhiGPUError("kernel must be callable")
 
+    @property
+    def total_threads(self) -> int:
+        return self.work_items
+
+    @property
+    def num_blocks(self) -> int:
+        return max(1, math.ceil(self.work_items / PHI_GPU_CORES))
+
 
 @dataclass(frozen=True)
 class KernelResult:
-    """Measured record of one launch."""
-
     name: str
     work_items: int
     cores_used: int
@@ -169,8 +270,7 @@ class KernelResult:
 
 
 class PhiGPU:
-    """The virtual phi-native GPU: 32 tensor cores over a fold-depth
-    memory hierarchy behind the geodesic scheduler and integrity gate."""
+    """Virtual phi-native GPU over the Aethel/Kellogg planes."""
 
     def __init__(
         self,
@@ -183,28 +283,22 @@ class PhiGPU:
         self.cores = int(cores)
         self.memory = memory if memory is not None else PhiMemoryHierarchy()
         self.gate = gate if gate is not None else TopologicalIntegrityGate()
-        self.scheduler = GeodesicScheduler(self.memory)
+        self.scheduler = GeodesicScheduler(self.memory, num_cores=self.cores)
         self.tensor_core = PhiTensorCore()
         self.launch_log: List[KernelResult] = []
+
+    @property
+    def num_cores(self) -> int:
+        return self.cores
 
     def store(self, name: str, array: np.ndarray, tier: MemoryTier = MemoryTier.HBM):
         return self.memory.store(name, array, tier)
 
     def launch_kernel(self, config: KernelLaunchConfig) -> np.ndarray:
-        """Execute ``config.kernel`` on per-core slices and reduce.
-
-        Each core receives a contiguous work slice (ceil-partitioned),
-        runs the kernel on the unfolded slice, and the partial results are
-        concatenated by ``_reduce_results``. The integrity gate verifies
-        the assembled output against a host reference computation.
-        """
+        """Execute ``config.kernel`` on per-core selective slices and reduce."""
         if not isinstance(config, KernelLaunchConfig):
             raise PhiGPUError("launch_kernel requires a KernelLaunchConfig")
-        resident = (
-            self.memory._residents.get(config.name)
-            if config.name in self.memory._residents
-            else None
-        )
+        resident = self.memory._residents.get(config.name)
         if resident is None:
             raise PhiGPUError(f"launch_kernel requires a stored resident named {config.name!r}")
         flat = phi_unfold(resident.state).ravel()
@@ -219,7 +313,7 @@ class PhiGPU:
         result = self._reduce_results(partials)
         reference = np.asarray(config.kernel(work)).ravel()
         seq = self.gate.next_sequence()
-        self.gate.verify(
+        verdict = self.gate.verify(
             op=config.name,
             sequence=seq,
             expected=reference,
@@ -227,7 +321,6 @@ class PhiGPU:
             input_norm=float(np.linalg.norm(work)),
             output_norm=float(np.linalg.norm(result)),
         )
-        verdict = self.gate.verdicts[-1]
         self.launch_log.append(
             KernelResult(
                 name=config.name,
@@ -240,31 +333,39 @@ class PhiGPU:
         return result
 
     def _reduce_results(self, partials: Sequence[np.ndarray]) -> np.ndarray:
-        """Concatenate per-core partial results (order-preserving)."""
         if not partials:
             return np.zeros(0, dtype=np.float64)
-        return np.concatenate([p.ravel() for p in partials])
+        return np.concatenate([np.asarray(p).ravel() for p in partials])
 
     def get_system_report(self) -> Dict[str, Any]:
-        """Software-emulated device report — internal accounting only."""
-        tiers = self.memory.tier_report()
         return {
             "truth_class": "internal",
             "cores": self.cores,
             "launches": len(self.launch_log),
             "integrity_pass_rate": self.gate.pass_rate,
-            "tiers": tiers,
+            "integrity": self.gate.get_metrics(),
+            "scheduler": self.scheduler.get_metrics(),
+            "memory": self.memory.get_memory_report(),
+            "tensor_core": self.tensor_core.get_aggregate_metrics(),
             "kernel_log": [r.name for r in self.launch_log],
+            "physical_tensor_backend": "tensor.backends.chronus_backend",
         }
 
 
-# -- HybridGPU -----------------------------------------------------------------
+class ComputeUnitType(Enum):
+    PHI_NATIVE = "phi_native"
+    TRADITIONAL = "traditional"
+
+
+@dataclass(frozen=True)
+class HybridComputeUnit:
+    unit_id: int
+    unit_type: ComputeUnitType
+    active: bool = True
 
 
 @dataclass(frozen=True)
 class RouteDecisionRecord:
-    """Where a workload was routed and why — internal observability."""
-
     name: str
     route: str
     reason: str
@@ -272,27 +373,33 @@ class RouteDecisionRecord:
 
 
 class HybridGPU:
-    """Routes structured workloads to the phi-native path and irregular
-    ones to the traditional NumPy path. A workload is *structured* when it
-    is a numeric ndarray foldable by ``aethel.phi_fold``; anything else
-    (ragged/object payloads, scalars too small to fold) stays traditional.
-    """
+    """Route structured payloads to phi-native units and irregular payloads traditional."""
 
-    def __init__(self, phi_gpu: Optional[PhiGPU] = None) -> None:
+    def __init__(
+        self,
+        phi_gpu: Optional[PhiGPU] = None,
+        *,
+        traditional_units: int = 1,
+    ) -> None:
+        if traditional_units < 1:
+            raise PhiGPUError("traditional_units must be positive")
         self.phi_gpu = phi_gpu if phi_gpu is not None else PhiGPU()
         self.routes: List[RouteDecisionRecord] = []
+        self.compute_units: List[HybridComputeUnit] = [
+            HybridComputeUnit(i, ComputeUnitType.PHI_NATIVE) for i in range(self.phi_gpu.cores)
+        ] + [
+            HybridComputeUnit(self.phi_gpu.cores + i, ComputeUnitType.TRADITIONAL)
+            for i in range(traditional_units)
+        ]
 
     def route_workload(self, name: str, payload: Any) -> str:
-        """Return ``phi_native`` or ``traditional`` with a recorded reason."""
         route, reason = self._classify(payload)
         elements = (
             int(np.asarray(payload).size)
             if hasattr(payload, "__len__") or np.isscalar(payload)
             else 0
         )
-        self.routes.append(
-            RouteDecisionRecord(name=name, route=route, reason=reason, elements=elements)
-        )
+        self.routes.append(RouteDecisionRecord(name, route, reason, elements))
         return route
 
     @staticmethod
@@ -308,38 +415,34 @@ class HybridGPU:
     def execute(
         self, name: str, payload: Any, kernel: Callable[[np.ndarray], np.ndarray]
     ) -> np.ndarray:
-        """Route then run: phi-native payloads are folded into the
-        hierarchy, launched through ``PhiGPU``, and unfolded; traditional
-        payloads run the kernel directly."""
         route = self.route_workload(name, payload)
         flat = np.asarray(payload, dtype=np.float64).ravel()
         if route == "phi_native":
             self.phi_gpu.store(name, flat, MemoryTier.HBM)
-            result = self.phi_gpu.launch_kernel(
+            return self.phi_gpu.launch_kernel(
                 KernelLaunchConfig(name=name, work_items=flat.size, kernel=kernel)
             )
-            return result
         return np.asarray(kernel(flat)).ravel()
 
     def get_hybrid_report(self) -> Dict[str, Any]:
         counts = {"phi_native": 0, "traditional": 0}
         for record in self.routes:
             counts[record.route] += 1
+        units = {kind.value: 0 for kind in ComputeUnitType}
+        for unit in self.compute_units:
+            if unit.active:
+                units[unit.unit_type.value] += 1
         return {
             "truth_class": "internal",
             "routes": counts,
+            "compute_units": units,
             "decisions": [r.name for r in self.routes],
             "phi_gpu": self.phi_gpu.get_system_report(),
         }
 
 
-# -- EnergyModel ----------------------------------------------------------------
-
-
 @dataclass(frozen=True)
 class EnergyComparison:
-    """Declared-coefficient comparison — model arithmetic, not measurement."""
-
     traditional_j: float
     phi_gpu_j: float
     savings_j: float
@@ -349,10 +452,7 @@ class EnergyComparison:
 
 
 class EnergyModel:
-    """Compares energy using the declared shift: traditional devices spend
-    ``movement_share`` of energy on data movement while the phi-native
-    model spends ``compute_share`` on compute. The coefficients are model
-    constants — INTERNAL, never a device measurement."""
+    """Declared energy-coefficient model; never physical telemetry."""
 
     def __init__(
         self,
@@ -369,7 +469,7 @@ class EnergyModel:
         self.compute_joule_per_element = float(compute_joule_per_element)
 
     def traditional_energy(self, elements: float, working_set_ratio: float = 1.0) -> float:
-        # Traditional path moves the full working set; folding does not help it.
+        del working_set_ratio
         moved = elements
         compute = elements
         return self.movement_joule_per_element * moved * self.movement_share + (
@@ -377,7 +477,6 @@ class EnergyModel:
         )
 
     def phi_gpu_energy(self, elements: float, working_set_ratio: float = 1.0) -> float:
-        # Phi-native path moves only the folded working set (elements / ratio).
         moved = elements / max(working_set_ratio, 1e-30)
         compute = elements
         return self.movement_joule_per_element * moved * (1.0 - self.compute_share) + (
@@ -385,9 +484,6 @@ class EnergyModel:
         )
 
     def compare(self, elements: float, working_set_ratio: float = 1.0) -> EnergyComparison:
-        """``compare()`` returns savings and reduction percent. The ratio
-        argument is the measured fold ratio from ``PhiMemoryHierarchy`` —
-        never an assumed value."""
         if elements <= 0:
             raise PhiGPUError("elements must be > 0")
         traditional = self.traditional_energy(elements, working_set_ratio)
@@ -404,9 +500,12 @@ class EnergyModel:
 
 
 __all__ = [
+    "ComputeUnitType",
     "EnergyComparison",
     "EnergyModel",
     "GeodesicScheduler",
+    "GeodesicTask",
+    "HybridComputeUnit",
     "HybridGPU",
     "KernelLaunchConfig",
     "KernelResult",
