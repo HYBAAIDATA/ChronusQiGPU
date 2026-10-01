@@ -219,23 +219,29 @@ class Pythagoras:
 
             # 1. CGP Step
             best_genome, cgp_fitness, cgp_transformed = self.cgp.evolve(current, generations=1)
+            cgp_transformed = self.domain.normalize(cgp_transformed)
             cgp_phi = self.domain.coherence(cgp_transformed)
-            if cgp_phi > prev_phi:
+            cgp_valid = self.domain.is_valid(cgp_transformed) and self.domain.tests(cgp_transformed)
+            if cgp_valid and cgp_phi > prev_phi:
                 current = cgp_transformed
                 prev_phi = cgp_phi
 
-            # 2. Directed / Surrogate Mutation Step
+            # 2. Directed / Surrogate Mutation Step. Fitness never overrides
+            # domain correctness: invalid candidates are transactionally rejected.
             mutated, step_gains = self.mutator.mutate(current, n_mutations=3)
             mutated = self.domain.normalize(mutated)
             mutated_phi = self.domain.coherence(mutated)
             gain = mutated_phi - prev_phi
+            candidate_valid = self.domain.is_valid(mutated) and self.domain.tests(mutated)
 
-            # ENH-04: Simulated annealing check for accepting mutants
+            # ENH-04: Simulated annealing may accept a lower-scoring candidate,
+            # but it may never accept a candidate that violates domain tests.
             accept = False
-            if adaptation_enabled:
-                accept = self.meta.should_accept(gain)
-            else:
-                accept = gain > 0.0
+            if candidate_valid:
+                if adaptation_enabled:
+                    accept = self.meta.should_accept(gain)
+                else:
+                    accept = gain > 0.0
 
             if accept:
                 current = mutated
