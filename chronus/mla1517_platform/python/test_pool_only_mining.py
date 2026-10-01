@@ -310,6 +310,28 @@ def test_operator_config_drives_primary_failover_and_credentials():
         False,
     )
 
+def test_explicitly_disabled_pool_is_never_dialed():
+    config = {
+        "pools": [
+            {
+                "endpoint": "btc.viabtc.io:3333",
+                "worker": "disabled.worker",
+                "password": "do-not-use",
+                "enabled": False,
+            },
+            {
+                "endpoint": "stratum.braiins.com:3333",
+                "worker": "enabled.worker",
+                "password": "x",
+                "enabled": True,
+            },
+        ]
+    }
+    endpoints = mining_runtime.pool_endpoints(ARGS, config)
+    assert len(endpoints) == 1
+    assert endpoints[0].name == "braiins"
+    assert endpoints[0].username == "enabled.worker"
+
 
 def test_unlisted_pools_are_refused_unless_overridden(monkeypatch):
     config = {"pools": [{"endpoint": "pool.example.org:3333", "worker": "w", "password": "x"}]}

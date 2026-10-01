@@ -239,7 +239,10 @@ class StratumProofAdapter:
             if not isinstance(params, Sequence) or len(params) != 1:
                 raise StratumAdapterError("mining.set_difficulty requires one parameter")
             self.target = _target_from_difficulty(params[0])
-            self._retarget_jobs()
+            # Stratum V1 applies a difficulty change to the next notify.
+            # Mutating an already-issued job can make an otherwise valid share
+            # fail the pool's historical target (or admit one at the wrong
+            # target), so current and retained jobs remain immutable.
             return self.target
         if method == "mining.set_target":
             if not isinstance(params, Sequence) or len(params) != 1:
@@ -258,6 +261,11 @@ class StratumProofAdapter:
                 raise StratumAdapterError("mining.set_extranonce requires extranonce1 and size")
             self.subscription = self.parse_subscribe_result([[], params[0], params[1]])
             self._extranonce2_counter = 0
+            # Every existing header template was built against the previous
+            # extranonce1/size contract. Refuse it until a fresh notify binds
+            # the replacement subscription.
+            self.current_job = None
+            self.jobs.clear()
             return self.subscription
         return None
 
@@ -304,7 +312,10 @@ class StratumProofAdapter:
         return value
 
     def _job_for(self, job_id: str) -> StratumJob:
-        if self.current_job is None or job_id not in self.jobs or job_id != self.current_job.job_id:
+        # clean_jobs=False explicitly preserves earlier jobs. The production
+        # coordinator can still impose a stricter current-generation policy,
+        # but the protocol adapter must not silently invalidate retained work.
+        if job_id not in self.jobs:
             raise StaleJobError(f"job {job_id!r} is stale or not current")
         return self.jobs[job_id]
 

@@ -217,8 +217,10 @@ class HashPipeline:
     ) -> HashResult:
         """Grind real sha256d in a deterministic candidate order."""
         t0 = time.perf_counter()
-        assert len(header80) == 80, "header must be 80 bytes"
-        assert len(target_be) == 32, "target must be 32 bytes"
+        if len(header80) != 80:
+            raise ValueError("header must be 80 bytes")
+        if len(target_be) != 32:
+            raise ValueError("target must be 32 bytes")
         nonce_array = self._as_nonce_array(nonces)
         if max_hashes is not None:
             nonce_array = nonce_array[:max_hashes]
@@ -308,8 +310,10 @@ class HashPipeline:
         contract as ``grind``. Requires ``count % 32 == 0``.
         """
         t0 = time.perf_counter()
-        assert len(header80) == 80, "header must be 80 bytes"
-        assert len(target_be) == 32, "target must be 32 bytes"
+        if len(header80) != 80:
+            raise ValueError("header must be 80 bytes")
+        if len(target_be) != 32:
+            raise ValueError("target must be 32 bytes")
         if count % 32 or base_nonce % 32:
             raise ValueError("m32 grind window and base must be multiples of 32")
         winner, win_hash, hashes = self.hasher.grind_target_m32(
