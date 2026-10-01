@@ -59,6 +59,31 @@ jobs:
           git fetch --depth=1 origin "$BASE"
           CHANGED=$(git diff --name-only --diff-filter=d "origin/$BASE"...HEAD -- '*.py')
           if [ -n "$CHANGED" ]; then python -m ruff check --select E9,F $CHANGED; else echo "no changed .py files"; fi
+      - name: Clean-wheel remote GPU smoke test
+        run: |
+          rm -rf dist /tmp/pythia-wheel-smoke
+          python -m pip wheel . --no-deps --wheel-dir dist
+          python -m venv /tmp/pythia-wheel-smoke
+          /tmp/pythia-wheel-smoke/bin/pip install --quiet numpy dist/*.whl
+          cd /tmp
+          /tmp/pythia-wheel-smoke/bin/python - <<'PY'
+          import json
+          import threading
+          import urllib.request
+          from mining.bitcoin_hasher import BitcoinHasher
+          from chronus.mla1517.remote_gpu_agent import build_server
+          assert BitcoinHasher
+          server = build_server("127.0.0.1", 0)
+          thread = threading.Thread(target=server.serve_forever, daemon=True)
+          thread.start()
+          try:
+              url = f"http://127.0.0.1:{server.server_address[1]}/v1/health"
+              payload = json.load(urllib.request.urlopen(url, timeout=5))
+              assert payload["protocol"] == "remote_opencl_v2"
+          finally:
+              server.shutdown()
+              server.server_close()
+          PY
       - name: Import audit (every local import resolves; none hidden)
         run: python scripts/import_audit.py
       - name: Import graph (no new import cycles or layer violations)
