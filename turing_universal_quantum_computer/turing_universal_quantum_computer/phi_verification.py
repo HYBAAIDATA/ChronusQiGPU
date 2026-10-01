@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import Iterable
 
 from .phi_quantum_machine import PhiQuantumCircuit, PhiQuantumMachine1000
 from .stabilizer import StabilizerState
@@ -28,11 +27,13 @@ def _pauli_product(
 
 
 def _stabilizer_basis(state: StabilizerState) -> dict[int, tuple[int, int, int]]:
-    """Build an echelon basis for the state's n stabilizer generators."""
+    """Build one echelon basis for the state's n stabilizer generators."""
     n = state.n
     basis: dict[int, tuple[int, int, int]] = {}
     for index in range(n, 2 * n):
-        x, z, r = int(state._x[index]), int(state._z[index]), int(bool(state._r[index]))
+        x = int(state._x[index])
+        z = int(state._z[index])
+        r = int(bool(state._r[index]))
         vector = x | (z << n)
         while vector:
             pivot = vector.bit_length() - 1
@@ -50,12 +51,15 @@ def _stabilizer_basis(state: StabilizerState) -> dict[int, tuple[int, int, int]]
     return basis
 
 
-def stabilizer_contains(state: StabilizerState, x: int, z: int, r: int = 0) -> bool:
-    """Return True iff the signed Pauli belongs to the state's stabilizer group."""
-    n = state.n
+def _contains_with_basis(
+    n: int,
+    basis: dict[int, tuple[int, int, int]],
+    x: int,
+    z: int,
+    r: int = 0,
+) -> bool:
     if x < 0 or z < 0 or x >> n or z >> n or r not in (0, 1):
         return False
-    basis = _stabilizer_basis(state)
     vector = x | (z << n)
     phase = int(r)
     while vector:
@@ -66,6 +70,12 @@ def stabilizer_contains(state: StabilizerState, x: int, z: int, r: int = 0) -> b
         x, z, phase = _pauli_product(x, z, phase, *row)
         vector = x | (z << n)
     return phase == 0
+
+
+def stabilizer_contains(state: StabilizerState, x: int, z: int, r: int = 0) -> bool:
+    """Return True iff the signed Pauli belongs to the state's stabilizer group."""
+    basis = _stabilizer_basis(state)
+    return _contains_with_basis(state.n, basis, x, z, r)
 
 
 def ghz_expected_generators(n_qubits: int) -> tuple[tuple[int, int, int], ...]:
@@ -79,7 +89,10 @@ def ghz_expected_generators(n_qubits: int) -> tuple[tuple[int, int, int], ...]:
 
 def verify_ghz_stabilizer_group(state: StabilizerState) -> dict[str, object]:
     expected = ghz_expected_generators(state.n)
-    membership = tuple(stabilizer_contains(state, *generator) for generator in expected)
+    basis = _stabilizer_basis(state)
+    membership = tuple(
+        _contains_with_basis(state.n, basis, *generator) for generator in expected
+    )
     witness = hashlib.sha256(
         json.dumps(expected, separators=(",", ":")).encode("utf-8")
     ).hexdigest()

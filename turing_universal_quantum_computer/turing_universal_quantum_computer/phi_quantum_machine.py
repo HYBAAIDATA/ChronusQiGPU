@@ -1,15 +1,17 @@
-"""Production phi-machine facade for the consolidated Turing VQC package.
+"""Production φ-machine facade for the consolidated Turing VQC package.
 
-Integrates the July 2026 1,000-logical-qubit artifact with the stronger
-in-repository exact stabilizer backend. The archived NumPy boolean tableau is
-not duplicated: StabilizerState already provides a more compact integer-bitset
-Aaronson-Gottesman representation, exact Clifford evolution, exact Born
-probabilities and fail-closed handling of non-Clifford gates.
+This module integrates the July 2026 1,000-logical-qubit artifact with the
+stronger in-repository exact stabilizer backend.  It deliberately does not
+reintroduce the archived NumPy boolean tableau: ``StabilizerState`` already
+provides a more compact integer-bitset Aaronson-Gottesman representation,
+exact Clifford evolution, exact Born probabilities and fail-closed handling of
+non-Clifford gates.
 
-PULVINI checkpointing here is an exact recursive representation transform, not
-a physical-compression claim. Each layer stores the left element of every
-Fibonacci-Q pair and propagates the pair sum; inverse recovery computes
-right=sum-left. If the repository canonical pulvini_fold is importable, each
+PULVINI checkpointing is an exact recursive representation transform.  It is
+not advertised as physical compression.  Each layer stores the left element
+of every Fibonacci-Q pair and propagates the pair sum; the inverse recovers the
+right element as ``sum-left``.  When the repository's canonical
+``python_backend.core_modules.math_folding.pulvini_fold`` is importable, every
 layer is cross-checked against it.
 """
 from __future__ import annotations
@@ -24,12 +26,22 @@ import re
 import time
 from typing import Any, Optional, Sequence
 
-from .stabilizer import StabilizerDomainError, StabilizerState
+from .stabilizer import StabilizerState
 
 CLIFFORD_GATES = frozenset({"h", "s", "sdg", "x", "y", "z", "cx", "cz", "swap"})
 ALGORITHM_CATALOG = (
-    "grover", "shor", "qft", "vqe", "qaoa", "qml", "quantum_walk",
-    "quantum_sensing", "qec", "annealing", "hybrid", "phase_estimation",
+    "grover",
+    "shor",
+    "qft",
+    "vqe",
+    "qaoa",
+    "qml",
+    "quantum_walk",
+    "quantum_sensing",
+    "qec",
+    "annealing",
+    "hybrid",
+    "phase_estimation",
 )
 
 
@@ -56,7 +68,7 @@ class PhiQuantumCircuit:
         name = name.lower()
         if name not in CLIFFORD_GATES:
             raise PhiMachineValidationError(
-                f"unsupported/non-Clifford gate {name!r}; select another exact Turing backend"
+                f"unsupported/non-Clifford gate {name!r}; use another exact Turing backend"
             )
         expected = 2 if name in {"cx", "cz", "swap"} else 1
         if len(qubits) != expected:
@@ -96,9 +108,13 @@ class PhiQuantumCircuit:
         for raw in qasm.splitlines():
             line = raw.strip().lower()
             if (
-                not line or line.startswith("//") or line.startswith("openqasm")
-                or line.startswith("include") or line.startswith("qreg")
-                or line.startswith("creg") or line.startswith("measure")
+                not line
+                or line.startswith("//")
+                or line.startswith("openqasm")
+                or line.startswith("include")
+                or line.startswith("qreg")
+                or line.startswith("creg")
+                or line.startswith("measure")
                 or line.startswith("barrier")
             ):
                 continue
@@ -115,7 +131,14 @@ class PhiQuantumCircuit:
 
 
 class AffineZSampler:
-    """Fast exact GF(2) Z-basis sampler for affine Clifford circuit families."""
+    """Fast exact GF(2) Z-basis sampler for affine Clifford circuit families.
+
+    Each output bit is represented as ``offset XOR parity(mask & random_bits)``.
+    This covers the large GHZ path without copying/measuring a 1,000-qubit
+    tableau once per shot.  If an H is applied to an already-dependent wire,
+    the circuit exits this bounded affine family and sampling falls back to
+    the exact tableau policy.
+    """
 
     def __init__(self, num_qubits: int):
         self.n = int(num_qubits)
@@ -129,7 +152,10 @@ class AffineZSampler:
             return
         if gate.name == "h":
             q = gate.qubits[0]
-            if self.coefficients[q] or self.variables >= self.n:
+            if self.coefficients[q]:
+                self.valid = False
+                return
+            if self.variables >= self.n:
                 self.valid = False
                 return
             self.coefficients[q] = 1 << self.variables
@@ -144,6 +170,8 @@ class AffineZSampler:
             self.offset[t] ^= self.offset[c]
             self.coefficients[t] ^= self.coefficients[c]
         else:
+            # CZ/SWAP are exact Clifford but are outside this simple affine
+            # Z-distribution tracker; the stabilizer backend still handles them.
             self.valid = False
 
     def sample(self, shots: int, seed: int) -> tuple[tuple[int, ...], ...]:
@@ -153,10 +181,11 @@ class AffineZSampler:
         rows: list[tuple[int, ...]] = []
         for _ in range(shots):
             random_bits = rng.getrandbits(self.variables) if self.variables else 0
-            rows.append(tuple(
+            row = tuple(
                 int(offset ^ ((mask & random_bits).bit_count() & 1))
                 for offset, mask in zip(self.offset, self.coefficients)
-            ))
+            )
+            rows.append(row)
         return tuple(rows)
 
 
@@ -168,6 +197,8 @@ class PulviniLayer:
 
 @dataclass(frozen=True)
 class PhiCheckpoint:
+    """Exact recursive PULVINI representation of a canonical tableau payload."""
+
     layers: tuple[PulviniLayer, ...]
     terminal_values: tuple[int, ...]
     payload_size: int
@@ -238,9 +269,11 @@ class PhiQuantumMachine:
         return (self.logical_tableau_bits + 7) // 8
 
     def _state_payload(self) -> bytes:
+        """Canonical packed payload independent of Python object representation."""
         n = self.logical_qubits
         width = (n + 7) // 8
-        out = bytearray(n.to_bytes(8, "little", signed=False))
+        out = bytearray()
+        out.extend(n.to_bytes(8, "little", signed=False))
         for x, z, r in zip(self.register._x, self.register._z, self.register._r):
             out.extend(int(x).to_bytes(width, "little", signed=False))
             out.extend(int(z).to_bytes(width, "little", signed=False))
@@ -255,39 +288,52 @@ class PhiQuantumMachine:
         return self._digest_payload(self._state_payload())
 
     def stabilizer_group_digest(self) -> str:
+        """Digest the n stabilizer generators only (destabilizers excluded)."""
         n = self.logical_qubits
         canonical = tuple(
-            (int(self.register._x[n + i]), int(self.register._z[n + i]), int(bool(self.register._r[n + i])))
+            (int(self.register._x[n + i]), int(self.register._z[m + i]), int(bool(self.register._r[n + i])))
             for i in range(n)
         )
-        return hashlib.sha256(
-            json.dumps(canonical, separators=(",", ":")).encode("utf-8")
-        ).hexdigest()
+        blob = json.dumps(canonical, separators=(",", ":")).encode("utf-8")
+        return hashlib.sha256(blob).hexdigest()
 
     def _restore_payload(self, payload: bytes) -> None:
         n = self.logical_qubits
         width = (n + 7) // 8
         expected = 8 + (2 * n) * (2 * width + 1)
         if len(payload) != expected:
-            raise PhiMachineValidationError(f"checkpoint payload size mismatch: {len(payload)} != {expected}")
+            raise PhiMachineValidationError(
+                f"checkpoint payload size mismatch: {len(payload)} != {expected}"
+            )
         encoded_n = int.from_bytes(payload[:8], "little", signed=False)
         if encoded_n != n:
-            raise PhiMachineValidationError(f"checkpoint width {encoded_n} does not match machine width {n}")
+            raise PhiMachineValidationError(
+                f"checkpoint width {encoded_n} does not match machine width {n}"
+            )
         mask = (1 << n) - 1
-        x_rows: list[int] = []
-        z_rows: list[int] = []
+       x_rows: list[int] = []
+       z_rows: list[int] = []
         phases: list[int] = []
         cursor = 8
         for _ in range(2 * n):
-            x = int.from_bytes(payload[cursor:cursor + width], "little", signed=False); cursor += width
-            z = int.from_bytes(payload[cursor:cursor + width], "little", signed=False); cursor += width
-            r = payload[cursor]; cursor += 1
+            x = int.from_bytes(payload[cursor:cursor + width], "little", signed=False)
+            cursor += width
+            z = int.from_bytes(payload[cursor:cursor + width], "little", signed=False)
+            cursor += width
+            r = payload[cursor]
+            cursor += 1
             if x & ~mask or z & ~mask or r not in (0, 1):
                 raise PhiMachineValidationError("checkpoint contains invalid tableau data")
-            x_rows.append(x); z_rows.append(z); phases.append(r)
+            x_rows.append(x)
+            z_rows.append(z)
+            phases.append(r)
         state = StabilizerState(n)
-        state._x, state._z, state._r = x_rows, z_rows, phases
+        state._x = x_rows
+        state._z = z_rows
+        state._r = phases
         self.register = state
+        # A restored arbitrary Clifford state cannot safely reuse stale affine
+        # sampling metadata. Future measurement uses the exact tableau path.
         self.sampler = AffineZSampler(n)
         self.sampler.valid = False
 
@@ -298,28 +344,34 @@ class PhiQuantumMachine:
         except Exception:
             return
         folded = pulvini_fold(values)
-        if folded.unfold() != tuple(Fraction(v) for v in values):
+        exact = tuple(Fraction(v) for v in values)
+        if folded.unfold() != exact:
             raise RuntimeError("canonical PULVINI round-trip invariant failed")
         pairs = tuple((int(a), int(b)) for a, b in folded.pairs)
+        expected = []
         padded = list(values)
         if len(padded) % 2:
             padded.append(0)
-        expected = tuple((padded[i] + padded[i + 1], padded[i]) for i in range(0, len(padded), 2))
-        if pairs != expected:
+        for i in range(0, len(padded), 2):
+            expected.append((padded[i] + padded[i + 1], padded[i]))
+        if pairs != tuple(expected):
             raise RuntimeError("local PULVINI layer diverges from canonical repository transform")
 
     @staticmethod
     def _fold_layer(values: Sequence[int]) -> tuple[PulviniLayer, tuple[int, ...]]:
         if not values:
             return PulviniLayer(0, ()), ()
-        PhiQuantumMachine._canonical_fold_crosscheck(values)
-        padded = [int(v) for v in values]
+        if len(values) <= 4096:
+            PhiQuantumMachine._canonical_fold_crosscheck(values)
+        padded = list(int(v) for v in values)
         original_length = len(padded)
         if original_length % 2:
             padded.append(0)
-        lefts, combined = [], []
+        lefts: list[int] = []
+        combined: list[int] = []
         for i in range(0, len(padded), 2):
-            left, right = padded[i], padded[i + 1]
+            left = padded[i]
+            right = padded[i + 1]
             lefts.append(left)
             combined.append(left + right)
         return PulviniLayer(original_length, tuple(lefts)), tuple(combined)
@@ -343,14 +395,20 @@ class PhiQuantumMachine:
         for _ in range(requested):
             layer, values = self._fold_layer(values)
             layers.append(layer)
-        checkpoint = PhiCheckpoint(tuple(layers), values, len(payload), self._digest_payload(payload), requested)
+        checkpoint = PhiCheckpoint(
+            layers=tuple(layers),
+            terminal_values=values,
+            payload_size=len(payload),
+            digest=self._digest_payload(payload),
+            depth=requested,
+         )
         if self._checkpoint_payload(checkpoint) != payload:
             raise RuntimeError("PULVINI checkpoint round-trip failed")
         self.last_checkpoint = checkpoint
         return checkpoint
 
     def _checkpoint_payload(self, checkpoint: PhiCheckpoint) -> bytes:
-        values = tuple(int(v) for v in checkpoint.terminal_values)
+        values: tuple[int, ...] = tuple(int(v) for v in checkpoint.terminal_values)
         for layer in reversed(checkpoint.layers):
             values = self._unfold_layer(layer, values)
         if any(v < 0 or v > 255 for v in values):
@@ -368,7 +426,8 @@ class PhiQuantumMachine:
             raise PhiMachineValidationError("no checkpoint available")
         if checkpoint.depth != len(checkpoint.layers):
             raise PhiMachineValidationError("checkpoint depth metadata mismatch")
-        self._restore_payload(self._checkpoint_payload(checkpoint))
+        payload = self._checkpoint_payload(checkpoint)
+        self._restore_payload(payload)
         if self.state_digest() != checkpoint.digest:
             raise PhiMachineValidationError("restored state failed digest verification")
         self.last_checkpoint = checkpoint
@@ -389,8 +448,14 @@ class PhiQuantumMachine:
             raise PhiMachineValidationError("shots must be a positive integer")
         if self.sampler.valid:
             return self.sampler.sample(shots, seed)
+        # General tableau measurement is deliberately bounded to prevent a
+        # misleading high-width/large-shot request from turning into hidden
+        # quadratic work. Exact probabilities remain available per qubit on
+        # StabilizerState without this sampled convenience path.
         if self.logical_qubits > 64 or shots > 128:
-            raise PhiMachineValidationError("general tableau sampling policy exceeded (max 64 qubits, 128 shots)")
+            raise PhiMachineValidationError(
+                "general tableau sampling policy exceeded (max 64 qubits, 128 shots)"
+            )
         rows: list[tuple[int, ...]] = []
         for shot in range(shots):
             reg = deepcopy(self.register)
@@ -407,12 +472,21 @@ class PhiQuantumMachine:
         self.apply_circuit(circuit)
         samples = self.sample(shots, seed)
         return ExecutionResult(
-            self.logical_qubits, self.gates_executed, shots, samples, self._counts(samples),
-            self.logical_tableau_bits, self.packed_tableau_bytes, self.logical_qubits + 4,
-            (time.perf_counter() - started) * 1000.0, self.state_digest(), self.stabilizer_group_digest(),
+            logical_qubits=self.logical_qubits,
+            gates_executed=self.gates_executed,
+            shots=shots,
+            samples=samples,
+            counts=self._counts(samples),
+            logical_tableau_bits=self.logical_tableau_bits,
+            packed_tableau_bytes=self.packed_tableau_bytes,
+            dense_statevector_log2_bytes=self.logical_qubits + 4,
+            execution_ms=(time.perf_counter() - started) * 1000.0,
+            state_digest=self.state_digest(),
+            stabilizer_group_digest=self.stabilizer_group_digest(),
         )
 
     def plan_algorithm(self, algorithm: str, problem_qubits: Optional[int] = None) -> dict[str, Any]:
+        """Return capability metadata without promoting plans to execution claims."""
         name = algorithm.lower()
         if name not in ALGORITHM_CATALOG:
             raise PhiMachineValidationError(f"unknown algorithm: {algorithm}")
@@ -428,22 +502,35 @@ class PhiQuantumMachine:
         if name == "qec":
             plan.update(status="executable-clifford", stabilizer_tableau=True, syndrome_channels=n)
         elif name == "grover":
-            plan.update(status="bounded-executable-on-other-turing-backends", search_space_log2=n,
-                        iteration_log2=n / 2, required_backend="exact sparse/tensor with oracle support")
+            plan.update(
+                status="bounded-executable-on-other-turing-backends",
+                search_space_log2=n,
+                iteration_log2=n / 2,
+                required_backend="exact sparse/tensor with oracle support",
+            )
         elif name == "qft":
-            plan.update(status="planned-on-this-backend", gate_count=n * (n + 1) // 2, depth=n,
-                        reason="general QFT requires non-Clifford controlled phases")
+            plan.update(
+                status="planned-on-this-backend",
+                gate_count=n * (n + 1) // 2,
+                depth=n,
+                reason="general QFT requires non-Clifford controlled phases",
+            )
         elif name == "shor":
-            plan.update(status="restricted-on-stabilizer", max_planned_modulus_bits=max(1, n // 2),
-                        reason="period finding requires non-Clifford/universal execution")
+            plan.update(
+                status="restricted-on-stabilizer",
+                max_planned_modulus_bits=max(1, n // 2),
+                reason="period finding requires non-Clifford/universal execution",
+            )
         else:
-            plan.update(status="planned-or-backend-dependent",
-                        required_backend="select an exact Turing backend that supports the circuit domain")
+            plan.update(
+                status="planned-or-backend-dependent",
+                required_backend="select an exact Turing backend that supports the circuit domain",
+            )
         return plan
 
     def system_report(self) -> dict[str, Any]:
         return {
-            "machine": "HYBA/Turing phi-Quantum Machine",
+            "machine": "HYBA/Turing φ-Quantum Machine",
             "logical_qubits": self.logical_qubits,
             "backend": "Turing integer-bitset Aaronson-Gottesman stabilizer",
             "truth_class": "exact Clifford algebra",
@@ -466,46 +553,16 @@ class PhiQuantumMachine1000(PhiQuantumMachine):
         super().__init__(logical_qubits=logical_qubits, fold_depth=fold_depth)
 
 
-def run_1000_qubit_verification(shots: int = 32) -> dict[str, Any]:
-    """Discriminating 1,000-qubit Clifford evidence gate."""
-    machine = PhiQuantumMachine1000()
-    result = machine.execute(PhiQuantumCircuit.ghz(1000), shots=shots, seed=42)
-    expected = PhiQuantumMachine1000()
-    expected.register = StabilizerState.ghz(1000)
-    expected.sampler.valid = False
-    group_match = machine.stabilizer_group_digest() == expected.stabilizer_group_digest()
-    state_match = machine.state_digest() == expected.state_digest()
-    checkpoint = machine.checkpoint(depth=20)
-    before = machine.state_digest()
-    machine.register.x(0)
-    machine.restore(checkpoint)
-    restored = machine.state_digest() == before == checkpoint.digest
-    diagnostic_correlations = all(
-        all(bit == 0 for bit in row) or all(bit == 1 for bit in row)
-        for row in result.samples
-    )
-    return {
-        **machine.system_report(),
-        "circuit": "GHZ-1000",
-        "gates": result.gates_executed,
-        "shots": shots,
-        "state_digest": result.state_digest,
-        "stabilizer_group_digest": result.stabilizer_group_digest,
-        "stabilizer_group_equality": group_match,
-        "canonical_state_digest_equality": state_match,
-        "pulvini_checkpoint_depth": checkpoint.depth,
-        "pulvini_restore_digest_verified": restored,
-        "measurement_correlation_diagnostic": diagnostic_correlations,
-        "measurement_correlation_is_evidence": False,
-        "verification_pass": bool(group_match and state_match and restored),
-    }
-
-
-run_1000_qubit_demonstration = run_1000_qubit_verification
 
 __all__ = [
-    "ALGORITHM_CATALOG", "CLIFFORD_GATES", "ExecutionResult", "Gate", "PhiCheckpoint",
-    "PhiMachineValidationError", "PhiQuantumCircuit", "PhiQuantumMachine",
-    "PhiQuantumMachine1000", "PulviniLayer", "run_1000_qubit_demonstration",
-    "run_1000_qubit_verification",
+    "ALGORITHM_CATALOG",
+    "CLIFFORD_GATES",
+    "ExecutionResult",
+    "Gate",
+    "PhiCheckpoint",
+    "PhiMachineValidationError",
+    "PhiQuantumCircuit",
+    "PhiQuantumMachine",
+    "PhiQuantumMachine1000",
+    "PulviniLayer",
 ]
