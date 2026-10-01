@@ -49,6 +49,19 @@ swarming (agents sampling exact Born distributions), and entangled
 subsystem broadcast via `register_subsystem_entanglement()` under the
 non-adjacent-Fibonacci (Zeckendorf) constraint.
 
+**What "exact" does and does not claim.** Every backend above is an exact
+*classical simulation* of a restricted, efficiently-simulable quantum
+state class (Clifford/stabilizer, closed-form free-fermion, closed-form
+walk) — the amplitudes and probabilities it reports are mathematically
+exact for that state class. It is not a claim of quantum hardware
+performance: none of these backends gain the runtime speedup that real
+quantum hardware would provide for a hard search/optimization problem,
+because simulating a quantum circuit classically does not confer the
+circuit's own complexity-class advantage. Any `quantum_advantage_*` or
+`speedup` figure reported by the optional `turing_core.discovery` engine
+describes the textbook query complexity of the algorithm under analysis,
+not a measured improvement from running this package.
+
 The production mining plane keeps `VIRTUAL_QUANTUM_QUBITS = 11` as its
 *default* lane width — a default, not a limit; the executor accepts any
 `n_qubits >= 1`.
