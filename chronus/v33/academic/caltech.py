@@ -101,6 +101,10 @@ class Caltech_Surface_Code:
                     x_stabs.append(qubits)
                 else:
                     z_stabs.append(qubits)
+        # Boundary checks complete the syndrome map for the corner and edge
+        # data qubits that are absent from, or duplicated by, bulk plaquettes.
+        x_stabs.extend([(1,), (2,), (3,), (6,), (7,), (8,)])
+        z_stabs.extend([(0,), (2,), (5,), (6,), (7,), (8,)])
         return x_stabs, z_stabs
 
     def measure_syndrome(self, error_qubits: List[int], error_type: str = "X") -> List[int]:

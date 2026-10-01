@@ -36,6 +36,7 @@ class LargeHilbertSpace:
         self.n_modes = int(n_modes)
         self.bond_dim = int(bond_dim)
         self.mps = MatrixProductState(n_qubits=self.n_modes, bond_dim=self.bond_dim)
+        self._max_truncation_error = 0.0
 
     def construct_product_ground(self) -> MatrixProductState:
         """Reset to |0…0⟩ product state (exact MPS, bond dim 1)."""
@@ -56,6 +57,7 @@ class LargeHilbertSpace:
         for i in range(self.n_modes - 1):
             err = self.mps.apply_two_qubit_gate(i, cnot)
             max_err = max(max_err, err)
+        self._max_truncation_error = max(self._max_truncation_error, max_err)
         return max_err
 
     def tebd_ising_step(self, j_coupling: float = 1.0, h_field: float = 0.5, dt: float = 0.01) -> float:
@@ -81,6 +83,7 @@ class LargeHilbertSpace:
             for i in range(start, self.n_modes - 1, 2):
                 err = self.mps.apply_two_qubit_gate(i, gate)
                 max_err = max(max_err, err)
+        self._max_truncation_error = max(self._max_truncation_error, max_err)
         return max_err
 
     def entanglement_entropy(self, bond: Optional[int] = None) -> float:
@@ -98,7 +101,7 @@ class LargeHilbertSpace:
             bond_dim=self.bond_dim,
             compression=audit,
             entanglement_mid=self.entanglement_entropy(),
-            max_truncation_error=0.0,
+            max_truncation_error=self._max_truncation_error,
         )
 
 

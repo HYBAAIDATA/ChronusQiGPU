@@ -32,10 +32,12 @@ def test_braid_hadamard_matches_f_matrix():
 @pytest.mark.unit
 def test_surface_code_decodes_single_error():
     code = Caltech_Surface_Code(distance=3)
-    syndrome = code.measure_syndrome([4], "X")
-    result = code.decode(syndrome, "X")
-    assert result.logical_error is False
-    assert (4, "X") in result.correction
+    for error_type in ("X", "Z"):
+        for qubit in range(code.n_qubits):
+            syndrome = code.measure_syndrome([qubit], error_type)
+            result = code.decode(syndrome, error_type)
+            assert result.logical_error is False
+            assert (qubit, error_type) in result.correction
 
 
 @pytest.mark.unit

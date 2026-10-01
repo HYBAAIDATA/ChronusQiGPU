@@ -34,7 +34,7 @@ CASES: tuple[ResearchCase, ...] = (
         institutions=("MIT",),
         source_url="https://arxiv.org/abs/1411.4028",
         implementation="chronus.v33.academic.nist.NIST_Benchmark",
-        invariant="deterministic small-instance QAOA cost reduction is positive",
+        invariant="p=1 two-vertex MaxCut QAOA cost reduction is positive",
         test_node="tests/test_chronus_v33/test_academic.py::test_nist_benchmark_determinism_score",
     ),
     ResearchCase(

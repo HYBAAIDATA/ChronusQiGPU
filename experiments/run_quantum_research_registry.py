@@ -22,7 +22,17 @@ def run_case(test_node: str, timeout: int) -> dict[str, object]:
             command, cwd=ROOT, text=True, capture_output=True, timeout=timeout, check=False
         )
     except subprocess.TimeoutExpired as exc:
-        return {"outcome": "timeout", "returncode": None, "stdout": exc.stdout or "", "stderr": exc.stderr or ""}
+        def text(value: object) -> str:
+            if isinstance(value, bytes):
+                return value.decode(errors="replace")
+            return str(value or "")
+
+        return {
+            "outcome": "timeout",
+            "returncode": None,
+            "stdout": text(exc.stdout),
+            "stderr": text(exc.stderr),
+        }
     return {
         "outcome": "pass" if result.returncode == 0 else "fail",
         "returncode": result.returncode,

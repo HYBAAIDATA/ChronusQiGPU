@@ -30,7 +30,7 @@ class CryogenicEnvironment:
 
     def __init__(self, temperature_k: float = 0.015, omega_hz: float = 5e9):
         self.temperature = float(temperature_k)
-        self.omega = float(omega_hz)
+        self.omega = 2.0 * np.pi * float(omega_hz)
 
     def thermal_noise(self) -> ThermalNoise:
         n = bose_occupation(self.omega, self.temperature)

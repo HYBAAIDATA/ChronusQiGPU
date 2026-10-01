@@ -41,9 +41,8 @@ class Table:
         if self.domain_bits < 0 or self.value_bits < 0:
             raise ValueError("domain_bits and value_bits must be non-negative")
         n = 1 << self.domain_bits if self.domain_bits <= 20 else 0
-        if self.data and len(self.data) != n and not self.sparse:
-            # Allow partial dense tables only when sparse is also used
-            pass
+        if self.data and (n == 0 or len(self.data) != n) and not self.sparse:
+            raise ValueError("partial dense tables require sparse storage")
         if not self.data and not self.sparse and self.domain_bits <= 16:
             # Default zero table
             self.data = [tuple(0 for _ in range(self.value_bits)) for _ in range(1 << self.domain_bits)]

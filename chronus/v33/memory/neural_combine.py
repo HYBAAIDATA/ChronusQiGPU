@@ -148,20 +148,22 @@ class NeuralCombineMemory:
         Train the router on a synthetic address→preferred-slot mapping
         (modular assignment). Real backprop, measured loss curve.
         """
+        if n_samples <= 0:
+            raise ValueError("n_samples must be positive")
         rng = np.random.default_rng(seed)
         loss_curve = []
         for _ in range(epochs):
-            addrs = rng.integers(0, 1 << self.address_bits, size=32)
+            addrs = rng.integers(0, 1 << self.address_bits, size=n_samples)
             x = np.stack([self._address_features(a) for a in addrs])
             # Target: one-hot preferred slot = address % n_slots
-            target = np.zeros((32, self.n_slots))
+            target = np.zeros((n_samples, self.n_slots))
             for i, a in enumerate(addrs):
                 target[i, a % self.n_slots] = 1.0
             loss = self.router.train_step(x, target, lr=0.08)
             loss_curve.append(loss)
 
         # Top-1 accuracy on a fresh batch
-        test_addrs = rng.integers(0, 1 << self.address_bits, size=128)
+        test_addrs = rng.integers(0, 1 << self.address_bits, size=n_samples)
         correct = 0
         for a in test_addrs:
             w = self.route(a)

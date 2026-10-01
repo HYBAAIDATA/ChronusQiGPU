@@ -103,17 +103,20 @@ class NIST_Benchmark:
         timings["qft_roundtrip"] = time.time() - t0
         scores["qft_roundtrip_error"] = float(np.max(np.abs(x - reconstructed)))
 
-        # "QAOA" stand-in: does a tiny real variational loop actually reduce
-        # a cost function below its initial value?
+        # p=1 QAOA for the two-vertex MaxCut instance.
         t0 = time.time()
-        rng = np.random.default_rng(2)
-        theta = rng.normal(size=8)
-        cost0 = float(np.sum(np.cos(theta) ** 2))
-        for _ in range(50):
-            grad = -2 * np.cos(theta) * np.sin(theta)
-            theta -= 0.1 * grad
-        cost1 = float(np.sum(np.cos(theta) ** 2))
-        timings["qaoa_toy_descent"] = time.time() - t0
+        gamma, beta = np.pi / 2, np.pi / 8
+        state = np.full(4, 0.5, dtype=complex)
+        cost_values = np.array([0.0, 1.0, 1.0, 0.0])
+        state *= np.exp(-1j * gamma * cost_values)
+        mixer = np.array(
+            [[np.cos(beta), -1j * np.sin(beta)], [-1j * np.sin(beta), np.cos(beta)]],
+            dtype=complex,
+        )
+        state = np.kron(mixer, mixer) @ state
+        cost0 = 0.5
+        cost1 = float(np.sum(np.abs(state) ** 2 * cost_values))
+        timings["qaoa_p1_maxcut"] = time.time() - t0
         scores["qaoa_cost_reduction"] = float(cost0 - cost1)
 
         return BenchmarkReport(scores=scores, timings_s=timings, average_score=float(np.mean(list(scores.values()))))

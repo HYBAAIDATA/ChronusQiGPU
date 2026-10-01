@@ -79,6 +79,8 @@ def phi_power_via_lucas(n: int) -> float:
     integer Lucas + Fibonacci sequences (same identity as phi_scaling.phi_power_exact).
     """
     n = int(n)
+    if n < 0:
+        return 1.0 / phi_power_via_lucas(-n)
     # Lucas L_n: L_0=2, L_1=1, L_n = L_{n-1}+L_{n-2}
     if n == 0:
         return 1.0
