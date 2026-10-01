@@ -31,6 +31,7 @@ pythia = "main:main"
 pythia-api = "control_api:main"
 pythia-mine = "mining_runtime:main"
 pythia-gpu-readiness = "gpu.readiness:main"
+pythagoras-v12 = "pythagoras.run_pythagoras:main"
 
 [project.optional-dependencies]
 hardware = [
@@ -113,6 +114,7 @@ l_hras = ["py.typed", "README.md", "config.example.toml"]
 toe = ["py.typed", "default_propagators.json"]
 millennium = ["*.ts", "rtl/*.sv", "docs/*.md"]
 python_backend = ["*.csv"]
+pythagoras = ["README.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["chronus/mla1517_platform/python", "tests"]
@@ -123,6 +125,5 @@ target-version = ["py312"]
 # Vendored skill grafts are kept byte-exact (Intelligence/skill_graft.py).
 extend-exclude = "Intelligence/skills/"
 exclude = '''
-/(\n    \\.git\n  | \\.pytest_cache\n  | __pycache__\n  | node_modules\n  | dist\n  | models\n  | logs\n  | legacy\n  | \\.venv\n  | venv\n)/
+/(\n    \.git\n  | \.pytest_cache\n  | __pycache__\n  | node_modules\n  | dist\n  | models\n  | logs\n  | legacy\n  | \.venv\n  | venv\n)/
 '''
-

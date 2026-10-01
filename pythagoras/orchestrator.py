@@ -293,6 +293,9 @@ class Pythagoras:
             "generations": generations,
             "fitness_history": fitness_history,
             "rolling_fitness": rolling_fit,
+            "gain_per_generation": (
+                (final_phi - initial_phi) / generations if generations else 0.0
+            ),
             "discovered_primitives": self.discovery.get_discovered(),
             "meta_state": self.meta.get_state(),
             "geometry_state": self.geometry.get_state(),
@@ -326,6 +329,10 @@ class Pythagoras:
 
         # ENH-14: Collective geometry consensus across corpus
         consensus_geometry = GeometryEvolution.compute_consensus(all_geometries)
+        self.geometry.load_state(consensus_geometry)
+        self.cgp.n_cols = self.geometry.n_cols
+        self.cgp.levels_back = self.geometry.levels_back
+        self.cgp.pop_size = self.geometry.pop_size
 
         total_delta = sum(r["delta_phi"] for r in results.values())
         avg_final = float(np.mean([r["final_phi"] for r in results.values()]))
@@ -363,7 +370,9 @@ class Pythagoras:
             "phase_transitions": self.meta.phase_transitions,
             "provenance_log": self.meta.provenance_log,
         }
-        p.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        temporary = p.with_suffix(p.suffix + ".tmp")
+        temporary.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        os.replace(temporary, p)
 
     def load_session(self, filepath: Path | str) -> None:
         """
@@ -383,6 +392,17 @@ class Pythagoras:
             self.mutator.surrogate.weights = np.array(data["surrogate_weights"], dtype=float)
             self.mutator.surrogate.bias = float(data.get("surrogate_bias", 0.0))
             self.mutator.surrogate.sample_count = int(data.get("surrogate_samples", 0))
+        if "meta_state" in data:
+            self.meta.load_state(
+                data["meta_state"],
+                phase_transitions=data.get("phase_transitions", []),
+                provenance_log=data.get("provenance_log", []),
+            )
+        if "geometry_state" in data:
+            self.geometry.load_state(data["geometry_state"])
+            self.cgp.n_cols = self.geometry.n_cols
+            self.cgp.levels_back = self.geometry.levels_back
+            self.cgp.pop_size = self.geometry.pop_size
 
     # =========================================================================
     # Kellogg v7.0 Stack Quantum Reflection Integration
