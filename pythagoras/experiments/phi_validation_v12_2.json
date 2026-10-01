@@ -1,0 +1,287 @@
+{
+  "protocol": {
+    "modules": [
+      "bisect.py",
+      "heapq.py",
+      "fractions.py",
+      "tokenize.py"
+    ],
+    "excluded_tuning_modules": [
+      "colorsys.py",
+      "fnmatch.py",
+      "graphlib.py",
+      "textwrap.py"
+    ],
+    "seeds": 3,
+    "generations": 4,
+    "bootstrap_samples": 2000,
+    "expected_directions": {
+      "delta_maintainability_index": "positive",
+      "complexity_improvement": "positive",
+      "mypy_error_reduction": "positive",
+      "delta_ast_nodes": "control_only"
+    }
+  },
+  "rows": [
+    {
+      "module": "bisect.py",
+      "seed": 0,
+      "delta_phi": 0.018071,
+      "delta_maintainability_index": -1.0487961414897455,
+      "complexity_improvement": -2.0,
+      "mypy_error_reduction": 0.0,
+      "delta_ast_nodes": 40.0,
+      "operators": [
+        "NON_LOCAL:function_split_refactor",
+        "NON_LOCAL:function_split_refactor"
+      ],
+      "contains_annassign": false
+    },
+    {
+      "module": "bisect.py",
+      "seed": 1,
+      "delta_phi": 0.018071,
+      "delta_maintainability_index": -1.0487961414897455,
+      "complexity_improvement": -2.0,
+      "mypy_error_reduction": 0.0,
+      "delta_ast_nodes": 40.0,
+      "operators": [
+        "NON_LOCAL:function_split_refactor",
+        "NON_LOCAL:function_split_refactor"
+      ],
+      "contains_annassign": false
+    },
+    {
+      "module": "bisect.py",
+      "seed": 2,
+      "delta_phi": 0.018071,
+      "delta_maintainability_index": -1.0487961414897455,
+      "complexity_improvement": -2.0,
+      "mypy_error_reduction": 0.0,
+      "delta_ast_nodes": 40.0,
+      "operators": [
+        "NON_LOCAL:function_split_refactor",
+        "NON_LOCAL:function_split_refactor"
+      ],
+      "contains_annassign": false
+    },
+    {
+      "module": "heapq.py",
+      "seed": 0,
+      "delta_phi": 0.011625,
+      "delta_maintainability_index": -0.2030152874769442,
+      "complexity_improvement": 0.0,
+      "mypy_error_reduction": 0.0,
+      "delta_ast_nodes": 12.0,
+      "operators": [
+        "ADD:AnnAssign",
+        "ADD:AnnAssign",
+        "AUTO:Composite[ADD:AnnAssign+ADD:AnnAssign]",
+        "AUTO:Composite[ADD:AnnAssign+ADD:AnnAssign]"
+      ],
+      "contains_annassign": true
+    },
+    {
+      "module": "heapq.py",
+      "seed": 1,
+      "delta_phi": 0.010099,
+      "delta_maintainability_index": -0.2030152874769442,
+      "complexity_improvement": 0.0,
+      "mypy_error_reduction": 0.0,
+      "delta_ast_nodes": 12.0,
+      "operators": [
+        "ADD:AnnAssign",
+        "ADD:AnnAssign",
+        "AUTO:Composite[ADD:AnnAssign+ADD:AnnAssign]",
+        "AUTO:Composite[ADD:AnnAssign+ADD:AnnAssign]"
+      ],
+      "contains_annassign": true
+    },
+    {
+      "module": "heapq.py",
+      "seed": 2,
+      "delta_phi": 0.009583,
+      "delta_maintainability_index": -0.2030152874769442,
+      "complexity_improvement": 0.0,
+      "mypy_error_reduction": 0.0,
+      "delta_ast_nodes": 12.0,
+      "operators": [
+        "ADD:AnnAssign",
+        "ADD:AnnAssign",
+        "AUTO:Composite[ADD:AnnAssign+ADD:AnnAssign]",
+        "AUTO:Composite[ADD:AnnAssign+ADD:AnnAssign]"
+      ],
+      "contains_annassign": true
+    },
+    {
+      "module": "fractions.py",
+      "seed": 0,
+      "delta_phi": 0.005856,
+      "delta_maintainability_index": -0.11211591455055014,
+      "complexity_improvement": 0.0,
+      "mypy_error_reduction": 0.0,
+      "delta_ast_nodes": 12.0,
+      "operators": [
+        "ADD:AnnAssign",
+        "ADD:AnnAssign",
+        "AUTO:Composite[ADD:AnnAssign+ADD:AnnAssign]",
+        "AUTO:Composite[ADD:AnnAssign+ADD:AnnAssign]"
+      ],
+      "contains_annassign": true
+    },
+    {
+      "module": "fractions.py",
+      "seed": 1,
+      "delta_phi": 0.00348,
+      "delta_maintainability_index": -0.1511710455910844,
+      "complexity_improvement": -2.0,
+      "mypy_error_reduction": 0.0,
+      "delta_ast_nodes": 120.0,
+      "operators": [
+        "ADD:AnnAssign",
+        "NON_LOCAL:function_split_refactor",
+        "AUTO:Composite[ADD:AnnAssign+NON_LOCAL:function_split_refactor]",
+        "ADD:AnnAssign"
+      ],
+      "contains_annassign": true
+    },
+    {
+      "module": "fractions.py",
+      "seed": 2,
+      "delta_phi": 0.003455,
+      "delta_maintainability_index": -0.13268580224229254,
+      "complexity_improvement": -2.0,
+      "mypy_error_reduction": 0.0,
+      "delta_ast_nodes": 118.0,
+      "operators": [
+        "NON_LOCAL:function_split_refactor",
+        "NON_LOCAL:function_split_refactor",
+        "ADD:AnnAssign",
+        "ADD:AnnAssign"
+      ],
+      "contains_annassign": true
+    },
+    {
+      "module": "tokenize.py",
+      "seed": 0,
+      "delta_phi": 0.003735,
+      "delta_maintainability_index": -0.1967868748163255,
+      "complexity_improvement": -1.0,
+      "mypy_error_reduction": 0.0,
+      "delta_ast_nodes": 36.0,
+      "operators": [
+        "ADD:AnnAssign",
+        "NON_LOCAL:function_split_refactor",
+        "ADD:AnnAssign",
+        "ADD:AnnAssign"
+      ],
+      "contains_annassign": true
+    },
+    {
+      "module": "tokenize.py",
+      "seed": 1,
+      "delta_phi": 0.004089,
+      "delta_maintainability_index": -0.22020761408842304,
+      "complexity_improvement": -1.0,
+      "mypy_error_reduction": 0.0,
+      "delta_ast_nodes": 38.0,
+      "operators": [
+        "NON_LOCAL:function_split_refactor",
+        "ADD:AnnAssign",
+        "ADD:AnnAssign",
+        "AUTO:Composite[ADD:AnnAssign+ADD:AnnAssign]"
+      ],
+      "contains_annassign": true
+    },
+    {
+      "module": "tokenize.py",
+      "seed": 2,
+      "delta_phi": 0.005137,
+      "delta_maintainability_index": -0.22020761408842304,
+      "complexity_improvement": -1.0,
+      "mypy_error_reduction": 0.0,
+      "delta_ast_nodes": 38.0,
+      "operators": [
+        "ADD:AnnAssign",
+        "ADD:AnnAssign",
+        "NON_LOCAL:function_split_refactor",
+        "AUTO:Composite[ADD:AnnAssign+ADD:AnnAssign]"
+      ],
+      "contains_annassign": true
+    }
+  ],
+  "correlations_all": {
+    "delta_maintainability_index": {
+      "rho": -0.7334819355659498,
+      "ci95": [
+        -0.9847404743713526,
+        -0.1108539854880308
+      ],
+      "n": 12
+    },
+    "complexity_improvement": {
+      "rho": 0.0,
+      "ci95": [
+        -0.6868353080799584,
+        0.9198662110077999
+      ],
+      "n": 12
+    },
+    "mypy_error_reduction": {
+      "rho": null,
+      "ci95": [
+        null,
+        null
+      ],
+      "n": 12
+    },
+    "delta_ast_nodes": {
+      "rho": -0.1917196687721455,
+      "ci95": [
+        -0.8148314726378963,
+        0.6667727596467747
+      ],
+      "n": 12
+    }
+  },
+  "correlations_annassign_variants": {
+    "delta_maintainability_index": {
+      "rho": -0.36604030822626193,
+      "ci95": [
+        -0.9473684210526315,
+        0.4210526315789474
+      ],
+      "n": 9
+    },
+    "complexity_improvement": {
+      "rho": 0.9354143466934853,
+      "ci95": [
+        0.7490237890648724,
+        0.9733285267845752
+      ],
+      "n": 9
+    },
+    "mypy_error_reduction": {
+      "rho": null,
+      "ci95": [
+        null,
+        null
+      ],
+      "n": 9
+    },
+    "delta_ast_nodes": {
+      "rho": -0.8831154886881195,
+      "ci95": [
+        -0.9597148699373931,
+        -0.5334715627323374
+      ],
+      "n": 9
+    }
+  },
+  "annassign_steps": {
+    "count": 19,
+    "mean_delta_phi": 0.0013515263157894736,
+    "min_delta_phi": 0.000932,
+    "max_delta_phi": 0.002123
+  }
+}
