@@ -96,7 +96,7 @@ The tensor substrate itself is the separate top-level package
                                     deterministic persistence
 
 TOE provides observed context and search-order heuristics to the canonical
-mining path (mla1517.mining.toe_adapter). It never substitutes SHA256d
+mining path (chronus.mla1517.mining.toe_adapter). It never substitutes SHA256d
 consensus and never decides share validity.
 """
 

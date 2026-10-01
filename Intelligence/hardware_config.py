@@ -5,7 +5,7 @@ Detects the deployment environment and configures the hardware profile:
 - **M3 Studio/Ultra** (80-core GPU = 80 SMs × 128 ALU lanes = 10,240 shader
   lanes, 96GB unified): the original target — Apple Metal detected on macOS.
   This is the integrated iGPU (`EUCLID_VGPU`) and the default mining
-  substrate under ``EUCLID_IGPU_SCHED`` (default on).
+  substrate under ``EUCLID_CHRONUS_SCHED`` (default on).
 - **Docker + NVIDIA GPU**: CUDA-capable GPU detected via nvidia-smi or
   Docker GPU passthrough.
 - **Docker + AMD GPU**: AMD ROCm or OpenCL backend.
@@ -33,7 +33,7 @@ The **hybrid** profile is for deployments that combine:
 The Lucas scaling ladder projects an EFFECTIVE-RATE accounting figure —
 it is not a physical hashrate and no share is ever produced at these rates
 (projection_is_measured: False, same truth label as
-``Intelligence/igpu_telemetry.py``):
+``Intelligence/chronus_telemetry.py``):
 - L_10 = 123x  → 8 MH/s × 123 = 984 MH/s effective-equivalent (projected)
 - L_15 = 1364x → 8 MH/s × 1364 = 10.9 GH/s effective-equivalent (projected)
 - L_20 = 15127x → 8 MH/s × 15127 = 121 GH/s effective-equivalent (projected)
@@ -65,7 +65,7 @@ logger = logging.getLogger("Intelligence.hardware_config")
 
 # Hard ceiling — no deployment can exceed this, regardless of hardware.
 # MUST stay equal to Intelligence.safety_constraints.ABSOLUTE_HARD_CAP_EHS;
-# tests/test_igpu_telemetry.py asserts the two agree so they cannot diverge.
+# tests/test_chronus_telemetry.py asserts the two agree so they cannot diverge.
 ABSOLUTE_HARD_CAP_EHS: float = 20.0
 ABSOLUTE_HARD_CAP_HPS: int = int(ABSOLUTE_HARD_CAP_EHS * 1e18)
 

@@ -735,24 +735,31 @@ class StratumV2Client:
     async def open(self) -> SetupConnectionSuccess:
         if self.state is not SessionState.NEW:
             raise Sv2ProtocolError("SV2 client can only be opened once")
-        await self.channel.open()
-        if self.require_secure and not getattr(self.channel, "secure", False):
-            await self.channel.close()
-            self.state = SessionState.CLOSED
-            raise Sv2TransportError("remote Stratum V2 requires an authenticated secure transport")
-        await self._send(self.setup.encode())
-        frame = await self._next_frame()
-        if frame.message_type == MessageType.SETUP_CONNECTION_ERROR:
-            error = SetupConnectionError.decode(frame)
-            await self.channel.close()
-            self.state = SessionState.CLOSED
-            raise Sv2ProtocolError(f"SetupConnection rejected: {error.error_code}")
-        success = SetupConnectionSuccess.decode(frame)
-        if success.used_version != 2:
-            raise Sv2ProtocolError("server selected unsupported SV2 version")
-        self.negotiated_flags = success.flags
-        self.state = SessionState.SETUP
-        return success
+        try:
+            await self.channel.open()
+            if self.require_secure and not getattr(self.channel, "secure", False):
+                raise Sv2TransportError(
+                    "remote Stratum V2 requires an authenticated secure transport"
+                )
+            await self._send(self.setup.encode())
+            frame = await self._next_frame()
+            if frame.message_type == MessageType.SETUP_CONNECTION_ERROR:
+                error = SetupConnectionError.decode(frame)
+                raise Sv2ProtocolError(f"SetupConnection rejected: {error.error_code}")
+            success = SetupConnectionSuccess.decode(frame)
+            if success.used_version != 2:
+                raise Sv2ProtocolError("server selected unsupported SV2 version")
+            self.negotiated_flags = success.flags
+            self.state = SessionState.SETUP
+            return success
+        except BaseException:
+            # Any handshake/protocol/transport failure invalidates the channel.
+            # Never leave a half-open authenticated transport available for reuse.
+            try:
+                await self.channel.close()
+            finally:
+                self.state = SessionState.CLOSED
+            raise
 
     async def submit_standard(self, job_id: int, nonce: int, ntime: int, version: int) -> None:
         if self.state is not SessionState.CHANNEL_OPEN or self.channel_id is None:

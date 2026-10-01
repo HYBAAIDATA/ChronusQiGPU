@@ -144,7 +144,7 @@ class TestHold:
         assert stats["total_held_candidates"] == 32
         assert stats["md_memory_entries"] == 32
         assert stats["galois_prime_entries"] >= 1
-        assert stats["igpu_vram_cached"] == 32
+        assert stats["chronus_vram_cached"] == 32
         assert stats["cassini_sample_passed"] >= 1
         assert stats["cassini_sample_failed"] == 0
 

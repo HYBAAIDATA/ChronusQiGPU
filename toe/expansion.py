@@ -30,7 +30,7 @@ except ImportError:  # direct execution fallback
     from toe.bridge import TOEBridge
 
 try:
-    from mla1517.scale import ScaleBudget, ScaleController, ScalePoint
+    from chronus.mla1517.scale import ScaleBudget, ScaleController, ScalePoint
 except ImportError:  # pragma: no cover - only for isolated source execution
     ScaleBudget = ScaleController = ScalePoint = None  # type: ignore[assignment]
 

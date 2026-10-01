@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from mla1517.mining.pow import compact_target
-from mla1517.mining.session import MiningSession, PythiaWinnerMemory, digest
-from mla1517.mining.solver import M32SearchSolver
+from chronus.mla1517.mining.pow import compact_target
+from chronus.mla1517.mining.session import MiningSession, PythiaWinnerMemory, digest
+from chronus.mla1517.mining.solver import M32SearchSolver
 
 _CORPUS = Path(__file__).parent / "fixtures/btc_headers/btc_headers_805000_805009.bin"
 

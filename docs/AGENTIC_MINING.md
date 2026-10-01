@@ -153,7 +153,7 @@ In strict accordance with Section 9 (Failure Protocol):
 ## 9. Runtime Wiring Status (Verified on `main`)
 
 Sections 1–8 are the architecture specification. This section records what is
-*actually wired and verified* in `mla1517_platform_v3.4/` today — each entry
+*actually wired and verified* in `chronus/mla1517_platform/` today — each entry
 was checked against running code, not inferred.
 
 | Path | Status | Evidence |

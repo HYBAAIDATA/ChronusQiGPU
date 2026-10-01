@@ -63,7 +63,7 @@ def live_run(mode: str, cycles: int = 8, root: Optional[Path] = None) -> List[Di
     import sys
     # Repo root must precede the platform dir: both ship a turing_core.py
     # and the root copy is the frozen substrate (conftest order).
-    for p in (str(root / "mla1517_platform_v3.4" / "python"), str(root)):
+    for p in (str(root / "chronus/mla1517_platform" / "python"), str(root)):
         if p not in sys.path:
             sys.path.insert(0, p)
     import turing_core

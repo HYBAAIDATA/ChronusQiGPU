@@ -3,7 +3,7 @@
 A TOECausalSignal is feed-forward evidence: it may steer solver ordering and
 gate dispatch, but it must never reach the double-SHA256 / target comparison.
 These tests pin the two enforcement mechanisms in
-``mla1517.mining.toe_signal``:
+``chronus.mla1517.mining.toe_signal``:
 
 - ``boundary_token``: every signal carries a domain-separated SHA-256
   attestation bound to its feed-forward payload. A missing, malformed, or
@@ -26,20 +26,20 @@ import pytest
 
 _PLATFORM = (
     Path(__file__).resolve().parent.parent
-    / "mla1517_platform_v3.4"
+    / "chronus/mla1517_platform"
     / "python"
 )
 if str(_PLATFORM) not in sys.path:
     sys.path.insert(0, str(_PLATFORM))
 
 from manifold_pool_coordinator import PoolEndpoint  # noqa: E402
-import mla1517.mining.pow as pow_module  # noqa: E402
-from mla1517.hardware import VaultRecord  # noqa: E402
-from mla1517.mining.chooser import MiningIntelligenceChooser  # noqa: E402
-from mla1517.mining.coordinator import IntelligentPoolCoordinator  # noqa: E402
-from mla1517.mining.solver import M32SearchSolver  # noqa: E402
-from mla1517.mining.toe_adapter import TOEMiningContext  # noqa: E402
-from mla1517.mining.toe_signal import (  # noqa: E402
+import chronus.mla1517.mining.pow as pow_module  # noqa: E402
+from chronus.mla1517.hardware import VaultRecord  # noqa: E402
+from chronus.mla1517.mining.chooser import MiningIntelligenceChooser  # noqa: E402
+from chronus.mla1517.mining.coordinator import IntelligentPoolCoordinator  # noqa: E402
+from chronus.mla1517.mining.solver import M32SearchSolver  # noqa: E402
+from chronus.mla1517.mining.toe_adapter import TOEMiningContext  # noqa: E402
+from chronus.mla1517.mining.toe_signal import (  # noqa: E402
     TOECausalSignal,
     TOEConsensusBoundaryError,
     build_toe_signal,

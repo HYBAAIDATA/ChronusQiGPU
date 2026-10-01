@@ -21,19 +21,19 @@ import pytest
 
 _PLATFORM = (
     Path(__file__).resolve().parent.parent
-    / "mla1517_platform_v3.4"
+    / "chronus/mla1517_platform"
     / "python"
 )
 if str(_PLATFORM) not in sys.path:
     sys.path.insert(0, str(_PLATFORM))
 
 from manifold_pool_coordinator import PoolEndpoint  # noqa: E402
-from mla1517.mining import coordinator as coord_mod  # noqa: E402
-from mla1517.mining.coordinator import (  # noqa: E402
+from chronus.mla1517.mining import coordinator as coord_mod  # noqa: E402
+from chronus.mla1517.mining.coordinator import (  # noqa: E402
     PERMITTED_WITHOUT_TOE,
     IntelligentPoolCoordinator,
 )
-from mla1517.mining.toe_adapter import TOEUnavailable  # noqa: E402
+from chronus.mla1517.mining.toe_adapter import TOEUnavailable  # noqa: E402
 
 _ENDPOINT = PoolEndpoint(host="stratum.example.invalid", port=3333, name="test")
 

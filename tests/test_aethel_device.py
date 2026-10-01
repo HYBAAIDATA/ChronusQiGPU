@@ -5,7 +5,7 @@ from aethel.device import ChronusSku
 from aethel.punch import resolve_punch_host, resolve_punch_host_class
 from aethel.storage import FibonacciAddress
 from aethel.zeckendorf import apply_zeckendorf_compression, reverse_zeckendorf_expansion
-from igpu.opencl_host import OpenClPunchHost, PunchUnsupported
+from chronus.opencl_host import OpenClPunchHost, PunchUnsupported
 
 
 def test_aethel_prefers_complete_unified_punch_contract():
@@ -38,7 +38,7 @@ def test_legacy_host_infers_encode_width_and_decodes_full_batch():
 def test_legacy_host_rejects_float_punches_it_cannot_execute_exactly():
     host = OpenClPunchHost()
     with pytest.raises(PunchUnsupported):
-        host.run_punch_batch(0x99, n=1, in_float=np.ones(11, dtype=np.float32))
+        host.run_punch_batch(0x02, n=1, in_float=np.ones(11, dtype=np.float32))
 
 
 def test_standalone_writes_fibonacci_address():

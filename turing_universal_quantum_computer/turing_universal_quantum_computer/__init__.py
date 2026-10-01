@@ -100,7 +100,7 @@ from .pisot import (  # noqa: F401 — VQC control-plane contracts
     plan_hilbert_coverage,
     require_lucas_execution_scale,
 )
-from .hendrix import HendrixIGPUSearch  # noqa: F401
+from .hendrix import HendrixChronusSearch  # noqa: F401
 from .strict_quantum import (  # noqa: F401
     QComplex,
     QMatrix,

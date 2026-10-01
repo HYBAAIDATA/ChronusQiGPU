@@ -166,7 +166,10 @@ def diagnose() -> Dict[str, Any]:
     _collect(report, "hyba_alias", _hyba_alias)
     _collect(report, "punch_host", _punch_host)
     _collect(report, "hasher", _hasher)
-    _collect(report, "chronus", _chronus)
+    _collect(report, "chronus_fabric", _chronus)
+    # The elevation spec's name for the fabric section — the same composed
+    # record, aliased so both names stay honest about the same facts.
+    report["super_gpu"] = report["chronus_fabric"]
     return report
 
 

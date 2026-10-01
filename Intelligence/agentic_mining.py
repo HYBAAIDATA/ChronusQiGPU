@@ -416,7 +416,7 @@ class AgenticMiningWorkflow:
             "total_held_candidates": self.manifold_bridge.size(),
             "md_memory_entries": len(self.manifold_bridge.md_memory),
             "galois_prime_entries": len(self.manifold_bridge.galois_storage.cells),
-            "igpu_vram_cached": len(self.manifold_bridge.igpu_hot_vram_cache),
+            "chronus_vram_cached": len(self.manifold_bridge.chronus_hot_vram_cache),
             "cassini_sample_passed": passed,
             "cassini_sample_failed": failed,
             "self_healed_count": self.manifold_bridge.total_healed_entries,

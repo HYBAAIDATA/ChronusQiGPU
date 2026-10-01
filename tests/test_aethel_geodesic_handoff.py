@@ -13,7 +13,7 @@ check needs the invariant, it calls the engine's function.
 
 import pytest  # noqa: F401  (pytest fixtures/parametrize may be added; keeps import explicit)
 
-from aethel.gpu import TensorCoreGPU_Context
+from aethel.gpu import ChronusContext
 from aethel.manifold import (
     ManifoldCurvature,
     PrimeStorageManifold,
@@ -29,7 +29,7 @@ from kellogg.traversal import (  # the geodesic engine, unmodified
 
 
 def _manifold() -> PrimeStorageManifold:
-    return PrimeStorageManifold(TensorCoreGPU_Context())
+    return PrimeStorageManifold(ChronusContext())
 
 
 def test_aethel_anchor_is_engine_checked_not_reimplemented():

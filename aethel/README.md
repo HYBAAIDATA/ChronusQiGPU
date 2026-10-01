@@ -7,7 +7,7 @@ everything that was previously scattered across the historical
 `Intelligence/hardened_unified_substrate`, frozen in
 `legacy/AETHEL_Subsystem/`) plus a pure-Python implementation of the
 shared-memory ingestion ABI previously only available in C
-(`mla1517_platform_v3.4/host/mla1517_aethel.{c,h}`).
+(`chronus/mla1517_platform/host/mla1517_aethel.{c,h}`).
 
 The package is deliberately decoupled from mining operations. It requires
 only NumPy; OpenCL punch hosts are optional and resolved lazily or
@@ -22,7 +22,7 @@ injected via `punch_host=`.
 | `aethel.zeckendorf` | `HardenedZeckendorfCodec` (F_93, full uint64), `SparseTopology`, `apply_zeckendorf_compression` / `reverse_zeckendorf_expansion`, punch opcodes |
 | `aethel.primes` | `GaloisPrimeSubstrate`, `PrimeCell` — composite keys in `GF(2⁶¹−1)` |
 | `aethel.compute` | `VirtualSM`, `ComputeUnitPool`, `VirtualWarp`, `SPMDExecutor`, `OptimizedTensorMicroKernel`, `RTCoreMicroKernel`, `MicroKernelLibrary`, `DistributedActor`, `CollectiveOps`, `DistributedDataflowGraph`, `DAGNode`, `DependencyDAG` |
-| `aethel.gpu` | `TensorCoreGPU_Context` — pv-lattice projection, GPU or identical CPU path |
+| `aethel.gpu` | `ChronusContext` — pv-lattice projection, GPU or identical CPU path |
 | `aethel.manifold` | `PrimeStorageManifold`, `TopologicalTensor`, `ManifoldCurvature`, `ManifoldSector`, `GeodesicNavigator`, `SelfHealingSubstrate` |
 | `aethel.unified` | `UnifiedSubstrate` (alias `HardenedUnifiedSubstrate`) |
 | `aethel.shm` | `AethelQueue`, `AethelRecord` — mmap seqlock slot queue, ABI v1, `attach()` fails closed with `SegmentMissing` |

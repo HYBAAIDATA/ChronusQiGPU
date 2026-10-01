@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Tuple
 
 from Intelligence.lucas_scales import (
-    IGPU_SCALE_RUNGS,
+    CHRONUS_SCALE_RUNGS,
     PISOT_EXACT_N,
     ladder_multiples_of,
     nearest_ladder_index,
@@ -82,7 +82,7 @@ def toe_t4_lucas_pisot(n: int) -> bool:
 
 
 def rungs() -> Tuple[int, ...]:
-    return IGPU_SCALE_RUNGS
+    return CHRONUS_SCALE_RUNGS
 
 
 __all__ = [

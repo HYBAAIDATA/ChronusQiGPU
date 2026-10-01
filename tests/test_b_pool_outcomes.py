@@ -13,7 +13,7 @@ import json
 import sys
 from pathlib import Path
 
-PY_DIR = Path(__file__).resolve().parents[1] / "mla1517_platform_v3.4" / "python"
+PY_DIR = Path(__file__).resolve().parents[1] / "chronus/mla1517_platform" / "python"
 sys.path.insert(0, str(PY_DIR))
 
 import pytest

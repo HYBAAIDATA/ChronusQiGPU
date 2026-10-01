@@ -259,7 +259,7 @@ The same 9 invariants are verified in three layers:
 | `legacy/papers/discovery/euclid_tapeout_checklist.py`     | Authoritative checklist: 12 closed items (H1–H12) + 3 open silicon-pending gaps (P1–P3: High-NA EUV, CoWoS packaging, datacenter field test). 5 dynamic engines: FPU static analysis, SVA verification (100 powers), Zeckendorf routing (500 addresses), Stratum handshake signal check, GIMB delegation. |
 | `legacy/papers/discovery/q5_golden_formal.py`             | `verify_golden_invariants_exact()` — all 9 invariants in exact Python. `FORMAL_JOBS` dict maps each invariant to its SVA property name for SymbiYosys flows.                                                                                                                                                      |
 | `legacy/papers/discovery/clay_checklist.py`               | **Intellectual honesty layer.** Tracks Yang-Mills mass-gap proof obligations (C1–C10 closed, G1–G6 open). `assert_no_established()` guarantees 0 items may be labelled ESTABLISHED without a continuum proof.                                                                                                     |
-| `tests/test_euclid_tapeout.py`                            | CI unittest suite described here is **not present in the current tree** — the checklist's own `run_full_tapeout_audit()` is the executable gate. Related coverage: `mla1517_platform_v3.4/python/test_euclid_core.py`.                              |
+| `tests/test_euclid_tapeout.py`                            | CI unittest suite described here is **not present in the current tree** — the checklist's own `run_full_tapeout_audit()` is the executable gate. Related coverage: `chronus/mla1517_platform/python/test_euclid_core.py`.                              |
 
 ### Tape-out checklist items (H1–H12)
 
@@ -292,7 +292,7 @@ Single Express app on port 3000. ~90 endpoints grouped by subsystem. No backgrou
 | Audit               | `/api/audit/run-all`, `/api/audit/q5-memory-diagnostics` (×2)            | 11 pre-flight audits                               |
 | Kellogg             | `/api/kellogg/*` (6 endpoints)                                           | TURING, COGITO, AL HARAS, full-stack               |
 | Stratum             | `/api/stratum/*` (11 endpoints)                                          | Circuit breaker, pools, BIP310, probe, credentials |
-| M3 iGPU             | `/api/m3-igpu/*`, `/api/igpu/*` (6 endpoints)                            | Hardware scaling, pool miner                       |
+| M3 iGPU             | `/api/m3-chronus/*`, `/api/chronus/*` (6 endpoints)                            | Hardware scaling, pool miner                       |
 | Bitcoin / Quantum   | `/api/bitcoin/block-header`, `/api/quantum/grover-run`                   |                                                    |
 | Difficulty          | `/api/v1/difficulty/*` (2)                                               | BIP-22 retargeting                                 |
 | Mempool             | `/api/v1/mempool/*` (2)                                                  | BIP-141 optimization                               |

@@ -87,9 +87,7 @@ def main(argv: List[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--root",
-        default=str(
-            Path(__file__).resolve().parent.parent / "mla1517_platform_v3.4" / "python" / "mla1517"
-        ),
+        default=str(Path(__file__).resolve().parent.parent / "chronus" / "mla1517"),
         help="path to the mla1517 package",
     )
     parser.add_argument("--json", action="store_true", help="emit JSON")

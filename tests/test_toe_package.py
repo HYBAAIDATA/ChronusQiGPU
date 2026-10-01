@@ -69,7 +69,7 @@ class ToePackageSurfaceTests(unittest.TestCase):
 
     def test_core_import_needs_only_numpy(self) -> None:
         # Optional surfaces (turing_core, mtheory, Intelligence.*,
-        # mla1517.scale, nltk) are lazy: ``import toe`` must already have
+        # chronus.mla1517.scale, nltk) are lazy: ``import toe`` must already have
         # succeeded for this test to run.
         self.assertIsNotNone(toe.TOEBridge)
         self.assertIsNotNone(toe.PredictiveEngine)

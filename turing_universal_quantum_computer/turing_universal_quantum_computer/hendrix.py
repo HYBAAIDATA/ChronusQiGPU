@@ -2,7 +2,7 @@
 from .pisot import HendrixSchedule, HendrixStructuredSearch
 
 
-class HendrixIGPUSearch(HendrixStructuredSearch):
+class HendrixChronusSearch(HendrixStructuredSearch):
     """Explicitly classical/iGPU schedule; consensus remains external."""
 
     execution_plane = "iGPU_classical_structured_search"
@@ -11,4 +11,4 @@ class HendrixIGPUSearch(HendrixStructuredSearch):
         return self.plan(nonce_count)
 
 
-__all__ = ["HendrixSchedule", "HendrixStructuredSearch", "HendrixIGPUSearch"]
+__all__ = ["HendrixSchedule", "HendrixStructuredSearch", "HendrixChronusSearch"]

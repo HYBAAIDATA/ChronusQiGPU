@@ -5,11 +5,11 @@ that the rest of the stack depends on.
 
 Integration is evidence, never a guess
 --------------------------------------
-``is_igpu`` is true only when the vendor is Intel or Apple, or when the
+``is_integrated`` is true only when the vendor is Intel or Apple, or when the
 device itself reports host-unified memory
 (``CL_DEVICE_HOST_UNIFIED_MEMORY``). A discrete GPU is never labelled
 integrated even though OpenCL reports it as a GPU, so ``is_gpu`` and
-``is_igpu`` stay independent facts. Every record carries the
+``is_integrated`` stay independent facts. Every record carries the
 ``integrated_reason`` that produced the verdict, so a wrong answer is
 traceable to the evidence that caused it rather than hidden in a boolean.
 
@@ -22,7 +22,7 @@ result does not depend on how many entries that list happened to hold.
 Suppressed duplicates are reported in :attr:`DetectionReport.deduped`
 instead of being discarded silently.
 
-Canonical home: ``igpu.detect`` (the consolidated iGPU package). The
+Canonical home: ``chronus.detect`` (the Chronus package). The
 pre-consolidation path ``legacy/accel/unified_gpu_detector.py`` re-exports
 this module.
 """
@@ -110,7 +110,7 @@ def host_unified_memory(device: Any) -> Optional[bool]:
 def classify_integrated(vendor: Any, device: Any = None) -> Tuple[bool, str]:
     """Decide whether a device is integrated, and say which evidence decided.
 
-    Returns ``(is_igpu, reason)``. The reason string is always populated so
+    Returns ``(is_integrated, reason)``. The reason string is always populated so
     telemetry can explain the verdict.
     """
     bucket = normalize_vendor(vendor)
@@ -132,7 +132,7 @@ class DetectedDevice:
     name: str
     vendor: str
     is_gpu: bool
-    is_igpu: bool
+    is_integrated: bool
     integrated_reason: str
     type_bits: int = 0
     platform: str = ""
@@ -155,7 +155,7 @@ class DetectedDevice:
             "name": self.name,
             "vendor": self.vendor,
             "is_gpu": self.is_gpu,
-            "is_igpu": self.is_igpu,
+            "is_integrated": self.is_integrated,
             "integrated_reason": self.integrated_reason,
             "type_bits": self.type_bits,
             "platform": self.platform,
@@ -215,14 +215,14 @@ def detect_cuda() -> List[DetectedDevice]:
         name = parts[0] if parts else ""
         pci = parts[1] if len(parts) > 1 else ""
         driver = parts[2] if len(parts) > 2 else ""
-        is_igpu, reason = classify_integrated("nvidia")
+        is_integrated, reason = classify_integrated("nvidia")
         devices.append(
             DetectedDevice(
                 backend="cuda",
                 name=name,
                 vendor="nvidia",
                 is_gpu=True,
-                is_igpu=is_igpu,
+                is_integrated=is_integrated,
                 integrated_reason=reason,
                 type_bits=_GPU_TYPE_BIT,
                 platform=exe,
@@ -243,14 +243,14 @@ def detect_metal() -> List[DetectedDevice]:
         out = _run(exe, ["SPDisplaysDataType"])
         names = [ln.split(":", 1)[1].strip() for ln in out.splitlines() if "Chipset Model" in ln]
         for name in names[:4]:
-            is_igpu, reason = classify_integrated("apple")
+            is_integrated, reason = classify_integrated("apple")
             devices.append(
                 DetectedDevice(
                     backend="metal",
                     name=name,
                     vendor="apple",
                     is_gpu=True,
-                    is_igpu=is_igpu,
+                    is_integrated=is_integrated,
                     integrated_reason=reason,
                     type_bits=_GPU_TYPE_BIT,
                     platform=exe,
@@ -259,14 +259,14 @@ def detect_metal() -> List[DetectedDevice]:
             )
     if devices:
         return devices
-    is_igpu, reason = classify_integrated("apple")
+    is_integrated, reason = classify_integrated("apple")
     return [
         DetectedDevice(
             backend="metal",
             name=_platform.machine() or "Apple GPU",
             vendor="apple",
             is_gpu=True,
-            is_igpu=is_igpu,
+            is_integrated=is_integrated,
             integrated_reason=reason,
             type_bits=_GPU_TYPE_BIT,
             platform=_platform.system(),
@@ -318,13 +318,13 @@ def _detect_opencl(
             vendor = str(getattr(dev, "vendor", "") or "").strip()
             type_bits = int(getattr(dev, "type", 0) or 0)
             unified = host_unified_memory(dev)
-            is_igpu, reason = classify_integrated(vendor, dev)
+            is_integrated, reason = classify_integrated(vendor, dev)
             record = DetectedDevice(
                 backend="opencl",
                 name=name,
                 vendor=vendor,
                 is_gpu=bool(type_bits & gpu_bit),
-                is_igpu=is_igpu,
+                is_integrated=is_integrated,
                 integrated_reason=reason,
                 type_bits=type_bits,
                 platform=platform_name,
@@ -380,7 +380,7 @@ def default_device(devices: Optional[Sequence[DetectedDevice]] = None) -> Option
     pool = list(devices) if devices is not None else detect_all().devices
     if not pool:
         return None
-    for predicate in (lambda d: d.is_igpu, lambda d: d.is_gpu, lambda d: True):
+    for predicate in (lambda d: d.is_integrated, lambda d: d.is_gpu, lambda d: True):
         for record in pool:
             if predicate(record):
                 return record

@@ -2,7 +2,8 @@
 
 import json
 
-from hyba import gpureport, vendors
+from chronus import report as gpureport
+from hyba import vendors
 
 
 def test_vendor_probes_report_honest_absence():

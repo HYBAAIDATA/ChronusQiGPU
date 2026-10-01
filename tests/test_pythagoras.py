@@ -1,19 +1,4 @@
-"""
-PYTHAGORAS — COMPREHENSIVE TEST SUITE
-Rigorous verification of the 4-layer meta-evolutionary code intelligence platform.
-
-Covers:
-- Module 1: PhiResonanceCalculator & ENH-02 Manifold Diagnostic
-- Module 2: CGP DAG evolution & concrete AST primitives (ENH-01 split_function)
-- Module 3: PythagorasMutator, Surrogate Model & ENH-12 Adversarial Primitives
-- Module 4: MetaEvolutionController, ENH-04 Simulated Annealing, ENH-09 Phase Transitions, ENH-10 Provenance
-- Module 5: AutoPrimitiveDiscovery dynamic operator promotion
-- Module 6: GeometryEvolution, ENH-06 Trigger Decoupling, ENH-07 Levels-Back, ENH-14 Collective Geometry
-- Module 7: Orchestrator, FIX-01 (__future__), FIX-02 (UTF-8), FIX-03 (Git lock), FIX-04 (Timeout),
-            ENH-03 (Cross-file seeding), ENH-05 (Conditions A, B, C), ENH-08 (Rolling-window),
-            ENH-11 (Transfer learning), ENH-13 (Multi-session memory), Kellogg v7.0 Quantum Reflection
-- Module 8: CLI execution
-"""
+"""Repository contracts for the wholesale PYTHAGORAS v12.2 implementation."""
 
 from __future__ import annotations
 
@@ -22,19 +7,21 @@ import math
 import os
 import shutil
 import tempfile
+import time
 import unittest
 from pathlib import Path
 import numpy as np
 
-from pythagoras import (
-    PHI,
-    PhiResonanceCalculator,
-    CGP,
+from pythagoras.phi_resonance import PHI, PhiResonanceCalculator
+from pythagoras.cgp import CGP
+from pythagoras.pythagoras_mutation import (
     PythagorasMutator,
     SurrogateFitnessModel,
-    MetaEvolutionController,
-    AutoPrimitiveDiscovery,
-    GeometryEvolution,
+)
+from pythagoras.meta_evolution import MetaEvolutionController
+from pythagoras.auto_primitive import AutoPrimitiveDiscovery
+from pythagoras.geometry_evolution import GeometryEvolution
+from pythagoras.orchestrator import (
     Pythagoras,
     normalize_future_imports,
     read_source_utf8,
@@ -252,6 +239,16 @@ class TestMetaEvolution(unittest.TestCase):
         )
         self.assertTrue(self.meta.in_annealing_mode)
 
+    def test_seeded_annealing_is_reproducible(self):
+        left = MetaEvolutionController(random_seed=7)
+        right = MetaEvolutionController(random_seed=7)
+        for controller in (left, right):
+            controller.in_annealing_mode = True
+            controller.temperature = 0.1
+        left_decisions = [left.should_accept(-0.05) for _ in range(20)]
+        right_decisions = [right.should_accept(-0.05) for _ in range(20)]
+        self.assertEqual(left_decisions, right_decisions)
+
     def test_simulated_annealing_enh04(self):
         # When not in annealing mode, negative delta rejected
         self.assertFalse(self.meta.should_accept(-0.05))
@@ -375,6 +372,22 @@ import os
         safe_code = "a = 2 + 2\n"
         ok, msg = run_isolated_execution(safe_code)
         self.assertTrue(ok)
+
+    def test_fix04_timeout_actually_terminates_child(self):
+        started = time.monotonic()
+        ok, msg = run_isolated_execution("while True:\n    pass\n", timeout_seconds=0.2)
+        elapsed = time.monotonic() - started
+        self.assertFalse(ok)
+        self.assertIn("timed out", msg.lower())
+        self.assertLess(elapsed, 2.0)
+
+    def test_invalid_high_fitness_candidates_are_not_committed(self):
+        orch = Pythagoras(condition="B")
+        initial = orch.domain.normalize(SAMPLE_CODE_1)
+        orch.domain.tests = lambda source: source == initial
+        result = orch.evolve_file(SAMPLE_CODE_1, generations=2)
+        self.assertTrue(orch.domain.tests(result["final_source"]))
+        self.assertTrue(orch.domain.is_valid(result["final_source"]))
 
     def test_enh08_rolling_window_normalize(self):
         raw = [1.0, 2.0, 3.0, 4.0, 5.0]

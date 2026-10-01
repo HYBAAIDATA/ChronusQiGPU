@@ -7,11 +7,11 @@ from fnmatch import fnmatch
 from pathlib import PurePosixPath
 
 ROUTES = (
-    ("mla1517_platform_v3.4/python/mla1517/mining/geometry.py", "CORE_AS_M32"),
-    ("mla1517_platform_v3.4/python/mla1517/*.py", "CORE"),
-    ("mla1517_platform_v3.4/host/*", "CORE"),
-    ("mla1517_platform_v3.4/kernels/*", "CORE"),
-    ("mla1517_platform_v3.4/rtl/*", "CORE_REFERENCE_IP"),
+    ("chronus/mla1517/mining/geometry.py", "CORE_AS_M32"),
+    ("chronus/mla1517/*.py", "CORE"),
+    ("chronus/mla1517_platform/host/*", "CORE"),
+    ("chronus/mla1517_platform/kernels/*", "CORE"),
+    ("chronus/mla1517_platform/rtl/*", "CORE_REFERENCE_IP"),
     ("hyba/*", "CORE_RENAMED_HYBA_DEVICES"),
     ("mining/*", "PYTHIA"),
     ("frontend/*", "PYTHIA"),
@@ -25,7 +25,7 @@ ROUTES = (
     ("agi/*", "LEGACY_OR_OWNED"),
     ("asi/*", "LEGACY_OR_OWNED"),
     ("millennium/*", "LEGACY_OR_OWNED"),
-    ("igpu/*", "LEGACY_OR_OWNED"),
+    ("chronus/*", "LEGACY_OR_OWNED"),
     ("pci/*", "LEGACY_OR_OWNED"),
     ("pythagoras/*", "LEGACY_OR_OWNED"),
     ("omega/*", "LEGACY_OR_OWNED"),

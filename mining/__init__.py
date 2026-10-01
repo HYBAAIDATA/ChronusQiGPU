@@ -1,6 +1,6 @@
 """Deterministic mining primitives used by PYTHIA.
 
-PYTHIA has one production mining boundary: ``mla1517_platform_v3.4``.
+PYTHIA has one production mining boundary: ``chronus/mla1517_platform``.
 This package contains reusable exact mining primitives and tests; it must
 not claim GPU execution, pool acceptance, or measured hashrate on its own.
 

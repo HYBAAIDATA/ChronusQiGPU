@@ -1,87 +1,57 @@
-"""Tensor execution accounting and access to the exact tensor substrate.
+"""Deprecated compatibility shim -- import from the ``tensor`` package instead.
 
-Tensor work is measured independently from SHA-256d work.  No value produced
-by this module can be interpreted as hashes per second.
+``tensor`` is now the canonical logical Tensor layer (contracts, backend
+registry/router, runtime, and bridges to the exact/quantum substrates). This
+module stays only as a temporary, zero-duplication re-export so existing
+imports such as ``from gpu.tensor import TensorMeasurement`` keep working.
+
+Migration guidance:
+
+* ``gpu.tensor.TensorMeasurement`` -> ``tensor.TensorMeasurement``
+* ``gpu.tensor.load_exact_tensor_module`` -> ``tensor.kellogg_bridge.load_exact_tensor_module``
+* ``gpu.tensor.load_quantum_tensor_module`` -> ``tensor.kellogg_bridge.load_quantum_tensor_module``
+* ``gpu.tensor.apply_tensor_advice`` / ``WindowRanker`` / etc. -> ``tensor.advisor``
+
+This module intentionally contains no tensor mathematics or execution
+logic of its own; see ``docs/TENSOR_ARCHITECTURE.md`` for the layer
+boundaries this re-export preserves.
 """
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+import warnings
 from importlib import import_module
 from typing import Any
 
-_HYBRID_EXPORTS = {
-    "IdentityWindowRanker": ("hyba.hybrid.tensor_advisor", "IdentityWindowRanker"),
+_EXPORTS = {
+    "TensorMeasurement": ("tensor.contracts", "TensorMeasurement"),
+    "load_exact_tensor_module": ("tensor.kellogg_bridge", "load_exact_tensor_module"),
+    "load_quantum_tensor_module": ("tensor.kellogg_bridge", "load_quantum_tensor_module"),
+    "IdentityWindowRanker": ("tensor.advisor", "IdentityWindowRanker"),
+    "TensorAdviceEvidence": ("tensor.advisor", "TensorAdviceEvidence"),
+    "TensorAdviceViolation": ("tensor.advisor", "TensorAdviceViolation"),
+    "WindowRanker": ("tensor.advisor", "WindowRanker"),
+    "apply_tensor_advice": ("tensor.advisor", "apply_tensor_advice"),
     "LayerSample": ("hyba.hybrid.performance", "LayerSample"),
     "PerformanceReport": ("hyba.hybrid.performance", "PerformanceReport"),
-    "TensorAdviceEvidence": (
-        "hyba.hybrid.tensor_advisor",
-        "TensorAdviceEvidence",
-    ),
-    "TensorAdviceViolation": (
-        "hyba.hybrid.tensor_advisor",
-        "TensorAdviceViolation",
-    ),
-    "WindowRanker": ("hyba.hybrid.tensor_advisor", "WindowRanker"),
-    "apply_tensor_advice": (
-        "hyba.hybrid.tensor_advisor",
-        "apply_tensor_advice",
-    ),
 }
 
-
-@dataclass(frozen=True)
-class TensorMeasurement:
-    """Measured tensor operations over a wall-clock interval."""
-
-    operations: int
-    elapsed_ns: int
-    backend: str
-    model_id: str = ""
-
-    def __post_init__(self) -> None:
-        if self.operations < 0:
-            raise ValueError("operations must be >= 0")
-        if self.elapsed_ns <= 0:
-            raise ValueError("elapsed_ns must be > 0")
-        if not self.backend.strip():
-            raise ValueError("backend must be non-empty")
-
-    @property
-    def tflops(self) -> float:
-        return self.operations * 1_000_000_000.0 / self.elapsed_ns / 1e12
-
-    def as_dict(self) -> dict[str, Any]:
-        return {
-            **asdict(self),
-            "measured_tensor_tflops": self.tflops,
-            "truth_class": "measured",
-            "hashrate_hps": None,
-        }
-
-
-def load_exact_tensor_module() -> Any:
-    """Load the canonical VQC exact-tensor implementation."""
-    return import_module("turing_universal_quantum_computer.exact_tensor")
-
-
-def load_quantum_tensor_module() -> Any:
-    """Load the canonical VQC quantum-tensor implementation."""
-    return import_module("turing_universal_quantum_computer.quantum_tensor")
+warnings.warn(
+    "gpu.tensor is a temporary compatibility shim; import from the 'tensor' "
+    "package instead (e.g. 'from tensor import TensorMeasurement'). See "
+    "docs/TENSOR_ARCHITECTURE.md for the migration map.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 
 def __getattr__(name: str) -> Any:
-    """Resolve hybrid tensor policy and reporting symbols lazily."""
+    """Resolve re-exported tensor symbols lazily, without duplicating them."""
     try:
-        module_name, attribute = _HYBRID_EXPORTS[name]
+        module_name, attribute = _EXPORTS[name]
     except KeyError as exc:
         raise AttributeError(name) from exc
     return getattr(import_module(module_name), attribute)
 
 
-__all__ = [
-    *_HYBRID_EXPORTS,
-    "TensorMeasurement",
-    "load_exact_tensor_module",
-    "load_quantum_tensor_module",
-]
+__all__ = sorted(_EXPORTS)

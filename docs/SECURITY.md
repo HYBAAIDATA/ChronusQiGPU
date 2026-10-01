@@ -13,7 +13,7 @@ This document records PYTHIA's production security controls. See
 - `main.py` auto-loads a repo-root `.env` (process env wins; `.env` fills gaps).
   `.env`, `.env.braiins`, `.env.viabtc` are gitignored; only `.env.example`
   templates are committed.
-- `StratumIdentity` (see `mla1517_platform_v3.4/python/startup_contract.py`)
+- `StratumIdentity` (see `chronus/mla1517_platform/python/startup_contract.py`)
   stores only `sha256(password)`; alias-conflict errors mask values `[:2]***`.
 - `firebase-applet-config.json` contains a committed Firebase web apiKey that is
   unused by code. `firestore.rules` is default-deny + auth-required. Treat as

@@ -270,7 +270,7 @@ def _check_lucas_scales(orchestrator) -> Dict[str, Any]:
 
     The profile climbs the curriculum rungs by design; the mining rungs
     live in the substrate lookup (LUCAS_SCALE_LADDER) and on
-    IGPU_SCALE_RUNGS, not in this profile. Verify the profile's rungs and
+    CHRONUS_SCALE_RUNGS, not in this profile. Verify the profile's rungs and
     values against an independent recurrence, and the lookup against the
     full ladder.
     """

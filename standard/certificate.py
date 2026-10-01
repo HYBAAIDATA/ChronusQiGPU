@@ -118,7 +118,7 @@ def _level(statuses: Dict[str, str], mode: str) -> str:
 
 def generate_certificate(
     repo: str = "QUANTUMDATA2/PYTHIAPhiMiner",
-    commit: str = "feat/igpu-seam",
+    commit: str = "feat/chronus-seam",
     standard_version: str = "1.0",
     checks: Optional[Dict[str, Evidence]] = None,
 ) -> ConformanceCertificate:

@@ -23,7 +23,7 @@ import numpy as np
 
 from .constants import DIM, PHI, SQRT5
 from .costs import OverheadMeter, container_bytes, metered
-from .gpu import TensorCoreGPU_Context
+from .gpu import ChronusContext
 from .primes import GaloisPrimeSubstrate
 from .zeckendorf import (
     PUNCH_MANIFOLD_COMPUTE,
@@ -265,7 +265,7 @@ class GeodesicNavigator:
 class PrimeStorageManifold:
     def __init__(
         self,
-        gpu: TensorCoreGPU_Context,
+        gpu: ChronusContext,
         n_primes: int = 25,
         punch_host=None,
         require_gpu: bool = False,

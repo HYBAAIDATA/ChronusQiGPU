@@ -17,18 +17,18 @@ with `canonicalEngine` (product, path, backend, ladder, execution state, hashrat
 ## Running the miner (hardware required)
 
 ```bash
-PYTHONPATH=mla1517_platform_v3.4/python \
-  python3 mla1517_platform_v3.4/python/headless_miner.py \
+PYTHONPATH=chronus/mla1517_platform/python \
+  python3 chronus/mla1517_platform/python/headless_miner.py \
   --device /dev/uio0 --user <stratum-user.worker> --password x --submit
 ```
 
 Or the runtime/coordinator CLIs, which now accept TLS:
 
 ```bash
-python3 mla1517_platform_v3.4/python/manifold_pool_coordinator.py \
+python3 chronus/mla1517_platform/python/manifold_pool_coordinator.py \
   --endpoint stratum+ssl://stratum.braiins.com:3333 --user $MLA1517_STRATUM_USER
 # or bare endpoint + TLS:
-python3 mla1517_platform_v3.4/python/mining_runtime.py --endpoint host:3333 --tls
+python3 chronus/mla1517_platform/python/mining_runtime.py --endpoint host:3333 --tls
 ```
 
 `--tls` can also be enabled with `MLA1517_STRATUM_TLS=1`. `stratum+ssl://` and
@@ -58,12 +58,12 @@ connect → `mining.subscribe` → `mining.authorize` — and optionally waits f
 
 ```bash
 # Sentinel worker (no credentials): expect authorize-reject on strict pools
-PYTHONPATH=mla1517_platform_v3.4/python \
+PYTHONPATH=chronus/mla1517_platform/python \
   python3 scripts/pool_smoke.py --endpoint stratum.braiins.com:3333 --wait-for-job 20
 
 # Operator worker: real credentials via env
 MLA1517_STRATUM_USER=<worker> MLA1517_STRATUM_PASSWORD=<pw> \
-  PYTHONPATH=mla1517_platform_v3.4/python \
+  PYTHONPATH=chronus/mla1517_platform/python \
   python3 scripts/pool_smoke.py --endpoint stratum.braiins.com:3333
 ```
 
@@ -88,7 +88,7 @@ the worker itself) are reported as such — not as a honeypot failure.
 
 ## Live submit approval
 
-On the canonical path (`mla1517_platform_v3.4/python/mla1517/mining/coordinator.py`)
+On the canonical path (`chronus/mla1517/mining/coordinator.py`)
 live submission is permitted only by `--submit` on the miner CLI or the
 operator's runtime approval: `PUT /api/v1/config {"live_submit":{"enabled":true}}`
 binds an approval to the enabled pool's endpoint+worker
