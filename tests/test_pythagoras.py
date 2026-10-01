@@ -1,7 +1,4 @@
 """Repository contracts for the wholesale PYTHAGORAS v12.2 implementation."""
-import pythagoras
-from pythagoras.engine.v6_5_manifold_escape import V65ManifoldEscapeEngine
-
 
 from __future__ import annotations
 
@@ -15,15 +12,16 @@ import unittest
 from pathlib import Path
 import numpy as np
 
-from pythagoras import (
-    PHI,
-    PhiResonanceCalculator,
-    CGP,
+from pythagoras.phi_resonance import PHI, PhiResonanceCalculator
+from pythagoras.cgp import CGP
+from pythagoras.pythagoras_mutation import (
     PythagorasMutator,
     SurrogateFitnessModel,
-    MetaEvolutionController,
-    AutoPrimitiveDiscovery,
-    GeometryEvolution,
+)
+from pythagoras.meta_evolution import MetaEvolutionController
+from pythagoras.auto_primitive import AutoPrimitiveDiscovery
+from pythagoras.geometry_evolution import GeometryEvolution
+from pythagoras.orchestrator import (
     Pythagoras,
     normalize_future_imports,
     read_source_utf8,

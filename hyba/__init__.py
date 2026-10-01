@@ -21,6 +21,7 @@ Key submodules:
 - :mod:`hyba.hasher` — SHA-256d hasher + pipeline support.
 - :mod:`hyba.diagnose` — one-call observed-facts report.
 - :mod:`hyba.inventory` — measured capability census across every backend.
+- :mod:`hyba.virtual_gpu` — ``SuperGPU`` composition surface (Chronus fabric).
 - :mod:`chronus` — canonical iGPU offering, fabric routing and telemetry.
 """
 

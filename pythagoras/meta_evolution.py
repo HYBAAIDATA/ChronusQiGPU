@@ -12,6 +12,8 @@ Features:
 
 from __future__ import annotations
 
+import hashlib
+import json
 import math
 from typing import Any, Dict, List, Optional
 import numpy as np
@@ -58,7 +60,6 @@ class MetaEvolutionController:
 
         # ENH-10: Primitive Provenance Tracking
         self.provenance_log: List[Dict[str, Any]] = []
-        self._rng = random.Random(int(random_seed))
 
     def update(
         self,
@@ -166,6 +167,26 @@ class MetaEvolutionController:
         acceptance_prob = math.exp(delta_phi / max(1e-4, self.temperature))
         return float(self._rng.random()) < acceptance_prob
 
+    def _append_provenance(self, record: Dict[str, Any]) -> None:
+        """Append a tamper-evident provenance event."""
+        previous_hash = (
+            self.provenance_log[-1].get("event_hash", "LEGACY")
+            if self.provenance_log
+            else "GENESIS"
+        )
+        payload = {
+            "sequence": len(self.provenance_log) + 1,
+            **record,
+            "previous_hash": previous_hash,
+        }
+        canonical = json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        payload["event_hash"] = hashlib.sha256(canonical).hexdigest()
+        self.provenance_log.append(payload)
+
     def get_state(self) -> Dict[str, Any]:
         """Return snapshot of current meta-evolutionary state."""
         return {
@@ -179,8 +200,6 @@ class MetaEvolutionController:
             "phase_transition_threshold": self.phase_transition_threshold,
             "stall_threshold": self.stall_threshold,
             "cooling_rate": self.cooling_rate,
-            "primitive_weights": dict(self.primitive_weights),
-            "operator_distribution": dict(self.operator_distribution),
         }
 
     def load_state(

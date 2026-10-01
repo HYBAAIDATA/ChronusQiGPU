@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import subprocess
 import sys
 import tempfile
@@ -135,7 +136,7 @@ def run_isolated_execution(
         detail = (completed.stderr or completed.stdout).strip()
         return False, detail or f"isolated execution exited {completed.returncode}"
     except subprocess.TimeoutExpired:
-        return False, f"Execution timed out after {timeout_seconds:.3f}s"
+        return False, f"execution timed out after {timeout_seconds}s (timeout)"
     except Exception as exc:
         return False, str(exc)
     finally:
