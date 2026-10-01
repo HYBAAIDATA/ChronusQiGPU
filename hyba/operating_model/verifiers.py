@@ -29,7 +29,7 @@ SCAN_GLOBS = (
     "kellogg/**/*.py",
     "toe/**/*.py",
     "lucas/**/*.py",
-    "mla1517_platform_v3.4/python/**/*.py",
+    "chronus/mla1517_platform/python/**/*.py",
     "turing_core.py",
 )
 
@@ -185,14 +185,14 @@ def pin_verifier(root: Optional[Path] = None) -> List[Dict[str, Any]]:
 
 
 def _load_core(root: Path):
-    """mla1517.core via the platform path, or turing_core as the root copy."""
+    """chronus.mla1517.core via the platform path, or turing_core as the root copy."""
     import sys
 
-    plat = root / "mla1517_platform_v3.4" / "python"
+    plat = root / "chronus/mla1517_platform" / "python"
     if str(plat) not in sys.path:
         sys.path.insert(0, str(plat))
     try:
-        import mla1517.core as core  # type: ignore
+        import chronus.mla1517.core as core  # type: ignore
 
         return core
     except Exception:
@@ -549,7 +549,7 @@ _DECLARED_CLAIMS = (
     # (claim, source file evidence, laureate attribution, reduction-or-None)
     {
         "claim": "cassini_identity_in_m15",
-        "source": "mla1517_platform_v3.4/python/pythia_turing_math.py",
+        "source": "chronus/mla1517_platform/python/pythia_turing_math.py",
         "laureate": "cassini",
         "reduction": None,
     },
@@ -561,7 +561,7 @@ _DECLARED_CLAIMS = (
     },
     {
         "claim": "golden_matrix_trace_eq_lucas",
-        "source": "mla1517_platform_v3.4/python/pythia_turing_math.py",
+        "source": "chronus/mla1517_platform/python/pythia_turing_math.py",
         "laureate": "lucas",
         "reduction": "tr(Q^n)=L_n reduces NP path count " "to fast doubling",
     },
@@ -664,7 +664,7 @@ _SUBMIT_ATTRS = frozenset({"submit", "submit_candidate", "submit_record"})
 _SUBMIT_RECEIVERS = frozenset({"client", "pool"})
 # The canonical coordinator file must override each transport primitive and
 # persist SUBMITTING before delegating.
-_LIFECYCLE_COORDINATOR = "mla1517_platform_v3.4/python/mla1517/mining/coordinator.py"
+_LIFECYCLE_COORDINATOR = "chronus/mla1517/mining/coordinator.py"
 
 
 def _submission_route_check(root: Path) -> List[Dict[str, Any]]:
@@ -842,7 +842,7 @@ _SUBSTRATE_SOURCES = frozenset(
         "lucas.algebra",
         "turing_core",
         "pythia_turing_math",
-        "mla1517.core",
+        "chronus.mla1517.core",
         "kellogg.scales",
         "hyba.operating_model.lemma",
     }
@@ -868,7 +868,7 @@ def _lucas_wiring_check(root: Path) -> List[Dict[str, Any]]:
                 # package: `from .x import` in pkg/mod.py is 'pkg.x'.
                 # The platform tree's sys.path root is not a package.
                 parts = list(path.parent.relative_to(root).parts)
-                if parts[:2] == ["mla1517_platform_v3.4", "python"]:
+                if parts[:2] == ["chronus/mla1517_platform", "python"]:
                     parts = parts[2:]
                 for _ in range(node.level - 1):
                     parts = parts[:-1]
@@ -898,7 +898,7 @@ def _lucas_wiring_check(root: Path) -> List[Dict[str, Any]]:
 
 _KERNEL_ORACLE_PATHS = (
     lambda root: root,
-    lambda root: root / "mla1517_platform_v3.4" / "python",
+    lambda root: root / "chronus/mla1517_platform" / "python",
 )
 
 

@@ -38,6 +38,19 @@ from hyba.hybrid.nonce_scheduler import (
     Share,
     verify_share,
 )
+from hyba.hybrid.performance import (
+    DEFAULT_HASHRATE_FLOOR_HPS,
+    LayerSample,
+    PerformanceReport,
+    job_performance_report,
+)
+from hyba.hybrid.tensor_advisor import (
+    IdentityWindowRanker,
+    TensorAdviceEvidence,
+    TensorAdviceViolation,
+    WindowRanker,
+    apply_tensor_advice,
+)
 
 __all__ = [
     "ASICNotPresent",
@@ -45,6 +58,7 @@ __all__ = [
     "AttestationRegistry",
     "AttestationViolation",
     "CoverageCertificate",
+    "DEFAULT_HASHRATE_FLOOR_HPS",
     "DeviceCapability",
     "DeviceUnsupportedError",
     "DispatchHandle",
@@ -52,15 +66,23 @@ __all__ = [
     "FACE_COUNT",
     "GPUSolver",
     "HybridCoordinator",
+    "IdentityWindowRanker",
     "JobResult",
     "NONCE_SPACE",
     "NonceScheduler",
     "NonceWindow",
+    "LayerSample",
+    "PerformanceReport",
     "Share",
     "SpanAssignment",
     "StratumJob",
     "TraversalHistory",
     "TraversalRecord",
+    "TensorAdviceEvidence",
+    "TensorAdviceViolation",
+    "WindowRanker",
+    "apply_tensor_advice",
+    "job_performance_report",
     "lucas_alignment",
     "lucas_weight",
     "partition",

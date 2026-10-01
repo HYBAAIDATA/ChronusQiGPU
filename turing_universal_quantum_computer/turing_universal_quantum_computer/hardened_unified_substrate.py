@@ -1092,7 +1092,7 @@ def _load_punch_host_class():
     return mod.UnifiedPunchHost
 
 
-class TensorCoreGPU_Context:
+class ChronusContext:
 
     def __init__(self, punch_host=None, require_gpu: bool = False):
 
@@ -1593,7 +1593,7 @@ class PrimeStorageManifold:
 
     def __init__(
         self,
-        gpu: TensorCoreGPU_Context,
+        gpu: ChronusContext,
         n_primes: int = 25,
         punch_host=None,
         require_gpu: bool = False,
@@ -1905,7 +1905,7 @@ class UnifiedSubstrate:
 
         self.dag = DependencyDAG()
 
-        self.gpu = TensorCoreGPU_Context(punch_host=punch_host, require_gpu=require_gpu)
+        self.gpu = ChronusContext(punch_host=punch_host, require_gpu=require_gpu)
 
         self.manifold = PrimeStorageManifold(
             self.gpu, n_primes, punch_host=self.gpu.punch_host, require_gpu=require_gpu

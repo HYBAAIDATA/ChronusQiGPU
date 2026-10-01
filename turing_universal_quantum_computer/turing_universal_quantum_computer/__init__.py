@@ -1,10 +1,10 @@
 """Turing Universal Quantum Computer — consolidated exact-quantum substrate.
 
 This package consolidates every PYTHIA/MLA1517 module that constitutes the
-Turing virtual quantum computer: the canonical 11-qubit exact register, the
-Q[sqrt(5)] / Pisot algebraic substrate, the exact tensor witnesses, the
-strict-quantum work certificates, the Lucas/Pisot Hendrix schedule, and the
-four-layer Aethel -> Tensor -> TURING -> iGPU production execution plane.
+Turing virtual quantum computer: the canonical exact register, Q[sqrt(5)] /
+Pisot algebra, exact tensor witnesses, strict work certificates, Lucas/Pisot
+Hendrix schedule, large-scale stabilizer execution, the production phi-machine
+facade, bounded phi-VQC ranking and the four-layer production execution plane.
 
 Layers
 ------
@@ -16,6 +16,11 @@ hilbert               QuantumRegister — canonical exact sparse state vector
                       support is bounded (fail-closed max_amplitudes)
 stabilizer            StabilizerState — exact Clifford tableau; superposition,
                       entanglement and measurement at arbitrary n (incl. 10000)
+phi_machine           HYBA 1,000-qubit Clifford execution profile on Turing,
+                      QASM subset, exact T_phi checkpoint custody and bounded
+                      algorithm capability metadata
+midas_vqc             32-face variational nonce ranker + exact Clifford skeleton;
+                      candidate ordering only, never mining consensus authority
 quantum_walk          coined cycle walk (sparse-exact) + closed-form
                       continuous-time hypercube walk (exact at any n)
 annealing             exact TFIM free-fermion spectrum, adiabatic gap,
@@ -24,15 +29,15 @@ swarm                 QuantumSwarm — agents sampling exact Born distributions
 turing_core.ten_thousand  TenThousandQubitSystem — the universal engine
 register_tensor       QuantumTensor — audited facade over QuantumRegister
 exact_tensor          canonical Q(sqrt(2)) + i Q(sqrt(2)) exact state vector
-exact_state_vector    MLA1517 exact state-vector algebra (predecessor surface)
-quantum_tensor        first-principles tensor layer over C^N (H, U, M, x, C)
+exact_state_vector    MLA1517 exact state-vector algebra
+quantum_tensor        first-principles tensor layer over C^N
 strict_quantum        strict Q(i) work-window certificates
 pisot / hendrix       Lucas/Pisot scale contracts + Hendrix schedule
 search                Grover-exact / Merkle / preimage search primitives
-turing_adapter        Turing-derived deterministic lane/nonce ordering
+turing_adapter        deterministic lane/nonce ordering
 quantum_cuda          iGPU / Turing exact-math accelerator facade
 
-Production plane (11-qubit VQC pipeline):
+Production plane:
 backend_binding, hardened_unified_substrate, unified_punch, bitcoin_hasher,
 hash_pipeline, manifold_bridge, intelligences, toe_system, four_layer_stack,
 scaled_execution (LucasScaledAethelExecutionAdapter).
@@ -40,8 +45,8 @@ scaled_execution (LucasScaledAethelExecutionAdapter).
 
 from __future__ import annotations
 
-from . import turing_core  # noqa: F401  — always available (stdlib only)
-from . import (  # noqa: F401 — light stdlib-only surfaces
+from . import turing_core  # noqa: F401
+from . import (  # noqa: F401
     duality,
     exact_field,
     exact_state_vector,
@@ -52,7 +57,7 @@ from . import (  # noqa: F401 — light stdlib-only surfaces
     quantum_tensor,
     strict_quantum,
 )
-from .turing_core import (  # noqa: F401 — canonical TURING core surface
+from .turing_core import (  # noqa: F401
     FAMILY_COEFFS,
     PHI,
     PSI,
@@ -85,7 +90,7 @@ from .turing_core import (  # noqa: F401 — canonical TURING core surface
     zeckendorf_decode,
     zeckendorf_encode,
 )
-from .pisot import (  # noqa: F401 — VQC control-plane contracts
+from .pisot import (  # noqa: F401
     DOMAIN_SCALE_INDEX,
     LUCAS_EXECUTION_SCALE_INDICES,
     SUPPORTED_SCALE_INDICES,
@@ -100,7 +105,7 @@ from .pisot import (  # noqa: F401 — VQC control-plane contracts
     plan_hilbert_coverage,
     require_lucas_execution_scale,
 )
-from .hendrix import HendrixIGPUSearch  # noqa: F401
+from .hendrix import HendrixChronusSearch  # noqa: F401
 from .strict_quantum import (  # noqa: F401
     QComplex,
     QMatrix,
@@ -111,12 +116,7 @@ from .strict_quantum import (  # noqa: F401
     verify_certificate,
 )
 
-# ---------------------------------------------------------------------------
-# Lazy surface: heavier or optional-dependency modules are resolved on first
-# attribute access so `import turing_universal_quantum_computer` stays fast
-# and never fails on a missing optional extra (sympy / scipy / networkx).
-# ---------------------------------------------------------------------------
-
+# Heavy and optional-dependency modules are lazy so a base import stays cheap.
 _LAZY_MODULES = {
     "hilbert",
     "register_tensor",
@@ -139,23 +139,26 @@ _LAZY_MODULES = {
     "quantum_algorithms",
     "grover_exact_scale",
     "stabilizer",
+    "phi_quantum_machine",
+    "phi_verification",
+    "phi_vqc",
     "quantum_walk",
     "annealing",
     "swarm",
+    "variational",
+    "phi_machine",
+    "midas_vqc",
 }
 
 _LAZY_SYMBOLS = {
-    # hilbert (requires sympy)
     "QuantumRegister": "hilbert",
     "GroverExact": "hilbert",
     "ExactComplex": "hilbert",
     "QSqrt": "hilbert",
     "QSqrt2": "hilbert",
     "qft": "hilbert",
-    # register_tensor (requires sympy + numpy)
     "QuantumTensor": "register_tensor",
     "QuantumTensorAudit": "register_tensor",
-    # production plane
     "FourLayerMiningStack": "four_layer_stack",
     "TuringLayer": "four_layer_stack",
     "NearStateIGpu": "four_layer_stack",
@@ -175,12 +178,10 @@ _LAZY_SYMBOLS = {
     "ExtendedAlgebra": "extended_algebra",
     "GroverSearch": "quantum_algorithms",
     "run_folded": "grover_exact_scale",
-    # universal n-qubit engine (default 10_000 qubits)
     "TenThousandQubitSystem": "turing_core.ten_thousand",
     "EntanglementRegistration": "turing_core.ten_thousand",
     "DEFAULT_UNIVERSAL_QUBITS": "turing_core.ten_thousand",
     "zeckendorf_valid": "turing_core.ten_thousand",
-    # exact large-scale backends
     "StabilizerState": "stabilizer",
     "StabilizerDomainError": "stabilizer",
     "CoinedCycleWalk": "quantum_walk",
@@ -189,9 +190,19 @@ _LAZY_SYMBOLS = {
     "landau_zener": "annealing",
     "adiabatic_condition": "annealing",
     "QuantumSwarm": "swarm",
+    # recovered HYBA 1,000-qubit machine surface
+    "PhiQuantumCircuit": "phi_machine",
+    "PhiQuantumMachine1000": "phi_machine",
+    "PhiCheckpoint": "phi_machine",
+    "run_1000_qubit_verification": "phi_machine",
+    "seeded_clifford_digest": "phi_machine",
+    "state_digest": "phi_machine",
+    # recovered MIDAS/VQC surface
+    "MidasPhiVQCRanker": "midas_vqc",
+    "VQCConfig": "midas_vqc",
 }
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 
 def __getattr__(name: str):

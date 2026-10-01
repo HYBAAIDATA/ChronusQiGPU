@@ -1,6 +1,6 @@
 # Hybrid substrate benchmark — raw numbers
 
-Generated: 2026-09-27 04:58:38 UTC
+Generated: 2026-09-29 14:36:02 UTC
 Corpus (negative control): DETERMINISTIC SYNTHETIC (sha256-derived, fixed seed) | n=4 | target=2^252 | nonce_space=4096
 Corpus (positive control): DETERMINISTIC SYNTHETIC (sha256-derived, fixed seed) | n=4 | target=2^240 | nonce_space=4096
 
@@ -8,19 +8,19 @@ Corpus (positive control): DETERMINISTIC SYNTHETIC (sha256-derived, fixed seed) 
 
 | config | completed | skipped | found_rate | mean probe idx | median | p95 | total hashes | wall s |
 |---|---|---|---|---|---|---|---|---|
-| gpu_only | 4 | 0 | 1.0 | 15.5 | 19.0 | 20.7 | 16384 | 1.422 |
+| gpu_only | 4 | 0 | 1.0 | 15.5 | 19.0 | 20.7 | 16384 | 1.578 |
 | asic_only | 0 | 4 | n/a | n/a | n/a | nan | 0 | 0.000 |
-| hybrid_even | 4 | 0 | 1.0 | 15.5 | 19.0 | 20.7 | 16384 | 1.437 |
+| hybrid_even | 4 | 0 | 1.0 | 15.5 | 19.0 | 20.7 | 16384 | 1.547 |
 | hybrid_lucas | 4 | 0 | 1.0 | 15.5 | 19.0 | 20.7 | 72 | 1.563 |
 
 ## Positive control (harder target — signal would be visible here)
 
 | config | completed | skipped | found_rate | mean probe idx | median | p95 | total hashes | wall s |
 |---|---|---|---|---|---|---|---|---|
-| gpu_only | 4 | 0 | 0.2 | 1,050.0 | 1050 | 1,050.0 | 16384 | 1.531 |
+| gpu_only | 4 | 0 | 0.2 | 1,050.0 | 1050 | 1,050.0 | 16384 | 1.610 |
 | asic_only | 0 | 4 | n/a | n/a | n/a | nan | 0 | 0.000 |
-| hybrid_even | 4 | 0 | 0.2 | 1,050.0 | 1050 | 1,050.0 | 16384 | 1.453 |
-| hybrid_lucas | 4 | 0 | 0.2 | 1,050.0 | 1050 | 1,050.0 | 13852 | 1.422 |
+| hybrid_even | 4 | 0 | 0.2 | 1,050.0 | 1050 | 1,050.0 | 16384 | 1.578 |
+| hybrid_lucas | 4 | 0 | 0.2 | 1,050.0 | 1050 | 1,050.0 | 13852 | 1.532 |
 
 ## Paired differences (95% bootstrap CI, lucas − baseline)
 

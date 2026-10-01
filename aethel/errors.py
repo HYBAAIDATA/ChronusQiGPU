@@ -28,6 +28,10 @@ class GapDetected(AethelError):
     index — detected before retrieval is allowed to proceed."""
 
 
+class StorageCorruption(AethelError):
+    """Persistent storage failed integrity or safety validation."""
+
+
 class SegmentMissing(AethelError):
     """A shared-memory region or journal file expected at attach time does
     not exist. Raised instead of silently creating fresh state."""

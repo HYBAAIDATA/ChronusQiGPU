@@ -935,14 +935,45 @@ def identify_frontdoor(
     2. There is no backdoor path from X to Z.
     3. All backdoor paths from Z to Y are blocked by X.
 
-    Returns the frontdoor adjustment set Z if identifiable, None otherwise.
+    Candidate sets are drawn from observed children of X that are also
+    ancestors of Y — singletons first, then their union — and each is
+    verified against all three conditions. Returns the verified frontdoor
+    set, else ``None``. (The previous version returned X-children ∩
+    Y-parents without verifying the conditions — a mediator is necessary,
+    not sufficient.)
     """
-    # Find mediators: children of X that are parents of Y
-    x_children = set(graph.children.get(treatment, []))
-    y_parents = set(graph.parents.get(outcome, []))
-    mediators = x_children & y_parents
-    if mediators:
-        return list(mediators)
+    children_x = set(graph.children.get(treatment, []))
+    candidates = sorted((children_x & graph.ancestors(outcome)) - {outcome})
+
+    def intercepted(z: List[str]) -> bool:
+        """Every directed path X→Y passes through a member of ``z``."""
+        blocked = graph
+        for node in z:
+            blocked = blocked.without_incoming({node}).without_outgoing(node)
+        seen, stack = set(), [treatment]
+        while stack:
+            n = stack.pop()
+            if n == outcome:
+                return False
+            if n in seen:
+                continue
+            seen.add(n)
+            stack.extend(blocked.children.get(n, []))
+        return True
+
+    underlined_x = graph.without_outgoing(treatment)
+    for size in range(1, len(candidates) + 1):
+        for subset in itertools.combinations(candidates, size):
+            z = list(subset)
+            if not intercepted(z):
+                continue
+            if not d_separated(underlined_x, {treatment}, set(z), ()):
+                continue
+            if all(
+                is_backdoor_admissible(graph, node, outcome, {treatment})
+                for node in z
+            ):
+                return z
     return None
 
 

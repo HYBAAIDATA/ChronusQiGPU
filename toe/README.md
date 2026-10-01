@@ -97,7 +97,7 @@ spec = toe.compile_operator(payload)
 ```
 
 The mining path consumes this through
-`mla1517_platform_v3.4/python/mla1517/mining/toe_adapter.py`
+`chronus/mla1517_platform/python/mla1517/mining/toe_adapter.py`
 (`TOEMiningAdapter`), which feeds real job + vault observations into the
 bridge and fails closed (`TOEUnavailable`) if the engine is absent.
 
@@ -113,8 +113,8 @@ explicitly attested in every `TOEExpansionResult` (`proof_boundary`).
 ```bash
 pytest tests/test_toe_tensor_ml.py tests/test_toe_expansion_contract.py \
        tests/test_agentic_mining.py tests/test_elevation_correctness.py
-python -m unittest discover -s mla1517_platform_v3.4/python   # incl. test_toe_mining_integration
+python -m unittest discover -s chronus/mla1517_platform/python   # incl. test_toe_mining_integration
 python -m toe.bridge                                        # self-test
-PYTHONPATH=.:mla1517_platform_v3.4/python \
+PYTHONPATH=.:chronus/mla1517_platform/python \
     python tests/explore_toe_implementation.py              # standalone diagnostic
 ```

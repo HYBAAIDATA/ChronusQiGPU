@@ -8,7 +8,7 @@ import importlib.util
 import sys
 from pathlib import Path
 
-_python = Path(__file__).parent / "mla1517_platform_v3.4" / "python"
+_python = Path(__file__).parent / "chronus/mla1517_platform" / "python"
 
 
 def _load(name, path):

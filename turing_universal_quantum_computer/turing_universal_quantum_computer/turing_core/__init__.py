@@ -6,7 +6,7 @@ This subpackage consolidates the repository's ``turing_core`` module:
   golden/Pisot algebra, Zeckendorf, T_phi fold, 32-node dual overlay,
   sha256d midstate engine).
 - ``schedule``  — the deterministic complete nonce-window permutation
-  substrate (formerly ``mla1517_platform_v3.4/python/turing_core.py``).
+  substrate (formerly ``chronus/mla1517_platform/python/turing_core.py``).
 - ``discovery`` — ``MathematicalDiscoveryEngine`` / ``TheoreticalSpaceExplorer``
   (optional: requires numpy/scipy/networkx).
 - ``ten_thousand`` — ``TenThousandQubitSystem``, the universal n-qubit

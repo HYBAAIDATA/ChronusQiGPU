@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 import tempfile
 from pathlib import Path
@@ -25,15 +26,15 @@ from .constants import (
     STATE_BYTES,
 )
 from .encoding import fold, unfold
-from .errors import AethelError, FoldDomainOverflow
+from .errors import AethelError, FoldDomainOverflow, StorageCorruption
 from .fibonacci import binet_fibonacci, cassini_holds, fibonacci
 from .shm import AethelQueue
-from .storage import AddressSpace
+from .storage import MAX_ADDRESS_INDEX, AddressSpace
 
 logger = logging.getLogger("aethel.selftest")
 
-_HEADER_REL = Path("mla1517_platform_v3.4") / "host" / "mla1517_aethel.h"
-_MMIO_REL = Path("mla1517_platform_v3.4") / "host" / "mla1517_mmio.h"
+_HEADER_REL = Path("chronus/mla1517_platform") / "host" / "mla1517_aethel.h"
+_MMIO_REL = Path("chronus/mla1517_platform") / "host" / "mla1517_mmio.h"
 
 _DEFINE_RE = re.compile(r"#define\s+(MLA1517_\w+)\s+([^/\s]+)")
 
@@ -104,18 +105,30 @@ def check_c_abi_agreement() -> Dict[str, Any]:
 
 def check_storage_contract(writes: int = 512) -> Dict[str, Any]:
     """Section A battery: monotonic indices + Cassini ledger integrity."""
-    space = AddressSpace()
-    addresses = []
-    for i in range(writes):
-        addresses.append(space.write(f"block-{i}".encode()))
-    monotonic = all(
-        addresses[i].index < addresses[i + 1].index for i in range(len(addresses) - 1)
-    )
-    fibonacci_ok = all(a.value == fibonacci(a.index) for a in addresses)
-    ledger_ok = space.ledger.verify_ledger()
-    quadruples_ok = all(
-        cassini_holds(e.quadruple) for e in space.ledger.entries
-    )
+    if not 1 <= writes <= 1_000_000:
+        return {
+            "name": "storage_contract",
+            "verdict": "FAIL",
+            "detail": "writes must be in [1, 1000000]",
+        }
+    remaining = writes
+    batch = 0
+    monotonic = fibonacci_ok = ledger_ok = quadruples_ok = True
+    while remaining:
+        count = min(remaining, MAX_ADDRESS_INDEX)
+        space = AddressSpace()
+        previous = 0
+        for i in range(count):
+            address = space.write(f"block-{batch * MAX_ADDRESS_INDEX + i}".encode())
+            monotonic = monotonic and address.index > previous
+            fibonacci_ok = fibonacci_ok and address.value == fibonacci(address.index)
+            previous = address.index
+        ledger_ok = ledger_ok and space.ledger.verify_ledger()
+        quadruples_ok = quadruples_ok and all(
+            cassini_holds(entry.quadruple) for entry in space.ledger.entries
+        )
+        remaining -= count
+        batch += 1
     forged = False
     try:
         space.register(index=9999, value=12345, payload=b"forged")
@@ -127,12 +140,71 @@ def check_storage_contract(writes: int = 512) -> Dict[str, Any]:
         "verdict": "PASS" if ok else "FAIL",
         "detail": {
             "writes": writes,
+            "bounded_batches": batch,
             "monotonic": monotonic,
             "fibonacci_addresses": fibonacci_ok,
             "ledger_verified": ledger_ok,
             "quadruples_valid": quadruples_ok,
             "forgery_rejected": forged,
         },
+    }
+
+
+def check_persistence_faults() -> Dict[str, Any]:
+    """Exercise digest rejection and explicit last-consistent-prefix recovery."""
+    with tempfile.TemporaryDirectory() as tmp:
+        store = Path(tmp) / "store"
+        space = AddressSpace()
+        space.write(b"fault-injection")
+        space.snapshot(store)
+        journal = store / "ledger.jsonl"
+        with journal.open("ab") as handle:
+            handle.write(b'{"seq":1')
+        recovered = AddressSpace.truncate_to_last_consistent_prefix(store)
+        backup_exists = (store / "ledger.jsonl.bak").is_file()
+        replay_ok = AddressSpace.attach(store).verify()
+        block = store / "blocks" / "1.blk"
+        block.write_bytes(b"corrupt")
+        digest_rejected = False
+        try:
+            AddressSpace.attach(store)
+        except StorageCorruption:
+            digest_rejected = True
+        ok = recovered == 1 and backup_exists and replay_ok and digest_rejected
+        return {
+            "name": "persistence_faults",
+            "verdict": "PASS" if ok else "FAIL",
+            "detail": {
+                "recovered_prefix_entries": recovered,
+                "backup_created": backup_exists,
+                "replay_verified": replay_ok,
+                "corrupt_payload_rejected": digest_rejected,
+            },
+        }
+
+
+def check_manifold_faults() -> Dict[str, Any]:
+    """Measure one successful heal and one fail-closed corruption outcome."""
+    from .gpu import TensorCoreGPU_Context
+    from .manifold import ManifoldCurvature, PrimeStorageManifold
+
+    manifold = PrimeStorageManifold(TensorCoreGPU_Context())
+    healed_id = manifold.ingest_sync(b"manifold-heal", ManifoldCurvature.GOLDEN_DENSE)
+    healed_tensor = manifold.tensors[healed_id]
+    healed_tensor.sparse_topology = {0: 0}
+    healed = manifold.read_payload(healed_tensor) == b"manifold-heal"
+
+    failed_id = manifold.ingest_sync(b"fail-closed", ManifoldCurvature.GOLDEN_DENSE)
+    failed_tensor = manifold.tensors[failed_id]
+    failed_tensor.sparse_topology = {0: 0}
+    failed_tensor.raw_payload = None
+    manifold.curved_storage.uuid_index.pop(failed_id, None)
+    rejected = manifold.read_payload(failed_tensor) is None
+    ok = healed and rejected and manifold.stats()["heal_events"] == 2
+    return {
+        "name": "manifold_faults",
+        "verdict": "PASS" if ok else "FAIL",
+        "detail": {"healed": healed, "unrecoverable_rejected": rejected},
     }
 
 
@@ -211,13 +283,55 @@ def check_handoff() -> Dict[str, Any]:
         return {"name": "geodesic_handoff", "verdict": "UNVERIFIED", "detail": str(exc)}
 
 
-def run_selftest(*, quick: bool = True) -> Dict[str, Any]:
+def run_selftest(
+    *,
+    quick: bool = True,
+    writes: Optional[int] = None,
+    roundtrips: Optional[int] = None,
+) -> Dict[str, Any]:
     """Run the contract battery.  Returns a structured verdict dict."""
-    writes = 512 if quick else 50_000
-    roundtrips = 512 if quick else 100_000
+    default_writes = 512 if quick else 50_000
+    default_roundtrips = 512 if quick else 100_000
+    try:
+        writes = int(
+            writes
+            if writes is not None
+            else os.getenv("AETHEL_SELFTEST_WRITES", default_writes)
+        )
+        roundtrips = int(
+            roundtrips
+            if roundtrips is not None
+            else os.getenv("AETHEL_SELFTEST_ROUNDTRIPS", default_roundtrips)
+        )
+    except (TypeError, ValueError):
+        return {
+            "package": "aethel",
+            "overall": "FAIL",
+            "checks": [
+                {
+                    "name": "configuration",
+                    "verdict": "FAIL",
+                    "detail": "soak settings must be integers",
+                }
+            ],
+        }
+    if not 1 <= writes <= 1_000_000 or not 1 <= roundtrips <= 1_000_000:
+        return {
+            "package": "aethel",
+            "overall": "FAIL",
+            "checks": [
+                {
+                    "name": "configuration",
+                    "verdict": "FAIL",
+                    "detail": "writes and roundtrips must be in [1, 1000000]",
+                }
+            ],
+        }
     checks = [
         check_storage_contract(writes),
         check_encoding_contract(roundtrips),
+        check_persistence_faults(),
+        check_manifold_faults(),
         check_seqlock(),
         check_c_abi_agreement(),
         check_handoff(),
@@ -231,7 +345,9 @@ def run_selftest(*, quick: bool = True) -> Dict[str, Any]:
     return {
         "package": "aethel",
         "version": __import__("aethel").__version__,
+        "version_source": __import__("aethel").__version_source__,
         "overall": overall,
+        "scale": {"writes": writes, "roundtrips": roundtrips},
         "checks": checks,
     }
 

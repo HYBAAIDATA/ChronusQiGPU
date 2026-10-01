@@ -9,7 +9,7 @@ import sys
 
 def collapse_the_gap(repo: str = "QUANTUMDATA2/PYTHIAPhiMiner") -> dict:
     from thermo.model import all_constants_sourced, falsification_tests
-    from igpu.seam.bennett import pebble_bounds
+    from chronus.seam.bennett import pebble_bounds
     from standard.certificate import generate_certificate
 
     assert all_constants_sourced(), "constants must be sourced"

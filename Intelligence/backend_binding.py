@@ -51,7 +51,7 @@ class BackendType(Enum):
     CPU = "cpu"
 
 
-# HYBA iGPU identity. Duplicated from scripts/igpu_diag.py on purpose — this
+# HYBA iGPU identity. Duplicated from scripts/chronus_diag.py on purpose — this
 # module implements its own substrate route (see LUCAS WIRING header).
 # Overridable via HYBA_DEVICE_ALIAS (comma-separated).
 DEFAULT_HYBA_ALIASES = ("hyba-mla1517", "hyba_mla1517", "mla1517", "hyba")
@@ -444,7 +444,7 @@ class BackendBinder:
         )
 
     def bind_all(self) -> BoundBackends:
-        """Bind every present backend at once — the SuperGPU composite.
+        """Bind every present backend at once — the ChronusFabric composite.
 
         Unlike :meth:`bind`, an explicit ``HYBA_BACKEND``/``KELLOGG_BACKEND``
         request does not hide the other detected backends: ``primary`` honors

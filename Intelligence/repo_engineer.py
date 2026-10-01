@@ -532,7 +532,7 @@ class RepoEngineer:
             return {"error": str(exc)}
         relative = path.relative_to(self.repo_root).as_posix()
         approved_root = relative.startswith("tests/") or relative.startswith(
-            "mla1517_platform_v3.4/python/"
+            "chronus/mla1517_platform/python/"
         )
         if not approved_root or not path.is_file():
             return {"error": "test_target_not_allowed_or_not_found"}

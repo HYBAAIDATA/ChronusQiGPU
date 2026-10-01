@@ -13,7 +13,7 @@ tree is never touched, and the check aborts unless the copy is what the
 tests import.
 
     python scripts/mutation_check.py \\
-        mla1517_platform_v3.4/python/mla1517/mining/hashrate_governor.py \\
+        chronus/mla1517/mining/hashrate_governor.py \\
         --tests test_hashrate_governor.py --workers 4
 """
 
@@ -34,7 +34,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_COPY_ROOT = ROOT / "mla1517_platform_v3.4" / "python"
+DEFAULT_COPY_ROOT = ROOT
 
 _COMPARE = {
     ast.Lt: ast.LtE,
@@ -222,21 +222,31 @@ def mutate(source: str, mutant: Mutant) -> str:
 class Sandbox:
     """A private copy of the package; the working tree is never written."""
 
-    def __init__(self, copy_root: Path, module: Path, extra_path: Path = ROOT) -> None:
+    def __init__(
+        self,
+        copy_root: Path,
+        module: Path,
+        extra_path: Path = ROOT,
+        pythonpath: tuple[Path, ...] = (),
+    ) -> None:
         self.extra_path = extra_path
+        self.pythonpath = pythonpath
         self.dir = Path(tempfile.mkdtemp(prefix="mutation-"))
         self.root = self.dir / copy_root.name
         shutil.copytree(
             copy_root,
             self.root,
-            ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".pytest_cache"),
+            ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".pytest_cache", ".git"),
         )
         self.module = self.root / module.relative_to(copy_root)
         self.original = self.module.read_text(encoding="utf-8")
 
     def env(self) -> dict[str, str]:
         env = dict(os.environ)
-        env["PYTHONPATH"] = os.pathsep.join([str(self.root), str(self.extra_path)])
+        env["PYTHONPATH"] = os.pathsep.join(
+            [str(self.root), str(self.extra_path)]
+            + [str(self.root / rel) for rel in self.pythonpath]
+        )
         env["PYTHONDONTWRITEBYTECODE"] = "1"
         return env
 
@@ -287,7 +297,8 @@ def run(args, root: Path = ROOT) -> dict:
     mutants = enumerate_mutants(source, lines)
     if args.limit:
         mutants = mutants[: args.limit]
-    sandboxes = [Sandbox(copy_root, module, root) for _ in range(max(1, args.workers))]
+    pythonpath = tuple(Path(p) for p in args.pythonpath)
+    sandboxes = [Sandbox(copy_root, module, root, pythonpath) for _ in range(max(1, args.workers))]
     try:
         if not sandboxes[0].imports_copy(module_name):
             raise SystemExit(f"{module_name} does not import from the sandbox; refusing to run")
@@ -344,6 +355,12 @@ def main() -> int:
         "--tests", nargs="+", required=True, help="pytest targets, relative to --copy-root"
     )
     parser.add_argument("--copy-root", default=str(DEFAULT_COPY_ROOT))
+    parser.add_argument(
+        "--pythonpath",
+        nargs="*",
+        default=[],
+        help="extra sandbox-relative dirs appended to PYTHONPATH for test runs",
+    )
     parser.add_argument("--workers", type=int, default=os.cpu_count() or 2)
     parser.add_argument("--timeout", type=float, default=0.0)
     parser.add_argument("--lines", help="only mutate these lines, e.g. 40-120")

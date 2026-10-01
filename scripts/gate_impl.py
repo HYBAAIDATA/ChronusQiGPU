@@ -88,8 +88,8 @@ def claims(root):
     from al_haras.claim_register import ClaimRejected
     from al_haras.claim_register import ClaimStatus
 
-    with tempfile.NamedTemporaryFile() as f:
-        reg = ClaimRegister(f.name, lambda x: x == "e")
+    with tempfile.TemporaryDirectory() as d:
+        reg = ClaimRegister(str(Path(d) / "claims.db"), lambda x: x == "e")
         reg.register(Claim("v", "verified", ClaimStatus.VERIFIED, ("e",), "owner"))
         try:
             reg.register(Claim("p", "production", ClaimStatus.PRODUCTION, ("e",), "owner"))
@@ -103,15 +103,14 @@ def claims(root):
 
 
 def imports(root):
-    from al_haras.core_api import import_audit
+    from scripts.import_audit import Auditor, live_files
 
-    paths = [
-        p
-        for p in root.rglob("*.py")
-        if not any(x in p.parts for x in (".git", "venv", ".venv", "node_modules"))
-    ]
-    checked = import_audit(paths)
-    return Outcome(Status.PASS, f"audited {len(checked)} Python files")
+    findings = Auditor(root).audit(live_files(root))
+    hidden = sum(f.swallowed for f in findings)
+    return Outcome(
+        Status.FAIL if findings else Status.PASS,
+        f"{len(findings)} finding(s), {hidden} swallowed",
+    )
 
 
 def no_float(root):
@@ -120,8 +119,8 @@ def no_float(root):
 
     candidates = []
     for pattern in (
-        "mla1517_platform_v3.4/python/mla1517/core.py",
-        "mla1517_platform_v3.4/python/mla1517/math_folding.py",
+        "chronus/mla1517/core.py",
+        "chronus/mla1517/math_folding.py",
         "python_backend/core_modules/math_folding.py",
     ):
         p = root / pattern

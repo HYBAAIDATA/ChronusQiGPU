@@ -105,7 +105,7 @@ class LucasScaledAethelExecutionAdapter:
         fold_ok = self.stack.tensor.decompress(folded, original_len) == header
         coverage = self._coverage(len(header) + len(target_bytes))
         try:
-            result = self.stack.igpu.mine(header, target_bytes, ordered, max_hashes=count)
+            result = self.stack.chronus.mine(header, target_bytes, ordered, max_hashes=count)
         except Exception as exc:
             self.toe.record_decision(
                 "execution_failed",
@@ -147,7 +147,7 @@ class LucasScaledAethelExecutionAdapter:
             digest=bytes.fromhex(result["winning_hash"]) if result["winning_hash"] else None,
             hashes=int(result["hashes_computed"]),
             metadata={
-                "execution_path": "aethel_exact_tensor_hendrix_lucas_pisot_igpu",
+                "execution_path": "aethel_exact_tensor_hendrix_lucas_pisot_chronus",
                 "coverage": coverage,
                 "tensor_scale": self.tensor.scale_manifest(),
                 "schedule": schedule.manifest(),
@@ -156,7 +156,7 @@ class LucasScaledAethelExecutionAdapter:
                 "evidence_store": evidence,
                 "fold_roundtrip_lossless": fold_ok,
                 "cassini_holds": cassini,
-                "igpu": result,
+                "chronus": result,
                 "toe": {
                     "provenance_verified": self.toe.verify_provenance(),
                     "records": len(self.toe.provenance_ledger),

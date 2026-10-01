@@ -86,16 +86,20 @@ writer occupies index `n_k` and is addressed by `F_{n_k}`
 ### A-ABI. Shared-memory region (`aethel.shm`)
 
 - **MEASURED**: `AethelQueue` is byte-compatible with
-  `mla1517_platform_v3.4/host/mla1517_aethel.{c,h}` — all seven constants
+  `chronus/mla1517_platform/host/mla1517_aethel.{c,h}` — all seven constants
   are parsed out of the C headers at test time and compared
   (`tests/test_aethel_concurrency.py::test_t6e_c_abi_agreement_parses_header`).
 - **MEASURED**: seqlock semantics — odd sequence = write in flight, even
-  non-zero = stable; concurrent commit/read produces no torn records
-  (`test_t6a`), a crashed writer's odd sequence is discarded and recovered
-  (`test_t6b`).
+  non-zero = stable; cooperating Python and native API operations also use
+  an advisory process lock. The seqlock is not a lock-free guarantee and
+  writers bypassing that lock are outside the multi-process contract
+  (`test_t6a`, `test_python_writers_are_serialized_across_processes`).
 - Failure modes: `SegmentMissing` on attach to an absent region;
   `AbiVersionMismatch` on a stale region; D10 seal ∉ {±1} drops the
   record at commit.
+- **BOUNDED**: at most 65,536 slots; the native and Python open paths reject
+  unsafe file types, owners, permissions, and mismatched sizes without
+  resizing an existing region.
 
 ### A6. Overhead accounting (`aethel.costs`)
 
@@ -118,6 +122,24 @@ writer occupies index `n_k` and is addressed by `F_{n_k}`
   writer's append cost into the one ledger meter; each `AddressSpace`
   meters only its own writes. The meter's own cost is two clock reads
   per instrumented op (~50–100 ns) — always-on, never alters behavior.
+
+### A7. Persistent snapshot and recovery boundary
+
+- **MEASURED**: blocks are size- and digest-checked, individually fsynced and
+  atomically replaced before the journal commit is replaced and its directory
+  fsynced. Replay requires contiguous sequence numbers, strict field types,
+  unique bounded indices, regular non-symlink block files, and matching
+  payload SHA-256 before the space is returned (`test_aethel_fault_injection`).
+- **MEASURED**: truncated/corrupt suffix recovery first saves the original
+  journal, then writes only the prefix whose entry, address witness and block
+  digest validate. Recovery never invents or repairs payload bytes.
+- **DECLARED**: commit durability is at the snapshot return boundary; a
+  crash before the journal replace leaves the prior journal authoritative.
+  Filesystem/device guarantees beyond successful `fsync` require deployment
+  evidence. Orphan block files are ignored and never exposed.
+- **BOUNDED**: 16 MiB payloads, 20,000 address indices, 250,000 entries and
+  256 MiB journals by default. Increasing these limits requires a new scale
+  and resource validation rather than an implicit allocation.
 
 ---
 
@@ -176,3 +198,22 @@ invariants (`build_search_crystal`, `partition_interval`,
 are imported and run against the storage interval unchanged — see
 `tests/test_aethel_geodesic_handoff.py` and `check_engine_invariants()`.
 Aethel reimplements none of it.
+
+`GeodesicNavigator.query_geodesic` falls back to `query()` only under its
+`allow_fallback` policy (enabled for compatibility by default), recording the
+backend and bounded reason. The fallback delegates exactly to `query()` for
+that call; it is not claimed to be result-equivalent to Pathfinder. The
+optional engine and hardware-dependent behavior remain provisional until
+validated in the target deployment.
+
+## Readiness and claim boundary
+
+`aethel/capabilities.json` maps each production claim to implementation,
+tests and one of `implemented+tested`, `external-evidence-required`,
+`provisional`, or `not-implemented`. It is machine-readable and deliberately
+sets `production_ready` to false. In particular, unit tests do not establish
+million-write soak safety, OpenCL/Chronus device parity, container startup, or
+deployment filesystem durability. Fibonacci/Cassini verifies the address
+stream; SHA-256 checks bytes against the local journal; neither proves keyed
+authenticity. Zeckendorf is an encoding, and geodesic search is an external
+engine contract.

@@ -21,8 +21,11 @@ class KernelSpec:
       the canonical kernel/entry for the op.
     - ``required_capabilities``: keys a device must carry in its measured
       capability map before the executor may bind it.
-    - ``precision_bound``: ``exact`` (integer/exact-algebra), ``f32``,
-      ``f64``, or ``u64-mod`` (wraps mod 2^64 like the kernels).
+    - ``precision_bound``: ``exact`` (arbitrary-precision integer or
+      exact-algebra), ``i64-bounded`` (exact only while intermediates fit
+      signed int64 — overflow violates the contract: CPU raises, OpenCL
+      ``long`` wraps), ``f32``, ``f64``, or ``u64-mod`` (wraps mod 2^64
+      like the kernels).
     - ``lucas_dispatch``: chunking discipline — ``ladder`` (chunk snaps to a
       ladder index), ``epoch32`` (multiples of 32 whole m32 epochs),
       ``serial`` (no dispatch chunking).
@@ -79,7 +82,7 @@ KERNEL_SPECS: Dict[str, KernelSpec] = {
         lucas_dispatch="epoch32",
         entry="bitcoin_sha256d_m32",
         canonical_source="kernels/bitcoin_sha256d.cl",
-        oracle="mla1517.mining.solver:M32SearchSolver.candidates",
+        oracle="chronus.mla1517.mining.solver:M32SearchSolver.candidates",
         executor="bitcoin_hasher",
     ),
     "sha256d_gold": KernelSpec(
@@ -130,8 +133,8 @@ KERNEL_SPECS: Dict[str, KernelSpec] = {
         precision_bound="exact",
         lucas_dispatch="serial",
         entry="mla1517_lucas_pisot_scale",
-        canonical_source="mla1517_platform_v3.4/kernels/mla1517_lucas_pisot_scale.cl",
-        oracle="mla1517.core:fib",
+        canonical_source="chronus/mla1517_platform/kernels/mla1517_lucas_pisot_scale.cl",
+        oracle="chronus.mla1517.core:fib",
         executor="ladder_executor",
     ),
     "exact_hadamard": KernelSpec(
@@ -145,8 +148,8 @@ KERNEL_SPECS: Dict[str, KernelSpec] = {
         precision_bound="exact",
         lucas_dispatch="serial",
         entry="exact_hadamard_lucas_pisot_scale",
-        canonical_source="mla1517_platform_v3.4/kernels/exact_quantum_kernel.cl",
-        oracle="mla1517.quantum:ExactStateVector.apply_single",
+        canonical_source="chronus/mla1517_platform/kernels/exact_quantum_kernel.cl",
+        oracle="chronus.mla1517.quantum:ExactStateVector.apply_single",
         executor="exact_accelerator",
     ),
     "poincare_fold": KernelSpec(
@@ -189,7 +192,10 @@ KERNEL_SPECS: Dict[str, KernelSpec] = {
         name="golden_ontology_transform",
         math=(
             "Fibonacci butterfly y[k] = sum_n x[n] * F_{(n+k)%N} with Binet"
-            " closure, Cassini identity, orthogonality bound"
+            " closure, Cassini identity, orthogonality bound. An N-point"
+            " circular Fibonacci-basis transform — NOT an FFT substitute"
+            " (no frequency decomposition); invertibility per N proven"
+            " separately by the supported-N contract"
         ),
         signature=(
             ("x_re", "i64[N]"),
@@ -199,11 +205,11 @@ KERNEL_SPECS: Dict[str, KernelSpec] = {
             ("y_im", "i64[N]"),
         ),
         required_capabilities=(),
-        precision_bound="exact",
+        precision_bound="i64-bounded",
         lucas_dispatch="ladder",
         entry="fibonacci_butterfly_kernel",
         canonical_source="kernels/golden_ontology_transform.cl",
-        oracle="mla1517.core:fib",
+        oracle="chronus.mla1517.core:fib",
         executor="unified_punch_host",
     ),
     "grover_iterate": KernelSpec(

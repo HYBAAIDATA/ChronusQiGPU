@@ -1,0 +1,364 @@
+{
+  "version": "hyba.data-substrate/v1",
+  "label": "SYNTHETIC workload evidence \u2014 no production mining data",
+  "base_commit": "67ab348444978ade22ab4611a13c44fecd5187e7",
+  "representation": {
+    "claim": "invertible working representation (Zeckendorf uniqueness)",
+    "domain": "bytes 0..1048576",
+    "roundtrip_all": true,
+    "datasets": {
+      "random_incompressible": {
+        "bytes": 4096,
+        "roundtrip": true,
+        "folded_units": 512
+      },
+      "structured_numeric": {
+        "bytes": 4096,
+        "roundtrip": true,
+        "folded_units": 512
+      },
+      "sparse": {
+        "bytes": 8192,
+        "roundtrip": true,
+        "folded_units": 1024
+      },
+      "repetitive_state": {
+        "bytes": 6144,
+        "roundtrip": true,
+        "folded_units": 768
+      },
+      "text": {
+        "bytes": 4480,
+        "roundtrip": true,
+        "folded_units": 560
+      },
+      "time_series": {
+        "bytes": 16384,
+        "roundtrip": true,
+        "folded_units": 2048
+      },
+      "high_dimensional": {
+        "bytes": 16384,
+        "roundtrip": true,
+        "folded_units": 2048
+      }
+    },
+    "boundary": {
+      "0": true,
+      "1": true,
+      "7": true,
+      "8": true,
+      "9": true,
+      "1023": true,
+      "1024": true
+    },
+    "oversize": "FoldDomainOverflow",
+    "failure_modes": [
+      "FoldDomainOverflow",
+      "ZeckendorfInvariantError"
+    ]
+  },
+  "roundtrip": {
+    "zeckendorf_bytes": "BIT_EXACT (byte-identical on all datasets)",
+    "poincare_11d": {
+      "what_dims_represent": "Klein-Poincare contraction of R^11 into B_phi^11 with phi-weighted norm + Lucas boundary reflection count",
+      "in_process_max_abs_err": 0.0,
+      "serialized_max_abs_err": 1.0516032489249483e-12,
+      "exactness": "bit-exact in-process (carried preimage); ~1e-12 closed-form after serialization",
+      "separability_raw": 10.807,
+      "separability_folded": 2.12,
+      "knn_neighborhood_agreement_k5": 0.692,
+      "retrieval_note": "NEGATIVE-BOUNDARY: separability degrades 10.8 -> 2.1 (contraction compresses magnitudes by design); kNN agreement 0.69 \u2014 local neighborhoods partially survive but the fold is NOT distance-preserving; use it as a bounded-manifold navigation layer, not a similarity index"
+    },
+    "binet_vs_recursive": true
+  },
+  "physical_storage": {
+    "datasets": {
+      "random_incompressible": {
+        "raw_bytes": 4096,
+        "folded_total_bytes": 11189,
+        "zlib_bytes": 4107,
+        "folded_ratio": 2.7317,
+        "zlib_ratio": 1.0027
+      },
+      "structured_numeric": {
+        "raw_bytes": 4096,
+        "folded_total_bytes": 11180,
+        "zlib_bytes": 815,
+        "folded_ratio": 2.7295,
+        "zlib_ratio": 0.199
+      },
+      "sparse": {
+        "raw_bytes": 8192,
+        "folded_total_bytes": 11272,
+        "zlib_bytes": 31,
+        "folded_ratio": 1.376,
+        "zlib_ratio": 0.0038
+      },
+      "repetitive_state": {
+        "raw_bytes": 6144,
+        "folded_total_bytes": 16904,
+        "zlib_bytes": 51,
+        "folded_ratio": 2.7513,
+        "zlib_ratio": 0.0083
+      },
+      "text": {
+        "raw_bytes": 4480,
+        "folded_total_bytes": 12264,
+        "zlib_bytes": 68,
+        "folded_ratio": 2.7375,
+        "zlib_ratio": 0.0152
+      },
+      "time_series": {
+        "raw_bytes": 16384,
+        "folded_total_bytes": 44290,
+        "zlib_bytes": 2167,
+        "folded_ratio": 2.7032,
+        "zlib_ratio": 0.1323
+      },
+      "high_dimensional": {
+        "raw_bytes": 16384,
+        "folded_total_bytes": 44739,
+        "zlib_bytes": 16395,
+        "folded_ratio": 2.7307,
+        "zlib_ratio": 1.0007
+      }
+    },
+    "substrate_resident_bytes": 2808,
+    "manifold_note": "PrimeStorageManifold holds up to 3 payload copies (raw + sparse topology + prime substrate) \u2014 redundancy for integrity/self-heal, not compression",
+    "verdict": "folded representation is larger than raw on every workload; it is invertible representation, not storage reduction"
+  },
+  "addressing": {
+    "fibonacci_index": {
+      "determinism": true,
+      "injective": "values injective for index>=3; F_1==F_2==1 collides (canonical address is the index, not the value)",
+      "reconstruction": true,
+      "ordering": "strictly increasing per writer",
+      "range": "F_93 covers uint64 domain",
+      "collisions_at_head": true
+    },
+    "zeckendorf_mask": {
+      "role": "fold identity, not an address scheme",
+      "uniqueness": "unique per content (Zeckendorf theorem)"
+    },
+    "pv_lattice_anchor": {
+      "role": "navigation only",
+      "injective": false,
+      "evidence": "mod-90 projection; 30 objects -> 30 distinct anchors"
+    },
+    "galois_prime_key": {
+      "role": "composite key in GF(2^61-1) for prime-substrate lookup",
+      "injective": "composite key per uuid lane"
+    }
+  },
+  "navigation": {
+    "lenses_on_shared_state": {
+      "content": {
+        "found": true,
+        "injective": true
+      },
+      "fold": {
+        "candidates": [
+          "n3"
+        ],
+        "injective": true
+      },
+      "anchor": {
+        "candidates": 1,
+        "injective": false,
+        "navigation_grade": true
+      }
+    },
+    "duplication": "lenses read shared _objects/ledger \u2014 no duplicate payload copies are created by navigation",
+    "structural_bytes": 33189
+  },
+  "near_state_compute": {
+    "classification": {
+      "equality": {
+        "class": "FOLD-NATIVE",
+        "how": "compare Zeckendorf mask tuples \u2014 mask equality == byte equality by uniqueness theorem",
+        "bytes_materialized": "0 payload bytes"
+      },
+      "byte_length": {
+        "class": "FOLD-NATIVE",
+        "how": "ZeckendorfVector.total_bytes field",
+        "bytes_materialized": "0"
+      },
+      "fold_integrity": {
+        "class": "FOLD-NATIVE",
+        "how": "verify() non-adjacency + offset invariants",
+        "bytes_materialized": "0"
+      },
+      "prefix_read": {
+        "class": "PARTIAL-RECONSTRUCTION",
+        "how": "decode only the first k masks -> first 8k bytes; remainder never materialized",
+        "bytes_materialized": "8k for k blocks"
+      },
+      "suffix_read": {
+        "class": "PARTIAL-RECONSTRUCTION",
+        "how": "decode only the last masks by offset",
+        "bytes_materialized": "8*(kept blocks)"
+      },
+      "content_digest": {
+        "class": "FULL-RECONSTRUCTION REQUIRED",
+        "how": "sha256 needs the full byte stream",
+        "bytes_materialized": "total_bytes"
+      },
+      "content_search": {
+        "class": "FULL-RECONSTRUCTION REQUIRED",
+        "how": "substring/regex needs reconstructed bytes",
+        "bytes_materialized": "total_bytes"
+      },
+      "content_distance": {
+        "class": "UNSUPPORTED",
+        "how": "Zeckendorf mask Hamming distance has no proven relation to payload distance \u2014 not claimed",
+        "bytes_materialized": "n/a"
+      }
+    },
+    "measured": {
+      "prefix_128_of_8192": {
+        "correct": true,
+        "materialized_bytes": 128,
+        "ns": 125300
+      },
+      "suffix_64_of_8192": {
+        "correct": true,
+        "materialized_bytes": 64
+      },
+      "full_unfold": {
+        "ns": 7914500,
+        "bytes": 8192
+      },
+      "partial_vs_full_ns_ratio": 0.016
+    }
+  },
+  "memory": {
+    "objects": 200,
+    "logical_bytes": 20490,
+    "resident_bytes": 149190,
+    "retrieval_precision_content_lens": 1.0,
+    "index_lookup_bytes_moved": 0,
+    "claim_check": "no '20x/90% memory expansion' claim \u2014 resident bytes exceed logical bytes (index + store); capability is content-addressed recall + versioning + integrity, not expansion",
+    "reprocessing_avoided": "repeat reasoning on identical content resolves to the same digest -> one representation reused"
+  },
+  "toe_integration": {
+    "conversion_ns": 1715700,
+    "signature_kind": "sequence",
+    "lenses_selected": [
+      [
+        "statistical",
+        "baseline descriptive layer \u2014 always admissible"
+      ],
+      [
+        "tensor",
+        "vector_dim >= 2 supports a non-degenerate quantum state"
+      ],
+      [
+        "temporal",
+        ">=4 values support Schr\u00f6dinger propagation"
+      ],
+      [
+        "algebraic",
+        "integral vector supports the exact-integer butterfly"
+      ],
+      [
+        "geometric",
+        "fold to the 11-ball is non-degenerate; spectral layer applies"
+      ],
+      [
+        "topological",
+        "univariate series >= 8 admits delay embedding dim=3"
+      ]
+    ],
+    "reuse_same_digest": true,
+    "note": "stored bytes -> rows -> IntelligenceState; identical stored content produces the identical observation identity (re-embed avoided)"
+  },
+  "data_movement": {
+    "bytes_read": 5120,
+    "bytes_written": 20480,
+    "bytes_reconstructed": 5120,
+    "bytes_copied": 0,
+    "bytes_folded": 0,
+    "bytes_unfolded": 0,
+    "workload": "30 puts + 10 gets + 10 transforms (512B each)"
+  },
+  "integrity": {
+    "quadruple_forgery_detected": true,
+    "reorder_detected": true,
+    "payload_mutation_detected": true
+  },
+  "recovery": {
+    "corrupt_stored_block": "fail-closed: SubstrateError",
+    "wrong_address": "fail-closed: GapDetected",
+    "missing_segment": "fail-closed: SegmentMissing",
+    "corrupt_metadata_journal": "fail-closed: AethelError",
+    "interrupted_fold_domain": "fail-closed: FoldDomainOverflow",
+    "consistent_prefix_journal": "recovered",
+    "truncated_entry_read": "fail-closed: GapDetected"
+  },
+  "concurrency": {
+    "errors": [],
+    "ledger_consistent": true,
+    "attest": true,
+    "isolation": true
+  },
+  "compatibility": {
+    "sqlite_prime_db": {
+      "put_get_verified": true,
+      "role": "durable adapter \u2014 SQLite is the journal/backend, not the substrate authority"
+    },
+    "file_boundary": {
+      "persisted_files": [
+        "blocks",
+        "ledger.jsonl"
+      ],
+      "attach_ok": true
+    },
+    "model": "PostgreSQL/files/object store -> compatibility adapter -> HYBA state substrate (adapter carries no semantics authority)"
+  },
+  "negative_results": [
+    "Zeckendorf fold is ~2.7x LARGER than raw on all measured datasets \u2014 invertible representation, never compression",
+    "F_1 == F_2 == 1: Fibonacci address VALUE collides at the sequence head \u2014 canonical identity is the index, value is navigation-grade",
+    "pv-lattice anchor is mod-90 many-to-one \u2014 navigation only, never canonical identity",
+    "content distance on folded masks is UNSUPPORTED \u2014 no proven relation between mask Hamming distance and payload distance",
+    "PrimeStorageManifold holds up to 3 payload copies (integrity/self-heal redundancy) \u2014 resident bytes exceed logical bytes",
+    "11D closed-form unfold drifts ~1e-12 without the carried preimage (serialization loses bit-exactness)",
+    "substrate attests integrity but cannot recover content lost when ALL copies corrupt \u2014 quarantine evidence, not invention"
+  ],
+  "unavailable": [
+    "native libprimedb_storage (C library) \u2014 absent from this tree; reference semantics only (declared in chronus.mla1517.prime_db)",
+    "GPU-persistence/zero-copy device path \u2014 no HYBA device on this VM",
+    "semantic/vector embedding navigation \u2014 no embedding store exists in the substrate (anchor buckets are the geometric lens)",
+    "physical compression \u2014 does not exist; fold is representation"
+  ],
+  "acceptance": {
+    "what_is_the_substrate": "aethel (Binet+Zeckendorf encoding, Fibonacci+Cassini address space with integrity ledger, prime substrate keys, geodesic handoff) + chronus.mla1517.prime_db reference semantics + hyba.substrate facade + toe.receipts evidence chain",
+    "mathematical_properties": [
+      "Zeckendorf uniqueness (exact invertible fold)",
+      "Cassini identity on every address transition",
+      "Fibonacci index injectivity (n>=3) + monotonic per-writer order",
+      "Binet closed form == recursion (Q(sqrt5) exact)",
+      "Klein-Poincare bijection R^11 -> ball"
+    ],
+    "physically_measured": [
+      "folded bytes ~2.7x raw (no compression)",
+      "structural_bytes resident vs logical",
+      "overhead meter CPU/wall per op",
+      "encode/decode throughput",
+      "partial-reconstruction byte savings"
+    ],
+    "fold_native_operators": [
+      "equality",
+      "byte_length",
+      "fold integrity (non-adjacency)"
+    ],
+    "requires_reconstruction": [
+      "content digest (full)",
+      "content search (full)",
+      "content distance (unsupported)"
+    ],
+    "canonical_addressing": "Fibonacci INDEX (injective, monotonic, Cassini-attested); value is navigation-grade after the F_1=F_2 collision; anchors are navigation only",
+    "demonstrated_storage_reduction": "NONE \u2014 fold expands; physical reduction would require a real compression layer on top",
+    "more_than_a_database_wrapper": "address stream is itself a proof (Cassini); fold is content-unique by theorem; integrity gates precede every read; navigation runs on manifold position without materializing payloads \u2014 semantics live in the mathematics, not in a schema layer"
+  }
+}

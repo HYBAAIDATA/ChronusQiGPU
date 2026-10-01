@@ -59,7 +59,7 @@ def emit_sha256d_m32() -> Callable[[Dict[str, Any], Dict[str, Any]], Dict[str, A
     """Turing lane-order m32 candidate stream — M32SearchSolver is the oracle."""
 
     def run(inputs: Dict[str, Any], dispatch: Dict[str, Any]) -> Dict[str, Any]:
-        from mla1517.mining.solver import M32SearchSolver
+        from chronus.mla1517.mining.solver import M32SearchSolver
 
         solver = M32SearchSolver()
         budget = int(inputs.get("budget", dispatch.get("work_items", 32)))
@@ -214,7 +214,7 @@ def emit_exact_hadamard() -> Callable[[Dict[str, Any], Dict[str, Any]], Dict[str
     """Exact H on the named qubit — amplitudes stay in Q(sqrt2)."""
 
     def run(inputs: Dict[str, Any], dispatch: Dict[str, Any]) -> Dict[str, Any]:
-        from mla1517.quantum import H, ExactStateVector
+        from chronus.mla1517.quantum import H, ExactStateVector
 
         state = inputs["state"]
         if isinstance(state, int):  # qubit count → basis state 0

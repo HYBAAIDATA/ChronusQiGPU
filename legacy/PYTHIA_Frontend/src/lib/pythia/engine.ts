@@ -20,6 +20,15 @@ export type TruthClass =
   | "historical"
   | "unavailable";
 
+/** The pool-lifecycle gates the pipeline row renders from backend evidence. */
+export type EvidenceGate =
+  | "connected"
+  | "authorized"
+  | "job_received"
+  | "candidate_found"
+  | "submitted"
+  | "accepted";
+
 /** Pool labels for display only — sockets open on the Python side. */
 export const POOLS = [
   {

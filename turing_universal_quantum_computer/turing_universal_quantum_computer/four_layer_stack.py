@@ -398,7 +398,7 @@ class FourLayerMiningStack:
         self.aethel = AethelStore()
         self.tensor = TensorFoldEngine()
         self.turing = TuringLayer(n_qubits=n_qubits)
-        self.igpu = NearStateIGpu(self.aethel, self.tensor)
+        self.chronus = NearStateIGpu(self.aethel, self.tensor)
 
     def mine_block(
         self,
@@ -433,7 +433,7 @@ class FourLayerMiningStack:
         fold_ok = self.tensor.decompress(folded_header) == header80
 
         # Layer 4: execute — score, reorder, real sha256d grind.
-        result = self.igpu.mine(header80, target_be, schedule, max_hashes=max_hashes)
+        result = self.chronus.mine(header80, target_be, schedule, max_hashes=max_hashes)
 
         # Integrity: Cassini on the golden anchor.
         cassini_ok = self.turing.cassini_holds(7)
@@ -465,7 +465,7 @@ class FourLayerMiningStack:
                     "bond_dimension_effective": result["schmidt"]["bond_dimension_effective"],
                 },
                 "turing": self.turing.status(),
-                "igpu": {
+                "chronus": {
                     k: result[k]
                     for k in (
                         "winning_nonce",

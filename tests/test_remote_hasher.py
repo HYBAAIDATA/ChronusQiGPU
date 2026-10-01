@@ -86,16 +86,31 @@ class _StubAgent(BaseHTTPRequestHandler):
                     "digest": "00" * 32 if type(self).tamper else digest.hex(),
                 }
                 break
+        from chronus.mla1517.remote_gpu import sha256d_share_attestation
+
+        device_name = "Stub iGPU-0"
+        attestation = sha256d_share_attestation(
+            header_hex=header.hex(),
+            target_hex=target.hex(),
+            base_nonce=base,
+            count=len(window) if nonces is not None else count,
+            hashes=len(window) if winner is None else window.index(winner["nonce"]) + 1,
+            nonce=None if winner is None else winner["nonce"],
+            digest_hex=None if winner is None else winner["digest"],
+            device=device_name,
+        )
         return self._reply(
             200,
             {
-                "device": {"name": "Stub iGPU-0", "vendor": "Intel"},
+                "device": {"name": device_name, "vendor": "Intel"},
                 "execution_backend": "opencl:gpu",
-                "order": order,
-                "hashes": len(window),
-                "window": len(window),
+                "hashes": len(window) if winner is None else window.index(winner["nonce"]) + 1,
+                "window": {"base_nonce": base, "count": len(window)},
                 "measured_ns": 999,
-                "winner": winner,
+                "share": None
+                if winner is None
+                else {"nonce": winner["nonce"], "hash": winner["digest"]},
+                "attestation": attestation,
             },
         )
 
@@ -130,7 +145,7 @@ def test_grind_range_returns_verified_triple(stub_agent):
     hasher = RemoteOpenCLHasher.from_env()
     nonce, digest, hashes = hasher.grind_target_range(bytes(80), b"\xff" * 32, 0, 8)
     assert nonce == 0
-    assert hashes == 8
+    assert hashes == 1
     blob = bytes(76) + nonce.to_bytes(4, "little")
     assert digest == hashlib.sha256(hashlib.sha256(blob).digest()).digest()
 
@@ -140,7 +155,7 @@ def test_grind_m32_runs_the_remote_window(stub_agent):
     lanes = list(range(32))
     nonce, digest, hashes = hasher.grind_target_m32(bytes(80), b"\xff" * 32, 0, lanes, 64)
     assert nonce == 0
-    assert hashes == 64
+    assert hashes == 1
     assert hasher.last_execution_backend == "opencl:gpu"
 
 
@@ -148,13 +163,13 @@ def test_grind_batch_executes_the_given_nonces(stub_agent):
     hasher = RemoteOpenCLHasher.from_env()
     nonce, digest, hashes = hasher.grind_target_batch(bytes(80), b"\xff" * 32, [5, 9, 12])
     assert nonce == 5
-    assert hashes == 3
+    assert hashes == 1
 
 
 def test_tampered_winner_never_reaches_the_pipeline(stub_agent):
     _StubAgent.tamper = True
     hasher = RemoteOpenCLHasher.from_env()
-    from mla1517.remote_gpu import RemoteGPUVerificationError
+    from chronus.mla1517.remote_gpu import RemoteGPUVerificationError
 
     with pytest.raises(RemoteGPUVerificationError):
         hasher.grind_target_range(bytes(80), b"\xff" * 32, 0, 4)
@@ -171,7 +186,7 @@ def test_pipeline_grinds_through_the_remote_hasher(stub_agent):
 
 
 def _plan(route, window=64):
-    from mla1517.mining.search_plan import PlanSource, SearchPlan
+    from chronus.mla1517.mining.search_plan import PlanSource, SearchPlan
 
     return SearchPlan(
         job_fingerprint="fp-1",
@@ -196,7 +211,7 @@ def _cpu_sweep(header, target, start, count):
 
 
 def _router(hasher):
-    from mla1517.mining.execution_router import ExecutionRouter
+    from chronus.mla1517.mining.execution_router import ExecutionRouter
 
     return ExecutionRouter(hasher, _cpu_sweep)
 
@@ -226,7 +241,7 @@ def test_router_refuses_gold_stride_honestly(stub_agent):
     # k_gold is absent on the remote hasher — hendrix is not implemented
     # over the wire, so the route falls back with KERNEL_UNAVAILABLE,
     # never silently executing a different traversal.
-    from mla1517.mining.search_plan import FallbackReason
+    from chronus.mla1517.mining.search_plan import FallbackReason
 
     hasher = RemoteOpenCLHasher.from_env()
     decision = _router(hasher).decide_route(_plan("opencl_gold"))
@@ -239,7 +254,7 @@ def test_unadvertised_sha256d_has_no_route_arms(stub_agent):
     hasher = RemoteOpenCLHasher.from_env()
     assert getattr(hasher, "k_range", None) is None
     assert getattr(hasher, "k_m32", None) is None
-    from mla1517.mining.search_plan import FallbackReason
+    from chronus.mla1517.mining.search_plan import FallbackReason
 
     decision = _router(hasher).decide_route(_plan("opencl_m32"))
     assert decision.fallback_reason == FallbackReason.KERNEL_UNAVAILABLE

@@ -63,8 +63,8 @@ def main(argv: List[str] | None = None) -> int:
             [
                 py,
                 "-c",
-                "import sys; sys.path.insert(0,'mla1517_platform_v3.4/python');"
-                "from mla1517.state import descriptor_size;"
+                "import sys; sys.path.insert(0,'chronus/mla1517_platform/python');"
+                "from chronus.mla1517.state import descriptor_size;"
                 "assert descriptor_size()==64, descriptor_size();"
                 "print('descriptor 64 bytes OK')",
             ],

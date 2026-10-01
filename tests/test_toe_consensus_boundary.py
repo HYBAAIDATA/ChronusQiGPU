@@ -3,7 +3,7 @@
 A TOECausalSignal is feed-forward evidence: it may steer solver ordering and
 gate dispatch, but it must never reach the double-SHA256 / target comparison.
 These tests pin the two enforcement mechanisms in
-``mla1517.mining.toe_signal``:
+``chronus.mla1517.mining.toe_signal``:
 
 - ``boundary_token``: every signal carries a domain-separated SHA-256
   attestation bound to its feed-forward payload. A missing, malformed, or
@@ -26,20 +26,20 @@ import pytest
 
 _PLATFORM = (
     Path(__file__).resolve().parent.parent
-    / "mla1517_platform_v3.4"
+    / "chronus/mla1517_platform"
     / "python"
 )
 if str(_PLATFORM) not in sys.path:
     sys.path.insert(0, str(_PLATFORM))
 
 from manifold_pool_coordinator import PoolEndpoint  # noqa: E402
-import mla1517.mining.pow as pow_module  # noqa: E402
-from mla1517.hardware import VaultRecord  # noqa: E402
-from mla1517.mining.chooser import MiningIntelligenceChooser  # noqa: E402
-from mla1517.mining.coordinator import IntelligentPoolCoordinator  # noqa: E402
-from mla1517.mining.solver import M32SearchSolver  # noqa: E402
-from mla1517.mining.toe_adapter import TOEMiningContext  # noqa: E402
-from mla1517.mining.toe_signal import (  # noqa: E402
+import chronus.mla1517.mining.pow as pow_module  # noqa: E402
+from chronus.mla1517.hardware import VaultRecord  # noqa: E402
+from chronus.mla1517.mining.chooser import MiningIntelligenceChooser  # noqa: E402
+from chronus.mla1517.mining.coordinator import IntelligentPoolCoordinator  # noqa: E402
+from chronus.mla1517.mining.solver import M32SearchSolver  # noqa: E402
+from chronus.mla1517.mining.toe_adapter import TOEMiningContext  # noqa: E402
+from chronus.mla1517.mining.toe_signal import (  # noqa: E402
     TOECausalSignal,
     TOEConsensusBoundaryError,
     build_toe_signal,
@@ -116,7 +116,10 @@ def test_missing_or_tampered_token_fails_closed():
 
 
 def test_consensus_vocabulary_in_result_fails_closed():
-    for key in ("target", "nonce", "header", "sha256d", "share"):
+    for key in (
+        "target", "nonce", "header", "sha256d", "share",
+        "valid_hash", "share_valid", "pool_accepted", "block_confirmed",
+    ):
         result = _clean_result()
         result["state_tomography"][key] = "0xdeadbeef"
         with pytest.raises(TOEConsensusBoundaryError):
@@ -134,7 +137,8 @@ def test_signal_declares_no_consensus_fields():
         "target", "bits", "nonce", "header", "block_header", "share",
         "difficulty", "sha256", "sha256d", "pow", "proof", "merkle_root",
         "block_hash", "extranonce", "extranonce2", "coinbase", "ntime",
-        "submission", "candidate",
+        "submission", "candidate", "valid_hash", "share_valid",
+        "pool_accepted", "block_confirmed",
     }
     assert field_names.isdisjoint(forbidden)
 

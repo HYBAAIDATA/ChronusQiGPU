@@ -1,7 +1,7 @@
 # PYTHIA Python API contract
 
 PYTHIA has one active mining control path: the Python backend under
-`mla1517_platform_v3.4/python`. The React/Vite frontend is an operator surface
+`chronus/mla1517_platform/python`. The React/Vite frontend is an operator surface
 only; it does not calculate hashes, construct Stratum jobs, decide share
 validity, or submit shares.
 
@@ -23,7 +23,7 @@ GPU, iGPU, FPGA, or measured hardware execution.
 ## Mining authority
 
 The Python adapter in
-`mla1517_platform_v3.4/python/mla1517/mining/stratum_adapter.py` is the proof
+`chronus/mla1517/mining/stratum_adapter.py` is the proof
 boundary. It consumes a live subscription and `mining.notify` job, constructs
 the coinbase, Merkle root, 80-byte header, and SHA256d digest, and returns
 `mining.submit` parameters only after the negotiated target check succeeds.

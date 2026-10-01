@@ -10,6 +10,7 @@ Claims under test:
 """
 
 import os
+import multiprocessing
 import struct
 import threading
 
@@ -34,6 +35,14 @@ def _state(d7: int, d10: int) -> bytes:
     struct.pack_into("<I", buf, AETHEL_D7_OFFSET, d7)
     struct.pack_into("<i", buf, AETHEL_D10_OFFSET, d10)
     return bytes(buf)
+
+
+def _multiprocess_writer(path, count, producer):
+    with AethelQueue(path, slot_count=4) as queue:
+        for item in range(count):
+            state = bytearray(_state(2, 1))
+            struct.pack_into("<I", state, 0, producer * count + item)
+            assert queue.commit(state) == 2
 
 
 def test_t6a_seqlock_no_torn_reads(tmp_path):
@@ -142,3 +151,26 @@ def test_t6e_c_abi_agreement_parses_header():
 
     verdict = check_c_abi_agreement()
     assert verdict["verdict"] == "PASS", verdict["detail"]
+
+
+def test_python_writers_are_serialized_across_processes(tmp_path):
+    path = tmp_path / "aethel.region"
+    with AethelQueue(path, slot_count=4) as queue:
+        processes = [
+            multiprocessing.Process(
+                target=_multiprocess_writer, args=(str(path), 500, producer)
+            )
+            for producer in range(2)
+        ]
+        for process in processes:
+            process.start()
+        while any(process.is_alive() for process in processes):
+            record = queue.read(2)
+            assert record is None or struct.unpack_from("<I", record.state, 0)[0] < 1_000
+        for process in processes:
+            process.join(timeout=30)
+            assert process.exitcode == 0
+        record = queue.read(2)
+
+    assert record is not None
+    assert record.sequence == 2_000

@@ -1,7 +1,7 @@
 # Production mining runbook
 
 The canonical path is one supervisor per host: `main.py` starts the control
-API (`mla1517_platform_v3.4/python/control_api.py`), which supervises three
+API (`chronus/mla1517_platform/python/control_api.py`), which supervises three
 workers: `agentic-mining` (`mining_runtime.py`), `salamander` and
 `discovery`. The retired `mining/production_miner.py` flow lives in
 `legacy/` and is not used.
@@ -11,7 +11,7 @@ workers: `agentic-mining` (`mining_runtime.py`), `salamander` and
 ```bash
 python -m flake8 --count
 python -m pytest tests/ -q
-(cd mla1517_platform_v3.4/python && python -m pytest -q)
+(cd chronus/mla1517_platform/python && python -m pytest -q)
 python -m scripts.deploy_sentry
 python scripts/import_audit.py
 ```
@@ -37,9 +37,15 @@ windows itself, within `PYTHIA_MAX_WINDOW_SECONDS` (default 2 s).
 
 ```bash
 python main.py
-curl -X POST -H "Authorization: Bearer $EUCLID_ADMIN_API_KEY" \
-     http://127.0.0.1:3000/api/v1/mining/start
 ```
+
+`/api/v1/mining/*` is an AL HARAS-mediated privileged route — it does not take
+the operator key. Start it from the operator console (`frontend/`, Runtime
+control), which supplies the subscription Bearer token plus `X-HYBA-Tenant` /
+`X-HYBA-Actor` headers and the `observation` block mutating privileged calls
+require. Direct calls must carry the same headers and a minted subscription
+token (`al_haras.entitlements.SubscriptionAuthority`); anything else is denied
+with an evaluated 400/402/403 — never silently accepted.
 
 A started worker mines in **shadow** until live submission is approved. It
 connects, authorizes, receives jobs, and hashes with full SHA256d and target
@@ -71,6 +77,12 @@ curl -X PUT -H "Authorization: Bearer $EUCLID_ADMIN_API_KEY" \
      http://127.0.0.1:3000/api/v1/config
 ```
 
+`PUT /api/v1/config` is a non-privileged mutating route and does take the
+operator key (`mining/*` does not — see above). Out-of-bounds values
+(`solvers.arms` outside [1,600], `hashrate.target_hs` outside [0,1e18],
+unknown sections, malformed pool endpoints) are rejected with 400 and
+nothing is persisted.
+
 - **Binding:** the approval is bound to the enabled pool's endpoint and
   worker.
 - **When it applies:** the worker re-reads it within 5 s and submits only
@@ -81,14 +93,23 @@ curl -X PUT -H "Authorization: Bearer $EUCLID_ADMIN_API_KEY" \
 
 ## Stop
 
-```bash
-curl -X POST -H "Authorization: Bearer $EUCLID_ADMIN_API_KEY" \
-     http://127.0.0.1:3000/api/v1/mining/stop
-```
+Stop via the operator console (Runtime control) — `/api/v1/mining/stop` is
+privileged and needs the same subscription credential flow as start.
 
 Workers finish their window and stop. On WSL2, always stop mining this way
 before stopping the container: a stop that lands during an OpenCL call can
-wedge the device.
+wedge the device. Stopping the whole API (`SIGTERM`, `CTRL_BREAK`, or
+`SIGINT`) runs graceful cleanup and a `shutdown_signal` audit entry.
+
+## Campaigns
+
+`POST /api/v1/campaign/start` (operator key) runs the configured campaign
+phases; `POST /api/v1/campaign/stop` retires all worker arms on every exit
+path — operator stop, phase failure or completion — and the terminal record
+(`GET /api/v1/campaign/status`) carries the phase results plus `retired`.
+A stop lands as terminal `"stopped"`, never `"error"`. With no mining
+device the config still applies and arms stay honestly `armed_no_device`
+with `measured_hs_avg: null` (unmeasured, not zero).
 
 ## Stop conditions
 

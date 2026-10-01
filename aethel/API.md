@@ -66,7 +66,7 @@ schema validation (header length, interval bounds) is the engine's own.
 | --- | --- | --- |
 | `UnifiedSubstrate` (`HardenedUnifiedSubstrate`) | `aethel.unified` | façade over compute layers + manifold; what `toe.hardened_unified_substrate` resolves to |
 | `PrimeStorageManifold` | `aethel.manifold` | `ingest_sync`, `read_payload` (digest-verified, `None` on corruption), `query`, `measure_throughput` |
-| `TensorCoreGPU_Context` | `aethel.gpu` | `project_and_collapse_pv`; `require_gpu=True` refuses silent CPU fallback |
+| `ChronusContext` | `aethel.gpu` | `project_and_collapse_pv`; `require_gpu=True` refuses silent CPU fallback |
 | `CassiniVerifier` | `aethel.cassini` | `verify(n)`, `verify_identity(n)`, `verify_with_values`, `verify_matrix` |
 | `GaloisPrimeSubstrate` / `PrimeCell` | `aethel.primes` | composite keys in GF(2⁶¹−1) |
 | constants | `aethel.constants` | `DIM`, `PHI`, `PSI`, `SQRT5`, `LUCAS_15/20/31`, `MODULUS_Q`, `PRIMES_25` |
@@ -75,7 +75,7 @@ schema validation (header length, interval bounds) is the engine's own.
 
 | Symbol | Notes |
 | --- | --- |
-| `GeodesicNavigator` | `query`/`query_geodesic`/`batch_project`; prefers `Intelligence.pathfinder.Pathfinder`, falls back to bisection |
+| `GeodesicNavigator` | `query`/`query_geodesic`/`batch_project`; `query_geodesic(..., allow_fallback=False)` fails closed, default fallback is recorded and is not equivalent-engine evidence |
 | `SelfHealingSubstrate` | `trigger(node)` — re-anchor to nearest Cassini-valid integer |
 | `ManifoldCurvature` / `ManifoldSector` | curvature/sector enums |
 | compute layers | `VirtualSM`, `ComputeUnitPool`, `VirtualWarp`, `SPMDExecutor`, micro-kernel library, distributed actors, `DependencyDAG` |
@@ -89,6 +89,8 @@ schema validation (header length, interval bounds) is the engine's own.
 - `aethel.punch` — lazy punch-host binding.
 - `AddressSpace._blocks`, `CassiniLedger.entries` — same-package-trust
   internals used by `geodesic.py` and tests.
+- `aethel/capabilities.json` — machine-readable implementation and evidence
+  status; it deliberately does not represent external evidence as PASS.
 
 ## Explicitly not part of this package
 

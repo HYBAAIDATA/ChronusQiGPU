@@ -40,6 +40,30 @@ Package layout:
                              modular sampling. Device cost is not
                              computed here; Aethel prices the overhead.
 
+Golden substrate (the DphiT stack; numpy, lazy-loaded):
+
+    kellogg.dphi_transform   Discrete-phi transform: Sturmian Z[phi]
+                             lattice split/merge, bit-exact integer
+                             lifting, depth-d coefficient layout, the
+                             reversible renormalizer, and the DphiT-vs-FFT
+                             stability benchmark.
+    kellogg.golden_convolution  DphiT convolution, Zeckendorf shifts,
+                             the O(N^2) structural sum, and measured
+                             transform-vs-structural error.
+    kellogg.phi_dynamics     Golden Laplacian eigenspectrum, coefficient
+                             propagation, structural fidelity, and the
+                             symplectic integer time step.
+    kellogg.golden_stealth   Scale-domain carrier encode/cloak/recover
+                             and the Fourier-vs-golden recovery duel.
+    kellogg.phi_stability    Stability horizon: MLE, Greene-residue
+                             critical-K bisection, NN-variance and
+                             discrepancy coverage, plastic sequences.
+    kellogg.golden_stride    Cache-aware golden strides and the sparse
+                             coverage benchmark.
+    kellogg.phi_renormalizer Integer-exact phi renormalization group,
+                             critical-Ising chain utilities, and the
+                             Chrysalis decode benchmark.
+
 Two scalar planes share the package by design:
 
 * ``exact``      — F4/Qsqrt2 Fraction arithmetic; certificates and
@@ -152,7 +176,88 @@ __version__ = "3.5.0"
 # of the training path by contract (tests assert it never enters
 # sys.modules through the ML import chain).
 _LAZY_SUBMODULE_ATTRS = {
+    "dphi_transform": (
+        "DphiTError",
+        "INV_PHI",
+        "INV_PHI_SQ",
+        "ReversibleRenormalizer",
+        "StabilityBenchmarkResult",
+        "dphi_transform",
+        "fibonacci_word_signal",
+        "get_golden_grading_vector",
+        "golden_lifting_step",
+        "idphi_transform",
+        "inverse_golden_lifting_step",
+        "merge_phi_lattice",
+        "phi_lattice_mask",
+        "run_stability_benchmark",
+        "split_phi_lattice",
+    ),
     "exact_field": ("sqrt_f",),
+    "golden_convolution": (
+        "GoldenConvolutionError",
+        "convolution_theorem_error",
+        "golden_convolution",
+        "golden_scale_filter",
+        "golden_shift",
+        "structural_convolution_sum",
+        "structural_vs_transform_error",
+        "zeckendorf_scale",
+    ),
+    "golden_stealth": (
+        "GoldenStealth",
+        "GoldenStealthError",
+        "StealthDuelResult",
+        "run_stealth_duel",
+    ),
+    "golden_stride": (
+        "CacheAwareGoldenStride",
+        "GoldenHilbertOptimizer",
+        "GoldenStrideError",
+        "sparse_coverage_benchmark",
+    ),
+    "phi_dynamics": (
+        "FidelityDeltaResult",
+        "GoldenDynamicsError",
+        "apply_golden_laplacian",
+        "golden_propagate",
+        "measure_structural_fidelity",
+        "propagation_energy_drift",
+        "reversible_time_step",
+        "run_fidelity_duel",
+        "standard_fft_wave_propagation",
+    ),
+    "phi_renormalizer": (
+        "ChrysalisResult",
+        "RGEfficiencyResult",
+        "RenormalizationError",
+        "benchmark_rg_efficiency",
+        "block_spin_decimate",
+        "chrysalis_benchmark",
+        "critical_ising_chain",
+        "generate_ising_chain",
+        "mutual_information",
+        "phi_reconstruct_deep",
+        "phi_renormalize_deep",
+        "phi_rg_step",
+        "scale_information_retained",
+    ),
+    "phi_stability": (
+        "GREENE_CRITICAL_RESIDUE",
+        "GoldenStabilityEngine",
+        "PlasticSequenceGenerator",
+        "StabilityError",
+        "StabilityMetrics",
+        "benchmark_golden_vs_others",
+        "continued_fraction_convergent",
+    ),
+    "phi_tensor_core": (
+        "ManifoldType",
+        "MetricTensor",
+        "PhiTensorCore",
+        "TensorCoreError",
+        "TensorOpRecord",
+    ),
     "tensor_ml": (
         "CANONICAL",
         "FIELD_ID",
@@ -314,6 +419,14 @@ __all__ = [
     "VersionLockError",
     "attest",
     "verify_version",
-    # tensor data plane + ML (lazy)
+    # golden substrate + tensor data plane + ML (lazy)
+    *_LAZY_SUBMODULE_ATTRS["dphi_transform"],
+    *_LAZY_SUBMODULE_ATTRS["golden_convolution"],
+    *_LAZY_SUBMODULE_ATTRS["golden_stealth"],
+    *_LAZY_SUBMODULE_ATTRS["golden_stride"],
+    *_LAZY_SUBMODULE_ATTRS["phi_dynamics"],
+    *_LAZY_SUBMODULE_ATTRS["phi_renormalizer"],
+    *_LAZY_SUBMODULE_ATTRS["phi_stability"],
+    *_LAZY_SUBMODULE_ATTRS["phi_tensor_core"],
     *_LAZY_SUBMODULE_ATTRS["tensor_ml"],
 ]

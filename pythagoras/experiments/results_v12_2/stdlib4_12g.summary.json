@@ -1,0 +1,342 @@
+{
+  "protocol": {
+    "seeds": 10,
+    "generations": 12,
+    "metric": "v12_1",
+    "euclid_gate": true,
+    "corpus": "stdlib4",
+    "files": [
+      "colorsys.py",
+      "fnmatch.py",
+      "graphlib.py",
+      "textwrap.py"
+    ]
+  },
+  "conditions": {
+    "A_meta_off": {
+      "total_delta_phi": {
+        "mean": 0.100227,
+        "sd": 0.0,
+        "ci95": [
+          0.100227,
+          0.100227
+        ]
+      },
+      "avg_final_phi": {
+        "mean": 0.67306,
+        "sd": 0.0,
+        "ci95": [
+          0.67306,
+          0.67306
+        ]
+      },
+      "auto_discovered_primitives": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "geometry_evolution_steps": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "surrogate_rmse": {
+        "mean": 0.018706,
+        "sd": 1.4e-05,
+        "ci95": [
+          0.018696,
+          0.018716
+        ]
+      },
+      "accept_rate": {
+        "mean": 0.5209,
+        "sd": 0.0,
+        "ci95": [
+          0.5209,
+          0.5209
+        ]
+      },
+      "meta_steps": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "evaluations": {
+        "mean": 83,
+        "sd": 0.0,
+        "ci95": [
+          83.0,
+          83.0
+        ]
+      },
+      "gain_per_100_evaluations": {
+        "mean": 0.120755,
+        "sd": 0.0,
+        "ci95": [
+          0.120755,
+          0.120755
+        ]
+      },
+      "rolling_3_win_gain": {
+        "mean": 0.004035,
+        "sd": 5e-06,
+        "ci95": [
+          0.004031,
+          0.004039
+        ]
+      },
+      "phase_transitions": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "barrier_crossings": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "B_meta_on": {
+      "total_delta_phi": {
+        "mean": 0.103908,
+        "sd": 3.2e-05,
+        "ci95": [
+          0.103885,
+          0.103931
+        ]
+      },
+      "avg_final_phi": {
+        "mean": 0.673981,
+        "sd": 8e-06,
+        "ci95": [
+          0.673975,
+          0.673987
+        ]
+      },
+      "auto_discovered_primitives": {
+        "mean": 2,
+        "sd": 0.0,
+        "ci95": [
+          2.0,
+          2.0
+        ]
+      },
+      "geometry_evolution_steps": {
+        "mean": 26.2,
+        "sd": 0.788811,
+        "ci95": [
+          25.635758,
+          26.764242
+        ]
+      },
+      "surrogate_rmse": {
+        "mean": 0.016595,
+        "sd": 2.8e-05,
+        "ci95": [
+          0.016576,
+          0.016615
+        ]
+      },
+      "accept_rate": {
+        "mean": 0.2916,
+        "sd": 0.0,
+        "ci95": [
+          0.2916,
+          0.2916
+        ]
+      },
+      "meta_steps": {
+        "mean": 28.2,
+        "sd": 0.788811,
+        "ci95": [
+          27.635758,
+          28.764242
+        ]
+      },
+      "evaluations": {
+        "mean": 122.2,
+        "sd": 9.342852,
+        "ci95": [
+          115.51699,
+          128.88301
+        ]
+      },
+      "gain_per_100_evaluations": {
+        "mean": 0.08551,
+        "sd": 0.006953,
+        "ci95": [
+          0.080536,
+          0.090484
+        ]
+      },
+      "rolling_3_win_gain": {
+        "mean": 0.007281,
+        "sd": 1.3e-05,
+        "ci95": [
+          0.007272,
+          0.007291
+        ]
+      },
+      "phase_transitions": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "barrier_crossings": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "C_budget_matched_off": {
+      "total_delta_phi": {
+        "mean": 0.100227,
+        "sd": 0.0,
+        "ci95": [
+          0.100227,
+          0.100227
+        ]
+      },
+      "avg_final_phi": {
+        "mean": 0.67306,
+        "sd": 0.0,
+        "ci95": [
+          0.67306,
+          0.67306
+        ]
+      },
+      "auto_discovered_primitives": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "geometry_evolution_steps": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "surrogate_rmse": {
+        "mean": 0.018927,
+        "sd": 2.5e-05,
+        "ci95": [
+          0.018909,
+          0.018944
+        ]
+      },
+      "accept_rate": {
+        "mean": 0.34823,
+        "sd": 0.023583,
+        "ci95": [
+          0.331361,
+          0.365099
+        ]
+      },
+      "meta_steps": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "evaluations": {
+        "mean": 113.9,
+        "sd": 4.998889,
+        "ci95": [
+          110.324259,
+          117.475741
+        ]
+      },
+      "gain_per_100_evaluations": {
+        "mean": 0.088154,
+        "sd": 0.004017,
+        "ci95": [
+          0.085281,
+          0.091027
+        ]
+      },
+      "rolling_3_win_gain": {
+        "mean": 0.004035,
+        "sd": 5e-06,
+        "ci95": [
+          0.004031,
+          0.004039
+        ]
+      },
+      "phase_transitions": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "barrier_crossings": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      }
+    }
+  },
+  "identical_final_phi_A_vs_B": 0,
+  "sensitivity_diagnostic": {
+    "colorsys.py": {
+      "phi": 0.683026,
+      "distinct_variants": 60,
+      "distinct_scores": 9,
+      "plateau_fraction": 0.3,
+      "verdict": "search_problem"
+    },
+    "fnmatch.py": {
+      "phi": 0.634233,
+      "distinct_variants": 11,
+      "distinct_scores": 6,
+      "plateau_fraction": 0.0,
+      "verdict": "search_problem"
+    },
+    "graphlib.py": {
+      "phi": 0.641466,
+      "distinct_variants": 22,
+      "distinct_scores": 5,
+      "plateau_fraction": 0.5,
+      "verdict": "search_problem"
+    },
+    "textwrap.py": {
+      "phi": 0.633289,
+      "distinct_variants": 29,
+      "distinct_scores": 7,
+      "plateau_fraction": 0.5517,
+      "verdict": "search_problem"
+    }
+  }
+}

@@ -16,7 +16,12 @@ import pytest
 
 from aethel.errors import GapDetected, InvalidAddress
 from aethel.fibonacci import cassini_holds, fibonacci, is_fibonacci
-from aethel.storage import AddressSpace, CassiniLedger, LedgerEntry
+from aethel.storage import (
+    MAX_ADDRESS_INDEX,
+    AddressSpace,
+    CassiniLedger,
+    LedgerEntry,
+)
 
 # Declared test scale. The soak-scale run lives in `aethel selftest --full`;
 # this suite must stay fast enough for CI while exercising every claim.
@@ -26,13 +31,19 @@ WRITE_SCALE = int(os.environ.get("AETHEL_TEST_WRITES", "20_000"))
 def test_a1_index_stream_strictly_increasing_fibonacci():
     """T3a: consecutive writes produce strictly increasing Fibonacci indices
     and each committed value equals fibonacci(index) exactly."""
-    space = AddressSpace()
-    previous = 0
-    for i in range(WRITE_SCALE):
-        address = space.write(f"block-{i}".encode())
-        assert address.index > previous, f"index regressed at write {i}"
-        assert address.value == fibonacci(address.index)
-        previous = address.index
+    remaining = WRITE_SCALE
+    offset = 0
+    while remaining:
+        space = AddressSpace()
+        previous = 0
+        batch = min(remaining, MAX_ADDRESS_INDEX)
+        for i in range(batch):
+            address = space.write(f"block-{offset + i}".encode())
+            assert address.index > previous, f"index regressed at write {offset + i}"
+            assert address.value == fibonacci(address.index)
+            previous = address.index
+        offset += batch
+        remaining -= batch
 
 
 def test_a2_ledger_verify_and_single_forged_quadruple():
@@ -116,7 +127,7 @@ def test_a6_concurrent_writers_disjoint_ranges():
     base = AddressSpace()
     writer_a = base
     writer_b = base.fork(writer=1, start_index=1)
-    # Writer B registers into a high band; writer A streams low indices.
+    # Writer B registers into a disjoint band; writer A streams low indices.
     barrier = threading.Barrier(2)
 
     def stream(space, prefix, count):
@@ -127,11 +138,11 @@ def test_a6_concurrent_writers_disjoint_ranges():
     def registered(space, start, count):
         barrier.wait()
         for i in range(count):
-            idx = 100_000 + i
+            idx = 1_000 + i
             space.register(idx, fibonacci(idx), f"hi-{i}".encode())
 
     t1 = threading.Thread(target=stream, args=(writer_a, "lo", 200))
-    t2 = threading.Thread(target=registered, args=(writer_b, 100_000, 200))
+    t2 = threading.Thread(target=registered, args=(writer_b, 1_000, 200))
     t1.start()
     t2.start()
     t1.join(timeout=60)

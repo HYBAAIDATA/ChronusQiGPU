@@ -1,13 +1,18 @@
-# Two SKUs, one substrate
+# Two provisional adapters, one canonical substrate
 
-Mining GPU: `aethel.device.IGpuSku`
-Hyperscaler: `aethel.hyperscaler.HyperscalerSku`
+Mining/Chronus adapter: `aethel.device.ChronusSku`
+Hyperscaler adapter: `aethel.hyperscaler.HyperscalerSku`
+
+These SKUs consume Aethel storage/encoding. They do not own it. Hardware
+availability and observed performance are environment-specific and are not
+established by SKU construction or CPU-side unit tests.
 
 Folded form is the working form. Unfold is egress.
 
 ## Mining — M1–M4
 
-- M1 punch set is the ISA (`0x08`–`0x1A`)
+- M1 supported punch calls are opcodes, not proof that every device implements
+  the full `0x08`–`0x1A` range
 - M2 batch size is a Lucas/Pisot ladder stop
 - M3 every ingest writes Aethel (Fibonacci + Cassini)
 - M4 standalone or nested in a host GPU
@@ -22,4 +27,5 @@ Folded form is the working form. Unfold is egress.
 
 ## Shared
 
-Aethel address space. Binet+Zeckendorf fold. Lucas/Pisot clock.
+Aethel address space. Binet+Zeckendorf fold. Lucas/Pisot scale policy; not a
+throughput or acceleration claim.

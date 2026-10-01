@@ -46,7 +46,7 @@ class RemoteOpenCLHasher:
     """BitcoinHasher-compatible dispatch to a remote GPU agent."""
 
     def __init__(self, endpoint: str, timeout: float = 30.0) -> None:
-        from mla1517.remote_gpu import (
+        from chronus.mla1517.remote_gpu import (
             SHA256D_MAX_BATCH,
             SHA256D_MAX_WINDOW,
             RemoteGPUClient,
@@ -100,7 +100,7 @@ class RemoteOpenCLHasher:
         with no endpoint configured there is nothing to bind, so the
         error names the missing configuration rather than degrading.
         """
-        from mla1517.remote_gpu import remote_endpoints
+        from chronus.mla1517.remote_gpu import remote_endpoints
 
         endpoints = remote_endpoints()
         if not endpoints:

@@ -1,0 +1,611 @@
+{
+  "protocol": {
+    "seeds": 10,
+    "generations": 3,
+    "metric": "v12_1",
+    "euclid_gate": true,
+    "corpus": "stdlib4",
+    "files": [
+      "colorsys.py",
+      "fnmatch.py",
+      "graphlib.py",
+      "textwrap.py"
+    ]
+  },
+  "reported_21_march": {
+    "A": {
+      "total_delta_phi": 0.1493,
+      "avg_final_phi": 0.6665,
+      "auto_discovered_primitives": 0,
+      "geometry_evolution_steps": 0,
+      "surrogate_rmse": 0.0817,
+      "accept_rate": 0.0,
+      "meta_steps": 0
+    },
+    "B": {
+      "total_delta_phi": 0.1949,
+      "avg_final_phi": 0.6779,
+      "auto_discovered_primitives": 1,
+      "geometry_evolution_steps": 2,
+      "surrogate_rmse": 0.0803,
+      "accept_rate": 0.4,
+      "meta_steps": 2
+    }
+  },
+  "conditions": {
+    "A_meta_off": {
+      "total_delta_phi": {
+        "mean": 0.049009,
+        "sd": 0.000844,
+        "ci95": [
+          0.048406,
+          0.049613
+        ]
+      },
+      "avg_final_phi": {
+        "mean": 0.660256,
+        "sd": 0.000211,
+        "ci95": [
+          0.660105,
+          0.660407
+        ]
+      },
+      "auto_discovered_primitives": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "geometry_evolution_steps": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "surrogate_rmse": {
+        "mean": 0.017988,
+        "sd": 5.4e-05,
+        "ci95": [
+          0.017949,
+          0.018027
+        ]
+      },
+      "accept_rate": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      "meta_steps": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "evaluations": {
+        "mean": 27,
+        "sd": 0.0,
+        "ci95": [
+          27.0,
+          27.0
+        ]
+      },
+      "gain_per_100_evaluations": {
+        "mean": 0.181516,
+        "sd": 0.003126,
+        "ci95": [
+          0.17928,
+          0.183752
+        ]
+      },
+      "rolling_3_win_gain": {
+        "mean": 0.004144,
+        "sd": 6.2e-05,
+        "ci95": [
+          0.004099,
+          0.004188
+        ]
+      },
+      "phase_transitions": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "barrier_crossings": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "B_meta_on": {
+      "total_delta_phi": {
+        "mean": 0.099165,
+        "sd": 0.0,
+        "ci95": [
+          0.099165,
+          0.099165
+        ]
+      },
+      "avg_final_phi": {
+        "mean": 0.672795,
+        "sd": 0.0,
+        "ci95": [
+          0.672795,
+          0.672795
+        ]
+      },
+      "auto_discovered_primitives": {
+        "mean": 2,
+        "sd": 0.0,
+        "ci95": [
+          2.0,
+          2.0
+        ]
+      },
+      "geometry_evolution_steps": {
+        "mean": 8,
+        "sd": 0.0,
+        "ci95": [
+          8.0,
+          8.0
+        ]
+      },
+      "surrogate_rmse": {
+        "mean": 0.017249,
+        "sd": 4.6e-05,
+        "ci95": [
+          0.017216,
+          0.017282
+        ]
+      },
+      "accept_rate": {
+        "mean": 0.9167,
+        "sd": 0.0,
+        "ci95": [
+          0.9167,
+          0.9167
+        ]
+      },
+      "meta_steps": {
+        "mean": 10,
+        "sd": 0.0,
+        "ci95": [
+          10.0,
+          10.0
+        ]
+      },
+      "evaluations": {
+        "mean": 40,
+        "sd": 0.0,
+        "ci95": [
+          40.0,
+          40.0
+        ]
+      },
+      "gain_per_100_evaluations": {
+        "mean": 0.247913,
+        "sd": 0.0,
+        "ci95": [
+          0.247913,
+          0.247913
+        ]
+      },
+      "rolling_3_win_gain": {
+        "mean": 0.008594,
+        "sd": 1e-05,
+        "ci95": [
+          0.008586,
+          0.008601
+        ]
+      },
+      "phase_transitions": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "barrier_crossings": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "C_budget_matched_off": {
+      "total_delta_phi": {
+        "mean": 0.078372,
+        "sd": 0.000613,
+        "ci95": [
+          0.077933,
+          0.07881
+        ]
+      },
+      "avg_final_phi": {
+        "mean": 0.667596,
+        "sd": 0.000153,
+        "ci95": [
+          0.667487,
+          0.667706
+        ]
+      },
+      "auto_discovered_primitives": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "geometry_evolution_steps": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "surrogate_rmse": {
+        "mean": 0.018052,
+        "sd": 3.1e-05,
+        "ci95": [
+          0.01803,
+          0.018074
+        ]
+      },
+      "accept_rate": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      "meta_steps": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "evaluations": {
+        "mean": 43,
+        "sd": 0.0,
+        "ci95": [
+          43.0,
+          43.0
+        ]
+      },
+      "gain_per_100_evaluations": {
+        "mean": 0.18226,
+        "sd": 0.001425,
+        "ci95": [
+          0.18124,
+          0.183279
+        ]
+      },
+      "rolling_3_win_gain": {
+        "mean": 0.004161,
+        "sd": 3e-05,
+        "ci95": [
+          0.00414,
+          0.004183
+        ]
+      },
+      "phase_transitions": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "barrier_crossings": {
+        "mean": 0,
+        "sd": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      }
+    }
+  },
+  "identical_final_phi_A_vs_B": 0,
+  "sensitivity_diagnostic": {
+    "colorsys.py": {
+      "phi": 0.683026,
+      "distinct_variants": 60,
+      "distinct_scores": 9,
+      "plateau_fraction": 0.3,
+      "verdict": "search_problem"
+    },
+    "fnmatch.py": {
+      "phi": 0.634233,
+      "distinct_variants": 11,
+      "distinct_scores": 6,
+      "plateau_fraction": 0.0,
+      "verdict": "search_problem"
+    },
+    "graphlib.py": {
+      "phi": 0.641466,
+      "distinct_variants": 22,
+      "distinct_scores": 5,
+      "plateau_fraction": 0.5,
+      "verdict": "search_problem"
+    },
+    "textwrap.py": {
+      "phi": 0.633289,
+      "distinct_variants": 29,
+      "distinct_scores": 7,
+      "plateau_fraction": 0.5517,
+      "verdict": "search_problem"
+    }
+  },
+  "example_session_seed0": {
+    "A": {
+      "colorsys.py": {
+        "initial_phi": 0.683026,
+        "final_phi": 0.693018,
+        "evals": 6,
+        "generation_reached_final": 3,
+        "steps": [
+          [
+            1,
+            "ADD:AnnAssign",
+            0.003328,
+            false,
+            null
+          ],
+          [
+            2,
+            "ADD:AnnAssign",
+            0.003331,
+            false,
+            null
+          ],
+          [
+            3,
+            "ADD:AnnAssign",
+            0.003333,
+            false,
+            null
+          ]
+        ]
+      },
+      "fnmatch.py": {
+        "initial_phi": 0.634233,
+        "final_phi": 0.647789,
+        "evals": 6,
+        "generation_reached_final": 3,
+        "steps": [
+          [
+            1,
+            "ADD:AnnAssign",
+            0.004793,
+            false,
+            null
+          ],
+          [
+            2,
+            "ADD:AnnAssign",
+            0.004853,
+            false,
+            null
+          ],
+          [
+            3,
+            "ADD:AnnAssign",
+            0.00391,
+            false,
+            null
+          ]
+        ]
+      },
+      "graphlib.py": {
+        "initial_phi": 0.641466,
+        "final_phi": 0.659781,
+        "evals": 9,
+        "generation_reached_final": 3,
+        "steps": [
+          [
+            1,
+            "ADD:AnnAssign",
+            0.006229,
+            false,
+            null
+          ],
+          [
+            2,
+            "ADD:AnnAssign",
+            0.005795,
+            false,
+            null
+          ],
+          [
+            3,
+            "ADD:AnnAssign",
+            0.006291,
+            false,
+            null
+          ]
+        ]
+      },
+      "textwrap.py": {
+        "initial_phi": 0.633289,
+        "final_phi": 0.641572,
+        "evals": 6,
+        "generation_reached_final": 3,
+        "steps": [
+          [
+            1,
+            "ADD:AnnAssign",
+            0.002822,
+            false,
+            null
+          ],
+          [
+            2,
+            "ADD:AnnAssign",
+            0.00283,
+            false,
+            null
+          ],
+          [
+            3,
+            "ADD:AnnAssign",
+            0.002631,
+            false,
+            null
+          ]
+        ]
+      }
+    },
+    "B": {
+      "colorsys.py": {
+        "initial_phi": 0.683026,
+        "final_phi": 0.696353,
+        "evals": 7,
+        "generation_reached_final": 3,
+        "steps": [
+          [
+            1,
+            "ADD:AnnAssign",
+            0.003328,
+            false,
+            null
+          ],
+          [
+            2,
+            "ADD:AnnAssign",
+            0.003331,
+            false,
+            null
+          ],
+          [
+            3,
+            "AUTO:Composite[ADD:AnnAssign+ADD:AnnAssign]",
+            0.006668,
+            false,
+            false
+          ]
+        ]
+      },
+      "fnmatch.py": {
+        "initial_phi": 0.634233,
+        "final_phi": 0.656259,
+        "evals": 9,
+        "generation_reached_final": 3,
+        "steps": [
+          [
+            1,
+            "AUTO:Composite[ADD:AnnAssign+ADD:AnnAssign]",
+            0.009646,
+            false,
+            false
+          ],
+          [
+            2,
+            "AUTO:Composite[ADD:AnnAssign+ADD:AnnAssign]",
+            0.007834,
+            false,
+            false
+          ],
+          [
+            3,
+            "ADD:AnnAssign",
+            0.004546,
+            false,
+            null
+          ]
+        ]
+      },
+      "graphlib.py": {
+        "initial_phi": 0.641466,
+        "final_phi": 0.689353,
+        "evals": 15,
+        "generation_reached_final": 3,
+        "steps": [
+          [
+            1,
+            "AUTO:Composite[ADD:AnnAssign+ADD:AnnAssign+ADD:AnnAssign]",
+            0.018315,
+            false,
+            false
+          ],
+          [
+            2,
+            "AUTO:Composite[ADD:AnnAssign+ADD:AnnAssign+ADD:AnnAssign]",
+            0.01795,
+            false,
+            false
+          ],
+          [
+            3,
+            "AUTO:Composite[ADD:AnnAssign+ADD:AnnAssign]",
+            0.011622,
+            false,
+            false
+          ]
+        ]
+      },
+      "textwrap.py": {
+        "initial_phi": 0.633289,
+        "final_phi": 0.649214,
+        "evals": 9,
+        "generation_reached_final": 2,
+        "steps": [
+          [
+            1,
+            "AUTO:Composite[ADD:AnnAssign+ADD:AnnAssign+ADD:AnnAssign]",
+            0.008283,
+            false,
+            false
+          ],
+          [
+            2,
+            "AUTO:Composite[ADD:AnnAssign+ADD:AnnAssign+ADD:AnnAssign]",
+            0.007642,
+            false,
+            false
+          ]
+        ]
+      }
+    }
+  },
+  "primary_B_vs_C": {
+    "total_delta_phi": {
+      "mean": 0.020793,
+      "sd": 0.000613,
+      "ci95": [
+        0.020355,
+        0.021232
+      ]
+    },
+    "gain_per_100_evaluations": {
+      "mean": 0.065653,
+      "sd": 0.001425,
+      "ci95": [
+        0.064634,
+        0.066673
+      ]
+    }
+  }
+}

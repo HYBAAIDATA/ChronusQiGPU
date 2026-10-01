@@ -1,4 +1,4 @@
-"""Exact state-vector algebra tests (consolidated from mla1517 quantum tests)."""
+"""Exact state-vector algebra tests (consolidated from chronus.mla1517 quantum tests)."""
 import unittest
 from fractions import Fraction
 
