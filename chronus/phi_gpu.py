@@ -1,17 +1,15 @@
-"""Chronus phi GPU — the virtual phi-native device control plane.
+"""Chronus phi GPU — consolidated Geodesic Tensor Engine control plane.
 
-The GPU plane of the Geodesic Tensor Engine. ``GeodesicScheduler`` orders
-kernel work by phi-manifold proximity and drives fold-depth residency policy;
-``PhiGPU`` launches generic kernels across 32 logical cores; ``HybridGPU``
-routes structured workloads to the phi-native path and irregular workloads to
-the traditional path; ``EnergyModel`` preserves the July declared-coefficient
-comparison.
+Chronus owns scheduling and GPU orchestration. Aethel owns folded-state custody;
+Kellogg owns folded tensor arithmetic; Tensor owns physical backend dispatch and
+measured TFLOPS. This module retains every July Geodesic control-plane surface
+while preserving those modern ownership boundaries.
 
-This is a software control-plane model. Physical tensor execution and measured
-TFLOPS live in ``tensor.backends.chronus_backend`` / ``chronus.tensor_compute``.
-Reports here therefore carry explicit internal/model truth classes.
+The virtual ``PhiGPU`` uses Aethel's true addressed ``unfold_partial`` path for
+kernel reads. Physical OpenCL tensor execution remains in
+``tensor.backends.chronus_backend`` and ``chronus.tensor_compute``; no device
+measurement is fabricated here.
 """
-
 from __future__ import annotations
 
 import heapq
@@ -23,12 +21,11 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
-from aethel.phi_fold import KernelBoundary, phi_unfold
+from aethel.phi_fold import KernelBoundary, unfold_partial
 from aethel.phi_memory import MemoryTier, PhiMemoryHierarchy, TopologicalIntegrityGate
 from kellogg.phi_tensor_core import PhiTensorCore
 
 logger = logging.getLogger("chronus.phi_gpu")
-
 PHI = (1.0 + math.sqrt(5.0)) / 2.0
 PHI_GPU_CORES = 32
 
@@ -38,7 +35,6 @@ class PhiGPUError(RuntimeError):
 
 
 def phi_log_distance(a: float, b: float) -> float:
-    """Simplified scheduler distance ``log_phi(max(|a|, |b|))``."""
     m = max(abs(float(a)), abs(float(b)))
     if m <= 0:
         return 0.0
@@ -54,8 +50,6 @@ class _ScheduledItem:
 
 @dataclass
 class KernelTask:
-    """One schedulable unit over a manifold position."""
-
     name: str
     position: float
     payload: Any = None
@@ -66,17 +60,11 @@ class KernelTask:
     geodesic_distance: float = 0.0
 
 
-# July public name retained in the modern Chronus owner.
 GeodesicTask = KernelTask
 
 
 class GeodesicScheduler:
-    """Geodesic work scheduler with July + modern interfaces.
-
-    The modern ``schedule()`` drains the queue and returns all tasks nearest
-    first. ``schedule_next()`` and ``schedule_batch()`` provide the July-style
-    incremental dispatch capability without changing existing callers.
-    """
+    """Nearest-first φ-manifold scheduler with modern and July interfaces."""
 
     def __init__(
         self,
@@ -102,7 +90,6 @@ class GeodesicScheduler:
     def compute_geodesic_distance(
         self, boundary: KernelBoundary, current_pos: Optional[np.ndarray] = None
     ) -> float:
-        """July boundary-distance API over the current scheduler metric."""
         if not isinstance(boundary, KernelBoundary):
             raise PhiGPUError("compute_geodesic_distance requires KernelBoundary")
         center = float(boundary.offset + boundary.length / 2.0)
@@ -121,11 +108,6 @@ class GeodesicScheduler:
         operation: str = "fma",
         resident: Optional[str] = None,
     ) -> float:
-        """Queue either a modern ``KernelTask`` or a July ``KernelBoundary``.
-
-        Boundary submission synthesizes a task whose position is the boundary
-        centre and preserves the supplied operands in ``payload``.
-        """
         if isinstance(task, KernelBoundary):
             task = KernelTask(
                 name=f"{operation}:{self._sequence}",
@@ -146,15 +128,14 @@ class GeodesicScheduler:
         if task.resident is None:
             return
         try:
-            if item.distance <= median:
-                self._settle_depth(task.resident, self.near_depth)
-            else:
-                self._settle_depth(task.resident, self.far_depth)
+            self._settle_depth(
+                task.resident, self.near_depth if item.distance <= median else self.far_depth
+            )
         except Exception as exc:
             logger.debug("depth settle for %r skipped: %s", task.resident, exc)
 
     def schedule(self) -> List[KernelTask]:
-        """Drain all pending tasks nearest-first (modern live contract)."""
+        """Drain pending work nearest-first; preserves the modern live contract."""
         drained: List[_ScheduledItem] = []
         while self._queue:
             drained.append(heapq.heappop(self._queue))
@@ -175,7 +156,6 @@ class GeodesicScheduler:
         return ordered
 
     def schedule_next(self) -> Optional[KernelTask]:
-        """Schedule only the nearest pending task."""
         if not self._queue:
             return None
         item = heapq.heappop(self._queue)
@@ -190,7 +170,6 @@ class GeodesicScheduler:
         return task
 
     def schedule_batch(self, batch_size: Optional[int] = None) -> List[KernelTask]:
-        """Schedule up to ``batch_size`` tasks; defaults to ``num_cores``."""
         limit = self.num_cores if batch_size is None else int(batch_size)
         if limit < 1:
             raise PhiGPUError("batch_size must be positive")
@@ -202,7 +181,6 @@ class GeodesicScheduler:
         return batch
 
     def mark_completed(self, task: KernelTask, result: Any = None) -> None:
-        """Record completion and optional result for July task accounting."""
         if not isinstance(task, KernelTask):
             raise PhiGPUError("mark_completed requires KernelTask")
         task.completed = True
@@ -238,8 +216,6 @@ class GeodesicScheduler:
 
 @dataclass(frozen=True)
 class KernelLaunchConfig:
-    """One kernel launch partitioned across logical cores."""
-
     name: str
     work_items: int
     kernel: Callable[[np.ndarray], np.ndarray]
@@ -267,10 +243,11 @@ class KernelResult:
     cores_used: int
     output_norm: float
     integrity_passed: bool
+    boundary: Tuple[int, int]
 
 
 class PhiGPU:
-    """Virtual phi-native GPU over the Aethel/Kellogg planes."""
+    """Complete July virtual GPU facade over modern Aethel/Kellogg owners."""
 
     def __init__(
         self,
@@ -295,19 +272,26 @@ class PhiGPU:
         return self.memory.store(name, array, tier)
 
     def launch_kernel(self, config: KernelLaunchConfig) -> np.ndarray:
-        """Execute ``config.kernel`` on per-core selective slices and reduce."""
+        """Execute a kernel using only the addressed folded-state slice."""
         if not isinstance(config, KernelLaunchConfig):
             raise PhiGPUError("launch_kernel requires a KernelLaunchConfig")
         resident = self.memory._residents.get(config.name)
         if resident is None:
             raise PhiGPUError(f"launch_kernel requires a stored resident named {config.name!r}")
-        flat = phi_unfold(resident.state).ravel()
-        boundary = config.boundary or KernelBoundary(0, min(config.work_items, flat.size))
-        work = flat[boundary.slice]
+        boundary = config.boundary or KernelBoundary(
+            0, min(config.work_items, resident.state.original_size)
+        )
+        if boundary.stop > resident.state.original_size:
+            raise PhiGPUError(
+                f"boundary [{boundary.offset}, {boundary.stop}) exceeds resident size "
+                f"{resident.state.original_size}"
+            )
+        work = unfold_partial(resident.state, boundary)
         if work.size < config.work_items:
             raise PhiGPUError(
                 f"boundary exposes {work.size} elements for {config.work_items} work items"
             )
+        work = work[: config.work_items]
         slices = np.array_split(work, self.cores)
         partials = [np.asarray(config.kernel(s)) for s in slices if s.size]
         result = self._reduce_results(partials)
@@ -328,6 +312,7 @@ class PhiGPU:
                 cores_used=len(partials),
                 output_norm=float(np.linalg.norm(result)),
                 integrity_passed=verdict.passed,
+                boundary=(boundary.offset, boundary.length),
             )
         )
         return result
@@ -339,7 +324,7 @@ class PhiGPU:
 
     def get_system_report(self) -> Dict[str, Any]:
         return {
-            "truth_class": "internal",
+            "truth_class": "internal_control_plane",
             "cores": self.cores,
             "launches": len(self.launch_log),
             "integrity_pass_rate": self.gate.pass_rate,
@@ -348,6 +333,7 @@ class PhiGPU:
             "memory": self.memory.get_memory_report(),
             "tensor_core": self.tensor_core.get_aggregate_metrics(),
             "kernel_log": [r.name for r in self.launch_log],
+            "partial_unfold": "aethel_true_selective",
             "physical_tensor_backend": "tensor.backends.chronus_backend",
         }
 
@@ -375,12 +361,7 @@ class RouteDecisionRecord:
 class HybridGPU:
     """Route structured payloads to phi-native units and irregular payloads traditional."""
 
-    def __init__(
-        self,
-        phi_gpu: Optional[PhiGPU] = None,
-        *,
-        traditional_units: int = 1,
-    ) -> None:
+    def __init__(self, phi_gpu: Optional[PhiGPU] = None, *, traditional_units: int = 1) -> None:
         if traditional_units < 1:
             raise PhiGPUError("traditional_units must be positive")
         self.phi_gpu = phi_gpu if phi_gpu is not None else PhiGPU()
@@ -433,7 +414,7 @@ class HybridGPU:
             if unit.active:
                 units[unit.unit_type.value] += 1
         return {
-            "truth_class": "internal",
+            "truth_class": "internal_control_plane",
             "routes": counts,
             "compute_units": units,
             "decisions": [r.name for r in self.routes],
@@ -470,17 +451,14 @@ class EnergyModel:
 
     def traditional_energy(self, elements: float, working_set_ratio: float = 1.0) -> float:
         del working_set_ratio
-        moved = elements
-        compute = elements
-        return self.movement_joule_per_element * moved * self.movement_share + (
-            self.compute_joule_per_element * compute * (1.0 - self.movement_share)
+        return self.movement_joule_per_element * elements * self.movement_share + (
+            self.compute_joule_per_element * elements * (1.0 - self.movement_share)
         )
 
     def phi_gpu_energy(self, elements: float, working_set_ratio: float = 1.0) -> float:
         moved = elements / max(working_set_ratio, 1e-30)
-        compute = elements
         return self.movement_joule_per_element * moved * (1.0 - self.compute_share) + (
-            self.compute_joule_per_element * compute * self.compute_share
+            self.compute_joule_per_element * elements * self.compute_share
         )
 
     def compare(self, elements: float, working_set_ratio: float = 1.0) -> EnergyComparison:
@@ -500,19 +478,7 @@ class EnergyModel:
 
 
 __all__ = [
-    "ComputeUnitType",
-    "EnergyComparison",
-    "EnergyModel",
-    "GeodesicScheduler",
-    "GeodesicTask",
-    "HybridComputeUnit",
-    "HybridGPU",
-    "KernelLaunchConfig",
-    "KernelResult",
-    "KernelTask",
-    "PHI_GPU_CORES",
-    "PhiGPU",
-    "PhiGPUError",
-    "RouteDecisionRecord",
-    "phi_log_distance",
+    "ComputeUnitType", "EnergyComparison", "EnergyModel", "GeodesicScheduler", "GeodesicTask",
+    "HybridComputeUnit", "HybridGPU", "KernelLaunchConfig", "KernelResult", "KernelTask",
+    "PHI_GPU_CORES", "PhiGPU", "PhiGPUError", "RouteDecisionRecord", "phi_log_distance",
 ]
