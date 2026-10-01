@@ -15,9 +15,9 @@ Endpoints:
                          plus measured wall time. The client re-verifies
                          every row against exact integer arithmetic.
     POST /v1/sha256d  -> {"header":<160-hex>, "target":<64-hex>,
-                         "base_nonce":<uint32>, "count":<int>} grinds the
-                         contiguous nonce window on the real device in
-                         serial scan order. The winning share is
+                         "order":...} grinds a bounded nonce window on the
+                         real device in contiguous, m32, or explicit-batch
+                         order. The winning share is
                          rechecked with hashlib before it leaves the
                          agent, the verdict carries a domain-separated
                          attestation the client recomputes, and the
@@ -46,7 +46,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from .remote_gpu import PROTOCOL_VERSION, SHA256D_MAX_WINDOW, sha256d_share_attestation
+from .remote_gpu import (
+    PROTOCOL_VERSION,
+    SHA256D_MAX_BATCH,
+    SHA256D_MAX_WINDOW,
+    sha256d_share_attestation,
+)
 
 __all__ = ["enumerate_devices", "build_server", "main"]
 
@@ -181,10 +186,14 @@ def _run_ladder(scales: List[int]) -> Dict[str, Any]:
 # self-check once, and a single lock serializes scans because the hasher
 # holds per-device buffers that are not reentrant.
 _SHA256D_LOCK = threading.Lock()
-_SHA256D_HASHER = None
+_SHA256D_HASHER: Any = None
 
 
-def _sha256d_hasher():
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def _sha256d_hasher() -> Any:
     """Lazily bind the local SHA-256d grinder to this host's OpenCL device.
 
     ``backend="opencl"`` fails loudly on a deviceless host — the remote
@@ -207,7 +216,7 @@ def _sha256d_hasher():
 
 
 def _run_sha256d(body: Dict[str, Any]) -> Dict[str, Any]:
-    """Grind one contiguous nonce window on the agent's real device.
+    """Grind one bounded nonce window on the agent's real device.
 
     Validates the job, runs the canonical serial-order scan
     (``nonce = base_nonce + i``), rechecks any winning share with hashlib
@@ -228,25 +237,56 @@ def _run_sha256d(body: Dict[str, Any]) -> Dict[str, Any]:
         raise ValueError(f"target must be 64 hex chars: {exc}")
     if len(target) != 32:
         raise ValueError("target must be exactly 32 bytes")
-    order = str(body.get("order", "range"))
-    if order != "range":
-        raise ValueError(f"unsupported scan order {order!r} — only 'range' is wired")
-    try:
-        base_nonce = int(body.get("base_nonce", 0))
-        count = int(body.get("count", 0))
-    except (TypeError, ValueError) as exc:
-        raise ValueError(f"base_nonce and count must be integers: {exc}")
-    if not 0 <= base_nonce <= 0xFFFFFFFF:
-        raise ValueError("base_nonce must be a uint32")
-    if not 1 <= count <= SHA256D_MAX_WINDOW:
-        raise ValueError(f"count must be in [1, {SHA256D_MAX_WINDOW}]")
+    order = str(body.get("order", "contiguous"))
+    nonces = None
+    lanes = None
+    if order == "batch":
+        nonces = body.get("nonces")
+        if not isinstance(nonces, list) or not nonces:
+            raise ValueError("batch order requires a non-empty nonces list")
+        if len(nonces) > SHA256D_MAX_BATCH:
+            raise ValueError(f"batch exceeds {SHA256D_MAX_BATCH} nonces")
+        try:
+            nonces = [int(nonce) & 0xFFFFFFFF for nonce in nonces]
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"nonces must be uint32 integers: {exc}") from exc
+        base_nonce, count = 0, len(nonces)
+    elif order in ("contiguous", "m32"):
+        try:
+            base_nonce = int(body.get("base_nonce", 0))
+            count = int(body.get("count", 0))
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"base_nonce and count must be integers: {exc}") from exc
+        if not 0 <= base_nonce <= 0xFFFFFFFF:
+            raise ValueError("base_nonce must be a uint32")
+        if not 1 <= count <= SHA256D_MAX_WINDOW:
+            raise ValueError(f"count must be in [1, {SHA256D_MAX_WINDOW}]")
+        if order == "m32":
+            lanes = body.get("lane_order")
+            if not isinstance(lanes, list) or len(lanes) != 32:
+                raise ValueError("m32 order requires 32 lane indices")
+            try:
+                lanes = [int(lane) for lane in lanes]
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"lane_order must contain integers: {exc}") from exc
+            if sorted(lanes) != list(range(32)) or count % 32:
+                raise ValueError("m32 requires each lane once and a multiple-of-32 window")
+    else:
+        raise ValueError(f"unsupported scan order {order!r}")
 
     with _SHA256D_LOCK:
         hasher = _sha256d_hasher()
         start = time.perf_counter_ns()
-        nonce, digest, hashes = hasher.grind_target_range_chunked(
-            header, target, base_nonce, count
-        )
+        if order == "batch":
+            nonce, digest, hashes = hasher.grind_target_batch(header, target, nonces)
+        elif order == "m32":
+            nonce, digest, hashes = hasher.grind_target_m32(
+                header, target, base_nonce, lanes, count
+            )
+        else:
+            nonce, digest, hashes = hasher.grind_target_range_chunked(
+                header, target, base_nonce, count
+            )
         measured_ns = time.perf_counter_ns() - start
 
     if nonce is not None:
@@ -321,6 +361,9 @@ class _Handler(BaseHTTPRequestHandler):
                     "protocol": PROTOCOL_VERSION,
                     "device_count": len(devices),
                     "opencl_error": error,
+                    # Routes this agent actually serves — the client binds
+                    # only what is advertised here, never an assumed arm.
+                    "endpoints": ["ladder", "sha256d"],
                 },
             )
             return

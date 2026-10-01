@@ -130,12 +130,14 @@ class _StubDeviceHandler(BaseHTTPRequestHandler):
     tampered = False
     require_token = False
     tampered_sha256d = False
+    sha256d_underreport = False
     bad_attestation = False
     out_of_window_nonce = False
 
     @classmethod
     def _reset_sha256d_flags(cls):
         cls.tampered_sha256d = False
+        cls.sha256d_underreport = False
         cls.bad_attestation = False
         cls.out_of_window_nonce = False
 
@@ -158,11 +160,22 @@ class _StubDeviceHandler(BaseHTTPRequestHandler):
     def _sha256d(self, body):
         header = bytes.fromhex(body["header"])
         target = bytes.fromhex(body["target"])
+        order = body.get("order", "contiguous")
         base = int(body.get("base_nonce", 0))
-        count = int(body["count"])
+        nonces = body.get("nonces")
+        lanes = body.get("lane_order")
+        count = len(nonces) if nonces is not None else int(body["count"])
+        if nonces is not None:
+            window = [int(nonce) & 0xFFFFFFFF for nonce in nonces]
+        elif order == "m32":
+            window = [
+                (base + int(lanes[i % 32]) + 32 * (i // 32)) & 0xFFFFFFFF
+                for i in range(count)
+            ]
+        else:
+            window = [(base + i) & 0xFFFFFFFF for i in range(count)]
         winner, digest, hashes = None, None, 0
-        for i in range(count):
-            nonce = (base + i) & 0xFFFFFFFF
+        for nonce in window:
             d = _cpu_sha256d(header, nonce)
             hashes += 1
             if _meets_target(d, target):
@@ -174,6 +187,9 @@ class _StubDeviceHandler(BaseHTTPRequestHandler):
         if digest is not None and type(self).tampered_sha256d:
             digest = bytes([digest[0] ^ 0x01]) + digest[1:]
         digest_hex = digest.hex() if digest is not None else None
+        reported_hashes = (
+            max(0, hashes - 1) if type(self).sha256d_underreport else hashes
+        )
         attest_nonce = winner
         if type(self).bad_attestation and winner is not None:
             attest_nonce = (winner + 1) & 0xFFFFFFFF
@@ -182,7 +198,7 @@ class _StubDeviceHandler(BaseHTTPRequestHandler):
             target_hex=target.hex(),
             base_nonce=base,
             count=count,
-            hashes=hashes,
+            hashes=reported_hashes,
             nonce=attest_nonce,
             digest_hex=digest_hex,
             device=device_name,
@@ -193,7 +209,7 @@ class _StubDeviceHandler(BaseHTTPRequestHandler):
             "execution_backend": "opencl:gpu",
             "measured_ns": 4321,
             "window": {"base_nonce": base, "count": count},
-            "hashes": hashes,
+            "hashes": reported_hashes,
             "share": None
             if winner is None
             else {"nonce": winner, "hash": digest_hex},
@@ -312,6 +328,71 @@ class StubAgentClientTests(_EnvGuard):
         finally:
             _StubDeviceHandler.require_token = False
             os.environ.pop("MLA1517_REMOTE_GPU_TOKEN", None)
+
+    def test_sha256d_contiguous_window_verified(self):
+        result = RemoteGPUClient(self.endpoint).execute_sha256d(
+            bytes(80), b"\xff" * 32, base_nonce=0, count=4
+        )
+        self.assertEqual(result.nonce, 0)
+        self.assertEqual(result.hashes, 1)
+        self.assertEqual(result.execution_backend, "opencl:gpu")
+        self.assertTrue(result.as_dict()["share_verified_against_exact_reference"])
+
+    def test_sha256d_m32_window_reports_the_m32_winner(self):
+        # The lane permutation changes traversal order, not the covered
+        # set: base + lane[i%32] + 32*(i//32) covers [base, base+count).
+        lanes = list(range(32))
+        result = RemoteGPUClient(self.endpoint).execute_sha256d(
+            bytes(80),
+            b"\x7f" + b"\xff" * 31,
+            base_nonce=100,
+            count=64,
+            lane_order=lanes,
+        )
+        self.assertIsNotNone(result.nonce)
+        self.assertLess((result.nonce - 100) & 0xFFFFFFFF, 64)
+
+    def test_sha256d_batch_list_executes_only_those_nonces(self):
+        nonces = [7, 11, 13]
+        result = RemoteGPUClient(self.endpoint).execute_sha256d(
+            bytes(80), b"\xff" * 32, order="batch", nonces=nonces
+        )
+        self.assertEqual(result.nonce, 7)
+        self.assertEqual(result.hashes, 1)
+
+    def test_sha256d_tampered_winner_is_rejected(self):
+        _StubDeviceHandler.tampered_sha256d = True
+        try:
+            with self.assertRaises(RemoteGPUVerificationError):
+                RemoteGPUClient(self.endpoint).execute_sha256d(
+                    bytes(80), b"\xff" * 32, base_nonce=0, count=4
+                )
+        finally:
+            _StubDeviceHandler.tampered_sha256d = False
+
+    def test_sha256d_no_winner_requires_full_window(self):
+        # Tiny target: no winner is fine only if every window nonce ran.
+        result = RemoteGPUClient(self.endpoint).execute_sha256d(
+            bytes(80), b"\x00" * 32, base_nonce=0, count=4
+        )
+        self.assertIsNone(result.nonce)
+        self.assertEqual(result.hashes, 4)
+
+    def test_sha256d_underreported_window_is_rejected(self):
+        _StubDeviceHandler.sha256d_underreport = True
+        try:
+            with self.assertRaises(RemoteGPUVerificationError):
+                RemoteGPUClient(self.endpoint).execute_sha256d(
+                    bytes(80), b"\x00" * 32, base_nonce=0, count=4
+                )
+        finally:
+            _StubDeviceHandler.sha256d_underreport = False
+
+    def test_sha256d_rejects_oversized_window(self):
+        with self.assertRaises(ValueError):
+            RemoteGPUClient(self.endpoint).execute_sha256d(
+                bytes(80), b"\xff" * 32, base_nonce=0, count=SHA256D_MAX_WINDOW + 1
+            )
 
 
 class StubAgentSha256dTests(_EnvGuard):

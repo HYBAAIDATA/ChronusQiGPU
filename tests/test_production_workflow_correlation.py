@@ -178,6 +178,7 @@ def test_new_stratum_identity_clears_stale_toe_evidence():
     coordinator.loss = SimpleNamespace(observe_bind=lambda *a, **k: None)
     coordinator.causal = SimpleNamespace(record=lambda *a, **k: events.append((a, k)))
     coordinator._precompute_wake = wake
+    coordinator._work_wake = wake
 
     assert coordinator._refresh_work_identity() is identity
     assert coordinator.last_toe_context is None

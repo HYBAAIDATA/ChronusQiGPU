@@ -273,7 +273,9 @@ class ExecutionRouter:
 
     def _opencl_bound(self) -> bool:
         backend = str(getattr(self._hasher, "backend", "") or "")
-        return backend.startswith("opencl")
+        # remote_opencl is a real OpenCL device reached over the wire; the
+        # route's per-arm handle check below still decides what can run.
+        return backend.startswith("opencl") or backend == "remote_opencl"
 
     def decide_route(self, plan: SearchPlan) -> RouteDecision:
         """Choose the route that will physically run, with explicit provenance.
@@ -694,8 +696,9 @@ class ExecutionRouter:
         )
         if device_executed:
             evidence = EvidenceClass.HARDWARE_EXECUTED
-        elif device_backend.startswith("opencl"):
-            # Device bound but this execution did not run on it.
+        elif device_backend.startswith("opencl") or device_backend == "remote_opencl":
+            # Device bound but this execution did not run on it — e.g. a
+            # remote agent that answered the window on its own CPU.
             evidence = EvidenceClass.DEVICE_AVAILABLE
         else:
             evidence = EvidenceClass.SOFTWARE_VERIFIED

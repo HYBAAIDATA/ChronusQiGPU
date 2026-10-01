@@ -77,8 +77,6 @@ def test_attaches_optimizer_only_with_measured_telemetry(monkeypatch):
     assert status["cuop"]["evidence_class"] == "Measured"
     assert status["cuop"]["reading"]["useful_ops"] == 1250.0
     assert status["supervisor"]["optimiser_attached"] is True
-
-
 def test_losing_telemetry_mid_run_does_not_block_healing(monkeypatch):
     control = _ControlPlane([SimpleNamespace(hashrate=250.0, liveness=True)])
     control.autostart = True

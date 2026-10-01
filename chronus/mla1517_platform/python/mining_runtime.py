@@ -104,10 +104,19 @@ def _execution_hasher(backend: str):
     ``auto`` binds an OpenCL device only if it passes the hasher's own
     self-check against hashlib, otherwise the CPU reference runs and the
     reason is kept as evidence. ``cpu`` never touches OpenCL.
+    ``remote`` binds a remote GPU agent (``MLA1517_REMOTE_GPU_ENDPOINT``);
+    an unconfigured endpoint fails closed rather than degrading to CPU.
     """
     backend = backend.strip().lower()
     if backend == "cpu":
         return CpuReferenceHasher()
+    if backend == "remote":
+        repo_root = str(Path(__file__).resolve().parents[3])
+        if repo_root not in sys.path:
+            sys.path.insert(0, repo_root)
+        from mining.remote_hasher import RemoteOpenCLHasher
+
+        return RemoteOpenCLHasher.from_env()
     repo_root = str(Path(__file__).resolve().parents[3])
     if repo_root not in sys.path:
         sys.path.insert(0, repo_root)
@@ -128,11 +137,18 @@ def _execution_hasher(backend: str):
     return hasher
 
 
-EXECUTION_DEVICES = ("opencl", "cpu")
+EXECUTION_DEVICES = ("opencl", "cpu", "remote")
 
 
 def execution_device() -> str | None:
-    """Bridge-free mining device from ``PYTHIA_EXECUTION_DEVICE``, if declared."""
+    """Bridge-free mining device from ``PYTHIA_EXECUTION_DEVICE``, if declared.
+
+    ``opencl`` mines on the OpenCL device the hasher binds and self-checks
+    against hashlib, and refuses to start without one; ``cpu`` mines on the
+    labelled CPU reference; ``remote`` mines on a remote GPU agent bound via
+    ``MLA1517_REMOTE_GPU_ENDPOINT``. Unset keeps the MMIO bridge as the only
+    device.
+    """
     value = os.getenv("PYTHIA_EXECUTION_DEVICE", "").strip().lower()
     if not value:
         return None
