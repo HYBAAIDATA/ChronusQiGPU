@@ -7,10 +7,10 @@ Chronus has two first-class delivery modes:
 * ``cloud_instance`` — the customer uses a HYBA Chronus instance deployed into
   their chosen cloud and reached through the existing verified remote protocol.
 
-Neither mode is a fallback for the other.  Selection is explicit and this
+Neither mode is a fallback for the other. Selection is explicit and this
 module never silently moves work between execution locations.
 
-This surface is intentionally descriptive/provisioning-only.  It does not
+This surface is intentionally descriptive/provisioning-only. It does not
 replace, cap, throttle, or reroute any existing Chronus execution path.
 """
 from __future__ import annotations
@@ -63,7 +63,7 @@ def probe_embedded(
     """Describe an embedded/container Chronus binding.
 
     The existing tensor probe is used because it only reports available after
-    a GPU/accelerator OpenCL device has been selected.  No CPU fallback is
+    a GPU/accelerator OpenCL device has been selected. No CPU fallback is
     introduced here.
     """
     if tensor_probe is None:
@@ -104,7 +104,7 @@ def probe_cloud_instance(
 ) -> ChronusDelivery:
     """Describe a Chronus instance deployed in the customer's chosen cloud.
 
-    The existing remote protocol remains the authority.  It verifies endpoint
+    The existing remote protocol remains the authority. It verifies endpoint
     reachability and imports only measured GPU/Chronus/accelerator devices.
     """
     if remote_probe is None:
@@ -136,13 +136,14 @@ def probe_cloud_instance(
             capabilities.update(str(name) for name, enabled in caps.items() if enabled)
 
     # The protocol's currently implemented executable surfaces are evidence,
-    # not assumptions.  Health is queried when supported so future agents may
+    # not assumptions. Health is queried when supported so future agents may
     # advertise additional endpoints without changing this contract.
     try:
         health = client.health()
     except Exception:
         health = {}
-    for name in health.get("endpoints", ()) if isinstance(health, dict) else ():
+    advertised = health.get("endpoints", ()) if isinstance(health, dict) else ()
+    for name in advertised:
         capabilities.add(f"remote:{name}")
 
     return ChronusDelivery(
