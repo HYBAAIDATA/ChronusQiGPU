@@ -27,15 +27,22 @@ def test_igpu_and_l_hras_are_explicit_distribution_packages():
         "igpu.seam",
         "l_hras",
         "l_hras.foundations",
+        "tensor",
+        "tensor.backends",
     } <= packages
 
 
 def test_package_roots_and_typing_markers_exist():
-    for package in ("gpu", "igpu", "l_hras"):
+    for package in ("gpu", "igpu", "l_hras", "tensor"):
         root = ROOT / package
         assert (root / "__init__.py").is_file()
         assert (root / "README.md").is_file()
         assert (root / "py.typed").is_file()
+
+
+def test_tensor_package_dir_is_declared():
+    package_dir = _project()["tool"]["setuptools"]["package-dir"]
+    assert package_dir["tensor"] == "tensor"
 
 
 def test_igpu_import_is_lazy_and_hardware_independent():
@@ -59,3 +66,4 @@ def test_runtime_resources_are_declared_as_package_data():
     assert "kernels/*.cl" in data["igpu"]
     assert "deploy/*.yml" in data["igpu"]
     assert "config.example.toml" in data["l_hras"]
+    assert "CAPABILITY_MANIFEST.md" in data["tensor"]
