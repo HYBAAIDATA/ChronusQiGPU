@@ -77,7 +77,7 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 include-package-data = false
 package-dir = {"" = "chronus/mla1517_platform/python", "aethel" = "aethel", "gpu" = "gpu", "hyba" = "hyba", "kellogg" = "kellogg", "toe" = "toe", "python_backend" = "python_backend", "al_haras" = "al_haras", "chronus" = "chronus", "l_hras" = "l_hras", "lucas" = "lucas", "millennium" = "millennium", "tensor" = "tensor", "hyba_profiles" = "hyba_profiles", "hyba_contracts" = "hyba_contracts", "hyba_services" = "hyba_services"}
-packages = ["lucas", "millennium", "aethel", "gpu", "gpu.backends", "hyba", "hyba.hybrid", "hyba.math_ir", "hyba.operating_model", "kellogg", "toe", "toe.intelligences", "toe.unified", "python_backend", "python_backend.pythia_mining", "python_backend.mathematical_foundation", "python_backend.hyba", "python_backend.hyba.runtime", "python_backend.core_modules", "al_haras", "chronus", "chronus.seam", "chronus.mla1517", "chronus.mla1517.mining", "chronus.v33", "chronus.v33.academic", "chronus.v33.compression", "chronus.v33.control", "chronus.v33.environment", "chronus.v33.fields", "chronus.v33.graphics", "chronus.v33.memory", "chronus.v33.theory", "l_hras", "l_hras.foundations", "tensor", "tensor.backends", "hyba_profiles", "hyba_contracts", "hyba_services"]
+packages = ["Intelligence", "mining", "lucas", "millennium", "aethel", "gpu", "gpu.backends", "hyba", "hyba.hybrid", "hyba.math_ir", "hyba.operating_model", "kellogg", "toe", "toe.intelligences", "toe.unified", "python_backend", "python_backend.pythia_mining", "python_backend.mathematical_foundation", "python_backend.hyba", "python_backend.hyba.runtime", "python_backend.core_modules", "al_haras", "chronus", "chronus.seam", "chronus.mla1517", "chronus.mla1517.mining", "chronus.v33", "chronus.v33.academic", "chronus.v33.compression", "chronus.v33.control", "chronus.v33.environment", "chronus.v33.fields", "chronus.v33.graphics", "chronus.v33.memory", "chronus.v33.theory", "l_hras", "l_hras.foundations", "tensor", "tensor.backends", "hyba_profiles", "hyba_contracts", "hyba_services"]
 py-modules = [
     "al_haras_pythia",
     "autonomous_supervisor",
@@ -111,7 +111,7 @@ py-modules = [
 "chronus.v33" = ["CAPABILITY_MANIFEST.json"]
 aethel = ["py.typed", "*.md"]
 gpu = ["py.typed", "README.md", "BLUEPRINT_AUDIT.md"]
-chronus = ["py.typed", "README.md", "kernels/*.cl", "deploy/*.yml"]
+chronus = ["py.typed", "README.md", "kernels/*.cl", "deploy/*.yml", "spec/*.json"]
 kellogg = ["py.typed"]
 tensor = ["py.typed", "README.md", "CAPABILITY_MANIFEST.md"]
 l_hras = ["py.typed", "README.md", "config.example.toml"]

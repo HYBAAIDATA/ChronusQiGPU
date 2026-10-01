@@ -18,20 +18,23 @@ from .zeckendorf import PUNCH_MANIFOLD_COMPUTE
 
 
 class ChronusContext:
-    def __init__(self, punch_host=None, require_gpu: bool = False):
+    def __init__(
+        self, punch_host=None, require_gpu: bool = False, allow_cpu_fallback: bool = True
+    ):
         self.cu_pool = ComputeUnitPool(n_sms=8, threads_per_sm=256)
         self.spmd = SPMDExecutor(n_lanes=32)
         self.microkernels = MicroKernelLibrary()
         self.cassini = CassiniVerifier()
-        self.require_gpu = require_gpu
+        self.require_gpu = bool(require_gpu)
+        self.allow_cpu_fallback = bool(allow_cpu_fallback)
         self.punch_host = punch_host
         # Backend that physically ran the last projection; None until one has.
         self._last_projection_backend = None
         if self.punch_host is None:
             self.punch_host = resolve_punch_host()
-        if require_gpu and not self.gpu_active:
+        if (self.require_gpu or not self.allow_cpu_fallback) and not self.gpu_active:
             raise RuntimeError(
-                "GPU execution required but no OpenCL device is available; "
+                "GPU-only execution policy is active but no OpenCL device is available; "
                 "refusing to run substrate projections on the CPU."
             )
 
@@ -48,6 +51,14 @@ class ChronusContext:
                 self.punch_host, "backend", "cpu"
             )
         return "cpu"
+
+    def _record_backend(self, backend: str, stage: str) -> None:
+        self._last_projection_backend = backend
+        used_cpu = not str(backend).startswith("opencl:")
+        if used_cpu and (self.require_gpu or not self.allow_cpu_fallback):
+            raise RuntimeError(
+                f"{stage} used {backend!r} while CPU fallback is disabled"
+            )
 
     def project_and_collapse_pv(self, data_tensor: np.ndarray, pv_base: float = PHI) -> int:
         flat = np.nan_to_num(
@@ -67,18 +78,20 @@ class ChronusContext:
             except NotImplementedError:
                 # OpenClPunchHost supports only 0x02/0x1C; 0x15 falls back
                 # to the exact CPU projection below instead of crashing.
-                self._last_projection_backend = "cpu"
+                self._record_backend("cpu_fallback", "manifold projection")
             else:
-                self._last_projection_backend = getattr(
-                    self.punch_host, "last_dispatch_backend", None
-                ) or getattr(self.punch_host, "backend", "cpu")
+                self._record_backend(
+                    getattr(self.punch_host, "last_dispatch_backend", None)
+                    or getattr(self.punch_host, "backend", "cpu"),
+                    "manifold projection",
+                )
                 norm_sq = float(out["float"][0])
                 if not np.isfinite(norm_sq) or norm_sq < 0:
                     return 0
                 anchor = int(round(float(np.sqrt(norm_sq)))) % 90
                 return max(0, anchor)
         else:
-            self._last_projection_backend = "cpu"
+            self._record_backend("cpu", "manifold projection")
         norm_sq = float(
             sum((pv_base ** -(i + 1)) * (float(flat[i]) ** 2) for i in range(len(flat)))
         )

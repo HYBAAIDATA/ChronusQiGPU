@@ -42,14 +42,18 @@ def main() -> int:
             if SECRET_NAMES.search(relative.name) and relative.name != ".env.example":
                 raise SystemExit(f"refusing to package secret-looking file: {relative}")
             data = path.read_bytes()
-            bundle.write(path, relative.as_posix())
+            archive_path = relative.as_posix()
+            bundle.writestr(archive_path, data)
+            entries.append({"path": archive_path, "size": len(data), "sha256": hashlib.sha256(data).hexdigest()})
         package = ROOT.parent / "mla1517"
         for path in sorted(package.rglob("*")):
             if not path.is_file() or not included(path):
                 continue
             relative = path.relative_to(package)
-            bundle.write(path, (Path("python/mla1517") / relative).as_posix())
-            entries.append({"path": relative.as_posix(), "size": len(data), "sha256": hashlib.sha256(data).hexdigest()})
+            data = path.read_bytes()
+            archive_path = (Path("python/chronus/mla1517") / relative).as_posix()
+            bundle.writestr(archive_path, data)
+            entries.append({"path": archive_path, "size": len(data), "sha256": hashlib.sha256(data).hexdigest()})
     manifest = {
         "product": "PYTHIA", "bundle": archive.name,
         "generated_at": datetime.now(timezone.utc).isoformat(),

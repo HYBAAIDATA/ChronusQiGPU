@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+import subprocess
+import sys
 
 import chronus
 import chronus.mla1517
@@ -75,3 +77,16 @@ def test_turing_remains_separate_compute_substrate():
     import turing_core
 
     assert turing_core is not chronus
+
+
+def test_chronus_import_contract_in_fresh_interpreter():
+    code = "import chronus, chronus.mla1517; assert chronus.mla1517.fib(10) == 55"
+    completed = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        timeout=30,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr

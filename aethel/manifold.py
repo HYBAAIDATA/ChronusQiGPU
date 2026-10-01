@@ -214,19 +214,20 @@ class GeodesicNavigator:
             in_float = in_float.reshape(-1)
             try:
                 res = host.run_punch_batch(PUNCH_MANIFOLD_COMPUTE, n=n, in_float=in_float)
-            except NotImplementedError:
-                # 0x15 is not in OpenClPunchHost's opcode set (0x02/0x1C);
-                # fall through to the identical CPU computation instead
-                # of crashing with PunchUnsupported.
-                pass
+            except NotImplementedError as exc:
+                self.manifold._record_stage(
+                    "index", "cpu_fallback", f"device rejected manifold punch: {exc}"
+                )
             else:
                 norm_sq = res["float"].reshape(n, DIM)[:, 0]
                 anchors = np.rint(np.sqrt(np.maximum(norm_sq, 0.0))).astype(np.int64) % 90
-                self.manifold.stage_evidence["index"] = getattr(
-                    host, "last_dispatch_backend", "opencl"
+                self.manifold._record_stage(
+                    "index", getattr(host, "last_dispatch_backend", "opencl")
                 )
                 return anchors
-        self.manifold.stage_evidence["index"] = "cpu"
+        self.manifold._record_stage(
+            "index", "cpu", "no usable OpenCL manifold projection"
+        )
         return np.array([self._project_to_pv_lattice(v) for v in vectors], dtype=np.int64)
 
     def _steepest_gradient(self, current: int, target: int) -> int:
@@ -268,24 +269,30 @@ class PrimeStorageManifold:
         gpu: ChronusContext,
         n_primes: int = 25,
         punch_host=None,
-        require_gpu: bool = False,
+        require_gpu: Optional[bool] = None,
+        allow_cpu_fallback: Optional[bool] = None,
     ):
         self.gpu = gpu
         self.punch_host = (
             punch_host if punch_host is not None else getattr(gpu, "punch_host", None)
         )
-        self.require_gpu = require_gpu
-        if require_gpu and not (
+        context_requires_gpu = bool(getattr(gpu, "require_gpu", False))
+        context_allows_cpu = bool(getattr(gpu, "allow_cpu_fallback", True))
+        self.require_gpu = context_requires_gpu or bool(require_gpu)
+        requested_allow = True if allow_cpu_fallback is None else bool(allow_cpu_fallback)
+        self.allow_cpu_fallback = context_allows_cpu and requested_allow
+        if (self.require_gpu or not self.allow_cpu_fallback) and not (
             self.punch_host is not None and getattr(self.punch_host, "use_opencl", False)
         ):
             raise RuntimeError(
-                "GPU execution required but no OpenCL device is available; "
+                "GPU-only execution policy is active but no OpenCL device is available; "
                 "storage encode/index/reconstruction refuse silent CPU "
                 "fallback."
             )
 
         # Per-stage execution provenance: which backend physically ran each
         # supported computational stage ("opencl:gpu" / "opencl:cpu" / "cpu").
+        self.stage_fallback_reasons: Dict[str, str] = {}
         self.stage_evidence: Dict[str, str] = {
             "encode": "none",
             "index": "none",
@@ -309,6 +316,23 @@ class PrimeStorageManifold:
             self.punch_host, "backend", "cpu"
         )
 
+    def _record_stage(
+        self, stage: str, backend: str, fallback_reason: Optional[str] = None
+    ) -> None:
+        backend = str(backend or "cpu")
+        self.stage_evidence[stage] = backend
+        used_cpu = not backend.startswith("opencl:")
+        if used_cpu:
+            self.stage_fallback_reasons[stage] = fallback_reason or (
+                "no OpenCL execution was reported"
+            )
+            if self.require_gpu or not self.allow_cpu_fallback:
+                raise RuntimeError(
+                    f"{stage} used {backend!r} while CPU fallback is disabled"
+                )
+        else:
+            self.stage_fallback_reasons.pop(stage, None)
+
     def execution_evidence(self) -> Dict[str, Any]:
         """Per-stage provenance plus device/telemetry from the bound host."""
         host = self.punch_host
@@ -320,6 +344,8 @@ class PrimeStorageManifold:
             "kernel_ms_total": float(getattr(host, "kernel_ms_total", 0.0) or 0.0),
             "last_kernel_ms": getattr(host, "last_kernel_ms", None),
             "gpu_required": self.require_gpu,
+            "allow_cpu_fallback": self.allow_cpu_fallback,
+            "fallback_reasons": dict(self.stage_fallback_reasons),
         }
 
     @metered("manifold.measure_throughput")
@@ -373,7 +399,9 @@ class PrimeStorageManifold:
             return tensor_uuid
 
         sparse = apply_zeckendorf_compression(payload, host=self.punch_host)
-        self.stage_evidence["encode"] = self._host_backend()
+        self._record_stage(
+            "encode", self._host_backend(), "Zeckendorf encode used CPU fallback"
+        )
         tensor.sparse_topology = sparse.blocks
         tensor.total_bytes = len(payload)
 
@@ -383,7 +411,9 @@ class PrimeStorageManifold:
             payload[: DIM * 4].ljust(DIM * 4, b"\x00"), dtype=np.float32
         )
         tensor.integer_anchor = self.gpu.project_and_collapse_pv(data_array, pv_root)
-        self.stage_evidence["index"] = self.gpu.projection_backend
+        self._record_stage(
+            "index", self.gpu.projection_backend, "projection used CPU fallback"
+        )
 
         # CassiniVerifier.verify is a theorem identity on fresh values, so
         # it can never fail; the real ingest gate is the 90-slot domain.
@@ -445,7 +475,9 @@ class PrimeStorageManifold:
                 tensor.sparse_topology, getattr(tensor, "total_bytes", 0)
             )
             data = reverse_zeckendorf_expansion(sparse, host=self.punch_host)
-            self.stage_evidence["decode"] = self._host_backend()
+            self._record_stage(
+                "decode", self._host_backend(), "Zeckendorf decode used CPU fallback"
+            )
             return data
         return None
 
