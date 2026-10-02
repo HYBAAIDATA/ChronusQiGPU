@@ -133,21 +133,25 @@ class PredictiveSolver:
             PredictionResult with the prediction, verification, and
             fallback info.
         """
+        if len(header) != 80:
+            raise ValueError("header must be 80 bytes")
+        if len(target) != 32:
+            raise ValueError("target must be 32 bytes")
+
         self._prediction_count += 1
         features = self._extract_features(header, block_context)
         candidates = self._generate_candidates(header, features)
 
         # Verify each candidate — first verified winner wins.
         target_be = bytes(target)
-        chunk1 = header[:64] if len(header) >= 64 else header + b"\x00" * (64 - len(header))
-        chunk2 = header[64:76] if len(header) >= 76 else b"\x00" * (76 - max(0, len(header) - 64))
+        header_prefix = header[:76]
 
         best_nonce = -1
         best_confidence = 0.0
         target_int = int.from_bytes(target_be, "big")
         for nonce, confidence, method in candidates:
             h = hashlib.sha256(
-                hashlib.sha256(chunk1 + chunk2 + struct.pack("<I", nonce)).digest()
+                hashlib.sha256(header_prefix + struct.pack("<I", nonce)).digest()
             ).digest()
             if int.from_bytes(h, "little") <= target_int:
                 # Winner! O(1) prediction succeeded.
@@ -176,9 +180,15 @@ class PredictiveSolver:
             try:
                 fb_nonce, fb_hashes = fallback_search(header, target)
                 fallback_hashes = fb_hashes
-                if fb_nonce is not None and fb_nonce >= 0:
-                    fallback_found = True
-                    fallback_nonce = fb_nonce
+                if type(fb_nonce) is int and 0 <= fb_nonce <= 0xFFFFFFFF:
+                    fallback_hash = hashlib.sha256(
+                        hashlib.sha256(
+                            header_prefix + struct.pack("<I", fb_nonce)
+                        ).digest()
+                    ).digest()
+                    if int.from_bytes(fallback_hash, "little") <= target_int:
+                        fallback_found = True
+                        fallback_nonce = fb_nonce
             except Exception as e:
                 logger.warning("Fallback search failed: %s", e)
 
