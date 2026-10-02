@@ -1,5 +1,32 @@
 # PYTHIA Production-Readiness Execution Plan (Devin edition)
 
+## Current execution refresh — 2026-10-02
+
+- Repository: `QuantumPhiEnterprise/PYTHIPhiMiner`
+- Current pinned `main`: `953765a7f79920d2177a406c2157340ef96000cc`
+- State: implementation in progress; this is **not** a production certificate.
+- Coordinator branch: `feat/pythia-production-readiness-coordination`
+- Owner A: PR #82 merged as `1aae12c3`: the bounded production 11D
+  Poincaré-golden nonce-order path now has deterministic full-window ordering,
+  explicit CPU-reference fallback, dependency failure, and SHA-256d
+  proof-boundary tests.
+- Owner B/C: PR #81 merged as `953765a7`: supervised runners now report
+  `stopping` until worker cleanup exits and campaign accepted shares use
+  per-phase deltas. RUN-02, measured-zero handling, stale-sidecar filtering,
+  and exception-safe campaign retirement remain covered.
+
+### Current ownership
+
+| Owner | Writable scope for this wave | Status |
+|---|---|---|
+| C | `docs/production/*`, release integration and evidence reconciliation | ACTIVE |
+| A | production coordinator nonce-order adapter plus focused theory tests/docs | MERGED — PR #82 / `1aae12c3` |
+| B/C | campaign/runner lifecycle and focused tests | MERGED — PR #81 / `953765a7` |
+
+The historical baseline below is retained as prior evidence, not reused as a
+current result. Every old PASS must be refreshed at the current implementation
+commit before release.
+
 Source pack: user-provided "PYTHIA production-readiness swarm — execution pack" (Codex-oriented).
 Adapted 2026-09-29 to the Devin child-session model.
 
