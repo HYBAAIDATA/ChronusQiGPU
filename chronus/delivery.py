@@ -56,44 +56,86 @@ def _tuple_capabilities(values: Iterable[str]) -> Tuple[str, ...]:
     return tuple(sorted({str(value) for value in values if str(value)}))
 
 
+def _probe_record(probe_fn: Callable[[], Any]) -> Dict[str, Any]:
+    probe = probe_fn()
+    return probe.as_dict() if hasattr(probe, "as_dict") else dict(probe)
+
+
 def probe_embedded(
     *,
     tensor_probe: Optional[Callable[[], Any]] = None,
+    native_probes: Optional[Sequence[Tuple[str, Callable[[], Any], str]]] = None,
 ) -> ChronusDelivery:
-    """Describe an embedded/container Chronus binding.
+    """Describe an embedded/container Chronus binding across local substrates.
 
-    The existing tensor probe is used because it only reports available after
-    a GPU/accelerator OpenCL device has been selected. No CPU fallback is
-    introduced here.
+    Chronus identity is independent of OpenCL. By default the embedded probe
+    observes OpenCL, CUDA, and Metal execution paths and reports every physical
+    path that is actually available. No backend is silently substituted for
+    another and no CPU fallback is introduced here.
+
+    ``tensor_probe`` remains a compatibility/test injection point. When it is
+    supplied without ``native_probes``, only that injected OpenCL-style probe
+    is evaluated, preserving the historical caller contract.
     """
-    if tensor_probe is None:
-        from .tensor_compute import probe as tensor_probe
+    if tensor_probe is not None and native_probes is None:
+        probes: Sequence[Tuple[str, Callable[[], Any], str]] = (
+            ("chronus-opencl", tensor_probe, "chronus.tensor_compute.probe"),
+        )
+    elif native_probes is not None:
+        probes = native_probes
+    else:
+        from .native_tensor import probe_cuda, probe_metal
+        from .tensor_compute import probe as opencl_probe
 
-    probe = tensor_probe()
-    record = probe.as_dict() if hasattr(probe, "as_dict") else dict(probe)
-    available = bool(record.get("available"))
-    operations = tuple(record.get("operations") or ())
-    dtypes = tuple(record.get("dtypes") or ())
-    capabilities = [f"tensor:{operation}" for operation in operations]
-    capabilities.extend(f"dtype:{dtype}" for dtype in dtypes)
-    device_id = str(record.get("device_id", "") or "")
-    device = {
-        "device_id": device_id,
-        "name": str(record.get("device_name", "") or ""),
-        "platform": str(record.get("platform_name", "") or ""),
-        "backend": "chronus-opencl" if available else "",
-    }
-    reason = str(record.get("reason", "") or "")
+        probes = (
+            ("chronus-opencl", opencl_probe, "chronus.tensor_compute.probe"),
+            ("chronus-cuda", probe_cuda, "chronus.native_tensor.probe_cuda"),
+            ("chronus-metal", probe_metal, "chronus.native_tensor.probe_metal"),
+        )
+
+    devices = []
+    capabilities = set()
+    evidence = []
+    unavailable_reasons = []
+    for backend_name, probe_fn, evidence_name in probes:
+        evidence.append(evidence_name)
+        try:
+            record = _probe_record(probe_fn)
+        except Exception as exc:
+            unavailable_reasons.append(
+                f"{backend_name}: {type(exc).__name__}: {exc}"
+            )
+            continue
+        if not bool(record.get("available")):
+            reason = str(record.get("reason", "") or "runtime unavailable")
+            unavailable_reasons.append(f"{backend_name}: {reason}")
+            continue
+        operations = tuple(record.get("operations") or ())
+        dtypes = tuple(record.get("dtypes") or ())
+        capabilities.update(f"tensor:{operation}" for operation in operations)
+        capabilities.update(f"dtype:{dtype}" for dtype in dtypes)
+        capabilities.add(f"backend:{backend_name}")
+        devices.append(
+            {
+                "device_id": str(record.get("device_id", "") or ""),
+                "name": str(record.get("device_name", "") or ""),
+                "platform": str(record.get("platform_name", "") or ""),
+                "backend": backend_name,
+            }
+        )
+
+    available = bool(devices)
+    reason = "" if available else "; ".join(unavailable_reasons)
     return ChronusDelivery(
         mode=DeliveryMode.EMBEDDED,
         available=available,
         execution_location="customer_container",
         transport="in_process",
         endpoint="",
-        devices=(device,) if available else (),
+        devices=tuple(devices),
         capabilities=_tuple_capabilities(capabilities),
         reason=reason,
-        evidence=("chronus.tensor_compute.probe",),
+        evidence=tuple(evidence),
     )
 
 
@@ -167,12 +209,16 @@ def probe_delivery(
     *,
     endpoints: Optional[Sequence[str]] = None,
     tensor_probe: Optional[Callable[[], Any]] = None,
+    native_probes: Optional[Sequence[Tuple[str, Callable[[], Any], str]]] = None,
     remote_probe: Optional[Callable[..., Any]] = None,
 ) -> ChronusDelivery:
     """Probe exactly the requested delivery mode; never cross-fallback."""
     selected = DeliveryMode(mode)
     if selected is DeliveryMode.EMBEDDED:
-        return probe_embedded(tensor_probe=tensor_probe)
+        return probe_embedded(
+            tensor_probe=tensor_probe,
+            native_probes=native_probes,
+        )
     return probe_cloud_instance(endpoints=endpoints, remote_probe=remote_probe)
 
 
