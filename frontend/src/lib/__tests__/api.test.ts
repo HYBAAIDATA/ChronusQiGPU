@@ -3,7 +3,9 @@ import {
   apiFetch,
   apiUrl,
   operatorKey,
+  operatorPrincipal,
   setOperatorKey,
+  setOperatorPrincipal,
   setSubscriptionCreds,
   subscriptionCreds,
 } from "@/lib/api";
@@ -12,6 +14,7 @@ import { createMockResponse, createMockUser, setupTestDB } from "@/test/helpers"
 afterEach(() => {
   vi.restoreAllMocks();
   setOperatorKey(null);
+  setOperatorPrincipal(null);
   setSubscriptionCreds(null);
   window.sessionStorage.clear();
 });
@@ -92,6 +95,28 @@ describe("operator key", () => {
     expect(prompt).toHaveBeenCalledTimes(1);
     expect(bearer(fetchMock.mock.calls[1]!)).toBe("Bearer k-2");
     expect(operatorKey()).toBe("k-2");
+  });
+
+  it("binds a mapped principal to its bearer on retry", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        createMockResponse({ error: "operator principal required" }, { status: 401 }),
+      )
+      .mockResolvedValueOnce(createMockResponse({ ok: true }));
+    vi.spyOn(window, "prompt")
+      .mockReturnValueOnce("andre")
+      .mockReturnValueOnce("ceo-token");
+    const response = await apiFetch("/api/v1/agentic/start", {
+      method: "POST",
+      body: "{}",
+    });
+    expect(response.ok).toBe(true);
+    const retry = new Headers((fetchMock.mock.calls[1]![1] as RequestInit).headers);
+    expect(retry.get("Authorization")).toBe("Bearer ceo-token");
+    expect(retry.get("X-PYTHIA-Principal")).toBe("andre");
+    expect(operatorKey()).toBe("ceo-token");
+    expect(operatorPrincipal()).toBe("andre");
   });
 
   it("forgets a refused key and returns the refusal when the operator cancels", async () => {
