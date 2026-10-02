@@ -46,3 +46,49 @@ Run a real tensor operation through `tensor.backends.chronus_backend`, then
 inspect `get_runtime().last_evidence`. Timing is evidence from that execution,
 not a projected performance claim. If the host has no Intel OpenCL ICD or no
 exposed iGPU, the report records the unavailable reason.
+
+## Capture a complete evidence artifact
+
+The evidence command runs the production Chronus OpenCL runtime, checks every
+result against NumPy, records OpenCL device and wall time, observes a sustained
+load, samples only sensors exposed by the host, inventories all OpenCL
+GPU/accelerator devices, and content-binds the runtime, kernel, inputs, and
+output.
+
+```bash
+python3 -m bench.chronus_igpu_evidence \
+  --size 512 \
+  --iterations 20 \
+  --stress-seconds 300 \
+  --sha256d-count 1048576
+```
+
+The command writes
+`bench/results/igpu_<device>_<UTC timestamp>.json`. It fails if the requested
+iGPU is absent, any tensor result disagrees with the CPU reference, or the
+evidence artifact cannot validate its physical-execution and content-hash
+invariants. When requested, SHA256d is measured through the production
+`BitcoinHasher` OpenCL path. Pool acknowledgement stays `Unavailable`; local
+work is not presented as an accepted mining share.
+
+Generic OpenCL does not expose peak bandwidth, and a product-name estimate is
+not evidence. Supply independently measured peak inputs only when available:
+
+```bash
+python3 -m bench.chronus_igpu_evidence \
+  --peak-gflops <measured-value> \
+  --peak-bandwidth-gbps <measured-value>
+```
+
+Without both values, roofline classification is `Unavailable`. Intel RAPL is
+reported as a package-level energy proxy, never as iGPU-only power. GPU hwmon
+power and temperature are reported only when corresponding sysfs sensors exist.
+
+The attestation is a reproducible software content binding, not hardware-rooted
+firmware attestation. Generic OpenCL does not expose a trustworthy firmware or
+ROM hash, so those claims remain unavailable.
+
+The existing remote agent supports verified SHA256d, ladder execution,
+telemetry, and multi-agent mining fleets. The evidence artifact probes and
+reports that path. Remote Chronus tensor dispatch is separately labelled
+`unimplemented`; it is not inferred from the mining path.
