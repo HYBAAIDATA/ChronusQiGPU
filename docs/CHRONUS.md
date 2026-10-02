@@ -26,11 +26,40 @@ falls back to OpenCL or CPU. Existing OpenCL routing priority is preserved;
 clients may explicitly require a native backend and policy-authorised routing
 may use one when the preferred backend is unavailable.
 
+CUDA deployment must provide a CuPy build compatible with the CUDA runtime
+chosen for that deployment. The generic image deliberately does not guess a
+CUDA-generation-specific CuPy wheel. Apple deployments use the existing MLX
+optional dependency. Missing bindings make only that physical path unavailable;
+they do not disable or relabel any other Chronus substrate.
+
 This native expansion currently applies to the tensor execution surface. The
 consensus SHA-256d mining path retains its existing OpenCL/explicit-CPU
 implementation until a separate native mining kernel is implemented and
 verified against the existing host acceptance authority. That boundary is
 recorded rather than hidden.
+
+## Physical measurement and provenance
+
+Host NumPy FLOPS, theoretical device peaks and physical Chronus device
+throughput remain separate evidence classes. Production measurement preserves
+the historical OpenCL tensor result and additionally attempts CUDA and Metal
+physical tensor measurements when those runtimes are present.
+
+Each physical tensor measurement:
+
+- times end-to-end Chronus execution rather than inferring throughput from a
+  device specification;
+- independently verifies the numerical output against NumPy before accepting
+  the sample;
+- records backend, method, precision and physical device identity;
+- binds the measured tensor result to the matching device census fingerprint;
+- remains explicitly unavailable when its runtime is absent or verification
+  fails.
+
+The production `--require-device` gate is substrate-neutral: at least one
+OpenCL, CUDA or Metal tensor measurement must both execute successfully and be
+bound to its physical execution-device fingerprint. A separate mining/hashrate
+device binding cannot satisfy that tensor requirement.
 
 ## Delivery modes
 
