@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 import subprocess
 import sys
 
@@ -32,21 +33,27 @@ def test_chronus_is_real_public_namespace():
 def test_no_active_igpu_namespace_or_compatibility_shim():
     assert not (ROOT / "igpu").exists()
     offenders = []
-    forbidden = (
-        "from igpu",
-        "import igpu",
-        "igpu.",
-        "igpu/",
-        "IGPUOpenCL",
-        "IgpuTelemetry",
-        "ResidentIGPU",
-        "IGpuSku",
+    # Identifier-boundary matching: the retired top-level ``igpu`` package is
+    # forbidden, while the live ``chronus.virtual_igpu`` module (a different,
+    # real namespace) must not false-positive on the "igpu." token.
+    forbidden = tuple(
+        re.compile(r"(?<![A-Za-z0-9_])" + re.escape(token))
+        for token in (
+            "from igpu",
+            "import igpu",
+            "igpu.",
+            "igpu/",
+            "IGPUOpenCL",
+            "IgpuTelemetry",
+            "ResidentIGPU",
+            "IGpuSku",
+        )
     )
     for path in ROOT.rglob("*"):
         if not path.is_file() or not _active(path) or path.suffix.lower() not in TEXT_SUFFIXES:
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
-        if any(token in text for token in forbidden):
+        if any(pattern.search(text) for pattern in forbidden):
             offenders.append(str(path.relative_to(ROOT)))
     assert offenders == []
 

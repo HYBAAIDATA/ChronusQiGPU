@@ -17,7 +17,7 @@ evidence surfaces (API payload — NOT the UI panel).
   branch lives in, not the main checkout.
 - Python `C:\Python312\python.exe`. **The editable `pythia-mla1517` install is
   STALE**: its `__editable__` finder maps `control_api`, `startup_contract`,
-  `worker_lifecycle`, … to a nonexistent pre-fold `mla1517_platform_v3.4`
+  `worker_lifecycle`, … to the nonexistent pre-fold `mla1517` platform
   layout and has **no `chronus` entry at all**. Plain `import chronus` raises
   ModuleNotFoundError. Fix per-checkout by booting with:
 
