@@ -82,7 +82,9 @@ def atomic_write(path: Path, payload: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, temporary = tempfile.mkstemp(prefix=path.name + ".", dir=path.parent)
     try:
-        os.fchmod(fd, 0o600)
+        if hasattr(os, "fchmod"):
+            # POSIX-only; os.chmod below covers Windows.
+            os.fchmod(fd, 0o600)
         with os.fdopen(fd, "wb") as handle:
             handle.write(canonical_json(payload))
             handle.flush()
@@ -91,8 +93,12 @@ def atomic_write(path: Path, payload: Mapping[str, Any]) -> None:
         os.chmod(path, 0o600)
     except Exception:
         try:
+            os.close(fd)
+        except OSError:
+            pass
+        try:
             os.unlink(temporary)
-        except FileNotFoundError:
+        except (FileNotFoundError, PermissionError):
             pass
         raise
 

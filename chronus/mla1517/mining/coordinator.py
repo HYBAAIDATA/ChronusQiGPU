@@ -87,6 +87,7 @@ from .loss_ledger import LossLedger
 from .promotion import ShadowTrial, applicable
 from .recovery_effect import RecoveryEffects
 from .closed_loop import ClosedLoopOptimizer
+from .software_revision import software_revision
 from .operating_policy import OperatingPolicy, PolicyContext
 from .policy_audit import PolicyAuditor
 from .world_model import MiningWorldModel
@@ -411,7 +412,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self._elapsed_scale = {"learner": ResidualScale(), "null": ResidualScale()}
         self._sec_per_hash: dict[str, float] = {}
         self.execution_hasher = hasher if hasher is not None else CpuReferenceHasher()
-        self.causal = CausalLedger(path=causal_log_path)
+        self._software_revision = software_revision()
+        self.causal = CausalLedger(path=causal_log_path, revision=self._software_revision)
         # The guarded operational cycle. Every transition is evidence in the
         # causal ledger; an undeclared edge raises and is counted.
         self.cycle = MiningCycleLedger(
@@ -872,6 +874,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         return {
             "schema": "pythia.mining_evidence/1",
             "observed_at": time.time(),
+            "software_revision": self._software_revision,
             "cycle": self.cycle.snapshot(),
             "lifecycle": self._lifecycle_flags(),
             "decisions": self.decisions.snapshot(12),

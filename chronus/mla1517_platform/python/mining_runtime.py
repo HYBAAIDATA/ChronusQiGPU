@@ -158,6 +158,13 @@ async def _main_async(args) -> None:
             "--device or MLA1517_MMIO_DEVICE is required "
             "(or PYTHIA_EXECUTION_DEVICE=opencl|cpu for bridge-free mining)"
         )
+    # The supervisor exports PYTHIA_IDENTITY_HMAC_SECRET to every spawned
+    # worker (startup_contract.rotate_supervisor_secret). A standalone
+    # ``--mine`` process has no supervisor to provision one; generate it
+    # here so the heartbeat channel keeps its HMAC integrity instead of
+    # dying on the first tick. setdefault: a supervisor-provided secret
+    # always wins, so supervised behaviour is unchanged.
+    os.environ.setdefault("PYTHIA_IDENTITY_HMAC_SECRET", os.urandom(32).hex())
     backend = device if not args.device else os.getenv("PYTHIA_EXECUTION_BACKEND", "auto")
     endpoints = pool_endpoints(args)
     observer = BitcoinChainObserver.from_environment()

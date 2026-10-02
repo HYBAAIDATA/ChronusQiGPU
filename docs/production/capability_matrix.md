@@ -1,7 +1,7 @@
 # Capability matrix — every named capability with an execution trace
 
-Pin: `e09afab` (baseline) — refreshed at `73a716d` (post-A/C merge) where
-marked. Seeded from `system_fabric.SUBSYSTEMS` (runtime fabric map) at
+Pin: `e09afab` (baseline) — refreshed at `73a716d` (post-A/C merge) and `10c6a63`
+(post-fold, production-readiness re-baseline) where marked. Seeded from `system_fabric.SUBSYSTEMS` (runtime fabric map) at
 baseline. `fabric`/`orchestrator`/`idle` are the repo's *static labels* — MAP-01
 requires every claimed wire to have runtime evidence or an honest "not wired"
 verdict; the Evidence column is filled only from executed checks.
@@ -24,7 +24,7 @@ mathematical/computational capability; Owner B rows concern mining/workflows.
 | vqc | 11-qubit VQC (`tqc.scaled_execution`) | production | pool_credentials | **PASS** @73a716d | A fix merged (#18): `tests/test_vqc.py` 8/8 verified on integrated main |
 | folding_storage | Zeckendorf archival-exact fold (`Intelligence.folded_state`) | orchestrator | — | PASS | self_test `folded_state — bit_exact=True` |
 | salamander | Self-healing engine (`Intelligence.salamander`) | orchestrator | mmio | **PASS** (#22) | B: fault→ack-gated retire→verify-recovery→probationary readmit, failover once/cooldown/cancel, `MIN_LANES` degraded floor — `tests/test_b_*` |
-| agentic_workflow | 6-phase autonomous mining (`Intelligence.agentic_mining`) | fabric | — | **PASS** (#22) | B: campaign start→running→stop→`stopped` terminal, `retire_all` on every exit incl. failure, operator-stop `stop_detail`; `tests/test_b_*` |
+| agentic_workflow | 6-phase autonomous mining (`Intelligence.agentic_mining`) | fabric | — | **PASS** (#22, +10c6a63) | B: campaign start→running→stop→`stopped` terminal, `retire_all` on every exit incl. failure, operator-stop `stop_detail`; @10c6a63 truthful `stopping` mid-state (`finished_at` = worker exit, not request time; terminal `stopped` restart-eligible) + per-phase share deltas w/ reset re-arm; `tests/test_b_*` |
 | chain_verification | 11-stage chain (`Intelligence.chain_verification`) | fabric | — | **PASS** (#23) | D: 11-stage envelope + `_recheck_winner` boundaries (see ricci row); `tests/test_c_chain_verification.py` |
 | hash_pipeline | sha256d sole accept authority (`mining.hash_pipeline`) | production | — | PASS | `re_paper_gate` PASS; proof-boundary unittests |
 | m32_solver | M32 lane solver (`chronus.mla1517.mining.solver`) | production | — | PASS | unittest discover 203 OK |
@@ -50,7 +50,19 @@ mathematical/computational capability; Owner B rows concern mining/workflows.
 | discovery | Mathematical discovery engine | idle | — | NOT_RUN | honest idle label |
 | pool_aware_miner | Pool-aware miner | idle | — | NOT_RUN | honest idle label |
 
-Seed backlog statuses: RUN-01/RUN-02, DATA-01/DATA-02, MAP-01 → PASS on #22 (B:
-campaign arms retire on every exit; sidecar metrics 30 s TTL + hashrate None-vs-0.0;
-importlib-verified wiring tiers). `autonomous_supervisor` IA02 (dead import,
-supervisor never built) → fixed here; `trigger_cycle` now runs real heal cycles.
+Seed backlog statuses: RUN-02, DATA-02, MAP-01 → PASS on #22 (B: campaign arms
+retire on every exit; sidecar metrics 30 s TTL + hashrate None-vs-0.0;
+importlib-verified wiring tiers). RUN-01 residual (stop marked `stopped` at
+request time, `finished_at` fabricated) → landed on `main` as `953765a` (PR #81):
+truthful `stopping` state until worker exit; this branch adds
+`RunnerStatus.state` `"stopping"` + terminal/restart coverage. DATA-01 residual
+(campaign `shares_accepted` = cumulative counter) → landed in `953765a`:
+per-phase deltas with reset handling; this branch adds reset re-arm coverage.
+DOC-01 → closed here: AGENTS.md §4 rewritten against the real product
+(control API + static UI + Python worker plane), README records the per-operation
+device policy (`cpu_reference` fallback carries `fallback_reason`).
+`autonomous_supervisor` IA02 (dead import, supervisor never built) → fixed here;
+`trigger_cycle` now runs real heal cycles. @10c6a63 also fixed Windows-only
+persistence defects surfaced by the re-baseline: `euclid.evidence.atomic_write`
+(POSIX-only `os.fchmod` + leaked fd on failure) and `MemoryDatabase.backup`
+(`sqlite3.connect` context manager never closed the output connection).
