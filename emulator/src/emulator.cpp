@@ -24,6 +24,8 @@ while(!all_done()){
  if(pc%4||pc/4>=binary_.code.size()) trap(TrapCode::OutOfBounds,"PC outside code");
  Decoded ins=decode(binary_.code[pc/4]);
  s.scheduler_steps++;
+ s.opcode_counts[uint8_t(ins.op)]++;
+ for(uint64_t value : {uint64_t(pc), uint64_t(ins.raw), uint64_t(mask)}) { s.trace_hash ^= value; s.trace_hash *= 1099511628211ull; }
  uint32_t taken=0,fall=0;
  for(int i=0;i<32;i++)if(mask&(1u<<i)){auto&l=selected->lanes[i];auto R=[&](uint8_t r){return r?l.r[r]:0u;};auto W=[&](uint8_t r,uint32_t v){if(r)l.r[r]=v;};uint64_t addr;switch(ins.op){
  case Opcode::NOP:l.pc+=4;break;case Opcode::MOV:W(ins.rd,R(ins.rs1));l.pc+=4;break;case Opcode::MOVI:W(ins.rd,uint32_t(ins.imm));l.pc+=4;break;case Opcode::ADD:W(ins.rd,R(ins.rs1)+R(ins.rs2));l.pc+=4;break;case Opcode::SUB:W(ins.rd,R(ins.rs1)-R(ins.rs2));l.pc+=4;break;case Opcode::MUL:W(ins.rd,uint32_t(uint64_t(R(ins.rs1))*R(ins.rs2)));l.pc+=4;break;case Opcode::FMA:W(ins.rd,fma_bits(R(ins.rs1),R(ins.rs2),R(ins.aux)));l.pc+=4;break;

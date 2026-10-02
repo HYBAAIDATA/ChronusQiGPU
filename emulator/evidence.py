@@ -14,7 +14,7 @@ def execute(cli:Path, executable:Path, *, global_size=(1,1,1),local_size=(1,1,1)
   "workload":{"id":"emulator-replay","tenant":"conformance","operation":"chronus1_execute","input_hash":digest(executable.read_bytes())},
   "planner":{"plan_id":"chronus1-reference","execution_class":"dense_native","global_size":list(global_size),"local_size":list(local_size)},
   "substrate":{"adapter_id":"chronus1-emulator","backend":"reference_emulator","manifest":{"isa":"chronus1-1.1","hardware_executed":False}},
-  "execution":{"status":"ok","hardware_executed":False,"lane_instructions":result["lane_instructions"],"scheduler_steps":result["scheduler_steps"],"work_groups":result["work_groups"]},
+  "execution":{"status":"ok","hardware_executed":False,"lane_instructions":result["lane_instructions"],"scheduler_steps":result["scheduler_steps"],"work_groups":result["work_groups"],"trace_digest":hashlib.sha256(result["trace_hash"].encode()).hexdigest()},
   "validation":{"passed":True,"authority":"chronus1-reference-replay","output_hash":output_digest},
   "provenance":{"runtime":"chronus1-emulator-v1","executable_digest":digest(executable.read_bytes())}
  }
