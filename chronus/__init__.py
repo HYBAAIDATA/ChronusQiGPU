@@ -36,6 +36,14 @@ if TYPE_CHECKING:
     from .tensor_compute import ChronusTensorRuntime, ChronusTensorUnavailable, TensorDeviceProbe
 
 _EXPORTS = {
+    "ChronusSubstrateMiningBridge": (
+        "chronus.mining_bridge",
+        "ChronusSubstrateMiningBridge",
+    ),
+    "SubstrateOrderingEvidence": (
+        "chronus.mining_bridge",
+        "SubstrateOrderingEvidence",
+    ),
     "BufferAttestation": ("chronus.gpu_capabilities", "BufferAttestation"),
     "BufferIntegrityGate": ("chronus.gpu_capabilities", "BufferIntegrityGate"),
     "ChronusTensorPipeline": ("chronus.gpu_capabilities", "ChronusTensorPipeline"),
