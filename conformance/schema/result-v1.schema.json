@@ -1,0 +1,103 @@
+{
+  "$id": "https://hyba.example/schema/chronus-conformance-result-v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "actual_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "actual_status": {
+      "enum": [
+        "PASS",
+        "REJECTED_IR",
+        "REJECTED_ASSEMBLY",
+        "TRAP",
+        "BUDGET_EXHAUSTED",
+        "CONTAINER_REJECTED",
+        "RESULT_MISMATCH",
+        "NONDETERMINISTIC",
+        "HARNESS_ERROR",
+        "NOT_RUN"
+      ]
+    },
+    "actual_trap": {
+      "anyOf": [
+        {
+          "enum": [
+            "ILLEGAL_OPCODE",
+            "MALFORMED_ENCODING",
+            "INVALID_SELECTOR",
+            "MISALIGNED_GLOBAL_ACCESS",
+            "GLOBAL_OOB",
+            "GLOBAL_ADDRESS_WRAP",
+            "MISALIGNED_LOCAL_ACCESS",
+            "LOCAL_OOB",
+            "WORKGROUP_ISOLATION",
+            "MISSING_RECONVERGENCE",
+            "SURPLUS_RECONVERGENCE",
+            "DUPLICATE_RECONVERGENCE",
+            "INVALID_RECONVERGENCE_TARGET",
+            "DIVERGENCE_OVERFLOW",
+            "INVALID_EARLY_EXIT",
+            "BARRIER_DEADLOCK",
+            "MISMATCHED_BARRIER",
+            "BARRIER_BUDGET_EXHAUSTED",
+            "INSTRUCTION_BUDGET_EXHAUSTED",
+            "BAD_MAGIC",
+            "BAD_VERSION",
+            "BAD_CHECKSUM",
+            "BAD_CONTAINER_SIZE",
+            "BAD_ENTRY",
+            "BAD_METADATA"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "case_id": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "passed": {
+      "type": "boolean"
+    },
+    "runner": {
+      "type": "string"
+    },
+    "runner_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "schema": {
+      "const": "chronus.conformance.result.v1"
+    },
+    "trace_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "schema",
+    "case_id",
+    "runner",
+    "runner_sha256",
+    "actual_sha256",
+    "trace_sha256",
+    "actual_status",
+    "actual_trap",
+    "passed"
+  ],
+  "type": "object"
+}
