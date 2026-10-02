@@ -82,7 +82,6 @@ def _wait_terminal(runner, timeout=10.0):
     return runner.status()
 
 
-
 def test_runner_stop_remains_stopping_until_worker_exits():
     gate = threading.Event()
     runner = system_fabric._Runner("truthful-stop")
@@ -104,6 +103,28 @@ def test_runner_stop_remains_stopping_until_worker_exits():
     assert terminal["state"] == "stopped"
     assert terminal["finished_at"] is not None
     assert terminal["error"] is None
+    # A stop request on an already-terminal runner is refused, and the
+    # runner is eligible to start again once the worker actually exited.
+    assert runner.stop() is False
+    assert runner.start(lambda r: {"ok": True}) is True
+    runner._thread.join(timeout=5)
+    assert runner.status()["state"] == "done"
+
+
+def test_runner_stop_when_function_returns_after_flag():
+    """A function that returns normally after the stop flag is still a
+    stopped run, not a successful 'done'."""
+    runner = system_fabric._Runner("late-stop")
+
+    def slow(r):
+        time.sleep(0.05)
+        return {"partial": True}
+
+    assert runner.start(slow)
+    runner.stop()
+    status = _wait_terminal(runner)
+    assert status["state"] == "stopped"
+    assert status["result"] == {"partial": True}
 
 
 def test_campaign_retires_arms_on_phase_failure(tmp_path, monkeypatch):
@@ -154,7 +175,6 @@ def test_campaign_measured_zero_is_a_measurement(tmp_path, monkeypatch):
     assert status["result"]["phases"][0]["measured_hs_avg"] == 0.0
 
 
-
 def test_campaign_reports_phase_share_delta_not_prior_total(tmp_path, monkeypatch):
     deps = _CampaignDeps(tmp_path, monkeypatch, single_phase=True)
     values = iter([100, 102, 102])
@@ -170,6 +190,29 @@ def test_campaign_reports_phase_share_delta_not_prior_total(tmp_path, monkeypatc
 
     deps.counter_probe = probe
     runner = _fresh_campaign(monkeypatch)
+    assert system_fabric.start_campaign(
+        apply_config=deps.apply_config,
+        retire_all=deps.retire_all,
+        counter_probe=deps.counter_probe,
+    )
+    status = _wait_terminal(runner)
+    assert status["result"]["phases"][0]["shares_accepted"] == 2
+
+
+def test_campaign_shares_counter_reset_counts_new_total(tmp_path, monkeypatch):
+    """DATA-01: when the aggregate counter resets (arm respawn/pool switch)
+    the post-reset reading itself is the new phase-local count."""
+    deps = _CampaignDeps(tmp_path, monkeypatch, single_phase=True)
+    runner = _fresh_campaign(monkeypatch)
+    calls = {"n": 0}
+
+    def probe():
+        calls["n"] += 1
+        # Baseline reads 4; every later read drops to 2 (a respawned arm's
+        # fresh counter) — the phase delta is the post-reset count itself.
+        return {"hashrate_hs": 10.0, "shares_accepted": 4 if calls["n"] == 1 else 2}
+
+    deps.counter_probe = probe
     assert system_fabric.start_campaign(
         apply_config=deps.apply_config,
         retire_all=deps.retire_all,
