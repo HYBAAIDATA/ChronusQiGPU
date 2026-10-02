@@ -11,6 +11,17 @@ Adapted 2026-09-29 to the Devin child-session model.
 - Runtime on this box: Python 3.14.7 via `uv` venv (`.venv/`), Node TBD
 - Child sessions run on their own VMs with their own clones; they do NOT share this checkout.
 
+## Re-baseline @ `10c6a63` (2026-10-01, follow-on session)
+
+The pack's observations were refreshed against current `main` (post-fold
+`chronus/` layout, swarm PRs through #78 merged). Verified-open residuals closed
+in this increment: RUN-01 truthful `stopping` state (was: `stopped` + fabricated
+`finished_at` at request time), DATA-01 per-phase share deltas (was: cumulative
+counter), DOC-01 AGENTS.md §4 rewritten for the real product + README
+per-operation device policy, and two Windows-only euclid persistence defects
+(`atomic_write`, `MemoryDatabase.backup`). Fresh gate numbers live in
+`validation.md` §"Re-baseline @ 10c6a63".
+
 ## Coordination model (Codex → Devin mapping)
 
 The pack specifies "Codex Coordinator" durable tasks on a shared checkout with a

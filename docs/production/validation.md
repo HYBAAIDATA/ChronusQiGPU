@@ -58,6 +58,48 @@ Install: `uv pip install -e ".[ml,dev]" -e ./turing_universal_quantum_computer`.
 | flake8 | `flake8 --count` repo-wide | **0** — upstream #16 repaired all findings |
 | IR-2 sqlite tempfile lock | 4 tests (`test_enterprise_v2_tranches`, `test_fold_pipeline`, `test_promotion_evidence`, `test_promotion_release_catalogue`) | **FAIL→FIXED** — `NamedTemporaryFile()` (exclusive lock) → `delete=False` + `addCleanup(os.unlink)`; verified 21/21 |
 
+## Re-baseline @ 10c6a63 (follow-on session, 2026-10-01/02)
+
+Refreshed the pack's observations against current `main` (post-fold `chronus/`
+layout; swarm PRs through #78). Env: this box's system Python 3.12.10 + pytest
+9.1.1; worktree `wt-prodready`, PYTHONPATH = worktree root +
+`chronus/mla1517_platform/python` + `turing_universal_quantum_computer`.
+`sympy`/`numpy`/`fastapi` installed into the interpreter (the editable install
+targets the main checkout, so the worktree needs explicit PYTHONPATH).
+
+| Gate | Command (cwd) | Result | Evidence |
+|---|---|---|---|
+| Repo pytest | `pytest tests/ -x -q` (worktree root) | **PASS — 2434 passed, 16 skipped, 92 subtests** (~548 s) | this session; started at 9 failures, all closed (see "defects fixed" below) |
+| Platform unittest | `unittest discover -s chronus/mla1517_platform/python` | PASS — 367 ran, OK (7 skipped) | this session |
+| `scripts/import_audit.py` | `python scripts/import_audit.py` | PASS — 0 violations | this session |
+| `scripts/refuted_claims.py` | `python scripts/refuted_claims.py` | PASS | this session |
+| Re-paper gate | `python scripts/re_paper_gate.py` | PASS | this session |
+| Drift sentry | `python -m scripts.drift_sentry --verify` | PASS | this session |
+| Deploy sentry | `python -m scripts.deploy_sentry` | 0 errors / 1 warning — DS02 quantum_core (known, unverified-on-silicon claim surface) | this session |
+| Self test | `python -X utf8 -m Intelligence.self_test` | PASS | this session |
+| Namespace gate | `pytest tests/test_chronus_namespace.py` | PASS — 5/5 after AGENTS.md rewrite stopped naming retired tokens | this session |
+| flake8/black | changed files only | flake8 0 on changed scope; black clean on edited lines (pre-existing repo-wide drift unchanged) | this session |
+| Hardware gate | `MLA1517_STRICT_HARDWARE_CI=1 make test` | NOT_RUN — no OpenCL device on this box | — |
+| Live pool submission | — | NOT_RUN — not authorized (triple gate) | — |
+
+### Defects found by the re-baseline and fixed on this branch
+
+| Defect | Pre-fix state | Fix |
+|---|---|---|
+| RUN-01 residual — `_Runner.stop()` | marked `stopped` at request time and fabricated `finished_at` while the worker still ran | truthful `stopping` state; `finished_at` stamped at worker exit in `_wrap`'s `finally`; terminal `stopped` becomes restart-eligible; `stop()` on a terminal runner returns `False`; `RunnerStatus.state` union + `_TERMINAL_STATES` updated |
+| DATA-01 residual — campaign `shares_accepted` | recorded the cumulative counter's max, so a phase accepting 2 shares off a counter at 100 read "102" | per-phase baseline: `shares_accepted` = max per-phase delta; a counter reset re-arms the baseline |
+| `euclid.evidence.atomic_write` (Windows) | `os.fchmod` is POSIX-only → AttributeError before `os.fdopen` → leaked fd → `os.unlink` WinError 32; 4 tests failed | `fchmod` guarded by `hasattr`; `os.close(fd)` on the failure path; unlink also tolerates `PermissionError` |
+| `MemoryDatabase.backup` (Windows) | `with sqlite3.connect(...) as output` never closes the connection → `os.replace` / tempdir cleanup WinError 32 | explicit `output.close()` in `finally` |
+| `test_millennium_package` x2 | `ModuleNotFoundError: fastapi` (env, like earlier sympy) | `uv pip install fastapi` → 2/2 pass |
+| `tests/test_chronus_namespace` x2 | AGENTS.md §4 rewrite named the retired tokens the gate greps for | rewrote those lines without the literal tokens |
+
+DOC-01 closed in the same increment: `AGENTS.md` §4.1–4.5 rewritten against the
+real product (Python control plane + static `dist/public` UI + `chronus.mla1517`
+canonical package); README now states the per-operation device policy —
+device-bound operations fail closed while the supervised solver route records
+`executed_route=cpu_reference` + `fallback_reason`, never relabelled as device
+execution.
+
 ## Invocation pitfalls recorded (so owners don't repeat them)
 
 - `tempfile.NamedTemporaryFile()` on Windows holds an exclusive lock — sqlite

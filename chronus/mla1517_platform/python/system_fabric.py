@@ -573,7 +573,7 @@ class _Runner:
         self._lock = threading.Lock()
         self._stop = threading.Event()
         self._thread: Optional[threading.Thread] = None
-        self.state = "idle"  # idle -> running -> done | stopped | error
+        self.state = "idle"  # idle -> running -> done | stopping -> stopped | error
         self.started_at: Optional[float] = None
         self.finished_at: Optional[float] = None
         self.error: Optional[str] = None
@@ -595,7 +595,11 @@ class _Runner:
             def _wrap() -> None:
                 try:
                     self.result = fn(self)
-                    if self.state == "running":
+                    if self.stopped:
+                        # The function returned after an operator stop
+                        # without raising on the flag — still a stop.
+                        self.state = "stopped"
+                    elif self.state in {"running", "stopping"}:
                         self.state = "done"
                 except Exception as exc:
                     if self.stopped:
@@ -607,6 +611,8 @@ class _Runner:
                         self.error = f"{type(exc).__name__}: {exc}"
                         self.state = "error"
                 finally:
+                    # finished_at is the worker's actual exit timestamp;
+                    # stop() records only the request.
                     self.finished_at = time.time()
 
             self._thread = threading.Thread(target=_wrap, name=f"fabric-{self.name}", daemon=True)
@@ -614,11 +620,17 @@ class _Runner:
             return True
 
     def stop(self) -> bool:
+        """Request cessation.
+
+        The state moves to ``stopping`` and stays there until the worker
+        actually exits — a phase still unwinding is reported as stopping,
+        never as stopped-and-finished while it is still running.
+        ``finished_at`` is stamped by the worker thread itself on exit.
+        """
         self._stop.set()
         with self._lock:
-            if self.state == "running":
-                self.state = "stopped"
-                self.finished_at = time.time()
+            if self.state in {"running", "stopping"}:
+                self.state = "stopping"
                 return True
             return False
 
@@ -823,7 +835,15 @@ def _run_campaign(
             applied = apply_config(next_cfg)
             started = time.time()
             measured: list[float] = []
-            shares_seen = 0
+            # The shares counter is cumulative across the whole process;
+            # the phase record must be the delta earned inside this phase,
+            # so the baseline is the reading taken at phase start.
+            try:
+                pre_phase = counter_probe().get("shares_accepted")
+                shares_baseline: float | None = float(pre_phase) if pre_phase is not None else 0.0
+            except Exception:
+                shares_baseline = None
+            shares_peak = 0.0
             duration = float(phase["duration_s"])
             while time.time() - started < duration:
                 if runner.stopped:
@@ -837,7 +857,23 @@ def _run_campaign(
                         measured.append(float(rate))
                     except (TypeError, ValueError):
                         pass
-                shares_seen = max(shares_seen, int(counters.get("shares_accepted") or 0))
+                raw_shares = counters.get("shares_accepted")
+                if raw_shares is not None:
+                    try:
+                        total_shares = float(raw_shares)
+                    except (TypeError, ValueError):
+                        total_shares = None
+                    if total_shares is not None:
+                        if shares_baseline is None:
+                            shares_baseline = total_shares
+                        phase_delta = total_shares - shares_baseline
+                        if phase_delta < 0:
+                            # The aggregate counter reset (arm respawn,
+                            # pool switch): the current reading is the
+                            # new phase-local count.
+                            shares_baseline = 0.0
+                            phase_delta = total_shares
+                        shares_peak = max(shares_peak, phase_delta)
                 time.sleep(min(2.0, max(0.25, duration / 240)))
             record["phases"].append(
                 {
@@ -853,7 +889,7 @@ def _run_campaign(
                     "finished_at": time.time(),
                     "measured_hs_avg": (sum(measured) / len(measured)) if measured else None,
                     "measured_hs_peak": max(measured) if measured else None,
-                    "shares_accepted": shares_seen,
+                    "shares_accepted": int(shares_peak),
                     "applied": applied,
                 }
             )

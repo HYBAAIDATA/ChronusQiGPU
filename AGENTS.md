@@ -379,13 +379,14 @@ This section defines the operational, architectural, and security laws of the EU
 
 ### 4.1 Project Overview
 
-EUCLID-CORE / PYTHIA is an algebraic mining orchestration, Stratum telemetry, and topological hardware verification platform.
+PYTHIA is HYBA's operational mining product: a Python control plane serving a static operator UI, driving supervised mining workers, Stratum pool lifecycle, self-healing, and the mathematical capability stack.
 
-- **Frontend / Backend**: React + Vite + Express (TypeScript)
-- **Core Verification & Algebra**: Python (`Intelligence/`, `core_engine/`, `lucas/`, `mining/`)
-- **Hardware & RTL**: OpenCL kernels (`kernels/`), Verilog/RTL (`hardware/rtl/`)
-- **Entry Points**: `server.ts` (API/Web), `main.py` (Python Intelligence Engine)
-- **Observability**: Prometheus metrics via `prom-client`
+- **Control service**: Python (`chronus/mla1517_platform/python/`): `main.py` (HTTP control API + static web root), `control_api.py` (routing/auth/worker supervision), `mining_runtime.py` (worker composition), `system_fabric.py` (capability wiring map + supervised `_Runner`s), `runtime_config.py` (durable config + live-submit gate), `worker_lifecycle.py`, `salamander_engine.py`. Console scripts: `pythia-api` → `control_api:main`, `pythia-mine` → `mining_runtime:main`.
+- **Canonical mining package**: `chronus.mla1517` (`chronus/mla1517/`), incl. `mining/coordinator.py`, `mining/execution_router.py`, `mining/stratum_adapter.py`, `mining/solver.py`. `chronus` is the only iGPU/hardware substrate; the retired pre-fold `igpu` package and the old `mla1517_platform_*` tree at repo root do not exist and must not be referenced.
+- **Mining core**: `mining/` (sha256d pipeline, stratum bridge arms, hash pipeline accept authority), `kernels/` (OpenCL `bitcoin_sha256d.cl` golden-stride contract).
+- **Math/verification stack**: `toe/`, `kellogg/`, `aethel/`, `lucas/`, `millennium/`, `turing_universal_quantum_computer/` (TUQC inner package), `Intelligence/` (orchestrator, agentic workflow, chain verification, folded state, salamander).
+- **Operator UI**: React + Vite static bundle in `frontend/`, built to `dist/public` and served by the Python control API (`--web-root`, default `dist/public`). There is no Node/Express backend and no `server.ts`/`src/` TypeScript service layer — those belong to a different product line.
+- **Observability**: worker heartbeat + `*.metrics.json` sidecars under the worker heartbeat dir, surfaced through the control API telemetry endpoints. No `prom-client`.
 
 ---
 
@@ -395,36 +396,48 @@ Before marking any task complete, execute the rigorous validation gauntlet:
 
 ```bash
 # ==========================================
-# 1. Node / TypeScript Verification
+# 1. Python Verification Gauntlet (repo root)
 # ==========================================
-npm ci
-npm run lint      # tsc --noEmit (must be 0 errors)
-npm run build     # vite build + esbuild server bundle
-npm test          # tsx --test src/**/*.test.ts
+python -m pip install -e ".[ml,dev]" -e ./turing_universal_quantum_computer
+python -m flake8 --count      # repo hygiene gate
+python -m black --check .     # formatting gate
+python -m pytest tests/ -x -q # core test suite
+python -m unittest discover -s chronus/mla1517_platform/python  # platform suite
+python -m scripts.drift_sentry --verify  # anti-drift invariant check
+python scripts/import_audit.py           # import-audit gate
+python -m scripts.deploy_sentry          # deployment sentry gate
+python -X utf8 -m Intelligence.self_test # intelligence self-test
+
+# TUQC suite — MUST run with cwd inside turing_universal_quantum_computer/
+cd turing_universal_quantum_computer && python -m pytest tests -q
 
 # ==========================================
-# 2. Python Verification Gauntlet
+# 2. Frontend Verification (all under frontend/)
 # ==========================================
-python -m flake8 --count      # must be 0
-python -m black --check .     # must be clean
-python -m pytest tests/ -x -q # core test suite must pass
-python -m scripts.drift_sentry --verify # anti-drift invariant check
+npm ci --prefix frontend
+npm --prefix frontend run lint     # tsc --noEmit (must be 0 errors)
+npm --prefix frontend run test:ts  # vitest
+npm --prefix frontend run build    # vite build → dist/public
 
 # ==========================================
-# 3. End-to-End Production Smoke Test
+# 3. Control-Service Smoke Test
 # ==========================================
-npm run build
-NODE_ENV=production EUCLID_ADMIN_API_KEY="$(openssl rand -hex 32)" \
-  CORS_ORIGIN="http://localhost:3000" node dist/server.cjs &
+# The control service binds the API + serves the built UI:
+MLA1517_STRATUM_USER=test MLA1517_STRATUM_PASSWORD=x \
+  MLA1517_STRATUM_ENDPOINT=stratum.braiins.com:3333 \
+  python -u chronus/mla1517_platform/python/main.py \
+    --host 127.0.0.1 --port 3000 --web-root dist/public &
 curl -f http://localhost:3000/api/v1/healthz
 ```
+
+Windows notes: run the smoke's env vars with `$env:` PowerShell syntax; `npm` may resolve to a broken shim — invoke the npm-cli entry under the hosted Node 24 toolchain directly.
 
 ---
 
 ### 4.3 Code Style & Hygiene
 
-- **Python**: Format with `black` (line length 88), lint with `flake8`. Strict adherence to `.flake8` and `pyproject.toml`.
-- **TypeScript**: Format with `prettier`, compile with `tsc --noEmit`. Strict adherence to `tsconfig.json`.
+- **Python**: Format with `black` (line length 100, `pyproject.toml`), lint with `flake8` (`max-line-length = 100`, `.flake8`). Note many existing files are intentionally not black-clean — match surrounding style; do not reformat wholesale.
+- **TypeScript**: `frontend/` only — `tsc --noEmit` clean, vitest. Strict adherence to `frontend/tsconfig.json`.
 - **Do not** add obvious explanatory comments that clutter mathematical clarity.
 - **Do not** commit secrets or keys under any circumstances.
 - **Module headers**: Preserve `LUCAS WIRING` headers. Do **not** place shebangs (`#!/usr/bin/env python3`) after module docstrings (prevents `flake8 E265`).
@@ -434,34 +447,42 @@ curl -f http://localhost:3000/api/v1/healthz
 ### 4.4 Architecture & Package Boundaries
 
 ```
-c:\Users\USER\Downloads\PYTHIA-main\PYTHIA-main\
-├── Intelligence/           # Primary Python orchestration & search heuristics
-│   ├── agentic_controller.py
-│   ├── poincare_cassini_search.py
-│   ├── lucas_attractor.py
-│   └── hardened_unified_substrate.py
-├── core_engine/            # Experimental algebraic substrates & simulation engines
-├── lucas/                  # Shared exact-arithmetic kernel (isolated purity checks)
-├── mining/                 # Stratum hashing, OpenCL bridges & Bitcoin SHA-256d
-├── kernels/                # OpenCL acceleration kernels (bitcoin_sha256d.cl)
-├── src/                    # TypeScript backend services & Stratum lifecycle
-└── scripts/                # Anti-drift sentry & repository maintenance tools
+PYTHIPhiMiner/
+├── chronus/                       # Chronus hardware substrate
+│   ├── mla1517/                   #   canonical package chronus.mla1517
+│   │   └── mining/                #     coordinator, execution_router, stratum_adapter,
+│   │                              #     solver, chooser, toe_adapter, worker lifecycle
+│   └── mla1517_platform/python/   #   control plane (control_api, main, mining_runtime,
+│                                  #     system_fabric, runtime_config, loose modules)
+├── mining/                        # sha256d hash pipeline + stratum bridge arms
+├── Intelligence/                  # orchestrator, agentic workflow, chain verification,
+│                                  # folded state, salamander, learning/memory
+├── toe/ kellogg/ aethel/ lucas/ millennium/   # mathematical substrates
+├── turing_universal_quantum_computer/         # TUQC (inner package; run tests inside it)
+├── kernels/                       # OpenCL kernels (bitcoin_sha256d.cl)
+├── frontend/                      # React + Vite operator UI (static bundle)
+├── tests/                         # repo-level pytest suite
+└── scripts/                       # gates: import_audit, deploy_sentry, drift_sentry,
+                                   # re_paper_gate, mutation_check, gate_impl
 ```
 
-1. **`Intelligence/`**: Exposes `IntelligenceOrchestrator` to the mining pipeline.
-2. **`core_engine/`**: Experimental substrates (AGI models, time-crystal shims, topological manifolds). These are **algebraic simulations** unless backed by physical RTL or formal proof.
-3. **`lucas/`**: Shared exact arithmetic kernel. Algorithm files must not import sibling modules (see `lucas/gate.py` purity constraints).
-4. **`mining/`**: Double-SHA256 consensus pipeline with OpenCL GPU offload.
+1. **`chronus/`** is the sole iGPU/hardware implementation. Importing the retired `igpu` package or the pre-fold platform path fails loudly (enforced by `tests/test_chronus_namespace.py`).
+2. **`lucas/`**: Shared exact arithmetic kernel. Algorithm files must not import sibling modules; only `lucas.pool` is the legal shared import.
+3. **`aethel/`** must not import `kellogg` (dependency direction is one-way).
+4. **`mining/`** is a repo-root package resolved via sys.path fallback from platform code — it is intentionally not in setuptools `packages`.
+5. **`Intelligence/`** orchestration loads the registry lazily inside `system_fabric`; measure/observe before labeling anything wired.
 
 ---
 
 ### 4.5 Critical Security & Consensus Caveats
 
-1. **Simulation Gate Invariant**: All synthetic/fabricated telemetry is disarmed unless `EUCLID_ENABLE_SIMULATION=true` (see `src/lib/simulation_gate.ts`). Keep `false` in production.
-2. **Consensus Immutability**: Intelligence models reorder and prune search space, but **NEVER bypass double-SHA256 hashing or target comparisons**. Every candidate block must verify:
+1. **Consensus Immutability**: Intelligence models reorder and prune search space, but **NEVER bypass double-SHA256 hashing or target comparisons**. Every candidate block must verify:
    $$\operatorname{SHA-256}(\operatorname{SHA-256}(\text{BlockHeader})) \le \text{Target}$$
-3. **Stratum State Machine Integrity**: `MiningLifecycleController` (`src/lib/stratum_protocol.ts`) transitions only through its declared edge table. Ad-hoc state jumps are strictly prohibited.
-4. **Fail-Closed Operations**: In production mode, non-privileged mutating endpoints require `Authorization: Bearer $EUCLID_ADMIN_API_KEY`; missing or wrong keys fail closed. Privileged routes (`/api/v1/mining/`, `/api/v1/policy/`, `/api/v1/worker/`, `/api/v1/recovery/`, `/api/v1/admin/`, `/api/v1/toe/`, `/api/v1/quantum/`, `/api/v1/scale/`, `/api/v1/assembly/`, `/api/v1/security/`) are AL HARAS-mediated instead: the Bearer slot carries a signed subscription entitlement plus `X-HYBA-Tenant`/`X-HYBA-Actor` headers (denial ladder 400→402→403; `guardian_dependency_unavailable` 503 is non-retryable). A request bearing neither credential is denied before any handler runs.
+   The hash pipeline is the sole accept authority; a pool share additionally requires the pool's own acknowledgement.
+2. **Fail-Closed Execution**: A missing device, credential, approval, or identity produces an unavailable/failed-closed state, never a pass. `cpu_reference` is a declared execution route with explicit provenance (`fallback_reason`), not a device result.
+3. **Live-Submission Gate**: Live Stratum submission is triple-gated — `runtime_config.live_submit.enabled` plus `approval_id = identity_commit(endpoint, worker)` bound to the exact pool identity; any `pools` write without the `live_submit` section revokes it.
+4. **Fail-Closed Operations**: In production mode, non-privileged mutating endpoints require the configured control bearer key; missing or wrong keys fail closed. Privileged routes (`/api/v1/mining/`, `/api/v1/policy/`, `/api/v1/worker/`, `/api/v1/recovery/`, `/api/v1/admin/`, `/api/v1/toe/`, `/api/v1/quantum/`, `/api/v1/scale/`, `/api/v1/assembly/`, `/api/v1/security/`) are AL HARAS-mediated instead: the Bearer slot carries a signed subscription entitlement plus `X-HYBA-Tenant`/`X-HYBA-Actor` headers (denial ladder 400→402→403; `guardian_dependency_unavailable` 503 is non-retryable). A request bearing neither credential is denied before any handler runs.
+5. **Worker State Machine Integrity**: `worker_lifecycle` records transition only through `startup_contract`'s declared edge table (`armed_no_device → starting → running → stopping → stopped`, etc.). Ad-hoc state jumps are prohibited; a supervisor's `stopping` means cessation is requested and in flight, not complete.
 
 ---
 
