@@ -157,12 +157,25 @@
       "relative_residual": "1.6692412543000614571001982411900016260480362256037505276072395746940181757634710227321328977601607259686007863859526192807065592E-9"
     }
   ],
-  "content_sha256": "e101c29235bee57d0c0c400c04df614daa11b88bf7d82f6a7b278a24b23d6f2f",
+  "content_sha256": "af3734b73ee1e3c5c1d744280ebce8cfa522de1a183033853a02498d2b6858e2",
   "falsified_or_unproven": [
     "the selected indices have a special Pisot advantage after controlling for n",
     "Lucas/Pisot structure alone establishes mining or scheduling advantage",
-    "binary64 is suitable for exact high-index Pisot certification"
+    "binary64 is suitable for exact high-index Pisot certification",
+    "the current Float32 11-D transport preserves the n=18 and n=20 Pisot residuals"
   ],
+  "float32_transport_boundary": {
+    "discovery_indices_erasing_residual": [
+      18,
+      20
+    ],
+    "discovery_indices_preserving_residual": [
+      10,
+      12,
+      15
+    ],
+    "true_residual_unrepresentable_first_n": 18
+  },
   "float64_boundary": {
     "float_pow_error_at_first_integral": 1,
     "float_pow_error_at_n76": 19,

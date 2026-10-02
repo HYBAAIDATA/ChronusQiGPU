@@ -6,6 +6,7 @@ from decimal import Decimal, localcontext
 import hashlib
 import json
 import math
+import struct
 from typing import Any
 
 from .core import fibonacci, lucas
@@ -74,6 +75,37 @@ def float64_boundary() -> dict[str, int]:
     }
 
 
+def _float32(value: float) -> float:
+    return struct.unpack("!f", struct.pack("!f", value))[0]
+
+
+def float32_boundary() -> dict[str, Any]:
+    """Show where the current 11-D Float32 transport erases Pisot drift."""
+    with localcontext() as ctx:
+        ctx.prec = 200
+        phi = (Decimal(1) + Decimal(5).sqrt()) / 2
+        first_collapse = None
+        for n in range(2, 100):
+            if _float32(float(phi**n)) == _float32(float(lucas(n))):
+                first_collapse = n
+                break
+    if first_collapse is None:
+        raise AssertionError("Float32 collapse boundary not found")
+    return {
+        "true_residual_unrepresentable_first_n": first_collapse,
+        "discovery_indices_preserving_residual": [
+            n
+            for n in DISCOVERY_INDICES
+            if _float32(float(phi**n)) != _float32(float(lucas(n)))
+        ],
+        "discovery_indices_erasing_residual": [
+            n
+            for n in DISCOVERY_INDICES
+            if _float32(float(phi**n)) == _float32(float(lucas(n)))
+        ],
+    }
+
+
 def research_report() -> dict[str, Any]:
     rows = [pisot_certificate(n) for n in DISCOVERY_INDICES]
     controls = sorted({n + d for n in DISCOVERY_INDICES for d in (-1, 0, 1) if n + d >= 2})
@@ -88,6 +120,7 @@ def research_report() -> dict[str, Any]:
         "selected": rows,
         "adjacent_controls": [pisot_certificate(n) for n in controls],
         "float64_boundary": float64_boundary(),
+        "float32_transport_boundary": float32_boundary(),
         "verified_claims": [
             "L_n is the exact trace of phi^n",
             "L_n^2 - 5F_n^2 = 4(-1)^n",
@@ -99,6 +132,7 @@ def research_report() -> dict[str, Any]:
             "the selected indices have a special Pisot advantage after controlling for n",
             "Lucas/Pisot structure alone establishes mining or scheduling advantage",
             "binary64 is suitable for exact high-index Pisot certification",
+            "the current Float32 11-D transport preserves the n=18 and n=20 Pisot residuals",
         ],
         "non_claims": [
             "mining advantage",
@@ -116,6 +150,7 @@ __all__ = [
     "DISCOVERY_CLASSIFICATION",
     "DISCOVERY_INDICES",
     "SCHEMA",
+    "float32_boundary",
     "float64_boundary",
     "pisot_certificate",
     "research_report",

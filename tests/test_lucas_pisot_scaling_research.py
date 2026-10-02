@@ -7,7 +7,12 @@ import unittest
 from lucas.algebra import fibonacci as algebra_fibonacci
 from lucas.algebra import lucas as algebra_lucas
 from lucas.core import fibonacci, lucas
-from lucas.scaling_research import DISCOVERY_INDICES, float64_boundary, pisot_certificate
+from lucas.scaling_research import (
+    DISCOVERY_INDICES,
+    float32_boundary,
+    float64_boundary,
+    pisot_certificate,
+)
 
 
 class TestLucasPisotScalingResearch(unittest.TestCase):
@@ -39,6 +44,12 @@ class TestLucasPisotScalingResearch(unittest.TestCase):
         for n in controls:
             normalized = Decimal(pisot_certificate(n)["normalized_residual"])
             self.assertLess(abs(normalized - 1), Decimal("1e-90"))
+
+    def test_float32_transport_erases_two_discovery_residuals(self):
+        boundary = float32_boundary()
+        self.assertEqual(boundary["true_residual_unrepresentable_first_n"], 18)
+        self.assertEqual(boundary["discovery_indices_preserving_residual"], [10, 12, 15])
+        self.assertEqual(boundary["discovery_indices_erasing_residual"], [18, 20])
 
     def test_float64_precision_boundary_is_explicit(self):
         boundary = float64_boundary()

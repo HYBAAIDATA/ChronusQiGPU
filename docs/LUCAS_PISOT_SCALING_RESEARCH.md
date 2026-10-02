@@ -28,6 +28,15 @@ Binary64 cannot certify the high-index residual:
 
 An integral-looking float is not an exact Pisot certificate. Exact integer or high-precision quadratic-field arithmetic is required.
 
+## 11-D Float32 transport boundary
+
+The current `toe.poincare_golden_11d.to_gpu_input()` contract converts its input to Float32. A focused representability test shows that the Pisot residual first disappears at `n=18`. Within the discovery set:
+
+- `n=10, 12, 15`: the residual remains distinguishable in Float32;
+- `n=18, 20`: `float32(phi^n) == float32(L_n)`, so the residual is erased.
+
+This does not corrupt Lucas integers, but it prevents the Float32 GPU payload from serving as evidence of the high-index Pisot drift. The authoritative Float64 11-D state must either remain on an exact/Float64 path or undergo an explicit, evidenced lossy conversion. Silent downcasting must not be treated as exact execution.
+
 ## Claim boundary
 
 This work proves identities and numerical boundaries. It does **not** prove mining advantage, scheduling advantage, hardware speedup, ergodicity, or production qualification.
