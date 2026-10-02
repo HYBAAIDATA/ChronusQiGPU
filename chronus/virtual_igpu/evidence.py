@@ -53,12 +53,15 @@ class EvidenceLedger:
         complete.setdefault("created_at", datetime.now(timezone.utc).isoformat())
         digest = digest_json(complete)
         chain = extend_chain((), {"execution_digest": digest}, self.signing_key)
-        artifact = {**complete, "attestation": {"algorithm": "hmac-sha256" if self.signing_key else "sha256-chain", "chain": list(chain)}}
-        payload = canonical_json(artifact)
+        # The primary artifact is exactly the canonical bytes named by its digest.
+        # Authentication is a detached receipt to avoid a circular self-hash.
+        payload = canonical_json(complete)
         path = self.artifacts / f"{digest}.json"
+        receipt_path = self.artifacts / f"{digest}.attestation.json"
         tmp = path.with_suffix(".tmp")
         with self._lock:
             tmp.write_bytes(payload); os.replace(tmp, path)
+            receipt_path.write_bytes(canonical_json({"algorithm": "hmac-sha256" if self.signing_key else "sha256-chain", "evidence_digest": digest, "chain": list(chain)}))
             w, e, s, v = complete["workload"], complete["execution"], complete["substrate"], complete["validation"]
             if e.get("hardware_executed") is True and not v.get("passed"):
                 path.unlink(missing_ok=True)
@@ -83,8 +86,8 @@ class EvidenceLedger:
     def get(self, digest: str) -> dict[str, Any]:
         path = self.artifacts / f"{digest}.json"
         data = json.loads(path.read_text())
-        attestation = data.pop("attestation")
         if digest_json(data) != digest:
             raise ValueError("evidence digest mismatch")
-        data["attestation"] = attestation
+        receipt_path = self.artifacts / f"{digest}.attestation.json"
+        data["attestation"] = json.loads(receipt_path.read_text())
         return data

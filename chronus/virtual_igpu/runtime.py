@@ -10,7 +10,7 @@ from .attestation import extend_chain
 from .evidence import EvidenceLedger
 from .memory import VirtualMemoryPlane
 from .optimizer import ClosedLoopOptimizer
-from .planner import ChronusPlanner, GeodesicScheduler
+from .planner import ChronusPlanner, CostVector, GeodesicScheduler
 
 class RuntimeInvariantError(RuntimeError): pass
 
@@ -46,7 +46,7 @@ class RuntimeDaemon:
         self.routes=GeodesicScheduler()
         for adapter in healthy:
             priority=max(-100,min(100,int(adapter.priority)))
-            self.routes.connect("intent",adapter.id,__import__("chronus.virtual_igpu.planner",fromlist=["CostVector"]).CostVector(latency=float(100-priority)/100))
+            self.routes.connect("intent",adapter.id,CostVector(latency=float(100-priority)/100))
         self.quotas:dict[str,Quota]={}; self.usage:dict[str,int]={}; self.in_flight:dict[str,int]={}
         self.refusals:list[dict[str,Any]]=[]; self.negotiations:list[dict[str,Any]]=[]; self.results:dict[str,WorkloadResult]={}
         self._pending:set[str]=set(); self._cancelled:set[str]=set(); self._running=True

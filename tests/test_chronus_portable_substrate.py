@@ -1,4 +1,5 @@
 import json
+import hashlib
 from pathlib import Path
 import pytest
 from chronus.virtual_igpu.abi import Workload, WorkloadKind
@@ -31,6 +32,7 @@ def test_evidence_ledger_is_durable_queryable_and_tamper_evident(tmp_path):
     ledger=EvidenceLedger(tmp_path,b"test-key")
     receipt=ledger.append(evidence_record())
     assert ledger.query(operation="fold")[0]["digest"]==receipt.digest
+    assert hashlib.sha256(Path(receipt.path).read_bytes()).hexdigest()==receipt.digest
     assert ledger.get(receipt.digest)["validation"]["passed"] is True
     path=Path(receipt.path); value=json.loads(path.read_text()); value["validation"]["passed"]=False; path.write_text(json.dumps(value))
     with pytest.raises(ValueError,match="digest mismatch"):
