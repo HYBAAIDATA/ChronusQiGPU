@@ -10,6 +10,9 @@ from chronus.measurement.production import measure_chronus_production
 from chronus.measurement.store.evidence import EvidenceStore
 from chronus.measurement.system.execution import bind_execution_device
 from chronus.measurement.workload.device_tensor import measure_device_tensor_matmul
+from chronus.measurement.workload.native_device_tensor import (
+    measure_native_device_tensor_matmul,
+)
 
 
 class _Runtime:
@@ -19,7 +22,13 @@ class _Runtime:
         assert operation == "matmul"
         assert tuple(output_shape) == (inputs[0].shape[0], inputs[1].shape[1])
         assert tuple(input_shapes[0]) == tuple(inputs[0].shape)
-        return np.asarray(inputs[0], dtype=np.float32) @ np.asarray(inputs[1], dtype=np.float32)
+        return np.asarray(inputs[0], dtype=np.float32) @ np.asarray(
+            inputs[1], dtype=np.float32
+        )
+
+
+class _CudaRuntime(_Runtime):
+    device_id = "cuda:0:CUDA Physical GPU"
 
 
 class _BadRuntime(_Runtime):
@@ -43,10 +52,17 @@ def _baseline():
                 "device_type": "GPU",
                 "device_class": "integrated",
             },
+            {
+                "name": "CUDA Physical GPU",
+                "backend": "cuda",
+                "device_type": "GPU",
+                "device_class": "discrete",
+            },
         ],
         "fingerprints": [
             {"digest": "c" * 64},
             {"digest": "p" * 64},
+            {"digest": "d" * 64},
         ],
         "os": "test",
     }
@@ -84,6 +100,22 @@ def test_device_tensor_measurement_is_verified_and_device_labelled():
     assert measured.gflops.mean > 0
     assert measured.tflops.mean == pytest.approx(measured.gflops.mean / 1000.0)
     assert measured.method == "chronus_opencl_end_to_end_matmul_f32"
+
+
+def test_native_cuda_tensor_measurement_uses_same_verification_boundary():
+    measured = measure_native_device_tensor_matmul(
+        "cuda",
+        shape=(16, 16),
+        repeats=3,
+        warmup=1,
+        runtime=_CudaRuntime(),
+    )
+    assert measured.verified is True
+    assert measured.backend == "chronus-cuda"
+    assert measured.device_id == _CudaRuntime.device_id
+    assert measured.gflops.mean > 0
+    assert measured.tflops.mean == pytest.approx(measured.gflops.mean / 1000.0)
+    assert measured.method == "chronus_cuda_end_to_end_matmul_f32"
 
 
 def test_device_tensor_measurement_rejects_unverified_output():
@@ -128,7 +160,9 @@ def test_persisted_evidence_recomputes_digest_and_detects_tamper(tmp_path):
     assert store.load(path)["ok"] is False
 
 
-def test_production_artifact_adds_device_evidence_without_replacing_host_measurement(monkeypatch):
+def test_production_artifact_adds_device_evidence_without_replacing_host_measurement(
+    monkeypatch,
+):
     import chronus.measurement.production as production
 
     base = build_artifact(_measurements())
@@ -140,8 +174,22 @@ def test_production_artifact_adds_device_evidence_without_replacing_host_measure
     def fake_device_stage(*, quick):
         assert quick is True
         return {
-            "gflops": {"mean": 2500.0, "stddev": 0.0, "samples": 1, "p50": 2500.0, "p95": 2500.0, "p99": 2500.0},
-            "tflops": {"mean": 2.5, "stddev": 0.0, "samples": 1, "p50": 2.5, "p95": 2.5, "p99": 2.5},
+            "gflops": {
+                "mean": 2500.0,
+                "stddev": 0.0,
+                "samples": 1,
+                "p50": 2500.0,
+                "p95": 2500.0,
+                "p99": 2500.0,
+            },
+            "tflops": {
+                "mean": 2.5,
+                "stddev": 0.0,
+                "samples": 1,
+                "p50": 2.5,
+                "p95": 2.5,
+                "p99": 2.5,
+            },
             "operation": "matmul",
             "shape": [128, 128],
             "precision": "fp32",
@@ -151,8 +199,14 @@ def test_production_artifact_adds_device_evidence_without_replacing_host_measure
             "verified": True,
         }
 
+    def fake_native_stage(execution_api, *, quick):
+        assert execution_api in {"cuda", "metal"}
+        assert quick is True
+        return {"available": False, "reason": "not present on test host"}
+
     monkeypatch.setattr(production, "measure_chronus", fake_measure_chronus)
     monkeypatch.setattr(production, "_device_tensor_stage", fake_device_stage)
+    monkeypatch.setattr(production, "_native_tensor_stage", fake_native_stage)
 
     artifact, availability = measure_chronus_production(
         quick=True,
@@ -165,5 +219,57 @@ def test_production_artifact_adds_device_evidence_without_replacing_host_measure
     assert artifact.device_fingerprint == "p" * 64
     assert artifact.baseline["execution_provenance"][1]["matched"] is True
     assert availability["workloads.tensor_device"] is True
+    assert availability["workloads.tensor_device_any"] is True
     assert availability["artifact.execution_device_bound"] is True
+    assert availability["artifact.tensor_device_bound"] is True
     assert availability["artifact.replay"] is True
+
+
+def test_production_device_gate_accepts_bound_cuda_when_opencl_is_absent(monkeypatch):
+    import chronus.measurement.production as production
+
+    base = build_artifact(_measurements())
+
+    def fake_measure_chronus(**kwargs):
+        del kwargs
+        return base, {"artifact.replay": True}
+
+    def no_opencl(*, quick):
+        assert quick is True
+        return {"available": False, "reason": "OpenCL not installed"}
+
+    def native_stage(execution_api, *, quick):
+        assert quick is True
+        if execution_api == "metal":
+            return {"available": False, "reason": "Metal not present"}
+        return {
+            "gflops": {"mean": 3000.0},
+            "tflops": {"mean": 3.0},
+            "operation": "matmul",
+            "shape": [128, 128],
+            "precision": "fp32",
+            "method": "chronus_cuda_end_to_end_matmul_f32",
+            "backend": "chronus-cuda",
+            "device_id": "cuda:0:CUDA Physical GPU",
+            "verified": True,
+        }
+
+    monkeypatch.setattr(production, "measure_chronus", fake_measure_chronus)
+    monkeypatch.setattr(production, "_device_tensor_stage", no_opencl)
+    monkeypatch.setattr(production, "_native_tensor_stage", native_stage)
+
+    artifact, availability = measure_chronus_production(
+        quick=True,
+        hmac_key=b"test-key",
+        store=EvidenceStore(),
+    )
+
+    assert availability["workloads.tensor_device"] is False
+    assert availability["workloads.tensor_cuda_device"] is True
+    assert availability["workloads.tensor_device_any"] is True
+    assert availability["artifact.tensor_device_bound"] is True
+    assert artifact.device_fingerprint == "d" * 64
+    cuda_binding = artifact.baseline["execution_provenance"][2]
+    assert cuda_binding["workload"] == "tensor_cuda_device"
+    assert cuda_binding["matched"] is True
+    assert cuda_binding["device_fingerprint"] == "d" * 64
