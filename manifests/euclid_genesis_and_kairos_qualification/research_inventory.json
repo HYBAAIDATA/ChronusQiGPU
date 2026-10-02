@@ -1,0 +1,27 @@
+{
+  "schema": "euclid.genesis-research-inventory/1",
+  "mined_before_edit": true,
+  "github": {
+    "repository": "QuantumPhiEnterprise/PYTHIPhiMiner",
+    "head": "d3eef9a71bccac5a59b27aff7283c4d98f06cc21",
+    "immediate_predecessor": "83c187e2cf9a6ef60271c3c6bfcb1b5669e0321e",
+    "surfaces": [
+      "euclid/kairos_runtime.py",
+      "euclid/learning_service.py",
+      "euclid/memory_database.py",
+      "euclid/training_pipeline.py",
+      "hyba_substrate/euclid_experience_superlearner.py",
+      "hyba_substrate/euclid_learning_system.py",
+      "hyba_substrate/organism_coherence.py",
+      "hyba_substrate/world_system_model.py",
+      "salamander/control_plane.py"
+    ]
+  },
+  "notion": [
+    {"title": "PYTHIPhiMiner Intelligence Elevation Review — EUCLID Recovery Plan", "url": "https://app.notion.com/p/5f064bbd7fa84ea09d3abafd3b6e6742", "class": "CURRENT_RESEARCH"},
+    {"title": "EUCLID — Kairos Runtime Control Plane", "url": "https://app.notion.com/p/a51328f83a1344db92cfb0920afae11d", "class": "ARCHIVAL_CURRICULUM"},
+    {"title": "EUCLID — Kairos Recovery & Replay Integrity", "url": "https://app.notion.com/p/66fa30a0dc50466998444b444dff25d3", "class": "ARCHIVAL_CURRICULUM"},
+    {"title": "EUCLID — Kairos Rights & Consent Ledger", "url": "https://app.notion.com/p/fa7b7e4c02084c33a74d459127560af8", "class": "ARCHIVAL_CURRICULUM"}
+  ],
+  "rule": "Historical records inform curriculum and equivalence tests; they do not establish current identity, memory, semantic truth, reward, final-test data, or production qualification."
+}

@@ -1,0 +1,11 @@
+{
+  "schema": "euclid.genesis-kairos.acceptance/1",
+  "base_sha": "d3eef9a71bccac5a59b27aff7283c4d98f06cc21",
+  "focused_tests": "NOT_RUN_AT_COMMIT_CREATION",
+  "inherited_104_108": "UNRESOLVED",
+  "ci": "NOT_REPORTED",
+  "production_ready": false,
+  "kairos_evidence_class": "REHEARSAL",
+  "external_validation": false,
+  "note": "Run python scripts/check_euclid_genesis_kairos_qualification.py to replace this seed with executed evidence."
+}
