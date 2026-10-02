@@ -77,7 +77,8 @@ def probe_embedded(
     supplied without ``native_probes``, only that injected OpenCL-style probe
     is evaluated, preserving the historical caller contract.
     """
-    if tensor_probe is not None and native_probes is None:
+    single_injected_probe = tensor_probe is not None and native_probes is None
+    if single_injected_probe:
         probes: Sequence[Tuple[str, Callable[[], Any], str]] = (
             ("chronus-opencl", tensor_probe, "chronus.tensor_compute.probe"),
         )
@@ -102,13 +103,16 @@ def probe_embedded(
         try:
             record = _probe_record(probe_fn)
         except Exception as exc:
+            detail = f"{type(exc).__name__}: {exc}"
             unavailable_reasons.append(
-                f"{backend_name}: {type(exc).__name__}: {exc}"
+                detail if single_injected_probe else f"{backend_name}: {detail}"
             )
             continue
         if not bool(record.get("available")):
-            reason = str(record.get("reason", "") or "runtime unavailable")
-            unavailable_reasons.append(f"{backend_name}: {reason}")
+            detail = str(record.get("reason", "") or "runtime unavailable")
+            unavailable_reasons.append(
+                detail if single_injected_probe else f"{backend_name}: {detail}"
+            )
             continue
         operations = tuple(record.get("operations") or ())
         dtypes = tuple(record.get("dtypes") or ())
