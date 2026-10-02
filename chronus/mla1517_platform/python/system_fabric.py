@@ -231,9 +231,9 @@ SUBSYSTEMS: list[dict[str, Any]] = [
         "key": "stratum_bridge",
         "name": "Stratum bridge arms",
         "module": "mining.stratum_bridge",
-        "wired": "production",
+        "wired": "idle",
         "gate": "opencl+credentials",
-        "detail": "supervised per-arm pool loop with deterministic pacing and the live-submit identity gate",
+        "detail": "legacy per-arm pool loop for the HYBA pipeline, exercised by tests only; canonical mining ownership is chronus.mla1517.mining.coordinator under mining_runtime",
     },
     {
         "key": "strict_quantum",
