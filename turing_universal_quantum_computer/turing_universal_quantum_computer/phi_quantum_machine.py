@@ -553,7 +553,6 @@ class PhiQuantumMachine1000(PhiQuantumMachine):
         super().__init__(logical_qubits=logical_qubits, fold_depth=fold_depth)
 
 
-
 __all__ = [
     "ALGORITHM_CATALOG",
     "CLIFFORD_GATES",

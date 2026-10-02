@@ -148,6 +148,7 @@ _LAZY_MODULES = {
     "variational",
     "phi_machine",
     "midas_vqc",
+    "trotter_simulation",
 }
 
 _LAZY_SYMBOLS = {
@@ -200,6 +201,7 @@ _LAZY_SYMBOLS = {
     # recovered MIDAS/VQC surface
     "MidasPhiVQCRanker": "midas_vqc",
     "VQCConfig": "midas_vqc",
+    "TrotterHamiltonianSimulator": "trotter_simulation",
 }
 
 __version__ = "1.1.0"

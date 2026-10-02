@@ -344,7 +344,15 @@ class ExactQFT:
 
 
 class GroverSearch:
-    """Exact Grover amplitude amplification with Lucas attractor scaling."""
+    """Exact Grover amplitude amplification.
+
+    Iteration count and the diffusion/oracle operators are the standard
+    textbook construction (Grover 1996) — no Lucas-sequence rescaling is
+    applied to the search itself. ``lucas_bound()`` is a separate, purely
+    informational comparison against the Lucas-number ceiling L_n; it
+    does not change the search and proves nothing about its performance
+    (see ``lucas/bound.py``, ``theorem_proven: False``).
+    """
 
     def __init__(self, n_qubits: int, lucas_engine: Optional[LucasEngine] = None) -> None:
         self.n_qubits = n_qubits
@@ -377,26 +385,6 @@ class GroverSearch:
             return 0
         theta = math.asin(math.sqrt(M / N))
         return int(math.floor(math.pi / (4.0 * theta)))
-
-    def lucas_enhanced_oracle(self, marked_indices: List[int]) -> List[int]:
-        """Enhance oracle using Lucas attractors for amplitude concentration."""
-        lucas_indices = [
-            self.lucas_engine._lucas(i) for i in range(10) if self.lucas_engine._lucas(i) < self.N
-        ]
-        enhanced = list(
-            dict.fromkeys(marked_indices + [i for i in lucas_indices if i not in marked_indices])
-        )
-        return enhanced
-
-    def lucas_adaptive_iterations(self, marked_count: int) -> int:
-        """Use Lucas sequence for optimal iteration scaling.
-
-        Clamped to >= 1: the φ-normalisation must never turn a valid
-        search into a zero-iteration no-op.
-        """
-        base = self.optimal_iterations(self.N, marked_count)
-        lucas_factor = self.lucas_engine._lucas(15) / 1364.0
-        return max(1, int(base / lucas_factor))
 
     def run(self, marked_indices: List[int], iterations: Optional[int] = None) -> Dict[str, Any]:
         M = len(marked_indices)
@@ -436,18 +424,6 @@ class GroverSearch:
             "rotation_angle_theta": theta,
             "final_state": state,
         }
-
-    def run_lucas_enhanced(self, marked_indices: List[int]) -> Dict[str, Any]:
-        """Run Grover with Lucas-adaptive iterations on the original marked set.
-
-        Lucas scaling adjusts the iteration schedule and verifies the
-        step bound — it must not rewrite the oracle, since expanding the
-        marked set changes the problem being solved.
-        """
-        iterations = self.lucas_adaptive_iterations(len(marked_indices))
-        result = self.run(marked_indices, iterations=iterations)
-        result["lucas_bound"] = self.lucas_bound()
-        return result
 
     def lucas_bound(self) -> Dict[str, Any]:
         """Wire to the pool's step_kernel — oracle iteration count ≤ L_n.

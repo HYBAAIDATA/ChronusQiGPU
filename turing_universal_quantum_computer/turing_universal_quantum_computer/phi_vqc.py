@@ -202,7 +202,8 @@ class PhiGroverVQC:
                 nonces = [int(item["nonce"]) for item in batch]
                 loss, grad, accuracy = self._loss_and_gradient(headers, nonces)
                 self.theta -= self.config.learning_rate * grad
-                losses.append(loss); accuracies.append(accuracy)
+                losses.append(loss)
+                accuracies.append(accuracy)
             epoch_loss = float(np.mean(losses))
             epoch_accuracy = float(np.mean(accuracies))
             self.loss_history.append(epoch_loss)
