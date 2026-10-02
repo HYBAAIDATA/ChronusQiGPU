@@ -1,30 +1,10 @@
 # Capability matrix — every named capability with an execution trace
 
-Current Owner A refresh base: `a4f56f008a8be7774fd6d7e862b366c4049413c3`
-(2026-10-02). Historical evidence remains pinned below and is not silently
-promoted to current execution. `fabric`/`orchestrator`/`idle` are static labels;
-reachability requires a concrete call → consumption → authority/evidence trace.
-
-## Owner A current trace refresh
-
-| capability | call → consumption → authority/evidence | current verdict |
-|---|---|---|
-| canonical 11D nonce order | `PYTHIA_NONCE_ORDER` → `coordinator.resolve_nonce_order` → `ExecutionRouter.execute_plan` → `poincare_11d_nonces` → CPU SHA-256d scan and independent host recheck | PASS — merged PR #82 / `1aae12c3`; this wave did not duplicate or modify that path |
-| predictive solver | `IntelligenceOrchestrator.solve` (also `orcle.py` over the last observed header/target) → `PredictiveSolver.solve` → generated candidates or injected structured fallback → SHA-256d/negotiated-target comparison | PASS — this wave closed a reachable authority defect: a non-negative fallback nonce had been marked found without an independent SHA-256d target recheck. Exact 80-byte header and 32-byte target boundaries now fail closed. `python -m unittest -v tests.test_a_predictive_solver_authority`: 5/5 PASS; focused `compileall`: PASS. No O(1), hashrate, hardware, or pool-success claim |
-| manifold bridge / substrate-12 hold | `TOESystem`, `Intelligence.agentic_mining`, `Intelligence.chain_verification`, and `chronus.seam.toe_loop` instantiate `ManifoldBridge` → `store_candidate` / `lookup_candidate_o1` → theorem/hold consumers | NOT_RUN at current base — source reachability is established, but no current focused execution was run; historical `tests/test_c_toe_system.py` evidence remains historical |
-| SHA-256d proof boundary | `HashPipeline.grind` / `grind_m32` → active hasher → independent `double_sha256` recomputation → `reference[::-1] <= target_be` | NOT_RUN — current source trace preserves SHA-256d and target authority, but hardware/OpenCL and live-pool execution remain absent |
-
-The bounded implementation in this wave is only
-`Intelligence/predictive_solver.py` plus
-`tests/test_a_predictive_solver_authority.py`. No Chronus runtime, frontend,
-control API, system fabric, operator authorization, or canonical 11D-order
-code was changed.
-
-## Historical inventory
-
-Pin: `e09afab` (baseline) — refreshed at `73a716d` (post-A/C merge) where
-marked. Seeded from `system_fabric.SUBSYSTEMS` at baseline. Every old PASS
-below is provenance, not a claim that the gate reran at the current base.
+Pin: `e09afab` (baseline) — refreshed at `73a716d` (post-A/C merge) and `10c6a63`
+(post-fold, production-readiness re-baseline) where marked. Seeded from `system_fabric.SUBSYSTEMS` (runtime fabric map) at
+baseline. `fabric`/`orchestrator`/`idle` are the repo's *static labels* — MAP-01
+requires every claimed wire to have runtime evidence or an honest "not wired"
+verdict; the Evidence column is filled only from executed checks.
 
 States: PASS / FAIL / BLOCKED / NOT_RUN / NOT_APPLICABLE. Owner A rows concern
 mathematical/computational capability; Owner B rows concern mining/workflows.
@@ -44,7 +24,7 @@ mathematical/computational capability; Owner B rows concern mining/workflows.
 | vqc | 11-qubit VQC (`tqc.scaled_execution`) | production | pool_credentials | **PASS** @73a716d | A fix merged (#18): `tests/test_vqc.py` 8/8 verified on integrated main |
 | folding_storage | Zeckendorf archival-exact fold (`Intelligence.folded_state`) | orchestrator | — | PASS | self_test `folded_state — bit_exact=True` |
 | salamander | Self-healing engine (`Intelligence.salamander`) | orchestrator | mmio | **PASS** (#22) | B: fault→ack-gated retire→verify-recovery→probationary readmit, failover once/cooldown/cancel, `MIN_LANES` degraded floor — `tests/test_b_*` |
-| agentic_workflow | 6-phase autonomous mining (`Intelligence.agentic_mining`) | fabric | — | **PASS** (#22) | B: campaign start→running→stop→`stopped` terminal, `retire_all` on every exit incl. failure, operator-stop `stop_detail`; `tests/test_b_*` |
+| agentic_workflow | 6-phase autonomous mining (`Intelligence.agentic_mining`) | fabric | — | **PASS** (#22, +10c6a63) | B: campaign start→running→stop→`stopped` terminal, `retire_all` on every exit incl. failure, operator-stop `stop_detail`; @10c6a63 truthful `stopping` mid-state (`finished_at` = worker exit, not request time; terminal `stopped` restart-eligible) + per-phase share deltas w/ reset re-arm; `tests/test_b_*` |
 | chain_verification | 11-stage chain (`Intelligence.chain_verification`) | fabric | — | **PASS** (#23) | D: 11-stage envelope + `_recheck_winner` boundaries (see ricci row); `tests/test_c_chain_verification.py` |
 | hash_pipeline | sha256d sole accept authority (`mining.hash_pipeline`) | production | — | PASS | `re_paper_gate` PASS; proof-boundary unittests |
 | m32_solver | M32 lane solver (`chronus.mla1517.mining.solver`) | production | — | PASS | unittest discover 203 OK |
@@ -70,7 +50,19 @@ mathematical/computational capability; Owner B rows concern mining/workflows.
 | discovery | Mathematical discovery engine | idle | — | NOT_RUN | honest idle label |
 | pool_aware_miner | Pool-aware miner | idle | — | NOT_RUN | honest idle label |
 
-Seed backlog statuses: RUN-01/RUN-02, DATA-01/DATA-02, MAP-01 → PASS on #22 (B:
-campaign arms retire on every exit; sidecar metrics 30 s TTL + hashrate None-vs-0.0;
-importlib-verified wiring tiers). `autonomous_supervisor` IA02 (dead import,
-supervisor never built) → fixed here; `trigger_cycle` now runs real heal cycles.
+Seed backlog statuses: RUN-02, DATA-02, MAP-01 → PASS on #22 (B: campaign arms
+retire on every exit; sidecar metrics 30 s TTL + hashrate None-vs-0.0;
+importlib-verified wiring tiers). RUN-01 residual (stop marked `stopped` at
+request time, `finished_at` fabricated) → landed on `main` as `953765a` (PR #81):
+truthful `stopping` state until worker exit; this branch adds
+`RunnerStatus.state` `"stopping"` + terminal/restart coverage. DATA-01 residual
+(campaign `shares_accepted` = cumulative counter) → landed in `953765a`:
+per-phase deltas with reset handling; this branch adds reset re-arm coverage.
+DOC-01 → closed here: AGENTS.md §4 rewritten against the real product
+(control API + static UI + Python worker plane), README records the per-operation
+device policy (`cpu_reference` fallback carries `fallback_reason`).
+`autonomous_supervisor` IA02 (dead import, supervisor never built) → fixed here;
+`trigger_cycle` now runs real heal cycles. @10c6a63 also fixed Windows-only
+persistence defects surfaced by the re-baseline: `euclid.evidence.atomic_write`
+(POSIX-only `os.fchmod` + leaked fd on failure) and `MemoryDatabase.backup`
+(`sqlite3.connect` context manager never closed the output connection).

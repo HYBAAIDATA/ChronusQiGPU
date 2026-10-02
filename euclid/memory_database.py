@@ -297,6 +297,14 @@ class MemoryDatabase:
         self._verify_record(record)
         return record
 
+    def has_replay_id(self, replay_id: str) -> bool:
+        if not replay_id:
+            raise ValueError("replay_id is required")
+        row = self._connection.execute(
+            "SELECT 1 FROM memories WHERE replay_id=? LIMIT 1", (replay_id,)
+        ).fetchone()
+        return row is not None
+
     def query(
         self,
         *,
@@ -404,8 +412,11 @@ class MemoryDatabase:
         target = Path(destination)
         target.parent.mkdir(parents=True, exist_ok=True)
         temporary = target.with_suffix(target.suffix + ".tmp")
-        with sqlite3.connect(str(temporary)) as output:
+        output = sqlite3.connect(str(temporary))
+        try:
             self._connection.backup(output)
+        finally:
+            output.close()
         os.replace(temporary, target)
         try:
             os.chmod(target, 0o600)
