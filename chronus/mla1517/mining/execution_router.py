@@ -60,6 +60,7 @@ from chronus.mla1517.mining.hendrix_order import (
     hendrix_nonces,
     hendrix_schedule,
 )
+from chronus.mla1517.mining.poincare_11d_order import poincare_11d_nonces
 
 __all__ = [
     "RouteDecision",
@@ -69,6 +70,7 @@ __all__ = [
     "NONCE_ORDER_HENDRIX",
     "NONCE_ORDER_KLEIN",
     "NONCE_ORDER_M32",
+    "NONCE_ORDER_POINCARE_11D",
     "NonceOrderUnavailable",
     "sha256d_scan",
 ]
@@ -84,6 +86,7 @@ NONCE_ORDER_M32 = "m32_turing_complete"
 NONCE_ORDER_KLEIN = "klein_poincare_numerical"
 NONCE_ORDER_SEQUENTIAL = "sequential"
 NONCE_ORDER_GOLDEN = "golden_stride"
+NONCE_ORDER_POINCARE_11D = "poincare_cassini_11d"
 # Hendrix structured search: position i of the leased window visits
 # base + (i * stride) % window with gcd(stride, window) == 1. A bijection of
 # the lease, so unlike golden stride it is allowed on leased work. Only the
@@ -426,7 +429,25 @@ class ExecutionRouter:
         False the remaining chunks are abandoned and the record reports
         INVALIDATED with actual_window covering only completed work.
         """
+        requested_order = self._nonce_order(plan)
         decision = self.decide_route(plan)
+        if (
+            requested_order == NONCE_ORDER_POINCARE_11D
+            and decision.executed_route is not ExecutionRoute.cpu_reference
+        ):
+            decision = RouteDecision(
+                requested_route=decision.requested_route,
+                executed_route=ExecutionRoute.cpu_reference,
+                fallback_reason=FallbackReason.KERNEL_UNAVAILABLE,
+                device_backend="cpu_reference",
+                device_name=decision.device_name,
+                device_vendor=decision.device_vendor,
+                kernel_identity="hashlib_sha256d",
+                kernel_build_status="n/a_cpu_reference",
+                launch_cap=max(
+                    1, int(getattr(self._hasher, "grind_batch", 1) or 1)
+                ),
+            )
 
         # --- freshness guard, BEFORE any device time is consumed -----------
         if identity is not None and not plan.is_valid_for(identity):
@@ -483,7 +504,6 @@ class ExecutionRouter:
                 None,
             )
 
-        requested_order = self._nonce_order(plan)
         # Hendrix runs where it is implemented: the CPU reference, and an
         # OpenCL M32 route whose program carries the bitcoin_sha256d_hendrix
         # kernel. The schedule is resolved before any work so an unavailable
@@ -496,6 +516,11 @@ class ExecutionRouter:
             if requested_order == NONCE_ORDER_HENDRIX
             and (decision.executed_route is ExecutionRoute.cpu_reference or on_device)
             and plan.window > 0
+            else None
+        )
+        poincare_order = (
+            poincare_11d_nonces(header, plan.base_step, plan.window)
+            if requested_order == NONCE_ORDER_POINCARE_11D and plan.window > 0
             else None
         )
 
@@ -543,6 +568,13 @@ class ExecutionRouter:
                         header,
                         target,
                         hendrix_nonces(plan.base_step, schedule, position, chunk.count),
+                    )
+                elif poincare_order is not None:
+                    position = (chunk.start - plan.base_step) & 0xFFFFFFFF
+                    nonce, digest, done = self._cpu_nonces(
+                        header,
+                        target,
+                        poincare_order[position : position + chunk.count],
                     )
                 else:
                     nonce, digest, done = self._run_chunk(plan, header, target, chunk, decision)

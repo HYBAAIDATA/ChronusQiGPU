@@ -56,8 +56,14 @@ from .self_healing_agent import (
 from .agentic_controller import AgenticMiningController
 from .causal import CausalCoordinate, CausalLedger
 from .dispatch_algebra import certify_dispatch
-from .execution_router import NONCE_ORDER_HENDRIX, NONCE_ORDER_M32, ExecutionRouter
+from .execution_router import (
+    NONCE_ORDER_HENDRIX,
+    NONCE_ORDER_M32,
+    NONCE_ORDER_POINCARE_11D,
+    ExecutionRouter,
+)
 from .hendrix_order import NonceOrderUnavailable, hendrix_schedule, load_hendrix
+from .poincare_11d_order import load_poincare_11d
 from .recovery_authority import RecoveryGovernor, RecoveryRecord
 from .nonce_lease import LeaseConflict, LeaseExhausted, LeaseRecord
 from .search_plan import (
@@ -116,7 +122,14 @@ _HASHRATE_SPAN_S = 30.0
 _METRICS_MIN_INTERVAL_S = 1.0
 _BASELINE_POLICY = "baseline_fallback"
 _EVIDENCE_MIN_INTERVAL_S = 0.5
-_NONCE_ORDERS = {"m32": NONCE_ORDER_M32, "hendrix": NONCE_ORDER_HENDRIX}
+_NONCE_ORDERS = {
+    "m32": NONCE_ORDER_M32,
+    "hendrix": NONCE_ORDER_HENDRIX,
+    "11d": NONCE_ORDER_POINCARE_11D,
+    "poincare11d": NONCE_ORDER_POINCARE_11D,
+    "poincare": NONCE_ORDER_POINCARE_11D,
+    "manifold": NONCE_ORDER_POINCARE_11D,
+}
 
 
 def _positive_env(name: str, default: float) -> float:
@@ -137,7 +150,9 @@ def resolve_nonce_order(value: str) -> str:
 
     Hendrix is the default: the structured search is part of the miner, and
     both the CPU reference and the OpenCL device (bitcoin_sha256d_hendrix)
-    execute it. ``m32`` keeps the Turing lane order.
+    execute it. ``m32`` keeps the Turing lane order. The explicit 11D aliases
+    select the canonical Poincare-Cassini dual-solid order on the CPU reference
+    route; no device kernel or consensus predicate is inferred from the label.
     """
     key = (value or "hendrix").strip().lower()
     if key not in _NONCE_ORDERS:
@@ -148,6 +163,12 @@ def resolve_nonce_order(value: str) -> str:
         search_cls, error = load_hendrix()
         if search_cls is None:
             raise NonceOrderUnavailable(f"PYTHIA_NONCE_ORDER=hendrix: {error}")
+    if _NONCE_ORDERS[key] == NONCE_ORDER_POINCARE_11D:
+        engine_cls, error = load_poincare_11d()
+        if engine_cls is None:
+            raise NonceOrderUnavailable(
+                f"PYTHIA_NONCE_ORDER={key}: Poincare 11D order unavailable: {error}"
+            )
     return _NONCE_ORDERS[key]
 
 
@@ -1498,6 +1519,10 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         }
 
     def _execution_route(self) -> str:
+        if self._nonce_order == NONCE_ORDER_POINCARE_11D:
+            # No device kernel implements the canonical 11D face-ranked order.
+            # Execute it on the CPU reference path instead of relabelling M32.
+            return "cpu_reference"
         hasher = self.execution_hasher
         backend = str(getattr(hasher, "backend", ""))
         if backend.startswith(("opencl", "remote_opencl")) and (
