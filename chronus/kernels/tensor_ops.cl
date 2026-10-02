@@ -1,6 +1,6 @@
-/* Chronus generic tensor kernels.
- * Deterministic float32 arithmetic. Each output is owned by one work item;
- * matmul uses a fixed accumulation order.
+/* Chronus OpenCL tensor kernels.
+ * Float32 output ownership is deterministic. Matmul traverses K in a fixed
+ * tile order and uses local memory suitable for unified-memory iGPUs.
  */
 __kernel void tensor_add_f32(__global const float *a, __global const float *b,
                              __global float *out, const uint n) {
@@ -14,13 +14,24 @@ __kernel void tensor_scale_f32(__global const float *a, __global const float *s,
                                __global float *out, const uint n) {
   const uint gid=get_global_id(0); if(gid<n) out[gid]=a[gid]*s[0];
 }
-__kernel void tensor_matmul_f32(__global const float *a, __global const float *b,
-                                __global float *out, const uint m,
-                                const uint k, const uint n) {
-  const uint gid=get_global_id(0); if(gid>=m*n) return;
-  const uint row=gid/n, col=gid-row*n; float acc=0.0f;
-  for(uint p=0;p<k;++p) acc=acc+a[row*k+p]*b[p*n+col];
-  out[gid]=acc;
+__kernel void tensor_matmul_tiled_f32(
+    __global const float *a, __global const float *b, __global float *out,
+    const uint m, const uint k, const uint n,
+    __local float *tile_a, __local float *tile_b) {
+  const uint col=get_global_id(0), row=get_global_id(1);
+  const uint lx=get_local_id(0), ly=get_local_id(1);
+  const uint tile=get_local_size(0);
+  float acc=0.0f;
+  for(uint base=0;base<k;base+=tile) {
+    const uint ap=base+lx, bp=base+ly;
+    tile_a[ly*tile+lx]=(row<m && ap<k) ? a[row*k+ap] : 0.0f;
+    tile_b[ly*tile+lx]=(bp<k && col<n) ? b[bp*n+col] : 0.0f;
+    barrier(CLK_LOCAL_MEM_FENCE);
+    for(uint p=0;p<tile;++p)
+      acc=acc+tile_a[ly*tile+p]*tile_b[p*tile+lx];
+    barrier(CLK_LOCAL_MEM_FENCE);
+  }
+  if(row<m && col<n) out[row*n+col]=acc;
 }
 __kernel void tensor_kron_1d_f32(__global const float *a, __global const float *b,
                                  __global float *out, const uint an, const uint bn) {
