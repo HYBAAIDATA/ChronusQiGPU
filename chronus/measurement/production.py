@@ -82,6 +82,17 @@ def _stage_available(stage: Dict[str, Any]) -> bool:
     return bool(isinstance(stage, dict) and stage.get("available", True))
 
 
+def _first_bound_fingerprint(bindings: list[Dict[str, Any]]) -> str:
+    return next(
+        (
+            str(binding.get("device_fingerprint", ""))
+            for binding in bindings
+            if binding.get("matched") and binding.get("device_fingerprint")
+        ),
+        "",
+    )
+
+
 def measure_chronus_production(
     *,
     quick: bool = True,
@@ -117,14 +128,9 @@ def measure_chronus_production(
     ]
     baseline["execution_provenance"] = bindings
 
-    execution_fp = next(
-        (
-            str(binding.get("device_fingerprint", ""))
-            for binding in bindings
-            if binding.get("matched") and binding.get("device_fingerprint")
-        ),
-        "",
-    )
+    tensor_bindings = bindings[1:]
+    tensor_execution_fp = _first_bound_fingerprint(tensor_bindings)
+    execution_fp = _first_bound_fingerprint(bindings)
 
     artifact = build_artifact(
         {
@@ -136,7 +142,9 @@ def measure_chronus_production(
             "efficiency": base_artifact.efficiency,
             "stability": base_artifact.stability,
         },
-        device_fingerprint=execution_fp or base_artifact.device_fingerprint,
+        device_fingerprint=(
+            tensor_execution_fp or execution_fp or base_artifact.device_fingerprint
+        ),
     )
     key = hmac_key if hmac_key is not None else load_hmac_key()
     artifact.attestation = attest_artifact(artifact, key)
@@ -154,6 +162,7 @@ def measure_chronus_production(
     result["workloads.tensor_device_any"] = bool(opencl_ok or cuda_ok or metal_ok)
     result["artifact.replay"] = replay_artifact(artifact)
     result["artifact.execution_device_bound"] = bool(execution_fp)
+    result["artifact.tensor_device_bound"] = bool(tensor_execution_fp)
     result["artifact.persistent_attestation_key"] = persistent_attestation
     return artifact, result
 
@@ -175,7 +184,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         action="store_true",
         help=(
             "return non-zero unless at least one physical OpenCL, CUDA, or Metal "
-            "Chronus tensor path was measured"
+            "Chronus tensor path was measured and bound to its execution device"
         ),
     )
     parser.add_argument(
@@ -200,7 +209,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         return 1
     if args.require_device and not availability.get("workloads.tensor_device_any", False):
         return 2
-    if args.require_device and not availability.get("artifact.execution_device_bound", False):
+    if args.require_device and not availability.get("artifact.tensor_device_bound", False):
         return 3
     if args.require_persistent_attestation and not availability.get(
         "artifact.persistent_attestation_key", False
