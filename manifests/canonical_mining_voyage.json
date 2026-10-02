@@ -1,0 +1,95 @@
+{
+  "schema": "pythia.canonical-mining-voyage/1",
+  "evidence_boundary": {
+    "loopback": "SOFTWARE_EXECUTION_VERIFIED",
+    "hardware_execution": "NOT_ESTABLISHED",
+    "pool_verification": "NOT_ESTABLISHED"
+  },
+  "stages": [
+    {
+      "name": "stratum_job_reception",
+      "module": "manifold_pool_coordinator",
+      "symbol": "StratumClient._handle_notification"
+    },
+    {
+      "name": "job_generation_tracking",
+      "module": "chronus.mla1517.mining.stratum_state",
+      "symbol": "StratumRuntimeState"
+    },
+    {
+      "name": "immutable_job_identity",
+      "module": "chronus.mla1517.mining.search_plan",
+      "symbol": "WorkIdentity"
+    },
+    {
+      "name": "kellogg_tensor_encoding",
+      "module": "kellogg.exact_tensor",
+      "symbol": "ExactTOETensor.encode"
+    },
+    {
+      "name": "toe_mining_adapter",
+      "module": "chronus.mla1517.mining.toe_adapter",
+      "symbol": "TOEMiningAdapter.analyse"
+    },
+    {
+      "name": "toe_advisory_frame",
+      "module": "chronus.mla1517.mining.toe_decision",
+      "symbol": "build_toe_decision_frame"
+    },
+    {
+      "name": "lane_order_and_safety_decision",
+      "module": "chronus.mla1517.mining.coordinator",
+      "symbol": "IntelligentPoolCoordinator.submit_record"
+    },
+    {
+      "name": "bounded_nonce_lease",
+      "module": "chronus.mla1517.mining.nonce_lease",
+      "symbol": "NonceLeaseLedger.allocate"
+    },
+    {
+      "name": "execution_router",
+      "module": "chronus.mla1517.mining.execution_router",
+      "symbol": "ExecutionRouter.execute_plan"
+    },
+    {
+      "name": "host_sha256d_recheck",
+      "module": "chronus.mla1517.mining.execution_router",
+      "symbol": "ExecutionRouter._independent_recheck"
+    },
+    {
+      "name": "execution_provenance",
+      "module": "chronus.mla1517.mining.search_plan",
+      "symbol": "ExecutionRecord"
+    },
+    {
+      "name": "stratum_submission",
+      "module": "chronus.mla1517.mining.coordinator",
+      "symbol": "IntelligentPoolCoordinator.submit_candidate"
+    },
+    {
+      "name": "literal_pool_outcome",
+      "module": "chronus.mla1517.mining.search_plan",
+      "symbol": "PoolOutcome"
+    },
+    {
+      "name": "literal_outcome_learning",
+      "module": "chronus.mla1517.mining.agentic_controller",
+      "symbol": "AgenticMiningController.record_outcome"
+    },
+    {
+      "name": "checkpoint_recovery",
+      "module": "chronus.mla1517.mining.intelligence_memory",
+      "symbol": "IntelligenceMemory.checkpoint"
+    },
+    {
+      "name": "session_restart_restore",
+      "module": "chronus.mla1517.mining.session",
+      "symbol": "MiningSession._restore"
+    },
+    {
+      "name": "recovery_authority",
+      "module": "chronus.mla1517.mining.recovery_authority",
+      "symbol": "RecoveryGovernor.propose"
+    }
+  ]
+}

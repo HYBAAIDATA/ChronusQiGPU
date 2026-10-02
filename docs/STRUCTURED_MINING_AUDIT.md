@@ -79,34 +79,43 @@ between: (a) a measured corpus statistic, (b) a reproducible predictor of
 SHA256d acceptance, and (c) a pool-accepted hashrate improvement. Only (b) and
 (c), each with matched controls, can alter the mining runtime.
 
-## Python TOE, manifold, and intelligence reconciliation
+## Python TOE and Kellogg integration
 
-The TOE is not absent. The current PYTHIA head contains Python implementations
-including:
+TOE is on the canonical runtime call graph; it is not proof authority. The
+production `IntelligentPoolCoordinator.submit_record()` takes the current
+Stratum job and observed 64-byte vault state through
+`chronus.mla1517.mining.toe_adapter.TOEMiningAdapter`, builds a validated
+`TOEMiningDecisionFrame`, and passes only its advisory frame/signal to the
+declared mining chooser and safety controls. `toe.bridge.TOEBridge` consumes
+Kellogg-owned `kellogg.quantum_tensor` and `kellogg.exact_tensor` operations;
+Kellogg owns the tensor representation, while TOE owns the analysis adapter.
+The frame digest is attached to the immutable SearchPlan. Missing or incomplete
+TOE evidence does not get replaced by synthetic evidence, and cannot validate a
+nonce, target, share, or pool outcome.
 
-- `Intelligence/toe_bridge.py`: `TOEBridge` with tomography, trajectory,
-  causal analysis, causal-ladder processing, and algebraic-family signatures;
-- `Intelligence/toe_system.py`: provenance ledger and multi-intelligence
-  candidate-arbitration code;
-- `toe.py`: the algebraic/PredictiveEngine substrate;
-- `registry.py` and `Intelligence/registry.py`: TOE subsystem registration.
-
-The accessible Notion pages also establish the M32 manifold, the golden/Pisot/
-Lucas family, the five-intelligence measured workflow, and the SHA256d-checked
-structured lane. [^https://app.notion.com/p/0d6bfd9f2ba142a6b346411869ae09cb]
-
-The defect is call-graph integration, not absence: the canonical
-`chronus/mla1517_platform/python/mining_runtime.py` currently instantiates
-`IntelligentPoolCoordinator` directly and does not invoke the Python TOE bridge
-or root registry. The TOE therefore cannot yet be credited with influencing a
-live mining decision. The required closure test must show measured mining input
-→ TOE decision → changed lane/order/safety state → independent SHA256d proof.
+`manifests/canonical_mining_voyage.json` records the canonical stage owners.
+`test_canonical_mining_manifest_resolves_all_production_owners` imports every
+declared module and resolves every declared symbol. The loopback voyage tests
+exercise the real Stratum client, coordinator, lease ledger, execution router,
+host proof check, submission lifecycle, literal outcomes, and restart behavior;
+the TOE adapter test separately verifies its real Kellogg-backed observation
+path. These software tests do not establish a TOE-driven live-device result.
 
 The full search did not find an indexed Notion page or current-PYTHIA file named
 `Hendrix`, `topology_2I.h`, or a 2I/600-cell SHA256d schedule-pruning kernel. I
 will not treat that as proof that the artifact never existed; it means the exact
 page or attachment still needs to be located and loaded rather than inferred
 from a title or a search snippet.
+
+## Voyage evidence classification
+
+The deterministic loopback pool and CPU route establish at most
+`SOFTWARE_EXECUTION_VERIFIED`. Their configured accept/reject responses are
+fixture outcomes, not `POOL_VERIFIED`; no loopback result establishes
+`HARDWARE_EXECUTION_VERIFIED`. Those promotions require separately recorded
+real-device execution and real-pool acknowledgement evidence. The executable
+stage map records these limits so software evidence cannot be promoted by
+wording alone.
 
 ## Live acceptance gate
 

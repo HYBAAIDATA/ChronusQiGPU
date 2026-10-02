@@ -27,7 +27,18 @@ EDGES = {
 # Bounded so frequent share acceptances cannot grow the persisted session.
 WINNER_MEMORY_LIMIT = 256
 SHARE_LOG_LIMIT = 256
-_CORRELATION_KEYS = ("pool_session_id", "generation", "execution_id", "candidate_id", "lease_id")
+_CORRELATION_KEYS = (
+    "pool_session_id",
+    "generation",
+    "job_fingerprint",
+    "job_id",
+    "toe_frame_id",
+    "plan_id",
+    "lease_id",
+    "execution_id",
+    "candidate_id",
+    "recovery_id",
+)
 _SHARE_STATES = {True: "ACCEPTED", False: "REJECTED", None: "UNKNOWN"}
 
 

@@ -10,12 +10,16 @@ No hardware and no live pool are involved; nothing here is hardware evidence.
 from __future__ import annotations
 
 import asyncio
+import importlib
 import json
 import secrets
+import struct
+from pathlib import Path
 
 import pytest
 
 from manifold_pool_coordinator import PoolEndpoint
+from chronus.mla1517.hardware import VaultRecord
 from chronus.mla1517.mining.coordinator import IntelligentPoolCoordinator
 from chronus.mla1517.mining.session import MiningSession
 from chronus.mla1517.mining.search_plan import LeaseState, PlanSource, PoolOutcome
@@ -313,6 +317,169 @@ def test_voyage_a_normal_mining_continuity():
     asyncio.run(_voyage_a())
 
 
+def test_canonical_mining_manifest_resolves_all_production_owners():
+    manifest_path = Path(__file__).resolve().parents[3] / "manifests/canonical_mining_voyage.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    assert manifest["evidence_boundary"] == {
+        "loopback": "SOFTWARE_EXECUTION_VERIFIED",
+        "hardware_execution": "NOT_ESTABLISHED",
+        "pool_verification": "NOT_ESTABLISHED",
+    }
+    assert manifest["stages"]
+    for stage in manifest["stages"]:
+        owner = importlib.import_module(stage["module"])
+        for name in stage["symbol"].split("."):
+            owner = getattr(owner, name)
+
+
+async def _kellogg_toe_submission_voyage():
+    pool = FakePool(target=EASY_TARGET, job=_job("toe-job"))
+    server, port = await _served(pool)
+    chain = FakeChain()
+    coord = coordinator(port, chain)
+    try:
+        await _connected(coord, "toe-job")
+        chain.block_hash = parent_of_current_job(coord)
+        state = struct.pack("<Q14I", 9, *([0] * 8), 1, 0, 0, 0, 0, 0)
+        accepted = await coord.submit_record(VaultRecord(node_id=3, sequence=19, state=state))
+
+        context = coord.last_toe_context
+        frame = coord.last_toe_frame
+        signal = coord.last_toe_signal
+        execution = coord.last_execution
+        assert accepted is True
+        assert context.job_id == frame.job_id == signal.job_id == "toe-job"
+        assert context.execution_evidence["backend"] == "cpu-exact"
+        assert frame.is_valid()
+        assert signal.is_valid() and not signal.causal_throttle
+        assert execution["toe_frame_id"] == frame.frame_digest
+        assert execution["toe_advice_reason"] == "NO_OPTIMAL_INTERVENTION"
+        assert execution["candidate_host_verified"] is True
+        assert execution["candidate_nonce"] is not None
+        assert execution["requested_route"] == execution["executed_route"] == "cpu_reference"
+        assert execution["device_backend"] == "cpu"
+        assert execution["truth_class"] == "SOFTWARE_EXECUTION_VERIFIED"
+        assert execution["pool_outcome"] == PoolOutcome.ACCEPTED.value
+
+        lease = coord.agentic._leases.get(execution["lease_id"])
+        assert lease.state is LeaseState.COMPLETE
+        assert lease.start == execution["nonce_start"]
+        assert lease.count == execution["requested_window"]
+        assert lease.start % 32 == 0 and lease.end <= 1 << 32
+        assert len(pool.submits) == 1
+        assert pool.submits[0][1] == "toe-job"
+        assert int(pool.submits[0][-1], 16) == execution["candidate_nonce"]
+        durable_share = coord.session.last_share
+        assert durable_share["submission_id"] == execution["submission_id"]
+        assert durable_share["outcome"] is True
+        assert durable_share["job_id"] == execution["job_id"]
+        assert durable_share["generation"] == execution["generation"]
+        assert durable_share["plan_id"] == execution["search_plan_id"]
+        assert durable_share["toe_frame_id"] == frame.frame_digest
+        assert durable_share["lease_id"] == execution["lease_id"]
+        assert durable_share["execution_id"] == execution["execution_id"]
+        assert coord.agentic.telemetry.last_outcome["pool_outcome"] == PoolOutcome.ACCEPTED.value
+        assert coord.agentic.telemetry.last_outcome["search_plan_id"] == execution["search_plan_id"]
+        assert coord.agentic.telemetry.learning_update_applied is True
+        assert list(coord.mining_intelligence.history)[-1]["accepted"] is True
+    finally:
+        if coord.client:
+            await coord.client.close()
+        server.close()
+        await server.wait_closed()
+
+
+def test_kellogg_to_toe_to_stratum_submission_voyage():
+    asyncio.run(_kellogg_toe_submission_voyage())
+
+
+async def _stale_candidate_after_notify():
+    pool = FakePool(target=EASY_TARGET, job=_job("job-a"))
+    server, port = await _served(pool)
+    coord = coordinator(port, FakeChain())
+    loop = asyncio.get_running_loop()
+    router_for = coord._router_for
+
+    class RacingRouter:
+        def __init__(self, router):
+            self.router = router
+
+        def execute_plan(self, *args, **kwargs):
+            result = self.router.execute_plan(*args, **kwargs)
+            future = asyncio.run_coroutine_threadsafe(pool.new_job(_job("job-b")), loop)
+            future.result(timeout=5)
+            observed = asyncio.run_coroutine_threadsafe(
+                until(
+                    lambda: coord.client.proof_adapter.current_job.job_id == "job-b",
+                    what="job-b notification",
+                ),
+                loop,
+            )
+            observed.result(timeout=5)
+            return result
+
+    coord._router_for = lambda plan: RacingRouter(router_for(plan))
+    try:
+        await _connected(coord, "job-a")
+        coord._fill_precompute_queue()
+        assert await coord.search_current_job() is False
+        execution = coord.last_execution
+        assert execution["pool_outcome"] == PoolOutcome.STALE.value
+        assert execution["candidate_host_verified"] is True
+        assert execution["job_id"] == "job-a"
+        assert execution["generation"] < coord.agentic.current_identity().generation
+        assert "submission_id" not in execution
+        assert pool.submits == []
+        assert coord.agentic.telemetry.learning_update_applied is False
+    finally:
+        if coord.client:
+            await coord.client.close()
+        server.close()
+        await server.wait_closed()
+
+
+def test_stale_candidate_after_notify_is_not_submitted_or_learned():
+    asyncio.run(_stale_candidate_after_notify())
+
+
+async def _execution_failure_retires_allocated_lease():
+    pool = FakePool(target=EASY_TARGET, job=_job("job-a"))
+    server, port = await _served(pool)
+    coord = coordinator(port, FakeChain())
+    try:
+        await _connected(coord, "job-a")
+        coord._fill_precompute_queue()
+        plan = coord.agentic._queue.queue[0]
+
+        class FailingRouter:
+            def execute_plan(self, *_args, **_kwargs):
+                raise RuntimeError("injected execution failure")
+
+        coord._router_for = lambda _plan: FailingRouter()
+        with pytest.raises(RuntimeError, match="injected execution failure"):
+            await coord.search_current_job()
+
+        lease = coord.agentic._leases.get(plan.plan_id)
+        assert lease.state is LeaseState.INVALIDATED
+        assert pool.submits == []
+        assert coord.last_execution["job_id"] == "job-a"
+        assert coord.last_execution["plan_id"] == plan.plan_id
+        assert coord.last_execution["lease_id"] == plan.plan_id
+        assert coord.last_execution["execution_id"]
+        assert coord.last_execution["pool_outcome"] == PoolOutcome.NOT_SUBMITTED.value
+        assert any(event.kind == "execution_failed" for event in coord.causal.events())
+    finally:
+        if coord.client:
+            await coord.client.close()
+        server.close()
+        await server.wait_closed()
+
+
+def test_execution_failure_after_lease_allocation_is_fail_closed():
+    asyncio.run(_execution_failure_retires_allocated_lease())
+
+
 async def _share_then_keep_mining(policy: str):
     pool = FakePool(target=EASY_TARGET, job=_job("job-a"))
     pool.submit_policy = policy
@@ -338,6 +505,14 @@ async def _share_then_keep_mining(policy: str):
             assert coord.session.last_share["submission_id"] == execution["submission_id"]
             assert coord.session.last_share["outcome"] is (policy == "accept")
             assert execution["candidate_id"] and execution["execution_id"]
+            assert execution["job_id"] == "job-a"
+            assert execution["candidate_nonce"] is not None
+            assert execution["candidate_host_verified"] is True
+            assert execution["requested_route"] == execution["executed_route"] == "cpu_reference"
+            assert execution["route_fallback_reason"] is None
+            assert execution["device_backend"] == "cpu"
+            assert execution["truth_class"] == "SOFTWARE_EXECUTION_VERIFIED"
+            assert execution["elapsed_seconds"] >= 0
         assert coord.session.cycles == 0 and coord.session.history == ["SEARCHING"]
         assert len({tuple(p[1:]) for p in pool.submits}) == 3
         assert list(coord.mining_intelligence.history)[-1]["accepted"] is (policy == "accept")

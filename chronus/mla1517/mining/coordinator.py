@@ -1156,6 +1156,18 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             )
             return None
 
+    def _toe_advice_reason(self) -> str:
+        signal = self.last_toe_signal
+        if signal is None:
+            return "TOE_UNAVAILABLE_OR_INCOMPLETE"
+        if not signal.is_valid():
+            return "INVALID_SIGNAL_FAIL_CLOSED"
+        if signal.causal_throttle:
+            return "SAFETY_THROTTLE"
+        if signal.intervention_optimal and signal.face_confidence > 0:
+            return "LANE_BIAS_APPLIED"
+        return "NO_OPTIMAL_INTERVENTION"
+
     def _record_toe_boundary_violation(self, exc: TOEConsensusBoundaryError) -> None:
         """Record a refused TOE output; the evidence is rejected, not sanitized."""
         LOG.warning("TOE consensus boundary violation; evidence refused: %s", exc)
@@ -1792,6 +1804,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             policy_id=_BASELINE_POLICY,
             evidence_refs={
                 "lane_order_source": order_source,
+                "toe_advice_reason": self._toe_advice_reason(),
                 **(self.last_toe_frame.evidence_refs() if self.last_toe_frame else {}),
             },
             created_at=time.monotonic(),
@@ -1845,6 +1858,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     "toe_face_bias": (
                         self.last_toe_signal.face_bias if self.last_toe_signal is not None else None
                     ),
+                    "toe_advice_reason": self._toe_advice_reason(),
                     **(self.last_toe_frame.evidence_refs() if self.last_toe_frame else {}),
                 },
                 created_at=time.monotonic(),
@@ -2072,6 +2086,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 pool_session_id=identity.pool_session_id,
                 generation=identity.generation,
                 job_fingerprint=identity.job_fingerprint,
+                job_id=identity.job_id,
                 toe_frame_id=plan.toe_frame_id,
                 plan_id=plan.plan_id,
                 lease_id=lease.lease_id,
@@ -2174,6 +2189,17 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                         "hash_count": record.hash_count,
                         "locally_valid_shares": record.locally_valid_shares,
                     },
+                )
+                record = replace(
+                    record,
+                    job_id=job.job_id,
+                    candidate_nonce=candidate["nonce"] if candidate is not None else None,
+                    candidate_host_verified=(
+                        bool(candidate["independently_rechecked"])
+                        if candidate is not None
+                        else None
+                    ),
+                    recovery_id=coordinate.recovery_id,
                 )
                 current = self._refresh_work_identity()
                 stale = (
@@ -2304,6 +2330,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             pool_outcome=outcome,
             pool_accepted=int(outcome is PoolOutcome.ACCEPTED),
             pool_rejected=int(outcome is PoolOutcome.REJECTED),
+            pool_stale=int(outcome is PoolOutcome.STALE),
             recovery_event=self.agentic.is_recovery_active(),
             lease_id=lease.lease_id,
             generation=identity.generation,
@@ -2313,6 +2340,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             candidate_id=coordinate.candidate_id,
             submission_id=coordinate.submission_id,
             learning_record_id=coordinate.learning_record_id,
+            job_id=identity.job_id,
+            recovery_id=coordinate.recovery_id,
         )
         self.agentic.record_outcome(final)
         if outcome in (PoolOutcome.ACCEPTED, PoolOutcome.REJECTED):
@@ -2418,17 +2447,25 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             **coordinate.as_dict(),
             "plan_source": final.plan_source.value,
             "plan_id": final.plan_id,
+            "search_plan_id": final.search_plan_id,
             "plan_fallback_reason": final.plan_fallback_reason,
             "extranonce2": lease.extranonce2,
             "nonce_start": lease.start,
             "requested_window": plan.window,
             "attempts": final.hash_count,
+            "candidate_nonce": final.candidate_nonce,
+            "candidate_host_verified": final.candidate_host_verified,
             "requested_route": final.requested_route,
             "executed_route": final.executed_route,
             "route_fallback_reason": final.fallback_reason,
             "evidence_class": final.evidence_class.value,
+            "truth_class": final.truth_class,
             "completion_state": final.completion_state.value,
+            "toe_advice_reason": final.toe_advice_reason,
+            "device_backend": final.device_backend,
             "device_name": final.device_name,
+            "elapsed_seconds": final.elapsed_seconds,
+            "pool_stale": final.pool_stale,
             "kernel_launch_count": final.kernel_launch_count,
             "kernel_ms": final.kernel_ms,
             "pool_outcome": outcome.value,
