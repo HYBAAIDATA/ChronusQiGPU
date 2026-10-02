@@ -3,26 +3,35 @@
 `chronus.mining_bridge.ChronusSubstrateMiningBridge` connects the existing
 `quantum_compute_substrate.PhiTensorCore` to `mining.HashPipeline`.
 
-## Authority boundary
+## Execution objective
 
-The bridge has **ORDER_ONLY** authority. It may return a deterministic
-permutation of a bounded nonce window. It cannot change:
+This is a search-optimisation layer for the complete mining fabric—not a
+CPU-only experiment and not a capability ceiling. Its sealed search plan is
+portable across:
 
-- the 80-byte Bitcoin header;
-- any nonce value or the candidate set;
-- the target;
-- SHA-256d;
-- share validation or submission;
-- pool credentials or acknowledgements.
+- CPU reference execution;
+- GPU and OpenCL execution;
+- ASIC execution;
+- Super ASIC execution.
 
 `HashPipeline.grind_with_chronus_substrate()` scores the declared candidates,
 applies the norm-preserving φ-tensor diffusion transform, seals the exact
 resulting order, and dispatches it through the existing `grind()` method.
-The active hashing backend computes every selected SHA-256d digest and the
-pipeline independently rechecks any reported winner.
+The active route—not the bridge—is responsible for hashing. The bridge does
+not force fallback to CPU and does not limit accelerator scale.
+
+## Consensus compatibility
+
+The search optimiser may change representation, topology, scheduling,
+partitioning, and execution order. The selected CPU/GPU/ASIC/Super ASIC route
+computes the work. SHA-256d and the negotiated target remain the interoperable
+proof boundary, and the pipeline independently rechecks any reported winner.
+That boundary protects correctness; it is not a restriction on performance,
+hardware design, search intelligence, or the objective of building dominant
+mining technology.
 
 Compression ratio and reconstruction error are diagnostics only. They are not
-hashrate, mining-success, quantum-advantage, or pool-acceptance claims.
+substitutes for measured hashrate, mining success, or pool acceptance.
 
 ## Verification
 

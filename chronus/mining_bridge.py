@@ -1,8 +1,8 @@
-"""Chronus bridge for algebraic nonce ordering in the mining pipeline.
+"""Chronus algebraic search optimisation for the mining execution fabric.
 
-The bridge may reorder a bounded candidate window.  It cannot change block
-headers, nonce values, targets, SHA-256d, share validation, or submission.
-Every candidate still crosses the canonical consensus hash boundary.
+The generated search plan is portable across CPU, GPU, ASIC, and Super ASIC
+hashing routes.  Consensus verification remains SHA-256d so stronger execution
+technology can scale without creating an incompatible proof.
 """
 
 from __future__ import annotations
@@ -29,7 +29,9 @@ class SubstrateOrderingEvidence:
     input_fingerprint: str
     output_fingerprint: str
     operator: str = "phi-tensor-diffusion"
-    authority: str = "ORDER_ONLY"
+    role: str = "SEARCH_OPTIMIZATION"
+    execution_scope: str = "CPU/GPU/ASIC/SUPER_ASIC"
+    consensus_authority: bool = False
     consensus_rule: str = "SHA256d(header) <= target"
     claim_lane: str = "RESTRICTED (INTERNAL)"
 
@@ -38,7 +40,7 @@ class SubstrateOrderingEvidence:
 
 
 class ChronusSubstrateMiningBridge:
-    """Apply the integrated φ tensor core to candidate ordering only."""
+    """Build accelerator-portable search plans with the integrated tensor core."""
 
     def __init__(self, *, seed: int = 0) -> None:
         self.seed = int(seed)

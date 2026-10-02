@@ -35,7 +35,9 @@ class ChronusSubstrateMiningUnitTests(unittest.TestCase):
         self.assertAlmostEqual(evidence.state_norm, 1.0, places=12)
         self.assertAlmostEqual(evidence.transformed_norm, 1.0, places=12)
         self.assertGreater(evidence.compression_ratio, 1.0)
-        self.assertEqual(evidence.authority, "ORDER_ONLY")
+        self.assertEqual(evidence.role, "SEARCH_OPTIMIZATION")
+        self.assertEqual(evidence.execution_scope, "CPU/GPU/ASIC/SUPER_ASIC")
+        self.assertFalse(evidence.consensus_authority)
 
     def test_invalid_input_fails_closed(self):
         bridge = ChronusSubstrateMiningBridge()
