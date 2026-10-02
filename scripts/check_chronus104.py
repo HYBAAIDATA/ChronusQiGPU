@@ -153,7 +153,7 @@ def main():
         "vector_add_max_n": 4080,
         "vector_add_first_rejected_n": 4081,
         "status": "PASS",
-        "CI_STATUS": "NOT_REPORTED",
+        "CI_STATUS": "NOT_EVALUATED_BY_LOCAL_GATE",
     }
     out = ROOT / "artifacts"
     out.mkdir(exist_ok=True)
@@ -163,7 +163,7 @@ def main():
     (out / "chronus104-sha256sums.txt").write_text(f"{digest}  chronus104-closure.json\n")
     (out / "chronus104-corpus-root.json").write_text(json.dumps(manifest_a, sort_keys=True, separators=(",", ":")))
     print("Chronus #104 conformance suite acceptance: PASS")
-    print("CI STATUS: NOT REPORTED")
+    print("CI STATUS: NOT EVALUATED BY LOCAL GATE (see GitHub Actions)")
 
 
 if __name__ == "__main__":
