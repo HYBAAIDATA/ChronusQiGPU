@@ -1,0 +1,32 @@
+{
+  "schema": "euclid.enterprise-convergence-plan/1",
+  "mode": "PLAN_ONLY",
+  "enterprise_code_merged": false,
+  "flow": [
+    "IMMUTABLE_MINING_FORK_POINT",
+    "ENTERPRISE_COMPATIBILITY_BRANCH",
+    "INTERFACE_EVIDENCE_RECONCILIATION",
+    "CONTROLLED_MERGE"
+  ],
+  "fork_point": "d3eef9a71bccac5a59b27aff7283c4d98f06cc21",
+  "preserve": [
+    "mining_truth",
+    "new_euclid_identity",
+    "ovid_authority",
+    "theseus_rebuildability",
+    "chronus_contracts",
+    "kairos_rehearsal_boundary",
+    "salamander_controls"
+  ],
+  "compatibility_tests": [
+    "schema_and_version_negotiation",
+    "identity_and_genesis_root_preservation",
+    "ovid_authoritative_restore_without_theseus",
+    "theseus_rebuild_from_ovid",
+    "chronus_conformance_evidence_portability",
+    "kairos_production_authority_rejection",
+    "salamander_promotion_and_rollback_compatibility",
+    "bitcoin_consensus_and_share_truth_immutability"
+  ],
+  "merge_gate": "ALL_COMPATIBILITY_AND_INHERITED_ACCEPTANCE_GATES_PASS"
+}

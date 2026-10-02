@@ -1,0 +1,19 @@
+{
+  "schema": "euclid.intelligence-reachability-effectiveness/1",
+  "allowed_states": ["REACHABLE_AND_EFFECTIVE", "REACHABLE_BUT_UNPROVEN", "DISCONNECTED", "DUPLICATED", "MISSING", "SUPERSEDED"],
+  "components": {
+    "identity_continuity": {"state": "REACHABLE_AND_EFFECTIVE", "basis": "fresh roots; explicit non-continuity"},
+    "uncertainty_calibration": {"state": "REACHABLE_BUT_UNPROVEN", "basis": "bounded values; empirical calibration pending"},
+    "causal_counterfactual_reasoning": {"state": "REACHABLE_BUT_UNPROVEN", "basis": "rehearsal route exists; broad effectiveness unproven"},
+    "planning_task_decomposition": {"state": "REACHABLE_BUT_UNPROVEN", "basis": "existing surface; wider evidence pending"},
+    "metacognition_claim_revision": {"state": "REACHABLE_AND_EFFECTIVE", "basis": "refutations retained with lineage"},
+    "generalisation_transfer": {"state": "REACHABLE_BUT_UNPROVEN", "basis": "transfer reachable; external generalisation unproven"},
+    "governed_delegation": {"state": "REACHABLE_BUT_UNPROVEN", "basis": "existing surface not promoted"},
+    "rights_consent": {"state": "REACHABLE_BUT_UNPROVEN", "basis": "local fail-closed technical control only"},
+    "reward_authority": {"state": "REACHABLE_AND_EFFECTIVE", "basis": "NONE boundary exercised"},
+    "consolidation": {"state": "REACHABLE_BUT_UNPROVEN", "basis": "existing route retained"},
+    "safe_tool_use": {"state": "REACHABLE_AND_EFFECTIVE", "basis": "production authority rejected in rehearsal"},
+    "organism_coherence_under_perturbation": {"state": "REACHABLE_BUT_UNPROVEN", "basis": "recovered substrate reachable; physical evidence pending"}
+  },
+  "non_claims": ["consciousness", "inherited memory", "general intelligence", "production intelligence", "production qualification", "external validation"]
+}
