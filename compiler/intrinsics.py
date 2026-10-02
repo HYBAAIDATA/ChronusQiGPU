@@ -42,7 +42,12 @@ def _validate_operands(name:str,o:Mapping[str,Any])->None:
  if name in {'FIBONACCI','BINET_EXACT'}:_keys(o,{'n'});n=_uint(o['n'],32,'n');
  elif name=='LUCAS':_keys(o,{'n'});n=_uint(o['n'],32,'n')
  elif name=='ZECKENDORF_ENCODE':_keys(o,{'value'});_uint(o['value'],64,'value');return
- elif name=='ZECKENDORF_DECODE':_keys(o,{'mask'});_uint(o['mask'],93,'mask');return
+ elif name=='ZECKENDORF_DECODE':
+  _keys(o,{'mask'});mask=_uint(o['mask'],93,'mask')
+  if not HardenedZeckendorfCodec.verify_non_adjacent(mask):raise ValueError('non-canonical adjacent Zeckendorf bits')
+  value=HardenedZeckendorfCodec.decode(mask)
+  if value>0xffffffffffffffff or HardenedZeckendorfCodec.encode(value)!=mask:raise ValueError('non-canonical Zeckendorf mask')
+  return
  elif name=='CASSINI_VERIFY':
   _keys(o,{'n','f_prev','f_n','f_next'});n=_uint(o['n'],32,'n');
   if n<1:raise ValueError('Cassini requires n>=1')
@@ -61,6 +66,7 @@ def compile_intrinsic(value:Mapping[str,Any])->IntrinsicPlan:
  if ir.lowering=='CHRONUS1':raise ValueError('Chronus-1 v1.1 lacks certified wide-integer intrinsic lowering')
  caps=REFERENCE_CAPABILITIES if ir.lowering=='REFERENCE_HOST' else OPENCL_CAPABILITIES
  if not caps[ir.intrinsic]['supported']:raise ValueError(f'{ir.intrinsic} unsupported by {ir.lowering}')
+ if ir.lowering=='OPENCL' and ir.intrinsic=='CASSINI_VERIFY' and ir.operands['n']>46:raise ValueError('OpenCL Cassini u64 intermediate domain is 1..46')
  plan={'schema':'chronus.intrinsic-plan.v1','intrinsic':ir.intrinsic,'semantic_version':'1.0.0','operands':dict(ir.operands),'result_type':ir.result_type,'backend':ir.lowering,'numeric_class':'APPROXIMATE' if ir.intrinsic=='PHI_WEIGHT' else 'EXACT','assembler_bypassed':False if ir.lowering=='CHRONUS1' else None}
  artifact=json.dumps(plan,sort_keys=True,separators=(',',':')).encode()
  return IntrinsicPlan(ir,artifact,ir.lowering,ir.intrinsic!='PHI_WEIGHT')
