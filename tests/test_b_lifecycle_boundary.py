@@ -77,10 +77,33 @@ def _wait_terminal(runner, timeout=10.0):
     while runner.status()["state"] == "running" and time.time() < deadline:
         time.sleep(0.05)
     if runner._thread is not None:
-        # "stopped" flips before the worker's teardown finally runs — join
-        # so retirement evidence is in place before assertions read it.
+        # Join so retirement evidence is in place before assertions read it.
         runner._thread.join(timeout=timeout)
     return runner.status()
+
+
+
+def test_runner_stop_remains_stopping_until_worker_exits():
+    gate = threading.Event()
+    runner = system_fabric._Runner("truthful-stop")
+
+    def blocked(_runner):
+        gate.wait(5)
+        raise InterruptedError("cooperative cancellation")
+
+    assert runner.start(blocked)
+    assert runner.stop()
+    requested = runner.status()
+    assert requested["state"] == "stopping"
+    assert requested["finished_at"] is None
+    assert runner._thread is not None and runner._thread.is_alive()
+
+    gate.set()
+    runner._thread.join(timeout=5)
+    terminal = runner.status()
+    assert terminal["state"] == "stopped"
+    assert terminal["finished_at"] is not None
+    assert terminal["error"] is None
 
 
 def test_campaign_retires_arms_on_phase_failure(tmp_path, monkeypatch):
@@ -129,6 +152,31 @@ def test_campaign_measured_zero_is_a_measurement(tmp_path, monkeypatch):
     status = _wait_terminal(runner)
     # DATA-01: an observed 0.0 stays a measurement, distinct from unmeasured.
     assert status["result"]["phases"][0]["measured_hs_avg"] == 0.0
+
+
+
+def test_campaign_reports_phase_share_delta_not_prior_total(tmp_path, monkeypatch):
+    deps = _CampaignDeps(tmp_path, monkeypatch, single_phase=True)
+    values = iter([100, 102, 102])
+    last = {"hashrate_hs": 12.5, "shares_accepted": 102}
+
+    def probe():
+        nonlocal last
+        try:
+            last = {"hashrate_hs": 12.5, "shares_accepted": next(values)}
+        except StopIteration:
+            pass
+        return last
+
+    deps.counter_probe = probe
+    runner = _fresh_campaign(monkeypatch)
+    assert system_fabric.start_campaign(
+        apply_config=deps.apply_config,
+        retire_all=deps.retire_all,
+        counter_probe=deps.counter_probe,
+    )
+    status = _wait_terminal(runner)
+    assert status["result"]["phases"][0]["shares_accepted"] == 2
 
 
 def test_campaign_absent_rate_stays_unmeasured(tmp_path, monkeypatch):

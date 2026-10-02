@@ -594,20 +594,26 @@ class _Runner:
 
             def _wrap() -> None:
                 try:
-                    self.result = fn(self)
-                    if self.state == "running":
-                        self.state = "done"
+                    result = fn(self)
+                    with self._lock:
+                        self.result = result
+                        if self._stop.is_set():
+                            self.state = "stopped"
+                        elif self.state == "running":
+                            self.state = "done"
                 except Exception as exc:
-                    if self.stopped:
-                        # Operator stop: the workflow raised on the stop
-                        # flag — that is a clean stop, not an error.
-                        self.state = "stopped"
-                        self.progress["stop_detail"] = f"{type(exc).__name__}: {exc}"
-                    else:
-                        self.error = f"{type(exc).__name__}: {exc}"
-                        self.state = "error"
+                    with self._lock:
+                        if self._stop.is_set():
+                            # Cooperative operator cancellation is terminal only
+                            # after the worker has actually left its function.
+                            self.state = "stopped"
+                            self.progress["stop_detail"] = f"{type(exc).__name__}: {exc}"
+                        else:
+                            self.error = f"{type(exc).__name__}: {exc}"
+                            self.state = "error"
                 finally:
-                    self.finished_at = time.time()
+                    with self._lock:
+                        self.finished_at = time.time()
 
             self._thread = threading.Thread(target=_wrap, name=f"fabric-{self.name}", daemon=True)
             self._thread.start()
@@ -616,10 +622,13 @@ class _Runner:
     def stop(self) -> bool:
         self._stop.set()
         with self._lock:
-            if self.state == "running":
-                self.state = "stopped"
-                self.finished_at = time.time()
-                return True
+            if self._thread is not None and self._thread.is_alive():
+                if self.state == "running":
+                    # A stop request is not completion. Keep the worker visibly
+                    # active until its finally/cleanup path has exited.
+                    self.state = "stopping"
+                    self.progress["stop_requested_at"] = time.time()
+                return self.state == "stopping"
             return False
 
     @property
@@ -823,7 +832,15 @@ def _run_campaign(
             applied = apply_config(next_cfg)
             started = time.time()
             measured: list[float] = []
-            shares_seen = 0
+            # Pool counters are cumulative. Capture a phase baseline and
+            # accumulate non-negative deltas, treating a decrease as a worker
+            # restart/reset rather than leaking prior-phase shares forward.
+            baseline = counter_probe()
+            try:
+                shares_last = int(baseline.get("shares_accepted") or 0)
+            except (TypeError, ValueError):
+                shares_last = 0
+            shares_delta = 0
             duration = float(phase["duration_s"])
             while time.time() - started < duration:
                 if runner.stopped:
@@ -837,7 +854,17 @@ def _run_campaign(
                         measured.append(float(rate))
                     except (TypeError, ValueError):
                         pass
-                shares_seen = max(shares_seen, int(counters.get("shares_accepted") or 0))
+                try:
+                    shares_now = int(counters.get("shares_accepted") or 0)
+                except (TypeError, ValueError):
+                    shares_now = shares_last
+                if shares_now >= shares_last:
+                    shares_delta += shares_now - shares_last
+                else:
+                    # Counter reset (worker restart or pool switch): the new
+                    # value is work observed after the reset.
+                    shares_delta += max(0, shares_now)
+                shares_last = shares_now
                 time.sleep(min(2.0, max(0.25, duration / 240)))
             record["phases"].append(
                 {
@@ -853,7 +880,7 @@ def _run_campaign(
                     "finished_at": time.time(),
                     "measured_hs_avg": (sum(measured) / len(measured)) if measured else None,
                     "measured_hs_peak": max(measured) if measured else None,
-                    "shares_accepted": shares_seen,
+                    "shares_accepted": shares_delta,
                     "applied": applied,
                 }
             )
