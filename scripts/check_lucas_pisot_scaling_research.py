@@ -10,7 +10,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from lucas.scaling_research import research_report
+from lucas.scaling_research import research_report, verify_content_sha256
 RESULT = ROOT / "artifacts" / "lucas-pisot-scaling-research.json"
 
 
@@ -22,7 +22,10 @@ def main() -> int:
     )
     if completed.returncode:
         return completed.returncode
-    RESULT.write_text(json.dumps(research_report(), indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    report = research_report()
+    if not verify_content_sha256(report):
+        raise AssertionError("canonical report digest failed self-verification")
+    RESULT.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"LUCAS_PISOT_RESEARCH=PASS artifact={RESULT.relative_to(ROOT)}")
     return 0
 

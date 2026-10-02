@@ -30,6 +30,7 @@ from toe.poincare_golden_11d import (
     generate_zeckendorf_decoupling_mask,
     get_metallic_mean,
     resolve_zeckendorf_slot,
+    to_authoritative_input,
     to_gpu_input,
     unfold_poincare_11d_vector,
 )
@@ -235,20 +236,38 @@ def test_generate_decoupling_mask_invariants_and_validation():
 # --- GPU byte codecs -----------------------------------------------------------------
 
 
-def test_to_gpu_input_flattens_and_validates_shape():
-    flat = to_gpu_input(np.arange(11))
+def test_to_gpu_input_requires_explicit_lossy_non_structural_policy():
+    with pytest.raises(ValueError, match="role"):
+        to_gpu_input(np.arange(11))
+    with pytest.raises(ValueError, match="allow_lossy"):
+        to_gpu_input(np.arange(11), role="decorative")
+    with pytest.raises(ValueError, match="authoritative"):
+        to_gpu_input(np.arange(11), role="structural", allow_lossy=True)
+
+    flat = to_gpu_input(np.arange(11), role="decorative", allow_lossy=True)
     assert flat.dtype == np.float32 and flat.shape == (11,)
-    batch = to_gpu_input(np.arange(33).reshape(3, 11))
+    batch = to_gpu_input(
+        np.arange(33).reshape(3, 11), role="parametric", allow_lossy=True
+    )
     assert batch.shape == (33,)
     assert np.allclose(batch.reshape(3, 11), np.arange(33).reshape(3, 11))
     with pytest.raises(ValueError, match="shape"):
-        to_gpu_input(np.zeros(12))
+        to_gpu_input(np.zeros(12), role="decorative", allow_lossy=True)
     with pytest.raises(ValueError, match="shape"):
-        to_gpu_input(np.zeros((2, 10)))
+        to_gpu_input(np.zeros((2, 10)), role="decorative", allow_lossy=True)
 
 
-def test_gpu_codec_roundtrip():
+def test_authoritative_input_preserves_float64_and_role():
     x = np.arange(22, dtype=np.float64).reshape(2, 11)
-    back = from_gpu_output(to_gpu_input(x), n=2)
+    flat = to_authoritative_input(x, role="structural")
+    assert flat.dtype == np.float64 and flat.shape == (22,)
+    with pytest.raises(ValueError, match="authoritative"):
+        to_authoritative_input(x, role="decorative")
+
+
+def test_gpu_codec_roundtrip_is_explicitly_lossy():
+    x = np.arange(22, dtype=np.float64).reshape(2, 11)
+    payload = to_gpu_input(x, role="decorative", allow_lossy=True)
+    back = from_gpu_output(payload, n=2)
     assert back.shape == (2, 11)
     assert np.allclose(back, x)

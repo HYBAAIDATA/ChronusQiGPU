@@ -157,14 +157,23 @@
       "relative_residual": "1.6692412543000614571001982411900016260480362256037505276072395746940181757634710227321328977601607259686007863859526192807065592E-9"
     }
   ],
-  "content_sha256": "af3734b73ee1e3c5c1d744280ebce8cfa522de1a183033853a02498d2b6858e2",
+  "content_sha256": "33930f41d895619e258e661999108acd0f3d556ccb740c4c99790f15eb1aab74",
+  "digest_canonicalization": "RFC8259-like UTF-8 JSON: sort_keys=True,separators=(',',':'); omit content_sha256",
   "falsified_or_unproven": [
     "the selected indices have a special Pisot advantage after controlling for n",
     "Lucas/Pisot structure alone establishes mining or scheduling advantage",
     "binary64 is suitable for exact high-index Pisot certification",
-    "the current Float32 11-D transport preserves the n=18 and n=20 Pisot residuals"
+    "the Float32 host codec preserves the n=18 and n=20 Pisot residuals",
+    "host Float32 behavior qualifies an OpenCL device or fp64 kernel"
   ],
-  "float32_transport_boundary": {
+  "float64_boundary": {
+    "float_pow_error_at_first_integral": 1,
+    "float_pow_error_at_n76": 19,
+    "float_pow_integral_first_n": 70,
+    "true_residual_unrepresentable_first_n": 39
+  },
+  "host_float32_rounding_boundary": {
+    "codec": "toe.poincare_golden_11d.to_gpu_input",
     "discovery_indices_erasing_residual": [
       18,
       20
@@ -174,13 +183,8 @@
       12,
       15
     ],
+    "scope": "host_codec_only_not_opencl_device_qualification",
     "true_residual_unrepresentable_first_n": 18
-  },
-  "float64_boundary": {
-    "float_pow_error_at_first_integral": 1,
-    "float_pow_error_at_n76": 19,
-    "float_pow_integral_first_n": 70,
-    "true_residual_unrepresentable_first_n": 39
   },
   "non_claims": [
     "mining advantage",
@@ -200,7 +204,7 @@
     ],
     "meaning": "date-of-birth-derived discovery indices"
   },
-  "schema": "hyba.research.lucas-pisot-scaling.v1",
+  "schema": "hyba.research.lucas-pisot-scaling.v2",
   "selected": [
     {
       "absolute_residual": "0.00813061875578334874772410988990352538299511068304258255032575121067454496036526610360376958348743833852515585372095363303518",
@@ -263,8 +267,14 @@
       "relative_residual": "4.3701303391810674621873016337458341933729873696495433564825186997817829533493661979810088650140097061344696514707149687254097158E-9"
     }
   ],
+  "semantic_roles": {
+    "certifying": "witnesses and acceptance evidence; authoritative arithmetic required",
+    "decorative": "labels, geometry, visualization; no invariant inferred",
+    "parametric": "seeds, schedules, subset selection; approximation disclosed",
+    "structural": "gates, folds, transitions, invariants; distinctions must be preserved"
+  },
   "verified_claims": [
-    "L_n is the exact trace of phi^n",
+    "L_n is the exact algebraic trace of phi^n",
     "L_n^2 - 5F_n^2 = 4(-1)^n",
     "for n >= 2, L_n is the nearest integer to phi^n",
     "absolute residual is phi^-n and relative residual is phi^-2n",

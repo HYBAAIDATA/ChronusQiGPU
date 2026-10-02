@@ -10,8 +10,11 @@ from lucas.core import fibonacci, lucas
 from lucas.scaling_research import (
     DISCOVERY_INDICES,
     float32_boundary,
+    host_float32_boundary,
     float64_boundary,
     pisot_certificate,
+    research_report,
+    verify_content_sha256,
 )
 
 
@@ -45,11 +48,24 @@ class TestLucasPisotScalingResearch(unittest.TestCase):
             normalized = Decimal(pisot_certificate(n)["normalized_residual"])
             self.assertLess(abs(normalized - 1), Decimal("1e-90"))
 
-    def test_float32_transport_erases_two_discovery_residuals(self):
-        boundary = float32_boundary()
+    def test_host_float32_codec_erases_two_discovery_residuals(self):
+        boundary = host_float32_boundary()
+        self.assertEqual(boundary["scope"], "host_codec_only_not_opencl_device_qualification")
         self.assertEqual(boundary["true_residual_unrepresentable_first_n"], 18)
         self.assertEqual(boundary["discovery_indices_preserving_residual"], [10, 12, 15])
         self.assertEqual(boundary["discovery_indices_erasing_residual"], [18, 20])
+
+    def test_backward_float32_alias_has_same_boundary(self):
+        self.assertEqual(
+            float32_boundary()["true_residual_unrepresentable_first_n"],
+            host_float32_boundary()["true_residual_unrepresentable_first_n"],
+        )
+
+    def test_report_digest_is_reproducible_from_parsed_content(self):
+        report = research_report()
+        self.assertTrue(verify_content_sha256(report))
+        report["non_claims"].append("tampered")
+        self.assertFalse(verify_content_sha256(report))
 
     def test_float64_precision_boundary_is_explicit(self):
         boundary = float64_boundary()
