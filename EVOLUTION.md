@@ -8,4 +8,4 @@ The conformance suite precedes cross-verification because cross-verification con
 
 `META_EVOLVE` may write priority recommendations to evidence history. It may not silently rewrite safety policy, verification authority, cryptographic boundaries, production keys, or approval classes. Such changes require review.
 
-Current iteration: `ISA_DEFINITION`, closed by `isa/chronus1.md`, `isa/chronus1.json`, and `scripts/check_chronus_isa.py`. The next open gap is the emulator. The UHD 620 physical gate remains external evidence and must be rerun on the target host before this iteration may be merged as physically regression-safe.
+Iterations closed: `ISA_DEFINITION` and `EMULATOR`. The reference C++17 emulator executes all 20 opcodes, the `.chronus` container, traps, divergence, barriers, partial work-groups and the hand-written local-memory tiled matmul. The next open gap is the assembler/disassembler. The UHD 620 physical gate remains external evidence and must be rerun on the target host before this iteration may be merged as physically regression-safe.
