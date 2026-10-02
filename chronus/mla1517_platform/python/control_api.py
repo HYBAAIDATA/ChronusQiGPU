@@ -804,26 +804,111 @@ def knowledge_payload() -> dict[str, Any]:
 
 ADMIN_KEY_ENV = "EUCLID_ADMIN_API_KEY"
 UNAUTHENTICATED_ENV = "PYTHIA_ALLOW_UNAUTHENTICATED_CONTROL"
+OPERATOR_PRINCIPALS_ENV = "PYTHIA_OPERATOR_PRINCIPALS_JSON"
+OPERATOR_PRINCIPAL_HEADER = "X-PYTHIA-Principal"
+_CONTROL_ROLES = frozenset({"ceo", "operator"})
+_PRINCIPAL_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:@-]{0,127}$")
+
+
+@dataclass(frozen=True)
+class ControlPrincipal:
+    principal_id: str
+    role: str
+    source: str
+
+
+def _operator_principals() -> tuple[dict[str, dict[str, str]] | None, str | None]:
+    """Load the server-side principal map without accepting plaintext secrets.
+
+    The optional JSON object maps a principal id to a supported role and the
+    SHA-256 digest of that principal's bearer token. When configured, this map
+    takes precedence over the legacy shared admin key.
+    """
+    raw = os.getenv(OPERATOR_PRINCIPALS_ENV)
+    if raw is None:
+        return None, None
+    try:
+        value = json.loads(raw)
+    except (TypeError, ValueError):
+        return None, "operator principal mapping is invalid"
+    if not isinstance(value, dict) or not value:
+        return None, "operator principal mapping is invalid"
+    principals: dict[str, dict[str, str]] = {}
+    for principal_id, spec in value.items():
+        if not isinstance(principal_id, str) or not _PRINCIPAL_ID_RE.fullmatch(
+            principal_id
+        ):
+            return None, "operator principal mapping is invalid"
+        if not isinstance(spec, dict):
+            return None, "operator principal mapping is invalid"
+        role = spec.get("role")
+        digest = spec.get("token_sha256")
+        if (
+            role not in _CONTROL_ROLES
+            or not isinstance(digest, str)
+            or re.fullmatch(r"[0-9a-fA-F]{64}", digest) is None
+        ):
+            return None, "operator principal mapping is invalid"
+        principals[principal_id] = {
+            "role": str(role),
+            "token_sha256": digest.lower(),
+        }
+    return principals, None
+
+
+def authenticate_control_principal(
+    headers: Any,
+) -> tuple[ControlPrincipal | None, tuple[HTTPStatus, str] | None]:
+    """Authenticate a server-mapped operator or the legacy admin-key identity."""
+    principals, mapping_error = _operator_principals()
+    if mapping_error:
+        return None, (HTTPStatus.SERVICE_UNAVAILABLE, mapping_error)
+    header = str(headers.get("Authorization", "") or "")
+    token = header[7:].strip() if header[:7].lower() == "bearer " else ""
+    if principals is not None:
+        principal_id = str(headers.get(OPERATOR_PRINCIPAL_HEADER, "") or "").strip()
+        if not principal_id:
+            return None, (HTTPStatus.UNAUTHORIZED, "operator principal required")
+        spec = principals.get(principal_id)
+        if spec is None:
+            return None, (HTTPStatus.FORBIDDEN, "operator principal is not authorized")
+        candidate = hashlib.sha256(token.encode("utf-8")).hexdigest() if token else ""
+        if not candidate or not hmac.compare_digest(candidate, spec["token_sha256"]):
+            return None, (HTTPStatus.UNAUTHORIZED, "operator credential required")
+        return (
+            ControlPrincipal(
+                principal_id=principal_id,
+                role=spec["role"],
+                source="server_principal_map",
+            ),
+            None,
+        )
+
+    key = os.getenv(ADMIN_KEY_ENV, "").strip()
+    if not key:
+        if _is_truthy(os.getenv(UNAUTHENTICATED_ENV)):
+            return ControlPrincipal("local-dev", "operator", "declared_dev_mode"), None
+        return None, (
+            HTTPStatus.FORBIDDEN,
+            f"{ADMIN_KEY_ENV} is not configured; control is closed",
+        )
+    if not token or not hmac.compare_digest(token.encode("utf-8"), key.encode("utf-8")):
+        return None, (HTTPStatus.UNAUTHORIZED, "operator key required")
+    return ControlPrincipal("legacy-admin", "operator", "legacy_admin_key"), None
 
 
 def control_authorization(headers: Any) -> tuple[HTTPStatus, str] | None:
     """None when a state-changing request is authorized, else (status, reason).
 
-    Fail closed: every POST and PUT that changes state (start, stop, switch,
-    elevate, escalate, config) needs ``Authorization: Bearer <key>`` matching
-    EUCLID_ADMIN_API_KEY. With no key configured nothing may change state,
-    unless PYTHIA_ALLOW_UNAUTHENTICATED_CONTROL=1 declares a local dev box.
+    Fail closed: when PYTHIA_OPERATOR_PRINCIPALS_JSON is configured, every
+    non-guardian state change needs a bearer credential bound to the claimed
+    X-PYTHIA-Principal by that server-side map. Otherwise the legacy shared
+    EUCLID_ADMIN_API_KEY contract remains available for migration. With
+    neither configured nothing may change state, unless the explicit local
+    development opt-out is enabled.
     """
-    key = os.getenv(ADMIN_KEY_ENV, "").strip()
-    if not key:
-        if _is_truthy(os.getenv(UNAUTHENTICATED_ENV)):
-            return None
-        return HTTPStatus.FORBIDDEN, f"{ADMIN_KEY_ENV} is not configured; control is closed"
-    header = str(headers.get("Authorization", "") or "")
-    token = header[7:].strip() if header[:7].lower() == "bearer " else ""
-    if not token or not hmac.compare_digest(token.encode("utf-8"), key.encode("utf-8")):
-        return HTTPStatus.UNAUTHORIZED, "operator key required"
-    return None
+    _, refusal = authenticate_control_principal(headers)
+    return refusal
 
 
 def start_repo_engineer() -> bool:
@@ -2011,8 +2096,17 @@ class _Handler(BaseHTTPRequestHandler):
         self._send(int(status), "application/json; charset=utf-8", body)
 
     def _refuse_unauthorized(self) -> bool:
-        refusal = control_authorization(self.headers)
+        principal, refusal = authenticate_control_principal(self.headers)
         if refusal is None:
+            assert principal is not None
+            self._control_principal = principal
+            _audit().append(
+                "control_authorized",
+                path=urlparse(self.path).path,
+                principal_id=principal.principal_id,
+                role=principal.role,
+                source=principal.source,
+            )
             return False
         status, reason = refusal
         _audit().append("control_refused", path=urlparse(self.path).path, reason=reason)
