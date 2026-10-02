@@ -9,7 +9,7 @@ def disassemble(blob):
   if d.name in ('BRA','BRAZ','BRANZ'):targets.add(d.pc+4+d.imm*4)
  targets.update(t for _,t in exe.reconvergence);targets.update(b for b,_ in exe.reconvergence)
  for pc in sorted(targets):labels.setdefault(pc,f"L_{pc:08x}")
- lines=['.section .text']
+ lines=['.section .text',f'.memory {exe.required_global_bytes}']
  for s in symbols:
   if s.flags&1:lines.append(f".global {s.name}")
  for s in symbols:

@@ -18,5 +18,5 @@ def assemble_source(source):
  conditional={n*4 for n,i in enumerate(p.instructions) if i.name in ('BRAZ','BRANZ')}
  if conditional!=seen:raise AsmError(0,f"conditional branches require explicit .reconv records: {sorted(conditional-seen)}")
  entry=(p.labels[p.globals[0]]*4 if p.globals else 0)
- return pack(Executable(words,entry=entry,required_global_bytes=0x301000,symbols=tuple(symbols),reconvergence=tuple(sorted(reconv))))
+ return pack(Executable(words,entry=entry,required_global_bytes=p.required_memory,symbols=tuple(symbols),reconvergence=tuple(sorted(reconv))))
 def assemble_file(path):return assemble_source(open(path,encoding='utf-8').read())

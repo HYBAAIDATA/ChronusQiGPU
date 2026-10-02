@@ -6,7 +6,7 @@ class Instruction: name:str; operands:tuple[str,...]; line:int
 @dataclass
 class Program:
  instructions:list[Instruction]=field(default_factory=list); labels:dict[str,int]=field(default_factory=dict)
- globals:list[str]=field(default_factory=list); declared_symbols:list[str]=field(default_factory=list)
+ globals:list[str]=field(default_factory=list); declared_symbols:list[str]=field(default_factory=list); required_memory:int=0x301000
  reconvergence:list[tuple[str,str]]=field(default_factory=list); has_data:bool=False
 
 def _split_operands(text):
@@ -31,6 +31,7 @@ def parse_source(source):
    elif directive=='.global' and len(parts)==2:p.globals.append(parts[1])
    elif directive=='.symbol' and len(parts)==2:p.declared_symbols.append(parts[1])
    elif directive=='.reconv' and len(parts)==3:p.reconvergence.append((parts[1].rstrip(','),parts[2]))
+   elif directive=='.memory' and len(parts)==2:p.required_memory=int(parts[1],0)
    else:raise AsmError(line_no,f"invalid directive {text}")
    continue
   if text.endswith(':'):
