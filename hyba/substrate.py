@@ -41,7 +41,7 @@ from typing import Dict, List, Optional
 
 from aethel.encoding import MAX_FOLD_LEN, ZeckendorfVector, fold, unfold
 from aethel.errors import AethelError, FoldDomainOverflow
-from aethel.storage import AddressSpace
+from aethel.storage import MAX_ADDRESS_INDEX, AddressSpace
 
 from toe.receipts import ReceiptLedger
 
@@ -141,7 +141,9 @@ class HybaSubstrate:
         # bands two forks would start cursors at the same index and later
         # writers would clobber earlier blocks in the shared block map —
         # the ledger stays consistent but the data does not.
-        self._band_size = 10_000
+        # Bands partition the shared index space; width derives from
+        # MAX_ADDRESS_INDEX so the declared bound is self-consistent.
+        self._band_size = MAX_ADDRESS_INDEX // 5
         # band 0 belongs to this (root) handle; scoped tenants take bands
         # 1, 2, ... — declared bound on writes per band is _band_size
         self._band_counter = [1]  # shared across scopes

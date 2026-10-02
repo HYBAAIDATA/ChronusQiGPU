@@ -24,6 +24,7 @@ from manifold_pool_coordinator import (
 
 from .causal import CausalCoordinate
 from .coordinator import IntelligentPoolCoordinator, MMIOControlSink
+from .cycle_fsm import MiningCycleState
 from .pool_chain import bip34_height
 
 LOG = logging.getLogger(__name__)
@@ -221,26 +222,20 @@ class ProductionStratumClient(StratumClient):
         loop = asyncio.get_running_loop()
         ack: asyncio.Future[None] = loop.create_future()
         try:
-            await asyncio.wait_for(
-                self._outbound.put((payload, ack)), timeout=self.enqueue_timeout
-            )
+            await asyncio.wait_for(self._outbound.put((payload, ack)), timeout=self.enqueue_timeout)
         except asyncio.TimeoutError as exc:
             raise TimeoutError(
                 f"Stratum outbound queue remained full for {self.enqueue_timeout:.3f}s"
             ) from exc
         try:
-            await asyncio.wait_for(
-                ack, timeout=self.write_timeout + self.enqueue_timeout
-            )
+            await asyncio.wait_for(ack, timeout=self.write_timeout + self.enqueue_timeout)
         except asyncio.TimeoutError as exc:
             raise TimeoutError(
                 f"Stratum socket write exceeded bounded transport budget "
                 f"({self.write_timeout:.3f}s)"
             ) from exc
 
-    async def request(
-        self, method: str, params: list[Any], *, timeout: float | None = None
-    ) -> Any:
+    async def request(self, method: str, params: list[Any], *, timeout: float | None = None) -> Any:
         if not self.writer:
             raise ConnectionError("Stratum session is not connected")
         if self._reader_task is not None and self._reader_task.done():
@@ -273,9 +268,7 @@ class ProductionStratumClient(StratumClient):
             return await asyncio.wait_for(future, timeout=limit)
         except asyncio.TimeoutError as exc:
             self._pending.pop(request_id, None)
-            raise TimeoutError(
-                f"Stratum request {method!r} timed out after {limit:.1f}s"
-            ) from exc
+            raise TimeoutError(f"Stratum request {method!r} timed out after {limit:.1f}s") from exc
 
     async def submit(self, params: list[Any]) -> Any:
         result = await super().submit(params)
@@ -318,9 +311,7 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
         outbound_queue_size: int | None = None,
         **kwargs: Any,
     ) -> None:
-        kwargs.setdefault(
-            "reconnect_delay", _positive_env("PYTHIA_RECONNECT_INITIAL_S", 0.25)
-        )
+        kwargs.setdefault("reconnect_delay", _positive_env("PYTHIA_RECONNECT_INITIAL_S", 0.25))
         super().__init__(*args, **kwargs)
         self.production_connect_timeout = (
             _positive_env("PYTHIA_STRATUM_CONNECT_TIMEOUT_S", 0.75)
@@ -371,7 +362,10 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
         # session, attach the stale count directly to that session telemetry.
         client = self.client
         session_id = execution.get("pool_session_id")
-        if isinstance(client, ProductionStratumClient) and client.runtime_state.session_id == session_id:
+        if (
+            isinstance(client, ProductionStratumClient)
+            and client.runtime_state.session_id == session_id
+        ):
             client.record_stale_candidate()
         self.causal.record(
             "candidate_stale_dropped",
@@ -399,6 +393,7 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
 
     def set_metrics_sink(self, sink: Any) -> None:
         """Publish measured hashing plus stale-candidate drop counters."""
+
         def wrapped(counters: Mapping[str, Any]) -> None:
             self._observe_stale_from_last_execution()
             sink({**dict(counters), "stale_candidates_dropped": self._stale_candidates_dropped})
@@ -427,14 +422,34 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
                 authorization_failures += 1
                 errors.append(f"{endpoint.name}: {exc}")
                 await client.close()
+                self._pool_endpoint_refused(endpoint, str(exc), "authorization")
                 continue
             except Exception as exc:
                 errors.append(f"{endpoint.name}: {exc}")
                 await client.close()
+                self._pool_endpoint_refused(endpoint, str(exc), "connect")
                 continue
 
             self.endpoint_index = index
             self.client = client
+            self.causal.record(
+                "pool_endpoint_selected",
+                self._pool_coordinate(),
+                pool=endpoint.name,
+                endpoint=f"{endpoint.host}:{endpoint.port}",
+                attempt=offset + 1,
+                previous_failures=list(errors),
+            )
+            if offset > 0:
+                # Failover rotation healed the SCAN leg: the declared pool
+                # order moved off the primary. Evidence only — the machine
+                # stays wherever it is unless it is still in SCAN.
+                self.cycle.try_transition(
+                    MiningCycleState.HEAL,
+                    event="failure",
+                    reason="pool failover rotated endpoints",
+                    evidence={"pool": endpoint.name, "failures": list(errors)},
+                )
             # Preserve IntelligentPoolCoordinator's post-handshake binding:
             # the first notify may arrive during subscribe/authorize.
             self._refresh_work_identity()
@@ -444,6 +459,29 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
         if authorization_failures == len(self.endpoints):
             raise StratumAuthorizationError("; ".join(errors))
         raise ConnectionError("; ".join(errors))
+
+    def _pool_coordinate(self) -> CausalCoordinate:
+        runtime = getattr(self.client, "runtime_state", None)
+        generation = getattr(runtime, "current_job", None) if runtime else None
+        return CausalCoordinate(
+            pool_session_id=getattr(runtime, "session_id", None) if runtime else None,
+            generation=getattr(generation, "generation", None),
+            job_fingerprint=getattr(generation, "fingerprint", None),
+        )
+
+    def _pool_endpoint_refused(self, endpoint: Any, error: str, stage: str) -> None:
+        """Durable evidence that a configured endpoint failed its handshake."""
+        try:
+            self.causal.record(
+                "pool_endpoint_refused",
+                self._pool_coordinate(),
+                pool=endpoint.name,
+                endpoint=f"{endpoint.host}:{endpoint.port}",
+                stage=stage,
+                error=error[:300],
+            )
+        except Exception:
+            pass
 
     async def run_hardware_loop(
         self,
@@ -519,9 +557,7 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
                         bridge.stop()
                         running = False
                     with contextlib.suppress(TimeoutError):
-                        await asyncio.wait_for(
-                            self._work_wake.wait(), max(poll_ms / 1000, 0.01)
-                        )
+                        await asyncio.wait_for(self._work_wake.wait(), max(poll_ms / 1000, 0.01))
                     self._work_wake.clear()
                     continue
                 if not running:
@@ -536,7 +572,7 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
                 if record is not None:
                     try:
                         await self.submit_record(record)
-                    except (ConnectionError, asyncio.IncompleteReadError) as exc:
+                    except (ConnectionError, TimeoutError, asyncio.IncompleteReadError) as exc:
                         LOG.warning("submit connection lost: %s", exc)
                         if running:
                             bridge.stop()

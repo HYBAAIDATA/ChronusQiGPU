@@ -28,7 +28,7 @@
     {
       "id": "storage.resource_and_path_bounds",
       "claim": "Payloads, address indices, journal entries, queue slots and files are bounded and symlinked storage entries are rejected.",
-      "implementation": ["aethel/storage.py", "aethel/shm.py", "mla1517_platform_v3.4/host/mla1517_aethel.c"],
+      "implementation": ["aethel/storage.py", "aethel/shm.py", "chronus/mla1517_platform/host/mla1517_aethel.c"],
       "tests": ["tests/test_aethel_fault_injection.py", "tests/test_aethel_concurrency.py"],
       "status": "implemented+tested"
     },
@@ -42,7 +42,7 @@
     {
       "id": "shm.python_native_abi",
       "claim": "Python and native queue writers/readers coordinate with an advisory process lock; readers reject unstable sequence records.",
-      "implementation": ["aethel/shm.py", "mla1517_platform_v3.4/host/mla1517_aethel.c"],
+      "implementation": ["aethel/shm.py", "chronus/mla1517_platform/host/mla1517_aethel.c"],
       "tests": ["tests/test_aethel_concurrency.py"],
       "status": "implemented+tested"
     },

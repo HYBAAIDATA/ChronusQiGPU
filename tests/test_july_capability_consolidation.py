@@ -3,7 +3,9 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-import aethel.phi_fold as phi_fold_module
+import importlib
+
+phi_fold_module = importlib.import_module("aethel.phi_fold")
 from aethel import (
     KernelBoundary,
     MemoryTier,
@@ -12,7 +14,6 @@ from aethel import (
     fold_result,
     phi_fold,
     phi_unfold,
-    unfold_partial,
     unfold_partial_with_stats,
 )
 from chronus.gpu_reference import get_gpu_spec, list_available_gpus
@@ -25,10 +26,16 @@ from chronus.phi_gpu import (
     PhiGPU,
 )
 from kellogg.phi_tensor_core import MetricTensor, PhiTensorCore, PrecisionMode
+from tensor import (
+    ExactnessMode,
+    Precision,
+    TensorOperationSpec,
+    TensorShape,
+)
 from tensor.backends.chronus_backend import ChronusBackend
-from turing_universal_quantum_computer.enhanced_classics import EnhancedGroverAlgorithm
-from turing_universal_quantum_computer.next_gen_2025 import QuantumSimulation2025
 from turing_universal_quantum_computer.property_invariants import InvariantTestSuite
+from turing_universal_quantum_computer.quantum_algorithms import GroverSearch
+from turing_universal_quantum_computer.trotter_simulation import TrotterHamiltonianSimulator
 
 
 def test_selective_unfold_does_not_call_full_unfold(monkeypatch):
@@ -193,9 +200,18 @@ def test_july_gpu_reference_is_dated_reference_not_telemetry():
 
 def test_current_chronus_physical_backend_declares_tensor_ops_fail_closed():
     backend = ChronusBackend()
+    declared = backend.capabilities()["operations"]
     for operation in ("matmul", "add", "scale", "kron", "hadamard"):
-        assert backend.supports(operation)
-    assert not backend.supports("unknown-operation")
+        assert operation in declared
+    unknown = TensorOperationSpec(
+        name="unknown-operation",
+        input_shapes=(TensorShape((4, 4)), TensorShape((4, 4))),
+        output_shape=TensorShape((4, 4)),
+        dtype=Precision.FLOAT32,
+        exactness_mode=ExactnessMode.EXACT,
+        op_count=64,
+    )
+    assert not backend.supports(unknown)
 
 
 def test_completed_qsim_trotterization_retains_full_hilbert_dimension():
@@ -204,7 +220,7 @@ def test_completed_qsim_trotterization_retains_full_hilbert_dimension():
          [0.0, 0.2, 3.0, 0.3], [0.0, 0.0, 0.3, 4.0]],
         dtype=complex,
     )
-    qsim = QuantumSimulation2025(num_qubits=2, hamiltonian=h)
+    qsim = TrotterHamiltonianSimulator(num_qubits=2, hamiltonian=h)
     propagator = qsim.improved_trotterization(0.05, trotter_order=2)
     assert propagator.shape == (4, 4)
     initial = np.array([1, 0, 0, 0], dtype=complex)
@@ -214,10 +230,9 @@ def test_completed_qsim_trotterization_retains_full_hilbert_dimension():
 
 
 def test_completed_grover_and_cptp_fixes_remain_live():
-    grover = EnhancedGroverAlgorithm(4)
-    result = grover.multi_marked_search([1, 3])
-    assert result["marked_items"] == [1, 3]
-    assert result["total_marked_probability"] > 0.0
+    grover = GroverSearch(4)
+    result = grover.run([1, 3])
+    assert result["peak_success_probability"] > 0.0
 
     suite = InvariantTestSuite(tolerance=1e-10)
     suite.test_cptp(n_dim=4)

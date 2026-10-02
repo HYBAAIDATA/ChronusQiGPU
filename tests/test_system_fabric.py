@@ -175,12 +175,19 @@ def test_campaign_drives_phases_through_config(cfg_dir, monkeypatch):
 
     applied: list[dict] = []
     retired: list[bool] = []
+    # Cumulative process counter: 3 shares before the phase, 5 during it —
+    # the phase record keeps only the phase-local delta.
+    probe_calls = {"n": 0}
+
+    def probe() -> dict:
+        probe_calls["n"] += 1
+        return {"hashrate_hs": 5e5, "shares_accepted": 3 if probe_calls["n"] == 1 else 5}
 
     record = system_fabric._run_campaign(
         system_fabric._Runner("c"),
         apply_config=lambda cfg: (applied.append(cfg), cfg)[1],
         retire_all=lambda: (retired.append(True), ["arm-0"])[1],
-        counter_probe=lambda: {"hashrate_hs": 5e5, "shares_accepted": 3},
+        counter_probe=probe,
     )
 
     assert len(record["phases"]) == 2
@@ -196,9 +203,11 @@ def test_campaign_drives_phases_through_config(cfg_dir, monkeypatch):
     assert next(p for p in p1["pools"] if p["enabled"])["worker"] == "acct.v1"
     assert p1["solvers"]["arms"] == 4
     assert p1["live_submit"]["enabled"] is False
-    # Measured counters recorded honestly.
+    # Measured counters recorded honestly: hashrate is the measured mean,
+    # shares are the phase-local delta (5 earned inside the phase, the 3
+    # pre-phase shares do not leak into its record).
     assert record["phases"][0]["measured_hs_avg"] == 5e5
-    assert record["phases"][0]["shares_accepted"] == 3
+    assert record["phases"][0]["shares_accepted"] == 2
     assert record["retired"] == ["arm-0"]
     assert retired == [True]
 

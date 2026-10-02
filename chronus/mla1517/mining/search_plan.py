@@ -344,6 +344,9 @@ class ExecutionRecord:
     planned_window_start: int | None = None
     chunk_count: int = 0
     power_w: float | None = None
+    # Verbatim cause of a DEVICE_ERROR (the device's exception text, or
+    # DEVICE_RESULT_MISMATCH when its claimed winner failed the host rehash).
+    device_error: str | None = None
     # --- correlation spine: session → generation → plan → lease → execution
     # → candidate → submission (persisted in MiningSession.pending/share_log).
     toe_frame_id: str | None = None
@@ -400,6 +403,10 @@ class ExecutionRecord:
                 raise ValueError("COMPLETE requires completed_work_items == requested_work_items")
         if self.completion_state is CompletionState.REFUSED and self.executed_route:
             raise ValueError("REFUSED must not report an executed route")
+        if self.device_error is not None and (
+            self.completion_state is not CompletionState.DEVICE_ERROR
+        ):
+            raise ValueError("device_error is only recorded on a DEVICE_ERROR execution")
         # POOL_CONFIRMED is only reachable from a literal ACCEPTED outcome.
         if self.evidence_class is EvidenceClass.POOL_CONFIRMED and (
             self.pool_outcome is not PoolOutcome.ACCEPTED

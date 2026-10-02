@@ -1,115 +1,146 @@
-# EUCLID-CORE / PYTHIA — Docker Deployment Guide
+# PYTHIA Deployment
 
-## Quick Start
+PYTHIA's canonical runtime is Python. `main.py` starts the control API and
+serves the built React/Vite frontend; the frontend is not a mining backend.
+The Docker image builds that frontend and starts `main.py`. The canonical
+mining implementation lives under `chronus/mla1517/` and
+`chronus/mla1517_platform/python/`.
+
+## Choose a deployment
+
+### Control service
+
+For a host with the required MLA1517 device, prepare a private `.env` from the
+template and set a new operator key:
 
 ```bash
-# 1. Build and start (CPU mode, 1 EH/s cap)
-docker compose up -d
+cp .env.example .env
+openssl rand -hex 32
+# Put the generated value in .env as EUCLID_ADMIN_API_KEY.
+docker compose up --build -d
+```
 
-# 2. Check health
-curl http://localhost:3000/api/health
+The root `docker-compose.yml` builds `Dockerfile`, publishes
+`${PYTHIA_PORT:-3000}`, requires `EUCLID_ADMIN_API_KEY`, and maps
+`${MLA1517_UIO_DEVICE:-/dev/uio0}` from the host to `/dev/uio0`. The host
+device must exist; set `MLA1517_UIO_DEVICE` if it is elsewhere. Compose maps
+the device node but does not set `MLA1517_MMIO_DEVICE` inside the container;
+the mount alone does not arm a mining worker. Keep `.env` private and do not
+commit it. The Compose file persists `/app/data` in the `pythia_data` volume.
 
-# 3. View logs
+Check the service health and logs:
+
+```bash
+curl --fail http://localhost:${PYTHIA_PORT:-3000}/api/health
 docker compose logs -f pythia
 ```
 
-## GPU Deployment
+`/api/health` reports whether the HTTP service is responding. It does not
+prove that a worker is ready, a device executed work, or a pool accepted a
+share. `/readyz` reports worker readiness; use the mining and Stratum status
+surfaces to inspect their independent state.
 
-If you have NVIDIA GPUs and the NVIDIA Container Toolkit installed:
+This is a control-service deployment, not by itself a live-miner deployment:
+the root Compose service does not pass pool credentials or configure an
+explicit submission approval. State-changing requests using the admin-key
+gate require the configured key as a bearer token in the HTTP Authorization
+header; absent or incorrect keys fail closed.
+
+### Live miner
+
+Live mining is a separate, explicitly approved operation. Use the canonical
+headless entry point only after configuring a real pool identity and endpoint
+from `.env.example`/the pool catalog, and binding a supported execution path:
 
 ```bash
-# Start with 4 GPUs
-EUCLID_GPU_COUNT=4 docker compose up -d
-
-# Or edit docker-compose.yml and uncomment the devices section
+PYTHONPATH=chronus/mla1517_platform/python \
+  python3 chronus/mla1517_platform/python/headless_miner.py \
+  --device /dev/uio0 \
+  --user "$MLA1517_STRATUM_USER" \
+  --password "$MLA1517_STRATUM_PASSWORD" \
+  --submit
 ```
 
-## Configuration
+`--submit` is explicit approval for this headless invocation; do not add it
+until the operator has approved live submissions. The supervised control
+service instead requires live-submit approval bound to the configured pool
+identity. Protect that approval and the admin key as operational secrets.
 
-All configuration is via environment variables (set in docker-compose.yml or at runtime):
+For a live deployment, keep the control and mining prerequisites distinct:
 
-| Variable                  | Default    | Description                                               |
-| ------------------------- | ---------- | --------------------------------------------------------- |
-| `EUCLID_MINING_CAP_EHS`   | `10.0`     | Hashrate cap in EH/s. Max 10.0. Adjustable from frontend. |
-| `EUCLID_HARDWARE_PROFILE` | `auto`     | `auto`, `m3_studio`, `docker`, `docker_gpu`               |
-| `EUCLID_GPU_COUNT`        | `0`        | Number of GPUs (0 = CPU/Turing fallback)                  |
-| `EUCLID_GPU_TYPE`         | `none`     | GPU type (auto-detected)                                  |
-| `EUCLID_MAX_MEMORY_GB`    | `100`      | Available memory in GB                                    |
-| `EUCLID_ADMIN_API_KEY`    | `changeme` | Admin API key (CHANGE in production)                      |
-| `PORT`                    | `3000`     | Server port                                               |
+- The control API needs a protected admin key for state-changing requests. A
+  direct headless invocation uses its explicit `--submit` option instead.
+- Live mining needs a valid Stratum worker identity, endpoint, and any
+  pool-required password/TLS settings.
+- Live mining needs an actual supported execution path: the MLA1517 MMIO
+  device, a self-checked OpenCL device, or another explicitly supported
+  backend. The CPU reference is software execution and must not be described
+  as hardware execution.
+- Live mining needs a real negotiated Stratum job and the corresponding
+  installed proof adapter.
+- Submission needs explicit operator approval, bound to the live pool
+  identity where the supervised control API is used.
+- A share is accepted only after the pool acknowledges the submission.
 
-## Hardware Profiles
+Without these conditions the runtime remains unavailable or fails closed. A
+configured endpoint, a started process, a candidate nonce, or a locally
+computed digest is not a pool-accepted share.
 
-### M3 Studio/Ultra (80-core GPU = 80 SMs × 128 lanes = 10,240 ALU lanes, 96GB) — original target
+For NVIDIA hosts, `docker-compose.cuda.yml` is an override for the root
+Compose file and requires the NVIDIA Container Toolkit:
 
-- Profile: `m3_studio`
-- Backend: Metal
-- Physical model: ~4.25 GH/s (`EUCLID_VGPU` topology: 10,240 lanes × 1.7 GHz boost / 4,096 cycles per SHA-256d)
-- Cap: 10 EH/s
+```bash
+docker compose -f docker-compose.yml -f docker-compose.cuda.yml up --build -d
+```
 
-### Docker + NVIDIA GPU
+It reserves `${EUCLID_CUDA_GPU_COUNT:-all}` GPUs and selects the CUDA backend.
+This does not configure pool credentials, a negotiated job, or submission
+approval. Other hardware and OpenCL setup must use a backend supported by the
+runtime and must pass its device checks; a declared device is not evidence of
+execution.
 
-- Profile: `docker_gpu`
-- Backend: CUDA
-- Physical: ~100 MH/s per GPU core
-- Cap: configurable (default 1 EH/s)
+## Runtime configuration
 
-### Docker + CPU (Turing exact-math fallback)
+Use the actual Python runtime names in `.env.example`:
 
-- Profile: `docker_cpu`
-- Backend: CPU (Q[√5] rational core)
-- Physical: ~1 MH/s per CPU core
-- Cap: configurable (default 1 EH/s)
-- The Lucas scaling (L_10=123x) amplifies effective search efficiency
+| Variable | Purpose |
+| --- | --- |
+| `EUCLID_ADMIN_API_KEY` | Required operator key for privileged control changes. |
+| `MLA1517_STRATUM_USER` | Pool worker identity (`account.worker`). |
+| `MLA1517_STRATUM_PASSWORD` | Pool password when required; the runtime default is `x`. |
+| `MLA1517_STRATUM_ENDPOINT` | Pool endpoint when overriding the catalog default. |
+| `MLA1517_STRATUM_TLS` | Require TLS for a bare host/port endpoint. |
+| `MLA1517_MMIO_DEVICE` | Host MLA1517 device path for the direct miner. |
+| `PYTHIA_EXECUTION_DEVICE` | Supervised bridge-free `opencl` or labelled `cpu` selection; standalone mining also supports a configured `remote` backend. |
+| `PYTHIA_EXECUTION_BACKEND` | SHA256d executor selection (`auto`, `cpu`, or `opencl`). |
+| `PYTHIA_HOST`, `PYTHIA_PORT`, `PYTHIA_WEB_ROOT` | Python control API bind and frontend settings. |
+| `HYBA_REQUIRE_HYBA`, `HYBA_DEVICE_ALIAS` | OpenCL device-identity policy. |
 
-## Safety Guarantees
+The Compose file also accepts `PYTHIA_PORT` and `MLA1517_UIO_DEVICE` for host
+port and device mapping. It injects `EUCLID_ADMIN_API_KEY`,
+`HYBA_REQUIRE_HYBA`, and `HYBA_DEVICE_ALIAS`; it does not automatically pass
+every variable in `.env.example` into the container. `main.py` loads a
+repository-root `.env` for direct Python runs, but `.env` is excluded from the
+Docker build context.
 
-- **Hashrate cap**: enforced server-side. Frontend can request changes but
-  cannot exceed the hard cap.
-- **Never two consecutive blocks**: after a block is accepted, PYTHIA waits
-  for an external block before mining again.
-- **One block then wait**: mine one block, submit, wait for acceptance,
-  enter cooldown.
-- **Blockchain safety is paramount**: all safety constraints are
-  non-bypassable.
+## Evidence and capability boundary
 
-## Storage
+Hashrate is reported only for executed device work or pool-accepted shares.
+Lucas, Kellogg, TOE, tensor, and geometric outputs are advisory ordering,
+scheduling, tensor, or research signals. They do not multiply executed
+SHA256d hashes or establish a throughput result. Search ordering does not
+change the SHA256d proof check or the pool's independent acceptance decision.
 
-- `pythia_memory` volume: persistent PYTHIA memory + superposition state
-- `blockdata` mount: read-only block data feed (mount your block data here)
+Use the README evidence classes without upgrading evidence by implication:
 
-## Scaling to 10 EH/s
+- **SOURCE VERIFIED** — implementation and source-level contract inspected.
+- **SOFTWARE EXECUTION VERIFIED** — software behavior passed its tests.
+- **HARDWARE EXECUTION VERIFIED** — the actual device executed and passed
+  independent checks.
+- **POOL VERIFIED** — a live pool acknowledged the share.
+- **UNVERIFIED** — evidence has not met the applicable class above.
 
-The hashrate cap is adjustable from the frontend up to the absolute hard
-cap of 10 EH/s. The frontend can never exceed this — requests above 10
-EH/s are automatically clamped.
-
-To reach 10 EH/s effective hashrate, the Lucas scaling ladder must amplify
-the physical hashrate. The Intelligence layer ladder goes to L_20 (15127x),
-but the pool profiles in `m3_igpu_scaler.ts` extend further:
-
-| Lucas Scale | Value        | 4.25 GH/s physical → effective |
-| ----------- | ------------ | ------------------------------ |
-| L_10        | 123          | 522.8 GH/s                     |
-| L_15        | 1,364        | 5.8 TH/s                       |
-| L_20        | 15,127       | 64.3 TH/s                      |
-| L_41        | 370,248,451  | 1.57 EH/s                      |
-| L_45        | 2,537,720,636 | 10.8 EH/s (capped at 10)      |
-| L_50        | 28,143,753,123 | 119.6 EH/s (capped at 10)    |
-
-So even a modest physical hashrate (4.25 GH/s on M3 Ultra, or higher
-hybrid with cloud GPUs) can reach 10 EH/s with sufficient Lucas scaling
-(L_45+). Valid scale indices are restricted to the ladder rungs
-{10,12,15,18,20,31,50,76} and their multiples. The pool profiles enforce
-their own ceilings (ViaBTC: 300 EH/s, Braiins: 20 EH/s).
-
-### Hybrid deployment (local GPU + Docker CPU + cloud GPU)
-
-Set `EUCLID_HARDWARE_PROFILE=hybrid` and `EUCLID_CLOUD_GPU_COUNT=N` to
-combine:
-
-1. Local AMD Radeon iGPU (~500 MH/s)
-2. Docker CPU 100GB (Turing Q[√5] exact-math, ~8 MH/s)
-3. N cloud GPUs (~10.3 GH/s each, RTX 4090-class)
-
-The physical hashrates are summed, then amplified by the Lucas scaling.
+This documentation change does not satisfy the hardware release gate.
+Promotion still requires a real-device run, independent host SHA256d
+recheck, bounded live submission, literal pool acknowledgement,
+restart/recovery testing, and recorded route/device provenance.

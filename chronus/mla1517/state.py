@@ -105,7 +105,7 @@ class LogicalState:
         index.
         """
         h = hashlib.sha256()
-        h.update(b"chronus.mla1517.state.v1")
+        h.update(b"mla1517.state.v1")
         for v in (
             self.index,
             self.lucas_scale,

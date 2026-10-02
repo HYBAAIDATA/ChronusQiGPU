@@ -8,11 +8,9 @@ import json
 import logging
 import os
 import signal
-import sys
-from pathlib import Path
 
 from chronus.mla1517.hardware import MMIOBridge
-from chronus.mla1517.mining.coordinator import CpuReferenceHasher
+from chronus.mla1517.mining.backend_registry import BackendRegistry
 from chronus.mla1517.mining.geodesic_support import GeodesicProductionMiningCoordinator
 from chronus.mla1517.mining.retarget_telemetry import RetargetWindowTracker
 from manifold_pool_coordinator import _build_parser, parse_endpoint
@@ -67,7 +65,11 @@ def pool_endpoints(args, config: dict | None = None) -> list[PoolEndpoint]:
         except Exception:
             LOG.debug("runtime_config unavailable", exc_info=True)
             config = {}
-    configured = [p for p in config.get("pools", []) if isinstance(p, dict)]
+    configured = [
+        p
+        for p in config.get("pools", [])
+        if isinstance(p, dict) and p.get("enabled", True) is not False
+    ]
     if configured:
         ordered = sorted(configured, key=lambda p: not p.get("enabled"))
         return [
@@ -98,56 +100,34 @@ def pool_endpoints(args, config: dict | None = None) -> list[PoolEndpoint]:
     return endpoints
 
 
-def _execution_hasher(backend: str):
-    """The hasher behind the Execution Router.
+def _registry() -> BackendRegistry:
+    """The lane registry for this process; probes are cached by the registry."""
+    return BackendRegistry()
 
-    ``auto`` binds an OpenCL device only if it passes the hasher's own
-    self-check against hashlib, otherwise the CPU reference runs and the
-    reason is kept as evidence. ``cpu`` never touches OpenCL.
-    ``remote`` binds a remote GPU agent (``MLA1517_REMOTE_GPU_ENDPOINT``);
-    an unconfigured endpoint fails closed rather than degrading to CPU.
+
+def _execution_hasher(backend: str, registry: BackendRegistry | None = None):
+    """The hasher behind the Execution Router, bound through the registry.
+
+    A lane is usable only after its real capability probe: ``auto`` probes
+    GPU then remote, then falls back to the CPU reference with the fallback
+    reason recorded; explicit lanes (``cpu``, ``gpu``/``opencl``, ``remote``,
+    ``asic``, ``super_asic``) select only that lane or fail closed.
     """
-    backend = backend.strip().lower()
-    if backend == "cpu":
-        return CpuReferenceHasher()
-    if backend == "remote":
-        repo_root = str(Path(__file__).resolve().parents[3])
-        if repo_root not in sys.path:
-            sys.path.insert(0, repo_root)
-        from mining.remote_hasher import RemoteOpenCLHasher
-
-        return RemoteOpenCLHasher.from_env()
-    repo_root = str(Path(__file__).resolve().parents[3])
-    if repo_root not in sys.path:
-        sys.path.insert(0, repo_root)
-    try:
-        from mining.bitcoin_hasher import BitcoinHasher
-
-        hasher = BitcoinHasher(backend=backend)
-    except Exception as exc:
-        if backend in ("gpu", "opencl"):
-            raise
-        fallback = CpuReferenceHasher()
-        fallback.fallback_reason = f"OpenCL unavailable: {exc}"
-        return fallback
-    if hasher.backend == "cpu":
-        fallback = CpuReferenceHasher()
-        fallback.fallback_reason = hasher.fallback_reason or "no OpenCL device bound"
-        return fallback
-    return hasher
+    return (registry or _registry()).select(backend).hasher
 
 
-EXECUTION_DEVICES = ("opencl", "cpu", "remote")
+EXECUTION_DEVICES = ("auto", "opencl", "gpu", "cpu", "remote", "asic", "super_asic")
 
 
 def execution_device() -> str | None:
     """Bridge-free mining device from ``PYTHIA_EXECUTION_DEVICE``, if declared.
 
-    ``opencl`` mines on the OpenCL device the hasher binds and self-checks
-    against hashlib, and refuses to start without one; ``cpu`` mines on the
-    labelled CPU reference; ``remote`` mines on a remote GPU agent bound via
-    ``MLA1517_REMOTE_GPU_ENDPOINT``. Unset keeps the MMIO bridge as the only
-    device.
+    ``opencl``/``gpu`` mines on the OpenCL device the hasher binds and
+    self-checks against hashlib, and refuses to start without one; ``cpu``
+    mines on the labelled CPU reference; ``remote`` mines on a remote GPU
+    agent bound via ``MLA1517_REMOTE_GPU_ENDPOINT``; ``asic``/``super_asic``
+    fail closed until a real driver exists; ``auto`` probes the declared
+    lanes in policy order. Unset keeps the MMIO bridge as the only device.
     """
     value = os.getenv("PYTHIA_EXECUTION_DEVICE", "").strip().lower()
     if not value:
@@ -178,6 +158,13 @@ async def _main_async(args) -> None:
             "--device or MLA1517_MMIO_DEVICE is required "
             "(or PYTHIA_EXECUTION_DEVICE=opencl|cpu for bridge-free mining)"
         )
+    # The supervisor exports PYTHIA_IDENTITY_HMAC_SECRET to every spawned
+    # worker (startup_contract.rotate_supervisor_secret). A standalone
+    # ``--mine`` process has no supervisor to provision one; generate it
+    # here so the heartbeat channel keeps its HMAC integrity instead of
+    # dying on the first tick. setdefault: a supervisor-provided secret
+    # always wins, so supervised behaviour is unchanged.
+    os.environ.setdefault("PYTHIA_IDENTITY_HMAC_SECRET", os.urandom(32).hex())
     backend = device if not args.device else os.getenv("PYTHIA_EXECUTION_BACKEND", "auto")
     endpoints = pool_endpoints(args)
     observer = BitcoinChainObserver.from_environment()
@@ -221,6 +208,7 @@ async def _main_async(args) -> None:
                 )
 
             os.environ.setdefault("PYTHIA_INTELLIGENCE_DIR", "data/intelligence")
+            registry = _registry()
             coordinator = GeodesicProductionMiningCoordinator(
                 endpoints,
                 username=args.user or endpoints[0].username,
@@ -229,7 +217,11 @@ async def _main_async(args) -> None:
                 mining_session=session,
                 chain_observer=observer,
                 stratum_status_sink=publish_stratum_status,
-                execution_hasher=_execution_hasher(backend),
+                execution_hasher=registry.select(backend).hasher,
+                # Salamander restarts re-select through the registry, so a
+                # dead lane can be re-probed and rerouted under policy.
+                execution_hasher_factory=(lambda: registry.select(backend, reprobe=True).hasher),
+                backend_registry=registry,
                 causal_log_path=os.getenv("PYTHIA_CAUSAL_LOG_PATH", "data/causal_ledger.jsonl"),
             )
             if coordinator.chain_observer is None:

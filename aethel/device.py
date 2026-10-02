@@ -120,9 +120,7 @@ class ChronusSku:
 
         def work(start: int, end: int) -> Optional[int]:
             for nonce in range(start, end):
-                digest = _sha256d(
-                    header76_bytes + nonce.to_bytes(4, "little")
-                )
+                digest = _sha256d(header76_bytes + nonce.to_bytes(4, "little"))
                 if _u256(digest) <= target:
                     return nonce
             return None
@@ -142,7 +140,4 @@ class ChronusSku:
         return min(hits) if hits else None
 
 
-# Compatibility name for existing callers; Chronus remains the owner.
-IGpuSku = ChronusSku
-
-__all__ = ["ChronusSku", "DeviceTicket", "IGpuSku", "Mode"]
+__all__ = ["ChronusSku", "DeviceTicket", "Mode"]

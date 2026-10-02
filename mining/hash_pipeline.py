@@ -92,9 +92,9 @@ class HashPipeline:
         """Lazily constructed so non-mining use pays no OpenCL init cost."""
         if self._hasher is None:
             if self._hasher_backend == "remote":
-                from mining.remote_hasher import RemoteOpenCLHasher
+                from mining.remote_hasher import hasher_for_env
 
-                self._hasher = RemoteOpenCLHasher.from_env()
+                self._hasher = hasher_for_env()
             else:
                 if BitcoinHasher is None:
                     raise RuntimeError("mining.bitcoin_hasher unavailable")
@@ -205,6 +205,45 @@ class HashPipeline:
         self.scoring_device = "numpy-phi-filter"
         return scores.tolist()
 
+    def grind_with_chronus_substrate(
+        self,
+        header80: bytes,
+        target_be: bytes,
+        nonces: List[int],
+        max_hashes: Optional[int] = None,
+        *,
+        fold_depth: int = 1,
+        seed: int = 0,
+    ):
+        """Order candidates through Chronus, then run canonical SHA-256d.
+
+        The substrate has ORDER_ONLY authority.  The resulting permutation is
+        sealed before dispatch, every selected candidate is hashed by the
+        configured backend, and ``grind`` retains its independent consensus
+        recheck.
+        """
+        from chronus.mining_bridge import ChronusSubstrateMiningBridge
+
+        scores = self.score_nonces(nonces)
+        ordered, evidence = ChronusSubstrateMiningBridge(seed=seed).order(
+            nonces,
+            scores,
+            fold_depth=fold_depth,
+        )
+        result = self.grind(
+            header80,
+            target_be,
+            ordered,
+            max_hashes=max_hashes,
+            preordered=True,
+            sealed_fingerprint=nonce_order_fingerprint(ordered),
+        )
+        self.scoring_backend = "chronus-substrate"
+        self.scoring_device = "phi-tensor-diffusion"
+        result.scoring_backend = self.scoring_backend
+        result.scoring_device = self.scoring_device
+        return result, evidence
+
     def grind(
         self,
         header80: bytes,
@@ -217,8 +256,10 @@ class HashPipeline:
     ) -> HashResult:
         """Grind real sha256d in a deterministic candidate order."""
         t0 = time.perf_counter()
-        assert len(header80) == 80, "header must be 80 bytes"
-        assert len(target_be) == 32, "target must be 32 bytes"
+        if len(header80) != 80:
+            raise ValueError("header must be 80 bytes")
+        if len(target_be) != 32:
+            raise ValueError("target must be 32 bytes")
         nonce_array = self._as_nonce_array(nonces)
         if max_hashes is not None:
             nonce_array = nonce_array[:max_hashes]
@@ -308,8 +349,10 @@ class HashPipeline:
         contract as ``grind``. Requires ``count % 32 == 0``.
         """
         t0 = time.perf_counter()
-        assert len(header80) == 80, "header must be 80 bytes"
-        assert len(target_be) == 32, "target must be 32 bytes"
+        if len(header80) != 80:
+            raise ValueError("header must be 80 bytes")
+        if len(target_be) != 32:
+            raise ValueError("target must be 32 bytes")
         if count % 32 or base_nonce % 32:
             raise ValueError("m32 grind window and base must be multiples of 32")
         winner, win_hash, hashes = self.hasher.grind_target_m32(

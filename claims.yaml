@@ -10,7 +10,7 @@ claims:
     status: VERIFIED
     test_command: "python scripts/schema_freeze_gate.py"
     artifact: "scripts/schema_freeze_gate.py"
-    artifact_hash: "d841a3a991a04286e7dd08eb903ccf680ac09e8bdb5c90b93c1d5be67325fb01"
+    artifact_hash: "d293681ffe074e99abcf33579f9852b41ac8bede5b5fa95c15a565441b321955"
     baseline: "SCHEMA_VERSION=2, HOT_DESCRIPTOR_V1.size=64"
   - id: c-assembly-lock
     text: "AssemblyLock is immutable, versioned and signed"
@@ -31,7 +31,7 @@ claims:
     status: VERIFIED
     test_command: "python -m pytest tests/test_runtime_config.py -x -q"
     artifact: "tests/test_runtime_config.py"
-    artifact_hash: "a71860b2168d7a8182d0266e5f38e7f01bbb438baa9d117c78d8a040fe4b64e9"
+    artifact_hash: "881fc8ae6e7522cd8554e02ae4b1c977883d3987b3da0e8b637e0071de4161b1"
     baseline: "27 config-contract assertions"
   - id: r-lucas-pisot-speedup
     text: "Lucas/Pisot quantum speedup"

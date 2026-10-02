@@ -16,6 +16,19 @@ python -m scripts.deploy_sentry
 python scripts/import_audit.py
 ```
 
+For a team with limited hardware and cash, this is the production cut:
+
+1. keep every experimental advantage feature disabled;
+2. establish one real pool identity and one execution backend;
+3. run shadow mode until exact SHA256d work and job turnover are visible;
+4. run one bounded live-share smoke;
+5. spend nothing on rented mining compute until measured pool revenue exceeds
+   the complete rental, power, network and pool-fee cost.
+
+The software becoming production-ready does not establish mining
+profitability. Public-cloud mining may be prohibited by provider terms and is
+normally uneconomic without measured device evidence.
+
 ## Configuration
 
 Credentials live in an ignored env file or a secret manager, never in Git.
@@ -25,6 +38,29 @@ Start from `.env.example`; two variables are required:
 MLA1517_STRATUM_USER='account.worker'           # the pool worker identity
 EUCLID_ADMIN_API_KEY="$(openssl rand -hex 32)"  # the operator key
 ```
+
+Example identities such as `account.worker`, `YOUR_WORKER`, `PYTHIA.001` and
+`test.worker` are rejected at startup. The checked-in `.env.example` value is
+documentation only and must be replaced.
+
+## Bounded one-share acceptance proof
+
+Run this only after a shadow session is healthy:
+
+```bash
+export PYTHIA_SMOKE_POOL_PASSWORD='read-from-your-secret-manager'
+python scripts/live_pool_smoke.py \
+  --pool braiins \
+  --worker 'real-account.real-rig' \
+  --backend cpu \
+  --max-runtime 600 \
+  --confirm-live-submit
+```
+
+The password is never placed in the child command line, `.env`, retained
+runtime configuration or log. The approval configuration is mode `0600`,
+ephemeral and deleted on every exit path. The command exits nonzero if a live
+submission test ends without a pool-accepted share.
 
 Pools come from the pool catalog: `PYTHIA_POOL_PROFILE` picks the primary
 and `PYTHIA_POOLS` the failover order (see `pool_catalog.py`). The device is

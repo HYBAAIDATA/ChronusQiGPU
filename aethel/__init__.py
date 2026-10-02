@@ -152,20 +152,20 @@ from .zeckendorf import (
     reverse_zeckendorf_expansion,
 )
 
-_SOURCE_VERSION = "1.0.0"
+__version__ = "1.0.0"
 
 
-def _resolve_version() -> tuple[str, str]:
+def _resolve_version(canonical: str) -> tuple[str, str]:
     try:
         installed = _metadata_version("aethel")
     except _PackageNotFoundError:
-        return _SOURCE_VERSION, "source_fallback"
+        return canonical, "source_fallback"
     if _re.fullmatch(r"\d+\.\d+\.\d+", installed):
         return installed, "distribution_metadata"
-    return _SOURCE_VERSION, "source_fallback"
+    return canonical, "source_fallback"
 
 
-__version__, __version_source__ = _resolve_version()
+__version__, __version_source__ = _resolve_version(__version__)
 
 __all__ = [
     "__version__",

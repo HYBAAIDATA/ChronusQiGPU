@@ -1,5 +1,14 @@
 """Mining safety FSM — the four-state cycle that governs every block.
 
+CANONICITY: legacy block-lifecycle FSM used by the ``hyba/operating_model``
+harness only; it is not the canonical production operational state
+machine. The canonical cycle (STARTUP/SCAN -> PLAN -> MINE -> VERIFY ->
+SUBMIT -> ACKNOWLEDGE -> EVALUATE/HEAL -> NEXT_CYCLE) is
+``chronus.mla1517.mining.cycle_fsm``, driven by the production
+coordinator. The persisted production block lifecycle lives in
+``chronus.mla1517.mining.session.MiningSession``.
+
+
     SEARCHING → SUBMITTING → WAITING_EXTERNAL → COOLDOWN → SEARCHING
 
 The machine may only transition through the declared edge table — no

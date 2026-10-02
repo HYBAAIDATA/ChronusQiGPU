@@ -107,9 +107,34 @@ def imports(root):
 
     findings = Auditor(root).audit(live_files(root))
     hidden = sum(f.swallowed for f in findings)
+    artifact = root / "results" / "import-audit-findings.json"
+    artifact.parent.mkdir(exist_ok=True)
+    artifact.write_text(
+        json.dumps(
+            [
+                {
+                    "code": f.code,
+                    "file": f.file,
+                    "line": f.line,
+                    "module": f.module,
+                    "name": f.name,
+                    "swallowed": f.swallowed,
+                    "rendered": f.render(),
+                }
+                for f in findings
+            ],
+            indent=2,
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+    reason = f"{len(findings)} finding(s), {hidden} swallowed"
+    if findings:
+        reason += ": " + " | ".join(f.render() for f in findings)
     return Outcome(
         Status.FAIL if findings else Status.PASS,
-        f"{len(findings)} finding(s), {hidden} swallowed",
+        reason,
+        (str(artifact),),
     )
 
 
