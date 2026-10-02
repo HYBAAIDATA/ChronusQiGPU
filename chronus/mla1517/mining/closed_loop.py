@@ -5,6 +5,7 @@ execution windows, compares useful work per wall-clock second, and owns the
 trial/accept/rollback lifecycle for mutable window-size changes. Consensus
 verification and pool acknowledgement remain outside this module.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -16,6 +17,8 @@ from dataclasses import asdict, dataclass
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
+
+from .software_revision import software_revision
 
 SCHEMA = "pythia.closed-loop-optimisation/1"
 
@@ -39,6 +42,7 @@ class OptimizationEvent:
     rollback: bool
     reason: str
     at: float
+    software_revision: str | None = None
     implementation: str = SCHEMA
 
 
@@ -71,6 +75,7 @@ class ClosedLoopOptimizer:
         self.samples: dict[str, deque[float]] = defaultdict(lambda: deque(maxlen=32))
         self.cooldown: dict[str, int] = defaultdict(int)
         self.attempts: dict[str, int] = defaultdict(int)
+        self._software_revision = software_revision()
         self.trial: dict[str, Any] | None = None
         self.history: deque[OptimizationEvent] = deque(maxlen=64)
         self.last_observation: dict[str, Any] | None = None
@@ -127,8 +132,17 @@ class ClosedLoopOptimizer:
         }
         self.history.append(
             OptimizationEvent(
-                "TRIAL_STARTED", route, current, proposed, self._mean(baseline), None,
-                None, False, reason, time.time()
+                "TRIAL_STARTED",
+                route,
+                current,
+                proposed,
+                self._mean(baseline),
+                None,
+                None,
+                False,
+                reason,
+                time.time(),
+                self._software_revision,
             )
         )
         self._persist()
@@ -173,12 +187,15 @@ class ClosedLoopOptimizer:
                 return
             if not route_matched:
                 self._finish(
-                    False, None,
+                    False,
+                    None,
                     f"candidate route fell back from {route} to {executed_route}",
                 )
                 return
             if device_error is not None or completion_state == "DEVICE_ERROR":
-                self._finish(False, None, f"candidate execution failed: {device_error or completion_state}")
+                self._finish(
+                    False, None, f"candidate execution failed: {device_error or completion_state}"
+                )
                 return
             if rate is None:
                 return
@@ -235,6 +252,7 @@ class ClosedLoopOptimizer:
                 not accepted,
                 reason,
                 time.time(),
+                self._software_revision,
             )
         )
         self.trial = None
@@ -245,6 +263,7 @@ class ClosedLoopOptimizer:
         return {
             "schema": SCHEMA,
             "status": "TRIAL" if self.trial else "MONITORING",
+            "software_revision": self._software_revision,
             "action_class": (
                 self.trial["action_class"] if self.trial else ActionClass.SAFE_AUTOMATIC.value
             ),
@@ -302,22 +321,17 @@ class ClosedLoopOptimizer:
             envelope = json.loads(self.state_path.read_text(encoding="utf-8"))
             body = envelope["body"]
             canonical = json.dumps(body, sort_keys=True, separators=(",", ":"))
-            if body.get("schema") != SCHEMA or envelope.get("sha256") != hashlib.sha256(
-                canonical.encode()
-            ).hexdigest():
+            if (
+                body.get("schema") != SCHEMA
+                or envelope.get("sha256") != hashlib.sha256(canonical.encode()).hexdigest()
+            ):
                 raise ValueError("optimisation state integrity failure")
             config = body.get("config", {})
             self.min_samples = int(config.get("min_samples", self.min_samples))
-            self.min_improvement = float(
-                config.get("min_improvement", self.min_improvement)
-            )
-            self.cooldown_windows = int(
-                config.get("cooldown_windows", self.cooldown_windows)
-            )
+            self.min_improvement = float(config.get("min_improvement", self.min_improvement))
+            self.cooldown_windows = int(config.get("cooldown_windows", self.cooldown_windows))
             self.max_attempts = int(config.get("max_attempts", self.max_attempts))
-            self.evidence_source = str(
-                config.get("evidence_source", self.evidence_source)
-            )
+            self.evidence_source = str(config.get("evidence_source", self.evidence_source))
             if (
                 self.min_samples < 2
                 or not 0 <= self.min_improvement <= 1
@@ -330,8 +344,12 @@ class ClosedLoopOptimizer:
             self.samples = defaultdict(lambda: deque(maxlen=32))
             for key, values in body.get("samples", {}).items():
                 self.samples[str(key)].extend(float(v) for v in values[-32:])
-            self.cooldown = defaultdict(int, {str(k): int(v) for k, v in body.get("cooldown", {}).items()})
-            self.attempts = defaultdict(int, {str(k): int(v) for k, v in body.get("attempts", {}).items()})
+            self.cooldown = defaultdict(
+                int, {str(k): int(v) for k, v in body.get("cooldown", {}).items()}
+            )
+            self.attempts = defaultdict(
+                int, {str(k): int(v) for k, v in body.get("attempts", {}).items()}
+            )
             self.history = deque(
                 (OptimizationEvent(**item) for item in body.get("history", [])), maxlen=64
             )
