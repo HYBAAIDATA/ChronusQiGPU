@@ -104,8 +104,8 @@ targets the main checkout, so the worktree needs explicit PYTHONPATH).
 
 | Defect | Pre-fix state | Fix |
 |---|---|---|
-| RUN-01 residual — `_Runner.stop()` | marked `stopped` at request time and fabricated `finished_at` while the worker still ran | truthful `stopping` state; `finished_at` stamped at worker exit in `_wrap`'s `finally`; terminal `stopped` becomes restart-eligible; `stop()` on a terminal runner returns `False`; `RunnerStatus.state` union + `_TERMINAL_STATES` updated |
-| DATA-01 residual — campaign `shares_accepted` | recorded the cumulative counter's max, so a phase accepting 2 shares off a counter at 100 read "102" | per-phase baseline: `shares_accepted` = max per-phase delta; a counter reset re-arms the baseline |
+| RUN-01 residual — `_Runner.stop()` | marked `stopped` at request time and fabricated `finished_at` while the worker still ran | landed on `main` as `953765a` (PR #81): lock-guarded `stopping` state, `finished_at` stamped at worker exit, `stop_requested_at` telemetry; this branch adds `RunnerStatus.state` `"stopping"` + terminal/restart-eligibility coverage |
+| DATA-01 residual — campaign `shares_accepted` | recorded the cumulative counter's max, so a phase accepting 2 shares off a counter at 100 read "102" | landed on `main` as `953765a` (PR #81): per-phase baseline + accumulated non-negative deltas with reset handling; this branch adds counter-reset re-arm coverage |
 | `euclid.evidence.atomic_write` (Windows) | `os.fchmod` is POSIX-only → AttributeError before `os.fdopen` → leaked fd → `os.unlink` WinError 32; 4 tests failed | `fchmod` guarded by `hasattr`; `os.close(fd)` on the failure path; unlink also tolerates `PermissionError` |
 | `MemoryDatabase.backup` (Windows) | `with sqlite3.connect(...) as output` never closes the connection → `os.replace` / tempdir cleanup WinError 32 | explicit `output.close()` in `finally` |
 | `test_millennium_package` x2 | `ModuleNotFoundError: fastapi` (env, like earlier sympy) | `uv pip install fastapi` → 2/2 pass |

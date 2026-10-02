@@ -53,10 +53,12 @@ mathematical/computational capability; Owner B rows concern mining/workflows.
 Seed backlog statuses: RUN-02, DATA-02, MAP-01 → PASS on #22 (B: campaign arms
 retire on every exit; sidecar metrics 30 s TTL + hashrate None-vs-0.0;
 importlib-verified wiring tiers). RUN-01 residual (stop marked `stopped` at
-request time, `finished_at` fabricated) → fixed @10c6a63: truthful `stopping`
-state until worker exit. DATA-01 residual (campaign `shares_accepted` = cumulative
-counter) → fixed @10c6a63: per-phase deltas with counter-reset re-arm.
-DOC-01 → closed @10c6a63: AGENTS.md §4 rewritten against the real product
+request time, `finished_at` fabricated) → landed on `main` as `953765a` (PR #81):
+truthful `stopping` state until worker exit; this branch adds
+`RunnerStatus.state` `"stopping"` + terminal/restart coverage. DATA-01 residual
+(campaign `shares_accepted` = cumulative counter) → landed in `953765a`:
+per-phase deltas with reset handling; this branch adds reset re-arm coverage.
+DOC-01 → closed here: AGENTS.md §4 rewritten against the real product
 (control API + static UI + Python worker plane), README records the per-operation
 device policy (`cpu_reference` fallback carries `fallback_reason`).
 `autonomous_supervisor` IA02 (dead import, supervisor never built) → fixed here;
