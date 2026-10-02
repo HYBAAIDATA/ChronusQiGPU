@@ -5,7 +5,9 @@ on:
     paths:
       - "euclid/**"
       - "chronus/seam/**"
+      - "chronus/mla1517/mining/euclid_support.py"
       - "tests/test_euclid_training_genetic_healing.py"
+      - "tests/test_euclid_training_readiness.py"
       - "tests/test_salamander_agentic.py"
       - ".github/workflows/euclid-evidence.yml"
   push:
@@ -26,9 +28,11 @@ jobs:
       - name: Install focused dependencies
         run: python -m pip install --disable-pip-version-check numpy pytest
       - name: Compile
-        run: python -m compileall -q euclid chronus/seam tests/test_euclid_training_genetic_healing.py
+        run: python -m compileall -q euclid chronus/seam tests/test_euclid_training_genetic_healing.py tests/test_euclid_training_readiness.py
       - name: EUCLID evidence and training gates
         run: python -m unittest -v tests.test_euclid_training_genetic_healing
+      - name: EUCLID training readiness gates
+        run: python -m unittest -v tests.test_euclid_training_readiness
       - name: Genetic mining layer contracts
         run: python -m pytest -q tests/test_layer_verdicts.py
       - name: Salamander self-healing safety
