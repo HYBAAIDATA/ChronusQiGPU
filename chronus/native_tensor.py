@@ -1,16 +1,14 @@
 """Native vendor tensor execution for Chronus.
 
-This module adds execution paths that do not require OpenCL:
+OpenCL is one Chronus execution substrate, not the Chronus architecture.
+This module provides independent local tensor execution paths for:
 
-* CUDA through CuPy with Chronus-owned CUDA kernels.
-* Metal through MLX on Apple silicon.
+* CUDA, using CuPy only as the Python binding to the CUDA runtime while the
+  arithmetic kernels themselves are Chronus-owned CUDA C kernels.
+* Metal, using MLX as the Apple GPU execution binding.
 
-Both paths are lazy, optional, and fail closed. Importing :mod:`chronus` does
-not require either vendor runtime. A native backend is reported as available
-only when its runtime can enumerate/use the corresponding physical GPU.
-
-OpenCL remains an independent Chronus execution backend; this module does not
-replace it or change its routing priority.
+Both paths are optional, lazy, and fail closed. Neither falls back to OpenCL
+or CPU internally. Existing OpenCL execution remains independent and unchanged.
 """
 from __future__ import annotations
 
@@ -31,7 +29,7 @@ class ChronusNativeTensorUnavailable(RuntimeError):
 
 
 class ChronusNativeTensorValidationError(ValueError):
-    """Raised when an operation disagrees with its declared tensor contract."""
+    """Raised when input data disagrees with the declared tensor contract."""
 
 
 @dataclass(frozen=True)
@@ -77,9 +75,9 @@ def _cupy_property(props: dict[Any, Any], name: str, default: Any = None) -> Any
     """Read a CuPy device property across byte-key/string-key versions."""
     if name in props:
         return props[name]
-    key = name.encode("utf-8")
-    if key in props:
-        return props[key]
+    encoded = name.encode("utf-8")
+    if encoded in props:
+        return props[encoded]
     return default
 
 
@@ -113,7 +111,7 @@ def _best_cuda_device(cp) -> tuple[int, dict[Any, Any]]:
 
 
 def probe_cuda() -> NativeTensorProbe:
-    """Probe the CUDA path without compiling kernels or fabricating capability."""
+    """Report CUDA only after a real CUDA device is enumerated."""
     try:
         cp = _load_cupy()
         index, props = _best_cuda_device(cp)
@@ -141,14 +139,13 @@ def probe_cuda() -> NativeTensorProbe:
 
 def _mlx_gpu_is_selected(mx) -> bool:
     try:
-        device = mx.default_device()
+        return "gpu" in str(mx.default_device()).lower()
     except Exception:
         return False
-    return "gpu" in str(device).lower()
 
 
 def probe_metal() -> NativeTensorProbe:
-    """Probe MLX-backed Metal execution on Apple silicon."""
+    """Report Metal only after MLX executes a real Apple GPU operation."""
     if platform.system() != "Darwin":
         return NativeTensorProbe(
             backend="metal",
@@ -161,15 +158,9 @@ def probe_metal() -> NativeTensorProbe:
     try:
         mx = _load_mlx()
         if not _mlx_gpu_is_selected(mx):
-            return NativeTensorProbe(
-                backend="metal",
-                available=False,
-                device_id="unavailable",
-                device_name="",
-                platform_name="Metal/MLX",
-                reason="MLX is importable but its active device is not a GPU",
+            raise ChronusNativeTensorUnavailable(
+                "MLX is importable but its active device is not a GPU"
             )
-        # Force one tiny operation so availability means execution, not importability.
         value = mx.array([1.0], dtype=mx.float32)
         result = value + value
         mx.eval(result)
@@ -314,7 +305,16 @@ extern "C" __global__ void tensor_kron_2d_f32(
 
 
 class ChronusCudaTensorRuntime:
-    """Chronus-owned CUDA tensor kernels launched through the CUDA runtime."""
+    """Chronus-owned CUDA C tensor kernels launched on a physical CUDA GPU."""
+
+    _KERNEL_NAMES = (
+        "tensor_add_f32",
+        "tensor_hadamard_f32",
+        "tensor_scale_f32",
+        "tensor_matmul_f32",
+        "tensor_kron_1d_f32",
+        "tensor_kron_2d_f32",
+    )
 
     def __init__(self) -> None:
         try:
@@ -322,18 +322,17 @@ class ChronusCudaTensorRuntime:
             index, props = _best_cuda_device(cp)
             device = cp.cuda.Device(index)
             device.use()
-            module = cp.RawModule(
-                code=_CUDA_SOURCE,
-                options=("--std=c++11",),
-                name_expressions=tuple(f"tensor_{name}_f32" for name in _OPERATIONS),
-            )
+            kernels = {
+                name: cp.RawKernel(_CUDA_SOURCE, name, options=("--std=c++11",))
+                for name in self._KERNEL_NAMES
+            }
         except Exception as exc:
             raise ChronusNativeTensorUnavailable(
                 f"CUDA tensor runtime unavailable: {type(exc).__name__}: {exc}"
             ) from exc
         self.cp = cp
         self.device = device
-        self.module = module
+        self.kernels = kernels
         self.device_name = _decode_device_name(
             _cupy_property(props, "name", f"cuda:{index}")
         )
@@ -342,8 +341,7 @@ class ChronusCudaTensorRuntime:
     def _launch(self, name: str, count: int, args: tuple[Any, ...]) -> None:
         threads = 256
         blocks = (int(count) + threads - 1) // threads
-        kernel = self.module.get_function(name)
-        kernel((blocks,), (threads,), args)
+        self.kernels[name]((blocks,), (threads,), args)
 
     def execute(
         self,
