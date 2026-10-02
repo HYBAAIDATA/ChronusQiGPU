@@ -10,6 +10,9 @@
       "euclid/kairos_runtime.py",
       "euclid/learning_service.py",
       "euclid/memory_database.py",
+      "euclid/training_pipeline.py",
+      "euclid/self_healing_evidence.py",
+      "euclid/evidence_bundle.py",
       "euclid/production_harness.py",
       "euclid/rights.py",
       "euclid/runtime.py"

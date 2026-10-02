@@ -14,6 +14,7 @@ from .contracts import (
 )
 from .runtime import EuclidRuntime
 from .memory_database import MemoryDatabase, MemoryScope
+from .training_pipeline import TrainingCase, TrainingPipeline
 
 __all__ = [
     "Authority",
@@ -25,4 +26,6 @@ __all__ = [
     "MemoryDatabase",
     "MemoryScope",
     "RewardAuthority",
+    "TrainingCase",
+    "TrainingPipeline",
 ]

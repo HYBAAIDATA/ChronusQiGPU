@@ -38,6 +38,20 @@ supports POSIX permissions. Application-level encryption is deliberately not
 misrepresented: production deployments requiring encryption at rest must use
 an encrypted volume or SQLCipher.
 
+## Training, genetic mining and self-healing evidence
+
+- `euclid.training_pipeline.TrainingPipeline` separates training cases from
+  held-out evaluation and a null control. Its report does not claim external
+  validation or general intelligence.
+- `chronus.seam.genetic_mining` performs deterministic population evolution
+  over dispatch geometry only. It cannot access or alter headers, targets,
+  hashes, credentials or share validity.
+- `euclid.self_healing_evidence` hashes protected Python trees before and
+  after diagnosis. Proposal-only diagnosis passes; any mutation or applied
+  repair fails the gate.
+- `euclid.evidence_bundle` seals runtime, memory, training, genetic-mining and
+  self-healing evidence into one fail-closed release artifact.
+
 ## Mining boundary
 
 The existing `chronus/mla1517/mining/euclid_support.py` remains the sole

@@ -1,0 +1,35 @@
+name: EUCLID evidence, training, genetic mining and healing
+
+on:
+  pull_request:
+    paths:
+      - "euclid/**"
+      - "chronus/seam/**"
+      - "tests/test_euclid_training_genetic_healing.py"
+      - "tests/test_salamander_agentic.py"
+      - ".github/workflows/euclid-evidence.yml"
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  evidence-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install focused dependencies
+        run: python -m pip install --disable-pip-version-check numpy pytest
+      - name: Compile
+        run: python -m compileall -q euclid chronus/seam tests/test_euclid_training_genetic_healing.py
+      - name: EUCLID evidence and training gates
+        run: python -m unittest -v tests.test_euclid_training_genetic_healing
+      - name: Genetic mining layer contracts
+        run: python -m pytest -q tests/test_layer_verdicts.py
+      - name: Salamander self-healing safety
+        run: python -m pytest -q tests/test_salamander_agentic.py
