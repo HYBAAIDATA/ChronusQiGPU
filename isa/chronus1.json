@@ -1,0 +1,19 @@
+{
+  "isa": "chronus1",
+  "version": {"major": 1, "minor": 0},
+  "instruction_width_bits": 32,
+  "endianness": "little",
+  "warp_lanes": 32,
+  "registers": {"general": 32, "predicate_masks": 4, "zero": "R0", "stack_pointer": "R31", "pc": "implicit"},
+  "memory": {"global_address_bits": 32, "local_bytes_per_cu": 65536, "alignment_bytes": 4},
+  "opcodes": {
+    "NOP": 0, "MOV": 1, "MOVI": 2, "ADD": 3, "SUB": 4, "MUL": 5, "FMA": 6,
+    "LOAD": 8, "STORE": 9, "LLOAD": 10, "LSTORE": 11, "BARRIER": 12,
+    "BRA": 16, "BRAZ": 17, "BRANZ": 18,
+    "GET_GID": 24, "GET_LID": 25, "GET_GSIZE": 26, "GET_LSIZE": 27, "EXIT": 63
+  },
+  "formats": ["R", "I", "M", "B", "S"],
+  "barrier_scopes": {"execution": 0, "local": 1, "global": 2, "local_global": 3},
+  "trap_on_reserved_opcode": true,
+  "silent_host_fallback": false
+}
