@@ -51,7 +51,12 @@ class LearningService:
 
     def record(self, experience: Experience) -> str:
         digest = experience.digest()
-        if digest in self._seen:
+        if experience.replay_id in self._seen:
+            raise ValueError("duplicate experience replay")
+        if (
+            self.memory_database is not None
+            and self.memory_database.has_replay_id(experience.replay_id)
+        ):
             raise ValueError("duplicate experience replay")
         if experience.reward_authority is RewardAuthority.NONE:
             self._persist_experience(experience)
@@ -59,7 +64,7 @@ class LearningService:
                 "experience-observed",
                 {"digest": digest, "reward_applied": False, "domain": experience.domain},
             )
-            self._seen.add(digest)
+            self._seen.add(experience.replay_id)
             return digest
 
         applied: list[str] = []
@@ -95,7 +100,7 @@ class LearningService:
             applied.append("pythia-store")
 
         self._persist_experience(experience)
-        self._seen.add(digest)
+        self._seen.add(experience.replay_id)
         self.evidence.append(
             "experience-learned",
             {"digest": digest, "engines": applied, "reward_applied": True},

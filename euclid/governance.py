@@ -6,6 +6,7 @@ from typing import Any, Callable, Mapping
 
 from .contracts import Authority, Capability, Health
 from .evidence import EvidenceChain
+from .rights import RightsLedger
 
 
 @dataclass(frozen=True)
@@ -57,9 +58,15 @@ class Delegator:
     DISPATCH_GATES = ("capable", "healthy", "permitted", "confident", "safe")
     INTEGRATION_GATES = ("coherent", "truth_evidence", "causal", "feedback")
 
-    def __init__(self, registry: OrganRegistry, evidence: EvidenceChain) -> None:
+    def __init__(
+        self,
+        registry: OrganRegistry,
+        evidence: EvidenceChain,
+        rights: RightsLedger,
+    ) -> None:
         self.registry = registry
         self.evidence = evidence
+        self.rights = rights
 
     def dispatch(
         self,
@@ -67,7 +74,6 @@ class Delegator:
         capability: str,
         request: Mapping[str, Any],
         *,
-        permitted: bool,
         confident: bool,
         safe: bool,
     ) -> Mapping[str, Any]:
@@ -75,7 +81,9 @@ class Delegator:
         gates = {
             "capable": capability in organ.capabilities,
             "healthy": organ.health is Health.HEALTHY,
-            "permitted": bool(permitted),
+            "permitted": self.rights.permits(
+                self.rights.creator_id, organ_id, capability, "dispatch"
+            ),
             "confident": bool(confident),
             "safe": bool(safe),
         }

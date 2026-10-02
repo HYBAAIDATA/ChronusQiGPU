@@ -54,19 +54,25 @@ class EuclidRuntimeTests(unittest.TestCase):
             "reasoner", frozenset({"reason"}), Authority.PROPOSE,
             lambda request: {"answer": request["question"]},
         ))
+        runtime.rights.grant("andre", "reasoner", "reason", "dispatch")
         result = runtime.delegator.dispatch(
             "reasoner", "reason", {"question": "why"},
-            permitted=True, confident=True, safe=True,
+            confident=True, safe=True,
         )
         self.assertEqual(result["answer"], "why")
-        for failed in ("permitted", "confident", "safe"):
-            kwargs = {"permitted": True, "confident": True, "safe": True}
+        for failed in ("confident", "safe"):
+            kwargs = {"confident": True, "safe": True}
             kwargs[failed] = False
             with self.assertRaises(PermissionError):
                 runtime.delegator.dispatch("reasoner", "reason", {}, **kwargs)
+        runtime.rights.revoke("andre", "reasoner", "reason", "dispatch")
         with self.assertRaises(PermissionError):
             runtime.delegator.dispatch(
-                "reasoner", "missing", {}, permitted=True, confident=True, safe=True
+                "reasoner", "reason", {}, confident=True, safe=True
+            )
+        with self.assertRaises(PermissionError):
+            runtime.delegator.dispatch(
+                "reasoner", "missing", {}, confident=True, safe=True
             )
         self.assertTrue(runtime.delegator.approve_integration(
             coherent=True, truth_evidence=True, causal=True, feedback=True
@@ -82,6 +88,8 @@ class EuclidRuntimeTests(unittest.TestCase):
         runtime.rights.revoke("andre", "repo-engineer", "repo", "read")
         with self.assertRaises(PermissionError):
             runtime.rights.require("andre", "repo-engineer", "repo", "read")
+        with self.assertRaises(PermissionError):
+            runtime.rights.grant("attacker", "repo-engineer", "repo", "read")
         manifest = ProviderManifest("local", "sha256:abc", frozenset({"text"}), "offline")
         require_provider(
             manifest, provider_id="local", identity="sha256:abc",
@@ -240,6 +248,44 @@ class EuclidRuntimeTests(unittest.TestCase):
                     scope=MemoryScope("local", "mission-1", "research"),
                 )
                 self.assertEqual(record.content["action"], "observe")
+
+    def test_replay_is_rejected_before_learner_update_after_restart(self):
+        class Learner:
+            def __init__(self):
+                self.tasks = {}
+                self.observations = []
+
+            def register_task(self, task, actions, reward_range):
+                self.tasks[task] = type("Task", (), {"actions": tuple(actions)})()
+
+            def observe(self, *args, **kwargs):
+                self.observations.append((args, kwargs))
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "memory.sqlite3"
+            first = Experience(
+                "experience-1", "mission-1", "research", "operator",
+                {"question": "q"}, "observe", {"answer": "a"},
+                1.0, RewardAuthority.OPERATOR, "sha256:source", 0.1,
+                "replay-1",
+            )
+            with MemoryDatabase(path) as database:
+                LearningService(memory_database=database).record(first)
+
+            learner = Learner()
+            replay = Experience(
+                "experience-2", "mission-1", "research", "operator",
+                {"question": "changed"}, "observe", {"answer": "changed"},
+                1.0, RewardAuthority.OPERATOR, "sha256:source", 0.1,
+                "replay-1",
+            )
+            with MemoryDatabase(path) as database:
+                service = LearningService(
+                    experience_learner=learner, memory_database=database
+                )
+                with self.assertRaises(ValueError):
+                    service.record(replay)
+            self.assertEqual(learner.observations, [])
 
     def test_unrewarded_observation_is_memorized_without_learning_reward(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -29,8 +29,8 @@ class EuclidRuntime:
         self.state_dir = Path(state_dir)
         self.evidence = EvidenceChain()
         self.registry = OrganRegistry()
-        self.delegator = Delegator(self.registry, self.evidence)
-        self.rights = RightsLedger(self.evidence)
+        self.rights = RightsLedger(creator_id, self.evidence)
+        self.delegator = Delegator(self.registry, self.evidence, self.rights)
         self.learning = LearningService(
             pythia=pythia,
             memory=memory,
@@ -145,9 +145,17 @@ class EuclidRuntime:
         runtime.kairos.worlds = {
             key: World(**value) for key, value in dict(body["worlds"]).items()
         }
-        runtime.rights = RightsLedger.restore(runtime.evidence, dict(body["rights"]))
+        runtime.rights = RightsLedger.restore(
+            runtime.evidence,
+            dict(body["rights"]),
+            creator_id=runtime.creator_id,
+        )
+        if runtime.rights.creator_id != runtime.creator_id:
+            raise ValueError("rights creator differs from runtime creator")
         runtime.registry = OrganRegistry()
-        runtime.delegator = Delegator(runtime.registry, runtime.evidence)
+        runtime.delegator = Delegator(
+            runtime.registry, runtime.evidence, runtime.rights
+        )
         runtime.learning.evidence = runtime.evidence
         runtime.kairos.replay_verify()
         return runtime

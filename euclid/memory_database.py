@@ -297,6 +297,14 @@ class MemoryDatabase:
         self._verify_record(record)
         return record
 
+    def has_replay_id(self, replay_id: str) -> bool:
+        if not replay_id:
+            raise ValueError("replay_id is required")
+        row = self._connection.execute(
+            "SELECT 1 FROM memories WHERE replay_id=? LIMIT 1", (replay_id,)
+        ).fetchone()
+        return row is not None
+
     def query(
         self,
         *,
