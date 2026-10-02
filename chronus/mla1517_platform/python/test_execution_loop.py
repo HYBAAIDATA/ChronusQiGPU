@@ -73,6 +73,13 @@ async def _mines_reports_and_reconnects(tmp_path):
         assert all(cert["lucas"]["checks"].values())
         assert cert["counts"]["refused"] == 0 and cert["counts"]["certified"] >= 2
         assert coord.last_execution["executed"] is True
+        # Closed-loop optimisation is registered by the real production
+        # coordinator and consumes these completed ExecutionRecords without a
+        # direct test-only invocation.
+        optimisation = coord.evidence_snapshot()["optimization"]
+        assert optimisation["status"] in {"MONITORING", "TRIAL"}
+        assert optimisation["last_observation"] != "Unavailable"
+        assert optimisation["evidence_source"] == "completed production ExecutionRecord"
 
         # The pool drops the session: the loop reconnects and keeps mining.
         connections = pool.connections

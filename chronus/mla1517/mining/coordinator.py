@@ -84,6 +84,7 @@ from .hashrate_governor import HashrateGovernor
 from .loss_ledger import LossLedger
 from .promotion import ShadowTrial, applicable
 from .recovery_effect import RecoveryEffects
+from .closed_loop import ClosedLoopOptimizer
 from .operating_policy import OperatingPolicy, PolicyContext
 from .policy_audit import PolicyAuditor
 from .world_model import MiningWorldModel
@@ -375,6 +376,9 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         # Learners for the seeded questions recovery.effect, precompute.depth
         # and policy.promotion (see docs/LEARNING.md).
         self.recovery_effects = RecoveryEffects()
+        self.optimization = ClosedLoopOptimizer(
+            evidence_source="completed production ExecutionRecord"
+        )
         self._ready_record = [0, 0]  # windows that found a plan ready, windows
         self._last_window_s: float | None = None
         self._shadow: ShadowTrial | None = None
@@ -588,8 +592,12 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 self.telemetry.close()
 
     def set_agentic_state_path(self, path: str) -> None:
-        """Configure where the agentic controller persists its learned policy."""
+        """Configure durable policy and closed-loop optimisation state."""
         self._agentic_state_path = path
+        root = os.path.dirname(path) or "."
+        self.optimization.set_state_path(
+            os.path.join(root, "closed_loop_optimization.json")
+        )
 
     async def connect_with_failover(self):
         client = await super().connect_with_failover()
@@ -730,6 +738,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             "last_execution": self.last_execution,
             "tuning": asdict(decision) if decision is not None else None,
             "recovery": self.recovery.snapshot(),
+            "optimization": self.optimization.snapshot(),
             "chain_evidence": (
                 getattr(self.chain_observer, "source", "bitcoind")
                 if self.chain_observer is not None
@@ -1211,7 +1220,16 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 agree=audit["agree"],
                 digest=audit["attestation"]["digest"],
             )
-        return decision.window
+        active_window = self.optimization.active.get(ctx.route, decision.window)
+        upper = ctx.max_window if ctx.derate_cap is None else min(ctx.max_window, ctx.derate_cap)
+        selected = self.optimization.select(
+            route=ctx.route,
+            proposed_window=decision.window,
+            safety_override=(ctx.recovery_active or derated or active_window > upper),
+            reason=f"{decision.source}: {decision.reason}",
+        )
+        selected = min(selected, upper)
+        return max(ctx.lanes, selected - selected % ctx.lanes)
 
     def _intelligence_ceiling(self) -> int:
         """Largest window the operating intelligence may choose.
@@ -2002,6 +2020,32 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self.world.tick(now)
         self._score_forecasts(final)
         self.world.observe_execution(final)
+        optimization_events = len(self.optimization.history)
+        self.optimization.observe(
+            route=final.requested_route or final.executed_route or final.device_used or "unknown",
+            executed_route=final.executed_route,
+            planned_window=final.planned_window,
+            completed_work=final.hash_count,
+            elapsed_seconds=final.elapsed_seconds,
+            completion_state=final.completion_state.value,
+            device_error=final.device_error,
+        )
+        if len(self.optimization.history) > optimization_events:
+            event = self.optimization.history[-1]
+            self.causal.record(
+                "optimization_" + event.event.lower(),
+                coordinate,
+                **asdict(event),
+            )
+            try:
+                self.knowledge.publish(
+                    "mining.closed_loop_optimizer",
+                    "mining.optimization",
+                    asdict(event),
+                    evidence="measured",
+                )
+            except Exception as exc:
+                LOG.warning("optimization outcome not shared: %s", exc)
         self._observe_recovery_effect(final)
         self._share_knowledge(now)
         self.loss.observe_execution(final, self.world, started_at=now - final.elapsed_seconds)
@@ -2040,8 +2084,19 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             stratum_state="NEW_JOB" if new_job else "READY",
             recovery_active=self.agentic.is_recovery_active(),
         )
-        if decision.action != "HOLD":
+        # Thermal/latency de-rate is a safety action. Scale-up remains a
+        # bounded experiment owned by ``ClosedLoopOptimizer``; it is never
+        # applied directly from a recommendation.
+        if decision.action == "DE_RATE":
             self._tuned_window = decision.next_window
+        elif decision.action == "SCALE_UP":
+            self.causal.record(
+                "optimization_candidate",
+                coordinate,
+                proposed_window=decision.next_window,
+                applied=False,
+                reason="awaiting bounded measured trial",
+            )
         self.last_execution = {
             "executed": True,
             **coordinate.as_dict(),
@@ -2084,6 +2139,11 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         if record.executed_route is None:
             return
         healthy = record.completion_state is not CompletionState.DEVICE_ERROR
+        if not healthy:
+            route = record.executed_route or record.device_used or "unknown"
+            self.optimization.fail_closed(
+                route, f"execution fault forced rollback: {record.device_error or 'DEVICE_ERROR'}"
+            )
         self._device_error_streak = 0 if healthy else self._device_error_streak + 1
         closed = self.recovery.observe(healthy)
         if (
