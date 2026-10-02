@@ -1,5 +1,23 @@
 # Validation — executed gates (honest states)
 
+## Current refresh @ 953765a (2026-10-02)
+
+| Gate | State | Evidence / reason |
+|---|---|---|
+| Source revision | PASS | GitHub `main` resolved to `953765a7f79920d2177a406c2157340ef96000cc` |
+| Repository instructions | PASS | `AGENTS.md` read at blob `bfb11420538f5cf1062030f10af320cbb3e04957` |
+| Owner A 11D implementation | PASS — MERGED | PR #82 merged as `1aae12c3`; compileall, adapter, route and consensus invariants PASS. Full repository pytest/CI remains unavailable |
+| Runtime RUN/DATA defects | PASS — MERGED | PR #81 merged as `953765a7`: truthful `stopping` state + per-phase accepted-share deltas; focused files compile. Full repository pytest/CI remains unavailable |
+| Current full repo pytest | NOT_RUN | No checkout is available in the coordinator sandbox; historical counts below are not current evidence |
+| Current platform unittest | NOT_RUN | Same limitation |
+| Current frontend gates | NOT_RUN | Same limitation |
+| Current hardware/OpenCL gate | NOT_RUN | No target device evidence |
+| Current live pool submission | NOT_RUN | Not authorized; no credential or target supplied |
+| Current GitHub Actions | BLOCKED | Check-runs API returned 403; combined status has zero statuses for PRs #80/#81. Repository account has also reported billing/spending-limit failures |
+
+The historical records below remain useful provenance but do not certify the
+current `main`. Missing execution remains missing evidence, not observed zero.
+
 Pin: `e09afab1b27a15006ba9384bdbb3f7192dd94251` (main @ 2026-09-28).
 Env (coordinator box): Windows, Python 3.14.7 (`uv` venv), Node 20.19.0 (manifest
 requires ≥22 — gates nonetheless pass on 20; engines mismatch is recorded, not hidden).

@@ -1,6 +1,6 @@
 # Runbook — install, configure, operate, recover, release
 
-Verified at `e09afab` on Windows + Linux-docker paths. Commands marked
+Historical verification began at `e09afab`; current software baseline is `88117ec`. Commands marked
 [verified] ran in this session; others are repo-documented.
 
 ## Install (development)
@@ -67,6 +67,26 @@ config + corrupt→defaults, MiningSession share-log restore.
 - `data/runtime_config.json` — operator-facing config (bounded writes; pool passwords merged server-side)
 - `C:\tmp\pythia\BOOT_AUDIT.log`, heartbeat dir sidecars (`*.bin` HMAC + `*.metrics.json`)
 - Restore = reinstall + same env + existing `data/` dir; recovery verification pending (B).
+
+## Production preflight
+
+The preflight is read-only: it does not connect to a pool, mine, submit shares,
+or print secret values. It separates application, device and live-pool
+prerequisites and emits `PASS`, `BLOCKED` or `FAIL` JSON.
+
+```bash
+python scripts/production_preflight.py --profile application --strict \
+  --output artifacts/preflight-application.json
+python scripts/production_preflight.py --profile device --strict \
+  --output artifacts/preflight-device.json
+python scripts/production_preflight.py --profile live --strict \
+  --output artifacts/preflight-live.json
+```
+
+A `BLOCKED` device/live result is not a software failure and must not be
+promoted to PASS. The live profile validates configuration and approval gates
+only; it does not establish connectivity, submission, acknowledgement or
+earnings. Those remain separate bounded-run evidence.
 
 ## Release gates (before calling a build releasable)
 

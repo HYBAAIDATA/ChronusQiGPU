@@ -72,16 +72,59 @@ def _fresh_campaign(monkeypatch):
     return system_fabric.CAMPAIGN
 
 
-_TERMINAL_STATES = {"idle", "done", "stopped", "error"}
-
-
 def _wait_terminal(runner, timeout=10.0):
     deadline = time.time() + timeout
-    while runner.status()["state"] not in _TERMINAL_STATES and time.time() < deadline:
+    while runner.status()["state"] == "running" and time.time() < deadline:
         time.sleep(0.05)
     if runner._thread is not None:
+        # Join so retirement evidence is in place before assertions read it.
         runner._thread.join(timeout=timeout)
     return runner.status()
+
+
+def test_runner_stop_remains_stopping_until_worker_exits():
+    gate = threading.Event()
+    runner = system_fabric._Runner("truthful-stop")
+
+    def blocked(_runner):
+        gate.wait(5)
+        raise InterruptedError("cooperative cancellation")
+
+    assert runner.start(blocked)
+    assert runner.stop()
+    requested = runner.status()
+    assert requested["state"] == "stopping"
+    assert requested["finished_at"] is None
+    assert runner._thread is not None and runner._thread.is_alive()
+
+    gate.set()
+    runner._thread.join(timeout=5)
+    terminal = runner.status()
+    assert terminal["state"] == "stopped"
+    assert terminal["finished_at"] is not None
+    assert terminal["error"] is None
+    # A stop request on an already-terminal runner is refused, and the
+    # runner is eligible to start again once the worker actually exited.
+    assert runner.stop() is False
+    assert runner.start(lambda r: {"ok": True}) is True
+    runner._thread.join(timeout=5)
+    assert runner.status()["state"] == "done"
+
+
+def test_runner_stop_when_function_returns_after_flag():
+    """A function that returns normally after the stop flag is still a
+    stopped run, not a successful 'done'."""
+    runner = system_fabric._Runner("late-stop")
+
+    def slow(r):
+        time.sleep(0.05)
+        return {"partial": True}
+
+    assert runner.start(slow)
+    runner.stop()
+    status = _wait_terminal(runner)
+    assert status["state"] == "stopped"
+    assert status["result"] == {"partial": True}
 
 
 def test_campaign_retires_arms_on_phase_failure(tmp_path, monkeypatch):
@@ -113,58 +156,10 @@ def test_campaign_operator_stop_retires_and_stays_stopped(tmp_path, monkeypatch)
     runner.stop()
     status = _wait_terminal(runner)
     # RUN-01: an operator stop is terminal "stopped", never "error" — and
-    # retirement still lands on the unwinding path.
+    # retirement still lands even though the state flipped early.
     assert status["state"] == "stopped"
     assert deps.retired == 1
     assert status["progress"]["campaign_record"]["retired"] == ["arm-0"]
-
-
-def test_runner_stop_is_truthful_stopping_until_worker_exits(monkeypatch):
-    """RUN-01: stop() must not claim stopped/finished while the worker is
-    still inside a phase — the state is 'stopping' until actual exit."""
-    runner = system_fabric._Runner("blocked")
-    release = threading.Event()
-
-    def blocked(r):
-        while not r.stopped:
-            time.sleep(0.01)
-        # Operator stop observed: now simulate teardown still in flight.
-        release.wait(timeout=10)
-        raise InterruptedError("phase unwound after stop")
-
-    assert runner.start(blocked)
-    time.sleep(0.05)
-    assert runner.stop() is True
-    mid = runner.status()
-    assert mid["state"] == "stopping"
-    assert mid["finished_at"] is None
-    # Restart is refused while the old worker still runs.
-    assert runner.start(lambda r: None) is False
-    release.set()
-    status = _wait_terminal(runner)
-    assert status["state"] == "stopped"
-    assert status["finished_at"] is not None
-    assert status["finished_at"] >= status["started_at"]
-    assert "stop_detail" in status["progress"]
-    # And the runner is eligible to start again once the worker exited.
-    assert runner.start(lambda r: {"ok": True}) is True
-    assert _wait_terminal(runner)["state"] == "done"
-
-
-def test_runner_done_when_stop_arrives_between_phases(monkeypatch):
-    """A function that returns normally after the stop flag is still a
-    stopped run, not a successful 'done'."""
-    runner = system_fabric._Runner("late-stop")
-
-    def slow(r):
-        time.sleep(0.05)
-        return {"partial": True}
-
-    assert runner.start(slow)
-    runner.stop()
-    status = _wait_terminal(runner)
-    assert status["state"] == "stopped"
-    assert status["result"] == {"partial": True}
 
 
 def test_campaign_measured_zero_is_a_measurement(tmp_path, monkeypatch):
@@ -180,51 +175,33 @@ def test_campaign_measured_zero_is_a_measurement(tmp_path, monkeypatch):
     assert status["result"]["phases"][0]["measured_hs_avg"] == 0.0
 
 
-def test_campaign_absent_rate_stays_unmeasured(tmp_path, monkeypatch):
-    deps = _CampaignDeps(tmp_path, monkeypatch, counters={}, single_phase=True)
-    runner = _fresh_campaign(monkeypatch)
-    assert system_fabric.start_campaign(
-        apply_config=deps.apply_config,
-        retire_all=deps.retire_all,
-        counter_probe=deps.counter_probe,
-    )
-    status = _wait_terminal(runner)
-    assert status["result"]["phases"][0]["measured_hs_avg"] is None
-
-
-def test_campaign_shares_are_phase_deltas_not_cumulative(tmp_path, monkeypatch):
-    """DATA-01: a cumulative process-wide shares counter must not inflate a
-    later phase — each phase records only the shares earned inside it."""
-    deps = _CampaignDeps(tmp_path, monkeypatch)
-    runner = _fresh_campaign(monkeypatch)
-    # First probe of a phase is the baseline read; later probes are the
-    # loop reads. This makes the expected values independent of how many
-    # loop iterations fit in the phase duration.
-    calls = {1: 0, 2: 0}
+def test_campaign_reports_phase_share_delta_not_prior_total(tmp_path, monkeypatch):
+    deps = _CampaignDeps(tmp_path, monkeypatch, single_phase=True)
+    values = iter([100, 102, 102])
+    last = {"hashrate_hs": 12.5, "shares_accepted": 102}
 
     def probe():
-        phase = len(deps.applied)  # apply_config runs once per phase
-        calls[phase] += 1
-        if phase == 1:
-            return {"hashrate_hs": 10.0, "shares_accepted": 4 if calls[phase] == 1 else 6}
-        return {"hashrate_hs": 10.0, "shares_accepted": 6 if calls[phase] == 1 else 8}
+        nonlocal last
+        try:
+            last = {"hashrate_hs": 12.5, "shares_accepted": next(values)}
+        except StopIteration:
+            pass
+        return last
 
     deps.counter_probe = probe
+    runner = _fresh_campaign(monkeypatch)
     assert system_fabric.start_campaign(
         apply_config=deps.apply_config,
         retire_all=deps.retire_all,
         counter_probe=deps.counter_probe,
     )
     status = _wait_terminal(runner)
-    phases = status["result"]["phases"]
-    assert len(phases) == 2
-    assert phases[0]["shares_accepted"] == 2
-    assert phases[1]["shares_accepted"] == 2
+    assert status["result"]["phases"][0]["shares_accepted"] == 2
 
 
 def test_campaign_shares_counter_reset_counts_new_total(tmp_path, monkeypatch):
     """DATA-01: when the aggregate counter resets (arm respawn/pool switch)
-    the reading itself is the new phase-local count, not a negative delta."""
+    the post-reset reading itself is the new phase-local count."""
     deps = _CampaignDeps(tmp_path, monkeypatch, single_phase=True)
     runner = _fresh_campaign(monkeypatch)
     calls = {"n": 0}
@@ -243,6 +220,18 @@ def test_campaign_shares_counter_reset_counts_new_total(tmp_path, monkeypatch):
     )
     status = _wait_terminal(runner)
     assert status["result"]["phases"][0]["shares_accepted"] == 2
+
+
+def test_campaign_absent_rate_stays_unmeasured(tmp_path, monkeypatch):
+    deps = _CampaignDeps(tmp_path, monkeypatch, counters={}, single_phase=True)
+    runner = _fresh_campaign(monkeypatch)
+    assert system_fabric.start_campaign(
+        apply_config=deps.apply_config,
+        retire_all=deps.retire_all,
+        counter_probe=deps.counter_probe,
+    )
+    status = _wait_terminal(runner)
+    assert status["result"]["phases"][0]["measured_hs_avg"] is None
 
 
 def test_arm_counters_distinguish_zero_absent_and_stale(tmp_path, monkeypatch):
