@@ -4,6 +4,14 @@ from __future__ import annotations
 from importlib import import_module
 
 _EXPORTS = {
+    "CapabilityManifest": ("chronus.virtual_igpu.capabilities", "CapabilityManifest"),
+    "EvidenceLedger": ("chronus.virtual_igpu.evidence", "EvidenceLedger"),
+    "ChronusPlanner": ("chronus.virtual_igpu.planner", "ChronusPlanner"),
+    "ExecutionPlan": ("chronus.virtual_igpu.planner", "ExecutionPlan"),
+    "ExecutionClass": ("chronus.virtual_igpu.operators", "ExecutionClass"),
+    "OperatorFamily": ("chronus.virtual_igpu.operators", "OperatorFamily"),
+    "ClosedLoopOptimizer": ("chronus.virtual_igpu.optimizer", "ClosedLoopOptimizer"),
+    "ActionClass": ("chronus.virtual_igpu.optimizer", "ActionClass"),
     "ABI_VERSION": ("chronus.virtual_igpu.abi", "ABI_VERSION"),
     "AdapterKind": ("chronus.virtual_igpu.abi", "AdapterKind"),
     "Capability": ("chronus.virtual_igpu.abi", "Capability"),

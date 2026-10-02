@@ -33,7 +33,7 @@ def build_server(runtime: RuntimeDaemon, host: str = "127.0.0.1", port: int = 87
                 return self.send_json(401, {"ok": False, "error": "unauthorized"})
             path = urlparse(self.path).path
             if path == "/health":
-                return self.send_json(200, {"ok": True, "value": {"protocol": ABI_VERSION}})
+                return self.send_json(200, {"ok": True, "value": {"protocol": ABI_VERSION, **runtime.health()}})
             if path == "/v1/adapters":
                 return self.send_json(200, {"ok": True, "value": runtime.adapter_report()})
             if path == "/v1/capabilities":
@@ -51,14 +51,7 @@ def build_server(runtime: RuntimeDaemon, host: str = "127.0.0.1", port: int = 87
                     200,
                     {
                         "ok": True,
-                        "value": [
-                            {
-                                "workload_id": result.workload_id,
-                                "evidence_digest": result.evidence_digest,
-                                "object_id": result.object_id,
-                            }
-                            for result in runtime.results.values()
-                        ],
+                        "value": runtime.ledger.query(limit=100),
                     },
                 )
             if path == "/v1/attestation":
@@ -80,7 +73,12 @@ def build_server(runtime: RuntimeDaemon, host: str = "127.0.0.1", port: int = 87
         def do_POST(self):
             if not self.authorized():
                 return self.send_json(401, {"ok": False, "error": "unauthorized"})
-            if urlparse(self.path).path != "/v1/workloads":
+            request_path = urlparse(self.path).path
+            if request_path.startswith("/v1/workloads/") and request_path.endswith("/cancel"):
+                workload_id = request_path.split("/")[-2]
+                runtime.cancel(workload_id)
+                return self.send_json(202, {"ok": True, "value": {"workload_id": workload_id, "cancelled": True}})
+            if request_path != "/v1/workloads":
                 return self.send_json(404, {"ok": False, "error": "not found"})
             try:
                 length = int(self.headers.get("Content-Length", "0"))
