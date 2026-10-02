@@ -39,6 +39,8 @@ PYTHONPATH=chronus/mla1517_platform/python \
 
 The miner fails closed when the device, negotiated job, proof adapter, credentials, or explicit submission approval is absent. `main.py` is the control service; it does not fabricate an active mining result.
 
+The per-operation device policy is explicit rather than global. Device-bound operations — the hardware miner, the strict hardware gate, live submission — fail closed on a missing device or credential. The supervised solver route is different: `PYTHIA_EXECUTION_DEVICE` declares the intended backend (`opencl`, `cpu`, `remote`), and when an OpenCL route is requested but the device or that arm's kernel is unavailable the execution router records `executed_route=cpu_reference` with an explicit `fallback_reason` (`OPENCL_UNAVAILABLE` / `KERNEL_UNAVAILABLE`). A CPU result is always labelled CPU — it is never reported as device execution.
+
 ## Canonical structured mining path
 
 The canonical mining package is `chronus/mla1517/mining`:
@@ -80,6 +82,7 @@ The declared Lucas ladder is exactly `10, 12, 15, 18, 20, 31, 50, 76`. Device ex
 - A Cassini seal or manifold invariant is internal correctness evidence, not Bitcoin proof-of-work.
 - A pool share requires a live negotiated job, valid credentials, a complete algorithm-specific translation, and the pool's independent acknowledgement.
 - Missing hardware, unsupported translation, overflow, stale job, torn state, or failed invariant is a fail-closed result.
+- A `cpu_reference` fallback carries its reason; the requested route and the executed route are recorded separately.
 - No synthetic pool acceptance, fixed hashrate, or theoretical multiplier is reported.
 
 ## Verification

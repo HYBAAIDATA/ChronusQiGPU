@@ -1,0 +1,38 @@
+name: Lucas-15 operator ablation
+
+on:
+  pull_request:
+    paths:
+      - "experiments/lucas15_operator_ablation.py"
+      - "mining/stratum_bridge.py"
+      - "tests/test_lucas15_operator_ablation.py"
+      - "tests/test_mining_claim_boundary.py"
+      - "docs/LUCAS15_OPERATOR_ABLATION.md"
+      - ".github/workflows/lucas15-operator-ablation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-ablation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --disable-pip-version-check numpy pytest
+      - name: Verify constants, arms, determinism, and mining claim boundary
+        run: python -m pytest tests/test_lucas15_operator_ablation.py tests/test_mining_claim_boundary.py -q
+      - name: Run bounded ablation smoke
+        run: >-
+          python experiments/lucas15_operator_ablation.py
+          --repeats 2 --dimension 32 --seed 1517
+          --output artifacts/lucas15_operator_ablation.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lucas15-operator-ablation
+          path: artifacts/lucas15_operator_ablation.json
+          if-no-files-found: error

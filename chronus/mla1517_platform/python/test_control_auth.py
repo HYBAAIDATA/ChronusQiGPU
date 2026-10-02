@@ -1,7 +1,8 @@
-"""State-changing control requests need the operator key; without one, control is closed."""
+"""State-changing controls require a server-bound operator identity or legacy key."""
 
 from __future__ import annotations
 
+import hashlib
 import json
 import threading
 import time
@@ -17,6 +18,7 @@ from al_haras.entitlements import SubscriptionAuthority, SubscriptionClaims
 import control_api
 
 KEY = "a" * 64
+CEO_TOKEN = "ceo-session-token"
 
 
 @pytest.mark.parametrize(
@@ -42,12 +44,76 @@ KEY = "a" * 64
     ],
 )
 def test_the_authorization_rule(monkeypatch, env, headers, expected):
-    for name in (control_api.ADMIN_KEY_ENV, control_api.UNAUTHENTICATED_ENV):
+    for name in (
+        control_api.ADMIN_KEY_ENV,
+        control_api.UNAUTHENTICATED_ENV,
+        control_api.OPERATOR_PRINCIPALS_ENV,
+    ):
         monkeypatch.delenv(name, raising=False)
     for name, value in env.items():
         monkeypatch.setenv(name, value)
     refusal = control_api.control_authorization(headers)
     assert (refusal[0] if refusal else None) == expected
+
+
+def _principal_map(role="ceo", digest=None):
+    return json.dumps(
+        {
+            "andre": {
+                "role": role,
+                "token_sha256": digest
+                or hashlib.sha256(CEO_TOKEN.encode()).hexdigest(),
+            }
+        }
+    )
+
+
+def test_server_principal_map_precedes_shared_key(monkeypatch):
+    monkeypatch.setenv(control_api.ADMIN_KEY_ENV, KEY)
+    monkeypatch.setenv(control_api.OPERATOR_PRINCIPALS_ENV, _principal_map())
+    assert control_api.control_authorization(
+        {"Authorization": f"Bearer {KEY}"}
+    ) == (HTTPStatus.UNAUTHORIZED, "operator principal required")
+    assert control_api.control_authorization(
+        {
+            "Authorization": f"Bearer {KEY}",
+            control_api.OPERATOR_PRINCIPAL_HEADER: "andre",
+        }
+    ) == (HTTPStatus.UNAUTHORIZED, "operator credential required")
+
+
+def test_server_mapped_ceo_identity_is_returned(monkeypatch):
+    monkeypatch.setenv(control_api.OPERATOR_PRINCIPALS_ENV, _principal_map())
+    principal, refusal = control_api.authenticate_control_principal(
+        {
+            "Authorization": f"Bearer {CEO_TOKEN}",
+            control_api.OPERATOR_PRINCIPAL_HEADER: "andre",
+        }
+    )
+    assert refusal is None
+    assert principal == control_api.ControlPrincipal(
+        principal_id="andre",
+        role="ceo",
+        source="server_principal_map",
+    )
+
+
+@pytest.mark.parametrize(
+    "mapping",
+    [
+        "{",
+        "{}",
+        _principal_map(role="viewer"),
+        _principal_map(digest="not-a-sha256"),
+    ],
+)
+def test_invalid_principal_mapping_fails_closed(monkeypatch, mapping):
+    monkeypatch.setenv(control_api.OPERATOR_PRINCIPALS_ENV, mapping)
+    refusal = control_api.control_authorization({})
+    assert refusal == (
+        HTTPStatus.SERVICE_UNAVAILABLE,
+        "operator principal mapping is invalid",
+    )
 
 
 def test_a_refused_request_never_reaches_its_handler(monkeypatch, tmp_path):

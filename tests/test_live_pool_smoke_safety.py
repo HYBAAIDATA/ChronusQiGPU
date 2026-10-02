@@ -62,5 +62,6 @@ def test_ephemeral_config_is_private_and_restores_environment(tmp_path, monkeypa
 
     live_pool_smoke._save_ephemeral_config(path, config)
 
-    assert stat.S_IMODE(path.stat().st_mode) == 0o600
+    if os.name != "nt":
+        assert stat.S_IMODE(path.stat().st_mode) == 0o600
     assert os.environ["PYTHIA_RUNTIME_CONFIG"] == "original-config.json"

@@ -53,14 +53,28 @@ def _punch_section() -> Dict[str, Any]:
     return info
 
 
+def _tensor_section() -> Dict[str, Any]:
+    from chronus import tensor_compute
+
+    result = tensor_compute.probe().as_dict()
+    runtime = getattr(tensor_compute, "_RUNTIME", None)
+    evidence = getattr(runtime, "last_evidence", None)
+    # No tensor is executed merely to make a report look healthy.
+    result["last_execution_evidence"] = (
+        evidence.as_dict() if evidence is not None else "Unavailable"
+    )
+    return result
+
+
 def report() -> Dict[str, Any]:
-    """Collect opencl + vendor + hasher + punch sections; never crash."""
+    """Collect observed OpenCL/vendor/hasher/punch/tensor facts; never crash."""
     out: Dict[str, Any] = {}
     for key, fn in (
         ("opencl", _opencl_section),
         ("vendors", _vendor_section),
         ("hasher", _hasher_section),
         ("punch", _punch_section),
+        ("tensor", _tensor_section),
     ):
         try:
             out[key] = fn()

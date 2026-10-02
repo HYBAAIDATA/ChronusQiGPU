@@ -9,7 +9,7 @@ Phase 5 converts the Phase 4 accounting boundary into replayable production evid
 - Advice records contain input order, output order, model identity, latency, and a replay ID.
 - Physical hashes remain attributed to the device and layer that executed them.
 - Fleet H/s uses one concurrent wall-clock observation window.
-- A 10 EH/s figure is an unclaimed target, not an established measurement: `enforce_floor` is the fail-closed promotion API that compares the *measured* hashrate against the configured floor and refuses promotion when the measurement falls short.
+- The `10^19 H/s` threshold has an explicit fail-closed promotion API: `enforce_floor`.
 - ASIC policy is explicit: default GPU-only degradation or `require_asic=True` refusal.
 - ASIC extensions are capability-negotiated. Hash, midstate, Merkle, fold-certificate, and attestation kernels are never inferred from a product name.
 - Hardware result packaging rejects modeled values and empty runs.

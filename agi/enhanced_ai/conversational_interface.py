@@ -15,11 +15,11 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 # Import existing HYBA components
-from hyba_backend.platform.quantum_core.processor import (
+from agi.quantum_processor import (
     ProblemDomain,
     UniversalQuantumProcessor,
 )
-from hyba_backend.platform.resonance import PhiResonanceScorer
+from agi.resonance import PhiResonanceScorer
 
 from .knowledge_base import EnhancedKnowledgeBase
 

@@ -1,6 +1,6 @@
 # Runbook — install, configure, operate, recover, release
 
-Verified at `e09afab` on Windows + Linux-docker paths. Commands marked
+Historical verification began at `e09afab`; current software baseline is `88117ec`. Commands marked
 [verified] ran in this session; others are repo-documented.
 
 ## Install (development)
@@ -46,8 +46,11 @@ Boot writes `BOOT_AUDIT.log` + `pythia-main.lock` to the boot-work dir
 (`C:\tmp\pythia\` on this Windows box — verified path; `data/` holds only
 runtime_config). Second instance needs `PYTHIA_BOOT_LOCK`/`PYTHIA_BOOT_AUDIT`
 overrides.
-Stop: SIGTERM/SIGINT — runner-stop semantics under Owner B verification (RUN-01).
-Restart: runtime_config + heartbeat sidecars reload — persistence verification pending (B).
+Stop: SIGTERM/SIGINT — a stop request reports `stopping` until the worker thread
+actually exits (verified @10c6a63); `finished_at` is the exit timestamp, and a
+terminal `stopped` runner is restart-eligible.
+Restart: runtime_config + heartbeat sidecars reload — verified (B, PR #22): durable
+config + corrupt→defaults, MiningSession share-log restore.
 
 ## Diagnose
 
@@ -64,6 +67,26 @@ Restart: runtime_config + heartbeat sidecars reload — persistence verification
 - `data/runtime_config.json` — operator-facing config (bounded writes; pool passwords merged server-side)
 - `C:\tmp\pythia\BOOT_AUDIT.log`, heartbeat dir sidecars (`*.bin` HMAC + `*.metrics.json`)
 - Restore = reinstall + same env + existing `data/` dir; recovery verification pending (B).
+
+## Production preflight
+
+The preflight is read-only: it does not connect to a pool, mine, submit shares,
+or print secret values. It separates application, device and live-pool
+prerequisites and emits `PASS`, `BLOCKED` or `FAIL` JSON.
+
+```bash
+python scripts/production_preflight.py --profile application --strict \
+  --output artifacts/preflight-application.json
+python scripts/production_preflight.py --profile device --strict \
+  --output artifacts/preflight-device.json
+python scripts/production_preflight.py --profile live --strict \
+  --output artifacts/preflight-live.json
+```
+
+A `BLOCKED` device/live result is not a software failure and must not be
+promoted to PASS. The live profile validates configuration and approval gates
+only; it does not establish connectivity, submission, acknowledgement or
+earnings. Those remain separate bounded-run evidence.
 
 ## Release gates (before calling a build releasable)
 

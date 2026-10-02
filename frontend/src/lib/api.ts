@@ -2,6 +2,7 @@
 
 const API_BASE = (import.meta.env.VITE_PYTHIA_PYTHON_API_URL || "").replace(/\/$/, "");
 const OPERATOR_KEY = "pythia.operatorKey";
+const OPERATOR_PRINCIPAL = "pythia.operatorPrincipal";
 const SUBSCRIPTION_TOKEN = "pythia.subscriptionToken";
 const HYBA_TENANT = "pythia.hybaTenant";
 const HYBA_ACTOR = "pythia.hybaActor";
@@ -53,6 +54,15 @@ export function operatorKey(): string | null {
 
 export function setOperatorKey(key: string | null): void {
   sessionSet(OPERATOR_KEY, key);
+}
+
+/** Server-mapped operator identity claimed alongside the session bearer. */
+export function operatorPrincipal(): string | null {
+  return sessionGet(OPERATOR_PRINCIPAL);
+}
+
+export function setOperatorPrincipal(principal: string | null): void {
+  sessionSet(OPERATOR_PRINCIPAL, principal);
 }
 
 export interface SubscriptionCreds {
@@ -123,9 +133,19 @@ async function reasonIs(response: Response, wanted: string): Promise<boolean> {
   }
 }
 
+async function controlError(response: Response): Promise<string | null> {
+  try {
+    const body = (await response.clone().json()) as { error?: string };
+    return typeof body.error === "string" ? body.error : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Reads pass through. State-changing requests carry the operator key — or,
- * on guardian-mediated routes, the subscription boundary (X-HYBA headers +
+ * Reads pass through. State-changing requests carry the operator credential
+ * and, when configured, its server-mapped principal id — or, on
+ * guardian-mediated routes, the subscription boundary (X-HYBA headers +
  * subscription bearer, and the POST body's `observation`). On the matching
  * denial the operator is asked for the missing credential once and the
  * request is retried with it. Cancelling the prompt declines for the rest of
@@ -167,7 +187,9 @@ export async function apiFetch(input: RequestInfo | URL, init: RequestInit = {})
   }
 
   const key = mutating ? operatorKey() : null;
+  const principal = mutating ? operatorPrincipal() : null;
   if (key) headers.set("Authorization", `Bearer ${key}`);
+  if (principal) headers.set("X-PYTHIA-Principal", principal);
   const response = await fetch(target, { ...init, headers });
   if (
     !mutating ||
@@ -177,14 +199,28 @@ export async function apiFetch(input: RequestInfo | URL, init: RequestInit = {})
   ) {
     return response;
   }
-  if (key) setOperatorKey(null); // the stored key was refused
-  const entered = window.prompt("Operator key (EUCLID_ADMIN_API_KEY)")?.trim();
-  if (!entered) {
+  const error = await controlError(response);
+  let enteredPrincipal = principal;
+  if (error === "operator principal required") {
+    enteredPrincipal = window.prompt("Operator principal id (X-PYTHIA-Principal)")?.trim() || null;
+    if (!enteredPrincipal) {
+      sessionSet(OPERATOR_KEY_DECLINED, "1");
+      return response;
+    }
+    setOperatorPrincipal(enteredPrincipal);
+  }
+  let enteredKey = key;
+  if (!enteredKey || error !== "operator principal required") {
+    if (key) setOperatorKey(null); // the stored key was refused
+    enteredKey = window.prompt("Operator credential")?.trim() || null;
+  }
+  if (!enteredKey) {
     sessionSet(OPERATOR_KEY_DECLINED, "1");
     return response;
   }
   sessionSet(OPERATOR_KEY_DECLINED, null);
-  setOperatorKey(entered);
-  headers.set("Authorization", `Bearer ${entered}`);
+  setOperatorKey(enteredKey);
+  headers.set("Authorization", `Bearer ${enteredKey}`);
+  if (enteredPrincipal) headers.set("X-PYTHIA-Principal", enteredPrincipal);
   return fetch(target, { ...init, headers });
 }

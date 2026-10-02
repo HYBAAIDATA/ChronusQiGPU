@@ -60,6 +60,7 @@ from chronus.mla1517.mining.hendrix_order import (
     hendrix_nonces,
     hendrix_schedule,
 )
+from chronus.mla1517.mining.poincare_11d_order import poincare_11d_nonces
 
 __all__ = [
     "RouteDecision",
@@ -69,6 +70,7 @@ __all__ = [
     "NONCE_ORDER_HENDRIX",
     "NONCE_ORDER_KLEIN",
     "NONCE_ORDER_M32",
+    "NONCE_ORDER_POINCARE_11D",
     "NonceOrderUnavailable",
     "sha256d_scan",
 ]
@@ -84,6 +86,7 @@ NONCE_ORDER_M32 = "m32_turing_complete"
 NONCE_ORDER_KLEIN = "klein_poincare_numerical"
 NONCE_ORDER_SEQUENTIAL = "sequential"
 NONCE_ORDER_GOLDEN = "golden_stride"
+NONCE_ORDER_POINCARE_11D = "poincare_cassini_11d"
 # Hendrix structured search: position i of the leased window visits
 # base + (i * stride) % window with gcd(stride, window) == 1. A bijection of
 # the lease, so unlike golden stride it is allowed on leased work. Only the
@@ -426,7 +429,25 @@ class ExecutionRouter:
         False the remaining chunks are abandoned and the record reports
         INVALIDATED with actual_window covering only completed work.
         """
+        requested_order = self._nonce_order(plan)
         decision = self.decide_route(plan)
+        if (
+            requested_order == NONCE_ORDER_POINCARE_11D
+            and decision.executed_route is not ExecutionRoute.cpu_reference
+        ):
+            decision = RouteDecision(
+                requested_route=decision.requested_route,
+                executed_route=ExecutionRoute.cpu_reference,
+                fallback_reason=FallbackReason.KERNEL_UNAVAILABLE,
+                device_backend="cpu_reference",
+                device_name=decision.device_name,
+                device_vendor=decision.device_vendor,
+                kernel_identity="hashlib_sha256d",
+                kernel_build_status="n/a_cpu_reference",
+                launch_cap=max(
+                    1, int(getattr(self._hasher, "grind_batch", 1) or 1)
+                ),
+            )
 
         # --- freshness guard, BEFORE any device time is consumed -----------
         if identity is not None and not plan.is_valid_for(identity):
@@ -483,7 +504,6 @@ class ExecutionRouter:
                 None,
             )
 
-        requested_order = self._nonce_order(plan)
         # Hendrix runs where it is implemented: the CPU reference, and an
         # OpenCL M32 route whose program carries the bitcoin_sha256d_hendrix
         # kernel. The schedule is resolved before any work so an unavailable
@@ -496,6 +516,11 @@ class ExecutionRouter:
             if requested_order == NONCE_ORDER_HENDRIX
             and (decision.executed_route is ExecutionRoute.cpu_reference or on_device)
             and plan.window > 0
+            else None
+        )
+        poincare_order = (
+            poincare_11d_nonces(header, plan.base_step, plan.window)
+            if requested_order == NONCE_ORDER_POINCARE_11D and plan.window > 0
             else None
         )
 
@@ -519,31 +544,50 @@ class ExecutionRouter:
         winner_digest: Optional[bytes] = None
         hit_sample: List[int] = []
         invalidated_midway = False
+        device_error: Optional[str] = None
 
         for chunk in chunks:
             if is_still_fresh is not None and not is_still_fresh():
                 invalidated_midway = True
                 break
-            if schedule is not None and on_device:
-                position = (chunk.start - plan.base_step) & 0xFFFFFFFF
-                nonce, digest, done = self._hasher.grind_target_hendrix(
-                    header,
-                    bytes(target)[::-1],
-                    plan.base_step,
-                    plan.window,
-                    schedule.stride,
-                    position,
-                    chunk.count,
-                )
-            elif schedule is not None:
-                position = (chunk.start - plan.base_step) & 0xFFFFFFFF
-                nonce, digest, done = self._cpu_nonces(
-                    header,
-                    target,
-                    hendrix_nonces(plan.base_step, schedule, position, chunk.count),
-                )
-            else:
-                nonce, digest, done = self._run_chunk(plan, header, target, chunk, decision)
+            try:
+                if schedule is not None and on_device:
+                    position = (chunk.start - plan.base_step) & 0xFFFFFFFF
+                    nonce, digest, done = self._hasher.grind_target_hendrix(
+                        header,
+                        bytes(target)[::-1],
+                        plan.base_step,
+                        plan.window,
+                        schedule.stride,
+                        position,
+                        chunk.count,
+                    )
+                elif schedule is not None:
+                    position = (chunk.start - plan.base_step) & 0xFFFFFFFF
+                    nonce, digest, done = self._cpu_nonces(
+                        header,
+                        target,
+                        hendrix_nonces(plan.base_step, schedule, position, chunk.count),
+                    )
+                elif poincare_order is not None:
+                    position = (chunk.start - plan.base_step) & 0xFFFFFFFF
+                    nonce, digest, done = self._cpu_nonces(
+                        header,
+                        target,
+                        poincare_order[position : position + chunk.count],
+                    )
+                else:
+                    nonce, digest, done = self._run_chunk(plan, header, target, chunk, decision)
+            except Exception as exc:
+                # The CPU reference is the proof oracle: its failure is a
+                # defect, never a device condition, so it propagates.
+                if decision.executed_route is ExecutionRoute.cpu_reference:
+                    raise
+                # A device chunk that raised (OpenCL error, or the hasher's
+                # own recheck refusing a false hit) fails closed as an
+                # explicit DEVICE_ERROR record carrying the cause verbatim.
+                device_error = f"{type(exc).__name__}: {exc}"
+                break
             completed += int(done)
             if nonce is not None and winner_nonce is None:
                 winner_nonce, winner_digest = nonce, digest
@@ -588,9 +632,31 @@ class ExecutionRouter:
                         hit_sample=hit_sample,
                         winner_nonce=None,
                         locally_valid=0,
+                        device_error=DEVICE_RESULT_MISMATCH,
                     ),
                     None,
                 )
+
+        if device_error is not None:
+            return (
+                self._build_record(
+                    plan,
+                    decision,
+                    requested_order,
+                    state=CompletionState.DEVICE_ERROR,
+                    actual_window=completed,
+                    completed_items=completed,
+                    elapsed=elapsed,
+                    kernel_ms=kernel_ms,
+                    launches=launches,
+                    chunk_count=len(chunks),
+                    hit_sample=hit_sample,
+                    winner_nonce=None,
+                    locally_valid=0,
+                    device_error=device_error,
+                ),
+                None,
+            )
 
         if invalidated_midway:
             state = CompletionState.INVALIDATED
@@ -679,6 +745,7 @@ class ExecutionRouter:
         hit_sample: Sequence[int],
         winner_nonce: Optional[int],
         locally_valid: int,
+        device_error: Optional[str] = None,
     ) -> ExecutionRecord:
         """Assemble the evidence-backed record for work that did run.
 
@@ -734,7 +801,9 @@ class ExecutionRouter:
             hash_count=completed_items,
             elapsed_seconds=elapsed,
             kernel_ms=kernel_ms,
-            temperature_c=None,  # not measured by the runtime
+            # Only a hasher that truly sampled device temperature (e.g. a
+            # remote agent's probe) may fill this; otherwise None.
+            temperature_c=getattr(self._hasher, "last_temperature_c", None),
             locally_valid_shares=locally_valid,
             pool_accepted=0,
             pool_rejected=0,
@@ -769,6 +838,7 @@ class ExecutionRouter:
             planned_lane_order=plan.lane_order,
             planned_window_start=plan.base_step,
             chunk_count=chunk_count,
+            device_error=device_error,
         )
         # hit_sample is telemetry on the returned record, kept out of the
         # evidence fields: it is NOT window-completion evidence.
