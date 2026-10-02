@@ -133,6 +133,54 @@ def test_cuda_probe_fails_closed_when_runtime_missing(monkeypatch):
     assert "cupy intentionally absent" in report.reason
 
 
+def test_cuda_runtime_builds_exact_declared_kernel_set(monkeypatch):
+    built = []
+
+    class Device:
+        def use(self):
+            return None
+
+    class RuntimeApi:
+        @staticmethod
+        def getDeviceCount():
+            return 1
+
+        @staticmethod
+        def getDeviceProperties(index):
+            assert index == 0
+            return {
+                "name": b"test-cuda",
+                "multiProcessorCount": 32,
+                "totalGlobalMem": 1024,
+            }
+
+    class Cuda:
+        runtime = RuntimeApi()
+
+        @staticmethod
+        def Device(index):
+            assert index == 0
+            return Device()
+
+    class FakeCp:
+        cuda = Cuda()
+
+        @staticmethod
+        def RawKernel(source, name, options=()):
+            assert "tensor_kron_1d_f32" in source
+            assert "tensor_kron_2d_f32" in source
+            assert options == ("--std=c++11",)
+            built.append(name)
+            return object()
+
+    monkeypatch.setattr(native_tensor, "_load_cupy", lambda: FakeCp())
+    runtime = native_tensor.ChronusCudaTensorRuntime()
+    assert set(built) == set(runtime._KERNEL_NAMES)
+    assert "tensor_kron_f32" not in built
+    assert "tensor_kron_1d_f32" in built
+    assert "tensor_kron_2d_f32" in built
+
+
 def test_metal_probe_requires_darwin(monkeypatch):
     monkeypatch.setattr(native_tensor.platform, "system", lambda: "Linux")
     report = native_tensor.probe_metal()
