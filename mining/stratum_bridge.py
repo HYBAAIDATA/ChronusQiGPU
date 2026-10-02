@@ -1,5 +1,13 @@
 """Python Stratum V1 bridge: TCP subscribe/authorize/notify/submit.
 
+CANONICITY: this is a LEGACY bridge — a second Stratum client for the HYBA
+hash-pipeline harness and its tests. It is NOT the canonical production
+mining path and owns no live mining state. The canonical path is
+``chronus.mla1517.mining.coordinator`` (epochs, leases, dispatch
+certificates, submission lifecycle) driven by
+``chronus/mla1517_platform/python/mining_runtime.py`` (``--mine``).
+Do not add new production callers here.
+
 Ports the proven `src/lib/stratum_tcp_client.ts` protocol to Python so the
 Python hash pipeline (mining/hash_pipeline.py) can close the P0 gate:
 shares_accepted > 0 on testnet BEFORE mainnet (workflow pdf section 1, 7).

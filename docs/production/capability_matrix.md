@@ -35,11 +35,11 @@ mathematical/computational capability; Owner B rows concern mining/workflows.
 | meta_evolution | Meta-evolution (`Intelligence.meta_evolution`) | orchestrator | — | PASS | self_test verdict (dphi=+0.0038, transitions=5) |
 | pythia_learning | Learning substrate (`Intelligence.pythia_learning`) | orchestrator | — | PASS | self_test ACTIVE (learned=14, consolidated=5) |
 | pythia_memory | Memory system (`Intelligence.pythia_memory`) | orchestrator | — | PASS | self_test ACTIVE (semantic=91) |
-| predictive_solver | Predictive solver (`Intelligence.predictive_solver`) | orchestrator | — | PENDING-A | needs nltk vader_lexicon at runtime |
+| predictive_solver | Predictive solver (`Intelligence.predictive_solver`) | orchestrator | — | **PASS** (Owner A refresh) | Reachable through `IntelligenceOrchestrator.solve` and `orcle.py`; fallback candidates are now independently SHA-256d/target rechecked and malformed header/target lengths fail closed; 5 focused tests PASS. The former `nltk vader_lexicon` note was stale: this module has no NLTK import |
 | counterfactual | Counterfactual intelligence | orchestrator | — | **PASS** | Pearl intervention/counterfactual rungs measured @7f89d84; receipt-chain seams in `tests/test_c_toe_bridge.py` (#23) |
 | safety | Hashrate-cap FSM (`Intelligence.safety_constraints`) | orchestrator | — | PENDING-B | — |
 | registry | 45-module registry (`Intelligence.registry`) | orchestrator | — | PENDING-B | — |
-| manifold_bridge | substrate-12 storage (`toe.manifold_bridge`) | fabric | — | PENDING-A | — |
+| manifold_bridge | substrate-12 storage (`toe.manifold_bridge`) | fabric | — | NOT_RUN @ current base | Source-reachable from `TOESystem`, agentic mining, chain verification, and TOE seam; no current execution in this wave |
 | pythia_agent | Deterministic orchestration (`pythia_agent`) | idle | — | NOT_RUN | honest idle label |
 | ontology_chain | Ontology mining chain | idle | — | NOT_RUN | honest idle label |
 | search_tree | Parallel search tree | idle | — | NOT_RUN | honest idle label |

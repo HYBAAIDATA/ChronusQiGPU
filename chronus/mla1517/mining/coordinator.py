@@ -66,6 +66,8 @@ from .hendrix_order import NonceOrderUnavailable, hendrix_schedule, load_hendrix
 from .poincare_11d_order import load_poincare_11d
 from .recovery_authority import RecoveryGovernor, RecoveryRecord
 from .nonce_lease import LeaseConflict, LeaseExhausted, LeaseRecord
+from .cycle_fsm import MiningCycleLedger, MiningCycleState
+from .decision_journal import DecisionDisposition, DecisionJournal
 from .search_plan import (
     CompletionState,
     ExecutionRecord,
@@ -300,6 +302,10 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         # when Salamander restarts it after a DEVICE_ERROR; None means no
         # restart is available and such a recovery fails honestly.
         self._execution_hasher_factory = kwargs.pop("execution_hasher_factory", None)
+        # The lane census the runtime probed; surfaced in evidence. None in
+        # direct-construction harnesses means "registry not wired", which is
+        # itself reported in telemetry.
+        self.backend_registry = kwargs.pop("backend_registry", None)
         causal_log_path = kwargs.pop("causal_log_path", None)
         super().__init__(*args, **kwargs)
         # A started worker hashes; whether it may submit is a separate,
@@ -408,6 +414,14 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self.execution_hasher = hasher if hasher is not None else CpuReferenceHasher()
         self._software_revision = software_revision()
         self.causal = CausalLedger(path=causal_log_path, revision=self._software_revision)
+        # The guarded operational cycle. Every transition is evidence in the
+        # causal ledger; an undeclared edge raises and is counted.
+        self.cycle = MiningCycleLedger(
+            on_event=self._mirror_cycle_event,
+        )
+        # Durable decision evidence: the full field contract from the run
+        # spec, mirrored into the same causal trail.
+        self.decisions = DecisionJournal(on_record=self._mirror_decision)
         self.recovery = RecoveryGovernor(on_event=self._on_recovery_event)
         self._evidence_sink: Any = None
         self._evidence_published_at = 0.0
@@ -442,7 +456,10 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
 
         def _stratum_sink(snapshot: dict[str, Any]) -> None:
             # Stratum publishes on every job/target/session edge; re-binding
-            # here invalidates queued plans in the same notification.
+            # here invalidates queued plans in the same notification. The
+            # lifecycle flags are appended so consumers never have to
+            # re-derive separated states from one conflated flag.
+            snapshot["lifecycle"] = self._lifecycle_flags()
             if upstream_sink is not None:
                 upstream_sink(snapshot)
             try:
@@ -452,6 +469,100 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             self._work_wake.set()
 
         self.stratum_status_sink = _stratum_sink
+
+    # -- cycle ledger and decision mirrors -------------------------------- #
+
+    def _mirror_cycle_event(self, event: Any) -> None:
+        axes = {
+            key: event.evidence.get(key)
+            for key in ("pool_session_id", "generation", "job_fingerprint")
+            if event.evidence.get(key) is not None
+        }
+        self.causal.record(
+            "cycle_transition",
+            CausalCoordinate(**axes),
+            **event.as_dict(),
+        )
+
+    def _mirror_decision(self, record: Any) -> None:
+        self.causal.record(
+            "decision",
+            CausalCoordinate(
+                pool_session_id=record.pool_session_id,
+                generation=record.generation,
+                job_fingerprint=record.job_fingerprint,
+            ),
+            **record.as_dict(),
+        )
+
+    def _record_decision(
+        self,
+        *,
+        decision_id: str,
+        coordinate: CausalCoordinate,
+        observation: dict[str, Any],
+        available_actions: list[str],
+        selected_action: str,
+        reason: str,
+        execution_target: str | None = None,
+        job_id: str | None = None,
+        disposition: str = DecisionDisposition.PENDING.value,
+    ) -> None:
+        self.decisions.record(
+            decision_id=decision_id,
+            pool_session_id=coordinate.pool_session_id,
+            generation=coordinate.generation,
+            job_id=job_id,
+            job_fingerprint=coordinate.job_fingerprint,
+            observation=observation,
+            available_actions=available_actions,
+            selected_action=selected_action,
+            reason=reason,
+            execution_target=execution_target,
+            disposition=disposition,
+        )
+
+    def _lifecycle_flags(self) -> dict[str, Any]:
+        """The separated pool/session flags — each its own truth.
+
+        ``ready`` (transport+subscription+authorization+target+job) is kept
+        for compatibility, but the split flags are the public contract:
+        a state that is not yet true reports False, never a guess.
+        """
+        runtime = getattr(self.client, "runtime_state", None)
+        identity = self.agentic.current_identity()
+        permitted = self.submission_permitted() if self.client is not None else False
+        connected = bool(getattr(runtime, "transport_connected", False))
+        subscribed = bool(getattr(runtime, "subscribed", False))
+        authorized = bool(getattr(runtime, "authorized", False))
+        job_available = getattr(runtime, "current_job", None) is not None
+        target_available = getattr(runtime, "target", None) is not None
+        submission_phase = getattr(runtime, "submission_phase", None)
+        mining_active = bool(
+            self.mining_enabled
+            and self.session.state == "SEARCHING"
+            and not self.work_throttled
+            and self.recovery.mode in ("NORMAL",)
+            and identity is not None
+        )
+        submission_ready = bool(
+            permitted
+            and connected
+            and subscribed
+            and authorized
+            and submission_phase is not None
+            and submission_phase.value == "IDLE"
+            and mining_active
+        )
+        return {
+            "transport_connected": connected,
+            "subscribed": subscribed,
+            "authorized": authorized,
+            "job_available": job_available,
+            "target_available": target_available,
+            "mining_active": mining_active,
+            "submission_ready": submission_ready,
+        }
 
     async def run_hardware_loop(
         self,
@@ -476,6 +587,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         )
         if self._agentic_state_path:
             self.agentic.load_state(self._agentic_state_path)
+        self.cycle.ensure(MiningCycleState.SCAN, reason="hardware loop entered")
         self._precompute_task = asyncio.create_task(self._precompute_loop())
         try:
             await super().run_hardware_loop(
@@ -495,6 +607,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 with contextlib.suppress(Exception):
                     await self.client.close()
                 self.client = None
+            self.cycle.halt("hardware loop stopped")
 
     async def run_execution_loop(
         self,
@@ -531,6 +644,19 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         delay = self.reconnect_delay
         try:
             while True:
+                # A healing step or a closed cycle returns to SCAN; nothing
+                # re-enters search mid-state.
+                if self.cycle.state is MiningCycleState.HEAL:
+                    self.cycle.transition(
+                        MiningCycleState.NEXT_CYCLE,
+                        event="healed",
+                        reason="recovery step completed",
+                    )
+                if self.cycle.state is MiningCycleState.NEXT_CYCLE:
+                    self.cycle.transition(
+                        MiningCycleState.SCAN, event="success", reason="next cycle"
+                    )
+                self.cycle.ensure(MiningCycleState.SCAN, reason="execution loop top")
                 if not self.client or not self.client.connected:
                     if self.client:
                         with contextlib.suppress(Exception):
@@ -545,6 +671,12 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                             else "every pool unavailable"
                         )
                         LOG.warning("%s: %s; retrying in %.1fs", kind, exc, delay)
+                        self.cycle.transition(
+                            MiningCycleState.HEAL,
+                            event="failure",
+                            reason=f"{kind}: {exc}",
+                            evidence={"backoff_s": delay, "kind": kind},
+                        )
                         self._publish_metrics(force=True)
                         await asyncio.sleep(delay)
                         delay = min(delay * 2, max_backoff_s)
@@ -558,6 +690,11 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                         await self.search_current_job()
                     except (ConnectionError, TimeoutError, asyncio.IncompleteReadError) as exc:
                         LOG.warning("pool connection lost during search: %s", exc)
+                        self.cycle.try_transition(
+                            MiningCycleState.HEAL,
+                            event="failure",
+                            reason=f"pool connection lost during search: {exc}",
+                        )
                         with contextlib.suppress(Exception):
                             await self.client.close()
                         self.client = None
@@ -592,6 +729,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     os.unlink(self.control_socket_path)
             if self.telemetry:
                 self.telemetry.close()
+            self.cycle.halt("execution loop stopped")
 
     def set_agentic_state_path(self, path: str) -> None:
         """Configure durable policy and closed-loop optimisation state."""
@@ -737,6 +875,14 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             "schema": "pythia.mining_evidence/1",
             "observed_at": time.time(),
             "software_revision": self._software_revision,
+            "cycle": self.cycle.snapshot(),
+            "lifecycle": self._lifecycle_flags(),
+            "decisions": self.decisions.snapshot(12),
+            "backends": (
+                self.backend_registry.snapshot()
+                if self.backend_registry is not None
+                else {"registry": "not wired", "lanes": "Unavailable"}
+            ),
             "agentic": self.agentic.snapshot(),
             "last_execution": self.last_execution,
             "tuning": asdict(decision) if decision is not None else None,
@@ -1009,6 +1155,18 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 exc,
             )
             return None
+
+    def _toe_advice_reason(self) -> str:
+        signal = self.last_toe_signal
+        if signal is None:
+            return "TOE_UNAVAILABLE_OR_INCOMPLETE"
+        if not signal.is_valid():
+            return "INVALID_SIGNAL_FAIL_CLOSED"
+        if signal.causal_throttle:
+            return "SAFETY_THROTTLE"
+        if signal.intervention_optimal and signal.face_confidence > 0:
+            return "LANE_BIAS_APPLIED"
+        return "NO_OPTIMAL_INTERVENTION"
 
     def _record_toe_boundary_violation(self, exc: TOEConsensusBoundaryError) -> None:
         """Record a refused TOE output; the evidence is rejected, not sanitized."""
@@ -1646,6 +1804,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             policy_id=_BASELINE_POLICY,
             evidence_refs={
                 "lane_order_source": order_source,
+                "toe_advice_reason": self._toe_advice_reason(),
                 **(self.last_toe_frame.evidence_refs() if self.last_toe_frame else {}),
             },
             created_at=time.monotonic(),
@@ -1699,6 +1858,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     "toe_face_bias": (
                         self.last_toe_signal.face_bias if self.last_toe_signal is not None else None
                     ),
+                    "toe_advice_reason": self._toe_advice_reason(),
                     **(self.last_toe_frame.evidence_refs() if self.last_toe_frame else {}),
                 },
                 created_at=time.monotonic(),
@@ -1747,6 +1907,11 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         )
         if not self.submission_permitted():
             self._record_submission_gate("SUBMISSION_DISABLED", job_id)
+            self.cycle.try_transition(
+                MiningCycleState.EVALUATE,
+                event="refused",
+                reason="SUBMISSION_DISABLED",
+            )
             return False  # shadow: a proof-checked share, never written
         if self.chain_observer is None:
             raise RuntimeError("live submission requires a Bitcoin chain observer")
@@ -1754,10 +1919,18 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         if proof.header[4:36][::-1].hex() != tip["block_hash"]:
             LOG.warning("candidate parent differs from verified chain tip")
             self._record_submission_gate("PARENT_MISMATCH", job_id)
+            self.cycle.try_transition(
+                MiningCycleState.EVALUATE, event="refused", reason="PARENT_MISMATCH"
+            )
             return False
         if self.session.already_submitted(proof.digest[::-1].hex()):
             LOG.warning("share already submitted; refusing a duplicate mining.submit")
             self._record_submission_gate("DUPLICATE_SUBMISSION", job_id)
+            self.cycle.try_transition(
+                MiningCycleState.EVALUATE,
+                event="refused",
+                reason="DUPLICATE_SUBMISSION",
+            )
             return False
         self._last_submission_id = f"submission:{uuid.uuid4()}"
         self.session.begin_submission(
@@ -1795,6 +1968,12 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             self._last_pool_outcome = (
                 PoolOutcome.OUTCOME_UNKNOWN if wrote else PoolOutcome.NOT_SUBMITTED
             )
+            self.cycle.try_transition(
+                MiningCycleState.HEAL,
+                event="failure",
+                reason="submission write failed",
+                evidence={"outcome": self._last_pool_outcome.value},
+            )
             raise
         finally:
             self.session.submission_finished(result)
@@ -1804,6 +1983,12 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             if self._bridge is not None and self.session.state == "SEARCHING":
                 self._bridge.start()
         self._last_pool_outcome = PoolOutcome.ACCEPTED if result is True else PoolOutcome.REJECTED
+        self.cycle.try_transition(
+            MiningCycleState.ACKNOWLEDGE,
+            event="success",
+            reason=self._last_pool_outcome.value,
+            evidence={"result": result},
+        )
         return result
 
     async def search_current_job(self) -> bool:
@@ -1814,6 +1999,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         literal pool ACCEPTED response.
         """
         async with self._search_lock:
+            self.cycle.ensure(MiningCycleState.SCAN, reason="search_current_job")
             if (
                 not self.mining_enabled
                 or self.session.state != "SEARCHING"
@@ -1828,6 +2014,17 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     "reason": self.agentic.admission_block_reason(),
                 }
                 return False
+            self.cycle.transition(
+                MiningCycleState.PLAN,
+                event="success",
+                reason="work identity bound",
+                evidence={
+                    "pool_session_id": identity.pool_session_id,
+                    "generation": identity.generation,
+                    "job_fingerprint": identity.job_fingerprint,
+                    "job_id": identity.job_id,
+                },
+            )
             client = self.client
             adapter = client.proof_adapter
             job = adapter.current_job
@@ -1871,6 +2068,16 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     if reserved is not None:
                         self.agentic.release_lease(reserved.lease_id)
                     LOG.warning("baseline search refused: %s", exc)
+                    self.cycle.transition(
+                        MiningCycleState.EVALUATE,
+                        event="failure",
+                        reason=f"baseline lease refused: {exc}",
+                    )
+                    self.cycle.transition(
+                        MiningCycleState.NEXT_CYCLE,
+                        event="success",
+                        reason="cycle closed without dispatch",
+                    )
                     self.last_execution = {"executed": False, "reason": f"lease: {exc}"}
                     return False
                 self.agentic.note_fallback(fallback_reason)
@@ -1879,6 +2086,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 pool_session_id=identity.pool_session_id,
                 generation=identity.generation,
                 job_fingerprint=identity.job_fingerprint,
+                job_id=identity.job_id,
                 toe_frame_id=plan.toe_frame_id,
                 plan_id=plan.plan_id,
                 lease_id=lease.lease_id,
@@ -1894,6 +2102,24 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 nonce_start=lease.start,
                 window=plan.window,
             )
+            self._record_decision(
+                decision_id=plan.plan_id,
+                coordinate=coordinate,
+                job_id=job.job_id,
+                observation={
+                    "plan_source": plan.source.value,
+                    "fallback_reason": fallback_reason,
+                    "queue_depth": self.agentic._queue.qsize(),
+                    "throttled": self.work_throttled,
+                    "governor_cap_hs": self.governor.cap_hs,
+                },
+                available_actions=[
+                    f"{PlanSource.AGENTIC_PRECOMPUTED.value}:{plan.executor_route}",
+                    f"{PlanSource.BASELINE_FALLBACK.value}:{plan.executor_route}",
+                ],
+                selected_action=f"{plan.source.value}:{plan.executor_route}",
+                reason=fallback_reason or "leased plan ready",
+            )
             record: ExecutionRecord | None = None
             candidate = None
             outcome = PoolOutcome.NO_CANDIDATE
@@ -1906,12 +2132,39 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     self.causal.record(
                         "dispatch_refused", coordinate, reason=certificate["refusal"]
                     )
+                    self.decisions.resolve(
+                        plan.plan_id,
+                        result={"refused": certificate["refusal"]},
+                        disposition=DecisionDisposition.REFUSED.value,
+                    )
+                    self.cycle.transition(
+                        MiningCycleState.EVALUATE,
+                        event="failure",
+                        reason=f"dispatch certificate refused: {certificate['refusal']}",
+                    )
+                    self.cycle.transition(
+                        MiningCycleState.NEXT_CYCLE,
+                        event="success",
+                        reason="cycle closed on refusal",
+                    )
                     self.last_execution = {
                         "executed": False,
                         "reason": f"dispatch_algebra: {certificate['refusal']}",
                     }
                     self._publish_evidence(force=True)
                     return False
+                self.cycle.transition(
+                    MiningCycleState.MINE,
+                    event="success",
+                    reason="dispatch certified; executing leased window",
+                    evidence={
+                        "plan_id": plan.plan_id,
+                        "lease_id": lease.lease_id,
+                        "route": plan.executor_route,
+                        "window": plan.window,
+                        "source": plan.source.value,
+                    },
+                )
                 record, candidate = None, None
                 self._execution_in_flight = True
                 try:
@@ -1926,6 +2179,28 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     )
                 finally:
                     self._execution_in_flight = False
+                self.cycle.transition(
+                    MiningCycleState.VERIFY,
+                    event="success",
+                    reason="execution record produced",
+                    evidence={
+                        "completion_state": record.completion_state.value,
+                        "executed_route": record.executed_route,
+                        "hash_count": record.hash_count,
+                        "locally_valid_shares": record.locally_valid_shares,
+                    },
+                )
+                record = replace(
+                    record,
+                    job_id=job.job_id,
+                    candidate_nonce=candidate["nonce"] if candidate is not None else None,
+                    candidate_host_verified=(
+                        bool(candidate["independently_rechecked"])
+                        if candidate is not None
+                        else None
+                    ),
+                    recovery_id=coordinate.recovery_id,
+                )
                 current = self._refresh_work_identity()
                 stale = (
                     client is not self.client
@@ -1940,11 +2215,23 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     self.causal.record("candidate_found", coordinate, nonce=candidate["nonce"])
                     if stale:
                         outcome = PoolOutcome.NOT_SUBMITTED
+                        self.cycle.transition(
+                            MiningCycleState.EVALUATE,
+                            event="stale",
+                            reason="identity changed after execution; share abandoned",
+                            evidence={"stale": True},
+                        )
                     else:
                         self._last_submission_id = None
                         self._pending_correlation = {
                             k: v for k, v in coordinate.as_dict().items() if k != "recovery_id"
                         }
+                        self.cycle.transition(
+                            MiningCycleState.SUBMIT,
+                            event="success",
+                            reason="locally verified candidate passes epoch/target checks",
+                            evidence={"nonce": candidate["nonce"]},
+                        )
                         try:
                             await self.submit_candidate(
                                 job_id=job.job_id,
@@ -1959,6 +2246,26 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                                 coordinate = coordinate.extend(
                                     submission_id=self._last_submission_id
                                 )
+                        self.cycle.try_transition(
+                            MiningCycleState.EVALUATE,
+                            event=outcome.value,
+                            reason="pool outcome recorded",
+                            evidence={"outcome": outcome.value},
+                        )
+                elif record.completion_state is CompletionState.INVALIDATED:
+                    self.cycle.transition(
+                        MiningCycleState.EVALUATE,
+                        event="stale",
+                        reason="execution invalidated mid-flight by job or session change",
+                        evidence={"completion_state": record.completion_state.value},
+                    )
+                else:
+                    self.cycle.transition(
+                        MiningCycleState.EVALUATE,
+                        event="success",
+                        reason=f"no candidate: {record.completion_state.value}",
+                        evidence={"completion_state": record.completion_state.value},
+                    )
             finally:
                 completed = record is not None and record.completed_work_items > 0
                 self.agentic.finish_execution(lease.lease_id, scanned=completed)
@@ -1969,8 +2276,37 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                         shares=int(candidate is not None),
                     )
                     self._record_execution(identity, plan, lease, record, outcome, coordinate)
+                    self.decisions.resolve(
+                        plan.plan_id,
+                        result={
+                            "completion_state": record.completion_state.value,
+                            "hash_count": record.hash_count,
+                            "candidate": candidate is not None,
+                            "pool_outcome": outcome.value,
+                        },
+                        disposition=(
+                            DecisionDisposition.STALE.value
+                            if record.completion_state is CompletionState.INVALIDATED
+                            else DecisionDisposition.EXECUTED.value
+                            if record.executed_route is not None
+                            else DecisionDisposition.REFUSED.value
+                        ),
+                        execution_target=record.executed_route,
+                    )
             if record is not None and self._bridge is None:
                 await self._observe_execution_health(record)
+            if self.cycle.state is MiningCycleState.EVALUATE:
+                self.cycle.transition(
+                    MiningCycleState.NEXT_CYCLE,
+                    event="success",
+                    reason="cycle evaluated and recorded",
+                )
+            elif self.cycle.state is MiningCycleState.HEAL:
+                self.cycle.transition(
+                    MiningCycleState.NEXT_CYCLE,
+                    event="healed",
+                    reason="recovery action dispatched",
+                )
             return outcome is PoolOutcome.ACCEPTED
 
     def _record_execution(
@@ -1994,6 +2330,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             pool_outcome=outcome,
             pool_accepted=int(outcome is PoolOutcome.ACCEPTED),
             pool_rejected=int(outcome is PoolOutcome.REJECTED),
+            pool_stale=int(outcome is PoolOutcome.STALE),
             recovery_event=self.agentic.is_recovery_active(),
             lease_id=lease.lease_id,
             generation=identity.generation,
@@ -2003,6 +2340,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             candidate_id=coordinate.candidate_id,
             submission_id=coordinate.submission_id,
             learning_record_id=coordinate.learning_record_id,
+            job_id=identity.job_id,
+            recovery_id=coordinate.recovery_id,
         )
         self.agentic.record_outcome(final)
         if outcome in (PoolOutcome.ACCEPTED, PoolOutcome.REJECTED):
@@ -2019,6 +2358,9 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             plan_id=plan.plan_id,
             toe_frame_id=plan.toe_frame_id,
         )
+        # The measured counters for this window are known now; publish them
+        # at completion instead of leaving the sink one interval behind.
+        self._publish_metrics(force=True)
         now = time.monotonic()
         self.world.tick(now)
         self._score_forecasts(final)
@@ -2105,17 +2447,25 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             **coordinate.as_dict(),
             "plan_source": final.plan_source.value,
             "plan_id": final.plan_id,
+            "search_plan_id": final.search_plan_id,
             "plan_fallback_reason": final.plan_fallback_reason,
             "extranonce2": lease.extranonce2,
             "nonce_start": lease.start,
             "requested_window": plan.window,
             "attempts": final.hash_count,
+            "candidate_nonce": final.candidate_nonce,
+            "candidate_host_verified": final.candidate_host_verified,
             "requested_route": final.requested_route,
             "executed_route": final.executed_route,
             "route_fallback_reason": final.fallback_reason,
             "evidence_class": final.evidence_class.value,
+            "truth_class": final.truth_class,
             "completion_state": final.completion_state.value,
+            "toe_advice_reason": final.toe_advice_reason,
+            "device_backend": final.device_backend,
             "device_name": final.device_name,
+            "elapsed_seconds": final.elapsed_seconds,
+            "pool_stale": final.pool_stale,
             "kernel_launch_count": final.kernel_launch_count,
             "kernel_ms": final.kernel_ms,
             "pool_outcome": outcome.value,
@@ -2154,6 +2504,12 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             and self.recovery.active_recovery_id() is None
             and self.recovery.mode != "FAULTED"
         ):
+            self.cycle.try_transition(
+                MiningCycleState.HEAL,
+                event="failure",
+                reason=f"execution device error: {record.device_error or 'DEVICE_ERROR'}",
+                evidence={"route": record.executed_route},
+            )
             await self._restart_execution_device(record.device_error or "DEVICE_ERROR")
         if closed or not healthy:
             self._sync_recovery_gate()
@@ -2187,11 +2543,24 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             self.execution_hasher = rebuilt
             return command
 
+        prior_backend = getattr(self.execution_hasher, "backend", None)
         try:
             self.recovery.dispatch(record, [(command, restart)])
         except Exception as exc:
             LOG.error("Salamander could not restart the execution device: %s", exc)
             return
+        new_backend = getattr(self.execution_hasher, "backend", None)
+        if new_backend != prior_backend:
+            # Alternative routing is evidence: the registry re-probed and
+            # moved the lane; that change belongs in the trail.
+            self.causal.record(
+                "execution_backend_rerouted",
+                CausalCoordinate(recovery_id=record.recovery_id),
+                previous_backend=prior_backend,
+                backend=new_backend,
+                device=getattr(self.execution_hasher, "device", None),
+                fallback_reason=getattr(self.execution_hasher, "fallback_reason", None),
+            )
         LOG.warning(
             "Salamander restarted the execution device (%s): backend=%s device=%s",
             record.recovery_id,

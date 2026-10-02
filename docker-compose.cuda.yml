@@ -1,9 +1,16 @@
 # NVIDIA CUDA override — strictly-defined GPU reservations.
 # Usage: GPU_BACKEND=cuda docker compose -f docker-compose.yml -f docker-compose.cuda.yml up -d
 #
-# Replaces the OpenCL /dev/dri passthrough with the NVIDIA driver device
-# reservation. The container gets direct metal access via the NVIDIA
-# Container Toolkit; HYBA_BACKEND=cuda selects the CUDA path in-code.
+# Replaces the OpenCL /dev/dri passthrough with an NVIDIA driver device
+# reservation. The NVIDIA Container Toolkit exposes the physical GPU to the
+# container. Chronus then reports/uses only execution surfaces whose runtime
+# is actually present. The native `chronus-cuda` tensor path requires a CuPy
+# build compatible with the deployed CUDA runtime; this override deliberately
+# does not guess or pin a CUDA-generation-specific CuPy wheel.
+#
+# HYBA_BACKEND=cuda is a deployment request, not proof that every workload has
+# a CUDA implementation. The existing mining SHA-256d path keeps its own
+# evidence boundary; native CUDA tensor execution is independently probed.
 services:
   pythia:
     environment:
