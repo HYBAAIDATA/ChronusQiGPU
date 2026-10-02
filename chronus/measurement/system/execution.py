@@ -19,6 +19,14 @@ def _field(value: Any, name: str, default: Any = "") -> Any:
     return getattr(value, name, default)
 
 
+def _execution_backend(backend: str) -> str:
+    """Reduce Chronus backend labels to the physical census backend name."""
+    value = _norm(backend)
+    if value.startswith("chronus-"):
+        value = value[len("chronus-") :]
+    return value.split(":", 1)[0]
+
+
 def bind_execution_device(
     baseline: Any,
     *,
@@ -28,13 +36,19 @@ def bind_execution_device(
 ) -> Dict[str, Any]:
     """Return an evidence record for the device that executed ``workload``.
 
-    Matching is evidence-based: the workload must expose a device identity that
-    names a censused device. A logical ``chronus`` contract record is never
-    silently substituted for an OpenCL/CUDA/Metal execution device.
-    ``baseline`` may be the live ``SystemBaseline`` or its attested dictionary.
+    Matching first requires device-identity evidence. If runtime and census use
+    different device naming schemes, a second match is permitted only when the
+    declared physical backend maps to exactly one censused device. That method
+    is reported explicitly as ``baseline_unique_backend_match`` rather than
+    masquerading as a name match.
+
+    A logical ``chronus`` contract record is never substituted for an
+    OpenCL/CUDA/Metal execution device. ``baseline`` may be the live
+    ``SystemBaseline`` or its attested dictionary.
     """
     backend_norm = _norm(backend)
     device_norm = _norm(device_id)
+    physical_backend = _execution_backend(backend)
     devices = list(_field(baseline, "devices", ()) or ())
     fingerprints = list(_field(baseline, "fingerprints", ()) or ())
 
@@ -44,11 +58,13 @@ def bind_execution_device(
         name = _norm(_field(device, "name", ""))
         candidate_backend = _norm(_field(device, "backend", ""))
 
-        if candidate_backend == "chronus" and not backend_norm.startswith("chronus"):
+        if candidate_backend == "chronus" and physical_backend != "chronus":
             continue
 
         score = 0
-        if name and device_norm and (name == device_norm or name in device_norm or device_norm in name):
+        if name and device_norm and (
+            name == device_norm or name in device_norm or device_norm in name
+        ):
             score += 100
         if name and name in backend_norm:
             score += 80
@@ -65,6 +81,22 @@ def bind_execution_device(
             best_score = score
 
     matched = best_index >= 0 and best_score >= 80
+    method = "baseline_device_identity_match" if matched else "unmatched"
+
+    # Some native APIs expose a logical runtime device string while the system
+    # census exposes the chipset model. Backend identity is sufficient only if
+    # the census proves there is exactly one physical candidate for that API.
+    if not matched and device_norm and device_norm != "unavailable" and physical_backend:
+        backend_candidates = [
+            index
+            for index, device in enumerate(devices)
+            if _norm(_field(device, "backend", "")) == physical_backend
+        ]
+        if len(backend_candidates) == 1:
+            best_index = backend_candidates[0]
+            matched = True
+            method = "baseline_unique_backend_match"
+
     fingerprint = ""
     matched_device = ""
     matched_backend = ""
@@ -83,5 +115,5 @@ def bind_execution_device(
         "device_fingerprint": fingerprint,
         "matched_device": matched_device,
         "matched_backend": matched_backend,
-        "method": "baseline_device_identity_match" if matched and fingerprint else "unmatched",
+        "method": method if matched and fingerprint else "unmatched",
     }
