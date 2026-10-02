@@ -1,3 +1,4 @@
+
 """Measured-intelligence adapter for the real MLA1517 Stratum coordinator.
 
 This adapter composes the canonical MMIO/vault/network implementation with the
@@ -65,6 +66,7 @@ from .execution_router import (
 from .hendrix_order import NonceOrderUnavailable, hendrix_schedule, load_hendrix
 from .poincare_11d_order import load_poincare_11d
 from .recovery_authority import RecoveryGovernor, RecoveryRecord
+from .production_integration import ProductionMiningIntegration
 from .nonce_lease import LeaseConflict, LeaseExhausted, LeaseRecord
 from .cycle_fsm import MiningCycleLedger, MiningCycleState
 from .decision_journal import DecisionDisposition, DecisionJournal
@@ -307,6 +309,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         # itself reported in telemetry.
         self.backend_registry = kwargs.pop("backend_registry", None)
         causal_log_path = kwargs.pop("causal_log_path", None)
+        production_integration = kwargs.pop("production_integration", None)
         super().__init__(*args, **kwargs)
         # A started worker hashes; whether it may submit is a separate,
         # live question (submission_permitted). Unapproved, it mines in
@@ -423,6 +426,11 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         # spec, mirrored into the same causal trail.
         self.decisions = DecisionJournal(on_record=self._mirror_decision)
         self.recovery = RecoveryGovernor(on_event=self._on_recovery_event)
+        self.production_integration = (
+            production_integration
+            if production_integration is not None
+            else ProductionMiningIntegration.from_repository()
+        )
         self._evidence_sink: Any = None
         self._evidence_published_at = 0.0
         self._pending_correlation: dict[str, Any] | None = None
@@ -757,6 +765,13 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             governed_mode=self.recovery.mode,
         )
         self._sync_recovery_gate()
+        recovery_evidence = self.production_integration.recovery_evidence(self.recovery)
+        self.causal.record(
+            "chronus107_mining_recovery",
+            CausalCoordinate(recovery_id=recovery_id),
+            evidence_sha256=recovery_evidence["evidence_sha256"],
+            mode=self.recovery.mode,
+        )
         self._publish_evidence(force=True)
 
     async def _handle_control_request(self, request: Mapping[str, Any]) -> dict[str, Any]:
@@ -878,6 +893,9 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             "cycle": self.cycle.snapshot(),
             "lifecycle": self._lifecycle_flags(),
             "decisions": self.decisions.snapshot(12),
+            "chronus107": self.production_integration.snapshot(
+                hasher=hasher, recovery=self.recovery
+            ),
             "backends": (
                 self.backend_registry.snapshot()
                 if self.backend_registry is not None
@@ -1804,6 +1822,9 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             policy_id=_BASELINE_POLICY,
             evidence_refs={
                 "lane_order_source": order_source,
+                "chronus107": self.production_integration.plan_evidence(
+                    window, min(256, max(1, window))
+                ),
                 "toe_advice_reason": self._toe_advice_reason(),
                 **(self.last_toe_frame.evidence_refs() if self.last_toe_frame else {}),
             },
@@ -1848,6 +1869,9 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 policy_id=decision.lead if decision is not None else "flat_exhaustive",
                 evidence_refs={
                     "lane_order_source": order_source,
+                    "chronus107": self.production_integration.plan_evidence(
+                        window, min(256, max(1, window))
+                    ),
                     "window_basis": (
                         "device_launch_lucas"
                         if self._execution_route() == "opencl_m32"
@@ -2442,8 +2466,16 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 applied=False,
                 reason="awaiting bounded measured trial",
             )
+        chronus107_evidence = self.production_integration.execution_evidence(final)
+        self.causal.record(
+            "chronus107_execution_evidence",
+            coordinate,
+            evidence_sha256=chronus107_evidence["evidence_sha256"],
+            state=chronus107_evidence["state"],
+        )
         self.last_execution = {
             "executed": True,
+            "chronus107": chronus107_evidence,
             **coordinate.as_dict(),
             "plan_source": final.plan_source.value,
             "plan_id": final.plan_id,
