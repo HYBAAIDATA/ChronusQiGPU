@@ -28,31 +28,16 @@
       "anyOf": [
         {
           "enum": [
-            "ILLEGAL_OPCODE",
-            "MALFORMED_ENCODING",
-            "INVALID_SELECTOR",
-            "MISALIGNED_GLOBAL_ACCESS",
-            "GLOBAL_OOB",
-            "GLOBAL_ADDRESS_WRAP",
-            "MISALIGNED_LOCAL_ACCESS",
-            "LOCAL_OOB",
-            "WORKGROUP_ISOLATION",
-            "MISSING_RECONVERGENCE",
-            "SURPLUS_RECONVERGENCE",
-            "DUPLICATE_RECONVERGENCE",
-            "INVALID_RECONVERGENCE_TARGET",
-            "DIVERGENCE_OVERFLOW",
-            "INVALID_EARLY_EXIT",
-            "BARRIER_DEADLOCK",
-            "MISMATCHED_BARRIER",
-            "BARRIER_BUDGET_EXHAUSTED",
-            "INSTRUCTION_BUDGET_EXHAUSTED",
-            "BAD_MAGIC",
-            "BAD_VERSION",
-            "BAD_CHECKSUM",
-            "BAD_CONTAINER_SIZE",
-            "BAD_ENTRY",
-            "BAD_METADATA"
+            "IllegalOpcode",
+            "MalformedEncoding",
+            "Misaligned",
+            "OutOfBounds",
+            "InvalidSelector",
+            "DivergenceOverflow",
+            "BarrierDeadlock",
+            "InvalidEarlyExit",
+            "BudgetExhausted",
+            "BinaryFormat"
           ]
         },
         {
