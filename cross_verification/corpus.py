@@ -29,6 +29,6 @@ class CorpusStore:
   return data
  def verify_case(self,case:Mapping[str,Any])->None:
   if case.get('schema')!='chronus.conformance.case.v1':raise CorpusError('unsupported case schema')
-  body={**case,'case_id':''};identifier='sha256:'+sha256(canonical(body))
+  body=dict(case);body.pop('case_id',None);identifier='sha256:'+sha256(canonical(body))
   if identifier!=case.get('case_id'):raise CorpusError('case identifier mismatch')
   for field,kind in (('ir_sha256','ir'),('input_sha256','inputs'),('executable_sha256','binaries'),('expected_sha256','expected')):self.artifact(kind,case.get(field))
