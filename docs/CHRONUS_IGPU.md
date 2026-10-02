@@ -20,14 +20,24 @@ UHD 630 uses the same setup with
 additionally constrain the OpenCL platform. If an explicit identity is absent,
 Chronus fails closed rather than choosing another device.
 
+`HYBA_DEVICE_ALIAS` is a preference hint, not a gate: an alias-named device
+is preferred when present, but an alias mismatch never makes an otherwise
+valid device unavailable. Setting `HYBA_REQUIRE_HYBA=1` promotes the alias
+list (default `hyba-mla1517, hyba_mla1517, mla1517, hyba`) to a hard
+requirement — the same contract as the mining SHA256d path.
+
 ## Execution behaviour
 
 - Only OpenCL GPU/accelerator devices are eligible.
 - Shared-memory Intel UHD/Iris devices are preferred when no identity is set.
+  `host_unified_memory` is required for the Intel-integrated preference, so a
+  discrete GPU carrying a "Graphics" product name is never misclassified as
+  an iGPU.
 - Elementwise and Kronecker launches are padded to a bounded power-of-two local
   size.
 - Matrix multiplication uses a bounds-safe local-memory tile selected from the
-  device's reported work-group and local-memory limits.
+  compiled kernel's reported work-group and local-memory limits, bounded by
+  the device limits.
 - The command queue has profiling enabled. Each completed operation retains
   kernel/device timing when the driver provides it, wall timing, launch sizes,
   kernel identity, output shape, and device identity in
