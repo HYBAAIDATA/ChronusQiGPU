@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from chronus.delivery import DeliveryMode, probe_cloud_instance, probe_delivery, probe_embedded
+from chronus.delivery import (
+    DeliveryMode,
+    probe_cloud_instance,
+    probe_delivery,
+    probe_embedded,
+)
 
 
 @dataclass
@@ -57,6 +62,29 @@ def test_embedded_delivery_is_explicit_and_in_process():
     assert "tensor:matmul" in out.capabilities
     assert "dtype:float32" in out.capabilities
     assert out.devices[0]["device_id"] == "opencl:Intel:Chronus-iGPU"
+
+
+def test_embedded_delivery_accepts_native_cuda_without_opencl():
+    cuda_probe = _EmbeddedProbe(
+        device_id="cuda:0:Chronus-NVIDIA",
+        device_name="Chronus-NVIDIA",
+        platform_name="CUDA",
+    )
+    unavailable_opencl = _EmbeddedProbe(
+        available=False,
+        reason="no OpenCL GPU",
+    )
+    out = probe_embedded(
+        native_probes=(
+            ("chronus-opencl", lambda: unavailable_opencl, "test.opencl"),
+            ("chronus-cuda", lambda: cuda_probe, "test.cuda"),
+        )
+    )
+    assert out.available is True
+    assert len(out.devices) == 1
+    assert out.devices[0]["backend"] == "chronus-cuda"
+    assert "backend:chronus-cuda" in out.capabilities
+    assert out.reason == ""
 
 
 def test_cloud_delivery_uses_measured_remote_inventory():
