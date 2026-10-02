@@ -1,0 +1,44 @@
+{
+  "schema": "salamander.autonomic-architecture.v1",
+  "base_sha": "83c187e2cf9a6ef60271c3c6bfcb1b5669e0321e",
+  "dependency_chain": {
+    "chronus104_corpus_sha256": "0b4035e138256cfed08ba5d9e1b0058dc8e7c0dbce2e0ccb50039254de4e1712",
+    "chronus105": "37e952acb851a19027ee11c60e35257ed26a5ec8",
+    "chronus106": "c0258303c4eed59f0a4fcae3e62c908f641a57a7",
+    "chronus107": "83c187e2cf9a6ef60271c3c6bfcb1b5669e0321e"
+  },
+  "ownership": {
+    "OVID": "Aethel authoritative durable storage/state/representation custody",
+    "THESEUS": "hyba_db rebuildable query/index/graph/semantic projections",
+    "EUCLID": "training, evaluation, developmental learning and reward-authority boundaries",
+    "KAIROS": "governed deterministic rehearsal and falsification worlds only",
+    "CHRONUS": "device-agnostic execution and capability evidence",
+    "SALAMANDER": "homeostasis, bounded orchestration, adaptation and deployment control",
+    "MINING": "existing coordinator, Stratum/proof/pool/ExecutionRouter/RecoveryGovernor authorities"
+  },
+  "provenance": {
+    "hyba_substrate": "RECOVERED_CONVERGED_ENTERPRISE_LEARNING_SUBSTRATE",
+    "euclid.kairos_runtime": "NEW_FAIL_CLOSED_EQUIVALENCE_NOT_BYTE_RECOVERY",
+    "Intelligence.salamander": "HISTORICAL_COMPONENT_CONSOLIDATED_NOT_PRODUCTION_AUTHORITY",
+    "Intelligence.salamander_agentic": "DIAGNOSTIC_ONLY_RUNTIME_REWRITE_AND_SHELL_PROHIBITED"
+  },
+  "invariants": [
+    "OVID data survives; THESEUS is rebuildable from OVID",
+    "OVID never depends on THESEUS to prove authoritative payload existence or integrity",
+    "learning may alter future operational policy, never correctness, conformance, storage integrity or safety",
+    "observation is not reward",
+    "Kairos has no miner, pool, wallet, credential, network, submission, revenue or profitability authority",
+    "no arbitrary execution, arbitrary SQL, arbitrary filesystem action or runtime source rewriting",
+    "unknown and unavailable metrics remain explicit and are never fabricated",
+    "mining-specific recovery remains RecoveryGovernor plus IntelligentPoolCoordinator.apply_salamander_mode"
+  ],
+  "truth_states": {
+    "physical_opencl": "PHYSICAL_EVIDENCE_REQUIRED",
+    "authorized_live_pool": "NOT_RUN",
+    "f64": "UNSUPPORTED",
+    "opencl.BINET_EXACT": "UNSUPPORTED",
+    "FOLDED_NATIVE": "OPEN",
+    "inherited_acceptance": "NOT_RUN",
+    "ci": "NOT_REPORTED"
+  }
+}
