@@ -123,7 +123,7 @@ class AethelQueue:
             info = os.fstat(self._fd)
             if (
                 not stat.S_ISREG(info.st_mode)
-                or info.st_mode & 0o077
+                or (os.name != "nt" and info.st_mode & 0o077)
                 or (hasattr(os, "geteuid") and info.st_uid != os.geteuid())
             ):
                 raise AethelError("aethel region must be a private regular file")

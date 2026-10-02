@@ -297,7 +297,7 @@ def run(args, root: Path = ROOT) -> dict:
     mutants = enumerate_mutants(source, lines)
     if args.limit:
         mutants = mutants[: args.limit]
-    pythonpath = tuple(Path(p) for p in args.pythonpath)
+    pythonpath = tuple(Path(p) for p in (getattr(args, "pythonpath", None) or ()))
     sandboxes = [Sandbox(copy_root, module, root, pythonpath) for _ in range(max(1, args.workers))]
     try:
         if not sandboxes[0].imports_copy(module_name):

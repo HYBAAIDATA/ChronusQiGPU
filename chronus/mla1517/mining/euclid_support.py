@@ -11,6 +11,7 @@ is never represented as active merely because configuration names it.
 """
 from __future__ import annotations
 
+import hashlib
 import math
 import os
 import time
@@ -30,6 +31,70 @@ class EuclidMiningAdvice:
     evidence: Mapping[str, Any]
 
 
+def _checkpoint_sha256(state_path: str | Path) -> str | None:
+    path = Path(state_path)
+    if not path.is_file():
+        return None
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(65536), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def load_policy_checkpoint(
+    state_path: str | Path,
+    *,
+    manifest_path: str | Path | None = None,
+    task_id: str | None = None,
+    actions: tuple[str, ...] | None = None,
+) -> dict[str, Any]:
+    """Loader contract for a trained EUCLID mining-policy checkpoint.
+
+    Validates the checkpoint manifest (when provided) and the recorded
+    learner-state hash against the on-disk artefact, then returns the exact
+    identity the mining adapter will consume.  Fail-closed: any corruption,
+    schema mismatch or hash drift raises ``ValueError``.
+    """
+    from euclid.checkpoint_manifest import load_manifest, verify_manifest
+
+    checkpoint_hash = _checkpoint_sha256(state_path)
+    if checkpoint_hash is None:
+        raise ValueError(f"learner checkpoint missing: {state_path}")
+    identity: dict[str, Any] = {
+        "checkpoint_path": str(state_path),
+        "checkpoint_sha256": checkpoint_hash,
+        "manifest_path": str(manifest_path) if manifest_path else None,
+        "manifest_verified": False,
+        "source_revision": None,
+        "policy_version": None,
+    }
+    if manifest_path is not None:
+        manifest = load_manifest(manifest_path)
+        task = dict(manifest.get("task") or {})
+        if task_id is not None and task.get("task_id") != task_id:
+            raise ValueError(
+                "manifest task_id does not match the mining adapter contract"
+            )
+        if actions is not None and tuple(task.get("actions") or ()) != tuple(
+            actions
+        ):
+            raise ValueError(
+                "manifest action schema does not match the mining adapter"
+            )
+        verification = verify_manifest(
+            manifest, learner_checkpoint_path=state_path
+        )
+        identity.update(
+            {
+                "manifest_verified": True,
+                "source_revision": verification.get("source_revision"),
+                "policy_version": verification.get("policy_version"),
+            }
+        )
+    return identity
+
+
 class EuclidMiningSupport:
     """Evidence-first bridge from measured mining state to EUCLID learning.
 
@@ -42,12 +107,20 @@ class EuclidMiningSupport:
     TASK_ID = "bitcoin-mining-operating-breadth"
     ACTIONS = ("hold", "reduce", "restore")
 
-    def __init__(self, baseline_breadth: int, *, state_path: str | None = None) -> None:
+    def __init__(
+        self,
+        baseline_breadth: int,
+        *,
+        state_path: str | None = None,
+        manifest_path: str | None = None,
+        learner: Any = None,
+    ) -> None:
         self.baseline_breadth = max(1, int(baseline_breadth))
         self.current_breadth = self.baseline_breadth
         self.state_path = state_path or os.getenv(
             "PYTHIA_EUCLID_MINING_STATE", "data/euclid_mining_policy.json"
         )
+        self.manifest_path = manifest_path
         try:
             interval = float(os.getenv("PYTHIA_EUCLID_DECISION_INTERVAL_S", "5"))
         except ValueError:
@@ -55,7 +128,8 @@ class EuclidMiningSupport:
         self.decision_interval_s = max(0.1, interval)
         self.available = False
         self.unavailable_reason: str | None = None
-        self.learner: Any = None
+        self.learner: Any = learner
+        self.policy_identity: dict[str, Any] | None = None
         self._last_state: dict[str, Any] | None = None
         self._last_action: str | None = None
         self._last_reward_at = 0.0
@@ -65,6 +139,34 @@ class EuclidMiningSupport:
         self._load_runtime()
 
     def _load_runtime(self) -> None:
+        if self.manifest_path is not None:
+            try:
+                self.policy_identity = load_policy_checkpoint(
+                    self.state_path,
+                    manifest_path=self.manifest_path,
+                    task_id=self.TASK_ID,
+                    actions=self.ACTIONS,
+                )
+            except Exception as exc:
+                self.unavailable_reason = (
+                    f"policy checkpoint rejected: {type(exc).__name__}: {exc}"
+                )
+                return
+        if self.learner is not None:
+            # Injected learner: the checkpoint it carries is the only policy
+            # state this controller may actuate from.
+            self.available = True
+            self.unavailable_reason = None
+            if self.policy_identity is None:
+                self.policy_identity = {
+                    "checkpoint_path": self.state_path,
+                    "checkpoint_sha256": _checkpoint_sha256(self.state_path),
+                    "manifest_path": None,
+                    "manifest_verified": False,
+                    "source_revision": None,
+                    "policy_version": None,
+                }
+            return
         try:
             from hyba_substrate.euclid_experience_superlearner import ExperienceSuperlearner
         except Exception as exc:  # import boundary is reported, never hidden
@@ -77,27 +179,39 @@ class EuclidMiningSupport:
                 epsilon=0.0,  # production policy never explores blindly
                 seed=20260718,
             )
-            learner.register_task(
-                self.TASK_ID,
-                self.ACTIONS,
-                difficulty=0.5,
-                reward_range=(-1.0, 1.0),
-                transfer_group="mining-operations",
-                metadata={
-                    "authority": "operational-only",
-                    "forbidden": [
-                        "sha256d",
-                        "target",
-                        "header",
-                        "share-validity",
-                        "credentials",
-                        "pool-outcome",
-                    ],
-                },
-            )
+            if self.TASK_ID not in learner.tasks:
+                # A restored trained checkpoint already carries the verified
+                # task contract; only a fresh policy state registers it here.
+                learner.register_task(
+                    self.TASK_ID,
+                    self.ACTIONS,
+                    difficulty=0.5,
+                    reward_range=(-1.0, 1.0),
+                    transfer_group="mining-operations",
+                    metadata={
+                        "authority": "operational-only",
+                        "forbidden": [
+                            "sha256d",
+                            "target",
+                            "header",
+                            "share-validity",
+                            "credentials",
+                            "pool-outcome",
+                        ],
+                    },
+                )
             self.learner = learner
             self.available = True
             self.unavailable_reason = None
+            if self.policy_identity is None:
+                self.policy_identity = {
+                    "checkpoint_path": self.state_path,
+                    "checkpoint_sha256": _checkpoint_sha256(self.state_path),
+                    "manifest_path": None,
+                    "manifest_verified": False,
+                    "source_revision": None,
+                    "policy_version": None,
+                }
         except Exception as exc:
             self.unavailable_reason = f"{type(exc).__name__}: {exc}"
 
@@ -258,6 +372,7 @@ class EuclidMiningSupport:
                 "outcome_key": outcome_key,
                 "last_reward_at": self._last_reward_at or None,
                 "claim_boundary": "bounded operating policy; no consensus authority",
+                "policy_identity": self.policy_identity,
             },
         )
         self._last_advice = advice
@@ -274,7 +389,9 @@ class EuclidMiningSupport:
             "decision_interval_s": self.decision_interval_s,
             "last_outcome_key": self._last_outcome_key,
             "last_advice": asdict(advice) if advice is not None else None,
+            "policy_identity": self.policy_identity,
             "authority": "operational-only",
+            "single_actuator": "dispatch_breadth via this support only",
         }
 
 
@@ -320,4 +437,5 @@ __all__ = [
     "EuclidMiningAdvice",
     "EuclidMiningSupport",
     "EuclidProductionMiningCoordinator",
+    "load_policy_checkpoint",
 ]

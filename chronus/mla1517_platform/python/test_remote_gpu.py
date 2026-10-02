@@ -14,6 +14,8 @@ import os
 import struct
 import threading
 import unittest
+import urllib.error
+import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from chronus.mla1517.core import fib, lucas
 from chronus.mla1517.remote_gpu import (
@@ -23,6 +25,7 @@ from chronus.mla1517.remote_gpu import (
     RemoteGPUUnavailable,
     RemoteGPUVerificationError,
     probe_first_reachable,
+    _window_commitment,
     sha256d_share_attestation,
 )
 from chronus.mla1517.scaling import LUCAS_PISOT_LADDER, padovan
@@ -48,6 +51,7 @@ class _EnvGuard(unittest.TestCase):
     _VARS = (
         "MLA1517_REMOTE_GPU_ENDPOINT",
         "MLA1517_REMOTE_GPU_TOKEN",
+        "MLA1517_REMOTE_GPU_ATTESTATION_KEY",
         "HYBA_REMOTE_OPENCL_ENDPOINTS",
         "MLA1517_MODE",
         "MLA1517_GPU_CONNECTED",
@@ -117,6 +121,29 @@ class RealAgentTests(_EnvGuard):
             )
 
 
+    def test_non_object_json_is_a_400(self):
+        req = urllib.request.Request(
+            self.endpoint + "/v1/sha256d", data=b"[]", method="POST",
+            headers={"Content-Type": "application/json"},
+        )
+        with self.assertRaises(urllib.error.HTTPError) as raised:
+            urllib.request.urlopen(req, timeout=2)
+        self.assertEqual(raised.exception.code, 400)
+
+    def test_string_integer_is_a_400(self):
+        payload = json.dumps({
+            "header": bytes(80).hex(), "target": (b"\xff" * 32).hex(),
+            "order": "contiguous", "base_nonce": 0, "count": "32",
+        }).encode()
+        req = urllib.request.Request(
+            self.endpoint + "/v1/sha256d", data=payload, method="POST",
+            headers={"Content-Type": "application/json"},
+        )
+        with self.assertRaises(urllib.error.HTTPError) as raised:
+            urllib.request.urlopen(req, timeout=2)
+        self.assertEqual(raised.exception.code, 400)
+
+
 class _StubDeviceHandler(BaseHTTPRequestHandler):
     """An agent that has one iGPU and answers ladder rows correctly.
 
@@ -133,6 +160,10 @@ class _StubDeviceHandler(BaseHTTPRequestHandler):
     sha256d_underreport = False
     bad_attestation = False
     out_of_window_nonce = False
+    bad_protocol = False
+    bad_backend = False
+    bad_timing = False
+    extra_field = False
 
     @classmethod
     def _reset_sha256d_flags(cls):
@@ -140,6 +171,10 @@ class _StubDeviceHandler(BaseHTTPRequestHandler):
         cls.sha256d_underreport = False
         cls.bad_attestation = False
         cls.out_of_window_nonce = False
+        cls.bad_protocol = False
+        cls.bad_backend = False
+        cls.bad_timing = False
+        cls.extra_field = False
 
     def log_message(self, *args):
         return
@@ -193,28 +228,33 @@ class _StubDeviceHandler(BaseHTTPRequestHandler):
         attest_nonce = winner
         if type(self).bad_attestation and winner is not None:
             attest_nonce = (winner + 1) & 0xFFFFFFFF
+        device_id = "opencl-test-device"
+        protocol = "wrong-protocol" if type(self).bad_protocol else PROTOCOL_VERSION
+        backend = "cpu" if type(self).bad_backend else "opencl:gpu"
+        measured_ns = "fast" if type(self).bad_timing else 4321
+        commitment = _window_commitment(order, window)
         attestation = sha256d_share_attestation(
-            header_hex=header.hex(),
-            target_hex=target.hex(),
-            base_nonce=base,
-            count=count,
-            hashes=reported_hashes,
-            nonce=attest_nonce,
-            digest_hex=digest_hex,
-            device=device_name,
+            header_hex=header.hex(), target_hex=target.hex(), base_nonce=base,
+            count=count, hashes=reported_hashes, nonce=attest_nonce,
+            digest_hex=digest_hex, device=device_name, device_id=device_id,
+            protocol=protocol, execution_backend=backend, measured_ns=measured_ns,
+            order=order, window_commitment=commitment,
         )
-        return {
-            "protocol": PROTOCOL_VERSION,
-            "device": {"name": device_name, "vendor": "Intel"},
-            "execution_backend": "opencl:gpu",
-            "measured_ns": 4321,
+        reply = {
+            "protocol": protocol,
+            "device": {"id": device_id, "name": device_name},
+            "execution_backend": backend,
+            "measured_ns": measured_ns,
             "window": {"base_nonce": base, "count": count},
+            "order": order,
+            "window_commitment": commitment,
             "hashes": reported_hashes,
-            "share": None
-            if winner is None
-            else {"nonce": winner, "hash": digest_hex},
+            "share": None if winner is None else {"nonce": winner, "hash": digest_hex},
             "attestation": attestation,
         }
+        if type(self).extra_field:
+            reply["unexpected"] = True
+        return reply
 
     def do_GET(self):
         if not self._auth_ok():
@@ -229,6 +269,23 @@ class _StubDeviceHandler(BaseHTTPRequestHandler):
                     "opencl_error": None,
                 },
             )
+        if self.path == "/v1/telemetry":
+            return self._send(
+                200,
+                {
+                    "protocol": PROTOCOL_VERSION,
+                    "devices": [
+                        {
+                            "name": "AirGPU iGPU-0",
+                            "vendor": "Intel",
+                            "temperature_c": 55.0,
+                            "power_w": 20.5,
+                            "utilization_pct": 88.0,
+                        }
+                    ],
+                    "sources": [{"tool": "nvidia-smi", "status": "measured"}],
+                },
+            )
         if self.path == "/v1/devices":
             return self._send(
                 200,
@@ -236,6 +293,7 @@ class _StubDeviceHandler(BaseHTTPRequestHandler):
                     "protocol": PROTOCOL_VERSION,
                     "devices": [
                         {
+                            "id": "opencl-test-device",
                             "name": "AirGPU iGPU-0",
                             "vendor": "Intel",
                             "type": "chronus",
@@ -294,6 +352,7 @@ class StubAgentClientTests(_EnvGuard):
         devs = RemoteGPUClient(self.endpoint).devices()
         self.assertEqual(len(devs), 1)
         self.assertEqual(devs[0].device_type, "chronus")
+        self.assertEqual(devs[0].device_id, "opencl-test-device")
         self.assertEqual(devs[0].endpoint, self.endpoint)
         self.assertTrue(devs[0].capability("lucas_ladder_kernel"))
 
@@ -394,6 +453,33 @@ class StubAgentClientTests(_EnvGuard):
                 bytes(80), b"\xff" * 32, base_nonce=0, count=SHA256D_MAX_WINDOW + 1
             )
 
+    def test_telemetry_parses_only_measured_fields(self):
+        rows = RemoteGPUClient(self.endpoint).telemetry()
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0].device, "AirGPU iGPU-0")
+        self.assertEqual(rows[0].temperature_c, 55.0)
+        self.assertEqual(rows[0].power_w, 20.5)
+        self.assertEqual(rows[0].utilization_pct, 88.0)
+        self.assertEqual([s.get("tool") for s in rows[0].sources], ["nvidia-smi"])
+
+
+class AgentTelemetryHonestyTests(_EnvGuard):
+    """_telemetry() on this box: no vendor probes exist, so every field
+    must come back None and the sources list must say why — measured
+    telemetry is reported or absent, never invented."""
+
+    def test_unprobed_fields_stay_null(self):
+        from chronus.mla1517 import remote_gpu_agent
+
+        payload = remote_gpu_agent._telemetry()
+        self.assertIn("devices", payload)
+        self.assertIn("sources", payload)
+        self.assertIsInstance(payload["sources"], list)
+        for dev in payload["devices"]:
+            self.assertIsNone(dev["temperature_c"])
+            self.assertIsNone(dev["power_w"])
+            self.assertIsNone(dev["utilization_pct"])
+
 
 class StubAgentSha256dTests(_EnvGuard):
     """Remote SHA-256d scans: verified shares, honest misses, hard rejects."""
@@ -424,14 +510,13 @@ class StubAgentSha256dTests(_EnvGuard):
         self.assertEqual(result.hashes, 1)
         self.assertEqual(result.device, "AirGPU iGPU-0")
         self.assertEqual(result.execution_backend, "opencl:gpu")
-        self.assertTrue(result.attestation.startswith("RSHA256D-"))
+        self.assertTrue(result.attestation.startswith("RSHA256D-SHA256-"))
         self.assertTrue(result.as_dict()["share_verified_against_exact_reference"])
 
     def test_share_found_later_in_window(self):
-        # Tightest possible accepting target: the largest digest value in
-        # the window (little-endian int, the CPU-path convention). At least
-        # one nonce is guaranteed to win, and probably not nonce 0.
-        target = max(
+        # The minimum digest accepts exactly the deterministic best nonce,
+        # forcing traversal beyond nonce zero (nonce 26 for this fixture).
+        target = min(
             int.from_bytes(_cpu_sha256d(self.HEADER, n), "little") for n in range(64)
         ).to_bytes(32, "big")
         result = RemoteGPUClient(self.endpoint).execute_sha256d(
@@ -440,7 +525,8 @@ class StubAgentSha256dTests(_EnvGuard):
         self.assertTrue(result.found)
         self.assertEqual(result.digest, _cpu_sha256d(self.HEADER, result.nonce))
         self.assertTrue(_meets_target(result.digest, target))
-        self.assertLessEqual(result.hashes, 64)
+        self.assertEqual(result.nonce, 26)
+        self.assertEqual(result.hashes, 27)
 
     def test_miss_reports_measured_hash_count(self):
         # Target zero: nothing wins — honest miss, full-window hash count.
@@ -473,6 +559,22 @@ class StubAgentSha256dTests(_EnvGuard):
             RemoteGPUClient(self.endpoint).execute_sha256d(
                 self.HEADER, b"\xff" * 32, base_nonce=0, count=64
             )
+
+
+    def test_protocol_backend_timing_and_extra_fields_fail_closed(self):
+        for flag in ("bad_protocol", "bad_backend", "bad_timing", "extra_field"):
+            setattr(_StubDeviceHandler, flag, True)
+            try:
+                with self.assertRaises(RemoteGPUVerificationError):
+                    RemoteGPUClient(self.endpoint).execute_sha256d(
+                        self.HEADER, b"\xff" * 32, base_nonce=0, count=4
+                    )
+            finally:
+                setattr(_StubDeviceHandler, flag, False)
+
+    def test_plain_http_non_loopback_is_rejected(self):
+        with self.assertRaises(ValueError):
+            RemoteGPUClient("http://example.com:8632")
 
 
 class ConnectorRemoteBindingTests(_EnvGuard):

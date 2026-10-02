@@ -1,5 +1,32 @@
 # PYTHIA Production-Readiness Execution Plan (Devin edition)
 
+## Current execution refresh — 2026-10-02
+
+- Repository: `QuantumPhiEnterprise/PYTHIPhiMiner`
+- Current pinned `main`: `953765a7f79920d2177a406c2157340ef96000cc`
+- State: implementation in progress; this is **not** a production certificate.
+- Coordinator branch: `feat/pythia-production-readiness-coordination`
+- Owner A: PR #82 merged as `1aae12c3`: the bounded production 11D
+  Poincaré-golden nonce-order path now has deterministic full-window ordering,
+  explicit CPU-reference fallback, dependency failure, and SHA-256d
+  proof-boundary tests.
+- Owner B/C: PR #81 merged as `953765a7`: supervised runners now report
+  `stopping` until worker cleanup exits and campaign accepted shares use
+  per-phase deltas. RUN-02, measured-zero handling, stale-sidecar filtering,
+  and exception-safe campaign retirement remain covered.
+
+### Current ownership
+
+| Owner | Writable scope for this wave | Status |
+|---|---|---|
+| C | `docs/production/*`, release integration and evidence reconciliation | ACTIVE |
+| A | production coordinator nonce-order adapter plus focused theory tests/docs | MERGED — PR #82 / `1aae12c3` |
+| B/C | campaign/runner lifecycle and focused tests | MERGED — PR #81 / `953765a7` |
+
+The historical baseline below is retained as prior evidence, not reused as a
+current result. Every old PASS must be refreshed at the current implementation
+commit before release.
+
 Source pack: user-provided "PYTHIA production-readiness swarm — execution pack" (Codex-oriented).
 Adapted 2026-09-29 to the Devin child-session model.
 
@@ -10,6 +37,19 @@ Adapted 2026-09-29 to the Devin child-session model.
 - Checkout: `C:/Users/Administrator/repos/PYTHIPhiMiner` — clean tree at pin
 - Runtime on this box: Python 3.14.7 via `uv` venv (`.venv/`), Node TBD
 - Child sessions run on their own VMs with their own clones; they do NOT share this checkout.
+
+## Re-baseline @ `10c6a63` (2026-10-01, follow-on session)
+
+The pack's observations were refreshed against `main` at `10c6a63` (post-fold
+`chronus/` layout, swarm PRs through #78 merged). While this increment was in
+flight, RUN-01/DATA-01 landed independently on `main` as `953765a` (PR #81) —
+the post-merge tree carries that lock-guarded implementation; this branch adds
+its remaining test coverage (terminal-stop refusal, restart eligibility,
+stop-after-clean-return, counter-reset re-arm). This increment's own closures:
+DOC-01 (AGENTS.md §4 rewritten for the real product + README per-operation
+device policy), two Windows-only euclid persistence defects (`atomic_write`,
+`MemoryDatabase.backup`), and the `RunnerStatus.state` `"stopping"` union.
+Fresh gate numbers live in `validation.md` §"Re-baseline @ 10c6a63".
 
 ## Coordination model (Codex → Devin mapping)
 

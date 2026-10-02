@@ -63,6 +63,35 @@ HYBA_REQUIRE_HYBA=0 HYBA_DEVICE_ALIAS=intel \
 
 Probe any overlay: `--profile probe run --rm chronus-probe` (`clinfo`).
 
+## Remote GPU agents (`chronus.mla1517.remote_gpu_agent`)
+
+A GPU that lives on another host joins the fleet over HTTP
+(`remote_opencl_v1`); the client re-verifies every result against exact
+arithmetic, so the network hop cannot weaken the proof.
+
+```bash
+# on the GPU host (any vendor — the agent binds what the driver gives it)
+python -m chronus.mla1517.remote_gpu_agent --host 0.0.0.0 --port 8632
+# on the miner
+export MLA1517_REMOTE_GPU_ENDPOINT=http://<host>:8632     # one agent
+export HYBA_REMOTE_OPENCL_ENDPOINTS=http://a:8632,http://b:8632  # a fleet
+export MLA1517_REMOTE_GPU_TOKEN=<shared bearer>           # optional gate
+export MLA1517_REMOTE_GPU_TIMEOUT=120                      # per-dispatch cap (s)
+```
+
+Routes: `GET /v1/health` · `GET /v1/devices` · `GET /v1/telemetry` ·
+`POST /v1/ladder` · `POST /v1/sha256d` (orders `contiguous`, `m32`,
+`batch`; wire caps 2^24 nonces per window, 2^20 per batch list).
+
+With several endpoints configured, `mining.remote_hasher.hasher_for_env`
+binds `RemoteFleetHasher`: each dispatched window slices into disjoint
+sub-ranges executed in parallel — per-slice order preserved (m32 slices
+stay whole 32-lane sweeps), merged winner = earliest slice's verified
+winner, and any slice failure fails the call rather than claim partial
+coverage. `/v1/telemetry` reports temperature/power/utilization only
+where a vendor probe on the agent host actually measured them — every
+field null otherwise, with a `sources` audit trail per probe.
+
 ## Consensus boundary
 
 In-kernel `(reversed digest < target)` + host `hashlib` re-verify on every

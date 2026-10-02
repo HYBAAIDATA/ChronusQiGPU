@@ -37,7 +37,7 @@ class TelemetryRouteTests(unittest.TestCase):
         root = Path(self.tempdir.name)
         self.hb = root / "hb"
         env = {
-            "MLA1517_STRATUM_USER": "PYTHIA.001",
+            "MLA1517_STRATUM_USER": "rig.telemetry",
             "MLA1517_STRATUM_PASSWORD": "x",
             "PYTHIA_POOL_PROFILE": "braiins",
             "PYTHIA_AUTOSTART_WORKERS": "0",

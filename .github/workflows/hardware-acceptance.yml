@@ -15,33 +15,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: {ref: '${{ inputs.commit_sha }}'}
-      - name: Existing strict hardware gate
-        id: strict_hardware
-        continue-on-error: true
-        run: MLA1517_STRICT_HARDWARE_CI=1 MLA1517_GPU_BACKEND=opencl make strict-hardware-gate
-      - name: Chronus production measurement
-        id: chronus_measurement
-        continue-on-error: true
-        run: >-
-          python -m chronus.measurement.production
-          --full
-          --require-device
-          --require-persistent-attestation
-          --output results/chronus_production_measurement.json
-        env:
-          CHRONUS_MEASUREMENT_HMAC_KEY: '${{ secrets.CHRONUS_MEASUREMENT_HMAC_KEY }}'
-      - name: Upload hardware evidence
-        if: always()
-        uses: actions/upload-artifact@v4
+      - run: MLA1517_STRICT_HARDWARE_CI=1 MLA1517_GPU_BACKEND=opencl make strict-hardware-gate
+      - name: Build and install the exact wheel under acceptance
+        run: |
+          rm -rf dist /tmp/pythia-hardware-wheel
+          python -m pip wheel . --no-deps --wheel-dir dist
+          python -m venv --system-site-packages /tmp/pythia-hardware-wheel
+          /tmp/pythia-hardware-wheel/bin/pip install --no-deps dist/*.whl
+      - name: Generate authenticated real-device endpoint evidence
+        run: |
+          TOKEN=$(python -c 'import secrets; print(secrets.token_hex(32))')
+          export MLA1517_REMOTE_GPU_TOKEN="$TOKEN"
+          export MLA1517_REMOTE_GPU_ATTESTATION_KEY="$TOKEN"
+          export MLA1517_HARDWARE_REPORT="$GITHUB_WORKSPACE/results/remote_gpu_report.json"
+          cd /tmp
+          /tmp/pythia-hardware-wheel/bin/python             "$GITHUB_WORKSPACE/scripts/remote_gpu_hardware_acceptance.py"
+      - uses: actions/upload-artifact@v4
         with:
           name: 'strict-hardware-report-${{ inputs.device_id }}'
           path: |
             results/strict_hardware_report.json
-            results/chronus_production_measurement.json
-          if-no-files-found: warn
-      - name: Publish check runs
-        if: always()
-        run: python scripts/publish_check_runs.py
+            results/remote_gpu_report.json
+      - run: python scripts/publish_check_runs.py
         env: {GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'}
       - name: Enforce hardware acceptance result
         if: always()

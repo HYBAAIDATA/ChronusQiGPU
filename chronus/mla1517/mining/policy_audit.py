@@ -19,7 +19,16 @@ from __future__ import annotations
 import math
 from typing import Any, Sequence
 
+from chronus.mla1517.quantum import classical_simulation_provenance
 from .operating_policy import PolicyDecision
+
+# The VQC register is exact state-vector algebra on the host CPU; its
+# ``measure(seed)`` draws from the exact Born distribution with a seeded PRNG.
+VQC_PROVENANCE = classical_simulation_provenance(
+    "turing_universal_quantum_computer.hilbert.QuantumRegister",
+    arithmetic="exact Q(zeta_8) / sympy cyclotomics",
+    sampling="seeded PRNG draw from the exact Born distribution",
+)
 
 
 def _load_register():
@@ -111,6 +120,7 @@ class PolicyAuditor:
             agree = math.isclose(losses[chosen], losses[classical], rel_tol=0.0, abs_tol=1e-15)
             vqc = {
                 "available": True,
+                "provenance": dict(VQC_PROVENANCE),
                 "window": candidates[chosen]["window"],
                 "rounds": result["rounds"],
                 "oracle_calls": result["oracle_calls"],

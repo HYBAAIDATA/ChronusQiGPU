@@ -49,6 +49,19 @@ swarming (agents sampling exact Born distributions), and entangled
 subsystem broadcast via `register_subsystem_entanglement()` under the
 non-adjacent-Fibonacci (Zeckendorf) constraint.
 
+**What "exact" does and does not claim.** Every backend above is an exact
+*classical simulation* of a restricted, efficiently-simulable quantum
+state class (Clifford/stabilizer, closed-form free-fermion, closed-form
+walk) — the amplitudes and probabilities it reports are mathematically
+exact for that state class. It is not a claim of quantum hardware
+performance: none of these backends gain the runtime speedup that real
+quantum hardware would provide for a hard search/optimization problem,
+because simulating a quantum circuit classically does not confer the
+circuit's own complexity-class advantage. Any `quantum_advantage_*` or
+`speedup` figure reported by the optional `turing_core.discovery` engine
+describes the textbook query complexity of the algorithm under analysis,
+not a measured improvement from running this package.
+
 The production mining plane keeps `VIRTUAL_QUANTUM_QUBITS = 11` as its
 *default* lane width — a default, not a limit; the executor accepts any
 `n_qubits >= 1`.
@@ -96,6 +109,7 @@ The production mining plane keeps `VIRTUAL_QUANTUM_QUBITS = 11` as its
 | — (new) | `annealing` — exact TFIM free-fermion + Landau-Zener |
 | — (new) | `swarm` — exact-distribution agent swarm |
 | — (new, ontology §4 `TenThousandQubitSystem`) | `turing_core.ten_thousand` |
+| — (new) | `trotter_simulation` — Trotter-Suzuki Hamiltonian evolution (explicit, honestly-approximate; see module docstring) |
 
 `toe/exact_tensor.py`, `toe/quantum_tensor.py`, `toe/exact_field.py`,
 `Intelligence/quantum_tensor.py`, `Intelligence/exact_tensor.py`, and

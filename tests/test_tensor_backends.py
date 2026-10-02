@@ -76,7 +76,7 @@ def test_chronus_backend_reports_unavailable_honestly_without_hardware():
 
 def test_chronus_backend_execute_fails_closed_when_unavailable():
     backend = ChronusBackend()
-    op = _matmul_spec()
+    op = _matmul_spec(Precision.FLOAT32)
     with pytest.raises(TensorBackendUnavailableError):
         backend.execute(op, (np.eye(2), np.eye(2)), deterministic=True)
 

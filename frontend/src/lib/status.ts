@@ -228,7 +228,7 @@ export type FabricMap = {
 /** Generic supervised-runner status (system_fabric._Runner.status()). */
 export type RunnerStatus = {
   schema?: string;
-  state?: "idle" | "running" | "done" | "stopped" | "error";
+  state?: "idle" | "running" | "stopping" | "done" | "stopped" | "error";
   started_at?: number | null;
   finished_at?: number | null;
   error?: string | null;

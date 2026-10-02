@@ -14,6 +14,7 @@ from aethel.device import ChronusSku
 from aethel.hyperscaler import HyperscalerSku
 from aethel.storage import FibonacciAddress
 from chronus.seam.scale import scale_job
+from chronus.seam.genetic_mining import evolve_mining_config
 from mining.stratum_bridge import (
     LiveJob,
     StratumBridge,
@@ -121,6 +122,9 @@ class GeneticConfig:
     window: int
     fitness: float
     generation: int
+    evidence_hash: str = ""
+    generations_run: int = 0
+    population_size: int = 0
 
 
 @dataclass
@@ -289,27 +293,33 @@ def classify_oi(job: LiveJob) -> OIDecision:
 
 
 def genetic_configure(requested: int, generations: int = 3) -> GeneticConfig:
-    best = GeneticConfig(1, "sha256d_scan", 1, 1, -1.0, 0)
-    for generation in range(generations):
-        scale = scale_job(f"gen-{generation}", requested + generation)
-        fitness = float(scale.work_items) / max(requested, 1)
-        config = GeneticConfig(
-            scale.work_items,
-            "sha256d_scan",
-            max(1, scale.ladder_index),
-            scale.work_items,
-            fitness,
-            generation,
-        )
-        log.info(
-            "Genetic gen %s: fitness=%s best=batch=%s",
-            generation,
-            fitness,
-            config.batch,
-        )
-        if config.fitness >= best.fitness:
-            best = config
-    return best
+    evolved = evolve_mining_config(
+        requested,
+        scale_job,
+        generations=generations,
+        population_size=8,
+    )
+    config = GeneticConfig(
+        evolved.batch,
+        "sha256d_scan",
+        evolved.threads,
+        evolved.window,
+        evolved.fitness,
+        evolved.generation,
+        evolved.evidence_hash,
+        evolved.generations_run,
+        evolved.population_size,
+    )
+    log.info(
+        "Genetic optimization: generations=%s population=%s fitness=%s "
+        "batch=%s evidence=%s",
+        config.generations_run,
+        config.population_size,
+        config.fitness,
+        config.batch,
+        config.evidence_hash,
+    )
+    return config
 
 
 def search_nonce(
@@ -415,7 +425,8 @@ async def _run_workflow(bridge, host, port, *, window, heal, fail_fast):
         config.batch > 0 and config.fitness >= 0,
         (
             f"Applied config: batch={config.batch} kernel={config.kernel} "
-            f"threads={config.threads} window={config.window}"
+            f"threads={config.threads} window={config.window} "
+            f"generations={config.generations_run} evidence={config.evidence_hash}"
         ),
     )
 

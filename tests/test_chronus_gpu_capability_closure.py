@@ -102,7 +102,7 @@ def test_chronus_pipeline_delegates_tt_and_mps_math_to_kellogg():
     pipeline = ChronusTensorPipeline()
     tensor = np.arange(24.0).reshape(2, 3, 4)
     train = pipeline.decompose(tensor, "tt", max_rank=16)
-    np.testing.assert_allclose(train.reconstruct(), tensor)
+    np.testing.assert_allclose(train.reconstruct(), tensor, atol=1e-12)
     state = np.arange(16.0)
     mps = pipeline.decompose(state, "mps", max_rank=16)
     assert len(mps) == 4

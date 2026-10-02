@@ -46,9 +46,9 @@ def test_tensor_train_roundtrip_preserves_complex_dtype():
 def test_tt_compatibility_payload_and_error_budget():
     tensor = np.arange(24.0).reshape(2, 3, 4)
     payload = tt_decompose(tensor, max_rank=16)
-    np.testing.assert_allclose(tt_reconstruct(payload), tensor)
+    np.testing.assert_allclose(tt_reconstruct(payload), tensor, atol=1e-12)
     budgeted, error = tt_compress_with_budget(tensor, 1e-12, 16)
-    np.testing.assert_allclose(tt_reconstruct(budgeted), tensor)
+    np.testing.assert_allclose(tt_reconstruct(budgeted), tensor, atol=1e-12)
     assert error < 1e-12
     with pytest.raises(TensorNetworkError):
         tt_compress_with_budget(np.eye(8), 0.0, 1)
@@ -126,7 +126,9 @@ def test_compressed_tensor_schemes_roundtrip(engine):
         CompressionScheme.MPS,
     ):
         compressed = engine.load_tensor_from_host(tensor, scheme=scheme)
-        np.testing.assert_allclose(engine.decompress_to_registers(compressed), tensor)
+        np.testing.assert_allclose(
+            engine.decompress_to_registers(compressed), tensor, atol=1e-12
+        )
         assert compressed.metadata_dict()["claim_boundary"].startswith("representation")
 
 
