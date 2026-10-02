@@ -14,7 +14,16 @@ from .contracts import (
 )
 from .runtime import EuclidRuntime
 from .memory_database import MemoryDatabase, MemoryScope
-from .training_pipeline import TrainingCase, TrainingPipeline
+from .training_pipeline import (
+    TrainingCase,
+    TrainingPipeline,
+    validate_partitions,
+)
+from .checkpoint_manifest import (
+    load_manifest,
+    verify_manifest,
+    write_manifest,
+)
 
 __all__ = [
     "Authority",
@@ -28,4 +37,8 @@ __all__ = [
     "RewardAuthority",
     "TrainingCase",
     "TrainingPipeline",
+    "load_manifest",
+    "validate_partitions",
+    "verify_manifest",
+    "write_manifest",
 ]
