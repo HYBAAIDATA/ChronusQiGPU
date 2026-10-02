@@ -1,10 +1,30 @@
 # Capability matrix — every named capability with an execution trace
 
+Current Owner A refresh base: `a4f56f008a8be7774fd6d7e862b366c4049413c3`
+(2026-10-02). Historical evidence remains pinned below and is not silently
+promoted to current execution. `fabric`/`orchestrator`/`idle` are static labels;
+reachability requires a concrete call → consumption → authority/evidence trace.
+
+## Owner A current trace refresh
+
+| capability | call → consumption → authority/evidence | current verdict |
+|---|---|---|
+| canonical 11D nonce order | `PYTHIA_NONCE_ORDER` → `coordinator.resolve_nonce_order` → `ExecutionRouter.execute_plan` → `poincare_11d_nonces` → CPU SHA-256d scan and independent host recheck | PASS — merged PR #82 / `1aae12c3`; this wave did not duplicate or modify that path |
+| predictive solver | `IntelligenceOrchestrator.solve` (also `orcle.py` over the last observed header/target) → `PredictiveSolver.solve` → generated candidates or injected structured fallback → SHA-256d/negotiated-target comparison | PASS — this wave closed a reachable authority defect: a non-negative fallback nonce had been marked found without an independent SHA-256d target recheck. Exact 80-byte header and 32-byte target boundaries now fail closed. `python -m unittest -v tests.test_a_predictive_solver_authority`: 5/5 PASS; focused `compileall`: PASS. No O(1), hashrate, hardware, or pool-success claim |
+| manifold bridge / substrate-12 hold | `TOESystem`, `Intelligence.agentic_mining`, `Intelligence.chain_verification`, and `chronus.seam.toe_loop` instantiate `ManifoldBridge` → `store_candidate` / `lookup_candidate_o1` → theorem/hold consumers | NOT_RUN at current base — source reachability is established, but no current focused execution was run; historical `tests/test_c_toe_system.py` evidence remains historical |
+| SHA-256d proof boundary | `HashPipeline.grind` / `grind_m32` → active hasher → independent `double_sha256` recomputation → `reference[::-1] <= target_be` | NOT_RUN — current source trace preserves SHA-256d and target authority, but hardware/OpenCL and live-pool execution remain absent |
+
+The bounded implementation in this wave is only
+`Intelligence/predictive_solver.py` plus
+`tests/test_a_predictive_solver_authority.py`. No Chronus runtime, frontend,
+control API, system fabric, operator authorization, or canonical 11D-order
+code was changed.
+
+## Historical inventory
+
 Pin: `e09afab` (baseline) — refreshed at `73a716d` (post-A/C merge) where
-marked. Seeded from `system_fabric.SUBSYSTEMS` (runtime fabric map) at
-baseline. `fabric`/`orchestrator`/`idle` are the repo's *static labels* — MAP-01
-requires every claimed wire to have runtime evidence or an honest "not wired"
-verdict; the Evidence column is filled only from executed checks.
+marked. Seeded from `system_fabric.SUBSYSTEMS` at baseline. Every old PASS
+below is provenance, not a claim that the gate reran at the current base.
 
 States: PASS / FAIL / BLOCKED / NOT_RUN / NOT_APPLICABLE. Owner A rows concern
 mathematical/computational capability; Owner B rows concern mining/workflows.
@@ -35,11 +55,11 @@ mathematical/computational capability; Owner B rows concern mining/workflows.
 | meta_evolution | Meta-evolution (`Intelligence.meta_evolution`) | orchestrator | — | PASS | self_test verdict (dphi=+0.0038, transitions=5) |
 | pythia_learning | Learning substrate (`Intelligence.pythia_learning`) | orchestrator | — | PASS | self_test ACTIVE (learned=14, consolidated=5) |
 | pythia_memory | Memory system (`Intelligence.pythia_memory`) | orchestrator | — | PASS | self_test ACTIVE (semantic=91) |
-| predictive_solver | Predictive solver (`Intelligence.predictive_solver`) | orchestrator | — | PENDING-A | needs nltk vader_lexicon at runtime |
+| predictive_solver | Predictive solver (`Intelligence.predictive_solver`) | orchestrator | — | **PASS** (Owner A refresh) | Reachable through `IntelligenceOrchestrator.solve` and `orcle.py`; fallback candidates are now independently SHA-256d/target rechecked and malformed header/target lengths fail closed; 5 focused tests PASS. The former `nltk vader_lexicon` note was stale: this module has no NLTK import |
 | counterfactual | Counterfactual intelligence | orchestrator | — | **PASS** | Pearl intervention/counterfactual rungs measured @7f89d84; receipt-chain seams in `tests/test_c_toe_bridge.py` (#23) |
 | safety | Hashrate-cap FSM (`Intelligence.safety_constraints`) | orchestrator | — | PENDING-B | — |
 | registry | 45-module registry (`Intelligence.registry`) | orchestrator | — | PENDING-B | — |
-| manifold_bridge | substrate-12 storage (`toe.manifold_bridge`) | fabric | — | PENDING-A | — |
+| manifold_bridge | substrate-12 storage (`toe.manifold_bridge`) | fabric | — | NOT_RUN @ current base | Source-reachable from `TOESystem`, agentic mining, chain verification, and TOE seam; no current execution in this wave |
 | pythia_agent | Deterministic orchestration (`pythia_agent`) | idle | — | NOT_RUN | honest idle label |
 | ontology_chain | Ontology mining chain | idle | — | NOT_RUN | honest idle label |
 | search_tree | Parallel search tree | idle | — | NOT_RUN | honest idle label |
