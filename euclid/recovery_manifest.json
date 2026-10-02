@@ -1,0 +1,41 @@
+{
+  "schema": "euclid.recovery-manifest/1",
+  "baseline_commit": "6a69065ca6af771ad23f237debc6124ae83a1fb6",
+  "classification": {
+    "equivalent": [
+      "euclid/contracts.py",
+      "euclid/evidence.py",
+      "euclid/adapters.py",
+      "euclid/governance.py",
+      "euclid/kairos_runtime.py",
+      "euclid/learning_service.py",
+      "euclid/memory_database.py",
+      "euclid/production_harness.py",
+      "euclid/rights.py",
+      "euclid/runtime.py"
+    ],
+    "retained": [
+      "Intelligence/pythia_learning.py",
+      "Intelligence/pythia_memory.py",
+      "Intelligence/pythia_store.py",
+      "hyba_substrate/euclid_experience_superlearner.py",
+      "chronus/mla1517/mining/euclid_support.py"
+    ],
+    "unavailable_canonical_custody": [
+      "euclid/delegation.py",
+      "euclid/task_orchestrator.py",
+      "euclid/federation.py",
+      "euclid/production_harness.py",
+      "euclid/subsystem_registry.py",
+      "euclid/memory_database_extended.py"
+    ],
+    "disabled": [
+      "federation",
+      "public_network_api",
+      "distributed_persistence",
+      "multi_user_kairos",
+      "self_modification"
+    ]
+  },
+  "claim_boundary": "Equivalent files are new fail-closed implementations, not byte-for-byte recovery of unavailable canonical archive material."
+}

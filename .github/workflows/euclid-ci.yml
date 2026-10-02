@@ -1,0 +1,33 @@
+name: EUCLID governed runtime
+
+on:
+  pull_request:
+    paths:
+      - "euclid/**"
+      - "tests/test_euclid_runtime.py"
+      - "docs/EUCLID_KAIROS_RUNTIME.md"
+      - "pyproject.toml"
+      - ".github/workflows/euclid-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "euclid/**"
+      - "tests/test_euclid_runtime.py"
+      - "pyproject.toml"
+
+permissions:
+  contents: read
+
+jobs:
+  governed-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile
+        run: python -m compileall -q euclid tests/test_euclid_runtime.py
+      - name: Focused tests
+        run: python -m unittest -v tests.test_euclid_runtime
