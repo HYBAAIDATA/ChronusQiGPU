@@ -38,3 +38,8 @@ jobs:
             results/remote_gpu_report.json
       - run: python scripts/publish_check_runs.py
         env: {GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'}
+      - name: Enforce hardware acceptance result
+        if: always()
+        run: |
+          test '${{ steps.strict_hardware.outcome }}' = 'success'
+          test '${{ steps.chronus_measurement.outcome }}' = 'success'

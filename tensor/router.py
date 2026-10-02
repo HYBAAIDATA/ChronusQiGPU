@@ -33,12 +33,20 @@ class RouteDecision:
 
 
 def default_registry() -> BackendRegistry:
-    """Build the default registry: NumPy reference first, Chronus optional."""
-    from .backends import chronus_backend, numpy_backend
+    """Build the default registry without changing existing backend preference.
+
+    NumPy remains the reference-first backend and OpenCL keeps its existing
+    Chronus priority. Native CUDA and Metal are additional hardware paths;
+    they can be explicitly required today and can participate in policy-
+    authorised fallback without replacing OpenCL implicitly.
+    """
+    from .backends import chronus_backend, chronus_native_backend, numpy_backend
 
     registry = BackendRegistry()
     registry.register("numpy-cpu", numpy_backend.create, priority=10)
     registry.register("chronus-opencl", chronus_backend.create, priority=50)
+    registry.register("chronus-cuda", chronus_native_backend.create_cuda, priority=60)
+    registry.register("chronus-metal", chronus_native_backend.create_metal, priority=60)
     return registry
 
 
