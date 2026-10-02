@@ -1,7 +1,8 @@
 """ISA-only case declarations normalized to the normative Chronus-1 trap taxonomy.
 
 The JSON inventory names scenario-specific failure modes. The generated conformance
-corpus exposes only trap classes that the normative ISA actually defines.
+corpus exposes only trap classes and lifecycle statuses that the normative
+reference machine actually defines.
 """
 from __future__ import annotations
 
@@ -51,5 +52,9 @@ def cases():
                 raise ValueError(
                     f"machine case {case['name']} uses non-normative trap {case['trap']!r}"
                 ) from exc
+            if case["trap"] == "BinaryFormat":
+                case["status"] = "CONTAINER_REJECTED"
+            elif case["trap"] == "BudgetExhausted":
+                case["status"] = "BUDGET_EXHAUSTED"
         out.append(case)
     return out
