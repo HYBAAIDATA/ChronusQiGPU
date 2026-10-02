@@ -28,6 +28,8 @@ def pack(exe:Executable)->bytes:
  if exe.major!=1 or exe.minor<1: raise ValueError("writer emits Chronus container 1.1+")
  if exe.entry%4 or exe.entry//4>=max(1,len(exe.code)): raise ValueError("entry outside code")
  code=struct.pack(f"<{len(exe.code)}I",*exe.code) if exe.code else b""
+ conditional={i*4 for i,w in enumerate(exe.code) if ((w>>26)&0x3f) in (17,18)}
+ if conditional!={b for b,_ in exe.reconvergence}: raise ValueError("every conditional branch requires one reconvergence record")
  meta=pack_metadata(exe); payload=code+meta; checksum=zlib.crc32(payload)&0xffffffff
  return HEADER.pack(MAGIC,exe.major,exe.minor,exe.flags,exe.entry,len(exe.code),exe.required_global_bytes,checksum,len(meta))+payload
 def unpack(data:bytes)->Executable:
@@ -60,6 +62,8 @@ def unpack(data:bytes)->Executable:
   if branch%4 or target%4 or branch//4>=words or target//4>=words: raise ValueError("invalid reconvergence PC")
   reconv.append((branch,target))
  if off!=len(meta) or len({b for b,_ in reconv})!=len(reconv): raise ValueError("trailing or duplicate metadata")
+ conditional={i*4 for i,w in enumerate(code) if ((w>>26)&0x3f) in (17,18)}
+ if conditional!={b for b,_ in reconv}: raise ValueError("missing or surplus reconvergence metadata")
  return Executable(tuple(code),entry,global_bytes,flags,tuple(symbols),tuple(reconv),major,minor)
 def write(path,exe):Path(path).write_bytes(pack(exe))
 def load(path):return unpack(Path(path).read_bytes())
