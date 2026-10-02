@@ -33,9 +33,9 @@ while(!all_done()){
  case Opcode::BRANZ:{bool t=R(ins.rd)!=0;l.pc=t?uint32_t(int64_t(l.pc)+4+(int64_t(ins.imm)<<2)):l.pc+4;(t?taken:fall)|=1u<<i;break;}
  case Opcode::GET_GID:W(ins.rd,l.gid[ins.rs1]);l.pc+=4;break;case Opcode::GET_LID:W(ins.rd,l.lid[ins.rs1]);l.pc+=4;break;case Opcode::GET_GSIZE:W(ins.rd,d.global[ins.rs1]);l.pc+=4;break;case Opcode::GET_LSIZE:W(ins.rd,d.local[ins.rs1]);l.pc+=4;break;case Opcode::EXIT:l.retired=true;break;default:trap(TrapCode::IllegalOpcode,"unreachable opcode");}
  l.r[0]=0;s.lane_instructions++;}
- if(taken&&fall){if(selected->divergence.size()>=32)trap(TrapCode::DivergenceOverflow,"divergence stack overflow");selected->divergence.push_back({pc,taken,fall});}
+ if(taken&&fall){selected->push_divergence({pc,binary_.reconvergence_pc(pc),taken,fall});}
  // Per-lane PCs are authoritative; pop trace frames once all live lanes reconverge.
- if(!selected->divergence.empty()){uint32_t common=0;bool set=false,same=true;for(auto&l:selected->lanes)if(l.active&&!l.retired&&!l.waiting){if(!set){common=l.pc;set=true;}else same&=l.pc==common;}if(same)selected->divergence.clear();}
+ if(!selected->divergence.empty()){uint32_t common=0;bool set=false,same=true;for(auto&l:selected->lanes)if(l.active&&!l.retired&&!l.waiting){if(!set){common=l.pc;set=true;}else same&=l.pc==common;}if(same&&set){while(!selected->divergence.empty()&&common==selected->divergence.back().reconverge_pc)selected->divergence.pop_back();}}
  }
 }
 }
