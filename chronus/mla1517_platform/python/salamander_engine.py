@@ -3,6 +3,7 @@
 from __future__ import annotations
 import asyncio
 import json
+import logging
 import os
 import socket
 import uuid
@@ -20,6 +21,8 @@ from salamander_control import (
 )
 from chronus.mla1517.telemetry_reader import TelemetryReader, TelemetrySnapshotError
 from worker_lifecycle import HeartbeatEmitter
+
+LOG = logging.getLogger(__name__)
 
 CURSOR_MAGIC, CURSOR_VERSION, CURSOR_BYTES = 0x50444243, 1, 256
 # The miner treats Salamander as the lane-mask owner only while it keeps
@@ -94,6 +97,9 @@ class SalamanderEngine:
         )
         self._last_sensed_faults: list[int] | None = None
         self._prev_sensed_faults: list[int] | None = None
+        # Optional sink for the measured step() outcome, wired by the
+        # supervised entrypoint to the worker heartbeat channel.
+        self.telemetry_reporter: Callable[[dict[str, Any]], None] | None = None
 
     def sense(self) -> dict[str, Any]:
         try:
@@ -299,7 +305,15 @@ class SalamanderEngine:
         if interval <= 0:
             raise ValueError("interval must be positive")
         while True:
-            self.step()
+            result = self.step()
+            if self.telemetry_reporter is not None:
+                # The supervisor's heartbeat channel carries the measured
+                # step outcome — mode, actions, sensed faults — as JSON so
+                # the control API shows what Salamander actually did.
+                try:
+                    self.telemetry_reporter(result)
+                except Exception:
+                    LOG.exception("salamander telemetry report failed")
             await asyncio.sleep(interval)
 
 
@@ -311,15 +325,19 @@ async def _main() -> None:
     seed = int(os.getenv("MLA1517_EUCLIDCORE_SEED", "1517"))
     if not device:
         raise SystemExit("MLA1517_MMIO_DEVICE is required")
-    with HeartbeatEmitter("salamander"):
+    with HeartbeatEmitter("salamander") as heartbeat:
         with MMIOBridge(device) as bridge:
-            await SalamanderEngine(
+            engine = SalamanderEngine(
                 bridge,
                 telemetry_path=telemetry,
                 data_dir=data_dir,
                 fault_threshold=threshold,
                 governance_seed=seed,
-            ).run()
+            )
+            engine.telemetry_reporter = lambda result: heartbeat.report(
+                salamander=json.dumps(result, sort_keys=True, separators=(",", ":"), default=str)
+            )
+            await engine.run()
 
 
 if __name__ == "__main__":

@@ -137,6 +137,69 @@ chronus unittest discover, startup boot path, and the stale-finder
 PYTHONPATH caveat (under remote-gpu knowledge). No new blueprint steps were
 needed for this session's setup.
 
+## Worker-spawn PYTHONPATH trap (verified, Oct 2026)
+
+The control API's `ControlPlane` SPAWNS its own workers (`agentic-mining`/
+`discovery`/`autonomous-supervisor`) via `subprocess.Popen` when
+`PYTHIA_AUTOSTART_WORKERS` (default true) and the device gate passes. Spawned
+children get `env=os.environ.copy()` + `env.setdefault("PYTHONPATH",
+str(python_root))` — `python_root` is `chronus/mla1517_platform/python/`, which
+does NOT contain the `chronus` package. So if the API's own env lacks
+`PYTHONPATH=<repo root>`, every spawned worker crashes instantly with
+`ModuleNotFoundError: No module named 'chronus'`; the control plane burns
+`_MAX_RESTARTS_WINDOW=5` restarts in ~60 s and then raises
+`RestartBudgetExhausted`, which makes `/api/v1/telemetry/ops`,
+`/telemetry/stream`, `/mla1517/status` ALL return HTTP 500 until the API is
+restarted. Symptom in API stdout: three-way traceback spam ending in
+`RestartBudgetExhausted: agentic-mining`.
+
+Correct boot PYTHONPATH for the live app:
+`PYTHONPATH=<repo root>;<repo root>/chronus/mla1517_platform/python`
+
+If `PYTHIA_EXECUTION_DEVICE` (or `MLA1517_MMIO_DEVICE`) is unset, no spawn is
+attempted — workers read as `armed_no_device`. Booting WITH the device but
+WITHOUT PYTHONPATH is worse than without either: it converts a passive
+`armed_no_device` into a crash loop + 500s.
+
+### Env recovered from a live worktree process (for reference)
+
+```
+MLA1517_STRATUM_USER=<braiins worker>  # secret:repo:PHIDATA2/PYTHIA:BRAIINS_USERNAME
+MLA1517_STRATUM_PASSWORD=<braiins>     # secret:repo:...:BRAIINS_PASSWORD
+PYTHIA_EXECUTION_DEVICE=cpu
+PYTHIA_IDENTITY_HMAC_SECRET=<64-hex>   # signs .bin heartbeats; API+workers must match
+PYTHIA_NONCE_ORDER=m32                 # required on this box (hendrix unavailable)
+PYTHIA_SUPERVISOR_EPOCH=<16-hex>
+PYTHONPATH=<repo root>;<repo root>/chronus/mla1517_platform/python
+EUCLID_ADMIN_API_KEY=test
+```
+
+### Recovering a running process's full env on Windows
+
+Worker processes inherit the API's env verbatim (`os.environ.copy()`), so
+dumping any orphan worker's environment recovers the parent API env.
+`wmic`/`Get-Process` do NOT expose env — read the PEB instead:
+`NtQueryInformationProcess(0)` → `PebBaseAddress`, `PEB+0x20` →
+`RTL_USER_PROCESS_PARAMETERS`, `+0x80` = env block (UTF-16LE NUL-separated),
+`+0x3F0` = `EnvironmentSize`. ~50 lines of ctypes; works same-bitness.
+
+### Kill/restart behavior to expect
+
+- `taskkill //PID <api> //F` orphans the spawned workers — they keep the pool
+  session alive and keep writing `%LOCALAPPDATA%\pythia\hb\*.metrics.json`, so
+  a resurrected API that does NOT spawn still displays live pool/job/hashrate
+  data. Only the control-plane-owned fields (declared/bound/executing, worker
+  states) degrade.
+- A resurrected API WITH exec device env spawns FRESH workers → duplicate pool
+  sessions + both writers clobbering the same heartbeat files. Kill orphans
+  (`mining_runtime.py`/`discovery_runtime.py`) before/after confirming the new
+  spawn is healthy; the new pool session gets a new `session_id` — good
+  visible recovery proof.
+- Cold browser reload while the API is down → `ERR_CONNECTION_REFUSED` (the
+  API also serves `dist/public` — nothing can render). The
+  stale/`unreachable`/`Waiting for telemetry` markers are only observable in
+  an already-loaded page.
+
 ## Devin Secrets Needed
 - `secret:repo:PHIDATA2/PYTHIA:BRAIINS_USERNAME`, `...:BRAIINS_PASSWORD`
   (working pool identity)

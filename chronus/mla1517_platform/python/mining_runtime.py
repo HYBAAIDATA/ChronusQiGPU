@@ -19,6 +19,10 @@ from chronus.mla1517.mining.chain_observer import BitcoinChainObserver
 from chronus.mla1517.mining.pool_chain import PoolChainObserver
 from chronus.mla1517.mining.session import MiningSession
 from chronus.mla1517.mining.stratum_events import StratumEventLog
+from chronus.mla1517.mining.telemetry_history import (
+    TelemetryHistory,
+    default_history_path,
+)
 from manifold_pool_coordinator import PoolEndpoint
 
 LOG = logging.getLogger("pythia.mining_runtime")
@@ -180,7 +184,11 @@ async def _main_async(args) -> None:
     )
     try:
         with HeartbeatEmitter("agentic-mining") as heartbeat:
-            stratum_events = StratumEventLog()
+            # §7 durable work history: every observed Stratum event plus
+            # bounded hashrate samples, appended as observed — the control
+            # API tails the same file for /api/v1/telemetry/history.
+            history = TelemetryHistory(default_history_path())
+            stratum_events = StratumEventLog(on_event=history.append)
             retarget = RetargetWindowTracker(
                 os.getenv("PYTHIA_RETARGET_TELEMETRY_PATH", "data/retarget_windows.json")
             )
@@ -233,7 +241,12 @@ async def _main_async(args) -> None:
                 coordinator.chain_observer = PoolChainObserver(lambda: coordinator.client)
                 LOG.info("chain evidence: pool Stratum jobs (no bitcoind configured)")
             coordinator.set_evidence_sink(publish_mining_evidence)
-            coordinator.set_metrics_sink(lambda counters: heartbeat.report(**counters))
+            coordinator.set_metrics_sink(
+                lambda counters: (
+                    heartbeat.report(**counters),
+                    history.record_metrics(counters),
+                )
+            )
             coordinator.set_agentic_state_path(
                 os.getenv("PYTHIA_AGENTIC_STATE_PATH", "data/agentic_policy.json")
             )
