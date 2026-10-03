@@ -15,6 +15,8 @@ from threading import Lock
 from time import perf_counter_ns
 from typing import Any, Sequence
 
+from .virtual_igpu.capabilities import DeviceLimits, KernelLimits, legal_local_size
+
 import numpy as np
 
 
@@ -81,6 +83,7 @@ class TensorDeviceProbe:
     global_memory_bytes: int | None = None
     local_memory_bytes: int | None = None
     max_work_group_size: int | None = None
+    max_work_item_sizes: tuple[int, ...] | None = None
     host_unified_memory: bool | None = None
     family: str = ""
     hyba_alias_family: str = ""
@@ -216,7 +219,7 @@ def _device_score(platform: Any, device: Any) -> tuple[int, int, int, int]:
         and any(token in identity for token in ("uhd", "iris", "graphics"))
     )
     return (
-        2 if intel_igpu else 1 if unified else 0,
+        3 if intel_igpu else 1 if unified else 0,
         _int_attr(device, "max_compute_units"),
         _int_attr(device, "global_mem_size"),
         _int_attr(device, "max_clock_frequency"),
@@ -276,6 +279,7 @@ def _probe_for(platform: Any, device: Any) -> TensorDeviceProbe:
         global_memory_bytes=_int_attr(device, "global_mem_size") or None,
         local_memory_bytes=_int_attr(device, "local_mem_size") or None,
         max_work_group_size=_int_attr(device, "max_work_group_size") or None,
+        max_work_item_sizes=tuple(int(v) for v in (getattr(device, "max_work_item_sizes", ()) or ())) or None,
         host_unified_memory=_bool_attr(device, "host_unified_memory"),
         family=_observed_family(name, vendor),
         hyba_alias_family=_alias_family(),
@@ -316,8 +320,12 @@ def _power_of_two_at_most(value: int) -> int:
     return 1 << (int(value).bit_length() - 1)
 
 
-def _plan_1d(output_size: int, max_work_group_size: int) -> tuple[tuple[int], tuple[int]]:
-    local = _power_of_two_at_most(min(max(1, output_size), max(1, max_work_group_size), 256))
+def _plan_1d(output_size: int, max_work_group_size: int, preferred_multiple: int = 1) -> tuple[tuple[int], tuple[int]]:
+    cap = min(max(1, output_size), max(1, max_work_group_size), 256)
+    local = _power_of_two_at_most(cap)
+    preferred_multiple = max(1, int(preferred_multiple))
+    if local >= preferred_multiple:
+        local = max(preferred_multiple, (local // preferred_multiple) * preferred_multiple)
     return (_round_up(output_size, local),), (local,)
 
 
@@ -381,6 +389,14 @@ class ChronusTensorRuntime:
         self.device_id = self.probe.device_id
         self.max_work_group_size = self.probe.max_work_group_size or 1
         self.local_memory_bytes = self.probe.local_memory_bytes or 1
+        self.device_limits = DeviceLimits(
+            self.max_work_group_size,
+            self.probe.max_work_item_sizes or (self.max_work_group_size,) * 3,
+            self.local_memory_bytes,
+            self.probe.global_memory_bytes,
+            _int_attr(device, "max_mem_alloc_size") or None,
+            self.probe.host_unified_memory,
+        )
         self.last_evidence: TensorExecutionEvidence | None = None
 
     def _launch_limits(self, kernel_name: str) -> tuple[int, int]:

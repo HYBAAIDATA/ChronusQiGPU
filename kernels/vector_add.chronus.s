@@ -1,0 +1,13 @@
+; C[gid] = A[gid] + B[gid]; A=0, B=64, C=128
+GET_GID R1, 0
+MOVI R2, 4
+MUL R3, R1, R2
+LOAD R4, [R3+0]
+MOVI R5, 64
+ADD R6, R3, R5
+LOAD R7, [R6+0]
+ADD R8, R4, R7
+MOVI R9, 128
+ADD R10, R3, R9
+STORE R8, [R10+0]
+EXIT

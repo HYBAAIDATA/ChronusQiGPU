@@ -7,6 +7,7 @@ Default remains HybaSubstrate. Theseus is additive and fail-soft.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 import json
 import os
 from pathlib import Path
@@ -16,6 +17,27 @@ from typing import Any
 from hyba.substrate import HybaSubstrate
 
 from .abi import Workload, WorkloadResult, canonical_json, digest_json
+
+
+
+
+class MemoryTier(str, Enum):
+    REGISTER = "register"
+    LOCAL = "local"
+    FOLDED_RESIDENT = "folded_resident"
+    AETHEL_CUSTODY = "aethel_custody"
+    HOST_EXPANDED = "host_expanded"
+    EXTERNAL = "external"
+
+@dataclass(frozen=True)
+class MemoryCost:
+    move: float
+    unfold: float
+    refold: float
+    compute: float
+    reuse_credit: float = 0.0
+    def total(self) -> float:
+        return self.move + self.unfold + self.refold + self.compute - self.reuse_credit
 
 
 @dataclass(frozen=True)
@@ -34,7 +56,7 @@ class VirtualMemoryPlane:
         self._stores: dict[str, HybaSubstrate] = {}
         self._lock = threading.RLock()
         self.residency: dict[str, str] = {}
-        self._theseus: Any = None
+        self.memory_tiers: dict[str, MemoryTier] = {}
 
     @staticmethod
     def _tenant_name(tenant: str) -> str:
@@ -93,7 +115,7 @@ class VirtualMemoryPlane:
             temporary.write_bytes(payload)
             os.replace(temporary, path)
             self.residency[identity.content_id] = result.executed_on
-            self._maybe_theseus_put(payload)
+            self.memory_tiers[identity.content_id] = MemoryTier.FOLDED_RESIDENT
         return PersistedEvidence(
             object_id=identity.content_id,
             fold_id=identity.fold_id,
@@ -124,3 +146,17 @@ class VirtualMemoryPlane:
         if object_id not in self.residency:
             raise KeyError("unknown object residency")
         self.residency[object_id] = target_adapter
+        self.memory_tiers[object_id] = MemoryTier.FOLDED_RESIDENT
+
+    def placement_cost(self, object_id: str, target_tier: MemoryTier, *, move: float, unfold: float = 0.0, refold: float = 0.0, compute: float = 0.0, reuse_credit: float = 0.0) -> MemoryCost:
+        if object_id not in self.residency:
+            raise KeyError("unknown object residency")
+        cost = MemoryCost(move, unfold, refold, compute, reuse_credit)
+        if cost.total() < 0:
+            raise ValueError("memory cost cannot be negative")
+        return cost
+
+    def set_tier(self, object_id: str, target_tier: MemoryTier) -> None:
+        if object_id not in self.residency:
+            raise KeyError("unknown object residency")
+        self.memory_tiers[object_id] = target_tier

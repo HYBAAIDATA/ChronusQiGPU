@@ -1,0 +1,14 @@
+{
+  "schema": "salamander.autonomic.acceptance.v1",
+  "base_sha": "83c187e2cf9a6ef60271c3c6bfcb1b5669e0321e",
+  "new_python_syntax": "PASS",
+  "focused_tests": "NOT_RUN",
+  "inherited_chronus107": "NOT_RUN",
+  "ci": "NOT_REPORTED",
+  "physical_opencl": "PHYSICAL_EVIDENCE_REQUIRED",
+  "authorized_live_pool": "NOT_RUN",
+  "f64": "UNSUPPORTED",
+  "opencl.BINET_EXACT": "UNSUPPORTED",
+  "FOLDED_NATIVE": "OPEN",
+  "note": "Syntax was validated before commit. This seed artifact does not claim unexecuted tests, CI, hardware or pool evidence."
+}

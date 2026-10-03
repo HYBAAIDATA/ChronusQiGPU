@@ -1,0 +1,187 @@
+{
+  "$id": "https://hyba.example/schema/chronus-conformance-case-v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "expected_status": {
+            "const": "REJECTED_IR"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "executable_sha256": {
+            "type": "null"
+          },
+          "expected_sha256": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "class": {
+            "const": "semantic"
+          },
+          "expected_status": {
+            "const": "PASS"
+          }
+        },
+        "required": [
+          "class",
+          "expected_status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "executable_sha256": {
+            "type": "string"
+          },
+          "expected_sha256": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "case_id": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "class": {
+      "enum": [
+        "isa",
+        "semantic"
+      ]
+    },
+    "executable_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "expected_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "expected_status": {
+      "enum": [
+        "PASS",
+        "REJECTED_IR",
+        "REJECTED_ASSEMBLY",
+        "TRAP",
+        "BUDGET_EXHAUSTED",
+        "CONTAINER_REJECTED",
+        "RESULT_MISMATCH",
+        "NONDETERMINISTIC",
+        "HARNESS_ERROR",
+        "NOT_RUN"
+      ]
+    },
+    "expected_trap": {
+      "anyOf": [
+        {
+          "enum": [
+            "ILLEGAL_OPCODE",
+            "MALFORMED_ENCODING",
+            "INVALID_SELECTOR",
+            "MISALIGNED_GLOBAL_ACCESS",
+            "GLOBAL_OOB",
+            "GLOBAL_ADDRESS_WRAP",
+            "MISALIGNED_LOCAL_ACCESS",
+            "LOCAL_OOB",
+            "WORKGROUP_ISOLATION",
+            "MISSING_RECONVERGENCE",
+            "SURPLUS_RECONVERGENCE",
+            "DUPLICATE_RECONVERGENCE",
+            "INVALID_RECONVERGENCE_TARGET",
+            "DIVERGENCE_OVERFLOW",
+            "INVALID_EARLY_EXIT",
+            "BARRIER_DEADLOCK",
+            "MISMATCHED_BARRIER",
+            "BARRIER_BUDGET_EXHAUSTED",
+            "INSTRUCTION_BUDGET_EXHAUSTED",
+            "BAD_MAGIC",
+            "BAD_VERSION",
+            "BAD_CHECKSUM",
+            "BAD_CONTAINER_SIZE",
+            "BAD_ENTRY",
+            "BAD_METADATA"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "input_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "ir_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "limits": {
+      "additionalProperties": false,
+      "properties": {
+        "barrier_budget": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "instruction_budget": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "instruction_budget",
+        "barrier_budget"
+      ],
+      "type": "object"
+    },
+    "operation": {
+      "type": "string"
+    },
+    "schema": {
+      "const": "chronus.conformance.case.v1"
+    },
+    "seed": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "schema",
+    "case_id",
+    "class",
+    "operation",
+    "seed",
+    "ir_sha256",
+    "input_sha256",
+    "executable_sha256",
+    "expected_sha256",
+    "expected_status",
+    "expected_trap",
+    "limits"
+  ],
+  "type": "object"
+}

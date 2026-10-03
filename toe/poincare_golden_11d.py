@@ -515,26 +515,53 @@ GPU_PUNCH_IDS = {
 }
 
 
-def to_gpu_input(x: np.ndarray) -> np.ndarray:
-    """Convert an 11D vector to the flat float32 layout expected by the
-    OpenCL unified punch kernel (``input_float[gid * DIM + i]``).
+GPU_FLOAT32_ROLES = frozenset({"decorative", "parametric"})
+AUTHORITATIVE_ROLES = frozenset({"structural", "certifying"})
 
-    Parameters
-    ----------
-    x : array-like, shape (11,)  or (N, 11)
-        One or more 11D vectors in the Poincaré-Golden manifold.
 
-    Returns
-    -------
-    np.ndarray, dtype=float32
-        Flat contiguous array of shape (N * 11,) ready for GPU upload.
-    """
-    arr = np.asarray(x, dtype=np.float32)
+def _flat_11d(x: np.ndarray, *, dtype) -> np.ndarray:
+    arr = np.asarray(x, dtype=dtype)
     if arr.ndim == 1:
+        if arr.shape != (11,):
+            raise ValueError(f"Expected shape (11,) or (N, 11), got {arr.shape}")
         arr = arr.reshape(1, 11)
     elif arr.ndim != 2 or arr.shape[1] != 11:
         raise ValueError(f"Expected shape (11,) or (N, 11), got {arr.shape}")
     return np.ascontiguousarray(arr.ravel())
+
+
+def to_gpu_input(
+    x: np.ndarray,
+    *,
+    role: str | None = None,
+    allow_lossy: bool = False,
+) -> np.ndarray:
+    """Create the OpenCL kernel's flat Float32 payload under an explicit policy.
+
+    The current kernel ABI is Float32. It is suitable only for decorative or
+    parametric use, and callers must acknowledge the lossy conversion. A
+    structural or certifying state is rejected rather than silently downcast.
+    No fp64 device qualification is implied by this host-side codec.
+    """
+    if role in AUTHORITATIVE_ROLES:
+        raise ValueError(
+            f"role={role!r} requires authoritative Float64/exact handling; "
+            "the current GPU kernel is not fp64-certified"
+        )
+    if role not in GPU_FLOAT32_ROLES:
+        raise ValueError(
+            "role must be explicitly 'decorative' or 'parametric' for the Float32 GPU path"
+        )
+    if not allow_lossy:
+        raise ValueError("Float32 GPU conversion requires allow_lossy=True")
+    return _flat_11d(x, dtype=np.float32)
+
+
+def to_authoritative_input(x: np.ndarray, *, role: str) -> np.ndarray:
+    """Flatten an authoritative host Float64 state without claiming GPU support."""
+    if role not in AUTHORITATIVE_ROLES:
+        raise ValueError("authoritative input role must be 'structural' or 'certifying'")
+    return _flat_11d(x, dtype=np.float64)
 
 
 def from_gpu_output(flat: np.ndarray, n: int = 1) -> np.ndarray:

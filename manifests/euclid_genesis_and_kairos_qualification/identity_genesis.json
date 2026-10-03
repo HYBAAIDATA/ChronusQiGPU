@@ -1,0 +1,77 @@
+{
+  "authority_boundaries": {
+    "bitcoin_consensus": "existing mining stack; unchanged",
+    "durable_state": "OVID (current implementation name: Aethel)",
+    "execution": "Chronus",
+    "learning": "EUCLID LearningService/TrainingPipeline/RewardAuthority",
+    "operational_experience": "Salamander",
+    "query_projection": "THESEUS (current implementation name: hyba_db)",
+    "rehearsal": "Kairos; no production mining/network/pool/wallet authority"
+  },
+  "base_sha": "d3eef9a71bccac5a59b27aff7283c4d98f06cc21",
+  "canonical_name": "EUCLID",
+  "created_at": "2026-10-02T19:05:40Z",
+  "generation_id": "EUCLID-PYTHIPhiMiner-CONVERGENCE-2026-10-02",
+  "non_claims": [
+    "consciousness",
+    "inherited memories",
+    "production intelligence",
+    "general intelligence",
+    "production qualification",
+    "external validation"
+  ],
+  "predecessor_relationship": "NEW_INSTANCE; prior EUCLID identities and memory lineages are not identity ancestors and may enter only as labelled archival/curriculum evidence",
+  "roots": {
+    "checkpoint_root": "977b366db095e834068f0edfb9caddd8971419d833087217f005e88208dcdbde",
+    "claim_root": "18f9b7b9277b42579441acba4a938f2cedf158eadb618ec44c4590074ff6baa7",
+    "curriculum_provenance_root": "cfa1a850e106b12e57b2e8d7af8a1835ee2a10831cd1b5ac069c51f26223a9ec",
+    "event_root": "5c50a8e84532bc8294141f34fa830d71270f6e2ea5dea647ca5d35ae11461c52",
+    "identity_root": "8321461d0f22147cd9f49e2bc7e4b5699a8bd4e520cb691b9254df848eda167b",
+    "manifest_root": "aacdff385b4c36efad32ddde3a201bccbe1915c998f536ab7da79cfc32837b78",
+    "memory_root": "aa5e06519588a0bb05882da58eef6dd811950104dcdcbf394b6cf416bb9abfa8"
+  },
+  "schema": "euclid.genesis/1",
+  "seal": "b93d1aaae32edc60f3043fd031cbf7e279418885407a106131d2adad9880192a",
+  "sources": [
+    {
+      "content_sha256": null,
+      "disposition": "OBSERVATION_ONLY",
+      "evidence_class": "CURRENT_INTERNAL",
+      "labels": [
+        "CURRENT_RESEARCH"
+      ],
+      "source_id": "notion-recovery-plan",
+      "source_identity": "Notion: PYTHIPhiMiner Intelligence Elevation Review \u2014 EUCLID Recovery Plan",
+      "uncertainty": 0.1,
+      "uri": "https://app.notion.com/p/5f064bbd7fa84ea09d3abafd3b6e6742",
+      "version": "2026-10-02"
+    },
+    {
+      "content_sha256": null,
+      "disposition": "OBSERVATION_ONLY",
+      "evidence_class": "ARCHIVAL",
+      "labels": [
+        "ARCHIVAL",
+        "CURRICULUM_ONLY"
+      ],
+      "source_id": "notion-kairos-runtime",
+      "source_identity": "Notion: EUCLID \u2014 Kairos Runtime Control Plane",
+      "uncertainty": 0.25,
+      "uri": "https://app.notion.com/p/a51328f83a1344db92cfb0920afae11d",
+      "version": "2026-07-19"
+    },
+    {
+      "content_sha256": null,
+      "disposition": "OBSERVATION_ONLY",
+      "evidence_class": "CURRENT_VERIFIED",
+      "labels": [
+        "IMMUTABLE_FORK_POINT"
+      ],
+      "source_id": "github-108",
+      "source_identity": "GitHub: QuantumPhiEnterprise/PYTHIPhiMiner #108",
+      "uncertainty": 0.0,
+      "uri": "https://github.com/QuantumPhiEnterprise/PYTHIPhiMiner/pull/108",
+      "version": "d3eef9a71bccac5a59b27aff7283c4d98f06cc21"
+    }
+  ]
+}
