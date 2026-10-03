@@ -12,6 +12,12 @@ import threading
 import pytest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+from chronus.mla1517.remote_gpu import (
+    PROTOCOL_VERSION,
+    _attestation_key,
+    _window_commitment,
+    sha256d_share_attestation,
+)
 from mining.hash_pipeline import HashPipeline
 from mining.remote_hasher import RemoteHasherError, RemoteOpenCLHasher
 
@@ -40,7 +46,7 @@ class _StubAgent(BaseHTTPRequestHandler):
             return self._reply(
                 200,
                 {
-                    "protocol": "remote_opencl_v2",
+                    "protocol": PROTOCOL_VERSION,
                     "devices": [
                         {
                             "id": "stub-igpu-0",
@@ -58,7 +64,7 @@ class _StubAgent(BaseHTTPRequestHandler):
                 200,
                 {
                     "status": "ok",
-                    "protocol": "remote_opencl_v2",
+                    "protocol": PROTOCOL_VERSION,
                     "device_count": 1,
                     "opencl_error": None,
                     "endpoints": endpoints,
@@ -69,7 +75,7 @@ class _StubAgent(BaseHTTPRequestHandler):
             return self._reply(
                 200,
                 {
-                    "protocol": "remote_opencl_v2",
+                    "protocol": PROTOCOL_VERSION,
                     "devices": [
                         {
                             "name": "Stub iGPU-0",
@@ -127,15 +133,8 @@ class _StubAgent(BaseHTTPRequestHandler):
                     "digest": "00" * 32 if type(self).tamper else digest.hex(),
                 }
                 break
-        from chronus.mla1517.remote_gpu import (
-            _attestation_key,
-            _window_commitment,
-            sha256d_share_attestation,
-        )
-
         device_name = "Stub iGPU-0"
         device_id = "stub-igpu-0"
-        measured_ns = 999
         hashes = len(window) if winner is None else window.index(winner["nonce"]) + 1
         commitment = _window_commitment(order, window)
         attestation = sha256d_share_attestation(
@@ -149,7 +148,7 @@ class _StubAgent(BaseHTTPRequestHandler):
             device=device_name,
             device_id=device_id,
             execution_backend="opencl:gpu",
-            measured_ns=measured_ns,
+            measured_ns=999,
             order=order,
             window_commitment=commitment,
             key=_attestation_key() or None,
@@ -157,14 +156,14 @@ class _StubAgent(BaseHTTPRequestHandler):
         return self._reply(
             200,
             {
-                "protocol": "remote_opencl_v2",
+                "protocol": PROTOCOL_VERSION,
                 "device": {"id": device_id, "name": device_name},
                 "execution_backend": "opencl:gpu",
-                "measured_ns": measured_ns,
+                "hashes": hashes,
                 "window": {"base_nonce": base, "count": len(window)},
+                "measured_ns": 999,
                 "order": order,
                 "window_commitment": commitment,
-                "hashes": hashes,
                 "share": (
                     None if winner is None else {"nonce": winner["nonce"], "hash": winner["digest"]}
                 ),
