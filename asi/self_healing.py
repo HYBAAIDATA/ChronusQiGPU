@@ -115,8 +115,12 @@ class SelfHealingEngine:
         """Collect current system metrics"""
         try:
             # Import metrics from enhanced AI
-            from services.agi.enhanced_ai.metrics import get_metrics
+            from agi.enhanced_ai.metrics import get_metrics
+        except ImportError as exc:
+            logger.error(f"enhanced metrics unavailable: {exc}")
+            return {}
 
+        try:
             get_metrics()
 
             # Collect key metrics
@@ -265,8 +269,11 @@ class SelfHealingEngine:
         """Fix response time issues"""
         try:
             # Clear caches to force refresh
-            from services.agi.enhanced_ai.cache import get_cache_manager
+            from agi.enhanced_ai.cache import get_cache_manager
+        except ImportError as exc:
+            return False, f"cache manager unavailable: {exc}"
 
+        try:
             cache_manager = get_cache_manager()
 
             # Selective cache clearing
@@ -295,8 +302,11 @@ class SelfHealingEngine:
         """Fix memory leak issues"""
         try:
             # Clear old sessions
-            from services.agi.enhanced_ai.persistence import get_persistence
+            from agi.enhanced_ai.persistence import get_persistence
+        except ImportError as exc:
+            return False, f"persistence unavailable: {exc}"
 
+        try:
             persistence = get_persistence()
 
             if persistence._initialized:
@@ -304,7 +314,10 @@ class SelfHealingEngine:
                 return True, f"Cleaned up {deleted} old sessions"
 
             # Clear caches
-            from services.agi.enhanced_ai.cache import get_cache_manager
+            try:
+                from agi.enhanced_ai.cache import get_cache_manager
+            except ImportError as exc:
+                return False, f"cache manager unavailable: {exc}"
 
             cache_manager = get_cache_manager()
             cache_manager.clear_all()
@@ -369,17 +382,20 @@ class SelfHealingEngine:
 
         # Optimize caches
         try:
-            from services.agi.enhanced_ai.cache import get_cache_manager
+            from agi.enhanced_ai.cache import get_cache_manager
+        except ImportError as exc:
+            logger.error(f"cache manager unavailable: {exc}")
+        else:
+            try:
+                cache_manager = get_cache_manager()
+                stats = cache_manager.get_all_stats()
 
-            cache_manager = get_cache_manager()
-            stats = cache_manager.get_all_stats()
-
-            # Adjust cache sizes based on hit rates
-            for cache_name, cache_stats in stats.items():
-                if cache_stats["hit_rate"] < 0.5:
-                    optimizations.append(f"Increased {cache_name} size for better hit rate")
-        except Exception as e:
-            logger.error(f"Error optimizing caches: {e}")
+                # Adjust cache sizes based on hit rates
+                for cache_name, cache_stats in stats.items():
+                    if cache_stats["hit_rate"] < 0.5:
+                        optimizations.append(f"Increased {cache_name} size for better hit rate")
+            except Exception as e:
+                logger.error(f"Error optimizing caches: {e}")
 
         # Optimize knowledge base
         try:
