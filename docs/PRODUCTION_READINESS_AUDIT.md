@@ -137,7 +137,7 @@ all commands still pass).
 |---|---|---|
 | `asic/__init__.py` | Unimplemented (empty marker package) | Harmless; no code imports it |
 | `core_engine/` | Deprecated facade (docstring-only) | Redirects to `Intelligence` |
-| `legacy/` | Retired surface | Excluded from flake8/black; includes `firebase-applet-config.json` with a committed Firebase **web** apiKey — see §5 |
+| `legacy/` | Retired surface | Excluded from flake8/black |
 | `scripts/import_audit.py` | **Broken → fixed** | Was a stub auditing absent `mla1517_core`; real audit restored |
 | `control_api._guardian_preflight` | **Broken → fixed** | Unhandled mediator exception → 500; now fail-closed 503 |
 
@@ -155,10 +155,11 @@ path; the only fake objects are in test files and `soak_voyage.py`.
 - **Fail-closed**: no device/job/proof-adapter/credentials/explicit-submit →
   refuse, never fake; guardian outage → 503 (fixed this pass);
   unsigned mediation manifest → gate FAIL (by design).
-- **Committed key**: `legacy/firebase-applet-config.json` contains a real
-  Firebase web apiKey. Web keys are public-by-design identifiers and
-  `firestore.rules` is default-deny, but the file is unused — recommend
-  removing it or rotating the key.
+- **Committed key — resolved**: `legacy/firebase-applet-config.json` (a real
+  Firebase web apiKey, unused by code) was removed from the tree. Web keys are
+  public-by-design identifiers and `firestore.rules` was default-deny, but the
+  key persists in git history — revoke/rotate it at the Firebase console if it
+  was ever live (operator action).
 - **Remaining**: `black --check .` repo-wide still fails on ~308 files —
   almost entirely vendored `turing_universal_quantum_computer/` internals and
   research dirs outside the 9-file CI scope; documented gap, not new debt.

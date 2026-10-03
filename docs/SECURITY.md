@@ -15,9 +15,10 @@ This document records PYTHIA's production security controls. See
   templates are committed.
 - `StratumIdentity` (see `chronus/mla1517_platform/python/startup_contract.py`)
   stores only `sha256(password)`; alias-conflict errors mask values `[:2]***`.
-- `firebase-applet-config.json` contains a committed Firebase web apiKey that is
-  unused by code. `firestore.rules` is default-deny + auth-required. Treat as
-  flagged: rotate/revoke the key or remove the file.
+- The committed Firebase web apiKey (`legacy/firebase-applet-config.json`) has
+  been removed from the repo; it was unused by code and `firestore.rules` was
+  default-deny + auth-required. The key remains in git history — revoke/rotate
+  it at the Firebase console if it was ever live (operator action).
 
 ## Pool transport
 

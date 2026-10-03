@@ -8,7 +8,6 @@ logs
 bun.lock
 package-lock.json
 metadata.json
-firebase-applet-config.json
 firebase-blueprint.json
 .env.example
 legacy
