@@ -7,6 +7,7 @@ from aethel.enterprise_bridge import (
     CapStatus,
     TruthClass,
     assert_ready,
+    compute_envelope_provenance_hash,
     emit_envelope,
     open_enterprise_store,
     provenance_hash,
@@ -35,14 +36,14 @@ def test_assert_ready_fail_closed_on_external():
 
 
 def test_envelope_has_truth_class_and_provenance():
-    env = emit_envelope({"x": 1}, truth_class=TruthClass.MEASURED, capability_id="E.FOLD.WORKING_FORM")
-    assert env["truth_class"] == "measured"
-    assert len(env["provenance_hash"]) == 64
-    assert env["capability_status"] == "READY"
-    # stable hash: recompute
-    again = provenance_hash({k: v for k, v in env.items() if k != "provenance_hash"})
-    # timestamp differs — just check field present and hex
-    assert all(c in "0123456789abcdef" for c in env["provenance_hash"])
+    env = emit_envelope({"x": 1}, truth_class=TruthClass.MEASURED)
+    assert env["truth_class"] == TruthClass.MEASURED.value
+    got = env["provenance_hash"]
+    assert isinstance(got, str) and len(got) == 64
+    assert got == compute_envelope_provenance_hash(env)
+    body = {k: v for k, v in env.items() if k != "provenance_hash"}
+    assert got == provenance_hash(body)
+
 
 
 def test_external_capability_marked_not_local_production():
@@ -65,3 +66,49 @@ def test_open_enterprise_store_put_get():
     health = db.health()
     assert health["owners"]["theseus"]["status"] == "ok"
     assert health["owners"]["ovid"]["status"] == "ok"
+
+
+def test_provenance_hash_recomputed_equality() -> None:
+    """Provenance must equal recomputed SHA-256 (integrity), not merely look hex-ish."""
+    from aethel.enterprise_bridge import (
+        TruthClass,
+        compute_envelope_provenance_hash,
+        emit_envelope,
+        provenance_hash,
+    )
+
+    env = emit_envelope(
+        {"k": "v", "n": 1},
+        truth_class=TruthClass.MEASURED,
+        capability_id="E.STORE.THESEUS",
+    )
+    got = env["provenance_hash"]
+    assert isinstance(got, str) and len(got) == 64
+    assert all(c in "0123456789abcdef" for c in got)
+    # Explicit recompute equality (the actual gate)
+    assert got == compute_envelope_provenance_hash(env)
+    body = {k: v for k, v in env.items() if k != "provenance_hash"}
+    assert got == provenance_hash(body)
+    # Integrity is SHA-256; authenticity (HMAC) is Theseus-side only
+
+
+def test_report_never_unqualified_production_ready() -> None:
+    from aethel.enterprise_bridge import report
+
+    d = report().to_dict()
+    assert d.get("production_ready") is False
+    assert d.get("software_readiness_scope") == "enterprise_custody_software_single_root"
+    assert d.get("catalogue_is_declarative") is True
+    assert d.get("evidence_drives_readiness") is True
+    assert d.get("readiness_kind") == "scoped_software"
+
+
+def test_capabilities_json_no_bare_production_ready_true() -> None:
+    import json
+    from importlib import resources
+
+    raw = resources.files("aethel").joinpath("capabilities.json").read_text(encoding="utf-8")
+    assert '"production_ready": true' not in raw
+    data = json.loads(raw)
+    assert "production_ready" not in data or data.get("production_ready") is False
+    assert data.get("software_readiness") == "enterprise_custody_software_single_root"

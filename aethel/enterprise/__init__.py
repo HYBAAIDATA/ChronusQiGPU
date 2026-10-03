@@ -14,7 +14,13 @@ from .adapters import (
     mirror_digest,
     wrap_notes,
 )
-from .authenticity import content_digest, mac_create, mac_verify
+from .authenticity import (
+    CustodyKey,
+    content_digest,
+    is_insecure_dev_key,
+    mac_create,
+    mac_verify,
+)
 from .custody import EnterpriseCustody, EnterpriseTheseus, compose
 from .errors import (
     AuthenticityError,
@@ -71,6 +77,8 @@ __all__ = [
     "content_digest",
     "mac_create",
     "mac_verify",
+    "CustodyKey",
+    "is_insecure_dev_key",
     # support
     "Quotas",
     "EvidenceTelemetry",

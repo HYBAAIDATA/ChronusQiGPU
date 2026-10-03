@@ -59,3 +59,18 @@ Lifecycle: recover Theseus **before** consumers; stop/flush consumers before clo
   - light endurance (50 ops) with telemetry counters
 - **Not measured here:** multi-node replication, hyperscaler fleet, hardware Chronus rooflines, Solutions API.
 
+
+
+## Evidence boundary / Not proven
+
+**Proven in this package (scoped):** `enterprise_custody_software_single_root` —
+versioned folded working form, restart/replay, primary+replica healing, HMAC authenticity,
+schema rejection, backup/restore, quotas/fail-closed storage exhaustion, thread concurrency,
+multi-process attach/reopen, read-only/degradation behavior, telemetry honesty and
+composition-root lifecycle.
+
+**Not proven:** distributed consensus, simultaneous multi-root/multi-node custody,
+cross-region DR, hyperscaler fleet soak, Chronus hardware performance, Solutions API
+production readiness, or enterprise-wide HYBA certification.
+
+Fifty operations is **light endurance (50 ops)** only — not soak evidence.

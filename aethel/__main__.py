@@ -167,6 +167,12 @@ def _cmd_health(_args: argparse.Namespace) -> int:
 
 
 def _cmd_readiness(_args: argparse.Namespace) -> int:
+    """Scoped software readiness only — never whole-system production_ready.
+
+    production_ready is always false at the aggregator surface so no report can
+    be read as unqualified HYBA / hyperscaler / hardware readiness.
+    Catalogue status is declarative; selftest evidence drives software_ok.
+    """
     from .selftest import run_selftest
 
     manifest = json.loads(
@@ -176,27 +182,30 @@ def _cmd_readiness(_args: argparse.Namespace) -> int:
     )
     selftest = run_selftest(quick=True)
     software_ok = selftest.get("overall") == "PASS"
-    production_ready = bool(manifest.get("production_ready")) and software_ok
-    readiness = "ready" if production_ready else (
-        "software_ready" if software_ok else "not_ready"
+    scope = (
+        manifest.get("software_readiness")
+        or manifest.get("production_ready_scope")
+        or "enterprise_custody_software_single_root"
     )
-    # Storage triad can be ready while hyperscaler remains not-implemented
-    sys.stdout.write(
-        json.dumps(
-            {
-                "readiness": readiness,
-                "production_ready": production_ready,
-                "software_readiness": manifest.get("software_readiness"),
-                "production_ready_scope": manifest.get("production_ready_scope"),
-                "owners": manifest.get("owners"),
-                "selftest_overall": selftest.get("overall"),
-                "claims": manifest.get("claims"),
-            },
-            indent=2,
-            default=str,
-        )
-        + "\n"
-    )
+    readiness = "software_ready_scoped" if software_ok else "not_ready"
+    payload = {
+        "readiness": readiness,
+        "production_ready": False,
+        "production_ready_note": (
+            "Always false. Not whole-system, distributed, hardware, "
+            "hyperscaler, or HYBA Intelligence production readiness."
+        ),
+        "readiness_kind": "scoped_software",
+        "software_readiness": scope if software_ok else "not_ready",
+        "software_readiness_scope": scope,
+        "production_ready_scope": scope,
+        "evidence_drives_readiness": True,
+        "catalogue_is_declarative": True,
+        "owners": manifest.get("owners"),
+        "selftest_overall": selftest.get("overall"),
+        "claims": manifest.get("claims"),
+    }
+    sys.stdout.write(json.dumps(payload, indent=2, default=str) + chr(10))
     return 0 if software_ok else 1
 
 

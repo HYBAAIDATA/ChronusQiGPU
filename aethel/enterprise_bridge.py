@@ -297,11 +297,26 @@ CAPABILITIES: tuple[Capability, ...] = (
 
 @dataclass
 class EnterpriseCapabilityReport:
-    """Machine-readable migration report for Intelligence CI."""
+    """Machine-readable migration report for Intelligence CI.
+
+    Catalogue CapStatus values are **declarative**. Independent promotion to
+    operational READY requires named acceptance evidence. Report surfaces never
+    emit unqualified production_ready=true.
+    """
 
     generated_at: str
     governance: str = "Veritas Integritas Rule 7"
     thesis: str = "The Folded Form is the Working Form"
+    catalogue_is_declarative: bool = True
+    evidence_drives_readiness: bool = True
+    software_readiness_scope: str = "enterprise_custody_software_single_root"
+    readiness_kind: str = "scoped_software"
+    # Never true for whole-system / hyperscaler / hardware
+    production_ready: bool = False
+    production_ready_note: str = (
+        "production_ready is always false at report level. "
+        "Use software_readiness_scope for scoped software claims only."
+    )
     mining_proof_ground: bool = True
     triad_ready: bool = True
     capabilities: List[Dict[str, Any]] = field(default_factory=list)
@@ -315,7 +330,22 @@ class EnterpriseCapabilityReport:
     )
 
     def to_dict(self) -> Dict[str, Any]:
-        return asdict(self)
+        d = asdict(self)
+        # Hard rule: never surface unqualified production_ready=true
+        d["production_ready"] = False
+        d.setdefault(
+            "triad_ready_note",
+            "Declarative catalogue AND local triad import smoke only; "
+            "not hyperscaler/whole-system production readiness.",
+        )
+        d.setdefault("catalogue_is_declarative", True)
+        d.setdefault("evidence_drives_readiness", True)
+        d.setdefault("readiness_kind", "scoped_software")
+        d.setdefault(
+            "software_readiness_scope",
+            "enterprise_custody_software_single_root",
+        )
+        return d
 
     def to_json(self, *, indent: int = 2) -> str:
         return json.dumps(self.to_dict(), indent=indent, sort_keys=True)
@@ -377,7 +407,7 @@ def capability_by_id(cap_id: str) -> Optional[Capability]:
 
 
 def assert_ready(cap_id: str) -> Capability:
-    """Fail closed if a host tries to advertise a non-READY capability as local."""
+    """Fail closed if catalogue status is not READY (declarative, not production proof)."""
     cap = capability_by_id(cap_id)
     if cap is None:
         raise KeyError(f"unknown capability id: {cap_id}")
@@ -390,15 +420,31 @@ def assert_ready(cap_id: str) -> Capability:
 
 
 def provenance_hash(payload: Mapping[str, Any] | bytes | str) -> str:
+    """SHA-256 integrity hash over canonical payload bytes.
+
+    This is integrity, not authenticity. HMAC authenticity is owned by
+    Theseus custody (aethel.enterprise.authenticity) and is never implied
+    by this envelope field.
+    """
     if isinstance(payload, (bytes, bytearray)):
         body = bytes(payload)
     elif isinstance(payload, str):
         body = payload.encode("utf-8")
     else:
-        body = json.dumps(payload, sort_keys=True, default=str, separators=(",", ":")).encode(
-            "utf-8"
-        )
+        body = json.dumps(
+            dict(payload), sort_keys=True, separators=(",", ":"), default=str
+        ).encode("utf-8")
     return hashlib.sha256(body).hexdigest()
+
+
+def compute_envelope_provenance_hash(body: Mapping[str, Any]) -> str:
+    """Recompute envelope provenance the same way envelope_response seals it.
+
+    Tests must assert equality against the recomputed hash, not merely that
+    the existing value is 64 hex characters.
+    """
+    sealed = {k: v for k, v in dict(body).items() if k != "provenance_hash"}
+    return provenance_hash(sealed)
 
 
 def emit_envelope(
@@ -436,6 +482,7 @@ def emit_envelope(
             body["advertisement"] = "not_local_production"
     if extra:
         body["extra"] = dict(extra)
+    # SHA-256 integrity only (not HMAC authenticity)
     body["provenance_hash"] = provenance_hash(
         {k: v for k, v in body.items() if k != "provenance_hash"}
     )
@@ -482,6 +529,7 @@ __all__ = [
     "capability_by_id",
     "assert_ready",
     "provenance_hash",
+    "compute_envelope_provenance_hash",
     "emit_envelope",
     "open_enterprise_store",
     "smoke_measured_put",

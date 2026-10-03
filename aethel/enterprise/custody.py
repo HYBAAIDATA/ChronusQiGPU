@@ -10,14 +10,20 @@ import uuid
 from pathlib import Path
 from typing import Any, Optional
 
-from .authenticity import content_digest, mac_create, mac_verify
 from .errors import (
     AuthenticityError,
     AuthorityBoundaryError,
     ConcurrencyConflict,
     ReadOnlyModeError,
+    ResourceExhausted,
     SchemaVersionError,
     UnrecoverableCustodyError,
+)
+from .authenticity import (
+    content_digest,
+    is_insecure_dev_key,
+    mac_create,
+    mac_verify,
 )
 from .governance import Quotas
 from .hooks import AllowAllHook, SecurityHook
@@ -60,7 +66,11 @@ class EnterpriseCustody:
         root: Path | str,
         *,
         tenant: str = "default",
-        hmac_key: bytes = b"enterprise-dev-key-change-me",
+        hmac_key: Optional[bytes] = None,
+        key_id: str = "k1",
+        require_authenticity: bool = True,
+        allow_insecure_dev_key: bool = False,
+        previous_hmac_keys: Optional[list[bytes]] = None,
         quotas: Optional[Quotas] = None,
         hook: Optional[SecurityHook] = None,
         read_only: bool = False,
@@ -71,7 +81,11 @@ class EnterpriseCustody:
     ) -> None:
         self.root = Path(root)
         self.tenant = tenant
-        self.hmac_key = hmac_key
+        self.key_id = str(key_id)
+        self.require_authenticity = bool(require_authenticity)
+        self.allow_insecure_dev_key = bool(allow_insecure_dev_key)
+        self.previous_hmac_keys = list(previous_hmac_keys or [])
+        self.hmac_key = self._resolve_hmac_key(hmac_key)
         self.quotas = quotas or Quotas()
         self.hook: SecurityHook = hook or AllowAllHook()
         self.read_only = read_only
@@ -117,6 +131,34 @@ class EnterpriseCustody:
 
     def _replica_path(self, record_id: str) -> Path:
         return self.replica_dir / f"{record_id}.json"
+
+
+    def _resolve_hmac_key(self, hmac_key: Optional[bytes]) -> bytes:
+        """Fail-closed when authenticity required and no usable key is provided.
+
+        No silent production default. Explicit allow_insecure_dev_key=True is
+        required for lab/dev placeholder keys. AL HARAS policy is not applied
+        here — only key presence/shape.
+        """
+        if hmac_key is None or hmac_key == b"":
+            if self.require_authenticity:
+                raise AuthenticityError(
+                    "HMAC key required (require_authenticity=True); "
+                    "no silent default production key"
+                )
+            return b""
+        key = bytes(hmac_key)
+        if (
+            self.require_authenticity
+            and is_insecure_dev_key(key)
+            and not self.allow_insecure_dev_key
+        ):
+            raise AuthenticityError(
+                "refusing insecure/default HMAC key without allow_insecure_dev_key=True"
+            )
+        if self.require_authenticity and len(key) < 16:
+            raise AuthenticityError("HMAC key must be >= 16 bytes")
+        return key
 
     def _append_event(self, event: CustodyEvent) -> None:
         self._events.append(event)
@@ -198,7 +240,7 @@ class EnterpriseCustody:
             raise SchemaVersionError(f"unknown ovid_transform_version={ovid_v}")
         env = CustodyEnvelope.from_dict(data)
         mac = env.mac
-        if not mac_verify(self.hmac_key, env, mac):
+        if not mac_verify(self.hmac_key, env, mac, previous_keys=self.previous_hmac_keys):
             raise AuthenticityError(f"MAC verify failed for {env.record_id}")
         try:
             stored = b64d(env.payload_b64)
@@ -602,6 +644,8 @@ class EnterpriseCustody:
         if not self._ready:
             status = "recovering"
         return {
+            "key_id": self.key_id,
+            "require_authenticity": self.require_authenticity,
             "status": status,
             "ready": self._ready,
             "degraded": self._degraded,
@@ -633,24 +677,39 @@ def compose(
     root: Path | str,
     *,
     tenant: str = "default",
-    hmac_key: bytes = b"enterprise-dev-key-change-me",
+    hmac_key: Optional[bytes] = None,
+    key_id: str = "k1",
+    require_authenticity: bool = True,
+    allow_insecure_dev_key: bool = False,
+    previous_hmac_keys: Optional[list[bytes]] = None,
     quotas: Optional[Quotas] = None,
     hook: Optional[SecurityHook] = None,
     read_only: bool = False,
     chronus_accel: bool = False,
+    use_ovid_fold: bool = True,
+    telemetry: Any = None,
+    ovid: Any = None,
     **kwargs: Any,
-) -> EnterpriseCustody:
-    """Factory: open enterprise custody with recover-on-open."""
+) -> "EnterpriseCustody":
+    """Factory: open enterprise custody under root (recovers journal first)."""
     return EnterpriseCustody(
         root,
         tenant=tenant,
         hmac_key=hmac_key,
+        key_id=key_id,
+        require_authenticity=require_authenticity,
+        allow_insecure_dev_key=allow_insecure_dev_key,
+        previous_hmac_keys=previous_hmac_keys,
         quotas=quotas,
         hook=hook,
         read_only=read_only,
         chronus_accel=chronus_accel,
+        use_ovid_fold=use_ovid_fold,
+        telemetry=telemetry,
+        ovid=ovid,
         **kwargs,
     )
+
 
 
 __all__ = [

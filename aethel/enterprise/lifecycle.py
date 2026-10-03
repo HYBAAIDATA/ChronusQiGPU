@@ -28,7 +28,11 @@ class CompositionRoot:
         root: Path | str,
         *,
         tenant: str = "default",
-        hmac_key: bytes = b"enterprise-dev-key-change-me",
+        hmac_key: Optional[bytes] = None,
+        key_id: str = "k1",
+        require_authenticity: bool = True,
+        allow_insecure_dev_key: bool = False,
+        previous_hmac_keys: Optional[list[bytes]] = None,
         hook: Optional[SecurityHook] = None,
         chronus_accel: bool = False,
         telemetry: Optional[EvidenceTelemetry] = None,
@@ -36,6 +40,10 @@ class CompositionRoot:
         self._root = Path(root)
         self._tenant = tenant
         self._hmac_key = hmac_key
+        self._key_id = key_id
+        self._require_authenticity = require_authenticity
+        self._allow_insecure_dev_key = allow_insecure_dev_key
+        self._previous_hmac_keys = previous_hmac_keys
         self._hook = hook
         self._chronus_accel = chronus_accel
         self.telemetry = telemetry or EvidenceTelemetry()
@@ -61,6 +69,10 @@ class CompositionRoot:
                 self._root,
                 tenant=self._tenant,
                 hmac_key=self._hmac_key,
+                key_id=self._key_id,
+                require_authenticity=self._require_authenticity,
+                allow_insecure_dev_key=self._allow_insecure_dev_key,
+                previous_hmac_keys=self._previous_hmac_keys,
                 hook=self._hook,
                 chronus_accel=self._chronus_accel,
                 telemetry=self.telemetry,
