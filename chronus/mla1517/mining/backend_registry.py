@@ -26,8 +26,12 @@ and — when unavailable — the measured reason.
 from __future__ import annotations
 
 import hashlib
+import json
+import os
 import time
-from dataclasses import dataclass, field
+import uuid
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
 from enum import StrEnum
 from typing import Any, Callable
 
@@ -80,6 +84,23 @@ class BackendSelection:
     fallback: bool
     reason: str
     probed: dict[str, LaneProbe]
+    decision_id: str = "Unavailable"
+    job_id: str = "Unavailable"
+    epoch: str = "Unavailable"
+    observation: dict[str, Any] = field(default_factory=dict)
+    available_actions: tuple[str, ...] = ()
+    selected_action: str = "Unavailable"
+    execution_target: str = "Unavailable"
+    result: str = "Unavailable"
+    disposition: str = "rejected"
+    timestamp: float = 0.0
+    software_revision: str = "unknown"
+
+    def as_dict(self) -> dict[str, Any]:
+        value = asdict(self)
+        value.pop("hasher", None)
+        value["probed"] = {name: probe.as_dict() for name, probe in self.probed.items()}
+        return value
 
 
 class BackendUnavailable(RuntimeError):
@@ -237,11 +258,16 @@ class BackendRegistry:
         probe_ttl_s: float = 60.0,
         probes: dict[BackendLane, Callable[[], LaneProbe]] | None = None,
         clock: Callable[[], float] = time.time,
+        software_revision: str = "unknown",
+        evidence_path: str | Path | None = None,
     ) -> None:
         if probe_ttl_s <= 0:
             raise ValueError("probe_ttl_s must be positive")
         self._ttl = probe_ttl_s
         self._clock = clock
+        self.software_revision = software_revision or "unknown"
+        self.evidence_path = Path(evidence_path) if evidence_path else None
+        self.last_selection: BackendSelection | None = None
         self._probes: dict[BackendLane, Callable[[], LaneProbe]] = probes or {
             BackendLane.CPU: _probe_cpu,
             BackendLane.GPU: _probe_gpu,
@@ -264,7 +290,10 @@ class BackendRegistry:
         """Probe every lane (cached within the TTL) and return the census."""
         return {lane.value: self.probe(lane, force=force) for lane in _LANES}
 
-    def select(self, requested: str, *, reprobe: bool = False) -> BackendSelection:
+    def select(
+        self, requested: str, *, reprobe: bool = False,
+        job_id: str = "Unavailable", epoch: str = "Unavailable",
+    ) -> BackendSelection:
         """Route per declared policy; a selected lane has been probed.
 
         ``auto`` walks GPU -> remote -> CPU and reports ``fallback=True``
@@ -295,23 +324,50 @@ class BackendRegistry:
                     )
             else:
                 hasher = probe.hasher
-            return BackendSelection(
-                requested=key,
-                lane=lane.value,
-                hasher=hasher,
-                fallback=lane is not first,
-                reason=(
-                    f"policy {key}: {lane.value} available ({probe.reason})"
-                    if lane is first
-                    else f"policy {key}: {first.value} unavailable "
-                    f"({probed[first.value].reason}); routed to {lane.value}"
-                ),
-                probed=probed,
+            reason = (
+                f"policy {key}: {lane.value} available ({probe.reason})"
+                if lane is first
+                else f"policy {key}: {first.value} unavailable "
+                f"({probed[first.value].reason}); routed to {lane.value}"
             )
-        raise BackendUnavailable(
+            selection = BackendSelection(
+                requested=key, lane=lane.value, hasher=hasher,
+                fallback=lane is not first, reason=reason, probed=probed,
+                decision_id=f"backend:{uuid.uuid4()}", job_id=job_id, epoch=epoch,
+                observation={
+                    "requested": key,
+                    "policy_order": [candidate.value for candidate in order],
+                    "probes": {name: result.as_dict() for name, result in probed.items()},
+                },
+                available_actions=tuple(
+                    name for name, result in probed.items() if result.available
+                ),
+                selected_action=lane.value, execution_target=lane.value,
+                result="backend_bound", disposition="accepted",
+                timestamp=self._clock(), software_revision=self.software_revision,
+            )
+            self._record(selection)
+            return selection
+        reason = (
             f"policy {key}: no lane available: "
             + "; ".join(f"{p.lane}: {p.reason}" for p in probed.values())
         )
+        selection = BackendSelection(
+            requested=key, lane="Unavailable", hasher=None, fallback=False,
+            reason=reason, probed=probed,
+            decision_id=f"backend:{uuid.uuid4()}", job_id=job_id, epoch=epoch,
+            observation={
+                "requested": key,
+                "policy_order": [candidate.value for candidate in order],
+                "probes": {name: result.as_dict() for name, result in probed.items()},
+            },
+            available_actions=(), selected_action="Unavailable",
+            execution_target="Unavailable", result="no_backend_bound",
+            disposition="rejected", timestamp=self._clock(),
+            software_revision=self.software_revision,
+        )
+        self._record(selection)
+        raise BackendUnavailable(reason)
 
     def snapshot(self) -> dict[str, Any]:
         """Lane census for telemetry; unavailable lanes stay visible."""
@@ -322,4 +378,23 @@ class BackendRegistry:
                 token: [lane.value for lane in order]
                 for token, order in sorted(_POLICY_ORDER.items())
             },
+            "last_selection": (
+                self.last_selection.as_dict() if self.last_selection else "Unavailable"
+            ),
         }
+
+    def _record(self, selection: BackendSelection) -> None:
+        """Persist one append-only decision without persisting a live hasher."""
+        self.last_selection = selection
+        if self.evidence_path is None:
+            return
+        self.evidence_path.parent.mkdir(parents=True, exist_ok=True)
+        line = json.dumps(selection.as_dict(), sort_keys=True, separators=(",", ":")) + "\n"
+        descriptor = os.open(
+            self.evidence_path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600
+        )
+        try:
+            os.write(descriptor, line.encode("utf-8"))
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)

@@ -101,8 +101,13 @@ def pool_endpoints(args, config: dict | None = None) -> list[PoolEndpoint]:
 
 
 def _registry() -> BackendRegistry:
-    """The lane registry for this process; probes are cached by the registry."""
-    return BackendRegistry()
+    """The lane registry for this process; probes and decisions are evidence."""
+    return BackendRegistry(
+        software_revision=os.getenv("PYTHIA_SOFTWARE_REVISION", "unknown"),
+        evidence_path=os.getenv(
+            "PYTHIA_BACKEND_EVIDENCE_PATH", "data/backend_decisions.jsonl"
+        ),
+    )
 
 
 def _execution_hasher(backend: str, registry: BackendRegistry | None = None):
