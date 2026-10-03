@@ -56,6 +56,9 @@ ml = [
     "scikit-learn>=1.3",
     # millennium.millennium_reasoning_service imports fastapi at module load.
     "fastapi>=0.110",
+    # millennium.mathematical_discovery imports scipy and networkx at module load.
+    "scipy>=1.11,<2",
+    "networkx>=3.0",
 ]
 dev = [
     "pytest>=7.4,<10",

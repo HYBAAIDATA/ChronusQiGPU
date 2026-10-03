@@ -63,7 +63,7 @@ from hyba_backend.platform.intelligence.unified_intelligence import (
 
 # Import PCI domain router so AGI mirrors PCI capabilities exactly
 try:
-    from services.pci.api import PostQuantumCivilizationAPI as _PCIDomainAPI
+    from pci.api import PostQuantumCivilizationAPI as _PCIDomainAPI
 
     _PCI_DOMAIN_AVAILABLE = True
 except Exception as _pci_import_err:

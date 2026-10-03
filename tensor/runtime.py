@@ -35,15 +35,23 @@ class CancellationToken:
 
 @dataclass
 class Deadline:
-    """A monotonic deadline derived from a declared timeout in nanoseconds."""
+    """A monotonic deadline derived from a declared timeout in nanoseconds.
+
+    ``perf_counter_ns`` rather than ``monotonic_ns`` is the clock: on hosts
+    where the monotonic source is a low-resolution tick (Windows VMs where
+    QueryPerformanceCounter is unavailable fall back to ~15.6 ms ticks),
+    a nanosecond deadline measured on it can read zero elapsed long after
+    the budget is spent. The perf counter is monotonic and the most
+    precise clock the platform offers.
+    """
 
     timeout_ns: Optional[int]
-    started_ns: int = field(default_factory=time.monotonic_ns)
+    started_ns: int = field(default_factory=time.perf_counter_ns)
 
     def check(self) -> None:
         if self.timeout_ns is None:
             return
-        elapsed = time.monotonic_ns() - self.started_ns
+        elapsed = time.perf_counter_ns() - self.started_ns
         if elapsed > self.timeout_ns:
             raise TensorTimeoutError(
                 f"tensor operation exceeded timeout of {self.timeout_ns} ns "

@@ -105,7 +105,7 @@ per-session auth-failure handling. Evidence: reconnect/failover tests in
 
 | Backend | Status |
 |---|---|
-| CPU | PRESENT, WIRED, ACTIVE, TESTED, PRODUCTION-EVIDENCED — `cpu_reference` route, measured 452→691 kH/s in the live run |
+| CPU | PRESENT, WIRED, ACTIVE, TESTED, PRODUCTION-EVIDENCED — `cpu_reference` route, measured in the sub-megahash CPU band during the live run (exact figures in the run artifacts) |
 | GPU (OpenCL) | PRESENT, WIRED (routes + self-check + arm/gold kernels), policy-gated; unavailable on this host — honestly reported by `execution_backend.fallback_reason` when auto-selecting; NOT evidenced here |
 | ASIC | NOT IMPLEMENTED — `asic/` is a Verilog stub; no driver/probe/contract exists. Declared absent |
 | SUPER ASIC | NOT IMPLEMENTED — no fabric entry, no probe, no contract |
@@ -142,7 +142,7 @@ sha256-checked envelope. Live evidence (ViaBTC leg, `closed_loop_optimization.js
 | 6–7 | 103680 | 64064 | −2.32%, −7.03% | ROLLED_BACK |
 
 Negative results are recorded, not hidden; the final configuration is the
-measured best (103680), hashrate 452→691 kH/s.
+measured best (103680); the run's hashrate stayed inside the measured sub-megahash CPU band.
 
 ## 9. Test results
 
@@ -176,7 +176,7 @@ races the 1 s metrics-publish interval (~25% fail on main and here alike).
 `--submit`, CPU route, ~2 min): connected, subscribed (`extranonce1=a74f327a`),
 authorized, difficulty 16384, 18 job generations bound with correct
 clean-jobs invalidation, 943 plans created, 926 executions finished,
-93,145,312 hashes at ~656 kH/s measured, 925 learning records, 7 bounded
+93,145,312 hashes at a measured sub-megahash CPU rate (exact band in the run artifacts), 925 learning records, 7 bounded
 optimisation trials, **shares_found = 0** (honest at this hashrate; the
 spec declares this valid evidence). Every causal record stamps
 `software_revision=1c3d8439…`.

@@ -40,8 +40,15 @@ class _StubAgent(BaseHTTPRequestHandler):
             return self._reply(
                 200,
                 {
-                    "protocol": "remote_opencl_v1",
-                    "devices": [{"name": "Stub iGPU-0", "vendor": "Intel", "type": "igpu"}],
+                    "protocol": "remote_opencl_v2",
+                    "devices": [
+                        {
+                            "id": "stub-igpu-0",
+                            "name": "Stub iGPU-0",
+                            "vendor": "Intel",
+                            "type": "igpu",
+                        }
+                    ],
                     "error": None,
                 },
             )
@@ -51,7 +58,7 @@ class _StubAgent(BaseHTTPRequestHandler):
                 200,
                 {
                     "status": "ok",
-                    "protocol": "remote_opencl_v1",
+                    "protocol": "remote_opencl_v2",
                     "device_count": 1,
                     "opencl_error": None,
                     "endpoints": endpoints,
@@ -62,7 +69,7 @@ class _StubAgent(BaseHTTPRequestHandler):
             return self._reply(
                 200,
                 {
-                    "protocol": "remote_opencl_v1",
+                    "protocol": "remote_opencl_v2",
                     "devices": [
                         {
                             "name": "Stub iGPU-0",
@@ -120,27 +127,44 @@ class _StubAgent(BaseHTTPRequestHandler):
                     "digest": "00" * 32 if type(self).tamper else digest.hex(),
                 }
                 break
-        from chronus.mla1517.remote_gpu import sha256d_share_attestation
+        from chronus.mla1517.remote_gpu import (
+            _attestation_key,
+            _window_commitment,
+            sha256d_share_attestation,
+        )
 
         device_name = "Stub iGPU-0"
+        device_id = "stub-igpu-0"
+        measured_ns = 999
+        hashes = len(window) if winner is None else window.index(winner["nonce"]) + 1
+        commitment = _window_commitment(order, window)
         attestation = sha256d_share_attestation(
             header_hex=header.hex(),
             target_hex=target.hex(),
             base_nonce=base,
-            count=len(window) if nonces is not None else count,
-            hashes=len(window) if winner is None else window.index(winner["nonce"]) + 1,
+            count=len(window),
+            hashes=hashes,
             nonce=None if winner is None else winner["nonce"],
             digest_hex=None if winner is None else winner["digest"],
             device=device_name,
+            device_id=device_id,
+            execution_backend="opencl:gpu",
+            measured_ns=measured_ns,
+            order=order,
+            window_commitment=commitment,
+            key=_attestation_key() or None,
         )
         return self._reply(
             200,
             {
-                "device": {"name": device_name, "vendor": "Intel"},
+                "protocol": "remote_opencl_v2",
+                "device": {"id": device_id, "name": device_name},
                 "execution_backend": "opencl:gpu",
-                "hashes": len(window) if winner is None else window.index(winner["nonce"]) + 1,
+                "measured_ns": measured_ns,
                 "window": {"base_nonce": base, "count": len(window)},
-                "measured_ns": 999,
+                "order": order,
+                "window_commitment": commitment,
+                "hashes": hashes,
                 "share": (
                     None if winner is None else {"nonce": winner["nonce"], "hash": winner["digest"]}
                 ),

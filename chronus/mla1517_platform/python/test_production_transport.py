@@ -8,6 +8,8 @@ import socket
 import unittest
 
 from manifold_pool_coordinator import PoolEndpoint
+from chronus.mla1517.mining.causal import CausalLedger
+from chronus.mla1517.mining.cycle_fsm import MiningCycleLedger
 from chronus.mla1517.mining.production_transport import (
     ProductionMiningCoordinator,
     ProductionStratumClient,
@@ -148,6 +150,8 @@ class ProductionTransportTests(unittest.TestCase):
         coord.production_outbound_queue_size = 8
         coord._refresh_work_identity = lambda: None
         coord._precompute_wake = asyncio.Event()
+        coord.causal = CausalLedger()
+        coord.cycle = MiningCycleLedger()
         try:
             client = await coord.connect_with_failover()
             self.assertEqual(client.endpoint.name, "secondary")

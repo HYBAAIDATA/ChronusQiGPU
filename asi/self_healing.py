@@ -115,7 +115,7 @@ class SelfHealingEngine:
         """Collect current system metrics"""
         try:
             # Import metrics from enhanced AI
-            from services.agi.enhanced_ai.metrics import get_metrics
+            from agi.enhanced_ai.metrics import get_metrics
 
             get_metrics()
 
@@ -265,7 +265,7 @@ class SelfHealingEngine:
         """Fix response time issues"""
         try:
             # Clear caches to force refresh
-            from services.agi.enhanced_ai.cache import get_cache_manager
+            from agi.enhanced_ai.cache import get_cache_manager
 
             cache_manager = get_cache_manager()
 
@@ -295,7 +295,7 @@ class SelfHealingEngine:
         """Fix memory leak issues"""
         try:
             # Clear old sessions
-            from services.agi.enhanced_ai.persistence import get_persistence
+            from agi.enhanced_ai.persistence import get_persistence
 
             persistence = get_persistence()
 
@@ -304,7 +304,7 @@ class SelfHealingEngine:
                 return True, f"Cleaned up {deleted} old sessions"
 
             # Clear caches
-            from services.agi.enhanced_ai.cache import get_cache_manager
+            from agi.enhanced_ai.cache import get_cache_manager
 
             cache_manager = get_cache_manager()
             cache_manager.clear_all()
@@ -369,7 +369,7 @@ class SelfHealingEngine:
 
         # Optimize caches
         try:
-            from services.agi.enhanced_ai.cache import get_cache_manager
+            from agi.enhanced_ai.cache import get_cache_manager
 
             cache_manager = get_cache_manager()
             stats = cache_manager.get_all_stats()

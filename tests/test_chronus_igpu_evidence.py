@@ -35,7 +35,8 @@ def test_gpu_hwmon_reads_real_files_only(tmp_path: Path):
 
 
 def test_rapl_wraparound_and_scope_are_explicit(tmp_path: Path):
-    domain = tmp_path / "class/powercap/intel-rapl:0"
+    # Real sysfs domains are intel-rapl:N; NTFS forbids ':' in names.
+    domain = tmp_path / "class/powercap/intel-rapl0"
     domain.mkdir(parents=True)
     (domain / "name").write_text("package-0")
     (domain / "max_energy_range_uj").write_text("1000")

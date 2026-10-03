@@ -28,7 +28,7 @@ production-hardening branch and its effect on capability.
 | Clarify `docker-compose.cuda.yml` | Record that NVIDIA device reservation is not proof every workload has a CUDA implementation and that native tensor execution needs a compatible CuPy binding | Documentation/comment only; compose reservation behaviour unchanged |
 | Update `docs/CHRONUS.md` | Document delivery methods, native tensor substrates, deployment binding requirements, physical measurement semantics and the remaining mining boundary | Documentation only |
 | Add/update `docs/CHRONUS_DELIVERY_MATRIX.md` | Record current evidence-backed capabilities for Embedded and Cloud Instance delivery | Documentation only; does not rank or limit either mode |
-| Update Phase 5 threshold wording | Make clear the 10 EH/s threshold is a promotion threshold, not a measured result by itself | Documentation truth-boundary only |
+| Update Phase 5 threshold wording | Make clear the Phase 5 exahash-scale throughput threshold is a promotion threshold, not a measured result by itself | Documentation truth-boundary only |
 | Extend import-audit gate evidence output | Persist findings and include rendered details in the gate reason | Same pass/fail criterion; adds diagnostic evidence |
 | Add production-hardening documentation and this ledger | Make the branch's design, limitations and impacts explicit | Documentation only |
 
