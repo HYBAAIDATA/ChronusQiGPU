@@ -1,6 +1,6 @@
-"""Governed, local-first EUCLID runtime.
+"""Governed, local-first EUCLID runtime and intelligence engine.
 
-The package is intentionally fail-closed.  Importing it performs no I/O,
+The package is intentionally fail-closed. Importing it performs no I/O,
 network access, dynamic discovery, or self-modification.
 """
 
@@ -24,11 +24,15 @@ from .checkpoint_manifest import (
     verify_manifest,
     write_manifest,
 )
+from .adapter import EuclidEngineAdapter
+
+__version__ = "16.0.0"
 
 __all__ = [
     "Authority",
     "Capability",
     "Experience",
+    "EuclidEngineAdapter",
     "EuclidRuntime",
     "Health",
     "Mission",
