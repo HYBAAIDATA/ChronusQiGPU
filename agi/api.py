@@ -61,16 +61,16 @@ from hyba_backend.platform.intelligence.unified_intelligence import (
     ScientificValidator,
 )
 
-# Import PCI domain router so AGI mirrors PCI capabilities exactly
+# Import PCI domain router so AGI mirrors PCI capabilities exactly.
+# Optional integration: pci.api needs fastapi; when it cannot be imported
+# the AGI API keeps running with an explicit unavailable flag and reason.
 try:
-    from services.pci.api import PostQuantumCivilizationAPI as _PCIDomainAPI
+    from pci.api import PostQuantumCivilizationAPI as _PCIDomainAPI
 
     _PCI_DOMAIN_AVAILABLE = True
-except Exception as _pci_import_err:
+except ImportError as _pci_import_err:
     _PCI_DOMAIN_AVAILABLE = False
-    import logging as _logging
-
-    _logging.getLogger(__name__).warning(
+    logging.getLogger(__name__).warning(
         f"[AGI] PCI domain router unavailable — AGI will lack domain endpoints: {_pci_import_err}"
     )
 from hyba_backend.core.intelligence import calculate_pure_quantum_intelligence

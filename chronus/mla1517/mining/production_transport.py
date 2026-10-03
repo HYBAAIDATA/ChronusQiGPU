@@ -22,10 +22,11 @@ from manifold_pool_coordinator import (
     StratumClient,
 )
 
-from .causal import CausalCoordinate
+from .causal import CausalCoordinate, CausalLedger
 from .coordinator import IntelligentPoolCoordinator, MMIOControlSink
-from .cycle_fsm import MiningCycleState
+from .cycle_fsm import MiningCycleLedger, MiningCycleState
 from .pool_chain import bip34_height
+from .software_revision import software_revision
 
 LOG = logging.getLogger(__name__)
 
@@ -336,6 +337,29 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
         self._stale_candidates_dropped = 0
         self._stale_execution_ids: set[str] = set()
 
+    def _causal_ledger(self) -> CausalLedger:
+        """The voyage's causal trail, created on first use when absent.
+
+        ``connect_with_failover`` also runs on coordinators assembled
+        without ``__init__`` (regression skeletons, deferred assembly). A
+        missing ledger must neither crash failover nor silently drop the
+        evidence: a real in-memory ``CausalLedger`` records it instead.
+        """
+        ledger = getattr(self, "causal", None)
+        if ledger is None:
+            revision = getattr(self, "_software_revision", None)
+            ledger = CausalLedger(revision=revision or software_revision())
+            self.causal = ledger
+        return ledger
+
+    def _cycle_ledger(self) -> MiningCycleLedger:
+        """The guarded cycle machine, created on first use when absent."""
+        ledger = getattr(self, "cycle", None)
+        if ledger is None:
+            ledger = MiningCycleLedger(on_event=self._mirror_cycle_event)
+            self.cycle = ledger
+        return ledger
+
     def _observe_stale_from_last_execution(self) -> None:
         """Count only candidates invalidated by a changed canonical identity."""
         execution = self.last_execution
@@ -367,7 +391,7 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
             and client.runtime_state.session_id == session_id
         ):
             client.record_stale_candidate()
-        self.causal.record(
+        self._causal_ledger().record(
             "candidate_stale_dropped",
             CausalCoordinate(
                 pool_session_id=(session_id if isinstance(session_id, str) else None),
@@ -431,27 +455,36 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
                 self._pool_endpoint_refused(endpoint, str(exc), "connect")
                 continue
 
+            # Commit the selection first, then record it. Every evidence
+            # call below is guarded: once endpoint_index/client are bound,
+            # no bookkeeping failure may raise and leave a live client
+            # orphaned behind an exception (partial initialization).
             self.endpoint_index = index
             self.client = client
-            self._pool_selected_record(endpoint, index, offset + 1, errors)
-            self.causal.record(
-                "pool_endpoint_selected",
-                self._pool_coordinate(),
-                pool=endpoint.name,
-                endpoint=f"{endpoint.host}:{endpoint.port}",
-                attempt=offset + 1,
-                previous_failures=list(errors),
-            )
+            try:
+                self._causal_ledger().record(
+                    "pool_endpoint_selected",
+                    self._pool_coordinate(),
+                    pool=endpoint.name,
+                    endpoint=f"{endpoint.host}:{endpoint.port}",
+                    attempt=offset + 1,
+                    previous_failures=list(errors),
+                )
+            except Exception:
+                pass
             if offset > 0:
                 # Failover rotation healed the SCAN leg: the declared pool
                 # order moved off the primary. Evidence only — the machine
                 # stays wherever it is unless it is still in SCAN.
-                self.cycle.try_transition(
-                    MiningCycleState.HEAL,
-                    event="failure",
-                    reason="pool failover rotated endpoints",
-                    evidence={"pool": endpoint.name, "failures": list(errors)},
-                )
+                try:
+                    self._cycle_ledger().try_transition(
+                        MiningCycleState.HEAL,
+                        event="failure",
+                        reason="pool failover rotated endpoints",
+                        evidence={"pool": endpoint.name, "failures": list(errors)},
+                    )
+                except Exception:
+                    pass
             # Preserve IntelligentPoolCoordinator's post-handshake binding:
             # the first notify may arrive during subscribe/authorize.
             self._refresh_work_identity()
@@ -475,7 +508,7 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
         """Durable evidence that a configured endpoint failed its handshake."""
         self._pool_refusal_record(endpoint, stage, error)
         try:
-            self.causal.record(
+            self._causal_ledger().record(
                 "pool_endpoint_refused",
                 self._pool_coordinate(),
                 pool=endpoint.name,
