@@ -1422,14 +1422,7 @@ def ops_telemetry_payload() -> dict[str, Any]:
                 for record in records
             },
         },
-        "security": (
-            security
-            if security_code == HTTPStatus.OK
-            else {
-                "available": False,
-                "reason": security.get("reason", "unavailable"),
-            }
-        ),
+        "security": _ops_security_section(security, security_code),
         "history": {
             "telemetry_history": history_store | {"record_tail": _jsonl_tail(history_path, 64)},
             "causal_ledger": causal_store,
@@ -1516,6 +1509,38 @@ def security_status_payload() -> tuple[HTTPStatus, dict[str, Any]]:
             "available": False,
             "reason": f"guardian_unavailable: {type(exc).__name__}: {exc}",
         }
+
+
+def _ops_security_section(security: dict[str, Any], security_code: HTTPStatus) -> dict[str, Any]:
+    """The ops contract's guardian section.
+
+    Beyond ``public_status`` the unprivileged observer provably sees the
+    gate's evaluated answer: every privileged request is preflighted and an
+    unauthenticated call is denied at the boundary. We embed exactly that
+    verdict — produced by the same evaluate() path the request would hit —
+    so the UI can show "gate closed: <reason>" as truth, not a guess.
+    """
+    if security_code != HTTPStatus.OK:
+        return {"available": False, "reason": security.get("reason", "unavailable")}
+    section = dict(security)
+    try:
+        _code, verdict = pythia_guardian_api().evaluate(
+            headers={},
+            body={
+                "operation": "security.status",
+                "resource": "security/status",
+                "payload": {},
+            },
+        )
+        section["gate"] = {
+            "allowed": verdict.get("allowed"),
+            "reason": verdict.get("reason"),
+            "policy_version": verdict.get("policy_version"),
+            "evaluated_at": verdict.get("evaluated_at"),
+        }
+    except Exception:
+        section["gate"] = {"available": False, "reason": "evaluation_failed"}
+    return section
 
 
 def telemetry_summary_payload() -> dict[str, Any]:

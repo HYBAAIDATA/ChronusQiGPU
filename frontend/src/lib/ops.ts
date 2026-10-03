@@ -96,9 +96,11 @@ export type OpsTelemetry = {
     primary?: StratumStatus["primary"];
     lifecycle?: {
       transport_connected?: boolean;
-      subscription_confirmed?: boolean;
+      subscribed?: boolean;
       authorized?: boolean;
-      job_active?: boolean;
+      job_available?: boolean;
+      target_available?: boolean;
+      mining_active?: boolean;
       submission_ready?: boolean;
       submission_permitted?: boolean;
     } | null;
@@ -169,7 +171,18 @@ export type OpsTelemetry = {
     salamander?: Record<string, unknown> | null;
     workers?: Record<string, { state: string; liveness: boolean; readiness: boolean }>;
   };
-  security: { available?: boolean; reason?: string } & Record<string, unknown>;
+  security: {
+    available?: boolean;
+    reason?: string;
+    /** Evaluated gate answer an unauthenticated caller provably sees. */
+    gate?: {
+      allowed?: boolean;
+      reason?: string;
+      policy_version?: string;
+      evaluated_at?: number;
+      available?: boolean;
+    };
+  } & Record<string, unknown>;
   history: {
     telemetry_history: StoreEvidence & { record_tail?: HistoryRecord[] };
     causal_ledger: StoreEvidence;

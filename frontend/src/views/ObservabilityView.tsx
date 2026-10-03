@@ -120,9 +120,9 @@ export const PoolCard: React.FC<{ ops: OpsTelemetry }> = ({ ops }) => {
   const stages: Array<{ label: string; state: string }> = [
     { label: "configured", state: (pool.configured ?? []).length > 0 || topo ? "complete" : "blocked" },
     { label: "connected", state: stageState(lc.transport_connected) },
-    { label: "subscribed", state: stageState(lc.subscription_confirmed) },
+    { label: "subscribed", state: stageState(lc.subscribed) },
     { label: "authorized", state: stageState(lc.authorized) },
-    { label: "receiving work", state: stageState(lc.job_active) },
+    { label: "receiving work", state: stageState(lc.job_available) },
     {
       label: "submitting",
       state: stageState(lc.submission_ready ?? (primary as Record<string, unknown>).submitting as boolean),
@@ -389,6 +389,7 @@ export const SystemsCard: React.FC<{ ops: OpsTelemetry }> = ({ ops }) => {
   const workers = ops.system.workers ?? {};
   const healingWorkers = ops.healing.workers ?? {};
   const guardian = ops.security;
+  const gate = guardian?.gate;
   const supervisor = ops.healing.autonomous_supervisor ?? {};
   const rows: Array<{ name: string; state: string; live: boolean | null; ready: boolean | null }> = [];
   for (const [name, w] of Object.entries(workers)) {
@@ -433,14 +434,14 @@ export const SystemsCard: React.FC<{ ops: OpsTelemetry }> = ({ ops }) => {
             <td className="pr-2 py-0.5">
               {guardian.available === false
                 ? "unavailable"
-                : guardian.allowed === false
-                  ? `gate closed — ${String(guardian.reason ?? "denied").toLowerCase()}`
-                  : guardian.allowed === true
+                : gate?.allowed === false
+                  ? `gate closed — ${String(gate.reason ?? "denied").toLowerCase()}`
+                  : gate?.allowed === true
                     ? "gate open"
-                    : val((guardian.policy_version ?? guardian.status) as string)}
+                    : val((gate?.policy_version ?? guardian.status) as string)}
             </td>
             <td className="pr-2 py-0.5">{guardian.available === false ? "no" : "yes"}</td>
-            <td className="py-0.5">{truncate(String(guardian.policy_version ?? guardian.reason ?? "—"), 24)}</td>
+            <td className="py-0.5">{truncate(String(gate?.policy_version ?? gate?.reason ?? "—"), 24)}</td>
           </tr>
         </tbody>
       </table>

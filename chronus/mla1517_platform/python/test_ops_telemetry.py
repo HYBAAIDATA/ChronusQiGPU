@@ -217,6 +217,23 @@ class OpsTelemetryRouteTests(unittest.TestCase):
 
         self.assertEqual(ops["execution"]["hashing"]["hashrate_hs"], 450_000.0)
 
+    def test_ops_security_reports_the_evaluated_gate_answer(self) -> None:
+        base = self._serve()
+        code, ops = self._get(base, "/api/v1/telemetry/ops")
+        self.assertEqual(code, 200)
+        security = ops["security"]
+        if control_api.pythia_guardian_api is None:
+            self.assertFalse(security["available"])
+            return
+        # The unprivileged observer provably sees the boundary verdict an
+        # unauthenticated request would get — embedded, not inferred.
+        gate = security.get("gate")
+        self.assertIsInstance(gate, dict)
+        self.assertIn(gate["allowed"], (True, False))
+        if gate["allowed"] is False:
+            self.assertTrue(gate["reason"])
+        self.assertTrue(gate["policy_version"])
+
     def test_stratum_status_passes_the_enriched_keys(self) -> None:
         self._metrics(stratum_status=self._stratum_snapshot())
         base = self._serve()
