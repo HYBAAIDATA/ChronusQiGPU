@@ -440,6 +440,7 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
                 outbound_queue_size=self.production_outbound_queue_size,
                 status_sink=self.stratum_status_sink,
             )
+            self._pool_attempt_record()
             try:
                 await client.connect()
             except StratumAuthorizationError as exc:
@@ -469,6 +470,10 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
                     attempt=offset + 1,
                     previous_failures=list(errors),
                 )
+            except Exception:
+                pass
+            try:
+                self._pool_selected_record(endpoint, index, offset + 1, errors)
             except Exception:
                 pass
             if offset > 0:
@@ -505,6 +510,7 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
 
     def _pool_endpoint_refused(self, endpoint: Any, error: str, stage: str) -> None:
         """Durable evidence that a configured endpoint failed its handshake."""
+        self._pool_refusal_record(endpoint, stage, error)
         try:
             self._causal_ledger().record(
                 "pool_endpoint_refused",

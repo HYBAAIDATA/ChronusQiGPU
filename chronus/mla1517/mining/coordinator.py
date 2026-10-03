@@ -432,6 +432,14 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         # job, or a recovery edge may have made work available; idle waits
         # stay bounded by their declared slices, never blind.
         self._work_wake = asyncio.Event()
+        # Measured pool topology: the rotation order comes from the
+        # configured endpoints, the attempt/refusal/selection history is
+        # recorded by the transport layer (connect_with_failover), never
+        # inferred from configuration.
+        self._pool_connect_attempts = 0
+        self._last_pool_error: str | None = None
+        self._last_pool_selected: dict[str, Any] | None = None
+        self._pool_history: deque[dict[str, Any]] = deque(maxlen=24)
         self._agentic_state_path: str | None = None
         self._identity_block_logged: set[str] = set()
         self._last_pool_outcome = PoolOutcome.NOT_SUBMITTED
@@ -460,6 +468,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             # lifecycle flags are appended so consumers never have to
             # re-derive separated states from one conflated flag.
             snapshot["lifecycle"] = self._lifecycle_flags()
+            snapshot["pool"] = self._pool_snapshot()
             if upstream_sink is not None:
                 upstream_sink(snapshot)
             try:
@@ -563,6 +572,95 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             "mining_active": mining_active,
             "submission_ready": submission_ready,
         }
+
+    def _pool_counters(self) -> tuple[int, "deque[dict[str, Any]]"]:
+        """The failover bookkeeping fields, lazily bound.
+
+        ``__new__``-constructed harnesses skip ``__init__``; the bookkeeping
+        still has to work there, so the fields appear on first use rather
+        than raising AttributeError.
+        """
+        if not hasattr(self, "_pool_history"):
+            self._pool_history = deque(maxlen=24)
+        if not hasattr(self, "_pool_connect_attempts"):
+            self._pool_connect_attempts = 0
+        return self._pool_connect_attempts, self._pool_history
+
+    def _pool_snapshot(self) -> dict[str, Any]:
+        """Measured pool topology: rotation order plus failover history.
+
+        ``endpoint_index`` is the index the rotation tries FIRST on the next
+        connect; ``active`` marks the endpoint whose client is bound now.
+        Refusals and selections are recorded inside
+        ``connect_with_failover``; nothing is derived from configuration.
+        """
+        attempts, history = self._pool_counters()
+        active_name = getattr(getattr(self.client, "endpoint", None), "name", None)
+        endpoints = []
+        for index, endpoint in enumerate(self.endpoints):
+            username = endpoint.username or self.username or ""
+            endpoints.append(
+                {
+                    "index": index,
+                    "name": endpoint.name,
+                    "endpoint": f"{endpoint.host}:{endpoint.port}",
+                    "tls": endpoint.tls,
+                    "extranonce_subscribe": endpoint.extranonce_subscribe,
+                    "worker": (
+                        username[:2] + "***" if len(username) > 2 else ("***" if username else None)
+                    ),
+                    "active": endpoint.name == active_name,
+                }
+            )
+        return {
+            "schema": "pythia.pool_topology/1",
+            "endpoints": endpoints,
+            "endpoint_index": self.endpoint_index,
+            "active": active_name,
+            "connect_attempts": attempts,
+            "last_error": getattr(self, "_last_pool_error", None),
+            "last_selected": getattr(self, "_last_pool_selected", None),
+            "history": list(history),
+        }
+
+    def _pool_attempt_record(self) -> None:
+        """Count one connection attempt — measured inside the rotation."""
+        self._pool_counters()
+        self._pool_connect_attempts += 1
+
+    def _pool_refusal_record(self, endpoint: Any, stage: str, error: str) -> None:
+        """Append the measured refusal to the failover history."""
+        _attempts, history = self._pool_counters()
+        trimmed = f"{endpoint.name}: {error[:300]}"
+        self._last_pool_error = trimmed
+        history.append(
+            {
+                "at": time.time(),
+                "event": "refused",
+                "pool": endpoint.name,
+                "endpoint": f"{endpoint.host}:{endpoint.port}",
+                "stage": stage,
+                "error": trimmed,
+            }
+        )
+
+    def _pool_selected_record(
+        self, endpoint: Any, index: int, attempt: int, previous_failures: list[str]
+    ) -> None:
+        """Append the measured selection to the failover history."""
+        _attempts, history = self._pool_counters()
+        record = {
+            "at": time.time(),
+            "event": "selected",
+            "pool": endpoint.name,
+            "endpoint": f"{endpoint.host}:{endpoint.port}",
+            "index": index,
+            "attempt": attempt,
+            "previous_failures": list(previous_failures),
+        }
+        self._last_pool_selected = record
+        self._last_pool_error = None
+        history.append(record)
 
     async def run_hardware_loop(
         self,
@@ -735,9 +833,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         """Configure durable policy and closed-loop optimisation state."""
         self._agentic_state_path = path
         root = os.path.dirname(path) or "."
-        self.optimization.set_state_path(
-            os.path.join(root, "closed_loop_optimization.json")
-        )
+        self.optimization.set_state_path(os.path.join(root, "closed_loop_optimization.json"))
 
     async def connect_with_failover(self):
         client = await super().connect_with_failover()
@@ -848,6 +944,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 {
                     "hashrate_hs": round(hashing["hashrate_hs"], 3),
                     "hashes_total": hashing["hashes_total"],
+                    "hashes_in_span": hashing["hashes_in_span"],
+                    "span_s": hashing["span_s"],
                     "shares_accepted": hashing["shares_accepted"],
                     "executions_total": hashing["executions_total"],
                     "backend": str(getattr(self.execution_hasher, "backend", "unknown")),
@@ -2287,9 +2385,11 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                         disposition=(
                             DecisionDisposition.STALE.value
                             if record.completion_state is CompletionState.INVALIDATED
-                            else DecisionDisposition.EXECUTED.value
-                            if record.executed_route is not None
-                            else DecisionDisposition.REFUSED.value
+                            else (
+                                DecisionDisposition.EXECUTED.value
+                                if record.executed_route is not None
+                                else DecisionDisposition.REFUSED.value
+                            )
                         ),
                         execution_target=record.executed_route,
                     )
