@@ -79,6 +79,9 @@ class AsicHasherAdapter:
 
     def _grind_window(self, header80: bytes, target_be: bytes, base: int, count: int):
         job_id = f"asic-{_next_job_seq()}"
+        # The channel must hash THIS header — bind it before dispatch so
+        # the wire payload carries the requested header prefix.
+        self._solver.prepare(job_id, bytes(header80))
         window = NonceWindow(
             job_id=job_id,
             session_epoch=0,
@@ -162,11 +165,21 @@ class SuperAsicHasher:
     grind_batch = 1 << 32  # the partition accepts the full nonce field
     m32_window_max = 1 << 32
 
-    def __init__(self, coordinator: HybridCoordinator, members: List[NonceScheduler]) -> None:
+    def __init__(
+        self,
+        coordinator: HybridCoordinator,
+        members: List[NonceScheduler],
+        bind_report: Optional[List[Dict[str, object]]] = None,
+    ) -> None:
         if not members:
             raise DeviceUnsupportedError("super_asic lane bound zero substrates")
         self._coord = coordinator
         self._members = list(members)
+        # Per-substrate join evidence: which classes were probed, which
+        # joined, and the measured reason for every exclusion — a
+        # configured-but-broken member is visible here, never dropped
+        # silently.
+        self.bind_report: List[Dict[str, object]] = list(bind_report or [])
         self._caps: Dict[int, DeviceCapability] = {id(m): m.capability() for m in self._members}
         classes = sorted({c.device_class for c in self._caps.values()})
         self.backend = "super_asic:" + "+".join(classes)
@@ -189,20 +202,98 @@ class SuperAsicHasher:
         unconfigured endpoints simply do not join, never silently.
         """
         members: List[NonceScheduler] = []
+        bind_report: List[Dict[str, object]] = []
+        registry = AttestationRegistry.get()
         asic = ASICSolver()
+        asic_cap = asic.capability()
+        bind_report.append(
+            {
+                "substrate": "asic",
+                "joined": bool(asic_cap.supported),
+                "device_id": asic_cap.device_id,
+                "reason": asic_cap.reason_if_unsupported,
+            }
+        )
         gpu = GPUSolver(backend="auto", allow_cpu=allow_cpu)
-        remote = None
-        try:
-            from hyba.hybrid.remote_solver import RemoteScheduler
+        gpu_cap = gpu.capability()
+        bind_report.append(
+            {
+                "substrate": "local",
+                "joined": bool(gpu_cap.supported),
+                "device_id": gpu_cap.device_id,
+                "reason": gpu_cap.reason_if_unsupported,
+            }
+        )
+        # Remote fleet (the super-GPU surface). A configured-but-broken
+        # remote is a visible exclusion — it lands in bind_report AND in
+        # the attestation registry, so composite evidence carries the
+        # reason instead of silently degrading to fewer substrates.
+        remote_endpoints = cls._remote_endpoints()
+        if remote_endpoints:
+            try:
+                from hyba.hybrid.remote_solver import RemoteScheduler
 
-            remote = RemoteScheduler.from_env(timeout=remote_timeout)
-        except Exception:
-            remote = None
-        if remote is not None and remote.capability().supported:
-            members.append(remote)
+                remote = RemoteScheduler.from_env(timeout=remote_timeout)
+                rcap = remote.capability()
+                bind_report.append(
+                    {
+                        "substrate": "remote",
+                        "joined": bool(rcap.supported),
+                        "device_id": rcap.device_id,
+                        "reason": rcap.reason_if_unsupported,
+                    }
+                )
+                if rcap.supported:
+                    members.append(remote)
+                else:
+                    registry.record_gap(
+                        "super_asic_remote_excluded: "
+                        + (rcap.reason_if_unsupported or "unsupported"),
+                        device_id=rcap.device_id,
+                        endpoints=list(remote_endpoints),
+                    )
+            except Exception as exc:
+                reason = f"{type(exc).__name__}: {exc}"
+                bind_report.append(
+                    {
+                        "substrate": "remote",
+                        "joined": False,
+                        "device_id": "remote:unbound",
+                        "reason": reason,
+                    }
+                )
+                registry.record_gap(
+                    f"super_asic_remote_excluded: {reason}",
+                    endpoints=list(remote_endpoints),
+                )
+        else:
+            bind_report.append(
+                {
+                    "substrate": "remote",
+                    "joined": False,
+                    "device_id": "remote:none",
+                    "reason": "no remote endpoints configured",
+                }
+            )
         coord = HybridCoordinator(gpu, asic, extra_devices=members)
         joined = coord._devices()
-        return cls(coord, joined)
+        return cls(coord, joined, bind_report=bind_report)
+
+    @staticmethod
+    def _remote_endpoints() -> List[str]:
+        """The fleet's configured endpoints — empty when none are set."""
+        try:
+            import sys
+            from pathlib import Path
+
+            repo_root = str(Path(__file__).resolve().parents[2])
+            if repo_root not in sys.path:
+                sys.path.insert(0, repo_root)
+            from chronus.mla1517.remote_gpu import remote_endpoints
+
+            return [str(e) for e in remote_endpoints()]
+        except Exception:
+            return []
 
     def _run(self, header80: bytes, target_be: bytes, base: int, count: int) -> tuple:
         job_id = f"superasic-{_next_job_seq()}"

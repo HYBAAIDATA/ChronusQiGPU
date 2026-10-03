@@ -7,11 +7,21 @@ to physical hardware through exactly three real channels:
   running a stratum-to-device bridge or vendor control plane. Windows are
   sent as JSON lines; shares return the same way.
 - **USB serial** (``HYBRID_ASIC_SERIAL=/dev/ttyUSBn`` or ``COMn``): a
-  cgminer-style serial control channel, used only when ``pyserial`` is
-  installed and the port opens.
+  cgminer-style serial control channel. ``pyserial`` presence + a
+  responsive port is probed and recorded, but a serial reply does NOT
+  make the solver ``supported`` — no serial dispatch protocol exists in
+  this module, and ``supported`` means dispatch-capable.
 - **PCIe** (``HYBRID_ASIC_PCIE=/dev/node``): a vendor driver node; only
   presence + readability is probed — dispatch over a vendor PCIe protocol
   requires a driver binding this module does not invent.
+
+Work binding: ``prepare(job_id, header80)`` binds the 80-byte block
+header to a job id before any window of that job is dispatched — the
+same contract :class:`GPUSolver` already honours and the coordinator
+already invokes. ``dispatch`` sends the bound 76-byte header prefix
+(``header_prefix_hex``) alongside the window; an endpoint that never
+received the header cannot produce a valid share, and ``dispatch``
+refuses to send a window whose job was never prepared.
 
 Fail-closed contract: when no channel is configured *and* responsive,
 ``capability().supported`` is False with a concrete reason, ``dispatch``
@@ -41,9 +51,9 @@ from hyba.hybrid.nonce_scheduler import (
 
 _PROBE_TIMEOUT_S = 2.0
 ASIC_HASH_KERNEL = "sha256d_scan"
-OPTIONAL_ASIC_KERNELS = frozenset({
-    "sha256d_midstate", "sha256d_merkle", "fold_certificate", "attest_result"
-})
+OPTIONAL_ASIC_KERNELS = frozenset(
+    {"sha256d_midstate", "sha256d_merkle", "fold_certificate", "attest_result"}
+)
 
 
 class ASICSolver:
@@ -56,16 +66,14 @@ class ASICSolver:
         pcie_node: Optional[str] = None,
     ) -> None:
         self._endpoint = endpoint or os.environ.get("HYBRID_ASIC_ENDPOINT", "").strip() or None
-        self._serial_port = (
-            serial_port or os.environ.get("HYBRID_ASIC_SERIAL", "").strip() or None
-        )
-        self._pcie_node = (
-            pcie_node or os.environ.get("HYBRID_ASIC_PCIE", "").strip() or None
-        )
+        self._serial_port = serial_port or os.environ.get("HYBRID_ASIC_SERIAL", "").strip() or None
+        self._pcie_node = pcie_node or os.environ.get("HYBRID_ASIC_PCIE", "").strip() or None
         self._capability: Optional[DeviceCapability] = None
         self._records: List[ExecutionAttestation] = []
         self._registry = AttestationRegistry.get()
         self._pending: Dict[int, Dict[str, Any]] = {}
+        self._finished: Dict[int, int] = {}
+        self._jobs: Dict[str, bytes] = {}
 
     # -- probing ------------------------------------------------------------
 
@@ -95,31 +103,33 @@ class ASICSolver:
             )
             return self._capability
 
+        probes: List[DeviceCapability] = []
         if self._endpoint:
-            cap = self._probe_network(self._endpoint)
-            if cap.supported:
-                self._capability = cap
-                return cap
+            probes.append(self._probe_network(self._endpoint))
         if self._serial_port:
-            cap = self._probe_serial(self._serial_port)
-            if cap.supported:
-                self._capability = cap
-                return cap
+            probes.append(self._probe_serial(self._serial_port))
         if self._pcie_node:
-            cap = self._probe_pcie(self._pcie_node)
+            probes.append(self._probe_pcie(self._pcie_node))
+        for cap in probes:
             if cap.supported:
                 self._capability = cap
                 return cap
 
+        channel_reasons = [c.reason_if_unsupported for c in probes if c.reason_if_unsupported]
         self._capability = DeviceCapability(
             device_id="asic:unresponsive",
             device_class="asic",
             measured_hashes_per_sec=0.0,
             supported=False,
             reason_if_unsupported=(
-                f"ASIC probe failed on all configured channels: {configured}"
+                "ASIC probe found no dispatch-capable channel: " + "; ".join(channel_reasons)
+                if channel_reasons
+                else f"ASIC probe failed on all configured channels: {configured}"
             ),
-            detail={"configured_channels": configured},
+            detail={
+                "configured_channels": configured,
+                "channel_results": [c.as_dict() for c in probes],
+            },
         )
         return self._capability
 
@@ -183,12 +193,26 @@ class ASICSolver:
                 ser.write(b'{"cmd":"capability"}\n')
                 reply = ser.readline()
             info = json.loads(reply.decode("utf-8", "replace"))
+            # The device answered, but a serial dispatch protocol does not
+            # exist in this module — ``supported`` means dispatch-capable,
+            # so the honest record is present-but-unsupported. Presence
+            # evidence (identity, measured rate) rides in detail.
             return DeviceCapability(
                 device_id=str(info.get("device_id", f"asic:{port}")),
                 device_class="asic",
                 measured_hashes_per_sec=float(info.get("measured_hashes_per_sec", 0.0)),
-                supported=True,
-                detail={"channel": "serial", "port": port, "serial": info.get("serial")},
+                supported=False,
+                reason_if_unsupported=(
+                    "serial device responded to the capability probe but no "
+                    "serial dispatch protocol is implemented; supported "
+                    "requires a dispatch-capable channel"
+                ),
+                detail={
+                    "channel": "serial",
+                    "port": port,
+                    "responsive": True,
+                    "serial": info.get("serial"),
+                },
             )
         except Exception as exc:
             return DeviceCapability(
@@ -222,23 +246,33 @@ class ASICSolver:
     def supports_kernel(self, kernel: str) -> bool:
         """Return only capabilities explicitly advertised by responsive hardware."""
         cap = self.capability()
-        return bool(
-            cap.supported
-            and kernel in set(cap.detail.get("advertised_kernels", []))
-        )
+        return bool(cap.supported and kernel in set(cap.detail.get("advertised_kernels", [])))
+
+    # -- job binding -------------------------------------------------------
+
+    def prepare(self, job_id: str, header80: bytes) -> None:
+        """Bind the 80-byte block header a job's windows will grind."""
+        if len(header80) != 80:
+            raise ValueError(f"header must be 80 bytes, got {len(header80)}")
+        self._jobs[str(job_id)] = bytes(header80)
 
     # -- NonceScheduler ------------------------------------------------------
 
     def dispatch(self, window: NonceWindow) -> DispatchHandle:
         cap = self.capability()
         if not cap.supported:
-            raise ASICNotPresent(
-                cap.reason_if_unsupported or "no ASIC is attached"
-            )
+            raise ASICNotPresent(cap.reason_if_unsupported or "no ASIC is attached")
         if cap.detail.get("channel") != "network":
             raise ASICNotPresent(
                 "ASIC reachable but the channel has no dispatch protocol "
                 "implemented (serial/PCIe bindings are not present)"
+            )
+        header = self._jobs.get(window.job_id)
+        if header is None:
+            raise ASICNotPresent(
+                f"job {window.job_id!r} has no bound header; call "
+                "prepare(job_id, header80) first — the endpoint must hash "
+                "the requested block header"
             )
         handle = DispatchHandle(
             handle_id=next_handle_id(),
@@ -250,8 +284,15 @@ class ASICSolver:
             host, _, port_s = self._endpoint.rpartition(":")
             sock = socket.create_connection((host, int(port_s)), timeout=_PROBE_TIMEOUT_S)
             sock.sendall(
-                json.dumps({"cmd": "dispatch", "window": window.as_dict(),
-                            "handle_id": handle.handle_id}).encode() + b"\n"
+                json.dumps(
+                    {
+                        "cmd": "dispatch",
+                        "window": window.as_dict(),
+                        "header_prefix_hex": header[:76].hex(),
+                        "handle_id": handle.handle_id,
+                    }
+                ).encode()
+                + b"\n"
             )
             self._pending[handle.handle_id] = {"handle": handle, "sock": sock}
         except Exception as exc:
@@ -279,20 +320,26 @@ class ASICSolver:
         except Exception:
             return None
         if msg.get("type") == "share":
+            nonce = int(msg["nonce"])
+            tried = int(msg.get("nonces_tried", handle.window.span))
             share = Share(
                 device_id=handle.device_id,
                 job_id=handle.window.job_id,
-                nonce=int(msg["nonce"]),
+                nonce=nonce,
                 digest=bytes.fromhex(str(msg["digest"])),
-                nonces_tried=int(msg.get("nonces_tried", handle.window.span)),
+                nonces_tried=tried,
                 face=handle.window.face,
+                # Contiguous traversal: the share's depth inside its window.
+                probe_index=nonce - handle.window.base_nonce + 1,
             )
-            self._attest("share", handle, nonces_tried=share.nonces_tried, found=True)
+            self._attest("share", handle, nonces_tried=tried, found=True)
+            self._finished[handle.handle_id] = tried
             self._pending.pop(handle.handle_id, None)
             return share
         if msg.get("type") == "exhausted":
-            self._attest("exhausted", handle, nonces_tried=handle.window.span,
-                         reason="window_exhausted")
+            tried = int(msg.get("nonces_tried", handle.window.span))
+            self._attest("exhausted", handle, nonces_tried=tried, reason="window_exhausted")
+            self._finished[handle.handle_id] = tried
             self._pending.pop(handle.handle_id, None)
         return None
 
@@ -300,6 +347,10 @@ class ASICSolver:
         state = self._pending.pop(handle.handle_id, None)
         if state is None:
             return
+        # The wire reports no partial-progress counter; a cancelled
+        # window's executed count is unknown, so it records zero — never
+        # a fabricated mid-flight estimate.
+        self._finished[handle.handle_id] = 0
         try:
             state["sock"].sendall(
                 json.dumps({"cmd": "cancel", "handle_id": handle.handle_id}).encode() + b"\n"
@@ -312,11 +363,22 @@ class ASICSolver:
     def is_done(self, handle: DispatchHandle) -> bool:
         return handle.handle_id not in self._pending
 
+    def hashed_count(self, handle: DispatchHandle) -> int:
+        """Total hashes the channel reported for this handle so far."""
+        return int(self._finished.get(handle.handle_id, 0))
+
     def attestation(self) -> List[ExecutionAttestation]:
         return list(self._records)
 
-    def _attest(self, kind: str, handle: DispatchHandle, *, reason: str = "",
-                nonces_tried: int = 0, found: bool = False) -> ExecutionAttestation:
+    def _attest(
+        self,
+        kind: str,
+        handle: DispatchHandle,
+        *,
+        reason: str = "",
+        nonces_tried: int = 0,
+        found: bool = False,
+    ) -> ExecutionAttestation:
         record = ExecutionAttestation(
             kind=kind,
             device_id=handle.device_id,

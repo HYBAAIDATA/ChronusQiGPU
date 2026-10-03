@@ -8,9 +8,10 @@ coordinator: each remote agent grinds its assigned window over the real
 ``remote_opencl_v2`` wire, and every returned share is host re-verified by
 the coordinator's consensus boundary — a remote agent cannot win by lying.
 
-Fail-closed contract: no configured endpoint, an unreachable agent, or an
-agent that does not advertise ``sha256d`` leaves ``capability().supported``
-False with the concrete reason; ``dispatch`` raises
+Fail-closed contract: no configured endpoint, an unreachable agent, an
+agent that does not advertise ``sha256d``, or a probe grind that errors
+or yields no device timing leaves ``capability().supported`` False with
+the concrete reason; ``dispatch`` raises
 :class:`DeviceUnsupportedError`. Nothing simulates a remote device.
 
 Dispatch is asynchronous by construction: ``dispatch`` starts a worker
@@ -92,7 +93,20 @@ class RemoteScheduler:
                 reason_if_unsupported="remote agent does not advertise the sha256d route",
             )
             return self._capability
-        hps = self._measure()
+        hps, measure_error = self._measure()
+        if hps is None or hps <= 0:
+            self._capability = DeviceCapability(
+                device_id=str(self._hasher.device),
+                device_class="remote",
+                measured_hashes_per_sec=0.0,
+                supported=False,
+                reason_if_unsupported=f"remote probe grind failed: {measure_error}",
+                detail={
+                    "backend": getattr(self._hasher, "backend", "remote_opencl"),
+                    "fleet_size": getattr(self._hasher, "fleet_size", 1),
+                },
+            )
+            return self._capability
         self._capability = DeviceCapability(
             device_id=str(self._hasher.device),
             device_class="remote",
@@ -106,19 +120,27 @@ class RemoteScheduler:
         )
         return self._capability
 
-    def _measure(self) -> float:
-        """One timed probe window; the measured rate the partitioner weighs."""
+    def _measure(self) -> tuple[Optional[float], Optional[str]]:
+        """One timed probe window; the measured rate the partitioner weighs.
+
+        Returns ``(hps, None)`` on a measured grind, or ``(None, reason)``
+        when the dispatch errored or produced no device timing — a remote
+        that cannot prove measured work is not supported, not slow.
+        """
         header = bytes(80)
         target = b"\x00" * 32  # unreachable: forces a full-window grind
         self.prepare(_PROBE_JOB_ID, header)
         try:
             _, _, done = self._hasher.grind_target_range(header, target, 0, _PROBE_NONCES)
-        except Exception:
-            return 0.0
+        except Exception as exc:
+            return None, f"{type(exc).__name__}: {exc}"
         measured_ns = getattr(self._hasher, "last_measured_ns", None)
         if measured_ns and measured_ns > 0:
-            return int(done) / (measured_ns / 1e9)
-        return 0.0
+            return int(done) / (measured_ns / 1e9), None
+        return None, (
+            "grind answered but reported no device timing "
+            "(last_measured_ns absent or non-positive)"
+        )
 
     def dispatch(self, window: NonceWindow) -> DispatchHandle:
         cap = self.capability()
