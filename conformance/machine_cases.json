@@ -1,0 +1,792 @@
+[
+  {
+    "kind": "legal_opcode",
+    "name": "legal_nop",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "legal_opcode",
+    "name": "legal_mov",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "legal_opcode",
+    "name": "legal_movi",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "legal_opcode",
+    "name": "legal_add",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "legal_opcode",
+    "name": "legal_sub",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "legal_opcode",
+    "name": "legal_mul",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "legal_opcode",
+    "name": "legal_fma",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "legal_opcode",
+    "name": "legal_load",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "legal_opcode",
+    "name": "legal_store",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "legal_opcode",
+    "name": "legal_lload",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "legal_opcode",
+    "name": "legal_lstore",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "legal_opcode",
+    "name": "legal_barrier",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "legal_opcode",
+    "name": "legal_bra",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "legal_opcode",
+    "name": "legal_braz",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "legal_opcode",
+    "name": "legal_branz",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "legal_opcode",
+    "name": "legal_get_gid",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "legal_opcode",
+    "name": "legal_get_lid",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "legal_opcode",
+    "name": "legal_get_gsize",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "legal_opcode",
+    "name": "legal_get_lsize",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "legal_opcode",
+    "name": "legal_exit",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "named",
+    "name": "reserved_opcode",
+    "status": "TRAP",
+    "trap": "ILLEGAL_OPCODE"
+  },
+  {
+    "kind": "named",
+    "name": "malformed_encoding",
+    "status": "TRAP",
+    "trap": "MALFORMED_ENCODING"
+  },
+  {
+    "kind": "named",
+    "name": "invalid_selector",
+    "status": "TRAP",
+    "trap": "INVALID_SELECTOR"
+  },
+  {
+    "kind": "named",
+    "name": "reserved_bits",
+    "status": "TRAP",
+    "trap": "MALFORMED_ENCODING"
+  },
+  {
+    "kind": "named",
+    "name": "misaligned_load",
+    "status": "TRAP",
+    "trap": "MISALIGNED_GLOBAL_ACCESS"
+  },
+  {
+    "kind": "named",
+    "name": "misaligned_store",
+    "status": "TRAP",
+    "trap": "MISALIGNED_GLOBAL_ACCESS"
+  },
+  {
+    "kind": "named",
+    "name": "oob_load",
+    "status": "TRAP",
+    "trap": "GLOBAL_OOB"
+  },
+  {
+    "kind": "named",
+    "name": "oob_store",
+    "status": "TRAP",
+    "trap": "GLOBAL_OOB"
+  },
+  {
+    "kind": "named",
+    "name": "address_wrap",
+    "status": "TRAP",
+    "trap": "GLOBAL_ADDRESS_WRAP"
+  },
+  {
+    "kind": "named",
+    "name": "misaligned_local_load",
+    "status": "TRAP",
+    "trap": "MISALIGNED_LOCAL_ACCESS"
+  },
+  {
+    "kind": "named",
+    "name": "misaligned_local_store",
+    "status": "TRAP",
+    "trap": "MISALIGNED_LOCAL_ACCESS"
+  },
+  {
+    "kind": "named",
+    "name": "local_oob",
+    "status": "TRAP",
+    "trap": "LOCAL_OOB"
+  },
+  {
+    "kind": "named",
+    "name": "workgroup_isolation",
+    "status": "TRAP",
+    "trap": "WORKGROUP_ISOLATION"
+  },
+  {
+    "kind": "named",
+    "name": "missing_reconvergence",
+    "status": "TRAP",
+    "trap": "MISSING_RECONVERGENCE"
+  },
+  {
+    "kind": "named",
+    "name": "surplus_reconvergence",
+    "status": "TRAP",
+    "trap": "SURPLUS_RECONVERGENCE"
+  },
+  {
+    "kind": "named",
+    "name": "duplicate_reconvergence",
+    "status": "TRAP",
+    "trap": "DUPLICATE_RECONVERGENCE"
+  },
+  {
+    "kind": "named",
+    "name": "reconvergence_target_oob",
+    "status": "TRAP",
+    "trap": "INVALID_RECONVERGENCE_TARGET"
+  },
+  {
+    "kind": "named",
+    "name": "divergence_overflow",
+    "status": "TRAP",
+    "trap": "DIVERGENCE_OVERFLOW"
+  },
+  {
+    "kind": "named",
+    "name": "early_exit",
+    "status": "TRAP",
+    "trap": "INVALID_EARLY_EXIT"
+  },
+  {
+    "kind": "named",
+    "name": "barrier_deadlock",
+    "status": "TRAP",
+    "trap": "BARRIER_DEADLOCK"
+  },
+  {
+    "kind": "named",
+    "name": "mismatched_barrier",
+    "status": "TRAP",
+    "trap": "MISMATCHED_BARRIER"
+  },
+  {
+    "kind": "named",
+    "name": "barrier_budget",
+    "status": "BUDGET_EXHAUSTED",
+    "trap": "BARRIER_BUDGET_EXHAUSTED"
+  },
+  {
+    "kind": "named",
+    "name": "instruction_budget",
+    "status": "BUDGET_EXHAUSTED",
+    "trap": "INSTRUCTION_BUDGET_EXHAUSTED"
+  },
+  {
+    "kind": "named",
+    "name": "bad_magic",
+    "status": "CONTAINER_REJECTED",
+    "trap": "BAD_MAGIC"
+  },
+  {
+    "kind": "named",
+    "name": "bad_version",
+    "status": "CONTAINER_REJECTED",
+    "trap": "BAD_VERSION"
+  },
+  {
+    "kind": "named",
+    "name": "bad_crc",
+    "status": "CONTAINER_REJECTED",
+    "trap": "BAD_CHECKSUM"
+  },
+  {
+    "kind": "named",
+    "name": "truncated",
+    "status": "CONTAINER_REJECTED",
+    "trap": "BAD_CONTAINER_SIZE"
+  },
+  {
+    "kind": "named",
+    "name": "surplus_bytes",
+    "status": "CONTAINER_REJECTED",
+    "trap": "BAD_CONTAINER_SIZE"
+  },
+  {
+    "kind": "named",
+    "name": "bad_entry",
+    "status": "CONTAINER_REJECTED",
+    "trap": "BAD_ENTRY"
+  },
+  {
+    "kind": "named",
+    "name": "bad_metadata_length",
+    "status": "CONTAINER_REJECTED",
+    "trap": "BAD_METADATA"
+  },
+  {
+    "kind": "named",
+    "name": "bad_code_size",
+    "status": "CONTAINER_REJECTED",
+    "trap": "BAD_CONTAINER_SIZE"
+  },
+  {
+    "kind": "named",
+    "name": "bad_symbol_metadata",
+    "status": "CONTAINER_REJECTED",
+    "trap": "BAD_METADATA"
+  },
+  {
+    "kind": "named",
+    "name": "valid_divergence",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "named",
+    "name": "valid_reconvergence",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "named",
+    "name": "valid_barrier",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "named",
+    "name": "partial_final_workgroup_barrier",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "named",
+    "name": "bounded_loop",
+    "status": "PASS",
+    "trap": null
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_000",
+    "seed": 104900,
+    "status": "TRAP",
+    "trap": "ILLEGAL_OPCODE"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_001",
+    "seed": 104901,
+    "status": "TRAP",
+    "trap": "MALFORMED_ENCODING"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_002",
+    "seed": 104902,
+    "status": "TRAP",
+    "trap": "INVALID_SELECTOR"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_003",
+    "seed": 104903,
+    "status": "TRAP",
+    "trap": "GLOBAL_OOB"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_004",
+    "seed": 104904,
+    "status": "TRAP",
+    "trap": "BAD_CHECKSUM"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_005",
+    "seed": 104905,
+    "status": "TRAP",
+    "trap": "ILLEGAL_OPCODE"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_006",
+    "seed": 104906,
+    "status": "TRAP",
+    "trap": "MALFORMED_ENCODING"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_007",
+    "seed": 104907,
+    "status": "TRAP",
+    "trap": "INVALID_SELECTOR"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_008",
+    "seed": 104908,
+    "status": "TRAP",
+    "trap": "GLOBAL_OOB"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_009",
+    "seed": 104909,
+    "status": "TRAP",
+    "trap": "BAD_CHECKSUM"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_010",
+    "seed": 104910,
+    "status": "TRAP",
+    "trap": "ILLEGAL_OPCODE"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_011",
+    "seed": 104911,
+    "status": "TRAP",
+    "trap": "MALFORMED_ENCODING"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_012",
+    "seed": 104912,
+    "status": "TRAP",
+    "trap": "INVALID_SELECTOR"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_013",
+    "seed": 104913,
+    "status": "TRAP",
+    "trap": "GLOBAL_OOB"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_014",
+    "seed": 104914,
+    "status": "TRAP",
+    "trap": "BAD_CHECKSUM"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_015",
+    "seed": 104915,
+    "status": "TRAP",
+    "trap": "ILLEGAL_OPCODE"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_016",
+    "seed": 104916,
+    "status": "TRAP",
+    "trap": "MALFORMED_ENCODING"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_017",
+    "seed": 104917,
+    "status": "TRAP",
+    "trap": "INVALID_SELECTOR"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_018",
+    "seed": 104918,
+    "status": "TRAP",
+    "trap": "GLOBAL_OOB"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_019",
+    "seed": 104919,
+    "status": "TRAP",
+    "trap": "BAD_CHECKSUM"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_020",
+    "seed": 104920,
+    "status": "TRAP",
+    "trap": "ILLEGAL_OPCODE"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_021",
+    "seed": 104921,
+    "status": "TRAP",
+    "trap": "MALFORMED_ENCODING"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_022",
+    "seed": 104922,
+    "status": "TRAP",
+    "trap": "INVALID_SELECTOR"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_023",
+    "seed": 104923,
+    "status": "TRAP",
+    "trap": "GLOBAL_OOB"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_024",
+    "seed": 104924,
+    "status": "TRAP",
+    "trap": "BAD_CHECKSUM"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_025",
+    "seed": 104925,
+    "status": "TRAP",
+    "trap": "ILLEGAL_OPCODE"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_026",
+    "seed": 104926,
+    "status": "TRAP",
+    "trap": "MALFORMED_ENCODING"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_027",
+    "seed": 104927,
+    "status": "TRAP",
+    "trap": "INVALID_SELECTOR"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_028",
+    "seed": 104928,
+    "status": "TRAP",
+    "trap": "GLOBAL_OOB"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_029",
+    "seed": 104929,
+    "status": "TRAP",
+    "trap": "BAD_CHECKSUM"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_030",
+    "seed": 104930,
+    "status": "TRAP",
+    "trap": "ILLEGAL_OPCODE"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_031",
+    "seed": 104931,
+    "status": "TRAP",
+    "trap": "MALFORMED_ENCODING"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_032",
+    "seed": 104932,
+    "status": "TRAP",
+    "trap": "INVALID_SELECTOR"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_033",
+    "seed": 104933,
+    "status": "TRAP",
+    "trap": "GLOBAL_OOB"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_034",
+    "seed": 104934,
+    "status": "TRAP",
+    "trap": "BAD_CHECKSUM"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_035",
+    "seed": 104935,
+    "status": "TRAP",
+    "trap": "ILLEGAL_OPCODE"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_036",
+    "seed": 104936,
+    "status": "TRAP",
+    "trap": "MALFORMED_ENCODING"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_037",
+    "seed": 104937,
+    "status": "TRAP",
+    "trap": "INVALID_SELECTOR"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_038",
+    "seed": 104938,
+    "status": "TRAP",
+    "trap": "GLOBAL_OOB"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_039",
+    "seed": 104939,
+    "status": "TRAP",
+    "trap": "BAD_CHECKSUM"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_040",
+    "seed": 104940,
+    "status": "TRAP",
+    "trap": "ILLEGAL_OPCODE"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_041",
+    "seed": 104941,
+    "status": "TRAP",
+    "trap": "MALFORMED_ENCODING"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_042",
+    "seed": 104942,
+    "status": "TRAP",
+    "trap": "INVALID_SELECTOR"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_043",
+    "seed": 104943,
+    "status": "TRAP",
+    "trap": "GLOBAL_OOB"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_044",
+    "seed": 104944,
+    "status": "TRAP",
+    "trap": "BAD_CHECKSUM"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_045",
+    "seed": 104945,
+    "status": "TRAP",
+    "trap": "ILLEGAL_OPCODE"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_046",
+    "seed": 104946,
+    "status": "TRAP",
+    "trap": "MALFORMED_ENCODING"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_047",
+    "seed": 104947,
+    "status": "TRAP",
+    "trap": "INVALID_SELECTOR"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_048",
+    "seed": 104948,
+    "status": "TRAP",
+    "trap": "GLOBAL_OOB"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_049",
+    "seed": 104949,
+    "status": "TRAP",
+    "trap": "BAD_CHECKSUM"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_050",
+    "seed": 104950,
+    "status": "TRAP",
+    "trap": "ILLEGAL_OPCODE"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_051",
+    "seed": 104951,
+    "status": "TRAP",
+    "trap": "MALFORMED_ENCODING"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_052",
+    "seed": 104952,
+    "status": "TRAP",
+    "trap": "INVALID_SELECTOR"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_053",
+    "seed": 104953,
+    "status": "TRAP",
+    "trap": "GLOBAL_OOB"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_054",
+    "seed": 104954,
+    "status": "TRAP",
+    "trap": "BAD_CHECKSUM"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_055",
+    "seed": 104955,
+    "status": "TRAP",
+    "trap": "ILLEGAL_OPCODE"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_056",
+    "seed": 104956,
+    "status": "TRAP",
+    "trap": "MALFORMED_ENCODING"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_057",
+    "seed": 104957,
+    "status": "TRAP",
+    "trap": "INVALID_SELECTOR"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_058",
+    "seed": 104958,
+    "status": "TRAP",
+    "trap": "GLOBAL_OOB"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_059",
+    "seed": 104959,
+    "status": "TRAP",
+    "trap": "BAD_CHECKSUM"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_060",
+    "seed": 104960,
+    "status": "TRAP",
+    "trap": "ILLEGAL_OPCODE"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_061",
+    "seed": 104961,
+    "status": "TRAP",
+    "trap": "MALFORMED_ENCODING"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_062",
+    "seed": 104962,
+    "status": "TRAP",
+    "trap": "INVALID_SELECTOR"
+  },
+  {
+    "kind": "seeded_mutation",
+    "name": "seeded_mutation_063",
+    "seed": 104963,
+    "status": "TRAP",
+    "trap": "GLOBAL_OOB"
+  }
+]

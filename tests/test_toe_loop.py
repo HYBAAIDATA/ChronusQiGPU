@@ -13,7 +13,7 @@ def test_realize_runs_the_twelve_theorems():
     assert out["roundtrip_ok"] is True
     assert out["ledger_ok"] is True
     assert "T1_cassini_identity" in out["theorems"]
-    assert "T4_lucas_pisot_scaling" in out["theorems"]
+    assert "T4_lucas_recurrence" in out["theorems"]
     assert "T5_zeckendorf_spacing" in out["theorems"]
     assert out["device_punches"]["punch_ids"]["phi_filter_score"] == 0x1A
     assert out["device_punches"]["punch_ids"]["poincare_fold"] == 0x08

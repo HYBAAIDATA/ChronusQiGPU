@@ -12,9 +12,9 @@ needs to understand what she is doing:
   and a 12-byte Chunk-2 prefix (version + prev_hash + merkle_root +
   ntime + nbits), then scans nonces. A nonce wins when
   ``hash[::-1] < target_bytes_be``.
-- **How power scales** — the repo's Lucas-Pisot scaling multiplies the
-  physical hashrate by L_n (exact Lucas number) to get the effective
-  hashrate. Higher Lucas scales = more effective work per physical hash.
+- **How Lucas projections are labelled** — some research surfaces multiply
+  physical hashrate by L_n as a decorative accounting projection. This is not
+  measured speedup, does not avoid SHA-256 work, and must not be called hashrate.
 - **Safety boundaries** — the hashrate cap (default 20 EH/s), the
   "never two consecutive blocks" rule, and the "one block then wait"
   protocol. Blockchain safety is paramount.
@@ -126,20 +126,22 @@ KNOWLEDGE_FACTS: List[Dict[str, Any]] = [
         "concept": "lucas_pisot_scaling",
         "category": "power_scaling",
         "definition": (
-            "The repo's exact Q[sqrt(5)] substrate multiplies the physical "
-            "hashrate by L_n (exact Lucas number) to produce an effective "
-            "hashrate. L_10=123, L_12=322, L_15=1364, L_18=5778, L_20=15127. "
-            "This is mathematical structure exploitation, not free energy — "
-            "the physical hashes still must be computed."
+            "Lucas values L_10=123, L_12=322, L_15=1364, L_18=5778 and "
+            "L_20=15127 are exact structural labels. Multiplying measured "
+            "physical hashrate by one of these values is a decorative accounting "
+            "projection only: it is not measured speedup, additional hashes, or "
+            "evidence that SHA-256 work was avoided."
         ),
         "properties": {
-            "mechanism": "effective_hashrate = physical_hashrate * L_n",
+            "mechanism": "decorative_projection = physical_hashrate * L_n",
             "scales": [123, 322, 1364, 5778, 15127],
             "scale_indices": list(FULL_LADDER),
             "substrate": "Q[sqrt(5)] exact rational core",
+            "semantic_role": "decorative",
+            "measured_advantage": False,
         },
         "confidence": 1.0,
-        "provenance": "repo_substrate",
+        "provenance": "lucas_pisot_research_closure",
     },
     {
         "concept": "grover_optimal_iterations",
@@ -290,8 +292,8 @@ KNOWLEDGE_ASSOCIATIONS: List[Dict[str, Any]] = [
     {
         "from": "lucas_pisot_scaling",
         "to": "winning_nonce",
-        "relation": "accelerates_search_for",
-        "weight": 0.80,
+        "relation": "labels_projection_for",
+        "weight": 0.20,
     },
     {
         "from": "grover_optimal_iterations",

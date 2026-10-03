@@ -192,11 +192,12 @@ class TOESystem:
         f_nm2 = CassiniVerifier.fibonacci(n_anchor - 2) if n_anchor >= 2 else 0
         results["T3_binet_recurrence"] = f_n == f_nm1 + f_nm2
 
-        # 4. Lucas-Pisot Scaling: L_{n+1} - L_n = L_{n-1}
+        # 4. Lucas recurrence only. This is algebraic coherence, not evidence
+        # of Pisot-residual preservation or operational scaling.
         l_n = CassiniVerifier.lucas(n_anchor)
         l_np1 = CassiniVerifier.lucas(n_anchor + 1)
         l_nm1 = CassiniVerifier.lucas(n_anchor - 1) if n_anchor >= 1 else 2
-        results["T4_lucas_pisot_scaling"] = l_np1 - l_n == l_nm1
+        results["T4_lucas_recurrence"] = l_np1 - l_n == l_nm1
 
         # 5. Zeckendorf Spacing: (mask & (mask << 1)) == 0
         mask = candidate.zeckendorf_mask

@@ -1,0 +1,80 @@
+{
+  "$id": "https://hyba.example/schema/chronus-conformance-corpus-v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "abi_version": {
+      "type": "string"
+    },
+    "artifact_root": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "assembler_version": {
+      "type": "string"
+    },
+    "byte_order": {
+      "const": "little"
+    },
+    "canonicalization_version": {
+      "type": "string"
+    },
+    "case_count": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "case_root": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "compiler_version": {
+      "type": "string"
+    },
+    "container_version": {
+      "type": "string"
+    },
+    "corpus_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "float_representation": {
+      "const": "IEEE-754 binary32"
+    },
+    "generator_source_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "generator_version": {
+      "type": "string"
+    },
+    "isa_version": {
+      "type": "string"
+    },
+    "schema": {
+      "const": "chronus.conformance.corpus.v1"
+    },
+    "seed_set_digest": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "generator_version",
+    "generator_source_sha256",
+    "isa_version",
+    "abi_version",
+    "container_version",
+    "compiler_version",
+    "assembler_version",
+    "canonicalization_version",
+    "seed_set_digest",
+    "case_count",
+    "artifact_root",
+    "case_root",
+    "corpus_sha256",
+    "byte_order",
+    "float_representation"
+  ],
+  "type": "object"
+}

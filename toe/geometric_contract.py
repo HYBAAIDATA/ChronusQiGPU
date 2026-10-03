@@ -34,7 +34,7 @@ def check_twelve(
         "G2_pisot_decay": bool(theorems.get("T2_pisot_decay")),
         "G3_lucas_trace": lucas(10) == 123
         and lucas(n_anchor) == lucas(n_anchor - 1) + lucas(n_anchor - 2),
-        "G4_lucas_pisot": bool(theorems.get("T4_lucas_pisot_scaling")),
+        "G4_lucas_recurrence": bool(theorems.get("T4_lucas_recurrence")),
         "G5_zeckendorf": bool(certificate.get("is_valid")) and (mask & (mask << 1)) == 0,
         "G6_born_floor": bool(theorems.get("T11_born_rule_threshold")),
         "G7_galois_bound": bool(theorems.get("T12_galois_bound")),

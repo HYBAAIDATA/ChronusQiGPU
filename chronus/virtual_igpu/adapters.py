@@ -20,6 +20,8 @@ from .abi import (
     WorkloadResult, digest_json,
 )
 from .attestation import extend_chain
+from .capabilities import CapabilityManifest
+from .operators import ExecutionClass
 
 
 class AdapterUnavailable(RuntimeError):
@@ -60,6 +62,28 @@ class ExecutionAdapter(ABC):
 
     def supports(self, kind: WorkloadKind) -> bool:
         return Capability(kind.value) in self.capabilities
+
+    def capability_manifest(self) -> CapabilityManifest:
+        health = self.health()
+        available = bool(health.get("available"))
+        return CapabilityManifest(
+            adapter_id=self.id,
+            adapter_kind=self.kind.value,
+            operations=tuple(sorted(c.value for c in self.capabilities)) if available else (),
+            dtypes=("float32", "bytes", "int"),
+            execution_classes=(ExecutionClass.DENSE_NATIVE.value,),
+            memory_model={"kind": "host", "unified": True},
+            execution_model={"priority": self.priority, "fail_closed": self.fail_closed},
+            limits={"legal_work_group_sizes": [1], "max_batch_size": 1 << 20, "max_queue_depth": 1},
+            profiling={"wall_time": True, "device_time": False},
+            verified={"available": available, "truth_class": health.get("truth_class", "runtime_probe")},
+            evidence={"attestation": True, "content_addressed": True},
+        )
+
+    def execute_planned(self, workload: Workload, plan: Any) -> WorkloadResult:
+        if getattr(plan, "adapter_id", self.id) != self.id:
+            raise AdapterUnavailable("execution plan targets another adapter")
+        return self.execute(workload)
 
     def _result(
         self, workload: Workload, output: dict[str, Any], started_ns: int,
@@ -187,6 +211,25 @@ class OpenCLIntelUHDAdapter(ExecutionAdapter):
             "reason": self._reason or None,
             "device": None if self._runtime is None else self._runtime.device_id,
         }
+
+    def capability_manifest(self) -> CapabilityManifest:
+        base = super().capability_manifest()
+        if self._runtime is None:
+            return base
+        probe = self._runtime.probe
+        max_wg = int(probe.max_work_group_size or 1)
+        legal = tuple(v for v in (8, 16, 32, 64, 128, 256) if v <= max_wg) or (1,)
+        return CapabilityManifest(
+            adapter_id=self.id, adapter_kind=self.kind.value,
+            operations=tuple(sorted(c.value for c in self.capabilities)), dtypes=("float32", "bytes"),
+            execution_classes=(ExecutionClass.DENSE_NATIVE.value, ExecutionClass.PARTIAL_UNFOLD.value, ExecutionClass.HYBRID.value),
+            memory_model={"kind": "opencl", "unified": probe.host_unified_memory, "local_memory_bytes": probe.local_memory_bytes},
+            execution_model={"priority": self.priority, "fail_closed": True},
+            limits={"legal_work_group_sizes": legal, "max_batch_size": max(1, int((probe.global_memory_bytes or 4) // 16)), "max_queue_depth": 8},
+            profiling={"wall_time": True, "device_time": True},
+            verified={"available": True, "device_id": probe.device_id},
+            evidence={"attestation": True, "content_addressed": True},
+        )
 
     def execute(self, workload: Workload) -> WorkloadResult:
         if self._runtime is None:
