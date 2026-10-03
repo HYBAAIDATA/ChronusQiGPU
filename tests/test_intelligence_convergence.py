@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from euclid.contracts import RewardAuthority
-from euclid.cognition import Outcome
+from euclid.cognition import AblationConfig, Outcome
 from euclid.cognition.production import (
     DurableCognitiveMemory,
     TOECognitivePlanner,
@@ -106,6 +106,33 @@ class IntelligenceConvergenceTests(unittest.TestCase):
             self.assertNotEqual(mcts.candidates[0].action_id, evolution.candidates[0].action_id)
             self.assertIn("mcts-v16", runtime.cognition.skills.calls)
             self.assertIn("evolution-v16", runtime.cognition.skills.calls)
+
+    def test_representation_and_mathematical_ablation_change_episode_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = self.production(directory)
+            self.addCleanup(runtime.close)
+            runtime.cognition.executor = MeasuredExecutor()
+            represented_problem = problem("repo-representation", "primitive-compose")
+            represented_problem["representation_evidence"] = {
+                "literal": {"utility": 0.1, "cost": 0.1},
+                "relational": {"utility": 0.8, "cost": 0.1},
+            }
+            represented = runtime.solve_repository_problem(represented_problem)
+            self.assertEqual(
+                represented.representation["active_representation"], "relational"
+            )
+
+            runtime.cognition.ablations = AblationConfig(
+                mathematical_structure=False
+            )
+            ablated = runtime.solve_repository_problem(
+                problem("repo-math-ablation", "mcts-v16")
+            )
+            self.assertIn("mathematical_structure", ablated.ablations)
+            self.assertTrue(all(
+                candidate.origin == "euclid-v16:ASTPrimitives"
+                for candidate in ablated.candidates
+            ))
 
     def test_durable_memory_replay_guard_restart_and_transfer(self):
         with tempfile.TemporaryDirectory() as directory:

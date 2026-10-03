@@ -71,6 +71,24 @@ class TOEWorldModelAdapter:
     def rollout(self, context: str, actions: Sequence[str]) -> list[PredictionRecord]:
         return [self._prediction(context, action, True) for action in actions]
 
+    def counterfactual(
+        self, context: str, actions: Sequence[str]
+    ) -> list[dict[str, Any]]:
+        factual = self._state(context)
+        return [
+            {
+                "action": action,
+                "future": self.model.predict_transition(
+                    factual,
+                    {} if action == "no-intervention"
+                    else {"action": _number(action)},
+                ),
+                "epistemic_status": "predicted",
+                "imagined": True,
+            }
+            for action in actions
+        ]
+
     def update(self, context: str, action: str, observed: str) -> float:
         previous = dict(self._state(context))
         nxt = dict(previous)
@@ -240,6 +258,7 @@ class V16SkillSearchAdapter:
         self.mcts = MCTSSearchEngine(repository=repository)
         self.evolution = EvolutionarySearchEngine(repository=repository)
         self.calls: list[str] = []
+        self.mathematical_enabled = True
 
     def available_strategies(self) -> tuple[str, ...]:
         return ("mcts-v16", "evolution-v16", "primitive-compose", "toe-plan")
@@ -247,6 +266,9 @@ class V16SkillSearchAdapter:
     def compose(self, goal: str, state: CognitiveState) -> list[CandidateAction]:
         code = str(state.representation.get("initial_code", "def candidate(x):\n    return x\n"))
         strategy = state.selected_strategy or "primitive-compose"
+        if not self.mathematical_enabled and strategy in {"mcts-v16", "evolution-v16"}:
+            self.calls.append("neutral-primitive-ablation")
+            strategy = "primitive-compose"
         if strategy == "mcts-v16":
             self.calls.append(strategy)
             result = self.mcts.run_mcts_search(

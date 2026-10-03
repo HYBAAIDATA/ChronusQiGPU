@@ -216,19 +216,29 @@ class CognitiveState:
         self.representation = dict(representation)
         self._clock = clock
         self.goals: list[Goal] = []
+        self.subgoals: list[Goal] = []
         self.hypotheses: list[Hypothesis] = []
+        self.causal_assumptions: list[Mapping[str, Any]] = []
         self.evidence_items: list[EvidenceItem] = []
         self.analogies: list[AnalogyMapping] = []
         self.retrieved_memory_refs: list[str] = []
+        self.representation_history: list[Mapping[str, Any]] = []
+        self.objectives: list[Mapping[str, Any]] = []
         self.selected_strategy: str | None = None
         self.alternative_strategies: list[str] = []
+        self.selected_capabilities: list[str] = []
         self.predictions: list[PredictionRecord] = []
+        self.counterfactuals: list[Mapping[str, Any]] = []
         self.plan: list[PlanNode] = []
         self.candidates: list[CandidateAction] = []
+        self.expected_outcome: Mapping[str, Any] | None = None
+        self.actual_outcome: Mapping[str, Any] | None = None
+        self.uncertainty: float = 1.0
         self.prediction_errors: list[float] = []
         self.replanning_events: list[Mapping[str, Any]] = []
         self.learning_updates: list[Mapping[str, Any]] = []
         self.control_decisions: list[Mapping[str, Any]] = []
+        self.transfer_history: list[Mapping[str, Any]] = []
         self.ablations: list[str] = []
         self.outcome: Outcome | None = None
         self.outcome_detail: str = ""
@@ -296,9 +306,11 @@ class CognitiveState:
             "problem_id": self.problem_id,
             "representation": self.representation,
             "goals": [asdict(g) for g in self.goals],
+            "subgoals": [asdict(g) for g in self.subgoals],
             "hypotheses": [
                 {**asdict(h), "status": h.status.value} for h in self.hypotheses
             ],
+            "causal_assumptions": [dict(item) for item in self.causal_assumptions],
             "evidence_items": [
                 {**asdict(e), "origin": e.origin.value, "status": e.status.value}
                 for e in self.evidence_items
@@ -307,15 +319,27 @@ class CognitiveState:
                 {**asdict(a), "status": a.status.value} for a in self.analogies
             ],
             "retrieved_memory_refs": list(self.retrieved_memory_refs),
+            "representation_history": [dict(item) for item in self.representation_history],
+            "objectives": [dict(item) for item in self.objectives],
             "selected_strategy": self.selected_strategy,
             "alternative_strategies": list(self.alternative_strategies),
+            "selected_capabilities": list(self.selected_capabilities),
             "predictions": [asdict(p) for p in self.predictions],
+            "counterfactuals": [dict(item) for item in self.counterfactuals],
             "plan": [asdict(n) for n in self.plan],
             "candidates": [asdict(c) for c in self.candidates],
+            "expected_outcome": (
+                dict(self.expected_outcome) if self.expected_outcome is not None else None
+            ),
+            "actual_outcome": (
+                dict(self.actual_outcome) if self.actual_outcome is not None else None
+            ),
+            "uncertainty": self.uncertainty,
             "prediction_errors": list(self.prediction_errors),
             "replanning_events": [dict(e) for e in self.replanning_events],
             "learning_updates": [dict(u) for u in self.learning_updates],
             "control_decisions": [dict(d) for d in self.control_decisions],
+            "transfer_history": [dict(item) for item in self.transfer_history],
             "ablations": list(self.ablations),
             "outcome": self.outcome.value if self.outcome else None,
             "outcome_detail": self.outcome_detail,
@@ -337,10 +361,12 @@ class CognitiveState:
             raise ValueError("cognitive-state seal mismatch")
         state = cls(str(body["problem_id"]), body["representation"] or {}, clock=clock)
         state.goals = [Goal(**g) for g in body["goals"] or []]
+        state.subgoals = [Goal(**g) for g in body.get("subgoals") or []]
         state.hypotheses = [
             Hypothesis(**{**h, "status": HypothesisStatus(h["status"])})
             for h in body["hypotheses"] or []
         ]
+        state.causal_assumptions = list(body.get("causal_assumptions") or [])
         state.evidence_items = [
             EvidenceItem(
                 **{
@@ -356,15 +382,23 @@ class CognitiveState:
             for a in body["analogies"] or []
         ]
         state.retrieved_memory_refs = list(body["retrieved_memory_refs"] or [])
+        state.representation_history = list(body.get("representation_history") or [])
+        state.objectives = list(body.get("objectives") or [])
         state.selected_strategy = body["selected_strategy"]
         state.alternative_strategies = list(body["alternative_strategies"] or [])
+        state.selected_capabilities = list(body.get("selected_capabilities") or [])
         state.predictions = [PredictionRecord(**p) for p in body["predictions"] or []]
+        state.counterfactuals = list(body.get("counterfactuals") or [])
         state.plan = [PlanNode(**n) for n in body["plan"] or []]
         state.candidates = [CandidateAction(**c) for c in body["candidates"] or []]
+        state.expected_outcome = body.get("expected_outcome")
+        state.actual_outcome = body.get("actual_outcome")
+        state.uncertainty = float(body.get("uncertainty", 1.0))
         state.prediction_errors = [float(e) for e in body["prediction_errors"] or []]
         state.replanning_events = list(body["replanning_events"] or [])
         state.learning_updates = list(body["learning_updates"] or [])
         state.control_decisions = list(body["control_decisions"] or [])
+        state.transfer_history = list(body.get("transfer_history") or [])
         state.ablations = list(body["ablations"] or [])
         state.outcome = Outcome(body["outcome"]) if body["outcome"] else None
         state.outcome_detail = str(body["outcome_detail"] or "")

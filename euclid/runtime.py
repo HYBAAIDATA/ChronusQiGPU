@@ -100,12 +100,16 @@ class EuclidRuntime:
         """Wire canonical implementations once; no parallel state histories."""
         from Intelligence.repo_engineer import RepoEngineer
         from .cognition.baselines import (
-            BanditMetaLearner,
             ConsequenceDeducer,
             DivergenceDiscriminator,
             RuleAbducer,
             StructuralAnalogyEngine,
             WeightedObjective,
+        )
+        from .cognition.adaptive import (
+            ObjectiveController,
+            PersistentStrategyLearner,
+            RepresentationController,
         )
         from .cognition.core import GeneralIntelligenceCore
         from .cognition.production import (
@@ -136,7 +140,9 @@ class EuclidRuntime:
             deducer=ConsequenceDeducer(explanations),
             discriminator=DivergenceDiscriminator(),
             metacontroller=TOEMetaController(),
-            metalearner=BanditMetaLearner(),
+            metalearner=PersistentStrategyLearner(
+                self.state_dir / "strategy_learning.json"
+            ),
             planner=TOECognitivePlanner(),
             skills=V16SkillSearchAdapter(),
             objective=WeightedObjective({
@@ -150,12 +156,16 @@ class EuclidRuntime:
             episode_learner=LearningServiceEpisodeAdapter(
                 self.learning, cognitive_memory
             ),
+            representation_controller=RepresentationController(),
+            objective_controller=ObjectiveController(),
             evidence=self.evidence,
         )
         from .cognition.reachability import ReachabilityStage
         for component in (
             "toe.world_model", "toe.planning", "toe.meta_reasoning",
             "euclid.v16.search", "euclid.v16.primitives",
+            "euclid.representation_controller", "euclid.objective_controller",
+            "euclid.strategy_meta_learning",
             "euclid.learning_service", "euclid.memory_database",
             "pythia.memory", "pythia.store", "experience_superlearner",
             "repository.engineer",
@@ -203,6 +213,8 @@ class EuclidRuntime:
         from .cognition.reachability import ReachabilityStage
         used = {
             "toe.world_model", "toe.planning", "toe.meta_reasoning",
+            "euclid.representation_controller", "euclid.objective_controller",
+            "euclid.strategy_meta_learning",
             "euclid.learning_service", "euclid.memory_database",
             "pythia.memory", "pythia.store", "experience_superlearner",
             "repository.engineer",

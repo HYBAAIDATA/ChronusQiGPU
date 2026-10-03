@@ -20,6 +20,14 @@ from .baselines import (
     TableWorldModel,
     WeightedObjective,
 )
+from .adaptive import (
+    CapabilityLifecycle,
+    IntermediateObjective,
+    NoveltyArchive,
+    ObjectiveController,
+    PersistentStrategyLearner,
+    RepresentationController,
+)
 from .core import AblationConfig, GeneralIntelligenceCore
 from .phi_schedule import EVIDENCE_CLASS as PHI_EVIDENCE_CLASS
 from .phi_schedule import neutral_order, phi_order
@@ -57,6 +65,7 @@ __all__ = [
     "BanditMetaLearner",
     "CallbackExecutor",
     "CandidateAction",
+    "CapabilityLifecycle",
     "CognitiveState",
     "ConsequenceDeducer",
     "DelegatorExecutor",
@@ -70,8 +79,12 @@ __all__ = [
     "HierarchicalPlanner",
     "Hypothesis",
     "HypothesisStatus",
+    "IntermediateObjective",
     "InMemoryMemorySystem",
     "MemoryKind",
+    "NoveltyArchive",
+    "ObjectiveController",
+    "PersistentStrategyLearner",
     "LearningServiceEpisodeAdapter",
     "Outcome",
     "PHI_EVIDENCE_CLASS",
@@ -79,6 +92,7 @@ __all__ = [
     "PredictionRecord",
     "RuleAbducer",
     "RepositoryIntelligenceExecutor",
+    "RepresentationController",
     "SignalMetaController",
     "StaticSkillComposer",
     "StructuralAnalogyEngine",

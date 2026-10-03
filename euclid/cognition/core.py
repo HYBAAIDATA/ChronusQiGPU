@@ -63,6 +63,8 @@ class AblationConfig:
     causal_reasoning: bool = True
     meta_learning: bool = True
     skill_composition: bool = True
+    representation_restructuring: bool = True
+    mathematical_structure: bool = True
     replanning: bool = True
 
 
@@ -83,6 +85,8 @@ class GeneralIntelligenceCore:
         objective: ObjectiveFunction,
         executor: Executor | None = None,
         episode_learner: Any | None = None,
+        representation_controller: Any | None = None,
+        objective_controller: Any | None = None,
         evidence: EvidenceChain | None = None,
         clock: Callable[[], float] = time.time,
         max_cycles: int = 8,
@@ -106,6 +110,8 @@ class GeneralIntelligenceCore:
         self.objective = objective
         self.executor = executor
         self.episode_learner = episode_learner
+        self.representation_controller = representation_controller
+        self.objective_controller = objective_controller
         self.evidence = evidence or EvidenceChain()
         self.clock = clock
         self.max_cycles = max_cycles
@@ -160,6 +166,70 @@ class GeneralIntelligenceCore:
         state = CognitiveState(problem_id, representation, clock=self.clock)
         state.goals.append(Goal("g0", goal_text))
 
+        # Representation changes require measured superiority to the literal
+        # baseline; absent measurements, the baseline is retained.
+        if self.representation_controller is not None and self.ablations.representation_restructuring:
+            measured = dict(problem.get("representation_evidence", {}))
+
+            def evaluate(kind: str, payload: Mapping[str, Any]) -> tuple[float, float]:
+                record = measured.get(kind, {})
+                return (
+                    float(record.get("utility", 0.0)),
+                    float(record.get("cost", 0.0)),
+                )
+
+            trial = self.representation_controller.select(problem, evaluate)
+            record = {
+                "representation_id": trial.representation_id,
+                "kind": trial.kind,
+                "accepted": trial.accepted,
+                "baseline_utility": trial.baseline_utility,
+                "candidate_utility": trial.candidate_utility,
+                "cost": trial.cost,
+                "rationale": trial.rationale,
+            }
+            state.representation_history.append(record)
+            if trial.accepted:
+                state.representation["active_representation"] = trial.kind
+                state.representation["representation_payload"] = dict(trial.payload)
+            self._transition(
+                state, "representation-control",
+                "representation compared against measured baseline", record,
+            )
+        elif not self.ablations.representation_restructuring:
+            self._ablated(state, "representation_restructuring")
+
+        if self.objective_controller is not None:
+            objectives = self.objective_controller.derive(
+                goal_text,
+                uncertainty=float(problem.get("uncertainty", 1.0)),
+                contradictions=int(problem.get("contradictions", 0)),
+                missing_evidence=int(problem.get("missing_evidence", 0)),
+                prediction_error=0.0,
+            )
+            state.objectives = [
+                {
+                    "objective_id": item.objective_id,
+                    "description": item.description,
+                    "parent_goal": item.parent_goal,
+                    "evidence_basis": item.evidence_basis,
+                    "metric": item.metric,
+                    "target": item.target,
+                    "weight": item.weight,
+                    "status": item.status,
+                }
+                for item in objectives
+            ]
+            state.subgoals = [
+                Goal(item.objective_id, item.description, parent_id="g0")
+                for item in objectives
+            ]
+            self._transition(
+                state, "objective-construction",
+                "intermediate objectives derived from measured gaps",
+                {"objectives": state.objectives},
+            )
+
         # 1. REPRESENT -----------------------------------------------------
         self._transition(
             state, "represent", "problem representation formed",
@@ -169,6 +239,12 @@ class GeneralIntelligenceCore:
         # 2. RETRIEVE --------------------------------------------------------
         memories = self.memory.retrieve(structure, ALL_MEMORY_KINDS)
         state.retrieved_memory_refs.extend(m.memory_id for m in memories)
+        state.transfer_history.extend({
+            "memory_id": memory.memory_id,
+            "kind": memory.kind.value,
+            "structural_relevance": memory.transfer_value,
+            "status": "candidate",
+        } for memory in memories)
         self._transition(
             state, "retrieve", "memory retrieved by structural relevance",
             {"retrieved": [m.memory_id for m in memories]},
@@ -246,6 +322,15 @@ class GeneralIntelligenceCore:
                     {key: [p.prediction_id for p in value]
                      for key, value in predictions_by_hypothesis.items()},
                 )
+                confidences = [
+                    prediction.confidence
+                    for values in predictions_by_hypothesis.values()
+                    for prediction in values
+                ]
+                state.uncertainty = (
+                    1.0 - sum(confidences) / len(confidences)
+                    if confidences else 1.0
+                )
             else:
                 self._ablated(state, "world_model:deduction")
 
@@ -267,6 +352,22 @@ class GeneralIntelligenceCore:
                          "expected_divergence": intervention.expected_divergence,
                          "rationale": intervention.rationale},
                     )
+                    state.causal_assumptions.append({
+                        "action": intervention.action,
+                        "expected_divergence": intervention.expected_divergence,
+                        "status": "assumption-pending-intervention",
+                    })
+                    counterfactual = getattr(self.world_model, "counterfactual", None)
+                    if callable(counterfactual):
+                        futures = counterfactual(
+                            context, [intervention.action, "no-intervention"]
+                        )
+                        state.counterfactuals.extend(futures)
+                        self._transition(
+                            state, "counterfactual",
+                            "alternative intervention outcomes compared",
+                            {"futures": futures},
+                        )
                     if self.executor is not None:
                         observed = self.executor.execute(
                             intervention.action, {"kind": "intervention", "cycle": cycle}
@@ -323,7 +424,16 @@ class GeneralIntelligenceCore:
 
             # 9. COMPOSE ----------------------------------------------------------
             if self.ablations.skill_composition:
+                if hasattr(self.skills, "mathematical_enabled"):
+                    self.skills.mathematical_enabled = (
+                        self.ablations.mathematical_structure
+                    )
+                if not self.ablations.mathematical_structure:
+                    self._ablated(state, "mathematical_structure")
                 state.candidates = self.skills.compose(goal_text, state)
+                state.selected_capabilities = sorted({
+                    candidate.origin for candidate in state.candidates
+                })
             else:
                 state.candidates = []
                 self._ablated(state, "skill_composition")
@@ -378,8 +488,48 @@ class GeneralIntelligenceCore:
                 self.world_model.predict(context, best.action_id)
                 if self.ablations.world_model else None
             )
+            state.expected_outcome = (
+                {
+                    "action": best.action_id,
+                    "expected": expected.expected,
+                    "confidence": expected.confidence,
+                }
+                if expected is not None else None
+            )
             result = dict(self.executor.execute(best.action_id,
                                                 {"kind": "plan", "cycle": cycle}))
+            state.actual_outcome = dict(result)
+            if self.objective_controller is not None and state.objectives:
+                audited = []
+                for raw in state.objectives:
+                    from .adaptive import IntermediateObjective
+                    item = IntermediateObjective(**raw)
+                    checked = self.objective_controller.audit_alignment(
+                        item,
+                        metric_improved=bool(result.get("metric_improved", False)),
+                        goal_progressed=bool(result.get("goal_met", False)),
+                    )
+                    audited.append({
+                        "objective_id": checked.objective_id,
+                        "description": checked.description,
+                        "parent_goal": checked.parent_goal,
+                        "evidence_basis": checked.evidence_basis,
+                        "metric": checked.metric,
+                        "target": checked.target,
+                        "weight": checked.weight,
+                        "status": checked.status,
+                    })
+                state.objectives = audited
+                detached = [
+                    item["objective_id"] for item in audited
+                    if item["status"] == "detached-proxy"
+                ]
+                if detached:
+                    self._transition(
+                        state, "objective-drift",
+                        "intermediate metric improved without goal progress",
+                        {"detached": detached},
+                    )
             executed_once = True
             state.add_evidence(EvidenceItem(
                 f"exec-{cycle}", EvidenceOrigin.OBSERVED, EpistemicStatus.KNOWN,
@@ -396,6 +546,7 @@ class GeneralIntelligenceCore:
                 observed_token = str(result.get("observation", ""))
                 error = self.world_model.update(context, best.action_id, observed_token)
                 state.prediction_errors.append(error)
+                state.uncertainty = min(1.0, max(0.0, float(error)))
                 self._transition(
                     state, "compare", "observed outcome compared with prediction",
                     {"expected": expected.expected, "observed": observed_token,
@@ -449,6 +600,12 @@ class GeneralIntelligenceCore:
                 "cycle budget exhausted" if executed_once
                 else "no governed execution occurred"
             )
+        for transfer in state.transfer_history:
+            transfer["status"] = (
+                "positive-transfer" if state.outcome is Outcome.SOLVED
+                else "negative-or-inconclusive-transfer"
+            )
+            transfer["outcome"] = state.outcome.value
         self._transition(state, "terminate", f"episode closed: {state.outcome.value}",
                          {"outcome": state.outcome.value, "detail": state.outcome_detail})
         state.verify_transitions()
