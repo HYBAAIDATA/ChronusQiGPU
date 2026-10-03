@@ -9,7 +9,11 @@ is strictly faster than its slowest member only when it actually is, and
 the ``backend`` label always names the substrates that really joined.
 
 This is the wiring for combining ASIC-class channels with the super-GPU
-remote fleet for increased hashrate: same window, more silicon, measured.
+remote fleet over one window. Composition can increase aggregate throughput
+when multiple real substrates actually join; any such increase is evidence only
+after comparative measurement, never an assumption. A degenerate single-
+substrate composition (``super_asic:cpu``) is a truthful orchestration lane,
+not evidence that ASIC + super-GPU composition increased hashrate.
 
 Honesty contract:
 
@@ -111,7 +115,11 @@ class AsicHasherAdapter:
         # channel error, EOF, cancellation — is a device failure, not
         # coverage. Fabricating `count` here would claim unsearched nonces.
         outcome = self._solver.outcome(handle)
-        if outcome == "exhausted":
+        if outcome in ("exhausted", "exhausted_partial"):
+            # Report the channel's TRUE executed count, never the assigned
+            # count. `exhausted_partial` means the channel declared exhaustion
+            # having covered less than the span, so this surfaces its real
+            # coverage instead of promoting it to the full window.
             self.launches += 1
             return None, None, self._solver.hashed_count(handle)
         raise RuntimeError(

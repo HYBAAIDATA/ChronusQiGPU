@@ -30,6 +30,7 @@ from hyba.hybrid.nonce_scheduler import (
     double_sha256,
     verify_share,
 )
+from hyba.hybrid.super_asic import AsicHasherAdapter
 
 
 class _BridgeHandler(socketserver.StreamRequestHandler):
@@ -94,6 +95,8 @@ class _BridgeHandler(socketserver.StreamRequestHandler):
                     "digest": digest.hex(),
                     "nonces_tried": nonce - base + 1,
                 }
+        if self.server.short_exhaust is not None:
+            return {"type": "exhausted", "nonces_tried": self.server.short_exhaust}
         return {"type": "exhausted", "nonces_tried": span}
 
 
@@ -101,11 +104,15 @@ class _Bridge(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
     daemon_threads = True
 
-    def __init__(self, header_override=None, drop_dispatch=False):
+    def __init__(self, header_override=None, drop_dispatch=False, short_exhaust=None):
         super().__init__(("127.0.0.1", 0), _BridgeHandler)
         self.received = []
         self.header_override = header_override
         self.drop_dispatch = drop_dispatch
+        # When set, an exhausted window declares this many nonces instead of the
+        # assigned span, simulating a channel that stopped short and tried to
+        # claim full coverage.
+        self.short_exhaust = short_exhaust
         self._thread = threading.Thread(target=self.serve_forever, daemon=True)
         self._thread.start()
 
@@ -204,6 +211,45 @@ def test_exhausted_window_reports_full_span(bridge):
     assert solver.hashed_count(handle) == 512
     kinds = {r["kind"] for r in AttestationRegistry.get().snapshot()}
     assert "exhausted" in kinds
+
+
+def test_short_exhausted_declaration_is_not_promoted_to_full_coverage():
+    """An exhausted declaration below the assigned span stays partial.
+
+    The channel claims exhaustion but reports fewer nonces than the window it was
+    given. Recording that as full coverage would inflate total_nonces_tried and
+    fabricate hashrate, so the count is kept true and the event is flagged. The
+    adapter must agree with the solver rather than assert the assigned count.
+
+    Both halves share ONE wire stub: this module's other tests are timing
+    sensitive and each extra server thread adds load across the whole file.
+    """
+    server = _Bridge(short_exhaust=7)
+    try:
+        solver = ASICSolver(endpoint=server.endpoint)
+        solver.prepare("j-short", bytes(range(80)))
+        window = _window("j-short", base=2048, span=512, target=b"\x00" * 32)
+        handle = solver.dispatch(window)
+        while solver.poll(handle) is None and not solver.is_done(handle):
+            pass
+        assert solver.is_done(handle)
+        # True executed count, not the 512 we assigned.
+        assert solver.hashed_count(handle) == 7
+        records = [
+            r for r in AttestationRegistry.get().snapshot() if r["kind"].startswith("exhausted")
+        ]
+        assert [r["kind"] for r in records] == ["exhausted_partial"]
+        assert records[0]["reason"] == "window_exhausted_below_span"
+        assert records[0]["nonces_tried"] == 7
+
+        # The adapter must surface the channel's true count (7), not `count` (512).
+        adapter = AsicHasherAdapter(ASICSolver(endpoint=server.endpoint))
+        nonce, digest, executed = adapter._grind_window(bytes(range(80)), b"\x00" * 32, 2048, 512)
+        assert nonce is None and digest is None
+        assert executed == 7
+    finally:
+        server.shutdown()
+        server.server_close()
 
 
 def test_share_probe_index_is_contiguous_depth(bridge):

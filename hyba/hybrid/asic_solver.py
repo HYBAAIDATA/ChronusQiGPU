@@ -352,8 +352,25 @@ class ASICSolver:
             self._pending.pop(handle.handle_id, None)
             return share
         if msg.get("type") == "exhausted":
-            tried = int(msg.get("nonces_tried", handle.window.span))
-            self._attest("exhausted", handle, nonces_tried=tried, reason="window_exhausted")
+            # An exhausted declaration is a coverage claim: it asserts the whole
+            # assigned span was searched. The endpoint may report nonces_tried,
+            # but it must never report LESS than the span we assigned -- that
+            # would silently promote a partial sweep to full coverage in layer
+            # accounting. Absent the field the wire contract is "I covered it
+            # all", so it defaults to the span. A short declaration is recorded
+            # at its true count and flagged, never rounded up.
+            claimed = msg.get("nonces_tried")
+            span = handle.window.span
+            tried = span if claimed is None else int(claimed)
+            if tried < span:
+                self._attest(
+                    "exhausted_partial",
+                    handle,
+                    nonces_tried=tried,
+                    reason="window_exhausted_below_span",
+                )
+            else:
+                self._attest("exhausted", handle, nonces_tried=tried, reason="window_exhausted")
             self._finished[handle.handle_id] = tried
             self._pending.pop(handle.handle_id, None)
         return None
