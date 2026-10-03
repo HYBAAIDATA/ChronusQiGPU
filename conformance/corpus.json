@@ -1,18 +1,1 @@
-{
-  "abi_version": "chronus-abi-1",
-  "artifact_root": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
-  "assembler_version": "chronus-asm-1",
-  "byte_order": "little",
-  "canonicalization_version": "canonical-json-v1",
-  "case_count": 986,
-  "case_root": "11d18669f490463b7b586667fd9d150e6b4e20c58a4beda4064952097e55b232",
-  "compiler_version": "chronus-subset-v0.1",
-  "container_version": "chronus-1.1",
-  "corpus_sha256": "0b4035e138256cfed08ba5d9e1b0058dc8e7c0dbce2e0ccb50039254de4e1712",
-  "float_representation": "IEEE-754 binary32",
-  "generator_source_sha256": "750351a9eb857de9db4f58ff962dd439e136c828f11e6604582cecd5b71dc3ac",
-  "generator_version": "1.0.0",
-  "isa_version": "chronus1-1.0",
-  "schema": "chronus.conformance.corpus.v1",
-  "seed_set_digest": "b1151c43d336ccb7cec1deb17fdfe4258a016a9b8703f8de6c04ca228140a625"
-}
+{"abi_version":"chronus-abi-1","artifact_root":"33b5c1af8ab7e572991b64bd16fcbffd11b9abf569c1dda68533e7fd68c451d5","assembler_version":"chronus-asm-1","byte_order":"little","canonicalization_version":"canonical-json-v1","case_count":986,"case_root":"ef5c16831ec1fbd9b1883bf320ebc65f8d5902cb11bb3ca3f3f074bab6f71725","compiler_version":"chronus-subset-v0.1","container_version":"chronus-1.1","corpus_sha256":"055847e164ca4e00c1b1f942aa9e99fd555bb14f249a51ef68db06c242876a33","float_representation":"IEEE-754 binary32","generator_source_sha256":"5b47b4c26e96b13a803431812b6267ce8b69790d253e23e5cef2664e0f549e51","generator_version":"1.1.0","isa_version":"chronus1-1.0","schema":"chronus.conformance.corpus.v1","seed_set_digest":"7add3ca8e2903e8e8de279d69d626751183fbeb8cb1b097c8f1e0d0aeece6f1c"}
