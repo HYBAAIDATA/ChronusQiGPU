@@ -1,7 +1,7 @@
 [project]
 name = "turing-universal-quantum-computer"
-version = "1.1.0"
-description = "Turing Virtual Quantum Computer — consolidated exact-quantum substrate: universal n-qubit engine with stabilizer/sparse/closed-form exact backends, HYBA 1,000-qubit Clifford profile, MIDAS 32-face VQC ranker, Q[sqrt(5)]/Pisot algebra, strict-quantum certificates, Hendrix schedule, and the four-layer production execution plane."
+version = "1.2.0"
+description = "Turing Virtual Quantum Computer — consolidated exact-quantum substrate with a backend registry, published capability matrix, fail-closed QPU boundary, run witnesses and an operator console: universal n-qubit engine with stabilizer/sparse/closed-form exact backends, HYBA 1,000-qubit Clifford profile, MIDAS 32-face VQC ranker, Q[sqrt(5)]/Pisot algebra, strict-quantum certificates, Hendrix schedule, and the four-layer production execution plane."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -32,6 +32,9 @@ dev = [
     "pytest>=7.4,<10",
 ]
 
+[project.scripts]
+turing-vqc = "turing_universal_quantum_computer.console:main"
+
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
@@ -39,6 +42,7 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 packages = [
     "turing_universal_quantum_computer",
+    "turing_universal_quantum_computer.backends",
     "turing_universal_quantum_computer.turing_core",
     "turing_universal_quantum_computer.intelligences",
     "turing_universal_quantum_computer.lucas",

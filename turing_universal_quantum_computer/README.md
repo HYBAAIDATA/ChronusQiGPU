@@ -66,6 +66,81 @@ The production mining plane keeps `VIRTUAL_QUANTUM_QUBITS = 11` as its
 *default* lane width — a default, not a limit; the executor accepts any
 `n_qubits >= 1`.
 
+## Operator console
+
+`turing-vqc` is the operator surface of the machine. It allocates a register,
+applies gates, samples shots, and reports exact measurement distributions,
+expectation values and entanglement.
+
+```bash
+turing-vqc                    # interactive console
+turing-vqc --demo             # run the built-in demonstration
+turing-vqc --script x.vqc     # run a console script
+```
+
+```
+vqc⟩ init 10000
+allocated |q10000⟩
+  representation  tableau — exact Clifford state in 20000 bits; non-Clifford gates will be refused, not approximated
+vqc⟩ h 0
+applied h 0  [stabilizer · exact · tableau 20000 bits]
+vqc⟩ cx 0 9999
+applied cx 0 9999  [stabilizer · exact · tableau 20000 bits]
+vqc⟩ prob 0 9999
+exact marginal on q0 q9999
+  uniform over 2 outcome(s), 1 free bit(s)
+  |00⟩  1/2  ██████████████··············
+  |11⟩  1/2  ██████████████··············
+vqc⟩ measure 128 --seed 3 --readout 0,9999
+job  128 shots   backend stabilizer   seed 3
+readout  q0 q9999
+  |00⟩       69   0.5391  ███████████████·············
+  |11⟩       59   0.4609  █████████████··············
+  the distribution is exact; the draw is a labelled classical sampling of it.
+```
+
+## Product boundary
+
+Three modules make the machine's claims checkable rather than asserted:
+
+- **`backends`** — a registry that decides *which* engine answers a program and
+  *what kind of claim* the answer carries (`execution_class`, `truth_class`).
+  Admission is decided **before** execution, so an out-of-domain program is
+  refused rather than truncated.
+- **`capabilities`** — the published capability matrix, plus `audit_claims()`, a
+  fail-closed lint over claim text. `capability_report()["claim_boundary_clean"]`
+  is asserted in CI, so a wording regression is a test failure rather than a
+  quiet overclaim.
+- **`certificates`** — verifiable run witnesses. `verify_witness` rejects a
+  witness that claims a theorem, consensus authority, or hardware it did not use.
+
+Two state representations, both exact, both first class:
+
+| Representation | Gate set | Width | Amplitude list |
+| --- | --- | --- | --- |
+| `dense_algebraic` | universal Clifford+T over `Q(√2) + iQ(√2)` | bounded by `max_amplitudes` | yes |
+| `tableau` | Clifford | any `n`, including 10,000 | no — and neither does hardware |
+
+`materialised = False` is **not** a degraded mode. The tableau is the correct
+representation for that state class, and it is what makes the wide register
+real: gates, shot sampling, marginals, expectation values and entanglement all
+work at `n = 10,000`. Reading out more qubits than `READOUT_LIMIT` is refused
+because sequential collapse is O(n) per qubit, not because the state is missing.
+
+### Hardware
+
+`QPUBackend` is the only hardware backend and **no provider adapter is
+bundled**. It refuses every program, never returns a simulated result in its
+place, and `measured_qpu` stays `False`. `assert_measured_qpu()` is the only
+sanctioned path to that claim, and it requires a completed provider job record
+carrying a provider name, job id, completion timestamp and result digest.
+
+Callers may repeat the register/width and exactness statements above; they must
+not state unqualified universal computation at 10,000 qubits, a physical
+quantum computer, a hardware speedup, cryptanalytic capability, theorem proofs
+or consensus authority. See `docs/TURING_VQC_CALLER_CONTRACT.md` for the full
+contract.
+
 ## Module map (source → package)
 
 | Original file | Package module |
@@ -110,6 +185,10 @@ The production mining plane keeps `VIRTUAL_QUANTUM_QUBITS = 11` as its
 | — (new) | `swarm` — exact-distribution agent swarm |
 | — (new, ontology §4 `TenThousandQubitSystem`) | `turing_core.ten_thousand` |
 | — (new) | `trotter_simulation` — Trotter-Suzuki Hamiltonian evolution (explicit, honestly-approximate; see module docstring) |
+| — (new, v1.2) | `backends/` — registry, capability envelopes, admission, fail-closed QPU boundary |
+| — (new, v1.2) | `capabilities` — published capability matrix + claim-boundary audit |
+| — (new, v1.2) | `certificates` — verifiable run witnesses |
+| — (new, v1.2) | `console` — the operator console (`turing-vqc`) |
 
 `toe/exact_tensor.py`, `toe/quantum_tensor.py`, `toe/exact_field.py`,
 `Intelligence/quantum_tensor.py`, `Intelligence/exact_tensor.py`, and
@@ -152,6 +231,21 @@ ghz = sys.ghz()                               # 10,000-party entanglement
 assert ghz["state"].entanglement_entropy({0}) == 1  # 1 e-bit, exact
 walk = sys.quantum_walk("hypercube")          # closed-form, zero materialised
 gap  = sys.anneal()["critical_gap"]           # 4 sin(pi/20000), symbolic-exact
+
+# Product boundary (v1.2): run through the registry and certify the result
+from turing_universal_quantum_computer.backends import Program, execute
+from turing_universal_quantum_computer.certificates import issue_witness, verify_witness
+
+program = Program(2).then("h", 0).then("cx", 0, 1)
+result = execute(program, shots=1024, seed=7)
+assert result.truth_class.value == "exact"
+assert verify_witness(issue_witness(program, result))
+
+# Wide register: the same surface at 10,000 qubits, exact and not materialised
+wide = Program(10_000).then("h", 0).then("cx", 0, 9_999)
+assert execute(wide, prefer="stabilizer", entropy_of=[0]).payload[
+    "entanglement_entropy_bits"
+] == 1
 
 # Discovery engine (optional: pip install .[discovery])
 from turing_universal_quantum_computer.turing_core.discovery import (
