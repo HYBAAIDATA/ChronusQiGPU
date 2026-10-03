@@ -23,6 +23,10 @@ abstraction + topological storage) and the shared-memory ingestion ABI:
     aethel.geodesic       handoff adapter into Intelligence.search_crystal
                           (the existing geodesic engine — imported, never
                           reimplemented)
+    aethel.phyllotaxis    sunflower/Vogel packing (golden angle)
+    aethel.ovid           metamorphosis owner — fold = working form
+    aethel.theseus        self-healing prime-manifold storage owner
+    aethel.triad          Chronus · Theseus · Ovid production façade
 
 Optional OpenCL punch hosts are injected or resolved lazily; the package
 requires only NumPy and never substitutes a storage heuristic for a real
@@ -32,6 +36,11 @@ committed at ingest.
 ``toe.hardened_unified_substrate`` remains importable as an
 identity-preserving alias of ``aethel.hardened_unified_substrate`` —
 every toe/Intelligence consumer binds to this package through it.
+
+Production owners (elevated names):
+    Chronus  — iGPU offering (``chronus`` package / ``aethel.chronus``)
+    Theseus  — self-healing prime storage (``aethel.theseus``)
+    Ovid     — fold metamorphosis working form (``aethel.ovid``)
 """
 
 import re as _re
@@ -112,6 +121,57 @@ from .fibonacci import (
 )
 from .encoding import MAX_FOLD_LEN, ZeckendorfVector, encoding_domain, fold, unfold
 from .geodesic import GeodesicHandoff, ManifoldPoint
+from .phyllotaxis import (
+    GOLDEN_ANGLE,
+    PhyllotaxisSite,
+    pack_from_anchor,
+    pack_indices,
+    verify_golden_angle_constant,
+    vogel_site,
+)
+from .ovid import (
+    CLAIM_BOUNDARY as OVID_CLAIM_BOUNDARY,
+    FoldedWorkingForm,
+    Ovid,
+    open_ovid,
+)
+from .theseus import (
+    CLAIM_BOUNDARY as THESEUS_CLAIM_BOUNDARY,
+    Theseus,
+    TheseusError,
+    TheseusRecord,
+    open_theseus,
+)
+from .triad import (
+    TRIAD_CLAIM_BOUNDARY,
+    TRIAD_ID,
+    Triad,
+    open_triad,
+)
+from .enterprise_bridge import (
+    CapStatus,
+    TruthClass,
+    emit_envelope,
+    open_enterprise_store,
+    report as enterprise_capability_report,
+)
+from .enterprise import (
+    AuthenticityError as EnterpriseAuthenticityError,
+    AuthorityBoundaryError,
+    CompositionRoot,
+    ConcurrencyConflict,
+    EnterpriseCustody,
+    EnterpriseTheseus,
+    EvidenceTelemetry,
+    Quotas,
+    ReadOnlyModeError,
+    ResourceExhausted,
+    SchemaVersionError,
+    UnrecoverableCustodyError,
+    assert_cpu_accel_parity,
+    compose as compose_enterprise_custody,
+    content_digest as enterprise_content_digest,
+)
 from .phi_fold import (
     KernelBoundary,
     NumericFoldState,
@@ -152,20 +212,24 @@ from .zeckendorf import (
     reverse_zeckendorf_expansion,
 )
 
-__version__ = "1.0.0"
+__version__, __version_source__ = "0.1.0", "source"
 
 
-def _resolve_version(canonical: str) -> tuple[str, str]:
+def _resolve_version() -> tuple[str, str]:
+    canonical = "0.1.0"
     try:
         installed = _metadata_version("aethel")
     except _PackageNotFoundError:
         return canonical, "source_fallback"
     if _re.fullmatch(r"\d+\.\d+\.\d+", installed):
-        return installed, "distribution_metadata"
+        return installed, "distribution"
     return canonical, "source_fallback"
 
 
-__version__, __version_source__ = _resolve_version(__version__)
+__version__, __version_source__ = _resolve_version()
+
+# Identity-preserving alias used by toe/Intelligence consumers
+hardened_unified_substrate = HardenedUnifiedSubstrate
 
 __all__ = [
     "__version__",
@@ -174,7 +238,7 @@ __all__ = [
     "CassiniVerifier",
     "HardenedZeckendorfCodec", "SparseTopology",
     "apply_zeckendorf_compression", "reverse_zeckendorf_expansion",
-    "PUNCH_MANIFOLD_COMPUTE", "PUNCH_ZECKENDORF_ENCODE", "PUNCH_ZECKENDORF_DECODE",
+    "PUNCH_ZECKENDORF_ENCODE", "PUNCH_ZECKENDORF_DECODE", "PUNCH_MANIFOLD_COMPUTE",
     "GaloisPrimeSubstrate", "PrimeCell",
     "VirtualSM", "ComputeUnitPool", "VirtualWarp", "SPMDExecutor",
     "OptimizedTensorMicroKernel", "RTCoreMicroKernel", "MicroKernelLibrary",
@@ -201,4 +265,46 @@ __all__ = [
     "MemoryTier", "TierResident", "PhiMemoryHierarchy",
     "TopologicalIntegrityGate", "IntegrityVerdict", "MemoryHierarchyError",
     "OpCost", "OverheadMeter", "container_bytes", "measure_alloc", "metered",
+    # Chronus · Theseus · Ovid triad
+    "GOLDEN_ANGLE",
+    "PhyllotaxisSite",
+    "vogel_site",
+    "pack_indices",
+    "pack_from_anchor",
+    "verify_golden_angle_constant",
+    "Ovid",
+    "FoldedWorkingForm",
+    "open_ovid",
+    "OVID_CLAIM_BOUNDARY",
+    "Theseus",
+    "TheseusRecord",
+    "TheseusError",
+    "open_theseus",
+    "THESEUS_CLAIM_BOUNDARY",
+    "Triad",
+    "open_triad",
+    "TRIAD_ID",
+    "TRIAD_CLAIM_BOUNDARY",
+    # Enterprise bridge (Rule 7)
+    "CapStatus",
+    "TruthClass",
+    "emit_envelope",
+    "open_enterprise_store",
+    "enterprise_capability_report",
+    # Enterprise custody substrate (single-root software; not hyperscaler)
+    "EnterpriseCustody",
+    "EnterpriseTheseus",
+    "CompositionRoot",
+    "compose_enterprise_custody",
+    "AuthorityBoundaryError",
+    "UnrecoverableCustodyError",
+    "ResourceExhausted",
+    "ConcurrencyConflict",
+    "SchemaVersionError",
+    "EnterpriseAuthenticityError",
+    "ReadOnlyModeError",
+    "Quotas",
+    "EvidenceTelemetry",
+    "assert_cpu_accel_parity",
+    "enterprise_content_digest",
 ]

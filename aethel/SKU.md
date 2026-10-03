@@ -1,31 +1,57 @@
-# Two provisional adapters, one canonical substrate
+# Chronus · Theseus · Ovid — production SKUs
 
-Mining/Chronus adapter: `aethel.device.ChronusSku`
-Hyperscaler adapter: `aethel.hyperscaler.HyperscalerSku`
+## Canonical triad (STABLE)
 
-These SKUs consume Aethel storage/encoding. They do not own it. Hardware
-availability and observed performance are environment-specific and are not
-established by SKU construction or CPU-side unit tests.
+| Owner | Module | Role |
+| --- | --- | --- |
+| **Chronus** | `chronus` package, `aethel.chronus`, `aethel.device.ChronusSku` | iGPU offering — measured device bind, punch ISA, virtual iGPU ABI |
+| **Theseus** | `aethel.theseus` | Self-healing prime-manifold storage — Galois prime keys, Cassini anchors, sunflower phyllotaxis packing, digest heal |
+| **Ovid** | `aethel.ovid` | Metamorphosis — **fold = working form**; unfold is egress only |
 
-Folded form is the working form. Unfold is egress.
+**Façade:** `aethel.triad.open_triad(durable=True, bind_chronus=True)`
 
-## Mining — M1–M4
+```python
+from aethel import open_triad
 
-- M1 supported punch calls are opcodes, not proof that every device implements
-  the full `0x08`–`0x1A` range
-- M2 batch size is a Lucas/Pisot ladder stop
-- M3 every ingest writes Aethel (Fibonacci + Cassini)
-- M4 standalone or nested in a host GPU
+db = open_triad(durable=True, bind_chronus=False)
+rec = db.put(b"payload", durable=True)
+assert db.get(rec.uuid) == b"payload"
+form = db.fold(b"payload")          # working form
+assert db.materialise(form) == b"payload"
+print(db.health())
+```
 
-## Hyperscaler — H1–H5
+## Provisional adapters (consume the triad)
 
-- H1 `put` stores a `ZeckendorfVector`, not raw bytes
-- H2 `working` returns that vector
-- H3 every mask is non-adjacent
-- H4 unit count snaps on the same ladder
-- H5 `egress` unfolds byte-identically
+| Adapter | Module | Notes |
+| --- | --- | --- |
+| Mining/Chronus SKU | `aethel.device.ChronusSku` | Storage + manifold ride with Chronus |
+| Hyperscaler SKU | `aethel.hyperscaler.HyperscalerSku` | Provisional; see `capabilities.json` |
 
-## Shared
+## Non-claims (all SKUs)
 
-Aethel address space. Binet+Zeckendorf fold. Lucas/Pisot scale policy; not a
-throughput or acceleration claim.
+- Not infinite capacity / zero physical footprint
+- Not a hash preimage oracle or cryptographic collapse
+- Not zero-energy compute
+- Geodesic **search** is handoff-only — not reimplemented inside Theseus
+- Chronus does not bypass untuned double-SHA256 targets
+
+## Readiness
+
+`capabilities.json` marks the **software storage triad** production-ready.
+Hardware soak, discrete-GPU fleet, and full hyperscaler deploy remain separately gated.
+
+## Enterprise migration (HYBA Intelligence)
+
+Mining is the first proof ground. Capabilities required by the enterprise brief
+are catalogued under Rule 7 in:
+
+- `docs/ENTERPRISE_CAPABILITY_BRIDGE.md`
+- `aethel.enterprise_bridge.report()` / `python -m aethel enterprise-report`
+
+**Migrate now (READY):** fold working form, prime/phyllotaxis store, self-heal,
+Chronus software bind, geodesic handoff, claim boundaries.
+
+**Do not claim from this repo:** Solutions API 18 endpoints, clinical MRI,
+Clay conjecture resolutions, 10-service commercial latency tables, near-state
+10k-qubit rooflines.

@@ -21,7 +21,8 @@ logger = logging.getLogger("chronus.device")
 
 DEVICE_ID = "chronus"
 CLAIM_BOUNDARY = (
-    "Chronus is HYBA's iGPU offering over the Turing compute substrate. "
+    "Chronus is HYBA's iGPU offering over the Turing compute substrate "
+    "and the Chronus·Theseus·Ovid triad compute owner. "
     "The 32-face frame and 11D Poincaré-golden manifold order/compose work; "
     "they do not bypass an operation's verification authority. For mining, "
     "sha256d(header80) <= target is the sole accept authority. Throughput is "

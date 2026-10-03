@@ -183,7 +183,7 @@ def test_alias_mismatch_fails_closed_when_require_hyba(monkeypatch):
     monkeypatch.setitem(sys.modules, "pyopencl", _fake_cl([_gpu("Other GPU", "Other", False)]))
     cl, selected, reason = _pick_gpu()
     assert cl is None and selected is None
-    assert "requested OpenCL GPU identity not found" in reason
+    assert "HYBA alias identity not found" in reason
 
 
 def test_require_hyba_uses_default_alias_set(monkeypatch):
@@ -200,7 +200,7 @@ def test_require_hyba_without_alias_device_fails_closed(monkeypatch):
     monkeypatch.setitem(sys.modules, "pyopencl", _fake_cl([_gpu("Other GPU", "Other", False)]))
     cl, selected, reason = _pick_gpu()
     assert cl is None and selected is None
-    assert "requested OpenCL GPU identity not found" in reason
+    assert "HYBA alias identity not found" in reason
 
 
 def test_launch_limits_respect_compiled_kernel_bounds(monkeypatch):
@@ -217,3 +217,76 @@ def test_launch_limits_fall_back_to_device_limits_when_query_fails(monkeypatch):
     _install_runtime_cl(monkeypatch, device, query_error=True)
     runtime = ChronusTensorRuntime()
     assert runtime._launch_limits("tensor_matmul_tiled_f32") == (256, 64 << 10)
+
+
+def _one_gpu(monkeypatch, name="Intel(R) UHD Graphics 620", vendor="Intel"):
+    """A single OpenCL GPU, so selection order cannot hide a mistake."""
+    device = _device(name, vendor, True)
+    device.type = 4
+    platform = SimpleNamespace(name="Intel OpenCL", get_devices=lambda: [device])
+    monkeypatch.setitem(
+        sys.modules,
+        "pyopencl",
+        SimpleNamespace(
+            device_type=SimpleNamespace(GPU=4, ACCELERATOR=8),
+            get_platforms=lambda: [platform],
+        ),
+    )
+
+
+def test_unmatched_alias_is_advisory_when_hyba_is_not_required(monkeypatch):
+    """HYBA_REQUIRE_HYBA=0 means "do not fail when HYBA cannot resolve this"."""
+    _one_gpu(monkeypatch)
+    monkeypatch.setenv("HYBA_DEVICE_ALIAS", "nonexistent-gpu")
+    monkeypatch.setenv("HYBA_REQUIRE_HYBA", "0")
+    monkeypatch.delenv("CHRONUS_OPENCL_DEVICE", raising=False)
+    monkeypatch.delenv("HYBA_DEVICE_VENDOR", raising=False)
+    cl, selected, reason = _pick_gpu()
+    assert reason == ""
+    assert selected is not None
+    assert selected[1].name == "Intel(R) UHD Graphics 620"
+
+
+def test_unmatched_alias_fails_closed_when_hyba_is_required(monkeypatch):
+    _one_gpu(monkeypatch)
+    monkeypatch.setenv("HYBA_DEVICE_ALIAS", "nonexistent-gpu")
+    monkeypatch.setenv("HYBA_REQUIRE_HYBA", "1")
+    monkeypatch.delenv("CHRONUS_OPENCL_DEVICE", raising=False)
+    monkeypatch.delenv("HYBA_DEVICE_VENDOR", raising=False)
+    cl, selected, reason = _pick_gpu()
+    assert cl is None and selected is None
+    assert "HYBA alias identity not found" in reason
+
+
+def test_explicit_device_identity_still_fails_closed_with_advisory_aliases(monkeypatch):
+    """An advisory alias must never rescue an absent requested device."""
+    _one_gpu(monkeypatch)
+    monkeypatch.setenv("CHRONUS_OPENCL_DEVICE", "NONEXISTENT-CHRONUS-GPU")
+    monkeypatch.setenv("HYBA_DEVICE_ALIAS", "intel,uhd")
+    monkeypatch.setenv("HYBA_REQUIRE_HYBA", "0")
+    cl, selected, reason = _pick_gpu()
+    assert cl is None and selected is None
+    assert "requested OpenCL GPU identity not found" in reason
+    assert "'aliases_binding': 'preference'" in reason
+
+
+def test_selector_binding_drops_aliases_but_keeps_identity():
+    selector = _DeviceSelector("intel", "", "", ("intel", "uhd"))
+    assert selector.hard is True
+    assert selector.binding == _DeviceSelector("intel", "", "", ())
+    assert selector.binding.explicit is True
+    assert _DeviceSelector(aliases=("intel",)).hard is False
+
+
+def test_resolve_alias_is_strict_only_under_require_hyba(monkeypatch):
+    from hyba.device import AliasUnresolvedError, resolve_alias
+
+    registry = {"uhd 620": "intel-uhd-620"}
+    monkeypatch.setenv("HYBA_DEVICE_ALIAS", "nope,uhd 620")
+    monkeypatch.setenv("HYBA_REQUIRE_HYBA", "0")
+    assert resolve_alias(registry=registry) == "intel-uhd-620"
+    monkeypatch.setenv("HYBA_DEVICE_ALIAS", "nope")
+    assert resolve_alias(registry=registry) is None
+    monkeypatch.setenv("HYBA_REQUIRE_HYBA", "1")
+    with pytest.raises(AliasUnresolvedError):
+        resolve_alias(registry=registry)

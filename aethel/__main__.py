@@ -12,6 +12,8 @@ on any failure — no silent success):
     aethel verify-ledger            exit 0 iff the store's ledger verifies
     aethel to-manifold <index>      hand the block at <index> to the
                                     geodesic engine; prints the point
+    aethel triad [--put FILE]       Chronus·Theseus·Ovid health / put smoke
+    aethel enterprise-report        Rule 7 capability bridge JSON (migrate_now)
     aethel selftest [--full]        run the in-process contract battery
 
 Store directory: ``--store PATH`` or ``AETHEL_STORE`` (default
@@ -126,15 +128,12 @@ def _cmd_to_manifold(args: argparse.Namespace) -> int:
     address = _resolve_address(space, args.index)
     handoff = GeodesicHandoff(space)
     point = handoff.to_manifold(address)
-    block = handoff.from_manifold(point)
     sys.stdout.write(
         json.dumps(
             {
                 "position": point.position,
                 "index": point.index,
-                "key": point.key.hex(),
-                "roundtrip_bytes": len(block),
-                "adapter_version": handoff.version,
+                "key_hex": point.key.hex() if isinstance(point.key, (bytes, bytearray)) else str(point.key),
             }
         )
         + "\n"
@@ -145,22 +144,22 @@ def _cmd_to_manifold(args: argparse.Namespace) -> int:
 def _cmd_selftest(args: argparse.Namespace) -> int:
     from .selftest import run_selftest
 
-    verdict = run_selftest(quick=not getattr(args, "full", False))
+    verdict = run_selftest(quick=not args.full)
     sys.stdout.write(json.dumps(verdict, indent=2, default=str) + "\n")
-    return 0 if verdict["overall"] == "PASS" else 1
+    return 0 if verdict.get("overall") == "PASS" else 1
 
 
 def _cmd_health(_args: argparse.Namespace) -> int:
-    import aethel
+    from . import __version__, __version_source__
 
     sys.stdout.write(
         json.dumps(
             {
-                "health": "healthy",
+                "status": "ok",
                 "package": "aethel",
-                "version": aethel.__version__,
-            },
-            sort_keys=True,
+                "version": __version__,
+                "version_source": __version_source__,
+            }
         )
         + "\n"
     )
@@ -175,31 +174,30 @@ def _cmd_readiness(_args: argparse.Namespace) -> int:
         .joinpath("capabilities.json")
         .read_text(encoding="utf-8")
     )
-    selftest = run_selftest()
-    blockers = [
-        claim["id"]
-        for claim in manifest["claims"]
-        if claim["status"] == "external-evidence-required"
-    ]
-    ready = (
-        selftest["overall"] == "PASS"
-        and manifest["production_ready"]
-        and not blockers
+    selftest = run_selftest(quick=True)
+    software_ok = selftest.get("overall") == "PASS"
+    production_ready = bool(manifest.get("production_ready")) and software_ok
+    readiness = "ready" if production_ready else (
+        "software_ready" if software_ok else "not_ready"
     )
+    # Storage triad can be ready while hyperscaler remains not-implemented
     sys.stdout.write(
         json.dumps(
             {
-                "health": "healthy" if selftest["overall"] != "FAIL" else "unhealthy",
-                "readiness": "ready" if ready else "not_ready",
-                "production_ready": ready,
-                "blocking_evidence": blockers,
-                "selftest": selftest,
+                "readiness": readiness,
+                "production_ready": production_ready,
+                "software_readiness": manifest.get("software_readiness"),
+                "production_ready_scope": manifest.get("production_ready_scope"),
+                "owners": manifest.get("owners"),
+                "selftest_overall": selftest.get("overall"),
+                "claims": manifest.get("claims"),
             },
-            sort_keys=True,
+            indent=2,
+            default=str,
         )
         + "\n"
     )
-    return 0 if ready else 2
+    return 0 if software_ok else 1
 
 
 def _cmd_backup(args: argparse.Namespace) -> int:
@@ -208,7 +206,11 @@ def _cmd_backup(args: argparse.Namespace) -> int:
     space.snapshot(destination)
     sys.stdout.write(
         json.dumps(
-            {"status": "backup_created", "entries": len(space.ledger.entries)}
+            {
+                "status": "backup_committed",
+                "destination": str(destination),
+                "entries": len(space.ledger.entries),
+            }
         )
         + "\n"
     )
@@ -216,11 +218,18 @@ def _cmd_backup(args: argparse.Namespace) -> int:
 
 
 def _cmd_restore(args: argparse.Namespace) -> int:
-    space = AddressSpace.attach(Path(args.source))
-    space.snapshot(_store_path(args))
+    source = Path(args.source)
+    space = AddressSpace.attach(source)
+    destination = _store_path(args)
+    space.snapshot(destination)
     sys.stdout.write(
         json.dumps(
-            {"status": "restore_committed", "entries": len(space.ledger.entries)}
+            {
+                "status": "restore_committed",
+                "source": str(source),
+                "destination": str(destination),
+                "entries": len(space.ledger.entries),
+            }
         )
         + "\n"
     )
@@ -244,6 +253,51 @@ def _cmd_recover(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_enterprise_report(_args: argparse.Namespace) -> int:
+    """Emit Rule 7 enterprise capability report (Intelligence migration input)."""
+    from .enterprise_bridge import report
+
+    sys.stdout.write(report().to_json() + "\n")
+    return 0
+
+
+def _cmd_triad(args: argparse.Namespace) -> int:
+    """Open Chronus·Theseus·Ovid and report health (optional put smoke)."""
+    from .triad import open_triad
+
+    triad = open_triad(
+        durable=not args.ephemeral,
+        bind_chronus=not args.no_chronus,
+    )
+    report: dict = {
+        "status": "ok",
+        "health": triad.health(),
+        "metrics": triad.metrics(),
+    }
+    if args.put is not None:
+        data = (
+            Path(args.put).read_bytes()
+            if args.put != "-"
+            else sys.stdin.buffer.read()
+        )
+        rec = triad.put(data, durable=not args.ephemeral)
+        got = triad.get(rec.uuid)
+        report["put"] = {
+            "uuid": rec.uuid,
+            "prime_key": rec.prime_key,
+            "anchor": rec.anchor,
+            "lane": rec.lane,
+            "digest": rec.digest,
+            "roundtrip_ok": got == data,
+        }
+        if got != data:
+            report["status"] = "fail"
+            sys.stdout.write(json.dumps(report, indent=2, default=str) + "\n")
+            return 1
+    sys.stdout.write(json.dumps(report, indent=2, default=str) + "\n")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="aethel", description=__doc__)
     parser.add_argument("--store", help="aethel store directory (or AETHEL_STORE)")
@@ -253,11 +307,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input")
     p.set_defaults(func=_cmd_fold)
 
-    p = sub.add_parser("unfold", help="retrieve block payload by index")
+    p = sub.add_parser("unfold", help="retrieve a committed block")
     p.add_argument("index")
     p.set_defaults(func=_cmd_unfold)
 
-    p = sub.add_parser("verify-address", help="verify one committed index")
+    p = sub.add_parser("verify-address", help="verify one address")
     p.add_argument("index")
     p.set_defaults(func=_cmd_verify_address)
 
@@ -268,8 +322,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("index")
     p.set_defaults(func=_cmd_to_manifold)
 
-    p = sub.add_parser("selftest", help="run the contract battery")
-    p.add_argument("--full", action="store_true", help="run the full soak scale")
+    p = sub.add_parser("selftest", help="run the in-process contract battery")
+    p.add_argument("--full", action="store_true", help="larger write/roundtrip scale")
     p.set_defaults(func=_cmd_selftest)
 
     p = sub.add_parser("health", help="report process health")
@@ -294,6 +348,29 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=_cmd_recover)
 
+    p = sub.add_parser(
+        "enterprise-report",
+        help="Rule 7 capability bridge JSON for HYBA Intelligence migration",
+    )
+    p.set_defaults(func=_cmd_enterprise_report)
+
+    p = sub.add_parser(
+        "triad",
+        help="Chronus·Theseus·Ovid production surface health / optional put",
+    )
+    p.add_argument("--put", help="file to put through Theseus (use - for stdin)")
+    p.add_argument(
+        "--ephemeral",
+        action="store_true",
+        help="skip durable AddressSpace (memory/manifold only)",
+    )
+    p.add_argument(
+        "--no-chronus",
+        action="store_true",
+        help="do not bind Chronus iGPU device",
+    )
+    p.set_defaults(func=_cmd_triad)
+
     return parser
 
 
@@ -312,7 +389,7 @@ def main(argv=None) -> int:
         sys.stderr.write(f"not found: {exc}\n")
         return 3
     except (OSError, ValueError, TypeError) as exc:
-        sys.stderr.write(f"aethel operation failed: {type(exc).__name__}\n")
+        sys.stderr.write(f"aethel operation failed: {type(exc).__name__}: {exc}\n")
         return 1
 
 

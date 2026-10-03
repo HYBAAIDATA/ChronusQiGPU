@@ -46,13 +46,25 @@ class _DeviceSelector:
     device: str = ""
     vendor: str = ""
     aliases: tuple[str, ...] = ()
-    require_aliases: bool = False
 
     @property
     def explicit(self) -> bool:
-        return bool(
-            self.platform or self.device or self.vendor or (self.require_aliases and self.aliases)
-        )
+        return self.hard
+
+    @property
+    def hard(self) -> bool:
+        """An explicit platform/device/vendor request: always fail-closed."""
+        return bool(self.platform or self.device or self.vendor)
+
+    @property
+    def binding(self) -> "_DeviceSelector":
+        """The selector constraints that must hold for a device to be eligible.
+
+        Aliases are excluded: they bind only under ``HYBA_REQUIRE_HYBA=1`` (see
+        :func:`_pick_gpu`), so an alias that matches nothing is a preference that
+        did not match rather than a fatal identity probe.
+        """
+        return _DeviceSelector(self.platform, self.device, self.vendor, ())
 
 
 @dataclass(frozen=True)
@@ -70,6 +82,8 @@ class TensorDeviceProbe:
     local_memory_bytes: int | None = None
     max_work_group_size: int | None = None
     host_unified_memory: bool | None = None
+    family: str = ""
+    hyba_alias_family: str = ""
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -87,6 +101,8 @@ class TensorExecutionEvidence:
     wall_time_ns: int
     profiling_available: bool
     hardware_executed: bool = True
+    device_max_work_group_size: int | None = None
+    kernel_max_work_group_size: int | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -123,7 +139,6 @@ def _selector_from_env() -> _DeviceSelector:
         device=os.getenv("CHRONUS_OPENCL_DEVICE", "").strip().lower(),
         vendor=os.getenv("HYBA_DEVICE_VENDOR", "").strip().lower(),
         aliases=_hyba_aliases(),
-        require_aliases=_require_hyba(),
     )
 
 
@@ -146,13 +161,44 @@ def _matches(platform: Any, device: Any, selector: _DeviceSelector) -> bool:
     platform_name = _text(getattr(platform, "name", "")).lower()
     name = _text(getattr(device, "name", "")).lower()
     vendor = _text(getattr(device, "vendor", "")).lower()
-    alias_gate = selector.require_aliases and selector.aliases
     return (
         (not selector.platform or selector.platform in platform_name)
         and (not selector.device or selector.device in name)
         and (not selector.vendor or selector.vendor in vendor)
-        and (not alias_gate or _alias_match(platform, device, selector.aliases))
+        and (not selector.aliases or _alias_match(platform, device, selector.aliases))
     )
+
+
+def _alias_hit(item: tuple[Any, Any], aliases: Sequence[str]) -> bool:
+    """True when any alias names this device's platform/vendor/name identity."""
+    if not aliases:
+        return False
+    platform, device = item
+    return _alias_match(platform, device, tuple(aliases))
+
+
+def _alias_family() -> str:
+    """The catalog family the requested aliases resolve to, else ``""``.
+
+    Advisory unless ``HYBA_REQUIRE_HYBA=1``: see :func:`hyba.device.resolve_alias`.
+    """
+    try:
+        from hyba.device import resolve_alias
+    except Exception:
+        return ""
+    try:
+        return resolve_alias() or ""
+    except Exception:
+        return ""
+
+
+def _strict_aliases() -> bool:
+    """True when an alias that matches nothing must fail closed."""
+    try:
+        from hyba.device import require_hyba
+    except Exception:
+        return _require_hyba()
+    return bool(require_hyba())
 
 
 def _device_score(platform: Any, device: Any) -> tuple[int, int, int, int]:
@@ -194,42 +240,62 @@ def _pick_gpu():
     if not candidates:
         return None, None, "no OpenCL GPU/accelerator device found"
     selector = _selector_from_env()
-    matching = [item for item in candidates if _matches(*item, selector)]
-    if selector.explicit and not matching:
+    binding = selector.binding
+    matching = [item for item in candidates if _matches(*item, binding)]
+    if binding.explicit and not matching:
         requested = {
-            "platform": selector.platform or None,
-            "device": selector.device or None,
-            "vendor": selector.vendor or None,
+            "platform": binding.platform or None,
+            "device": binding.device or None,
+            "vendor": binding.vendor or None,
             "aliases": selector.aliases or None,
+            "aliases_binding": "strict" if _strict_aliases() else "preference",
         }
         return None, None, f"requested OpenCL GPU identity not found: {requested}"
     pool = matching or candidates
-    if selector.aliases and not selector.require_aliases:
-        # Aliases are a preference hint unless HYBA_REQUIRE_HYBA makes them a
-        # gate: prefer an alias-named device, never reject a valid one.
-        aliased = [item for item in pool if _alias_match(*item, selector.aliases)]
-        if aliased:
-            pool = aliased
-    selected = max(pool, key=lambda item: _device_score(*item))
+    # An alias that matches nothing is a preference that did not match, not a
+    # fatal identity probe, unless HYBA_REQUIRE_HYBA demands the alias.
+    aliased = [item for item in pool if _alias_hit(item, selector.aliases)]
+    if selector.aliases and not aliased and _strict_aliases():
+        return None, None, f"HYBA alias identity not found: {list(selector.aliases)}"
+    selected = max(aliased or pool, key=lambda item: _device_score(*item))
     return cl, selected, ""
 
 
 def _probe_for(platform: Any, device: Any) -> TensorDeviceProbe:
     name = _text(getattr(device, "name", "unknown"))
     platform_name = _text(getattr(platform, "name", "unknown"))
+    vendor = _text(getattr(device, "vendor", ""))
     return TensorDeviceProbe(
         True,
         f"opencl:{platform_name}:{name}",
         name,
         platform_name,
         "",
-        vendor=_text(getattr(device, "vendor", "")),
+        vendor=vendor,
         compute_units=_int_attr(device, "max_compute_units") or None,
         global_memory_bytes=_int_attr(device, "global_mem_size") or None,
         local_memory_bytes=_int_attr(device, "local_mem_size") or None,
         max_work_group_size=_int_attr(device, "max_work_group_size") or None,
         host_unified_memory=_bool_attr(device, "host_unified_memory"),
+        family=_observed_family(name, vendor),
+        hyba_alias_family=_alias_family(),
     )
+
+
+def _observed_family(name: str, vendor: str) -> str:
+    """Catalog family for the device actually enumerated, else ``""``.
+
+    Reports what was observed, never what was requested: the requested alias
+    family is reported separately as ``hyba_alias_family``.
+    """
+    try:
+        from hyba.identify import identify
+    except Exception:
+        return ""
+    try:
+        return identify(name, vendor).family or ""
+    except Exception:
+        return ""
 
 
 def probe() -> TensorDeviceProbe:
@@ -265,6 +331,27 @@ def _plan_matmul(
     ):
         tile //= 2
     return (_round_up(n, tile), _round_up(m, tile)), (tile, tile)
+
+
+def plan_work_group(kernel: Any, device: Any, cl: Any) -> int:
+    """Legal work-group size for ``kernel`` on ``device``.
+
+    ``min(CL_DEVICE_MAX_WORK_GROUP_SIZE, CL_KERNEL_WORK_GROUP_SIZE)``. The kernel
+    limit can sit below the device limit once register pressure and ``__local``
+    usage are accounted for, so planning from the device limit alone would raise
+    ``CL_INVALID_WORK_GROUP_SIZE`` on a device this one has not run on yet. The
+    device maximum is never exceeded, and a runtime that cannot be queried falls
+    back to that same device maximum rather than assuming a larger one.
+    """
+    device_max = _int_attr(device, "max_work_group_size") or 1
+    try:
+        param = cl.kernel_work_group_info.WORK_GROUP_SIZE
+        kernel_max = int(kernel.get_work_group_info(param, device))
+    except Exception:
+        return max(1, device_max)
+    if kernel_max <= 0:
+        return max(1, device_max)
+    return max(1, min(device_max, kernel_max))
 
 
 class ChronusTensorRuntime:
@@ -324,7 +411,17 @@ class ChronusTensorRuntime:
 
     @staticmethod
     def _float32_array(value: Any, shape: Sequence[int]) -> np.ndarray:
-        array = np.asarray(value, dtype=np.float32, order="C")
+        """Validate one input as certified float32, or refuse it.
+
+        A silent ``float64 -> float32`` downcast would return a plausible answer
+        computed at a precision the device never had, so an uncertified dtype is
+        rejected here rather than quietly narrowed. Callers convert deliberately.
+        """
+        array = np.asarray(value)
+        if array.dtype != np.float32:
+            raise ChronusTensorValidationError(
+                f"dtype {array.dtype} is not certified; Chronus executes float32 only"
+            )
         expected = tuple(int(v) for v in shape)
         if tuple(array.shape) != expected:
             raise ChronusTensorValidationError(
@@ -352,6 +449,14 @@ class ChronusTensorRuntime:
         except Exception:
             return None
 
+    def _work_group_limit(self, kernel_name: str) -> int:
+        """Work-group ceiling for one kernel, clamped to the device limit."""
+        try:
+            kernel = getattr(self.program, kernel_name)
+        except Exception:
+            return self.max_work_group_size
+        return plan_work_group(kernel, self.device, self.cl)
+
     def _finish(
         self,
         operation: str,
@@ -377,6 +482,8 @@ class ChronusTensorRuntime:
             device_time_ns=device_time_ns,
             wall_time_ns=max(0, perf_counter_ns() - started_ns),
             profiling_available=device_time_ns is not None,
+            device_max_work_group_size=self.max_work_group_size,
+            kernel_max_work_group_size=self._work_group_limit(kernel),
         )
         self.last_evidence = evidence
         return output.reshape(evidence.output_shape), evidence
@@ -461,16 +568,7 @@ class ChronusTensorRuntime:
                 kernel = "tensor_kron_1d_f32"
                 group_limit, _local_budget = self._launch_limits(kernel)
                 global_size, local_size = _plan_1d(out_size, group_limit)
-                event = self.program.tensor_kron_1d_f32(
-                    self.queue,
-                    global_size,
-                    local_size,
-                    buffers[0],
-                    buffers[1],
-                    out_buffer,
-                    u32(an),
-                    u32(bn),
-                )
+                extra = (u32(an), u32(bn))
             elif arrays[0].ndim == 2:
                 ar, ac = arrays[0].shape
                 br, bc = arrays[1].shape
@@ -479,20 +577,13 @@ class ChronusTensorRuntime:
                 kernel = "tensor_kron_2d_f32"
                 group_limit, _local_budget = self._launch_limits(kernel)
                 global_size, local_size = _plan_1d(out_size, group_limit)
-                event = self.program.tensor_kron_2d_f32(
-                    self.queue,
-                    global_size,
-                    local_size,
-                    buffers[0],
-                    buffers[1],
-                    out_buffer,
-                    u32(ar),
-                    u32(ac),
-                    u32(br),
-                    u32(bc),
-                )
+                extra = (u32(ar), u32(ac), u32(br), u32(bc))
             else:
                 raise ChronusTensorValidationError("Chronus kron supports rank 1 or 2")
+            event = getattr(self.program, kernel)(
+                self.queue, global_size, local_size, buffers[0], buffers[1],
+                out_buffer, *extra
+            )
         else:
             raise ChronusTensorValidationError(f"unsupported operation {operation!r}")
         return self._finish(
@@ -544,6 +635,7 @@ __all__ = [
     "TensorExecutionEvidence",
     "get_runtime",
     "get_tensor_runtime",
+    "plan_work_group",
     "probe",
     "probe_tensor",
 ]
