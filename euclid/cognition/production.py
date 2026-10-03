@@ -375,7 +375,9 @@ class LearningServiceEpisodeAdapter:
             reward=reward,
             reward_authority=reward_authority,
             provenance=f"cognitive-episode:{state.problem_id}",
-            uncertainty=max(state.prediction_errors[-1:], default=0.0),
+            uncertainty=max(
+                0.0, min(1.0, max(state.prediction_errors[-1:], default=0.0))
+            ),
             replay_id=replay_id,
         )
         digest = self.service.record(experience)
