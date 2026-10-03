@@ -18,36 +18,62 @@ class FileLock:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._fh: Any = None
         self._thread = threading.RLock()
+        # Ensure lock file exists with one byte so msvcrt can lock a range.
+        self._ensure_lockfile()
+
+    def _ensure_lockfile(self) -> None:
+        try:
+            if not self.path.exists() or self.path.stat().st_size == 0:
+                # Exclusive create when missing; ignore races with peers.
+                flags = os.O_CREAT | os.O_RDWR
+                if sys.platform == "win32":
+                    flags |= getattr(os, "O_BINARY", 0)
+                fd = os.open(str(self.path), flags, 0o666)
+                try:
+                    if os.fstat(fd).st_size == 0:
+                        try:
+                            os.write(fd, b"X")
+                        except OSError:
+                            pass
+                finally:
+                    os.close(fd)
+        except OSError:
+            # Peer may be creating/locking; acquire() will retry.
+            pass
 
     def acquire(self) -> None:
         self._thread.acquire()
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self._fh = open(self.path, "a+b")
-        if sys.platform == "win32":
-            import msvcrt
+        deadline = time.time() + 30.0
+        last_err: Optional[BaseException] = None
+        while True:
+            try:
+                self._ensure_lockfile()
+                self._fh = open(self.path, "r+b")
+                if sys.platform == "win32":
+                    import msvcrt
 
-            # Lock one byte at start; retry briefly.
-            self._fh.seek(0)
-            if self._fh.tell() == 0 and self._fh.read(1) == b"":
-                self._fh.write(b"\0")
-                self._fh.flush()
-            deadline = time.time() + 30.0
-            while True:
-                try:
                     self._fh.seek(0)
                     msvcrt.locking(self._fh.fileno(), msvcrt.LK_NBLCK, 1)
-                    break
-                except OSError:
-                    if time.time() > deadline:
-                        self._fh.close()
-                        self._fh = None
-                        self._thread.release()
-                        raise TimeoutError(f"FileLock timeout: {self.path}")
-                    time.sleep(0.01)
-        else:
-            import fcntl
+                else:
+                    import fcntl
 
-            fcntl.flock(self._fh.fileno(), fcntl.LOCK_EX)
+                    fcntl.flock(self._fh.fileno(), fcntl.LOCK_EX)
+                return
+            except (OSError, PermissionError) as exc:
+                last_err = exc
+                if self._fh is not None:
+                    try:
+                        self._fh.close()
+                    except OSError:
+                        pass
+                    self._fh = None
+                if time.time() > deadline:
+                    self._thread.release()
+                    raise TimeoutError(
+                        f"FileLock timeout: {self.path} last={last_err!r}"
+                    ) from last_err
+                time.sleep(0.02)
 
     def release(self) -> None:
         try:
@@ -67,7 +93,10 @@ class FileLock:
                         fcntl.flock(self._fh.fileno(), fcntl.LOCK_UN)
                     except OSError:
                         pass
-                self._fh.close()
+                try:
+                    self._fh.close()
+                except OSError:
+                    pass
                 self._fh = None
         finally:
             self._thread.release()
@@ -113,15 +142,19 @@ class WriteAheadJournal:
                 os.fsync(fh.fileno())
 
     def recover(self) -> list[dict[str, Any]]:
-        """Load sealed ops; drop incomplete tail (intent without seal)."""
+        """Return sealed rows; drop incomplete tail and dangling intents."""
         if not self.path.exists():
             return []
-        raw = self.path.read_text(encoding="utf-8")
-        lines = [ln for ln in raw.splitlines() if ln.strip()]
+        with self._lock:
+            raw = self.path.read_text(encoding="utf-8")
+        lines = raw.splitlines()
         sealed: list[dict[str, Any]] = []
         pending: dict[str, dict[str, Any]] = {}
         valid_lines: list[str] = []
         for ln in lines:
+            ln = ln.strip()
+            if not ln:
+                continue
             try:
                 row = json.loads(ln)
             except json.JSONDecodeError:

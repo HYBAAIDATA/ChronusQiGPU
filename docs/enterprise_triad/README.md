@@ -2,75 +2,58 @@
 
 **Governance:** Veritas Integritas · Rule 7 (Strict Honest Measurement)  
 **Package:** `aethel.enterprise`  
-**Claim scope:** *enterprise_custody_software_single_root* — single-process, single-root software custody with primary+replica files, write-ahead journal, HMAC authenticity, and measured telemetry. **Not** a distributed hyperscaler, multi-region cluster, or Solutions API.
+**Claim scopes:** software-measured only (see Proven below). `production_ready` remains **false**.
 
-## Authority (non-absorption)
+## Proven (extended software scopes)
 
-| Owner | Authority | Must not |
-| :--- | :--- | :--- |
-| **Ovid** | Transform only (fold/unfold, versioned metamorphosis) | Own durable bytes, policy, or accel |
-| **Theseus** | Custody only (put/get/delete, heal, journal, replicas) | Own transform semantics or security policy |
-| **Chronus** | Acceleration only (optional CPU/iGPU path) | Change digests, own custody, or redefine fold |
-| **Geodesic** | Outside triad — Intelligence handoff | Be absorbed into Theseus/Ovid/Chronus |
-| **AL HARAS** | Security authority (hooks, evidence, deny) | Live *inside* Theseus as embedded policy |
+| Scope string | What was measured |
+|---|---|
+| `enterprise_custody_software_single_root` | Single-process primary+replica+journal+HMAC+tenancy (A1–A19) |
+| `distributed_consensus_software_multi_node_local` | In-process Raft-like majority commit, 3+ nodes, leader election + failover |
+| `multi_root_multi_node_custody_software` | Distinct `EnterpriseCustody` root per cluster node |
+| `cross_region_dr_software_simulated_regions` | region_a primary cluster + region_b DR root; snapshot, failover, restore |
+| `hyperscaler_soak_software_local_fleet` | Local multi-worker soak (>=4 workers, >=200 ops); not infinite cloud |
+| `chronus_hardware_perf_measured` | CPU baseline timings always; Chronus accel path when device present; no invented FLOPS |
+| `solutions_api_readiness_software` | In-process Solutions API façade smoke put/get readiness |
+| `enterprise_hyba_certification_gate_software` | Evidence-aggregating cert gate; PASS only if all required checks pass |
 
-Theseus may **forward evidence** to AL HARAS via optional hooks. It must not implement guardian policy locally.
+Evidence modules:
 
-## Document index
+- `tests/test_enterprise_custody_substrate.py`
+- `tests/test_enterprise_distributed_substrate.py`
+- `tests/test_enterprise_capability_bridge.py`
+- `aethel/enterprise/distributed.py`
+- `aethel/enterprise/solutions_api.py`
 
-| File | Topic |
-| :--- | :--- |
-| [00_authority_matrix.md](00_authority_matrix.md) | Owner boundaries, non-absorption |
-| [01_storage_consistency.md](01_storage_consistency.md) | Atomicity, visibility, crash, concurrency, heal |
-| [02_schema_version_lineage.md](02_schema_version_lineage.md) | `format_version`, `ovid_transform_version` |
-| [03_provenance_authenticity.md](03_provenance_authenticity.md) | SHA-256 integrity vs HMAC authenticity |
-| [04_degradation_modes.md](04_degradation_modes.md) | Health / read-only / fail-closed table |
-| [05_migration_classification.md](05_migration_classification.md) | Repo store classification |
-| [06_acceptance_test_matrix.md](06_acceptance_test_matrix.md) | A1–A20 acceptance locks |
-| [07_failure_model.md](07_failure_model.md) | Typed errors |
+## Still outside this package
 
-## Runtime entry
+Honest externalities **not** claimed here:
 
-```python
-from aethel.enterprise import compose, EnterpriseCustody, CompositionRoot
+- Real multi-region **WAN** latency / packet loss / split-brain across geo facilities
+- Third-party **vendor cloud fleets** (AWS/GCP/Azure SKUs, autoscaling groups)
+- Physical Chronus **silicon roofline** when no device is present (CPU baseline is always reported; accel path only if device probes true)
+- Legal / compliance / regulatory sign-off
+- HYBA Intelligence product ABAC, clinical MRI, or whole-system production readiness
 
-root = compose(path, tenant="default", hmac_key=b"...")
-root.put(b"payload", record_id="r1")
+## Architecture (software)
+
+```
+SolutionsAPI ──► MultiNodeCluster (RaftNode × N)
+                      │
+                      ├─ node root_0  EnterpriseCustody
+                      ├─ node root_1  EnterpriseCustody
+                      └─ node root_k  EnterpriseCustody
+
+CrossRegionDR: region_a = cluster, region_b = custody root (simulated region)
+HyperscalerSoak: ThreadPool workers → cluster put/get
+ChronusPerfProbe: timed put/get; cpu_only flag honest
+HybaEnterpriseCertificate: required_evidence → PASS/FAIL
 ```
 
-Lifecycle: recover Theseus **before** consumers; stop/flush consumers before closing custody.
+## Contracts
 
-## Related
+See `docs/enterprise_triad/00_*.md` … `07_*.md` for authority, consistency, authenticity, degradation, migration, acceptance, and failure model.
 
-- Parent bridge: [`docs/ENTERPRISE_CAPABILITY_BRIDGE.md`](../ENTERPRISE_CAPABILITY_BRIDGE.md)
-- Software triad façade: `aethel.triad` / `aethel.open_triad`
-- Capabilities: `aethel/capabilities.json` → `enterprise_custody_software_single_root`
+## HMAC policy
 
-## Measured evidence (this workspace)
-
-- Package: `aethel.enterprise`
-- Tests: `tests/test_enterprise_custody_substrate.py` (+ triad + bridge suite)
-- Evidence class: **MEASURED** for single-root software custody including:
-  - versioned Ovid Zeckendorf working form
-  - Theseus primary+replica + WAL recover
-  - HMAC authenticity vs SHA-256 integrity
-  - multi-thread concurrency + multi-process attach/reopen
-  - heal, backup/restore, quotas, read-only, hook deny
-  - light endurance (50 ops) with telemetry counters
-- **Not measured here:** multi-node replication, hyperscaler fleet, hardware Chronus rooflines, Solutions API.
-
-
-
-## Evidence boundary / Not proven
-
-**Proven in this package (scoped):** `enterprise_custody_software_single_root` —
-versioned folded working form, restart/replay, primary+replica healing, HMAC authenticity,
-schema rejection, backup/restore, quotas/fail-closed storage exhaustion, thread concurrency,
-multi-process attach/reopen, read-only/degradation behavior, telemetry honesty and
-composition-root lifecycle.
-
-**Not proven:** distributed consensus, simultaneous multi-root/multi-node custody,
-cross-region DR, hyperscaler fleet soak, Chronus hardware performance, Solutions API
-production readiness, or enterprise-wide HYBA certification.
-
-Fifty operations is **light endurance (50 ops)** only — not soak evidence.
+Explicit `hmac_key` required (>=16 bytes). `allow_insecure_dev_key=True` only in tests with known test keys. No silent production default.

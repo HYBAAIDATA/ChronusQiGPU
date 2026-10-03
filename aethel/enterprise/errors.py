@@ -34,6 +34,30 @@ class ReadOnlyModeError(EnterpriseCustodyError):
     """Mutation attempted while custody is read-only."""
 
 
+class ConsensusError(EnterpriseCustodyError):
+    """Distributed consensus protocol failure."""
+
+
+class NotLeaderError(ConsensusError):
+    """Mutation requires the Raft leader."""
+
+
+class QuorumLostError(ConsensusError):
+    """Majority of nodes unavailable or did not ack commit."""
+
+
+class RegionFailoverError(EnterpriseCustodyError):
+    """Cross-region DR failover/failback/read failure."""
+
+
+class SoakThresholdError(EnterpriseCustodyError):
+    """Hyperscaler soak exceeded failure threshold."""
+
+
+class CertificationError(EnterpriseCustodyError):
+    """HYBA enterprise certification gate error."""
+
+
 __all__ = [
     "EnterpriseCustodyError",
     "AuthorityBoundaryError",
@@ -43,4 +67,10 @@ __all__ = [
     "SchemaVersionError",
     "AuthenticityError",
     "ReadOnlyModeError",
+    "ConsensusError",
+    "NotLeaderError",
+    "QuorumLostError",
+    "RegionFailoverError",
+    "SoakThresholdError",
+    "CertificationError",
 ]

@@ -125,6 +125,70 @@ CAPABILITIES: tuple[Capability, ...] = (
         "H1–H4 contracts in module; not full 10-service suite",
         "Pulvini",
     ),
+
+    Capability(
+        "E.STORE.CONSENSUS_LOCAL",
+        "Distributed consensus (local multi-node Raft-like)",
+        CapStatus.READY,
+        "theseus",
+        "aethel.enterprise.distributed.MultiNodeCluster",
+        "Scope: distributed_consensus_software_multi_node_local — in-process majority commit",
+        "Pulvini",
+    ),
+    Capability(
+        "E.STORE.MULTI_ROOT",
+        "Multi-root multi-node custody",
+        CapStatus.READY,
+        "theseus",
+        "aethel.enterprise.distributed.MultiRootCustody",
+        "Scope: multi_root_multi_node_custody_software — distinct root per node",
+        "Pulvini",
+    ),
+    Capability(
+        "E.STORE.DR_SIMULATED",
+        "Cross-region DR (simulated regions)",
+        CapStatus.READY,
+        "theseus",
+        "aethel.enterprise.distributed.CrossRegionDR",
+        "Scope: cross_region_dr_software_simulated_regions — not real multi-geo WAN",
+        "Pulvini",
+    ),
+    Capability(
+        "E.STORE.SOAK_LOCAL_FLEET",
+        "Hyperscaler soak (local multi-worker fleet)",
+        CapStatus.READY,
+        "theseus",
+        "aethel.enterprise.distributed.HyperscalerSoak",
+        "Scope: hyperscaler_soak_software_local_fleet — not infinite cloud",
+        "Pulvini",
+    ),
+    Capability(
+        "E.COMPUTE.CHRONUS_PERF_PROBE",
+        "Chronus hardware perf probe (honest CPU/accel)",
+        CapStatus.READY,
+        "chronus",
+        "aethel.enterprise.distributed.ChronusPerfProbe",
+        "Scope: chronus_hardware_perf_measured — never invents device FLOPS",
+        "Accel",
+    ),
+    Capability(
+        "E.API.SOLUTIONS_SOFTWARE_FACADE",
+        "Solutions API readiness (in-process facade)",
+        CapStatus.READY,
+        "api",
+        "aethel.enterprise.solutions_api.SolutionsAPI",
+        "Scope: solutions_api_readiness_software — not product /api/v1/solutions suite",
+        "API",
+    ),
+    Capability(
+        "E.GOV.HYBA_CERT_GATE",
+        "Enterprise HYBA certification gate (software)",
+        CapStatus.READY,
+        "governance",
+        "aethel.enterprise.distributed.HybaEnterpriseCertificate",
+        "Scope: enterprise_hyba_certification_gate_software — PASS only if all evidence passes",
+        "Governance",
+    ),
     # Compass
     Capability(
         "E.SEARCH.GEODESIC_HANDOFF",
@@ -311,11 +375,23 @@ class EnterpriseCapabilityReport:
     evidence_drives_readiness: bool = True
     software_readiness_scope: str = "enterprise_custody_software_single_root"
     readiness_kind: str = "scoped_software"
+    extended_software_scopes: List[str] = field(
+        default_factory=lambda: [
+            "enterprise_custody_software_single_root",
+            "distributed_consensus_software_multi_node_local",
+            "multi_root_multi_node_custody_software",
+            "cross_region_dr_software_simulated_regions",
+            "hyperscaler_soak_software_local_fleet",
+            "chronus_hardware_perf_measured",
+            "solutions_api_readiness_software",
+            "enterprise_hyba_certification_gate_software",
+        ]
+    )
     # Never true for whole-system / hyperscaler / hardware
     production_ready: bool = False
     production_ready_note: str = (
         "production_ready is always false at report level. "
-        "Use software_readiness_scope for scoped software claims only."
+        "Use software_readiness_scope / extended_software_scopes for scoped claims only."
     )
     mining_proof_ground: bool = True
     triad_ready: bool = True
