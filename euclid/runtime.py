@@ -38,6 +38,7 @@ class EuclidRuntime:
             experience_learner=experience_learner,
             memory_database=memory_database,
             evidence=self.evidence,
+            replay_journal_path=self.state_dir / "replay_journal.json",
         )
         self.kairos = KairosRuntime(creator_id, self.evidence)
 

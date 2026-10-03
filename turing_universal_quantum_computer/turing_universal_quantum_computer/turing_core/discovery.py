@@ -13,6 +13,17 @@ information theory meets quantum mechanics, and optimization meets emergence.
 
 Target: Discover new mathematical structures that emerge at computational limits
 
+Optional module (``pip install .[discovery]``): a heuristic exploration
+engine, not part of the exact-math core (``stabilizer``, ``quantum_walk``,
+``annealing``, ``hilbert``). Every ``quantum_advantage_*`` / ``*_speedup``
+value here is the textbook query-complexity ratio of the algorithm being
+analyzed (e.g. Grover's proven O(sqrt(N)) vs O(N) oracle calls) — it
+describes what a real quantum computer executing that algorithm would
+need, NOT a measured improvement from running this module, which executes
+entirely on classical hardware via simulation. Simulating a quantum
+circuit classically does not confer that algorithm's hardware speedup;
+treat every figure here as theoretical-complexity analysis, never as a
+benchmark result for this codebase.
 """
 
 import numpy as np

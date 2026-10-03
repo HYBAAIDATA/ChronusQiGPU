@@ -1,221 +1,325 @@
-"""Fail-closed execution-backend registry for the production mining runtime.
+"""Explicit mining-backend registry: declared lanes, real probes, one policy.
 
-Names are not capabilities.  A backend becomes selectable only after its
-factory has produced an implementation and its health probe has passed.
-Explicit backend requests never degrade to CPU.  ``auto`` follows a declared
-ordered policy and records exactly why each stronger lane was skipped.
+The registry is the single authority over which execution lanes exist and
+whether they are usable. A lane is ``available`` only after its probe ran:
+the probe is a real capability check, not a configuration lookup — the CPU
+lane re-hashes a known vector through hashlib, the GPU lane binds an OpenCL
+device through ``BitcoinHasher`` (which self-checks the kernels against
+hashlib before it reports success), the remote lane binds the remote GPU
+agent's health contract, and the ASIC lanes report truthfully that no
+driver exists in this build.
+
+Routing follows the declared policy only:
+
+* ``auto``   — first available lane in probe order; a CPU fallback is a
+  recorded fallback, never silent.
+* ``cpu``    — CPU lane only.
+* ``gpu`` / ``opencl`` — the OpenCL lane or the selection fails closed.
+* ``remote`` — the remote GPU lane or the selection fails closed.
+* ``asic`` / ``super_asic`` — those lanes or a closed refusal; no lane is
+  invented to satisfy the request.
+
+The probe result is evidence: every lane surfaces its status, its device,
+and — when unavailable — the measured reason.
 """
+
 from __future__ import annotations
 
-import json
-import os
-import platform
+import hashlib
 import time
-import uuid
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
-from pathlib import Path
-from typing import Any, Callable, Iterable
+from typing import Any, Callable
 
-SCHEMA = "pythia.execution-backend-registry/1"
-
-
-class BackendKind(StrEnum):
-    CPU = "CPU"
-    GPU = "GPU"
-    ASIC = "ASIC"
-    SUPER_ASIC = "SUPER_ASIC"
+SCHEMA = "pythia.backend_registry/1"
 
 
-class BackendUnavailable(RuntimeError):
-    """No policy-permitted, capability-proven backend can execute work."""
+class BackendLane(StrEnum):
+    """The declared execution lanes."""
+
+    CPU = "cpu"
+    GPU = "gpu"  # OpenCL device bound through mining.bitcoin_hasher
+    REMOTE_GPU = "remote_gpu"  # remote agent over MLA1517_REMOTE_GPU_ENDPOINT
+    ASIC = "asic"
+    SUPER_ASIC = "super_asic"
+
+
+_LANES = tuple(BackendLane)
 
 
 @dataclass(frozen=True)
-class BackendCapability:
-    backend_id: str
-    kind: BackendKind
-    implementation: str
+class LaneProbe:
+    """The measured outcome of one capability probe."""
+
+    lane: str
     available: bool
-    healthy: bool
-    device: str
-    reason: str
+    backend: str | None
+    device: str | None
     probed_at: float
-    evidence: dict[str, Any]
+    reason: str
+    hasher: Any = field(default=None, repr=False, compare=False)
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "lane": self.lane,
+            "available": self.available,
+            "backend": self.backend,
+            "device": self.device,
+            "probed_at": self.probed_at,
+            "reason": self.reason,
+        }
 
 
 @dataclass(frozen=True)
 class BackendSelection:
-    decision_id: str
-    job_id: str
-    epoch: str
-    observation: dict[str, Any]
-    available_actions: tuple[str, ...]
-    selected_action: str
+    """The routing decision for one run — evidence, not just a hasher."""
+
+    requested: str
+    lane: str
+    hasher: Any
+    fallback: bool
     reason: str
-    execution_target: str
-    result: str
-    disposition: str
-    timestamp: float
-    software_revision: str
+    probed: dict[str, LaneProbe]
 
 
-@dataclass
-class _Provider:
-    backend_id: str
-    kind: BackendKind
-    implementation: str
-    factory: Callable[[], Any] | None
-    health: Callable[[Any], tuple[bool, str, dict[str, Any]]]
-    unavailable_reason: str
+class BackendUnavailable(RuntimeError):
+    """The requested lane failed its capability probe."""
+
+
+def _probe_cpu() -> LaneProbe:
+    """CPU lane: hashlib SHA256d against a known vector."""
+    try:
+        header = bytes(range(80))
+        digest = hashlib.sha256(hashlib.sha256(header).digest()).digest()
+        if len(digest) != 32:
+            raise RuntimeError("hashlib sha256d returned a malformed digest")
+        return LaneProbe(
+            lane=BackendLane.CPU.value,
+            available=True,
+            backend="cpu",
+            device="CPU (hashlib)",
+            probed_at=time.time(),
+            reason="hashlib sha256d self-check passed",
+        )
+    except Exception as exc:  # pragma: no cover - catastrophic platform failure
+        return LaneProbe(
+            lane=BackendLane.CPU.value,
+            available=False,
+            backend=None,
+            device=None,
+            probed_at=time.time(),
+            reason=f"hashlib sha256d self-check failed: {exc}",
+        )
+
+
+def _probe_gpu() -> LaneProbe:
+    """OpenCL lane: bind a device through BitcoinHasher's real self-check.
+
+    ``BitcoinHasher(backend="gpu")`` compiles the kernels, binds a GPU-type
+    device and refuses to come up when the device disagrees with hashlib on
+    the probe nonces — a positive result is a measured capability, not an
+    assumption.
+    """
+    try:
+        import sys
+        from pathlib import Path
+
+        repo_root = str(Path(__file__).resolve().parents[3])
+        if repo_root not in sys.path:
+            sys.path.insert(0, repo_root)
+        from mining.bitcoin_hasher import BitcoinHasher
+
+        hasher = BitcoinHasher(backend="gpu")
+        backend = str(getattr(hasher, "backend", "") or "")
+        if not backend.startswith("opencl"):
+            # The hasher bound but reported the CPU reference: that is an
+            # unavailable GPU lane, not a silent fallback.
+            reason = getattr(hasher, "fallback_reason", None) or "no GPU-class OpenCL device bound"
+            return LaneProbe(
+                lane=BackendLane.GPU.value,
+                available=False,
+                backend=None,
+                device=None,
+                probed_at=time.time(),
+                reason=f"OpenCL probe: {reason}",
+            )
+        return LaneProbe(
+            lane=BackendLane.GPU.value,
+            available=True,
+            backend=backend,
+            device=getattr(hasher, "device", None),
+            probed_at=time.time(),
+            reason="OpenCL device bound; kernel self-checks passed",
+            hasher=hasher,
+        )
+    except Exception as exc:
+        return LaneProbe(
+            lane=BackendLane.GPU.value,
+            available=False,
+            backend=None,
+            device=None,
+            probed_at=time.time(),
+            reason=f"OpenCL probe failed: {exc}",
+        )
+
+
+def _probe_remote_gpu() -> LaneProbe:
+    """Remote lane: bind the remote GPU agent's health contract."""
+    try:
+        import sys
+        from pathlib import Path
+
+        repo_root = str(Path(__file__).resolve().parents[3])
+        if repo_root not in sys.path:
+            sys.path.insert(0, repo_root)
+        from mining.remote_hasher import hasher_for_env
+
+        hasher = hasher_for_env()
+        return LaneProbe(
+            lane=BackendLane.REMOTE_GPU.value,
+            available=True,
+            backend=getattr(hasher, "backend", "remote_opencl"),
+            device=getattr(hasher, "device", None),
+            probed_at=time.time(),
+            reason="remote GPU agent bound and health-checked",
+            hasher=hasher,
+        )
+    except Exception as exc:
+        return LaneProbe(
+            lane=BackendLane.REMOTE_GPU.value,
+            available=False,
+            backend=None,
+            device=None,
+            probed_at=time.time(),
+            reason=f"remote GPU probe failed: {exc}",
+        )
+
+
+def _probe_asic(lane: BackendLane) -> LaneProbe:
+    """ASIC lanes: no driver exists in this build; the probe reports that.
+
+    ``asic/`` ships an unsynthesised Verilog sketch only, so the honest
+    measured answer is unavailable — surfaced, not hidden.
+    """
+    return LaneProbe(
+        lane=lane.value,
+        available=False,
+        backend=None,
+        device=None,
+        probed_at=time.time(),
+        reason=(
+            "no ASIC driver is present in this build "
+            "(asic/ is an unsynthesised Verilog sketch); lane cannot be probed"
+        ),
+    )
+
+
+# request tokens -> routing. ``auto`` probes GPU then remote, then falls
+# back to CPU with a declared reason; every other token selects exactly its
+# lane or fails closed.
+_POLICY_ORDER = {
+    "auto": (BackendLane.GPU, BackendLane.REMOTE_GPU, BackendLane.CPU),
+    "cpu": (BackendLane.CPU,),
+    "gpu": (BackendLane.GPU,),
+    "opencl": (BackendLane.GPU,),
+    "remote": (BackendLane.REMOTE_GPU,),
+    "asic": (BackendLane.ASIC,),
+    "super_asic": (BackendLane.SUPER_ASIC,),
+}
 
 
 class BackendRegistry:
-    """Own capability probes and policy-governed execution selection."""
+    """Registry of declared lanes; probes on demand and caches the evidence."""
 
-    def __init__(self, *, software_revision: str = "unknown", evidence_path: str | Path | None = None):
-        self.software_revision = software_revision or "unknown"
-        self.evidence_path = Path(evidence_path) if evidence_path else None
-        self._providers: dict[str, _Provider] = {}
-        self._instances: dict[str, Any] = {}
-        self._capabilities: dict[str, BackendCapability] = {}
-        self.last_selection: BackendSelection | None = None
-
-    def register(
+    def __init__(
         self,
-        backend_id: str,
-        kind: BackendKind,
-        implementation: str,
         *,
-        factory: Callable[[], Any] | None,
-        health: Callable[[Any], tuple[bool, str, dict[str, Any]]] | None = None,
-        unavailable_reason: str = "implementation not configured",
+        probe_ttl_s: float = 60.0,
+        probes: dict[BackendLane, Callable[[], LaneProbe]] | None = None,
+        clock: Callable[[], float] = time.time,
     ) -> None:
-        if not backend_id or backend_id in self._providers:
-            raise ValueError(f"invalid or duplicate backend id: {backend_id!r}")
-        self._providers[backend_id] = _Provider(
-            backend_id,
-            kind,
-            implementation,
-            factory,
-            health or self._default_health,
-            unavailable_reason,
-        )
-
-    @staticmethod
-    def _default_health(instance: Any) -> tuple[bool, str, dict[str, Any]]:
-        healthy = bool(getattr(instance, "healthy", True))
-        reason = "health probe passed" if healthy else "implementation reported unhealthy"
-        return healthy, reason, {
-            "reported_backend": getattr(instance, "backend", "Unavailable"),
-            "reported_device": getattr(instance, "device", "Unavailable"),
+        if probe_ttl_s <= 0:
+            raise ValueError("probe_ttl_s must be positive")
+        self._ttl = probe_ttl_s
+        self._clock = clock
+        self._probes: dict[BackendLane, Callable[[], LaneProbe]] = probes or {
+            BackendLane.CPU: _probe_cpu,
+            BackendLane.GPU: _probe_gpu,
+            BackendLane.REMOTE_GPU: _probe_remote_gpu,
+            BackendLane.ASIC: lambda: _probe_asic(BackendLane.ASIC),
+            BackendLane.SUPER_ASIC: lambda: _probe_asic(BackendLane.SUPER_ASIC),
         }
+        self._probed: dict[BackendLane, LaneProbe] = {}
 
-    def probe(self, backend_id: str) -> BackendCapability:
-        provider = self._providers[backend_id]
-        now = time.time()
-        if provider.factory is None:
-            cap = BackendCapability(
-                backend_id, provider.kind, provider.implementation, False, False,
-                "Unavailable", provider.unavailable_reason, now, {},
+    def probe(self, lane: BackendLane, *, force: bool = False) -> LaneProbe:
+        """Run (or serve the fresh cache of) a lane's capability probe."""
+        cached = self._probed.get(lane)
+        if not force and cached is not None and self._clock() - cached.probed_at < self._ttl:
+            return cached
+        probe = self._probes[lane]()
+        self._probed[lane] = probe
+        return probe
+
+    def census(self, *, force: bool = False) -> dict[str, LaneProbe]:
+        """Probe every lane (cached within the TTL) and return the census."""
+        return {lane.value: self.probe(lane, force=force) for lane in _LANES}
+
+    def select(self, requested: str, *, reprobe: bool = False) -> BackendSelection:
+        """Route per declared policy; a selected lane has been probed.
+
+        ``auto`` walks GPU -> remote -> CPU and reports ``fallback=True``
+        whenever the bound lane is not the first probe target. Any other
+        token selects exactly its lane: when the probe is unavailable the
+        selection raises ``BackendUnavailable`` — it fails closed instead of
+        silently degrading.
+        """
+        key = (requested or "auto").strip().lower()
+        if key not in _POLICY_ORDER:
+            raise BackendUnavailable(
+                f"unknown backend policy {requested!r}; choose from {sorted(_POLICY_ORDER)}"
             )
-        else:
-            try:
-                instance = provider.factory()
-                healthy, reason, evidence = provider.health(instance)
-                available = instance is not None and healthy
-                cap = BackendCapability(
-                    backend_id, provider.kind, provider.implementation, available, healthy,
-                    str(getattr(instance, "device", "Unavailable")), reason, now, dict(evidence),
-                )
-                if available:
-                    self._instances[backend_id] = instance
-                else:
-                    self._instances.pop(backend_id, None)
-            except Exception as exc:
-                self._instances.pop(backend_id, None)
-                cap = BackendCapability(
-                    backend_id, provider.kind, provider.implementation, False, False,
-                    "Unavailable", f"capability probe failed: {type(exc).__name__}: {exc}", now, {},
-                )
-        self._capabilities[backend_id] = cap
-        return cap
+        order = _POLICY_ORDER[key]
+        probed = {lane.value: self.probe(lane, force=reprobe) for lane in order}
+        first = order[0]
+        for lane in order:
+            probe = probed[lane.value]
+            if not probe.available:
+                continue
+            if lane is BackendLane.CPU:
+                from .coordinator import CpuReferenceHasher
 
-    def probe_all(self) -> dict[str, BackendCapability]:
-        return {backend_id: self.probe(backend_id) for backend_id in self._providers}
-
-    def select(
-        self,
-        requested: str,
-        *,
-        policy_order: Iterable[str],
-        job_id: str = "Unavailable",
-        epoch: str = "Unavailable",
-    ) -> Any:
-        capabilities = self.probe_all()
-        order = tuple(policy_order)
-        if requested != "auto":
-            order = (requested,)
-        unknown = [name for name in order if name not in capabilities]
-        if unknown:
-            raise BackendUnavailable(f"unknown backend(s): {', '.join(unknown)}")
-        selectable = [name for name in order if capabilities[name].available and capabilities[name].healthy]
-        selected = selectable[0] if selectable else "Unavailable"
-        skipped = {
-            name: capabilities[name].reason
-            for name in order
-            if name != selected
-        }
-        disposition = "accepted" if selected != "Unavailable" else "rejected"
-        reason = (
-            f"selected first capable backend in declared order {order}"
-            if selected != "Unavailable"
-            else f"no capable backend in declared order {order}"
+                hasher = CpuReferenceHasher()
+                if lane is not first:
+                    hasher.fallback_reason = (
+                        f"{first.value} lane unavailable: {probed[first.value].reason}"
+                    )
+            else:
+                hasher = probe.hasher
+            return BackendSelection(
+                requested=key,
+                lane=lane.value,
+                hasher=hasher,
+                fallback=lane is not first,
+                reason=(
+                    f"policy {key}: {lane.value} available ({probe.reason})"
+                    if lane is first
+                    else f"policy {key}: {first.value} unavailable "
+                    f"({probed[first.value].reason}); routed to {lane.value}"
+                ),
+                probed=probed,
+            )
+        raise BackendUnavailable(
+            f"policy {key}: no lane available: "
+            + "; ".join(f"{p.lane}: {p.reason}" for p in probed.values())
         )
-        decision = BackendSelection(
-            decision_id=f"backend:{uuid.uuid4()}",
-            job_id=job_id,
-            epoch=epoch,
-            observation={
-                "requested": requested,
-                "policy_order": list(order),
-                "capabilities": {k: asdict(v) for k, v in capabilities.items()},
-                "skipped": skipped,
-            },
-            available_actions=tuple(selectable),
-            selected_action=selected,
-            reason=reason,
-            execution_target=selected,
-            result="backend_bound" if selected != "Unavailable" else "no_backend_bound",
-            disposition=disposition,
-            timestamp=time.time(),
-            software_revision=self.software_revision,
-        )
-        self.last_selection = decision
-        self._append_evidence(decision)
-        if selected == "Unavailable":
-            detail = "; ".join(f"{name}: {capabilities[name].reason}" for name in order)
-            raise BackendUnavailable(f"{reason}: {detail}")
-        instance = self._instances[selected]
-        setattr(instance, "backend_selection", asdict(decision))
-        return instance
 
     def snapshot(self) -> dict[str, Any]:
+        """Lane census for telemetry; unavailable lanes stay visible."""
         return {
             "schema": SCHEMA,
-            "host": {"system": platform.system(), "machine": platform.machine()},
-            "capabilities": {k: asdict(v) for k, v in self._capabilities.items()},
-            "last_selection": asdict(self.last_selection) if self.last_selection else "Unavailable",
+            "lanes": {lane.value: self.probe(lane).as_dict() for lane in _LANES},
+            "policy": {
+                token: [lane.value for lane in order]
+                for token, order in sorted(_POLICY_ORDER.items())
+            },
         }
-
-    def _append_evidence(self, decision: BackendSelection) -> None:
-        if self.evidence_path is None:
-            return
-        self.evidence_path.parent.mkdir(parents=True, exist_ok=True)
-        line = json.dumps(asdict(decision), sort_keys=True, separators=(",", ":")) + "\n"
-        fd = os.open(self.evidence_path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
-        try:
-            os.write(fd, line.encode())
-            os.fsync(fd)
-        finally:
-            os.close(fd)

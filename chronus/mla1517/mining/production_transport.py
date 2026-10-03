@@ -22,9 +22,11 @@ from manifold_pool_coordinator import (
     StratumClient,
 )
 
-from .causal import CausalCoordinate
+from .causal import CausalCoordinate, CausalLedger
 from .coordinator import IntelligentPoolCoordinator, MMIOControlSink
+from .cycle_fsm import MiningCycleLedger, MiningCycleState
 from .pool_chain import bip34_height
+from .software_revision import software_revision
 
 LOG = logging.getLogger(__name__)
 
@@ -221,26 +223,20 @@ class ProductionStratumClient(StratumClient):
         loop = asyncio.get_running_loop()
         ack: asyncio.Future[None] = loop.create_future()
         try:
-            await asyncio.wait_for(
-                self._outbound.put((payload, ack)), timeout=self.enqueue_timeout
-            )
+            await asyncio.wait_for(self._outbound.put((payload, ack)), timeout=self.enqueue_timeout)
         except asyncio.TimeoutError as exc:
             raise TimeoutError(
                 f"Stratum outbound queue remained full for {self.enqueue_timeout:.3f}s"
             ) from exc
         try:
-            await asyncio.wait_for(
-                ack, timeout=self.write_timeout + self.enqueue_timeout
-            )
+            await asyncio.wait_for(ack, timeout=self.write_timeout + self.enqueue_timeout)
         except asyncio.TimeoutError as exc:
             raise TimeoutError(
                 f"Stratum socket write exceeded bounded transport budget "
                 f"({self.write_timeout:.3f}s)"
             ) from exc
 
-    async def request(
-        self, method: str, params: list[Any], *, timeout: float | None = None
-    ) -> Any:
+    async def request(self, method: str, params: list[Any], *, timeout: float | None = None) -> Any:
         if not self.writer:
             raise ConnectionError("Stratum session is not connected")
         if self._reader_task is not None and self._reader_task.done():
@@ -273,9 +269,7 @@ class ProductionStratumClient(StratumClient):
             return await asyncio.wait_for(future, timeout=limit)
         except asyncio.TimeoutError as exc:
             self._pending.pop(request_id, None)
-            raise TimeoutError(
-                f"Stratum request {method!r} timed out after {limit:.1f}s"
-            ) from exc
+            raise TimeoutError(f"Stratum request {method!r} timed out after {limit:.1f}s") from exc
 
     async def submit(self, params: list[Any]) -> Any:
         result = await super().submit(params)
@@ -318,9 +312,7 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
         outbound_queue_size: int | None = None,
         **kwargs: Any,
     ) -> None:
-        kwargs.setdefault(
-            "reconnect_delay", _positive_env("PYTHIA_RECONNECT_INITIAL_S", 0.25)
-        )
+        kwargs.setdefault("reconnect_delay", _positive_env("PYTHIA_RECONNECT_INITIAL_S", 0.25))
         super().__init__(*args, **kwargs)
         self.production_connect_timeout = (
             _positive_env("PYTHIA_STRATUM_CONNECT_TIMEOUT_S", 0.75)
@@ -344,6 +336,29 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
         )
         self._stale_candidates_dropped = 0
         self._stale_execution_ids: set[str] = set()
+
+    def _causal_ledger(self) -> CausalLedger:
+        """The voyage's causal trail, created on first use when absent.
+
+        ``connect_with_failover`` also runs on coordinators assembled
+        without ``__init__`` (regression skeletons, deferred assembly). A
+        missing ledger must neither crash failover nor silently drop the
+        evidence: a real in-memory ``CausalLedger`` records it instead.
+        """
+        ledger = getattr(self, "causal", None)
+        if ledger is None:
+            revision = getattr(self, "_software_revision", None)
+            ledger = CausalLedger(revision=revision or software_revision())
+            self.causal = ledger
+        return ledger
+
+    def _cycle_ledger(self) -> MiningCycleLedger:
+        """The guarded cycle machine, created on first use when absent."""
+        ledger = getattr(self, "cycle", None)
+        if ledger is None:
+            ledger = MiningCycleLedger(on_event=self._mirror_cycle_event)
+            self.cycle = ledger
+        return ledger
 
     def _observe_stale_from_last_execution(self) -> None:
         """Count only candidates invalidated by a changed canonical identity."""
@@ -371,9 +386,12 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
         # session, attach the stale count directly to that session telemetry.
         client = self.client
         session_id = execution.get("pool_session_id")
-        if isinstance(client, ProductionStratumClient) and client.runtime_state.session_id == session_id:
+        if (
+            isinstance(client, ProductionStratumClient)
+            and client.runtime_state.session_id == session_id
+        ):
             client.record_stale_candidate()
-        self.causal.record(
+        self._causal_ledger().record(
             "candidate_stale_dropped",
             CausalCoordinate(
                 pool_session_id=(session_id if isinstance(session_id, str) else None),
@@ -399,6 +417,7 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
 
     def set_metrics_sink(self, sink: Any) -> None:
         """Publish measured hashing plus stale-candidate drop counters."""
+
         def wrapped(counters: Mapping[str, Any]) -> None:
             self._observe_stale_from_last_execution()
             sink({**dict(counters), "stale_candidates_dropped": self._stale_candidates_dropped})
@@ -421,20 +440,55 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
                 outbound_queue_size=self.production_outbound_queue_size,
                 status_sink=self.stratum_status_sink,
             )
+            self._pool_attempt_record()
             try:
                 await client.connect()
             except StratumAuthorizationError as exc:
                 authorization_failures += 1
                 errors.append(f"{endpoint.name}: {exc}")
                 await client.close()
+                self._pool_endpoint_refused(endpoint, str(exc), "authorization")
                 continue
             except Exception as exc:
                 errors.append(f"{endpoint.name}: {exc}")
                 await client.close()
+                self._pool_endpoint_refused(endpoint, str(exc), "connect")
                 continue
 
+            # Commit the selection first, then record it. Every evidence
+            # call below is guarded: once endpoint_index/client are bound,
+            # no bookkeeping failure may raise and leave a live client
+            # orphaned behind an exception (partial initialization).
             self.endpoint_index = index
             self.client = client
+            try:
+                self._causal_ledger().record(
+                    "pool_endpoint_selected",
+                    self._pool_coordinate(),
+                    pool=endpoint.name,
+                    endpoint=f"{endpoint.host}:{endpoint.port}",
+                    attempt=offset + 1,
+                    previous_failures=list(errors),
+                )
+            except Exception:
+                pass
+            try:
+                self._pool_selected_record(endpoint, index, offset + 1, errors)
+            except Exception:
+                pass
+            if offset > 0:
+                # Failover rotation healed the SCAN leg: the declared pool
+                # order moved off the primary. Evidence only — the machine
+                # stays wherever it is unless it is still in SCAN.
+                try:
+                    self._cycle_ledger().try_transition(
+                        MiningCycleState.HEAL,
+                        event="failure",
+                        reason="pool failover rotated endpoints",
+                        evidence={"pool": endpoint.name, "failures": list(errors)},
+                    )
+                except Exception:
+                    pass
             # Preserve IntelligentPoolCoordinator's post-handshake binding:
             # the first notify may arrive during subscribe/authorize.
             self._refresh_work_identity()
@@ -444,6 +498,30 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
         if authorization_failures == len(self.endpoints):
             raise StratumAuthorizationError("; ".join(errors))
         raise ConnectionError("; ".join(errors))
+
+    def _pool_coordinate(self) -> CausalCoordinate:
+        runtime = getattr(self.client, "runtime_state", None)
+        generation = getattr(runtime, "current_job", None) if runtime else None
+        return CausalCoordinate(
+            pool_session_id=getattr(runtime, "session_id", None) if runtime else None,
+            generation=getattr(generation, "generation", None),
+            job_fingerprint=getattr(generation, "fingerprint", None),
+        )
+
+    def _pool_endpoint_refused(self, endpoint: Any, error: str, stage: str) -> None:
+        """Durable evidence that a configured endpoint failed its handshake."""
+        self._pool_refusal_record(endpoint, stage, error)
+        try:
+            self._causal_ledger().record(
+                "pool_endpoint_refused",
+                self._pool_coordinate(),
+                pool=endpoint.name,
+                endpoint=f"{endpoint.host}:{endpoint.port}",
+                stage=stage,
+                error=error[:300],
+            )
+        except Exception:
+            pass
 
     async def run_hardware_loop(
         self,
@@ -519,9 +597,7 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
                         bridge.stop()
                         running = False
                     with contextlib.suppress(TimeoutError):
-                        await asyncio.wait_for(
-                            self._work_wake.wait(), max(poll_ms / 1000, 0.01)
-                        )
+                        await asyncio.wait_for(self._work_wake.wait(), max(poll_ms / 1000, 0.01))
                     self._work_wake.clear()
                     continue
                 if not running:

@@ -6,9 +6,9 @@ Topology, Convergence, Conservation, Unitarity, Hermiticity, PSD.
 """
 import numpy as np
 import time
-from typing import Dict, List, Tuple, Callable, Any
 from dataclasses import dataclass
 from enum import Enum
+
 
 class InvariantType(Enum):
     LINEARITY = "linearity"
@@ -26,6 +26,7 @@ class InvariantType(Enum):
     TRACE_NORM = "trace_norm"
     ENTANGLEMENT = "entanglement_monotone"
 
+
 @dataclass
 class InvariantResult:
     invariant_type: InvariantType
@@ -35,6 +36,7 @@ class InvariantResult:
     details: str
     time_us: float
 
+
 @dataclass
 class InvariantReport:
     results: list
@@ -42,6 +44,7 @@ class InvariantReport:
     total_failed: int
     total_time_s: float
     timestamp: str
+
 
 class PropertyOracles:
     @staticmethod
@@ -137,7 +140,7 @@ class InvariantTestSuite:
             a, b = rng.uniform(-2, 2), rng.uniform(-2, 2)
             err = self.oracles.check_linearity(op, x, y, a, b)
             self._record(InvariantType.LINEARITY, err < self.tolerance, err,
-                        self.tolerance, f"T{trial}: err={err:.2e}", (time.time()-t0)*1e6)
+                         self.tolerance, f"T{trial}: err={err:.2e}", (time.time() - t0) * 1e6)
 
     def test_invertibility(self, op, inv_op, n_dim=64):
         rng = np.random.default_rng(42)
@@ -146,16 +149,17 @@ class InvariantTestSuite:
             x = rng.normal(size=n_dim)
             err = self.oracles.check_invertibility(op, inv_op, x)
             self._record(InvariantType.INVERTIBILITY, err < self.tolerance, err,
-                        self.tolerance, f"T{trial}: err={err:.2e}", (time.time()-t0)*1e6)
+                         self.tolerance, f"T{trial}: err={err:.2e}", (time.time() - t0) * 1e6)
 
     def test_norm_preservation(self, op, n_dim=64):
         rng = np.random.default_rng(42)
         for trial in range(10):
             t0 = time.time()
-            x = rng.normal(size=n_dim); x /= np.linalg.norm(x)
+            x = rng.normal(size=n_dim)
+            x /= np.linalg.norm(x)
             err = self.oracles.check_norm_preservation(op, x)
             self._record(InvariantType.NORM, err < self.tolerance, err,
-                        self.tolerance, f"T{trial}: err={err:.2e}", (time.time()-t0)*1e6)
+                         self.tolerance, f"T{trial}: err={err:.2e}", (time.time() - t0) * 1e6)
 
     def test_conditioning(self):
         rng = np.random.default_rng(42)
@@ -164,7 +168,7 @@ class InvariantTestSuite:
             M = rng.normal(size=(size, size))
             kappa = self.oracles.check_conditioning(M)
             self._record(InvariantType.CONDITIONING, kappa < 1e6, kappa,
-                        1e6, f"size={size} k={kappa:.1f}", (time.time()-t0)*1e6)
+                         1e6, f"size={size} k={kappa:.1f}", (time.time() - t0) * 1e6)
 
     def test_cptp(self, n_dim=8):
         rng = np.random.default_rng(42)
@@ -181,21 +185,23 @@ class InvariantTestSuite:
             trace_err, min_choi = self.oracles.check_cptp(kraus)
             passed = trace_err < self.tolerance and min_choi > -self.tolerance
             self._record(InvariantType.CPTP, passed, trace_err, self.tolerance,
-                        f"T{trial}: tr={trace_err:.2e} choi={min_choi:.2e}", (time.time()-t0)*1e6)
+                         f"T{trial}: tr={trace_err:.2e} choi={min_choi:.2e}", (time.time() - t0) * 1e6)
 
     def test_povm(self, n_dim=8):
         rng = np.random.default_rng(42)
         for trial in range(5):
             t0 = time.time()
             m = 6
-            U = rng.normal(size=(m, m)) + 1j * rng.normal(size=(m, m)); U, _ = np.linalg.qr(U)
+            U = rng.normal(size=(m, m)) + 1j * rng.normal(size=(m, m))
+            U, _ = np.linalg.qr(U)
             elements = []
             for i in range(m):
-                proj = np.zeros((m, m), dtype=complex); proj[i, i] = 1.0
+                proj = np.zeros((m, m), dtype=complex)
+                proj[i, i] = 1.0
                 elements.append((U.conj().T @ proj @ U)[:n_dim, :n_dim])
             err = self.oracles.check_povm(elements)
             self._record(InvariantType.POVM, err < self.tolerance, err,
-                        self.tolerance, f"T{trial}: err={err:.2e}", (time.time()-t0)*1e6)
+                         self.tolerance, f"T{trial}: err={err:.2e}", (time.time() - t0) * 1e6)
 
     def test_unitarity(self, n_dim=16):
         rng = np.random.default_rng(42)
@@ -205,7 +211,7 @@ class InvariantTestSuite:
             U, _ = np.linalg.qr(A)
             err = self.oracles.check_unitarity(U)
             self._record(InvariantType.UNITARITY, err < self.tolerance, err,
-                        self.tolerance, f"T{trial}: err={err:.2e}", (time.time()-t0)*1e6)
+                         self.tolerance, f"T{trial}: err={err:.2e}", (time.time() - t0) * 1e6)
 
     def test_hermiticity(self, n_dim=16):
         rng = np.random.default_rng(42)
@@ -215,7 +221,7 @@ class InvariantTestSuite:
             H = (A + A.conj().T) / 2
             err = self.oracles.check_hermiticity(H)
             self._record(InvariantType.HERMITICITY, err < self.tolerance, err,
-                        self.tolerance, f"T{trial}: err={err:.2e}", (time.time()-t0)*1e6)
+                         self.tolerance, f"T{trial}: err={err:.2e}", (time.time() - t0) * 1e6)
 
     def test_psd(self, n_dim=16):
         rng = np.random.default_rng(42)
@@ -225,17 +231,18 @@ class InvariantTestSuite:
             M = A.T @ A
             is_psd, min_eig = self.oracles.check_psd(M)
             self._record(InvariantType.PSD, is_psd, min_eig,
-                        -1e-10, f"T{trial}: PSD={is_psd}", (time.time()-t0)*1e6)
+                         -1e-10, f"T{trial}: PSD={is_psd}", (time.time() - t0) * 1e6)
 
     def test_trace_norm(self, n_dim=8):
         rng = np.random.default_rng(42)
         for trial in range(10):
             t0 = time.time()
             A = rng.normal(size=(n_dim, n_dim))
-            rho = A.T @ A; rho /= np.trace(rho)
+            rho = A.T @ A
+            rho /= np.trace(rho)
             trace_err, tn = self.oracles.check_trace_norm(rho)
             self._record(InvariantType.TRACE_NORM, trace_err < self.tolerance, trace_err,
-                        self.tolerance, f"T{trial}: err={trace_err:.2e}", (time.time()-t0)*1e6)
+                         self.tolerance, f"T{trial}: err={trace_err:.2e}", (time.time() - t0) * 1e6)
 
     def test_entanglement(self, n_dim=8):
         rng = np.random.default_rng(42)
@@ -245,7 +252,7 @@ class InvariantTestSuite:
             state /= np.linalg.norm(state)
             ent = self.oracles.check_entanglement_monotone(state, n_dim // 2)
             self._record(InvariantType.ENTANGLEMENT, True, ent, 0.0,
-                        f"T{trial}: E={ent:.4f}", (time.time()-t0)*1e6)
+                         f"T{trial}: E={ent:.4f}", (time.time() - t0) * 1e6)
 
     def test_conservation(self, op, n_dim=64):
         rng = np.random.default_rng(42)
@@ -254,7 +261,7 @@ class InvariantTestSuite:
             x = rng.normal(size=n_dim)
             err = abs(np.sum(op(x)) - np.sum(x)) / max(abs(np.sum(x)), 1e-15)
             self._record(InvariantType.CONSERVATION, err < self.tolerance, err,
-                        self.tolerance, f"T{trial}: err={err:.2e}", (time.time()-t0)*1e6)
+                         self.tolerance, f"T{trial}: err={err:.2e}", (time.time() - t0) * 1e6)
 
     def test_topology(self, op, n_dim=64):
         rng = np.random.default_rng(42)
@@ -262,16 +269,19 @@ class InvariantTestSuite:
             t0 = time.time()
             x = rng.normal(size=n_dim)
             y = op(x)
-            ev_x = np.sort(np.abs(x)); ev_y = np.sort(np.abs(y))
+            ev_x = np.sort(np.abs(x))
+            ev_y = np.sort(np.abs(y))
             err = np.linalg.norm(ev_x - ev_y) / max(np.linalg.norm(ev_x), 1e-15)
             self._record(InvariantType.TOPOLOGY, err < self.tolerance * 100, err,
-                        self.tolerance * 100, f"T{trial}: err={err:.2e}", (time.time()-t0)*1e6)
+                         self.tolerance * 100, f"T{trial}: err={err:.2e}", (time.time() - t0) * 1e6)
 
     def run_all(self, op=None, inv_op=None):
         self.results = []
         t_start = time.time()
-        if op is None: op = lambda x: x
-        if inv_op is None: inv_op = lambda x: x
+        if op is None:
+            def op(x): return x
+        if inv_op is None:
+            def inv_op(x): return x
         tests = [
             ("Linearity", self.test_linearity, [op]),
             ("Invertibility", self.test_invertibility, [op, inv_op]),

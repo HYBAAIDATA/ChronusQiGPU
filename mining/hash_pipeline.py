@@ -205,6 +205,45 @@ class HashPipeline:
         self.scoring_device = "numpy-phi-filter"
         return scores.tolist()
 
+    def grind_with_chronus_substrate(
+        self,
+        header80: bytes,
+        target_be: bytes,
+        nonces: List[int],
+        max_hashes: Optional[int] = None,
+        *,
+        fold_depth: int = 1,
+        seed: int = 0,
+    ):
+        """Order candidates through Chronus, then run canonical SHA-256d.
+
+        The substrate has ORDER_ONLY authority.  The resulting permutation is
+        sealed before dispatch, every selected candidate is hashed by the
+        configured backend, and ``grind`` retains its independent consensus
+        recheck.
+        """
+        from chronus.mining_bridge import ChronusSubstrateMiningBridge
+
+        scores = self.score_nonces(nonces)
+        ordered, evidence = ChronusSubstrateMiningBridge(seed=seed).order(
+            nonces,
+            scores,
+            fold_depth=fold_depth,
+        )
+        result = self.grind(
+            header80,
+            target_be,
+            ordered,
+            max_hashes=max_hashes,
+            preordered=True,
+            sealed_fingerprint=nonce_order_fingerprint(ordered),
+        )
+        self.scoring_backend = "chronus-substrate"
+        self.scoring_device = "phi-tensor-diffusion"
+        result.scoring_backend = self.scoring_backend
+        result.scoring_device = self.scoring_device
+        return result, evidence
+
     def grind(
         self,
         header80: bytes,

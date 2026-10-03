@@ -1,6 +1,6 @@
-"""Governed, local-first EUCLID runtime.
+"""Governed, local-first EUCLID runtime and intelligence engine.
 
-The package is intentionally fail-closed.  Importing it performs no I/O,
+The package is intentionally fail-closed. Importing it performs no I/O,
 network access, dynamic discovery, or self-modification.
 """
 
@@ -14,12 +14,25 @@ from .contracts import (
 )
 from .runtime import EuclidRuntime
 from .memory_database import MemoryDatabase, MemoryScope
-from .training_pipeline import TrainingCase, TrainingPipeline
+from .training_pipeline import (
+    TrainingCase,
+    TrainingPipeline,
+    validate_partitions,
+)
+from .checkpoint_manifest import (
+    load_manifest,
+    verify_manifest,
+    write_manifest,
+)
+from .adapter import EuclidEngineAdapter
+
+__version__ = "16.0.0"
 
 __all__ = [
     "Authority",
     "Capability",
     "Experience",
+    "EuclidEngineAdapter",
     "EuclidRuntime",
     "Health",
     "Mission",
@@ -28,4 +41,8 @@ __all__ = [
     "RewardAuthority",
     "TrainingCase",
     "TrainingPipeline",
+    "load_manifest",
+    "validate_partitions",
+    "verify_manifest",
+    "write_manifest",
 ]

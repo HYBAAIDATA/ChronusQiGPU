@@ -412,8 +412,11 @@ class MemoryDatabase:
         target = Path(destination)
         target.parent.mkdir(parents=True, exist_ok=True)
         temporary = target.with_suffix(target.suffix + ".tmp")
-        with sqlite3.connect(str(temporary)) as output:
+        output = sqlite3.connect(str(temporary))
+        try:
             self._connection.backup(output)
+        finally:
+            output.close()
         os.replace(temporary, target)
         try:
             os.chmod(target, 0o600)

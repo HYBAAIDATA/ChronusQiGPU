@@ -1,0 +1,210 @@
+"""Sealed checkpoint manifest for governed EUCLID training artefacts.
+
+A manifest links one trained learner checkpoint to the exact dataset
+partitions, task/action contract, deduplication state, source revision and
+evidence that produced it.  Restore paths verify the manifest seal and the
+recorded learner-state hash before the checkpoint is consumed; corruption or
+schema mismatch fails closed and is never silently skipped.
+"""
+from __future__ import annotations
+
+import hashlib
+import time
+from pathlib import Path
+from typing import Any, Mapping, Sequence
+
+from .contracts import canonical_json, domain_hash
+from .evidence import load_json
+from hyba_substrate.memory_preservation import verified_atomic_json_write
+
+MANIFEST_SCHEMA = "euclid.checkpoint-manifest/1"
+POLICY_VERSION = "euclid.experience-policy/1"
+SECRET_FIELD_TOKENS = ("password", "secret", "token", "credential", "api_key")
+
+
+def sha256_file(path: str | Path) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(65536), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _reject_secret_fields(value: Any, *, trail: str = "") -> None:
+    """Refuse manifest fields whose names suggest credentials."""
+    if isinstance(value, Mapping):
+        for key, item in value.items():
+            lowered = str(key).lower()
+            if any(token in lowered for token in SECRET_FIELD_TOKENS):
+                raise ValueError(f"manifest field {trail + str(key)!r} may carry secrets")
+            _reject_secret_fields(item, trail=f"{trail}{key}.")
+    elif isinstance(value, (list, tuple)):
+        for index, item in enumerate(value):
+            _reject_secret_fields(item, trail=f"{trail}{index}.")
+
+
+def dataset_partition_fingerprint(
+    cases: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Hash a partition of canonical case descriptors.
+
+    Each descriptor must expose case_id, state, lineage_id, session_id and
+    seed keys (as produced by ``TrainingCase.as_identity``).
+    """
+    canonical_json(list(cases))  # reject non-serializable partitions early
+    entries = sorted(
+        (
+            str(case["case_id"]),
+            str(case.get("lineage_id") or ""),
+            str(case.get("session_id") or ""),
+            "" if case.get("seed") is None else str(case["seed"]),
+            canonical_json(case["state"]).decode("utf-8"),
+        )
+        for case in cases
+    )
+    return {
+        "cases": len(entries),
+        "lineages": len({(row[1], row[2], row[3]) for row in entries}),
+        "hash": domain_hash("euclid.dataset-partition.v1", entries),
+    }
+
+
+def build_manifest(
+    *,
+    source_revision: str,
+    task: Mapping[str, Any],
+    learner: Mapping[str, Any],
+    dataset: Mapping[str, Any],
+    dedup: Mapping[str, Any],
+    evidence: Mapping[str, Any],
+    boundaries: Mapping[str, Any] | None = None,
+    created_at: float | None = None,
+    policy_version: str = POLICY_VERSION,
+) -> dict[str, Any]:
+    """Assemble a sealed manifest body (``seal`` covers every field)."""
+    if not str(source_revision or "").strip():
+        raise ValueError("source_revision is required and must be injectable")
+    body = {
+        "schema": MANIFEST_SCHEMA,
+        "created_at": float(time.time() if created_at is None else created_at),
+        "source_revision": str(source_revision),
+        "policy_version": str(policy_version),
+        "task": dict(task),
+        "learner": dict(learner),
+        "dataset": dict(dataset),
+        "dedup": dict(dedup),
+        "evidence": dict(evidence),
+        "boundaries": dict(
+            boundaries
+            or {
+                "live_pool_readiness": "NOT_CLAIMED",
+                "hardware_readiness": "NOT_CLAIMED",
+                "profitability": "NOT_CLAIMED",
+                "production_readiness": "NOT_CLAIMED",
+            }
+        ),
+    }
+    _reject_secret_fields(body)
+    return {**body, "seal": domain_hash("euclid.checkpoint-manifest.seal.v1", body)}
+
+
+def write_manifest(
+    path: str | Path,
+    *,
+    source_revision: str,
+    task: Mapping[str, Any],
+    learner: Mapping[str, Any],
+    dataset: Mapping[str, Any],
+    dedup: Mapping[str, Any],
+    evidence: Mapping[str, Any],
+    boundaries: Mapping[str, Any] | None = None,
+    created_at: float | None = None,
+    policy_version: str = POLICY_VERSION,
+) -> dict[str, Any]:
+    manifest = build_manifest(
+        source_revision=source_revision,
+        task=task,
+        learner=learner,
+        dataset=dataset,
+        dedup=dedup,
+        evidence=evidence,
+        boundaries=boundaries,
+        created_at=created_at,
+        policy_version=policy_version,
+    )
+    verified_atomic_json_write(Path(path).resolve(), manifest)
+    return manifest
+
+
+def load_manifest(path: str | Path) -> dict[str, Any]:
+    """Load a manifest and verify schema plus seal; fail closed otherwise."""
+    payload = load_json(Path(path))
+    if not isinstance(payload, dict):
+        raise ValueError("checkpoint manifest is not a JSON object")
+    if payload.get("schema") != MANIFEST_SCHEMA:
+        raise ValueError("unsupported checkpoint manifest schema")
+    body = {key: value for key, value in payload.items() if key != "seal"}
+    if payload.get("seal") != domain_hash(
+        "euclid.checkpoint-manifest.seal.v1", body
+    ):
+        raise ValueError("checkpoint manifest seal mismatch")
+    for section in ("task", "learner", "dataset", "dedup", "evidence"):
+        if not isinstance(payload.get(section), Mapping):
+            raise ValueError(f"checkpoint manifest section {section!r} missing")
+    return dict(payload)
+
+
+def verify_manifest(
+    manifest: Mapping[str, Any],
+    *,
+    learner_checkpoint_path: str | Path | None = None,
+    evidence_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """Verify a loaded manifest against on-disk artefacts.
+
+    Recomputes the learner checkpoint hash and (optionally) the evidence
+    report hash.  Any mismatch, missing artefact or schema drift raises
+    ``ValueError`` so a corrupted handoff cannot reach deployment.
+    """
+    if manifest.get("schema") != MANIFEST_SCHEMA:
+        raise ValueError("unsupported checkpoint manifest schema")
+    learner = dict(manifest.get("learner") or {})
+    checkpoint = learner_checkpoint_path or learner.get("checkpoint_path")
+    if not checkpoint:
+        raise ValueError("manifest records no learner checkpoint path")
+    checkpoint_path = Path(str(checkpoint))
+    if not checkpoint_path.is_file():
+        raise ValueError(f"learner checkpoint missing: {checkpoint_path}")
+    recorded_hash = str(learner.get("state_hash") or "")
+    actual_hash = sha256_file(checkpoint_path)
+    if recorded_hash != actual_hash:
+        raise ValueError("learner checkpoint hash differs from manifest")
+    evidence = dict(manifest.get("evidence") or {})
+    if evidence_path is not None:
+        evidence_file = Path(evidence_path)
+        if not evidence_file.is_file():
+            raise ValueError(f"training evidence missing: {evidence_file}")
+        recorded_evidence = str(evidence.get("report_sha256") or "")
+        if recorded_evidence and recorded_evidence != sha256_file(evidence_file):
+            raise ValueError("training evidence hash differs from manifest")
+    return {
+        "schema": "euclid.checkpoint-manifest.verification/1",
+        "valid": True,
+        "checkpoint_path": str(checkpoint_path),
+        "learner_state_hash": actual_hash,
+        "source_revision": manifest.get("source_revision"),
+        "policy_version": manifest.get("policy_version"),
+        "task_id": (manifest.get("task") or {}).get("task_id"),
+    }
+
+
+__all__ = [
+    "MANIFEST_SCHEMA",
+    "POLICY_VERSION",
+    "build_manifest",
+    "dataset_partition_fingerprint",
+    "load_manifest",
+    "sha256_file",
+    "verify_manifest",
+    "write_manifest",
+]

@@ -33,18 +33,21 @@ URLs and it is never logged.
 from __future__ import annotations
 
 import hashlib
+import hmac
+import ipaddress
 import json
 import os
 import struct
 import urllib.error
 import urllib.request
+from urllib.parse import urlsplit
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 from .core import fib, lucas
 from .scaling import LUCAS_PISOT_LADDER, padovan
 
-PROTOCOL_VERSION = "remote_opencl_v1"
+PROTOCOL_VERSION = "remote_opencl_v2"
 DEFAULT_TIMEOUT_S = 5.0
 #: Scans run far longer than a probe, so sha256d calls get their own budget.
 SHA256D_DEFAULT_TIMEOUT_S = 300.0
@@ -52,6 +55,8 @@ SHA256D_DEFAULT_TIMEOUT_S = 300.0
 SHA256D_MAX_WINDOW = 1 << 24
 #: Largest explicit nonce list one remote call may carry (the upload is real).
 SHA256D_MAX_BATCH = 1 << 20
+SHA256D_MAX_RESPONSE_BYTES = 1 << 20
+_ALLOWED_SHA256D_BACKENDS = frozenset(("opencl:gpu", "opencl:cpu"))
 
 __all__ = [
     "PROTOCOL_VERSION",
@@ -90,6 +95,7 @@ class RemoteDevice:
     """One OpenCL device measured by a remote agent."""
 
     name: str
+    device_id: str
     vendor: str
     device_type: str  # gpu | chronus | cpu | accelerator | other
     compute_units: Optional[int]
@@ -104,6 +110,7 @@ class RemoteDevice:
     def as_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
+            "id": self.device_id,
             "vendor": self.vendor,
             "type": self.device_type,
             "compute_units": self.compute_units,
@@ -177,6 +184,7 @@ class Sha256dResult:
     measured_ns: Optional[int]
     attestation: str
     share_verified: bool
+    hardware_provenance_verified: bool = False
 
     @property
     def found(self) -> bool:
@@ -196,6 +204,7 @@ class Sha256dResult:
             "measured_ns": self.measured_ns,
             "attestation": self.attestation,
             "share_verified_against_exact_reference": self.share_verified,
+            "hardware_provenance_verified": self.hardware_provenance_verified,
         }
 
 
@@ -209,31 +218,70 @@ def sha256d_share_attestation(
     nonce: Optional[int],
     digest_hex: Optional[str],
     device: str,
+    device_id: str = "",
+    protocol: str = PROTOCOL_VERSION,
+    execution_backend: str = "opencl:gpu",
+    measured_ns: Optional[int] = None,
+    order: str = "contiguous",
+    window_commitment: str = "",
+    key: Optional[bytes] = None,
 ) -> str:
-    """Domain-separated SHA-256 binding a share verdict to its exact job.
+    """Bind a SHA-256d verdict to the complete execution record.
 
-    Agent and client compute the token over the same canonical record, so
-    a verdict replayed from another job (or a tampered window, count, or
-    device name) fails the recomputation check. This is a binding
-    certificate, not authentication — the bearer token gates the wire.
+    With ``key`` this is an HMAC-SHA256 authentication token. Without a key
+    it is only an integrity checksum and MUST NOT be treated as hardware
+    provenance. The record includes protocol/backend/timing, stable device
+    identity, scan order, and a commitment to the exact nonce sequence.
     """
     record = {
-        "schema": "remote-sha256d-share-v1",
+        "schema": "remote-sha256d-share-v2",
+        "protocol": protocol,
         "header": header_hex,
         "target": target_hex,
+        "order": order,
+        "window_commitment": window_commitment,
         "base_nonce": int(base_nonce),
         "count": int(count),
         "hashes": int(hashes),
         "nonce": nonce,
         "hash": digest_hex,
         "device": device,
+        "device_id": device_id,
+        "execution_backend": execution_backend,
+        "measured_ns": measured_ns,
     }
     canonical = json.dumps(record, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    return "RSHA256D-" + hashlib.sha256(canonical).hexdigest()
+    if key:
+        return "RSHA256D-HMAC-" + hmac.new(key, canonical, hashlib.sha256).hexdigest()
+    return "RSHA256D-SHA256-" + hashlib.sha256(canonical).hexdigest()
+
+
+def _window_commitment(order: str, nonces: List[int]) -> str:
+    payload = json.dumps(
+        {"order": order, "nonces": [int(n) & 0xFFFFFFFF for n in nonces]},
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("ascii")
+    return hashlib.sha256(payload).hexdigest()
 
 
 def _token() -> str:
     return os.environ.get("MLA1517_REMOTE_GPU_TOKEN", "").strip()
+
+
+def _attestation_key() -> bytes:
+    value = os.environ.get("MLA1517_REMOTE_GPU_ATTESTATION_KEY", "").strip() or _token()
+    return value.encode("utf-8")
+
+
+def _is_loopback_endpoint(endpoint: str) -> bool:
+    host = (urlsplit(endpoint).hostname or "").casefold()
+    if host == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
 
 
 def remote_endpoints() -> List[str]:
@@ -257,6 +305,9 @@ class RemoteGPUClient:
         if not endpoint.startswith(("http://", "https://")):
             endpoint = "http://" + endpoint
         self.endpoint = endpoint.rstrip("/")
+        parsed = urlsplit(self.endpoint)
+        if parsed.scheme != "https" and not _is_loopback_endpoint(self.endpoint):
+            raise ValueError("non-loopback remote GPU endpoints require HTTPS")
         self.timeout = timeout
 
     def _request(
@@ -280,7 +331,16 @@ class RemoteGPUClient:
             req.add_header("Authorization", f"Bearer {token}")
         try:
             with urllib.request.urlopen(req, timeout=timeout or self.timeout) as resp:
-                return json.loads(resp.read().decode("utf-8"))
+                declared = int(resp.headers.get("Content-Length", "0") or 0)
+                if declared > SHA256D_MAX_RESPONSE_BYTES:
+                    raise RemoteGPUVerificationError("remote response exceeds size limit")
+                raw = resp.read(SHA256D_MAX_RESPONSE_BYTES + 1)
+                if len(raw) > SHA256D_MAX_RESPONSE_BYTES:
+                    raise RemoteGPUVerificationError("remote response exceeds size limit")
+                payload = json.loads(raw.decode("utf-8"))
+                if not isinstance(payload, dict):
+                    raise RemoteGPUVerificationError("remote response must be a JSON object")
+                return payload
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")[:400]
             raise RemoteGPUUnavailable(
@@ -307,6 +367,7 @@ class RemoteGPUClient:
             out.append(
                 RemoteDevice(
                     name=str(d.get("name", "")),
+                    device_id=str(d.get("id", "")),
                     vendor=str(d.get("vendor", "")),
                     device_type=str(d.get("type", "other")),
                     compute_units=d.get("compute_units"),
@@ -388,9 +449,10 @@ class RemoteGPUClient:
         count: int = SHA256D_MAX_WINDOW,
         lane_order: Optional[List[int]] = None,
         nonces: Optional[List[int]] = None,
+        device_id: Optional[str] = None,
         timeout: Optional[float] = SHA256D_DEFAULT_TIMEOUT_S,
     ) -> Sha256dResult:
-        """Dispatch a bounded SHA-256d scan and verify its attested verdict."""
+        """Dispatch a bounded SHA-256d scan and fail closed on malformed provenance."""
         if target is not None and target_be is not None:
             raise ValueError("specify target or target_be, not both")
         target = target if target is not None else target_be
@@ -398,110 +460,135 @@ class RemoteGPUClient:
             raise ValueError("header must be exactly 80 bytes")
         if target is None or len(target) != 32:
             raise ValueError("target must be exactly 32 bytes")
-        base_nonce = int(base_nonce)
-        body: Dict[str, Any] = {
-            "header": header.hex(),
-            "target": target.hex(),
-            "order": order,
-        }
+        if type(base_nonce) is not int:
+            raise ValueError("base_nonce must be an integer")
+        body: Dict[str, Any] = {"header": header.hex(), "target": target.hex(), "order": order}
+        if device_id:
+            body["device_id"] = str(device_id)
         if order == "batch":
-            if not nonces:
+            if not isinstance(nonces, list) or not nonces:
                 raise ValueError("batch order requires a non-empty nonces list")
             if len(nonces) > SHA256D_MAX_BATCH:
                 raise ValueError(f"batch exceeds {SHA256D_MAX_BATCH} nonces")
-            selected_nonces = [int(n) & 0xFFFFFFFF for n in nonces]
+            if any(type(n) is not int or not 0 <= n <= 0xFFFFFFFF for n in nonces):
+                raise ValueError("nonces must be uint32 integers")
+            selected_nonces = list(nonces)
             body["nonces"] = selected_nonces
             base_nonce, count = 0, len(selected_nonces)
         elif order in ("contiguous", "m32"):
-            count = int(count)
+            if type(count) is not int:
+                raise ValueError("count must be an integer")
             if not 0 <= base_nonce <= 0xFFFFFFFF:
                 raise ValueError("base_nonce must be a uint32")
             if not 1 <= count <= SHA256D_MAX_WINDOW:
                 raise ValueError(f"count must be in [1, {SHA256D_MAX_WINDOW}]")
-            body["base_nonce"] = base_nonce
-            body["count"] = count
+            body.update({"base_nonce": base_nonce, "count": count})
             if order == "m32":
-                lanes = [int(lane) for lane in (lane_order or [])]
+                if not isinstance(lane_order, list) or any(type(x) is not int for x in lane_order):
+                    raise ValueError("m32 lane_order must contain integers")
+                lanes = list(lane_order)
                 if len(lanes) != 32 or sorted(lanes) != list(range(32)):
                     raise ValueError("m32 order requires all 32 lanes exactly once")
                 if count % 32:
                     raise ValueError("m32 grind window must be a multiple of 32")
                 body["lane_order"] = lanes
+                selected_nonces = [
+                    (base_nonce + lanes[i % 32] + 32 * (i // 32)) & 0xFFFFFFFF
+                    for i in range(count)
+                ]
+            else:
+                selected_nonces = [(base_nonce + i) & 0xFFFFFFFF for i in range(count)]
         else:
             raise ValueError(f"unsupported sha256d order {order!r}")
 
-        reply = self._request("POST", "/v1/sha256d", body, timeout=timeout)
-        device = str((reply.get("device") or {}).get("name", "remote"))
-        backend = str(reply.get("execution_backend", "remote_opencl"))
-        measured_ns = reply.get("measured_ns")
-        hashes = reply.get("hashes")
-        share = reply.get("share")
-        nonce = None if share is None else share.get("nonce")
-        digest_hex = None if share is None else str(share.get("hash", ""))
-        window_size = len(selected_nonces) if order == "batch" else count
-        if not isinstance(hashes, int) or not 0 < hashes <= window_size:
-            raise RemoteGPUVerificationError(
-                f"{self.endpoint} reported incoherent hash count {hashes!r} "
-                f"for a window of {window_size}"
-            )
-        expected = sha256d_share_attestation(
-            header_hex=header.hex(),
-            target_hex=target.hex(),
-            base_nonce=base_nonce,
-            count=count,
-            hashes=hashes,
-            nonce=nonce,
-            digest_hex=None if share is None else digest_hex,
-            device=device,
-        )
-        if str(reply.get("attestation", "")) != expected:
-            raise RemoteGPUVerificationError(
-                f"{self.endpoint} attestation mismatch — the verdict is not "
-                "bound to this exact job"
-            )
-        if share is None:
-            if hashes != window_size:
-                raise RemoteGPUVerificationError(
-                    f"{self.endpoint} reported no share after only {hashes}/"
-                    f"{window_size} hashes"
-                )
-            return Sha256dResult(
-                base_nonce, count, hashes, None, None, device, backend, measured_ns, expected, False
-            )
-
-        if not isinstance(nonce, int) or not 0 <= nonce <= 0xFFFFFFFF:
-            raise RemoteGPUVerificationError(f"{self.endpoint} returned malformed nonce {nonce!r}")
-        if order == "batch":
-            in_window = nonce in selected_nonces
-        else:
-            in_window = ((nonce - base_nonce) & 0xFFFFFFFF) < window_size
-        if not in_window:
-            raise RemoteGPUVerificationError(
-                f"{self.endpoint} returned nonce {nonce} outside the window"
-            )
+        commitment = _window_commitment(order, selected_nonces)
         try:
-            reported = bytes.fromhex(digest_hex)
-        except ValueError as exc:
+            reply = self._request("POST", "/v1/sha256d", body, timeout=timeout)
+            required = {
+                "protocol", "device", "execution_backend", "measured_ns", "window",
+                "order", "window_commitment", "hashes", "share", "attestation",
+            }
+            if set(reply) != required:
+                raise RemoteGPUVerificationError(
+                    f"{self.endpoint} returned unexpected response fields: "
+                    f"missing={sorted(required - set(reply))}, "
+                    f"extra={sorted(set(reply) - required)}"
+                )
+            if reply["protocol"] != PROTOCOL_VERSION:
+                raise RemoteGPUVerificationError("remote SHA-256d protocol mismatch")
+            backend = reply["execution_backend"]
+            if backend not in _ALLOWED_SHA256D_BACKENDS:
+                raise RemoteGPUVerificationError(f"unapproved execution backend {backend!r}")
+            device_obj = reply["device"]
+            if not isinstance(device_obj, dict) or set(device_obj) != {"id", "name"}:
+                raise RemoteGPUVerificationError("malformed device identity")
+            device = device_obj["name"]
+            returned_device_id = device_obj["id"]
+            if not all(isinstance(x, str) and x for x in (device, returned_device_id)):
+                raise RemoteGPUVerificationError("empty device identity")
+            if device_id and returned_device_id != device_id:
+                raise RemoteGPUVerificationError("agent executed on a different device")
+            measured_ns = reply["measured_ns"]
+            if type(measured_ns) is not int or measured_ns < 0:
+                raise RemoteGPUVerificationError("malformed measured_ns")
+            if reply["order"] != order or reply["window_commitment"] != commitment:
+                raise RemoteGPUVerificationError("scan order/window commitment mismatch")
+            window = reply["window"]
+            if window != {"base_nonce": base_nonce, "count": count}:
+                raise RemoteGPUVerificationError("returned window does not match request")
+            hashes = reply["hashes"]
+            window_size = len(selected_nonces)
+            if type(hashes) is not int or not 0 < hashes <= window_size:
+                raise RemoteGPUVerificationError("incoherent hash count")
+            share = reply["share"]
+            if share is not None and (
+                not isinstance(share, dict) or set(share) != {"nonce", "hash"}
+            ):
+                raise RemoteGPUVerificationError("malformed share")
+            nonce = None if share is None else share["nonce"]
+            digest_hex = None if share is None else share["hash"]
+            expected = sha256d_share_attestation(
+                header_hex=header.hex(), target_hex=target.hex(), base_nonce=base_nonce,
+                count=count, hashes=hashes, nonce=nonce, digest_hex=digest_hex,
+                device=device, device_id=returned_device_id, protocol=PROTOCOL_VERSION,
+                execution_backend=backend, measured_ns=measured_ns, order=order,
+                window_commitment=commitment, key=_attestation_key() or None,
+            )
+            if not hmac.compare_digest(str(reply["attestation"]), expected):
+                raise RemoteGPUVerificationError("attestation mismatch")
+            provenance = bool(_attestation_key()) and self.endpoint.startswith("https://")
+            if share is None:
+                if hashes != window_size:
+                    raise RemoteGPUVerificationError(
+                        "no-share verdict did not scan the full window"
+                    )
+                return Sha256dResult(base_nonce, count, hashes, None, None, device, backend,
+                                     measured_ns, expected, False, provenance)
+            if type(nonce) is not int or nonce not in selected_nonces:
+                raise RemoteGPUVerificationError("returned nonce is outside the requested sequence")
+            if type(digest_hex) is not str:
+                raise RemoteGPUVerificationError("share digest must be hex text")
+            try:
+                reported = bytes.fromhex(digest_hex)
+            except ValueError as exc:
+                raise RemoteGPUVerificationError("non-hex share digest") from exc
+            if len(reported) != 32:
+                raise RemoteGPUVerificationError("share digest must be 32 bytes")
+            exact = hashlib.sha256(
+                hashlib.sha256(header[:76] + struct.pack("<I", nonce)).digest()
+            ).digest()
+            if exact != reported:
+                raise RemoteGPUVerificationError("share fails exact hashlib recheck")
+            if int.from_bytes(exact, "little") > int.from_bytes(target, "big"):
+                raise RemoteGPUVerificationError("share does not meet the target")
+            return Sha256dResult(base_nonce, count, hashes, nonce, reported, device, backend,
+                                 measured_ns, expected, True, provenance)
+        except RemoteGPUError:
+            raise
+        except (AttributeError, KeyError, TypeError, ValueError) as exc:
             raise RemoteGPUVerificationError(
-                f"{self.endpoint} returned a non-hex share digest"
+                f"{self.endpoint} returned a malformed SHA-256d response: {exc}"
             ) from exc
-        if len(reported) != 32:
-            raise RemoteGPUVerificationError(
-                f"{self.endpoint} returned a {len(reported)}-byte share digest"
-            )
-        blob = header[:76] + struct.pack("<I", nonce)
-        exact = hashlib.sha256(hashlib.sha256(blob).digest()).digest()
-        if exact != reported:
-            raise RemoteGPUVerificationError(
-                f"{self.endpoint} share at nonce {nonce} fails the exact hashlib recheck"
-            )
-        if int.from_bytes(exact, "little") > int.from_bytes(target, "big"):
-            raise RemoteGPUVerificationError(
-                f"{self.endpoint} share at nonce {nonce} does not meet the job target"
-            )
-        return Sha256dResult(
-            base_nonce, count, hashes, nonce, reported, device, backend, measured_ns, expected, True
-        )
 
 
 def probe_first_reachable(

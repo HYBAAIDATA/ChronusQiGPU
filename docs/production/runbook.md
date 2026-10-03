@@ -46,8 +46,11 @@ Boot writes `BOOT_AUDIT.log` + `pythia-main.lock` to the boot-work dir
 (`C:\tmp\pythia\` on this Windows box — verified path; `data/` holds only
 runtime_config). Second instance needs `PYTHIA_BOOT_LOCK`/`PYTHIA_BOOT_AUDIT`
 overrides.
-Stop: SIGTERM/SIGINT — runner-stop semantics under Owner B verification (RUN-01).
-Restart: runtime_config + heartbeat sidecars reload — persistence verification pending (B).
+Stop: SIGTERM/SIGINT — a stop request reports `stopping` until the worker thread
+actually exits (verified @10c6a63); `finished_at` is the exit timestamp, and a
+terminal `stopped` runner is restart-eligible.
+Restart: runtime_config + heartbeat sidecars reload — verified (B, PR #22): durable
+config + corrupt→defaults, MiningSession share-log restore.
 
 ## Diagnose
 

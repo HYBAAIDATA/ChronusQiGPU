@@ -8,15 +8,9 @@ import json
 import logging
 import os
 import signal
-import sys
-from pathlib import Path
 
 from chronus.mla1517.hardware import MMIOBridge
-from chronus.mla1517.mining.coordinator import CpuReferenceHasher
-from chronus.mla1517.mining.backend_registry import (
-    BackendKind,
-    BackendRegistry,
-)
+from chronus.mla1517.mining.backend_registry import BackendRegistry
 from chronus.mla1517.mining.geodesic_support import GeodesicProductionMiningCoordinator
 from chronus.mla1517.mining.retarget_telemetry import RetargetWindowTracker
 from manifold_pool_coordinator import _build_parser, parse_endpoint
@@ -25,6 +19,10 @@ from chronus.mla1517.mining.chain_observer import BitcoinChainObserver
 from chronus.mla1517.mining.pool_chain import PoolChainObserver
 from chronus.mla1517.mining.session import MiningSession
 from chronus.mla1517.mining.stratum_events import StratumEventLog
+from chronus.mla1517.mining.telemetry_history import (
+    TelemetryHistory,
+    default_history_path,
+)
 from manifold_pool_coordinator import PoolEndpoint
 
 LOG = logging.getLogger("pythia.mining_runtime")
@@ -106,101 +104,34 @@ def pool_endpoints(args, config: dict | None = None) -> list[PoolEndpoint]:
     return endpoints
 
 
-def _execution_hasher(backend: str):
-    """Bind only a capability-proven backend under an explicit policy.
+def _registry() -> BackendRegistry:
+    """The lane registry for this process; probes are cached by the registry."""
+    return BackendRegistry()
 
-    Explicit requests are fail-closed: ``gpu``, ``remote``, ``asic`` and
-    ``super_asic`` never degrade to CPU. ``auto`` may select a weaker lane
-    only because ``PYTHIA_BACKEND_ORDER`` declares that ordered policy. Every
-    probe and selection is attached to the returned hasher and appended to
-    the configured evidence ledger.
+
+def _execution_hasher(backend: str, registry: BackendRegistry | None = None):
+    """The hasher behind the Execution Router, bound through the registry.
+
+    A lane is usable only after its real capability probe: ``auto`` probes
+    GPU then remote, then falls back to the CPU reference with the fallback
+    reason recorded; explicit lanes (``cpu``, ``gpu``/``opencl``, ``remote``,
+    ``asic``, ``super_asic``) select only that lane or fail closed.
     """
-    requested = backend.strip().lower()
-    aliases = {"gpu": "opencl", "opencl": "opencl", "remote": "remote", "cpu": "cpu", "asic": "asic", "super_asic": "super_asic"}
-    if requested != "auto" and requested not in aliases:
-        raise SystemExit(f"unknown execution backend {backend!r}")
-
-    registry = BackendRegistry(
-        software_revision=os.getenv("PYTHIA_SOFTWARE_REVISION", "unknown"),
-        evidence_path=os.getenv("PYTHIA_BACKEND_EVIDENCE_PATH", "data/backend_decisions.jsonl"),
-    )
-    registry.register(
-        "cpu", BackendKind.CPU, "CpuReferenceHasher",
-        factory=CpuReferenceHasher,
-    )
-
-    repo_root = str(Path(__file__).resolve().parents[3])
-    if repo_root not in sys.path:
-        sys.path.insert(0, repo_root)
-
-    def opencl_factory():
-        from mining.bitcoin_hasher import BitcoinHasher
-        return BitcoinHasher(backend="opencl")
-
-    def accelerator_health(instance):
-        actual = str(getattr(instance, "backend", "Unavailable"))
-        healthy = actual not in {"cpu", "Unavailable", "none", ""}
-        reason = "accelerator self-check passed" if healthy else (
-            getattr(instance, "fallback_reason", None) or "accelerator did not bind"
-        )
-        return healthy, str(reason), {
-            "reported_backend": actual,
-            "reported_device": getattr(instance, "device", "Unavailable"),
-        }
-
-    registry.register(
-        "opencl", BackendKind.GPU, "BitcoinHasher/OpenCL",
-        factory=opencl_factory,
-        health=accelerator_health,
-    )
-
-    def remote_factory():
-        from mining.remote_hasher import hasher_for_env
-        return hasher_for_env()
-
-    registry.register(
-        "remote", BackendKind.GPU, "RemoteHasher",
-        factory=remote_factory,
-        health=accelerator_health,
-    )
-    registry.register(
-        "asic", BackendKind.ASIC, "Unavailable",
-        factory=None,
-        unavailable_reason="no production ASIC transport is implemented",
-    )
-    registry.register(
-        "super_asic", BackendKind.SUPER_ASIC, "Unavailable",
-        factory=None,
-        unavailable_reason="no production SUPER ASIC transport is implemented",
-    )
-
-    order = tuple(
-        value.strip().lower()
-        for value in os.getenv("PYTHIA_BACKEND_ORDER", "opencl,remote,cpu").split(",")
-        if value.strip()
-    )
-    selected = registry.select(
-        aliases.get(requested, requested),
-        policy_order=order,
-    )
-    LOG.info(
-        "execution backend selected: %s",
-        json.dumps(selected.backend_selection, sort_keys=True, separators=(",", ":"), default=str),
-    )
-    return selected
+    return (registry or _registry()).select(backend).hasher
 
 
-EXECUTION_DEVICES = ("opencl", "cpu", "remote", "asic", "super_asic")
+EXECUTION_DEVICES = ("auto", "opencl", "gpu", "cpu", "remote", "asic", "super_asic")
 
 
 def execution_device() -> str | None:
     """Bridge-free mining device from ``PYTHIA_EXECUTION_DEVICE``, if declared.
 
-    ``opencl`` mines on the OpenCL device the hasher binds and self-checks
-    against hashlib, and refuses to start without one; ``cpu`` mines on the
-    labelled CPU reference; ``remote`` mines on a remote GPU agent bound via
-    ``MLA1517_REMOTE_GPU_ENDPOINT``. Unset keeps the MMIO bridge as the only
-    device.
+    ``opencl``/``gpu`` mines on the OpenCL device the hasher binds and
+    self-checks against hashlib, and refuses to start without one; ``cpu``
+    mines on the labelled CPU reference; ``remote`` mines on a remote GPU
+    agent bound via ``MLA1517_REMOTE_GPU_ENDPOINT``; ``asic``/``super_asic``
+    fail closed until a real driver exists; ``auto`` probes the declared
+    lanes in policy order. Unset keeps the MMIO bridge as the only device.
     """
     value = os.getenv("PYTHIA_EXECUTION_DEVICE", "").strip().lower()
     if not value:
@@ -231,6 +162,13 @@ async def _main_async(args) -> None:
             "--device or MLA1517_MMIO_DEVICE is required "
             "(or PYTHIA_EXECUTION_DEVICE=opencl|cpu|remote|asic|super_asic for bridge-free mining)"
         )
+    # The supervisor exports PYTHIA_IDENTITY_HMAC_SECRET to every spawned
+    # worker (startup_contract.rotate_supervisor_secret). A standalone
+    # ``--mine`` process has no supervisor to provision one; generate it
+    # here so the heartbeat channel keeps its HMAC integrity instead of
+    # dying on the first tick. setdefault: a supervisor-provided secret
+    # always wins, so supervised behaviour is unchanged.
+    os.environ.setdefault("PYTHIA_IDENTITY_HMAC_SECRET", os.urandom(32).hex())
     backend = device if not args.device else os.getenv("PYTHIA_EXECUTION_BACKEND", "auto")
     endpoints = pool_endpoints(args)
     observer = BitcoinChainObserver.from_environment()
@@ -241,7 +179,11 @@ async def _main_async(args) -> None:
     )
     try:
         with HeartbeatEmitter("agentic-mining") as heartbeat:
-            stratum_events = StratumEventLog()
+            # §7 durable work history: every observed Stratum event plus
+            # bounded hashrate samples, appended as observed — the control
+            # API tails the same file for /api/v1/telemetry/history.
+            history = TelemetryHistory(default_history_path())
+            stratum_events = StratumEventLog(on_event=history.append)
             retarget = RetargetWindowTracker(
                 os.getenv("PYTHIA_RETARGET_TELEMETRY_PATH", "data/retarget_windows.json")
             )
@@ -274,6 +216,7 @@ async def _main_async(args) -> None:
                 )
 
             os.environ.setdefault("PYTHIA_INTELLIGENCE_DIR", "data/intelligence")
+            registry = _registry()
             coordinator = GeodesicProductionMiningCoordinator(
                 endpoints,
                 username=args.user or endpoints[0].username,
@@ -282,14 +225,23 @@ async def _main_async(args) -> None:
                 mining_session=session,
                 chain_observer=observer,
                 stratum_status_sink=publish_stratum_status,
-                execution_hasher=_execution_hasher(backend),
+                execution_hasher=registry.select(backend).hasher,
+                # Salamander restarts re-select through the registry, so a
+                # dead lane can be re-probed and rerouted under policy.
+                execution_hasher_factory=(lambda: registry.select(backend, reprobe=True).hasher),
+                backend_registry=registry,
                 causal_log_path=os.getenv("PYTHIA_CAUSAL_LOG_PATH", "data/causal_ledger.jsonl"),
             )
             if coordinator.chain_observer is None:
                 coordinator.chain_observer = PoolChainObserver(lambda: coordinator.client)
                 LOG.info("chain evidence: pool Stratum jobs (no bitcoind configured)")
             coordinator.set_evidence_sink(publish_mining_evidence)
-            coordinator.set_metrics_sink(lambda counters: heartbeat.report(**counters))
+            coordinator.set_metrics_sink(
+                lambda counters: (
+                    heartbeat.report(**counters),
+                    history.record_metrics(counters),
+                )
+            )
             coordinator.set_agentic_state_path(
                 os.getenv("PYTHIA_AGENTIC_STATE_PATH", "data/agentic_policy.json")
             )

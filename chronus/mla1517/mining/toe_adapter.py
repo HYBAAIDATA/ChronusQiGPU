@@ -69,11 +69,15 @@ class TOEMiningAdapter:
             raise TOEUnavailable("TOE requires a live Stratum job id")
         params = getattr(job, "params", ())
         observed = {
-            "job_id_bytes": list(job_id.encode("utf-8")),
-            "stratum_numeric_fields": self._numeric(params),
-            "mla1517_state_bytes": list(state),
-            "node_id": int(node_id),
-            "sequence": int(sequence),
+            # Put the measured tensor payload first. Mapping field names are
+            # text in Kellogg's finite-dimensional encoder; allowing schema
+            # labels to occupy the leading amplitudes made identical key
+            # strings dominate every live observation.
+            "0": list(state),
+            "1": list(job_id.encode("utf-8")),
+            "2": self._numeric(params),
+            "3": int(node_id),
+            "4": int(sequence),
         }
         result = self.bridge.predict(observed)
         if not isinstance(result, Mapping) or not result.get("available", False):

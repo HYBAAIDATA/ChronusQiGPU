@@ -24,7 +24,7 @@ def test_probe_summary_selects_container_hint():
 
 
 def test_gpu_report_sections_serialize():
-    """Aggregated report is JSON-safe and has all four sections."""
+    """Aggregated report is JSON-safe and has all five sections."""
     doc = gpureport.report()
-    assert set(doc) == {"opencl", "vendors", "hasher", "punch"}
+    assert set(doc) == {"opencl", "vendors", "hasher", "punch", "tensor"}
     json.dumps(doc, default=str)

@@ -1,0 +1,14 @@
+{
+  "AUTO:ASTDelta_NON_LOCAL_function_split_refactor_acc8bdd1": {
+    "primitive_id": "AUTO:ASTDelta_NON_LOCAL_function_split_refactor_acc8bdd1",
+    "version": "1.0",
+    "pattern_hash": "acc8bdd10a96d7f9",
+    "op_func_code_str": "def transform(code_str: str, seed: int = 42):\n    import ast\n    tree = ast.parse(code_str)\n    return ast.unparse(tree)\n",
+    "origin_target": "search.py",
+    "cumulative_delta_phi": 0.004,
+    "targets_reused_on": [
+      "search.py"
+    ],
+    "content_hash": "de70c89421e95bd684abc96eeecb4f2fbf1d885a8c4816823e20fc1e60f0e117"
+  }
+}

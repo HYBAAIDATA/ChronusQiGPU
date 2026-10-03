@@ -1,133 +1,210 @@
 ---
 name: testing-pythia-operator-app
-description: How to boot and end-to-end test the PYTHIA operator app (control API + React operator UI) on the devinbox Windows environment — updated for the post-fold chronus layout (chronus/mla1517_platform, chronus.mla1517 namespace).
+description: How to boot and end-to-end test the PYTHIA operator app (control API + React operator UI) on the devinbox Windows environment — updated for the post-fold chronus layout (chronus/mla1517_platform, chronus.mla1517 namespace), worktree checkouts, pool credentials, guardian subscription tokens, and the euclid_support mining-evidence surface.
 ---
 
-# Testing the PYTHIA operator app (post-chronus-fold)
+# Testing the PYTHIA operator app (post-chronus-fold) — 2026-10-02 update
 
-Supersedes the path references in the older pre-fold platform notes. Everything
-below verified live on `devin/1790841083-chronus-consolidation` (PR #43, 2026-10-01).
+Everything in the base skill still holds. This update adds: worktree booting,
+which repo-scoped pool secrets actually pass the fail-closed identity gate,
+running the agentic-mining worker for real evidence, minting guardian
+subscription tokens for privileged routes, and where `euclid_support`
+evidence surfaces (API payload — NOT the UI panel).
 
 ## Environment on this box
-- Repo: `C:\Users\Administrator\repos\PYTHIPhiMiner`. Python: **`C:\Python312\python.exe`**
-  — there is NO `.venv`; the editable install `pythia-mla1517` in site-packages is
-  regenerated per-layout and maps `chronus` + every `chronus\mla1517_platform\python`
-  top-level module (`control_api`, `startup_contract`, `system_fabric`, `worker_lifecycle`,
-  `discovery_runtime`, …) + repo packages (`Intelligence`, `al_haras`, `lucas`, `toe`).
-  `import chronus` / `chronus.mla1517.fib(10)==55` works from ANY cwd.
-- Node: 20.19.0 and 24.0.1 under `C:\hostedtoolcache\node\`; engines want >=22 → prefer 24.
-  **npm on PATH fails in Git Bash** — invoke npm-cli directly:
-  `node /c/hostedtoolcache/node/24.0.1/x64/node_modules/npm/bin/npm-cli.js`.
-  `frontend/node_modules` is NOT committed — `npm-cli.js --prefix frontend ci` first
-  (~55 s, 354 pkgs), then `node frontend/node_modules/vite/bin/vite.js build`
-  (cwd=frontend) → `dist/public`. Grep the bundle for `chronus.mla1517.status/1`
-  to prove the build isn't stale.
-- Chrome: `C:\devin\chrome\chrome-win64\chrome.exe` (renders JSON in-page even on
-  400/503 — navigate straight at JSON endpoints for recorded evidence).
-- Secrets: `VIABTC_USERNAME`/`VIABTC_PASSWORD` (+BRAIINS) repo-scoped; bind via exec env.
-  Real creds are safe — nothing dials the pool — and prove identity HMAC + redaction
-  (`status.host.stratum.user_redacted` shows `PY***` for real, `te***` for placeholder).
+- Repo: `C:\Users\Administrator\repos\PYTHIPhiMiner`. Worktrees may exist
+  (e.g. `C:\Users\Administrator\wt-training`) — test the checkout the PR
+  branch lives in, not the main checkout.
+- Python `C:\Python312\python.exe`. **The editable `pythia-mla1517` install is
+  STALE**: its `__editable__` finder maps `control_api`, `startup_contract`,
+  `worker_lifecycle`, … to the nonexistent pre-fold `mla1517` platform
+  layout and has **no `chronus` entry at all**. Plain `import chronus` raises
+  ModuleNotFoundError. Fix per-checkout by booting with:
 
-## Booting the control API
-Entrypoint moved: `chronus/mla1517_platform/python/main.py` (repo-root `main.py` shim
-inserts the platform dir on sys.path then calls `control_api.main` — both boot;
-`package.json start` uses the shim).
+  `PYTHONPATH=<checkout>;<checkout>\chronus\mla1517_platform\python`
 
+  (Windows `;` separator; verify with `python -c "import chronus, control_api;
+  print(chronus.__file__)"` — every module must resolve inside the intended
+  checkout. Worker subprocesses inherit PYTHONPATH via env.copy+setdefault,
+  and `al_haras_pythia.py` also appends `<platform>/../../..` itself.)
+- Node: prefer 24 (`node /c/hostedtoolcache/node/24.0.1/x64/node_modules/npm/bin/npm-cli.js`).
+  `frontend/node_modules` is NOT committed: `npm-cli.js --prefix frontend ci`
+  (~55 s) then `node frontend/node_modules/vite/bin/vite.js build` (cwd=frontend)
+  → `dist/public`. Grep bundle for `chronus.mla1517.status/1` (freshness).
+- Chrome: `C:\devin\chrome\chrome-win64\chrome.exe` (`--start-maximized`).
+  Renders JSON in-page — navigate straight at JSON endpoints for evidence.
+
+## Secrets: which pool creds actually work (verified 2026-10-02)
+- `secret:repo:PHIDATA2/PYTHIA:VIABTC_USERNAME` is the literal placeholder
+  `pythia.001` → **rejected** by `startup_contract` fail-closed
+  (`MLA1517_STRATUM_USER must be a real pool worker identity, not a placeholder`).
+  Do not use the viabtc profile for a real boot.
+- `secret:repo:PHIDATA2/PYTHIA:BRAIINS_USERNAME`/`BRAIINS_PASSWORD` pass
+  validation AND the pool genuinely connects: default catalog endpoint
+  `stratum.braiins.com:3333`, `Pool: braiins connected`, `Authorized: true`,
+  jobs ~1/20 s, CPU hasher ~450–650 kH/s. UI redacts worker to `Py***`.
+- Submit gate stays disarmed by default (worker spawned without `--submit`;
+  `/api/v1/config` shows `live_submit.enabled:false`). Grind-only, safe.
+
+## Booting the control API (worktree-verified)
 ```
-env MLA1517_STRATUM_USER=$VIABTC_USERNAME MLA1517_STRATUM_PASSWORD=$VIABTC_PASSWORD \
-  PYTHIA_POOL_PROFILE=viabtc MLA1517_VIABTC_ENDPOINT=btc.viabtc.io:3333 \
+cd <checkout>
+env PYTHONPATH='<checkout>;<checkout>\chronus\mla1517_platform\python' \
+  MLA1517_STRATUM_USER=$BRAIINS_USERNAME MLA1517_STRATUM_PASSWORD=$BRAIINS_PASSWORD \
   EUCLID_ADMIN_API_KEY=test-operator-key \
+  PYTHIA_EXECUTION_DEVICE=cpu \
+  AL_HARAS_SUBSCRIPTION_KEYS='{"k1":"<any >=32-byte secret>"}' \
   /c/Python312/python.exe -u chronus/mla1517_platform/python/main.py \
   --host 127.0.0.1 --port 3000 --web-root dist/public
 ```
-- Boot env order (startup_contract.resolve_stratum_identity): pool catalog
-  (`PYTHIA_POOLS`/`PYTHIA_POOL_PROFILE`, default braiins; catalog braiins/viabtc/nicehash/
-  ckpool) → `MLA1517_STRATUM_USER is required` → alias policy → endpoint
-  (`MLA1517_STRATUM_ENDPOINT` or `MLA1517_{PROFILE}_ENDPOINT`).
-- Bare-env fail-closed proof: `env -i PATH=… … python -u chronus/mla1517_platform/python/main.py`
-  → traceback ends `startup_contract.StartupConfigError: MLA1517_STRATUM_USER is required`.
-- `_PROJECT_ROOT` is now 3 levels up from `python/` (was 2) — `.env` still loads from
-  repo root; `runtime_config` resolves `<repo>/data/runtime_config.json` (visible in
-  GET /api/v1/config `path` field — quick path-arithmetic check).
-- Lock/audit defaults `/tmp/pythia/*` → effectively `C:\app\data\*`; second instance needs
-  `PYTHIA_BOOT_LOCK`/`PYTHIA_BOOT_AUDIT` overrides. `taskkill //PID //F` frees the lock;
-  **killing the control API orphans the discovery worker** — taskkill the leftover
-  `python.exe` too (its pid is in the audit `worker_spawned` event).
+- `PYTHIA_EXECUTION_DEVICE=cpu` un-gates `agentic-mining` → supervisor spawns
+  `mining_runtime.py` → `GeodesicProductionMiningCoordinator` →
+  `EuclidMiningSupport(baseline_breadth)` ctor path + `evidence_snapshot()`
+  publish loop. Needs `pip install -e turing_universal_quantum_computer
+  --no-deps` **and** `pip install numpy sympy` (both blueprint maintenance
+  steps — if the worker crash-loops `No module named 'turing_...'` or
+  `No module named 'sympy'`, that's the missing piece).
+- Provenance check: `GET /api/v1/config` → `path` field shows
+  `<checkout>\data\runtime_config.json` — proves which checkout is serving.
+- Evidence only publishes after stratum CONNECTS (the publish sites are in
+  the job loop); while disconnected the metrics file has counters but no
+  `mining_evidence` key.
 
-## Post-fold response shapes (verified)
-- Schema strings renamed: status `chronus.mla1517.status/1`, ready probes
-  `chronus.mla1517.ready/1`, stratum `chronus.mla1517.stratum/1`;
-  `canonicalEngine.path` = `main.py → control_api.py → chronus/mla1517_platform/python`;
-  identity HMAC body prefix `chronus.mla1517.stratum.identity.v1`.
-- Workers: `agentic-mining`,`salamander` device-gated → `armed_no_device`; **`discovery`
-  is ungated and RUNS** (simulated twin) → heartbeats flip it ready/running →
-  `GET /ready-to-mine` answers 503 `{"ready":false,"reason":"stratum_disconnected"}`
-  (was `worker_not_running`/`worker_unavailable` pre-heartbeat — both honest).
-  `/metrics` `pythia_ready_to_mine{reason="<current>"}` = 1, `pythia_ready_to_mine_value 0`.
-- `/readyz` → 200 `{"ready":true,"reason":"ok"}`.
-- `/api/v1/telemetry/events` → 200 `{"available":false,"reason":"the mining worker has not
-  reported Stratum telemetry"}`; `/api/v1/hardware/status` → `mining_device.bound:false`,
-  `opencl.device_count:0, physical_gpu_count:0` (chronus.report; CPU `detected_backend:"cpu"`
-  is honest, `error:null`); `/api/v1/stratum/status` → `state:"CONFIGURED"`,
-  `primary.transport:"DISCONNECTED"`, worker redacted.
-- Guardian: privileged GETs (`/api/v1/security/status`, `/api/v1/mining/evidence`, …)
-  AND privileged POSTs (`POST /api/v1/mining/start` — preflight runs BEFORE the handler)
-  → **400 `TENANT_AND_ACTOR_REQUIRED`** signed receipt (`allowed:false`, `evidence_id`,
-  `payload_hash`, `tenant_id:"UNKNOWN"`, `policy_version:"al-haras.policy.v1"`).
-  NON-privileged POSTs (e.g. `POST /api/v1/agentic/start`) → 401 `"operator key required"`
-  when `EUCLID_ADMIN_API_KEY` is set, 403 `"... is not configured"` when unset.
-- `GET /api/v1/status` → 404 `{"error":"not_found"}` (old notes said
-  "endpoint not implemented" — string drifted).
-- `GET /api/v1/knowledge` → 200 exercises the lazy `chronus.mla1517.knowledge` import
-  (and `announce_skills()` → `Intelligence.skill_graft` — populated fabric facts at boot).
-- Old namespaces must FAIL LOUDLY: importing `igpu` or `mla1517` must raise
-  ModuleNotFoundError (no compat aliases by design — assert this).
-- `python -X utf8 -m unittest discover -s chronus/mla1517_platform/python` from REPO ROOT
-  → 348 tests, ~23 s, 1 fail + 1 error at main parity (envelope `allowed` vs `available`
-  assertion; `stale_ratio` 0.0 vs None — both behavioral, pre-existing).
+## Guardian subscription tokens for privileged GETs (verified working)
+Privileged prefixes (`/api/v1/mining|policy|worker|recovery|admin|toe|
+quantum|scale|assembly|security/`) are mediated: need `X-HYBA-Tenant` +
+`X-HYBA-Actor` headers + `Authorization: Bearer <subscription token>`;
+absent → signed 400 `TENANT_AND_ACTOR_REQUIRED` denial receipt.
+- Boot with `AL_HARAS_SUBSCRIPTION_KEYS` (JSON map key-id→≥32-byte secret);
+  issuer `hyba-subscriptions`, capability `hyba.security`.
+- Mint a token with worktree code:
 
-## UI (5 s poll of /api/v1/mla1517/status; hash views Operations/Algebra/Intelligence/Manifold/Audit)
-- Header `PYTHIA OPS` + `MLA1517 CANONICAL` badge; amber chip shows `ready.reason`
-  verbatim (`stratum_disconnected`); `SUPER-GPU · CPU HOST` device chip.
-- Hero `Standing by.` + `Readiness gate reports stratum_disconnected`; footer literally
-  renders `chronus.mla1517.status/1`; engine card PATH shows the chronus platform path;
-  exact-ladder chips L10 L12 L15 L18 L20 L31 L50 L76; solver manifold `1 independent
-  solver`/32.
-- **Privileged polls fire the native 3-prompt subscription sequence**
-  (`Subscription token` → `Tenant id` → `Actor id`) — a 400 guardian denial can trigger
-  it; Cancel/Esc declines for the session (sessionStorage flag). Expect one prompt on
-  first load from the evidence poll.
-- Kill API → within one poll red `API OFFLINE` chip + hero `Control plane unreachable.`
-  (still-open tab auto-reconnects on reboot — visible as resumed 5 s GETs in the log).
+  ```
+  from al_haras.entitlements import SubscriptionAuthority, SubscriptionClaims
+  SubscriptionAuthority({"k1": secret}, "hyba-subscriptions").issue(
+      SubscriptionClaims(subscription_id="sub-e2e-test",
+        tenant_id="e2e-tenant", issuer="hyba-subscriptions", key_id="k1",
+        capabilities=("hyba.security",), actors=("e2e-actor",),
+        not_before=0, expires_at=now+7200))
+  ```
+- UI fires the native 3-prompt sequence (token → tenant → actor) on the
+  first denied privileged poll; entered triples are stored in sessionStorage
+  and retried — a correctly minted triple returns 200.
+- Gotcha: sessionStorage creds do NOT reliably survive navigation to a
+  different page on the same origin in Chrome-for-Testing — pass them via
+  query params on test-harness pages instead.
+- CSP gotcha: every served page has `script-src 'self'` (NO unsafe-inline) —
+  any custom test HTML must load JS from an external `.js` file or it
+  silently never runs. `connect-src 'self'` allows same-origin fetch.
 
-## Blueprint (post-fold, already retargeted)
-`.devin` blueprint was retargeted post-fold to `chronus/mla1517_platform` for
-unittest discover and the startup boot path, and to `chronus.mla1517` module
-names (`chronus.mla1517.remote_gpu_agent`, `chronus.mla1517.prime`).
+## euclid_support evidence surface (what the mining_evidence payload carries)
+`EuclidProductionMiningCoordinator.evidence_snapshot()` embeds
+`euclid_support.snapshot()` → heartbeat `mining_evidence`
+(`%LOCALAPPDATA%\pythia\hb\agentic-mining.metrics.json`) →
+`GET /api/v1/mining/evidence`. Block contains (post-PR-93):
+`schema:"pythia.euclid_mining_support/1"`, `available`, `unavailable_reason`,
+`baseline/current_dispatch_breadth`, `last_advice` (incl.
+`evidence.policy_identity` + `claim_boundary`),
+`policy_identity:{checkpoint_path,checkpoint_sha256,manifest_path,
+manifest_verified,source_revision,policy_version}`,
+`authority:"operational-only"`,
+`single_actuator:"dispatch_breadth via this support only"`.
+**The React MiningEvidencePanel does NOT render `euclid_support`** (lib/
+evidence.ts row lists exclude it) — the fields exist only in the API JSON.
+Verify via the endpoint response (curl with the 3 headers, or a
+CSP-compliant viewer page); do not expect it in the panel UI.
 
-## Exercising the real mining loop on a GPU-less box (verified live)
-- `PYTHIA_EXECUTION_DEVICE=cpu` — un-gates `agentic-mining` → supervisor spawns
-  `mining_runtime.py` → `EuclidProductionMiningCoordinator.run_execution_loop`.
-  **Prerequisite on this box:** `pip install -e turing_universal_quantum_computer --no-deps`
-  (nested editable package, blueprint maintenance step — it may not have run).
-  Without it the worker crash-loops at `resolve_nonce_order("hendrix")` →
-  `No module named 'turing_universal_quantum_computer.pisot'`; retries burn the
-  5/600s respawn budget → `failed` → `supervisor_degraded`.
-- Windows heartbeat dir: `control_api._heartbeat_dir` now uses
-  `worker_lifecycle._default_heartbeat_dir()` (fixed on the chronus-surface PR) —
-  the earlier Windows-only bug (default `/run/pythia/hb` → `C:\run\pythia\hb`)
-  made every metrics-derived surface silently unavailable while liveness read
-  green. If a pre-fix build is ever under test, set
-  `PYTHIA_WORKER_HEARTBEAT_DIR=%LOCALAPPDATA%\pythia\hb` as the workaround.
-- With real ViaBTC creds + submit gate disarmed: connected/authorized/subscribed,
-  jobs stream ~1/20s, CPU hasher ~450-650 kH/s, `ready-to-mine` →
-  `ready:true reason:"ok"` — grind-only, safe.
+## Response shapes (unchanged this round, re-verified)
+- `/readyz` 200 `{"ready":true,"reason":"ok","schema_version":"chronus.mla1517.ready/1"}`
+- `/api/v1/mla1517/status` `chronus.mla1517.status/1`; `workers` is a DICT
+  keyed by id (agentic-mining/discovery/salamander), each with
+  `state/liveness/readiness/attempts_*`.
+- `/ready-to-mine` → `ready:true reason:"ok"` once pool-connected + worker live.
+- `/api/v1/stratum/status` `state READY`, `transport CONNECTED`,
+  `authorized/subscribed:true`, `worker:"Py***"`, `worker_live:true`.
+- `/api/v1/telemetry/events` `available:true` with real stratum event stream
+  when connected (schema `pythia.telemetry_events/1`).
+- `/api/v1/hardware/status` `execution.backend:"cpu"`,
+  `mining_device.bound:true`, `opencl.device_count:0`,
+  `physical_gpu_count:0`, salamander `armed_no_device` — honest, no
+  fabricated GPU.
+- Audit view `#/audit` runs 15/15 local checks live.
 
-## Chronus contract device — where it surfaces (post-chronus-surface PR)
-`chronus.detect.detect_all()` enumerates the MLA1517 iGPU contract device FIRST
-(vendor `hyba`, integrated, `mla1517_simt`; `default` = `hyba: MLA1517 iGPU`).
-Served surfaces: `/api/v1/gpu.contract_device` carries the record ALONGSIDE the
-physical counts (`opencl_device_count`/`physical_gpu_available` deliberately
-exclude it — declared identity, not probed silicon); the header chip shows
-`Chronus · MLA1517 iGPU` (amber) when no OpenCL hardware is present.
-`status.device.devices` + `hardware/status.opencl` remain OpenCL-only by design.
+## Blueprint
+`.devin` blueprint already covers: turing editable install (no-deps),
+`sympy numpy fastapi` runtime deps, `npm-cli.js --prefix frontend install`,
+chronus unittest discover, startup boot path, and the stale-finder
+PYTHONPATH caveat (under remote-gpu knowledge). No new blueprint steps were
+needed for this session's setup.
+
+## Worker-spawn PYTHONPATH trap (verified, Oct 2026)
+
+The control API's `ControlPlane` SPAWNS its own workers (`agentic-mining`/
+`discovery`/`autonomous-supervisor`) via `subprocess.Popen` when
+`PYTHIA_AUTOSTART_WORKERS` (default true) and the device gate passes. Spawned
+children get `env=os.environ.copy()` + `env.setdefault("PYTHONPATH",
+str(python_root))` — `python_root` is `chronus/mla1517_platform/python/`, which
+does NOT contain the `chronus` package. So if the API's own env lacks
+`PYTHONPATH=<repo root>`, every spawned worker crashes instantly with
+`ModuleNotFoundError: No module named 'chronus'`; the control plane burns
+`_MAX_RESTARTS_WINDOW=5` restarts in ~60 s and then raises
+`RestartBudgetExhausted`, which makes `/api/v1/telemetry/ops`,
+`/telemetry/stream`, `/mla1517/status` ALL return HTTP 500 until the API is
+restarted. Symptom in API stdout: three-way traceback spam ending in
+`RestartBudgetExhausted: agentic-mining`.
+
+Correct boot PYTHONPATH for the live app:
+`PYTHONPATH=<repo root>;<repo root>/chronus/mla1517_platform/python`
+
+If `PYTHIA_EXECUTION_DEVICE` (or `MLA1517_MMIO_DEVICE`) is unset, no spawn is
+attempted — workers read as `armed_no_device`. Booting WITH the device but
+WITHOUT PYTHONPATH is worse than without either: it converts a passive
+`armed_no_device` into a crash loop + 500s.
+
+### Env recovered from a live worktree process (for reference)
+
+```
+MLA1517_STRATUM_USER=<braiins worker>  # secret:repo:PHIDATA2/PYTHIA:BRAIINS_USERNAME
+MLA1517_STRATUM_PASSWORD=<braiins>     # secret:repo:...:BRAIINS_PASSWORD
+PYTHIA_EXECUTION_DEVICE=cpu
+PYTHIA_IDENTITY_HMAC_SECRET=<64-hex>   # signs .bin heartbeats; API+workers must match
+PYTHIA_NONCE_ORDER=m32                 # required on this box (hendrix unavailable)
+PYTHIA_SUPERVISOR_EPOCH=<16-hex>
+PYTHONPATH=<repo root>;<repo root>/chronus/mla1517_platform/python
+EUCLID_ADMIN_API_KEY=test
+```
+
+### Recovering a running process's full env on Windows
+
+Worker processes inherit the API's env verbatim (`os.environ.copy()`), so
+dumping any orphan worker's environment recovers the parent API env.
+`wmic`/`Get-Process` do NOT expose env — read the PEB instead:
+`NtQueryInformationProcess(0)` → `PebBaseAddress`, `PEB+0x20` →
+`RTL_USER_PROCESS_PARAMETERS`, `+0x80` = env block (UTF-16LE NUL-separated),
+`+0x3F0` = `EnvironmentSize`. ~50 lines of ctypes; works same-bitness.
+
+### Kill/restart behavior to expect
+
+- `taskkill //PID <api> //F` orphans the spawned workers — they keep the pool
+  session alive and keep writing `%LOCALAPPDATA%\pythia\hb\*.metrics.json`, so
+  a resurrected API that does NOT spawn still displays live pool/job/hashrate
+  data. Only the control-plane-owned fields (declared/bound/executing, worker
+  states) degrade.
+- A resurrected API WITH exec device env spawns FRESH workers → duplicate pool
+  sessions + both writers clobbering the same heartbeat files. Kill orphans
+  (`mining_runtime.py`/`discovery_runtime.py`) before/after confirming the new
+  spawn is healthy; the new pool session gets a new `session_id` — good
+  visible recovery proof.
+- Cold browser reload while the API is down → `ERR_CONNECTION_REFUSED` (the
+  API also serves `dist/public` — nothing can render). The
+  stale/`unreachable`/`Waiting for telemetry` markers are only observable in
+  an already-loaded page.
+
+## Devin Secrets Needed
+- `secret:repo:PHIDATA2/PYTHIA:BRAIINS_USERNAME`, `...:BRAIINS_PASSWORD`
+  (working pool identity)
+- `secret:repo:PHIDATA2/PYTHIA:VIABTC_USERNAME`, `...:VIABTC_PASSWORD`
+  (present but placeholder `pythia.001` — fails identity gate by design)
+- `EUCLID_ADMIN_API_KEY` — set any test value at boot for POST coverage.
+- `AL_HARAS_SUBSCRIPTION_KEYS` — a test-only keyring you choose at boot,
+  paired with a locally minted token for privileged GETs.

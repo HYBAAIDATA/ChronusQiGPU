@@ -17,7 +17,7 @@ import time
 import uuid
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Iterable, Sequence
 
 
 def canonical_json_bytes(value: Any, *, allow_nonfinite: bool = False) -> bytes:
@@ -31,9 +31,16 @@ def sha256_bytes(data: bytes) -> str:
 
 
 def _fsync_directory(path: Path) -> None:
-    descriptor = os.open(path, os.O_RDONLY)
+    try:
+        descriptor = os.open(path, os.O_RDONLY)
+    except OSError:
+        # Windows cannot open/fsync a directory descriptor; the file-level
+        # fsync in _atomic_bytes is the durability guarantee there.
+        return
     try:
         os.fsync(descriptor)
+    except OSError:
+        pass
     finally:
         os.close(descriptor)
 

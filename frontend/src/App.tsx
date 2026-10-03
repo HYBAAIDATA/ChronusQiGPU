@@ -8,11 +8,19 @@ import { AlgebraView } from "./views/AlgebraView";
 import { AuditView } from "./views/AuditView";
 import { IntelligenceView } from "./views/IntelligenceView";
 import { ManifoldView } from "./views/ManifoldView";
+import { ObservabilityView } from "./views/ObservabilityView";
 
-type ViewKey = "operations" | "algebra" | "intelligence" | "manifold" | "audit";
+type ViewKey =
+  | "operations"
+  | "observability"
+  | "algebra"
+  | "intelligence"
+  | "manifold"
+  | "audit";
 
 const VIEWS: Array<{ key: ViewKey; label: string }> = [
   { key: "operations", label: "Operations" },
+  { key: "observability", label: "Observability" },
   { key: "algebra", label: "Algebra" },
   { key: "intelligence", label: "Intelligence" },
   { key: "manifold", label: "Manifold" },
@@ -93,6 +101,7 @@ export default function App() {
             <MiningEvidencePanel />
           </>
         )}
+        {view === "observability" && <ObservabilityView />}
         {view === "algebra" && <AlgebraView />}
         {view === "intelligence" && <IntelligenceView />}
         {view === "manifold" && <ManifoldView status={status} offline={offline} />}

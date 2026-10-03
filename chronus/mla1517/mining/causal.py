@@ -23,6 +23,8 @@ from dataclasses import asdict, dataclass, fields, replace
 from pathlib import Path
 from typing import Any, Deque, Iterable
 
+from .software_revision import software_revision
+
 _AXES = (
     "pool_session_id",
     "generation",
@@ -51,6 +53,7 @@ class CausalCoordinate:
     submission_id: str | None = None
     recovery_id: str | None = None
     learning_record_id: str | None = None
+    job_id: str | None = None
 
     def extend(self, **axes: Any) -> "CausalCoordinate":
         unknown = set(axes) - set(_AXES)
@@ -76,15 +79,19 @@ class CausalEvent:
     kind: str
     coordinate: CausalCoordinate
     detail: dict[str, Any]
+    software_revision: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
-        return {
+        record = {
             "seq": self.seq,
             "at": self.at,
             "kind": self.kind,
             "coordinate": self.coordinate.as_dict(),
             "detail": self.detail,
         }
+        if self.software_revision is not None:
+            record["software_revision"] = self.software_revision
+        return record
 
 
 class CausalLedger:
@@ -96,6 +103,7 @@ class CausalLedger:
         capacity: int = 4096,
         path: str | Path | None = None,
         max_file_bytes: int = 32 * 1024 * 1024,
+        revision: str | None = None,
     ) -> None:
         if capacity <= 0 or max_file_bytes <= 0:
             raise ValueError("ledger bounds must be positive")
@@ -104,11 +112,23 @@ class CausalLedger:
         self._lock = threading.Lock()
         self._path = Path(path) if path is not None else None
         self._max_file_bytes = max_file_bytes
+        self._revision = revision if revision is not None else software_revision()
         self.file_errors = 0
+
+    @property
+    def software_revision(self) -> str:
+        return self._revision
 
     def record(self, kind: str, coordinate: CausalCoordinate, **detail: Any) -> CausalEvent:
         with self._lock:
-            event = CausalEvent(next(self._seq), time.time(), kind, coordinate, dict(detail))
+            event = CausalEvent(
+                next(self._seq),
+                time.time(),
+                kind,
+                coordinate,
+                dict(detail),
+                software_revision=self._revision,
+            )
             self._events.append(event)
         self._mirror(event)
         return event
@@ -163,6 +183,7 @@ def load_jsonl(lines: Iterable[str]) -> list[CausalEvent]:
                 kind=str(raw["kind"]),
                 coordinate=CausalCoordinate(**raw["coordinate"]),
                 detail=dict(raw.get("detail", {})),
+                software_revision=raw.get("software_revision"),
             )
         )
     return events
