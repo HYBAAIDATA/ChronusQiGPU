@@ -1,9 +1,11 @@
 """EUCLID cognition: the integrated primary intelligence loop.
 
-Orchestration core (:class:`GeneralIntelligenceCore`) plus explicit
-specialist interfaces and deterministic baselines.  All cognition evidence
-is rehearsal-class research evidence; nothing here carries production,
-mining, reward, or consensus authority.
+Orchestration core (:class:`GeneralIntelligenceCore`), explicit specialist
+interfaces, deterministic baselines, program-domain adapters wired to the
+real v16 engine, the sealed CognitiveEpisode evidence structure, and the
+CognitiveService composition point for EuclidRuntime.  All cognition
+evidence is rehearsal-class research evidence; nothing here carries
+production, mining, reward, or consensus authority.
 """
 from .baselines import (
     BanditMetaLearner,
@@ -20,26 +22,20 @@ from .baselines import (
     TableWorldModel,
     WeightedObjective,
 )
-from .adaptive import (
-    CapabilityLifecycle,
-    IntermediateObjective,
-    NoveltyArchive,
-    ObjectiveController,
-    PersistentStrategyLearner,
-    RepresentationController,
-)
 from .core import AblationConfig, GeneralIntelligenceCore
+from .episode import CognitiveEpisode, episode_from_state
 from .phi_schedule import EVIDENCE_CLASS as PHI_EVIDENCE_CLASS
 from .phi_schedule import neutral_order, phi_order
-from .production import (
-    DurableCognitiveMemory,
-    LearningServiceEpisodeAdapter,
-    RepositoryIntelligenceExecutor,
-    TOECognitivePlanner,
-    TOEMetaController,
-    TOEWorldModelAdapter,
-    V16SkillSearchAdapter,
+from .program_domain import (
+    DivergenceDiscriminator as ProgramDivergenceDiscriminator,
+    ProgramAbducer,
+    ProgramDeducer,
+    ProgramSkillComposer,
+    ProgramWorldModel,
+    program_signature,
+    signature_class,
 )
+from .service import CognitiveService, enable_intelligence
 from .state import (
     AnalogyMapping,
     AnalogyStatus,
@@ -65,12 +61,14 @@ __all__ = [
     "BanditMetaLearner",
     "CallbackExecutor",
     "CandidateAction",
-    "CapabilityLifecycle",
+    "CognitiveEpisode",
+    "CognitiveService",
     "CognitiveState",
     "ConsequenceDeducer",
     "DelegatorExecutor",
     "DivergenceDiscriminator",
-    "DurableCognitiveMemory",
+    "enable_intelligence",
+    "episode_from_state",
     "EpistemicStatus",
     "EvidenceItem",
     "EvidenceOrigin",
@@ -79,30 +77,26 @@ __all__ = [
     "HierarchicalPlanner",
     "Hypothesis",
     "HypothesisStatus",
-    "IntermediateObjective",
     "InMemoryMemorySystem",
     "MemoryKind",
-    "NoveltyArchive",
-    "ObjectiveController",
-    "PersistentStrategyLearner",
-    "LearningServiceEpisodeAdapter",
+    "neutral_order",
     "Outcome",
     "PHI_EVIDENCE_CLASS",
+    "phi_order",
     "PlanNode",
     "PredictionRecord",
+    "ProgramAbducer",
+    "ProgramDeducer",
+    "ProgramDivergenceDiscriminator",
+    "ProgramSkillComposer",
+    "ProgramWorldModel",
+    "program_signature",
     "RuleAbducer",
-    "RepositoryIntelligenceExecutor",
-    "RepresentationController",
     "SignalMetaController",
+    "signature_class",
     "StaticSkillComposer",
     "StructuralAnalogyEngine",
     "TableWorldModel",
-    "TOECognitivePlanner",
-    "TOEMetaController",
-    "TOEWorldModelAdapter",
     "TransitionRecord",
     "WeightedObjective",
-    "V16SkillSearchAdapter",
-    "neutral_order",
-    "phi_order",
 ]

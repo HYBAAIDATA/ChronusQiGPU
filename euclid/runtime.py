@@ -264,6 +264,17 @@ class EuclidRuntime:
         if database is not None:
             database.close()
 
+    def enable_intelligence(self, **kwargs: Any) -> Any:
+        """Wire the merged v16 engine and the cognition loop into this runtime.
+
+        Composition is explicit and governed: organs are registered, dispatch
+        rights are creator-scoped, and all feedback flows through the existing
+        LearningService.  Returns the live CognitiveService.
+        """
+        from .cognition.service import enable_intelligence
+
+        return enable_intelligence(self, **kwargs)
+
     def startup_report(self) -> dict[str, Any]:
         return {
             "schema": "euclid.startup/1",
@@ -354,7 +365,10 @@ class EuclidRuntime:
             runtime.registry, runtime.evidence, runtime.rights
         )
         runtime.learning.evidence = runtime.evidence
-        if runtime.cognition is not None:
-            runtime.cognition.evidence = runtime.evidence
+        # Re-attach the durable memory database when the state dir has one;
+        # persistence must survive restart, not just the live process.
+        database_path = runtime.state_dir / "euclid_memory.sqlite3"
+        if database_path.is_file():
+            runtime.learning.memory_database = MemoryDatabase(database_path)
         runtime.kairos.replay_verify()
         return runtime

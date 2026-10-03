@@ -56,9 +56,6 @@ ml = [
     "scikit-learn>=1.3",
     # millennium.millennium_reasoning_service imports fastapi at module load.
     "fastapi>=0.110",
-    # millennium.mathematical_discovery imports scipy and networkx at module load.
-    "scipy>=1.11,<2",
-    "networkx>=3.0",
 ]
 dev = [
     "pytest>=7.4,<10",
@@ -80,7 +77,7 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 include-package-data = false
 package-dir = {"" = "chronus/mla1517_platform/python", "euclid" = "euclid", "Intelligence" = "Intelligence", "mining" = "mining", "aethel" = "aethel", "gpu" = "gpu", "hyba" = "hyba", "kellogg" = "kellogg", "toe" = "toe", "python_backend" = "python_backend", "al_haras" = "al_haras", "chronus" = "chronus", "quantum_compute_substrate" = "quantum_compute_substrate", "l_hras" = "l_hras", "lucas" = "lucas", "millennium" = "millennium", "tensor" = "tensor", "hyba_profiles" = "hyba_profiles", "hyba_contracts" = "hyba_contracts", "hyba_services" = "hyba_services"}
-packages = ["euclid", "euclid.cognition", "euclid.core", "euclid.search", "euclid.discovery", "euclid.surrogate", "euclid.geometry", "euclid.transfer", "euclid.validation", "euclid.agents", "Intelligence", "mining", "lucas", "millennium", "aethel", "gpu", "gpu.backends", "hyba", "hyba.hybrid", "hyba.math_ir", "hyba.operating_model", "kellogg", "toe", "toe.intelligences", "toe.unified", "python_backend", "python_backend.pythia_mining", "python_backend.mathematical_foundation", "python_backend.hyba", "python_backend.hyba.runtime", "python_backend.core_modules", "al_haras", "chronus", "quantum_compute_substrate", "chronus.seam", "chronus.mla1517", "chronus.mla1517.mining", "chronus.v33", "chronus.v33.academic", "chronus.v33.compression", "chronus.v33.control", "chronus.v33.environment", "chronus.v33.fields", "chronus.v33.graphics", "chronus.v33.memory", "chronus.v33.theory", "l_hras", "l_hras.foundations", "l_hras.experimental", "l_hras.experimental.blueprint", "l_hras.experimental.blueprint.core", "l_hras.experimental.blueprint.substrate", "l_hras.experimental.blueprint.fold", "l_hras.experimental.blueprint.intelligences", "l_hras.experimental.blueprint.modes", "l_hras.experimental.blueprint.modules", "l_hras.experimental.blueprint.layers", "l_hras.experimental.blueprint.floor", "l_hras.experimental.blueprint.aethel", "l_hras.experimental.blueprint.guardian", "l_hras.experimental.blueprint.mining", "l_hras.experimental.blueprint.security", "l_hras.experimental.blueprint.asic", "l_hras.experimental.blueprint.blueprint_tests", "tensor", "tensor.backends", "hyba_profiles", "hyba_contracts", "hyba_services"]
+packages = ["euclid", "euclid.core", "euclid.search", "euclid.discovery", "euclid.transfer", "euclid.validation", "euclid.geometry", "euclid.surrogate", "euclid.agents", "euclid.enterprise", "euclid.benchmarks", "euclid.tests", "euclid.cognition", "Intelligence", "mining", "lucas", "millennium", "aethel", "gpu", "gpu.backends", "hyba", "hyba.hybrid", "hyba.math_ir", "hyba.operating_model", "kellogg", "toe", "toe.intelligences", "toe.unified", "python_backend", "python_backend.pythia_mining", "python_backend.mathematical_foundation", "python_backend.hyba", "python_backend.hyba.runtime", "python_backend.core_modules", "al_haras", "chronus", "quantum_compute_substrate", "chronus.seam", "chronus.mla1517", "chronus.mla1517.mining", "chronus.v33", "chronus.v33.academic", "chronus.v33.compression", "chronus.v33.control", "chronus.v33.environment", "chronus.v33.fields", "chronus.v33.graphics", "chronus.v33.memory", "chronus.v33.theory", "l_hras", "l_hras.foundations", "l_hras.experimental", "l_hras.experimental.blueprint", "l_hras.experimental.blueprint.core", "l_hras.experimental.blueprint.substrate", "l_hras.experimental.blueprint.fold", "l_hras.experimental.blueprint.intelligences", "l_hras.experimental.blueprint.modes", "l_hras.experimental.blueprint.modules", "l_hras.experimental.blueprint.layers", "l_hras.experimental.blueprint.floor", "l_hras.experimental.blueprint.aethel", "l_hras.experimental.blueprint.guardian", "l_hras.experimental.blueprint.mining", "l_hras.experimental.blueprint.security", "l_hras.experimental.blueprint.asic", "l_hras.experimental.blueprint.blueprint_tests", "tensor", "tensor.backends", "hyba_profiles", "hyba_contracts", "hyba_services"]
 py-modules = [
     "al_haras_pythia",
     "autonomous_supervisor",
@@ -132,5 +129,16 @@ target-version = ["py312"]
 # Vendored skill grafts are kept byte-exact (Intelligence/skill_graft.py).
 extend-exclude = "Intelligence/skills/"
 exclude = '''
-/(\n    \.git\n  | \.pytest_cache\n  | __pycache__\n  | node_modules\n  | dist\n  | models\n  | logs\n  | legacy\n  | \.venv\n  | venv\n)/
+/(
+    \.git
+  | \.pytest_cache
+  | __pycache__
+  | node_modules
+  | dist
+  | models
+  | logs
+  | legacy
+  | \.venv
+  | venv
+)/
 '''
