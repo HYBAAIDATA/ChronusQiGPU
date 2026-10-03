@@ -472,6 +472,10 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
                 )
             except Exception:
                 pass
+            try:
+                self._pool_selected_record(endpoint, index, offset + 1, errors)
+            except Exception:
+                pass
             if offset > 0:
                 # Failover rotation healed the SCAN leg: the declared pool
                 # order moved off the primary. Evidence only — the machine
