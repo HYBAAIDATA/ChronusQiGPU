@@ -160,7 +160,7 @@ async def _main_async(args) -> None:
     if not args.device and device is None:
         raise SystemExit(
             "--device or MLA1517_MMIO_DEVICE is required "
-            "(or PYTHIA_EXECUTION_DEVICE=opencl|cpu for bridge-free mining)"
+            "(or PYTHIA_EXECUTION_DEVICE=opencl|cpu|remote|asic|super_asic for bridge-free mining)"
         )
     # The supervisor exports PYTHIA_IDENTITY_HMAC_SECRET to every spawned
     # worker (startup_contract.rotate_supervisor_secret). A standalone
