@@ -239,11 +239,18 @@ class RecoveryGovernor:
             self._on_event(kind, record)
 
     def snapshot(self) -> dict[str, Any]:
+        open_records = list(self._records.values())
         return {
             "authority": "salamander",
             "mode": self.mode,
             "salamander_supervisor_alive": self.salamander_alive(),
             "external_mode": self._external_mode if self.salamander_alive() else None,
-            "open": [r.as_dict() for r in self._records.values()],
+            # The circuit state the operator sees: whether speculation is
+            # frozen and which recovery owns it. False means the ledger is
+            # clear — not guessed, derived from the declared mode.
+            "freezes_speculation": self.mode in FREEZING_MODES,
+            "faulted": self._faulted,
+            "active_recovery_id": open_records[0].recovery_id if open_records else None,
+            "open": [r.as_dict() for r in open_records],
             "recent": [r.as_dict() for r in list(self._closed)[-8:]],
         }
