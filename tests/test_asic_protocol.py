@@ -69,6 +69,8 @@ class _BridgeHandler(socketserver.StreamRequestHandler):
                 self.wfile.flush()
             elif msg.get("cmd") == "dispatch":
                 self.server.received.append(msg)
+                if getattr(self.server, "drop_dispatch", False):
+                    return  # hang up mid-window: a channel failure, not a reply
                 self.wfile.write(json.dumps(self._grind(msg)).encode() + b"\n")
                 self.wfile.flush()
 
@@ -99,10 +101,11 @@ class _Bridge(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
     daemon_threads = True
 
-    def __init__(self, header_override=None):
+    def __init__(self, header_override=None, drop_dispatch=False):
         super().__init__(("127.0.0.1", 0), _BridgeHandler)
         self.received = []
         self.header_override = header_override
+        self.drop_dispatch = drop_dispatch
         self._thread = threading.Thread(target=self.serve_forever, daemon=True)
         self._thread.start()
 
@@ -386,3 +389,199 @@ def test_coordinator_binds_header_on_asic(bridge):
     result = coord.run_job(job)
     assert result.share is not None
     assert any(m.get("header_prefix_hex") == job.header80[:76].hex() for m in bridge.received)
+
+
+def test_channel_eof_is_failure_not_exhaustion():
+    """A channel that dies mid-window attests ``failed`` — its nonces were
+    NOT covered, and the adapter refuses to report them as hashed."""
+    server = _Bridge(drop_dispatch=True)
+    try:
+        solver = ASICSolver(endpoint=server.endpoint)
+        from hyba.hybrid.super_asic import AsicHasherAdapter
+
+        adapter = AsicHasherAdapter(solver)
+        with pytest.raises(RuntimeError, match="without exhaustion"):
+            adapter.grind_target_range(bytes(range(80)), b"\xff" * 32, 0, 16)
+        kinds = {r["kind"] for r in AttestationRegistry.get().snapshot()}
+        assert "failed" in kinds
+        assert "exhausted" not in kinds
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_weighted_partition_apportions_every_device():
+    """``weighted`` gives each joined substrate hps-proportional work —
+    the composite only combines throughput when all members receive spans."""
+    from hyba.hybrid.lucas_partition import partition
+    from hyba.hybrid.nonce_scheduler import DeviceCapability
+
+    class _Dev:
+        def __init__(self, dev_id, hps):
+            self._cap = DeviceCapability(
+                device_id=dev_id,
+                device_class="asic",
+                measured_hashes_per_sec=hps,
+                supported=True,
+            )
+
+        def capability(self):
+            return self._cap
+
+    spans, cert = partition(1000, [_Dev("a", 9.0), _Dev("b", 1.0)], strategy="weighted")
+    assert cert.verify()
+    by_dev = {s.device_id: s.span for s in spans}
+    assert by_dev == {"a": 900, "b": 100}
+
+    # No measurements at all: equal apportionment, not a fabricated weight.
+    spans, cert = partition(1000, [_Dev("a", 0.0), _Dev("b", 0.0)], strategy="weighted")
+    assert cert.verify()
+    assert sum(s.span for s in spans) == 1000
+    assert {s.device_id for s in spans} == {"a", "b"}
+
+
+def test_remote_dispatches_run_one_at_a_time(monkeypatch):
+    """A multi-window job queues remote windows: one in-flight call per
+    scheduler, never a pile of concurrent requests on one agent."""
+    import time as _time
+
+    from hyba.hybrid.remote_solver import RemoteScheduler
+
+    inflight = {"cur": 0, "max": 0}
+    lock = threading.Lock()
+
+    class _SerialHasher:
+        k_range = object()
+        k_m32 = None
+        device = "remote-serial-stub"
+        backend = "remote_opencl"
+        fleet_size = 1
+        last_execution_backend = "remote_opencl"
+        last_measured_ns = 10**7
+
+        def grind_target_range(self, header, target, base, count):
+            with lock:
+                inflight["cur"] += 1
+                inflight["max"] = max(inflight["max"], inflight["cur"])
+            try:
+                _time.sleep(0.02)
+                return None, None, count
+            finally:
+                with lock:
+                    inflight["cur"] -= 1
+
+    import mining.remote_hasher
+
+    monkeypatch.setattr(mining.remote_hasher, "hasher_for_env", lambda timeout=5.0: _SerialHasher())
+    sched = RemoteScheduler()
+    assert sched.capability().supported
+    sched.prepare("j-seq", bytes(80))
+    handles = [sched.dispatch(_window("j-seq", i * 16, 16, b"\x00" * 32)) for i in range(3)]
+    deadline = _time.time() + 10
+    while not all(sched.is_done(h) for h in handles) and _time.time() < deadline:
+        for h in handles:
+            sched.poll(h)
+    assert all(sched.is_done(h) for h in handles)
+    assert inflight["max"] == 1, inflight
+
+
+def test_remote_dispatch_error_is_failed_not_exhausted(monkeypatch):
+    """A mid-job transport error attests ``failed`` — the skipped nonce
+    range is a visible defect in the record, not fake coverage."""
+    import time as _time
+
+    from hyba.hybrid.remote_solver import RemoteScheduler
+
+    class _FailAfterProbe:
+        k_range = object()
+        k_m32 = None
+        device = "remote-fail-stub"
+        backend = "remote_opencl"
+        fleet_size = 1
+        last_execution_backend = "remote_opencl"
+        last_measured_ns = 10**7
+
+        def __init__(self):
+            self._calls = 0
+
+        def grind_target_range(self, header, target, base, count):
+            self._calls += 1
+            if self._calls == 1:
+                return None, None, count  # capability probe succeeds
+            raise RuntimeError("connection reset by agent")
+
+    import mining.remote_hasher
+
+    monkeypatch.setattr(
+        mining.remote_hasher, "hasher_for_env", lambda timeout=5.0: _FailAfterProbe()
+    )
+    sched = RemoteScheduler()
+    assert sched.capability().supported
+    sched.prepare("j-fail", bytes(80))
+    handle = sched.dispatch(_window("j-fail", 0, 16, b"\x00" * 32))
+    deadline = _time.time() + 10
+    while not sched.is_done(handle) and _time.time() < deadline:
+        sched.poll(handle)
+    assert sched.is_done(handle)
+    kinds = [r.kind for r in sched.attestation()]
+    assert "failed" in kinds
+    assert "exhausted" not in kinds
+    failed = [r for r in sched.attestation() if r.kind == "failed"]
+    assert "remote_dispatch_failed" in failed[-1].reason
+
+
+def test_lanes_route_through_opencl_range_not_cpu_reference():
+    """Selecting asic/super_asic must execute the lane: the coordinator
+    picks the contiguous-range route and the router binds the lane's
+    ``k_range`` arm — never a silent cpu_reference plan."""
+    from chronus.mla1517.mining.execution_router import ExecutionRoute, ExecutionRouter
+    from manifold_pool_coordinator import PoolEndpoint
+    from test_governance_causality import _plan
+    from test_pool_only_mining import _pool_only_coordinator
+
+    class _LaneHasher:
+        backend = "super_asic:cpu"
+        device = "hybrid[cpu]"
+        vendor = None
+        k_range = object()
+        k_m32 = k_gold = None
+        grind_batch = 1 << 20
+        launches = 0
+        kernel_ms = 0.0
+
+        def __init__(self):
+            self.calls = []
+
+        def grind_target_range(self, header, target_be, base, count):
+            self.calls.append((base, count))
+            self.launches += 1
+            return None, None, count
+
+    hasher = _LaneHasher()
+    coord = _pool_only_coordinator([PoolEndpoint("h", 1, "braiins")], execution_hasher=hasher)
+    assert coord._execution_route() == "opencl_range"
+
+    router = ExecutionRouter(hasher, lambda *a: (None, None, 0))
+    plan = _plan("opencl_range", base_step=0, window=64, dispatch_breadth=64)
+    record, candidate = router.execute_plan(plan, bytes(range(80)), bytes(32))
+    assert record.executed_route == ExecutionRoute.opencl_range.value
+    assert record.device_backend == "super_asic:cpu"
+    assert hasher.calls, "the bound lane was never invoked"
+    assert sum(c for _, c in hasher.calls) == 64
+
+
+class _OpenclHasher:
+    backend = "opencl:gpu"
+    k_m32 = object()
+    k_range = None
+
+
+def test_opencl_route_unchanged():
+    """The lane routing addition must not disturb the existing m32 route."""
+    from manifold_pool_coordinator import PoolEndpoint
+    from test_pool_only_mining import _pool_only_coordinator
+
+    coord = _pool_only_coordinator(
+        [PoolEndpoint("h", 1, "braiins")], execution_hasher=_OpenclHasher()
+    )
+    assert coord._execution_route() == "opencl_m32"

@@ -735,9 +735,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         """Configure durable policy and closed-loop optimisation state."""
         self._agentic_state_path = path
         root = os.path.dirname(path) or "."
-        self.optimization.set_state_path(
-            os.path.join(root, "closed_loop_optimization.json")
-        )
+        self.optimization.set_state_path(os.path.join(root, "closed_loop_optimization.json"))
 
     async def connect_with_failover(self):
         client = await super().connect_with_failover()
@@ -1708,6 +1706,12 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             getattr(hasher, "k_m32", None) is not None
         ):
             return "opencl_m32"
+        if backend.split(":", 1)[0] in ("asic", "super_asic") and (
+            getattr(hasher, "k_range", None) is not None
+        ):
+            # ASIC / composite lanes expose a contiguous-window arm
+            # (grind_target_range) — that is the only route they can run.
+            return "opencl_range"
         return "cpu_reference"
 
     def _router_for(self, plan: SearchPlan) -> ExecutionRouter:
@@ -2287,9 +2291,11 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                         disposition=(
                             DecisionDisposition.STALE.value
                             if record.completion_state is CompletionState.INVALIDATED
-                            else DecisionDisposition.EXECUTED.value
-                            if record.executed_route is not None
-                            else DecisionDisposition.REFUSED.value
+                            else (
+                                DecisionDisposition.EXECUTED.value
+                                if record.executed_route is not None
+                                else DecisionDisposition.REFUSED.value
+                            )
                         ),
                         execution_target=record.executed_route,
                     )

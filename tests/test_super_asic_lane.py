@@ -151,6 +151,10 @@ def test_remote_scheduler_unsupported_without_endpoints():
 
 
 def test_contiguous_runs_decomposition():
-    assert _contiguous_runs([5, 6, 7, 20, 9, 21]) == [(5, 3), (9, 1), (20, 2)]
+    # Runs preserve the caller's traversal order — a ranked sequence is
+    # searched in the order supplied, never re-sorted or deduplicated.
+    assert _contiguous_runs([5, 6, 7, 20, 9, 21]) == [(5, 3), (20, 1), (9, 1), (21, 1)]
+    assert _contiguous_runs([20, 5, 6]) == [(20, 1), (5, 2)]
+    assert _contiguous_runs([5, 5]) == [(5, 1), (5, 1)]
     assert _contiguous_runs([]) == []
     assert _contiguous_runs([0xFFFFFFFF]) == [(0xFFFFFFFF, 1)]

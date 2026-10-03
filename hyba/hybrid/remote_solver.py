@@ -14,12 +14,15 @@ or yields no device timing leaves ``capability().supported`` False with
 the concrete reason; ``dispatch`` raises
 :class:`DeviceUnsupportedError`. Nothing simulates a remote device.
 
-Dispatch is asynchronous by construction: ``dispatch`` starts a worker
-thread that runs the (blocking) remote call; ``poll`` reads the result
-queue without blocking. ``cancel`` is honest about the wire: an in-flight
-remote call cannot be aborted, so cancellation is attested with
-``reason="cancel_requested_remote_inflight"`` and the late result is
-discarded.
+Dispatch is asynchronous by construction but serial per scheduler:
+``dispatch`` enqueues the window and a single worker thread issues one
+remote call at a time, so a multi-window job cannot bury one agent under
+concurrent requests and ``cancel`` can drop queued windows before they
+ever reach the wire. ``poll`` reads the result queue without blocking.
+An in-flight remote call cannot be aborted, so cancelling a started
+window attests ``remote call in flight`` and the late result is
+discarded; cancelling a queued window attests that no remote call was
+ever made for it.
 """
 
 from __future__ import annotations
@@ -67,6 +70,11 @@ class RemoteScheduler:
         self._records: List[ExecutionAttestation] = []
         self._registry = AttestationRegistry.get()
         self._capability: Optional[DeviceCapability] = None
+        # One worker serializes remote calls per scheduler: the coordinator
+        # may dispatch many windows to this device before polling, but the
+        # remote agent only ever sees one in-flight request.
+        self._inbox: "queue.Queue[Dict[str, Any]]" = queue.Queue()
+        self._worker: Optional[threading.Thread] = None
 
     @classmethod
     def from_env(cls, timeout: float = 5.0) -> "RemoteScheduler":
@@ -165,24 +173,36 @@ class RemoteScheduler:
             "results": results,
             "hashed_total": 0,
             "cancelled": False,
-            "thread": None,
+            "started": False,
+            "header": header,
         }
         self._pending[handle.handle_id] = state
-
-        def _run() -> None:
-            try:
-                nonce, digest, done = self._hasher.grind_target_range(
-                    header, window.target, window.base_nonce, window.span
-                )
-                results.put({"nonce": nonce, "digest": digest, "done": int(done)})
-            except Exception as exc:
-                results.put({"error": f"{type(exc).__name__}: {exc}"})
-
-        thread = threading.Thread(target=_run, daemon=True, name="remote-scheduler")
-        state["thread"] = thread
-        thread.start()
+        self._inbox.put(state)
+        if self._worker is None or not self._worker.is_alive():
+            self._worker = threading.Thread(
+                target=self._worker_loop, daemon=True, name="remote-scheduler"
+            )
+            self._worker.start()
         self._attest("dispatch", handle, reason="dispatched")
         return handle
+
+    def _worker_loop(self) -> None:
+        """Serial remote executor: one in-flight call per scheduler, FIFO."""
+        while True:
+            state = self._inbox.get()
+            if state["cancelled"]:
+                # Cancelled while queued — no remote call is ever made for
+                # this window; the cancellation attestation already said so.
+                continue
+            state["started"] = True
+            window = state["handle"].window
+            try:
+                nonce, digest, done = self._hasher.grind_target_range(
+                    state["header"], window.target, window.base_nonce, window.span
+                )
+                state["results"].put({"nonce": nonce, "digest": digest, "done": int(done)})
+            except Exception as exc:
+                state["results"].put({"error": f"{type(exc).__name__}: {exc}"})
 
     def poll(self, handle: DispatchHandle) -> Optional[Share]:
         state = self._pending.get(handle.handle_id)
@@ -194,7 +214,10 @@ class RemoteScheduler:
             return None
         device_ns = getattr(self._hasher, "last_measured_ns", None)
         if "error" in result:
-            self._attest("exhausted", handle, reason=f"remote_dispatch_failed: {result['error']}")
+            # A transport/dispatch failure is a failure, not exhaustion:
+            # the assigned nonces were NOT covered and the attestation must
+            # not claim otherwise.
+            self._attest("failed", handle, reason=f"remote_dispatch_failed: {result['error']}")
             self._finished[handle.handle_id] = int(state["hashed_total"])
             self._pending.pop(handle.handle_id, None)
             return None
@@ -240,13 +263,16 @@ class RemoteScheduler:
         state["cancelled"] = True
         self._finished[handle.handle_id] = int(state["hashed_total"])
         # The remote wire is request/response: an in-flight call cannot be
-        # aborted, so the attestation records the truth — cancellation was
-        # requested while the remote window was still executing; whatever
-        # the agent returns for it is discarded.
+        # aborted, but a still-queued window is never sent at all. The
+        # attestation records which of those is true for this handle.
+        if state["started"]:
+            detail = "remote call in flight (result discarded)"
+        else:
+            detail = "cancelled while queued; no remote call made"
         self._attest(
             "cancelled",
             handle,
-            reason=f"{reason}; remote call in flight (result discarded)",
+            reason=f"{reason}; {detail}",
         )
 
     def is_done(self, handle: DispatchHandle) -> bool:

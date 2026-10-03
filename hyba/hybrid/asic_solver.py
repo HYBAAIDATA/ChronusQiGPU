@@ -300,6 +300,13 @@ class ASICSolver:
         self._attest("dispatch", handle, reason="dispatched")
         return handle
 
+    def outcome(self, handle: DispatchHandle) -> Optional[str]:
+        """Terminal outcome kind recorded for a finished handle, if any."""
+        for rec in reversed(self._records):
+            if rec.handle_id == handle.handle_id:
+                return rec.kind
+        return None
+
     def poll(self, handle: DispatchHandle) -> Optional[Share]:
         state = self._pending.get(handle.handle_id)
         if state is None:
@@ -310,10 +317,18 @@ class ASICSolver:
             line = sock.makefile("rb").readline()
         except socket.timeout:
             return None
-        except Exception:
+        except Exception as exc:
+            # A channel error is a terminal failure, not exhaustion: the
+            # window's nonces were NOT covered and the record must say so.
+            self._attest("failed", handle, reason=f"asic_channel_error: {exc}")
+            self._finished[handle.handle_id] = 0
             self._pending.pop(handle.handle_id, None)
             return None
         if not line:
+            # Orderly close with no payload — same story: uncovered window.
+            self._attest("failed", handle, reason="asic_channel_eof")
+            self._finished[handle.handle_id] = 0
+            self._pending.pop(handle.handle_id, None)
             return None
         try:
             msg = json.loads(line.decode("utf-8", "replace"))

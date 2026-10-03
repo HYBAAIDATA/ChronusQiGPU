@@ -228,7 +228,11 @@ def partition(
     """Assign ``[0, total_span)`` to devices by predicted yield.
 
     ``strategy="lucas"`` uses per-face weighted ownership;
-    ``strategy="even"`` splits the span equally across devices.
+    ``strategy="even"`` splits the span equally across devices;
+    ``strategy="weighted"`` apportions the span in proportion to each
+    device's measured hps, so every joined substrate receives work —
+    required for compositions whose purpose is combined throughput
+    (lucas argmax would award every face to the single fastest device).
     Returns ``(spans, certificate)`` where ``certificate.verify()``
     re-proves totality and disjointness.
     """
@@ -237,7 +241,7 @@ def partition(
         raise ValueError(f"total_span must be > 0, got {total_span}")
     if not devices:
         raise ValueError("partition requires at least one device")
-    if strategy not in ("lucas", "even"):
+    if strategy not in ("lucas", "even", "weighted"):
         raise ValueError(f"unknown partition strategy: {strategy}")
 
     history = history or TraversalHistory()
@@ -252,19 +256,24 @@ def partition(
 
     face_spans: List[Tuple[str, int, int]] = []  # (device_id, face, span)
 
-    if strategy == "even":
-        allocations = _largest_remainder(total_span, [1.0] * len(usable))
-        for (dev_id, span) in zip(device_ids, allocations):
+    if strategy in ("even", "weighted"):
+        if strategy == "even":
+            shares = [1.0] * len(usable)
+        else:
+            shares = [max(hps[d], 0.0) for d in device_ids]
+            if not any(s > 0 for s in shares):
+                # No device has a measurement yet — equal apportionment is
+                # the honest fallback, not a fabricated weighting.
+                shares = [1.0] * len(device_ids)
+        allocations = _largest_remainder(total_span, shares)
+        for dev_id, span in zip(device_ids, allocations):
             if span > 0:
                 face_spans.append((dev_id, 0, span))
     else:
         # Weight matrix W[d][f]; face owned by argmax over devices.
         weights: List[List[float]] = []
         for dev_id in device_ids:
-            row = [
-                lucas_weight(f, hps[dev_id], history.miss_rate(f))
-                for f in range(FACE_COUNT)
-            ]
+            row = [lucas_weight(f, hps[dev_id], history.miss_rate(f)) for f in range(FACE_COUNT)]
             weights.append(row)
         owners: List[str] = []
         yields_: List[float] = []
@@ -288,9 +297,7 @@ def partition(
     spans: List[SpanAssignment] = []
     cursor = 0
     for dev_id, face, span in face_spans:
-        spans.append(
-            SpanAssignment(device_id=dev_id, base_nonce=cursor, span=span, face=face)
-        )
+        spans.append(SpanAssignment(device_id=dev_id, base_nonce=cursor, span=span, face=face))
         cursor += span
     assert cursor == total_span, "partition must cover the span exactly"
 

@@ -106,10 +106,19 @@ class AsicHasherAdapter:
                 raise RuntimeError("ASIC returned a share failing host re-verification")
             self.launches += 1
             return share.nonce, share.digest, share.nonces_tried
-        # No share: the channel attests exhaustion at full span — the
-        # honest executed count is the whole window.
-        self.launches += 1
-        return None, None, count
+        # The window ended without a share. Only an explicit exhaustion
+        # outcome means the span was ground; every other terminal state —
+        # channel error, EOF, cancellation — is a device failure, not
+        # coverage. Fabricating `count` here would claim unsearched nonces.
+        outcome = self._solver.outcome(handle)
+        if outcome == "exhausted":
+            self.launches += 1
+            return None, None, self._solver.hashed_count(handle)
+        raise RuntimeError(
+            f"ASIC channel ended the window without exhaustion "
+            f"(outcome={outcome!r}) — refusing to report uncovered "
+            "nonces as hashed"
+        )
 
     def grind_target_range(self, header80, target_be, base_nonce, count):
         return self._grind_window(header80, target_be, int(base_nonce), int(count))
@@ -138,13 +147,16 @@ def _next_job_seq() -> int:
 
 
 def _contiguous_runs(nonces: Sequence[int]) -> List[tuple[int, int]]:
-    """Decompose an explicit nonce set into (base, span) contiguous runs."""
-    ordered = sorted({int(n) & 0xFFFFFFFF for n in nonces})
-    if not ordered:
+    """Decompose an explicit nonce sequence into (base, span) contiguous runs,
+    preserving the caller's traversal order — a ranked or topological nonce
+    list is searched in the order supplied, so the first winner and the probe
+    count correspond to that order, not a sorted one."""
+    seq = [int(n) & 0xFFFFFFFF for n in nonces]
+    if not seq:
         return []
     runs: List[tuple[int, int]] = []
-    start = prev = ordered[0]
-    for n in ordered[1:]:
+    start = prev = seq[0]
+    for n in seq[1:]:
         if n != prev + 1:
             runs.append((start, prev - start + 1))
             start = n
@@ -308,11 +320,18 @@ class SuperAsicHasher:
         # count, and only windows executed on a non-CPU substrate are device
         # launches — a CPU member's work is real work, not a launch.
         before = len(self._registry.snapshot())
-        result = self._coord.run_job(job)
+        # ``weighted`` apportions the span across every joined substrate in
+        # proportion to measured hps — the composite only combines hashrate
+        # when each member actually receives work (lucas argmax would award
+        # every face to the single fastest device).
+        result = self._coord.run_job(job, strategy="weighted")
         self.last_result = result
         device_ns = 0
         device_windows = 0
+        failed: List[str] = []
         for rec in self._registry.snapshot()[before:]:
+            if rec.get("kind") == "failed" and (rec.get("window") or {}).get("job_id") == job_id:
+                failed.append(f"{rec.get('device_id')}: {rec.get('reason')}")
             if rec.get("kind") not in ("share", "exhausted"):
                 continue
             if rec.get("device_class") == "cpu":
@@ -325,6 +344,10 @@ class SuperAsicHasher:
                 device_ns += int(rec["device_time_ns"])
         self.launches += device_windows
         self.kernel_ms += device_ns / 1e6
+        if failed:
+            # A member died mid-job: its assigned spans were not covered.
+            # Fail-closed — never return a result that skipped nonces.
+            raise RuntimeError("super_asic substrate failed during the job: " + "; ".join(failed))
         share = result.share
         return (
             share.nonce if share is not None else None,

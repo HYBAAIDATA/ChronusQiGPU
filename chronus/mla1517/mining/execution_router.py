@@ -277,8 +277,13 @@ class ExecutionRouter:
     def _opencl_bound(self) -> bool:
         backend = str(getattr(self._hasher, "backend", "") or "")
         # remote_opencl is a real OpenCL device reached over the wire; the
-        # route's per-arm handle check below still decides what can run.
-        return backend.startswith("opencl") or backend == "remote_opencl"
+        # asic/super_asic lanes are bound dispatch channels/composites.
+        # The route's per-arm handle check below still decides what can run.
+        return (
+            backend.startswith("opencl")
+            or backend == "remote_opencl"
+            or backend.split(":", 1)[0] in ("asic", "super_asic")
+        )
 
     def decide_route(self, plan: SearchPlan) -> RouteDecision:
         """Choose the route that will physically run, with explicit provenance.
@@ -446,9 +451,7 @@ class ExecutionRouter:
                 device_vendor=decision.device_vendor,
                 kernel_identity="hashlib_sha256d",
                 kernel_build_status="n/a_cpu_reference",
-                launch_cap=max(
-                    1, int(getattr(self._hasher, "grind_batch", 1) or 1)
-                ),
+                launch_cap=max(1, int(getattr(self._hasher, "grind_batch", 1) or 1)),
             )
 
         # --- freshness guard, BEFORE any device time is consumed -----------
@@ -765,7 +768,11 @@ class ExecutionRouter:
         )
         if device_executed:
             evidence = EvidenceClass.HARDWARE_EXECUTED
-        elif device_backend.startswith("opencl") or device_backend == "remote_opencl":
+        elif (
+            device_backend.startswith("opencl")
+            or device_backend == "remote_opencl"
+            or device_backend.split(":", 1)[0] in ("asic", "super_asic")
+        ):
             # Device bound but this execution did not run on it — e.g. a
             # remote agent that answered the window on its own CPU.
             evidence = EvidenceClass.DEVICE_AVAILABLE
