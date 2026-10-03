@@ -13,6 +13,10 @@ from pathlib import Path
 
 from chronus.mla1517.hardware import MMIOBridge
 from chronus.mla1517.mining.coordinator import CpuReferenceHasher
+from chronus.mla1517.mining.backend_registry import (
+    BackendKind,
+    BackendRegistry,
+)
 from chronus.mla1517.mining.geodesic_support import GeodesicProductionMiningCoordinator
 from chronus.mla1517.mining.retarget_telemetry import RetargetWindowTracker
 from manifold_pool_coordinator import _build_parser, parse_endpoint
@@ -103,45 +107,90 @@ def pool_endpoints(args, config: dict | None = None) -> list[PoolEndpoint]:
 
 
 def _execution_hasher(backend: str):
-    """The hasher behind the Execution Router.
+    """Bind only a capability-proven backend under an explicit policy.
 
-    ``auto`` binds an OpenCL device only if it passes the hasher's own
-    self-check against hashlib, otherwise the CPU reference runs and the
-    reason is kept as evidence. ``cpu`` never touches OpenCL.
-    ``remote`` binds a remote GPU agent (``MLA1517_REMOTE_GPU_ENDPOINT``);
-    an unconfigured endpoint fails closed rather than degrading to CPU.
+    Explicit requests are fail-closed: ``gpu``, ``remote``, ``asic`` and
+    ``super_asic`` never degrade to CPU. ``auto`` may select a weaker lane
+    only because ``PYTHIA_BACKEND_ORDER`` declares that ordered policy. Every
+    probe and selection is attached to the returned hasher and appended to
+    the configured evidence ledger.
     """
-    backend = backend.strip().lower()
-    if backend == "cpu":
-        return CpuReferenceHasher()
-    if backend == "remote":
-        repo_root = str(Path(__file__).resolve().parents[3])
-        if repo_root not in sys.path:
-            sys.path.insert(0, repo_root)
-        from mining.remote_hasher import hasher_for_env
+    requested = backend.strip().lower()
+    aliases = {"gpu": "opencl", "opencl": "opencl", "remote": "remote", "cpu": "cpu", "asic": "asic", "super_asic": "super_asic"}
+    if requested != "auto" and requested not in aliases:
+        raise SystemExit(f"unknown execution backend {backend!r}")
 
-        return hasher_for_env()
+    registry = BackendRegistry(
+        software_revision=os.getenv("PYTHIA_SOFTWARE_REVISION", "unknown"),
+        evidence_path=os.getenv("PYTHIA_BACKEND_EVIDENCE_PATH", "data/backend_decisions.jsonl"),
+    )
+    registry.register(
+        "cpu", BackendKind.CPU, "CpuReferenceHasher",
+        factory=CpuReferenceHasher,
+    )
+
     repo_root = str(Path(__file__).resolve().parents[3])
     if repo_root not in sys.path:
         sys.path.insert(0, repo_root)
-    try:
+
+    def opencl_factory():
         from mining.bitcoin_hasher import BitcoinHasher
+        return BitcoinHasher(backend="opencl")
 
-        hasher = BitcoinHasher(backend=backend)
-    except Exception as exc:
-        if backend in ("gpu", "opencl"):
-            raise
-        fallback = CpuReferenceHasher()
-        fallback.fallback_reason = f"OpenCL unavailable: {exc}"
-        return fallback
-    if hasher.backend == "cpu":
-        fallback = CpuReferenceHasher()
-        fallback.fallback_reason = hasher.fallback_reason or "no OpenCL device bound"
-        return fallback
-    return hasher
+    def accelerator_health(instance):
+        actual = str(getattr(instance, "backend", "Unavailable"))
+        healthy = actual not in {"cpu", "Unavailable", "none", ""}
+        reason = "accelerator self-check passed" if healthy else (
+            getattr(instance, "fallback_reason", None) or "accelerator did not bind"
+        )
+        return healthy, str(reason), {
+            "reported_backend": actual,
+            "reported_device": getattr(instance, "device", "Unavailable"),
+        }
+
+    registry.register(
+        "opencl", BackendKind.GPU, "BitcoinHasher/OpenCL",
+        factory=opencl_factory,
+        health=accelerator_health,
+    )
+
+    def remote_factory():
+        from mining.remote_hasher import hasher_for_env
+        return hasher_for_env()
+
+    registry.register(
+        "remote", BackendKind.GPU, "RemoteHasher",
+        factory=remote_factory,
+        health=accelerator_health,
+    )
+    registry.register(
+        "asic", BackendKind.ASIC, "Unavailable",
+        factory=None,
+        unavailable_reason="no production ASIC transport is implemented",
+    )
+    registry.register(
+        "super_asic", BackendKind.SUPER_ASIC, "Unavailable",
+        factory=None,
+        unavailable_reason="no production SUPER ASIC transport is implemented",
+    )
+
+    order = tuple(
+        value.strip().lower()
+        for value in os.getenv("PYTHIA_BACKEND_ORDER", "opencl,remote,cpu").split(",")
+        if value.strip()
+    )
+    selected = registry.select(
+        aliases.get(requested, requested),
+        policy_order=order,
+    )
+    LOG.info(
+        "execution backend selected: %s",
+        json.dumps(selected.backend_selection, sort_keys=True, separators=(",", ":"), default=str),
+    )
+    return selected
 
 
-EXECUTION_DEVICES = ("opencl", "cpu", "remote")
+EXECUTION_DEVICES = ("opencl", "cpu", "remote", "asic", "super_asic")
 
 
 def execution_device() -> str | None:
@@ -180,7 +229,7 @@ async def _main_async(args) -> None:
     if not args.device and device is None:
         raise SystemExit(
             "--device or MLA1517_MMIO_DEVICE is required "
-            "(or PYTHIA_EXECUTION_DEVICE=opencl|cpu for bridge-free mining)"
+            "(or PYTHIA_EXECUTION_DEVICE=opencl|cpu|remote|asic|super_asic for bridge-free mining)"
         )
     backend = device if not args.device else os.getenv("PYTHIA_EXECUTION_BACKEND", "auto")
     endpoints = pool_endpoints(args)
