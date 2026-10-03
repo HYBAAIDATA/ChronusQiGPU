@@ -1806,6 +1806,12 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             getattr(hasher, "k_m32", None) is not None
         ):
             return "opencl_m32"
+        if backend.split(":", 1)[0] in ("asic", "super_asic") and (
+            getattr(hasher, "k_range", None) is not None
+        ):
+            # ASIC / composite lanes expose a contiguous-window arm
+            # (grind_target_range) — that is the only route they can run.
+            return "opencl_range"
         return "cpu_reference"
 
     def _router_for(self, plan: SearchPlan) -> ExecutionRouter:
@@ -2275,6 +2281,18 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                         lease=reserved.contract(),
                         is_still_fresh=lambda: self._identity_is(identity.key),
                     )
+                except Exception as exc:
+                    self.causal.record("execution_failed", coordinate, reason=str(exc))
+                    self.last_execution = {
+                        "executed": False,
+                        "job_id": job.job_id,
+                        "plan_id": plan.plan_id,
+                        "lease_id": lease.lease_id,
+                        "execution_id": coordinate.execution_id,
+                        "pool_outcome": PoolOutcome.NOT_SUBMITTED.value,
+                        "reason": f"execution_router: {exc}",
+                    }
+                    raise
                 finally:
                     self._execution_in_flight = False
                 self.cycle.transition(
@@ -2312,7 +2330,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     )
                     self.causal.record("candidate_found", coordinate, nonce=candidate["nonce"])
                     if stale:
-                        outcome = PoolOutcome.NOT_SUBMITTED
+                        outcome = PoolOutcome.STALE
                         self.cycle.transition(
                             MiningCycleState.EVALUATE,
                             event="stale",

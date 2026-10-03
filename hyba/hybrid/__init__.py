@@ -46,6 +46,8 @@ from hyba.hybrid.performance import (
     enforce_floor,
     job_performance_report,
 )
+from hyba.hybrid.remote_solver import RemoteScheduler
+from hyba.hybrid.super_asic import AsicHasherAdapter, SuperAsicHasher
 from hyba.hybrid.tensor_advisor import (
     IdentityWindowRanker,
     TensorAdviceEvidence,
@@ -58,6 +60,7 @@ from hyba.hybrid.tensor_advisor import (
 __all__ = [
     "ASICNotPresent",
     "ASICSolver",
+    "AsicHasherAdapter",
     "AttestationRegistry",
     "AttestationViolation",
     "CoverageCertificate",
@@ -77,7 +80,9 @@ __all__ = [
     "NonceWindow",
     "LayerSample",
     "PerformanceReport",
+    "RemoteScheduler",
     "Share",
+    "SuperAsicHasher",
     "SpanAssignment",
     "StratumJob",
     "TraversalHistory",

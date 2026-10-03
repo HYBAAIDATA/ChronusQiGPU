@@ -6,8 +6,11 @@ the probe is a real capability check, not a configuration lookup — the CPU
 lane re-hashes a known vector through hashlib, the GPU lane binds an OpenCL
 device through ``BitcoinHasher`` (which self-checks the kernels against
 hashlib before it reports success), the remote lane binds the remote GPU
-agent's health contract, and the ASIC lanes report truthfully that no
-driver exists in this build.
+agent's health contract, the ``asic`` lane probes the real ASIC channel
+driver (:class:`hyba.hybrid.asic_solver.ASICSolver` — network/serial/PCIe),
+and ``super_asic`` binds the hybrid composition of every supported
+substrate — ASIC channel(s), the remote fleet, and the local OpenCL/CPU
+solver — under the Lucas-partitioned coordinator.
 
 Routing follows the declared policy only:
 
@@ -16,8 +19,11 @@ Routing follows the declared policy only:
 * ``cpu``    — CPU lane only.
 * ``gpu`` / ``opencl`` — the OpenCL lane or the selection fails closed.
 * ``remote`` — the remote GPU lane or the selection fails closed.
-* ``asic`` / ``super_asic`` — those lanes or a closed refusal; no lane is
-  invented to satisfy the request.
+* ``asic`` — a physically bound ASIC channel or a closed refusal; no lane
+  is invented to satisfy the request.
+* ``super_asic`` — the joined-substrate composition; available whenever at
+  least one real substrate binds (ASIC channel, remote fleet, or the
+  resident GPU/CPU solver), with ``backend`` naming what joined.
 
 The probe result is evidence: every lane surfaces its status, its device,
 and — when unavailable — the measured reason.
@@ -216,23 +222,88 @@ def _probe_remote_gpu() -> LaneProbe:
         )
 
 
-def _probe_asic(lane: BackendLane) -> LaneProbe:
-    """ASIC lanes: no driver exists in this build; the probe reports that.
+def _probe_asic() -> LaneProbe:
+    """ASIC lane: run the real channel probe, not a declaration.
 
-    ``asic/`` ships an unsynthesised Verilog sketch only, so the honest
-    measured answer is unavailable — surfaced, not hidden.
+    :class:`hyba.hybrid.asic_solver.ASICSolver` speaks to physical ASICs
+    through the configured channels (``HYBRID_ASIC_ENDPOINT`` network,
+    ``HYBRID_ASIC_SERIAL``, ``HYBRID_ASIC_PCIE``). ``capability()`` is a
+    live probe: an unconfigured or unresponsive channel reports
+    ``supported=False`` with the concrete reason, and the lane stays
+    unavailable. When a dispatch-capable channel answers, the lane binds
+    it through :class:`AsicHasherAdapter`.
     """
-    return LaneProbe(
-        lane=lane.value,
-        available=False,
-        backend=None,
-        device=None,
-        probed_at=time.time(),
-        reason=(
-            "no ASIC driver is present in this build "
-            "(asic/ is an unsynthesised Verilog sketch); lane cannot be probed"
-        ),
-    )
+    try:
+        from hyba.hybrid.asic_solver import ASICSolver
+        from hyba.hybrid.super_asic import AsicHasherAdapter
+
+        solver = ASICSolver()
+        cap = solver.capability()
+        if not cap.supported:
+            return LaneProbe(
+                lane=BackendLane.ASIC.value,
+                available=False,
+                backend=None,
+                device=None,
+                probed_at=time.time(),
+                reason=cap.reason_if_unsupported or "ASIC channel unsupported",
+            )
+        return LaneProbe(
+            lane=BackendLane.ASIC.value,
+            available=True,
+            backend="asic",
+            device=cap.device_id,
+            probed_at=time.time(),
+            reason=(
+                f"ASIC channel bound: {cap.detail.get('channel', 'unknown')} "
+                f"channel measured {cap.measured_hashes_per_sec:g} H/s"
+            ),
+            hasher=AsicHasherAdapter(solver),
+        )
+    except Exception as exc:
+        return LaneProbe(
+            lane=BackendLane.ASIC.value,
+            available=False,
+            backend=None,
+            device=None,
+            probed_at=time.time(),
+            reason=f"ASIC probe failed: {type(exc).__name__}: {exc}",
+        )
+
+
+def _probe_super_asic() -> LaneProbe:
+    """super_asic lane: bind the composite over every supported substrate.
+
+    ASIC channel(s) + remote fleet + resident GPU/CPU solver under one
+    Lucas-partitioned coordinator — the super-GPU surface and the ASIC
+    channel combined for measured increased hashrate. The lane is
+    available whenever at least one real substrate binds; ``backend``
+    names the composition honestly (``super_asic:cpu`` on a bare host,
+    ``super_asic:asic+remote+gpu`` when everything joins).
+    """
+    try:
+        from hyba.hybrid.super_asic import SuperAsicHasher
+
+        hasher = SuperAsicHasher.bind()
+        count = len(hasher._members)
+        return LaneProbe(
+            lane=BackendLane.SUPER_ASIC.value,
+            available=True,
+            backend=hasher.backend,
+            device=hasher.device,
+            probed_at=time.time(),
+            reason=(f"composite bound over {count} substrate(s): {hasher.backend}"),
+            hasher=hasher,
+        )
+    except Exception as exc:
+        return LaneProbe(
+            lane=BackendLane.SUPER_ASIC.value,
+            available=False,
+            backend=None,
+            device=None,
+            probed_at=time.time(),
+            reason=f"super_asic composition failed: {type(exc).__name__}: {exc}",
+        )
 
 
 # request tokens -> routing. ``auto`` probes GPU then remote, then falls
@@ -272,8 +343,8 @@ class BackendRegistry:
             BackendLane.CPU: _probe_cpu,
             BackendLane.GPU: _probe_gpu,
             BackendLane.REMOTE_GPU: _probe_remote_gpu,
-            BackendLane.ASIC: lambda: _probe_asic(BackendLane.ASIC),
-            BackendLane.SUPER_ASIC: lambda: _probe_asic(BackendLane.SUPER_ASIC),
+            BackendLane.ASIC: _probe_asic,
+            BackendLane.SUPER_ASIC: _probe_super_asic,
         }
         self._probed: dict[BackendLane, LaneProbe] = {}
 

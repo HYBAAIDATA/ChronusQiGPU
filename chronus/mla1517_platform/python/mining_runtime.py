@@ -120,7 +120,9 @@ def _execution_hasher(backend: str, registry: BackendRegistry | None = None):
     A lane is usable only after its real capability probe: ``auto`` probes
     GPU then remote, then falls back to the CPU reference with the fallback
     reason recorded; explicit lanes (``cpu``, ``gpu``/``opencl``, ``remote``,
-    ``asic``, ``super_asic``) select only that lane or fail closed.
+    ``asic``, ``super_asic``) select only that lane or fail closed. The
+    ``asic`` lane requires a live ASIC channel; ``super_asic`` runs the
+    Lucas-partitioned composite over whichever substrates genuinely bound.
     """
     return (registry or _registry()).select(backend).hasher
 
@@ -134,9 +136,13 @@ def execution_device() -> str | None:
     ``opencl``/``gpu`` mines on the OpenCL device the hasher binds and
     self-checks against hashlib, and refuses to start without one; ``cpu``
     mines on the labelled CPU reference; ``remote`` mines on a remote GPU
-    agent bound via ``MLA1517_REMOTE_GPU_ENDPOINT``; ``asic``/``super_asic``
-    fail closed until a real driver exists; ``auto`` probes the declared
-    lanes in policy order. Unset keeps the MMIO bridge as the only device.
+    agent bound via ``MLA1517_REMOTE_GPU_ENDPOINT``; ``asic`` binds a real
+    ASIC channel (``HYBRID_ASIC_ENDPOINT``/``HYBRID_ASIC_SERIAL``/
+    ``HYBRID_ASIC_PCIE``) or fails closed; ``super_asic`` binds the hybrid
+    composition over every supported substrate (ASIC channel + remote fleet
+    + resident GPU/CPU solver) via the Lucas-partitioned coordinator;
+    ``auto`` probes the declared lanes in policy order. Unset keeps the
+    MMIO bridge as the only device.
     """
     value = os.getenv("PYTHIA_EXECUTION_DEVICE", "").strip().lower()
     if not value:

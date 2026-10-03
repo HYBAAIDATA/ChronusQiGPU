@@ -9,6 +9,7 @@ pyopencl==2024.1
 nltk==3.9.1
 scikit-learn==1.5.2
 fastapi==0.115.6
+scipy==1.18.1
 anthropic==0.40.0
 networkx==3.4.2
 pytest==8.3.4
