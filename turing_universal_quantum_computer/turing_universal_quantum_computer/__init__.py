@@ -41,6 +41,13 @@ Production plane:
 backend_binding, hardened_unified_substrate, unified_punch, bitcoin_hasher,
 hash_pipeline, manifold_bridge, intelligences, toe_system, four_layer_stack,
 scaled_execution (LucasScaledAethelExecutionAdapter).
+
+Product boundary (v1.2):
+backends              backend registry, capability envelopes, admission and
+                      refusal, and the fail-closed QPU boundary
+capabilities          published capability matrix + enforced claim audit
+certificates          verifiable run witnesses
+console               the operator console (`turing-vqc`)
 """
 
 from __future__ import annotations
@@ -149,6 +156,11 @@ _LAZY_MODULES = {
     "phi_machine",
     "midas_vqc",
     "trotter_simulation",
+    # product boundary (v1.2)
+    "backends",
+    "capabilities",
+    "certificates",
+    "console",
 }
 
 _LAZY_SYMBOLS = {
@@ -202,9 +214,38 @@ _LAZY_SYMBOLS = {
     "MidasPhiVQCRanker": "midas_vqc",
     "VQCConfig": "midas_vqc",
     "TrotterHamiltonianSimulator": "trotter_simulation",
+    # product boundary (v1.2)
+    "Program": "backends",
+    "Operation": "backends",
+    "ExecutionResult": "backends",
+    "ExecutionClass": "backends",
+    "TruthClass": "backends",
+    "Capability": "backends",
+    "Admission": "backends",
+    "ExactStatevector": "backends",
+    "ExactFieldBackend": "backends",
+    "StabilizerBackend": "backends",
+    "SparseExactBackend": "backends",
+    "ClosedFormBackend": "backends",
+    "QPUBackend": "backends",
+    "QPUUnavailableError": "backends",
+    "QPUClaimError": "backends",
+    "QPUJob": "backends",
+    "assert_measured_qpu": "backends",
+    "backend_matrix": "backends",
+    "select_backend": "backends",
+    "execute": "backends",
+    "capability_report": "capabilities",
+    "capability_matrix": "capabilities",
+    "audit_claims": "capabilities",
+    "render_matrix": "capabilities",
+    "RunWitness": "certificates",
+    "issue_witness": "certificates",
+    "verify_witness": "certificates",
+    "QuantumConsole": "console",
 }
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 
 def __getattr__(name: str):

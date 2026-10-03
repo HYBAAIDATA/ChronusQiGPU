@@ -115,6 +115,48 @@ class StratumRuntimeStateTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "already unresolved"):
             state.submission_started("job-1")
 
+    def test_job_snapshot_exports_the_pool_work_fields(self) -> None:
+        """§4: the job view needs the fields the pool actually delivered."""
+        state = _authorized_state()
+        state.target_updated(target=(1 << 255), source="mining.set_target", value="80" + "00" * 31)
+        generation = state.job_received(
+            replace(
+                JOB,
+                prevhash="ab" * 32,
+                merkle_branch=("cc" * 32, "dd" * 32),
+                target=state.target,
+            ),
+            SUBSCRIPTION,
+        )
+        job = state.snapshot(now=generation.received_at)["job"]
+
+        self.assertTrue(job["active"])
+        self.assertEqual(job["prevhash"], "ab" * 32)
+        self.assertEqual(job["version"], "20000000")
+        self.assertEqual(job["nbits"], "1d00ffff")
+        self.assertEqual(job["ntime"], "65abcdef")
+        self.assertEqual(job["extranonce1"], "01020304")
+        self.assertEqual(job["extranonce2_size"], 4)
+        self.assertEqual(job["merkle_branch"], ["cc" * 32, "dd" * 32])
+        self.assertEqual(job["coinb1"], "01000000")
+        self.assertEqual(job["coinb2"], "ffffffff")
+
+    def test_job_fields_stay_null_before_any_job(self) -> None:
+        """No job received means no work-detail fields — never invented."""
+        snapshot = _authorized_state().snapshot()["job"]
+        for key in (
+            "prevhash",
+            "version",
+            "nbits",
+            "ntime",
+            "extranonce1",
+            "extranonce2_size",
+            "merkle_branch",
+            "coinb1",
+            "coinb2",
+        ):
+            self.assertIsNone(snapshot[key], key)
+
 
 if __name__ == "__main__":
     unittest.main()

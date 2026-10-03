@@ -43,9 +43,7 @@ from hyba.hybrid.gpu_solver import GPUSolver
 from hyba.hybrid.nonce_scheduler import AttestationRegistry
 
 # Dockerfile.hybrid points HYBA_REPORTS_DIR at a volume-mountable directory.
-REPORTS = Path(
-    os.getenv("HYBA_REPORTS_DIR") or Path(__file__).resolve().parent.parent / "reports"
-)
+REPORTS = Path(os.getenv("HYBA_REPORTS_DIR") or Path(__file__).resolve().parent.parent / "reports")
 
 
 def synthetic_headers(n: int, seed: int = 0x48495259) -> List[bytes]:
@@ -122,9 +120,15 @@ def run_config(
             from hyba.hybrid.nonce_scheduler import NonceWindow
 
             t0 = time.monotonic_ns()
+            job_id = f"asic_only-{i}"
+            asic.prepare(job_id, header)
             window = NonceWindow(
-                job_id=f"asic_only-{i}", session_epoch=0, job_epoch=0,
-                base_nonce=0, span=nonce_space, target=target,
+                job_id=job_id,
+                session_epoch=0,
+                job_epoch=0,
+                base_nonce=0,
+                span=nonce_space,
+                target=target,
             )
             handle = asic.dispatch(window)
             share = None
@@ -138,12 +142,8 @@ def run_config(
             trials.append(
                 {
                     "found": share is not None,
-                    "nonces_tried": (
-                        share.nonces_tried if share else nonce_space
-                    ),
-                    "winner_probe_index": (
-                        share.probe_index if share else None
-                    ),
+                    "nonces_tried": (share.nonces_tried if share else nonce_space),
+                    "winner_probe_index": (share.probe_index if share else None),
                     "wall_ns": time.monotonic_ns() - t0,
                     "cert_digest": "asic_only:no_partition",
                     "skipped": False,
@@ -190,9 +190,7 @@ def run_config(
         "total_hashes": int(sum(tried)),
         "wall_ns_total": int(sum(t["wall_ns"] for t in done)),
         "attestations_emitted": len(att) - registry_before,
-        "found_rate": (
-            sum(1 for t in done if t["found"]) / len(done) if done else None
-        ),
+        "found_rate": (sum(1 for t in done if t["found"]) / len(done) if done else None),
     }
 
 
@@ -239,7 +237,9 @@ def benchmark(
         "n_headers": len(headers),
         "target_bits": target_bits,
         "nonce_space": nonce_space,
-        "per_config": {k: {kk: vv for kk, vv in v.items() if kk != "trials"} for k, v in results.items()},
+        "per_config": {
+            k: {kk: vv for kk, vv in v.items() if kk != "trials"} for k, v in results.items()
+        },
         "lucas_minus_even": {"diffs": dc, "ci95": bootstrap_ci(dc, resamples)},
         "lucas_minus_gpu_only": {"diffs": da, "ci95": bootstrap_ci(da, resamples)},
     }
@@ -319,9 +319,7 @@ def write_reports(
         "physical-cost metric separately: digests actually executed on",
         "device, including hashes burned by windows later cancelled.",
     ]
-    (out_dir / "hybrid_benchmark.md").write_text(
-        "\n".join(lines) + "\n", encoding="utf-8"
-    )
+    (out_dir / "hybrid_benchmark.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     if significant:
         verdict = (
@@ -344,13 +342,15 @@ def write_reports(
         "",
         verdict,
         "",
-        f"- harness_trustworthy: {harness_trustworthy} "
-        "(negative-control CIs contain zero; the instrument is not "
-        "measuring artifacts)"
-        if harness_trustworthy
-        else f"- harness_trustworthy: {harness_trustworthy} "
-        "(negative-control CI excluded zero — the harness itself is "
-        "measuring artifacts; all other numbers are suspect)",
+        (
+            f"- harness_trustworthy: {harness_trustworthy} "
+            "(negative-control CIs contain zero; the instrument is not "
+            "measuring artifacts)"
+            if harness_trustworthy
+            else f"- harness_trustworthy: {harness_trustworthy} "
+            "(negative-control CI excluded zero — the harness itself is "
+            "measuring artifacts; all other numbers are suspect)"
+        ),
         f"- negative control lucas − gpu_only CI: [{neg_ci['low']:,.1f}, {neg_ci['high']:,.1f}]",
         f"- positive control lucas − gpu_only CI: [{pos_ci['low']:,.1f}, {pos_ci['high']:,.1f}]",
         f"- corpus: negative={neg['corpus']} positive={pos['corpus']}",
@@ -361,9 +361,7 @@ def write_reports(
         "Every dispatched window was attested; absent ASIC channels were",
         "recorded as attestation gaps, not simulated.",
     ]
-    (out_dir / "hybrid_falsification.md").write_text(
-        "\n".join(fals) + "\n", encoding="utf-8"
-    )
+    (out_dir / "hybrid_falsification.md").write_text("\n".join(fals) + "\n", encoding="utf-8")
 
     return {
         "harness_trustworthy": harness_trustworthy,

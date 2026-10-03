@@ -338,6 +338,35 @@ class BanditMetaLearner:
         stats[0] += 1 if success else 0
         stats[1] += 1
 
+    def to_dict(self) -> dict[str, Any]:
+        body = {
+            "schema": "euclid.cognition.strategy-stats/1",
+            "min_trials": self.min_trials,
+            "stats": [
+                {"problem_class": klass, "strategy_id": strategy,
+                 "successes": value[0], "trials": value[1]}
+                for (klass, strategy), value in sorted(self._stats.items())
+            ],
+        }
+        return {**body, "seal": domain_hash("euclid.cognition.strategy-stats.seal.v1", body)}
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> "BanditMetaLearner":
+        body = {"schema": payload.get("schema"), "min_trials": payload.get("min_trials"),
+                "stats": payload.get("stats")}
+        if body["schema"] != "euclid.cognition.strategy-stats/1":
+            raise ValueError("unsupported strategy-stats schema")
+        if payload.get("seal") != domain_hash(
+            "euclid.cognition.strategy-stats.seal.v1", body
+        ):
+            raise ValueError("strategy-stats seal mismatch")
+        learner = cls(min_trials=int(body["min_trials"] or 1))
+        for row in body["stats"] or []:
+            learner._stats[(str(row["problem_class"]), str(row["strategy_id"]))] = [
+                int(row["successes"]), int(row["trials"])
+            ]
+        return learner
+
 
 class SignalMetaController:
     """Evidence-driven metacognition over measurable episode signals.

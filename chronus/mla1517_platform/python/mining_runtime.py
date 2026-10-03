@@ -19,6 +19,10 @@ from chronus.mla1517.mining.chain_observer import BitcoinChainObserver
 from chronus.mla1517.mining.pool_chain import PoolChainObserver
 from chronus.mla1517.mining.session import MiningSession
 from chronus.mla1517.mining.stratum_events import StratumEventLog
+from chronus.mla1517.mining.telemetry_history import (
+    TelemetryHistory,
+    default_history_path,
+)
 from manifold_pool_coordinator import PoolEndpoint
 
 LOG = logging.getLogger("pythia.mining_runtime")
@@ -101,8 +105,13 @@ def pool_endpoints(args, config: dict | None = None) -> list[PoolEndpoint]:
 
 
 def _registry() -> BackendRegistry:
-    """The lane registry for this process; probes are cached by the registry."""
-    return BackendRegistry()
+    """The lane registry for this process; probes and decisions are evidence."""
+    return BackendRegistry(
+        software_revision=os.getenv("PYTHIA_SOFTWARE_REVISION", "unknown"),
+        evidence_path=os.getenv(
+            "PYTHIA_BACKEND_EVIDENCE_PATH", "data/backend_decisions.jsonl"
+        ),
+    )
 
 
 def _execution_hasher(backend: str, registry: BackendRegistry | None = None):
@@ -111,7 +120,9 @@ def _execution_hasher(backend: str, registry: BackendRegistry | None = None):
     A lane is usable only after its real capability probe: ``auto`` probes
     GPU then remote, then falls back to the CPU reference with the fallback
     reason recorded; explicit lanes (``cpu``, ``gpu``/``opencl``, ``remote``,
-    ``asic``, ``super_asic``) select only that lane or fail closed.
+    ``asic``, ``super_asic``) select only that lane or fail closed. The
+    ``asic`` lane requires a live ASIC channel; ``super_asic`` runs the
+    Lucas-partitioned composite over whichever substrates genuinely bound.
     """
     return (registry or _registry()).select(backend).hasher
 
@@ -125,9 +136,13 @@ def execution_device() -> str | None:
     ``opencl``/``gpu`` mines on the OpenCL device the hasher binds and
     self-checks against hashlib, and refuses to start without one; ``cpu``
     mines on the labelled CPU reference; ``remote`` mines on a remote GPU
-    agent bound via ``MLA1517_REMOTE_GPU_ENDPOINT``; ``asic``/``super_asic``
-    fail closed until a real driver exists; ``auto`` probes the declared
-    lanes in policy order. Unset keeps the MMIO bridge as the only device.
+    agent bound via ``MLA1517_REMOTE_GPU_ENDPOINT``; ``asic`` binds a real
+    ASIC channel (``HYBRID_ASIC_ENDPOINT``/``HYBRID_ASIC_SERIAL``/
+    ``HYBRID_ASIC_PCIE``) or fails closed; ``super_asic`` binds the hybrid
+    composition over every supported substrate (ASIC channel + remote fleet
+    + resident GPU/CPU solver) via the Lucas-partitioned coordinator;
+    ``auto`` probes the declared lanes in policy order. Unset keeps the
+    MMIO bridge as the only device.
     """
     value = os.getenv("PYTHIA_EXECUTION_DEVICE", "").strip().lower()
     if not value:
@@ -156,7 +171,7 @@ async def _main_async(args) -> None:
     if not args.device and device is None:
         raise SystemExit(
             "--device or MLA1517_MMIO_DEVICE is required "
-            "(or PYTHIA_EXECUTION_DEVICE=opencl|cpu for bridge-free mining)"
+            "(or PYTHIA_EXECUTION_DEVICE=opencl|cpu|remote|asic|super_asic for bridge-free mining)"
         )
     # The supervisor exports PYTHIA_IDENTITY_HMAC_SECRET to every spawned
     # worker (startup_contract.rotate_supervisor_secret). A standalone
@@ -175,7 +190,11 @@ async def _main_async(args) -> None:
     )
     try:
         with HeartbeatEmitter("agentic-mining") as heartbeat:
-            stratum_events = StratumEventLog()
+            # §7 durable work history: every observed Stratum event plus
+            # bounded hashrate samples, appended as observed — the control
+            # API tails the same file for /api/v1/telemetry/history.
+            history = TelemetryHistory(default_history_path())
+            stratum_events = StratumEventLog(on_event=history.append)
             retarget = RetargetWindowTracker(
                 os.getenv("PYTHIA_RETARGET_TELEMETRY_PATH", "data/retarget_windows.json")
             )
@@ -228,7 +247,12 @@ async def _main_async(args) -> None:
                 coordinator.chain_observer = PoolChainObserver(lambda: coordinator.client)
                 LOG.info("chain evidence: pool Stratum jobs (no bitcoind configured)")
             coordinator.set_evidence_sink(publish_mining_evidence)
-            coordinator.set_metrics_sink(lambda counters: heartbeat.report(**counters))
+            coordinator.set_metrics_sink(
+                lambda counters: (
+                    heartbeat.report(**counters),
+                    history.record_metrics(counters),
+                )
+            )
             coordinator.set_agentic_state_path(
                 os.getenv("PYTHIA_AGENTIC_STATE_PATH", "data/agentic_policy.json")
             )

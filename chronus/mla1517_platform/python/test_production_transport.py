@@ -8,6 +8,8 @@ import socket
 import unittest
 
 from manifold_pool_coordinator import PoolEndpoint
+from chronus.mla1517.mining.causal import CausalLedger
+from chronus.mla1517.mining.cycle_fsm import MiningCycleLedger
 from chronus.mla1517.mining.production_transport import (
     ProductionMiningCoordinator,
     ProductionStratumClient,
@@ -148,10 +150,94 @@ class ProductionTransportTests(unittest.TestCase):
         coord.production_outbound_queue_size = 8
         coord._refresh_work_identity = lambda: None
         coord._precompute_wake = asyncio.Event()
+        # This fixture bypasses __init__ via __new__, so the two collaborators the
+        # failover path records into must be supplied the way
+        # IntelligentPoolCoordinator.__init__ builds them (coordinator.py:416,419).
+        # Without them connect_with_failover raises AttributeError on self.causal
+        # once the secondary endpoint succeeds.
+        coord.causal = CausalLedger()
+        coord.cycle = MiningCycleLedger(on_event=coord._mirror_cycle_event)
         try:
             client = await coord.connect_with_failover()
             self.assertEqual(client.endpoint.name, "secondary")
             self.assertEqual(coord.endpoint_index, 1)
+            self.assertEqual(pool.connections, 1)
+
+            # Failover evidence must come from the canonical causal mechanism, and
+            # must record the real refusal of the configured primary -- not a
+            # synthesised success, and not a substituted default pool.
+            events = coord.causal.events()
+            kinds = [event.kind for event in events]
+            self.assertIn("pool_endpoint_refused", kinds)
+            self.assertIn("pool_endpoint_selected", kinds)
+            refused = [e for e in events if e.kind == "pool_endpoint_refused"]
+            self.assertTrue(
+                any(e.detail.get("pool") == "primary" for e in refused),
+                "primary endpoint failure was not recorded",
+            )
+            selected = [e for e in events if e.kind == "pool_endpoint_selected"]
+            self.assertTrue(
+                any(e.detail.get("pool") == "secondary" for e in selected),
+                "secondary endpoint selection was not recorded",
+            )
+            # The rotation off the primary must leave a HEAL transition as evidence.
+            self.assertIn("cycle_transition", kinds)
+            self.assertEqual(pool.connections, 1)
+        finally:
+            if coord.client is not None:
+                await coord.client.close()
+            server.close()
+            await server.wait_closed()
+
+    def test_failover_records_refusal_and_selection_evidence(self) -> None:
+        asyncio.run(self._failover_evidence())
+
+    async def _failover_evidence(self) -> None:
+        pool = _HandshakePool()
+        server = await asyncio.start_server(pool.handle, "127.0.0.1", 0)
+        live_port = server.sockets[0].getsockname()[1]
+        probe = socket.socket()
+        probe.bind(("127.0.0.1", 0))
+        dead_port = probe.getsockname()[1]
+        probe.close()
+
+        coord = ProductionMiningCoordinator.__new__(ProductionMiningCoordinator)
+        coord.endpoints = (
+            PoolEndpoint("127.0.0.1", dead_port, "primary"),
+            PoolEndpoint("127.0.0.1", live_port, "secondary"),
+        )
+        coord.username = "worker"
+        coord.password = "x"
+        coord.endpoint_index = 0
+        coord.client = None
+        coord.stratum_status_sink = None
+        coord.production_connect_timeout = 0.05
+        coord.production_request_timeout = 1.0
+        coord.production_write_timeout = 0.1
+        coord.production_outbound_queue_size = 8
+        coord._refresh_work_identity = lambda: None
+        coord._precompute_wake = asyncio.Event()
+        try:
+            client = await coord.connect_with_failover()
+            # The failover path self-heals its evidence machinery: the
+            # primary refusal and the committed selection are both recorded
+            # in a real causal ledger, and the coordinator is left fully
+            # bound to the live secondary — not partially initialized.
+            events = coord.causal.events()
+            kinds = [event.kind for event in events]
+            self.assertIn("pool_endpoint_refused", kinds)
+            self.assertIn("pool_endpoint_selected", kinds)
+            refused = next(e for e in events if e.kind == "pool_endpoint_refused")
+            self.assertEqual(refused.detail["pool"], "primary")
+            self.assertEqual(refused.detail["stage"], "connect")
+            selected = next(e for e in events if e.kind == "pool_endpoint_selected")
+            self.assertEqual(selected.detail["pool"], "secondary")
+            self.assertEqual(selected.detail["attempt"], 2)
+            self.assertEqual(len(selected.detail["previous_failures"]), 1)
+            self.assertIs(coord.client, client)
+            self.assertTrue(coord.client.connected)
+            # Only configured endpoints were attempted: one dead port, one
+            # live pool, one pool connection.
             self.assertEqual(pool.connections, 1)
         finally:
             if coord.client is not None:

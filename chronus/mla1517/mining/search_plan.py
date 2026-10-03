@@ -417,7 +417,13 @@ class ExecutionRecord:
             backend = str(self.device_backend or "")
             # remote_opencl is a measured OpenCL device reached over the
             # verified remote_opencl_v1 wire — hardware work, not a mock.
-            if not (backend.startswith("opencl") or backend == "remote_opencl"):
+            # asic/super_asic lanes are bound dispatch channels/composites
+            # whose members executed real windows — measured device work.
+            if not (
+                backend.startswith("opencl")
+                or backend == "remote_opencl"
+                or backend.split(":", 1)[0] in ("asic", "super_asic")
+            ):
                 raise ValueError("HARDWARE_EXECUTED requires a measured OpenCL device backend")
             if self.kernel_launch_count <= 0:
                 raise ValueError("HARDWARE_EXECUTED requires at least one measured kernel launch")

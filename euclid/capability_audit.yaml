@@ -1,0 +1,101 @@
+# Capability audit for the intelligence-elevation programme (initial pass).
+# Classification vocabulary: CANONICAL | ADAPT | MERGE | SUPERSEDE |
+# RESEARCH_ONLY | REMOVE_FROM_ACTIVE_PATH | UNAUDITED.
+# Rule: nothing is deleted; unique capability is never removed without an
+# equivalence proof.  UNAUDITED modules keep their current status and are
+# listed so the next audit pass has an explicit queue.
+schema: euclid.capability-audit/1
+base_sha: bf6972f928b38f3a3f9c5ff2618970ef913e3e15
+audited_by: intelligence-elevation stage-1 (evidence-backed where cited)
+
+capabilities:
+  euclid.runtime.EuclidRuntime:
+    classification: CANONICAL
+    evidence: composition root; enable_intelligence wires the live stack;
+      restore now re-attaches the durable MemoryDatabase
+  euclid.governance.Delegator + euclid.rights.RightsLedger:
+    classification: CANONICAL
+    evidence: all cognition execution passes through dispatch gates; rights
+      revocation fails closed (test_execution_fails_closed_without_rights)
+  euclid.kairos_runtime.KairosRuntime:
+    classification: CANONICAL
+    evidence: rehearsal world runtime; replay_verify exercised by matrix probe
+  euclid.learning_service.LearningService + euclid.memory_database.MemoryDatabase:
+    classification: CANONICAL
+    evidence: sole learning/persistence path for cognition feedback
+  euclid.search.mcts_search.MCTSSearchEngine:
+    classification: SUPERSEDE
+    evidence: >-
+      review confirmed root-only traversal (children never expanded, tree
+      discarded per generation, no transposition reuse).  Preserved for
+      backwards compatibility and as benchmark condition C; the canonical
+      tree-search route is now euclid.search.deep_mcts.DeepMCTSEngine.
+      Benchmark note: condition C underperformed the random baseline on
+      held-out tasks in the v1 benchmark configuration.
+  euclid.search.evolutionary_search.EvolutionarySearchEngine:
+    classification: CANONICAL
+    evidence: strongest measured baseline route (condition B); retained as a
+      strategy in the meta-controller portfolio
+  euclid.search.deep_mcts.DeepMCTSEngine:
+    classification: CANONICAL
+    evidence: new; multi-depth, transposition table, hard budgets,
+      terminal-test-aware values, prior/value/reward/phi separation
+  euclid.core.primitives.ASTPrimitives:
+    classification: CANONICAL
+  euclid.discovery.ast_delta_discovery.ASTDeltaDiscoveryEngine:
+    classification: ADAPT
+    evidence: sandbox->promotion lifecycle retained; promotion still keys on
+      delta-phi trials and must gain held-out evaluation before it can
+      promote into the canonical loop (flagged, not blocking)
+  euclid.transfer.persistent_repository.PersistentPrimitiveRepository:
+    classification: CANONICAL
+    evidence: HMAC-signed persistence; reused by deep MCTS priors
+  euclid.surrogate.adaptive_surrogate.AdaptiveOperatorSurrogate:
+    classification: CANONICAL
+    evidence: policy-prior source for deep MCTS; RMSE reported
+  euclid.geometry.search_topology.CGPSearchTopologyController:
+    classification: ADAPT
+    evidence: used by v16 engines; not yet wired into deep MCTS (recorded as
+      open integration, not silently dropped)
+  euclid.core.phi_metric.PhiResonanceCalculator:
+    classification: ADAPT
+    evidence: phi is a diagnostic signal only in the elevated path;
+      multi-objective fitness with test gating is the objective
+  euclid.core.euclid_intelligence.EuclidIntelligenceEngine:
+    classification: RESEARCH_ONLY
+    evidence: Lucas/Pisot structural metrics; no measured task advantage;
+      retained for telemetry with truthful labelling
+  euclid.core.tononi_penrose.TononiPenroseSubstrate:
+    classification: RESEARCH_ONLY
+  euclid.agents.manifold.SharedEntangledManifold:
+    classification: RESEARCH_ONLY
+    evidence: 11D projection telemetry; no measured decision value yet
+  euclid.agents.orchestrator.MultiAgentEntangledOrchestrator:
+    classification: RESEARCH_ONLY
+    evidence: PYTHIA "recommendation" is a hard-coded annotation-density rule;
+      must not be presented as learned strategy selection
+  euclid.enterprise.roi_governance.EnterpriseROIGovernanceEngine:
+    classification: RESEARCH_ONLY
+    evidence: modelled financial estimates; separated from measured telemetry
+  euclid.cognition.*:
+    classification: CANONICAL
+    evidence: the integrated loop, episode evidence, world model, meta-learning
+      and service wiring added by this change; 27 focused tests
+  euclid.capability_matrix:
+    classification: CANONICAL
+    evidence: executable stage ladder; generates from probe evidence only
+
+unaudited_queues:
+  agi/: UNAUDITED (large legacy surface; no classification asserted)
+  Intelligence/: UNAUDITED (incl. Intelligence/asi)
+  toe/: UNAUDITED (declared operators/world-model machinery: audit scheduled
+    before any TOE-only benchmark route is asserted)
+  pythia stack: UNAUDITED (PYTHIA specialist role reserved; adapter pending)
+  salamander/: UNAUDITED (self-healing remains restricted per governance)
+  al_haras/: UNAUDITED (security/evidence governance ownership unchanged)
+
+non_actions:
+  - no module deleted
+  - no second learner, world-model authority, or top-level AI identity created
+  - no mining/Stratum/SHA256d authority touched
+  - runtime self-modification remains disabled

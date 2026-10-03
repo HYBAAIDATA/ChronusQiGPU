@@ -17,8 +17,11 @@ import sys
 import threading
 import time
 import traceback
+from collections import deque
 from dataclasses import dataclass
 from dataclasses import field
+from datetime import datetime
+from datetime import timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler
 from http.server import ThreadingHTTPServer
@@ -743,7 +746,7 @@ def _stratum_status_payload(
     primary.setdefault("endpoint", endpoint)
     primary.setdefault("worker", identity["user_redacted"])
     state = str(observed.get("state") or "DEGRADED")
-    return {
+    payload: dict[str, Any] = {
         "schema": "chronus.mla1517.stratum/1",
         "state": state,
         "ready": ready,
@@ -755,6 +758,22 @@ def _stratum_status_payload(
         "submission": submission,
         "counters": counters,
     }
+    # The worker publishes more measured context than the curated minimum:
+    # session identity, protocol, share outcome ratios, lifecycle flags, the
+    # retarget window, measured effective hashrate and the pool topology.
+    # These pass through verbatim — they are already canonical state.
+    for key in (
+        "session_id",
+        "protocol",
+        "outcomes",
+        "lifecycle",
+        "retarget_window",
+        "effective_stratum_hashrate_hs",
+        "pool",
+    ):
+        if observed.get(key) is not None:
+            payload[key] = observed[key]
+    return payload
 
 
 def _ready_to_mine_reason(
@@ -838,9 +857,7 @@ def _operator_principals() -> tuple[dict[str, dict[str, str]] | None, str | None
         return None, "operator principal mapping is invalid"
     principals: dict[str, dict[str, str]] = {}
     for principal_id, spec in value.items():
-        if not isinstance(principal_id, str) or not _PRINCIPAL_ID_RE.fullmatch(
-            principal_id
-        ):
+        if not isinstance(principal_id, str) or not _PRINCIPAL_ID_RE.fullmatch(principal_id):
             return None, "operator principal mapping is invalid"
         if not isinstance(spec, dict):
             return None, "operator principal mapping is invalid"
@@ -1102,6 +1119,328 @@ def telemetry_events_payload(limit: Any = 100) -> dict[str, Any]:
     }
 
 
+# -- operational-observability surface (spec §1-§13) -------------------------
+#
+# One canonical contract assembled from the channels that already carry the
+# truth: the worker's published Stratum snapshot and event log, the measured
+# hashing counters, the supervisor's worker records, the persisted JSONL
+# stores, and the guardian's public status. A section whose source has not
+# reported yet answers available=false with a reason — the console shows
+# "Unavailable", never a synthesized value.
+
+
+def _iso_ts(timestamp: float) -> str:
+    return datetime.fromtimestamp(timestamp, tz=timezone.utc).isoformat()
+
+
+def _env_data_path(env_name: str, default_name: str) -> Path:
+    """Worker-persisted data file. Workers run with cwd=_PY_DIR, so relative
+    env overrides resolve there too — not against the API process's cwd."""
+    raw = os.getenv(env_name)
+    if raw:
+        candidate = Path(raw)
+        if candidate.is_absolute():
+            return candidate
+        return _PY_DIR / candidate
+    return _PY_DIR / "data" / default_name
+
+
+def _file_evidence(path: Path | None) -> dict[str, Any]:
+    """Provenance of a persisted telemetry store — observed, never assumed."""
+    info: dict[str, Any] = {
+        "path": os.path.basename(str(path)) if path else None,
+        "exists": False,
+        "size_bytes": None,
+        "modified_at": None,
+    }
+    if path is None:
+        info["reason"] = "store not configured"
+        return info
+    try:
+        stat = os.stat(path)
+    except OSError:
+        info["reason"] = "no persisted records yet"
+        return info
+    info["exists"] = True
+    info["size_bytes"] = stat.st_size
+    info["modified_at"] = _iso_ts(stat.st_mtime)
+    return info
+
+
+def _jsonl_tail(path: Path, limit: int, kinds: set[str] | None = None) -> list[dict[str, Any]]:
+    """Newest ``limit`` records of a JSONL store; empty when absent."""
+    records: deque[dict[str, Any]] = deque(maxlen=max(1, int(limit)))
+    try:
+        with open(path, "rb") as stream:
+            for raw in stream:
+                raw = raw.strip()
+                if not raw:
+                    continue
+                try:
+                    record = json.loads(raw)
+                except ValueError:
+                    continue
+                if not isinstance(record, dict):
+                    continue
+                if kinds is not None and record.get("kind") not in kinds:
+                    continue
+                records.append(record)
+    except OSError:
+        return list(records)
+    return list(records)
+
+
+def _telemetry_history_path() -> Path:
+    return _env_data_path("PYTHIA_TELEMETRY_HISTORY_PATH", "telemetry_history.jsonl")
+
+
+def _causal_log_path() -> Path:
+    return _env_data_path("PYTHIA_CAUSAL_LOG_PATH", "causal_ledger.jsonl")
+
+
+def _mining_session_path() -> Path:
+    return _env_data_path("PYTHIA_MINING_SESSION_PATH", "mining_session.json")
+
+
+def telemetry_history_payload(limit: Any = 256, kind: Any = None) -> dict[str, Any]:
+    """Durable operational history — real records the worker appended (§7)."""
+    try:
+        count = max(1, min(int(limit), 500))
+    except (TypeError, ValueError):
+        count = 256
+    kinds = None
+    if isinstance(kind, str) and kind.strip():
+        kinds = {item.strip() for item in kind.split(",") if item.strip()}
+    path = _telemetry_history_path()
+    records = _jsonl_tail(path, count, kinds)
+    return {
+        "schema": "pythia.telemetry_history/1",
+        "generated_at": now_iso(),
+        "available": bool(records),
+        "reason": (
+            None if records else "the mining worker has not persisted telemetry history yet"
+        ),
+        "store": _file_evidence(path),
+        "count": len(records),
+        "records": records,
+    }
+
+
+def causal_events_payload(limit: Any = 128) -> dict[str, Any]:
+    """The persisted causal ledger's tail — durable causal evidence (§10)."""
+    try:
+        count = max(1, min(int(limit), 500))
+    except (TypeError, ValueError):
+        count = 128
+    path = _causal_log_path()
+    records = _jsonl_tail(path, count)
+    return {
+        "schema": "pythia.causal_tail/1",
+        "generated_at": now_iso(),
+        "available": bool(records),
+        "reason": (None if records else "the causal ledger has no persisted events yet"),
+        "store": _file_evidence(path),
+        "count": len(records),
+        "records": records,
+    }
+
+
+def mining_session_payload() -> dict[str, Any]:
+    """The durable mining lifecycle: state, cycle count and the share log."""
+    path = _mining_session_path()
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {
+            "schema": "pythia.mining_session/1",
+            "generated_at": now_iso(),
+            "available": False,
+            "reason": "no persisted mining session",
+            "store": _file_evidence(path),
+        }
+    share_log = raw.get("share_log") if isinstance(raw.get("share_log"), list) else []
+    pending = raw.get("pending") if isinstance(raw.get("pending"), dict) else None
+    return {
+        "schema": "pythia.mining_session/1",
+        "generated_at": now_iso(),
+        "available": True,
+        "store": _file_evidence(path),
+        "state": raw.get("state"),
+        "cycles": raw.get("cycles"),
+        "history": raw.get("history")[-16:] if isinstance(raw.get("history"), list) else None,
+        "last_block_hash": raw.get("last_block_hash"),
+        "share_count": len(share_log),
+        "share_log": share_log[-64:],
+        "pending": (
+            {
+                "job_id": pending.get("job_id"),
+                "block_hash": pending.get("block_hash"),
+                "parent_height": pending.get("parent_height"),
+                "block_candidate": pending.get("block_candidate"),
+                "outcome": pending.get("outcome"),
+                "submission_id": pending.get("submission_id"),
+                "sent_at": pending.get("sent_at"),
+            }
+            if pending
+            else None
+        ),
+    }
+
+
+def ops_telemetry_payload() -> dict[str, Any]:
+    """The canonical operational-telemetry contract (spec §2).
+
+    One document assembled from the channels that already carry truth: the
+    worker's published Stratum snapshot (pool/session/job/submission state,
+    measured outcomes, lifecycle flags, pool topology), the derived event
+    stream, the measured-hashing counters, the supervisor's worker records,
+    the persisted stores' provenance, and the guardian's public status.
+    Sections with no source yet answer available=false with a reason; the
+    frontend renders ``Unavailable``, never a synthesized value.
+    """
+    control = _control_plane()
+    records = control.records()
+    stratum = _stratum_status_payload(control, records)
+    metrics = _read_metrics("agentic-mining")
+    ready, ready_reason = _ready_to_mine_reason(records, stratum)
+    security_code, security = security_status_payload()
+    evidence = _metrics_json("agentic-mining", "mining_evidence")
+
+    history_path = _telemetry_history_path()
+    history_store = _file_evidence(history_path)
+    causal_store = _file_evidence(_causal_log_path())
+    session_store = _file_evidence(_mining_session_path())
+    session = mining_session_payload()
+
+    hashing = None
+    if "hashrate_hs" in metrics:
+        hashing = {
+            key: metrics.get(key)
+            for key in (
+                "hashrate_hs",
+                "hashes_total",
+                "hashes_in_span",
+                "span_s",
+                "executions_total",
+                "shares_accepted",
+                "stale_candidates_dropped",
+                "backend",
+            )
+        }
+    events = telemetry_events_payload(64)
+
+    job = stratum.get("job") if isinstance(stratum.get("job"), dict) else {}
+    pool_topology = stratum.get("pool") if isinstance(stratum.get("pool"), dict) else None
+
+    return {
+        "schema": "pythia.ops_telemetry/1",
+        "generated_at": now_iso(),
+        "sources": {
+            "stratum": "agentic-mining heartbeat key 'stratum_status'",
+            "events": "agentic-mining heartbeat key 'stratum_events'",
+            "hashing": "agentic-mining heartbeat counters",
+            "workers": "supervisor worker records (heartbeat-verified)",
+            "history": str(history_path.name),
+            "causal": _causal_log_path().name,
+            "session": _mining_session_path().name,
+            "security": "AL HARAS guardian public_status",
+        },
+        "system": {
+            "supervisor_started_at": control.started_at,
+            "uptime_s": round(time.monotonic() - control.started_monotonic, 1),
+            "ready_to_mine": ready,
+            "ready_reason": ready_reason,
+            "workers": {record.worker_id: record.public() for record in records},
+        },
+        "pool": {
+            "available": stratum.get("evidence_available") is True,
+            "state": stratum.get("state"),
+            "primary": stratum.get("primary"),
+            "lifecycle": stratum.get("lifecycle"),
+            "topology": pool_topology,
+            "session_id": stratum.get("session_id"),
+            "protocol": stratum.get("protocol"),
+            "configured": _configured_pools(),
+        },
+        "job": job
+        | {
+            "available": stratum.get("evidence_available") is True and bool(job.get("active")),
+            "reason": (
+                None
+                if stratum.get("evidence_available") and job.get("active")
+                else (
+                    "no current job"
+                    if stratum.get("evidence_available")
+                    else "waiting for telemetry"
+                )
+            ),
+        },
+        "execution": {
+            "device": {
+                "bound": control.mining_device_bound(),
+                "mmio_bridge_configured": bool(control.mmio_device),
+                "execution_device": control.execution_device or None,
+                "reason": (
+                    None
+                    if control.mining_device_bound()
+                    else _mining_device_reason(control) or "no mining device bound"
+                ),
+            },
+            "backend": (evidence.get("execution_backend") if isinstance(evidence, dict) else None),
+            "hashing": hashing,
+        },
+        "shares": {
+            "counters": stratum.get("counters"),
+            "outcomes": stratum.get("outcomes"),
+            "submission": stratum.get("submission"),
+            "session": {
+                "available": session["available"],
+                "state": session.get("state") if session["available"] else None,
+                "share_count": session.get("share_count") if session["available"] else None,
+                "share_log": session.get("share_log") if session["available"] else [],
+            },
+        },
+        "events": {
+            "available": events.get("available", False),
+            "reason": events.get("reason"),
+            "last_seq": events.get("last_seq"),
+            "totals": events.get("totals"),
+            "events": events.get("events", []),
+        },
+        "healing": {
+            "autonomous_supervisor": autonomous_supervisor.status(),
+            "recovery": (evidence.get("recovery") if isinstance(evidence, dict) else None),
+            # The Salamander engine's own step() result — only present when
+            # the worker is actually running and reporting (§9).
+            "salamander": _metrics_json("salamander", "salamander"),
+            "workers": {
+                record.worker_id: {
+                    "state": record.state,
+                    "liveness": record.liveness,
+                    "readiness": record.readiness,
+                }
+                for record in records
+            },
+        },
+        "security": _ops_security_section(security, security_code),
+        "history": {
+            "telemetry_history": history_store | {"record_tail": _jsonl_tail(history_path, 64)},
+            "causal_ledger": causal_store,
+            "mining_session": session_store
+            | {"share_count": session.get("share_count") if session["available"] else None},
+        },
+    }
+
+
+def _configured_pools() -> list[dict[str, Any]]:
+    """The operator's configured pool roster — the declared failover order."""
+    try:
+        pools = runtime_config.public_view().get("pools") or []
+    except Exception:
+        return []
+    return [p for p in pools if isinstance(p, dict)]
+
+
 def hardware_status_payload() -> dict[str, Any]:
     """Mining device binding, OpenCL inventory and the worker's live execution."""
     control = _control_plane()
@@ -1170,6 +1509,38 @@ def security_status_payload() -> tuple[HTTPStatus, dict[str, Any]]:
             "available": False,
             "reason": f"guardian_unavailable: {type(exc).__name__}: {exc}",
         }
+
+
+def _ops_security_section(security: dict[str, Any], security_code: HTTPStatus) -> dict[str, Any]:
+    """The ops contract's guardian section.
+
+    Beyond ``public_status`` the unprivileged observer provably sees the
+    gate's evaluated answer: every privileged request is preflighted and an
+    unauthenticated call is denied at the boundary. We embed exactly that
+    verdict — produced by the same evaluate() path the request would hit —
+    so the UI can show "gate closed: <reason>" as truth, not a guess.
+    """
+    if security_code != HTTPStatus.OK:
+        return {"available": False, "reason": security.get("reason", "unavailable")}
+    section = dict(security)
+    try:
+        _code, verdict = pythia_guardian_api().evaluate(
+            headers={},
+            body={
+                "operation": "security.status",
+                "resource": "security/status",
+                "payload": {},
+            },
+        )
+        section["gate"] = {
+            "allowed": verdict.get("allowed"),
+            "reason": verdict.get("reason"),
+            "policy_version": verdict.get("policy_version"),
+            "evaluated_at": verdict.get("evaluated_at"),
+        }
+    except Exception:
+        section["gate"] = {"available": False, "reason": "evaluation_failed"}
+    return section
 
 
 def telemetry_summary_payload() -> dict[str, Any]:
@@ -1801,6 +2172,28 @@ class _Handler(BaseHTTPRequestHandler):
             params = parse_qs(parsed.query)
             self._json(HTTPStatus.OK, telemetry_events_payload(params.get("n", ["100"])[0]))
             return
+        if path == "/api/v1/telemetry/ops":
+            self._json(HTTPStatus.OK, ops_telemetry_payload())
+            return
+        if path == "/api/v1/telemetry/history":
+            params = parse_qs(parsed.query)
+            self._json(
+                HTTPStatus.OK,
+                telemetry_history_payload(
+                    params.get("n", ["256"])[0], params.get("kind", [None])[0]
+                ),
+            )
+            return
+        if path == "/api/v1/telemetry/causal":
+            params = parse_qs(parsed.query)
+            self._json(HTTPStatus.OK, causal_events_payload(params.get("n", ["128"])[0]))
+            return
+        if path == "/api/v1/telemetry/session":
+            self._json(HTTPStatus.OK, mining_session_payload())
+            return
+        if path == "/api/v1/telemetry/stream":
+            self._telemetry_stream()
+            return
         if path == "/api/v1/hardware/status":
             self._json(HTTPStatus.OK, hardware_status_payload())
             return
@@ -2068,6 +2461,57 @@ class _Handler(BaseHTTPRequestHandler):
         "base-uri 'self'; "
         "form-action 'self'"
     )
+
+    def _telemetry_stream(self) -> None:
+        """Server-Sent Events of the canonical ops telemetry (§11).
+
+        Each frame carries one ``pythia.ops_telemetry/1`` document plus the
+        new Stratum events since the last published ``last_seq``, so a
+        client can keep its projection current without re-fetching. The
+        connection stays open for a bounded window and closes cleanly —
+        EventSource reconnects automatically; staleness is surfaced by the
+        UI from ``generated_at`` ages.
+        """
+        self.send_response(int(HTTPStatus.OK))
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Content-Security-Policy", self._CSP)
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("Connection", "close")
+        self.end_headers()
+        self.close_connection = True
+        last_seq = 0
+        # Bounded lifetime: the client reconnects and resumes from the
+        # persisted ``last_seq`` the next frame reports.
+        for _tick in range(120):
+            try:
+                payload = ops_telemetry_payload()
+                events = payload["events"].get("events") or []
+                new_events = [e for e in events if int(e.get("seq") or 0) > last_seq]
+                if new_events:
+                    last_seq = int(payload["events"].get("last_seq") or last_seq)
+                frame = {
+                    "type": "ops",
+                    "seq": last_seq,
+                    "ops": payload,
+                    "new_events": new_events,
+                }
+                self.wfile.write(
+                    b"data: "
+                    + json.dumps(frame, sort_keys=True, default=str).encode("utf-8")
+                    + b"\n\n"
+                )
+                self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError, OSError):
+                break
+            try:
+                self.wfile.write(b": keepalive\n\n")
+                self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError, OSError):
+                break
+            time.sleep(1.5)
 
     def _send(
         self,

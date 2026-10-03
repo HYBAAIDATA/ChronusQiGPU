@@ -203,7 +203,7 @@ class GeneralIntelligenceCore:
                 {"observation": str(observation)}, source="problem-statement", uncertainty=0.0,
             ))
 
-        context = problem_id
+        context = str(problem.get("context_key") or problem_id)
         solved = False
         executed_once = False
         for cycle in range(self.max_cycles):

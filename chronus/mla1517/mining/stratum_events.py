@@ -22,9 +22,15 @@ _TOTALS = ("jobs_received", "disconnects", "submitted", "accepted", "rejected", 
 
 
 class StratumEventLog:
-    def __init__(self, maxlen: int = 200, clock: Callable[[], float] = time.time) -> None:
+    def __init__(
+        self,
+        maxlen: int = 200,
+        clock: Callable[[], float] = time.time,
+        on_event: Callable[[dict[str, Any]], None] | None = None,
+    ) -> None:
         self._events: deque[dict[str, Any]] = deque(maxlen=maxlen)
         self._clock = clock
+        self._on_event = on_event
         self._seq = 0
         self._last: Mapping[str, Any] | None = None
         self._session_counters: dict[str, int] = {}
@@ -32,7 +38,13 @@ class StratumEventLog:
 
     def _emit(self, kind: str, **fields: Any) -> None:
         self._seq += 1
-        self._events.append({"seq": self._seq, "at": self._clock(), "kind": kind, **fields})
+        event = {"seq": self._seq, "at": self._clock(), "kind": kind, **fields}
+        self._events.append(event)
+        if self._on_event is not None:
+            try:
+                self._on_event(event)
+            except Exception:
+                pass
 
     def observe(self, snapshot: Mapping[str, Any]) -> None:
         primary = snapshot.get("primary") or {}

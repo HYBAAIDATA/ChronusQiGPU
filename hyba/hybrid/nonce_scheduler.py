@@ -160,7 +160,7 @@ class Share:
 class ExecutionAttestation:
     """One attested event in the dispatch lifecycle."""
 
-    kind: str  # "dispatch" | "share" | "exhausted" | "cancelled" | "gap"
+    kind: str  # "dispatch" | "share" | "exhausted" | "cancelled" | "failed" | "gap"
     device_id: str
     device_class: str
     handle_id: Optional[int]
@@ -216,7 +216,9 @@ class AttestationRegistry:
             self._records.append(attestation)
         return attestation
 
-    def record_gap(self, reason: str, *, device_id: str = "", **detail: Any) -> ExecutionAttestation:
+    def record_gap(
+        self, reason: str, *, device_id: str = "", **detail: Any
+    ) -> ExecutionAttestation:
         """Record an explicit attestation gap (e.g. ASIC absent)."""
         return self.record(
             ExecutionAttestation(

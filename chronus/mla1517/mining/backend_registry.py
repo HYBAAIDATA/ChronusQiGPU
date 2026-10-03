@@ -6,8 +6,11 @@ the probe is a real capability check, not a configuration lookup — the CPU
 lane re-hashes a known vector through hashlib, the GPU lane binds an OpenCL
 device through ``BitcoinHasher`` (which self-checks the kernels against
 hashlib before it reports success), the remote lane binds the remote GPU
-agent's health contract, and the ASIC lanes report truthfully that no
-driver exists in this build.
+agent's health contract, the ``asic`` lane probes the real ASIC channel
+driver (:class:`hyba.hybrid.asic_solver.ASICSolver` — network/serial/PCIe),
+and ``super_asic`` binds the hybrid composition of every supported
+substrate — ASIC channel(s), the remote fleet, and the local OpenCL/CPU
+solver — under the Lucas-partitioned coordinator.
 
 Routing follows the declared policy only:
 
@@ -16,8 +19,11 @@ Routing follows the declared policy only:
 * ``cpu``    — CPU lane only.
 * ``gpu`` / ``opencl`` — the OpenCL lane or the selection fails closed.
 * ``remote`` — the remote GPU lane or the selection fails closed.
-* ``asic`` / ``super_asic`` — those lanes or a closed refusal; no lane is
-  invented to satisfy the request.
+* ``asic`` — a physically bound ASIC channel or a closed refusal; no lane
+  is invented to satisfy the request.
+* ``super_asic`` — the joined-substrate composition; available whenever at
+  least one real substrate binds (ASIC channel, remote fleet, or the
+  resident GPU/CPU solver), with ``backend`` naming what joined.
 
 The probe result is evidence: every lane surfaces its status, its device,
 and — when unavailable — the measured reason.
@@ -26,8 +32,12 @@ and — when unavailable — the measured reason.
 from __future__ import annotations
 
 import hashlib
+import json
+import os
 import time
-from dataclasses import dataclass, field
+import uuid
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
 from enum import StrEnum
 from typing import Any, Callable
 
@@ -80,6 +90,23 @@ class BackendSelection:
     fallback: bool
     reason: str
     probed: dict[str, LaneProbe]
+    decision_id: str = "Unavailable"
+    job_id: str = "Unavailable"
+    epoch: str = "Unavailable"
+    observation: dict[str, Any] = field(default_factory=dict)
+    available_actions: tuple[str, ...] = ()
+    selected_action: str = "Unavailable"
+    execution_target: str = "Unavailable"
+    result: str = "Unavailable"
+    disposition: str = "rejected"
+    timestamp: float = 0.0
+    software_revision: str = "unknown"
+
+    def as_dict(self) -> dict[str, Any]:
+        value = asdict(self)
+        value.pop("hasher", None)
+        value["probed"] = {name: probe.as_dict() for name, probe in self.probed.items()}
+        return value
 
 
 class BackendUnavailable(RuntimeError):
@@ -195,23 +222,88 @@ def _probe_remote_gpu() -> LaneProbe:
         )
 
 
-def _probe_asic(lane: BackendLane) -> LaneProbe:
-    """ASIC lanes: no driver exists in this build; the probe reports that.
+def _probe_asic() -> LaneProbe:
+    """ASIC lane: run the real channel probe, not a declaration.
 
-    ``asic/`` ships an unsynthesised Verilog sketch only, so the honest
-    measured answer is unavailable — surfaced, not hidden.
+    :class:`hyba.hybrid.asic_solver.ASICSolver` speaks to physical ASICs
+    through the configured channels (``HYBRID_ASIC_ENDPOINT`` network,
+    ``HYBRID_ASIC_SERIAL``, ``HYBRID_ASIC_PCIE``). ``capability()`` is a
+    live probe: an unconfigured or unresponsive channel reports
+    ``supported=False`` with the concrete reason, and the lane stays
+    unavailable. When a dispatch-capable channel answers, the lane binds
+    it through :class:`AsicHasherAdapter`.
     """
-    return LaneProbe(
-        lane=lane.value,
-        available=False,
-        backend=None,
-        device=None,
-        probed_at=time.time(),
-        reason=(
-            "no ASIC driver is present in this build "
-            "(asic/ is an unsynthesised Verilog sketch); lane cannot be probed"
-        ),
-    )
+    try:
+        from hyba.hybrid.asic_solver import ASICSolver
+        from hyba.hybrid.super_asic import AsicHasherAdapter
+
+        solver = ASICSolver()
+        cap = solver.capability()
+        if not cap.supported:
+            return LaneProbe(
+                lane=BackendLane.ASIC.value,
+                available=False,
+                backend=None,
+                device=None,
+                probed_at=time.time(),
+                reason=cap.reason_if_unsupported or "ASIC channel unsupported",
+            )
+        return LaneProbe(
+            lane=BackendLane.ASIC.value,
+            available=True,
+            backend="asic",
+            device=cap.device_id,
+            probed_at=time.time(),
+            reason=(
+                f"ASIC channel bound: {cap.detail.get('channel', 'unknown')} "
+                f"channel measured {cap.measured_hashes_per_sec:g} H/s"
+            ),
+            hasher=AsicHasherAdapter(solver),
+        )
+    except Exception as exc:
+        return LaneProbe(
+            lane=BackendLane.ASIC.value,
+            available=False,
+            backend=None,
+            device=None,
+            probed_at=time.time(),
+            reason=f"ASIC probe failed: {type(exc).__name__}: {exc}",
+        )
+
+
+def _probe_super_asic() -> LaneProbe:
+    """super_asic lane: bind the composite over every supported substrate.
+
+    ASIC channel(s) + remote fleet + resident GPU/CPU solver under one
+    Lucas-partitioned coordinator — the super-GPU surface and the ASIC
+    channel combined for measured increased hashrate. The lane is
+    available whenever at least one real substrate binds; ``backend``
+    names the composition honestly (``super_asic:cpu`` on a bare host,
+    ``super_asic:asic+remote+gpu`` when everything joins).
+    """
+    try:
+        from hyba.hybrid.super_asic import SuperAsicHasher
+
+        hasher = SuperAsicHasher.bind()
+        count = len(hasher._members)
+        return LaneProbe(
+            lane=BackendLane.SUPER_ASIC.value,
+            available=True,
+            backend=hasher.backend,
+            device=hasher.device,
+            probed_at=time.time(),
+            reason=(f"composite bound over {count} substrate(s): {hasher.backend}"),
+            hasher=hasher,
+        )
+    except Exception as exc:
+        return LaneProbe(
+            lane=BackendLane.SUPER_ASIC.value,
+            available=False,
+            backend=None,
+            device=None,
+            probed_at=time.time(),
+            reason=f"super_asic composition failed: {type(exc).__name__}: {exc}",
+        )
 
 
 # request tokens -> routing. ``auto`` probes GPU then remote, then falls
@@ -237,17 +329,22 @@ class BackendRegistry:
         probe_ttl_s: float = 60.0,
         probes: dict[BackendLane, Callable[[], LaneProbe]] | None = None,
         clock: Callable[[], float] = time.time,
+        software_revision: str = "unknown",
+        evidence_path: str | Path | None = None,
     ) -> None:
         if probe_ttl_s <= 0:
             raise ValueError("probe_ttl_s must be positive")
         self._ttl = probe_ttl_s
         self._clock = clock
+        self.software_revision = software_revision or "unknown"
+        self.evidence_path = Path(evidence_path) if evidence_path else None
+        self.last_selection: BackendSelection | None = None
         self._probes: dict[BackendLane, Callable[[], LaneProbe]] = probes or {
             BackendLane.CPU: _probe_cpu,
             BackendLane.GPU: _probe_gpu,
             BackendLane.REMOTE_GPU: _probe_remote_gpu,
-            BackendLane.ASIC: lambda: _probe_asic(BackendLane.ASIC),
-            BackendLane.SUPER_ASIC: lambda: _probe_asic(BackendLane.SUPER_ASIC),
+            BackendLane.ASIC: _probe_asic,
+            BackendLane.SUPER_ASIC: _probe_super_asic,
         }
         self._probed: dict[BackendLane, LaneProbe] = {}
 
@@ -264,7 +361,10 @@ class BackendRegistry:
         """Probe every lane (cached within the TTL) and return the census."""
         return {lane.value: self.probe(lane, force=force) for lane in _LANES}
 
-    def select(self, requested: str, *, reprobe: bool = False) -> BackendSelection:
+    def select(
+        self, requested: str, *, reprobe: bool = False,
+        job_id: str = "Unavailable", epoch: str = "Unavailable",
+    ) -> BackendSelection:
         """Route per declared policy; a selected lane has been probed.
 
         ``auto`` walks GPU -> remote -> CPU and reports ``fallback=True``
@@ -295,23 +395,50 @@ class BackendRegistry:
                     )
             else:
                 hasher = probe.hasher
-            return BackendSelection(
-                requested=key,
-                lane=lane.value,
-                hasher=hasher,
-                fallback=lane is not first,
-                reason=(
-                    f"policy {key}: {lane.value} available ({probe.reason})"
-                    if lane is first
-                    else f"policy {key}: {first.value} unavailable "
-                    f"({probed[first.value].reason}); routed to {lane.value}"
-                ),
-                probed=probed,
+            reason = (
+                f"policy {key}: {lane.value} available ({probe.reason})"
+                if lane is first
+                else f"policy {key}: {first.value} unavailable "
+                f"({probed[first.value].reason}); routed to {lane.value}"
             )
-        raise BackendUnavailable(
+            selection = BackendSelection(
+                requested=key, lane=lane.value, hasher=hasher,
+                fallback=lane is not first, reason=reason, probed=probed,
+                decision_id=f"backend:{uuid.uuid4()}", job_id=job_id, epoch=epoch,
+                observation={
+                    "requested": key,
+                    "policy_order": [candidate.value for candidate in order],
+                    "probes": {name: result.as_dict() for name, result in probed.items()},
+                },
+                available_actions=tuple(
+                    name for name, result in probed.items() if result.available
+                ),
+                selected_action=lane.value, execution_target=lane.value,
+                result="backend_bound", disposition="accepted",
+                timestamp=self._clock(), software_revision=self.software_revision,
+            )
+            self._record(selection)
+            return selection
+        reason = (
             f"policy {key}: no lane available: "
             + "; ".join(f"{p.lane}: {p.reason}" for p in probed.values())
         )
+        selection = BackendSelection(
+            requested=key, lane="Unavailable", hasher=None, fallback=False,
+            reason=reason, probed=probed,
+            decision_id=f"backend:{uuid.uuid4()}", job_id=job_id, epoch=epoch,
+            observation={
+                "requested": key,
+                "policy_order": [candidate.value for candidate in order],
+                "probes": {name: result.as_dict() for name, result in probed.items()},
+            },
+            available_actions=(), selected_action="Unavailable",
+            execution_target="Unavailable", result="no_backend_bound",
+            disposition="rejected", timestamp=self._clock(),
+            software_revision=self.software_revision,
+        )
+        self._record(selection)
+        raise BackendUnavailable(reason)
 
     def snapshot(self) -> dict[str, Any]:
         """Lane census for telemetry; unavailable lanes stay visible."""
@@ -322,4 +449,23 @@ class BackendRegistry:
                 token: [lane.value for lane in order]
                 for token, order in sorted(_POLICY_ORDER.items())
             },
+            "last_selection": (
+                self.last_selection.as_dict() if self.last_selection else "Unavailable"
+            ),
         }
+
+    def _record(self, selection: BackendSelection) -> None:
+        """Persist one append-only decision without persisting a live hasher."""
+        self.last_selection = selection
+        if self.evidence_path is None:
+            return
+        self.evidence_path.parent.mkdir(parents=True, exist_ok=True)
+        line = json.dumps(selection.as_dict(), sort_keys=True, separators=(",", ":")) + "\n"
+        descriptor = os.open(
+            self.evidence_path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600
+        )
+        try:
+            os.write(descriptor, line.encode("utf-8"))
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)

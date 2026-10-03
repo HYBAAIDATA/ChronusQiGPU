@@ -5,6 +5,7 @@ and an explicitly requested platform/device/vendor must be present.  Selection
 and launch policy favour integrated GPUs (shared host memory) without making
 unmeasured performance claims.
 """
+
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
@@ -27,17 +28,33 @@ class ChronusTensorValidationError(ValueError):
     pass
 
 
+# HYBA iGPU identity aliases — same HYBA_DEVICE_ALIAS contract as
+# mining/bitcoin_hasher.py and unified_punch.py.
+DEFAULT_HYBA_ALIASES = ("hyba-mla1517", "hyba_mla1517", "mla1517", "hyba")
+
+
+def _require_hyba() -> bool:
+    return os.getenv("HYBA_REQUIRE_HYBA", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+
+
 @dataclass(frozen=True)
 class _DeviceSelector:
     platform: str = ""
     device: str = ""
     vendor: str = ""
     aliases: tuple[str, ...] = ()
-    aliases_required: bool = False
+    require_aliases: bool = False
 
     @property
     def explicit(self) -> bool:
-        return bool(self.platform or self.device or self.vendor or (self.aliases and self.aliases_required))
+        return bool(
+            self.platform or self.device or self.vendor or (self.require_aliases and self.aliases)
+        )
 
 
 @dataclass(frozen=True)
@@ -96,48 +113,65 @@ def _bool_attr(value: Any, name: str) -> bool:
         return False
 
 
+def _hyba_aliases() -> tuple[str, ...]:
+    raw = os.getenv("HYBA_DEVICE_ALIAS", "").strip()
+    if raw:
+        return tuple(item.strip().lower() for item in raw.split(",") if item.strip())
+    return DEFAULT_HYBA_ALIASES
+
+
 def _selector_from_env() -> _DeviceSelector:
-    aliases = tuple(
-        item.strip().lower()
-        for item in os.getenv("HYBA_DEVICE_ALIAS", "").split(",")
-        if item.strip()
-    )
     return _DeviceSelector(
         platform=os.getenv("CHRONUS_OPENCL_PLATFORM", "").strip().lower(),
         device=os.getenv("CHRONUS_OPENCL_DEVICE", "").strip().lower(),
         vendor=os.getenv("HYBA_DEVICE_VENDOR", "").strip().lower(),
-        aliases=aliases,
-        aliases_required=os.getenv("HYBA_REQUIRE_HYBA", "0").strip().lower() in {"1", "true", "yes", "on"},
+        aliases=_hyba_aliases(),
+        require_aliases=_require_hyba(),
     )
 
 
-def _matches(platform: Any, device: Any, selector: _DeviceSelector) -> bool:
-    platform_name = _text(getattr(platform, "name", "")).lower()
-    name = _text(getattr(device, "name", "")).lower()
-    vendor = _text(getattr(device, "vendor", "")).lower()
-    identity = " ".join((platform_name, vendor, name))
-    return (
-        (not selector.platform or selector.platform in platform_name)
-        and (not selector.device or selector.device in name)
-        and (not selector.vendor or selector.vendor in vendor)
-        and (not selector.aliases_required or any(alias in identity for alias in selector.aliases))
-    )
-
-
-def _device_score(platform: Any, device: Any) -> tuple[int, int, int, int]:
-    """Rank actual device facts; shared-memory Intel GPUs are preferred."""
-    identity = " ".join(
+def _device_identity(platform: Any, device: Any) -> str:
+    return " ".join(
         (
             _text(getattr(platform, "name", "")),
             _text(getattr(device, "vendor", "")),
             _text(getattr(device, "name", "")),
         )
     ).lower()
-    unified = _bool_attr(device, "host_unified_memory")
-    vendor = _text(getattr(device, "vendor", "")).lower()
+
+
+def _alias_match(platform: Any, device: Any, aliases: tuple[str, ...]) -> bool:
+    identity = _device_identity(platform, device)
+    return any(alias and alias in identity for alias in aliases)
+
+
+def _matches(platform: Any, device: Any, selector: _DeviceSelector) -> bool:
+    platform_name = _text(getattr(platform, "name", "")).lower()
     name = _text(getattr(device, "name", "")).lower()
-    # Classification requires vendor + integrated-memory evidence + model family.
-    intel_igpu = "intel" in vendor and unified and any(token in name for token in ("uhd", "iris"))
+    vendor = _text(getattr(device, "vendor", "")).lower()
+    alias_gate = selector.require_aliases and selector.aliases
+    return (
+        (not selector.platform or selector.platform in platform_name)
+        and (not selector.device or selector.device in name)
+        and (not selector.vendor or selector.vendor in vendor)
+        and (not alias_gate or _alias_match(platform, device, selector.aliases))
+    )
+
+
+def _device_score(platform: Any, device: Any) -> tuple[int, int, int, int]:
+    """Rank actual device facts; shared-memory Intel GPUs are preferred.
+
+    An Intel device only counts as integrated when it reports unified host
+    memory — discrete GPUs (e.g. Arc) may carry a ``Graphics`` product name
+    and must not outrank genuinely shared-memory devices.
+    """
+    identity = _device_identity(platform, device)
+    unified = _bool_attr(device, "host_unified_memory")
+    intel_igpu = (
+        unified
+        and "intel" in identity
+        and any(token in identity for token in ("uhd", "iris", "graphics"))
+    )
     return (
         3 if intel_igpu else 1 if unified else 0,
         _int_attr(device, "max_compute_units"),
@@ -173,11 +207,12 @@ def _pick_gpu():
         }
         return None, None, f"requested OpenCL GPU identity not found: {requested}"
     pool = matching or candidates
-    # Non-required aliases are a preference only, never a fatal identity constraint.
-    if selector.aliases and not selector.aliases_required:
-        preferred = [item for item in pool if any(alias in " ".join((_text(getattr(item[0], "name", "")), _text(getattr(item[1], "vendor", "")), _text(getattr(item[1], "name", "")))).lower() for alias in selector.aliases)]
-        if preferred:
-            pool = preferred
+    if selector.aliases and not selector.require_aliases:
+        # Aliases are a preference hint unless HYBA_REQUIRE_HYBA makes them a
+        # gate: prefer an alias-named device, never reject a valid one.
+        aliased = [item for item in pool if _alias_match(*item, selector.aliases)]
+        if aliased:
+            pool = aliased
     selected = max(pool, key=lambda item: _device_score(*item))
     return cl, selected, ""
 
@@ -277,15 +312,31 @@ class ChronusTensorRuntime:
         )
         self.last_evidence: TensorExecutionEvidence | None = None
 
-    def _kernel_limits(self, kernel: Any) -> KernelLimits:
-        info = self.cl.kernel_work_group_info
+    def _launch_limits(self, kernel_name: str) -> tuple[int, int]:
+        """Work-group size and dynamic local-memory budget for a built kernel.
+
+        ``CL_KERNEL_WORK_GROUP_SIZE`` can be lower than the device maximum and
+        the kernel's static local memory shrinks the dynamic budget, so the
+        compiled kernel's own limits bound every launch plan.  A driver that
+        cannot report them falls back to the device limits; an illegal launch
+        then still fails loudly at enqueue rather than being concealed.
+        """
+        kernel = getattr(self.program, kernel_name)
+        work_group = 0
+        static_local = 0
         try:
-            maximum = int(kernel.get_work_group_info(info.WORK_GROUP_SIZE, self.device))
-            preferred = int(kernel.get_work_group_info(info.PREFERRED_WORK_GROUP_SIZE_MULTIPLE, self.device))
-            static_local = int(kernel.get_work_group_info(info.LOCAL_MEM_SIZE, self.device))
-        except Exception as exc:
-            raise ChronusTensorUnavailable(f"kernel capability query failed: {type(exc).__name__}: {exc}") from exc
-        return KernelLimits(maximum, max(1, preferred), static_local)
+            info = self.cl.kernel_work_group_info
+            work_group = int(kernel.get_work_group_info(info.WORK_GROUP_SIZE, self.device) or 0)
+            static_local = int(kernel.get_work_group_info(info.LOCAL_MEM_SIZE, self.device) or 0)
+        except Exception:
+            pass
+        max_group = (
+            min(self.max_work_group_size, work_group)
+            if work_group > 0
+            else self.max_work_group_size
+        )
+        local_budget = self.local_memory_bytes - max(0, static_local)
+        return max(1, max_group), max(1, local_budget)
 
     @staticmethod
     def _float32_array(value: Any, shape: Sequence[int]) -> np.ndarray:
@@ -300,9 +351,7 @@ class ChronusTensorRuntime:
     def _buffers(self, arrays: Sequence[np.ndarray], output_size: int):
         flags = self.cl.mem_flags
         inputs = [
-            self.cl.Buffer(
-                self.context, flags.READ_ONLY | flags.COPY_HOST_PTR, hostbuf=array
-            )
+            self.cl.Buffer(self.context, flags.READ_ONLY | flags.COPY_HOST_PTR, hostbuf=array)
             for array in arrays
         ]
         output = np.empty(int(output_size), dtype=np.float32)
@@ -368,23 +417,31 @@ class ChronusTensorRuntime:
             if len(arrays) != 2 or arrays[0].shape != arrays[1].shape:
                 raise ChronusTensorValidationError(f"{operation} requires two equal shapes")
             kernel = f"tensor_{operation}_f32"
-            kernel_fn = getattr(self.program, kernel)
-            limits = self._kernel_limits(kernel_fn)
-            global_size, local_size = _plan_1d(out_size, min(self.max_work_group_size, limits.max_work_group_size), limits.preferred_multiple)
-            legal_local_size(local_size, self.device_limits, limits)
-            event = kernel_fn(
-                self.queue, global_size, local_size, buffers[0], buffers[1], out_buffer, u32(out_size)
+            group_limit, _local_budget = self._launch_limits(kernel)
+            global_size, local_size = _plan_1d(out_size, group_limit)
+            event = getattr(self.program, kernel)(
+                self.queue,
+                global_size,
+                local_size,
+                buffers[0],
+                buffers[1],
+                out_buffer,
+                u32(out_size),
             )
         elif operation == "scale":
             if len(arrays) != 2 or arrays[1].size != 1:
                 raise ChronusTensorValidationError("scale requires a tensor and one scalar")
             kernel = "tensor_scale_f32"
-            kernel_fn = self.program.tensor_scale_f32
-            limits = self._kernel_limits(kernel_fn)
-            global_size, local_size = _plan_1d(out_size, min(self.max_work_group_size, limits.max_work_group_size), limits.preferred_multiple)
-            legal_local_size(local_size, self.device_limits, limits)
-            event = kernel_fn(
-                self.queue, global_size, local_size, buffers[0], buffers[1], out_buffer, u32(out_size)
+            group_limit, _local_budget = self._launch_limits(kernel)
+            global_size, local_size = _plan_1d(out_size, group_limit)
+            event = self.program.tensor_scale_f32(
+                self.queue,
+                global_size,
+                local_size,
+                buffers[0],
+                buffers[1],
+                out_buffer,
+                u32(out_size),
             )
         elif operation == "matmul":
             if len(arrays) != 2 or arrays[0].ndim != 2 or arrays[1].ndim != 2:
@@ -394,16 +451,10 @@ class ChronusTensorRuntime:
             if k != k2 or tuple(output_shape) != (m, n):
                 raise ChronusTensorValidationError("matmul dimensions/output shape disagree")
             kernel = "tensor_matmul_tiled_f32"
-            kernel_fn = self.program.tensor_matmul_tiled_f32
-            limits = self._kernel_limits(kernel_fn)
-            global_size, local_size = _plan_matmul(
-                m, n, min(self.max_work_group_size, limits.max_work_group_size),
-                max(1, self.local_memory_bytes - limits.static_local_memory_bytes)
-            )
+            group_limit, local_budget = self._launch_limits(kernel)
+            global_size, local_size = _plan_matmul(m, n, group_limit, local_budget)
             tile = local_size[0]
-            dynamic_local = 2 * tile * tile * 4
-            legal_local_size(local_size, self.device_limits, limits, dynamic_local)
-            event = kernel_fn(
+            event = self.program.tensor_matmul_tiled_f32(
                 self.queue,
                 global_size,
                 local_size,
@@ -419,19 +470,22 @@ class ChronusTensorRuntime:
         elif operation == "kron":
             if len(arrays) != 2 or arrays[0].ndim != arrays[1].ndim:
                 raise ChronusTensorValidationError("kron requires equal-rank inputs")
-            # Both rank variants are constrained by their compiled kernel below.
             if arrays[0].ndim == 1:
                 an, bn = arrays[0].size, arrays[1].size
                 if tuple(output_shape) != (an * bn,):
                     raise ChronusTensorValidationError("kron output shape disagrees")
                 kernel = "tensor_kron_1d_f32"
-                kernel_fn = self.program.tensor_kron_1d_f32
-                limits = self._kernel_limits(kernel_fn)
-                global_size, local_size = _plan_1d(out_size, min(self.max_work_group_size, limits.max_work_group_size), limits.preferred_multiple)
-                legal_local_size(local_size, self.device_limits, limits)
-                event = kernel_fn(
-                    self.queue, global_size, local_size, buffers[0], buffers[1],
-                    out_buffer, u32(an), u32(bn)
+                group_limit, _local_budget = self._launch_limits(kernel)
+                global_size, local_size = _plan_1d(out_size, group_limit)
+                event = self.program.tensor_kron_1d_f32(
+                    self.queue,
+                    global_size,
+                    local_size,
+                    buffers[0],
+                    buffers[1],
+                    out_buffer,
+                    u32(an),
+                    u32(bn),
                 )
             elif arrays[0].ndim == 2:
                 ar, ac = arrays[0].shape
@@ -439,21 +493,34 @@ class ChronusTensorRuntime:
                 if tuple(output_shape) != (ar * br, ac * bc):
                     raise ChronusTensorValidationError("kron output shape disagrees")
                 kernel = "tensor_kron_2d_f32"
-                kernel_fn = self.program.tensor_kron_2d_f32
-                limits = self._kernel_limits(kernel_fn)
-                global_size, local_size = _plan_1d(out_size, min(self.max_work_group_size, limits.max_work_group_size), limits.preferred_multiple)
-                legal_local_size(local_size, self.device_limits, limits)
-                event = kernel_fn(
-                    self.queue, global_size, local_size, buffers[0], buffers[1],
-                    out_buffer, u32(ar), u32(ac), u32(br), u32(bc)
+                group_limit, _local_budget = self._launch_limits(kernel)
+                global_size, local_size = _plan_1d(out_size, group_limit)
+                event = self.program.tensor_kron_2d_f32(
+                    self.queue,
+                    global_size,
+                    local_size,
+                    buffers[0],
+                    buffers[1],
+                    out_buffer,
+                    u32(ar),
+                    u32(ac),
+                    u32(br),
+                    u32(bc),
                 )
             else:
                 raise ChronusTensorValidationError("Chronus kron supports rank 1 or 2")
         else:
             raise ChronusTensorValidationError(f"unsupported operation {operation!r}")
         return self._finish(
-            operation, kernel, event, started_ns, output, out_buffer, output_shape,
-            global_size, local_size
+            operation,
+            kernel,
+            event,
+            started_ns,
+            output,
+            out_buffer,
+            output_shape,
+            global_size,
+            local_size,
         )
 
     def execute(

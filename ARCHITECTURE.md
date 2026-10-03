@@ -82,8 +82,7 @@ euclid-core/
 ├── scripts/                         # TS test scripts (Q5 reference, RTL, Al Haras handshake)
 ├── legacy/infra/prometheus/          # prometheus.yml + alerts.yml (6 alert rules)
 ├── legacy/firestore.rules            # Default-deny, immutable audit trails
-├── legacy/firebase-blueprint.json    # JSON-schema for MiningSession / Share / AuditReport
-└── firebase-applet-config.json       # Firebase client config (AI Studio applet)
+└── legacy/firebase-blueprint.json    # JSON-schema for MiningSession / Share / AuditReport
 ```
 
 ---

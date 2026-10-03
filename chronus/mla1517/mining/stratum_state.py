@@ -359,6 +359,19 @@ class StratumRuntimeState:
                 "difficulty_received_at": self.difficulty_received_at,
                 "share_target": f"{target:064x}" if target is not None else None,
                 "target_generation": self.target_generation,
+                # §4 work-detail fields: the job fields the pool actually
+                # delivered. ``prevhash`` binds the generation to chain state;
+                # ``extranonce1``/``extranonce2_size`` bound the namespace the
+                # worker may search. Values stay absent when no job arrived.
+                "prevhash": job.prevhash if job else None,
+                "version": job.version if job else None,
+                "nbits": job.nbits if job else None,
+                "ntime": job.ntime if job else None,
+                "extranonce1": job.extranonce1 if job else None,
+                "extranonce2_size": job.extranonce2_size if job else None,
+                "merkle_branch": list(job.merkle_branch) if job else None,
+                "coinb1": job.coinb1 if job else None,
+                "coinb2": job.coinb2 if job else None,
             },
             "submission": {
                 "state": self.submission_phase.value,
