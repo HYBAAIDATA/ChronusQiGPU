@@ -9,11 +9,15 @@ other device instead of silently hashing elsewhere.
 from __future__ import annotations
 
 import os
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable, Mapping, Optional
 
 DEFAULT_HYBA_ALIASES = ("hyba-mla1517", "hyba_mla1517", "mla1517", "hyba")
 
 HYBA_REQUIRE_HYBA = "HYBA_REQUIRE_HYBA"
+
+
+class AliasUnresolvedError(RuntimeError):
+    """No requested alias resolved while strict HYBA selection was required."""
 
 
 def aliases(raw: Optional[str] = None) -> tuple:
@@ -37,6 +41,44 @@ def is_hyba_name(name: Any, alias_list: Optional[Iterable[str]] = None) -> Optio
     for alias in alias_list if alias_list is not None else aliases():
         if alias and alias in lowered:
             return alias
+    return None
+
+
+def alias_registry() -> dict:
+    """Every catalog alias mapped to its family, so an alias names real silicon.
+
+    Built from :mod:`hyba.catalog` so an alias can never resolve to a family the
+    catalog does not declare; an unknown alias stays unresolved.
+    """
+    from hyba.catalog import CATALOG
+
+    registry: dict = {}
+    for spec in CATALOG:
+        for alias in spec.aliases:
+            if alias:
+                registry.setdefault(alias, spec.family)
+    return registry
+
+
+def resolve_alias(raw: Optional[str] = None, registry: Optional[Mapping[str, str]] = None) -> Optional[str]:
+    """Resolve the first requested alias to a catalog family, else None.
+
+    ``HYBA_REQUIRE_HYBA=1`` raises :class:`AliasUnresolvedError` when no alias
+    resolves, so a strict deployment never binds a substitute device. With
+    ``HYBA_REQUIRE_HYBA=0`` an unresolved alias is advisory and returns None:
+    ``HYBA_REQUIRE_HYBA=0`` means exactly "do not fail when HYBA cannot resolve
+    this", and the caller keeps its non-HYBA route.
+    """
+    table = dict(registry if registry is not None else alias_registry())
+    for alias in aliases(raw):
+        family = table.get(alias)
+        if family:
+            return family
+    if require_hyba():
+        raise AliasUnresolvedError(
+            f"HYBA_REQUIRE_HYBA set but no alias in {list(aliases(raw))} "
+            f"resolves to a catalog family"
+        )
     return None
 
 

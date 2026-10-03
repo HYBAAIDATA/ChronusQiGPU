@@ -17,6 +17,7 @@ class DeviceSpec:
     backends: Tuple[str, ...]
     dispatch: str
     notes: str = ""
+    generic: bool = False
 
 
 APPLE_SILICON = (
@@ -62,11 +63,20 @@ INTEL_Chronus = (
     DeviceSpec(
         "intel-uhd-620",
         "Intel",
-        ("intel-uhd-620", "uhd 620", "uhd620", "0x5917", "5917"),
+        ("intel-uhd-620", "uhd graphics 620", "uhd 620", "uhd620", "0x5917", "5917"),
         ("0x5917", "5917"),
         ("opencl", "cpu"),
         "opencl",
         "Kaby Lake-R GT2 24EU dev reference",
+    ),
+    DeviceSpec(
+        "intel-uhd-630",
+        "Intel",
+        ("intel-uhd-630", "uhd graphics 630", "uhd 630", "uhd630"),
+        (),
+        ("opencl", "cpu"),
+        "opencl",
+        "Comet Lake GT2; name-alias match only (PCI id unverified)",
     ),
     DeviceSpec(
         "intel-iris-xe",
@@ -186,12 +196,60 @@ HYBA_FABRIC = (
     ),
 )
 
+# Last-resort vendor entries. They exist so an unlisted GPU of a known vendor
+# reports "vendor, model unverified" instead of being filed under whichever
+# model happens to sit first in the catalog, and so a generic token such as
+# "graphics" can never win over a model-specific rule.
+GENERIC_VENDORS = (
+    DeviceSpec(
+        "intel-generic",
+        "Intel",
+        ("graphics",),
+        (),
+        ("opencl", "cpu"),
+        "opencl",
+        "Intel GPU, model unverified; name-alias only",
+        generic=True,
+    ),
+    DeviceSpec(
+        "apple-generic",
+        "Apple",
+        ("gpu",),
+        (),
+        ("opencl", "cpu"),
+        "opencl",
+        "Apple GPU, model unverified; name-alias only",
+        generic=True,
+    ),
+    DeviceSpec(
+        "nvidia-generic",
+        "NVIDIA",
+        ("gpu",),
+        (),
+        ("opencl", "cpu"),
+        "opencl",
+        "NVIDIA GPU, model unverified; name-alias only",
+        generic=True,
+    ),
+    DeviceSpec(
+        "amd-generic",
+        "AMD",
+        ("gpu",),
+        (),
+        ("opencl", "cpu"),
+        "opencl",
+        "AMD GPU, model unverified; name-alias only",
+        generic=True,
+    ),
+)
+
 CATALOG: Tuple[DeviceSpec, ...] = (
     *HYBA_FABRIC,
     *APPLE_SILICON,
     *INTEL_Chronus,
     *NVIDIA_GPU,
     *AMD_GPU,
+    *GENERIC_VENDORS,
 )
 
 
@@ -199,34 +257,87 @@ def _norm(text: Any) -> str:
     return str(text or "").strip().lower()
 
 
+# Match tiers, strongest evidence first. A generic vendor entry can never reach
+# a model-specific tier, so "graphics" can only be selected after every
+# model-specific rule has been tried and found nothing.
+_TIER_PCI_ENV = 4
+_TIER_PCI_NAME = 3
+_TIER_ALIAS = 2
+_TIER_GENERIC_ALIAS = 1
+_TIER_VENDOR = 0
+
+
+def _pci_tokens(spec: DeviceSpec) -> Tuple[str, ...]:
+    """Every form of each PCI id: prefixed and bare."""
+    tokens: list = []
+    for spec_id in spec.pci_ids:
+        token = _norm(spec_id)
+        if not token:
+            continue
+        tokens.append(token)
+        if token.startswith("0x") and len(token) > 2:
+            tokens.append(token[2:])
+    return tuple(tokens)
+
+
+def _match_score(
+    spec: DeviceSpec,
+    name_l: str,
+    vendor_l: str,
+    given: Tuple[str, ...],
+) -> Optional[Tuple[int, int]]:
+    """``(tier, specificity)`` for one spec against observed evidence.
+
+    Tiers descend from an operator-supplied PCI id, to a PCI id visible in the
+    reported name, to a name alias, to a generic alias, to vendor evidence
+    alone. Within the alias tiers the longest matching alias wins, so a
+    model-specific rule always outranks a shorter or generic one. A generic
+    spec is limited to the two lowest tiers: it must never claim a model on
+    evidence that does not identify one.
+    """
+    spec_vendor = _norm(spec.vendor)
+    if vendor_l and spec_vendor and spec_vendor not in vendor_l:
+        return None
+
+    tokens = _pci_tokens(spec)
+    if spec_vendor or tokens:
+        if any(token in given for token in tokens):
+            return (_TIER_PCI_ENV, 0)
+        if any(token in name_l for token in tokens):
+            return (_TIER_PCI_NAME, 0)
+
+    hits = [alias for alias in spec.aliases if alias and alias in name_l]
+    if hits and not spec.generic:
+        return (_TIER_ALIAS, max(len(alias) for alias in hits))
+    if hits and spec.generic:
+        return (_TIER_GENERIC_ALIAS, max(len(alias) for alias in hits))
+    if spec.generic and vendor_l and spec_vendor and spec_vendor in vendor_l:
+        return (_TIER_VENDOR, 0)
+    return None
+
+
 def find_spec(
     name: Any = "",
     vendor: Any = "",
     pci_ids: Tuple[str, ...] = (),
 ) -> Optional[DeviceSpec]:
-    """First catalog spec matching PCI evidence, alias, or vendor+alias."""
+    """Best catalog spec for the observed evidence, or None when unverified.
+
+    The strongest evidence wins, not the catalog order. A vendor string alone no
+    longer selects that vendor's first-listed model: it selects the vendor's
+    generic entry, so an unlisted GPU is reported as unverified rather than
+    mislabelled as a model that was never observed.
+    """
     name_l = _norm(name)
     vendor_l = _norm(vendor)
     given = tuple(t.strip().lower() for t in (pci_ids or ()) if str(t).strip())
+    best: Optional[DeviceSpec] = None
+    best_score: Optional[Tuple[int, int]] = None
     for spec in CATALOG:
-        spec_vendor = _norm(spec.vendor)
-        pci_hit = False
-        for spec_id in spec.pci_ids:
-            token = spec_id.lower()
-            bare = token[2:] if token.startswith("0x") else token
-            if (token and token in name_l) or (bare and bare in name_l):
-                pci_hit = True
-            for item in given:
-                item_bare = item[2:] if item.startswith("0x") else item
-                if item and (item == token or item == bare or item_bare == bare):
-                    pci_hit = True
-        alias_hit = any(a and a in name_l for a in spec.aliases)
-        if pci_hit or alias_hit:
-            if vendor_l and spec_vendor and spec_vendor not in vendor_l:
-                continue
-            return spec
-    if vendor_l:
-        for spec in CATALOG:
-            if _norm(spec.vendor) and _norm(spec.vendor) in vendor_l:
-                return spec
-    return None
+        score = _match_score(spec, name_l, vendor_l, given)
+        if score is None:
+            continue
+        # Strictly greater keeps the first catalog entry on an exact tie.
+        if best_score is None or score > best_score:
+            best, best_score = spec, score
+    return best

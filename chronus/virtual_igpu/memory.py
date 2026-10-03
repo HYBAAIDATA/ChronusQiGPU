@@ -1,4 +1,9 @@
-"""Virtual memory plane composed over Aethel/HybaSubstrate custody."""
+"""Virtual memory plane composed over Aethel/HybaSubstrate custody.
+
+Optional Theseus path: when ``CHRONUS_VIGPU_THESEUS=1``, evidence payloads are
+also committed through ``aethel.theseus`` (prime keys + phyllotaxis packing).
+Default remains HybaSubstrate. Theseus is additive and fail-soft.
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -69,6 +74,20 @@ class VirtualMemoryPlane:
             else:
                 self._stores[tenant] = HybaSubstrate(tenant=tenant)
         return self._stores[tenant]
+
+    def _maybe_theseus_put(self, payload: bytes) -> None:
+        flag = os.environ.get("CHRONUS_VIGPU_THESEUS", "").strip().lower()
+        if flag not in {"1", "true", "yes"}:
+            return
+        try:
+            if self._theseus is None:
+                from aethel.theseus import open_theseus
+
+                self._theseus = open_theseus(durable=False)
+            self._theseus.put(payload, durable=False)
+        except Exception:
+            # Hyba path is authoritative; Theseus is additive custody.
+            return
 
     def persist(
         self, workload: Workload, result: WorkloadResult, negotiation: dict[str, Any]

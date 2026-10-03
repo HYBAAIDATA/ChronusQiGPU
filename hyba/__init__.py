@@ -32,23 +32,29 @@ __version__ = "0.1.0"
 from hyba.device import (
     DEFAULT_HYBA_ALIASES,
     HYBA_REQUIRE_HYBA,
+    AliasUnresolvedError,
+    alias_registry,
     aliases,
     describe,
     is_hyba_name,
     rank_key,
     require_hyba,
+    resolve_alias,
 )
 
 __all__ = [
     "__version__",
     "DEFAULT_HYBA_ALIASES",
     "HYBA_REQUIRE_HYBA",
+    "AliasUnresolvedError",
+    "alias_registry",
     "aliases",
     "describe",
     "diagnose",
     "is_hyba_name",
     "rank_key",
     "require_hyba",
+    "resolve_alias",
 ]
 
 

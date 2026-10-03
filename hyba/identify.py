@@ -19,6 +19,7 @@ class DeviceIdentity:
     backends: Tuple[str, ...] = ()
     dispatch: str = "cpu"
     known: bool = False
+    generic: bool = False
     match_evidence: Tuple[str, ...] = field(default_factory=tuple)
 
     def as_dict(self) -> Dict[str, Any]:
@@ -31,6 +32,7 @@ class DeviceIdentity:
             "backends": list(self.backends),
             "dispatch": self.dispatch,
             "known": self.known,
+            "generic": self.generic,
             "match_evidence": list(self.match_evidence),
         }
 
@@ -40,11 +42,18 @@ def identify(
     vendor: Any = "",
     pci_ids: Tuple[str, ...] = (),
 ) -> DeviceIdentity:
-    """Identify a device against the catalog from observed evidence."""
+    """Identify a device against the catalog from observed evidence.
+
+    A generic vendor match is reported as ``generic`` with ``known=False``: the
+    vendor was observed but the model was not, and a device is never filed under
+    a model the evidence does not name.
+    """
     spec = find_spec(name, vendor, pci_ids)
     evidence: List[str] = []
     name_l = _norm(name)
-    if spec is not None:
+    if spec is not None and spec.generic:
+        evidence.append(f"generic-vendor:{spec.vendor}")
+    elif spec is not None:
         for alias in spec.aliases:
             if alias and alias in name_l:
                 evidence.append(f"alias:{alias}")
@@ -66,7 +75,8 @@ def identify(
         family=spec.family if spec else None,
         backends=tuple(spec.backends) if spec else (),
         dispatch=spec.dispatch if spec else "cpu",
-        known=spec is not None and bool(evidence),
+        known=spec is not None and not spec.generic and bool(evidence),
+        generic=bool(spec is not None and spec.generic),
         match_evidence=tuple(evidence),
     )
 
