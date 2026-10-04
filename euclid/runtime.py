@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, ClassVar, Mapping
 
 from .contracts import Authority, domain_hash
 from .evidence import EvidenceChain, atomic_write, load_json
@@ -62,6 +62,8 @@ class EuclidRuntime:
         store: Any | None = None,
         experience_learner: Any | None = None,
         specialists: Mapping[str, Any] | None = None,
+        organism: bool = True,
+        guardian: Any | None = None,
     ) -> "EuclidRuntime":
         root = Path(state_dir)
         root.mkdir(parents=True, exist_ok=True)
@@ -91,24 +93,235 @@ class EuclidRuntime:
             memory_database=database,
         )
         runtime._compose_cognition()
+        if organism:
+            runtime.compose_organism(guardian=guardian)
         for organ_id, implementation in dict(specialists or {}).items():
             runtime.register_specialist(organ_id, implementation)
         return runtime
 
+    # Specialist organs composed under EUCLID: organ id -> (reachability
+    # component, adapter factory, read-only health probe request).
+    ORGANISM_SPECIALISTS: ClassVar[dict[str, tuple[str, str, dict[str, Any]]]] = {
+        "turing": ("turing.backends", "TuringQuantumOrgan",
+                   {"operation": "capability-matrix"}),
+        "chronus": ("chronus.backend_registry", "ChronusComputeOrgan",
+                    {"operation": "census"}),
+        "triad": ("aethel.triad", "TriadCustodyOrgan", {"operation": "verify"}),
+    }
+
+    def compose_organism(
+        self,
+        *,
+        guardian: Any | None = None,
+        implementations: Mapping[str, Any] | None = None,
+    ) -> None:
+        """Register TURING/CHRONUS/Triad specialists, the AL HARAS boundary and
+        the Salamander bounded-recovery plane on this composition root.
+
+        Authority stays with each owner; EUCLID only gains governed dispatch.
+        An organ whose owner cannot be constructed is recorded unavailable
+        with its reason instead of being registered."""
+        from salamander.control_plane import (
+            ActionRegistry,
+            AutonomicControlPlane,
+        )
+        from salamander.control_plane import EvidenceLedger as AutonomicLedger
+        from salamander.models import ActionKind
+
+        from .cognition.reachability import ReachabilityStage
+        from .organ_adapters import specialists as adapters
+
+        self.guardian = guardian
+        self.organism_unavailable: dict[str, str] = {}
+        self._organ_probes: dict[str, dict[str, Any]] = {}
+        provided = dict(implementations or {})
+        for organ_id, (component, factory, probe) in self.ORGANISM_SPECIALISTS.items():
+            try:
+                implementation = provided.get(organ_id) or getattr(adapters, factory)()
+            except Exception as exc:  # noqa: BLE001 - absence is recorded evidence
+                self.organism_unavailable[organ_id] = f"{type(exc).__name__}: {exc}"
+                self.evidence.append(
+                    "organ-unavailable",
+                    {"organ_id": organ_id, "reason": self.organism_unavailable[organ_id]},
+                )
+                continue
+            self.register_specialist(organ_id, implementation)
+            self.rights.grant(self.creator_id, organ_id, f"{organ_id}.request", "dispatch")
+            self._organ_probes[organ_id] = dict(probe)
+            self._advance(component, ReachabilityStage.REACHABLE, "organism-startup")
+        if guardian is not None:
+            self._advance("al_haras.guardian", ReachabilityStage.REACHABLE, "organism-startup")
+        actions = ActionRegistry()
+        actions.register(
+            "requalify-organ",
+            {ActionKind.REQUALIFY},
+            self._requalify_organ,
+            verifier_id="euclid.delegator-redispatch",
+            verifier=self._verify_requalified,
+        )
+        self.autonomic = AutonomicControlPlane(
+            registry=actions,
+            ledger=AutonomicLedger(
+                sink=lambda record: self.evidence.append("salamander-action", dict(record))
+            ),
+        )
+        self._advance("salamander.control_plane", ReachabilityStage.REACHABLE, "organism-startup")
+        self.reachability.save(self.state_dir / "cognition_reachability.json")
+
+    def _advance(
+        self, component: str, stage: Any, episode_id: str,
+        detail: Mapping[str, Any] | None = None,
+    ) -> None:
+        """Record every stage up to ``stage`` once; never moves backwards."""
+        from .cognition.reachability import ReachabilityStage
+
+        current = self.reachability.stage(component)
+        first = int(current) + 1 if current is not None else int(ReachabilityStage.PRESENT)
+        for value in range(first, int(stage) + 1):
+            self.reachability.record(
+                component,
+                ReachabilityStage(value),
+                episode_id=episode_id,
+                evidence_ref=self.evidence.head or "genesis",
+                detail=dict(detail or {}),
+            )
+
+    def dispatch_specialist(
+        self,
+        organ_id: str,
+        request: Mapping[str, Any],
+        *,
+        tenant_id: str,
+        actor: str,
+        subscription_token: str | None = None,
+    ) -> dict[str, Any]:
+        """Governed specialist execution: AL HARAS boundary (when configured),
+        then EUCLID delegation gates, then the owner's own implementation.
+
+        A denial or veto is returned as data so the caller can replan; it is
+        never converted into a fabricated result."""
+        from .cognition.reachability import ReachabilityStage
+
+        known = {item["organ_id"] for item in self.registry.report()}
+        if organ_id not in known:
+            raise ValueError(f"unknown specialist organ: {organ_id}")
+        operation = f"{organ_id}.{request.get('operation', 'default')}"
+        episode = f"dispatch:{operation}"
+        governance: dict[str, Any] = {"guardian": "not-configured"}
+        if getattr(self, "guardian", None) is not None:
+            from al_haras import GuardianRequest
+
+            verdict = self.guardian.evaluate(
+                GuardianRequest(
+                    tenant_id=tenant_id,
+                    operation=operation,
+                    resource=organ_id,
+                    payload=dict(request),
+                    actor=actor,
+                ),
+                subscription_token=subscription_token or "",
+            )
+            governance = {
+                "guardian": "al_haras",
+                "allowed": verdict.allowed,
+                "reason": verdict.reason,
+                "evidence_id": verdict.evidence_id,
+                "policy_version": verdict.policy_version,
+            }
+            if not verdict.allowed:
+                self.evidence.append(
+                    "governance-denial",
+                    {"organ": organ_id, "operation": operation, **governance},
+                )
+                self._advance("al_haras.guardian", ReachabilityStage.CHANGES_DECISION,
+                              episode, {"denied": operation})
+                self.reachability.save(self.state_dir / "cognition_reachability.json")
+                return {"allowed": False, "organ": organ_id, "operation": operation,
+                        "governance": governance}
+            self._advance("al_haras.guardian", ReachabilityStage.USED_IN_EPISODE, episode)
+        try:
+            result = self.delegator.dispatch(
+                organ_id, f"{organ_id}.request", request, confident=True, safe=True
+            )
+        except PermissionError as exc:
+            return {"allowed": False, "organ": organ_id, "operation": operation,
+                    "governance": governance, "vetoed": str(exc),
+                    "health": self.registry.get(organ_id).health.value}
+        component = self.ORGANISM_SPECIALISTS.get(organ_id, (f"{organ_id}.organ",))[0]
+        self._advance(component, ReachabilityStage.OUTCOME_OBSERVED, episode,
+                      {"operation": operation})
+        self.reachability.save(self.state_dir / "cognition_reachability.json")
+        return {"allowed": True, "organ": organ_id, "operation": operation,
+                "governance": governance, "result": result,
+                "evidence_head": self.evidence.head}
+
+    def heal_organ(self, organ_id: str, *, reason: str) -> Any:
+        """Salamander-bounded requalification of one degraded specialist."""
+        import uuid
+
+        from salamander.models import ActionKind, ActionRequest
+
+        from .cognition.reachability import ReachabilityStage
+
+        request = ActionRequest(
+            action_id=f"requalify:{organ_id}:{uuid.uuid4().hex[:12]}",
+            kind=ActionKind.REQUALIFY,
+            handler="requalify-organ",
+            tenant_id=self.creator_id,
+            target=organ_id,
+            reason=reason,
+            bounds={"max_attempts": 1},
+            idempotency_key=f"requalify:{organ_id}:{self.evidence.head}",
+        )
+        result = self.autonomic.execute(request)
+        if result.verified:
+            self._advance("salamander.control_plane", ReachabilityStage.FEEDBACK_CLOSED,
+                          f"heal:{organ_id}", {"action_id": result.action_id})
+            self.reachability.save(self.state_dir / "cognition_reachability.json")
+        return result
+
+    def _requalify_organ(self, request: Any) -> Mapping[str, Any]:
+        from .contracts import Health
+
+        organ = self.registry.get(request.target)
+        probe = dict(organ.handler(dict(self._organ_probes[request.target])))
+        if probe.get("verified", True) is not False:
+            organ.health = Health.HEALTHY
+        return {"organ": request.target,
+                "probe_digest": domain_hash("euclid.organ-probe.v1", probe),
+                "health": organ.health.value}
+
+    def _verify_requalified(
+        self, request: Any, response: Mapping[str, Any]
+    ) -> Mapping[str, Any]:
+        """Independent postcondition: the delegator's own gates (incl. healthy)
+        must now admit a fresh read-only probe of the organ."""
+        try:
+            probe = self.delegator.dispatch(
+                request.target, f"{request.target}.request",
+                self._organ_probes[request.target], confident=True, safe=True,
+            )
+        except PermissionError as exc:
+            return {"verified": False, "error": str(exc)}
+        return {"verified": probe.get("verified", True) is not False,
+                "evidence_ref": self.evidence.head,
+                "observations": {"health": response.get("health")}}
+
     def _compose_cognition(self) -> None:
         """Wire canonical implementations once; no parallel state histories."""
         from Intelligence.repo_engineer import RepoEngineer
+
+        from .cognition.adaptive import (
+            ObjectiveController,
+            PersistentStrategyLearner,
+            RepresentationController,
+        )
         from .cognition.baselines import (
             ConsequenceDeducer,
             DivergenceDiscriminator,
             RuleAbducer,
             StructuralAnalogyEngine,
             WeightedObjective,
-        )
-        from .cognition.adaptive import (
-            ObjectiveController,
-            PersistentStrategyLearner,
-            RepresentationController,
         )
         from .cognition.core import GeneralIntelligenceCore
         from .cognition.production import (
@@ -466,6 +679,12 @@ class EuclidRuntime:
                     "submission",
                     "pool-acknowledgement",
                 ],
+            },
+            "organism": {
+                "specialists": sorted(getattr(self, "_organ_probes", {})),
+                "unavailable": dict(getattr(self, "organism_unavailable", {})),
+                "guardian_configured": getattr(self, "guardian", None) is not None,
+                "autonomic": getattr(self, "autonomic", None) is not None,
             },
             "evidence_head": self.evidence.head,
             "memory_database": (
