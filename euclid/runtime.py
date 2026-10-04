@@ -211,6 +211,7 @@ class EuclidRuntime:
             raise RuntimeError("cognition is not composed; use EuclidRuntime.production")
         state = self.cognition.solve(problem, goal=goal)
         from .cognition.reachability import ReachabilityStage
+        from .cognition.state import AnalogyStatus
         used = {
             "toe.world_model", "toe.planning", "toe.meta_reasoning",
             "euclid.representation_controller", "euclid.objective_controller",
@@ -237,14 +238,33 @@ class EuclidRuntime:
                         component, stage, episode_id=state.problem_id,
                         evidence_ref=reference,
                     )
-        if state.retrieved_memory_refs:
+        # Transfer requires demonstrated decision effect, not retrieval.  A
+        # retrieved record only counts once it entered the episode's reasoning
+        # as an adopted structural mapping sourced from that exact memory;
+        # retrieval on its own is persistence, and must never be promoted.
+        transferred = [
+            mapping.source_ref for mapping in state.analogies
+            if mapping.status is AnalogyStatus.ADOPTED
+            and mapping.source_ref in set(state.retrieved_memory_refs)
+        ]
+        if transferred:
             for component in ("euclid.memory_database", "pythia.memory"):
                 current = self.reachability.stage(component)
                 if current is not None and current < ReachabilityStage.TRANSFER_VERIFIED:
                     self.reachability.record(
                         component, ReachabilityStage.TRANSFER_VERIFIED,
                         episode_id=state.problem_id, evidence_ref=reference,
+                        detail={"decision_links": sorted(transferred)},
                     )
+        else:
+            self.evidence.append("transfer-not-established", {
+                "problem_id": state.problem_id,
+                "retrieved": len(state.retrieved_memory_refs),
+                "reason": (
+                    "retrieval alone is persistence; no retrieved memory reached "
+                    "a decision as an adopted structural mapping"
+                ),
+            })
         self.reachability.save(self.state_dir / "cognition_reachability.json")
         return state
 
@@ -257,12 +277,33 @@ class EuclidRuntime:
         })
 
     def close(self) -> None:
-        store = self.learning.store
-        if store is not None and hasattr(store, "save"):
-            store.save()
-        database = self.learning.memory_database
-        if database is not None:
-            database.close()
+        """Release durable resources.  Safe to call twice, and never raises.
+
+        Shutdown must not be able to leak a live handle: the database is closed
+        in ``finally`` so a failing snapshot write cannot strand the SQLite
+        connection (which then keeps the state directory undeletable).
+        """
+        if getattr(self, "_closed", False):
+            return
+        self._closed = True
+        try:
+            store = self.learning.store
+            if store is not None and hasattr(store, "save"):
+                try:
+                    store.save()
+                except Exception as exc:  # noqa: BLE001 - shutdown is fail-soft
+                    self.evidence.append("shutdown-store-save-failed", {
+                        "error": f"{type(exc).__name__}: {exc}",
+                    })
+        finally:
+            database = self.learning.memory_database
+            if database is not None:
+                try:
+                    database.close()
+                except Exception as exc:  # noqa: BLE001 - shutdown is fail-soft
+                    self.evidence.append("shutdown-database-close-failed", {
+                        "error": f"{type(exc).__name__}: {exc}",
+                    })
 
     def enable_intelligence(self, **kwargs: Any) -> Any:
         """Wire the merged v16 engine and the cognition loop into this runtime.
@@ -367,8 +408,16 @@ class EuclidRuntime:
         runtime.learning.evidence = runtime.evidence
         # Re-attach the durable memory database when the state dir has one;
         # persistence must survive restart, not just the live process.
+        # production() already opened a handle for this path, so the previous
+        # one must be released or the restore strands two live connections.
         database_path = runtime.state_dir / "euclid_memory.sqlite3"
         if database_path.is_file():
+            previous = runtime.learning.memory_database
+            if previous is not None:
+                try:
+                    previous.close()
+                except Exception:  # noqa: BLE001 - already-closed handle
+                    pass
             runtime.learning.memory_database = MemoryDatabase(database_path)
         runtime.kairos.replay_verify()
         return runtime

@@ -23,6 +23,7 @@ from .interfaces import (
     Abducer,
     AnalogyEngine,
     CausalDiscriminator,
+    ControlAssessment,
     Deducer,
     Executor,
     MemorySystem,
@@ -31,6 +32,7 @@ from .interfaces import (
     ObjectiveFunction,
     Planner,
     SkillComposer,
+    StrategyChoice,
     WorldModel,
 )
 from .state import (
@@ -64,6 +66,8 @@ class AblationConfig:
     meta_learning: bool = True
     skill_composition: bool = True
     replanning: bool = True
+    representation_restructuring: bool = True
+    mathematical_structure: bool = True
 
 
 class GeneralIntelligenceCore:
@@ -82,6 +86,9 @@ class GeneralIntelligenceCore:
         skills: SkillComposer,
         objective: ObjectiveFunction,
         executor: Executor | None = None,
+        episode_learner: Any | None = None,
+        representation_controller: Any | None = None,
+        objective_controller: Any | None = None,
         evidence: EvidenceChain | None = None,
         clock: Callable[[], float] = time.time,
         max_cycles: int = 8,
@@ -104,6 +111,9 @@ class GeneralIntelligenceCore:
         self.skills = skills
         self.objective = objective
         self.executor = executor
+        self.episode_learner = episode_learner
+        self.representation_controller = representation_controller
+        self.objective_controller = objective_controller
         self.evidence = evidence or EvidenceChain()
         self.clock = clock
         self.max_cycles = max_cycles
@@ -131,6 +141,28 @@ class GeneralIntelligenceCore:
             state, "ablated", f"{mechanism} disabled for this episode", {"mechanism": mechanism}
         )
 
+    def _executable_strategies(self) -> tuple[str, ...]:
+        """Strategies this episode's skill composer can actually execute.
+
+        The composer is the authority on its own portfolio: ``V16SkillSearchAdapter``
+        really runs MCTS/evolution behind ``mcts-v16`` / ``evolution-v16``, while a
+        declared-skill composer has no such routes.  Asking the composer keeps
+        strategy selection honest — the loop can never advertise a strategy it
+        would silently ignore at composition time.
+        """
+        declared = getattr(self.skills, "available_strategies", None)
+        if callable(declared):
+            try:
+                strategies = tuple(str(s) for s in declared())
+            except Exception as exc:  # noqa: BLE001 - degrade, never fabricate
+                self._unavailable_strategy_reason = (
+                    f"{type(exc).__name__}: {exc}"
+                )
+                return ()
+            if strategies:
+                return strategies
+        return ()
+
     # -- the loop -------------------------------------------------------------
     def solve(
         self,
@@ -153,17 +185,22 @@ class GeneralIntelligenceCore:
         state.goals.append(Goal("g0", goal_text))
 
         # 1. REPRESENT -----------------------------------------------------
-        self._transition(
-            state, "represent", "problem representation formed",
-            {"structure": sorted(structure), "observation_count": len(observations)},
+        self._represent(state, problem, structure)
+        representation_kind = str(state.representation.get("representation_kind", "literal"))
+        retrieval_structure = frozenset(
+            str(s) for s in state.representation.get("retrieval_structure", structure)
         )
+        if retrieval_structure != structure:
+            structure = retrieval_structure
 
         # 2. RETRIEVE --------------------------------------------------------
         memories = self.memory.retrieve(structure, ALL_MEMORY_KINDS)
         state.retrieved_memory_refs.extend(m.memory_id for m in memories)
         self._transition(
-            state, "retrieve", "memory retrieved by structural relevance",
-            {"retrieved": [m.memory_id for m in memories]},
+            state, "retrieve", "experience retrieved by causal relevance",
+            {"structure": sorted(structure),
+             "representation_kind": representation_kind,
+             "retrieved": [m.memory_id for m in memories]},
         )
 
         # 3. ANALOGY ----------------------------------------------------------
@@ -271,16 +308,46 @@ class GeneralIntelligenceCore:
                 self._ablated(state, "causal_reasoning")
 
             # 7. STRATEGY SELECTION --------------------------------------------
-            available_strategies = ("analogy-causal-plan", "abduce-intervene-deduce",
-                                    "rollout-search-execute")
+            # The portfolio is whatever the skill composer can really execute.
+            # A hardcoded tuple would silently starve the composed strategies
+            # (v16 MCTS/evolution), which is exactly how they became
+            # unreachable from the loop while still passing their own tests.
+            available_strategies = tuple(self._executable_strategies())
+            if not available_strategies:
+                # A composer that declares no portfolio can still be driven by
+                # the loop's own reasoning strategies.
+                available_strategies = (
+                    "analogy-causal-plan", "abduce-intervene-deduce",
+                    "rollout-search-execute",
+                )
             if self.ablations.meta_learning:
-                choice = self.metalearner.select_strategy(problem_class, available_strategies)
+                requested = str(problem.get("strategy") or "").strip()
+                if requested:
+                    if requested not in available_strategies:
+                        # Fail closed: a declared strategy the composer cannot
+                        # execute is an unavailable result, never a silent
+                        # substitution that would fabricate a different plan.
+                        raise ValueError(
+                            f"declared strategy {requested!r} is not executable; "
+                            f"available: {sorted(available_strategies)}"
+                        )
+                    choice = StrategyChoice(
+                        requested, tuple(s for s in available_strategies
+                                         if s != requested),
+                        f"declared by problem {problem_id}",
+                    )
+                else:
+                    choice = self.metalearner.select_strategy(
+                        problem_class, available_strategies
+                    )
                 state.selected_strategy = choice.strategy_id
                 state.alternative_strategies = list(choice.alternatives)
                 self._transition(
                     state, "strategy", "reasoning strategy selected",
-                    {"selected": choice.strategy_id, "alternatives": list(choice.alternatives),
-                     "basis": choice.basis},
+                    {"selected": choice.strategy_id,
+                     "alternatives": list(choice.alternatives),
+                     "basis": choice.basis,
+                     "available": list(available_strategies)},
                 )
             else:
                 state.selected_strategy = available_strategies[0]
@@ -295,6 +362,13 @@ class GeneralIntelligenceCore:
             )
 
             # 9. COMPOSE ----------------------------------------------------------
+            if not self.ablations.mathematical_structure:
+                # Remove the mathematical prior at its source: the composer
+                # itself must stop routing to phi-parameterised search, not
+                # merely be told to ignore the result afterwards.
+                if hasattr(self.skills, "mathematical_enabled"):
+                    self.skills.mathematical_enabled = False
+                self._ablated(state, "mathematical_structure")
             if self.ablations.skill_composition:
                 state.candidates = self.skills.compose(goal_text, state)
             else:
@@ -377,7 +451,7 @@ class GeneralIntelligenceCore:
                 )
 
             # 14. METACONTROL ------------------------------------------------------------
-            assessment = self.metacontroller.assess(state)
+            assessment = self._objective_bias(state, self.metacontroller.assess(state))
             state.control_decisions.append(
                 {"cycle": cycle, "action": assessment.action,
                  "rationale": assessment.rationale, "signals": dict(assessment.signals)}
@@ -405,9 +479,11 @@ class GeneralIntelligenceCore:
             # 15. SUCCESS CHECK ---------------------------------------------------------
             if bool(result.get("goal_met")):
                 solved = True
-                self._learn(state, problem_class, success=True, cycle=cycle)
+                self._learn(state, problem_class, success=True, cycle=cycle,
+                            result=result)
                 break
-            self._learn(state, problem_class, success=False, cycle=cycle)
+            self._learn(state, problem_class, success=False, cycle=cycle,
+                        result=result)
 
         if solved:
             state.outcome = Outcome.SOLVED
@@ -423,7 +499,246 @@ class GeneralIntelligenceCore:
         state.verify_transitions()
         return state
 
+    def _objective_bias(
+        self, state: CognitiveState, assessment: ControlAssessment
+    ) -> ControlAssessment:
+        """Let measured epistemic state override an 'act now' verdict.
+
+        Intermediate objectives are derived from quantities the episode has
+        actually measured — prediction confidence (uncertainty), refuted
+        hypotheses (contradictions), predictions that never produced an observed
+        error (evidence gaps), and prediction error.  When the dominant
+        objective is epistemic and the metacontroller would otherwise act, the
+        loop is told to gather evidence instead: spending a cycle on evidence is
+        only worth it when the measurement says the model is unsupported.
+
+        With no controller, or when the objective is the terminal goal itself,
+        the metacontroller's verdict passes through untouched.
+        """
+        if self.objective_controller is None:
+            return assessment
+        predictions = state.predictions
+        uncertainty = (
+            sum(max(0.0, 1.0 - float(p.confidence)) for p in predictions) / len(predictions)
+            if predictions
+            else 0.0
+        )
+        contradictions = sum(
+            1 for h in state.hypotheses
+            if str(getattr(h.status, "value", h.status)) == "REFUTED"
+        )
+        evidence_gap = max(0, len(predictions) - len(state.prediction_errors))
+        prediction_error = (
+            sum(abs(float(e)) for e in state.prediction_errors) / len(state.prediction_errors)
+            if state.prediction_errors
+            else 0.0
+        )
+        try:
+            objectives = self.objective_controller.derive(
+                state.goals[-1].description if state.goals else "",
+                uncertainty=uncertainty,
+                contradictions=contradictions,
+                missing_evidence=evidence_gap,
+                prediction_error=prediction_error,
+            )
+        except Exception as exc:  # noqa: BLE001 - objectives are advisory
+            self._transition(
+                state, "objective", "objective derivation failed; verdict unchanged",
+                {"error": f"{type(exc).__name__}: {exc}"},
+            )
+            return assessment
+        if not objectives:
+            return assessment
+        dominant = max(objectives, key=lambda o: float(o.weight))
+        epistemic = dominant.metric in {
+            "uncertainty", "contradictions", "evidence_gap", "prediction_error",
+        }
+        self._transition(
+            state, "objective", "intermediate objectives derived from measured signals",
+            {"uncertainty": uncertainty, "contradictions": contradictions,
+             "evidence_gap": evidence_gap, "prediction_error": prediction_error,
+             "dominant": dominant.metric, "objectives": [o.objective_id for o in objectives]},
+        )
+        if not epistemic or assessment.action != "continue":
+            return assessment
+        return ControlAssessment(
+            "seek_evidence",
+            f"dominant intermediate objective {dominant.metric!r} "
+            f"(weight {float(dominant.weight):.3f}) outranks acting now | "
+            f"{assessment.rationale}",
+            dict(assessment.signals),
+        )
+
     # -- helpers ----------------------------------------------------------------
+    @staticmethod
+    def _retrieval_tokens(structure: frozenset[str], payload: Mapping[str, Any]) -> frozenset[str]:
+        """Retrieval keys a representation would index by.
+
+        Only declared relations and edges become keys; opaque payload internals
+        (source text, numeric vectors) must never enter the retrieval
+        vocabulary, or retrieval would silently degrade to surface matching.
+        """
+        tokens = {str(s) for s in structure}
+        for key in ("relations", "edges"):
+            for item in payload.get(key, ()) or ():
+                if isinstance(item, (list, tuple)):
+                    tokens.update(str(part) for part in item)
+                else:
+                    tokens.add(str(item))
+        return frozenset(tokens)
+
+    def _represent_from_evidence(
+        self,
+        state: CognitiveState,
+        structure: frozenset[str],
+        observations: tuple[Any, ...],
+        evidence: Mapping[str, Any],
+    ) -> None:
+        """Adopt a representation using caller-supplied measured evidence.
+
+        The measurement decides; complexity never earns credit on its own.  A
+        representation is adopted only when its measured net utility strictly
+        beats the literal baseline, so a representation that measures no better
+        is rejected even though it was offered.
+        """
+        measured: dict[str, tuple[float, float]] = {}
+        for kind, row in evidence.items():
+            if not isinstance(row, Mapping):
+                continue
+            try:
+                measured[str(kind)] = (
+                    float(row["utility"]), float(row["cost"]),
+                )
+            except (KeyError, TypeError, ValueError):
+                continue
+
+        controller = self.representation_controller
+        baseline_kind = str(state.representation.get("representation_kind", "literal"))
+
+        def evaluator(kind: str, _payload: Mapping[str, Any]) -> tuple[float, float]:
+            return measured.get(kind, (0.0, 1.0))
+
+        try:
+            trial = controller.select(
+                {"representation_kind": baseline_kind, "structure": sorted(structure),
+                 "observations": list(observations)},
+                evaluator,
+            )
+        except Exception as exc:  # noqa: BLE001 - representation is advisory
+            self._transition(
+                state, "represent", "declared representation evidence unusable",
+                {"error": f"{type(exc).__name__}: {exc}",
+                 "representation_kind": "literal"},
+            )
+            return
+
+        chosen = str(trial.kind)
+        payload = trial.payload if trial.accepted else {}
+        state.representation["representation_kind"] = chosen
+        state.representation["active_representation"] = chosen
+        state.representation["representation_adopted"] = bool(trial.accepted)
+        state.representation["representation_trial"] = trial.rationale
+        if chosen != "literal":
+            state.representation["retrieval_structure"] = sorted(
+                self._retrieval_tokens(structure, payload)
+            )
+        self._transition(
+            state, "represent",
+            "representation selected from declared measured evidence",
+            {"structure": sorted(structure),
+             "observation_count": len(observations),
+             "representation_kind": chosen,
+             "adopted": bool(trial.accepted),
+             "baseline_utility": trial.baseline_utility,
+             "candidate_utility": trial.candidate_utility,
+             "cost": trial.cost,
+             "rationale": trial.rationale},
+        )
+
+    def _represent(
+        self,
+        state: CognitiveState,
+        problem: Mapping[str, Any],
+        structure: frozenset[str],
+    ) -> None:
+        """Choose a representation by measured net retrieval utility.
+
+        Without a controller the literal representation is used, exactly as
+        before.  With one, each candidate is scored by how much prior
+        experience it actually retrieves minus its construction cost, and it is
+        adopted only when that net utility beats the baseline.  The adopted
+        representation's retrieval keys then drive stage 2, so this genuinely
+        changes which memories the episode sees.
+        """
+        observations = tuple(problem.get("observations", ()))
+        state.representation.setdefault("representation_kind", "literal")
+        state.representation.setdefault("retrieval_structure", sorted(structure))
+
+        if not self.ablations.representation_restructuring:
+            self.representation_controller = None
+            self._ablated(state, "representation_restructuring")
+
+        # Measured evidence supplied with the problem outranks the loop's
+        # retrieval proxy: when the caller measured real utility/cost per
+        # representation, that measurement is the evidence, not our guess.
+        declared_evidence = problem.get("representation_evidence")
+        if (
+            self.representation_controller is not None
+            and isinstance(declared_evidence, Mapping)
+            and declared_evidence
+        ):
+            self._represent_from_evidence(
+                state, structure, observations, declared_evidence
+            )
+            return
+        if self.representation_controller is None:
+            self._transition(
+                state, "represent", "literal problem representation retained",
+                {"structure": sorted(structure),
+                 "observation_count": len(observations),
+                 "representation_kind": "literal"},
+            )
+            return
+
+        def evaluator(kind: str, payload: Mapping[str, Any]) -> tuple[float, float]:
+            tokens = (
+                structure if kind == "literal"
+                else self._retrieval_tokens(structure, payload)
+            )
+            utility = float(len(self.memory.retrieve(tokens, ALL_MEMORY_KINDS)))
+            return utility, 0.05 * float(len(payload))
+
+        try:
+            trial = self.representation_controller.select(problem, evaluator)
+        except Exception as exc:  # noqa: BLE001 - representation is advisory
+            self._transition(
+                state, "represent", "representation search failed; baseline retained",
+                {"error": f"{type(exc).__name__}: {exc}",
+                 "representation_kind": "literal"},
+            )
+            return
+
+        chosen = str(trial.kind)
+        state.representation["representation_kind"] = chosen
+        state.representation["active_representation"] = chosen
+        state.representation["representation_trial"] = trial.rationale
+        state.representation["representation_adopted"] = bool(trial.accepted)
+        if chosen != "literal":
+            state.representation["retrieval_structure"] = sorted(
+                self._retrieval_tokens(structure, trial.payload)
+            )
+        self._transition(
+            state, "represent", "representation selected by measured net utility",
+            {"structure": sorted(structure),
+             "observation_count": len(observations),
+             "representation_kind": chosen,
+             "adopted": bool(trial.accepted),
+             "baseline_utility": trial.baseline_utility,
+             "candidate_utility": trial.candidate_utility,
+             "cost": trial.cost,
+             "rationale": trial.rationale},
+        )
+
     def _compare_hypotheses(
         self,
         state: CognitiveState,
@@ -459,7 +774,15 @@ class GeneralIntelligenceCore:
              "remaining_active": [h.hypothesis_id for h in state.active_hypotheses()]},
         )
 
-    def _learn(self, state: CognitiveState, problem_class: str, *, success: bool, cycle: int) -> None:
+    def _learn(
+        self,
+        state: CognitiveState,
+        problem_class: str,
+        *,
+        success: bool,
+        cycle: int,
+        result: Mapping[str, Any] | None = None,
+    ) -> None:
         if self.ablations.meta_learning and state.selected_strategy:
             self.metalearner.update(problem_class, state.selected_strategy, success,
                                     detail=f"cycle={cycle}")
@@ -467,6 +790,30 @@ class GeneralIntelligenceCore:
                 {"kind": "strategy", "strategy": state.selected_strategy,
                  "problem_class": problem_class, "success": success, "cycle": cycle}
             )
+        # Close the episode into the governed LearningService so cognition
+        # outcomes reach durable, replay-protected memory instead of
+        # terminating in telemetry.  Fail-soft: a learner failure must never
+        # abort an episode, but it is always recorded in the ledger.
+        if self.episode_learner is not None:
+            payload = dict(result or {})
+            payload.setdefault("goal_met", success)
+            payload.setdefault("problem_class", problem_class)
+            try:
+                recorded = self.episode_learner.record_episode(
+                    state, success=success, cycle=cycle, result=payload
+                )
+            except Exception as exc:  # noqa: BLE001 - learner is advisory
+                self._transition(
+                    state, "learn", "episode learner rejected the outcome",
+                    {"error": f"{type(exc).__name__}: {exc}",
+                     "problem_class": problem_class, "cycle": cycle},
+                )
+            else:
+                self._transition(
+                    state, "learn", "episode closed into LearningService",
+                    {"experience_id": recorded, "success": success,
+                     "problem_class": problem_class, "cycle": cycle},
+                )
         self._transition(
             state, "learn", "episode outcome fed back to learning",
             {"success": success, "problem_class": problem_class,

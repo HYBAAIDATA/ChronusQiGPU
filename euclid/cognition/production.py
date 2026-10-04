@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import uuid
 from dataclasses import replace
 from typing import Any, Mapping, Sequence
 
@@ -358,7 +357,10 @@ class LearningServiceEpisodeAdapter:
             reward_authority = RewardAuthority.MEASURED_ENVIRONMENT
             reward = float(result["reward"])
         experience = Experience(
-            experience_id="cognition-" + uuid.uuid4().hex,
+            # Identity is derived from content, never from a random token: a
+            # sealed episode must be byte-identical when replayed, and a uuid
+            # would make every replay of the same episode look like a new one.
+            experience_id="cognition-" + replay_id[:32],
             mission_id=state.problem_id,
             domain=str(state.representation.get("problem_class", "repository")),
             source="euclid.cognition",
