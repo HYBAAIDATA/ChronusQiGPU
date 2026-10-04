@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import signal
+from dataclasses import replace
 
 from chronus.mla1517.hardware import MMIOBridge
 from chronus.mla1517.mining.backend_registry import (
@@ -162,6 +163,26 @@ def backend_order() -> tuple[str, ...] | None:
     return tuple(result)
 
 
+def _record_aggregate_backend_selection(
+    registry: BackendRegistry,
+    selection: BackendSelection,
+) -> None:
+    """Persist the outer policy decision after concrete-lane attempts.
+
+    ``BackendRegistry.select(<concrete lane>)`` already records each refusal or
+    acceptance. A declared multi-lane ``auto`` policy needs one additional
+    aggregate record so telemetry does not lose the original request and
+    fallback provenance. BackendRegistry owns the append-only evidence format;
+    this helper deliberately delegates to that recorder rather than writing a
+    second file format.
+    """
+    recorder = getattr(registry, "_record", None)
+    if callable(recorder):
+        recorder(selection)
+    else:  # small injected registries used by contract tests
+        setattr(registry, "last_selection", selection)
+
+
 def select_execution_backend(
     registry: BackendRegistry,
     requested: str,
@@ -175,8 +196,10 @@ def select_execution_backend(
     Explicit ``requested`` lanes remain exact/fail-closed. ``auto`` preserves
     BackendRegistry's built-in policy unless ``PYTHIA_BACKEND_ORDER`` is set;
     when it is set, the concrete lanes are tried exactly in that order. Every
-    refusal is persisted by BackendRegistry and no undeclared CPU fallback is
-    injected by this function.
+    concrete attempt is persisted by BackendRegistry and the final aggregate
+    selection retains the original ``auto`` request, the refused-lane history,
+    and whether the selected lane was a fallback. CPU is never appended behind
+    the operator's back.
     """
     key = (requested or "auto").strip().lower()
     order = backend_order() if key == "auto" else None
@@ -184,20 +207,101 @@ def select_execution_backend(
         return registry.select(key, reprobe=reprobe, job_id=job_id, epoch=epoch)
 
     refused: list[str] = []
-    for token in order:
+    attempts: list[dict[str, str]] = []
+    aggregate_probes = {}
+    for index, token in enumerate(order):
         try:
-            return registry.select(
+            concrete = registry.select(
                 token,
                 reprobe=reprobe,
                 job_id=job_id,
                 epoch=epoch,
             )
         except BackendUnavailable as exc:
-            refused.append(f"{token}: {exc}")
-    raise BackendUnavailable(
+            refusal = f"{token}: {exc}"
+            refused.append(refusal)
+            attempts.append({"token": token, "outcome": "refused", "reason": str(exc)})
+            last = getattr(registry, "last_selection", None)
+            if isinstance(last, BackendSelection):
+                aggregate_probes.update(last.probed)
+            continue
+
+        aggregate_probes.update(getattr(concrete, "probed", {}) or {})
+        attempts.append(
+            {
+                "token": token,
+                "outcome": "selected",
+                "lane": concrete.lane,
+                "reason": concrete.reason,
+            }
+        )
+        reason = (
+            f"declared PYTHIA_BACKEND_ORDER {list(order)} selected {concrete.lane}"
+            + (f" after refusals: {'; '.join(refused)}" if refused else "")
+        )
+        hasher = concrete.hasher
+        if index > 0 and hasher is not None:
+            # Preserve the fallback reason on hashers that expose this field;
+            # this is diagnostic provenance only and never changes execution.
+            try:
+                hasher.fallback_reason = reason
+            except Exception:
+                pass
+        aggregate = replace(
+            concrete,
+            requested=key,
+            fallback=index > 0,
+            reason=reason,
+            probed=dict(aggregate_probes),
+            observation={
+                "requested": key,
+                "policy_source": "PYTHIA_BACKEND_ORDER",
+                "policy_order": list(order),
+                "attempts": attempts,
+                "probes": {
+                    name: probe.as_dict() for name, probe in aggregate_probes.items()
+                },
+            },
+            available_actions=tuple(
+                name for name, probe in aggregate_probes.items() if probe.available
+            ),
+            selected_action=concrete.lane,
+            execution_target=concrete.lane,
+            result="backend_bound",
+            disposition="accepted",
+        )
+        _record_aggregate_backend_selection(registry, aggregate)
+        return aggregate
+
+    reason = (
         "declared PYTHIA_BACKEND_ORDER exhausted with no available lane: "
         + "; ".join(refused)
     )
+    last = getattr(registry, "last_selection", None)
+    if isinstance(last, BackendSelection):
+        aggregate = replace(
+            last,
+            requested=key,
+            fallback=False,
+            reason=reason,
+            probed=dict(aggregate_probes),
+            observation={
+                "requested": key,
+                "policy_source": "PYTHIA_BACKEND_ORDER",
+                "policy_order": list(order),
+                "attempts": attempts,
+                "probes": {
+                    name: probe.as_dict() for name, probe in aggregate_probes.items()
+                },
+            },
+            available_actions=(),
+            selected_action="Unavailable",
+            execution_target="Unavailable",
+            result="no_backend_bound",
+            disposition="rejected",
+        )
+        _record_aggregate_backend_selection(registry, aggregate)
+    raise BackendUnavailable(reason)
 
 
 def _execution_hasher(backend: str, registry: BackendRegistry | None = None):
