@@ -28,6 +28,70 @@ class ChronusTensorValidationError(ValueError):
     pass
 
 
+def validate_declared_output_shape(
+    operation: str,
+    input_shapes: Sequence[Sequence[int]],
+    output_shape: Sequence[int],
+) -> tuple[int, ...]:
+    """Reject shape mismatches before host/device allocation or kernel dispatch.
+
+    Closes the PR #95 class of gap: elementwise/scale (and peers) must not
+    allocate from a caller-declared output shape that disagrees with inputs.
+    """
+    if not output_shape:
+        raise ChronusTensorValidationError("output_shape must be non-empty")
+    out = tuple(int(x) for x in output_shape)
+    if any(d <= 0 for d in out):
+        raise ChronusTensorValidationError("output dimensions must be positive")
+    shapes = [tuple(int(x) for x in s) for s in input_shapes]
+    op = operation.lower().strip()
+
+    def _prod(shape: Sequence[int]) -> int:
+        n = 1
+        for d in shape:
+            n *= int(d)
+        return int(n)
+
+    if op in {"add", "mul", "elementwise_add", "elementwise_mul", "elementwise"}:
+        if len(shapes) < 2:
+            raise ChronusTensorValidationError(f"{op} requires two input shapes")
+        if shapes[0] != shapes[1]:
+            raise ChronusTensorValidationError(
+                f"{op} input shapes disagree: {shapes[0]} vs {shapes[1]}"
+            )
+        if out != shapes[0]:
+            raise ChronusTensorValidationError(
+                f"{op} output_shape {out} does not match input shape {shapes[0]}"
+            )
+    elif op in {"scale", "elementwise_scale"}:
+        if len(shapes) < 1:
+            raise ChronusTensorValidationError(f"{op} requires one input shape")
+        if out != shapes[0]:
+            raise ChronusTensorValidationError(
+                f"{op} output_shape {out} does not match input shape {shapes[0]}"
+            )
+    elif op in {"matmul", "gemm", "cgemv"}:
+        if len(shapes) < 2:
+            raise ChronusTensorValidationError(f"{op} requires two input shapes")
+        a, b = shapes[0], shapes[1]
+        if len(a) != 2 or len(b) != 2:
+            raise ChronusTensorValidationError(f"{op} requires rank-2 inputs")
+        if a[1] != b[0]:
+            raise ChronusTensorValidationError(
+                f"{op} inner dimensions disagree: {a} @ {b}"
+            )
+        expected = (a[0], b[1])
+        if out != expected:
+            raise ChronusTensorValidationError(
+                f"{op} output_shape {out} does not match expected {expected}"
+            )
+    else:
+        if _prod(out) <= 0:
+            raise ChronusTensorValidationError("output must contain at least one element")
+    return out
+
+
+
 # HYBA iGPU identity aliases — same HYBA_DEVICE_ALIAS contract as
 # mining/bitcoin_hasher.py and unified_punch.py.
 DEFAULT_HYBA_ALIASES = ("hyba-mla1517", "hyba_mla1517", "mla1517", "hyba")
@@ -513,8 +577,9 @@ class ChronusTensorRuntime:
     ) -> tuple[np.ndarray, TensorExecutionEvidence]:
         if len(inputs) != len(input_shapes):
             raise ChronusTensorValidationError("input count does not match declared shapes")
+        declared = validate_declared_output_shape(operation, input_shapes, output_shape)
         arrays = [self._float32_array(v, s) for v, s in zip(inputs, input_shapes)]
-        out_size = int(np.prod(tuple(output_shape), dtype=np.int64))
+        out_size = int(np.prod(declared, dtype=np.int64))
         if out_size <= 0:
             raise ChronusTensorValidationError("output must contain at least one element")
         buffers, output, out_buffer = self._buffers(arrays, out_size)
@@ -654,4 +719,5 @@ __all__ = [
     "plan_work_group",
     "probe",
     "probe_tensor",
+    "validate_declared_output_shape",
 ]
