@@ -1,18 +1,22 @@
-"""Consolidated self-healing / self-optimising supervisor.
+"""Control-plane lifecycle supervisor with explicit mining authority boundaries.
 
-Wires ``Intelligence.autonomous_capabilities`` into the control plane as a
-continuous daemon. It unifies:
+This daemon supervises *process/control-plane* liveness. It may restart dead
+worker processes through the canonical control plane, but it does not own
+mining state, mining recovery, backend selection, share submission, or mining
+parameter optimisation.
 
-* Self-healing loop — probes registered subsystems and runs verified repairs.
-* Self-optimising loop — measures CUOP and golden-step tunes the window size.
-* Learner-drift supervision — retrains the validity learner when prediction
-  error drifts above threshold (when a workflow is attached).
-* Cassini ledger — every action is hash-chained and fingerprinted.
+The canonical mining runtime owns those responsibilities:
 
-The supervisor is report-only by default. Repairs execute only when a
-registered repair callable is provided and the post-repair probe confirms
-HEALTHY. Optimiser parameter changes are applied, re-measured, and reverted
-on regression.
+* ``IntelligentPoolCoordinator`` / ``RecoveryGovernor`` own in-process mining
+  recovery and execution-lane healing.
+* ``ClosedLoopOptimizer`` owns measured mining-window optimisation and its
+  retain/rollback lifecycle.
+* ``MiningSession`` and the Stratum coordinator own share submission state.
+
+CUOP remains available here as measured observation-only evidence. This module
+must never write the mining nonce window or attach a second mining optimiser.
+That keeps one authoritative closed-loop mining control plane while preserving
+an outer supervisor that can revive a crashed worker process.
 """
 
 from __future__ import annotations
@@ -28,14 +32,24 @@ logger = logging.getLogger("pythia.autonomous_supervisor")
 _SUPERVISOR: Optional["AutonomousSupervisor"] = None
 _SUPERVISOR_GUARD = threading.Lock()
 
+_AUTHORITY = {
+    "scope": "control_plane_process_lifecycle",
+    "worker_process_restarts": True,
+    "mining_state_owner": "IntelligentPoolCoordinator",
+    "mining_recovery_owner": "RecoveryGovernor/SelfHealingAgent",
+    "mining_optimisation_owner": "ClosedLoopOptimizer",
+    "share_submission_owner": "IntelligentPoolCoordinator/MiningSession",
+    "mining_parameter_writes": False,
+    "cuop_mode": "observation_only",
+}
+
 
 class AutonomousSupervisor:
-    """Daemon that runs the consolidated autonomy plane.
+    """Daemon supervising process liveness without competing with the miner.
 
     ``power_meter`` is the only power authority CUOP accepts: a callable that
-    returns measured mean watts, or ``None`` when no reading exists. Without
-    it CUOP is Unavailable and the optimiser stays detached; healing runs
-    regardless.
+    returns measured mean watts, or ``None`` when no reading exists. CUOP is
+    reported as evidence only; it is not allowed to mutate mining parameters.
     """
 
     def __init__(
@@ -52,6 +66,8 @@ class AutonomousSupervisor:
         self._cycle_count = 0
         self._started_at: Optional[float] = None
         self._supervisor: Any = None
+        # Compatibility attributes are intentionally always detached. Mining
+        # optimisation belongs to the production coordinator.
         self._optimiser: Any = None
         self._measure_fn: Optional[Callable[[], Any]] = None
         self._cuop_status: dict[str, Any] = {
@@ -60,20 +76,15 @@ class AutonomousSupervisor:
             "reason": "not_measured",
         }
 
-    # ------------------------------------------------------------------
-    # Wiring
-    # ------------------------------------------------------------------
     def _build(self) -> None:
-        """Lazy import and construction so boot is not blocked."""
+        """Lazy construction; never installs a second mining optimiser."""
         if self._supervisor is not None:
             return
         try:
             from Intelligence.autonomous_capabilities import (
                 AutonomySupervisor,
                 CassiniCycleLedger,
-                CuopLearner,
                 CuopMeter,
-                SelfOptimisingLoop,
             )
         except Exception as exc:  # pragma: no cover - defensive
             logger.warning("Autonomous capabilities unavailable: %s", exc)
@@ -83,8 +94,8 @@ class AutonomousSupervisor:
         ledger = CassiniCycleLedger()
         supervisor = AutonomySupervisor(engine=None, ledger=ledger)
 
-        # Register a subsystem probe for the local control plane.
         def control_plane_probe() -> str:
+            """Probe worker-process liveness only, not mining health."""
             try:
                 import control_api as _ca
 
@@ -99,6 +110,12 @@ class AutonomousSupervisor:
             return "HEALTHY"
 
         def restart_workers() -> bool:
+            """Revive worker processes through the control-plane lifecycle.
+
+            This is intentionally not an in-process mining repair. Once the
+            mining worker is alive, RecoveryGovernor/SelfHealingAgent regain
+            sole authority over mining recovery.
+            """
             try:
                 import control_api as _ca
 
@@ -117,14 +134,13 @@ class AutonomousSupervisor:
             repairs={"subsystem_stall": restart_workers},
         )
 
-        # Self-optimising loop: tune the runtime config window size.
         meter = CuopMeter(usd_per_kwh=float(os.getenv("PYTHIA_CUOP_USD_KWH", "0.10")))
 
         def measure_cuop() -> Any:
-            """Return measured CUOP, or ``None`` with explicit unavailable evidence.
+            """Return measured CUOP or explicit unavailable evidence.
 
-            An operator-set ``PYTHIA_CUOP_POWER_W`` is configuration, not a
-            measurement, so it never yields a CUOP reading.
+            ``PYTHIA_CUOP_POWER_W`` is configuration, not a measurement, so
+            it never becomes runtime evidence.
             """
             try:
                 import control_api as _ca
@@ -152,6 +168,7 @@ class AutonomousSupervisor:
                     "available": True,
                     "evidence_class": "Measured",
                     "reason": None,
+                    "mode": "observation_only",
                     "reading": reading.to_dict(),
                 }
                 return reading
@@ -161,63 +178,28 @@ class AutonomousSupervisor:
                     "available": False,
                     "evidence_class": "Unavailable",
                     "reason": reason,
+                    "mode": "observation_only",
                 }
                 logger.info("CUOP unavailable: %s", reason)
                 return None
 
-        def get_window() -> float:
-            try:
-                import runtime_config
-
-                cfg = runtime_config.load()
-                return float(cfg.get("window", 200000))
-            except Exception:
-                return 200000.0
-
-        def set_window(value: float) -> None:
-            try:
-                import runtime_config
-
-                cfg = runtime_config.load()
-                window = int(value)
-                bounds = cfg.get("bounds", {}).get("window", [1, 1 << 22])
-                window = max(bounds[0], min(bounds[1], window))
-                cfg["window"] = window
-                runtime_config.save(cfg)
-            except Exception as exc:
-                logger.warning("set_window failed: %s", exc)
-
-        learner = CuopLearner(
-            name="nonce_window",
-            getter=get_window,
-            setter=set_window,
-            lo=1000.0,
-            hi=1_000_000.0,
-            rel_step=0.25,
+        # Measure for status/evidence, but never attach SelfOptimisingLoop or
+        # write runtime_config.window. The mining coordinator's
+        # ClosedLoopOptimizer is the sole nonce-window optimisation authority.
+        measure_cuop()
+        ledger.log(
+            "supervision",
+            {
+                "trigger": "authority_boundary",
+                "action": "mining_optimizer_not_attached",
+                "reason": "mining_optimisation_owned_by_closed_loop_optimizer",
+                "evidence_class": "Policy",
+                "theorem_proven": False,
+            },
         )
-        optimiser = SelfOptimisingLoop(meter=meter, learners=[learner], ledger=ledger)
-        baseline = measure_cuop()
-        if baseline is not None:
-            optimiser.measure_baseline(lambda: baseline)
-            supervisor.attach_optimiser(optimiser, measure_cuop)
-        else:
-            ledger.log(
-                "supervision",
-                {
-                    "trigger": "cuop_unavailable",
-                    "action": "optimiser_not_attached",
-                    "reason": self._cuop_status["reason"],
-                    "evidence_class": "Unavailable",
-                    "theorem_proven": False,
-                },
-            )
         self._supervisor = supervisor
-        self._optimiser = optimiser
         self._measure_fn = measure_cuop
 
-    # ------------------------------------------------------------------
-    # Daemon loop
-    # ------------------------------------------------------------------
     def _loop(self) -> None:
         self._started_at = time.time()
         try:
@@ -230,6 +212,10 @@ class AutonomousSupervisor:
 
         while not self._stop.is_set():
             try:
+                # Refresh CUOP as observation evidence each cycle. It is not
+                # an optimisation input in this authority plane.
+                if self._measure_fn is not None:
+                    self._measure_fn()
                 if self._supervisor is not None:
                     result = self._supervisor.supervise_cycle()
                 else:
@@ -261,9 +247,6 @@ class AutonomousSupervisor:
                 return True
         return False
 
-    # ------------------------------------------------------------------
-    # Status / control
-    # ------------------------------------------------------------------
     def status(self) -> dict[str, Any]:
         with self._lock:
             running = self._thread is not None and self._thread.is_alive()
@@ -274,21 +257,24 @@ class AutonomousSupervisor:
                 except Exception as exc:
                     supervisor_status = {"error": f"{type(exc).__name__}: {exc}"}
             return {
-                "schema": "pythia.autonomous_supervisor/1",
+                "schema": "pythia.autonomous_supervisor/2",
                 "running": running,
                 "interval_s": self.interval_s,
                 "cycle_count": self._cycle_count,
                 "started_at": self._started_at,
                 "last_result": self._last_result,
+                "authority": dict(_AUTHORITY),
                 "cuop": dict(self._cuop_status),
                 "supervisor": supervisor_status,
             }
 
     def trigger_cycle(self) -> dict[str, Any]:
-        """Run one cycle synchronously (for testing / manual intervention)."""
+        """Run one process-lifecycle supervision cycle synchronously."""
         self._build()
         if self._supervisor is None:
             return {"ok": False, "error": "supervisor not built"}
+        if self._measure_fn is not None:
+            self._measure_fn()
         result = self._supervisor.supervise_cycle()
         with self._lock:
             self._last_result = result
@@ -322,7 +308,11 @@ def stop() -> bool:
 def status() -> dict[str, Any]:
     with _SUPERVISOR_GUARD:
         if _SUPERVISOR is None:
-            return {"schema": "pythia.autonomous_supervisor/1", "running": False}
+            return {
+                "schema": "pythia.autonomous_supervisor/2",
+                "running": False,
+                "authority": dict(_AUTHORITY),
+            }
         return _SUPERVISOR.status()
 
 
