@@ -4,15 +4,15 @@
     "recorded": [
       {
         "authority": "measured-environment",
-        "digest": "3ee02762e103c0a6"
+        "digest": "b43a54fbb473adc6"
       },
       {
         "authority": "operator",
-        "digest": "67cb878e59683144"
+        "digest": "1377028439dac14e"
       },
       {
         "authority": "validated-simulation",
-        "digest": "7fd6b7b8c9a64d32"
+        "digest": "f18b2326a85c5237"
       }
     ],
     "verdict": "PASS"

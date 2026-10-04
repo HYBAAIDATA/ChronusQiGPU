@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
-from typing import Any, Callable, Mapping, Optional, Sequence
+from typing import Any, Callable, Mapping
 
 from ..contracts import Experience, RewardAuthority
 from ..evidence import atomic_write, load_json
@@ -29,14 +29,12 @@ from .baselines import (
     BanditMetaLearner,
     InMemoryMemorySystem,
     SignalMetaController,
-    StaticSkillComposer,
     StructuralAnalogyEngine,
     WeightedObjective,
 )
 from .core import AblationConfig, GeneralIntelligenceCore
 from .episode import CognitiveEpisode, episode_from_state
 from .interfaces import MemoryItem
-from .phi_schedule import phi_order
 from .program_domain import (
     DivergenceDiscriminator,
     ProgramAbducer,
@@ -62,6 +60,7 @@ def strip_non_deterministic(value: Any) -> Any:
     if isinstance(value, list):
         return [strip_non_deterministic(v) for v in value]
     return value
+
 
 OBJECTIVE_WEIGHTS = {
     "correctness_estimate": 0.5,

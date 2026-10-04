@@ -12,7 +12,7 @@ import math
 import time
 from dataclasses import asdict, dataclass, field
 from enum import Enum
-from typing import Any, Callable, Iterable, Mapping
+from typing import Any, Callable, Mapping
 
 from ..contracts import domain_hash
 
