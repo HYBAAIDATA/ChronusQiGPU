@@ -1,55 +1,61 @@
 # Research reconciliation
 
-The workspace research pages assert a large catalogue of advantages. This document gives every substantive one of them a disposition, so the repository carries the pages' *conclusions* — including the negative ones — instead of re-asserting a claim by association with the page it came from.
+The workspace research pages assert a large catalogue of advantages. This document gives every substantive one of them a disposition, so the repository carries the pages' *epistemic state* instead of re-asserting a claim by association with the page it came from.
 
-The machine-readable form is `chronus/v33/research_reconciliation.py`; the gate is `tests/test_chronus_v33/test_research_reconciliation.py`. `REFUTED` and `PROHIBITED` entries are executable: the entry stores the page's own phrasing and the named in-repo linter must catch it.
+The machine-readable form is `chronus/v33/research_reconciliation.py`; the gate is `tests/test_chronus_v33/test_research_reconciliation.py`.
 
-## Dispositions
+## The rule
+
+**Nothing is refuted unless it was tested.**
+
+A claim is `TESTED_AND_REFUTED` only when an experiment ran, in a stated regime, and failed *there*. A claim no experiment has addressed is `UNTESTED`, and it is not refuted: an experiment on a different question, in a different regime, does not settle it. That is enforced structurally, not by convention — `TESTED_AND_REFUTED` requires a `regime` and an `outcome`, `UNTESTED` requires the `falsification` that would settle it, neither may borrow the other's evidence, and `test_the_refuted_lint_stays_silent_on_untested_claims` fails if an untested claim ever reaches the refuted register.
 
 | Disposition | Meaning |
 | --- | --- |
-| `VERIFIED` | Backed by an in-repo test or benchmark. May be asserted. |
-| `REFUTED` | In-repo evidence contradicts it. Must not be asserted. |
-| `PROHIBITED` | Must be absent from generated pages and release text. |
+| `VERIFIED` | Tested in this repository, in the stated regime, and passes. May be asserted within that regime. |
+| `TESTED_AND_REFUTED` | An experiment ran and the claim failed **in the stated regime**. Says nothing about any other regime. |
+| `UNTESTED` | No experiment addresses it. Must not be asserted, and must not be called refuted. |
+| `PROHIBITED` | A boundary rather than a result: barred from generated pages and release text by policy, whatever any experiment would say. |
 | `HYPOTHESIS` | Plausible, unevidenced. Stays isolated under `experiments/`. |
-| `UNBACKED` | Asserted in a source page with no in-repo evidence either way. |
 
-## The headline
-
-`CLAIMS_BOUNDARY_SHEET_V4` (June 30, 2026) is the most honest document in the set, and it refutes the catalogue's central claim. Its own decision criterion is met in the negative: φ does not beat uniform 8-bit on ≥ 2/3 data types, and does not beat the NULL model. The rate-distortion decomposition attributes every compression gain to the engineering stack — adaptive density, fallback, lattice regeneration — while φ-only lands at 0.92× compression with 0.2735 error, worse than baseline. Gate G1 (null model) is marked **FAILED**; G4, G5 and G6 have never been run.
-
-`USE_CASES` then asserts the opposite across 80+ entries, in the form of one-line `Advantage:` claims with no measurement behind them. That is the gap this reconciliation closes: the pages may keep their catalogue, but the claims that the evidence contradicts, or that policy prohibits, now trip a lint.
+Two lints, deliberately separate. `al_haras/refuted_claims.py` bars claims that were tested and failed. `al_haras/unmeasured_claims.py` bars claims that were never tested. Putting the second kind into the first would let an untested claim be dismissed by someone else's experiment on a different question.
 
 ## Mining
 
-| Claim | Disposition | Evidence |
+| Claim | Disposition | Basis |
 | --- | --- | --- |
-| φ-compression outperforms uniform quantization | `REFUTED` | `benchmarks/baseline_comparison_v4.py`; decision criterion met in the negative |
-| Up to 32:1 compression from 32-face folding | `PROHIBITED` | face-index quantisation is a lossy codebook, not a compression result |
-| Golden-ratio partitioning resists hash collisions | `PROHIBITED` | non-uniform output does not lower collision probability in SHA-256d |
-| Manifold key search is quantum-resistant cryptography | `PROHIBITED` | `STRICT_QUANTUM_BOUNDARY.md` category 3 |
-| Manifold structure makes brute-force nonce search exponentially harder | `PROHIBITED` | every candidate is still checked against the full double-SHA256 predicate |
+| φ-compression matches or beats uniform 4-bit on structured data | `TESTED_AND_REFUTED` | `baseline_comparison_v4.py`, sinusoidal: φ 3.06× / 0.1022 error vs uniform 4-bit 4.00× / 0.0803; no improvement over the NULL model |
+| The φ-specific components (lattice, multiscale) contribute to compression | `TESTED_AND_REFUTED` | `rate_distortion_decomposition.py`: φ-only 0.92× / 0.2735 error; engineering-only 4.00× / 0.1072 |
+| φ-compression outperforms uniform quantization on real transformer KV-cache data | `UNTESTED` | the sheet marks it Pending, not Failed. Falsifier: `llm_kv_cache_real_model.py`, PPL degradation ≤ 0.5 at 2× |
+| Up to 32:1 compression from 32-face folding | `UNTESTED` | falsifier: measure the sheet's own `compression_ratio` over payload + metadata on a stated corpus |
+| Golden-ratio partitioning resists hash collisions | `UNTESTED` | falsifier: birthday search, phi partition vs uniform, equal nonce budget, full double-SHA256 predicate |
+| Manifold key search is quantum-resistant cryptography | `UNTESTED` | falsifier: state the hardness assumption, then a reduction or an attack cost. None is stated |
+| Manifold structure makes brute-force nonce search exponentially harder | `UNTESTED` | falsifier: candidates per second on the phi schedule vs uniform at equal accepted-work accounting |
 
 ## Intelligence
 
-| Claim | Disposition | Evidence |
+| Claim | Disposition | Basis |
 | --- | --- | --- |
-| MPS compression makes architecture search polynomial in depth | `PROHIBITED` | bond dimension bounds representable entanglement, not the search |
-| φ-resonance-weighted correction improves correction fidelity | `PROHIBITED` | the in-tree decoder is a distance-3 reference decoder with no weighting |
-| φ-resonance identifies functional DNA patterns | `PROHIBITED` | no in-repo genomic result exists |
+| MPS compression makes architecture search polynomial in depth | `UNTESTED` | falsifier: run the search with and without MPS at equal evaluation budget |
+| φ-resonance-weighted correction improves correction fidelity | `UNTESTED` | falsifier: fixed-rate depolarising channel, logical error rate with and without weighting |
+| φ-resonance identifies functional DNA patterns | `UNTESTED` | falsifier: labelled functional-annotation corpus, precision/recall against a motif baseline |
+| Grassmannian subspaces give a natural commitment scheme | `UNTESTED` | falsifier: a hiding and binding argument, or a distinguishing attack cost. No construction exists |
 | Self-healing emerges from the architecture | `HYPOTHESIS` | isolated under `experiments/`; the six behaviours are never enumerated |
-| Grassmannian subspaces give a natural commitment scheme | `UNBACKED` | no in-repo construction, proof, or hiding argument |
 
 ## Quantum
 
-| Claim | Disposition | Evidence |
+| Claim | Disposition | Basis |
 | --- | --- | --- |
-| The wide register is exact for the stabilizer state class | `VERIFIED` | registered as `vqc-stabilizer-full-width` in the executable research intake |
-| Quantum walk gives exponential speedup for path finding | `PROHIBITED` | the in-tree walk is exact and verifiable; the speedup claim is neither |
-| Quantum interference gives exponential speedup for optimization landscapes | `PROHIBITED` | variational methods are heuristics; no landscape is specified or measured |
-| Tensor-network decomposition gives exponential compression | `PROHIBITED` | low entanglement bounds the representation, not the compression ratio |
-| The system is a physical quantum computer | `PROHIBITED` | caught by `capabilities.audit_claims`; the doctrine page keeps it RESTRICTED/INTERNAL |
+| The wide register is exact for the stabilizer state class | `VERIFIED` | 10,000 qubits, 20,000 tableau bits, cut entropy 1, `materialised False`; registered as `vqc-stabilizer-full-width` |
+| Quantum walk gives exponential speedup for path finding | `PROHIBITED` | policy bar on the phrase, not a test result. The in-tree walk is exact and verifiable; the speedup is unmeasured |
+| Quantum interference gives exponential speedup for optimization landscapes | `PROHIBITED` | same bar; no landscape is named, so the claim is unfalsifiable as written |
+| Tensor-network decomposition gives exponential compression | `UNTESTED` | falsifier: bits per element on a stated tensor family vs a fixed-rank baseline at equal error |
+| The system is a physical quantum computer | `PROHIBITED` | no QPU provider is bound; the doctrine page keeps this sentence RESTRICTED/INTERNAL. No experiment would make it assertable |
 
 ## What this does not do
 
-It does not implement the catalogue. Nothing here promotes a use case to a capability, and no entry in this file is a performance result. Where a page describes a real, bounded, tested artefact — the Kairos mining-orchestration reasoning layer and lab service, the exact stabiliser register, the distance-3 reference decoder — that artefact keeps its own boundary document and its own tests, and this file records the disposition of the claim, not the capability.
+It does not implement the catalogue. Nothing here promotes a use case to a capability, and no entry is a performance result. It also does not dismiss the catalogue: most of it is `UNTESTED`, which is a statement about the absence of an experiment, not about the claim's truth. Where a page describes a real, bounded, tested artefact — the Kairos mining-orchestration reasoning layer and lab service, the exact stabiliser register, the distance-3 reference decoder — that artefact keeps its own boundary document and its own tests, and this file records the disposition of the claim, not the capability.
+
+## Correction history
+
+The first revision of this file dispositioned eleven claims as `REFUTED` or `PROHIBITED` and extended `al_haras/refuted_claims.py` with nine of the pages' phrasings. That was wrong. Nine of those eleven had never been tested: they were unmeasured, and an experiment on a different question does not refute them. `refuted_claims.py` is unchanged by this work; the nine phrasings live in `al_haras/unmeasured_claims.py`, and only two claims in the whole catalogue are `TESTED_AND_REFUTED` — both because a named benchmark ran in a named regime and failed there.
