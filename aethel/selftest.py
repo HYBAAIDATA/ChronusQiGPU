@@ -27,7 +27,12 @@ from .constants import (
 )
 from .encoding import fold, unfold
 from .errors import AethelError, FoldDomainOverflow
-from .fibonacci import binet_fibonacci, cassini_holds, fibonacci
+from .fibonacci import (
+    binet_fibonacci,
+    cassini_holds,
+    cassini_quadruple,
+    fibonacci,
+)
 from .shm import AethelQueue
 from .storage import AddressSpace
 
@@ -140,7 +145,9 @@ def check_encoding_contract(roundtrips: int = 64) -> Dict[str, Any]:
             failures += 1
     # Binet exactness smoke for small n
     binet_ok = all(binet_fibonacci(n) == fibonacci(n) for n in range(0, 70))
-    cassini_ok = all(cassini_holds(n) for n in range(0, 40))
+    cassini_ok = all(
+        cassini_holds(cassini_quadruple(n)) for n in range(1, 40)
+    )
     ok = failures == 0 and binet_ok and cassini_ok
     return {
         "name": "encoding_contract",
@@ -163,7 +170,7 @@ def check_persistence_faults() -> Dict[str, Any]:
             space.write(b"alpha")
             space.write(b"beta")
             space.snapshot(root / "snap")
-            reopened = AddressSpace.open(root / "snap")
+            reopened = AddressSpace.attach(root / "snap")
             ok = reopened.verify()
             return {
                 "name": "persistence_faults",
@@ -213,17 +220,17 @@ def check_manifold_faults() -> Dict[str, Any]:
         # Successful heal path: corrupt raw_payload then trigger list API
         if tensor.raw_payload is not None:
             tensor.raw_payload = b"CORRUPT" + payload
-        healed_ids = healer.trigger([tensor])
+        healed_id = healer.trigger(tensor)
         heal_ok = False
         if tensor.raw_payload is not None:
             heal_ok = tensor.raw_payload == payload
-        if not heal_ok and healed_ids:
+        if not heal_ok and healed_id:
             # Healer may restore via host_mirror without rewriting raw_payload
             try:
                 got = manifold.read_payload(tensor)
                 heal_ok = got == payload
             except Exception:
-                heal_ok = bool(healed_ids)
+                heal_ok = bool(healed_id)
 
         # Fail-closed path: tensor with no recoverable mirror
         bad = TopologicalTensor(
@@ -235,7 +242,7 @@ def check_manifold_faults() -> Dict[str, Any]:
         )
         fail_closed = True
         try:
-            out = healer.trigger([bad])
+            out = healer.trigger(bad)
             # If it "heals" without a valid source, that is a claim-boundary break
             if out and bad.raw_payload not in (None, b"no-mirror-payload"):
                 # restored something — only ok if digest matches raw
@@ -363,6 +370,124 @@ def check_triad() -> Dict[str, Any]:
     except Exception as exc:
         return {
             "name": "triad",
+            "verdict": "FAIL",
+            "detail": f"{type(exc).__name__}: {exc}",
+        }
+
+
+def check_seqlock() -> Dict[str, Any]:
+    """Shared-memory seqlock: stable commits, Cassini-gated rejections, no
+    torn records under concurrent readers (bounded smoke, not the soak)."""
+    import struct
+    import tempfile
+    import threading
+
+    from .shm import AethelQueue
+
+    def _state(d7: int, d10: int) -> bytes:
+        buf = bytearray(STATE_BYTES)
+        struct.pack_into("<I", buf, AETHEL_D7_OFFSET, d7)
+        struct.pack_into("<i", buf, AETHEL_D10_OFFSET, d10)
+        return bytes(buf)
+
+    try:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "aethel.region"
+            committed = {
+                _state(slot, 1 if slot % 2 == 0 else -1) for slot in range(8)
+            }
+            stop = threading.Event()
+            errors: list = []
+
+            def writer() -> None:
+                with AethelQueue(path, slot_count=8) as q:
+                    for i in range(500):
+                        if stop.is_set():
+                            break
+                        q.commit(_state(i % 8, 1 if i % 2 == 0 else -1))
+
+            def reader() -> None:
+                with AethelQueue(path, slot_count=8) as q:
+                    while not stop.is_set():
+                        for slot in range(8):
+                            rec = q.read(slot)
+                            if rec is not None and rec.state not in committed:
+                                errors.append((slot, rec.state))
+
+            threads = [threading.Thread(target=writer)] + [
+                threading.Thread(target=reader) for _ in range(2)
+            ]
+            for t in threads:
+                t.start()
+            threads[0].join(timeout=60)
+            stop.set()
+            for t in threads[1:]:
+                t.join(timeout=30)
+
+            with AethelQueue(path, slot_count=8) as q:
+                # Cassini gate: a state with an invalid seal must be rejected.
+                bad = _state(2, 0)
+                rejection_ok = q.commit(bad) is None
+
+            ok = not errors and rejection_ok
+            return {
+                "name": "seqlock",
+                "verdict": "PASS" if ok else "FAIL",
+                "detail": {
+                    "torn_or_forged": len(errors),
+                    "cassini_rejection": bool(rejection_ok),
+                },
+            }
+    except Exception as exc:
+        return {
+            "name": "seqlock",
+            "verdict": "FAIL",
+            "detail": f"{type(exc).__name__}: {exc}",
+        }
+
+
+def check_handoff() -> Dict[str, Any]:
+    """Geodesic handoff: storage -> engine point -> block, plus the engine's
+    own invariant checks run unchanged on the storage interval."""
+    from .geodesic import GeodesicHandoff
+
+    try:
+        space = AddressSpace()
+        addr = space.write(b"selftest-handoff-payload")
+        adapter = GeodesicHandoff(space)
+        point = adapter.to_manifold(addr)
+        block = adapter.from_manifold(point)
+        if block != b"selftest-handoff-payload":
+            return {
+                "name": "handoff",
+                "verdict": "FAIL",
+                "detail": f"round-trip mismatch: {block!r}",
+            }
+        retrieved = adapter.retrieve(point.key)
+        invariants = adapter.check_engine_invariants()
+        engine_ok = (
+            invariants["coverage_complete"]
+            and invariants["schedules_unimodular"]
+            and invariants["enumeration_exact"]
+        )
+        ok = retrieved == b"selftest-handoff-payload" and engine_ok
+        return {
+            "name": "handoff",
+            "verdict": "PASS" if ok else "FAIL",
+            "detail": {
+                "retrieved": retrieved == b"selftest-handoff-payload",
+                "engine": invariants,
+            },
+        }
+    except ImportError as exc:
+        return {
+            "name": "handoff",
+            "verdict": "UNVERIFIED",
+            "detail": f"geodesic engine unavailable: {exc}",
+        }
+    except Exception as exc:
+        return {
+            "name": "handoff",
             "verdict": "FAIL",
             "detail": f"{type(exc).__name__}: {exc}",
         }
