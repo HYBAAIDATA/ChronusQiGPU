@@ -1,0 +1,85 @@
+{
+  "base_sha": "bf6972f928b38f3a3f9c5ff2618970ef913e3e15",
+  "checks": [
+    {
+      "command": [
+        "/usr/local/bin/python3",
+        "-m",
+        "compileall",
+        "-q",
+        "euclid/cognition",
+        "euclid/search/deep_mcts.py",
+        "euclid/capability_matrix.py",
+        "euclid/benchmarks/intelligence_elevation.py"
+      ],
+      "label": "compile",
+      "passed": true,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "command": [
+        "/usr/local/bin/python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "euclid/tests",
+        "-p",
+        "test_*.py"
+      ],
+      "label": "euclid-suite-full",
+      "passed": true,
+      "returncode": 0,
+      "stderr": "................................./usr/lib64/python3.13/dataclasses.py:1410: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcee80b5990>\n  def _asdict_inner(obj, dict_factory):\nResourceWarning: Enable tracemalloc to get the object allocation traceback\n/usr/lib64/python3.13/dataclasses.py:1410: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcee80b55d0>\n  def _asdict_inner(obj, dict_factory):\nResourceWarning: Enable tracemalloc to get the object allocation traceback\n.........Signature mismatch for primitive 'AUTO:ForgedRule'. Entry rejected for security.\n................\n----------------------------------------------------------------------\nRan 58 tests in 2.287s\n\nOK\n",
+      "stdout": ""
+    },
+    {
+      "command": [
+        "/usr/local/bin/python3",
+        "-c",
+        "import json;from euclid.benchmarks.intelligence_elevation import run_benchmark;r = run_benchmark(smoke=True);assert r['summary'];print(json.dumps(r['summary'], sort_keys=True))"
+      ],
+      "label": "benchmark-smoke",
+      "passed": true,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "{\"A-random\": {\"train\": {\"evaluations\": {\"mean\": 8.0, \"n\": 2, \"std\": 0.0}, \"improvement\": {\"mean\": 0.023252, \"n\": 2, \"std\": 0.002943}}}, \"C-v16-mcts\": {\"train\": {\"evaluations\": {\"mean\": 8.0, \"n\": 2, \"std\": 0.0}, \"improvement\": {\"mean\": 0.016098, \"n\": 2, \"std\": 0.000738}}}, \"D-elevated\": {\"train\": {\"evaluations\": {\"mean\": 8.0, \"n\": 2, \"std\": 0.0}, \"improvement\": {\"mean\": 0.023252, \"n\": 2, \"std\": 0.002943}}}}\n"
+    },
+    {
+      "command": [
+        "/usr/local/bin/python3",
+        "-c",
+        "from euclid.capability_matrix import generate_matrix, STAGES;m = generate_matrix();c = m['capabilities'];assert STAGES.index(c['cognition-loop']['stage']) >= STAGES.index('PERSISTED');assert c['cross-problem-transfer']['stage'] == 'HELD_OUT_TESTED';print({k: v['stage'] for k, v in c.items()})"
+      ],
+      "label": "capability-matrix",
+      "passed": true,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "{'cognition-loop': 'PERSISTED', 'cross-problem-transfer': 'HELD_OUT_TESTED', 'governance-runtime': 'FEEDBACK_CLOSED', 'persistence-replay': 'REPLAYED', 'search-engines': 'EFFECT_OBSERVED'}\n"
+    }
+  ],
+  "claim_boundary": {
+    "agi_or_asi": false,
+    "consciousness": false,
+    "external_superiority": false,
+    "internal_measured_improvement_only": true,
+    "phi_is_diagnostic_not_objective": true,
+    "production_mining_authority": false,
+    "quantum_advantage": false
+  },
+  "known_negative_results": [
+    "On the v1 saturating task family, the elevated loop matches but does not exceed the greedy evolutionary route; transfer gain over the cold-repository ablation measured 0.0. Harder held-out task families are required before any transfer advantage can be claimed.",
+    "The merged v16 root-level MCTS underperformed both the random baseline and the elevated deep MCTS on held-out tasks in this benchmark configuration."
+  ],
+  "passed": true,
+  "remaining_gates": [
+    "CI/check runs",
+    "installable-wheel test in CI",
+    "harder held-out task families (program repair, causal, planning)",
+    "TOE/PYTHIA organ adapter evidence",
+    "independent external validation"
+  ],
+  "schema": "euclid.intelligence-elevation.acceptance/1"
+}

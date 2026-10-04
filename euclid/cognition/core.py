@@ -87,6 +87,9 @@ class GeneralIntelligenceCore:
         max_cycles: int = 8,
         ablations: AblationConfig | None = None,
         analogy_adopt_threshold: float = 0.5,
+        episode_learner: Any | None = None,
+        representation_controller: Any | None = None,
+        objective_controller: Any | None = None,
     ) -> None:
         if max_cycles < 1:
             raise ValueError("max_cycles must be >= 1")
@@ -109,6 +112,12 @@ class GeneralIntelligenceCore:
         self.max_cycles = max_cycles
         self.ablations = ablations or AblationConfig()
         self.analogy_adopt_threshold = analogy_adopt_threshold
+        # Optional production wiring (EuclidRuntime._compose_cognition).  Each
+        # component is exercised only through measured, recorded signals; when
+        # absent the loop behaves exactly as before.
+        self.episode_learner = episode_learner
+        self.representation_controller = representation_controller
+        self.objective_controller = objective_controller
 
     # -- instrumentation ----------------------------------------------------
     def _transition(
@@ -149,13 +158,42 @@ class GeneralIntelligenceCore:
         observations = tuple(problem.get("observations", ()))
         problem_class = str(problem_class or problem.get("problem_class") or "unclassified")
 
-        state = CognitiveState(problem_id, {"structure": sorted(structure)}, clock=self.clock)
+        representation: dict[str, Any] = {
+            "structure": sorted(structure),
+            "problem_class": problem_class,
+        }
+        for key in (
+            "initial_code", "operators", "plan_depth", "budget",
+            "representation_kind", "state_vector", "surface", "observations",
+            "context_key",
+        ):
+            if key in problem:
+                representation[key] = problem[key]
+        state = CognitiveState(problem_id, representation, clock=self.clock)
         state.goals.append(Goal("g0", goal_text))
 
         # 1. REPRESENT -----------------------------------------------------
+        representation_details: dict[str, Any] = {
+            "structure": sorted(structure), "observation_count": len(observations),
+        }
+        if self.representation_controller is not None:
+            trial = self._select_representation(problem, structure)
+            representation_details["representation_trial"] = {
+                "kind": trial.kind,
+                "accepted": trial.accepted,
+                "baseline_utility": trial.baseline_utility,
+                "candidate_utility": trial.candidate_utility,
+                "cost": trial.cost,
+                "rationale": trial.rationale,
+            }
+            if trial.accepted:
+                state.representation["representation_kind"] = trial.kind
+                state.representation["representation_overlay"] = dict(trial.payload)
+                # The overlay is provenance; canonical top-level fields are the
+                # executable representation consumed by planners and skills.
+                state.representation.update(dict(trial.payload))
         self._transition(
-            state, "represent", "problem representation formed",
-            {"structure": sorted(structure), "observation_count": len(observations)},
+            state, "represent", "problem representation formed", representation_details,
         )
 
         # 2. RETRIEVE --------------------------------------------------------
@@ -288,15 +326,37 @@ class GeneralIntelligenceCore:
                 self._ablated(state, "meta_learning")
 
             # 8. PLAN ------------------------------------------------------------
-            state.plan = self.planner.plan(goal_text, state)
+            planning_goal = goal_text
+            active_objectives = list(state.representation.get("active_objectives", ()))
+            if active_objectives:
+                ordered = sorted(
+                    active_objectives,
+                    key=lambda item: (-float(item.get("weight", 0.0)),
+                                      str(item.get("objective_id", ""))),
+                )
+                planning_goal = (
+                    goal_text + " | intermediate objectives: "
+                    + "; ".join(str(item.get("description", "")) for item in ordered)
+                )
+                self._transition(
+                    state, "objective-applied",
+                    "active intermediate objectives supplied to decision mechanisms",
+                    {"cycle": cycle,
+                     "objective_ids": [item.get("objective_id") for item in ordered],
+                     "planning_goal": planning_goal},
+                )
+            state.plan = self.planner.plan(planning_goal, state)
             self._transition(
                 state, "plan", "hierarchical plan formed",
-                {"nodes": [n.node_id for n in state.plan]},
+                {"nodes": [n.node_id for n in state.plan],
+                 "objective_ids": [
+                     item.get("objective_id") for item in active_objectives
+                 ]},
             )
 
             # 9. COMPOSE ----------------------------------------------------------
             if self.ablations.skill_composition:
-                state.candidates = self.skills.compose(goal_text, state)
+                state.candidates = self.skills.compose(planning_goal, state)
             else:
                 state.candidates = []
                 self._ablated(state, "skill_composition")
@@ -329,7 +389,11 @@ class GeneralIntelligenceCore:
                 self._ablated(state, "world_model:rollout")
 
             # 11. RANK ---------------------------------------------------------------
-            ranked = self.objective.evaluate(state.candidates, {"cycle": cycle})
+            ranked = self.objective.evaluate(
+                state.candidates,
+                {"cycle": cycle,
+                 "objectives": list(state.representation.get("active_objectives", ()))},
+            )
             state.candidates = ranked
             self._transition(
                 state, "rank", "candidates ranked by multi-objective evidence",
@@ -387,6 +451,31 @@ class GeneralIntelligenceCore:
                 {"action": assessment.action, "rationale": assessment.rationale,
                  "signals": dict(assessment.signals)},
             )
+            if self.objective_controller is not None:
+                latest_error = state.prediction_errors[-1] if state.prediction_errors else 0.0
+                objectives = self.objective_controller.derive(
+                    goal_text,
+                    uncertainty=min(1.0, max(0.0, float(latest_error))),
+                    contradictions=sum(
+                        1 for h in state.hypotheses
+                        if h.status is HypothesisStatus.REFUTED
+                    ),
+                    missing_evidence=0 if state.retrieved_memory_refs else 1,
+                    prediction_error=float(latest_error),
+                )
+                objective_rows = [
+                    {"objective_id": o.objective_id,
+                     "description": o.description,
+                     "metric": o.metric, "target": o.target,
+                     "weight": o.weight, "status": o.status}
+                    for o in objectives
+                ]
+                state.representation["active_objectives"] = objective_rows
+                self._transition(
+                    state, "objectives",
+                    "intermediate objectives derived and retained for the next decision",
+                    {"cycle": cycle, "objectives": objective_rows},
+                )
             if assessment.action == "replan":
                 if self.ablations.replanning:
                     state.plan = self.planner.replan(
@@ -399,15 +488,16 @@ class GeneralIntelligenceCore:
                                      {"nodes": [n.node_id for n in state.plan]})
                 else:
                     self._ablated(state, "replanning")
+            # 15. OUTCOME / LEARNING -----------------------------------------------
+            cycle_success = bool(result.get("goal_met"))
+            self._learn(
+                state, problem_class, success=cycle_success, cycle=cycle, result=result
+            )
+            if cycle_success:
+                solved = True
+                break
             if assessment.action == "halt_stalled":
                 break
-
-            # 15. SUCCESS CHECK ---------------------------------------------------------
-            if bool(result.get("goal_met")):
-                solved = True
-                self._learn(state, problem_class, success=True, cycle=cycle)
-                break
-            self._learn(state, problem_class, success=False, cycle=cycle)
 
         if solved:
             state.outcome = Outcome.SOLVED
@@ -459,7 +549,35 @@ class GeneralIntelligenceCore:
              "remaining_active": [h.hypothesis_id for h in state.active_hypotheses()]},
         )
 
-    def _learn(self, state: CognitiveState, problem_class: str, *, success: bool, cycle: int) -> None:
+    def _select_representation(self, problem: Mapping[str, Any], structure: frozenset) -> Any:
+        """Measured representation selection: utility is the candidate's
+        structural coverage of THIS problem (fraction of declared structure
+        recoverable from the candidate payload, plus any extracted edge or
+        symbol sets); cost is a declared per-evaluation proxy scaled by
+        payload size.  No external capability claim is made."""
+        import json as _json
+
+        def evaluate(kind: str, payload: Mapping[str, Any]) -> tuple[float, float]:
+            encoded = _json.dumps(payload, sort_keys=True, default=str)
+            covered = sum(1 for item in structure if str(item) in encoded)
+            utility = covered / max(1, len(structure))
+            for key in ("edges", "symbols", "unit_direction"):
+                if payload.get(key):
+                    utility += 0.1
+            utility = min(1.0, utility)
+            cost = 0.05 + min(0.2, len(encoded) / 100_000.0)
+            return utility, cost
+
+        return self.representation_controller.select(problem, evaluate)
+
+    def _learn(self, state: CognitiveState, problem_class: str, *, success: bool, cycle: int,
+               result: Mapping[str, Any] | None = None) -> None:
+        if self.episode_learner is not None:
+            # Close the observed outcome into the canonical LearningService;
+            # replay protection there fails closed on duplicates.
+            self.episode_learner.record_episode(
+                state, success=success, cycle=cycle, result=dict(result or {})
+            )
         if self.ablations.meta_learning and state.selected_strategy:
             self.metalearner.update(problem_class, state.selected_strategy, success,
                                     detail=f"cycle={cycle}")

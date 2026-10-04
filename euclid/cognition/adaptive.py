@@ -48,11 +48,18 @@ class RepresentationController:
         source = problem.get("initial_code")
         if isinstance(source, str) and source.strip():
             import ast
-            tree = ast.parse(source)
-            dependencies = sorted({
-                node.id for node in ast.walk(tree) if isinstance(node, ast.Name)
-            })
-            candidates.append(("source-dependency", {"symbols": dependencies}))
+            try:
+                tree = ast.parse(source)
+            except (SyntaxError, TypeError, ValueError):
+                # Malformed source is a valid repair input.  It cannot support
+                # a source-dependency representation, so retain other measured
+                # candidates and let the literal source reach diagnosis.
+                tree = None
+            if tree is not None:
+                dependencies = sorted({
+                    node.id for node in ast.walk(tree) if isinstance(node, ast.Name)
+                })
+                candidates.append(("source-dependency", {"symbols": dependencies}))
         numeric = [
             float(value) for value in problem.get("state_vector", ())
             if isinstance(value, (int, float)) and math.isfinite(float(value))
