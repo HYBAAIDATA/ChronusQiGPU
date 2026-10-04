@@ -310,6 +310,27 @@ class GeneralIntelligenceCore:
             elif not self.ablations.causal_reasoning:
                 self._ablated(state, "causal_reasoning")
 
+            if state.hypotheses and all(
+                hypothesis.status is HypothesisStatus.REFUTED
+                for hypothesis in state.hypotheses
+            ):
+                state.outcome = Outcome.ABORTED
+                state.outcome_detail = (
+                    "all competing hypotheses were refuted by observed intervention evidence"
+                )
+                self._transition(
+                    state,
+                    "hypothesis-exhausted",
+                    "all hypotheses refuted; downstream planning refused",
+                    {
+                        "cycle": cycle,
+                        "refuted": [
+                            hypothesis.hypothesis_id for hypothesis in state.hypotheses
+                        ],
+                    },
+                )
+                break
+
             # 7. STRATEGY SELECTION --------------------------------------------
             available_strategies = ("analogy-causal-plan", "abduce-intervene-deduce",
                                     "rollout-search-execute")
