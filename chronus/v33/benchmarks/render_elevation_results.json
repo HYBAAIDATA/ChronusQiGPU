@@ -1,0 +1,29 @@
+{
+  "schema": "chronos-v33-render-elevation-v1",
+  "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+  "python": "3.13.14",
+  "numpy": "2.5.3",
+  "energy": -7.387996,
+  "full_render_8k": {
+    "samples_per_pixel_1": {
+      "wall_seconds": 2.6835,
+      "rendered_pixels_hit": 1832112,
+      "total_pixels": 33177600,
+      "raster_compression_ratio": 3628800.0
+    },
+    "samples_per_pixel_4": {
+      "wall_seconds": 11.1646,
+      "rendered_pixels_hit": 1833696,
+      "total_pixels": 33177600,
+      "raster_compression_ratio": 3628800.0
+    }
+  },
+  "gpu_lane": {
+    "backend": "cupy",
+    "available": false,
+    "device": "",
+    "reason": "cupy not importable: ModuleNotFoundError: No module named 'cupy'",
+    "measured": false
+  },
+  "note": "Wall times are measured on the host that produced this artifact. The GPU lane is fail-closed: when unavailable, no GPU wall time exists and none is invented."
+}

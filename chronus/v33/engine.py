@@ -45,6 +45,9 @@ class RenderOutput:
     qsvt_semantic: Optional[str] = None
     qsvt_degree: Optional[int] = None
     memory_compression_ratio: Optional[float] = None
+    # v3.1 elevation evidence: what the reconstruction plane actually traced
+    samples_per_pixel: Optional[int] = None
+    render_backend: Optional[Dict] = None
 
 
 class ChronosEngine:
@@ -155,6 +158,8 @@ class ChronosEngine:
             scf_converged=h_terms.scf_converged,
             corrections_applied=corrections,
             spectral_mode=False,
+            samples_per_pixel=frame.metadata.get("samples_per_pixel"),
+            render_backend=frame.metadata.get("render_backend"),
         )
 
     # ------------------------------------------------------------------
@@ -297,4 +302,3 @@ class ChronosEngine:
         if state[peak].real < 0:
             state = -state
         return state
-
