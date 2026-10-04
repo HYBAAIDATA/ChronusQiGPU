@@ -226,3 +226,47 @@ Body assertions that depended on in-scope defects (v16 strategy selection,
 - Mining/tensor/Chronus kernels, quantum-computer implementation, Salamander.
 - `RESTART_VERIFIED` remains self-certified in-process (F1) — a genuine
   two-process restart harness is owned by the implementation track.
+
+## Production-readiness corrections beyond the review scope
+
+The mandate moved from documenting to fixing. The following pre-existing
+defects — all outside the partner-owned file set — were blocking the full
+suite and are now corrected and verified, with the honest-behavior
+rationale kept intact:
+
+- **Worker durable-state paths** (`deploy/azure/Dockerfile`): workers run
+  with cwd `chronus/mla1517_platform/python` as uid 10001; telemetry,
+  retarget-window and backend-decision writers `mkdir('data')` under CWD
+  → PermissionError → `RestartBudgetExhausted`. ENV paths now route those
+  files under `/var/lib/pythia` (a chowned durable dir). Verified under
+  uid 65534 with a read-only worker cwd: crash reproduced without the
+  envs, worker mines with them. Docker live smoke passes.
+- **`test_backend_decision_evidence` sys.modules leak**: `setUp` replaced
+  `chronus.mla1517.mining.coordinator` with a bare stub and `tearDown`
+  never restored it, so `test_production_workflow_correlation` imported
+  the stub (`unknown location`). Restore/pop in `tearDown`.
+- **Canonical literals**: `aethel.__version__` split into a regex-visible
+  literal (single-source-of-truth gate); `lucas/scaling_research.py`
+  `DISCOVERY_INDICES` now aliases `CURRICULUM_RUNGS` from `lucas.ladder`
+  instead of redeclaring the ladder literal (drift gate).
+- **`salamander/control_plane.execute`**: `except Exception` swallowed
+  `FailClosed` from the action registry and converted an unregistered
+  handler into a `FAILED` result; `FailClosed` refusals now propagate to
+  the caller after recording the circuit miss.
+- **`chronus/virtual_igpu` evidence directory**: ledger artifacts moved
+  from the divergent `evidence-ledger/` to the canonical content-addressed
+  `evidence/` directory shared with durable memory persistence
+  (`sha256(artifact bytes) == evidence_digest`).
+- **`millennium/mathematical_discovery`**: scipy/networkx moved to lazy
+  call-site imports; neither is in CI's `[ml,dev]` install, so module
+  import failed before the runtime-dependency gate could run. The
+  vendored package's own lazy-heavy-module convention applies.
+- **`turing_universal_quantum_computer`**: `StabilizerState.measure`
+  reported deterministic outcomes by *forcing* canonical 0, raising on a
+  qubit whose outcome was fixed at 1 — deterministic measurements now
+  report the actual outcome; `_selection_order` yielded `sparse`
+  unconditionally past the dense budget, letting a 64-qubit non-Clifford
+  program execute instead of refusing — non-Clifford beyond budget now
+  yields no backend and the console renders REFUSED.
+
+Full CI: 26/26 checks pass at head `fdc64e7`.
