@@ -2,7 +2,7 @@
 
 **HYBA / MLA1517 + PRIME-DB — Interface Contract Document**
 
-**Version:** 1.0
+**Version:** 1.1
 **Status:** Canonical
 **Audience:** Engineers, architects, auditors, design partners
 **Scope:** Every cross-boundary connection in the platform
@@ -27,6 +27,13 @@
 | R8 | Every proof is independently verifiable |
 | R9 | Every policy travels with the object |
 | R10 | No contract is implicit |
+
+### Authority boundary
+
+- **OVID** is the authoritative durable record owner.
+- **THESEUS** is the rebuildable query/index/graph/semantic projection.
+- The legacy **PRIME-DB** name in this mining repository denotes reference semantics and local execution persistence/projection only; it does not supersede OVID authority or become an enterprise system of record.
+- **Chronus / MLA1517** owns execution and capability evidence, never durable-record authority.
 
 ---
 
@@ -78,7 +85,7 @@
                            │ C4: ExecutionPlan
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              PRIME-DB AUTHORITATIVE OBJECT                  │
+│              OVID AUTHORITATIVE RECORD / PRIME-DB EXECUTION VIEW                  │
 │  exact_state | folded | residual | proof | lineage | policy │
 └──────────────────────────┬──────────────────────────────────┘
                            │ C5: CapabilityRequest
@@ -773,7 +780,7 @@ These co-designed pairs define the platform's character. They are not sequential
 
 **Flow:**
 ```
-PRIME-DB object
+OVID-authorized object / PRIME-DB execution projection
     ↓ validate hash, Fibonacci state, Cassini, Zeckendorf
 MLA1517 runtime
     ↓ select mode and lane count
@@ -787,7 +794,7 @@ Proof envelope
     ↓ object validity, seal, coverage, execution status
 Deterministic result merge
     ↓
-PRIME-DB commit
+OVID durable commit + rebuildable projection refresh
 ```
 
 **Guarantees:**
@@ -796,6 +803,7 @@ PRIME-DB commit
 - G3: Transformations produce lineage and proof records
 - G4: Fail-closed on missing hardware
 - G5: No performance claim until hardware measurements exist
+- G6: OVID remains the durable authority; PRIME-DB/THESEUS state is rebuildable
 
 ---
 
