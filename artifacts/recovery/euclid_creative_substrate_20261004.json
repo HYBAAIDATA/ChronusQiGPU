@@ -1,0 +1,37 @@
+{
+  "schema": "hyba.euclid.recovery-manifest.v1",
+  "date": "2026-10-04",
+  "tranche": "creative-substrate-1",
+  "archive": {
+    "name": "EUCLID_PROD_MORNING_RECOVERY_COMPLETE_20260719.zip",
+    "sha256": "30d3ddde94238b4cbb4fbb0b299775fed0b90c414669275379cab08186371229"
+  },
+  "files": [
+    {
+      "path": "euclid/creative_substrate.py",
+      "sha256": "a6ea5f5a8a7b4e090c1e1e63e9f63dbd25ef61b3fb7a87c07c3d0b475f27c757",
+      "mode": "byte-exact-recovery"
+    },
+    {
+      "path": "tests/test_euclid_creative_substrate.py",
+      "sha256": "22d38cd3ebc985033efdfca280e2e1df7683bc40674059bb90dc62265bc81913",
+      "mode": "byte-exact-recovery"
+    }
+  ],
+  "validation": {
+    "compile": "passed",
+    "focused_tests": {
+      "passed": 15,
+      "failed": 0
+    },
+    "compatibility_target": "current hyba_substrate/memory_preservation.py"
+  },
+  "claim_boundary": "Focused archive recovery and compatibility evidence only; not full-system or production certification.",
+  "excluded_domains": [
+    "mining consensus",
+    "share truth",
+    "Chronus execution",
+    "tensor kernels",
+    "Salamander"
+  ]
+}
