@@ -1,7 +1,7 @@
 # Chronus algebraic substrate mining bridge
 
 `chronus.mining_bridge.ChronusSubstrateMiningBridge` connects the existing
-`quantum_compute_substrate.PhiTensorCore` to `mining.HashPipeline`.
+`quantum_compute_substrate.QuantumFoldTensorCore` to `mining.HashPipeline`.
 
 ## Execution objective
 

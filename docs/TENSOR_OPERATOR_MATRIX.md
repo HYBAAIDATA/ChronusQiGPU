@@ -5,6 +5,11 @@ tensor-stack elevation. Every row was verified against the implementation
 named; "evidence" cites the test file that exercises it. This matrix is the
 Phase-0 audit artifact of `PHIMINER_TENSOR_ELEVATION_20261004`.
 
+**Post-elevation status (branch `devin/1791144000-tensor-elevation`):** the
+ledgers in §5–§7 are updated to landed state — see the per-row status
+markers (`RESOLVED` / `LIVE` / `DECLARED`) in §7 and the landed
+dispositions in §5.
+
 Legend for the **Gap** column: `--` = no known gap, otherwise the live
 limitation is stated.
 
@@ -59,35 +64,36 @@ limitation is stated.
 
 | Symbol | Copies | Disposition |
 |---|---|---|
-| `PhiTensorCore` | `kellogg/phi_tensor_core.py` (numeric folded ALU — canonical), `python_backend/core_modules/geodesic_tensor_engine.py` (exact authority), `quantum_compute_substrate/phi_tensor_core.py` (quantum-amplitude unit used by `chronus/mining_bridge.py`) | keep numeric + exact in canonical homes; quantum-amplitude unit keeps distinct semantics — rename to remove the collision |
-| `GeodesicScheduler` | `chronus/phi_gpu.py` (task ordering), `chronus/virtual_igpu/planner.py` (Dijkstra route planning), `geodesic_tensor_engine.py` (exact ordering facade) | rename planner's to `GeodesicRouter`; keep the other two (different planes) |
-| `PhiMemoryHierarchy` / `TopologicalIntegrityGate` / `EnergyModel` / `PhiGPU` / `HybridGPU` / `MetricTensor` / `KernelBoundary` / `PartialUnfoldStats` | aethel+chronus numeric family vs `geodesic_tensor_engine.py` exact family | keep both semantic families; all new capability lands in canonical files only; `KernelBoundary` field names differ (`offset/length` vs `start/stop`) — keep, document |
-| `fold_result` vs exact plane | numeric has `fold_result` (full re-fold); exact plane has no write-back op at all | Phase 3 adds regional write-back on both |
+| `PhiTensorCore` | `kellogg/phi_tensor_core.py` (numeric folded ALU — canonical), `python_backend/core_modules/geodesic_tensor_engine.py` (exact authority), `quantum_compute_substrate/phi_tensor_core.py` (quantum-amplitude unit used by `chronus/mining_bridge.py`) | **LANDED** — substrate class renamed `QuantumFoldTensorCore`; numeric + exact keep canonical homes; no aliases |
+| `GeodesicScheduler` | `chronus/phi_gpu.py` (task ordering), `chronus/virtual_igpu/planner.py` (Dijkstra route planning), `geodesic_tensor_engine.py` (exact ordering facade) | **LANDED** — planner's class renamed `GeodesicRouter` (callers + tests retargeted; no alias shim) |
+| `PhiMemoryHierarchy` / `TopologicalIntegrityGate` / `EnergyModel` / `PhiGPU` / `HybridGPU` / `MetricTensor` / `KernelBoundary` / `PartialUnfoldStats` | aethel+chronus numeric family vs `geodesic_tensor_engine.py` exact family | **LANDED** — both families kept; `tests/test_canonical_tensor_ownership.py` gates the one-home rule so neither family can fork |
+| `fold_result` vs exact plane | numeric has `fold_result` (full re-fold); exact plane has no write-back op at all | numeric regional write-back landed (`splice_region` / `commit_region`); **exact-plane write-back still absent** (see §7) |
 
-## 6. Reachability ledger (the primary gap)
+## 6. Reachability ledger (post-elevation)
 
 | Surface | Reachable today? | Path |
 |---|---|---|
-| `tensor.execute` | tests + pilot only | no CLI, no control-API endpoint, no embedded caller |
-| `gpu.tensor` shim | importable | deprecated re-export (may remain the documented deprecation path) |
-| `chronus.phi_gpu.PhiGPU` | tests + `HybridGPU` | no production caller |
+| `tensor.execute` | **yes** | `TensorRuntime.execute` (`tensor/api.py`); CLI `python -m tensor`; control API `POST /api/v1/tensor/execute` (guardian-preflighted); `FoldedLinearPilot` runs every chunk through it |
+| `python -m tensor` | **yes** | `store` / `run` / `benchmark` / `report` with `--store-path` checkpoint |
+| control API tensor surface | **yes** | `GET /api/v1/tensor/capabilities`, `POST /api/v1/tensor/execute` under `_guardian_preflight` |
+| `gpu.tensor` shim | importable | deprecated re-export (documented deprecation path) |
+| `chronus.phi_gpu.PhiGPU` | tests + `HybridGPU` + ready-queue executor | `submit_task`/`run_next`/`run_ready` consume the scheduler's picks; scheduled boundary controls the launch |
 | `geodesic_tensor_engine` | `geodesic_support.py` (mining, env-gated) + tests | only the nonce planner is reachable in production |
 | `PhiMemoryHierarchy` | via `chronus.phi_gpu` | no direct production residency lifecycle |
-| `FoldedLinearPilot` | tests only | not wired into any serving path |
+| `FoldedLinearPilot` | tests + `TensorRuntime` | executes through `tensor.execute` backend path with per-request provenance |
 | `ChronusPlanner` | virtual_igpu runtime | internal |
-| control API | live | `chronus/mla1517_platform/python/control_api.py` — no `/api/v1/tensor/*` endpoints |
 
-## 7. Defect ledger carried forward (verified live @ f311eac)
+## 7. Defect ledger — post-elevation status
 
 | Finding | Status |
 |---|---|
-| `aethel.phi_fold.phi_fold` coerces to float64 (line ~130) — dtype/complex custody lost | **LIVE** |
-| `fold_result` full-tensor unfold→write→re-fold per regional write | **LIVE** (documented limitation) |
-| `PhiGPU.launch_kernel` ignores `self.scheduler`; serial `np.array_split`; `_reduce_results` whole-state concat | **LIVE** (partially improved: uses `config.boundary` + verifies vs reference) |
-| matmul fully unfolds operands in both planes | **LIVE** (global dependency unmodelled) |
-| exact plane has no write-back op | **LIVE** |
-| no persistent/versioned folded-state graph, no checkpoint/restore, no eviction/device-loss handling | **LIVE** |
-| no semantic IR (axis/contraction algebra, dependency-graph program) | **LIVE** |
-| no registered lifted-operator catalogue | **LIVE** |
-| `PhiRecursiveOperator`/`formal.py` absent | **confirmed absent** — lifting rules derive from `PulviniFold` |
-| `tensor` has zero production callers | **LIVE** — primary reachability gap |
+| `aethel.phi_fold.phi_fold` coerces to float64 (line ~130) — dtype/complex custody lost | **RESOLVED** — Phase 2: `NumericFoldState` carries `dtype`; fold/unfold bit-exact for float32/64, complex64/128, int/uint |
+| `fold_result` full-tensor unfold→write→re-fold per regional write | **RESOLVED** — `splice_region`/`commit_region` write only the owning segments; `fold_result` kept as the pre-existing API |
+| `PhiGPU.launch_kernel` ignores `self.scheduler`; serial `np.array_split`; `_reduce_results` whole-state concat | **RESOLVED (coupling)** — `KernelTask.depends_on` + ready queue (`_pop_ready`/`run_ready`); a scheduled task's declared boundary controls its launch; `launch_kernel` keeps its own partial-unfold semantics for direct callers |
+| matmul fully unfolds operands in both planes | **DECLARED-MATERIALIZING** — dependency cones model the global read (`tensor/dependency.py`); `tensor.folded` matmul reports its measured decode on the receipt instead of claiming residency |
+| exact plane has no write-back op | **LIVE** — `unfold_values_at`/`unfold_region`/`dependency_cone` landed (reads + cones); a regional write on `ExactFoldState` is future work |
+| no persistent/versioned folded-state graph, no checkpoint/restore, no eviction/device-loss handling | **RESOLVED** — `aethel/fold_store.py`: versioned blocks, lineage, content hash, exactly-once `commit_region`, checkpoint/restore, evict/regenerate, device-loss invalidation |
+| no semantic IR (axis/contraction algebra, dependency-graph program) | **RESOLVED** — `tensor/contracts.py` axis/shape algebra + checked size arithmetic; `tensor/dependency.py` cones |
+| no registered lifted-operator catalogue | **RESOLVED** — `tensor/folded.py` catalogue (add/hadamard/fma/scale lifted with 0 decoded bytes; transpose/reduce_sum/matmul/kron declared-materializing) + `evaluate_operator` promotion evidence |
+| `PhiRecursiveOperator`/`formal.py` absent | **confirmed absent** — lifting rules derive from `PulviniFold`/`phi_fold` (numeric partition property verified: lifted ops commute with the fold, bit-identical) |
+| `tensor` has zero production callers | **RESOLVED** — control-API endpoints + `python -m tensor` CLI + `FoldedLinearPilot` execute through `tensor/api.py` |

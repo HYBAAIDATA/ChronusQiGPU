@@ -24,7 +24,7 @@ Everything here is pure index algebra — nothing touches data.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional, Tuple
 
 from .contracts import DependencyScope, TensorOperationSpec, TensorOpKind
@@ -62,9 +62,7 @@ class DependencyCone:
         return any(c.whole_input for c in self.inputs)
 
 
-def _region_slices(
-    shape: Tuple[int, ...], specs: Tuple[object, ...]
-) -> Tuple[slice, ...]:
+def _region_slices(shape: Tuple[int, ...], specs: Tuple[object, ...]) -> Tuple[slice, ...]:
     if len(specs) != len(shape):
         raise TensorValidationError(
             f"output region has {len(specs)} entries for a rank-{len(shape)} result"
@@ -73,13 +71,9 @@ def _region_slices(
     for axis, (dim, spec) in enumerate(zip(shape, specs)):
         if isinstance(spec, slice):
             if (spec.step or 1) != 1:
-                raise TensorValidationError(
-                    "dependency cones support unit-step output slices only"
-                )
+                raise TensorValidationError("dependency cones support unit-step output slices only")
             for bound in (spec.start, spec.stop):
-                if bound is not None and (
-                    int(bound) > int(dim) or int(bound) < -int(dim)
-                ):
+                if bound is not None and (int(bound) > int(dim) or int(bound) < -int(dim)):
                     raise TensorValidationError(
                         f"output axis {axis} slice {spec!r} outside dim {dim}"
                     )
@@ -142,8 +136,7 @@ def dependency_cone(
             inverse = _region_slices(
                 shapes[0],
                 tuple(
-                    region[operation.output_axes.index(axis)]
-                    for axis in operation.input_axes[0]
+                    region[operation.output_axes.index(axis)] for axis in operation.input_axes[0]
                 ),
             )
             inputs = (InputCone(0, inverse, False, scope, detail="transpose inverse"),)
@@ -165,15 +158,16 @@ def dependency_cone(
                 axis_slice.get(axis, slice(0, int(dim)))
                 for axis, dim in zip(operation.input_axes[0], shapes[0])
             )
-            return DependencyCone(
-                operation.name, region, (InputCone(0, slices, False, scope),)
-            )
+            return DependencyCone(operation.name, region, (InputCone(0, slices, False, scope),))
         return DependencyCone(
             operation.name,
             region,
             (
                 InputCone(
-                    0, None, True, scope,
+                    0,
+                    None,
+                    True,
+                    scope,
                     detail="reduce without declared axes — whole input required",
                 ),
             ),
@@ -186,8 +180,7 @@ def dependency_cone(
         cones = []
         for index, (axes, dims) in enumerate(zip(input_axes, shapes)):
             slices = tuple(
-                axis_slice.get(axis, slice(0, int(dim)))
-                for axis, dim in zip(axes, dims)
+                axis_slice.get(axis, slice(0, int(dim))) for axis, dim in zip(axes, dims)
             )
             cones.append(
                 InputCone(
@@ -216,7 +209,10 @@ def dependency_cone(
                 hull_slices.append(slice(lo, hi + 1))
             cones.append(
                 InputCone(
-                    operand, tuple(hull_slices), False, scope,
+                    operand,
+                    tuple(hull_slices),
+                    False,
+                    scope,
                     hull=True,
                     detail="mixed-radix cone bounded by its box hull (declared superset)",
                 )

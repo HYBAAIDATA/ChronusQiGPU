@@ -12,7 +12,7 @@ from typing import Sequence
 
 import numpy as np
 
-from quantum_compute_substrate.phi_tensor_core import FoldState, PhiTensorCore
+from quantum_compute_substrate.phi_tensor_core import FoldState, QuantumFoldTensorCore
 
 
 @dataclass(frozen=True)
@@ -103,7 +103,7 @@ class ChronusSubstrateMiningBridge:
         if not np.any(values):
             values = np.ones(values.size, dtype=np.float64)
         state = FoldState(values.astype(np.complex128), 0, values.size).normalize()
-        core = PhiTensorCore(core_id=0, dim=values.size, seed=self.seed)
+        core = QuantumFoldTensorCore(core_id=0, dim=values.size, seed=self.seed)
         transformed = core.amplitude_amplification(state)
         if not core.integrity_check(state) or not core.integrity_check(transformed):
             raise RuntimeError("substrate transformation failed norm integrity")

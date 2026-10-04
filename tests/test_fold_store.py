@@ -3,7 +3,6 @@
 import numpy as np
 import pytest
 
-from aethel.errors import AethelError
 from aethel.fold_store import (
     CommitConflictError,
     DeviceLostError,
@@ -104,8 +103,11 @@ def test_commit_is_exactly_once():
         store.commit_region("x", KernelBoundary(0, 4), np.ones(4), commit_id="dup")
     with pytest.raises(CommitConflictError, match="expected version"):
         store.commit_region(
-            "x", KernelBoundary(4, 4), np.ones(4),
-            commit_id="c2", expected_version=0,  # stale: current is 1
+            "x",
+            KernelBoundary(4, 4),
+            np.ones(4),
+            commit_id="c2",
+            expected_version=0,  # stale: current is 1
         )
     assert store.version("x") == 1
 
@@ -195,15 +197,17 @@ def test_checkpoint_restore_roundtrip_and_tamper(tmp_path):
     with pytest.raises(CommitConflictError):
         restored.commit_region("a", KernelBoundary(0, 1), np.zeros(1, np.float32), commit_id="m1")
     with pytest.raises(CommitConflictError):
-        restored.commit_region("a", KernelBoundary(0, 1), np.zeros(1, np.float32), commit_id="genesis")
+        restored.commit_region(
+            "a", KernelBoundary(0, 1), np.zeros(1, np.float32), commit_id="genesis"
+        )
 
 
 def test_checkpoint_tamper_fails_closed(tmp_path):
     store = PersistentFoldStore()
     store.create("a", np.arange(64), depth=2)
-    path = store.checkpoint(tmp_path / "g")
+    store.checkpoint(tmp_path / "g")
     # Corrupt one segment array inside the archive.
-    import zipfile, shutil
+    import zipfile
 
     real = tmp_path / "g.npz"
     bad = tmp_path / "g_bad.npz"

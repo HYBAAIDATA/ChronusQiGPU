@@ -1,13 +1,12 @@
 """Semantic-IR contracts: op kinds, axis semantics, shape algebra, bounds."""
 
-import sys
 
 import pytest
 
 from tensor.contracts import (
+    MAX_TENSOR_ELEMENTS,
     DependencyScope,
     ExactnessMode,
-    MAX_TENSOR_ELEMENTS,
     Precision,
     TensorOperationSpec,
     TensorOpKind,
@@ -253,7 +252,7 @@ def test_element_count_overflow_fails_before_allocation():
     with pytest.raises(TensorValidationError, match="64-bit addressable"):
         TensorShape((MAX_TENSOR_ELEMENTS, 2))
     with pytest.raises(TensorValidationError):
-        TensorShape((2 ** 62, 2 ** 62))
+        TensorShape((2**62, 2**62))
 
 
 def test_estimate_bytes_overflow_checked():

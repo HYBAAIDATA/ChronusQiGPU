@@ -1,7 +1,7 @@
 """Tests for the φ-resonance tensor core."""
 
 import numpy as np
-from quantum_compute_substrate.phi_tensor_core import PhiTensorCore, FoldState
+from quantum_compute_substrate.phi_tensor_core import QuantumFoldTensorCore, FoldState
 
 
 class TestFoldState:
@@ -47,9 +47,9 @@ class TestFoldState:
         assert folded is state
 
 
-class TestPhiTensorCore:
+class TestQuantumFoldTensorCore:
     def test_initial_state_is_uniform_superposition(self):
-        core = PhiTensorCore(core_id=0, dim=64, seed=42)
+        core = QuantumFoldTensorCore(core_id=0, dim=64, seed=42)
         state = core.state
         assert state.dim == 64
         assert abs(state.norm - 1.0) < 1e-10
@@ -58,14 +58,14 @@ class TestPhiTensorCore:
 
     def test_amplitude_amplification_preserves_norm(self):
         """The Grover diffusion operator is unitary — it must preserve norm."""
-        core = PhiTensorCore(core_id=0, dim=64, seed=42)
+        core = QuantumFoldTensorCore(core_id=0, dim=64, seed=42)
         state = core._initialize_state()
         amplified = core.amplitude_amplification(state)
         assert abs(amplified.norm - 1.0) < 1e-10
 
     def test_amplitude_amplification_correct_formula(self):
         """Verify the implementation matches D|φ⟩ = 2⟨ψ|φ⟩|ψ⟩ - |φ⟩."""
-        core = PhiTensorCore(core_id=0, dim=64, seed=42)
+        core = QuantumFoldTensorCore(core_id=0, dim=64, seed=42)
         rng = np.random.default_rng(42)
         state = FoldState(rng.standard_normal(64) + 1j * rng.standard_normal(64), 0, 64)
         state = state.normalize()
@@ -82,7 +82,7 @@ class TestPhiTensorCore:
         assert abs(amplified.norm - 1.0) < 1e-10  # unitary
 
     def test_grover_oracle_flips_target_phase(self):
-        core = PhiTensorCore(core_id=0, dim=64, seed=42)
+        core = QuantumFoldTensorCore(core_id=0, dim=64, seed=42)
         state = core._initialize_state()
         target = 10
         oracled = core.grover_oracle(state, target)
@@ -94,21 +94,21 @@ class TestPhiTensorCore:
                 assert oracled.data[i] == state.data[i]
 
     def test_grover_iteration_preserves_norm(self):
-        core = PhiTensorCore(core_id=0, dim=64, seed=42)
+        core = QuantumFoldTensorCore(core_id=0, dim=64, seed=42)
         state = core._initialize_state()
         for _ in range(5):
             state = core.grover_iteration(state, target=10)
         assert abs(state.norm - 1.0) < 1e-10
 
     def test_tensor_product(self):
-        core = PhiTensorCore(core_id=0, dim=64, seed=42)
+        core = QuantumFoldTensorCore(core_id=0, dim=64, seed=42)
         a = FoldState(np.ones(4, dtype=np.complex128), 0, 4)
         b = FoldState(np.ones(4, dtype=np.complex128), 0, 4)
         result = core.tensor_product(a, b)
         assert result.dim == 16
 
     def test_fma(self):
-        core = PhiTensorCore(core_id=0, dim=64, seed=42)
+        core = QuantumFoldTensorCore(core_id=0, dim=64, seed=42)
         a = FoldState(np.ones(4, dtype=np.complex128), 0, 4)
         b = FoldState(np.ones(4, dtype=np.complex128) * 2, 0, 4)
         c = FoldState(np.ones(4, dtype=np.complex128) * 3, 0, 4)
@@ -116,7 +116,7 @@ class TestPhiTensorCore:
         assert np.allclose(result.data, np.ones(4) * 5)  # 1*2+3=5
 
     def test_measured_flops_positive_after_operations(self):
-        core = PhiTensorCore(core_id=0, dim=64, seed=42)
+        core = QuantumFoldTensorCore(core_id=0, dim=64, seed=42)
         core.reset_counters()
         a = FoldState(np.ones(32, dtype=np.complex128), 0, 32)
         b = FoldState(np.ones(32, dtype=np.complex128), 0, 32)
@@ -124,6 +124,6 @@ class TestPhiTensorCore:
         assert core.measured_flops() > 0
 
     def test_integrity_check(self):
-        core = PhiTensorCore(core_id=0, dim=64, seed=42)
+        core = QuantumFoldTensorCore(core_id=0, dim=64, seed=42)
         state = core._initialize_state()
-        assert PhiTensorCore.integrity_check(state)
+        assert QuantumFoldTensorCore.integrity_check(state)

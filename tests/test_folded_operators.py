@@ -94,9 +94,7 @@ def test_materializing_ops_are_declared_and_correct(name):
     out, receipt = folded_execute(name, _states(*arrays))
     assert receipt.path == "materialized"  # honestly declared, not faked
     assert receipt.decoded_bytes > 0
-    np.testing.assert_allclose(
-        phi_unfold(out), np.asarray(ref).reshape(phi_unfold(out).shape)
-    )
+    np.testing.assert_allclose(phi_unfold(out), np.asarray(ref).reshape(phi_unfold(out).shape))
 
 
 def test_unknown_op_and_arity_fail_closed():
@@ -110,7 +108,6 @@ def test_unknown_op_and_arity_fail_closed():
 def test_promotion_evidence_is_measured_not_assumed():
     a = np.linspace(-1, 1, 256).reshape(16, 16)
     b = np.linspace(0.5, 1.5, 256).reshape(16, 16)
-    scalar = np.array([1.25])
     promoted = evaluate_operator("add", (a, b))
     assert promoted.correct and promoted.promoted
     assert promoted.decoded_bytes == 0
