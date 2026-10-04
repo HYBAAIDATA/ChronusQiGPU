@@ -81,13 +81,13 @@ class DocumentedFindingTests(unittest.TestCase):
             _falsification["strategy_feedback_loop_connected"]["executed_arm_stats_keys"]
         )
 
-    def test_transfer_verified_never_recorded(self):
-        # No producer grants TRANSFER_VERIFIED — recorded as a verified
-        # negative rather than an absent measurement.
-        self.assertEqual(
-            _falsification["transfer_verified_never_recorded"]["verdict"],
-            "PASS",
-        )
+    def test_transfer_verified_requires_memory_influence(self):
+        # TRANSFER_VERIFIED is now produced — and must require episode
+        # evidence: no grant on a cold episode; grant only when a durable
+        # record observably biases a downstream decision.
+        result = _falsification["transfer_verified_requires_memory_influence"]
+        self.assertEqual(result["verdict"], "PASS")
+        self.assertTrue(result["memory_influence_transition"])
 
 
 class RewardIntegrityTests(unittest.TestCase):

@@ -105,7 +105,7 @@
             {
               "counts_for_control": false,
               "cycle": 0,
-              "digest": "6c124bc497990d9e118a2045985a4da73704899096acdff2a74f6046bf192749",
+              "digest": "88694051bc634ec1c1dcc8d032b114ebd9d8411fe3de70540192c1cfc511fcb0",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -119,7 +119,7 @@
             {
               "counts_for_control": false,
               "cycle": 1,
-              "digest": "8c2d6cf7bd59ff9f7c7f6ecc8e2cce82b82e15c0ebcf043be4ec5b7f4036da96",
+              "digest": "7e52e095980fb97bf7b9af23c1b8fb532f4860a5a69c9363b9edae1b762a6113",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -133,7 +133,7 @@
             {
               "counts_for_control": false,
               "cycle": 2,
-              "digest": "e25148955d11588fc16d04f11a02635f02d3b2b85d8e59a369e301f7d8deede4",
+              "digest": "ce6ec97b8ced27a7b8448c0c763a5539b446ca81eee25c2a8c696e2fd89445e8",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -147,7 +147,7 @@
             {
               "counts_for_control": false,
               "cycle": 3,
-              "digest": "4c2e47a74fa6b88592e861c7548903998cab6f6b86410beb68811c78726828e5",
+              "digest": "ce826fd2ba9c44ce7bc5b78c8a689164bb9293f61ef54a245390fbf2ce39f06f",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -161,7 +161,7 @@
             {
               "counts_for_control": false,
               "cycle": 4,
-              "digest": "9ff8e31dd49dda013d7867fa83cdfc43ac74f4efdbd25b8f169f54014d01143b",
+              "digest": "fdfdc6a56b272590fe564460e0add145b1a6ea461adf983873196a3d8d36922f",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -175,7 +175,7 @@
             {
               "counts_for_control": false,
               "cycle": 5,
-              "digest": "4fadbd2a5df12e9e7b9f12c90a8917cf6becd989faa70cbedb2b7f1c9690435b",
+              "digest": "ae41c2e7f18df5f2c51f53e31d2f2b942836141d5b8798167f7fdcbd0638eafb",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -189,7 +189,7 @@
             {
               "counts_for_control": false,
               "cycle": 6,
-              "digest": "fc71f31d2c48e8f0a208e74e1316f303a3f3afe3f3694698ebf5dc268cbbe790",
+              "digest": "082b43e6974de358ad5d2dbd0de123357b96051c1fe3736f18e0f97ed71fe325",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -203,7 +203,7 @@
             {
               "counts_for_control": false,
               "cycle": 7,
-              "digest": "82ee28ee12edb1f3c4a9680921988afb6a90e72adc3969b1bc2b06bf39baa4e2",
+              "digest": "24cd3bb60b5da5c02f4725d8e1474283bb59975ceee9a48bb3f3b6e4a7751ec4",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -243,7 +243,7 @@
           "problem_id": "ctl-1",
           "replanning_events": 8,
           "retrieved_memory_refs": [],
-          "seal": "6828ca43fba8792d53e1434e7705fe567a75cb53545ded2f3f73e6897a242ea2",
+          "seal": "04ee852fc32ab296aed7d0a738c27fe5f84a6deb1ad0a1ce1652851e0a7cd1eb",
           "selected_strategy": "primitive-compose",
           "transitions": 125
         }
@@ -302,7 +302,7 @@
             {
               "counts_for_control": false,
               "cycle": 0,
-              "digest": "7b32331b247218241632641fdb18a80bda6c3d668139a02937c0619305dd64d8",
+              "digest": "6ac09b6523e78912116f72d35535f62d3ac527e4cc5d44c43fe40a111208d9ae",
               "kind": "canonical-learning-service",
               "success": true
             },
@@ -328,7 +328,7 @@
           "problem_id": "val-1",
           "replanning_events": 1,
           "retrieved_memory_refs": [],
-          "seal": "cd264a3f2cfe866e424dabfedb167bafbc57bf269fe94646802b9212ac5a1373",
+          "seal": "4a6cc9cfeb5f03a2f239d63c5a055cd9ae72648abf5c298e3191076376eff252",
           "selected_strategy": "primitive-compose",
           "transitions": 20
         },
@@ -382,7 +382,7 @@
             {
               "counts_for_control": false,
               "cycle": 0,
-              "digest": "f54efe590a7dd501a772224641e2e97f664cdd3dc1ca408d8de9ad5f0629ee6a",
+              "digest": "8bb378a6e916197342cd2e0dd0d08dc06e32cf061c9a2755016476f3082a0c16",
               "kind": "canonical-learning-service",
               "success": true
             },
@@ -408,9 +408,9 @@
           "problem_id": "val-2",
           "replanning_events": 0,
           "retrieved_memory_refs": [
-            "episode-7b32331b247218241632641f"
+            "episode-6ac09b6523e78912116f72d3"
           ],
-          "seal": "4805f30ae781931c0936ef396e2b8d59235f967054883e99538bdf90156eff25",
+          "seal": "adcee2586ff97b9bb2912d4ecefe5ea18db245fbe919dac735ae70b28ded141c",
           "selected_strategy": "primitive-compose",
           "transitions": 20
         }
@@ -468,7 +468,7 @@
             {
               "counts_for_control": false,
               "cycle": 0,
-              "digest": "a9897e9397f5efd9540b05b71e1e3e7ff7c9d9a886d28ab52c949593fee2e305",
+              "digest": "2151821c25094a1b06bed6998ba35f5659ac063e1be289e93423ec968e4898c7",
               "kind": "canonical-learning-service",
               "success": true
             },
@@ -496,7 +496,7 @@
           "retrieved_memory_refs": [
             "irrelevant-null-1"
           ],
-          "seal": "fa3c830213f94a3d410b74140d6f8f917960a4930370f028a00c550f6e3114f5",
+          "seal": "d7870f4bf353a4f9c7762a29fe47f1167ff94266fdb26aac5cb4bc732251effb",
           "selected_strategy": "primitive-compose",
           "transitions": 20
         }
@@ -618,7 +618,7 @@
             {
               "counts_for_control": false,
               "cycle": 0,
-              "digest": "ca7a6a51878b70936d92461b49dc6c2c52be8cf7650f2d9cfbdc6977c622bfb3",
+              "digest": "8fae4958f9a89374d89f95064deaf067985e36b04eff6eac07280c2bbabe69ec",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -632,7 +632,7 @@
             {
               "counts_for_control": false,
               "cycle": 1,
-              "digest": "eb934f96bc1961e24b624c20db72f2174ed9e3ba63d0bd4c71402f34a7cbc815",
+              "digest": "233cc340b19da2b78cabcdbc427fb1c73d537c2eb1c029f4639ed9d08250fe57",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -646,7 +646,7 @@
             {
               "counts_for_control": false,
               "cycle": 2,
-              "digest": "a88d8d9709fcba4cc2db999122e38aa5d67116e06093cc1f64416013c83751ad",
+              "digest": "ac1d51659890911b702ad0e8059b442b806b370bf1e368d412aa640034d4993c",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -660,7 +660,7 @@
             {
               "counts_for_control": false,
               "cycle": 3,
-              "digest": "61b7ce10cde505c9d2f75c132dfb4429485b3f4c0e67c46a6b5d2c865c8941ac",
+              "digest": "e0f9c3a267af1e959f66b29fc37ab259b55cc57ced15509db14558a067a6f7bb",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -674,7 +674,7 @@
             {
               "counts_for_control": false,
               "cycle": 4,
-              "digest": "7db894105ec174d8be0bd7b9f9dce21f3411276b91054251ce5141c8f8043e77",
+              "digest": "257de1bb8d3d8a5d74f3799d6dfb6a76d48854d4222e8ad2832e1496bbf0ab15",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -688,7 +688,7 @@
             {
               "counts_for_control": false,
               "cycle": 5,
-              "digest": "7d9059dd127d077172b6acebe45b549af3ac91701f24e20e4b32c0651a4cb979",
+              "digest": "cab8c3559d1e2def7773fe27a52b77e84b0dfffb4a187a52b51974c1134bfe6d",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -702,7 +702,7 @@
             {
               "counts_for_control": false,
               "cycle": 6,
-              "digest": "4267281778b31653ccc87f0ed8e8c9fc7a209770f75b90c3c4bf26cc9e8af1f5",
+              "digest": "06d0d48a84182d2802263325107299bb2ffa52d07a9b1d661a68db445595b538",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -716,7 +716,7 @@
             {
               "counts_for_control": false,
               "cycle": 7,
-              "digest": "78c272f083d55373b7b38ec30a5149542477eab0efc5bd1962c298785ac683f8",
+              "digest": "b3a65642954ad4eea13ddffefcde8c1e4e38dd2c56ee610926402b5a512e7702",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -756,7 +756,7 @@
           "problem_id": "ctl-1",
           "replanning_events": 8,
           "retrieved_memory_refs": [],
-          "seal": "b977b1ea006d9e5111b37f94fdb4b5a565f9ef20746f803ba25bb8f165e30338",
+          "seal": "c967382be909ac302c597d8e0eba9f8751faaefc68cd281ef4a2e50dde70525a",
           "selected_strategy": "primitive-compose",
           "transitions": 125
         }
@@ -815,7 +815,7 @@
             {
               "counts_for_control": false,
               "cycle": 0,
-              "digest": "0e4c073de02d671ebd5ad6d769d4e2a871bc1a66660d73447e7cf4bdd81beedc",
+              "digest": "f41ba871a2eef9dc8fcf9ec94378b30310e66ea1e65a33cf3dae64ce09a08e9b",
               "kind": "canonical-learning-service",
               "success": true
             },
@@ -841,12 +841,12 @@
           "problem_id": "temporal-1",
           "replanning_events": 1,
           "retrieved_memory_refs": [
-            "episode-13c334fb798bb6379719a99d",
-            "episode-92edafa56d9a23f76f5aa231",
-            "episode-9eebdd5f32c7426e551a4dcb",
-            "episode-f54efe590a7dd501a7722246"
+            "episode-8bb378a6e916197342cd2e0d",
+            "episode-bf7139701c07c61ca53375a0",
+            "episode-c9690278fa4f6492a2c694a3",
+            "episode-ca8fde560e8dbe81a10d9414"
           ],
-          "seal": "ecc6574c81cd942f68d8aa7460338e23ca73cce0d533a6fedd94c72759d28ef4",
+          "seal": "6c95dfceb7b3e60908d15b4674bcd6705b4d5544f3f7d6810a15c728c8b66e89",
           "selected_strategy": "primitive-compose",
           "transitions": 20
         }
@@ -902,7 +902,7 @@
             {
               "counts_for_control": false,
               "cycle": 0,
-              "digest": "13c334fb798bb6379719a99dcaa3042b6ce18d15ad2e16b1373cdda80e52e059",
+              "digest": "c9690278fa4f6492a2c694a346b845a5fdd293fb9924f5a46a3dc9e89f860792",
               "kind": "canonical-learning-service",
               "success": true
             },
@@ -928,10 +928,10 @@
           "problem_id": "val-1",
           "replanning_events": 1,
           "retrieved_memory_refs": [
-            "episode-92edafa56d9a23f76f5aa231",
-            "episode-9eebdd5f32c7426e551a4dcb"
+            "episode-bf7139701c07c61ca53375a0",
+            "episode-ca8fde560e8dbe81a10d9414"
           ],
-          "seal": "e06d5f202107b6c560a2e659fa849e8dea350b2fb2fefa106a41955edd3be0b2",
+          "seal": "ac00fd1305ffe996990f362699a2bbfaad7c357b75697cd4f06790190cdbb8a9",
           "selected_strategy": "primitive-compose",
           "transitions": 21
         },
@@ -985,7 +985,7 @@
             {
               "counts_for_control": false,
               "cycle": 0,
-              "digest": "f54efe590a7dd501a772224641e2e97f664cdd3dc1ca408d8de9ad5f0629ee6a",
+              "digest": "8bb378a6e916197342cd2e0dd0d08dc06e32cf061c9a2755016476f3082a0c16",
               "kind": "canonical-learning-service",
               "success": true
             },
@@ -1011,11 +1011,11 @@
           "problem_id": "val-2",
           "replanning_events": 0,
           "retrieved_memory_refs": [
-            "episode-13c334fb798bb6379719a99d",
-            "episode-92edafa56d9a23f76f5aa231",
-            "episode-9eebdd5f32c7426e551a4dcb"
+            "episode-bf7139701c07c61ca53375a0",
+            "episode-c9690278fa4f6492a2c694a3",
+            "episode-ca8fde560e8dbe81a10d9414"
           ],
-          "seal": "e230608981abba67f18ead36ebdba120c3a164c8c14e95e4f47e1f0486a37da0",
+          "seal": "f8bd7e91cc26bd6f2feb530b4cb0ad02914d95dd93b0cd361f13f8dd674a1917",
           "selected_strategy": "primitive-compose",
           "transitions": 20
         }

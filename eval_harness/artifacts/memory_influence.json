@@ -58,7 +58,7 @@
           {
             "counts_for_control": false,
             "cycle": 0,
-            "digest": "0543c6802c48fb6ee727cb99bde860e874a02e5ad7bb96ac2b144c701cfc4985",
+            "digest": "a1141ac8b7226c1ad74c4d915a199d2aef5c3c91edf9c0bf94b7dfeaefdfa5d5",
             "kind": "canonical-learning-service",
             "success": true
           },
@@ -86,7 +86,7 @@
         "retrieved_memory_refs": [
           "relevant-episode-1"
         ],
-        "seal": "04586f76609656df1dd7c69808069c5fe80047bcef047524dae33a86f651abcd",
+        "seal": "d87e97999871423a4953bb5ec5a6d243b92842ab95e9d4e23629218444f77105",
         "selected_strategy": "primitive-compose",
         "transitions": 20
       },

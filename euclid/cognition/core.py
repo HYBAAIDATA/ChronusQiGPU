@@ -792,7 +792,11 @@ class GeneralIntelligenceCore:
             # rejection is recorded evidence, not a reason to kill the episode.
             try:
                 self.episode_learner.record_episode(
-                    state, success=success, cycle=cycle, result=dict(result or {})
+                    state,
+                    success=success,
+                    cycle=cycle,
+                    result=dict(result or {}),
+                    channel="consolidation",
                 )
             except ValueError as exc:
                 state.learning_updates.append(

@@ -23,7 +23,7 @@
     },
     "euclid.memory_database": {
       "assessed_stage": "PERSISTED",
-      "assessment_basis": "sqlite store writes durably and verify() passes; restart verification is self-certified (no verify() on boot)",
+      "assessment_basis": "TRANSFER_VERIFIED only when a durable record observably biased candidate scoring (memory-influence transition); otherwise PERSISTED once the sqlite store wrote durably and verify() passes; restart verification is self-certified (no verify() on boot)",
       "recorded_stage": "PERSISTED",
       "verdict": "MATCH"
     },

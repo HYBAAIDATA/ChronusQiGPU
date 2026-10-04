@@ -381,10 +381,16 @@ class LearningServiceEpisodeAdapter:
         success: bool,
         cycle: int,
         result: Mapping[str, Any],
+        channel: str = "submission",
     ) -> str:
         # Replay identity is derived from the *recorded content* of the
         # episode, never from wall-clock transition timestamps: an identical
         # replay must collide (fail closed) while distinct episodes must not.
+        # ``channel`` separates the automatic in-solve episode closure
+        # (``"consolidation"``) from explicit operator submissions
+        # (``"submission"``): each is a different record of the episode, so a
+        # submission made after a solve is not a replay of the closure, while
+        # resubmitting the same record on the same channel still fails closed.
         replay_id = domain_hash(
             "euclid.cognition.replay.v1",
             {
@@ -395,6 +401,7 @@ class LearningServiceEpisodeAdapter:
                 "success": bool(success),
                 "result": dict(result),
                 "evidence_ids": [item.evidence_id for item in state.evidence_items],
+                "channel": channel,
             },
         )
         reward_authority = RewardAuthority.NONE

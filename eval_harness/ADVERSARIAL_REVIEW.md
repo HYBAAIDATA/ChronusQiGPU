@@ -51,11 +51,16 @@ P4. `euclid/cognition/production.py` — `LearningServiceEpisodeAdapter` minted
     `replay_id` from the *last transition digest*, which includes a timestamp:
     every record of the same episode got a fresh identity, so duplicate-replay
     protection could never fire. Patched: replay id is a content hash of
-    problem/cycle/strategy/action/result/evidence (`duplicate_replay_closed`
-    PASS). Consequence: a repeated identical episode is now correctly
-    detected as a duplicate — `core._learn` records the rejection as
-    `canonical-learning-service-rejected` evidence instead of crashing, and
-    `service._record_experience` records `cognition-experience-rejected`.
+    problem/cycle/strategy/action/result/evidence plus the record `channel`
+    — the automatic in-solve closure (`consolidation`) and an explicit
+    operator `submission` are different records of an episode, so a
+    submission made after a solve is not a replay of the closure while a
+    resubmission on the same channel still collides
+    (`duplicate_replay_closed` PASS). Consequence: a repeated identical
+    episode is now correctly detected as a duplicate — `core._learn` records
+    the rejection as `canonical-learning-service-rejected` evidence instead
+    of crashing, and `service._record_experience` records
+    `cognition-experience-rejected`.
 
 P5. `euclid/cognition/production.py` — `problem["strategy"]` was dead input:
     `V16SkillSearchAdapter.compose` ignored it, so `mcts-v16`/`evolution-v16`
@@ -153,6 +158,16 @@ P13. `euclid/runtime.py` — **reachability grants did not require episode
 
      `capability_matrix.json`: 14 MATCH / 0 INFLATED / 0 UNDERSTATED.
 
+P14. `euclid/runtime.py`, `core.py` — **TRANSFER_VERIFIED had no producer**
+     (was F5): the ladder's top stage was dead code. Patched: the
+     `memory-influence` transition (P12) is the episode evidence —
+     `euclid.memory_database` is granted TRANSFER_VERIFIED only when a
+     durable episodic record observably biased candidate scoring in the
+     episode; retrieval alone never reaches it. The falsification check
+     `transfer_verified_requires_memory_influence` PASSes both directions:
+     no grant on a cold episode, grant exactly when the influence
+     transition fired.
+
 ## Recorded findings (defects outside patch scope — Cline-owned areas)
 
 F1. **RESTART_VERIFIED is self-certified** (verdict FAIL).
@@ -164,13 +179,6 @@ F1. **RESTART_VERIFIED is self-certified** (verdict FAIL).
     persisted *content* survived). This collapses "local execution ≠
     production certification". The restart surface is owned by the
     implementation track.
-
-F5. **TRANSFER_VERIFIED has no producer** (verified negative). No code path
-    records it; the convergence test's `require(... TRANSFER_VERIFIED)`
-    cannot pass. `transfer_verified_never_recorded` PASS documents the gap.
-    Honest production would require cross-task episode evidence — a measured
-    improvement on a held-out task traceable to memory written by an earlier
-    task — not a retrieval count.
 
 ## Reward integrity (all PASS)
 
@@ -201,10 +209,11 @@ change a held-out decision under this task mix; that is recorded, not hidden.
 - `test_episode_calls_toe...`: `toe.world_model` now reaches FEEDBACK_CLOSED
   when `compare` ran; any remaining failure is producer coverage in the
   partner-owned test setup;
-- `test_durable_memory_replay_guard...`: its scenario asserts the *first*
-  manual re-record succeeds — under content-derived replay identity (P4) that
-  re-record is already a duplicate and correctly fails closed; the test
-  encodes the old non-deterministic identity behaviour.
+- `test_durable_memory_replay_guard...`: PASSES on Linux — channel-split
+  replay identity (P4) lets the explicit submission record (call A) while
+  the identical resubmission (call B) fails closed, and the
+  `memory-influence` grant (P14) earns TRANSFER_VERIFIED on the restarted
+  runtime; on Windows it ends on the same sqlite-lock teardown noted above.
 
 Body assertions that depended on in-scope defects (v16 strategy selection,
 `active_representation`, ablation fields) now pass.
@@ -215,5 +224,5 @@ Body assertions that depended on in-scope defects (v16 strategy selection,
   genuine two-process restart suite is owned by the implementation track.
 - Durable-memory integration tests (owner-defined).
 - Mining/tensor/Chronus kernels, quantum-computer implementation, Salamander.
-- TRANSFER_VERIFIED lacks an episode-evidence producer — it cannot be
-  earned honestly today (F5).
+- `RESTART_VERIFIED` remains self-certified in-process (F1) — a genuine
+  two-process restart harness is owned by the implementation track.

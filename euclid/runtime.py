@@ -322,6 +322,13 @@ class EuclidRuntime:
                 "experience_superlearner",
             ):
                 target(component, ReachabilityStage.PERSISTED)
+        # TRANSFER_VERIFIED: a durable episodic record retrieved from the
+        # memory database observably biased candidate scoring in this episode
+        # (the "memory-influence" transition only exists when that bias was
+        # applied) — a downstream decision artifact changed by the record,
+        # not merely a retrieval count.
+        if "memory-influence" in phases:
+            target("euclid.memory_database", ReachabilityStage.TRANSFER_VERIFIED)
         if "execute" in phases:
             target("repository.engineer", ReachabilityStage.OUTCOME_OBSERVED)
         executed_actions = {

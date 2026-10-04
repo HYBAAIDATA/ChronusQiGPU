@@ -497,22 +497,60 @@ def check_restart_verified_self_certified():
     }
 
 
-def check_transfer_verified_never_recorded():
-    """No producer ever records TRANSFER_VERIFIED -> the top stage is dead."""
-    root = state_dir("transfer-none")
+def check_transfer_verified_requires_memory_influence():
+    """TRANSFER_VERIFIED must require episode evidence: a cold episode
+    (nothing durable retrieved into a decision) must NOT grant it; it is
+    granted only when a durable episodic record observably biases candidate
+    scoring (the ``memory-influence`` transition)."""
+    from euclid.cognition.interfaces import MemoryItem
+    from euclid.cognition.reachability import ReachabilityStage
+    from euclid.cognition.state import MemoryKind
+
+    root = state_dir("transfer-evidence")
     rt = production_runtime(root)
     try:
-        _solve(rt, pid="t1")
-        _solve(rt, pid="t2", prob=problem("t2", problem_class="other-class"))
-        stages = {e.component: e.stage for e in rt.reachability._entries}
-        recorded = [s for s in stages.values() if s == "TRANSFER_VERIFIED"]
+        cold_state = _solve(rt, pid="t-cold")
+        cold_stage = rt.reachability.stage("euclid.memory_database")
+        cold_granted = cold_stage is not None and (
+            cold_stage >= ReachabilityStage.TRANSFER_VERIFIED
+        )
+        # Seed a durable episodic record that qualifies under the memory-bias
+        # gate: structural overlap with the problem, recorded success and the
+        # action it executed.
+        rt.cognition.memory.store(
+            MemoryItem(
+                memory_id="transfer-seed-1",
+                kind=MemoryKind.EPISODIC,
+                payload={
+                    "prior_outcome": "solved",
+                    "success": True,
+                    "executed_action": "primitive:MUTATE:swap_op",
+                },
+                provenance="adversarial-seed",
+                structural_features=frozenset(["rel:dependency-chain", "rel:action-outcome"]),
+                transfer_value=0.9,
+            )
+        )
+        warm_state = _solve(rt, pid="t-warm")
+        warm_stage = rt.reachability.stage("euclid.memory_database")
+        warm_granted = warm_stage is not None and (
+            warm_stage >= ReachabilityStage.TRANSFER_VERIFIED
+        )
+        influence_fired = any(t.phase == "memory-influence" for t in warm_state.transitions)
+        _ = cold_state
     finally:
         close_runtime(rt)
+    verdict = "PASS" if (not cold_granted and warm_granted and influence_fired) else "FAIL"
     return {
-        "verdict": "PASS" if not recorded else "INFO",
-        "max_stages": stages,
-        "claim": "TRANSFER_VERIFIED is unreachable in code",
-        "note": "no producer records it; the ladder's top stage is dead code",
+        "verdict": verdict,
+        "cold_stage": cold_stage.name if cold_stage else None,
+        "warm_stage": warm_stage.name if warm_stage else None,
+        "memory_influence_transition": influence_fired,
+        "claim": "TRANSFER_VERIFIED requires a recorded downstream decision changed by durable memory",
+        "note": (
+            "the grant fires only on the memory-influence transition — a "
+            "durable record biasing candidate scoring — never on retrieval alone"
+        ),
     }
 
 

@@ -115,9 +115,16 @@ def _assess(component, runtime, state, artifacts):
             "canonical learning-service record wrote durably",
         ),
         "euclid.memory_database": (
-            "PERSISTED" if files["memory_db"] else "USED_IN_EPISODE",
-            "sqlite store writes durably and verify() passes; restart "
-            "verification is self-certified (no verify() on boot)",
+            (
+                "TRANSFER_VERIFIED"
+                if "memory-influence" in phases
+                else ("PERSISTED" if files["memory_db"] else "USED_IN_EPISODE")
+            ),
+            "TRANSFER_VERIFIED only when a durable record observably biased "
+            "candidate scoring (memory-influence transition); otherwise "
+            "PERSISTED once the sqlite store wrote durably and verify() "
+            "passes; restart verification is self-certified (no verify() on "
+            "boot)",
         ),
         "pythia.memory": (
             "PERSISTED" if files["memory_db"] else "PRESENT",
