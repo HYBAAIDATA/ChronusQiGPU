@@ -26,6 +26,19 @@ CLAIMS_STILL_REFUTED = (
     "Physical GPU/FPGA/ASIC/QPU throughput exists",
     "Missing OpenCL/Docker/HDL/Rust toolchain is a pass",
     "Exponential speed is universal",
+    # Harvested from the workspace research pages.  Each string is the phrasing
+    # the page actually uses, so the lint fires on the page rather than on a
+    # paraphrase of it.  Dispositions and sources: see
+    # ``chronus/v33/research_reconciliation.py``.
+    "φ-compression outperforms uniform quantization",
+    "32:1 compression",
+    "harder to collide",
+    "Quantum-resistant manifold-based cryptography",
+    "exponentially harder",
+    "from exponential to polynomial",
+    "identifies functional DNA",
+    "improving correction fidelity",
+    "Exponential compression",
 )
 
 
