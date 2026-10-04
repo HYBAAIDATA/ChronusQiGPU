@@ -139,7 +139,15 @@ def _selection_order(
         return
     if program.is_clifford():
         yield registry["stabilizer"]
-    yield registry["sparse"]
+        # The sparse engine stays a fallback for Clifford programs: bounded
+        # support is enforced by the register at run time (fail-closed), so a
+        # state that densifies raises instead of fabricating an answer.
+        yield registry["sparse"]
+    # Non-Clifford programs beyond the dense budget get no candidate: the
+    # sparse backend cannot prove bounded support statically, so admitting it
+    # here would be an unverifiable selection.  It remains reachable only by
+    # an explicit prefer="sparse" from a caller that knows its state is
+    # bounded; automatic selection refuses rather than approximates.
 
 
 def select_backend(

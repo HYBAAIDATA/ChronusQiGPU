@@ -397,6 +397,17 @@ class AutonomicControlPlane:
                 None if verified else "handler did not provide post-action verification",
             )
             circuit.record(verified, self.clock_ns())
+        except FailClosed as exc:
+            # A structural contract violation (unregistered handler, wrong
+            # action kind) is not an execution outcome: it must propagate
+            # fail-closed rather than degrade into a FAILED result record.
+            circuit.record(False, self.clock_ns())
+            self.ledger.append(
+                "action-rejected",
+                {"action_id": request.action_id, "reason": str(exc)},
+                at_ns=self.clock_ns(),
+            )
+            raise
         except Exception as exc:
             circuit.record(False, self.clock_ns())
             result = ActionResult(

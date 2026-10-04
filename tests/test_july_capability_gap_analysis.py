@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import ast
 import importlib
-import io
 import json
+import math
 from pathlib import Path
 import zipfile
 
@@ -14,10 +14,13 @@ import pytest
 
 from turing_universal_quantum_computer import (
     AlgorithmResult,
+    CompositionStrategy,
     EnhancedGroverAlgorithm,
     EnhancedQuantumFourierTransform,
     QuantumAccelerationEngine,
     UnsupportedAlgorithmError,
+    coordinate_descent_stage,
+    grid_search_stage,
     redirect_historical_surface,
     run_all_verifications,
 )
@@ -27,7 +30,7 @@ from kellogg.tensor_serialization import (
     load_pv,
     save_pv,
 )
-from turing_universal_quantum_computer.quantum_algorithms import VQE
+from turing_universal_quantum_computer.quantum_algorithms import MathEigensolver, VQE
 from turing_universal_quantum_computer.trotter_simulation import TrotterHamiltonianSimulator
 
 
@@ -289,3 +292,120 @@ def test_malformed_pv_payload_is_rejected(tmp_path):
     invalid.write_bytes(b"not a zip artifact")
     with pytest.raises(TensorSerializationError):
         load_pv(invalid)
+
+
+# -- qaoa_optimize adapter ----------------------------------------------------
+
+
+def test_qaoa_maxcut_recovers_triangle_optimum():
+    result = QuantumAccelerationEngine().run_qaoa([(0, 1), (1, 2), (2, 0)], p_layers=1)
+    assert result.algorithm == "qaoa_maxcut"
+    assert result.result["optimal_cost"] == 2
+    assert result.result["most_likely_cost"] == 2
+    assert result.result["cost_expectation"] > 1.5  # random assignment is 3/4 of max
+    assert result.speedup_claim is False
+    assert result.physical_hardware is False
+    assert result.consensus_authority is False
+
+
+def test_qaoa_state_is_normalized_and_angles_bounded():
+    result = QuantumAccelerationEngine().run_qaoa(
+        [(0, 1), (1, 2), (2, 3), (3, 0)], p_layers=2, grid_points=8
+    )
+    payload = result.result
+    assert len(payload["angles"]) == 2
+    for gamma, beta in payload["angles"]:
+        assert 0.0 <= gamma < math.pi
+        assert 0.0 <= beta < math.pi
+    assert len(payload["layer_history"]) == 2
+    # deeper p never reports a worse measured expectation on this instance
+    assert payload["layer_history"][-1]["cost_expectation"] >= (
+        payload["layer_history"][0]["cost_expectation"] - 1e-9
+    )
+    assert 0.0 < payload["most_likely_probability"] <= 1.0 + 1e-12
+    assert payload["approximation_ratio"] <= 1.0 + 1e-12
+
+
+def test_qaoa_end_to_end_result_contract_and_fail_closed():
+    engine = QuantumAccelerationEngine(max_qubits=4)
+    result = engine.run_qaoa([(0, 1), (1, 2)], p_layers=1, grid_points=6)
+    payload = result.result
+    assert payload["problem"] == "maxcut"
+    assert payload["n_qubits"] == 3
+    assert payload["optimal_cost"] == 2
+    assert result.truth_class == "finite_precision_software_simulation"
+    assert result.backend == "turing_universal_quantum_computer.july_compat.qaoa"
+    with pytest.raises(UnsupportedAlgorithmError, match="bounded dense adapter"):
+        engine.run_qaoa([(0, 1), (1, 2), (2, 3), (3, 4), (4, 0)])
+    with pytest.raises(ValueError, match="non-empty"):
+        engine.run_qaoa([])
+    with pytest.raises(ValueError, match="unique"):
+        engine.run_qaoa([(0, 1), (0, 1)])
+    with pytest.raises(ValueError, match="self-loops"):
+        engine.run_qaoa([(0, 0)])
+    with pytest.raises(ValueError, match="without gaps"):
+        engine.run_qaoa([(0, 2)])
+    with pytest.raises(TypeError, match="integers"):
+        engine.run_qaoa([(0, True)])
+    with pytest.raises(ValueError, match="positive integer"):
+        engine.run_qaoa([(0, 1)], p_layers=0)
+    with pytest.raises(ValueError, match=">= 4"):
+        engine.run_qaoa([(0, 1)], grid_points=2)
+
+
+# -- CompositionStrategy adapter ----------------------------------------------
+
+
+def test_composition_strategy_orders_and_reports_stages():
+    calls = []
+
+    def probe(theta):
+        calls.append(tuple(theta))
+        return (theta[0] - 1.0) ** 2
+
+    strategy = CompositionStrategy(
+        grid_search_stage(0.0, 2.0, 3), coordinate_descent_stage(0.5, 10)
+    )
+    outcome = strategy.run(probe, [0.0])
+    assert outcome["strategy"] == "sequential"
+    assert len(outcome["stage_records"]) == 2
+    assert outcome["stage_records"][0]["stage"] == "grid"
+    assert outcome["stage_records"][1]["stage"] == "coordinate_descent"
+    # the grid coarse pass must land near 1.0 and the descent must not regress
+    assert outcome["objective_value"] <= outcome["stage_records"][0]["objective_after"] + 1e-12
+    assert outcome["objective_value"] == pytest.approx(0.0, abs=1e-6)
+
+
+def test_composition_is_deterministic_and_validates_inputs():
+    strategy = CompositionStrategy(grid_search_stage(-1.0, 1.0, 5))
+    objective = lambda theta: (theta[0] - 0.4) ** 2 + (theta[1] + 0.2) ** 2  # noqa: E731
+    first = strategy.run(objective, [0.0, 0.0])
+    second = strategy.run(objective, [0.0, 0.0])
+    assert first == second
+    with pytest.raises(ValueError, match="at least one stage"):
+        CompositionStrategy()
+    with pytest.raises(TypeError, match="callable"):
+        CompositionStrategy(object())
+    with pytest.raises(ValueError, match="non-empty"):
+        strategy.run(objective, [])
+    with pytest.raises(TypeError, match="numeric"):
+        strategy.run(objective, [True])
+    with pytest.raises(ValueError, match="low < high"):
+        grid_search_stage(2.0, 1.0, 3)
+    with pytest.raises(ValueError, match="positive"):
+        coordinate_descent_stage(learning_rate=0.0)
+
+
+def test_composition_integrates_with_canonical_vqe_objective():
+    hamiltonian = VQE.ising_hamiltonian()
+    objective = lambda theta: VQE.ansatz(list(theta)).expectation(hamiltonian)  # noqa: E731
+    strategy = CompositionStrategy(
+        grid_search_stage(0.0, math.pi, 9),
+        coordinate_descent_stage(learning_rate=0.4, iterations=15),
+    )
+    outcome = strategy.run(objective, [0.5, 0.5, 0.5, 0.5])
+    eigenvalues = MathEigensolver.hermitian_eigenvalues(hamiltonian)
+    exact_ground = min(eigenvalues)
+    assert outcome["objective_value"] >= exact_ground - 1e-10
+    # the composite must reach within a small variational gap of the 4-parameter ansatz
+    assert outcome["objective_value"] - exact_ground < 0.05

@@ -6,7 +6,7 @@ append-only transition hash chain. Human demonstrations are not silently used.
 """
 from __future__ import annotations
 import json, math, random, time, uuid
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 from .euclid_learning_system import MemoryKind
@@ -56,6 +56,29 @@ class ExperienceSuperlearner:
    if self.tasks[task_id]!=candidate:raise ValueError("task_id is already registered with a different specification")
    return self.tasks[task_id]
   self.tasks[task_id]=candidate; self.task_rewards[task_id]=[]
+  if persist:self._checkpoint()
+  return candidate
+ def extend_task_actions(self,task_id:str,actions:Sequence[str],*,persist:bool=True)->ExperienceTask:
+  """Bounded growth of a registered task's action set.
+
+  Measured episodes legitimately emit new action identifiers under a task
+  (e.g. different composed candidates per strategy); the contract stays
+  declared-by-registration while allowing audited extension instead of a
+  hard fail on every new measured action.
+  """
+  task_id=str(task_id).strip()
+  if task_id not in self.tasks:raise ValueError("unknown task")
+  task=self.tasks[task_id]
+  additions=tuple(dict.fromkeys(str(a).strip() for a in actions if str(a).strip()))
+  if not additions:raise ValueError("at least one nonempty action is required")
+  merged=tuple(dict.fromkeys(task.actions+additions))
+  if len(merged)==len(task.actions):return task
+  candidate=replace(task,actions=merged)
+  self.tasks[task_id]=candidate
+  for pair,q in self.q_values.items():
+   if json.loads(pair)[0]==task_id:
+    for a in additions:
+     if a not in q:q[a]=0.0;self.action_visits[pair][a]=0
   if persist:self._checkpoint()
   return candidate
  def _ensure_state(self,task_id:str,state_key:str)->tuple[dict[str,float],dict[str,int]]:

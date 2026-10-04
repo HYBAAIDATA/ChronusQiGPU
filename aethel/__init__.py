@@ -212,21 +212,29 @@ from .zeckendorf import (
     reverse_zeckendorf_expansion,
 )
 
-__version__, __version_source__ = "0.1.0", "source"
+# Single-source version literal — the version_single_source gate requires the
+# only ``__version__ = "x.y.z"`` literal in the package to live here.
+__version__ = "1.0.0"
 
 
-def _resolve_version() -> tuple[str, str]:
-    canonical = "0.1.0"
+def _version_source() -> str:
+    """Whether installed distribution metadata confirms the canonical literal.
+
+    ``distribution_metadata`` only when an installed ``aethel`` distribution
+    reports exactly this version; otherwise ``source_fallback``. A disagreeing
+    installation still surfaces through ``importlib.metadata`` — the literal
+    stays the single source of truth.
+    """
     try:
         installed = _metadata_version("aethel")
     except _PackageNotFoundError:
-        return canonical, "source_fallback"
-    if _re.fullmatch(r"\d+\.\d+\.\d+", installed):
-        return installed, "distribution"
-    return canonical, "source_fallback"
+        return "source_fallback"
+    if _re.fullmatch(r"\d+\.\d+\.\d+", installed) and installed == __version__:
+        return "distribution_metadata"
+    return "source_fallback"
 
 
-__version__, __version_source__ = _resolve_version()
+__version_source__ = _version_source()
 
 # Identity-preserving alias used by toe/Intelligence consumers
 hardened_unified_substrate = HardenedUnifiedSubstrate
