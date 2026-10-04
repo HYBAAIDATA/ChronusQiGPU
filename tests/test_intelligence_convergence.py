@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import hashlib
+import shutil
 import tempfile
 import unittest
-from pathlib import Path
+from contextlib import contextmanager
 from unittest.mock import patch
 
 from euclid.contracts import RewardAuthority
@@ -59,10 +60,29 @@ class IntelligenceConvergenceTests(unittest.TestCase):
         with patch("Intelligence.repo_engineer.RepoEngineer", FakeRepoEngineer):
             return EuclidRuntime.production(creator_id="andre", state_dir=root)
 
-    def test_production_root_composes_real_repository_implementations(self):
-        with tempfile.TemporaryDirectory() as directory:
+    @contextmanager
+    def _production_dir(self):
+        """Yield a factory whose runtimes are closed before the dir is
+        removed — open sqlite handles must be released first on platforms
+        that lock database files, even when a test assertion fails."""
+        directory = tempfile.mkdtemp()
+        runtimes = []
+
+        def make():
             runtime = self.production(directory)
-            self.addCleanup(runtime.close)
+            runtimes.append(runtime)
+            return runtime
+
+        try:
+            yield make
+        finally:
+            for runtime in reversed(runtimes):
+                runtime.close()
+            shutil.rmtree(directory, ignore_errors=True)
+
+    def test_production_root_composes_real_repository_implementations(self):
+        with self._production_dir() as make:
+            runtime = make()
             self.assertIsInstance(runtime.cognition.world_model, TOEWorldModelAdapter)
             self.assertIsInstance(runtime.cognition.memory, DurableCognitiveMemory)
             self.assertIsInstance(runtime.cognition.planner, TOECognitivePlanner)
@@ -74,9 +94,8 @@ class IntelligenceConvergenceTests(unittest.TestCase):
             )
 
     def test_episode_calls_toe_changes_state_executes_and_closes_feedback(self):
-        with tempfile.TemporaryDirectory() as directory:
-            runtime = self.production(directory)
-            self.addCleanup(runtime.close)
+        with self._production_dir() as make:
+            runtime = make()
             runtime.cognition.executor = MeasuredExecutor()
             state = runtime.solve_repository_problem(problem("repo-1"))
             self.assertEqual(state.outcome, Outcome.SOLVED)
@@ -93,9 +112,8 @@ class IntelligenceConvergenceTests(unittest.TestCase):
             )
 
     def test_v16_mcts_and_evolution_are_selectable_and_change_candidates(self):
-        with tempfile.TemporaryDirectory() as directory:
-            runtime = self.production(directory)
-            self.addCleanup(runtime.close)
+        with self._production_dir() as make:
+            runtime = make()
             runtime.cognition.executor = MeasuredExecutor()
             mcts = runtime.solve_repository_problem(problem("repo-mcts", "mcts-v16"))
             evolution = runtime.solve_repository_problem(
@@ -108,9 +126,8 @@ class IntelligenceConvergenceTests(unittest.TestCase):
             self.assertIn("evolution-v16", runtime.cognition.skills.calls)
 
     def test_representation_and_mathematical_ablation_change_episode_path(self):
-        with tempfile.TemporaryDirectory() as directory:
-            runtime = self.production(directory)
-            self.addCleanup(runtime.close)
+        with self._production_dir() as make:
+            runtime = make()
             runtime.cognition.executor = MeasuredExecutor()
             represented_problem = problem("repo-representation", "primitive-compose")
             represented_problem["representation_evidence"] = {
@@ -135,8 +152,8 @@ class IntelligenceConvergenceTests(unittest.TestCase):
             ))
 
     def test_durable_memory_replay_guard_restart_and_transfer(self):
-        with tempfile.TemporaryDirectory() as directory:
-            first = self.production(directory)
+        with self._production_dir() as make:
+            first = make()
             first.cognition.executor = MeasuredExecutor()
             state = first.solve_repository_problem(problem("repo-first"))
             result = MeasuredExecutor().execute("x", {})
@@ -150,10 +167,7 @@ class IntelligenceConvergenceTests(unittest.TestCase):
             self.assertGreater(
                 first.learning.memory_database.verify()["memories"], 0
             )
-            first.close()
-
-            second = self.production(directory)
-            self.addCleanup(second.close)
+            second = make()
             second.cognition.executor = MeasuredExecutor()
             related = second.solve_repository_problem(problem("repo-related"))
             self.assertTrue(related.retrieved_memory_refs)
@@ -164,9 +178,8 @@ class IntelligenceConvergenceTests(unittest.TestCase):
     def test_cognition_does_not_change_bitcoin_consensus_semantics(self):
         header = bytes(range(80))
         before = hashlib.sha256(hashlib.sha256(header).digest()).digest()
-        with tempfile.TemporaryDirectory() as directory:
-            runtime = self.production(directory)
-            self.addCleanup(runtime.close)
+        with self._production_dir() as make:
+            runtime = make()
             runtime.cognition.executor = MeasuredExecutor()
             runtime.solve_repository_problem(problem("repo-consensus-boundary"))
         after = hashlib.sha256(hashlib.sha256(header).digest()).digest()

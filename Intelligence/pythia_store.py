@@ -675,6 +675,7 @@ class PythiaStore:
             "learning": self.pythia.to_snapshot(),
             "qudits": self.qudits.to_snapshot(),
         }
+        self.snapshot_path.parent.mkdir(parents=True, exist_ok=True)
         tmp = self.snapshot_path.with_suffix(".json.tmp")
         tmp.write_text(json.dumps(snap, default=str), encoding="utf-8")
         os.replace(tmp, self.snapshot_path)

@@ -11,6 +11,8 @@ from typing import Any, Mapping
 from .core import fibonacci, lucas
 from .ladder import CURRICULUM_RUNGS
 
+# The discovery seed is the curriculum ladder — imported from the canonical
+# single ladder source (lucas/ladder.py) so the rung set cannot drift.
 DISCOVERY_INDICES: tuple[int, ...] = CURRICULUM_RUNGS
 DISCOVERY_CLASSIFICATION = "AUTOBIOGRAPHICAL_DISCOVERY_SEED"
 SCHEMA = "hyba.research.lucas-pisot-scaling.v2"

@@ -23,24 +23,23 @@ def probe(lane, available, *, hasher=None, reason="measured fixture"):
 
 
 class BackendDecisionEvidenceTests(unittest.TestCase):
-    _STUB_NAME = "chronus.mla1517.mining.coordinator"
-    _MISSING = object()
-
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
-        self._prior = sys.modules.get(self._STUB_NAME, self._MISSING)
-        module = types.ModuleType(self._STUB_NAME)
+        module = types.ModuleType("chronus.mla1517.mining.coordinator")
         module.CpuReferenceHasher = FakeHasher
+        # Restore the real coordinator afterwards: a bare ModuleType left in
+        # sys.modules breaks later imports of other names from that module.
+        self._saved_coordinator = sys.modules.get(module.__name__, None)
         sys.modules[module.__name__] = module
         self.path = Path(self.tmp.name) / "backend.jsonl"
 
     def tearDown(self):
-        # Restore sys.modules: the stub shadows a real package module and
-        # leaking it breaks later tests that import the real coordinator.
-        if self._prior is self._MISSING:
-            sys.modules.pop(self._STUB_NAME, None)
+        if self._saved_coordinator is None:
+            sys.modules.pop("chronus.mla1517.mining.coordinator", None)
         else:
-            sys.modules[self._STUB_NAME] = self._prior
+            sys.modules["chronus.mla1517.mining.coordinator"] = (
+                self._saved_coordinator
+            )
         self.tmp.cleanup()
 
     def registry(self, *, gpu=False):

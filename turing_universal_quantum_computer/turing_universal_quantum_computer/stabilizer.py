@@ -290,7 +290,9 @@ class StabilizerState:
         and the measurement is degenerate, a seeded draw samples the exact
         (1/2, 1/2) distribution — the seeded RNG is classical sampling OF
         the exact distribution, same boundary as QuantumRegister.measure.
-        If neither is given, canonical collapse takes outcome 0.
+        If neither is given and the measurement is degenerate, canonical
+        collapse takes outcome 0; a deterministic measurement returns its
+        actual outcome.
         """
         self._require_qubit(q)
         n = self.n
@@ -300,12 +302,8 @@ class StabilizerState:
             if random_outcome and seed is not None:
                 outcome = 1 if random.Random(seed).random() < float(p1) else 0
             elif random_outcome:
-                outcome = 0  # canonical deterministic collapse convention
-            else:
-                # Deterministic measurement: the outcome is fixed by the
-                # state — reporting it is not "forcing" an outcome.
-                outcome = self._deterministic_outcome(q)
-        if outcome not in (0, 1):
+                outcome = 0  # canonical collapse convention (degenerate only)
+        if outcome is not None and outcome not in (0, 1):
             raise ValueError("outcome must be 0 or 1")
 
         anticommuting = None
@@ -323,6 +321,8 @@ class StabilizerState:
             self._x[p], self._z[p], self._r[p] = 0, 1 << q, outcome
         else:
             actual = self._deterministic_outcome(q)
+            if outcome is None:
+                outcome = actual
             if outcome != actual:
                 # Forcing the impossible outcome is not a collapse — fail.
                 raise ValueError(

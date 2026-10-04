@@ -19,6 +19,7 @@ from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _PLATFORM = _REPO_ROOT / "chronus/mla1517_platform" / "python"
+_TURING = _REPO_ROOT / "turing_universal_quantum_computer"
 
 # Re-home first so the repo root lands at sys.path[0]: the platform tree
 # carries its own bare ``turing_core`` shim which must NOT shadow the root
@@ -30,6 +31,11 @@ for _path in (str(_PLATFORM), str(_REPO_ROOT)):
     while _path in sys.path:
         sys.path.remove(_path)
     sys.path.insert(0, _path)
+
+_TURING_PATH = str(_TURING)
+while _TURING_PATH in sys.path:
+    sys.path.remove(_TURING_PATH)
+sys.path.insert(0, _TURING_PATH)
 
 # ``tests/test_agentic_mining.py`` appends ``<repo>/Intelligence`` to
 # ``sys.path`` so its fallback ``import agentic_mining`` can resolve. That makes

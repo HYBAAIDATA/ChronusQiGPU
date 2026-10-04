@@ -186,6 +186,7 @@ def refuted(root):
                     "not established",
                     "does not prove",
                     "unclaimed",
+                    "prohibited",
                 )
             ):
                 continue

@@ -1,5 +1,4 @@
 """One governed facade over the existing PYTHIA and experience learners."""
-
 from __future__ import annotations
 
 import hashlib
@@ -43,7 +42,9 @@ class LearningService:
         self.experience_learner = experience_learner
         self.memory_database = memory_database
         self.evidence = evidence or EvidenceChain()
-        self.replay_journal_path = Path(replay_journal_path) if replay_journal_path else None
+        self.replay_journal_path = (
+            Path(replay_journal_path) if replay_journal_path else None
+        )
         self._seen: set[str] = set()
         self._journal: dict[str, dict[str, Any]] = {}
         self._load_journal()
@@ -61,7 +62,9 @@ class LearningService:
             "schema": payload.get("schema"),
             "entries": payload.get("entries"),
         }
-        if payload.get("seal") != domain_hash("euclid.replay-journal.seal.v1", body):
+        if payload.get("seal") != domain_hash(
+            "euclid.replay-journal.seal.v1", body
+        ):
             raise ValueError("replay journal seal mismatch")
         entries = dict(body["entries"] or {})
         self._journal = entries
@@ -101,11 +104,16 @@ class LearningService:
             if existing.get("digest") != digest or existing.get(
                 "content_hash"
             ) != self._content_hash(experience):
-                raise ValueError("conflicting experience replay identity/content")
+                raise ValueError(
+                    "conflicting experience replay identity/content"
+                )
             raise ValueError("duplicate experience replay")
         if replay_id in self._seen:
             raise ValueError("duplicate experience replay")
-        if self.memory_database is not None and self.memory_database.has_replay_id(replay_id):
+        if (
+            self.memory_database is not None
+            and self.memory_database.has_replay_id(replay_id)
+        ):
             raise ValueError("duplicate experience replay")
 
     def _persist_experience(self, experience: Experience) -> None:
@@ -151,15 +159,19 @@ class LearningService:
         applied: list[str] = []
         if self.experience_learner is not None:
             task = experience.domain
-            spec = self.experience_learner.tasks.get(task)
-            if spec is None:
+            actions = tuple(getattr(self.experience_learner.tasks.get(task), "actions", ()))
+            if not actions:
                 self.experience_learner.register_task(
                     task, (experience.action,), reward_range=(-1.0, 1.0)
                 )
-            elif experience.action not in spec.actions:
-                # First-seen actions widen the task's declared vocabulary;
-                # crashing here made any second strategy unlearnable.
-                self.experience_learner.register_action(task, experience.action)
+            elif experience.action not in actions:
+                if not hasattr(self.experience_learner, "extend_task_actions"):
+                    raise ValueError(
+                        "experience action is outside registered task contract"
+                    )
+                self.experience_learner.extend_task_actions(
+                    task, (experience.action,)
+                )
             self.experience_learner.observe(
                 task,
                 dict(experience.observation),
@@ -175,15 +187,11 @@ class LearningService:
             applied.append("experience-superlearner")
 
         if self.store is not None and hasattr(self.store, "record_run"):
-            self.store.record_run(
-                "governed-experience",
-                {
-                    "digest": digest,
-                    "domain": experience.domain,
-                    "reward_authority": experience.reward_authority.value,
-                    "uncertainty": experience.uncertainty,
-                },
-            )
+            self.store.record_run("governed-experience", {
+                "digest": digest, "domain": experience.domain,
+                "reward_authority": experience.reward_authority.value,
+                "uncertainty": experience.uncertainty,
+            })
             applied.append("pythia-store")
 
         self._persist_experience(experience)
@@ -203,7 +211,8 @@ class LearningService:
                 str(self.replay_journal_path) if self.replay_journal_path else None
             ),
             "journal_sha256": None,
-            "durable": self.replay_journal_path is not None or self.memory_database is not None,
+            "durable": self.replay_journal_path is not None
+            or self.memory_database is not None,
         }
         if self.replay_journal_path is not None and self.replay_journal_path.is_file():
             state["journal_sha256"] = hashlib.sha256(

@@ -236,18 +236,20 @@ class EuclidRuntime:
             if previous is None or stage > previous:
                 targets[component] = stage
 
+        persisted = any(
+            item.get("kind") == "canonical-learning-service"
+            for item in state.learning_updates
+        )
         if phases & {"deduce", "imagine", "compare"}:
-            # A compare transition means world_model.update() ran on observed
-            # evidence — feedback genuinely closed into the model.  Deduce or
-            # imagine phases alone only exercised the model.
-            target(
-                "toe.world_model",
-                (
-                    ReachabilityStage.FEEDBACK_CLOSED
-                    if "compare" in phases
-                    else ReachabilityStage.USED_IN_EPISODE
-                ),
+            # Feedback is closed when the compare-phase outcome update is also
+            # closed into the canonical learning service for this episode.
+            world_stage = (
+                ReachabilityStage.OUTCOME_OBSERVED
+                if "compare" in phases else ReachabilityStage.USED_IN_EPISODE
             )
+            target("toe.world_model", world_stage)
+            if "compare" in phases and persisted:
+                target("toe.world_model", ReachabilityStage.FEEDBACK_CLOSED)
         if "plan" in phases:
             executed_ids = {
                 str(item.details.get("action")) for item in transitions if item.phase == "execute"
@@ -507,10 +509,9 @@ class EuclidRuntime:
         runtime.registry = OrganRegistry()
         runtime.delegator = Delegator(runtime.registry, runtime.evidence, runtime.rights)
         runtime.learning.evidence = runtime.evidence
-        # Re-attach the durable memory database when the state dir has one;
-        # persistence must survive restart, not just the live process.
-        database_path = runtime.state_dir / "euclid_memory.sqlite3"
-        if database_path.is_file():
-            runtime.learning.memory_database = MemoryDatabase(database_path)
+        # The durable memory database is already attached by production()
+        # at state_dir/euclid_memory.sqlite3; opening a second connection
+        # here would leak the first handle (and break tempdir cleanup on
+        # platforms that lock open database files).
         runtime.kairos.replay_verify()
         return runtime

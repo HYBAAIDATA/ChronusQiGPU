@@ -212,133 +212,67 @@ from .zeckendorf import (
     reverse_zeckendorf_expansion,
 )
 
+# Single-source version literal — the version_single_source gate requires the
+# only ``__version__ = "x.y.z"`` literal in the package to live here.
 __version__ = "1.0.0"
-__version_source__ = "source"
 
 
-def _resolve_version() -> tuple[str, str]:
-    canonical = "1.0.0"
+def _version_source() -> str:
+    """Whether installed distribution metadata confirms the canonical literal.
+
+    ``distribution_metadata`` only when an installed ``aethel`` distribution
+    reports exactly this version; otherwise ``source_fallback``. A disagreeing
+    installation still surfaces through ``importlib.metadata`` — the literal
+    stays the single source of truth.
+    """
     try:
         installed = _metadata_version("aethel")
     except _PackageNotFoundError:
-        return canonical, "source_fallback"
-    if _re.fullmatch(r"\d+\.\d+\.\d+", installed):
-        return installed, "distribution_metadata"
-    return canonical, "source_fallback"
+        return "source_fallback"
+    if _re.fullmatch(r"\d+\.\d+\.\d+", installed) and installed == __version__:
+        return "distribution_metadata"
+    return "source_fallback"
 
 
-__version__, __version_source__ = _resolve_version()
+__version_source__ = _version_source()
 
 # Identity-preserving alias used by toe/Intelligence consumers
 hardened_unified_substrate = HardenedUnifiedSubstrate
 
 __all__ = [
     "__version__",
-    "DIM",
-    "PHI",
-    "PSI",
-    "SQRT5",
-    "LUCAS_15",
-    "LUCAS_20",
-    "LUCAS_31",
-    "MODULUS_Q",
-    "PRIMES_25",
+    "DIM", "PHI", "PSI", "SQRT5",
+    "LUCAS_15", "LUCAS_20", "LUCAS_31", "MODULUS_Q", "PRIMES_25",
     "CassiniVerifier",
-    "HardenedZeckendorfCodec",
-    "SparseTopology",
-    "apply_zeckendorf_compression",
-    "reverse_zeckendorf_expansion",
-    "PUNCH_ZECKENDORF_ENCODE",
-    "PUNCH_ZECKENDORF_DECODE",
-    "PUNCH_MANIFOLD_COMPUTE",
-    "GaloisPrimeSubstrate",
-    "PrimeCell",
-    "VirtualSM",
-    "ComputeUnitPool",
-    "VirtualWarp",
-    "SPMDExecutor",
-    "OptimizedTensorMicroKernel",
-    "RTCoreMicroKernel",
-    "MicroKernelLibrary",
-    "DistributedActor",
-    "CollectiveOps",
-    "DistributedDataflowGraph",
-    "DAGNode",
-    "DependencyDAG",
-    "ChronusContext",
-    "ManifoldCurvature",
-    "ManifoldSector",
-    "TopologicalTensor",
-    "GeodesicNavigator",
-    "SelfHealingSubstrate",
-    "PrimeStorageManifold",
-    "UnifiedSubstrate",
-    "HardenedUnifiedSubstrate",
-    "OverheadLedger",
-    "price_addresses",
-    "price_exact_generator",
-    "AethelQueue",
-    "AethelRecord",
-    "AethelError",
-    "STATE_BYTES",
-    "AETHEL_ABI_VERSION",
-    "AETHEL_MAGIC",
-    "AETHEL_HEADER_BYTES",
-    "AETHEL_SLOT_STRIDE",
-    "AETHEL_D7_OFFSET",
-    "AETHEL_D10_OFFSET",
-    "AbiVersionMismatch",
-    "EncodingError",
-    "EngineUnavailable",
-    "FoldDomainOverflow",
-    "GapDetected",
-    "HandoffRejection",
-    "InvalidAddress",
-    "SegmentMissing",
-    "ZeckendorfInvariantError",
-    "BinetIndex",
-    "binet_approx",
-    "binet_fibonacci",
-    "fibonacci",
-    "fibonacci_index",
-    "is_fibonacci",
-    "lucas",
-    "cassini_quadruple",
-    "cassini_holds",
-    "ZeckendorfVector",
-    "fold",
-    "unfold",
-    "encoding_domain",
-    "MAX_FOLD_LEN",
-    "FibonacciAddress",
-    "LedgerEntry",
-    "CassiniLedger",
-    "AddressSpace",
-    "DEFAULT_MAX_STEP",
-    "GeodesicHandoff",
-    "ManifoldPoint",
-    "KernelBoundary",
-    "NumericFoldState",
-    "PartialUnfoldStats",
-    "PhiFoldError",
-    "phi_fold",
-    "phi_unfold",
-    "unfold_partial",
-    "unfold_partial_with_stats",
-    "fold_result",
-    "reconstruction_error",
-    "working_set_ratio",
-    "MemoryTier",
-    "TierResident",
-    "PhiMemoryHierarchy",
-    "TopologicalIntegrityGate",
-    "IntegrityVerdict",
-    "MemoryHierarchyError",
-    "OpCost",
-    "OverheadMeter",
-    "container_bytes",
-    "measure_alloc",
-    "metered",
+    "HardenedZeckendorfCodec", "SparseTopology",
+    "apply_zeckendorf_compression", "reverse_zeckendorf_expansion",
+    "PUNCH_ZECKENDORF_ENCODE", "PUNCH_ZECKENDORF_DECODE", "PUNCH_MANIFOLD_COMPUTE",
+    "GaloisPrimeSubstrate", "PrimeCell",
+    "VirtualSM", "ComputeUnitPool", "VirtualWarp", "SPMDExecutor",
+    "OptimizedTensorMicroKernel", "RTCoreMicroKernel", "MicroKernelLibrary",
+    "DistributedActor", "CollectiveOps", "DistributedDataflowGraph",
+    "DAGNode", "DependencyDAG", "ChronusContext",
+    "ManifoldCurvature", "ManifoldSector", "TopologicalTensor",
+    "GeodesicNavigator", "SelfHealingSubstrate", "PrimeStorageManifold",
+    "UnifiedSubstrate", "HardenedUnifiedSubstrate",
+    "OverheadLedger", "price_addresses", "price_exact_generator",
+    "AethelQueue", "AethelRecord", "AethelError",
+    "STATE_BYTES", "AETHEL_ABI_VERSION", "AETHEL_MAGIC",
+    "AETHEL_HEADER_BYTES", "AETHEL_SLOT_STRIDE", "AETHEL_D7_OFFSET", "AETHEL_D10_OFFSET",
+    "AbiVersionMismatch", "EncodingError", "EngineUnavailable",
+    "FoldDomainOverflow", "GapDetected", "HandoffRejection",
+    "InvalidAddress", "SegmentMissing", "ZeckendorfInvariantError",
+    "BinetIndex", "binet_approx", "binet_fibonacci", "fibonacci",
+    "fibonacci_index", "is_fibonacci", "lucas", "cassini_quadruple", "cassini_holds",
+    "ZeckendorfVector", "fold", "unfold", "encoding_domain", "MAX_FOLD_LEN",
+    "FibonacciAddress", "LedgerEntry", "CassiniLedger", "AddressSpace", "DEFAULT_MAX_STEP",
+    "GeodesicHandoff", "ManifoldPoint",
+    "KernelBoundary", "NumericFoldState", "PartialUnfoldStats", "PhiFoldError",
+    "phi_fold", "phi_unfold", "unfold_partial", "unfold_partial_with_stats", "fold_result",
+    "reconstruction_error", "working_set_ratio",
+    "MemoryTier", "TierResident", "PhiMemoryHierarchy",
+    "TopologicalIntegrityGate", "IntegrityVerdict", "MemoryHierarchyError",
+    "OpCost", "OverheadMeter", "container_bytes", "measure_alloc", "metered",
     # Chronus · Theseus · Ovid triad
     "GOLDEN_ANGLE",
     "PhyllotaxisSite",

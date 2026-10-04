@@ -166,22 +166,12 @@ class GeneralIntelligenceCore:
             "problem_class": problem_class,
         }
         for key in (
-            "initial_code",
-            "operators",
-            "plan_depth",
-            "budget",
-            "representation_kind",
-            "state_vector",
-            "surface",
-            "observations",
-            "context_key",
+            "initial_code", "operators", "plan_depth", "budget",
+            "representation_kind", "state_vector", "surface", "observations",
+            "context_key", "strategy",
         ):
             if key in problem:
                 representation[key] = problem[key]
-        # A declared strategy request is a wired input, not dead data: the
-        # skill composer reads representation["requested_strategy"].
-        if "strategy" in problem:
-            representation["requested_strategy"] = str(problem["strategy"])
         state = CognitiveState(problem_id, representation, clock=self.clock)
         state.goals.append(Goal("g0", goal_text))
 
@@ -431,9 +421,11 @@ class GeneralIntelligenceCore:
 
             # 9. COMPOSE ----------------------------------------------------------
             if self.ablations.skill_composition:
+                if hasattr(self.skills, "mathematical_enabled"):
+                    self.skills.mathematical_enabled = (
+                        self.ablations.mathematical_structure
+                    )
                 if not self.ablations.mathematical_structure:
-                    if hasattr(self.skills, "mathematical_enabled"):
-                        self.skills.mathematical_enabled = False
                     self._ablated(state, "mathematical_structure")
                 state.candidates = self.skills.compose(planning_goal, state)
             else:
@@ -730,7 +722,15 @@ class GeneralIntelligenceCore:
         payload size.  No external capability claim is made."""
         import json as _json
 
+        declared = problem.get("representation_evidence") or {}
+
         def evaluate(kind: str, payload: Mapping[str, Any]) -> tuple[float, float]:
+            entry = declared.get(kind)
+            if isinstance(entry, Mapping) and "utility" in entry:
+                # The problem declares measured evidence for this kind;
+                # trust it over the structural proxy (both are bounded
+                # per-evaluation values, not capability claims).
+                return float(entry["utility"]), float(entry.get("cost", 0.0))
             encoded = _json.dumps(payload, sort_keys=True, default=str)
             covered = sum(1 for item in structure if str(item) in encoded)
             utility = covered / max(1, len(structure))

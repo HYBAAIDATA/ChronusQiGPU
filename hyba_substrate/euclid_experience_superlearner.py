@@ -6,7 +6,6 @@ append-only transition hash chain. Human demonstrations are not silently used.
 """
 
 from __future__ import annotations
-
 import json
 import math
 import random
@@ -183,30 +182,37 @@ class ExperienceSuperlearner:
             self._checkpoint()
         return candidate
 
-    def register_action(self, task_id: str, action: str) -> ExperienceTask:
-        """Extend a registered task's declared action vocabulary in place.
+    def extend_task_actions(
+        self, task_id: str, actions: Sequence[str], *, persist: bool = True
+    ) -> ExperienceTask:
+        """Bounded growth of a registered task's action set.
 
-        A task's action set is a contract, not a cap: new measured actions widen it
-        (existing q/visit rows are backfilled) rather than crashing the episode.
+        Measured episodes legitimately emit new action identifiers under a task
+        (e.g. different composed candidates per strategy); the contract stays
+        declared-by-registration while allowing audited extension instead of a
+        hard fail on every new measured action.
         """
-        task = self.tasks.get(task_id)
-        if task is None:
+        task_id = str(task_id).strip()
+        if task_id not in self.tasks:
             raise ValueError("unknown task")
-        action = str(action).strip()
-        if not action:
-            raise ValueError("action must be nonempty")
-        if action in task.actions:
+        task = self.tasks[task_id]
+        additions = tuple(dict.fromkeys(str(a).strip() for a in actions if str(a).strip()))
+        if not additions:
+            raise ValueError("at least one nonempty action is required")
+        merged = tuple(dict.fromkeys(task.actions + additions))
+        if len(merged) == len(task.actions):
             return task
-        merged = replace(task, actions=task.actions + (action,))
-        self.tasks[task_id] = merged
-        for key, row in self.q_values.items():
-            if json.loads(key)[0] == task_id:
-                row.setdefault(action, 0.0)
-        for key, row in self.action_visits.items():
-            if json.loads(key)[0] == task_id:
-                row.setdefault(action, 0)
-        self._checkpoint()
-        return merged
+        candidate = replace(task, actions=merged)
+        self.tasks[task_id] = candidate
+        for pair, q in self.q_values.items():
+            if json.loads(pair)[0] == task_id:
+                for a in additions:
+                    if a not in q:
+                        q[a] = 0.0
+                        self.action_visits[pair][a] = 0
+        if persist:
+            self._checkpoint()
+        return candidate
 
     def _ensure_state(
         self, task_id: str, state_key: str
