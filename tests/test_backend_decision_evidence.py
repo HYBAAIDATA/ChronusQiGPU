@@ -43,7 +43,6 @@ class BackendDecisionEvidenceTests(unittest.TestCase):
         self.tmp.cleanup()
 
     def registry(self, *, gpu=False):
-        cpu = FakeHasher()
         probes = {
             BackendLane.CPU: lambda: probe(BackendLane.CPU, True),
             BackendLane.GPU: lambda: probe(BackendLane.GPU, gpu, hasher=FakeHasher() if gpu else None, reason="GPU probe result"),

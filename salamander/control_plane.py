@@ -9,7 +9,7 @@ from __future__ import annotations
 import copy
 import time
 from collections import defaultdict, deque
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from typing import Any, Callable, Iterable, Mapping
 
 from .models import (
@@ -36,7 +36,6 @@ from .models import (
     RewardAuthority,
     Severity,
     TheseusProjection,
-    canonical,
     digest,
 )
 
