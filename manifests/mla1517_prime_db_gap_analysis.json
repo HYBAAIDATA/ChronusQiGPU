@@ -1,0 +1,103 @@
+{
+  "schema": "hyba.mla1517-prime-db-gap-analysis.v1",
+  "source": "MLA1517 + PRIME-DB \u2014 Transfer Notes, Specifications & Build Start",
+  "repository_scope": "PYTHIA mining proof ground; enterprise product services are excluded",
+  "ownership": {
+    "OVID": "authoritative durable storage/state/representation custody",
+    "THESEUS": "rebuildable query/index/graph/semantic projection",
+    "PRIME-DB": "legacy MLA1517 reference semantics and local execution persistence/projection",
+    "CHRONUS": "execution and capability evidence",
+    "MINING": "SHA-256d consensus, target verification, pool acknowledgement and recovery authorities"
+  },
+  "closed_gaps": [
+    {
+      "id": "AUTH-001",
+      "status": "CLOSED",
+      "evidence": [
+        "CONTRACTS.md",
+        "al_haras/delivery_plan.py"
+      ],
+      "summary": "Removed PRIME-DB-as-enterprise-authority wording and restored OVID/THESEUS ownership."
+    },
+    {
+      "id": "SCOPE-001",
+      "status": "CLOSED",
+      "evidence": [
+        "docs/MLA1517_PRIME_DB_GAP_ANALYSIS.md"
+      ],
+      "summary": "Separated shipped mining substrate from planned enterprise services."
+    },
+    {
+      "id": "CLAIM-001",
+      "status": "CLOSED",
+      "evidence": [
+        "chronus/mla1517_platform/python/reference_test.py"
+      ],
+      "summary": "Locked refuted transfer-note hypotheses as non-promotable claims."
+    },
+    {
+      "id": "DIST-001",
+      "status": "CLOSED",
+      "evidence": [
+        "https://github.com/QuantumPhi2/PhiMiner/pull/31"
+      ],
+      "summary": "Chronos v3.3 compatibility facade, package data and executable capability audit were merged."
+    }
+  ],
+  "refuted_or_prohibited_claims": [
+    "zeckendorf_reduces_generic_address_bits",
+    "float64_binet_alone_is_lossless_storage",
+    "lucas_pisot_phase_is_a_quantum_speedup",
+    "global_phase_changes_measurement_probabilities",
+    "prime_addressing_creates_physical_capacity",
+    "unmeasured_physical_or_pool_performance"
+  ],
+  "software_evidence_present": [
+    "exact integer rings and no-float exact-core gate",
+    "exact Q(sqrt(2)) quantum runtime with fail-closed unsupported operations",
+    "M32 32-lane / 12-execution / 20-memory software and hardware contracts",
+    "native PRIME-DB mmap persistence, cursor recovery, Cassini recheck and bounded growth",
+    "strict hardware gate and live-submit approval boundary",
+    "FoldContract and OperatorContract surfaces",
+    "Chronos v3.3 capability surface audit"
+  ],
+  "open_evidence_gates": [
+    {
+      "id": "HW-OPENCL",
+      "status": "PHYSICAL_EVIDENCE_REQUIRED",
+      "owner": "deployment",
+      "evidence_required": "real OpenCL device execution with device identity and signed result"
+    },
+    {
+      "id": "HW-RTL",
+      "status": "PHYSICAL_EVIDENCE_REQUIRED",
+      "owner": "hardware",
+      "evidence_required": "HDL simulation, synthesis, timing closure and FPGA/silicon execution"
+    },
+    {
+      "id": "TOOLCHAINS",
+      "status": "EVIDENCE_REQUIRED",
+      "owner": "build",
+      "evidence_required": "Rust, CUDA/HIP and Docker builds in qualified environments"
+    },
+    {
+      "id": "POOL-LIVE",
+      "status": "AUTHORIZED_LIVE_EVIDENCE_REQUIRED",
+      "owner": "mining",
+      "evidence_required": "pool-accepted shares at announced target under explicit approval"
+    },
+    {
+      "id": "PERF",
+      "status": "MEASUREMENT_REQUIRED",
+      "owner": "performance",
+      "evidence_required": "reproducible hashrate, latency, power and error measurements"
+    }
+  ],
+  "enterprise_only_planned": [
+    "versioned enterprise datasets and multimodel query services",
+    "cost/proof planner and uncertainty plane",
+    "privacy, QRAM/QDC and federated services",
+    "HYBA Flow, Ontology, Agent Fabric, Quality, Model Gateway, Document Intelligence, Evidence, Share, Federate, Studio, Insight, Edge, Vault, Deploy and Guard product services"
+  ],
+  "production_ready": false
+}
