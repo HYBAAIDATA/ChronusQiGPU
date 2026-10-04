@@ -41,6 +41,13 @@ class ResearchDomain(Enum):
     COHERENCE_EVALUATOR = "coherence_evaluator"
 
 
+class EvidenceSource(Enum):
+    """Provenance of a gate decision; defaults fail closed to NONE."""
+    INTERNAL_HEURISTIC = "internal_heuristic"
+    EXTERNAL_SUBSYSTEM = "external_subsystem"
+    NONE = "none"
+
+
 class ConfidenceBound(Enum):
     """
     Five confidence bounds a candidate organ must clear.
@@ -179,6 +186,10 @@ class IntegrationAssessment:
     truth_evidence_supplied: bool
     causal_attribution_supplied: bool
     feedback_processing_completed: bool
+    coherence_source: EvidenceSource = EvidenceSource.NONE
+    truth_source: EvidenceSource = EvidenceSource.NONE
+    causal_source: EvidenceSource = EvidenceSource.NONE
+    feedback_source: EvidenceSource = EvidenceSource.NONE
     veto_reason: Optional[str] = None
     assessed_at: Optional[float] = None
     assessment_hash: Optional[str] = None
@@ -457,6 +468,12 @@ class WorldIntegrationGate:
         No silent integration. No implicit trust. No accidental world mutation.
         """
         gates: Dict[str, Tuple[bool, str]] = {}
+        sources: Dict[str, EvidenceSource] = {
+            "coherence": EvidenceSource.EXTERNAL_SUBSYSTEM if self._external_coherence_validator is not None else EvidenceSource.INTERNAL_HEURISTIC,
+            "truth_evidence": EvidenceSource.EXTERNAL_SUBSYSTEM if self._external_truth_validator is not None else EvidenceSource.INTERNAL_HEURISTIC,
+            "causal_attribution": EvidenceSource.EXTERNAL_SUBSYSTEM if self._external_causal_validator is not None else EvidenceSource.INTERNAL_HEURISTIC,
+            "feedback_processing": EvidenceSource.EXTERNAL_SUBSYSTEM if self._external_feedback_validator is not None else EvidenceSource.INTERNAL_HEURISTIC,
+        }
 
         # Gate 1: Coherence
         coherence_ok, coherence_reason = self._check_coherence(result, world_state_hash)
@@ -490,9 +507,13 @@ class WorldIntegrationGate:
                 truth_evidence_supplied=gates["truth_evidence"][0],
                 causal_attribution_supplied=gates["causal_attribution"][0],
                 feedback_processing_completed=gates["feedback_processing"][0],
+                coherence_source=sources["coherence"],
+                truth_source=sources["truth_evidence"],
+                causal_source=sources["causal_attribution"],
+                feedback_source=sources["feedback_processing"],
                 veto_reason=veto_reason,
                 assessed_at=time.time(),
-                assessment_hash=self._hash_assessment(result, gates),
+                assessment_hash=self._hash_assessment(result, gates, sources),
             )
 
         return IntegrationAssessment(
@@ -502,8 +523,12 @@ class WorldIntegrationGate:
             truth_evidence_supplied=True,
             causal_attribution_supplied=True,
             feedback_processing_completed=True,
+            coherence_source=sources["coherence"],
+            truth_source=sources["truth_evidence"],
+            causal_source=sources["causal_attribution"],
+            feedback_source=sources["feedback_processing"],
             assessed_at=time.time(),
-            assessment_hash=self._hash_assessment(result, gates),
+            assessment_hash=self._hash_assessment(result, gates, sources),
         )
 
     def _check_coherence(
@@ -576,6 +601,7 @@ class WorldIntegrationGate:
     def _hash_assessment(
         result: DelegationResult,
         gates: Dict[str, Tuple[bool, str]],
+        sources: Dict[str, EvidenceSource],
     ) -> str:
         """Produce a deterministic assessment hash."""
         payload = json.dumps({
@@ -583,6 +609,7 @@ class WorldIntegrationGate:
             "organ_id": result.organ_id,
             "output_hash": result.output_hash,
             "gates": {k: v[0] for k, v in gates.items()},
+            "evidence_sources": {k: v.value for k, v in sources.items()},
         }, sort_keys=True)
         return hashlib.sha256(payload.encode()).hexdigest()
 
