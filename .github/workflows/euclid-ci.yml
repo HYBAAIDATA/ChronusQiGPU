@@ -27,6 +27,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install runtime dependencies
+        # production() imports Intelligence.* which requires numpy (declared
+        # in pyproject dependencies); the job previously ran tests with no
+        # install step, so the two production-path tests always errored.
+        run: python -m pip install "numpy>=1.26,<3"
       - name: Compile
         run: python -m compileall -q euclid tests/test_euclid_runtime.py
       - name: Focused tests
