@@ -40,7 +40,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install -e ./turing_universal_quantum_computer -e ".[ml,dev]"
+      - run: pip install -e ./turing_universal_quantum_computer -e ".[ml,dev,graph]"
       - name: Lint (flake8)
         # Ratchet: lint every Python file this change touches. A repo-wide
         # count fails on thousands of pre-existing violations the
