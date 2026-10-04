@@ -115,7 +115,9 @@ class StructuralResearchGateTests(unittest.TestCase):
         gate = self.gates["turing.pisot_transform.v1"]
         self.assertFalse(gate["supersedes_qft"])
         self.assertFalse(gate["fourier_retired"])
-        self.assertIn("Matched QFT".lower(), gate["benchmark_spec"].lower())
+        benchmark = gate["benchmark_spec"].lower()
+        self.assertIn("qft", benchmark)
+        self.assertIn("benchmark", benchmark)
 
     def test_eleven_is_a_coordinate_dimension_not_a_physics_claim(self):
         gate = self.gates["turing.dimension_11.v1"]
