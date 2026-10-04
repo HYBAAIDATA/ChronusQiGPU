@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "package": "aethel",
+  "production_ready": false,
   "software_readiness": "enterprise_custody_software_single_root",
   "production_ready_scope": "enterprise_custody_software_single_root",
   "owners": {
