@@ -25,6 +25,7 @@ arithmetic, not a measured device property.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 from dataclasses import dataclass, field
 from typing import Tuple
@@ -35,6 +36,13 @@ logger = logging.getLogger("aethel.phi_fold")
 
 PHI = (1.0 + np.sqrt(5.0)) / 2.0
 PHI_SQ = PHI + 1.0  # phi^2 = phi + 1
+
+#: Element kinds admissible to folded custody. Bool is excluded because
+#: reconstruction-error arithmetic (subtraction) is undefined on it; object
+#: and structured dtypes are excluded because element identity is undefined
+#: for them. Numeric dtypes — signed/unsigned int, float, complex — all
+#: round-trip bit-exact through the partition.
+_FOLDABLE_KINDS = frozenset("iufc")
 
 
 class PhiFoldError(ValueError):
@@ -74,6 +82,12 @@ class NumericFoldState:
     ``retained`` is the depth-folded dominant segment; ``complements[i]``
     is the segment split off at fold level ``i + 1``. Reconstruction is
     ``concat(retained, complements[d-1], ..., complements[0])``.
+
+    ``dtype`` records the element type held in custody — every segment
+    shares it. ``layout`` records the flat-memory order the fold was taken
+    over (``"C"`` today). ``content_hash`` is a SHA-256 digest over the
+    dtype, shape, and every segment's raw bytes: content identity that
+    survives reload and detects corruption.
     """
 
     retained: np.ndarray
@@ -81,10 +95,27 @@ class NumericFoldState:
     depth: int = 0
     original_shape: Tuple[int, ...] = ()
     original_size: int = 0
+    dtype: np.dtype = np.dtype(np.float64)
+    layout: str = "C"
+    content_hash: str = ""
 
     @property
     def retained_size(self) -> int:
         return int(self.retained.size)
+
+    def compute_content_hash(self) -> str:
+        """Deterministic SHA-256 over dtype, shape, and all segment bytes."""
+        digest = hashlib.sha256()
+        digest.update(np.dtype(self.dtype).str.encode("utf-8"))
+        digest.update(repr(tuple(self.original_shape)).encode("utf-8"))
+        digest.update(int(self.original_size).to_bytes(8, "little"))
+        for segment in (self.retained, *self.complements):
+            digest.update(np.ascontiguousarray(segment).tobytes(order="C"))
+        return digest.hexdigest()
+
+    def verify_content_hash(self) -> bool:
+        """Recompute the content digest; False means custody was altered."""
+        return bool(self.content_hash) and self.content_hash == self.compute_content_hash()
 
 
 @dataclass(frozen=True)
@@ -123,13 +154,21 @@ def phi_fold(array: np.ndarray, depth: int = 1) -> NumericFoldState:
     """Fold a numeric array ``depth`` levels, retaining every complement.
 
     Precondition: ``depth >= 0`` and the array is non-empty; each level
-    requires at least 2 elements in the retained segment.
-    Postcondition: ``phi_unfold(phi_fold(x, d)) == x`` element-exact, and
-    ``state.depth == d``.
+    requires at least 2 elements in the retained segment. The input must be a
+    numeric dtype (int, uint, float, or complex); no silent coercion happens
+    — the folded segments keep the caller's dtype so reconstruction is
+    bit-exact for every supported dtype, including complex64/complex128.
+    Postcondition: ``phi_unfold(phi_fold(x, d)) == x`` element-exact with the
+    original dtype, and ``state.depth == d``.
     """
-    flat = np.asarray(array, dtype=np.float64).ravel()
+    flat = np.ascontiguousarray(np.asarray(array)).ravel()
     if flat.size == 0:
         raise PhiFoldError("phi_fold requires a non-empty array")
+    if flat.dtype.kind not in _FOLDABLE_KINDS:
+        raise PhiFoldError(
+            f"folded custody requires a numeric dtype (int/uint/float/complex); "
+            f"got {flat.dtype}"
+        )
     if depth < 0:
         raise PhiFoldError(f"depth must be >= 0, got {depth}")
     retained = flat
@@ -144,13 +183,17 @@ def phi_fold(array: np.ndarray, depth: int = 1) -> NumericFoldState:
             retained.size,
             complement.size,
         )
-    return NumericFoldState(
+    state = NumericFoldState(
         retained=retained,
         complements=tuple(complements),
         depth=depth,
         original_shape=tuple(np.asarray(array).shape),
         original_size=int(flat.size),
+        dtype=flat.dtype,
+        layout="C",
     )
+    object.__setattr__(state, "content_hash", state.compute_content_hash())
+    return state
 
 
 def _validate_state(state: NumericFoldState) -> None:
@@ -164,6 +207,13 @@ def _validate_state(state: NumericFoldState) -> None:
     if represented != state.original_size:
         raise PhiFoldError(
             f"fold state represents {represented} elements; expected {state.original_size}"
+        )
+    state_dtype = np.dtype(state.dtype)
+    if state.retained.dtype != state_dtype or any(
+        part.dtype != state_dtype for part in state.complements
+    ):
+        raise PhiFoldError(
+            f"fold state mixes segment dtypes; all segments must be {state_dtype}"
         )
 
 
@@ -237,7 +287,7 @@ def unfold_partial_with_stats(
             f"partial unfold reconstructed {source_values_read} values; expected {boundary.length}"
         )
     if not pieces:
-        result = np.empty(0, dtype=np.float64)
+        result = np.empty(0, dtype=state.dtype)
     elif len(pieces) == 1:
         result = pieces[0].copy()
     else:
@@ -274,7 +324,13 @@ def fold_result(
     Reads remain truly partial; writes are explicitly full-state re-folds.
     """
     _validate_state(original_state)
-    values = np.asarray(result_slice, dtype=np.float64).ravel()
+    values = np.asarray(result_slice)
+    if values.dtype != np.dtype(original_state.dtype):
+        raise PhiFoldError(
+            f"result slice dtype {values.dtype} does not match custodied "
+            f"dtype {original_state.dtype}; conversion is the caller's decision"
+        )
+    values = values.ravel()
     if values.size != boundary.length:
         raise PhiFoldError(
             f"result slice has {values.size} values; boundary requires {boundary.length}"
