@@ -1,0 +1,71 @@
+{
+  "schema": "hyba.euclid.elevation-manifest.v1",
+  "date": "2026-10-04",
+  "branch": "elevation/phi-vqc-intelligence-organs",
+  "golden_archive": {
+    "name": "EUCLID_PROD_GOLDEN_RATIO_ELEVATION_20260719.zip",
+    "sha256": "7dae964b8065f0c6fb2e63f720e8321b06c304669eb0c2e6d74f01a9b7e5e8a5",
+    "file_count": 3086,
+    "baseline_delta": {
+      "added": 4,
+      "changed": 8,
+      "deleted": 0
+    }
+  },
+  "vqc_existing_source": {
+    "path": "turing_universal_quantum_computer/turing_universal_quantum_computer/variational.py",
+    "git_blob_sha": "f1c15c8459916913c74387800cfc12fff9c594c8",
+    "copied": false
+  },
+  "files": [
+    {
+      "path": "hyba_substrate/golden_ratio_library.py",
+      "sha256": "0e296ba824b4f4a5d626b916fe74ced86e0eab09af0a52a2efd15837164d1d62"
+    },
+    {
+      "path": "hyba_substrate/phi_multi_use.py",
+      "sha256": "ccc39a995ee93918eef2a3ff8675bb147dce8a963a0ca447a0d88185d29332b0"
+    },
+    {
+      "path": "euclid/organ_adapters/__init__.py",
+      "sha256": "2d9c557dbda3bb01393dbf50609047194235d083a57ec225b3abbe8c5a5266eb"
+    },
+    {
+      "path": "euclid/organ_adapters/phi_intelligence.py",
+      "sha256": "3a3b4766d2f0c8f33f975c1ebfb42bed83a18ab20829cddfcbbb2dc652ecf882"
+    },
+    {
+      "path": "euclid/organ_adapters/vqc_intelligence.py",
+      "sha256": "b6a780c01fd351223c955c91035fce8c22a1230c960155cde10344811e6f35c0"
+    },
+    {
+      "path": "tests/test_phi_vqc_intelligence_organs.py",
+      "sha256": "fac08f66da1040fd75d4dffea18381a50fda756303844a6849da02017081a39d"
+    }
+  ],
+  "validation": {
+    "adapter_tests": {
+      "passed": 6,
+      "failed": 0
+    },
+    "golden_archive_tests": {
+      "passed": 7,
+      "failed": 0
+    },
+    "identity_seal": "0ad0de2a94bd4dd37e4c5a982d011d05bfcde153c9279660131d66eb3292bae3"
+  },
+  "authorities": {
+    "phi-intelligence": "read-only",
+    "vqc-intelligence": "propose"
+  },
+  "forbidden": [
+    "header mutation",
+    "target mutation",
+    "sha256d authority",
+    "credential access",
+    "share validation",
+    "submission",
+    "pool acknowledgement"
+  ],
+  "claim_boundary": "Classical mathematical intelligence proposals only; no physical-QPU, performance, mining-success, or production claim."
+}
