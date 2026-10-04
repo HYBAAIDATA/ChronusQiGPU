@@ -42,6 +42,7 @@ from .contracts import (
     TruthClass,
     estimate_bytes,
 )
+from .dependency import DependencyCone, InputCone, dependency_cone
 from .engine import execute
 from .errors import (
     TensorBackendUnavailableError,
@@ -60,6 +61,7 @@ __all__ = [
     "CancellationToken",
     "DEFAULT_MAX_TENSOR_BYTES",
     "Deadline",
+    "DependencyCone",
     "DependencyScope",
     "ExactnessMode",
     "MAX_TENSOR_ELEMENTS",
@@ -73,6 +75,7 @@ __all__ = [
     "TensorCancelledError",
     "TensorError",
     "TensorExactnessError",
+    "InputCone",
     "TensorMeasurement",
     "TensorMemoryError",
     "TensorOperationSpec",
@@ -84,6 +87,7 @@ __all__ = [
     "TensorValidationError",
     "TruthClass",
     "default_registry",
+    "dependency_cone",
     "estimate_bytes",
     "execute",
     "preflight_memory",

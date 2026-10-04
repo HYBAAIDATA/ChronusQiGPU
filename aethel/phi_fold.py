@@ -309,6 +309,142 @@ def unfold_partial(state: NumericFoldState, boundary: KernelBoundary) -> np.ndar
     return unfold_partial_with_stats(state, boundary)[0]
 
 
+@dataclass(frozen=True)
+class RegionUnfoldStats:
+    """Measured work performed by a shaped-region selective unfold."""
+
+    requested_values: int
+    boundaries: Tuple[KernelBoundary, ...]
+    source_values_read: int
+    source_segments_touched: int
+    source_segments_total: int
+    decoded_bytes: int
+    full_length: int
+    depth: int
+
+    @property
+    def reconstructed_fraction(self) -> float:
+        return self.requested_values / self.full_length if self.full_length else 0.0
+
+
+def region_flat_boundaries(
+    shape: Tuple[int, ...], slices: Tuple[object, ...]
+) -> Tuple[Tuple[KernelBoundary, ...], Tuple[int, ...]]:
+    """Map a shaped region to the minimal set of contiguous flat intervals.
+
+    ``slices`` is one ``slice`` (or ``int`` coordinate) per axis of the
+    C-order tensor. Returns ``(boundaries, region_shape)`` — the merged flat
+    intervals and the region's own shape. Strided slices (step != 1) fail
+    closed: the addressed decoder works on contiguous intervals only.
+    """
+    if len(slices) != len(shape):
+        raise PhiFoldError(
+            f"region has {len(slices)} entries for a rank-{len(shape)} tensor"
+        )
+    per_axis: list[np.ndarray] = []
+    region_shape: list[int] = []
+    for axis, (dim, spec) in enumerate(zip(shape, slices)):
+        if isinstance(spec, slice):
+            if (spec.step or 1) != 1:
+                raise PhiFoldError("region decode supports unit-step slices only")
+            _require_explicit_bounds(axis, spec, int(dim))
+            start, stop, _ = spec.indices(int(dim))
+            _require_axis_bounds(axis, start, stop, int(dim))
+            idx = np.arange(start, stop)
+        elif isinstance(spec, int) and not isinstance(spec, bool):
+            pos = int(spec)
+            if pos < 0:
+                pos += int(dim)
+            _require_axis_bounds(axis, pos, pos + 1, int(dim))
+            idx = np.array([pos])
+        else:
+            raise PhiFoldError(f"unsupported region specifier {spec!r} on axis {axis}")
+        per_axis.append(idx)
+        region_shape.append(int(idx.size))
+    if any(axis_idx.size == 0 for axis_idx in per_axis):
+        raise PhiFoldError("region is empty")
+    coords = np.meshgrid(*per_axis, indexing="ij")
+    flat = np.ravel_multi_index([c.ravel() for c in coords], shape).ravel()
+    flat.sort()
+    boundaries: list[KernelBoundary] = []
+    run_start = int(flat[0])
+    run_prev = int(flat[0])
+    for value in flat[1:]:
+        v = int(value)
+        if v != run_prev + 1:
+            boundaries.append(KernelBoundary(run_start, run_prev - run_start + 1))
+            run_start = v
+        run_prev = v
+    boundaries.append(KernelBoundary(run_start, run_prev - run_start + 1))
+    return tuple(boundaries), tuple(region_shape)
+
+
+def _require_explicit_bounds(axis: int, spec: slice, dim: int) -> None:
+    """Reject out-of-range explicit bounds — ``slice.indices`` would clamp."""
+    for bound in (spec.start, spec.stop):
+        if bound is not None and (int(bound) > dim or int(bound) < -dim):
+            raise PhiFoldError(
+                f"region axis {axis} slice {spec!r} is outside dim {dim}"
+            )
+
+
+def _require_axis_bounds(axis: int, start: int, stop: int, dim: int) -> None:
+    if start < 0 or stop < start or stop > dim:
+        raise PhiFoldError(
+            f"region axis {axis} slice [{start}, {stop}) is outside dim {dim}"
+        )
+
+
+def unfold_region(
+    state: NumericFoldState, slices: Tuple[object, ...]
+) -> Tuple[np.ndarray, RegionUnfoldStats]:
+    """Reconstruct a shaped region (any per-axis box) without full unfold.
+
+    The region is decomposed into the minimal contiguous flat intervals and
+    each interval is decoded by the segment-intersection path — no full
+    tensor is materialised. ``decoded_bytes`` is the measured number of
+    bytes actually read from resident segments (values x itemsize).
+    """
+    _validate_state(state)
+    boundaries, region_shape = region_flat_boundaries(state.original_shape, slices)
+    pieces: list[np.ndarray] = []
+    source_read = 0
+    touched = 0
+    segments = _logical_segments(state)
+    for boundary in boundaries:
+        logical_offset = 0
+        for segment in segments:
+            seg_start, seg_stop = logical_offset, logical_offset + int(segment.size)
+            logical_offset = seg_stop
+            if boundary.stop <= seg_start:
+                break
+            if boundary.offset >= seg_stop:
+                continue
+            local_start = max(boundary.offset, seg_start) - seg_start
+            local_stop = min(boundary.stop, seg_stop) - seg_start
+            piece = np.asarray(segment).ravel()[local_start:local_stop]
+            pieces.append(piece)
+            source_read += int(piece.size)
+            touched += 1
+    requested = int(np.prod(region_shape))
+    result = np.concatenate(pieces) if pieces else np.empty(0, dtype=state.dtype)
+    if result.size != requested:
+        raise PhiFoldError(
+            f"region decode produced {result.size} values; expected {requested}"
+        )
+    stats = RegionUnfoldStats(
+        requested_values=requested,
+        boundaries=boundaries,
+        source_values_read=source_read,
+        source_segments_touched=touched,
+        source_segments_total=len(segments),
+        decoded_bytes=source_read * np.dtype(state.dtype).itemsize,
+        full_length=state.original_size,
+        depth=state.depth,
+    )
+    return result.reshape(region_shape), stats
+
+
 def splice_region(
     original_state: NumericFoldState,
     boundary: KernelBoundary,
@@ -449,7 +585,10 @@ __all__ = [
     "phi_fold",
     "phi_unfold",
     "reconstruction_error",
+    "region_flat_boundaries",
+    "RegionUnfoldStats",
     "splice_region",
+    "unfold_region",
     "unfold_partial",
     "unfold_partial_with_stats",
     "working_set_ratio",
