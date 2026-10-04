@@ -9,7 +9,7 @@ from __future__ import annotations
 import copy
 import time
 from collections import defaultdict, deque
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from typing import Any, Callable, Iterable, Mapping
 
 from .models import (
@@ -36,7 +36,6 @@ from .models import (
     RewardAuthority,
     Severity,
     TheseusProjection,
-    canonical,
     digest,
 )
 
@@ -397,6 +396,11 @@ class AutonomicControlPlane:
                 None if verified else "handler did not provide post-action verification",
             )
             circuit.record(verified, self.clock_ns())
+        except FailClosed:
+            # Registry refusals (unregistered handler/kind) are fail-closed
+            # boundaries — they must reach the caller, not become results.
+            circuit.record(False, self.clock_ns())
+            raise
         except Exception as exc:
             circuit.record(False, self.clock_ns())
             result = ActionResult(

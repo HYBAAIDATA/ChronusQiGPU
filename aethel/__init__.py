@@ -212,7 +212,8 @@ from .zeckendorf import (
     reverse_zeckendorf_expansion,
 )
 
-__version__, __version_source__ = "1.0.0", "source"
+__version__ = "1.0.0"
+__version_source__ = "source"
 
 
 def _resolve_version() -> tuple[str, str]:
