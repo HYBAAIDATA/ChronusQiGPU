@@ -395,5 +395,96 @@ class TestProductionComponentWiring(unittest.TestCase):
         self.assertIn("objectives", phases)
 
 
+class TestProductionReviewRegressions(unittest.TestCase):
+    def test_malformed_source_retains_literal_representation(self) -> None:
+        from euclid.cognition.adaptive import RepresentationController
+
+        problem = dict(PROBLEM, initial_code="def broken(:\n    pass")
+        state = build_core(
+            SyntheticDomain(), representation_controller=RepresentationController()
+        ).solve(problem)
+        self.assertEqual(state.representation["initial_code"], problem["initial_code"])
+        self.assertIn("represent", [item.phase for item in state.transitions])
+
+    def test_accepted_representation_is_canonical_not_dead_overlay(self) -> None:
+        from euclid.cognition.adaptive import RepresentationTrial
+
+        class _Controller:
+            def select(self, problem, evaluator):
+                return RepresentationTrial(
+                    "repr-test", "graph", {"edges": [("a", "b")]},
+                    0.0, 1.0, 0.1, True, "measured improvement",
+                )
+
+        state = build_core(
+            SyntheticDomain(), representation_controller=_Controller()
+        ).solve(PROBLEM)
+        self.assertEqual(state.representation["edges"], [("a", "b")])
+        self.assertEqual(state.representation["representation_overlay"]["edges"], [("a", "b")])
+
+    def test_objectives_feed_the_next_planning_decision(self) -> None:
+        from euclid.cognition.adaptive import ObjectiveController
+        from euclid.cognition.baselines import HierarchicalPlanner
+
+        goals = []
+
+        class _Planner(HierarchicalPlanner):
+            def plan(self, goal, state):
+                goals.append(goal)
+                return super().plan(goal, state)
+
+        calls = {"plans": 0}
+
+        def delayed(action, payload):
+            if payload.get("kind") == "plan":
+                calls["plans"] += 1
+            return {
+                "observation": "UNEXPECTED" if calls["plans"] == 1 else "S",
+                "goal_met": calls["plans"] >= 2,
+            }
+
+        core = build_core(
+            SyntheticDomain(), executor=CallbackExecutor(delayed),
+            objective_controller=ObjectiveController(),
+        )
+        core.planner = _Planner()
+        state = core.solve(PROBLEM)
+        self.assertIn("objective-applied", [item.phase for item in state.transitions])
+        self.assertTrue(any("intermediate objectives:" in item for item in goals[1:]))
+
+    def test_persistence_bookkeeping_does_not_double_count_failure(self) -> None:
+        controller = SignalMetaController(stall_after=2)
+        state = CognitiveState("counting", {"structure": []}, clock=FIXED_CLOCK)
+        state.learning_updates.extend([
+            {"kind": "canonical-learning-service", "success": False,
+             "counts_for_control": False},
+            {"kind": "strategy", "success": False},
+        ])
+        assessment = controller.assess(state)
+        self.assertEqual(assessment.action, "continue")
+        self.assertEqual(assessment.signals["consecutive_failures"], 1.0)
+
+    def test_terminal_halt_still_closes_learning(self) -> None:
+        from euclid.cognition.interfaces import ControlAssessment
+
+        episodes = []
+
+        class _Halt:
+            def assess(self, state):
+                return ControlAssessment("halt_stalled", "test halt", {})
+
+        class _Learner:
+            def record_episode(self, state, *, success, cycle, result):
+                episodes.append((success, cycle, dict(result)))
+
+        core = build_core(SyntheticDomain(succeed_on_plan=False), episode_learner=_Learner())
+        core.metacontroller = _Halt()
+        state = core.solve(PROBLEM)
+        self.assertTrue(episodes)
+        learn_index = max(i for i, item in enumerate(state.transitions) if item.phase == "learn")
+        terminate_index = next(i for i, item in enumerate(state.transitions) if item.phase == "terminate")
+        self.assertLess(learn_index, terminate_index)
+
+
 if __name__ == "__main__":
     unittest.main()

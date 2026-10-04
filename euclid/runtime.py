@@ -211,40 +211,83 @@ class EuclidRuntime:
             raise RuntimeError("cognition is not composed; use EuclidRuntime.production")
         state = self.cognition.solve(problem, goal=goal)
         from .cognition.reachability import ReachabilityStage
-        used = {
-            "toe.world_model", "toe.planning", "toe.meta_reasoning",
-            "euclid.representation_controller", "euclid.objective_controller",
-            "euclid.strategy_meta_learning",
-            "euclid.learning_service", "euclid.memory_database",
-            "pythia.memory", "pythia.store", "experience_superlearner",
-            "repository.engineer",
+        transitions = list(state.transitions)
+        phases = {item.phase for item in transitions}
+        reference = transitions[-1].digest
+        targets: dict[str, ReachabilityStage] = {}
+
+        def target(component: str, stage: ReachabilityStage) -> None:
+            previous = targets.get(component)
+            if previous is None or stage > previous:
+                targets[component] = stage
+
+        if phases & {"deduce", "imagine", "compare"}:
+            target(
+                "toe.world_model",
+                ReachabilityStage.OUTCOME_OBSERVED
+                if "compare" in phases else ReachabilityStage.USED_IN_EPISODE,
+            )
+        if "plan" in phases:
+            target("toe.planning", ReachabilityStage.CHANGES_DECISION)
+        control_actions = {
+            str(item.details.get("action"))
+            for item in transitions if item.phase == "metacontrol"
         }
-        if any(c.origin.startswith("euclid-v16") for c in state.candidates):
-            used.update(("euclid.v16.search", "euclid.v16.primitives"))
-        reference = state.transitions[-1].digest
-        for component in sorted(used):
-            for stage in (
-                ReachabilityStage.USED_IN_EPISODE,
-                ReachabilityStage.CHANGES_DECISION,
-                ReachabilityStage.EXECUTED,
-                ReachabilityStage.OUTCOME_OBSERVED,
-                ReachabilityStage.FEEDBACK_CLOSED,
-                ReachabilityStage.PERSISTED,
+        if control_actions:
+            target(
+                "toe.meta_reasoning",
+                ReachabilityStage.CHANGES_DECISION
+                if control_actions - {"continue"}
+                else ReachabilityStage.USED_IN_EPISODE,
+            )
+        represent = next((item for item in transitions if item.phase == "represent"), None)
+        if represent is not None and represent.details.get("representation_trial") is not None:
+            accepted = bool(represent.details["representation_trial"].get("accepted"))
+            target(
+                "euclid.representation_controller",
+                ReachabilityStage.CHANGES_DECISION
+                if accepted else ReachabilityStage.USED_IN_EPISODE,
+            )
+        if "objectives" in phases:
+            target(
+                "euclid.objective_controller",
+                ReachabilityStage.CHANGES_DECISION
+                if "objective-applied" in phases
+                else ReachabilityStage.USED_IN_EPISODE,
+            )
+        if "strategy" in phases:
+            target("euclid.strategy_meta_learning", ReachabilityStage.CHANGES_DECISION)
+        if any(item.get("kind") == "strategy" for item in state.learning_updates):
+            target("euclid.strategy_meta_learning", ReachabilityStage.FEEDBACK_CLOSED)
+        persisted = any(
+            item.get("kind") == "canonical-learning-service"
+            for item in state.learning_updates
+        )
+        if persisted:
+            for component in (
+                "euclid.learning_service", "euclid.memory_database",
+                "pythia.memory", "pythia.store", "experience_superlearner",
             ):
-                current = self.reachability.stage(component)
-                if current is None or current < stage:
-                    self.reachability.record(
-                        component, stage, episode_id=state.problem_id,
-                        evidence_ref=reference,
-                    )
-        if state.retrieved_memory_refs:
-            for component in ("euclid.memory_database", "pythia.memory"):
-                current = self.reachability.stage(component)
-                if current is not None and current < ReachabilityStage.TRANSFER_VERIFIED:
-                    self.reachability.record(
-                        component, ReachabilityStage.TRANSFER_VERIFIED,
-                        episode_id=state.problem_id, evidence_ref=reference,
-                    )
+                target(component, ReachabilityStage.PERSISTED)
+        if "execute" in phases:
+            target("repository.engineer", ReachabilityStage.OUTCOME_OBSERVED)
+        if any(c.origin.startswith("euclid-v16") for c in state.candidates):
+            target("euclid.v16.search", ReachabilityStage.CHANGES_DECISION)
+            target("euclid.v16.primitives", ReachabilityStage.CHANGES_DECISION)
+
+        for component, final_stage in sorted(targets.items()):
+            current = self.reachability.stage(component)
+            first = max(
+                int(ReachabilityStage.USED_IN_EPISODE),
+                int(current) + 1 if current is not None else int(ReachabilityStage.USED_IN_EPISODE),
+            )
+            for value in range(first, int(final_stage) + 1):
+                self.reachability.record(
+                    component, ReachabilityStage(value),
+                    episode_id=state.problem_id,
+                    evidence_ref=reference,
+                    detail={"derived_from_episode": True},
+                )
         self.reachability.save(self.state_dir / "cognition_reachability.json")
         return state
 

@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import uuid
 from dataclasses import replace
 from typing import Any, Mapping, Sequence
 
@@ -358,7 +357,9 @@ class LearningServiceEpisodeAdapter:
             reward_authority = RewardAuthority.MEASURED_ENVIRONMENT
             reward = float(result["reward"])
         experience = Experience(
-            experience_id="cognition-" + uuid.uuid4().hex,
+            experience_id="cognition-" + domain_hash(
+                "euclid.cognition.experience-id.v1", {"replay_id": replay_id}
+            )[:32],
             mission_id=state.problem_id,
             domain=str(state.representation.get("problem_class", "repository")),
             source="euclid.cognition",
@@ -379,6 +380,7 @@ class LearningServiceEpisodeAdapter:
                 0.0, min(1.0, max(state.prediction_errors[-1:], default=0.0))
             ),
             replay_id=replay_id,
+            created_at=float(cycle),
         )
         digest = self.service.record(experience)
         if self.memory is not None:
@@ -395,9 +397,13 @@ class LearningServiceEpisodeAdapter:
                 frozenset(map(str, state.representation.get("structure", ()))),
                 1.0 if success else 0.25,
             ))
-        state.learning_updates.append(
-            {"kind": "canonical-learning-service", "digest": digest, "cycle": cycle}
-        )
+        state.learning_updates.append({
+            "kind": "canonical-learning-service",
+            "digest": digest,
+            "cycle": cycle,
+            "success": bool(success),
+            "counts_for_control": False,
+        })
         return digest
 
 

@@ -158,7 +158,18 @@ class GeneralIntelligenceCore:
         observations = tuple(problem.get("observations", ()))
         problem_class = str(problem_class or problem.get("problem_class") or "unclassified")
 
-        state = CognitiveState(problem_id, {"structure": sorted(structure)}, clock=self.clock)
+        representation: dict[str, Any] = {
+            "structure": sorted(structure),
+            "problem_class": problem_class,
+        }
+        for key in (
+            "initial_code", "operators", "plan_depth", "budget",
+            "representation_kind", "state_vector", "surface", "observations",
+            "context_key",
+        ):
+            if key in problem:
+                representation[key] = problem[key]
+        state = CognitiveState(problem_id, representation, clock=self.clock)
         state.goals.append(Goal("g0", goal_text))
 
         # 1. REPRESENT -----------------------------------------------------
@@ -178,6 +189,9 @@ class GeneralIntelligenceCore:
             if trial.accepted:
                 state.representation["representation_kind"] = trial.kind
                 state.representation["representation_overlay"] = dict(trial.payload)
+                # The overlay is provenance; canonical top-level fields are the
+                # executable representation consumed by planners and skills.
+                state.representation.update(dict(trial.payload))
         self._transition(
             state, "represent", "problem representation formed", representation_details,
         )
@@ -312,15 +326,37 @@ class GeneralIntelligenceCore:
                 self._ablated(state, "meta_learning")
 
             # 8. PLAN ------------------------------------------------------------
-            state.plan = self.planner.plan(goal_text, state)
+            planning_goal = goal_text
+            active_objectives = list(state.representation.get("active_objectives", ()))
+            if active_objectives:
+                ordered = sorted(
+                    active_objectives,
+                    key=lambda item: (-float(item.get("weight", 0.0)),
+                                      str(item.get("objective_id", ""))),
+                )
+                planning_goal = (
+                    goal_text + " | intermediate objectives: "
+                    + "; ".join(str(item.get("description", "")) for item in ordered)
+                )
+                self._transition(
+                    state, "objective-applied",
+                    "active intermediate objectives supplied to decision mechanisms",
+                    {"cycle": cycle,
+                     "objective_ids": [item.get("objective_id") for item in ordered],
+                     "planning_goal": planning_goal},
+                )
+            state.plan = self.planner.plan(planning_goal, state)
             self._transition(
                 state, "plan", "hierarchical plan formed",
-                {"nodes": [n.node_id for n in state.plan]},
+                {"nodes": [n.node_id for n in state.plan],
+                 "objective_ids": [
+                     item.get("objective_id") for item in active_objectives
+                 ]},
             )
 
             # 9. COMPOSE ----------------------------------------------------------
             if self.ablations.skill_composition:
-                state.candidates = self.skills.compose(goal_text, state)
+                state.candidates = self.skills.compose(planning_goal, state)
             else:
                 state.candidates = []
                 self._ablated(state, "skill_composition")
@@ -353,7 +389,11 @@ class GeneralIntelligenceCore:
                 self._ablated(state, "world_model:rollout")
 
             # 11. RANK ---------------------------------------------------------------
-            ranked = self.objective.evaluate(state.candidates, {"cycle": cycle})
+            ranked = self.objective.evaluate(
+                state.candidates,
+                {"cycle": cycle,
+                 "objectives": list(state.representation.get("active_objectives", ()))},
+            )
             state.candidates = ranked
             self._transition(
                 state, "rank", "candidates ranked by multi-objective evidence",
@@ -423,15 +463,18 @@ class GeneralIntelligenceCore:
                     missing_evidence=0 if state.retrieved_memory_refs else 1,
                     prediction_error=float(latest_error),
                 )
+                objective_rows = [
+                    {"objective_id": o.objective_id,
+                     "description": o.description,
+                     "metric": o.metric, "target": o.target,
+                     "weight": o.weight, "status": o.status}
+                    for o in objectives
+                ]
+                state.representation["active_objectives"] = objective_rows
                 self._transition(
                     state, "objectives",
-                    "intermediate objectives derived from measured signals",
-                    {"cycle": cycle,
-                     "objectives": [
-                         {"objective_id": o.objective_id, "metric": o.metric,
-                          "weight": o.weight, "status": o.status}
-                         for o in objectives
-                     ]},
+                    "intermediate objectives derived and retained for the next decision",
+                    {"cycle": cycle, "objectives": objective_rows},
                 )
             if assessment.action == "replan":
                 if self.ablations.replanning:
@@ -445,15 +488,16 @@ class GeneralIntelligenceCore:
                                      {"nodes": [n.node_id for n in state.plan]})
                 else:
                     self._ablated(state, "replanning")
+            # 15. OUTCOME / LEARNING -----------------------------------------------
+            cycle_success = bool(result.get("goal_met"))
+            self._learn(
+                state, problem_class, success=cycle_success, cycle=cycle, result=result
+            )
+            if cycle_success:
+                solved = True
+                break
             if assessment.action == "halt_stalled":
                 break
-
-            # 15. SUCCESS CHECK ---------------------------------------------------------
-            if bool(result.get("goal_met")):
-                solved = True
-                self._learn(state, problem_class, success=True, cycle=cycle, result=result)
-                break
-            self._learn(state, problem_class, success=False, cycle=cycle, result=result)
 
         if solved:
             state.outcome = Outcome.SOLVED
