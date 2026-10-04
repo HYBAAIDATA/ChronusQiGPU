@@ -71,7 +71,7 @@ def _reference_frame(recon, expectations, distribution, camera, objects, n_faces
     rgb = np.zeros((h, w, 3), dtype=np.float32)
     depth = np.zeros((h, w), dtype=np.float32)
     normal = np.zeros((h, w, 3), dtype=np.float32)
-    center = np.array(objects[0]["geometry"].get("center", (0,0,0)), dtype=np.float64)
+    center = np.array(objects[0]["geometry"].get("center", (0, 0, 0)), dtype=np.float64)
     radius = float(objects[0]["geometry"].get("radius", 1.0))
     dirs, origin = recon._camera_rays(w, h, camera)
     dist = np.asarray(distribution, dtype=np.float64)
