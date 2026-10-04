@@ -81,6 +81,7 @@ def build_core(
     executor=None,
     memory: InMemoryMemorySystem | None = None,
     evidence: EvidenceChain | None = None,
+    **extra,
 ) -> GeneralIntelligenceCore:
     from euclid.cognition import CandidateAction, StaticSkillComposer
     skills = StaticSkillComposer([
@@ -111,6 +112,7 @@ def build_core(
         evidence=evidence or EvidenceChain(),
         clock=FIXED_CLOCK,
         ablations=ablations,
+        **extra,
     )
 
 
@@ -344,6 +346,53 @@ class TestObjectiveAuditability(unittest.TestCase):
         for candidate in state.candidates:
             self.assertEqual(dict(candidate.weights_used), WEIGHTS)
             self.assertIsNotNone(candidate.total)
+
+
+class TestProductionComponentWiring(unittest.TestCase):
+    """Regression guard for the EuclidRuntime._compose_cognition seam.
+
+    The production runtime constructs GeneralIntelligenceCore with
+    episode_learner, representation_controller and objective_controller.
+    The core must accept them and exercise each through measured,
+    transition-recorded signals (a scrape/merge once shipped a runtime
+    whose constructor call the core could not accept).
+    """
+
+    def test_production_components_accepted_and_exercised(self) -> None:
+        from euclid.cognition.adaptive import (
+            ObjectiveController,
+            RepresentationController,
+        )
+
+        episodes: list[tuple[bool, int]] = []
+
+        class _RecordingEpisodeLearner:
+            def record_episode(self, state, *, success, cycle, result):
+                episodes.append((bool(success), int(cycle)))
+                state.learning_updates.append(
+                    {"kind": "canonical-learning-service", "cycle": int(cycle)}
+                )
+
+        core = build_core(
+            SyntheticDomain(),
+            episode_learner=_RecordingEpisodeLearner(),
+            representation_controller=RepresentationController(),
+            objective_controller=ObjectiveController(),
+        )
+        state = core.solve(PROBLEM)
+        phases = [t.phase for t in state.transitions]
+
+        # Episode outcomes were closed into the learning channel.
+        self.assertTrue(episodes)
+        # Representation selection ran a measured, recorded trial.
+        represent = next(t for t in state.transitions if t.phase == "represent")
+        trial = represent.details.get("representation_trial")
+        self.assertIsNotNone(trial)
+        self.assertIn("baseline_utility", trial)
+        self.assertIn("candidate_utility", trial)
+        self.assertIn("cost", trial)
+        # Intermediate objectives were derived from measured signals.
+        self.assertIn("objectives", phases)
 
 
 if __name__ == "__main__":
