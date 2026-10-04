@@ -3,6 +3,7 @@
 Every assertion runs the production path (``EuclidRuntime.production``) and the
 owners' real implementations; unavailable substrates are asserted unavailable.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -24,8 +25,10 @@ from euclid.organ_adapters import specialists as adapters
 from euclid.runtime import EuclidRuntime
 
 KEY = b"k" * 32
-BELL = {"n_qubits": 2, "operations": [{"gate": "h", "qubits": [0]},
-                                       {"gate": "cx", "qubits": [0, 1]}]}
+BELL = {
+    "n_qubits": 2,
+    "operations": [{"gate": "h", "qubits": [0]}, {"gate": "cx", "qubits": [0, 1]}],
+}
 
 
 @pytest.fixture
@@ -60,8 +63,9 @@ def test_turing_workload_reaches_turing_with_exact_truth_class(runtime):
 
 
 def test_turing_hardware_preference_is_refused_not_simulated(runtime):
-    out = _dispatch(runtime, "turing", {"operation": "run-program", "program": BELL,
-                                        "prefer": "qpu"})
+    out = _dispatch(
+        runtime, "turing", {"operation": "run-program", "program": BELL, "prefer": "qpu"}
+    )
     assert out["allowed"]
     assert out["result"]["executed"] is False
     assert out["result"]["truth_class"] == "refused"
@@ -71,9 +75,17 @@ def test_turing_hardware_preference_is_refused_not_simulated(runtime):
 def test_chronus_substrate_selection_preserves_sha256d_semantics(runtime):
     header = bytes(range(80))
     target = b"\xff" * 32
-    out = _dispatch(runtime, "chronus", {"operation": "sha256d-scan", "policy": "cpu",
-                                         "header_hex": header.hex(),
-                                         "target_hex": target.hex(), "nonces": [7, 8]})
+    out = _dispatch(
+        runtime,
+        "chronus",
+        {
+            "operation": "sha256d-scan",
+            "policy": "cpu",
+            "header_hex": header.hex(),
+            "target_hex": target.hex(),
+            "nonces": [7, 8],
+        },
+    )
     result = out["result"]
     assert result["executed"] and result["lane"] == "cpu" and result["nonce"] == 7
     expected = sha256d(header[:76] + (7).to_bytes(4, "little"))
@@ -82,8 +94,12 @@ def test_chronus_substrate_selection_preserves_sha256d_semantics(runtime):
 
 def test_chronus_unprobed_lane_is_never_bound(runtime):
     census = _dispatch(runtime, "chronus", {"operation": "census"})["result"]["lanes"]
-    for lane, policy in (("cuda", "cuda"), ("metal", "metal"),
-                         ("remote_gpu", "remote"), ("asic", "asic")):
+    for lane, policy in (
+        ("cuda", "cuda"),
+        ("metal", "metal"),
+        ("remote_gpu", "remote"),
+        ("asic", "asic"),
+    ):
         out = _dispatch(runtime, "chronus", {"operation": "select", "policy": policy})["result"]
         assert out["bound"] is census[lane]["available"]
         if not census[lane]["available"]:
@@ -105,16 +121,27 @@ def _guardian(allowed):
     authority = SubscriptionAuthority({"k1": KEY}, "hyba-subscriptions")
     guardian = ALHaras(
         authority,
-        GuardianPolicy(version="organism-test", allowed_operations=frozenset(allowed),
-                       max_payload_bytes=1 << 16),
+        GuardianPolicy(
+            version="organism-test",
+            allowed_operations=frozenset(allowed),
+            max_payload_bytes=1 << 16,
+        ),
         HashChainAudit(),
     )
     now = int(time.time())
-    token = authority.issue(SubscriptionClaims(
-        subscription_id="sub-1", tenant_id="tenant-a", issuer="hyba-subscriptions",
-        key_id="k1", capabilities=("hyba.security",), actors=("user-1",),
-        not_before=now - 60, expires_at=now + 600, max_payload_bytes=1 << 16,
-    ))
+    token = authority.issue(
+        SubscriptionClaims(
+            subscription_id="sub-1",
+            tenant_id="tenant-a",
+            issuer="hyba-subscriptions",
+            key_id="k1",
+            capabilities=("hyba.security",),
+            actors=("user-1",),
+            not_before=now - 60,
+            expires_at=now + 600,
+            max_payload_bytes=1 << 16,
+        )
+    )
     return guardian, token
 
 
@@ -122,15 +149,17 @@ def test_al_haras_denies_prohibited_action_and_permits_replan(tmp_path):
     guardian, token = _guardian({"turing.capability-matrix"})
     rt = EuclidRuntime.production(creator_id="creator-1", state_dir=tmp_path, guardian=guardian)
     try:
-        denied = _dispatch(rt, "turing", {"operation": "run-program", "program": BELL},
-                           subscription_token=token)
+        denied = _dispatch(
+            rt, "turing", {"operation": "run-program", "program": BELL}, subscription_token=token
+        )
         assert denied["allowed"] is False
         assert denied["governance"]["guardian"] == "al_haras"
         assert "result" not in denied
         assert any(r.kind == "governance-denial" for r in rt.evidence.records)
         assert rt.reachability.stage("al_haras.guardian") is ReachabilityStage.CHANGES_DECISION
-        replanned = _dispatch(rt, "turing", {"operation": "capability-matrix"},
-                              subscription_token=token)
+        replanned = _dispatch(
+            rt, "turing", {"operation": "capability-matrix"}, subscription_token=token
+        )
         assert replanned["allowed"] is True and replanned["governance"]["allowed"] is True
         no_token = _dispatch(rt, "turing", {"operation": "capability-matrix"})
         assert no_token["allowed"] is False
@@ -146,7 +175,9 @@ def test_salamander_detects_repairs_and_verifies_bounded_fault(runtime):
     assert result.status == "VERIFIED" and result.verified
     assert runtime.registry.get("chronus").health is Health.HEALTHY
     assert _dispatch(runtime, "chronus", {"operation": "census"})["allowed"] is True
-    assert runtime.reachability.stage("salamander.control_plane") is ReachabilityStage.FEEDBACK_CLOSED
+    assert (
+        runtime.reachability.stage("salamander.control_plane") is ReachabilityStage.FEEDBACK_CLOSED
+    )
     assert any(r.kind == "salamander-action" for r in runtime.evidence.records)
 
 
@@ -154,8 +185,9 @@ def test_salamander_does_not_mark_unverifiable_repair_verified(runtime):
     runtime.registry.get("triad").health = Health.DEGRADED
     triad = runtime.registry.get("triad")
     original = triad.handler
-    triad.handler = lambda request: {"verified": False} if request.get(
-        "operation") == "verify" else original(request)
+    triad.handler = lambda request: (
+        {"verified": False} if request.get("operation") == "verify" else original(request)
+    )
     result = runtime.heal_organ("triad", reason="custody integrity failure")
     assert result.verified is False
     assert runtime.registry.get("triad").health is Health.DEGRADED
