@@ -95,9 +95,6 @@ class GeneralIntelligenceCore:
         max_cycles: int = 8,
         ablations: AblationConfig | None = None,
         analogy_adopt_threshold: float = 0.5,
-        episode_learner: Any | None = None,
-        representation_controller: Any | None = None,
-        objective_controller: Any | None = None,
     ) -> None:
         if max_cycles < 1:
             raise ValueError("max_cycles must be >= 1")
@@ -228,13 +225,31 @@ class GeneralIntelligenceCore:
                     # The overlay is provenance; canonical top-level fields are
                     # the executable representation consumed by planners/skills.
                     state.representation.update(dict(trial.payload))
+                    # An adopted representation must also re-key retrieval, so
+                    # restructuring genuinely changes which prior experience
+                    # this episode sees.  Only declared relations and edges
+                    # become keys; opaque payload internals must never enter the
+                    # retrieval vocabulary.
+                    state.representation["retrieval_structure"] = sorted(
+                        self._retrieval_tokens(structure, trial.payload)
+                    )
             else:
                 self._ablated(state, "representation_restructuring")
+        state.representation.setdefault(
+            "retrieval_structure", sorted(structure)
+        )
         self._transition(
             state,
             "represent",
             "problem representation formed",
             representation_details,
+        )
+        # Retrieval keys follow the adopted representation's overlay, so a
+        # restructured problem genuinely sees different prior experience.
+        retrieval_structure = frozenset(
+            str(token) for token in state.representation.get(
+                "retrieval_structure", sorted(structure)
+            )
         )
         if retrieval_structure != structure:
             structure = retrieval_structure
