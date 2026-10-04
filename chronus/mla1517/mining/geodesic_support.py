@@ -62,6 +62,18 @@ class ProductionExecutionRouter(ExecutionRouter):
             return True
         return super()._opencl_bound()
 
+    def decide_route(self, plan):
+        """Use the legacy route token while keeping native kernel provenance literal."""
+        decision = super().decide_route(plan)
+        backend = _backend_name(self._hasher)
+        if backend not in _NATIVE_BACKENDS or decision.executed_route.value == "cpu_reference":
+            return decision
+        return replace(
+            decision,
+            kernel_identity=f"chronus_native_sha256d:{backend}:{decision.executed_route.value}",
+            kernel_build_status="native_method_bound_after_backend_self_check",
+        )
+
     def _build_record(self, *args: Any, **kwargs: Any):
         """Keep native provenance truthful without abusing an OpenCL-only tier.
 
