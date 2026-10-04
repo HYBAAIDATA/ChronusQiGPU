@@ -7,6 +7,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 import uuid
 from pathlib import Path
 from typing import Any
@@ -16,6 +17,12 @@ MAX_TOOL_CALLS = 8
 MAX_FILE_LINES = 240
 MAX_FILE_BYTES = 512_000
 MAX_TOOL_OUTPUT_CHARS = 14_000
+# The import audit is a read-only measurement over the whole tracked tree and
+# costs tens of seconds.  A cognition episode runs it once per cycle, so an
+# uncached audit turns one episode into minutes of identical work.  Reuse the
+# measurement inside this window; it is explicitly reported as cached so no
+# caller can mistake a reused audit for a fresh one.
+IMPORT_AUDIT_CACHE_TTL_S = 60.0
 EXCLUDED_DIRS = {
     ".git",
     ".venv",
@@ -83,6 +90,7 @@ class RepoEngineer:
         )
         self.store.load()
         self.context, self.context_files = self._load_context()
+        self._audit_cache: dict[str, Any] | None = None
 
     @staticmethod
     def _engineering_guidance(content: str) -> str:
@@ -191,14 +199,29 @@ class RepoEngineer:
         return result
 
     def _import_audit(self) -> dict[str, Any]:
+        """Measure import integrity, reusing a recent identical measurement.
+
+        The audit is read-only and deterministic for an unchanged tree, so one
+        measurement is reused inside ``IMPORT_AUDIT_CACHE_TTL_S``.  The result
+        carries ``cached`` so evidence consumers can tell a reused measurement
+        from a freshly computed one.
+        """
+        now = time.monotonic()
+        cached = getattr(self, "_audit_cache", None)
+        if cached is not None and now - cached["at"] < IMPORT_AUDIT_CACHE_TTL_S:
+            return {**cached["result"], "cached": True,
+                    "age_s": round(now - cached["at"], 3)}
+
+        started = time.monotonic()
         try:
             from scripts.import_audit import Auditor, live_files
 
-            findings = Auditor(self.repo_root).audit(live_files(self.repo_root))
+            files = live_files(self.repo_root)
+            findings = Auditor(self.repo_root).audit(files)
         except Exception as exc:
             return {"error": f"{type(exc).__name__}: {exc}"}
-        return {
-            "files_audited": len(live_files(self.repo_root)),
+        result = {
+            "files_audited": len(files),
             "finding_count": len(findings),
             "findings": [
                 {
@@ -212,7 +235,11 @@ class RepoEngineer:
                 for item in findings[:40]
             ],
             "truncated": len(findings) > 40,
+            "cached": False,
+            "audit_s": round(time.monotonic() - started, 3),
         }
+        self._audit_cache = {"at": now, "result": result}
+        return result
 
     def _skill_lookup(self, prompt: str) -> dict[str, Any]:
         try:

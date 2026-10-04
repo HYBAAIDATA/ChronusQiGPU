@@ -390,12 +390,33 @@ class EuclidRuntime:
         )
 
     def close(self) -> None:
-        store = self.learning.store
-        if store is not None and hasattr(store, "save"):
-            store.save()
-        database = self.learning.memory_database
-        if database is not None:
-            database.close()
+        """Release durable resources.  Safe to call twice, and never raises.
+
+        Shutdown must not be able to leak a live handle: the database is closed
+        in ``finally`` so a failing snapshot write cannot strand the SQLite
+        connection (which then keeps the state directory undeletable).
+        """
+        if getattr(self, "_closed", False):
+            return
+        self._closed = True
+        try:
+            store = self.learning.store
+            if store is not None and hasattr(store, "save"):
+                try:
+                    store.save()
+                except Exception as exc:  # noqa: BLE001 - shutdown is fail-soft
+                    self.evidence.append("shutdown-store-save-failed", {
+                        "error": f"{type(exc).__name__}: {exc}",
+                    })
+        finally:
+            database = self.learning.memory_database
+            if database is not None:
+                try:
+                    database.close()
+                except Exception as exc:  # noqa: BLE001 - shutdown is fail-soft
+                    self.evidence.append("shutdown-database-close-failed", {
+                        "error": f"{type(exc).__name__}: {exc}",
+                    })
 
     def enable_intelligence(self, **kwargs: Any) -> Any:
         """Wire the merged v16 engine and the cognition loop into this runtime.
