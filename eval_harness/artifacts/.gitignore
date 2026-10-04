@@ -1,0 +1,2 @@
+# Ephemeral per-run task directories (state dirs, journals, snapshots).
+tmp/

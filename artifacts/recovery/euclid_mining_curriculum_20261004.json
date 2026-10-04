@@ -1,0 +1,42 @@
+{
+  "schema": "hyba.euclid.recovery-manifest.v1",
+  "date": "2026-10-04",
+  "tranche": "mining-curriculum-6",
+  "stacked_on": "task-orchestrator-5",
+  "archive": {
+    "name": "EUCLID_PROD_MORNING_RECOVERY_COMPLETE_20260719.zip",
+    "sha256": "30d3ddde94238b4cbb4fbb0b299775fed0b90c414669275379cab08186371229"
+  },
+  "historical_source": {
+    "path": "euclid/memory_database_extended.py",
+    "sha256": "22d7913b2999dcedfc07b371ca905d5456a990bedf7147eeb3057a6251cc9aa4"
+  },
+  "decision": "recover-as-non-authoritative-curriculum-not-parallel-database",
+  "recovered_seed_count": 18,
+  "files": [
+    {
+      "path": "euclid/curriculum/__init__.py",
+      "sha256": "8972a385c1335a49d18b057907733ff4bc1da74a2e1a191e3cd7f1a2c2dd0451"
+    },
+    {
+      "path": "euclid/curriculum/mining_hypotheses.py",
+      "sha256": "252739cf829be3a3df3310136cc4c6eff2136b68881bfd8218c7e7153f9e1d1e"
+    },
+    {
+      "path": "euclid/curriculum/mining_hypotheses_20260719.json",
+      "sha256": "d541046746c42acd0de34ebedfde234615fb801ee2ec810ed821f6f2c2a3806d"
+    },
+    {
+      "path": "tests/test_euclid_mining_curriculum.py",
+      "sha256": "2f1fbfccaa1a39b0cc5d0fe9cc0aaaf0b4607fa3f81c0cc9d76c71b44c6d5d4f"
+    }
+  ],
+  "validation": {
+    "compile": "passed",
+    "focused_tests": {
+      "passed": 4,
+      "failed": 0
+    }
+  },
+  "claim_boundary": "Curriculum availability only; no current truth, reward, transfer, production, or mining authority."
+}

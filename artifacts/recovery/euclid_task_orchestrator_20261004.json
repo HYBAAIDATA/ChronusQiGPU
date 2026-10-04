@@ -1,0 +1,44 @@
+{
+  "schema": "hyba.euclid.recovery-manifest.v1",
+  "date": "2026-10-04",
+  "tranche": "task-orchestrator-5",
+  "stacked_on": "mathematical-explorer-4",
+  "archive": {
+    "name": "EUCLID_PROD_MORNING_RECOVERY_COMPLETE_20260719.zip",
+    "sha256": "30d3ddde94238b4cbb4fbb0b299775fed0b90c414669275379cab08186371229"
+  },
+  "files": [
+    {
+      "path": "euclid/delegation.py",
+      "sha256": "1a36aa0686d50566c41204ea016a8a7012de41aada81c603f505a4d3e5578c44",
+      "mode": "integration-repair"
+    },
+    {
+      "path": "euclid/task_orchestrator.py",
+      "sha256": "518dbff044ab9e8b1c1840e3e7ed75a03c4b3440bce4601198c15f9df39d11db",
+      "mode": "integration-repair"
+    },
+    {
+      "path": "tests/test_euclid_task_orchestrator.py",
+      "sha256": "b7689d8d188746f2c3dd5cb1aacd064e89d07163bfc7fd065cf2530627e2c741",
+      "mode": "new-regression-test"
+    }
+  ],
+  "archive_source": {
+    "path": "euclid/task_orchestrator.py",
+    "sha256": "4c25d908bd74bdfda3d81b6083ad1d3223725b7c534fda1e5de55ef9967219df"
+  },
+  "repairs": [
+    "canonical delegation import",
+    "explicit per-gate evidence provenance",
+    "assessment digest binds evidence provenance"
+  ],
+  "validation": {
+    "compile": "passed",
+    "focused_tests": {
+      "passed": 42,
+      "failed": 0
+    }
+  },
+  "claim_boundary": "Focused in-process orchestration contracts only."
+}

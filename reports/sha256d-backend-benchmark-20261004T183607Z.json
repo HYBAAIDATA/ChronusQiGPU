@@ -1,0 +1,222 @@
+{
+  "schema": "phiminer.sha256d_backend_benchmark/1",
+  "generated_at": "2026-10-04T18:36:06.647080+00:00",
+  "environment": {
+    "platform": "Windows-2022Server-10.0.20348-SP0",
+    "machine": "AMD64",
+    "python": "3.13.12"
+  },
+  "parameters": {
+    "batch": 65536,
+    "warmup": 0,
+    "repeat": 2,
+    "header_seed": 803074,
+    "header_sha256": "725c3215a76f689cb61c1a133d1158648ecc1a22a0086d743157c505d9ae9e16"
+  },
+  "work_units": [
+    {
+      "id": "digest_batch",
+      "kind": "digest_batch",
+      "scanned": 65536,
+      "target": null
+    },
+    {
+      "id": "range",
+      "kind": "range",
+      "scanned": 65536,
+      "base_nonce": 0,
+      "count": 65536,
+      "hit_step": 49152,
+      "target": "48709e08d7cbdb1a86b4d445e7b6ca2535e2165b536723bf7a18c0013df3e4f9"
+    },
+    {
+      "id": "m32",
+      "kind": "m32",
+      "scanned": 65536,
+      "base_nonce": 0,
+      "count": 65536,
+      "hit_step": 49152,
+      "target": "48709e08d7cbdb1a86b4d445e7b6ca2535e2165b536723bf7a18c0013df3e4f9"
+    },
+    {
+      "id": "hendrix",
+      "kind": "hendrix",
+      "scanned": 65536,
+      "base_nonce": 0,
+      "window": 65536,
+      "stride": 2654435769,
+      "position": 0,
+      "count": 65536,
+      "hit_step": 49152,
+      "target": "48709e08d7cbdb1a86b4d445e7b6ca2535e2165b536723bf7a18c0013df3e4f9"
+    },
+    {
+      "id": "gold",
+      "kind": "gold",
+      "scanned": 65536,
+      "seed": 1367855294,
+      "count": 65536,
+      "hit_step": 49152,
+      "target": "b986739939305f14c243ac7419953215148f0a52e29feddbc831864222e6a951"
+    }
+  ],
+  "lanes": {
+    "cpu": {
+      "lane": "cpu",
+      "measured": true,
+      "backend": "cpu",
+      "device": "CPU (hashlib)",
+      "opencl_required": true,
+      "kernel_clock_source": "none",
+      "results": {
+        "digest_batch": {
+          "measured": true,
+          "launches": 0,
+          "scanned_per_launch": 65536,
+          "scanned_total": 131072,
+          "wall_s": 0.197972,
+          "hashes_per_s": 662073.4245241336,
+          "kernel_ms": 0.0,
+          "kernel_clock_source": "none",
+          "winner_nonce": null,
+          "parity": {
+            "count": 65536,
+            "digest_chain_sha256": "19df107a3fc07a674f0f8fb394fc332820a7be6c851921ca816b12915ddbcfc1"
+          },
+          "min_wall_s": 0.098388,
+          "max_hashes_per_s": 666100.8766345889
+        },
+        "range": {
+          "measured": true,
+          "launches": 0,
+          "scanned_per_launch": 65536,
+          "scanned_total": 131072,
+          "wall_s": 0.196255,
+          "hashes_per_s": 667864.4256407556,
+          "kernel_ms": 0.0,
+          "kernel_clock_source": "none",
+          "winner_nonce": 1,
+          "parity": {
+            "winner_nonce": 1,
+            "winner_digest": "f4d06920eb752d486f4e4bd9ca530fae8c8a6e3011a84a9852d3e450ff033107"
+          },
+          "min_wall_s": 0.096917,
+          "max_hashes_per_s": 676210.267384633
+        },
+        "m32": {
+          "measured": true,
+          "launches": 0,
+          "scanned_per_launch": 2,
+          "scanned_total": 4,
+          "wall_s": 5.4e-05,
+          "hashes_per_s": 74211.50307986714,
+          "kernel_ms": 0.0,
+          "kernel_clock_source": "none",
+          "winner_nonce": 1,
+          "parity": {
+            "winner_nonce": 1,
+            "winner_digest": "f4d06920eb752d486f4e4bd9ca530fae8c8a6e3011a84a9852d3e450ff033107"
+          },
+          "min_wall_s": 1.3e-05,
+          "max_hashes_per_s": 156250.00094960484
+        },
+        "hendrix": {
+          "measured": true,
+          "launches": 0,
+          "scanned_per_launch": 3,
+          "scanned_total": 6,
+          "wall_s": 2.7e-05,
+          "hashes_per_s": 221402.21300216473,
+          "kernel_ms": 0.0,
+          "kernel_clock_source": "none",
+          "winner_nonce": 62322,
+          "parity": {
+            "winner_nonce": 62322,
+            "winner_digest": "67ede40cad6e1a97cf62895c8446fd81244613212c7b1a4f4fcdf82ba182bb13"
+          },
+          "min_wall_s": 1.1e-05,
+          "max_hashes_per_s": 272727.27059716097
+        },
+        "gold": {
+          "measured": true,
+          "launches": 0,
+          "scanned_per_launch": 65536,
+          "scanned_total": 131072,
+          "wall_s": 0.228014,
+          "hashes_per_s": 574841.1393494908,
+          "kernel_ms": 0.0,
+          "kernel_clock_source": "none",
+          "winner_nonce": 1367855294,
+          "parity": {
+            "winner_nonce": 1367855294,
+            "winner_digest": "3cca2399ff607223ae6327c161e9a42a5dde2ee6fbdbf36e14afe0a06cb1c57a"
+          },
+          "min_wall_s": 0.113411,
+          "max_hashes_per_s": 577861.288954184
+        }
+      }
+    },
+    "opencl": {
+      "lane": "opencl",
+      "measured": false,
+      "reason": "No module named 'pyopencl'"
+    },
+    "cuda": {
+      "lane": "cuda",
+      "measured": false,
+      "reason": "CUDA sha256d lane unavailable: ModuleNotFoundError: No module named 'cupy'"
+    },
+    "metal": {
+      "lane": "metal",
+      "measured": false,
+      "reason": "Metal sha256d lane requires Darwin (Apple GPU)"
+    }
+  },
+  "parity": {
+    "digest_batch": {
+      "consistent": true,
+      "lanes": {
+        "cpu": {
+          "count": 65536,
+          "digest_chain_sha256": "19df107a3fc07a674f0f8fb394fc332820a7be6c851921ca816b12915ddbcfc1"
+        }
+      }
+    },
+    "range": {
+      "consistent": true,
+      "lanes": {
+        "cpu": {
+          "winner_nonce": 1,
+          "winner_digest": "f4d06920eb752d486f4e4bd9ca530fae8c8a6e3011a84a9852d3e450ff033107"
+        }
+      }
+    },
+    "m32": {
+      "consistent": true,
+      "lanes": {
+        "cpu": {
+          "winner_nonce": 1,
+          "winner_digest": "f4d06920eb752d486f4e4bd9ca530fae8c8a6e3011a84a9852d3e450ff033107"
+        }
+      }
+    },
+    "hendrix": {
+      "consistent": true,
+      "lanes": {
+        "cpu": {
+          "winner_nonce": 62322,
+          "winner_digest": "67ede40cad6e1a97cf62895c8446fd81244613212c7b1a4f4fcdf82ba182bb13"
+        }
+      }
+    },
+    "gold": {
+      "consistent": true,
+      "lanes": {
+        "cpu": {
+          "winner_nonce": 1367855294,
+          "winner_digest": "3cca2399ff607223ae6327c161e9a42a5dde2ee6fbdbf36e14afe0a06cb1c57a"
+        }
+      }
+    }
+  }
+}

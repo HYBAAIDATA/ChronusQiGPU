@@ -66,3 +66,9 @@ execution.
 
 This is an MVP truth boundary, not a claim that every declared adapter already
 has a production kernel. Adapter health and capabilities are authoritative.
+
+---
+
+## Implementation matrix (2 Oct 2026 prompt)
+
+See **`docs/CHRONUS_VIRTUAL_IGPU_IMPLEMENTATION_MATRIX.md`** for the capability → code → test → evidence-gate ledger, trust classes, and honest pending gates (UnifiedEnterprise, hardware-rooted attestation, cloud/pool).

@@ -5,6 +5,7 @@ authority into EUCLID.  TOE owns causal/world modelling and planning, v16 owns
 program search/primitives, PYTHIA owns its memory/learning stack, and governed
 organs own execution.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -52,9 +53,7 @@ class TOEWorldModelAdapter:
 
     def _prediction(self, context: str, action: str, imagined: bool) -> PredictionRecord:
         self._sequence += 1
-        future = self.model.predict_transition(
-            self._state(context), {"action": _number(action)}
-        )
+        future = self.model.predict_transition(self._state(context), {"action": _number(action)})
         return PredictionRecord(
             f"toe-pred-{self._sequence}",
             context,
@@ -70,17 +69,14 @@ class TOEWorldModelAdapter:
     def rollout(self, context: str, actions: Sequence[str]) -> list[PredictionRecord]:
         return [self._prediction(context, action, True) for action in actions]
 
-    def counterfactual(
-        self, context: str, actions: Sequence[str]
-    ) -> list[dict[str, Any]]:
+    def counterfactual(self, context: str, actions: Sequence[str]) -> list[dict[str, Any]]:
         factual = self._state(context)
         return [
             {
                 "action": action,
                 "future": self.model.predict_transition(
                     factual,
-                    {} if action == "no-intervention"
-                    else {"action": _number(action)},
+                    {} if action == "no-intervention" else {"action": _number(action)},
                 ),
                 "epistemic_status": "predicted",
                 "imagined": True,
@@ -100,13 +96,11 @@ class TOEWorldModelAdapter:
         assessment = self.model.assess()
         status = str(assessment["status"])
         mapped = (
-            "healthy" if status == "MODEL_SUPPORTED"
-            else "breakdown" if status == "MODEL_CONTRADICTED"
-            else "degraded"
+            "healthy"
+            if status == "MODEL_SUPPORTED"
+            else "breakdown" if status == "MODEL_CONTRADICTED" else "degraded"
         )
-        return ModelHealth(
-            mapped, float(assessment.get("mean_abs_error", 0.0)), status
-        )
+        return ModelHealth(mapped, float(assessment.get("mean_abs_error", 0.0)), status)
 
 
 class DurableCognitiveMemory:
@@ -127,7 +121,8 @@ class DurableCognitiveMemory:
         self.scope = MemoryScope(creator_id, "euclid-cognition", "repository")
 
     def retrieve(
-        self, structural_features: frozenset[str],
+        self,
+        structural_features: frozenset[str],
         kinds: Sequence[MemoryKind] | None = None,
     ) -> list[MemoryItem]:
         allowed = set(kinds or tuple(MemoryKind))
@@ -142,11 +137,19 @@ class DurableCognitiveMemory:
             if kind not in allowed:
                 continue
             features = frozenset(map(str, record.content.get("structural_features", ())))
-            overlap = len(features & structural_features) / max(1, len(features | structural_features))
-            items.append(MemoryItem(
-                record.memory_id, kind, dict(record.content.get("payload", {})),
-                record.provenance, features, overlap,
-            ))
+            overlap = len(features & structural_features) / max(
+                1, len(features | structural_features)
+            )
+            items.append(
+                MemoryItem(
+                    record.memory_id,
+                    kind,
+                    dict(record.content.get("payload", {})),
+                    record.provenance,
+                    features,
+                    overlap,
+                )
+            )
         return sorted(items, key=lambda item: (-item.transfer_value, item.memory_id))
 
     def store(self, item: MemoryItem) -> None:
@@ -181,7 +184,8 @@ class TOECognitivePlanner:
         ]
         operators = [
             OperatorSpec(
-                str(spec["name"]), str(spec.get("node", "progress")),
+                str(spec["name"]),
+                str(spec.get("node", "progress")),
                 tuple(map(float, spec.get("levels", ()))),
                 tuple(map(float, spec.get("deltas", ()))),
                 float(spec.get("cost", 1.0)),
@@ -193,7 +197,9 @@ class TOECognitivePlanner:
             return {"progress": max(interventions.values(), default=0.0)}
 
         result = plan(
-            environment, operators, objective=Objective("progress"),
+            environment,
+            operators,
+            objective=Objective("progress"),
             depth=int(state.representation.get("plan_depth", 3)),
             budget=float(state.representation.get("budget", 2.0)),
         )
@@ -201,7 +207,9 @@ class TOECognitivePlanner:
             return [PlanNode("toe-unavailable", f"TOE plan unavailable: {result['reason']}")]
         return [
             PlanNode(
-                f"toe-{index}", str(step["name"]), skill_ref="toe.planning",
+                f"toe-{index}",
+                str(step["name"]),
+                skill_ref="toe.planning",
                 children=((f"toe-{index + 1}",) if index + 1 < len(result["sequence"]) else ()),
             )
             for index, step in enumerate(result["sequence"])
@@ -236,13 +244,12 @@ class TOEMetaController:
         )
         if decision["recommendation"] != ACT_NOW:
             return ControlAssessment(
-                "replan", str(decision["reason"]),
+                "replan",
+                str(decision["reason"]),
                 {"toe_evidence_count": float(len(state.evidence_items))},
             )
         fallback = self.fallback.assess(state)
-        return replace(
-            fallback, rationale=f"TOE: {decision['reason']} | {fallback.rationale}"
-        )
+        return replace(fallback, rationale=f"TOE: {decision['reason']} | {fallback.rationale}")
 
 
 class V16SkillSearchAdapter:
@@ -260,11 +267,24 @@ class V16SkillSearchAdapter:
         self.mathematical_enabled = True
 
     def available_strategies(self) -> tuple[str, ...]:
-        return ("mcts-v16", "evolution-v16", "primitive-compose", "toe-plan")
+        # Order is the declared default when no per-class evidence exists:
+        # primitive-compose preserves the cold-start baseline; measured
+        # success must promote a search arm.
+        return ("primitive-compose", "mcts-v16", "evolution-v16", "toe-plan")
 
     def compose(self, goal: str, state: CognitiveState) -> list[CandidateAction]:
         code = str(state.representation.get("initial_code", "def candidate(x):\n    return x\n"))
-        strategy = state.selected_strategy or "primitive-compose"
+        # A problem-requested strategy is an explicit pin on which search
+        # skill composes candidates; it takes precedence over the learned
+        # strategy selection and must name a real portfolio entry.
+        requested = state.representation.get("strategy") or state.representation.get(
+            "requested_strategy"
+        )
+        if requested is not None and str(requested) not in self.available_strategies():
+            raise ValueError(f"unknown skill-search strategy {requested!r}")
+        strategy = str(requested) if requested else (
+            state.selected_strategy or "primitive-compose"
+        )
         if not self.mathematical_enabled and strategy in {"mcts-v16", "evolution-v16"}:
             self.calls.append("neutral-primitive-ablation")
             strategy = "primitive-compose"
@@ -276,18 +296,20 @@ class V16SkillSearchAdapter:
             return [self._candidate("mcts", result)]
         if strategy == "evolution-v16":
             self.calls.append(strategy)
-            result = self.evolution.run_optimization(
-                state.problem_id, code, max_generations=1
-            )
+            result = self.evolution.run_optimization(state.problem_id, code, max_generations=1)
             return [self._candidate("evolution", result)]
         self.calls.append("primitive-compose")
         return [
             CandidateAction(
-                f"primitive:{name}", f"apply verified AST primitive {name}",
+                f"primitive:{name}",
+                f"apply verified AST primitive {name}",
                 origin="euclid-v16:ASTPrimitives",
                 features={
-                    "correctness_estimate": 0.5, "cost": 0.2,
-                    "uncertainty": 0.5, "novelty": 0.2, "transfer_value": 0.2,
+                    "correctness_estimate": 0.5,
+                    "cost": 0.2,
+                    "uncertainty": 0.5,
+                    "novelty": 0.2,
+                    "transfer_value": 0.2,
                 },
             )
             for name, _ in self.primitives.get_all_operators()
@@ -297,13 +319,15 @@ class V16SkillSearchAdapter:
     def _candidate(kind: str, result: Mapping[str, Any]) -> CandidateAction:
         delta = float(result.get("total_delta_phi", 0.0))
         return CandidateAction(
-            f"search:{kind}", f"{kind} produced measured candidate",
+            f"search:{kind}",
+            f"{kind} produced measured candidate",
             origin=f"euclid-v16:{kind}",
             features={
                 "correctness_estimate": 1.0 if result.get("total_evals_valid") else 0.0,
                 "cost": min(1.0, float(result.get("total_evals_attempted", 0)) / 100.0),
                 "uncertainty": 0.5 if not result.get("accepted_steps_count") else 0.2,
-                "novelty": max(0.0, delta), "transfer_value": min(1.0, max(0.0, delta)),
+                "novelty": max(0.0, delta),
+                "transfer_value": min(1.0, max(0.0, delta)),
             },
         )
 
@@ -316,10 +340,12 @@ class RepositoryIntelligenceExecutor:
         self.results: list[dict[str, Any]] = []
 
     def execute(self, action: str, payload: Mapping[str, Any]) -> Mapping[str, Any]:
-        report = dict(self.engineer.ask(
-            f"Investigate repository action {action}; inspect wiring, dependencies, "
-            "relevant skills and focused evidence. Do not modify source."
-        ))
+        report = dict(
+            self.engineer.ask(
+                f"Investigate repository action {action}; inspect wiring, dependencies, "
+                "relevant skills and focused evidence. Do not modify source."
+            )
+        )
         evidence = report.get("evidence", {})
         findings = evidence.get("import_audit", {}).get("finding_count")
         result = {
@@ -336,6 +362,15 @@ class RepositoryIntelligenceExecutor:
         return result
 
 
+def _last_executed_action(state: CognitiveState) -> str | None:
+    """The action id that last crossed the governed execution boundary."""
+    for item in reversed(state.evidence_items):
+        if item.evidence_id.startswith("exec-"):
+            action = item.content.get("action")
+            return str(action) if action else None
+    return None
+
+
 class LearningServiceEpisodeAdapter:
     """Close observed cognition outcomes into the canonical LearningService."""
 
@@ -344,12 +379,34 @@ class LearningServiceEpisodeAdapter:
         self.memory = memory
 
     def record_episode(
-        self, state: CognitiveState, *, success: bool, cycle: int,
+        self,
+        state: CognitiveState,
+        *,
+        success: bool,
+        cycle: int,
         result: Mapping[str, Any],
+        channel: str = "submission",
     ) -> str:
+        # Replay identity is derived from the *recorded content* of the
+        # episode, never from wall-clock transition timestamps: an identical
+        # replay must collide (fail closed) while distinct episodes must not.
+        # ``channel`` separates the automatic in-solve episode closure
+        # (``"consolidation"``) from explicit operator submissions
+        # (``"submission"``): each is a different record of the episode, so a
+        # submission made after a solve is not a replay of the closure, while
+        # resubmitting the same record on the same channel still fails closed.
         replay_id = domain_hash(
             "euclid.cognition.replay.v1",
-            {"problem_id": state.problem_id, "transition": state.transitions[-1].digest},
+            {
+                "problem_id": state.problem_id,
+                "cycle": int(cycle),
+                "strategy": state.selected_strategy,
+                "action": (state.candidates[0].action_id if state.candidates else None),
+                "success": bool(success),
+                "result": dict(result),
+                "evidence_ids": [item.evidence_id for item in state.evidence_items],
+                "channel": channel,
+            },
         )
         reward_authority = RewardAuthority.NONE
         reward = None
@@ -357,10 +414,8 @@ class LearningServiceEpisodeAdapter:
             reward_authority = RewardAuthority.MEASURED_ENVIRONMENT
             reward = float(result["reward"])
         experience = Experience(
-            # Identity is derived from content, never from a random token: a
-            # sealed episode must be byte-identical when replayed, and a uuid
-            # would make every replay of the same episode look like a new one.
-            experience_id="cognition-" + replay_id[:32],
+            experience_id="cognition-"
+            + domain_hash("euclid.cognition.experience-id.v1", {"replay_id": replay_id})[:32],
             mission_id=state.problem_id,
             domain=str(state.representation.get("problem_class", "repository")),
             source="euclid.cognition",
@@ -371,34 +426,44 @@ class LearningServiceEpisodeAdapter:
             },
             action=state.candidates[0].action_id if state.candidates else "no-action",
             outcome={
-                "success": success, "cycle": cycle, "result": dict(result),
+                "success": success,
+                "cycle": cycle,
+                "result": dict(result),
                 "strategy": state.selected_strategy,
             },
             reward=reward,
             reward_authority=reward_authority,
             provenance=f"cognitive-episode:{state.problem_id}",
-            uncertainty=max(
-                0.0, min(1.0, max(state.prediction_errors[-1:], default=0.0))
-            ),
+            uncertainty=max(0.0, min(1.0, max(state.prediction_errors[-1:], default=0.0))),
             replay_id=replay_id,
+            created_at=float(cycle),
         )
         digest = self.service.record(experience)
         if self.memory is not None:
-            self.memory.store(MemoryItem(
-                "episode-" + digest[:24],
-                MemoryKind.EPISODIC,
-                {
-                    "problem_id": state.problem_id,
-                    "strategy": state.selected_strategy,
-                    "success": success,
-                    "result": dict(result),
-                },
-                f"learning-service:{digest}",
-                frozenset(map(str, state.representation.get("structure", ()))),
-                1.0 if success else 0.25,
-            ))
+            self.memory.store(
+                MemoryItem(
+                    "episode-" + digest[:24],
+                    MemoryKind.EPISODIC,
+                    {
+                        "problem_id": state.problem_id,
+                        "strategy": state.selected_strategy,
+                        "executed_action": _last_executed_action(state),
+                        "success": success,
+                        "result": dict(result),
+                    },
+                    f"learning-service:{digest}",
+                    frozenset(map(str, state.representation.get("structure", ()))),
+                    1.0 if success else 0.25,
+                )
+            )
         state.learning_updates.append(
-            {"kind": "canonical-learning-service", "digest": digest, "cycle": cycle}
+            {
+                "kind": "canonical-learning-service",
+                "digest": digest,
+                "cycle": cycle,
+                "success": bool(success),
+                "counts_for_control": False,
+            }
         )
         return digest
 

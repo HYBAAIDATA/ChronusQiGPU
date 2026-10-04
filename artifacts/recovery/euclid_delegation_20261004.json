@@ -1,0 +1,33 @@
+{
+  "schema": "hyba.euclid.recovery-manifest.v1",
+  "date": "2026-10-04",
+  "tranche": "delegation-3",
+  "stacked_on": "federation-2",
+  "archive": {
+    "name": "EUCLID_PROD_MORNING_RECOVERY_COMPLETE_20260719.zip",
+    "sha256": "30d3ddde94238b4cbb4fbb0b299775fed0b90c414669275379cab08186371229"
+  },
+  "files": [
+    {
+      "path": "euclid/delegation.py",
+      "sha256": "76ecf5a6e3abf68dd45b3031dcd7b0e859d813a3b5f2b24c2125d57f30443013",
+      "mode": "byte-exact-recovery"
+    },
+    {
+      "path": "tests/test_euclid_delegation.py",
+      "sha256": "ea4571e070990effa35a4ed076bb9d9a969d89430e87ed494912dd467cce0bd3",
+      "mode": "byte-exact-recovery"
+    }
+  ],
+  "validation": {
+    "compile": "passed",
+    "focused_tests": {
+      "passed": 37,
+      "failed": 0
+    }
+  },
+  "deferred": [
+    "euclid/task_orchestrator.py"
+  ],
+  "claim_boundary": "Delegation contract tests only; no remote-agent, scheduler, production, or mining claim."
+}

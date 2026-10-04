@@ -31,13 +31,23 @@ def test_braid_hadamard_matches_f_matrix():
 
 @pytest.mark.unit
 def test_surface_code_decodes_single_error():
+    # A real surface code cannot return the *identical* error for every qubit:
+    # boundary-degenerate single errors share a syndrome, and any commuting
+    # stabilizer layout on this plaquette grid has such degenerate pairs. The
+    # decoder contract is that the returned correction has the same syndrome,
+    # so error XOR correction is a stabilizer/logical with empty syndrome —
+    # and distance-3 has no weight-2 logical operator, so cancellation means
+    # the error is genuinely corrected up to a stabilizer.
     code = Caltech_Surface_Code(distance=3)
     for error_type in ("X", "Z"):
         for qubit in range(code.n_qubits):
             syndrome = code.measure_syndrome([qubit], error_type)
             result = code.decode(syndrome, error_type)
             assert result.logical_error is False
-            assert (qubit, error_type) in result.correction
+            corrected = sorted({qubit} ^ {q for q, _ in result.correction})
+            assert code.measure_syndrome(corrected, error_type) == [0] * len(
+                syndrome
+            )
 
 
 @pytest.mark.unit

@@ -2,7 +2,12 @@
 
 No capability is called integrated before FEEDBACK_CLOSED.  Runtime probes are
 append-only evidence entries and can be persisted/reloaded as JSON.
+
+Persisted ledgers are sealed: ``load`` re-derives the seal and rejects any
+file whose entries were edited, reordered, or fabricated.  A reachability
+file is evidence; an unverifiable one fails closed.
 """
+
 from __future__ import annotations
 
 import json
@@ -10,6 +15,12 @@ from dataclasses import asdict, dataclass
 from enum import IntEnum
 from pathlib import Path
 from typing import Any, Mapping
+
+from ..contracts import domain_hash
+from ..evidence import atomic_write
+
+_SEAL_DOMAIN = "euclid.cognition.reachability.seal.v1"
+_SCHEMA = "euclid.cognition.reachability/1"
 
 
 class ReachabilityStage(IntEnum):
@@ -42,8 +53,13 @@ class ReachabilityMatrix:
         self._entries: list[CapabilityEvidence] = []
 
     def record(
-        self, component: str, stage: ReachabilityStage, *,
-        episode_id: str, evidence_ref: str, detail: Mapping[str, Any] | None = None,
+        self,
+        component: str,
+        stage: ReachabilityStage,
+        *,
+        episode_id: str,
+        evidence_ref: str,
+        detail: Mapping[str, Any] | None = None,
     ) -> CapabilityEvidence:
         current = self.stage(component)
         if current is not None and stage < current:
@@ -71,25 +87,41 @@ class ReachabilityMatrix:
             )
 
     def save(self, path: str | Path) -> None:
-        payload = {
-            "schema": "euclid.cognition.reachability/1",
+        body = {
+            "schema": _SCHEMA,
             "entries": [asdict(entry) for entry in self._entries],
         }
-        Path(path).write_text(
-            json.dumps(payload, sort_keys=True, separators=(",", ":")),
-            encoding="utf-8",
-        )
+        payload = {**body, "seal": domain_hash(_SEAL_DOMAIN, body)}
+        atomic_write(Path(path), payload)
 
     @classmethod
     def load(cls, path: str | Path) -> "ReachabilityMatrix":
         payload = json.loads(Path(path).read_text(encoding="utf-8"))
-        if payload.get("schema") != "euclid.cognition.reachability/1":
+        if payload.get("schema") != _SCHEMA:
             raise ValueError("unsupported reachability schema")
+        body = {key: payload.get(key) for key in ("schema", "entries")}
+        if payload.get("seal") != domain_hash(_SEAL_DOMAIN, body):
+            raise ValueError("reachability ledger seal mismatch")
         matrix = cls()
-        matrix._entries = [
-            CapabilityEvidence(**entry) for entry in payload.get("entries", ())
-        ]
+        matrix._entries = [CapabilityEvidence(**entry) for entry in payload.get("entries", ())]
+        matrix._verify_ordering()
         return matrix
+
+    def _verify_ordering(self) -> None:
+        """Reject persisted histories a live ledger could never produce."""
+        seen: dict[str, ReachabilityStage] = {}
+        for entry in self._entries:
+            try:
+                stage = ReachabilityStage[entry.stage]
+            except KeyError as exc:
+                raise ValueError(f"reachability entry has unknown stage {entry.stage!r}") from exc
+            current = seen.get(entry.component)
+            if current is not None and stage < current:
+                raise ValueError(
+                    "reachability ledger moves backwards for "
+                    f"{entry.component}: {current.name} -> {stage.name}"
+                )
+            seen[entry.component] = stage
 
 
 __all__ = ["CapabilityEvidence", "ReachabilityMatrix", "ReachabilityStage"]

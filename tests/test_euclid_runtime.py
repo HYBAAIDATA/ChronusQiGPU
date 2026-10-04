@@ -130,12 +130,13 @@ class EuclidRuntimeTests(unittest.TestCase):
             runtime.rights.grant("andre", "reasoner", "kairos", "read")
             runtime.save(path)
             restored = EuclidRuntime.restore(path, state_dir=directory)
-            try:
-                restored.rights.require("andre", "reasoner", "kairos", "read")
-                self.assertEqual(restored.kairos.worlds["kairos"].state, {"ready": False})
-                self.assertTrue(restored.kairos.replay_verify())
-            finally:
-                restored.close()
+            restored.rights.require("andre", "reasoner", "kairos", "read")
+            self.assertEqual(restored.kairos.worlds["kairos"].state, {"ready": False})
+            self.assertTrue(restored.kairos.replay_verify())
+            # Release the sqlite handles so the tempdir can be removed on
+            # platforms that lock open database files.
+            restored.close()
+            runtime.close()
 
     def test_governed_adapters_are_narrow(self):
         reasoner = reasoning_organ("reasoner", {"reason": lambda value: {"seen": value}})

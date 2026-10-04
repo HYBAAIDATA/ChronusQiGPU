@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -13,6 +14,22 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from chronus.v33.research_registry import CASES, validate_registry
+
+_SKIPPED = re.compile(r"(\d+) skipped")
+
+
+def classify(returncode: int, stdout: str) -> str:
+    """Report a skipped invariant as skipped, never as a pass.
+
+    ``EVOLUTION.md``: a missing gate is a failed gate, never a synthetic pass.
+    A skipped node means the invariant was not checked in this environment, so
+    it is counted against the run rather than absorbed into a green result.
+    """
+    if returncode != 0:
+        return "fail"
+    if _SKIPPED.search(stdout):
+        return "skipped"
+    return "pass"
 
 
 def run_case(test_node: str, timeout: int) -> dict[str, object]:
@@ -34,7 +51,7 @@ def run_case(test_node: str, timeout: int) -> dict[str, object]:
             "stderr": text(exc.stderr),
         }
     return {
-        "outcome": "pass" if result.returncode == 0 else "fail",
+        "outcome": classify(result.returncode, result.stdout),
         "returncode": result.returncode,
         "stdout": result.stdout,
         "stderr": result.stderr,

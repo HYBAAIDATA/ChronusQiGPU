@@ -33,13 +33,23 @@ POLL_CHUNK_NONCES = 1 << 18  # per-poll grind bound: keeps hybrid polling fair
 
 
 class GPUSolver:
-    """NonceScheduler over the resident OpenCL scanner (or honest CPU path)."""
+    """NonceScheduler over the resident SHA-256d scanner.
+
+    ``backend`` is any in-process lane ``hasher_for_backend`` resolves —
+    ``auto``/``cpu``/``opencl``/``gpu`` (OpenCL or its declared CPU
+    reference) and ``cuda``/``metal`` (the Chronus-owned native lanes).
+    ``remote`` belongs to ``RemoteScheduler`` and is rejected here.
+    """
 
     def __init__(self, backend: str = "auto", allow_cpu: bool = True) -> None:
-        from mining.bitcoin_hasher import BitcoinHasher, GRIND_BATCH
+        from mining.bitcoin_hasher import GRIND_BATCH, hasher_for_backend
 
+        if (backend or "").strip().lower() == "remote":
+            raise DeviceUnsupportedError(
+                "GPUSolver binds in-process lanes only; use RemoteScheduler for 'remote'"
+            )
         self._grind_batch = int(GRIND_BATCH)
-        self._hasher = BitcoinHasher(backend=backend)
+        self._hasher = hasher_for_backend(backend)
         self._jobs: Dict[str, bytes] = {}
         self._pending: Dict[int, Dict[str, Any]] = {}
         self._finished: Dict[int, int] = {}
