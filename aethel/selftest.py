@@ -26,14 +26,12 @@ from .constants import (
     STATE_BYTES,
 )
 from .encoding import fold, unfold
-from .errors import AethelError, FoldDomainOverflow
 from .fibonacci import (
     binet_fibonacci,
     cassini_holds,
     cassini_quadruple,
     fibonacci,
 )
-from .shm import AethelQueue
 from .storage import AddressSpace
 
 logger = logging.getLogger("aethel.selftest")
