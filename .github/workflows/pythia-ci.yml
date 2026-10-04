@@ -105,6 +105,19 @@ jobs:
         run: python -m unittest discover -s chronus/mla1517_platform/python -p test_self_healing_agent.py -v
       - name: Coordinator control-sink routing gate
         run: python -m unittest discover -s chronus/mla1517_platform/python -p test_control_plane_wiring.py -v
+      - name: Agentic mining authority and backend-routing gates
+        run: >-
+          python -m pytest
+          chronus/mla1517_platform/python/test_backend_policy.py
+          tests/test_autonomous_supervisor_production.py
+          tests/test_native_production_routing.py
+          -q
+      - name: Production-entry closed-loop mining gates
+        run: >-
+          python -m pytest
+          chronus/mla1517_platform/python/test_execution_loop.py
+          chronus/mla1517_platform/python/test_production_loop_e2e.py
+          -q
       - name: Aethel storage/encoding/handoff contract gate
         run: >-
           python -m pytest
@@ -145,9 +158,9 @@ jobs:
           done
       - name: Verify canonical imports and no circular import failure
         run: |
-          python -c "import coordinator; from chronus.mla1517.mining.intelligence_controller import IntelligenceController; from chronus.mla1517.mining.self_optimizing_agent import SelfOptimizingTuner; from chronus.mla1517.mining.self_healing_agent import SelfHealingAgent; print('PASS — canonical coordinator and three agentic layers import')"
+          python -c "import coordinator; from chronus.mla1517.mining.intelligence_controller import IntelligenceController; from chronus.mla1517.mining.self_optimizing_agent import SelfOptimizingTuner; from chronus.mla1517.mining.self_healing_agent import SelfHealingAgent; from chronus.mla1517.mining.geodesic_support import ProductionExecutionRouter; print('PASS — canonical coordinator, agentic layers and production execution router import')"
       - name: Compile canonical Python tree
-        run: python -m compileall -q chronus/mla1517_platform/python
+        run: python -m compileall -q chronus/mla1517_platform/python chronus/mla1517/mining
       - name: Verify installed canonical entrypoints
         run: >-
           python -c "import control_api, coordinator, main, mining_runtime, chronus.mla1517;
