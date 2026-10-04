@@ -64,6 +64,7 @@ class AblationConfig:
     meta_learning: bool = True
     skill_composition: bool = True
     replanning: bool = True
+    mathematical_structure: bool = True
 
 
 class GeneralIntelligenceCore:
@@ -165,7 +166,7 @@ class GeneralIntelligenceCore:
         for key in (
             "initial_code", "operators", "plan_depth", "budget",
             "representation_kind", "state_vector", "surface", "observations",
-            "context_key",
+            "context_key", "strategy",
         ):
             if key in problem:
                 representation[key] = problem[key]
@@ -188,6 +189,7 @@ class GeneralIntelligenceCore:
             }
             if trial.accepted:
                 state.representation["representation_kind"] = trial.kind
+                state.representation["active_representation"] = trial.kind
                 state.representation["representation_overlay"] = dict(trial.payload)
                 # The overlay is provenance; canonical top-level fields are the
                 # executable representation consumed by planners and skills.
@@ -377,6 +379,12 @@ class GeneralIntelligenceCore:
 
             # 9. COMPOSE ----------------------------------------------------------
             if self.ablations.skill_composition:
+                if hasattr(self.skills, "mathematical_enabled"):
+                    self.skills.mathematical_enabled = (
+                        self.ablations.mathematical_structure
+                    )
+                if not self.ablations.mathematical_structure:
+                    self._ablated(state, "mathematical_structure")
                 state.candidates = self.skills.compose(planning_goal, state)
             else:
                 state.candidates = []
@@ -578,7 +586,15 @@ class GeneralIntelligenceCore:
         payload size.  No external capability claim is made."""
         import json as _json
 
+        declared = problem.get("representation_evidence") or {}
+
         def evaluate(kind: str, payload: Mapping[str, Any]) -> tuple[float, float]:
+            entry = declared.get(kind)
+            if isinstance(entry, Mapping) and "utility" in entry:
+                # The problem declares measured evidence for this kind;
+                # trust it over the structural proxy (both are bounded
+                # per-evaluation values, not capability claims).
+                return float(entry["utility"]), float(entry.get("cost", 0.0))
             encoded = _json.dumps(payload, sort_keys=True, default=str)
             covered = sum(1 for item in structure if str(item) in encoded)
             utility = covered / max(1, len(structure))

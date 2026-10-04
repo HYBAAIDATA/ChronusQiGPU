@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from dataclasses import asdict, dataclass, field
 from enum import StrEnum
 from typing import Any, Mapping
@@ -196,6 +197,21 @@ class ActionResult:
 
 
 @dataclass(frozen=True)
+class ActionVerification:
+    verifier_id: str
+    verified: bool
+    evidence_ref: str | None
+    observations: Mapping[str, Any] = field(default_factory=dict)
+    error: str | None = None
+
+    def __post_init__(self) -> None:
+        if not self.verifier_id:
+            raise ValueError("independent verifier identity is required")
+        if self.verified and not self.evidence_ref:
+            raise ValueError("verified actions require independent evidence")
+
+
+@dataclass(frozen=True)
 class CapabilityIdentity:
     backend_id: str
     device_id: str
@@ -281,6 +297,40 @@ class PolicyVersion:
     lifecycle: PolicyLifecycle = PolicyLifecycle.CANDIDATE
     evidence_refs: list[str] = field(default_factory=list)
     baseline_id: str | None = None
+
+
+@dataclass(frozen=True)
+class OptimizationTrial:
+    trial_id: str
+    policy_id: str
+    partition: DatasetPartition
+    baseline_measurements: Mapping[str, float]
+    candidate_measurements: Mapping[str, float]
+    sample_count: int
+    evidence_ref: str
+    temporal_lineage: str
+
+    def __post_init__(self) -> None:
+        if not all((self.trial_id, self.policy_id, self.evidence_ref, self.temporal_lineage)):
+            raise ValueError("optimization trial identity and evidence are required")
+        if self.partition not in {
+            DatasetPartition.VALIDATION,
+            DatasetPartition.FINAL_TEST,
+            DatasetPartition.TEMPORAL_HOLDOUT,
+        }:
+            raise ValueError("optimization decisions require a held-out evaluation partition")
+        if self.sample_count <= 0:
+            raise ValueError("optimization trial requires measured samples")
+        baseline = dict(self.baseline_measurements)
+        candidate = dict(self.candidate_measurements)
+        if not baseline or baseline.keys() != candidate.keys():
+            raise ValueError("baseline and candidate metrics must be non-empty and identical")
+        if any(
+            isinstance(value, bool) or not isinstance(value, (int, float))
+            or not math.isfinite(float(value))
+            for value in (*baseline.values(), *candidate.values())
+        ):
+            raise ValueError("optimization measurements must be finite numbers")
 
 
 @dataclass(frozen=True)

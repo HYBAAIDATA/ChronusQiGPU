@@ -40,7 +40,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install -e ./turing_universal_quantum_computer -e ".[ml,dev]"
+      - run: pip install -e ./turing_universal_quantum_computer -e ".[ml,dev,graph]"
       - name: Lint (flake8)
         # Ratchet: lint every Python file this change touches. A repo-wide
         # count fails on thousands of pre-existing violations the
@@ -63,6 +63,10 @@ jobs:
         run: |
           rm -rf dist /tmp/pythia-wheel-smoke
           python -m pip wheel . --no-deps --wheel-dir dist
+          # pythia-mla1517 declares turing-universal-quantum-computer>=1.0
+          # (in-tree, not on PyPI): build it too so dist/*.whl resolves
+          # the dependency from the local wheels.
+          python -m pip wheel ./turing_universal_quantum_computer --no-deps --wheel-dir dist
           python -m venv /tmp/pythia-wheel-smoke
           /tmp/pythia-wheel-smoke/bin/pip install --quiet numpy dist/*.whl
           cd /tmp

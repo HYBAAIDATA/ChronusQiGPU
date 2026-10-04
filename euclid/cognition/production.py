@@ -264,7 +264,15 @@ class V16SkillSearchAdapter:
 
     def compose(self, goal: str, state: CognitiveState) -> list[CandidateAction]:
         code = str(state.representation.get("initial_code", "def candidate(x):\n    return x\n"))
-        strategy = state.selected_strategy or "primitive-compose"
+        # A problem-requested strategy is an explicit pin on which search
+        # skill composes candidates; it takes precedence over the learned
+        # strategy selection and must name a real portfolio entry.
+        requested = state.representation.get("strategy")
+        if requested is not None and str(requested) not in self.available_strategies():
+            raise ValueError(f"unknown skill-search strategy {requested!r}")
+        strategy = str(requested) if requested else (
+            state.selected_strategy or "primitive-compose"
+        )
         if not self.mathematical_enabled and strategy in {"mcts-v16", "evolution-v16"}:
             self.calls.append("neutral-primitive-ablation")
             strategy = "primitive-compose"

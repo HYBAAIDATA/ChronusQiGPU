@@ -101,10 +101,46 @@ class Caltech_Surface_Code:
                     x_stabs.append(qubits)
                 else:
                     z_stabs.append(qubits)
-        # Boundary checks complete the syndrome map for the corner and edge
-        # data qubits that are absent from, or duplicated by, bulk plaquettes.
-        x_stabs.extend([(1,), (2,), (3,), (6,), (7,), (8,)])
-        z_stabs.extend([(0,), (2,), (5,), (6,), (7,), (8,)])
+        # Boundary weight-2 checks complete the syndrome map for the edge and
+        # corner data qubits. Each pair is chosen to share an even number of
+        # qubits with every opposite-type bulk plaquette, so the full
+        # stabilizer group stays abelian (verified by
+        # theory.error_correction.verify_stabilizer_algebra). A weight-1 check
+        # on a qubit inside an opposite-type plaquette anti-commutes with it.
+        if d == 3:
+            # Diagonal-corner boundary pattern: X checks on the top-right and
+            # bottom-left edges, Z checks on the top-left and bottom-right
+            # edges. Together with the 4 bulk plaquettes these give 8
+            # independent commuting stabilizers on 9 data qubits -> 1 logical.
+            x_stabs.extend([(1, 2), (6, 7)])
+            z_stabs.extend([(0, 3), (5, 8)])
+        else:
+            # General fallback: pair each uncovered edge qubit with its
+            # neighbour along the edge when that pair is consistent, else
+            # drop the check rather than emit a non-commuting stabilizer.
+            covered = set()
+            for stab in x_stabs + z_stabs:
+                covered.update(stab)
+            edge_pairs = [
+                (i * d + j, i * d + j + 1)
+                for i in (0, d - 1)
+                for j in range(d - 1)
+            ] + [
+                (i * d + j, (i + 1) * d + j)
+                for j in (0, d - 1)
+                for i in range(d - 1)
+            ]
+            for pair in edge_pairs:
+                overlap_x = sum(
+                    len(set(pair) & set(zs)) % 2 for zs in z_stabs
+                )
+                overlap_z = sum(
+                    len(set(pair) & set(xs)) % 2 for xs in x_stabs
+                )
+                if overlap_x == 0:
+                    x_stabs.append(pair)
+                elif overlap_z == 0:
+                    z_stabs.append(pair)
         return x_stabs, z_stabs
 
     def measure_syndrome(self, error_qubits: List[int], error_type: str = "X") -> List[int]:

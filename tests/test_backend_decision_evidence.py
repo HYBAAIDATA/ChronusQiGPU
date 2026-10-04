@@ -27,14 +27,22 @@ class BackendDecisionEvidenceTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         module = types.ModuleType("chronus.mla1517.mining.coordinator")
         module.CpuReferenceHasher = FakeHasher
+        # Restore the real coordinator afterwards: a bare ModuleType left in
+        # sys.modules breaks later imports of other names from that module.
+        self._saved_coordinator = sys.modules.get(module.__name__, None)
         sys.modules[module.__name__] = module
         self.path = Path(self.tmp.name) / "backend.jsonl"
 
     def tearDown(self):
+        if self._saved_coordinator is None:
+            sys.modules.pop("chronus.mla1517.mining.coordinator", None)
+        else:
+            sys.modules["chronus.mla1517.mining.coordinator"] = (
+                self._saved_coordinator
+            )
         self.tmp.cleanup()
 
     def registry(self, *, gpu=False):
-        cpu = FakeHasher()
         probes = {
             BackendLane.CPU: lambda: probe(BackendLane.CPU, True),
             BackendLane.GPU: lambda: probe(BackendLane.GPU, gpu, hasher=FakeHasher() if gpu else None, reason="GPU probe result"),

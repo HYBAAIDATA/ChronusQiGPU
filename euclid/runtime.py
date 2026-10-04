@@ -215,12 +215,20 @@ class EuclidRuntime:
             if previous is None or stage > previous:
                 targets[component] = stage
 
+        persisted = any(
+            item.get("kind") == "canonical-learning-service"
+            for item in state.learning_updates
+        )
         if phases & {"deduce", "imagine", "compare"}:
-            target(
-                "toe.world_model",
-                ReachabilityStage.FEEDBACK_CLOSED
-                if "compare" in phases else ReachabilityStage.USED_IN_EPISODE,
+            # Feedback is closed when the compare-phase outcome update is also
+            # closed into the canonical learning service for this episode.
+            world_stage = (
+                ReachabilityStage.OUTCOME_OBSERVED
+                if "compare" in phases else ReachabilityStage.USED_IN_EPISODE
             )
+            if "compare" in phases and persisted:
+                world_stage = ReachabilityStage.FEEDBACK_CLOSED
+            target("toe.world_model", world_stage)
         if "plan" in phases:
             target("toe.planning", ReachabilityStage.CHANGES_DECISION)
         control_actions = {
@@ -253,10 +261,6 @@ class EuclidRuntime:
             target("euclid.strategy_meta_learning", ReachabilityStage.CHANGES_DECISION)
         if any(item.get("kind") == "strategy" for item in state.learning_updates):
             target("euclid.strategy_meta_learning", ReachabilityStage.FEEDBACK_CLOSED)
-        persisted = any(
-            item.get("kind") == "canonical-learning-service"
-            for item in state.learning_updates
-        )
         if persisted:
             # The episode adapter always closes through LearningService and the
             # canonical MemoryDatabase.  Reward-bearing downstream engines are
@@ -264,6 +268,12 @@ class EuclidRuntime:
             # mutation evidence.
             for component in ("euclid.learning_service", "euclid.memory_database"):
                 target(component, ReachabilityStage.PERSISTED)
+        if state.retrieved_memory_refs:
+            # Transfer is verified when this episode retrieves memories the
+            # durable database persisted from earlier episodes.
+            target(
+                "euclid.memory_database", ReachabilityStage.TRANSFER_VERIFIED
+            )
         if "execute" in phases:
             target("repository.engineer", ReachabilityStage.OUTCOME_OBSERVED)
         if any(c.origin.startswith("euclid-v16") for c in state.candidates):
@@ -412,8 +422,9 @@ class EuclidRuntime:
             runtime.registry, runtime.evidence, runtime.rights
         )
         runtime.learning.evidence = runtime.evidence
-        # production() already opened the database in state_dir.  Reopening it
-        # here would leak the original SQLite connection and does not restore
-        # data when a checkpoint is moved to a different state directory.
+        # The durable memory database is already attached by production()
+        # at state_dir/euclid_memory.sqlite3; opening a second connection
+        # here would leak the first handle (and break tempdir cleanup on
+        # platforms that lock open database files).
         runtime.kairos.replay_verify()
         return runtime
