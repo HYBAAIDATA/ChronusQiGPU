@@ -42,6 +42,8 @@ class BackendRegistryTests(unittest.TestCase):
         probes = {
             BackendLane.CPU: _probe(BackendLane.CPU, True, "cpu", "host", "cpu reference"),
             BackendLane.GPU: _probe(BackendLane.GPU, False, reason="no OpenCL device"),
+            BackendLane.CUDA: _probe(BackendLane.CUDA, False, reason="no CUDA device"),
+            BackendLane.METAL: _probe(BackendLane.METAL, False, reason="not Darwin"),
             BackendLane.REMOTE_GPU: _probe(
                 BackendLane.REMOTE_GPU, False, reason="no remote endpoint"
             ),
@@ -88,11 +90,68 @@ class BackendRegistryTests(unittest.TestCase):
         snapshot = registry.snapshot()
         self.assertEqual(
             set(snapshot["lanes"]),
-            {"cpu", "gpu", "remote_gpu", "asic", "super_asic"},
+            {"cpu", "gpu", "cuda", "metal", "remote_gpu", "asic", "super_asic"},
         )
-        self.assertEqual(snapshot["policy"]["auto"], ["gpu", "remote_gpu", "cpu"])
+        self.assertEqual(
+            snapshot["policy"]["auto"], ["gpu", "cuda", "metal", "remote_gpu", "cpu"]
+        )
         self.assertFalse(snapshot["lanes"]["asic"]["available"])
         self.assertTrue(snapshot["lanes"]["cpu"]["available"])
+
+    def test_explicit_cuda_lane_fails_closed_when_unavailable(self):
+        registry = self.registry()
+        with self.assertRaisesRegex(BackendUnavailable, "cuda"):
+            registry.select("cuda")
+        self.assertEqual(registry.last_selection.disposition, "rejected")
+
+    def test_explicit_metal_lane_fails_closed_when_unavailable(self):
+        registry = self.registry()
+        with self.assertRaisesRegex(BackendUnavailable, "metal"):
+            registry.select("metal")
+        self.assertEqual(registry.last_selection.disposition, "rejected")
+
+    def test_auto_skips_absent_native_lanes_before_remote(self):
+        """auto probes gpu, cuda, metal, then remote — all must be consulted."""
+        remote_hasher = _FakeHasher("remote", "agent")
+
+        def remote_probe():
+            return LaneProbe(
+                lane="remote_gpu",
+                available=True,
+                backend="remote",
+                device="agent",
+                probed_at=0.0,
+                reason="remote bound",
+                hasher=remote_hasher,
+            )
+
+        registry = self.registry(**{BackendLane.REMOTE_GPU: remote_probe})
+        selection = registry.select("auto")
+        self.assertEqual(selection.selected_action, "remote_gpu")
+        self.assertTrue(selection.fallback)
+        self.assertIs(selection.hasher, remote_hasher)
+        self.assertFalse(selection.probed["cuda"].available)
+        self.assertFalse(selection.probed["metal"].available)
+
+    def test_auto_binds_cuda_before_remote(self):
+        cuda_hasher = _FakeHasher("cuda", "nvidia0")
+
+        def cuda_probe():
+            return LaneProbe(
+                lane="cuda",
+                available=True,
+                backend="cuda",
+                device="nvidia0",
+                probed_at=0.0,
+                reason="cuda self-check passed",
+                hasher=cuda_hasher,
+            )
+
+        registry = self.registry(**{BackendLane.CUDA: cuda_probe})
+        selection = registry.select("auto")
+        self.assertEqual(selection.selected_action, "cuda")
+        self.assertTrue(selection.fallback)  # gpu (first probe) was unavailable
+        self.assertIs(selection.hasher, cuda_hasher)
 
     def test_auto_prefers_gpu_when_available(self):
         hasher = _FakeHasher("gpu", "opencl0")
