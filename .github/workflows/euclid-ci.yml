@@ -28,10 +28,14 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install runtime dependencies
-        # production() imports Intelligence.* which requires numpy (declared
-        # in pyproject dependencies); the job previously ran tests with no
-        # install step, so the two production-path tests always errored.
-        run: python -m pip install "numpy>=1.26,<3"
+        # production() imports Intelligence.* which needs the declared
+        # pyproject dependencies (numpy, pyyaml, sympy, the in-tree VQC
+        # package); the job previously ran tests with no install step, so
+        # the two production-path tests always errored.
+        run: >-
+          python -m pip install
+          -e ./turing_universal_quantum_computer
+          -e .
       - name: Compile
         run: python -m compileall -q euclid tests/test_euclid_runtime.py
       - name: Focused tests
