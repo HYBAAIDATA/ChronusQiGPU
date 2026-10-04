@@ -29,6 +29,7 @@ import numpy as np
 from aethel.fold_store import FoldStoreError, PersistentFoldStore
 
 from .api import TensorRuntime
+from .benchmarks import run_benchmarks
 from .folded import evaluate_operator
 
 
@@ -99,11 +100,18 @@ def _cmd_benchmark(args: argparse.Namespace) -> Dict[str, Any]:
     evidence = evaluate_operator(
         args.operation, workloads[args.operation], repeats=args.repeats
     )
+    report = run_benchmarks(
+        operations=[args.operation],
+        sizes=((n, n),),
+        repeats=args.repeats,
+    )
     return {
         "ok": True,
         "command": "benchmark",
         "size": n,
-        **{k: v for k, v in evidence.__dict__.items()},
+        "correct": report.all_valid,
+        "promotion": dict(evidence.__dict__),
+        "report": report.as_dict(),
     }
 
 

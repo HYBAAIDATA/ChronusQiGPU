@@ -44,6 +44,11 @@ from .contracts import (
 from .engine import execute as _engine_execute
 from .errors import TensorValidationError
 from .folded import FOLDED_OPERATOR_CATALOGUE, folded_execute
+from .receipts import (
+    build_backend_receipt,
+    build_folded_receipt,
+    logical_bytes,
+)
 from .router import default_registry
 from .runtime import CancellationToken, timed_execute
 
@@ -239,11 +244,12 @@ class TensorRuntime:
         # lifted path never decodes them at all.
         states = tuple(self.store.read_state(n) for n in names)
         token.check()
+        started_ns = time.perf_counter_ns()
 
         def _run():
             return folded_execute(operation, states)
 
-        (out_state, receipt), _measurement = timed_execute(
+        (out_state, fold_receipt), measurement = timed_execute(
             _run,
             operations=out_state_ops(states),
             backend=f"tensor.folded:{operation}",
@@ -252,6 +258,17 @@ class TensorRuntime:
             cancel_token=token,
         )
         out_name = out or f"{request_id}:out"
+        receipt = build_folded_receipt(
+            request_id=request_id,
+            operation=operation,
+            states=states,
+            output_name=out_name,
+            out_state=out_state,
+            fold_receipt=fold_receipt,
+            elapsed_ns=measurement.elapsed_ns,
+            cancelled=token.cancelled,
+            started_ns=started_ns,
+        )
         with self._lock:
             # Atomic publication: custody of the produced folded state and
             # the receipt appear together — no unfold/re-fold round trip.
@@ -259,14 +276,15 @@ class TensorRuntime:
             record = {
                 "request_id": request_id,
                 "operation": operation,
-                "path": receipt.path,
+                "path": fold_receipt.path,
                 "inputs": list(names),
                 "output": out_name,
                 "output_hash": out_state.content_hash,
-                "decoded_bytes": receipt.decoded_bytes,
+                "decoded_bytes": fold_receipt.decoded_bytes,
                 "elapsed_ns": receipt.elapsed_ns,
                 "truth_class": TruthClass.MEASURED.value,
-                "published_ns": time.perf_counter_ns(),
+                "receipt": receipt.as_dict(),
+                "published_ns": receipt.published_ns,
             }
             self._results[request_id] = record
         return dict(record)
@@ -278,9 +296,16 @@ class TensorRuntime:
     ) -> Dict[str, Any]:
         # Mixed operands are legal: resident names resolve to arrays here;
         # the folded path only engages when *every* operand is resident.
+        resident_names = {
+            o for o in operands
+            if isinstance(o, str) and o in self.tensor_names()
+        }
+        decoded_input_bytes = sum(
+            logical_bytes(self.store.read_state(n)) for n in resident_names
+        )
         resolved = tuple(
             self.store.read(o)
-            if isinstance(o, str) and o in self.tensor_names()
+            if isinstance(o, str) and o in resident_names
             else o
             for o in operands
         )
@@ -322,11 +347,22 @@ class TensorRuntime:
             ),
         )
         token.check()
+        started_ns = time.perf_counter_ns()
         result = _engine_execute(
             request, arrays,
             model=ModelIdentity(model_id=model_id),
             registry=self.registry,
             cancel_token=token,
+        )
+        receipt = build_backend_receipt(
+            request_id=request_id,
+            operation=operation,
+            arrays=arrays,
+            decoded_input_bytes=decoded_input_bytes,
+            result=result,
+            output_id=f"{request_id}:out",
+            elapsed_ns=result.measurement.elapsed_ns,
+            started_ns=started_ns,
         )
         with self._lock:
             record = {
@@ -339,7 +375,8 @@ class TensorRuntime:
                 "elapsed_ns": result.measurement.elapsed_ns,
                 "truth_class": result.truth_class.value,
                 "fallback_used": result.measurement.fallback_used,
-                "published_ns": time.perf_counter_ns(),
+                "receipt": receipt.as_dict(),
+                "published_ns": receipt.published_ns,
             }
             self._results[request_id] = record
         return dict(record)
