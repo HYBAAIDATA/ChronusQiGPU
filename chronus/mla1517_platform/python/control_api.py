@@ -70,6 +70,7 @@ _PRIVILEGED_PREFIXES = (
     "/api/v1/scale/",
     "/api/v1/assembly/",
     "/api/v1/security/",
+    "/api/v1/tensor/",
 )
 from lucas.ladder import FULL_LADDER
 
@@ -1947,6 +1948,92 @@ def _salamander_fault(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]
     return HTTPStatus.OK, {"ok": True, "recorded": True}
 
 
+_TENSOR_RUNTIME_GUARD = threading.Lock()
+_TENSOR_RUNTIME: Any = None
+
+
+def _tensor_runtime() -> Any:
+    """Lazily construct the canonical TensorRuntime the API serves.
+
+    Deferred to the first /api/v1/tensor/* request so control-plane startup
+    and read-only GETs never pay the custody/backend import.
+    """
+    global _TENSOR_RUNTIME
+    with _TENSOR_RUNTIME_GUARD:
+        if _TENSOR_RUNTIME is None:
+            from tensor.api import default_runtime
+
+            _TENSOR_RUNTIME = default_runtime()
+        return _TENSOR_RUNTIME
+
+
+def tensor_capabilities_payload() -> dict[str, Any]:
+    """GET /api/v1/tensor/capabilities — the runtime's honest catalogue."""
+    return _tensor_runtime().capabilities()
+
+
+def _tensor_execute(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
+    """POST /api/v1/tensor/execute — canonical tensor.execute surface.
+
+    Body shapes:
+      {"operation": "add", "inputs": ["a", "b"]}
+        run folded-resident over resident blocks a,b
+      {"operation": "add", "operands": [[[..]], [[..]]], "dtype": "float64"}
+        run the backend path over inline arrays
+      {"operation": "add", "tensors": {"a": [[..]], "b": [[..]]}}
+        take custody of each payload first, then run folded-resident
+    """
+    import numpy as np
+
+    operation = str(body.get("operation") or "").strip()
+    if not operation:
+        raise ValueError("operation is required")
+    dtype = str(body.get("dtype", "float64"))
+    rt = _tensor_runtime()
+    request_tag = f"api-{int(time.time_ns())}"
+
+    inputs = body.get("inputs")
+    tensors = body.get("tensors")
+    if tensors is not None:
+        if not isinstance(tensors, dict) or not tensors:
+            raise ValueError("tensors must be a non-empty {name: data} map")
+        names = []
+        for key, data in tensors.items():
+            name = f"{request_tag}:{key}"
+            rt.store_tensor(
+                name,
+                np.asarray(data, dtype=dtype),
+                depth=int(body.get("depth", 3)),
+            )
+            names.append(name)
+        inputs = names
+
+    if inputs is None:
+        operands = body.get("operands")
+        if not isinstance(operands, list) or not operands:
+            raise ValueError("request needs inputs, operands, or tensors")
+        inputs = operands
+    if not isinstance(inputs, list) or not inputs:
+        raise ValueError("inputs must be a non-empty list")
+
+    operand_values = [
+        np.asarray(o, dtype=dtype) if isinstance(o, (list, tuple)) else str(o)
+        for o in inputs
+    ]
+    record = rt.execute(
+        operation,
+        operand_values,
+        out=body.get("out"),
+        dtype=dtype,
+        backend_required=body.get("backend"),
+        request_id=str(body.get("request_id") or request_tag),
+    )
+    payload = {"schema_version": "tensor.execute/1", **record}
+    if record.get("path") != "backend" and record.get("output"):
+        payload["values"] = rt.read_tensor(record["output"]).tolist()
+    return HTTPStatus.OK, payload
+
+
 def _toe_bridge() -> Any:
     """Lazily construct the single TOEBridge the collapse endpoint serves.
 
@@ -2200,6 +2287,9 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/api/v1/security/status":
             self._json(*security_status_payload())
             return
+        if path == "/api/v1/tensor/capabilities":
+            self._json(HTTPStatus.OK, tensor_capabilities_payload())
+            return
         if path == "/api/v1/security/subscribe":
             code, security = security_status_payload()
             if code != HTTPStatus.OK:
@@ -2249,6 +2339,7 @@ class _Handler(BaseHTTPRequestHandler):
         "/api/v1/mining/elevate": _mining_elevate,
         "/api/v1/mining/escalate": _mining_escalate,
         "/api/v1/salamander/fault": _salamander_fault,
+        "/api/v1/tensor/execute": _tensor_execute,
     }
 
     def _guardian_api(self):

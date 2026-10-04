@@ -14,8 +14,8 @@ from typing import Any
 
 import numpy as np
 
-from .contracts import ExactnessMode, ModelIdentity, Precision, TensorOperationSpec, TensorRequest, TensorShape
-from .engine import execute as execute_tensor
+from .contracts import Precision
+from .api import TensorRuntime, default_runtime
 from .pulvini_bridge import load_geodesic_tensor_engine
 
 _DTYPE_TO_PRECISION={np.dtype(np.float32):Precision.FLOAT32,np.dtype(np.float64):Precision.FLOAT64}
@@ -70,28 +70,49 @@ class FoldedWeightState:
 
 
 class FoldedLinearPilot:
-    def __init__(self, folded_weights: FoldedWeightState): self.weights=folded_weights
+    def __init__(self, folded_weights: FoldedWeightState,
+                 runtime: TensorRuntime | None = None):
+        self.weights = folded_weights
+        # The pilot's weight custody is registered with the canonical
+        # runtime so per-request provenance names it; execution flows
+        # through runtime.execute instead of a bare backend call.
+        self.runtime = runtime if runtime is not None else default_runtime()
+        self.runtime.register_custody(
+            "folded-linear-weights", folded_weights.state)
 
-    def run(self,activations:np.ndarray,*,chunk_rows:int=128,backend_required:str="numpy-cpu",
-            registry=None,model_id:str="folded-linear-pilot"):
+    def run(self, activations: np.ndarray, *, chunk_rows: int = 128,
+            backend_required: str = "numpy-cpu",
+            registry=None, model_id: str = "folded-linear-pilot"):
         if chunk_rows<1: raise ValueError("chunk_rows must be positive")
-        dtype=self.weights.numpy_dtype; precision=_DTYPE_TO_PRECISION[dtype]
+        dtype=self.weights.numpy_dtype
         x=np.asarray(activations,dtype=dtype); was_vector=x.ndim==1
         if was_vector: x=x.reshape(1,-1)
         if x.ndim!=2 or x.shape[1]!=self.weights.shape[1]:
             raise ValueError("activations must have shape (batch, in_features)")
         started=time.perf_counter_ns(); chunks=[]; partial_stats=[]; measurements=[]; total_ops=0
         out_features,in_features=self.weights.shape
-        for start in range(0,out_features,int(chunk_rows)):
-            stop=min(out_features,start+int(chunk_rows)); weight_rows,stats=self.weights.rows(start,stop)
-            partial_stats.append(stats); rhs=np.ascontiguousarray(weight_rows.T)
-            batch=x.shape[0]; width=stop-start; op_count=2*batch*in_features*width; total_ops+=op_count
-            spec=TensorOperationSpec(name="matmul",input_shapes=(TensorShape((batch,in_features)),
-                    TensorShape((in_features,width))),output_shape=TensorShape((batch,width)),
-                    dtype=precision,exactness_mode=ExactnessMode.EXACT,op_count=op_count)
-            request=TensorRequest(operation=spec,backend_required=backend_required,allow_fallback=False)
-            result=execute_tensor(request,(x,rhs),registry=registry,model=ModelIdentity(model_id=model_id))
-            chunks.append(np.asarray(result.data,dtype=dtype)); measurements.append(result.as_dict())
+        if registry is None:
+            runtime = self.runtime
+        else:
+            runtime = TensorRuntime(registry=registry)
+        for start in range(0, out_features, int(chunk_rows)):
+            stop = min(out_features, start + int(chunk_rows))
+            weight_rows, stats = self.weights.rows(start, stop)
+            partial_stats.append(stats)
+            rhs = np.ascontiguousarray(weight_rows.T)
+            batch = x.shape[0]
+            width = stop - start
+            op_count = 2 * batch * in_features * width
+            total_ops += op_count
+            record = runtime.execute(
+                "matmul", (x, rhs), dtype=dtype.name,
+                backend_required=backend_required,
+                model_id=model_id,
+                op_count=op_count,
+                exactness="exact",
+            )
+            chunks.append(np.asarray(record["output"], dtype=dtype))
+            measurements.append(record)
         output=np.concatenate(chunks,axis=1) if chunks else np.empty((x.shape[0],0),dtype=dtype)
         elapsed_ns=max(1,time.perf_counter_ns()-started); baseline=x@self.weights.restore().T
         diff=np.asarray(output,dtype=np.float64)-np.asarray(baseline,dtype=np.float64)

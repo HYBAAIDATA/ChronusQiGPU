@@ -34,7 +34,7 @@ import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Iterable, Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 import numpy as np
 
@@ -159,6 +159,44 @@ class PersistentFoldStore:
             self._blocks[name] = block
             return block
 
+    def create_state(
+        self,
+        name: str,
+        state: NumericFoldState,
+        *,
+        device_id: Optional[str] = None,
+    ) -> FoldBlock:
+        """Take custody of an already-folded state as version 0.
+
+        This is how produced folded results enter the store — no
+        decode/re-fold round trip, so custody stays byte-exact.
+        """
+        if not name:
+            raise FoldStoreError("block name is required")
+        if not isinstance(state, NumericFoldState):
+            raise FoldStoreError("create_state requires a NumericFoldState")
+        if not state.content_hash or not state.verify_content_hash():
+            raise FoldStoreError("fold state fails content-hash verification")
+        with self._lock:
+            if name in self._blocks:
+                raise FoldStoreError(f"block {name!r} already exists")
+            version = FoldBlockVersion(
+                version=0,
+                state=state,
+                lineage=("genesis",),
+                commit_id="genesis",
+                created_ns=time.time_ns(),
+            )
+            block = FoldBlock(
+                name=name,
+                versions={0: version},
+                current_version=0,
+                device_id=device_id,
+                _commit_ids=frozenset({"genesis"}),
+            )
+            self._blocks[name] = block
+            return block
+
     def block(self, name: str) -> FoldBlock:
         try:
             return self._blocks[name]
@@ -192,6 +230,11 @@ class PersistentFoldStore:
         """True addressed partial read of a resident block."""
         with self._lock:
             return unfold_partial(self._resident_block(name).state, boundary)
+
+    def read_state(self, name: str) -> NumericFoldState:
+        """The resident folded state itself — for folded-resident execution."""
+        with self._lock:
+            return self._resident_block(name).state
 
     def version(self, name: str) -> int:
         return self.block(name).current_version
