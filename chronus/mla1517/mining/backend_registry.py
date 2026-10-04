@@ -448,7 +448,21 @@ class BackendRegistry:
         cached = self._probed.get(lane)
         if not force and cached is not None and self._clock() - cached.probed_at < self._ttl:
             return cached
-        probe = self._probes[lane]()
+        factory = self._probes.get(lane)
+        if factory is None:
+            # A lane without a wired probe is unavailable by definition —
+            # fail closed with the measured reason, never a bare KeyError.
+            probe = LaneProbe(
+                lane=lane.value,
+                available=False,
+                backend=None,
+                device=None,
+                probed_at=self._clock(),
+                reason=f"no capability probe wired for lane {lane.value}",
+            )
+            self._probed[lane] = probe
+            return probe
+        probe = factory()
         self._probed[lane] = probe
         return probe
 
