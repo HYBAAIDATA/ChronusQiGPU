@@ -16,6 +16,7 @@ from .models import (
     ActionKind,
     ActionRequest,
     ActionResult,
+    ActionVerification,
     Admission,
     AdmissionDecision,
     Availability,
@@ -31,6 +32,7 @@ from .models import (
     HealthState,
     LearningExperience,
     OvidRecordIdentity,
+    OptimizationTrial,
     PolicyLifecycle,
     PolicyVersion,
     RewardAuthority,
@@ -92,6 +94,36 @@ class EvidenceLedger:
                 raise FailClosed("autonomic evidence digest mismatch")
             previous = record["evidence_sha256"]
         return previous == self._head
+
+    def to_payload(self) -> Mapping[str, Any]:
+        body = {
+            "schema": "salamander.autonomic-evidence-checkpoint.v1",
+            "records": copy.deepcopy(self._records),
+            "head": self._head,
+        }
+        return {**body, "seal": digest("salamander.autonomic-evidence-checkpoint.v1", body)}
+
+    @classmethod
+    def from_payload(
+        cls,
+        payload: Mapping[str, Any],
+        *,
+        sink: Callable[[Mapping[str, Any]], None] | None = None,
+    ) -> "EvidenceLedger":
+        body = {
+            "schema": payload.get("schema"),
+            "records": payload.get("records"),
+            "head": payload.get("head"),
+        }
+        if body["schema"] != "salamander.autonomic-evidence-checkpoint.v1":
+            raise FailClosed("unsupported autonomic evidence checkpoint")
+        if payload.get("seal") != digest("salamander.autonomic-evidence-checkpoint.v1", body):
+            raise FailClosed("autonomic evidence checkpoint seal mismatch")
+        ledger = cls(sink=sink)
+        ledger._records = copy.deepcopy(list(body["records"] or ()))
+        ledger._head = str(body["head"])
+        ledger.verify()
+        return ledger
 
 
 class CircuitBreaker:
@@ -168,32 +200,63 @@ class RecoveryPlan:
 
 
 class ActionRegistry:
-    """Only exact registered handlers can actuate; no shell/SQL/path handlers exist."""
+    """Bounded actuators paired with independent postcondition verifiers."""
 
     def __init__(self) -> None:
-        self._handlers: dict[str, tuple[set[ActionKind], Callable[[ActionRequest], Mapping[str, Any]]]] = {}
+        self._handlers: dict[
+            str,
+            tuple[
+                set[ActionKind],
+                Callable[[ActionRequest], Mapping[str, Any]],
+                str,
+                Callable[[ActionRequest, Mapping[str, Any]], Mapping[str, Any]],
+            ],
+        ] = {}
 
     def register(
         self,
         name: str,
         kinds: Iterable[ActionKind],
         handler: Callable[[ActionRequest], Mapping[str, Any]],
+        *,
+        verifier_id: str,
+        verifier: Callable[[ActionRequest, Mapping[str, Any]], Mapping[str, Any]],
     ) -> None:
         if not name or name in self._handlers or not callable(handler):
             raise ValueError("handler must be callable, named and unique")
+        if not verifier_id or not callable(verifier):
+            raise ValueError("an independent named postcondition verifier is required")
         allowed = set(kinds)
         if not allowed:
             raise ValueError("handler must have explicit action kinds")
-        self._handlers[name] = (allowed, handler)
+        self._handlers[name] = (allowed, handler, verifier_id, verifier)
 
     def execute(self, request: ActionRequest) -> Mapping[str, Any]:
         registered = self._handlers.get(request.handler)
         if registered is None:
             raise FailClosed("unregistered action handler")
-        kinds, handler = registered
+        kinds, handler, _, _ = registered
         if request.kind not in kinds:
             raise FailClosed("handler is not registered for action kind")
         return dict(handler(request))
+
+    def verify(
+        self, request: ActionRequest, response: Mapping[str, Any]
+    ) -> ActionVerification:
+        registered = self._handlers.get(request.handler)
+        if registered is None:
+            raise FailClosed("unregistered action handler")
+        _, _, verifier_id, verifier = registered
+        result = dict(verifier(request, dict(response)))
+        verified = result.get("verified") is True
+        evidence_ref = result.get("evidence_ref")
+        return ActionVerification(
+            verifier_id=verifier_id,
+            verified=verified,
+            evidence_ref=str(evidence_ref) if evidence_ref else None,
+            observations=dict(result.get("observations", {})),
+            error=None if verified else str(result.get("error") or "postcondition not proven"),
+        )
 
 
 class HealthEnvelope:
@@ -272,7 +335,7 @@ class AutonomicControlPlane:
         self._tenant_inflight: dict[str, int] = defaultdict(int)
         self._policies: dict[str, PolicyVersion] = {}
         self._current_policy: str | None = None
-        self._baseline_metrics: dict[str, tuple[float, float]] = {}
+        self._baseline_metrics: dict[str, tuple[float, float, bool]] = {}
 
     # --------------------------------------------------------- health/events
     def observe(
@@ -389,12 +452,29 @@ class AutonomicControlPlane:
         before = self.ledger.append("action-proposed", asdict(request), at_ns=now)
         try:
             response = self.registry.execute(request)
-            verified = bool(response.get("verified", False))
-            after = self.ledger.append("action-result-payload", response, at_ns=self.clock_ns())
+            execution_ref = self.ledger.append(
+                "action-result-payload", response, at_ns=self.clock_ns()
+            )
+            try:
+                verification = self.registry.verify(request, response)
+            except Exception as exc:
+                verification = ActionVerification(
+                    verifier_id="unavailable",
+                    verified=False,
+                    evidence_ref=None,
+                    observations={"execution_ref": execution_ref},
+                    error=f"{type(exc).__name__}: {exc}",
+                )
+            verification_ref = self.ledger.append(
+                "action-independent-verification",
+                asdict(verification),
+                at_ns=self.clock_ns(),
+            )
+            verified = verification.verified
             result = ActionResult(
                 request.action_id, "VERIFIED" if verified else "UNVERIFIED",
-                now, self.clock_ns(), request.handler, before, after, verified,
-                None if verified else "handler did not provide post-action verification",
+                now, self.clock_ns(), request.handler, before, verification_ref, verified,
+                verification.error,
             )
             circuit.record(verified, self.clock_ns())
         except Exception as exc:
@@ -501,16 +581,89 @@ class AutonomicControlPlane:
         self.ledger.append("policy-transition", asdict(policy), at_ns=self.clock_ns())
         return policy
 
-    def set_baseline(self, metric: str, mean: float, tolerance: float) -> None:
-        if tolerance < 0:
-            raise ValueError("tolerance must be non-negative")
-        self._baseline_metrics[metric] = (float(mean), float(tolerance))
+    def set_baseline(
+        self,
+        metric: str,
+        mean: float,
+        tolerance: float,
+        *,
+        higher_is_better: bool = True,
+    ) -> None:
+        if not metric or tolerance < 0:
+            raise ValueError("metric and non-negative tolerance are required")
+        self._baseline_metrics[metric] = (
+            float(mean), float(tolerance), bool(higher_is_better)
+        )
 
     def regression(self, metric: str, measured: float) -> bool:
         if metric not in self._baseline_metrics:
             raise FailClosed("regression baseline unavailable")
-        mean, tolerance = self._baseline_metrics[metric]
-        return float(measured) < mean - tolerance
+        mean, tolerance, higher_is_better = self._baseline_metrics[metric]
+        value = float(measured)
+        return value < mean - tolerance if higher_is_better else value > mean + tolerance
+
+    def evaluate_optimization(
+        self,
+        trial: OptimizationTrial,
+        verifier: Callable[[OptimizationTrial], Mapping[str, Any]],
+    ) -> Mapping[str, Any]:
+        policy = self._policies.get(trial.policy_id)
+        if policy is None:
+            raise FailClosed("optimization policy is not registered")
+        if policy.lifecycle not in {
+            PolicyLifecycle.VALIDATED,
+            PolicyLifecycle.FINAL_TESTED,
+            PolicyLifecycle.SHADOW,
+            PolicyLifecycle.CANARY,
+            PolicyLifecycle.PROMOTED,
+        }:
+            raise FailClosed("optimization policy has not reached an evaluation gate")
+        baseline = dict(trial.baseline_measurements)
+        candidate = dict(trial.candidate_measurements)
+        missing = sorted(set(candidate) - set(self._baseline_metrics))
+        if missing:
+            raise FailClosed("optimization baselines unavailable: " + ", ".join(missing))
+        verification = dict(verifier(trial))
+        independently_verified = verification.get("verified") is True
+        verifier_ref = str(verification.get("evidence_ref") or "")
+        if independently_verified and not verifier_ref:
+            raise FailClosed("independent optimization evidence is required")
+        regressions: list[str] = []
+        improvements: list[str] = []
+        for metric, value in candidate.items():
+            configured, tolerance, higher_is_better = self._baseline_metrics[metric]
+            if abs(float(baseline[metric]) - configured) > tolerance:
+                raise FailClosed(f"optimization baseline drifted for {metric}")
+            delta = float(value) - float(baseline[metric])
+            if self.regression(metric, value):
+                regressions.append(metric)
+            elif (higher_is_better and delta > tolerance) or (
+                not higher_is_better and delta < -tolerance
+            ):
+                improvements.append(metric)
+        accepted = independently_verified and not regressions and bool(improvements)
+        result = {
+            "trial_id": trial.trial_id,
+            "policy_id": trial.policy_id,
+            "partition": trial.partition.value,
+            "sample_count": trial.sample_count,
+            "accepted": accepted,
+            "regressions": tuple(sorted(regressions)),
+            "improvements": tuple(sorted(improvements)),
+            "trial_evidence_ref": trial.evidence_ref,
+            "verifier_evidence_ref": verifier_ref or None,
+        }
+        evidence = self.ledger.append(
+            "optimization-evaluation", result, at_ns=self.clock_ns()
+        )
+        if not accepted:
+            target = (
+                PolicyLifecycle.ROLLED_BACK
+                if policy.lifecycle is PolicyLifecycle.PROMOTED
+                else PolicyLifecycle.QUARANTINED
+            )
+            self.transition_policy(policy.policy_id, target, evidence)
+        return result
 
     def rollback_on_regression(self, policy_id: str, measurements: Mapping[str, float], evidence_ref: str) -> bool:
         regressed = any(self.regression(name, value) for name, value in measurements.items())

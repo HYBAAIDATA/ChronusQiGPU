@@ -25,6 +25,7 @@ from salamander.models import (
     HealthObservation,
     HealthState,
     OvidRecordIdentity,
+    OptimizationTrial,
     PolicyLifecycle,
     PolicyVersion,
     RewardAuthority,
@@ -48,7 +49,7 @@ def request(action_id="a", handler="bounded", kind=ActionKind.REPLAN, dep=()):
     )
 
 
-def plane(handler=None):
+def plane(handler=None, verifier=None):
     registry = ActionRegistry()
     registry.register(
         "bounded",
@@ -56,7 +57,13 @@ def plane(handler=None):
             ActionKind.REPLAN, ActionKind.THROTTLE, ActionKind.FAILOVER,
             ActionKind.REBUILD_PROJECTION, ActionKind.ROLLBACK,
         },
-        handler or (lambda _: {"verified": True, "post_observation": "healthy"}),
+        handler or (lambda _: {"post_observation": "healthy"}),
+        verifier_id="independent-test-probe",
+        verifier=verifier or (lambda _request, response: {
+            "verified": response.get("post_observation") == "healthy",
+            "evidence_ref": "probe:healthy",
+            "observations": {"health": response.get("post_observation")},
+        }),
     )
     return AutonomicControlPlane(registry=registry, clock_ns=Clock())
 
@@ -165,10 +172,16 @@ def test_action_handlers_are_registered_bounded_and_idempotent():
 
 
 def test_unverified_action_is_not_recovery_proof():
-    cp = plane(lambda _: {"verified": False})
+    cp = plane(
+        lambda _: {"verified": True, "post_observation": "claimed-healthy"},
+        verifier=lambda _request, _response: {
+            "verified": False, "error": "independent probe failed"
+        },
+    )
     result = cp.execute(request())
     assert result.status == "UNVERIFIED"
     assert not result.verified
+    assert "independent probe failed" in result.error
 
 
 def test_tenant_admission_and_isolation():
@@ -289,6 +302,67 @@ def test_evidence_chain_detects_tamper_and_api_has_real_availability():
         ledger.verify()
     snapshot = plane().api_snapshot()
     assert snapshot["routes"]["/api/salamander/evidence"] == "AVAILABLE"
+
+
+def test_action_registration_requires_independent_verifier():
+    registry = ActionRegistry()
+    with pytest.raises((TypeError, ValueError)):
+        registry.register("unsafe", {ActionKind.REPLAN}, lambda _: {"verified": True})
+
+
+def test_evidence_checkpoint_round_trip_and_tamper_rejection():
+    ledger = EvidenceLedger()
+    ledger.append("observed", {"value": 1}, at_ns=1)
+    payload = ledger.to_payload()
+    restored = EvidenceLedger.from_payload(payload)
+    assert restored.verify()
+    assert restored.head == ledger.head
+    tampered = dict(payload)
+    tampered["head"] = "f" * 64
+    with pytest.raises(FailClosed):
+        EvidenceLedger.from_payload(tampered)
+
+
+def test_optimization_requires_holdout_independent_proof_and_improvement():
+    cp = plane()
+    policy = PolicyVersion("policy:opt", "a" * 64, "b" * 64)
+    cp.register_policy(policy)
+    for state in (PolicyLifecycle.TRAINED, PolicyLifecycle.VALIDATED):
+        cp.transition_policy(policy.policy_id, state, "e:" + state.value)
+    cp.set_baseline("throughput", 100.0, 2.0, higher_is_better=True)
+    cp.set_baseline("latency", 20.0, 1.0, higher_is_better=False)
+    trial = OptimizationTrial(
+        "trial:1", policy.policy_id, DatasetPartition.TEMPORAL_HOLDOUT,
+        {"throughput": 100.0, "latency": 20.0},
+        {"throughput": 110.0, "latency": 18.0},
+        50, "ovid:trial-1", "holdout:2026-10-04",
+    )
+    result = cp.evaluate_optimization(
+        trial, lambda _: {"verified": True, "evidence_ref": "independent:trial-1"}
+    )
+    assert result["accepted"] is True
+    assert set(result["improvements"]) == {"throughput", "latency"}
+    assert policy.lifecycle is PolicyLifecycle.VALIDATED
+
+
+def test_optimization_regression_quarantines_candidate():
+    cp = plane()
+    policy = PolicyVersion("policy:bad", "a" * 64, "b" * 64)
+    cp.register_policy(policy)
+    for state in (PolicyLifecycle.TRAINED, PolicyLifecycle.VALIDATED):
+        cp.transition_policy(policy.policy_id, state, "e:" + state.value)
+    cp.set_baseline("throughput", 100.0, 2.0)
+    trial = OptimizationTrial(
+        "trial:bad", policy.policy_id, DatasetPartition.FINAL_TEST,
+        {"throughput": 100.0}, {"throughput": 90.0},
+        25, "ovid:trial-bad", "final:2026-10-04",
+    )
+    result = cp.evaluate_optimization(
+        trial, lambda _: {"verified": True, "evidence_ref": "independent:bad"}
+    )
+    assert result["accepted"] is False
+    assert result["regressions"] == ("throughput",)
+    assert policy.lifecycle is PolicyLifecycle.QUARANTINED
 
 
 def test_no_arbitrary_execution_surface():
