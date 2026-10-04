@@ -9,6 +9,7 @@ unmeasured performance claims.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import math
 import os
 from pathlib import Path
 from threading import Lock
@@ -426,6 +427,86 @@ def plan_work_group(kernel: Any, device: Any, cl: Any) -> int:
     return max(1, min(device_max, kernel_max))
 
 
+_U32_MAX = (1 << 32) - 1
+
+
+def _declared_dims(shape: Sequence[int]) -> tuple[int, ...]:
+    dims = []
+    for value in shape:
+        try:
+            dimension = int(value)
+        except (TypeError, ValueError):
+            raise ChronusTensorValidationError(
+                f"invalid declared dimension {value!r}"
+            ) from None
+        if dimension != value or dimension < 1:
+            raise ChronusTensorValidationError(f"invalid declared dimension {value!r}")
+        dims.append(dimension)
+    return tuple(dims)
+
+
+def validate_dispatch(
+    operation: str,
+    input_shapes: Sequence[Sequence[int]],
+    output_shape: Sequence[int],
+) -> None:
+    """Prove the declared output shape from the declared inputs before allocation.
+
+    Kernels address operands through 32-bit unsigned indices and receive
+    dimensions as ``uint32``, so every dimension and every operand's element
+    count must fit that bound; larger work is rejected here rather than
+    narrowed silently at launch.
+    """
+    shapes = [_declared_dims(shape) for shape in input_shapes]
+    out = _declared_dims(output_shape)
+    if not out:
+        raise ChronusTensorValidationError("output must contain at least one element")
+    for shape in (*shapes, out):
+        if math.prod(shape) > _U32_MAX:
+            raise ChronusTensorValidationError(
+                f"shape {shape} exceeds the uint32 kernel addressing bound"
+            )
+    if operation in {"add", "hadamard"}:
+        if len(shapes) != 2 or shapes[0] != shapes[1]:
+            raise ChronusTensorValidationError(f"{operation} requires two equal shapes")
+        if out != shapes[0]:
+            raise ChronusTensorValidationError(
+                f"{operation} output shape {out} does not match input shape {shapes[0]}"
+            )
+    elif operation == "scale":
+        if len(shapes) != 2 or not shapes[0] or math.prod(shapes[1]) != 1:
+            raise ChronusTensorValidationError("scale requires a tensor and one scalar")
+        if out != shapes[0]:
+            raise ChronusTensorValidationError(
+                f"scale output shape {out} does not match input shape {shapes[0]}"
+            )
+    elif operation == "matmul":
+        if len(shapes) != 2 or len(shapes[0]) != 2 or len(shapes[1]) != 2:
+            raise ChronusTensorValidationError("matmul requires two rank-2 inputs")
+        m, k = shapes[0]
+        k2, n = shapes[1]
+        if k != k2 or out != (m, n):
+            raise ChronusTensorValidationError("matmul dimensions/output shape disagree")
+    elif operation == "kron":
+        if len(shapes) != 2 or len(shapes[0]) != len(shapes[1]):
+            raise ChronusTensorValidationError("kron requires equal-rank inputs")
+        if len(shapes[0]) == 1:
+            expected = (shapes[0][0] * shapes[1][0],)
+        elif len(shapes[0]) == 2:
+            expected = (
+                shapes[0][0] * shapes[1][0],
+                shapes[0][1] * shapes[1][1],
+            )
+        else:
+            raise ChronusTensorValidationError("Chronus kron supports rank 1 or 2")
+        if out != expected:
+            raise ChronusTensorValidationError(
+                f"kron output shape {out} does not match expected {expected}"
+            )
+    else:
+        raise ChronusTensorValidationError(f"unsupported operation {operation!r}")
+
+
 class ChronusTensorRuntime:
     def __init__(self) -> None:
         cl, selected, reason = _pick_gpu()
@@ -579,7 +660,8 @@ class ChronusTensorRuntime:
             raise ChronusTensorValidationError("input count does not match declared shapes")
         declared = validate_declared_output_shape(operation, input_shapes, output_shape)
         arrays = [self._float32_array(v, s) for v, s in zip(inputs, input_shapes)]
-        out_size = int(np.prod(declared, dtype=np.int64))
+        validate_dispatch(operation, input_shapes, output_shape)
+        out_size = int(np.prod(tuple(output_shape), dtype=np.int64))
         if out_size <= 0:
             raise ChronusTensorValidationError("output must contain at least one element")
         buffers, output, out_buffer = self._buffers(arrays, out_size)
@@ -719,5 +801,5 @@ __all__ = [
     "plan_work_group",
     "probe",
     "probe_tensor",
-    "validate_declared_output_shape",
+    "validate_dispatch",
 ]

@@ -118,23 +118,38 @@ def _execution_hasher(backend: str, registry: BackendRegistry | None = None):
     """The hasher behind the Execution Router, bound through the registry.
 
     A lane is usable only after its real capability probe: ``auto`` probes
-    GPU then remote, then falls back to the CPU reference with the fallback
-    reason recorded; explicit lanes (``cpu``, ``gpu``/``opencl``, ``remote``,
-    ``asic``, ``super_asic``) select only that lane or fail closed. The
+    the local GPU lanes (OpenCL, then Chronus-owned CUDA and Metal), then
+    remote, then falls back to the CPU reference with the fallback
+    reason recorded; explicit lanes (``cpu``, ``gpu``/``opencl``, ``cuda``,
+    ``metal``, ``remote``, ``asic``, ``super_asic``) select only that lane
+    or fail closed. The
     ``asic`` lane requires a live ASIC channel; ``super_asic`` runs the
     Lucas-partitioned composite over whichever substrates genuinely bound.
     """
     return (registry or _registry()).select(backend).hasher
 
 
-EXECUTION_DEVICES = ("auto", "opencl", "gpu", "cpu", "remote", "asic", "super_asic")
+EXECUTION_DEVICES = (
+    "auto",
+    "opencl",
+    "gpu",
+    "cpu",
+    "cuda",
+    "metal",
+    "remote",
+    "asic",
+    "super_asic",
+)
 
 
 def execution_device() -> str | None:
     """Bridge-free mining device from ``PYTHIA_EXECUTION_DEVICE``, if declared.
 
     ``opencl``/``gpu`` mines on the OpenCL device the hasher binds and
-    self-checks against hashlib, and refuses to start without one; ``cpu``
+    self-checks against hashlib, and refuses to start without one;
+    ``cuda``/``metal`` mine on the Chronus-owned native SHA-256d lanes
+    (CuPy CUDA runtime / MLX on Apple GPU), each self-checked against
+    hashlib at bind with no CPU or OpenCL substitution; ``cpu``
     mines on the labelled CPU reference; ``remote`` mines on a remote GPU
     agent bound via ``MLA1517_REMOTE_GPU_ENDPOINT``; ``asic`` binds a real
     ASIC channel (``HYBRID_ASIC_ENDPOINT``/``HYBRID_ASIC_SERIAL``/
@@ -171,7 +186,7 @@ async def _main_async(args) -> None:
     if not args.device and device is None:
         raise SystemExit(
             "--device or MLA1517_MMIO_DEVICE is required "
-            "(or PYTHIA_EXECUTION_DEVICE=opencl|cpu|remote|asic|super_asic for bridge-free mining)"
+            "(or PYTHIA_EXECUTION_DEVICE=opencl|cpu|cuda|metal|remote|asic|super_asic for bridge-free mining)"
         )
     # The supervisor exports PYTHIA_IDENTITY_HMAC_SECRET to every spawned
     # worker (startup_contract.rotate_supervisor_secret). A standalone

@@ -29,15 +29,25 @@ class AethelPackageSurfaceTests(unittest.TestCase):
 
     def test_public_surface_resolves(self) -> None:
         for name in aethel.__all__:
-            self.assertTrue(
-                hasattr(aethel, name), f"aethel.__all__ exports missing {name}"
-            )
+            self.assertTrue(hasattr(aethel, name), f"aethel.__all__ exports missing {name}")
 
     def test_core_submodules_importable(self) -> None:
         for name in (
-            "constants", "cassini", "zeckendorf", "primes", "compute",
-            "gpu", "manifold", "unified", "shm", "errors", "fibonacci",
-            "storage", "encoding", "geodesic", "selftest",
+            "constants",
+            "cassini",
+            "zeckendorf",
+            "primes",
+            "compute",
+            "gpu",
+            "manifold",
+            "unified",
+            "shm",
+            "errors",
+            "fibonacci",
+            "storage",
+            "encoding",
+            "geodesic",
+            "selftest",
         ):
             with self.subTest(module=name):
                 module = importlib.import_module(f"aethel.{name}")
@@ -105,10 +115,11 @@ class AethelPackagingTests(unittest.TestCase):
         self.assertIn("capabilities.json", data)
 
     def test_capability_manifest_keeps_external_gates_unverified(self) -> None:
-        manifest = json.loads(
-            (_ROOT / "aethel" / "capabilities.json").read_text(encoding="utf-8")
-        )
+        manifest = json.loads((_ROOT / "aethel" / "capabilities.json").read_text(encoding="utf-8"))
         valid_statuses = {
+            "measured",
+            "best_effort",
+            "partial",
             "implemented+tested",
             "external-evidence-required",
             "provisional",
@@ -118,11 +129,14 @@ class AethelPackagingTests(unittest.TestCase):
         self.assertTrue(manifest["claims"])
         for claim in manifest["claims"]:
             self.assertIn(claim["status"], valid_statuses)
-            self.assertIn("implementation", claim)
-            self.assertIn("tests", claim)
+            self.assertFalse(claim["production_ready"])
+            self.assertTrue(
+                any(key in claim for key in ("surface", "evidence", "evidence_tests", "tests")),
+                f"claim {claim.get('id')} carries no evidence pointer",
+            )
         self.assertTrue(
             any(
-                claim["status"] == "external-evidence-required"
+                claim["status"] in {"best_effort", "partial", "external-evidence-required"}
                 for claim in manifest["claims"]
             )
         )

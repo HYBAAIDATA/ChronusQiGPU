@@ -1,0 +1,1579 @@
+{
+  "schema": "pythia.july-2026-capability-gap-analysis/v1",
+  "reference_date": "2026-07-24",
+  "source_artifacts": [
+    {
+      "name": "GEODESIC_TENSOR_ENGINE_20260724.zip",
+      "sha256": "966ae765e76a516f9874d745f4f31e2560549b844388b85f044a1de1dc768398"
+    },
+    {
+      "name": "GEODESIC_TENSOR_ENGINE_EXTENDED_20260724.zip",
+      "sha256": "43d4d3a39fd13fb525bf3acf0b822af1ef55c6b801616aeb9bf326a76dcfa44b"
+    },
+    {
+      "name": "PULVINI_V3_HERMES_COMPLETION_20260724.zip",
+      "sha256": "a307f93ed32c1ba97ab6241b44f8789b16b33bab6f603e7bab1f9a0eef923277"
+    },
+    {
+      "name": "HYBA_1000_QUBIT_VQC_20260724.zip",
+      "sha256": "7b4ef03683de8bf03a189293bb72e4493c9a408c5722b38f4a1e2ca8f05e9038"
+    }
+  ],
+  "entries": [
+    {
+      "id": "acceleration_result_record",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.quantum_engine",
+      "public_surface": "algorithm acceleration result records",
+      "historical_capability": "Return an algorithm result with declared backend and measurement truth.",
+      "current_owner": "Turing",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/july_compat.py",
+      "status": "adapter-added",
+      "symbol": "turing_universal_quantum_computer.july_compat:AlgorithmResult",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_algorithm_result_rejects_overclaim"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_algorithm_result_keeps_claim_flags_false"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_enhanced_grover_and_qft_integrate_with_canonical_algorithms"
+        }
+      ],
+      "claim_boundary": "Immutable result records reject hardware, speedup, or consensus-authority assertions.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "acceleration_facade",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.quantum_engine",
+      "public_surface": "QuantumAccelerationEngine",
+      "historical_capability": "Algorithm facade and result records for bounded quantum algorithm execution.",
+      "current_owner": "Turing",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/july_compat.py",
+      "status": "adapter-added",
+      "symbol": "turing_universal_quantum_computer.july_compat:QuantumAccelerationEngine",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_algorithm_adapter_rejects_invalid_domains_and_types"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_algorithm_result_keeps_claim_flags_false"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_enhanced_grover_and_qft_integrate_with_canonical_algorithms"
+        }
+      ],
+      "claim_boundary": "Dense software simulation only; bounded to configured qubit width, no measured acceleration, hardware, or mining authority.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "audit_and_compliance",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.audit",
+      "public_surface": "AuditLedger",
+      "historical_capability": "Append-only evidence ledger and integrity checking.",
+      "current_owner": "AL HARAS",
+      "current_path": "al_haras/audit.py",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "Use the current hash-chain audit; a ledger does not establish compliance or theorem truth by itself.",
+      "redirect": "al_haras.audit.HashChainAudit",
+      "retirement_reason": "The July wrapper name is redundant with the canonical hash-chain audit."
+    },
+    {
+      "id": "compliance_verifier",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.compliance",
+      "public_surface": "ComplianceVerifier",
+      "historical_capability": "Evaluate evidence against current release and claim governance rules.",
+      "current_owner": "AL HARAS",
+      "current_path": "al_haras/claims_yaml.py; al_haras/promotion_gates.py",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "Claim governance checks configured evidence and policy; it does not prove scientific claims.",
+      "redirect": "al_haras.claims_yaml.load_claims",
+      "retirement_reason": "The historical facade is replaced by explicit AL HARAS claim and promotion gates."
+    },
+    {
+      "id": "backend_selection",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.quantum_engine",
+      "public_surface": "backend selection",
+      "historical_capability": "Select an execution backend by supported algorithm domain.",
+      "current_owner": "Turing",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/backends",
+      "status": "elevated",
+      "symbol": "turing_universal_quantum_computer.backends:select_backend",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "turing_universal_quantum_computer/tests/test_backend_boundary.py::test_dense_backend_refuses_beyond_its_budget"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "turing_universal_quantum_computer/tests/test_backend_boundary.py::test_no_backend_claims_a_physical_device_except_qpu"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "turing_universal_quantum_computer/tests/test_console_session.py::test_backends_matrix_lists_every_backend"
+        }
+      ],
+      "claim_boundary": "Registry dispatch is capability admission, not physical device evidence; unsupported domains fail closed.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "benchmark_reproducibility",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.benchmarks",
+      "public_surface": "benchmark and reproducibility surfaces",
+      "historical_capability": "Repeatable benchmark reports with execution and measurement boundaries.",
+      "current_owner": "Kellogg and Tensor",
+      "current_path": "kellogg/tensor_network.py; tensor/contracts.py",
+      "status": "elevated",
+      "symbol": "kellogg.tensor_network:TensorNetworkAudit",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_kellogg_tensor_network_convergence.py::test_tt_compatibility_payload_and_error_budget"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_kellogg_tensor_network_convergence.py::test_hamiltonian_evolution_is_norm_preserving"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_hash_pipeline.py::test_benchmark_reports_measured"
+        }
+      ],
+      "claim_boundary": "Reports distinguish measured fields from models and representation accounting; no general speedup claim.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "compression_artifact_codec",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.quantum_engine",
+      "public_surface": "ArtifactCodec",
+      "historical_capability": "Persist, reload, and validate compressed tensor artifacts.",
+      "current_owner": "Kellogg",
+      "current_path": "kellogg/tensor_serialization.py",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "Use checksummed, non-pickle PV serialization; validation is structural integrity, not artifact provenance.",
+      "redirect": "kellogg.tensor_serialization.save_pv/load_pv/validate_pv",
+      "retirement_reason": "The historical codec facade is replaced by the tested safe canonical serializer."
+    },
+    {
+      "id": "compression_policy",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.quantum_engine",
+      "public_surface": "CompressionPolicy",
+      "historical_capability": "Choose a tensor representation and bounded compression policy.",
+      "current_owner": "Kellogg",
+      "current_path": "kellogg/compressed_tensor.py",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "Use EngineConfig and explicit lossy TT/MPS error; representation ratios are not physical compression.",
+      "redirect": "kellogg.compressed_tensor.EngineConfig",
+      "retirement_reason": "The canonical engine already validates schemes, rank budgets, and approximation error."
+    },
+    {
+      "id": "compression_service",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.quantum_engine",
+      "public_surface": "PulviniCompressionService",
+      "historical_capability": "Compression-aware tensor loading, execution, and reconstruction.",
+      "current_owner": "Kellogg",
+      "current_path": "kellogg/compressed_tensor.py",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "Use the canonical operator engine; no physical compression or hardware benefit is implied.",
+      "redirect": "kellogg.compressed_tensor.QuantumCompressedTensorEngine",
+      "retirement_reason": "A second service layer would duplicate Kellogg ownership."
+    },
+    {
+      "id": "exact_tensor_core",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.formal",
+      "public_surface": "Exact tensor and algebraic contracts",
+      "historical_capability": "Validated exact state/tensor operations with bounded unsupported cases.",
+      "current_owner": "Kellogg",
+      "current_path": "kellogg/exact_tensor.py; kellogg/exact_field.py",
+      "status": "elevated",
+      "symbol": "kellogg.exact_tensor:ExactStateVector",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "turing_universal_quantum_computer/tests/test_exact_state_vector.py::test_tensor_and_cnot_bell_state"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_july_capability_consolidation.py::test_kellogg_binary_elementwise_reduce_and_metrics"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_kellogg_tensor_network_convergence.py::test_compressed_tensor_schemes_roundtrip"
+        }
+      ],
+      "claim_boundary": "Exactness applies only to declared algebraic domains; unsupported values or operations are rejected.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "formal_contract_reports",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.formal",
+      "public_surface": "FormalContract, AxiomReport, TheoremReport, ComplexityReport, FullContractReport",
+      "historical_capability": "Aggregate axioms, theorem statements, and complexity claims into contract reports.",
+      "current_owner": "Turing and AL HARAS",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/certificates.py; al_haras/",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "RunWitness records execution evidence only; this repository does not claim theorem proofs.",
+      "redirect": "turing_universal_quantum_computer.certificates.RunWitness",
+      "retirement_reason": "A generic theorem-report facade risks conflating executable evidence with mathematical proof."
+    },
+    {
+      "id": "geodesic_exact_folding",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.geodesic_tensor_engine",
+      "public_surface": "Exact PULVINI fold and selective unfold",
+      "historical_capability": "Reversible pair folding and selective reconstruction for tensor custody.",
+      "current_owner": "python_backend.core_modules",
+      "current_path": "python_backend/core_modules/math_folding.py; python_backend/core_modules/geodesic_tensor_engine.py",
+      "status": "elevated",
+      "symbol": "python_backend.core_modules.geodesic_tensor_engine:unfold_partial_with_stats",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_july_capability_consolidation.py::test_fold_result_round_trip_updates_only_requested_slice"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_july_capability_consolidation.py::test_integrity_gate_roundtrip_and_metrics"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_july_capability_consolidation.py::test_selective_unfold_does_not_call_full_unfold"
+        }
+      ],
+      "claim_boundary": "Exact reversible representation and selective reads; no physical memory savings or acceleration claim.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "geodesic_tensor_facade",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.geodesic_tensor_engine",
+      "public_surface": "MetricTensor, PhiTensorCore, EnergyModel, HybridGPU",
+      "historical_capability": "Metric-aware tensor operations, virtual routing, and declared resource models.",
+      "current_owner": "Kellogg, Tensor, and Chronus",
+      "current_path": "kellogg/phi_tensor_core.py; tensor/; chronus/tensor_compute.py",
+      "status": "elevated",
+      "symbol": "kellogg.phi_tensor_core:MetricTensor",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_july_capability_consolidation.py::test_metric_tensor_exposes_riemannian_surface"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_july_capability_consolidation.py::test_kellogg_binary_elementwise_reduce_and_metrics"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_july_capability_consolidation.py::test_current_chronus_physical_backend_declares_tensor_ops_fail_closed"
+        }
+      ],
+      "claim_boundary": "Virtual routing and EnergyModel values are not device measurements; hardware execution uses Chronus provenance.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "hamiltonian_reduction",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.hamiltonian",
+      "public_surface": "HamiltonianReducer",
+      "historical_capability": "Reduce Hamiltonian dimension while preserving spectral and topology properties.",
+      "current_owner": "quantum_compute_substrate.pulvini",
+      "current_path": "quantum_compute_substrate/pulvini/pulvini_scaling.py",
+      "status": "elevated",
+      "symbol": "quantum_compute_substrate.pulvini.pulvini_scaling:PulviniOperator",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "quantum_compute_substrate/tests/test_pulvini.py::TestSpectralGapPreservation::test_rejects_non_square"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "quantum_compute_substrate/tests/test_pulvini.py::TestSpectralGapPreservation::test_gap_preserved_dim_16"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "quantum_compute_substrate/tests/test_pulvini.py::TestSubstrateIntegration::test_orchestrator_hamiltonian_from_cathedral_pauli"
+        }
+      ],
+      "claim_boundary": "SVD projection into the phi^2-complement subspace with a measured spectral-gap delta and Frobenius reconstruction bound; the audit declares is_reversible=False for the Hamiltonian path.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "hamiltonian_result_record",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.hamiltonian",
+      "public_surface": "HamiltonianResult",
+      "historical_capability": "Report a Hamiltonian reduction outcome and its declared error or preservation evidence.",
+      "current_owner": "quantum_compute_substrate.pulvini",
+      "current_path": "quantum_compute_substrate/pulvini/pulvini_scaling.py",
+      "status": "elevated",
+      "symbol": "quantum_compute_substrate.pulvini.pulvini_scaling:PulviniAuditEnvelope",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "quantum_compute_substrate/tests/test_pulvini.py::TestSpectralGapPreservation::test_audit_envelope_fields_populated"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "quantum_compute_substrate/tests/test_pulvini.py::TestQuantumDynamics::test_norm_drift_field_populated"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "quantum_compute_substrate/tests/test_pulvini.py::TestPythagorasOrchestrator::test_routing_audit_fields_present"
+        }
+      ],
+      "claim_boundary": "The audit envelope reports measured dimensions, reconstruction error, spectral-gap delta and norm drift; it does not claim spectral preservation.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "historical_enhanced_grover",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.enhanced_classics",
+      "public_surface": "EnhancedGroverAlgorithm",
+      "historical_capability": "Grover search facade over a bounded marked-item domain.",
+      "current_owner": "Turing",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/july_compat.py",
+      "status": "adapter-added",
+      "symbol": "turing_universal_quantum_computer.july_compat:EnhancedGroverAlgorithm",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_algorithm_adapter_rejects_invalid_domains_and_types"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_algorithm_result_keeps_claim_flags_false"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_enhanced_grover_and_qft_integrate_with_canonical_algorithms"
+        }
+      ],
+      "claim_boundary": "Finite-precision software simulation of standard Grover; no measured speedup or consensus authority.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "historical_enhanced_qft",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.enhanced_classics",
+      "public_surface": "EnhancedQuantumFourierTransform",
+      "historical_capability": "Bounded QFT and inverse-QFT operator construction.",
+      "current_owner": "Turing",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/july_compat.py",
+      "status": "adapter-added",
+      "symbol": "turing_universal_quantum_computer.july_compat:EnhancedQuantumFourierTransform",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_algorithm_adapter_rejects_invalid_domains_and_types"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_algorithm_result_keeps_claim_flags_false"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_enhanced_grover_and_qft_integrate_with_canonical_algorithms"
+        }
+      ],
+      "claim_boundary": "Bounded finite-precision matrix construction; dense dimension cap applies.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "historical_enhanced_shor",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.enhanced_classics",
+      "public_surface": "EnhancedShorAlgorithm",
+      "historical_capability": "Shor factoring facade.",
+      "current_owner": "Turing",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/july_compat.py",
+      "status": "retired-with-reason",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_algorithm_adapters_are_bounded_and_make_no_hardware_or_speedup_claim"
+        }
+      ],
+      "claim_boundary": "The adapter explicitly refuses Shor; factoring and quantum speedup are not claimed.",
+      "redirect": "turing_universal_quantum_computer.july_compat.QuantumAccelerationEngine.run_shor",
+      "retirement_reason": "No validated end-to-end factoring implementation exists in the retained backend."
+    },
+    {
+      "id": "invariant_verification_facade",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.quantum_formalism",
+      "public_surface": "operator-calculus run_all_verifications and report generation",
+      "historical_capability": "Run seeded operator invariants and return an aggregate verification report.",
+      "current_owner": "Turing",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/july_compat.py",
+      "status": "adapter-added",
+      "symbol": "turing_universal_quantum_computer.july_compat:run_all_verifications",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_operator_verification_report_returns_canonical_report"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_operator_verification_report_fails_closed"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_operator_verification_report_covers_core_invariants"
+        }
+      ],
+      "claim_boundary": "Runs deterministic numerical checks and raises on failed checks; does not certify a theorem or physical device.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "kellogg_compressed_tensor_engine",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.quantum_engine",
+      "public_surface": "QuantumCompressedTensorEngine",
+      "historical_capability": "Validated compressed tensor operations, quantum operators, measurement, and interference.",
+      "current_owner": "Kellogg",
+      "current_path": "kellogg/compressed_tensor.py",
+      "status": "elevated",
+      "symbol": "kellogg.compressed_tensor:QuantumCompressedTensorEngine",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_kellogg_tensor_network_convergence.py::test_compressed_tensor_schemes_roundtrip"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_kellogg_tensor_network_convergence.py::test_unitary_kraus_and_measurement_paths_preserve_density"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_kellogg_tensor_network_convergence.py::test_safe_authenticated_serialization_roundtrip"
+        }
+      ],
+      "claim_boundary": "Explicit finite-precision software semantics, validated dimensions and CPTP completeness; no physical compression claim.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "modern_variational_eigensolver",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.next_gen_2025",
+      "public_surface": "ModernVariationalQuantumEigensolver and next-gen VQE facade",
+      "historical_capability": "Variational energy minimization for a small explicit Hamiltonian.",
+      "current_owner": "Turing",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_algorithms.py",
+      "status": "present",
+      "symbol": "turing_universal_quantum_computer.quantum_algorithms:VQE",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_vqe_hamiltonian_is_hermitian"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_vqe_result_respects_variational_energy_bound"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_current_vqe_surface_executes_finite_bounded_problem"
+        }
+      ],
+      "claim_boundary": "Small dense numerical optimizer; convergence and optimality are not guaranteed beyond reported finite run results.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "next_gen_2025_facades",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.next_gen_2025",
+      "public_surface": "next_gen_2025",
+      "historical_capability": "Aggregate planned or experimental optimization and simulation interfaces.",
+      "current_owner": "Turing",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/capabilities.py",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "Only backend-specific capability metadata and implemented algorithms are advertised; planned facades are not execution evidence.",
+      "redirect": "turing_universal_quantum_computer.capabilities.capability_report",
+      "retirement_reason": "The broad historical namespace mixed executable algorithms and plans without a stable per-domain contract."
+    },
+    {
+      "id": "mps_tt_budgeted_compression",
+      "source_module": "src.chronos.compression and src.chronos.academic.tensor_compression",
+      "public_surface": "MPS/TT decomposition, reconstruction, and budgeted compression",
+      "historical_capability": "Validated tensor network decomposition with bounded rank and reconstruction-error accounting.",
+      "current_owner": "Kellogg",
+      "current_path": "kellogg/tensor_network.py",
+      "status": "elevated",
+      "symbol": "kellogg.tensor_network:TensorTrain",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_kellogg_tensor_network_convergence.py::test_tensor_train_roundtrip_preserves_complex_dtype"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_kellogg_tensor_network_convergence.py::test_mps_roundtrip_and_dimension_contract"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_kellogg_tensor_network_convergence.py::test_tt_compatibility_payload_and_error_budget"
+        }
+      ],
+      "claim_boundary": "Lossy truncation reports reconstruction error and representation storage only; no HBM or physical compression claim.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "operator_hamiltonian_and_trotter",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.hamiltonian",
+      "public_surface": "Hermitian Hamiltonian Trotter simulation",
+      "historical_capability": "Bounded full-Hilbert-dimension time evolution with invalid Hamiltonians refused.",
+      "current_owner": "Turing",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/trotter_simulation.py",
+      "status": "elevated",
+      "symbol": "turing_universal_quantum_computer.trotter_simulation:TrotterHamiltonianSimulator",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_trotter_adapter_rejects_non_hermitian_hamiltonians"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_july_capability_consolidation.py::test_completed_qsim_trotterization_retains_full_hilbert_dimension"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_kellogg_tensor_network_convergence.py::test_hamiltonian_evolution_is_norm_preserving"
+        }
+      ],
+      "claim_boundary": "Approximate Trotter-Suzuki software evolution with validated Hermiticity and reported finite-time behavior.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "pv_artifact_persistence",
+      "source_module": "src.chronos.compression",
+      "public_surface": "PV serialization save/load/validate",
+      "historical_capability": "Safely serialize compressed tensor payloads with integrity checks.",
+      "current_owner": "Kellogg",
+      "current_path": "kellogg/tensor_serialization.py",
+      "status": "elevated",
+      "symbol": "kellogg.tensor_serialization:save_pv",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_malformed_pv_payload_is_rejected"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_chronus_gpu_capability_closure.py::test_pipeline_uses_safe_kellogg_serialization"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_kellogg_tensor_network_convergence.py::test_safe_authenticated_serialization_roundtrip"
+        }
+      ],
+      "claim_boundary": "Checksums, optional HMAC, and allow_pickle=False validate the artifact container; no signing identity is implied.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "pulvini_array_matrix_tensor_wrappers",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.formal",
+      "public_surface": "PulviniArray, PulviniMatrix, PulviniTensor",
+      "historical_capability": "Convenience objects for typed folded arrays and matrix/tensor views.",
+      "current_owner": "python_backend.core_modules",
+      "current_path": "python_backend/core_modules/geodesic_tensor_engine.py",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "ExactFoldState records flat exact values, shape, depth, and inverse behavior; no parallel wrapper hierarchy.",
+      "redirect": "python_backend.core_modules.geodesic_tensor_engine.ExactFoldState",
+      "retirement_reason": "Shape-tagged exact fold state covers the data custody contract without duplicate object wrappers."
+    },
+    {
+      "id": "pulvini_functor",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.functor",
+      "public_surface": "PulviniFunctor",
+      "historical_capability": "Functorial mapping over folded tensor structures.",
+      "current_owner": "python_backend.core_modules",
+      "current_path": "python_backend/core_modules/geodesic_tensor_engine.py",
+      "status": "retired-with-reason",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "Only concrete exact fold and tensor operations are asserted; categorical law preservation is not claimed.",
+      "redirect": "python_backend.core_modules.geodesic_tensor_engine.ExactFoldState",
+      "retirement_reason": "No executable mapping-law specification or test evidence was recovered for the historical abstraction."
+    },
+    {
+      "id": "quantum_inspired_optimizer",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.quantum_optimizer",
+      "public_surface": "QuantumInspiredOptimizer",
+      "historical_capability": "Numerical parameter optimization using declared variational methods.",
+      "current_owner": "Turing",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_algorithms.py; variational.py",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "Use explicit VQE or VQC optimizers; no quantum runtime or advantage is inferred.",
+      "redirect": "turing_universal_quantum_computer.quantum_algorithms.VQE.optimize",
+      "retirement_reason": "The generic optimizer name obscures the distinct validated VQE and VQC objective contracts."
+    },
+    {
+      "id": "quantum_inspired_vqc",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.next_gen_2025",
+      "public_surface": "VQCPhiGroverIntegration, VQCTrainingDataGenerator",
+      "historical_capability": "Deterministic training data and a constrained VQC/Grover candidate-ranking integration.",
+      "current_owner": "Turing",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/variational.py; phi_vqc.py",
+      "status": "present",
+      "symbol": "turing_universal_quantum_computer.variational:VQCPhiGroverIntegration",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "turing_universal_quantum_computer/tests/test_variational.py::VQCCircuitTests::test_forward_distribution_sums_to_one"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "turing_universal_quantum_computer/tests/test_phi_quantum_machine_consolidation.py::test_vqc_ranks_only_existing_candidates"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "turing_universal_quantum_computer/tests/test_variational.py::VQCIntegrationTests::test_demonstrate_vqc_end_to_end"
+        }
+      ],
+      "claim_boundary": "VQC can only rank an existing candidate set; SHA-256d and target checking remain sole consensus authority.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "regenerative_checkpoint",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.regenerative",
+      "public_surface": "exact machine checkpoint, tamper detection, restoration, invariant reporting",
+      "historical_capability": "Integrity-checked checkpoint, corruption detection, and exact restoration for supported Clifford state.",
+      "current_owner": "Turing",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/phi_quantum_machine.py",
+      "status": "elevated",
+      "symbol": "turing_universal_quantum_computer.phi_quantum_machine:PhiQuantumMachine",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "turing_universal_quantum_computer/tests/test_phi_machine_profile.py::TestPhiMachineProfile::test_checkpoint_roundtrip_and_tamper_detection"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "turing_universal_quantum_computer/tests/test_phi_quantum_machine_consolidation.py::test_depth_20_pulvini_checkpoint_restores_exact_digest"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "turing_universal_quantum_computer/tests/test_phi_quantum_machine_consolidation.py::test_vqc_clifford_skeleton_checkpoint_is_exact"
+        }
+      ],
+      "claim_boundary": "Exact checkpoint custody and tamper detection for supported Clifford state only; no generic hardware fault recovery.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "regenerative_contract_facade",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.regenerative",
+      "public_surface": "RegenerativeContract, arbitrary fault injection, regeneration experiment reports",
+      "historical_capability": "Generic fault injection, automatic recovery, and aggregated invariant experiment reporting.",
+      "current_owner": "Turing",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/phi_quantum_machine.py",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "Use exact machine checkpoints; arbitrary fault recovery and hardware regeneration are not claimed.",
+      "redirect": "turing_universal_quantum_computer.phi_quantum_machine.PhiQuantumMachine.checkpoint",
+      "retirement_reason": "Only exact checkpoint restoration has current executable evidence; generic fault injection is not implemented."
+    },
+    {
+      "id": "turing_1000_qubit_machine",
+      "source_module": "HYBA_1000_QUBIT_VQC_20260724.zip",
+      "public_surface": "PhiQuantumMachine1000, signed-Pauli verification, algorithm catalogue",
+      "historical_capability": "Large-width exact Clifford execution and discriminating stabilizer verification.",
+      "current_owner": "Turing",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/phi_quantum_machine.py; phi_verification.py",
+      "status": "elevated",
+      "symbol": "turing_universal_quantum_computer.phi_quantum_machine:PhiQuantumMachine1000",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "turing_universal_quantum_computer/tests/test_phi_quantum_machine_consolidation.py::test_qasm_clifford_surface_and_non_clifford_rejection"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "turing_universal_quantum_computer/tests/test_phi_quantum_machine_consolidation.py::test_exact_ghz_stabilizer_membership_is_discriminating"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "turing_universal_quantum_computer/tests/test_phi_quantum_machine_consolidation.py::test_full_1000_qubit_production_gate"
+        }
+      ],
+      "claim_boundary": "Exact classical Clifford/stabilizer execution; not universal arbitrary-circuit computation or quantum advantage.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "turing_algorithm_catalogue",
+      "source_module": "HYBA_1000_QUBIT_VQC_20260724.zip",
+      "public_surface": "12-algorithm acceleration catalogue",
+      "historical_capability": "Publish per-algorithm execution status and supported state class.",
+      "current_owner": "Turing",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/phi_quantum_machine.py",
+      "status": "elevated",
+      "symbol": "turing_universal_quantum_computer.phi_quantum_machine:ALGORITHM_CATALOG",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "turing_universal_quantum_computer/tests/test_phi_quantum_machine_consolidation.py::test_algorithm_plans_distinguish_executable_from_metadata"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "turing_universal_quantum_computer/tests/test_phi_machine_profile.py::TestPhiMachineProfile::test_algorithm_surface_keeps_non_clifford_boundary"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "turing_universal_quantum_computer/tests/test_console_session.py::test_backends_matrix_lists_every_backend"
+        }
+      ],
+      "claim_boundary": "Catalogue rows are capability metadata, not evidence that all listed algorithms execute or accelerate.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "turing_candidate_set_boundary",
+      "source_module": "HYBA_1000_QUBIT_VQC_20260724.zip",
+      "public_surface": "phi-VQC candidate ordering",
+      "historical_capability": "VQC-based candidate prioritization without replacing consensus validation.",
+      "current_owner": "Turing and mining",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/phi_vqc.py; mining/hash_pipeline.py",
+      "status": "elevated",
+      "symbol": "turing_universal_quantum_computer.phi_vqc:PhiGroverVQC",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "turing_universal_quantum_computer/tests/test_phi_quantum_machine_consolidation.py::test_vqc_ranks_only_existing_candidates"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_three_layer_runtime.py::test_tensor_advice_fails_closed_on_window_mutation"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_hash_pipeline.py::test_removed_quantum_standin_ids_are_rejected"
+        }
+      ],
+      "claim_boundary": "Candidate ordering only; mining hash pipeline alone verifies proof-of-work and remains the accept authority.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "trotter_and_cptp_fixes",
+      "source_module": "PULVINI_V3_HERMES_COMPLETION_20260724.zip",
+      "public_surface": "Full Hilbert dimension, Grover keyword compatibility, CPTP completeness",
+      "historical_capability": "Retain corrected Trotter dimension, Grover execution, and trace-preserving channel checks.",
+      "current_owner": "Turing",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/trotter_simulation.py; kellogg/compressed_tensor.py",
+      "status": "elevated",
+      "symbol": "kellogg.compressed_tensor:QuantumCompressedTensorEngine",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_july_capability_consolidation.py::test_completed_grover_and_cptp_fixes_remain_live"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_kellogg_tensor_network_convergence.py::test_unitary_kraus_and_measurement_paths_preserve_density"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_july_capability_consolidation.py::test_completed_qsim_trotterization_retains_full_hilbert_dimension"
+        }
+      ],
+      "claim_boundary": "Numerical validation within explicit domains; no broad quantum capability or speedup claim.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "topology_signature",
+      "source_module": "src.chronos.compression and src.chronos.academic.tensor_compression",
+      "public_surface": "Topology signature and preservation checks",
+      "historical_capability": "Compare graph topology before and after declared tensor transformations.",
+      "current_owner": "Kellogg",
+      "current_path": "kellogg/tensor_network.py",
+      "status": "elevated",
+      "symbol": "kellogg.tensor_network:topology_signature",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_kellogg_tensor_network_convergence.py::test_topology_and_persistence_contracts"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_kellogg_tensor_network_convergence.py::test_topology_and_persistence_contracts"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_aethel_geodesic_handoff.py::test_geodesic_step_uses_engine_invariant"
+        }
+      ],
+      "claim_boundary": "The signature is a graph descriptor comparison, not a proof of general topological equivalence.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "variational_fisher_natural_gradient",
+      "source_module": "src.chronos.theory.metrology and euclid.pythagoras.quantum.pulvini_enterprise.next_gen_2025",
+      "public_surface": "Fisher metric and natural-gradient step",
+      "historical_capability": "Compute complex-state Fisher geometry and a normalized optimizer step.",
+      "current_owner": "Kellogg",
+      "current_path": "kellogg/tensor_network.py; kellogg/quantum_tensor.py",
+      "status": "elevated",
+      "symbol": "kellogg.tensor_network:natural_gradient_step",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_kellogg_tensor_network_convergence.py::test_quantum_fisher_uses_complex_modulus_and_step_normalizes"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_kellogg_tensor_network_convergence.py::test_quantum_fisher_uses_complex_modulus_and_step_normalizes"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "turing_universal_quantum_computer/tests/test_variational.py::VQCCircuitTests::test_train_records_history_and_best_params"
+        }
+      ],
+      "claim_boundary": "Finite-dimensional numerical metric and optimizer update; no convergence, energy, or quantum-advantage guarantee.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "chronus_physical_execution",
+      "source_module": "GEODESIC_TENSOR_ENGINE_EXTENDED_20260724.zip",
+      "public_surface": "Physical tensor backend and execution provenance",
+      "historical_capability": "Route declared tensor kernels to actual hardware with measured provenance.",
+      "current_owner": "Chronus and Tensor",
+      "current_path": "chronus/tensor_compute.py; tensor/backends/chronus_backend.py",
+      "status": "elevated",
+      "symbol": "tensor.backends.chronus_backend:ChronusBackend",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_chronus_tensor_compute.py::test_chronus_backend_wires_runtime"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_chronus_production_measurement.py::test_device_tensor_measurement_rejects_unverified_output"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_chronus_production_measurement.py::test_device_tensor_measurement_is_verified_and_device_labelled"
+        }
+      ],
+      "claim_boundary": "A real device claim requires runtime hardware and verified output provenance; absence is unavailable, not simulated success.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "chronos_academic_integrations",
+      "source_module": "src.chronos.academic",
+      "public_surface": "academic integrations (Caltech topological/surface-code/Ising-anyon, Cambridge PINN/GQN/RL, CERN cavity-QED/QFT/LHC, MIT fault-tolerant control, Jaynes-Cummings, NIST benchmark, TokyoTech metrology)",
+      "historical_capability": "Deterministic physics-model integrations used for enhancement and verification experiments.",
+      "current_owner": "chronus.v33.academic",
+      "current_path": "chronus/v33/academic",
+      "status": "elevated",
+      "symbol": "chronus.v33.academic:AcademicChronosEngine",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_july_chronos_mapping.py::test_v33_academic_surface"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_chronus_v33/test_academic.py::test_uhlmann_fidelity_self"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_chronus_v33/test_academic_integration.py::test_academic_engine_end_to_end"
+        }
+      ],
+      "claim_boundary": "Software model facades executing deterministic computations; no lab hardware access or published-result replication is claimed.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "chronos_memory_substrate",
+      "source_module": "src.chronos.memory",
+      "public_surface": "QRAM, QSVT, block-encoding, MPS store, neural-combine memory, memory hierarchy, table memory",
+      "historical_capability": "Memory primitives: quantum random access, singular-value transform, block encodings, MPS storage and learned index combination.",
+      "current_owner": "chronus.v33.memory",
+      "current_path": "chronus/v33/memory",
+      "status": "elevated",
+      "symbol": "chronus.v33.memory:MemoryHierarchy",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_july_chronos_mapping.py::test_v33_memory_surface"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_chronus_v33/test_memory.py::test_table_qram_roundtrip"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_chronus_v33/test_memory.py::test_hierarchy_pipeline"
+        }
+      ],
+      "claim_boundary": "Exact software models of the memory primitives; no hardware QRAM or physical qubit array is claimed.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "chronos_tebd_compression",
+      "source_module": "src.chronos.compression",
+      "public_surface": "TEBD time evolution, phi-fold compression, large-Hilbert-space handling",
+      "historical_capability": "Time-evolving block decimation and phi-fold tensor compression for large spaces.",
+      "current_owner": "chronus.v33.compression",
+      "current_path": "chronus/v33/compression",
+      "status": "elevated",
+      "symbol": "chronus.v33.compression:run_tebd",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_july_chronos_mapping.py::test_v33_compression_surface"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_july_chronos_mapping.py::test_tebd_step_preserves_state_norm"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_chronus_v33/test_memory.py::test_mps_ghz_compression"
+        }
+      ],
+      "claim_boundary": "Finite-bond-dimension TEBD with measured truncation and energy reports; convergence claims come from the run report, not assertion.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "chronos_control_feedback",
+      "source_module": "src.chronos.control",
+      "public_surface": "QuantumController pulses and ClosedLoopController feedback",
+      "historical_capability": "Pulse application, frequency tuning, drift evolution, readout and closed-loop feedback control.",
+      "current_owner": "chronus.v33.control",
+      "current_path": "chronus/v33/control",
+      "status": "elevated",
+      "symbol": "chronus.v33.control:ClosedLoopController",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_july_chronos_mapping.py::test_v33_control_surface"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_july_chronos_mapping.py::test_control_evolution_preserves_norm"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_july_chronos_mapping.py::test_closed_loop_step_produces_feedback"
+        }
+      ],
+      "claim_boundary": "Exact state evolution under declared Hamiltonians and pulses; no physical control electronics is implied.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "chronos_environment_models",
+      "source_module": "src.chronos.environment",
+      "public_surface": "decoherence, thermal environment, cryogenic environment",
+      "historical_capability": "Lindblad dissipation, amplitude damping and thermal/cryogenic environment models.",
+      "current_owner": "chronus.v33.environment",
+      "current_path": "chronus/v33/environment",
+      "status": "elevated",
+      "symbol": "chronus.v33.environment:CryogenicEnvironment",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_july_chronos_mapping.py::test_v33_environment_surface"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_july_chronos_mapping.py::test_amplitude_damping_preserves_trace"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_july_chronos_mapping.py::test_cryogenic_environment_reports"
+        }
+      ],
+      "claim_boundary": "Exact Kraus/Lindblad channels on declared density matrices; no device noise characterization is claimed.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "chronos_field_drives",
+      "source_module": "src.chronos.fields",
+      "public_surface": "laser and microwave field drives",
+      "historical_capability": "Coherent/displacement laser states and microwave Rabi drive evolution.",
+      "current_owner": "chronus.v33.fields",
+      "current_path": "chronus/v33/fields",
+      "status": "elevated",
+      "symbol": "chronus.v33.fields:CoherentLaser",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_july_chronos_mapping.py::test_v33_fields_surface"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_july_chronos_mapping.py::test_rabi_evolve_preserves_norm"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_july_chronos_mapping.py::test_microwave_drive_rotates_population"
+        }
+      ],
+      "claim_boundary": "Deterministic field-driven state evolution in software; no lab instruments are driven.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "chronos_engine_evolution",
+      "source_module": "src.chronos.engine, src.chronos.evolution_engine, src.chronos.emp, src.chronos.hamiltonian, src.chronos.manifold",
+      "public_surface": "ChronosEngine, EvolutionEngine, ErrorMitigationProcessor, HamiltonianLibrary, M32Manifold",
+      "historical_capability": "The orchestrating engine, evolution engine, error-mitigation processor, Hamiltonian library and M32 manifold.",
+      "current_owner": "chronus.v33",
+      "current_path": "chronus/v33",
+      "status": "elevated",
+      "symbol": "chronus.v33:ChronosEngine",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_july_chronos_mapping.py::test_v33_engine_surface"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_chronus_v33/test_gap_close.py::test_engine_default_path_unchanged_energy"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_chronus_v33/test_gap_close.py::test_engine_emp_path_smoke"
+        }
+      ],
+      "claim_boundary": "Engine outputs are computed states and reports; performance numbers come only from measured paths.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "chronos_qsdl_pipeline",
+      "source_module": "src.chronos.qsdl_parser",
+      "public_surface": "QSDLParser and QSDLCompiler scene pipeline",
+      "historical_capability": "Quantum scene description language parsing and compilation into validated scenes.",
+      "current_owner": "chronus.v33",
+      "current_path": "chronus/v33",
+      "status": "elevated",
+      "symbol": "chronus.v33:QSDLCompiler",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_july_chronos_mapping.py::test_v33_qsdl_surface"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_july_chronos_mapping.py::test_qsdl_default_scene_is_stable"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_july_chronos_mapping.py::test_qsdl_compile_produces_scene_objects"
+        }
+      ],
+      "claim_boundary": "The compiler validates declared scenes; scene contents are configuration, not measured hardware evidence.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "chronos_weak_measurement",
+      "source_module": "src.chronos.weak_measurement",
+      "public_surface": "WeakMeasurementSession, uhlmann_fidelity, bayesian_inversion",
+      "historical_capability": "Weak-measurement sessions, Uhlmann fidelity and Bayesian inversion of measurement records.",
+      "current_owner": "chronus.v33",
+      "current_path": "chronus/v33/weak_measurement.py",
+      "status": "elevated",
+      "symbol": "chronus.v33:WeakMeasurementSession",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_chronus_v33/test_gap_close.py::test_weak_measurement_self_test"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_chronus_v33/test_gap_close.py::test_weak_measurement_kraus_preserves_trace"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_chronus_v33/test_gap_close.py::test_bayesian_inversion_high_fidelity_small_epsilon"
+        }
+      ],
+      "claim_boundary": "Statistical estimation over simulated measurement records; no physical meter is read.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "chronos_theory_reports",
+      "source_module": "src.chronos.theory",
+      "public_surface": "theory report surfaces (run_unbuilt_maths and domain reports)",
+      "historical_capability": "Consolidated reporting over the archived theory modules.",
+      "current_owner": "chronus.v33.theory",
+      "current_path": "chronus/v33/theory",
+      "status": "elevated",
+      "symbol": "chronus.v33.theory:run_unbuilt_maths",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_july_chronos_mapping.py::test_v33_theory_surface"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_chronus_v33/test_research_reconciliation.py::test_every_documented_claim_is_dispositioned_and_sourced"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_chronus_v33/test_research_registry.py::test_research_registry_is_source_linked_and_executable"
+        }
+      ],
+      "claim_boundary": "Theory reports enumerate declared material with measured statuses; they assert no unmeasured result.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "qaoa_optimize",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.quantum_formalism",
+      "public_surface": "qaoa_optimize",
+      "historical_capability": "QAOA optimisation facade over a small problem instance.",
+      "current_owner": "turing_universal_quantum_computer.july_compat",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/july_compat.py",
+      "status": "adapter-added",
+      "symbol": "turing_universal_quantum_computer.july_compat:QuantumAccelerationEngine",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_qaoa_maxcut_recovers_triangle_optimum"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_qaoa_state_is_normalized_and_angles_bounded"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_qaoa_end_to_end_result_contract_and_fail_closed"
+        }
+      ],
+      "claim_boundary": "Bounded exact MaxCut QAOA on <= max_qubits nodes with deterministic grid+refine angle selection; the result record cannot claim speedup, hardware, or consensus authority.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "optimizer_composition_strategy",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.quantum_optimizer",
+      "public_surface": "CompositionStrategy",
+      "historical_capability": "Composition of optimiser passes over one parameter vector.",
+      "current_owner": "turing_universal_quantum_computer.july_compat",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/july_compat.py",
+      "status": "adapter-added",
+      "symbol": "turing_universal_quantum_computer.july_compat:CompositionStrategy",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_composition_strategy_orders_and_reports_stages"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_composition_is_deterministic_and_validates_inputs"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_composition_integrates_with_canonical_vqe_objective"
+        }
+      ],
+      "claim_boundary": "Sequential deterministic composition of software optimiser stages; per-stage objective values are reported, no acceleration is asserted.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "phi_recursive_operator",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.formal",
+      "public_surface": "PhiRecursiveOperator, PHI",
+      "historical_capability": "The recursive golden-ratio operator primitive used by the July formal layer.",
+      "current_owner": "quantum_compute_substrate.pulvini",
+      "current_path": "quantum_compute_substrate/pulvini/pulvini_scaling.py",
+      "status": "elevated",
+      "symbol": "quantum_compute_substrate.pulvini.pulvini_scaling:PulviniOperator",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "quantum_compute_substrate/tests/test_pulvini.py::TestEdgeCasesAndStability::test_fibonacci_split_sums_to_dim"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "quantum_compute_substrate/tests/test_pulvini.py::TestGoldenRatioInvariants::test_phi_squared_identity"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "quantum_compute_substrate/tests/test_pulvini.py::TestReconstructionErrorBounds::test_multi_level_fold_roundtrip"
+        }
+      ],
+      "claim_boundary": "The operator performs phi-recursive partition with measured reconstruction error; no operator-algebra law beyond the tested fold/unfold contracts is claimed.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "pulvini_scaling_audit",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.pulvini_scaling",
+      "public_surface": "PulviniAuditEnvelope",
+      "historical_capability": "Deterministic audit envelope for phi-scaled reductions.",
+      "current_owner": "quantum_compute_substrate.pulvini",
+      "current_path": "quantum_compute_substrate/pulvini/pulvini_scaling.py",
+      "status": "elevated",
+      "symbol": "quantum_compute_substrate.pulvini.pulvini_scaling:PulviniAuditEnvelope",
+      "evidence_tests": [
+        {
+          "kind": "unit",
+          "nodeid": "quantum_compute_substrate/tests/test_pulvini.py::TestSpectralGapPreservation::test_audit_envelope_fields_populated"
+        },
+        {
+          "kind": "invariant",
+          "nodeid": "quantum_compute_substrate/tests/test_pulvini.py::TestQuantumDynamics::test_norm_drift_field_populated"
+        },
+        {
+          "kind": "integration",
+          "nodeid": "quantum_compute_substrate/tests/test_pulvini.py::TestPythagorasOrchestrator::test_routing_audit_fields_present"
+        }
+      ],
+      "claim_boundary": "The envelope reports measured dimensions, error bounds and gap deltas; it never asserts preservation without measurement.",
+      "redirect": "",
+      "retirement_reason": ""
+    },
+    {
+      "id": "regenerative_fault_taxonomy",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.regenerative",
+      "public_surface": "FaultSeverity",
+      "historical_capability": "Fault taxonomy used by the fault-injection contract.",
+      "current_owner": "salamander",
+      "current_path": "salamander/models.py",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "Severity is an incident-health classification; it does not inject faults.",
+      "redirect": "salamander.models.Severity",
+      "retirement_reason": "Arbitrary fault injection/regeneration was superseded by checkpoint-tamper detection plus the Salamander severity ladder."
+    },
+    {
+      "id": "regenerative_invariant_checks",
+      "source_module": "euclid.pythagoras.quantum.pulvini_enterprise.regenerative",
+      "public_surface": "verify_invariants",
+      "historical_capability": "Post-fault invariant verification entry point.",
+      "current_owner": "euclid.adapter",
+      "current_path": "euclid/adapter.py",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "Verification is read-only; it does not claim regeneration.",
+      "redirect": "euclid.adapter.EuclidEngineAdapter.verify_property_invariants",
+      "retirement_reason": "The regenerative fault contract was superseded by checkpoint verification plus the property-invariant suite."
+    },
+    {
+      "id": "runner_ultimate_integration",
+      "source_module": "repository root",
+      "public_surface": "run_ultimate_integration",
+      "historical_capability": "Standalone July integration runner for the full stack.",
+      "current_owner": "turing_universal_quantum_computer",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/july_compat.py",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "The canonical gate is tests/test_july_capability_gap_analysis.py; the redirect executes the invariant suite.",
+      "redirect": "turing_universal_quantum_computer.run_all_verifications",
+      "retirement_reason": "Standalone runners were replaced by the in-repo verification battery and the aggregate conformance gate."
+    },
+    {
+      "id": "runner_1000_qubit_vqc",
+      "source_module": "repository root",
+      "public_surface": "run_1000_qubit_vqc_integration",
+      "historical_capability": "Standalone 1,000-qubit + VQC integration runner.",
+      "current_owner": "turing_universal_quantum_computer",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/phi_machine.py",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "Verification replays the discriminating signed-Pauli checks; it does not mine.",
+      "redirect": "turing_universal_quantum_computer.run_1000_qubit_verification",
+      "retirement_reason": "The runner was consolidated into the canonical 1,000-qubit verification entry point."
+    },
+    {
+      "id": "runner_close_gaps",
+      "source_module": "repository root",
+      "public_surface": "close_gaps_test",
+      "historical_capability": "Standalone gap-closure test driver.",
+      "current_owner": "chronus.v33",
+      "current_path": "chronus/v33/test_harness.py",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "The harness reports self-test outcomes; coverage claims come from the test suite, not the runner name.",
+      "redirect": "chronus.v33.test_harness.ChronosTestHarness",
+      "retirement_reason": "The v33 consolidation moved gap closure into the executable test harness and the pytest suites."
+    },
+    {
+      "id": "runner_benchmarks",
+      "source_module": "benchmarks",
+      "public_surface": "run_benchmarks",
+      "historical_capability": "Standalone benchmark driver script.",
+      "current_owner": "benchmarks",
+      "current_path": "benchmarks/common.py",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "Benchmarks are measured software timings; no hardware superiority is implied.",
+      "redirect": "benchmarks.common",
+      "retirement_reason": "Benchmarking moved to the benchmarks package with deterministic RNG and CI statistics; claims run through the benchmark tests."
+    },
+    {
+      "id": "example_memory_integration",
+      "source_module": "examples",
+      "public_surface": "memory_integration",
+      "historical_capability": "Example wiring of the July memory stack.",
+      "current_owner": "chronus.v33.memory",
+      "current_path": "chronus/v33/memory",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "Self-tests verify the software models only.",
+      "redirect": "chronus.v33.memory.run_memory_self_tests",
+      "retirement_reason": "The example was consolidated into the canonical memory self-test battery."
+    },
+    {
+      "id": "tests_geodesic_historical",
+      "source_module": "/data/raw/hyba_mining_review_20261001_v1/geodesic",
+      "public_surface": "test_geodesic_tensor_engine, test_geodesic_tensor_engine_extensions",
+      "historical_capability": "July Geodesic engine test files.",
+      "current_owner": "python_backend.core_modules",
+      "current_path": "python_backend/core_modules/geodesic_tensor_engine.py",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "Current gates supersede the archived copies; historical totals are provenance, not CI evidence.",
+      "redirect": "python_backend.core_modules.geodesic_tensor_engine",
+      "retirement_reason": "The canonical geodesic engine is gated by the in-checkout geodesic and consolidation test suites."
+    },
+    {
+      "id": "tests_pulvini_historical",
+      "source_module": "/data/raw/hyba_mining_review_20261001_v1/pulvini",
+      "public_surface": "test_pulvini_completion, test_pulvini_use_cases",
+      "historical_capability": "July PULVINI completion/use-case test files.",
+      "current_owner": "quantum_compute_substrate.pulvini",
+      "current_path": "quantum_compute_substrate/pulvini",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "Current gates supersede the archived copies; historical totals are provenance, not CI evidence.",
+      "redirect": "quantum_compute_substrate.pulvini",
+      "retirement_reason": "PULVINI semantics are gated by quantum_compute_substrate/tests/test_pulvini.py."
+    },
+    {
+      "id": "test_phi_quantum_machine_historical",
+      "source_module": "/data/raw/hyba_mining_review_20261001_v1/vqc",
+      "public_surface": "test_phi_quantum_machine",
+      "historical_capability": "July 1,000-qubit machine test file.",
+      "current_owner": "turing_universal_quantum_computer",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/phi_quantum_machine.py",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "Current gates supersede the archived copy; historical totals are provenance, not CI evidence.",
+      "redirect": "turing_universal_quantum_computer.phi_quantum_machine",
+      "retirement_reason": "The machine is gated by turing_universal_quantum_computer/tests/test_phi_quantum_machine_consolidation.py."
+    },
+    {
+      "id": "test_vqc_phi_grover_historical",
+      "source_module": "/data/raw/hyba_mining_review_20261001_v1/vqc",
+      "public_surface": "test_vqc_phi_grover",
+      "historical_capability": "July phi-VQC test file.",
+      "current_owner": "turing_universal_quantum_computer",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/phi_vqc.py",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "The VQC orders supplied candidates only; it never creates proofs.",
+      "redirect": "turing_universal_quantum_computer.phi_vqc",
+      "retirement_reason": "The VQC ranker is gated by the consolidation and variational test suites."
+    },
+    {
+      "id": "module_euclid_script",
+      "source_module": "repository root",
+      "public_surface": "euclid",
+      "historical_capability": "Top-level July euclid.py driver module.",
+      "current_owner": "euclid.adapter",
+      "current_path": "euclid/adapter.py",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "The adapter reports cognition-layer metrics; mining authority stays with the hash pipeline.",
+      "redirect": "euclid.adapter.EuclidEngineAdapter",
+      "retirement_reason": "The loose script was consolidated into the EuclidEngineAdapter intelligence surface."
+    },
+    {
+      "id": "module_property_invariants",
+      "source_module": "repository root",
+      "public_surface": "property_invariants",
+      "historical_capability": "Top-level July property_invariants.py module.",
+      "current_owner": "turing_universal_quantum_computer",
+      "current_path": "turing_universal_quantum_computer/turing_universal_quantum_computer/property_invariants.py",
+      "status": "superseded",
+      "symbol": "",
+      "evidence_tests": [
+        {
+          "kind": "redirect",
+          "nodeid": "tests/test_july_capability_gap_analysis.py::test_retired_surfaces_have_executable_redirects"
+        }
+      ],
+      "claim_boundary": "The suite reports pass/fail counts it actually executed; no coverage beyond its checks is implied.",
+      "redirect": "turing_universal_quantum_computer.property_invariants.InvariantTestSuite",
+      "retirement_reason": "The loose module was consolidated into the canonical InvariantTestSuite."
+    }
+  ]
+}

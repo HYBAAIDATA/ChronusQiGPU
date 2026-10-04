@@ -1,0 +1,39 @@
+{
+  "schema": "hyba.euclid.recovery-manifest.v1",
+  "date": "2026-10-04",
+  "tranche": "startup-registry-7",
+  "stacked_on": "mining-curriculum-6",
+  "archive": {
+    "name": "EUCLID_PROD_MORNING_RECOVERY_COMPLETE_20260719.zip",
+    "sha256": "30d3ddde94238b4cbb4fbb0b299775fed0b90c414669275379cab08186371229"
+  },
+  "files": [
+    {
+      "path": "euclid/subsystem_registry.py",
+      "sha256": "6f42ab6a61eac093e395846d5c82ba3da64f21ccdb42f75abfe82983b671df6c",
+      "mode": "byte-exact-recovery"
+    },
+    {
+      "path": "euclid/startup_orchestrator.py",
+      "sha256": "d2be4b3d2acffb3422b50548a322b9d3e7e9a5bb963071a189122ed7fb26c80e",
+      "mode": "byte-exact-recovery"
+    },
+    {
+      "path": "tests/test_euclid_startup_orchestrator.py",
+      "sha256": "994ad2c6cdc29963e3a0f534b0f106d47ebe64cd49a9333531dbac32301a9af8",
+      "mode": "byte-exact-recovery"
+    }
+  ],
+  "dependency_equivalence": {
+    "resonance_intelligence/audit_system.py": "fd5be3f0eb7691dd03a4cf4d6b9e64f9fb3b31adbb76001265aaa9e96acbb120",
+    "resonance_intelligence/fallback_modes.py": "3ddd69a59fecb641ad28c4b212bce01cb55438c68bcd1e71a6a1fc691ed5fae6"
+  },
+  "validation": {
+    "compile": "passed",
+    "focused_tests": {
+      "passed": 9,
+      "failed": 0
+    }
+  },
+  "claim_boundary": "Startup admission behavior only; no intelligence, transfer, restart, mining, or external-execution certification."
+}

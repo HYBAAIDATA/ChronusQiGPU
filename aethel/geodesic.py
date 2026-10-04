@@ -99,6 +99,7 @@ class GeodesicHandoff:
         self.space = space
         self._capacity = capacity
         self._engine = None
+        self._engine_interval: Optional[Tuple[int, int]] = None
         self._positions: Dict[bytes, int] = {}
         self._by_position: Dict[int, bytes] = {}
 
@@ -119,12 +120,16 @@ class GeodesicHandoff:
         over-uint32 intervals raise its own ValueError — schema validation
         is the engine's, not the adapter's.
         """
-        if self._engine is None:
+        interval = self.storage_interval()
+        if self._engine is None or self._engine_interval != interval:
+            # The manifold grows with the ledger; a cached engine sized to
+            # an earlier interval cannot cover positions committed since.
             crystal = _search_crystal()
-            start, size = self.storage_interval()
+            start, size = interval
             self._engine = crystal.PoincareCassiniSearchEngine(
                 total_nonce_space=size, nonce_start=start
             )
+            self._engine_interval = interval
         return self._engine
 
     def storage_interval(self) -> Tuple[int, int]:
@@ -177,9 +182,7 @@ class GeodesicHandoff:
         )
         self._positions[key] = position
         self._by_position[position] = key
-        logger.debug(
-            "to_manifold: index=%d -> position=%d", entry.index, position
-        )
+        logger.debug("to_manifold: index=%d -> position=%d", entry.index, position)
         return point
 
     def from_manifold(self, point: ManifoldPoint) -> bytes:
@@ -190,14 +193,11 @@ class GeodesicHandoff:
         """
         self.space.ledger.check_consistent()
         if point.position < 0 or point.position >= len(self.space.ledger.entries):
-            raise HandoffRejection(
-                f"position {point.position} outside storage interval"
-            )
+            raise HandoffRejection(f"position {point.position} outside storage interval")
         entry = self.space.ledger.entries[point.position]
         if entry.index != point.index:
             raise HandoffRejection(
-                f"position {point.position} maps to index {entry.index}, "
-                f"not {point.index}"
+                f"position {point.position} maps to index {entry.index}, " f"not {point.index}"
             )
         if self.block_key(entry.index, entry.digest) != point.key:
             raise HandoffRejection("point key does not match ledger digest")
@@ -223,12 +223,12 @@ class GeodesicHandoff:
             raise HandoffRejection("unknown key: block was never handed off")
         order = self.engine().enumerate_nonces(key)
         if position not in order:
-            raise HandoffRejection(
-                "engine coverage does not include the block position"
-            )
+            raise HandoffRejection("engine coverage does not include the block position")
         entry = self.space.ledger.entries[position]
         point = ManifoldPoint(
-            position=position, index=entry.index, key=key,
+            position=position,
+            index=entry.index,
+            key=key,
             vector=self._direction(key),
         )
         return self.from_manifold(point)
@@ -258,8 +258,7 @@ class GeodesicHandoff:
         intervals = crystal.partition_interval(start, size, len(faces))
         covered = sum(iv.size for iv in intervals)
         contiguous = all(
-            intervals[i].stop == intervals[i + 1].start
-            for i in range(len(intervals) - 1)
+            intervals[i].stop == intervals[i + 1].start for i in range(len(intervals) - 1)
         )
         coverage_ok = covered == size and contiguous and intervals[0].start == start
 
@@ -271,9 +270,7 @@ class GeodesicHandoff:
 
         key = self.block_key(0, "invariant-probe")
         order = self.engine().enumerate_nonces(key)
-        enumeration_ok = len(order) == size and set(order) == set(
-            range(start, start + size)
-        )
+        enumeration_ok = len(order) == size and set(order) == set(range(start, start + size))
 
         return {
             "faces": len(faces),

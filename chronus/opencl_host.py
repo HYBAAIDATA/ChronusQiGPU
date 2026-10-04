@@ -9,6 +9,14 @@ Honesty contract
 ``last_dispatch_backend`` names the substrate that produced the result, never
 the one that merely exists. A CPU fallback after a failed device verification
 reports ``cpu`` / ``cpu_fallback``; it is never reported as a device run.
+
+Mandatory CPU rescan
+--------------------
+The device is a proposer, never the accept authority. After every device
+dispatch — scan or punch — the CPU reference rescans or recomputes the
+work unconditionally, and the device answer is credited only when the
+rescan reproduces it. ``last_cpu_rescan`` records each rescan: what the
+device claimed, what the rescan found, and whether they agreed.
 """
 
 from __future__ import annotations
@@ -237,6 +245,7 @@ class OpenClPunchHost:
         self.use_opencl = False
         self.backend = "cpu"
         self.last_dispatch_backend = "none"
+        self.last_cpu_rescan: Optional[dict] = None
         self.device_name = ""
         self._cl = None
         self._ctx = None
@@ -299,32 +308,52 @@ class OpenClPunchHost:
         cl.enqueue_copy(self._queue, hit, hit_buf)
         self._queue.finish()
         val = int(hit[0])
+        # Mandatory CPU rescan — it always runs, hit or miss. The device
+        # answer is confirmed only when the rescan reproduces it exactly.
+        cpu_val = self._cpu_rescan(header76, target, window)
         if val < 0:
-            # The device ran and reported no hit. That is a device result.
+            agreed = cpu_val is None
+        else:
+            agreed = val < window and cpu_val == val
+        self.last_cpu_rescan = {
+            "ran": True,
+            "window": window,
+            "device_claim": val if val >= 0 else None,
+            "cpu_result": cpu_val,
+            "agreed": agreed,
+        }
+        if agreed:
+            # The device produced a result the mandatory rescan confirmed.
             self.last_dispatch_backend = self.backend
-            return None
-        digest = _sha256d(header76 + val.to_bytes(4, "little"))
-        if _u256(digest) <= target:
-            # The device's hit was independently confirmed by the host.
-            self.last_dispatch_backend = self.backend
-            return val
-        # The device's claim did not verify, so the CPU decides the answer.
-        # Report the CPU: reporting the device here would claim hardware
-        # execution for work the host performed.
+            return cpu_val
+        # The device claim did not survive the rescan, so the CPU decides
+        # the answer. Report the CPU: reporting the device here would claim
+        # hardware execution for work the host performed.
         LOG.warning(
-            "device hit %d failed host verification; falling back to CPU scan",
-            val,
+            "device scan claim %s failed the mandatory CPU rescan (rescan found %s)",
+            val if val >= 0 else None,
+            cpu_val,
         )
-        return self._cpu_scan(header76, target, window, "cpu_fallback")
+        self.last_dispatch_backend = "cpu_fallback"
+        return cpu_val
+
+    def _cpu_rescan(self, header76: bytes, target: int, window: int) -> Optional[int]:
+        """Earliest valid nonce in the window, or None — the accept authority.
+
+        This is the rescan the device answer is always checked against: it
+        returns the first nonce whose SHA-256d meets target, so it catches
+        both phantom hits and silently skipped winners.
+        """
+        for nonce in range(window):
+            if _u256(_sha256d(header76 + nonce.to_bytes(4, "little"))) <= target:
+                return nonce
+        return None
 
     def _cpu_scan(
         self, header76: bytes, target: int, window: int, dispatch_backend: str
     ) -> Optional[int]:
         self.last_dispatch_backend = dispatch_backend
-        for nonce in range(window):
-            if _u256(_sha256d(header76 + nonce.to_bytes(4, "little"))) <= target:
-                return nonce
-        return None
+        return self._cpu_rescan(header76, target, window)
 
     def run_punch_batch(
         self, opcode: int, n: Optional[int] = None, in_float=None, in_ulong=None
@@ -367,12 +396,30 @@ class OpenClPunchHost:
             if self.use_opencl and self._punch is not None:
                 try:
                     out = self._dispatch_punch(opcode, count, values)
-                    self.last_dispatch_backend = self.backend
-                    return {"ulong": out}
                 except Exception as exc:  # pragma: no cover - device-specific
                     # A device failure must not be reported as a device run.
                     LOG.warning("punch dispatch failed on %s: %s", self.backend, exc)
                     self.last_dispatch_backend = "cpu_fallback"
+                else:
+                    # Mandatory CPU rescan — integer punches must reproduce
+                    # the reference bit-for-bit before the device is credited.
+                    ref = self._cpu_punch(opcode, count, values)
+                    agreed = out.shape == ref.shape and bool(np.array_equal(out, ref))
+                    self.last_cpu_rescan = {
+                        "ran": True,
+                        "opcode": int(opcode),
+                        "channel": "ulong",
+                        "agreed": agreed,
+                    }
+                    if agreed:
+                        self.last_dispatch_backend = self.backend
+                        return {"ulong": out}
+                    LOG.warning(
+                        "punch opcode %#04x device output disagreed with the CPU rescan",
+                        int(opcode),
+                    )
+                    self.last_dispatch_backend = "cpu_fallback"
+                    return {"ulong": ref}
             else:
                 self.last_dispatch_backend = "cpu"
             return {"ulong": self._cpu_punch(opcode, count, values)}
@@ -390,8 +437,6 @@ class OpenClPunchHost:
             if self.use_opencl and self._punch is not None:
                 try:
                     out = self._dispatch_punch_float(opcode, count, values)
-                    self.last_dispatch_backend = self.backend
-                    return {"float": out}
                 except Exception as exc:  # pragma: no cover - device-specific
                     LOG.warning(
                         "float punch dispatch failed on %s: %s",
@@ -399,6 +444,35 @@ class OpenClPunchHost:
                         exc,
                     )
                     self.last_dispatch_backend = "cpu_fallback"
+                else:
+                    # Mandatory CPU rescan — float output must land within
+                    # float32 reduction tolerance of the reference before the
+                    # device is credited; the disagreement size is recorded.
+                    ref = self._cpu_punch_float(opcode, count, values)
+                    if out.shape == ref.shape:
+                        max_err = float(np.max(np.abs(out - ref))) if out.size else 0.0
+                        agreed = bool(np.allclose(out, ref, rtol=1e-5, atol=1e-6))
+                    else:
+                        max_err = float("inf")
+                        agreed = False
+                    self.last_cpu_rescan = {
+                        "ran": True,
+                        "opcode": int(opcode),
+                        "channel": "float",
+                        "agreed": agreed,
+                        "max_abs_error": max_err,
+                    }
+                    if agreed:
+                        self.last_dispatch_backend = self.backend
+                        return {"float": out}
+                    LOG.warning(
+                        "float punch opcode %#04x device output disagreed with the "
+                        "CPU rescan (max_abs_error=%.3e)",
+                        int(opcode),
+                        max_err,
+                    )
+                    self.last_dispatch_backend = "cpu_fallback"
+                    return {"float": ref}
             else:
                 self.last_dispatch_backend = "cpu"
             return {"float": self._cpu_punch_float(opcode, count, values)}

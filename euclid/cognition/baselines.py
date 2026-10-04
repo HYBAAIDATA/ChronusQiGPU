@@ -387,6 +387,11 @@ class SignalMetaController:
         latest_error = state.prediction_errors[-1] if state.prediction_errors else 0.0
         consecutive_failures = 0
         for update in reversed(state.learning_updates):
+            counts = update.get(
+                "counts_for_control", update.get("kind") == "strategy"
+            )
+            if not counts:
+                continue
             if update.get("success"):
                 break
             consecutive_failures += 1

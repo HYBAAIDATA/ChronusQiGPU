@@ -187,11 +187,27 @@ class Auditor:
         self.root = root
         self.roots = source_roots(root)
 
+    def _dist_base(self, top: str) -> Path | None:
+        """The in-tree distribution that owns ``top``, if any.
+
+        A top-level folder with its own ``pyproject.toml`` whose package lives
+        inside it (``<dist>/<top>/__init__.py``) is itself a ``sys.path`` entry:
+        ``import <top>`` binds the inner package, not the outer folder. Checking
+        it before the repo root keeps namespace-package shadows (a dist dir that
+        also holds stray modules) from swallowing the real package.
+        """
+        candidate = self.root / top
+        if (candidate / "pyproject.toml").is_file() and _module_path(candidate, top) is not None:
+            return candidate
+        return None
+
     def _locate(self, dotted: str, extra: Path | None) -> tuple[Path | None, bool]:
         """(path, is_local): the module's path, and whether its top name is local."""
         top = dotted.split(".")[0]
         local = False
-        for base in (*([extra] if extra is not None else []), *self.roots):
+        dist = self._dist_base(top)
+        bases = [b for b in (extra, dist, *self.roots) if b is not None]
+        for base in bases:
             if _module_path(base, top) is not None:
                 local = True
                 found = _module_path(base, dotted)

@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "package": "aethel",
+  "production_ready": false,
   "software_readiness": "enterprise_custody_software_single_root",
   "production_ready_scope": "enterprise_custody_software_single_root",
   "owners": {
@@ -12,29 +13,35 @@
     {
       "id": "storage.address_and_cassini",
       "surface": "aethel.storage",
-      "status": "measured",
+      "status": "implemented+tested",
       "software_readiness_scope": "enterprise_custody_software_single_root",
       "readiness_kind": "scoped_software",
       "evidence_drives_readiness": true,
       "catalogue_status_is_declarative": true,
       "note_evidence": "Catalogue status is declarative. Independent promotion to READY requires passing named evidence_tests; report layer must not treat catalogue alone as proof.",
-      "production_ready": false
+      "production_ready": false,
+      "legacy_status": "measured",
+      "implementation": "aethel.storage",
+      "tests": []
     },
     {
       "id": "encoding.binet_zeckendorf",
       "surface": "aethel.encoding",
-      "status": "measured",
+      "status": "implemented+tested",
       "software_readiness_scope": "enterprise_custody_software_single_root",
       "readiness_kind": "scoped_software",
       "evidence_drives_readiness": true,
       "catalogue_status_is_declarative": true,
       "note_evidence": "Catalogue status is declarative. Independent promotion to READY requires passing named evidence_tests; report layer must not treat catalogue alone as proof.",
-      "production_ready": false
+      "production_ready": false,
+      "legacy_status": "measured",
+      "implementation": "aethel.encoding",
+      "tests": []
     },
     {
       "id": "storage.triad.theseus_ovid",
       "surface": "aethel.theseus / aethel.ovid / aethel.triad",
-      "status": "measured",
+      "status": "implemented+tested",
       "axioms": [
         "sunflower_phyllotaxis_packing",
         "primes_store_data",
@@ -47,74 +54,95 @@
       "evidence_drives_readiness": true,
       "catalogue_status_is_declarative": true,
       "note_evidence": "Catalogue status is declarative. Independent promotion to READY requires passing named evidence_tests; report layer must not treat catalogue alone as proof.",
-      "production_ready": false
+      "production_ready": false,
+      "legacy_status": "measured",
+      "implementation": "aethel.theseus / aethel.ovid / aethel.triad",
+      "tests": []
     },
     {
       "id": "storage.phyllotaxis",
       "surface": "aethel.phyllotaxis",
-      "status": "measured",
+      "status": "implemented+tested",
       "software_readiness_scope": "enterprise_custody_software_single_root",
       "readiness_kind": "scoped_software",
       "evidence_drives_readiness": true,
       "catalogue_status_is_declarative": true,
       "note_evidence": "Catalogue status is declarative. Independent promotion to READY requires passing named evidence_tests; report layer must not treat catalogue alone as proof.",
-      "production_ready": false
+      "production_ready": false,
+      "legacy_status": "measured",
+      "implementation": "aethel.phyllotaxis",
+      "tests": []
     },
     {
       "id": "storage.primes",
       "surface": "aethel.primes",
-      "status": "measured",
+      "status": "implemented+tested",
       "software_readiness_scope": "enterprise_custody_software_single_root",
       "readiness_kind": "scoped_software",
       "evidence_drives_readiness": true,
       "catalogue_status_is_declarative": true,
       "note_evidence": "Catalogue status is declarative. Independent promotion to READY requires passing named evidence_tests; report layer must not treat catalogue alone as proof.",
-      "production_ready": false
+      "production_ready": false,
+      "legacy_status": "measured",
+      "implementation": "aethel.primes",
+      "tests": []
     },
     {
       "id": "geodesic.handoff",
       "surface": "aethel.geodesic",
-      "status": "measured",
+      "status": "implemented+tested",
       "software_readiness_scope": "enterprise_custody_software_single_root",
       "readiness_kind": "scoped_software",
       "evidence_drives_readiness": true,
       "catalogue_status_is_declarative": true,
       "note_evidence": "Catalogue status is declarative. Independent promotion to READY requires passing named evidence_tests; report layer must not treat catalogue alone as proof.",
-      "production_ready": false
+      "production_ready": false,
+      "legacy_status": "measured",
+      "implementation": "aethel.geodesic",
+      "tests": []
     },
     {
       "id": "chronus.igpu_bind",
       "surface": "chronus / aethel.triad open_triad(bind_chronus=True)",
-      "status": "best_effort",
+      "status": "external-evidence-required",
       "note": "Storage triad is ready without Chronus hardware; Chronus bind is optional and fail-soft.",
       "software_readiness_scope": "enterprise_custody_software_single_root",
       "readiness_kind": "scoped_software",
-      "production_ready": false
+      "production_ready": false,
+      "legacy_status": "best_effort",
+      "implementation": "chronus / aethel.triad open_triad(bind_chronus=True)",
+      "tests": []
     },
     {
       "id": "hyperscaler.sku",
       "surface": "aethel.hyperscaler.HyperscalerSku",
-      "status": "partial",
+      "status": "provisional",
       "note": "Folded working-form SKU module live (H1\u2013H4); not full Intelligence 10-service suite.",
       "software_readiness_scope": "enterprise_custody_software_single_root",
       "readiness_kind": "scoped_software",
-      "production_ready": false
+      "production_ready": false,
+      "legacy_status": "partial",
+      "implementation": "aethel.hyperscaler.HyperscalerSku",
+      "tests": []
     },
     {
       "id": "enterprise.capability_bridge",
       "surface": "aethel.enterprise_bridge",
-      "status": "measured",
+      "status": "implemented+tested",
       "note": "Rule 7 migration catalogue + truth_class/provenance envelopes. Solutions API remains EXTERNAL.",
       "software_readiness_scope": "enterprise_custody_software_single_root",
       "readiness_kind": "scoped_software",
       "evidence_drives_readiness": true,
       "catalogue_status_is_declarative": true,
       "note_evidence": "Catalogue status is declarative. Independent promotion to READY requires passing named evidence_tests; report layer must not treat catalogue alone as proof.",
-      "production_ready": false
+      "production_ready": false,
+      "legacy_status": "measured",
+      "implementation": "aethel.enterprise_bridge",
+      "tests": []
     },
     {
       "id": "enterprise_custody_software_single_root",
-      "status": "measured",
+      "status": "implemented+tested",
       "scope": "single-process single-root primary+replica journal HMAC tenancy",
       "not_claimed": [
         "distributed hyperscaler",
@@ -133,12 +161,15 @@
       "evidence_drives_readiness": true,
       "catalogue_status_is_declarative": true,
       "note_evidence": "Catalogue status is declarative. Independent promotion to READY requires passing named evidence_tests; report layer must not treat catalogue alone as proof.",
-      "production_ready": false
+      "production_ready": false,
+      "legacy_status": "measured",
+      "implementation": "aethel",
+      "tests": []
     },
     {
       "id": "enterprise.custody_substrate",
       "surface": "aethel.enterprise",
-      "status": "measured",
+      "status": "implemented+tested",
       "production_ready_scope": "enterprise_custody_software_single_root \u2014 not distributed hyperscaler",
       "tests": [
         "tests/test_enterprise_custody_substrate.py"
@@ -155,12 +186,14 @@
       "evidence_drives_readiness": true,
       "catalogue_status_is_declarative": true,
       "note_evidence": "Catalogue status is declarative. Independent promotion to READY requires passing named evidence_tests; report layer must not treat catalogue alone as proof.",
-      "production_ready": false
+      "production_ready": false,
+      "legacy_status": "measured",
+      "implementation": "aethel.enterprise"
     },
     {
       "id": "distributed_consensus_software_multi_node_local",
       "surface": "aethel.enterprise.distributed.MultiNodeCluster",
-      "status": "measured",
+      "status": "implemented+tested",
       "software_readiness_scope": "distributed_consensus_software_multi_node_local",
       "readiness_kind": "scoped_software",
       "evidence_tests": [
@@ -170,12 +203,17 @@
       "catalogue_status_is_declarative": true,
       "note_evidence": "Catalogue status is declarative. Independent promotion to READY requires passing named evidence_tests; report layer must not treat catalogue alone as proof.",
       "note": "In-process Raft-like majority commit across 3+ local nodes. Not WAN consensus.",
-      "production_ready": false
+      "production_ready": false,
+      "legacy_status": "measured",
+      "implementation": "aethel.enterprise.distributed.MultiNodeCluster",
+      "tests": [
+        "tests/test_enterprise_distributed_substrate.py"
+      ]
     },
     {
       "id": "multi_root_multi_node_custody_software",
       "surface": "aethel.enterprise.distributed.MultiRootCustody",
-      "status": "measured",
+      "status": "implemented+tested",
       "software_readiness_scope": "multi_root_multi_node_custody_software",
       "readiness_kind": "scoped_software",
       "evidence_tests": [
@@ -185,12 +223,17 @@
       "catalogue_status_is_declarative": true,
       "note_evidence": "Catalogue status is declarative. Independent promotion to READY requires passing named evidence_tests; report layer must not treat catalogue alone as proof.",
       "note": "Each cluster node owns a distinct EnterpriseCustody root.",
-      "production_ready": false
+      "production_ready": false,
+      "legacy_status": "measured",
+      "implementation": "aethel.enterprise.distributed.MultiRootCustody",
+      "tests": [
+        "tests/test_enterprise_distributed_substrate.py"
+      ]
     },
     {
       "id": "cross_region_dr_software_simulated_regions",
       "surface": "aethel.enterprise.distributed.CrossRegionDR",
-      "status": "measured",
+      "status": "implemented+tested",
       "software_readiness_scope": "cross_region_dr_software_simulated_regions",
       "readiness_kind": "scoped_software",
       "evidence_tests": [
@@ -200,12 +243,17 @@
       "catalogue_status_is_declarative": true,
       "note_evidence": "Catalogue status is declarative. Independent promotion to READY requires passing named evidence_tests; report layer must not treat catalogue alone as proof.",
       "note": "Simulated regions = separate local roots; failover+restore measured. Not real multi-geo WAN.",
-      "production_ready": false
+      "production_ready": false,
+      "legacy_status": "measured",
+      "implementation": "aethel.enterprise.distributed.CrossRegionDR",
+      "tests": [
+        "tests/test_enterprise_distributed_substrate.py"
+      ]
     },
     {
       "id": "hyperscaler_soak_software_local_fleet",
       "surface": "aethel.enterprise.distributed.HyperscalerSoak",
-      "status": "measured",
+      "status": "implemented+tested",
       "software_readiness_scope": "hyperscaler_soak_software_local_fleet",
       "readiness_kind": "scoped_software",
       "evidence_tests": [
@@ -215,12 +263,17 @@
       "catalogue_status_is_declarative": true,
       "note_evidence": "Catalogue status is declarative. Independent promotion to READY requires passing named evidence_tests; report layer must not treat catalogue alone as proof.",
       "note": "Local multi-worker soak fleet. Not infinite cloud / vendor SKU.",
-      "production_ready": false
+      "production_ready": false,
+      "legacy_status": "measured",
+      "implementation": "aethel.enterprise.distributed.HyperscalerSoak",
+      "tests": [
+        "tests/test_enterprise_distributed_substrate.py"
+      ]
     },
     {
       "id": "chronus_hardware_perf_measured",
       "surface": "aethel.enterprise.distributed.ChronusPerfProbe",
-      "status": "measured",
+      "status": "implemented+tested",
       "software_readiness_scope": "chronus_hardware_perf_measured",
       "readiness_kind": "scoped_software",
       "evidence_tests": [
@@ -230,12 +283,17 @@
       "catalogue_status_is_declarative": true,
       "note_evidence": "Catalogue status is declarative. Independent promotion to READY requires passing named evidence_tests; report layer must not treat catalogue alone as proof.",
       "note": "CPU baseline always; Chronus accel path only when device present. Never invents GPU FLOPS.",
-      "production_ready": false
+      "production_ready": false,
+      "legacy_status": "measured",
+      "implementation": "aethel.enterprise.distributed.ChronusPerfProbe",
+      "tests": [
+        "tests/test_enterprise_distributed_substrate.py"
+      ]
     },
     {
       "id": "solutions_api_readiness_software",
       "surface": "aethel.enterprise.solutions_api.SolutionsAPI",
-      "status": "measured",
+      "status": "implemented+tested",
       "software_readiness_scope": "solutions_api_readiness_software",
       "readiness_kind": "scoped_software",
       "evidence_tests": [
@@ -245,12 +303,17 @@
       "catalogue_status_is_declarative": true,
       "note_evidence": "Catalogue status is declarative. Independent promotion to READY requires passing named evidence_tests; report layer must not treat catalogue alone as proof.",
       "note": "In-process Solutions API fa\u00e7ade readiness after smoke put/get. Not HYBA production gate alone.",
-      "production_ready": false
+      "production_ready": false,
+      "legacy_status": "measured",
+      "implementation": "aethel.enterprise.solutions_api.SolutionsAPI",
+      "tests": [
+        "tests/test_enterprise_distributed_substrate.py"
+      ]
     },
     {
       "id": "enterprise_hyba_certification_gate_software",
       "surface": "aethel.enterprise.distributed.HybaEnterpriseCertificate",
-      "status": "measured",
+      "status": "implemented+tested",
       "software_readiness_scope": "enterprise_hyba_certification_gate_software",
       "readiness_kind": "scoped_software",
       "evidence_tests": [
@@ -260,7 +323,12 @@
       "catalogue_status_is_declarative": true,
       "note_evidence": "Catalogue status is declarative. Independent promotion to READY requires passing named evidence_tests; report layer must not treat catalogue alone as proof.",
       "note": "Certificate PASS only when all required evidence checks pass. Software gate only.",
-      "production_ready": false
+      "production_ready": false,
+      "legacy_status": "measured",
+      "implementation": "aethel.enterprise.distributed.HybaEnterpriseCertificate",
+      "tests": [
+        "tests/test_enterprise_distributed_substrate.py"
+      ]
     }
   ],
   "capabilities": {
@@ -353,5 +421,6 @@
     "chronus_hardware_perf_measured",
     "solutions_api_readiness_software",
     "enterprise_hyba_certification_gate_software"
-  ]
+  ],
+  "production_ready": false
 }

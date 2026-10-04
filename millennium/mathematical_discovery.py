@@ -17,12 +17,6 @@ Target: Discover new mathematical structures that emerge at computational limits
 
 import numpy as np
 
-from scipy.optimize import minimize
-
-from scipy.linalg import eigvals
-
-import networkx as nx
-
 from itertools import combinations
 
 import math
@@ -604,6 +598,8 @@ class TheoreticalSpaceExplorer:
 
             try:
 
+                from scipy.optimize import minimize  # optional heavy dep, lazy
+
                 result = minimize(objective_function, start_point, method="BFGS")
 
                 if result.success:
@@ -840,6 +836,8 @@ class TheoreticalSpaceExplorer:
 
         # Use graph analysis
 
+        import networkx as nx  # optional heavy dep, lazy
+
         G = nx.from_numpy_array(binary_matrix)
 
         return nx.number_connected_components(G)
@@ -919,6 +917,8 @@ class TheoreticalSpaceExplorer:
                         ) / (4 * eps**2)
 
             # Calculate curvature measures
+
+            from scipy.linalg import eigvals  # optional heavy dep, lazy
 
             eigenvalues = eigvals(hessian)
 

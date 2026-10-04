@@ -1,3 +1,12 @@
+"""July ``src.chronos`` v3.3 surface — the classical graphics/research engine.
+
+This package is the graphics Chronos: M32 manifold, QSDL, dense ground-state
+solve, ray trace, and the memory/compression custody tables. It is not the
+mining iGPU — the mining runtime is the ``chronus`` hardware package above it
+(``chronus/opencl_host.py``, ``chronus/mla1517_platform/``). The two share only
+a name; see ``docs/CHRONUS_V33_FULL_CONVERGENCE.md``.
+"""
+
 from .engine import ChronosEngine, RenderOutput
 from .manifold import M32Manifold, fibonacci_sphere
 from .hamiltonian import HamiltonianLibrary, HamiltonianTerms

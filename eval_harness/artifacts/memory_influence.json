@@ -1,0 +1,183 @@
+{
+  "claim": "a retrieved record counts as influential only if removing it changes a recorded downstream decision",
+  "influence_verdicts": {
+    "irrelevant_changes_decision": false,
+    "relevant_influential": true,
+    "relevant_vs_irrelevant_differ": true
+  },
+  "measured_result": "retrieval demonstrably changed a recorded decision",
+  "runs": {
+    "A_relevant_present": {
+      "episode": {
+        "ablations": [],
+        "alternative_strategies": [
+          "mcts-v16",
+          "evolution-v16",
+          "toe-plan"
+        ],
+        "candidate_origins": [
+          "euclid-v16:ASTPrimitives",
+          "euclid-v16:ASTPrimitives",
+          "euclid-v16:ASTPrimitives",
+          "euclid-v16:ASTPrimitives",
+          "euclid-v16:ASTPrimitives",
+          "euclid-v16:ASTPrimitives"
+        ],
+        "candidate_ranking": [
+          "primitive:MUTATE:swap_op",
+          "primitive:ADD:AnnAssign",
+          "primitive:MUTATE:list_comp",
+          "primitive:NON_LOCAL:class_decomposition",
+          "primitive:NON_LOCAL:conditional_flattening",
+          "primitive:NON_LOCAL:function_split_refactor"
+        ],
+        "control_decisions": [
+          "continue"
+        ],
+        "cycles": 1,
+        "execute_results": [
+          {
+            "goal_met": true,
+            "observation": "measured-pass",
+            "reward": 1.0,
+            "reward_authority": "measured-environment"
+          }
+        ],
+        "executed_actions": [
+          "primitive:MUTATE:swap_op"
+        ],
+        "last_ranking": [
+          "primitive:MUTATE:swap_op",
+          "primitive:ADD:AnnAssign",
+          "primitive:MUTATE:list_comp",
+          "primitive:NON_LOCAL:class_decomposition",
+          "primitive:NON_LOCAL:conditional_flattening",
+          "primitive:NON_LOCAL:function_split_refactor"
+        ],
+        "learning_updates": [
+          {
+            "counts_for_control": false,
+            "cycle": 0,
+            "digest": "a1141ac8b7226c1ad74c4d915a199d2aef5c3c91edf9c0bf94b7dfeaefdfa5d5",
+            "kind": "canonical-learning-service",
+            "success": true
+          },
+          {
+            "cycle": 0,
+            "kind": "strategy",
+            "problem_class": "repository-wiring",
+            "strategy": "primitive-compose",
+            "success": true
+          }
+        ],
+        "objective_applications": [
+          null
+        ],
+        "outcome": "solved",
+        "outcome_detail": "goal verified by governed execution feedback",
+        "plan_nodes": [
+          "toe-0"
+        ],
+        "prediction_errors": [
+          0.09492497953702228
+        ],
+        "problem_id": "mi-probe",
+        "replanning_events": 0,
+        "retrieved_memory_refs": [
+          "relevant-episode-1"
+        ],
+        "seal": "ad8b52b65e33037c6de040628d5e86f3a8490b4680cb63c4d6120f0dff18d5d7",
+        "selected_strategy": "primitive-compose",
+        "transitions": 20
+      },
+      "fingerprint": {
+        "candidate_ranking": [
+          "primitive:MUTATE:swap_op",
+          "primitive:ADD:AnnAssign",
+          "primitive:MUTATE:list_comp",
+          "primitive:NON_LOCAL:class_decomposition",
+          "primitive:NON_LOCAL:conditional_flattening",
+          "primitive:NON_LOCAL:function_split_refactor"
+        ],
+        "executed_actions": [
+          "primitive:MUTATE:swap_op"
+        ],
+        "outcome": "solved",
+        "plan_nodes": [
+          "toe-0"
+        ],
+        "selected_strategy": "primitive-compose"
+      },
+      "retrieved_refs": [
+        "relevant-episode-1"
+      ],
+      "retrieved_relevant": true
+    },
+    "B_relevant_removed": {
+      "fingerprint": {
+        "candidate_ranking": [
+          "primitive:ADD:AnnAssign",
+          "primitive:MUTATE:list_comp",
+          "primitive:MUTATE:swap_op",
+          "primitive:NON_LOCAL:class_decomposition",
+          "primitive:NON_LOCAL:conditional_flattening",
+          "primitive:NON_LOCAL:function_split_refactor"
+        ],
+        "executed_actions": [
+          "primitive:ADD:AnnAssign"
+        ],
+        "outcome": "solved",
+        "plan_nodes": [
+          "toe-0"
+        ],
+        "selected_strategy": "primitive-compose"
+      },
+      "retrieved_refs": []
+    },
+    "C_irrelevant_present": {
+      "fingerprint": {
+        "candidate_ranking": [
+          "primitive:ADD:AnnAssign",
+          "primitive:MUTATE:list_comp",
+          "primitive:MUTATE:swap_op",
+          "primitive:NON_LOCAL:class_decomposition",
+          "primitive:NON_LOCAL:conditional_flattening",
+          "primitive:NON_LOCAL:function_split_refactor"
+        ],
+        "executed_actions": [
+          "primitive:ADD:AnnAssign"
+        ],
+        "outcome": "solved",
+        "plan_nodes": [
+          "toe-0"
+        ],
+        "selected_strategy": "primitive-compose"
+      },
+      "retrieved_irrelevant": true,
+      "retrieved_refs": [
+        "irrelevant-episode-1"
+      ]
+    },
+    "D_all_disabled": {
+      "fingerprint": {
+        "candidate_ranking": [
+          "primitive:ADD:AnnAssign",
+          "primitive:MUTATE:list_comp",
+          "primitive:MUTATE:swap_op",
+          "primitive:NON_LOCAL:class_decomposition",
+          "primitive:NON_LOCAL:conditional_flattening",
+          "primitive:NON_LOCAL:function_split_refactor"
+        ],
+        "executed_actions": [
+          "primitive:ADD:AnnAssign"
+        ],
+        "outcome": "solved",
+        "plan_nodes": [
+          "toe-0"
+        ],
+        "selected_strategy": "primitive-compose"
+      },
+      "retrieved_refs": []
+    }
+  }
+}
