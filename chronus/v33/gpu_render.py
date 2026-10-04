@@ -148,7 +148,6 @@ class CupyRenderBackend:
         t[valid] = tmin[valid]
         return cp.asnumpy(t), cp.asnumpy(valid)
 
-
 __all__ = [
     "ENV_BACKEND",
     "BackendStatus",
