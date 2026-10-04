@@ -25,6 +25,19 @@ from .checkpoint_manifest import (
     write_manifest,
 )
 from .adapter import EuclidEngineAdapter
+from .subsystem_registry import (
+    HealthLevel,
+    HealthStatus,
+    SubsystemDescriptor,
+    SubsystemKind,
+    SubsystemRegistry,
+    build_default_registry,
+    salamander_descriptor,
+)
+from .startup_orchestrator import (
+    StartupOrchestrator,
+    StartupVerdict,
+)
 
 __version__ = "16.0.0"
 
@@ -35,13 +48,22 @@ __all__ = [
     "EuclidEngineAdapter",
     "EuclidRuntime",
     "Health",
+    "HealthLevel",
+    "HealthStatus",
     "Mission",
     "MemoryDatabase",
     "MemoryScope",
     "RewardAuthority",
+    "StartupOrchestrator",
+    "StartupVerdict",
+    "SubsystemDescriptor",
+    "SubsystemKind",
+    "SubsystemRegistry",
     "TrainingCase",
     "TrainingPipeline",
     "load_manifest",
+    "build_default_registry",
+    "salamander_descriptor",
     "validate_partitions",
     "verify_manifest",
     "write_manifest",
