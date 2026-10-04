@@ -13,7 +13,10 @@ import time
 
 import pytest
 
-from chronus.mla1517.mining.geodesic_support import ProductionExecutionRouter
+from chronus.mla1517.mining.geodesic_support import (
+    GeodesicProductionMiningCoordinator,
+    ProductionExecutionRouter,
+)
 from chronus.mla1517.mining.search_plan import (
     CompletionState,
     EvidenceClass,
@@ -90,6 +93,17 @@ def _lease(plan: SearchPlan) -> NonceLease:
 
 
 @pytest.mark.parametrize("backend", ["cuda", "metal"])
+def test_canonical_coordinator_classifies_native_backend_as_device_route(backend):
+    coordinator = GeodesicProductionMiningCoordinator.__new__(
+        GeodesicProductionMiningCoordinator
+    )
+    coordinator.execution_hasher = _NativeHasher(backend)
+    coordinator._nonce_order = "m32"
+
+    assert coordinator._execution_route() == "opencl_m32"
+
+
+@pytest.mark.parametrize("backend", ["cuda", "metal"])
 def test_native_m32_executes_on_native_hasher_without_cpu_substitution(backend):
     hasher = _NativeHasher(backend)
 
@@ -114,7 +128,6 @@ def test_native_m32_executes_on_native_hasher_without_cpu_substitution(backend):
     assert record.device_backend == backend
     assert record.kernel_identity == f"chronus_native_sha256d:{backend}:opencl_m32"
     assert record.kernel_build_status == "native_method_bound_after_backend_self_check"
-    assert "opencl" not in record.kernel_identity.split(":", 2)[1]
     assert record.kernel_launch_count == 1
     assert record.kernel_ms == pytest.approx(0.25)
     assert record.completion_state is CompletionState.EARLY_WINNER
