@@ -32,6 +32,16 @@ from .math_folding import PulviniFold, pulvini_fold
 PHI = (1.0 + math.sqrt(5.0)) / 2.0
 
 
+def _hash_fractions(values) -> str:
+    import hashlib
+
+    digest = hashlib.sha256()
+    for value in values:
+        digest.update(repr(value).encode("utf-8"))
+        digest.update(b"\x00")
+    return digest.hexdigest()
+
+
 def _fraction(value: int | Fraction) -> Fraction:
     if isinstance(value, bool):
         return Fraction(int(value))
@@ -89,6 +99,30 @@ class ExactFoldState:
     original_length: int
     depth: int
     shape: tuple[int, ...]
+    content_hash: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.content_hash:
+            object.__setattr__(
+                self,
+                "content_hash",
+                self._digest_header() + _hash_fractions(self.values),
+            )
+
+    def _digest_header(self) -> str:
+        import hashlib
+
+        digest = hashlib.sha256()
+        digest.update(repr(tuple(self.shape)).encode("utf-8"))
+        digest.update(int(self.original_length).to_bytes(8, "little"))
+        digest.update(int(self.depth).to_bytes(8, "little"))
+        return digest.hexdigest() + ":"
+
+    def verify_content_hash(self) -> bool:
+        """Recompute the content digest; False means custody was altered."""
+        return bool(self.content_hash) and self.content_hash == (
+            self._digest_header() + _hash_fractions(self.values)
+        )
 
     def unfold(self) -> tuple[Fraction, ...]:
         """Canonical full inverse, retained as the reference implementation."""

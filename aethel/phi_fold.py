@@ -309,6 +309,81 @@ def unfold_partial(state: NumericFoldState, boundary: KernelBoundary) -> np.ndar
     return unfold_partial_with_stats(state, boundary)[0]
 
 
+def splice_region(
+    original_state: NumericFoldState,
+    boundary: KernelBoundary,
+    values: np.ndarray,
+) -> Tuple[NumericFoldState, Tuple[int, ...]]:
+    """Write ``boundary`` directly into the resident segments that own it.
+
+    The numeric fold is a pure contiguous partition: resident segments are
+    disjoint slices of the flat logical array in order (``retained`` then the
+    complements in reverse fold order). A bounded write therefore touches
+    *only* the segments intersecting the write region — no unfold, no
+    re-fold, no other lineage is disturbed. The result is byte-identical to
+    an unfold→write→re-fold because fold boundaries depend only on
+    ``original_size`` and ``depth``, never on content.
+
+    Untouched segment arrays are shared with the input state (read-only
+    custody — callers must not mutate them); intersecting segments are
+    copied before the splice. Returns ``(new_state, affected_levels)`` where
+    ``affected_levels`` names the fold lineage touched: ``-1`` for the
+    retained segment, otherwise the 0-based complement index.
+    """
+    _validate_state(original_state)
+    if not isinstance(boundary, KernelBoundary):
+        raise PhiFoldError("splice_region requires a KernelBoundary")
+    arr = np.asarray(values)
+    if arr.dtype != np.dtype(original_state.dtype):
+        raise PhiFoldError(
+            f"write dtype {arr.dtype} does not match custodied dtype "
+            f"{original_state.dtype}; conversion is the caller's decision"
+        )
+    flat_values = arr.ravel()
+    if flat_values.size != boundary.length:
+        raise PhiFoldError(
+            f"write has {flat_values.size} values; boundary requires {boundary.length}"
+        )
+    if boundary.stop > original_state.original_size:
+        raise PhiFoldError("write region exceeds folded tensor bounds")
+
+    segments = _logical_segments(original_state)
+    # Segment 0 is the retained segment; segments 1..d are complements in
+    # reverse fold order (logical index -> fold level d - i).
+    logical_offset = 0
+    write_offset = 0
+    affected: list[int] = []
+    new_segments: list[np.ndarray] = []
+    for index, segment in enumerate(segments):
+        seg_start = logical_offset
+        seg_stop = logical_offset + int(segment.size)
+        logical_offset = seg_stop
+        if boundary.stop <= seg_start or boundary.offset >= seg_stop:
+            new_segments.append(segment)
+            continue
+        local_start = max(boundary.offset, seg_start) - seg_start
+        local_stop = min(boundary.stop, seg_stop) - seg_start
+        piece = np.ascontiguousarray(segment).ravel().copy()
+        piece[local_start:local_stop] = flat_values[
+            write_offset : write_offset + (local_stop - local_start)
+        ]
+        write_offset += local_stop - local_start
+        new_segments.append(piece)
+        affected.append(-1 if index == 0 else original_state.depth - index)
+
+    new_state = NumericFoldState(
+        retained=new_segments[0],
+        complements=tuple(reversed(new_segments[1:])),
+        depth=original_state.depth,
+        original_shape=original_state.original_shape,
+        original_size=original_state.original_size,
+        dtype=original_state.dtype,
+        layout=original_state.layout,
+    )
+    object.__setattr__(new_state, "content_hash", new_state.compute_content_hash())
+    return new_state, tuple(affected)
+
+
 def fold_result(
     result_slice: np.ndarray,
     boundary: KernelBoundary,
@@ -318,12 +393,17 @@ def fold_result(
 ) -> NumericFoldState:
     """Write a computed logical slice back into a folded state losslessly.
 
-    Updating a folded resident necessarily changes the representation of the
-    containing tensor, so this operation reconstructs the full logical payload,
-    applies the bounded write, then re-folds at the requested/original depth.
-    Reads remain truly partial; writes are explicitly full-state re-folds.
+    When the target fold depth is unchanged this delegates to
+    :func:`splice_region`, a true regional write that updates only the
+    segments owning the write region (bit-identical to the historical
+    unfold→write→re-fold, since fold boundaries are size-derived). A depth
+    change is a genuine global dependency: the full payload is reconstructed
+    and re-folded, exactly as before.
     """
     _validate_state(original_state)
+    target_depth = original_state.depth if depth is None else int(depth)
+    if target_depth == original_state.depth:
+        return splice_region(original_state, boundary, result_slice)[0]
     values = np.asarray(result_slice)
     if values.dtype != np.dtype(original_state.dtype):
         raise PhiFoldError(
@@ -339,7 +419,6 @@ def fold_result(
         raise PhiFoldError("result slice exceeds original tensor bounds")
     full = phi_unfold(original_state).ravel().copy()
     full[boundary.slice] = values
-    target_depth = original_state.depth if depth is None else int(depth)
     return phi_fold(full.reshape(original_state.original_shape), depth=target_depth)
 
 
@@ -370,6 +449,7 @@ __all__ = [
     "phi_fold",
     "phi_unfold",
     "reconstruction_error",
+    "splice_region",
     "unfold_partial",
     "unfold_partial_with_stats",
     "working_set_ratio",
