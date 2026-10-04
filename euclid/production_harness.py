@@ -66,8 +66,11 @@ def run_production_gates(factory: Callable[[Path], EuclidRuntime]) -> dict[str, 
         results.append(GateResult(
             "tamper-rejection", rejected, "modified checkpoints must be rejected",
         ))
-        runtime.close()
+        # Close inside the temporary directory's lifetime: each runtime holds a
+        # SQLite handle, and a handle outliving the directory makes it
+        # undeletable.
         restored.close()
+        runtime.close()
     passed = all(result.passed for result in results)
     return {
         "schema": "euclid.production-gates/1",

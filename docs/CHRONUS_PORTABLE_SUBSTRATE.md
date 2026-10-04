@@ -24,7 +24,7 @@ A capability is advertised only when its adapter reports available. CUDA, ROCm, 
 
 ## Evidence ledger
 
-`EvidenceLedger` stores canonical JSON artifacts under `evidence-ledger/<sha256>.json` and query metadata in SQLite/WAL. Set `CHRONUS_EVIDENCE_HMAC_KEY` for authenticated chains. SHA-256 alone is tamper-evident, not identity-authenticated.
+`EvidenceLedger` stores canonical JSON artifacts under `evidence/<sha256>.json` (the same content-addressed directory durable memory persistence uses) and query metadata in SQLite/WAL. Set `CHRONUS_EVIDENCE_HMAC_KEY` for authenticated chains. SHA-256 alone is tamper-evident, not identity-authenticated.
 
 ## Execution classes
 

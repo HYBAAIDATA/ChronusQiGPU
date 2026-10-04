@@ -58,3 +58,6 @@ proofs/lean/.lake/
 
 # assurance-gate result artifacts (make gates / scripts/gate_runner.py)
 results/
+
+# adversarial-review evidence artifacts (eval_harness/artifacts/.gitignore keeps tmp/ out)
+!eval_harness/artifacts/

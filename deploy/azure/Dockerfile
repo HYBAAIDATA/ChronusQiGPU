@@ -33,6 +33,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHIA_MINING_SESSION_PATH=/var/lib/pythia/mining_session.json \
     PYTHIA_CAUSAL_LOG_PATH=/var/lib/pythia/causal_ledger.jsonl \
     PYTHIA_AGENTIC_STATE_PATH=/var/lib/pythia/agentic_policy.json \
+    PYTHIA_TELEMETRY_HISTORY_PATH=/var/lib/pythia/telemetry_history.jsonl \
+    PYTHIA_RETARGET_TELEMETRY_PATH=/var/lib/pythia/retarget_windows.json \
+    PYTHIA_BACKEND_EVIDENCE_PATH=/var/lib/pythia/backend_decisions.jsonl \
     PYTHIA_INTELLIGENCE_DIR=/var/lib/pythia/intelligence
 WORKDIR /app
 COPY . .

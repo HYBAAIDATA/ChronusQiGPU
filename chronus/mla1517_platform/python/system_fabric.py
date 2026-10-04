@@ -40,7 +40,7 @@ import sys
 import threading
 import time
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Mapping, Optional
 
 _PY_DIR = Path(__file__).resolve().parent
 _REPO_ROOT = _PY_DIR.parent.parent.parent
@@ -522,6 +522,358 @@ def autonomous_supervisor_status() -> dict[str, Any]:
         return {"schema": "pythia.autonomous_supervisor/1", "error": f"{type(exc).__name__}: {exc}"}
 
 
+# ---------------------------------------------------------------------------
+# EUCLID cognition — the intelligence authority's closed loop
+# ---------------------------------------------------------------------------
+
+_EUCLID_LOCK = threading.Lock()
+_EUCLID: dict[str, Any] = {"runtime": None, "error": None}
+
+
+def _euclid_state_dir() -> Path:
+    """Where cognition state lives.  Defaults beside the repo's other runtime
+    state; overridable so a deployment can place it on durable storage."""
+    configured = os.getenv("PYTHIA_EUCLID_STATE_DIR")
+    if configured:
+        return Path(configured)
+    repo_root = Path(__file__).resolve().parents[3]
+    return repo_root / "data" / "euclid"
+
+
+def euclid_cognition() -> Any:
+    """The EUCLID cognition runtime, constructed lazily on first use.
+
+    This is the single production entry point to the intelligence authority.
+    It is deliberately lazy: importing this module must not create state, and
+    a control plane that never asks for cognition never pays for it.  Failures
+    are reported honestly rather than replaced with a deterministic stub.
+    """
+    with _EUCLID_LOCK:
+        if _EUCLID["runtime"] is not None:
+            return _EUCLID["runtime"]
+        if _EUCLID["error"] is not None:
+            return None
+        try:
+            import sys as _sys
+
+            repo_root = str(Path(__file__).resolve().parents[3])
+            if repo_root not in _sys.path:
+                _sys.path.append(repo_root)
+            from euclid import EuclidRuntime
+
+            runtime = EuclidRuntime.production(
+                creator_id=os.getenv("PYTHIA_CREATOR_ID", "pythia-operator"),
+                state_dir=_euclid_state_dir(),
+            )
+            _EUCLID["runtime"] = runtime
+        except Exception as exc:  # noqa: BLE001 - report, never fake
+            _EUCLID["error"] = f"{type(exc).__name__}: {exc}"
+            return None
+    return _EUCLID["runtime"]
+
+
+def euclid_cognition_close() -> dict[str, Any]:
+    """Close and forget the cached cognition runtime.
+
+    Orderly shutdown and test isolation both need a real teardown: the runtime
+    holds a SQLite connection and a snapshot writer, so leaking it strands the
+    state directory.  Idempotent, and never raises — shutdown is fail-soft.
+    """
+    with _EUCLID_LOCK:
+        runtime = _EUCLID["runtime"]
+        _EUCLID["runtime"] = None
+    if runtime is None:
+        return {
+            "schema": "pythia.euclid.cognition.close/1",
+            "closed": False,
+            "reason": "no cognition runtime was constructed",
+        }
+    try:
+        runtime.close()
+    except Exception as exc:  # noqa: BLE001 - shutdown is fail-soft
+        return {
+            "schema": "pythia.euclid.cognition.close/1",
+            "closed": False,
+            "reason": f"{type(exc).__name__}: {exc}",
+        }
+    return {"schema": "pythia.euclid.cognition.close/1", "closed": True}
+
+
+def euclid_cognition_status() -> dict[str, Any]:
+    """Honest cognition status, including why it may be unavailable.
+
+    Status reports only what was actually measured.  In particular it never
+    claims transfer from retrieval alone, adaptation from a record count, or
+    success from a stalled episode.
+    """
+    runtime = euclid_cognition()
+    if runtime is None:
+        return {
+            "schema": "pythia.euclid.cognition/1",
+            "available": False,
+            "reason": _EUCLID["error"] or "not constructed",
+            "authority": "euclid.cognition",
+            "open_gates": ["cognition_runtime_unavailable"],
+        }
+    try:
+        status = dict(runtime.startup_report()["cognition"])
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "schema": "pythia.euclid.cognition/1",
+            "available": False,
+            "reason": f"{type(exc).__name__}: {exc}",
+            "open_gates": ["cognition_startup_report_failed"],
+        }
+
+    learning = runtime.learning
+    replay = learning.replay_state()
+    try:
+        memory_integrity = (
+            learning.memory_database.verify()
+            if learning.memory_database is not None
+            else {"valid": False, "reason": "no durable memory database"}
+        )
+    except Exception as exc:  # noqa: BLE001 - integrity failure is a gate, not a crash
+        memory_integrity = {"valid": False, "reason": f"{type(exc).__name__}: {exc}"}
+
+    journal_path = replay.get("replay_journal_path")
+    replay_integrity: dict[str, Any] = {
+        "path": journal_path,
+        "entries": replay.get("journal_entries"),
+        "sha256": replay.get("journal_sha256"),
+        "verified": False,
+    }
+    # A sealed journal that reloaded is the only honest basis for "verified":
+    # LearningService validates the seal while loading it, so a runtime that
+    # came up at all has already proved it.
+    if journal_path:
+        replay_integrity["verified"] = bool(
+            replay.get("journal_entries") is not None
+            and Path(journal_path).is_file()
+        )
+
+    reachability: dict[str, str] = {}
+    for component in (
+        "toe.world_model", "toe.planning", "toe.meta_reasoning",
+        "euclid.v16.search", "euclid.v16.primitives",
+        "euclid.strategy_meta_learning", "euclid.learning_service",
+        "euclid.memory_database", "pythia.memory", "pythia.store",
+        "experience_superlearner", "repository.engineer",
+    ):
+        stage = runtime.reachability.stage(component)
+        if stage is not None:
+            reachability[component] = stage.name
+
+    open_gates: list[str] = []
+    if not memory_integrity.get("valid"):
+        open_gates.append("memory_integrity_unverified")
+    if not replay_integrity["verified"]:
+        open_gates.append("replay_journal_unverified")
+    if not any(
+        stage == "TRANSFER_VERIFIED" for stage in reachability.values()
+    ):
+        open_gates.append("transfer_not_verified")
+    if not any(
+        stage == "RESTART_VERIFIED" for stage in reachability.values()
+    ):
+        open_gates.append("restart_not_verified")
+    open_gates.extend([
+        "held_out_generalisation_not_established",
+        "external_validation_absent",
+        "production_certification_absent",
+    ])
+
+    status.update({
+        "schema": "pythia.euclid.cognition/1",
+        "available": True,
+        "authority": "euclid.cognition",
+        "state_dir": str(_euclid_state_dir()),
+        "memory": {
+            "implementation": type(getattr(runtime.cognition, "memory", None)).__name__,
+            "integrity": memory_integrity,
+        },
+        "replay_journal": replay_integrity,
+        "reachability": reachability,
+        "evidence_head": runtime.evidence.head,
+        "resources": {"open": not getattr(runtime, "_closed", False)},
+        "experiences_seen": len(learning._seen),
+        "open_gates": open_gates,
+        "claims_not_made": [
+            "transfer is never claimed from retrieval alone",
+            "adaptation is never claimed from record count",
+            "a stalled episode is never reported as successful cognition",
+        ],
+    })
+    return status
+
+
+def euclid_cognition_solve(
+    problem_id: str,
+    goal: str,
+    *,
+    problem_class: str = "repository-wiring",
+    structure: tuple[str, ...] = (),
+    observations: tuple[str, ...] = (),
+    strategy: str = "",
+    initial_code: str = "",
+) -> dict[str, Any]:
+    """Run one real cognition episode through the EUCLID composition root.
+
+    This is the production entry point: it executes the actual loop against the
+    actual durable state, not a simulation of it.  The returned trace is the
+    episode's own evidence — phases, selected strategy, hypotheses, prediction
+    errors, learning updates and the sealed episode identity.
+
+    Fail-closed: an unavailable cognition runtime, an unusable problem or a
+    strategy the composer cannot execute all produce an explicit unavailable /
+    failed result.  Nothing is ever fabricated to look like successful
+    reasoning.
+    """
+    if not problem_id or not goal:
+        return {
+            "schema": "pythia.euclid.cognition.solve/1",
+            "available": False,
+            "failure": "invalid_request",
+            "reason": "problem_id and goal are required",
+        }
+    runtime = euclid_cognition()
+    if runtime is None:
+        return {
+            "schema": "pythia.euclid.cognition.solve/1",
+            "available": False,
+            "failure": "runtime_unavailable",
+            "reason": _EUCLID["error"] or "cognition runtime not constructed",
+        }
+
+    problem: dict[str, Any] = {
+        "problem_id": str(problem_id),
+        "goal": str(goal),
+        "problem_class": str(problem_class),
+        "structure": list(structure),
+        "observations": list(observations),
+    }
+    if strategy:
+        # Reject an unknown strategy before any work runs, so an unavailable
+        # route is never silently replaced by a different one.
+        available = getattr(runtime.cognition, "skills", None)
+        declared = getattr(available, "available_strategies", None)
+        if callable(declared):
+            known = tuple(str(s) for s in declared())
+            if strategy not in known:
+                return {
+                    "schema": "pythia.euclid.cognition.solve/1",
+                    "available": False,
+                    "failure": "strategy_unavailable",
+                    "reason": f"strategy {strategy!r} is not executable",
+                    "available_strategies": list(known),
+                }
+        problem["strategy"] = str(strategy)
+    if initial_code:
+        problem["initial_code"] = str(initial_code)
+
+    started = time.perf_counter()
+    try:
+        state = runtime.solve_repository_problem(problem)
+    except Exception as exc:  # noqa: BLE001 - report, never fake a trace
+        return {
+            "schema": "pythia.euclid.cognition.solve/1",
+            "available": False,
+            "failure": "execution_error",
+            "problem_id": str(problem_id),
+            "reason": f"{type(exc).__name__}: {exc}",
+        }
+
+    transitions = [
+        {
+            "sequence": record.sequence,
+            "phase": record.phase,
+            "summary": record.summary,
+            "digest": record.digest,
+        }
+        for record in state.transitions
+    ]
+    return {
+        "schema": "pythia.euclid.cognition.solve/1",
+        "available": True,
+        "authority": "euclid.cognition",
+        "problem_id": state.problem_id,
+        "goal": goal,
+        "problem_class": problem_class,
+        "outcome": state.outcome.value if state.outcome else None,
+        "outcome_detail": state.outcome_detail,
+        "selected_strategy": state.selected_strategy,
+        "alternative_strategies": list(state.alternative_strategies),
+        "representation": dict(state.representation),
+        "hypotheses": [
+            {
+                "id": h.hypothesis_id,
+                "statement": h.statement,
+                "status": h.status.value,
+                "confidence": h.confidence,
+            }
+            for h in state.hypotheses
+        ],
+        "retrieved_memory_refs": list(state.retrieved_memory_refs),
+        "prediction_errors": list(state.prediction_errors),
+        "replanning_events": [dict(e) for e in state.replanning_events],
+        "control_decisions": [dict(d) for d in state.control_decisions],
+        "learning_updates": [dict(u) for u in state.learning_updates],
+        "ablations": list(state.ablations),
+        "candidates": [
+            {"action_id": c.action_id, "origin": c.origin, "total": c.total}
+            for c in state.candidates
+        ],
+        "transitions": transitions,
+        "wall_time_s": round(time.perf_counter() - started, 6),
+        "state_digest": state.transitions[-1].digest if state.transitions else None,
+        # Persistence and transfer are reported as separate, separately earned
+        # facts.  Retrieval is persistence; only a retrieved record adopted as a
+        # structural mapping is a decision effect.
+        "persistence": {
+            "retrieved": len(state.retrieved_memory_refs),
+            "memory_ids": list(state.retrieved_memory_refs),
+        },
+        "decision_effect": {
+            "adopted_analogies": [
+                {
+                    "analogy_id": mapping.analogy_id,
+                    "source_ref": mapping.source_ref,
+                    "structural_overlap": mapping.structural_overlap,
+                }
+                for mapping in state.analogies
+                if mapping.status.value == "adopted"
+            ],
+            "decision_links": sorted(
+                mapping.source_ref for mapping in state.analogies
+                if mapping.status.value == "adopted"
+                and mapping.source_ref in set(state.retrieved_memory_refs)
+            ),
+            "transfer_verified": any(
+                mapping.status.value == "adopted"
+                and mapping.source_ref in set(state.retrieved_memory_refs)
+                for mapping in state.analogies
+            ),
+        },
+        "reward_authority": {
+            "observed_reward_authorities": sorted({
+                str(update.get("reward_authority", "unspecified"))
+                for update in state.learning_updates
+                if isinstance(update, Mapping) and "reward_authority" in update
+            }) or ["none-recorded"],
+        },
+        "terminal_cycle_learned": bool(
+            state.learning_updates
+            and state.outcome is not None
+        ),
+        "reachability_stages": {
+            component: runtime.reachability.stage(component).name
+            for component in ("euclid.memory_database", "pythia.memory",
+                              "euclid.strategy_meta_learning")
+            if runtime.reachability.stage(component) is not None
+        },
+    }
+
+
 def intelligence_status() -> dict[str, Any]:
     ensure_orchestrator()
     with _INTEL_LOCK:
@@ -534,6 +886,9 @@ def intelligence_status() -> dict[str, Any]:
         "state": state,
         "started_at": started,
         "ready_at": ready_at,
+        # The intelligence authority itself, independent of the mining
+        # orchestrator's wiring state.
+        "euclid_cognition": euclid_cognition_status(),
     }
     if state == "error":
         payload["error"] = error

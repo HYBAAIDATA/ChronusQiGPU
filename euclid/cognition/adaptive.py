@@ -4,6 +4,7 @@ These mechanisms operate on the shared cognitive envelope.  They never promote
 complexity, novelty, mathematical structure, skills, or strategies without a
 measured comparison against a declared baseline.
 """
+
 from __future__ import annotations
 
 import json
@@ -14,7 +15,10 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
 from ..contracts import domain_hash
+from ..evidence import atomic_write
 from .interfaces import StrategyChoice
+
+_SEAL_DOMAIN = "euclid.strategy-learning.seal.v1"
 
 
 @dataclass(frozen=True)
@@ -48,6 +52,7 @@ class RepresentationController:
         source = problem.get("initial_code")
         if isinstance(source, str) and source.strip():
             import ast
+
             try:
                 tree = ast.parse(source)
             except (SyntaxError, TypeError, ValueError):
@@ -56,33 +61,44 @@ class RepresentationController:
                 # candidates and let the literal source reach diagnosis.
                 tree = None
             if tree is not None:
-                dependencies = sorted({
-                    node.id for node in ast.walk(tree) if isinstance(node, ast.Name)
-                })
+                dependencies = sorted(
+                    {node.id for node in ast.walk(tree) if isinstance(node, ast.Name)}
+                )
                 candidates.append(("source-dependency", {"symbols": dependencies}))
         numeric = [
-            float(value) for value in problem.get("state_vector", ())
+            float(value)
+            for value in problem.get("state_vector", ())
             if isinstance(value, (int, float)) and math.isfinite(float(value))
         ]
         if numeric:
             norm = math.sqrt(sum(value * value for value in numeric)) or 1.0
-            candidates.append((
-                "manifold-direction",
-                {"unit_direction": [value / norm for value in numeric],
-                 "evidence_class": "exploratory-parametric"},
-            ))
+            candidates.append(
+                (
+                    "manifold-direction",
+                    {
+                        "unit_direction": [value / norm for value in numeric],
+                        "evidence_class": "exploratory-parametric",
+                    },
+                )
+            )
         return candidates
 
     def select(
-        self, problem: Mapping[str, Any],
+        self,
+        problem: Mapping[str, Any],
         evaluator: Callable[[str, Mapping[str, Any]], tuple[float, float]],
     ) -> RepresentationTrial:
         baseline_kind = str(problem.get("representation_kind", "literal"))
         baseline_payload = {"problem": dict(problem)}
         baseline_utility, baseline_cost = evaluator(baseline_kind, baseline_payload)
         best = RepresentationTrial(
-            baseline_kind, baseline_kind, baseline_payload,
-            baseline_utility, baseline_utility, baseline_cost, False,
+            baseline_kind,
+            baseline_kind,
+            baseline_payload,
+            baseline_utility,
+            baseline_utility,
+            baseline_cost,
+            False,
             "baseline retained",
         )
         for kind, payload in self.candidates(problem):
@@ -91,10 +107,20 @@ class RepresentationController:
             baseline_net = baseline_utility - baseline_cost
             if net > baseline_net and net > best.candidate_utility - best.cost:
                 best = RepresentationTrial(
-                    "repr-" + domain_hash("euclid.representation.v1", {
-                        "kind": kind, "payload": payload,
-                    })[:16],
-                    kind, payload, baseline_utility, utility, cost, True,
+                    "repr-"
+                    + domain_hash(
+                        "euclid.representation.v1",
+                        {
+                            "kind": kind,
+                            "payload": payload,
+                        },
+                    )[:16],
+                    kind,
+                    payload,
+                    baseline_utility,
+                    utility,
+                    cost,
+                    True,
                     f"net utility {net:.6g} exceeds baseline {baseline_net:.6g}",
                 )
         return best
@@ -116,8 +142,13 @@ class ObjectiveController:
     """Construct intermediate objectives and detect proxy detachment."""
 
     def derive(
-        self, goal: str, *, uncertainty: float, contradictions: int,
-        missing_evidence: int, prediction_error: float,
+        self,
+        goal: str,
+        *,
+        uncertainty: float,
+        contradictions: int,
+        missing_evidence: int,
+        prediction_error: float,
     ) -> list[IntermediateObjective]:
         specs: list[tuple[str, str, float, float]] = []
         if uncertainty > 0:
@@ -133,21 +164,26 @@ class ObjectiveController:
         total = sum(weight for _, _, _, weight in specs)
         return [
             IntermediateObjective(
-                f"objective-{index}", description, goal,
-                "measured cognitive-state signals", metric, target, weight / total,
+                f"objective-{index}",
+                description,
+                goal,
+                "measured cognitive-state signals",
+                metric,
+                target,
+                weight / total,
             )
             for index, (description, metric, target, weight) in enumerate(specs)
         ]
 
     @staticmethod
     def audit_alignment(
-        objective: IntermediateObjective, *,
-        metric_improved: bool, goal_progressed: bool,
+        objective: IntermediateObjective,
+        *,
+        metric_improved: bool,
+        goal_progressed: bool,
     ) -> IntermediateObjective:
         if metric_improved and not goal_progressed:
-            return IntermediateObjective(
-                **{**asdict(objective), "status": "detached-proxy"}
-            )
+            return IntermediateObjective(**{**asdict(objective), "status": "detached-proxy"})
         return objective
 
 
@@ -164,6 +200,9 @@ class PersistentStrategyLearner:
             payload = json.loads(self.path.read_text(encoding="utf-8"))
             if payload.get("schema") != self.SCHEMA:
                 raise ValueError("unsupported strategy-learning schema")
+            body = {key: payload.get(key) for key in ("schema", "stats", "negative_transfer")}
+            if payload.get("seal") != domain_hash(_SEAL_DOMAIN, body):
+                raise ValueError("strategy-learning ledger seal mismatch")
             self.stats = dict(payload.get("stats", {}))
             self.negative_transfer = list(payload.get("negative_transfer", ()))
 
@@ -174,15 +213,9 @@ class PersistentStrategyLearner:
             "stats": self.stats,
             "negative_transfer": self.negative_transfer,
         }
-        temporary = self.path.with_suffix(".tmp")
-        temporary.write_text(
-            json.dumps(body, sort_keys=True, separators=(",", ":")), encoding="utf-8"
-        )
-        temporary.replace(self.path)
+        atomic_write(self.path, {**body, "seal": domain_hash(_SEAL_DOMAIN, body)})
 
-    def select_strategy(
-        self, problem_class: str, available: Sequence[str]
-    ) -> StrategyChoice:
+    def select_strategy(self, problem_class: str, available: Sequence[str]) -> StrategyChoice:
         if not available:
             raise ValueError("at least one strategy is required")
         class_stats = self.stats.get(problem_class, {})
@@ -195,18 +228,23 @@ class PersistentStrategyLearner:
                 scored.append((mean + 0.1 * uncertainty, strategy, record))
         if not scored:
             return StrategyChoice(
-                available[0], tuple(available[1:]),
+                available[0],
+                tuple(available[1:]),
                 f"no evidence for class {problem_class!r}; cross-class preference blocked",
             )
         scored.sort(key=lambda row: (-row[0], row[1]))
         selected = scored[0][1]
         return StrategyChoice(
-            selected, tuple(item for item in available if item != selected),
+            selected,
+            tuple(item for item in available if item != selected),
             f"per-class measured utility over {int(scored[0][2]['trials'])} trial(s)",
         )
 
     def update(
-        self, problem_class: str, strategy_id: str, success: bool,
+        self,
+        problem_class: str,
+        strategy_id: str,
+        success: bool,
         detail: str = "",
     ) -> None:
         utility = 1.0 if success else 0.0
@@ -219,18 +257,24 @@ class PersistentStrategyLearner:
         self._save()
 
     def record_transfer(
-        self, source_class: str, target_class: str, strategy_id: str,
-        baseline_utility: float, transfer_utility: float,
+        self,
+        source_class: str,
+        target_class: str,
+        strategy_id: str,
+        baseline_utility: float,
+        transfer_utility: float,
     ) -> None:
         delta = float(transfer_utility) - float(baseline_utility)
         if delta < 0:
-            self.negative_transfer.append({
-                "source_class": source_class,
-                "target_class": target_class,
-                "strategy_id": strategy_id,
-                "delta": delta,
-                "timestamp": time.time(),
-            })
+            self.negative_transfer.append(
+                {
+                    "source_class": source_class,
+                    "target_class": target_class,
+                    "strategy_id": strategy_id,
+                    "delta": delta,
+                    "timestamp": time.time(),
+                }
+            )
         self._save()
 
 
@@ -256,22 +300,26 @@ class CapabilityLifecycle:
         self.events: list[dict[str, Any]] = []
 
     def discover(
-        self, capability_id: str, *, kind: str, dependencies: Sequence[str],
+        self,
+        capability_id: str,
+        *,
+        kind: str,
+        dependencies: Sequence[str],
         provenance: str,
     ) -> CapabilityRecord:
         if kind not in {"primitive", "composed-primitive", "skill", "composed-skill", "strategy"}:
             raise ValueError("unsupported capability kind")
         if capability_id in self.records:
             return self.records[capability_id]
-        record = CapabilityRecord(
-            capability_id, kind, tuple(dependencies), provenance
-        )
+        record = CapabilityRecord(capability_id, kind, tuple(dependencies), provenance)
         self.records[capability_id] = record
         self.events.append({"event": "discovered", "capability_id": capability_id})
         return record
 
     def validate(
-        self, capability_id: str, *,
+        self,
+        capability_id: str,
+        *,
         implementation: Callable[[Any], Any],
         reference: Callable[[Any], Any],
         corpus: Sequence[Any],
@@ -291,14 +339,16 @@ class CapabilityLifecycle:
                 record.failures += 1
                 valid = False
         record.domains.add(domain)
-        record.semantic_digest = domain_hash(
-            "euclid.capability.semantic-equivalence.v1", outputs
-        )
+        record.semantic_digest = domain_hash("euclid.capability.semantic-equivalence.v1", outputs)
         record.status = "validated" if valid else "rejected"
-        self.events.append({
-            "event": record.status, "capability_id": capability_id,
-            "domain": domain, "semantic_digest": record.semantic_digest,
-        })
+        self.events.append(
+            {
+                "event": record.status,
+                "capability_id": capability_id,
+                "domain": domain,
+                "semantic_digest": record.semantic_digest,
+            }
+        )
         return valid
 
     def promote(self, capability_id: str, *, min_domains: int = 2) -> None:
@@ -314,10 +364,13 @@ class CapabilityLifecycle:
         if not rationale:
             raise ValueError("deprecation rationale is required")
         self.records[capability_id].status = "deprecated"
-        self.events.append({
-            "event": "deprecated", "capability_id": capability_id,
-            "rationale": rationale,
-        })
+        self.events.append(
+            {
+                "event": "deprecated",
+                "capability_id": capability_id,
+                "rationale": rationale,
+            }
+        )
 
 
 class NoveltyArchive:
@@ -332,7 +385,10 @@ class NoveltyArchive:
         return math.sqrt(sum((a - b) ** 2 for a, b in zip(left, right)))
 
     def consider(
-        self, descriptor: Sequence[float], *, correct: bool,
+        self,
+        descriptor: Sequence[float],
+        *,
+        correct: bool,
         invariants_hold: bool,
     ) -> dict[str, Any]:
         point = tuple(map(float, descriptor))
@@ -340,7 +396,8 @@ class NoveltyArchive:
             return {"accepted": False, "reason": "correctness/invariant gate failed"}
         novelty = (
             min(self._distance(point, prior) for prior in self.descriptors)
-            if self.descriptors else math.inf
+            if self.descriptors
+            else math.inf
         )
         accepted = novelty >= self.threshold
         if accepted:

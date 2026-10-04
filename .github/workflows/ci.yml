@@ -68,7 +68,9 @@ jobs:
           # the dependency from the local wheels.
           python -m pip wheel ./turing_universal_quantum_computer --no-deps --wheel-dir dist
           python -m venv /tmp/pythia-wheel-smoke
-          /tmp/pythia-wheel-smoke/bin/pip install --quiet numpy dist/*.whl
+          # --no-deps: the wheel declares turing-universal-quantum-computer
+          # (in-tree, not on PyPI); the smoke imports need only stdlib+numpy.
+          /tmp/pythia-wheel-smoke/bin/pip install --quiet --no-deps numpy dist/*.whl
           cd /tmp
           /tmp/pythia-wheel-smoke/bin/python - <<'PY'
           import json

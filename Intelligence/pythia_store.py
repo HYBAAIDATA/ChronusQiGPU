@@ -662,6 +662,10 @@ class PythiaStore:
 
     def save(self) -> Path:
         """Persist memory tiers + learning substrate + qudit traces."""
+        # The snapshot dir is created in __init__ but may be removed at any
+        # point during the process (e.g. temp-dir teardown under tests); a
+        # write without the parent present must not crash close().
+        self.dir.mkdir(parents=True, exist_ok=True)
         self._refresh_qudits()
         snap = {
             "version": 1,

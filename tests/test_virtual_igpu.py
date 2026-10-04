@@ -42,7 +42,7 @@ def test_end_to_end_fold_is_attested_persisted_and_content_addressed(tmp_path):
     assert result.object_id and result.evidence_digest
     artifact = daemon.memory.retrieve("tenant-a", "w1")
     assert artifact["result"]["digest"] == result.digest
-    evidence = tmp_path / "evidence-ledger" / f"{result.evidence_digest}.json"
+    evidence = tmp_path / "evidence" / f"{result.evidence_digest}.json"
     assert evidence.is_file()
     assert hashlib.sha256(evidence.read_bytes()).hexdigest() == result.evidence_digest
 

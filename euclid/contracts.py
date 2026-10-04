@@ -105,4 +105,14 @@ class Experience:
             raise ValueError("reward authority requires a reward")
 
     def digest(self) -> str:
-        return domain_hash("euclid.experience.v1", asdict(self))
+        """Content identity of the experience, excluding wall-clock time.
+
+        ``created_at`` is deliberately excluded: this digest is the replay
+        identity used to detect duplicates and content conflicts, so it must be
+        reproducible for the same experience.  Including a wall-clock default
+        would make every replay of one episode hash differently and defeat
+        duplicate detection entirely.  The timestamp remains on the record.
+        """
+        body = asdict(self)
+        body.pop("created_at", None)
+        return domain_hash("euclid.experience.v1", body)

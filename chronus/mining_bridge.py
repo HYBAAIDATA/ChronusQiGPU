@@ -8,7 +8,7 @@ technology can scale without creating an incompatible proof.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from typing import Sequence
+from typing import Any, Sequence
 
 import numpy as np
 
@@ -134,3 +134,77 @@ class ChronusSubstrateMiningBridge:
 
 
 __all__ = ["ChronusSubstrateMiningBridge", "SubstrateOrderingEvidence"]
+
+
+# ---------------------------------------------------------------------------
+# Virtual iGPU execution path (optional, fail-closed)
+# ---------------------------------------------------------------------------
+def submit_via_virtual_igpu(
+    plan: SearchPlan | dict[str, Any],
+    *,
+    header80: bytes | None = None,
+    target_hex: str | None = None,
+    tenant: str = "mining",
+    execution_policy: str = "preferred_accelerator",
+    allow_software_fallback: bool = True,
+    endpoint: str | None = None,
+) -> dict[str, Any]:
+    """Route a portable search plan through Chronus Virtual iGPU.
+
+    SHA-256d re-verification remains the validity oracle. The Virtual iGPU
+    returns a receipt; a found nonce is not pool-accepted until the mining
+    stack submits and receives acknowledgement separately.
+    """
+    from chronus.virtual_igpu import ChronusClient
+    from chronus.virtual_igpu.abi import Workload, WorkloadKind
+    import uuid
+
+    if hasattr(plan, "__dict__") and not isinstance(plan, dict):
+        plan_dict = {
+            k: getattr(plan, k)
+            for k in dir(plan)
+            if not k.startswith("_") and not callable(getattr(plan, k))
+        }
+        # Prefer dataclasses.asdict when available
+        try:
+            from dataclasses import asdict, is_dataclass
+
+            if is_dataclass(plan):
+                plan_dict = asdict(plan)
+        except Exception:
+            pass
+    else:
+        plan_dict = dict(plan)
+
+    client = ChronusClient(endpoint=endpoint)
+    payload = {
+        "plan": plan_dict,
+        "header80_hex": header80.hex() if isinstance(header80, (bytes, bytearray)) else header80,
+        "target_hex": target_hex,
+    }
+    # Prefer SHA256D_SCAN when header material is present; else fold plan as STORE proof
+    if header80 is not None:
+        kind = WorkloadKind.SHA256D_SCAN if hasattr(WorkloadKind, "SHA256D_SCAN") else WorkloadKind.SHA256D_VERIFY
+        body = {
+            "header80_hex": payload["header80_hex"],
+            "target_hex": target_hex,
+            "plan": plan_dict,
+        }
+    else:
+        kind = WorkloadKind.FOLD if hasattr(WorkloadKind, "FOLD") else WorkloadKind.STORE
+        body = payload
+
+    workload = Workload(
+        id=str(uuid.uuid4()),
+        kind=kind,
+        tenant=tenant,
+        input=body,
+        execution_policy=execution_policy,
+        allow_software_fallback=allow_software_fallback,
+    )
+    result = client.submit(workload)
+    out = result.to_dict() if hasattr(result, "to_dict") else dict(result.__dict__)
+    out["share_state"] = "local_result"  # not pool-accepted
+    out["validity_oracle"] = "sha256d_reverify_required"
+    return out
+
