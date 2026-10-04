@@ -2,14 +2,21 @@
 
 The manifest is byte-stable: ``json.dumps(indent=2, ensure_ascii=False) + "\n"``.
 This script owns the entry inventory so additions stay schema-valid.
+
+The regeneration is idempotent: managed entries are upserted by ``id`` in
+place, so repeated runs produce the same file. ``--check`` verifies the
+on-disk manifest matches the regenerated output without writing — exit 1
+on drift.
 """
 
 import json
+import sys
 
 PATH = "manifests/july_2026_capability_gap_analysis.json"
 
 
 def main() -> None:
+    check = "--check" in sys.argv[1:]
     with open(PATH, encoding="utf-8") as handle:
         document = json.load(handle)
     entries = document["entries"]
@@ -655,8 +662,27 @@ def main() -> None:
         ),
     ]
 
-    entries.extend(new_entries)
+    # Upsert managed entries by id, in place: a rerun must reproduce the
+    # same manifest, not append a second copy of every managed entry.
+    position = {entry["id"]: index for index, entry in enumerate(entries)}
+    for entry in new_entries:
+        if entry["id"] in position:
+            entries[position[entry["id"]]] = entry
+        else:
+            entries.append(entry)
     rendered = json.dumps(document, indent=2, ensure_ascii=False) + "\n"
+    if check:
+        with open(PATH, encoding="utf-8", newline="\n") as handle:
+            current = handle.read()
+        if current == rendered:
+            print("check: manifest up to date, entries:", len(entries))
+            return
+        print(
+            "check: manifest drifted from the regenerated output; "
+            "run scripts/regen_july_manifest.py to rewrite it",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     with open(PATH, "w", encoding="utf-8", newline="\n") as handle:
         handle.write(rendered)
     print("entries:", len(entries))
