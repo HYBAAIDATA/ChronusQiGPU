@@ -11,7 +11,7 @@ selecting it would imply hardware that this package does not have.
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable
 
 from .algebraic import ExactFieldBackend, SUPPORTED_GATES
 from .base import (
