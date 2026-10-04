@@ -181,12 +181,6 @@ class EuclidRuntime:
                         component, stage, episode_id="runtime-startup",
                         evidence_ref=self.evidence.head or "genesis",
                     )
-            elif current is ReachabilityStage.PERSISTED:
-                self.reachability.record(
-                    component, ReachabilityStage.RESTART_VERIFIED,
-                    episode_id="runtime-restart",
-                    evidence_ref=self.evidence.head or "genesis",
-                )
 
     def register_specialist(self, organ_id: str, implementation: Any) -> None:
         """Expose a specialist without transferring its domain authority."""
@@ -224,7 +218,7 @@ class EuclidRuntime:
         if phases & {"deduce", "imagine", "compare"}:
             target(
                 "toe.world_model",
-                ReachabilityStage.OUTCOME_OBSERVED
+                ReachabilityStage.FEEDBACK_CLOSED
                 if "compare" in phases else ReachabilityStage.USED_IN_EPISODE,
             )
         if "plan" in phases:
@@ -264,10 +258,11 @@ class EuclidRuntime:
             for item in state.learning_updates
         )
         if persisted:
-            for component in (
-                "euclid.learning_service", "euclid.memory_database",
-                "pythia.memory", "pythia.store", "experience_superlearner",
-            ):
+            # The episode adapter always closes through LearningService and the
+            # canonical MemoryDatabase.  Reward-bearing downstream engines are
+            # not promoted here because this state does not carry per-engine
+            # mutation evidence.
+            for component in ("euclid.learning_service", "euclid.memory_database"):
                 target(component, ReachabilityStage.PERSISTED)
         if "execute" in phases:
             target("repository.engineer", ReachabilityStage.OUTCOME_OBSERVED)
@@ -350,6 +345,15 @@ class EuclidRuntime:
                 if self.learning.memory_database is not None
                 else {"valid": False, "reason": "not configured"}
             ),
+            "intelligence_readiness": {
+                "status": "NOT_CERTIFIED",
+                "production_certified": False,
+                "reasons": [
+                    "restart requires independent cross-process verification",
+                    "transfer requires deterministic ablation-backed decision effect",
+                    "external validation is not present",
+                ],
+            },
         }
 
     def snapshot(self) -> dict[str, Any]:
@@ -408,10 +412,8 @@ class EuclidRuntime:
             runtime.registry, runtime.evidence, runtime.rights
         )
         runtime.learning.evidence = runtime.evidence
-        # Re-attach the durable memory database when the state dir has one;
-        # persistence must survive restart, not just the live process.
-        database_path = runtime.state_dir / "euclid_memory.sqlite3"
-        if database_path.is_file():
-            runtime.learning.memory_database = MemoryDatabase(database_path)
+        # production() already opened the database in state_dir.  Reopening it
+        # here would leak the original SQLite connection and does not restore
+        # data when a checkpoint is moved to a different state directory.
         runtime.kairos.replay_verify()
         return runtime

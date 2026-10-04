@@ -107,7 +107,7 @@ class IntelligenceConvergenceTests(unittest.TestCase):
             self.assertIn("mcts-v16", runtime.cognition.skills.calls)
             self.assertIn("evolution-v16", runtime.cognition.skills.calls)
 
-    def test_representation_and_mathematical_ablation_change_episode_path(self):
+    def test_representation_and_skill_ablation_change_episode_path(self):
         with tempfile.TemporaryDirectory() as directory:
             runtime = self.production(directory)
             self.addCleanup(runtime.close)
@@ -122,19 +122,16 @@ class IntelligenceConvergenceTests(unittest.TestCase):
                 represented.representation["active_representation"], "relational"
             )
 
-            runtime.cognition.ablations = AblationConfig(
-                mathematical_structure=False
-            )
+            runtime.cognition.ablations = AblationConfig(skill_composition=False)
             ablated = runtime.solve_repository_problem(
-                problem("repo-math-ablation", "mcts-v16")
+                problem("repo-skill-ablation", "mcts-v16")
             )
-            self.assertIn("mathematical_structure", ablated.ablations)
+            self.assertIn("skill_composition", ablated.ablations)
             self.assertTrue(all(
-                candidate.origin == "euclid-v16:ASTPrimitives"
-                for candidate in ablated.candidates
+                candidate.origin == "planner" for candidate in ablated.candidates
             ))
 
-    def test_durable_memory_replay_guard_restart_and_transfer(self):
+    def test_durable_memory_replay_guard_restart_without_transfer_claim(self):
         with tempfile.TemporaryDirectory() as directory:
             first = self.production(directory)
             first.cognition.executor = MeasuredExecutor()
@@ -157,9 +154,10 @@ class IntelligenceConvergenceTests(unittest.TestCase):
             second.cognition.executor = MeasuredExecutor()
             related = second.solve_repository_problem(problem("repo-related"))
             self.assertTrue(related.retrieved_memory_refs)
-            second.reachability.require(
-                "euclid.memory_database", ReachabilityStage.TRANSFER_VERIFIED
-            )
+            memory_stage = second.reachability.stage("euclid.memory_database")
+            self.assertEqual(memory_stage, ReachabilityStage.PERSISTED)
+            self.assertLess(memory_stage, ReachabilityStage.RESTART_VERIFIED)
+            self.assertLess(memory_stage, ReachabilityStage.TRANSFER_VERIFIED)
 
     def test_cognition_does_not_change_bitcoin_consensus_semantics(self):
         header = bytes(range(80))
