@@ -57,11 +57,15 @@ def _decision_fingerprint(state):
 
 
 def _relevant_item():
+    # Same shape a real producer writes: an executed action + recorded
+    # success, keyed to structural features that overlap THIS problem.
     return MemoryItem(
         memory_id="relevant-episode-1",
         kind=MemoryKind.EPISODIC,
         payload={
             "prior_outcome": "solved",
+            "success": True,
+            "executed_action": "primitive:MUTATE:swap_op",
             "note": "same dependency-chain structure",
         },
         provenance="adversarial-seed",
@@ -71,11 +75,15 @@ def _relevant_item():
 
 
 def _irrelevant_item():
+    # Identical bias content to the relevant item — a different executed
+    # action — but zero structural overlap, so the gate must keep it inert.
     return MemoryItem(
         memory_id="irrelevant-episode-1",
         kind=MemoryKind.EPISODIC,
         payload={
             "prior_outcome": "solved",
+            "success": True,
+            "executed_action": "primitive:MUTATE:list_comp",
             "note": "unrelated unrelated unrelated",
         },
         provenance="adversarial-seed",

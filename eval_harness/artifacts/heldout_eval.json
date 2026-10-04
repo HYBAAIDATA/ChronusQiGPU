@@ -5,8 +5,8 @@
     "cold_vs_irrelevant_ranking_equal": true,
     "cold_vs_warm_ranking_equal": true,
     "warm_learned_state_differs_from_cold": {
-      "cold_strategy": "analogy-causal-plan",
-      "warm_strategy": "analogy-causal-plan"
+      "cold_strategy": "primitive-compose",
+      "warm_strategy": "primitive-compose"
     }
   },
   "note": "No improvement is asserted. Rows are evidence; comparisons record whether learned/seeded state changed any recorded decision.",
@@ -18,8 +18,9 @@
         {
           "ablations": [],
           "alternative_strategies": [
-            "abduce-intervene-deduce",
-            "rollout-search-execute"
+            "mcts-v16",
+            "evolution-v16",
+            "toe-plan"
           ],
           "candidate_origins": [
             "euclid-v16:ASTPrimitives",
@@ -104,7 +105,7 @@
             {
               "counts_for_control": false,
               "cycle": 0,
-              "digest": "07ec453fd12f4acb164a544656f73c09e4e8cd89a38b0abeaad4ccc51853c766",
+              "digest": "6c124bc497990d9e118a2045985a4da73704899096acdff2a74f6046bf192749",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -112,13 +113,13 @@
               "cycle": 0,
               "kind": "strategy",
               "problem_class": "ctl-class",
-              "strategy": "analogy-causal-plan",
+              "strategy": "primitive-compose",
               "success": false
             },
             {
               "counts_for_control": false,
               "cycle": 1,
-              "digest": "1cb76e1aa9f1871c4491536f0b3f8ce9cc6dc6e4090bc1c785f16517f4276cd7",
+              "digest": "8c2d6cf7bd59ff9f7c7f6ecc8e2cce82b82e15c0ebcf043be4ec5b7f4036da96",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -126,13 +127,13 @@
               "cycle": 1,
               "kind": "strategy",
               "problem_class": "ctl-class",
-              "strategy": "analogy-causal-plan",
+              "strategy": "primitive-compose",
               "success": false
             },
             {
               "counts_for_control": false,
               "cycle": 2,
-              "digest": "308990a33a5bf0055f4ee0042e3fd1f25590c693263bdc75f99ea5aeb8ab3db7",
+              "digest": "e25148955d11588fc16d04f11a02635f02d3b2b85d8e59a369e301f7d8deede4",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -140,13 +141,13 @@
               "cycle": 2,
               "kind": "strategy",
               "problem_class": "ctl-class",
-              "strategy": "analogy-causal-plan",
+              "strategy": "primitive-compose",
               "success": false
             },
             {
               "counts_for_control": false,
               "cycle": 3,
-              "digest": "04c9c985f525e16f8f979c49a71db3b14884d8e981a3d18c7b0e1965b60f13cd",
+              "digest": "4c2e47a74fa6b88592e861c7548903998cab6f6b86410beb68811c78726828e5",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -154,13 +155,13 @@
               "cycle": 3,
               "kind": "strategy",
               "problem_class": "ctl-class",
-              "strategy": "analogy-causal-plan",
+              "strategy": "primitive-compose",
               "success": false
             },
             {
               "counts_for_control": false,
               "cycle": 4,
-              "digest": "d9ec93bfdd1752ac6fadd3f1608543a0d7aa7ba6dd4145d3c176a2e2f350b4dd",
+              "digest": "9ff8e31dd49dda013d7867fa83cdfc43ac74f4efdbd25b8f169f54014d01143b",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -168,13 +169,13 @@
               "cycle": 4,
               "kind": "strategy",
               "problem_class": "ctl-class",
-              "strategy": "analogy-causal-plan",
+              "strategy": "primitive-compose",
               "success": false
             },
             {
               "counts_for_control": false,
               "cycle": 5,
-              "digest": "38269a1aae2564f67e316540c7bbe60f13ec3d6b0ffb12b1db363cb8a43edd95",
+              "digest": "4fadbd2a5df12e9e7b9f12c90a8917cf6becd989faa70cbedb2b7f1c9690435b",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -182,13 +183,13 @@
               "cycle": 5,
               "kind": "strategy",
               "problem_class": "ctl-class",
-              "strategy": "analogy-causal-plan",
+              "strategy": "primitive-compose",
               "success": false
             },
             {
               "counts_for_control": false,
               "cycle": 6,
-              "digest": "7e6902ec3c661f3b695df7cd0641b13ff7aae2e9da37b4a01381ce376acf5185",
+              "digest": "fc71f31d2c48e8f0a208e74e1316f303a3f3afe3f3694698ebf5dc268cbbe790",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -196,13 +197,13 @@
               "cycle": 6,
               "kind": "strategy",
               "problem_class": "ctl-class",
-              "strategy": "analogy-causal-plan",
+              "strategy": "primitive-compose",
               "success": false
             },
             {
               "counts_for_control": false,
               "cycle": 7,
-              "digest": "b6ebce2f8a14a2c356c3e8107758598164691eb338be9f36e76a91b9ac50ea5b",
+              "digest": "82ee28ee12edb1f3c4a9680921988afb6a90e72adc3969b1bc2b06bf39baa4e2",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -210,7 +211,7 @@
               "cycle": 7,
               "kind": "strategy",
               "problem_class": "ctl-class",
-              "strategy": "analogy-causal-plan",
+              "strategy": "primitive-compose",
               "success": false
             }
           ],
@@ -242,8 +243,8 @@
           "problem_id": "ctl-1",
           "replanning_events": 8,
           "retrieved_memory_refs": [],
-          "seal": "dca678cf5841471d468b8827f1c1b14909709e0af4622baf2a2dd16463f88d8c",
-          "selected_strategy": "analogy-causal-plan",
+          "seal": "6828ca43fba8792d53e1434e7705fe567a75cb53545ded2f3f73e6897a242ea2",
+          "selected_strategy": "primitive-compose",
           "transitions": 125
         }
       ]
@@ -254,8 +255,9 @@
         {
           "ablations": [],
           "alternative_strategies": [
-            "abduce-intervene-deduce",
-            "rollout-search-execute"
+            "mcts-v16",
+            "evolution-v16",
+            "toe-plan"
           ],
           "candidate_origins": [
             "euclid-v16:ASTPrimitives",
@@ -300,7 +302,7 @@
             {
               "counts_for_control": false,
               "cycle": 0,
-              "digest": "9478ab73eb836e2925a673c48a69376aedfb2c081e380e0276bf04595e38e6bb",
+              "digest": "7b32331b247218241632641fdb18a80bda6c3d668139a02937c0619305dd64d8",
               "kind": "canonical-learning-service",
               "success": true
             },
@@ -308,7 +310,7 @@
               "cycle": 0,
               "kind": "strategy",
               "problem_class": "train-class",
-              "strategy": "analogy-causal-plan",
+              "strategy": "primitive-compose",
               "success": true
             }
           ],
@@ -326,15 +328,16 @@
           "problem_id": "val-1",
           "replanning_events": 1,
           "retrieved_memory_refs": [],
-          "seal": "6487e12458eb0848d5328a605286f845a0036a4e5e5526f0f82220400a0b4b90",
-          "selected_strategy": "analogy-causal-plan",
+          "seal": "cd264a3f2cfe866e424dabfedb167bafbc57bf269fe94646802b9212ac5a1373",
+          "selected_strategy": "primitive-compose",
           "transitions": 20
         },
         {
           "ablations": [],
           "alternative_strategies": [
-            "abduce-intervene-deduce",
-            "rollout-search-execute"
+            "mcts-v16",
+            "evolution-v16",
+            "toe-plan"
           ],
           "candidate_origins": [
             "euclid-v16:ASTPrimitives",
@@ -353,7 +356,7 @@
             "primitive:NON_LOCAL:function_split_refactor"
           ],
           "control_decisions": [
-            "replan"
+            "continue"
           ],
           "cycles": 1,
           "execute_results": [
@@ -379,7 +382,7 @@
             {
               "counts_for_control": false,
               "cycle": 0,
-              "digest": "6e53f4c07278897588ed77d8e76cbcea919a8c5555f8fbe3f1d25fb8ace29e34",
+              "digest": "f54efe590a7dd501a772224641e2e97f664cdd3dc1ca408d8de9ad5f0629ee6a",
               "kind": "canonical-learning-service",
               "success": true
             },
@@ -387,7 +390,7 @@
               "cycle": 0,
               "kind": "strategy",
               "problem_class": "train-class",
-              "strategy": "analogy-causal-plan",
+              "strategy": "primitive-compose",
               "success": true
             }
           ],
@@ -403,12 +406,12 @@
             0.03442378240880961
           ],
           "problem_id": "val-2",
-          "replanning_events": 1,
+          "replanning_events": 0,
           "retrieved_memory_refs": [
-            "episode-9478ab73eb836e2925a673c4"
+            "episode-7b32331b247218241632641f"
           ],
-          "seal": "a6e7a192121feea0151d302dad7fd02b90fc778244c98cd46f051593747387f7",
-          "selected_strategy": "analogy-causal-plan",
+          "seal": "4805f30ae781931c0936ef396e2b8d59235f967054883e99538bdf90156eff25",
+          "selected_strategy": "primitive-compose",
           "transitions": 20
         }
       ]
@@ -418,8 +421,9 @@
         {
           "ablations": [],
           "alternative_strategies": [
-            "abduce-intervene-deduce",
-            "rollout-search-execute"
+            "mcts-v16",
+            "evolution-v16",
+            "toe-plan"
           ],
           "candidate_origins": [
             "euclid-v16:ASTPrimitives",
@@ -464,7 +468,7 @@
             {
               "counts_for_control": false,
               "cycle": 0,
-              "digest": "25ec8ea3c35eeac08396da1d840500b6443f3abafd75888013bfc19789bd0bd7",
+              "digest": "a9897e9397f5efd9540b05b71e1e3e7ff7c9d9a886d28ab52c949593fee2e305",
               "kind": "canonical-learning-service",
               "success": true
             },
@@ -472,7 +476,7 @@
               "cycle": 0,
               "kind": "strategy",
               "problem_class": "ctl-class",
-              "strategy": "analogy-causal-plan",
+              "strategy": "primitive-compose",
               "success": true
             }
           ],
@@ -492,8 +496,8 @@
           "retrieved_memory_refs": [
             "irrelevant-null-1"
           ],
-          "seal": "781926ece15c96f6800b935dfcf752eec643d601f8ae9ae2a45a2de70fce3abe",
-          "selected_strategy": "analogy-causal-plan",
+          "seal": "fa3c830213f94a3d410b74140d6f8f917960a4930370f028a00c550f6e3114f5",
+          "selected_strategy": "primitive-compose",
           "transitions": 20
         }
       ]
@@ -503,8 +507,9 @@
         {
           "ablations": [],
           "alternative_strategies": [
-            "abduce-intervene-deduce",
-            "rollout-search-execute"
+            "mcts-v16",
+            "evolution-v16",
+            "toe-plan"
           ],
           "candidate_origins": [
             "euclid-v16:ASTPrimitives",
@@ -613,7 +618,7 @@
             {
               "counts_for_control": false,
               "cycle": 0,
-              "digest": "b6f3da4c775b88b5a3227d058bba402d852032ef9a877585f0c9a3a7e5bb018c",
+              "digest": "ca7a6a51878b70936d92461b49dc6c2c52be8cf7650f2d9cfbdc6977c622bfb3",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -621,13 +626,13 @@
               "cycle": 0,
               "kind": "strategy",
               "problem_class": "ctl-class",
-              "strategy": "analogy-causal-plan",
+              "strategy": "primitive-compose",
               "success": false
             },
             {
               "counts_for_control": false,
               "cycle": 1,
-              "digest": "b709735be48e1b352ee555768682ef6d8fe999947e987e034abab73ac1101ee3",
+              "digest": "eb934f96bc1961e24b624c20db72f2174ed9e3ba63d0bd4c71402f34a7cbc815",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -635,13 +640,13 @@
               "cycle": 1,
               "kind": "strategy",
               "problem_class": "ctl-class",
-              "strategy": "analogy-causal-plan",
+              "strategy": "primitive-compose",
               "success": false
             },
             {
               "counts_for_control": false,
               "cycle": 2,
-              "digest": "ae7d8bac91b9bd984fee54309f05713028d1691a6fd4c1fca0e7211de51d4a25",
+              "digest": "a88d8d9709fcba4cc2db999122e38aa5d67116e06093cc1f64416013c83751ad",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -649,13 +654,13 @@
               "cycle": 2,
               "kind": "strategy",
               "problem_class": "ctl-class",
-              "strategy": "analogy-causal-plan",
+              "strategy": "primitive-compose",
               "success": false
             },
             {
               "counts_for_control": false,
               "cycle": 3,
-              "digest": "16b8f70103e2dbef3847e63357f6e3efa18c56de05d16f90e77da8bf498de160",
+              "digest": "61b7ce10cde505c9d2f75c132dfb4429485b3f4c0e67c46a6b5d2c865c8941ac",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -663,13 +668,13 @@
               "cycle": 3,
               "kind": "strategy",
               "problem_class": "ctl-class",
-              "strategy": "analogy-causal-plan",
+              "strategy": "primitive-compose",
               "success": false
             },
             {
               "counts_for_control": false,
               "cycle": 4,
-              "digest": "94644987206ab9364627ea8ec468cc8354e0c1cc791bd15dd7c424eb0804bcf1",
+              "digest": "7db894105ec174d8be0bd7b9f9dce21f3411276b91054251ce5141c8f8043e77",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -677,13 +682,13 @@
               "cycle": 4,
               "kind": "strategy",
               "problem_class": "ctl-class",
-              "strategy": "analogy-causal-plan",
+              "strategy": "primitive-compose",
               "success": false
             },
             {
               "counts_for_control": false,
               "cycle": 5,
-              "digest": "9179c1b89169072397012a6b648d8ad95d2ea9ad7c507f9381fd3526cbae1c9e",
+              "digest": "7d9059dd127d077172b6acebe45b549af3ac91701f24e20e4b32c0651a4cb979",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -691,13 +696,13 @@
               "cycle": 5,
               "kind": "strategy",
               "problem_class": "ctl-class",
-              "strategy": "analogy-causal-plan",
+              "strategy": "primitive-compose",
               "success": false
             },
             {
               "counts_for_control": false,
               "cycle": 6,
-              "digest": "62f412b1ce486cf61a23a839b01ce05764e4c14df061afd20ccd1134b6e2c6d1",
+              "digest": "4267281778b31653ccc87f0ed8e8c9fc7a209770f75b90c3c4bf26cc9e8af1f5",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -705,13 +710,13 @@
               "cycle": 6,
               "kind": "strategy",
               "problem_class": "ctl-class",
-              "strategy": "analogy-causal-plan",
+              "strategy": "primitive-compose",
               "success": false
             },
             {
               "counts_for_control": false,
               "cycle": 7,
-              "digest": "7884fdcca1d3a0f35abc8cc56f94848d8699dd3d614d3c7fde8818f10eef7076",
+              "digest": "78c272f083d55373b7b38ec30a5149542477eab0efc5bd1962c298785ac683f8",
               "kind": "canonical-learning-service",
               "success": false
             },
@@ -719,7 +724,7 @@
               "cycle": 7,
               "kind": "strategy",
               "problem_class": "ctl-class",
-              "strategy": "analogy-causal-plan",
+              "strategy": "primitive-compose",
               "success": false
             }
           ],
@@ -751,8 +756,8 @@
           "problem_id": "ctl-1",
           "replanning_events": 8,
           "retrieved_memory_refs": [],
-          "seal": "1ea3f4a0c2a23baac41a5481416639ad72a9940d156768669c1ce94f1697f2f4",
-          "selected_strategy": "analogy-causal-plan",
+          "seal": "b977b1ea006d9e5111b37f94fdb4b5a565f9ef20746f803ba25bb8f165e30338",
+          "selected_strategy": "primitive-compose",
           "transitions": 125
         }
       ]
@@ -763,8 +768,9 @@
         {
           "ablations": [],
           "alternative_strategies": [
-            "abduce-intervene-deduce",
-            "rollout-search-execute"
+            "mcts-v16",
+            "evolution-v16",
+            "toe-plan"
           ],
           "candidate_origins": [
             "euclid-v16:ASTPrimitives",
@@ -809,7 +815,7 @@
             {
               "counts_for_control": false,
               "cycle": 0,
-              "digest": "b5766596e8cb7a6946d28fafb8a80e519bf5d849ca7e90c34abdf51c8e04240e",
+              "digest": "0e4c073de02d671ebd5ad6d769d4e2a871bc1a66660d73447e7cf4bdd81beedc",
               "kind": "canonical-learning-service",
               "success": true
             },
@@ -817,7 +823,7 @@
               "cycle": 0,
               "kind": "strategy",
               "problem_class": "temporal-class",
-              "strategy": "analogy-causal-plan",
+              "strategy": "primitive-compose",
               "success": true
             }
           ],
@@ -835,13 +841,13 @@
           "problem_id": "temporal-1",
           "replanning_events": 1,
           "retrieved_memory_refs": [
-            "episode-2eda6ca921e5b33f1e1fded3",
-            "episode-6e53f4c07278897588ed77d8",
-            "episode-d259f443729b4ca8c61fcc08",
-            "episode-e64ea6f3cdacf3f4076b0075"
+            "episode-13c334fb798bb6379719a99d",
+            "episode-92edafa56d9a23f76f5aa231",
+            "episode-9eebdd5f32c7426e551a4dcb",
+            "episode-f54efe590a7dd501a7722246"
           ],
-          "seal": "551d2fe88a6b37eba3aca92b48dd30b1eb0d574b36fcd3517101ff6bd7028db8",
-          "selected_strategy": "analogy-causal-plan",
+          "seal": "ecc6574c81cd942f68d8aa7460338e23ca73cce0d533a6fedd94c72759d28ef4",
+          "selected_strategy": "primitive-compose",
           "transitions": 20
         }
       ],
@@ -849,8 +855,9 @@
         {
           "ablations": [],
           "alternative_strategies": [
-            "abduce-intervene-deduce",
-            "rollout-search-execute"
+            "mcts-v16",
+            "evolution-v16",
+            "toe-plan"
           ],
           "candidate_origins": [
             "euclid-v16:ASTPrimitives",
@@ -895,7 +902,7 @@
             {
               "counts_for_control": false,
               "cycle": 0,
-              "digest": "2eda6ca921e5b33f1e1fded32e0bb304b1fbaaa1fd03ed508a63a00383edf590",
+              "digest": "13c334fb798bb6379719a99dcaa3042b6ce18d15ad2e16b1373cdda80e52e059",
               "kind": "canonical-learning-service",
               "success": true
             },
@@ -903,7 +910,7 @@
               "cycle": 0,
               "kind": "strategy",
               "problem_class": "train-class",
-              "strategy": "analogy-causal-plan",
+              "strategy": "primitive-compose",
               "success": true
             }
           ],
@@ -921,18 +928,19 @@
           "problem_id": "val-1",
           "replanning_events": 1,
           "retrieved_memory_refs": [
-            "episode-d259f443729b4ca8c61fcc08",
-            "episode-e64ea6f3cdacf3f4076b0075"
+            "episode-92edafa56d9a23f76f5aa231",
+            "episode-9eebdd5f32c7426e551a4dcb"
           ],
-          "seal": "c7264e2f96ec1f97f767ae5e2f174103e9728d81652e28e8e4ed35a5be09f372",
-          "selected_strategy": "analogy-causal-plan",
-          "transitions": 20
+          "seal": "e06d5f202107b6c560a2e659fa849e8dea350b2fb2fefa106a41955edd3be0b2",
+          "selected_strategy": "primitive-compose",
+          "transitions": 21
         },
         {
           "ablations": [],
           "alternative_strategies": [
-            "abduce-intervene-deduce",
-            "rollout-search-execute"
+            "mcts-v16",
+            "evolution-v16",
+            "toe-plan"
           ],
           "candidate_origins": [
             "euclid-v16:ASTPrimitives",
@@ -951,7 +959,7 @@
             "primitive:NON_LOCAL:function_split_refactor"
           ],
           "control_decisions": [
-            "replan"
+            "continue"
           ],
           "cycles": 1,
           "execute_results": [
@@ -977,7 +985,7 @@
             {
               "counts_for_control": false,
               "cycle": 0,
-              "digest": "6e53f4c07278897588ed77d8e76cbcea919a8c5555f8fbe3f1d25fb8ace29e34",
+              "digest": "f54efe590a7dd501a772224641e2e97f664cdd3dc1ca408d8de9ad5f0629ee6a",
               "kind": "canonical-learning-service",
               "success": true
             },
@@ -985,7 +993,7 @@
               "cycle": 0,
               "kind": "strategy",
               "problem_class": "train-class",
-              "strategy": "analogy-causal-plan",
+              "strategy": "primitive-compose",
               "success": true
             }
           ],
@@ -1001,14 +1009,14 @@
             0.03442378240880961
           ],
           "problem_id": "val-2",
-          "replanning_events": 1,
+          "replanning_events": 0,
           "retrieved_memory_refs": [
-            "episode-2eda6ca921e5b33f1e1fded3",
-            "episode-d259f443729b4ca8c61fcc08",
-            "episode-e64ea6f3cdacf3f4076b0075"
+            "episode-13c334fb798bb6379719a99d",
+            "episode-92edafa56d9a23f76f5aa231",
+            "episode-9eebdd5f32c7426e551a4dcb"
           ],
-          "seal": "600ff580eeac7786aedb1deaba0d2f8fdc8a67342bb273ec0ad9a8cf49401ff4",
-          "selected_strategy": "analogy-causal-plan",
+          "seal": "e230608981abba67f18ead36ebdba120c3a164c8c14e95e4f47e1f0486a37da0",
+          "selected_strategy": "primitive-compose",
           "transitions": 20
         }
       ]

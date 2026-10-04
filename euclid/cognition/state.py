@@ -6,6 +6,7 @@ an episode can be replayed, audited, and falsified.  Nothing in this module
 grants production, mining, or reward authority; all cognition evidence is
 rehearsal-class research evidence.
 """
+
 from __future__ import annotations
 
 import math
@@ -323,16 +324,12 @@ class CognitiveState:
             "problem_id": self.problem_id,
             "representation": self.representation,
             "goals": [asdict(g) for g in self.goals],
-            "hypotheses": [
-                {**asdict(h), "status": h.status.value} for h in self.hypotheses
-            ],
+            "hypotheses": [{**asdict(h), "status": h.status.value} for h in self.hypotheses],
             "evidence_items": [
                 {**asdict(e), "origin": e.origin.value, "status": e.status.value}
                 for e in self.evidence_items
             ],
-            "analogies": [
-                {**asdict(a), "status": a.status.value} for a in self.analogies
-            ],
+            "analogies": [{**asdict(a), "status": a.status.value} for a in self.analogies],
             "retrieved_memory_refs": list(self.retrieved_memory_refs),
             "selected_strategy": self.selected_strategy,
             "alternative_strategies": list(self.alternative_strategies),

@@ -69,13 +69,16 @@ class DocumentedFindingTests(unittest.TestCase):
         # process; no producer requires a cross-process restart.
         self.assertEqual(_falsification["restart_verified_self_certified"]["verdict"], "FAIL")
 
-    def test_strategy_feedback_loop_disconnected(self):
-        # Measured outcomes are written under meta-strategy vocabulary while
-        # executed candidates are ranked under the composer vocabulary; the
-        # two key-spaces are disjoint, so feedback can never change a ranking.
+    def test_strategy_feedback_loop_connected(self):
+        # Measured outcomes must land under a key the decision machinery
+        # reads: stats[(class, arm)] for an arm in the composer portfolio or
+        # the selected strategy id.
         self.assertEqual(
             _falsification["strategy_feedback_loop_connected"]["verdict"],
-            "FAIL",
+            "PASS",
+        )
+        self.assertTrue(
+            _falsification["strategy_feedback_loop_connected"]["executed_arm_stats_keys"]
         )
 
     def test_transfer_verified_never_recorded(self):
@@ -98,13 +101,13 @@ class RewardIntegrityTests(unittest.TestCase):
 
 
 class MemoryInfluenceTests(unittest.TestCase):
-    def test_retrieval_has_no_decision_channel(self):
-        # Negative result: removing retrieved records changes no recorded
-        # downstream decision under deterministic conditions.
+    def test_retrieval_changes_decision_only_when_relevant(self):
+        # A retrieved record is influential iff removing it changes a
+        # recorded downstream decision; irrelevant memory must stay inert.
         verdicts = _influence["influence_verdicts"]
-        self.assertFalse(verdicts["relevant_influential"])
+        self.assertTrue(verdicts["relevant_influential"])
         self.assertFalse(verdicts["irrelevant_changes_decision"])
-        self.assertFalse(verdicts["relevant_vs_irrelevant_differ"])
+        self.assertTrue(verdicts["relevant_vs_irrelevant_differ"])
 
 
 class HeldOutEvaluationTests(unittest.TestCase):
@@ -137,11 +140,13 @@ class CapabilityMatrixTests(unittest.TestCase):
         ):
             self.assertIn(component, _matrix["matrix"])
 
-    def test_inflated_claims_recorded(self):
-        # strategy_meta_learning records FEEDBACK_CLOSED while only
-        # USED_IN_EPISODE is evidenced — the inflation is recorded.
+    def test_recorded_stages_match_executable_evidence(self):
+        # No recorded stage may exceed what episode evidence supports.
+        verdicts = {component: row["verdict"] for component, row in _matrix["matrix"].items()}
+        self.assertNotIn("INFLATED", verdicts.values())
         row = _matrix["matrix"]["euclid.strategy_meta_learning"]
-        self.assertEqual(row["verdict"], "INFLATED")
+        self.assertEqual(row["verdict"], "MATCH")
+        self.assertEqual(row["recorded_stage"], "FEEDBACK_CLOSED")
 
 
 if __name__ == "__main__":

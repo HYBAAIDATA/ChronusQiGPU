@@ -2,8 +2,8 @@
   "deterministic_seal": {
     "claim": "identical fixed-input episodes produce identical sealed state",
     "seals": [
-      "f5f3c5d36151f327145d0b93ad036f4f1895974af2e24c9539bde9a6b271627e",
-      "f5f3c5d36151f327145d0b93ad036f4f1895974af2e24c9539bde9a6b271627e"
+      "27252ef4ff41a94f56111883589db01decdea487937b2e8eb2aa84384268667c",
+      "27252ef4ff41a94f56111883589db01decdea487937b2e8eb2aa84384268667c"
     ],
     "verdict": "PASS"
   },
@@ -31,7 +31,7 @@
     "claim": "reachability stages correspond to verified evidence",
     "euclid.memory_database stage": "PERSISTED",
     "euclid.strategy_meta_learning stage": "FEEDBACK_CLOSED",
-    "euclid.v16.search stage": "CHANGES_DECISION",
+    "euclid.v16.search stage": "REACHABLE",
     "note": "runtime.py grant rules are inside the partner implementation's scope; recorded here as measured findings",
     "pythia.memory stage": "PERSISTED",
     "pythia.store stage": "PERSISTED",
@@ -77,12 +77,22 @@
     ],
     "composer_stats_keys": [
       [
-        "fb-class",
+        "sig:ab76260d21f582bd",
         "analogy-causal-plan"
+      ],
+      [
+        "sig:ab76260d21f582bd",
+        "greedy-surrogate"
       ]
     ],
-    "note": "feedback stats were written only for meta-strategy ids the candidate composer never reads; the executed strategy cannot respond to measured outcomes",
-    "verdict": "FAIL"
+    "executed_actions": [
+      "strategy:greedy-surrogate"
+    ],
+    "executed_arm_stats_keys": [
+      "greedy-surrogate"
+    ],
+    "note": "executed-arm stats keys present",
+    "verdict": "PASS"
   },
   "terminal_cycle_learned": {
     "claim": "terminal cycles are learned before halt",
@@ -99,14 +109,14 @@
       "euclid.representation_controller": "CHANGES_DECISION",
       "euclid.strategy_meta_learning": "FEEDBACK_CLOSED",
       "euclid.v16.primitives": "CHANGES_DECISION",
-      "euclid.v16.search": "CHANGES_DECISION",
+      "euclid.v16.search": "REACHABLE",
       "experience_superlearner": "PERSISTED",
       "pythia.memory": "PERSISTED",
       "pythia.store": "PERSISTED",
       "repository.engineer": "OUTCOME_OBSERVED",
       "toe.meta_reasoning": "CHANGES_DECISION",
       "toe.planning": "CHANGES_DECISION",
-      "toe.world_model": "OUTCOME_OBSERVED"
+      "toe.world_model": "FEEDBACK_CLOSED"
     },
     "note": "no producer records it; the ladder's top stage is dead code",
     "verdict": "PASS"

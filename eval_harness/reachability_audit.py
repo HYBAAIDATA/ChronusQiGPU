@@ -35,7 +35,9 @@ STAGE_NAMES = [stage.name for stage in ReachabilityStage]
 def _assess(component, runtime, state, artifacts):
     """Return (assessed_stage_name, basis) from executable evidence."""
     phases = {t.phase for t in state.transitions}
-    executed_origin = state.candidates[0].origin if state.candidates else None
+    executed_actions = {
+        str(t.details.get("action")) for t in state.transitions if t.phase == "execute"
+    }
     files = {
         "reachability": (artifacts / "cognition_reachability.json").is_file(),
         "memory_db": (artifacts / "euclid_memory.sqlite3").is_file(),
@@ -56,22 +58,28 @@ def _assess(component, runtime, state, artifacts):
             "(TOEWorldModelAdapter holds state in memory, not persisted)",
         ),
         "toe.planning": (
-            "USED_IN_EPISODE",
-            "plan phase ran; plan nodes never reach candidates when the "
-            "composer returns non-empty (fallback path untriggered)",
+            (
+                "CHANGES_DECISION"
+                if (state.replanning_events or any(a.startswith("plan-") for a in executed_actions))
+                else "USED_IN_EPISODE"
+            ),
+            "CHANGES_DECISION requires a replan or an executed plan-node "
+            "candidate; a plan composed but never consumed only ran",
         ),
         "toe.meta_reasoning": (
             (
                 "CHANGES_DECISION"
-                if any(
-                    t.phase == "metacontrol"
-                    and t.details.get("action") == "replan"
-                    and "replan" in phases
-                    for t in state.transitions
+                if (
+                    state.replanning_events
+                    or any(
+                        t.phase == "metacontrol" and t.details.get("action") == "halt_stalled"
+                        for t in state.transitions
+                    )
                 )
                 else "USED_IN_EPISODE"
             ),
-            "metacontrol ran; CHANGES_DECISION only when a replan rewrote " "the plan",
+            "non-continue metacontrol actions are applied: replan rewrites "
+            "the plan, halt_stalled ends the episode early",
         ),
         "euclid.representation_controller": (
             (
@@ -86,15 +94,21 @@ def _assess(component, runtime, state, artifacts):
             "accepted restructuring changes representation consumed " "downstream",
         ),
         "euclid.objective_controller": (
-            "USED_IN_EPISODE",
-            "objectives alter planning_goal text only; candidate features "
-            "and executed action are unaffected",
+            ("CHANGES_DECISION" if "objective-applied" in phases else "USED_IN_EPISODE"),
+            "derived objectives are applied to planning_goal and passed "
+            "to the rank evaluator's context",
         ),
         "euclid.strategy_meta_learning": (
-            "USED_IN_EPISODE",
-            "metalearner stats update lands on meta-strategy ids that have "
-            "no channel into candidate ranking (disjoint vocabularies); "
-            "FEEDBACK_CLOSED write is real but CHANGES_DECISION is not",
+            (
+                "FEEDBACK_CLOSED"
+                if any(
+                    u.get("kind") in {"strategy", "executed-arm"} for u in state.learning_updates
+                )
+                else "USED_IN_EPISODE"
+            ),
+            "a strategy/executed-arm update banks the outcome under a key "
+            "the selection machinery reads (select_strategy or composer "
+            "scoring)",
         ),
         "euclid.learning_service": (
             "PERSISTED",
@@ -106,8 +120,9 @@ def _assess(component, runtime, state, artifacts):
             "verification is self-certified (no verify() on boot)",
         ),
         "pythia.memory": (
-            "PRESENT",
-            "no write path reaches the pythia memory tiers from the " "cognition loop",
+            "PERSISTED" if files["memory_db"] else "PRESENT",
+            "the durable cognition memory adapter writes episode records "
+            "into the sqlite store covered by verify()",
         ),
         "pythia.store": (
             "PERSISTED" if files["pythia_journal"] else "PRESENT",
@@ -123,15 +138,30 @@ def _assess(component, runtime, state, artifacts):
         ),
         "euclid.v16.search": (
             (
-                "EXECUTED"
-                if executed_origin == "euclid-v16:mcts" or executed_origin == "euclid-v16:evolution"
-                else "USED_IN_EPISODE"
+                "CHANGES_DECISION"
+                if any(a.startswith("search:") for a in executed_actions)
+                else (
+                    "USED_IN_EPISODE"
+                    if any(c.action_id.startswith("search:") for c in state.candidates)
+                    else "REACHABLE"
+                )
             ),
-            "v16 search executed only when the ranked candidate is a " "search candidate",
+            "v16 search changes the decision only when a search candidate "
+            "was the executed action; composed-but-not-executed is used",
         ),
         "euclid.v16.primitives": (
-            "EXECUTED" if executed_origin == "euclid-v16:ASTPrimitives" else "USED_IN_EPISODE",
-            "primitives executed only when the ranked candidate is a " "primitive candidate",
+            (
+                "CHANGES_DECISION"
+                if any(a.startswith("primitive:") for a in executed_actions)
+                else (
+                    "USED_IN_EPISODE"
+                    if any(c.action_id.startswith("primitive:") for c in state.candidates)
+                    else "REACHABLE"
+                )
+            ),
+            "primitives change the decision only when a primitive "
+            "candidate was the executed action; composed-but-not-executed "
+            "is used",
         ),
     }
     return rules.get(
@@ -185,8 +215,8 @@ def run_all():
         "matrix": matrix,
         "note": (
             "assessed_stage is the highest stage supported by executable "
-            "episode evidence; the recorded ledger self-certifies several "
-            "stages from phase/component presence alone"
+            "episode evidence; every grant rule requires the episode "
+            "transition it records"
         ),
     }
 

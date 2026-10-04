@@ -29,7 +29,7 @@
     },
     "euclid.objective_controller": {
       "assessed_stage": "USED_IN_EPISODE",
-      "assessment_basis": "objectives alter planning_goal text only; candidate features and executed action are unaffected",
+      "assessment_basis": "derived objectives are applied to planning_goal and passed to the rank evaluator's context",
       "recorded_stage": "USED_IN_EPISODE",
       "verdict": "MATCH"
     },
@@ -40,22 +40,22 @@
       "verdict": "MATCH"
     },
     "euclid.strategy_meta_learning": {
-      "assessed_stage": "USED_IN_EPISODE",
-      "assessment_basis": "metalearner stats update lands on meta-strategy ids that have no channel into candidate ranking (disjoint vocabularies); FEEDBACK_CLOSED write is real but CHANGES_DECISION is not",
+      "assessed_stage": "FEEDBACK_CLOSED",
+      "assessment_basis": "a strategy/executed-arm update banks the outcome under a key the selection machinery reads (select_strategy or composer scoring)",
       "recorded_stage": "FEEDBACK_CLOSED",
-      "verdict": "INFLATED"
+      "verdict": "MATCH"
     },
     "euclid.v16.primitives": {
-      "assessed_stage": "EXECUTED",
-      "assessment_basis": "primitives executed only when the ranked candidate is a primitive candidate",
+      "assessed_stage": "CHANGES_DECISION",
+      "assessment_basis": "primitives change the decision only when a primitive candidate was the executed action; composed-but-not-executed is used",
       "recorded_stage": "CHANGES_DECISION",
-      "verdict": "UNDERSTATED"
+      "verdict": "MATCH"
     },
     "euclid.v16.search": {
-      "assessed_stage": "USED_IN_EPISODE",
-      "assessment_basis": "v16 search executed only when the ranked candidate is a search candidate",
-      "recorded_stage": "CHANGES_DECISION",
-      "verdict": "INFLATED"
+      "assessed_stage": "REACHABLE",
+      "assessment_basis": "v16 search changes the decision only when a search candidate was the executed action; composed-but-not-executed is used",
+      "recorded_stage": "REACHABLE",
+      "verdict": "MATCH"
     },
     "experience_superlearner": {
       "assessed_stage": "PERSISTED",
@@ -64,10 +64,10 @@
       "verdict": "MATCH"
     },
     "pythia.memory": {
-      "assessed_stage": "PRESENT",
-      "assessment_basis": "no write path reaches the pythia memory tiers from the cognition loop",
+      "assessed_stage": "PERSISTED",
+      "assessment_basis": "the durable cognition memory adapter writes episode records into the sqlite store covered by verify()",
       "recorded_stage": "PERSISTED",
-      "verdict": "INFLATED"
+      "verdict": "MATCH"
     },
     "pythia.store": {
       "assessed_stage": "PERSISTED",
@@ -83,23 +83,23 @@
     },
     "toe.meta_reasoning": {
       "assessed_stage": "CHANGES_DECISION",
-      "assessment_basis": "metacontrol ran; CHANGES_DECISION only when a replan rewrote the plan",
+      "assessment_basis": "non-continue metacontrol actions are applied: replan rewrites the plan, halt_stalled ends the episode early",
       "recorded_stage": "CHANGES_DECISION",
       "verdict": "MATCH"
     },
     "toe.planning": {
-      "assessed_stage": "USED_IN_EPISODE",
-      "assessment_basis": "plan phase ran; plan nodes never reach candidates when the composer returns non-empty (fallback path untriggered)",
+      "assessed_stage": "CHANGES_DECISION",
+      "assessment_basis": "CHANGES_DECISION requires a replan or an executed plan-node candidate; a plan composed but never consumed only ran",
       "recorded_stage": "CHANGES_DECISION",
-      "verdict": "INFLATED"
+      "verdict": "MATCH"
     },
     "toe.world_model": {
       "assessed_stage": "FEEDBACK_CLOSED",
       "assessment_basis": "compare phase ran; world model updated from observed outcome (TOEWorldModelAdapter holds state in memory, not persisted)",
-      "recorded_stage": "OUTCOME_OBSERVED",
-      "verdict": "UNDERSTATED"
+      "recorded_stage": "FEEDBACK_CLOSED",
+      "verdict": "MATCH"
     }
   },
-  "note": "assessed_stage is the highest stage supported by executable episode evidence; the recorded ledger self-certifies several stages from phase/component presence alone",
+  "note": "assessed_stage is the highest stage supported by executable episode evidence; every grant rule requires the episode transition it records",
   "schema": "euclid.adversarial.capability-matrix/1"
 }

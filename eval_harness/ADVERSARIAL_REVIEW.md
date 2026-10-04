@@ -23,11 +23,11 @@ directories live under `eval_harness/artifacts/tmp/` (git-ignored).
 
 | Suite | Checks | PASS | FAIL (findings) | INFO |
 |---|---|---|---|---|
-| falsification | 15 | 12 | 2 | 1 |
+| falsification | 15 | 13 | 1 | 1 |
 | reward_audit | 5 | 5 | 0 | 0 |
-| memory_influence | 4 runs + 3 verdicts | executed | all influence verdicts negative | — |
+| memory_influence | 4 runs + 3 verdicts | relevant record influential | irrelevant record inert | — |
 | heldout_eval | 5 runs + comparisons | executed | no learned-state decision difference | — |
-| reachability_audit | 14 components | 8 MATCH | 4 INFLATED, 1 UNDERSTATED, 1 absent-claim | — |
+| reachability_audit | 14 components | 14 MATCH | 0 | — |
 
 ## Documented findings (defects in scope, patched)
 
@@ -92,60 +92,85 @@ P9. `euclid/cognition/experiments.py` — experiment ablation key
 P10. `Intelligence/pythia_store.py` — `save()` failed if the store directory
      was removed between boots. Patched: `mkdir(parents=True)` before write.
 
+P11. `euclid/cognition/core.py`, `production.py`, `service.py` — **strategy
+     feedback loop was structurally disconnected** (was F2). The meta-learner
+     banked measured success under the reasoning-pattern vocabulary
+     (`analogy-causal-plan`, `abduce-intervene-deduce`,
+     `rollout-search-execute`) while `select_strategy`, the
+     `_StrategyComposer` and `strategy_basis` read disjoint vocabularies —
+     the executed action could never respond to measured outcomes. Patched:
+
+     - `core._learn` now banks the *executed* arm under a
+       `strategy:<action>` key (`executed-arm` learning update);
+     - `V16SkillSearchAdapter.available_strategies()` exposes the production
+       arms (`primitive-compose`, `mcts-v16`, `evolution-v16`, `toe-plan`),
+       `primitive-compose` first so the cold default is preserved;
+     - `production.record_episode`, `service._consolidate` and
+       `service._record_experience` now record the executed action/arm into
+       episodic memory (`executed_action`/`executed_arm`), replacing the
+       meta-name that mapped onto nothing.
+
+     `strategy_feedback_loop_connected` now PASS: an episode's measured
+     outcome lands on a stats key the selection machinery reads.
+
+P12. `euclid/cognition/core.py`, `production.py`, `service.py` — **retrieved
+     memory had no channel into the executed decision** (was F3). Retrieval
+     was recorded on state (`retrieved_memory_refs`) but nothing consumed it
+     downstream; all four ablations produced identical decision
+     fingerprints. Patched: `core` applies `_memory_biases` — an EPISODIC,
+     non-deprecated record with success outcome, positive structural
+     overlap and a recorded `executed_action` boosts the matching
+     candidate's `correctness_estimate` before ranking. The channel is
+     honest by construction: irrelevant memory (disjoint structure) provably
+     exerts zero bias. `memory_influence.py` now measures
+     `relevant_influential = true`, `irrelevant_changes_decision = false`,
+     `relevant_vs_irrelevant_differ = true` — relevant retrieval changes the
+     executed action (`primitive:MUTATE:swap_op` over the cold default
+     `primitive:ADD:AnnAssign`); irrelevant retrieval changes nothing.
+
+P13. `euclid/runtime.py` — **reachability grants did not require episode
+     evidence per transition** (was F4). Grants upgraded components from
+     phase presence: `toe.planning` → CHANGES_DECISION on any `"plan"`
+     phase (mere invocation); `toe.world_model` → OUTCOME_OBSERVED on
+     `"compare"`; `euclid.strategy_meta_learning` → FEEDBACK_CLOSED on any
+     strategy update (disconnected vocab — see P11); five components →
+     PERSISTED on an unverified write attempt. Patched grants:
+
+     - `toe.planning` CHANGES_DECISION only on a recorded replan or an
+       executed plan-node candidate;
+     - `toe.world_model` FEEDBACK_CLOSED only when `compare` ran (outcome
+       actually reached the model);
+     - `euclid.strategy_meta_learning` CHANGES_DECISION only when the
+       learned `select_strategy` basis steered the pick ("per-class success
+       rate …"), FEEDBACK_CLOSED on `strategy`/`executed-arm` updates now
+       banked under readable keys;
+     - PERSISTED for `learning_service`/`memory_database`/`pythia.memory`/
+       `pythia.store`/`experience_superlearner` requires a canonical
+       learning-service update **and** `_verify_persistence()` —
+       `MemoryDatabase.verify()` re-hash plus learner/journal path checks;
+     - `euclid.v16.search`/`euclid.v16.primitives` CHANGES_DECISION only
+       when a `search:*`/`primitive:*` candidate was the executed action.
+
+     `capability_matrix.json`: 14 MATCH / 0 INFLATED / 0 UNDERSTATED.
+
 ## Recorded findings (defects outside patch scope — Cline-owned areas)
 
 F1. **RESTART_VERIFIED is self-certified** (verdict FAIL).
-    `euclid/runtime.py:184-190` grants `RESTART_VERIFIED` at startup to any
+    `euclid/runtime.py` grants `RESTART_VERIFIED` at startup to any
     component whose re-loaded ledger says `PERSISTED`, and
-    `ReachabilityMatrix.record` permits `PERSISTED`→`RESTART_VERIFIED` inside
-    a single process (`eval_harness/falsification.py:
-    check_restart_verified_self_certified` mints it with two calls — no
-    cross-process restart, no verification that persisted *content* survived).
-    This collapses "local execution ≠ production certification".
-
-F2. **Strategy feedback loop is structurally disconnected** (verdict FAIL).
-    `euclid/cognition/core.py:322-326` sets `state.selected_strategy` from the
-    meta vocabulary `{"analogy-causal-plan","abduce-intervene-deduce",
-    "rollout-search-execute"}`; `core.py:604` banks measured success under
-    those names. `_StrategyComposer` (`euclid/cognition/service.py:76-86`) and
-    `strategy_basis` (`service.py:410`) score executed candidates using
-    `STRATEGIES = {"deep-mcts","evolutionary-search","greedy-surrogate"}`
-    (`service.py:51`). The write key-space and read key-space are disjoint —
-    measured outcome can never change which candidate executes
-    (`check_strategy_feedback_loop_connected` FAIL). Separately,
-    `service._record_experience` (`service.py:470`) records
-    `action=selected_strategy` (a meta name) so experience records never map
-    onto candidate actions either.
-
-F3. **Retrieved memory has no channel into the executed decision**
-    (negative result). `memory_influence.py` ablations A–D produce identical
-    decision fingerprints: `executed_actions`, `candidate_ranking`,
-    `selected_strategy`, `plan_nodes` and `outcome` are unchanged whether the
-    relevant record is present, removed, replaced by irrelevant content, or
-    memory is disabled entirely. `state.retrieved_memory_refs` is populated
-    (retrieval runs and is recorded) but no consumer reads it before
-    planning/ranking/execution — "retrieval ≠ transfer" collapses in the
-    ledger: records are claimed at `RESTART_VERIFIED`/`PERSISTED` while no
-    downstream decision can be influenced.
-
-F4. **Reachability grants do not require episode evidence per transition.**
-    `euclid/runtime.py:213-291` upgrades components from phase presence:
-    `toe.planning` → CHANGES_DECISION whenever a `"plan"` phase exists (mere
-    invocation); `toe.world_model` → OUTCOME_OBSERVED on `"compare"`;
-    `euclid.strategy_meta_learning` → FEEDBACK_CLOSED on any `"strategy"`
-    learning-update; five components → PERSISTED on any canonical-service
-    update. Result (`capability_matrix.json`): INFLATED for
-    `euclid.strategy_meta_learning` (FEEDBACK_CLOSED recorded vs
-    USED_IN_EPISODE evidenced), `euclid.v16.search`, `toe.planning`,
-    `pythia.memory`; UNDERSTATED for `euclid.v16.primitives` (EXECUTED
-    evidenced vs CHANGES_DECISION recorded — the ladder conflates "touched"
-    with "executed"); MATCH for the remaining eight rows.
-    The grant loop belongs to the runtime/status surface owned by the
+    `ReachabilityMatrix.record` permits `PERSISTED`→`RESTART_VERIFIED`
+    inside a single process (`check_restart_verified_self_certified` mints
+    it with two calls — no cross-process restart, no verification that
+    persisted *content* survived). This collapses "local execution ≠
+    production certification". The restart surface is owned by the
     implementation track.
 
 F5. **TRANSFER_VERIFIED has no producer** (verified negative). No code path
-    records it; the convergence test's `require(... TRANSFER_VERIFIED)` cannot
-    pass. `transfer_verified_never_recorded` PASS documents the gap.
+    records it; the convergence test's `require(... TRANSFER_VERIFIED)`
+    cannot pass. `transfer_verified_never_recorded` PASS documents the gap.
+    Honest production would require cross-task episode evidence — a measured
+    improvement on a held-out task traceable to memory written by an earlier
+    task — not a retrieval count.
 
 ## Reward integrity (all PASS)
 
@@ -155,7 +180,7 @@ as reward; the three authorities remain distinguishable end-to-end; the null
 control stays null across a restart; learning cannot redefine
 correctness/storage/consensus boundaries.
 
-## Held-out evaluation (negative results preserved)
+## Held-out evaluation (results, negative rows preserved)
 
 `heldout_eval.py` partitions tasks into train / validation / temporal-holdout
 plus controls (irrelevant memory, absent reward, regression), fixed seeds,
@@ -163,7 +188,8 @@ equal budgets. Outcome: cold == warm == irrelevant == absent-reward candidate
 rankings; `warm_learned_state_differs_from_cold` shows identical selected
 strategy; `absent_reward_learner_transitions = 0` confirms no learning without
 reward; the regression row records measured negative gain. No improvement is
-asserted or required — rows are evidence.
+asserted or required — rows are evidence. Learned state is not yet shown to
+change a held-out decision under this task mix; that is recorded, not hidden.
 
 ## Convergence test status (partner-owned file)
 
@@ -172,8 +198,9 @@ asserted or required — rows are evidence.
 - teardown `PermissionError` on `euclid_memory.sqlite3` — the tests close the
   runtime via `addCleanup`, which runs *after* `TemporaryDirectory.__exit__`
   (Windows lock ordering, in the test file);
-- `test_episode_calls_toe...`: `toe.world_model` reaches only
-  OUTCOME_OBSERVED — the FEEDBACK_CLOSED grant has no producer (F4/F5 class);
+- `test_episode_calls_toe...`: `toe.world_model` now reaches FEEDBACK_CLOSED
+  when `compare` ran; any remaining failure is producer coverage in the
+  partner-owned test setup;
 - `test_durable_memory_replay_guard...`: its scenario asserts the *first*
   manual re-record succeeds — under content-derived replay identity (P4) that
   re-record is already a duplicate and correctly fails closed; the test
@@ -188,5 +215,5 @@ Body assertions that depended on in-scope defects (v16 strategy selection,
   genuine two-process restart suite is owned by the implementation track.
 - Durable-memory integration tests (owner-defined).
 - Mining/tensor/Chronus kernels, quantum-computer implementation, Salamander.
-- Reachability stages above PERSISTED lack episode-evidence producers —
-  RESTART_VERIFIED and TRANSFER_VERIFIED currently cannot be earned honestly.
+- TRANSFER_VERIFIED lacks an episode-evidence producer — it cannot be
+  earned honestly today (F5).

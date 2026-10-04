@@ -1,4 +1,5 @@
 """Reproducible integrated-intelligence benchmark and ablation programme."""
+
 from __future__ import annotations
 
 import math
@@ -47,12 +48,26 @@ class TrialResult:
 class BenchmarkProgramme:
     """Partition-safe repeated evaluation with ablations and variation."""
 
-    REQUIRED_FAMILIES = frozenset({
-        "deduction", "abduction", "analogy", "causal", "counterfactual",
-        "world-model-shift", "planning", "replanning", "compositional-skill",
-        "primitive-discovery", "meta-learning", "representation-change",
-        "transfer", "negative-transfer", "continual-learning", "reward-hacking",
-    })
+    REQUIRED_FAMILIES = frozenset(
+        {
+            "deduction",
+            "abduction",
+            "analogy",
+            "causal",
+            "counterfactual",
+            "world-model-shift",
+            "planning",
+            "replanning",
+            "compositional-skill",
+            "primitive-discovery",
+            "meta-learning",
+            "representation-change",
+            "transfer",
+            "negative-transfer",
+            "continual-learning",
+            "reward-hacking",
+        }
+    )
 
     def __init__(self, tasks: Sequence[BenchmarkTask]) -> None:
         self.tasks = list(tasks)
@@ -71,8 +86,11 @@ class BenchmarkProgramme:
     def ablations() -> dict[str, AblationConfig]:
         return {
             "v16.4-reference": AblationConfig(
-                world_model=False, analogy=False, causal_reasoning=False,
-                meta_learning=False, representation_restructuring=False,
+                world_model=False,
+                analogy=False,
+                causal_reasoning=False,
+                meta_learning=False,
+                representation_restructuring=False,
                 replanning=False,
             ),
             "integrated": AblationConfig(),
@@ -81,18 +99,17 @@ class BenchmarkProgramme:
             "minus-analogy": AblationConfig(analogy=False),
             "minus-meta-learning": AblationConfig(meta_learning=False),
             "minus-skills-primitives": AblationConfig(skill_composition=False),
-            "minus-representation": AblationConfig(
-                representation_restructuring=False
-            ),
-            "minus-mathematical-structure": AblationConfig(
-                mathematical_structure=False
-            ),
+            "minus-representation": AblationConfig(representation_restructuring=False),
+            "minus-mathematical-structure": AblationConfig(mathematical_structure=False),
             "minus-replanning": AblationConfig(replanning=False),
         }
 
     def run(
-        self, factory: Callable[[AblationConfig, int], Any], *,
-        partition: str = "evaluation", repeats: int = 5,
+        self,
+        factory: Callable[[AblationConfig, int], Any],
+        *,
+        partition: str = "evaluation",
+        repeats: int = 5,
         systems: Sequence[str] | None = None,
     ) -> dict[str, Any]:
         if partition != "evaluation":
@@ -113,44 +130,48 @@ class BenchmarkProgramme:
                         state = runtime.solve_repository_problem(task.problem)
                         elapsed = time.perf_counter() - started
                         actual = state.outcome.value
-                        rows.append(TrialResult(
-                            name, task.task_id, task.family, seed,
-                            solved=actual == "solved",
-                            correct=actual == task.expected_outcome,
-                            wall_time_s=elapsed,
-                            transitions=len(state.transitions),
-                            evidence_requests=sum(
-                                d.get("action") == "seek_evidence"
-                                for d in state.control_decisions
-                            ),
-                            replans=len(state.replanning_events),
-                            prediction_error=(
-                                state.prediction_errors[-1]
-                                if state.prediction_errors else None
-                            ),
-                            uncertainty=min(
-                                1.0,
-                                max(
-                                    0.0,
-                                    max(state.prediction_errors[-1:], default=0.0),
+                        rows.append(
+                            TrialResult(
+                                name,
+                                task.task_id,
+                                task.family,
+                                seed,
+                                solved=actual == "solved",
+                                correct=actual == task.expected_outcome,
+                                wall_time_s=elapsed,
+                                transitions=len(state.transitions),
+                                evidence_requests=sum(
+                                    d.get("action") == "seek_evidence"
+                                    for d in state.control_decisions
                                 ),
-                            ),
-                            retrieved_memories=len(state.retrieved_memory_refs),
-                            primitives_used=sum(
-                                1
-                                for candidate in state.candidates
-                                if "primitive" in candidate.action_id
-                                or "primitive" in str(candidate.origin)
-                            ),
-                            representation_changed=any(
-                                transition.phase == "represent"
-                                and transition.details.get(
-                                    "representation_trial", {}
-                                ).get("accepted")
-                                for transition in state.transitions
-                            ),
-                            strategy=state.selected_strategy,
-                        ))
+                                replans=len(state.replanning_events),
+                                prediction_error=(
+                                    state.prediction_errors[-1] if state.prediction_errors else None
+                                ),
+                                uncertainty=min(
+                                    1.0,
+                                    max(
+                                        0.0,
+                                        max(state.prediction_errors[-1:], default=0.0),
+                                    ),
+                                ),
+                                retrieved_memories=len(state.retrieved_memory_refs),
+                                primitives_used=sum(
+                                    1
+                                    for candidate in state.candidates
+                                    if "primitive" in candidate.action_id
+                                    or "primitive" in str(candidate.origin)
+                                ),
+                                representation_changed=any(
+                                    transition.phase == "represent"
+                                    and transition.details.get("representation_trial", {}).get(
+                                        "accepted"
+                                    )
+                                    for transition in state.transitions
+                                ),
+                                strategy=state.selected_strategy,
+                            )
+                        )
                 finally:
                     runtime.close()
         return {
@@ -190,18 +211,17 @@ class BenchmarkProgramme:
                 "correctness": cls._interval([float(row.correct) for row in subset]),
                 "solved": cls._interval([float(row.solved) for row in subset]),
                 "wall_time_s": cls._interval([row.wall_time_s for row in subset]),
-                "prediction_error": cls._interval([
-                    row.prediction_error for row in subset
-                    if row.prediction_error is not None
-                ]),
+                "prediction_error": cls._interval(
+                    [row.prediction_error for row in subset if row.prediction_error is not None]
+                ),
                 "uncertainty": cls._interval([row.uncertainty for row in subset]),
                 "replans": cls._interval([float(row.replans) for row in subset]),
-                "memory_retrieval": cls._interval([
-                    float(row.retrieved_memories) for row in subset
-                ]),
-                "representation_change_rate": cls._interval([
-                    float(row.representation_changed) for row in subset
-                ]),
+                "memory_retrieval": cls._interval(
+                    [float(row.retrieved_memories) for row in subset]
+                ),
+                "representation_change_rate": cls._interval(
+                    [float(row.representation_changed) for row in subset]
+                ),
             }
         return summary
 
@@ -221,12 +241,16 @@ def adversarial_evaluation_tasks() -> list[BenchmarkTask]:
     families = sorted(BenchmarkProgramme.REQUIRED_FAMILIES)
     return [
         BenchmarkTask(
-            f"eval-{family}-001", family, "evaluation",
-            {**base, "problem_id": f"eval-{family}-001",
-             "problem_class": family},
+            f"eval-{family}-001",
+            family,
+            "evaluation",
+            {**base, "problem_id": f"eval-{family}-001", "problem_class": family},
             "solved",
-            ("superficial-analogy", "reward-hacking")
-            if family in {"analogy", "reward-hacking"} else (),
+            (
+                ("superficial-analogy", "reward-hacking")
+                if family in {"analogy", "reward-hacking"}
+                else ()
+            ),
         )
         for family in families
     ]

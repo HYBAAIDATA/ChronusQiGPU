@@ -7,6 +7,7 @@ Persisted ledgers are sealed: ``load`` re-derives the seal and rejects any
 file whose entries were edited, reordered, or fabricated.  A reachability
 file is evidence; an unverifiable one fails closed.
 """
+
 from __future__ import annotations
 
 import json
@@ -52,8 +53,13 @@ class ReachabilityMatrix:
         self._entries: list[CapabilityEvidence] = []
 
     def record(
-        self, component: str, stage: ReachabilityStage, *,
-        episode_id: str, evidence_ref: str, detail: Mapping[str, Any] | None = None,
+        self,
+        component: str,
+        stage: ReachabilityStage,
+        *,
+        episode_id: str,
+        evidence_ref: str,
+        detail: Mapping[str, Any] | None = None,
     ) -> CapabilityEvidence:
         current = self.stage(component)
         if current is not None and stage < current:
@@ -97,9 +103,7 @@ class ReachabilityMatrix:
         if payload.get("seal") != domain_hash(_SEAL_DOMAIN, body):
             raise ValueError("reachability ledger seal mismatch")
         matrix = cls()
-        matrix._entries = [
-            CapabilityEvidence(**entry) for entry in payload.get("entries", ())
-        ]
+        matrix._entries = [CapabilityEvidence(**entry) for entry in payload.get("entries", ())]
         matrix._verify_ordering()
         return matrix
 
@@ -110,9 +114,7 @@ class ReachabilityMatrix:
             try:
                 stage = ReachabilityStage[entry.stage]
             except KeyError as exc:
-                raise ValueError(
-                    f"reachability entry has unknown stage {entry.stage!r}"
-                ) from exc
+                raise ValueError(f"reachability entry has unknown stage {entry.stage!r}") from exc
             current = seen.get(entry.component)
             if current is not None and stage < current:
                 raise ValueError(
