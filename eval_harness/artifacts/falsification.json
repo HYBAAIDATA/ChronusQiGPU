@@ -2,8 +2,8 @@
   "deterministic_seal": {
     "claim": "identical fixed-input episodes produce identical sealed state",
     "seals": [
-      "cec5e5a10998e9cf44c596ed2434521f3e823427109e7f474c2987fff447f543",
-      "cec5e5a10998e9cf44c596ed2434521f3e823427109e7f474c2987fff447f543"
+      "a25a794415b8390d8f2d7e444169fac1a709e6a8f11337fdb1f8bc4a389ac106",
+      "a25a794415b8390d8f2d7e444169fac1a709e6a8f11337fdb1f8bc4a389ac106"
     ],
     "verdict": "PASS"
   },
@@ -33,8 +33,8 @@
     "euclid.strategy_meta_learning stage": "FEEDBACK_CLOSED",
     "euclid.v16.search stage": "REACHABLE",
     "note": "runtime.py grant rules are inside the partner implementation's scope; recorded here as measured findings",
-    "pythia.memory stage": "PERSISTED",
-    "pythia.store stage": "PERSISTED",
+    "pythia.memory stage": "REACHABLE",
+    "pythia.store stage": "REACHABLE",
     "pythia_rows_written": 1,
     "verdict": "INFO"
   },
@@ -57,8 +57,8 @@
   },
   "restart_verified_self_certified": {
     "claim": "RESTART_VERIFIED requires executed verification",
-    "euclid.memory_database_stage": "RESTART_VERIFIED",
-    "verdict": "FAIL"
+    "euclid.memory_database_stage": "PERSISTED",
+    "verdict": "PASS"
   },
   "second_action_same_domain": {
     "actions": [

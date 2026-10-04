@@ -60,20 +60,20 @@
     "experience_superlearner": {
       "assessed_stage": "PERSISTED",
       "assessment_basis": "observe() runs only for reward-bearing experiences",
-      "recorded_stage": "PERSISTED",
-      "verdict": "MATCH"
+      "recorded_stage": "REACHABLE",
+      "verdict": "UNDERSTATED"
     },
     "pythia.memory": {
       "assessed_stage": "PERSISTED",
       "assessment_basis": "the durable cognition memory adapter writes episode records into the sqlite store covered by verify()",
-      "recorded_stage": "PERSISTED",
-      "verdict": "MATCH"
+      "recorded_stage": "REACHABLE",
+      "verdict": "UNDERSTATED"
     },
     "pythia.store": {
       "assessed_stage": "PERSISTED",
       "assessment_basis": "store.record_run appends journal rows only when a reward-bearing experience flows",
-      "recorded_stage": "PERSISTED",
-      "verdict": "MATCH"
+      "recorded_stage": "REACHABLE",
+      "verdict": "UNDERSTATED"
     },
     "repository.engineer": {
       "assessed_stage": "OUTCOME_OBSERVED",

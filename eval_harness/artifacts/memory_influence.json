@@ -86,7 +86,7 @@
         "retrieved_memory_refs": [
           "relevant-episode-1"
         ],
-        "seal": "d87e97999871423a4953bb5ec5a6d243b92842ab95e9d4e23629218444f77105",
+        "seal": "ad8b52b65e33037c6de040628d5e86f3a8490b4680cb63c4d6120f0dff18d5d7",
         "selected_strategy": "primitive-compose",
         "transitions": 20
       },
