@@ -85,14 +85,24 @@ _WORKER_SPECS = {
 # simulated twin, so it runs (and learns) on a host with no device bound.
 _DEVICE_WORKERS = frozenset({"agentic-mining", "salamander"})
 # With PYTHIA_EXECUTION_DEVICE declared, the mining worker drives the
-# Execution Router directly (OpenCL, the labelled CPU reference, or a remote
-# GPU agent) and needs no MMIO bridge. Salamander supervises the bridge, so
+# Execution Router directly (OpenCL, the Chronus-owned CUDA or Metal lanes,
+# the labelled CPU reference, or a remote GPU agent) and needs no MMIO bridge. Salamander supervises the bridge, so
 # it still waits for one. The declared vocabulary matches
 # mining_runtime.EXECUTION_DEVICES; lane availability itself is enforced by
 # the backend registry's real probes, so requesting an absent lane fails
 # closed rather than falling back silently.
 _EXECUTION_DEVICE_WORKERS = frozenset({"agentic-mining"})
-_EXECUTION_DEVICES = ("auto", "opencl", "gpu", "cpu", "remote", "asic", "super_asic")
+_EXECUTION_DEVICES = (
+    "auto",
+    "opencl",
+    "gpu",
+    "cpu",
+    "cuda",
+    "metal",
+    "remote",
+    "asic",
+    "super_asic",
+)
 _LOCK_HELD = False
 _LOCK_GUARD = threading.Lock()
 _AUDIT: AppendOnlyAudit | None = None

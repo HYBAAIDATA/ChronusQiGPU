@@ -89,16 +89,19 @@ class HashPipeline:
 
     @property
     def hasher(self):
-        """Lazily constructed so non-mining use pays no OpenCL init cost."""
-        if self._hasher is None:
-            if self._hasher_backend == "remote":
-                from mining.remote_hasher import hasher_for_env
+        """Lazily constructed so non-mining use pays no device init cost.
 
-                self._hasher = hasher_for_env()
-            else:
-                if BitcoinHasher is None:
-                    raise RuntimeError("mining.bitcoin_hasher unavailable")
-                self._hasher = BitcoinHasher(backend=self._hasher_backend)
+        ``hasher_backend`` is any token ``hasher_for_backend`` resolves:
+        ``auto``/``cpu``/``opencl``/``gpu`` (OpenCL lane + declared CPU
+        reference under auto), ``remote`` (the remote GPU agent), ``cuda``
+        and ``metal`` (the Chronus-owned native lanes — no substitution).
+        """
+        if self._hasher is None:
+            if BitcoinHasher is None:
+                raise RuntimeError("mining.bitcoin_hasher unavailable")
+            from mining.bitcoin_hasher import hasher_for_backend
+
+            self._hasher = hasher_for_backend(self._hasher_backend)
         return self._hasher
 
     @staticmethod

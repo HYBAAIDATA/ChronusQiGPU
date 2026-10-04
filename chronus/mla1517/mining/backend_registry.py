@@ -5,7 +5,10 @@ whether they are usable. A lane is ``available`` only after its probe ran:
 the probe is a real capability check, not a configuration lookup — the CPU
 lane re-hashes a known vector through hashlib, the GPU lane binds an OpenCL
 device through ``BitcoinHasher`` (which self-checks the kernels against
-hashlib before it reports success), the remote lane binds the remote GPU
+hashlib before it reports success), the ``cuda`` and ``metal`` lanes bind
+the Chronus-owned native SHA-256d hashers in ``mining.native_sha256d``
+(same bind-time hashlib self-check, never a CPU/OpenCL substitution), the
+remote lane binds the remote GPU
 agent's health contract, the ``asic`` lane probes the real ASIC channel
 driver (:class:`hyba.hybrid.asic_solver.ASICSolver` — network/serial/PCIe),
 and ``super_asic`` binds the hybrid composition of every supported
@@ -18,6 +21,10 @@ Routing follows the declared policy only:
   recorded fallback, never silent.
 * ``cpu``    — CPU lane only.
 * ``gpu`` / ``opencl`` — the OpenCL lane or the selection fails closed.
+* ``cuda`` — the Chronus-owned CUDA SHA-256d lane (CuPy runtime +
+  Chronus CUDA C kernels, hashlib self-check at bind) or it fails closed.
+* ``metal`` — the Chronus-owned Metal SHA-256d lane (MLX kernels on Apple
+  GPU, hashlib self-check at bind) or it fails closed.
 * ``remote`` — the remote GPU lane or the selection fails closed.
 * ``asic`` — a physically bound ASIC channel or a closed refusal; no lane
   is invented to satisfy the request.
@@ -49,6 +56,8 @@ class BackendLane(StrEnum):
 
     CPU = "cpu"
     GPU = "gpu"  # OpenCL device bound through mining.bitcoin_hasher
+    CUDA = "cuda"  # Chronus-owned CUDA C kernels via mining.native_sha256d
+    METAL = "metal"  # Chronus-owned Metal kernels via mining.native_sha256d
     REMOTE_GPU = "remote_gpu"  # remote agent over MLA1517_REMOTE_GPU_ENDPOINT
     ASIC = "asic"
     SUPER_ASIC = "super_asic"
@@ -190,6 +199,81 @@ def _probe_gpu() -> LaneProbe:
         )
 
 
+def _probe_cuda() -> LaneProbe:
+    """CUDA lane: bind the Chronus-owned CUDA SHA-256d hasher.
+
+    ``ChronusCudaSha256dHasher`` compiles the Chronus CUDA C kernels on a
+    real enumerated device and self-checks them against hashlib at bind
+    time — a positive probe is measured agreement, never a declaration.
+    The lane never substitutes OpenCL or CPU execution.
+    """
+    try:
+        import sys
+        from pathlib import Path
+
+        repo_root = str(Path(__file__).resolve().parents[3])
+        if repo_root not in sys.path:
+            sys.path.insert(0, repo_root)
+        from mining.native_sha256d import ChronusCudaSha256dHasher
+
+        hasher = ChronusCudaSha256dHasher()
+        return LaneProbe(
+            lane=BackendLane.CUDA.value,
+            available=True,
+            backend=hasher.backend,
+            device=hasher.device,
+            probed_at=time.time(),
+            reason="CUDA device bound; kernel self-checks passed",
+            hasher=hasher,
+        )
+    except Exception as exc:
+        return LaneProbe(
+            lane=BackendLane.CUDA.value,
+            available=False,
+            backend=None,
+            device=None,
+            probed_at=time.time(),
+            reason=f"CUDA probe failed: {exc}",
+        )
+
+
+def _probe_metal() -> LaneProbe:
+    """Metal lane: bind the Chronus-owned Metal SHA-256d hasher.
+
+    ``ChronusMetalSha256dHasher`` compiles the Chronus Metal kernels on an
+    Apple GPU through MLX and self-checks against hashlib at bind time.
+    The lane never substitutes OpenCL or CPU execution.
+    """
+    try:
+        import sys
+        from pathlib import Path
+
+        repo_root = str(Path(__file__).resolve().parents[3])
+        if repo_root not in sys.path:
+            sys.path.insert(0, repo_root)
+        from mining.native_sha256d import ChronusMetalSha256dHasher
+
+        hasher = ChronusMetalSha256dHasher()
+        return LaneProbe(
+            lane=BackendLane.METAL.value,
+            available=True,
+            backend=hasher.backend,
+            device=hasher.device,
+            probed_at=time.time(),
+            reason="Metal device bound; kernel self-checks passed",
+            hasher=hasher,
+        )
+    except Exception as exc:
+        return LaneProbe(
+            lane=BackendLane.METAL.value,
+            available=False,
+            backend=None,
+            device=None,
+            probed_at=time.time(),
+            reason=f"Metal probe failed: {exc}",
+        )
+
+
 def _probe_remote_gpu() -> LaneProbe:
     """Remote lane: bind the remote GPU agent's health contract."""
     try:
@@ -306,14 +390,23 @@ def _probe_super_asic() -> LaneProbe:
         )
 
 
-# request tokens -> routing. ``auto`` probes GPU then remote, then falls
-# back to CPU with a declared reason; every other token selects exactly its
-# lane or fails closed.
+# request tokens -> routing. ``auto`` probes the local OpenCL lane, then
+# the Chronus-owned CUDA and Metal lanes, then remote, and falls back to
+# CPU with a declared reason — local physical substrates before the
+# network hop. Every other token selects exactly its lane or fails closed.
 _POLICY_ORDER = {
-    "auto": (BackendLane.GPU, BackendLane.REMOTE_GPU, BackendLane.CPU),
+    "auto": (
+        BackendLane.GPU,
+        BackendLane.CUDA,
+        BackendLane.METAL,
+        BackendLane.REMOTE_GPU,
+        BackendLane.CPU,
+    ),
     "cpu": (BackendLane.CPU,),
     "gpu": (BackendLane.GPU,),
     "opencl": (BackendLane.GPU,),
+    "cuda": (BackendLane.CUDA,),
+    "metal": (BackendLane.METAL,),
     "remote": (BackendLane.REMOTE_GPU,),
     "asic": (BackendLane.ASIC,),
     "super_asic": (BackendLane.SUPER_ASIC,),
@@ -342,6 +435,8 @@ class BackendRegistry:
         self._probes: dict[BackendLane, Callable[[], LaneProbe]] = probes or {
             BackendLane.CPU: _probe_cpu,
             BackendLane.GPU: _probe_gpu,
+            BackendLane.CUDA: _probe_cuda,
+            BackendLane.METAL: _probe_metal,
             BackendLane.REMOTE_GPU: _probe_remote_gpu,
             BackendLane.ASIC: _probe_asic,
             BackendLane.SUPER_ASIC: _probe_super_asic,
@@ -367,11 +462,11 @@ class BackendRegistry:
     ) -> BackendSelection:
         """Route per declared policy; a selected lane has been probed.
 
-        ``auto`` walks GPU -> remote -> CPU and reports ``fallback=True``
-        whenever the bound lane is not the first probe target. Any other
-        token selects exactly its lane: when the probe is unavailable the
-        selection raises ``BackendUnavailable`` — it fails closed instead of
-        silently degrading.
+        ``auto`` walks GPU -> CUDA -> Metal -> remote -> CPU and reports
+        ``fallback=True`` whenever the bound lane is not the first probe
+        target. Any other token selects exactly its lane: when the probe
+        is unavailable the selection raises ``BackendUnavailable`` — it
+        fails closed instead of silently degrading.
         """
         key = (requested or "auto").strip().lower()
         if key not in _POLICY_ORDER:
