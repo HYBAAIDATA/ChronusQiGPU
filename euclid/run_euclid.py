@@ -1,5 +1,5 @@
 """
-EUCLID Platform Verification Runner v16.0 (Silver Paradigm Release)
+EUCLID Local Demonstration Runner v16.0
 ===================================================================
 Executes Adapter Façade API, Multi-Agent Coordination, MCTS Search Engine,
 and EUCLID Lucas Intelligence Scale.
@@ -88,7 +88,7 @@ class DataPipeline:
     print(json.dumps(adapter.snapshot(), indent=2))
 
     print("\n==========================================================================")
-    print("EUCLID DROP-IN ENGINE PAYLOAD V16.0 VERIFIED SUCCESSFULLY")
+    print("EUCLID LOCAL DEMO COMPLETED; PRODUCTION NOT CERTIFIED")
     print("==========================================================================")
 
 if __name__ == "__main__":

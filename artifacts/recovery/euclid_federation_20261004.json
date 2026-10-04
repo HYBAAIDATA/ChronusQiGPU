@@ -1,0 +1,37 @@
+{
+  "schema": "hyba.euclid.recovery-manifest.v1",
+  "date": "2026-10-04",
+  "tranche": "federation-2",
+  "stacked_on": "creative-substrate-1",
+  "archive": {
+    "name": "EUCLID_PROD_MORNING_RECOVERY_COMPLETE_20260719.zip",
+    "sha256": "30d3ddde94238b4cbb4fbb0b299775fed0b90c414669275379cab08186371229"
+  },
+  "files": [
+    {
+      "path": "euclid/federation.py",
+      "sha256": "f14e41d6b2924b6da2e42b79ba666839d7269d7a8bd14c621a8369f511e188ff",
+      "mode": "byte-exact-recovery"
+    },
+    {
+      "path": "tests/test_euclid_federation.py",
+      "sha256": "7009e76e4e439e0c89c4c60fe8a6b66ff1f2389791c556cc6f12f4b1676a86dc",
+      "mode": "byte-exact-recovery"
+    }
+  ],
+  "validation": {
+    "compile": "passed",
+    "focused_tests": {
+      "passed": 11,
+      "failed": 0
+    }
+  },
+  "claim_boundary": "Exercised federation semantics only; no distributed deployment, consensus, production, or mining claim.",
+  "excluded_authority": [
+    "mining consensus",
+    "share validation",
+    "Chronus execution",
+    "authoritative storage",
+    "reward authority"
+  ]
+}

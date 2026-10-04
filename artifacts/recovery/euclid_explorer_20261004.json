@@ -1,0 +1,30 @@
+{
+  "schema": "hyba.euclid.recovery-manifest.v1",
+  "date": "2026-10-04",
+  "tranche": "mathematical-explorer-4",
+  "stacked_on": "delegation-3",
+  "archive": {
+    "name": "EUCLID_PROD_MORNING_RECOVERY_COMPLETE_20260719.zip",
+    "sha256": "30d3ddde94238b4cbb4fbb0b299775fed0b90c414669275379cab08186371229"
+  },
+  "files": [
+    {
+      "path": "euclid/explorer.py",
+      "sha256": "f9406ea2958627cd7b9101db1564aa215bf8920cfd0031703ac528854bee7fff",
+      "mode": "byte-exact-recovery"
+    },
+    {
+      "path": "tests/test_mathematical_frontier_explorer.py",
+      "sha256": "cedd064e5336b94f52d96ca9b783577b996859e251800323db7298749f400f99",
+      "mode": "byte-exact-recovery"
+    }
+  ],
+  "validation": {
+    "compile": "passed",
+    "focused_tests": {
+      "passed": 9,
+      "failed": 0
+    }
+  },
+  "claim_boundary": "Candidate generation/evaluation behavior only; no correctness, production, reward, or mining authority."
+}

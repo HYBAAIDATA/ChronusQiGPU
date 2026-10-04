@@ -181,12 +181,6 @@ class EuclidRuntime:
                         component, stage, episode_id="runtime-startup",
                         evidence_ref=self.evidence.head or "genesis",
                     )
-            elif current is ReachabilityStage.PERSISTED:
-                self.reachability.record(
-                    component, ReachabilityStage.RESTART_VERIFIED,
-                    episode_id="runtime-restart",
-                    evidence_ref=self.evidence.head or "genesis",
-                )
 
     def register_specialist(self, organ_id: str, implementation: Any) -> None:
         """Expose a specialist without transferring its domain authority."""
@@ -268,10 +262,11 @@ class EuclidRuntime:
         if any(item.get("kind") == "strategy" for item in state.learning_updates):
             target("euclid.strategy_meta_learning", ReachabilityStage.FEEDBACK_CLOSED)
         if persisted:
-            for component in (
-                "euclid.learning_service", "euclid.memory_database",
-                "pythia.memory", "pythia.store", "experience_superlearner",
-            ):
+            # The episode adapter always closes through LearningService and the
+            # canonical MemoryDatabase.  Reward-bearing downstream engines are
+            # not promoted here because this state does not carry per-engine
+            # mutation evidence.
+            for component in ("euclid.learning_service", "euclid.memory_database"):
                 target(component, ReachabilityStage.PERSISTED)
         if state.retrieved_memory_refs:
             # Transfer is verified when this episode retrieves memories the
@@ -360,6 +355,15 @@ class EuclidRuntime:
                 if self.learning.memory_database is not None
                 else {"valid": False, "reason": "not configured"}
             ),
+            "intelligence_readiness": {
+                "status": "NOT_CERTIFIED",
+                "production_certified": False,
+                "reasons": [
+                    "restart requires independent cross-process verification",
+                    "transfer requires deterministic ablation-backed decision effect",
+                    "external validation is not present",
+                ],
+            },
         }
 
     def snapshot(self) -> dict[str, Any]:
