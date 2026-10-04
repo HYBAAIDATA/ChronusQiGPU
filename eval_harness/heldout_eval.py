@@ -26,6 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from environment import (  # noqa: E402
+    INTERVENTION_RESULTS,
     ScriptedExecutor,
     close_runtime,
     episode_summary,
@@ -70,7 +71,7 @@ IRRELEVANT_MEMORY = MemoryItem(
 
 
 def _solve_set(runtime, tasks, result=None):
-    executor = ScriptedExecutor({"default": result or measured_result()})
+    executor = ScriptedExecutor({**INTERVENTION_RESULTS, "default": result or measured_result()})
     runtime.cognition.executor = executor
     rows = []
     for task in tasks:

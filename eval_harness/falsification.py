@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from environment import (  # noqa: E402
+    INTERVENTION_RESULTS,
     ScriptedExecutor,
     close_runtime,
     measured_result,
@@ -30,7 +31,10 @@ from euclid.learning_service import LearningService  # noqa: E402
 
 def _solve(runtime, pid="falsify-1", result=None, prob=None):
     runtime.cognition.executor = ScriptedExecutor(
-        {"default": result if result is not None else measured_result()}
+        {
+            **INTERVENTION_RESULTS,
+            "default": result if result is not None else measured_result(),
+        }
     )
     return runtime.solve_repository_problem(prob or problem(pid))
 
@@ -472,11 +476,13 @@ def check_mathematical_structure_ablation():
 
 
 def check_restart_verified_self_certified():
-    """RESTART_VERIFIED is granted without executing any verification.
+    """RESTART_VERIFIED must be granted only by executed verification.
 
-    runtime.py grants it on the *next* production() boot for any component
-    that reached PERSISTED — same process counts; no artifact verification is
-    performed.  Recorded finding (partner-scope file): verdict FAIL.
+    Previously runtime.py granted it on the *next* production() boot for any
+    component that reached PERSISTED — same process counted, no artifact
+    verification.  That self-certification has since been removed; the check
+    now pins the repaired behavior (PASS) and regresses to FAIL if a
+    self-certified grant ever reappears.
     """
     root = state_dir("restart-selfcert")
     rt = production_runtime(root)

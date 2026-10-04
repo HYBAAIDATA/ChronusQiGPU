@@ -234,6 +234,21 @@ class TestMetacognitionAndReplanning(unittest.TestCase):
         self.assertNotEqual(state.outcome, Outcome.SOLVED)
         self.assertTrue(state.outcome_detail)
 
+    def test_all_hypotheses_refuted_aborts_before_planning(self) -> None:
+        calls = []
+
+        def refute_everything(action, payload):
+            calls.append((action, payload.get("kind")))
+            return {"observation": "OUTSIDE-EXPLANATION-SPACE", "goal_met": False}
+
+        state = build_core(
+            SyntheticDomain(), executor=CallbackExecutor(refute_everything)
+        ).solve(PROBLEM)
+        self.assertEqual(state.outcome, Outcome.ABORTED)
+        self.assertIn("all competing hypotheses were refuted", state.outcome_detail)
+        self.assertIn("hypothesis-exhausted", [item.phase for item in state.transitions])
+        self.assertFalse(any(kind == "plan" for _, kind in calls))
+
     def test_no_executor_fails_closed(self) -> None:
         domain = SyntheticDomain()
         core = build_core(domain, executor=None)

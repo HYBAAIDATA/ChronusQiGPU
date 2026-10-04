@@ -1,0 +1,309 @@
+{
+  "schema": "hyba.euclid.curriculum.v1",
+  "source_archive": "EUCLID_PROD_MORNING_RECOVERY_COMPLETE_20260719.zip",
+  "source_archive_sha256": "30d3ddde94238b4cbb4fbb0b299775fed0b90c414669275379cab08186371229",
+  "source_path": "euclid/memory_database_extended.py",
+  "source_sha256": "22d7913b2999dcedfc07b371ca905d5456a990bedf7147eeb3057a6251cc9aa4",
+  "identity_root": "fresh-euclid-2026",
+  "semantic_policy": "Historical hypotheses are curriculum material, not current truth, measured reward, execution authority, or mining evidence.",
+  "seeds": [
+    {
+      "seed_id": "mine_pred_001",
+      "domain": "mining_predictive",
+      "statement": "φ-Prospector: Project nonce resonance trajectory on Riemannian manifold to predict high-yield nonce ranges before they are mined.",
+      "provenance": "SCBC Predictive Intelligence + HYBA φ-resonance data",
+      "memory_form": "predictive",
+      "historical_evidence_stage": "hypothesized",
+      "content_hash": "5b2d1c80595649463ab9c2b97ff4072ad3dce16dec1ad4089584a839564c7c34",
+      "metadata": {
+        "method": "geodesic_projection",
+        "horizon": "5 blocks",
+        "chrstoffel_dim": 3
+      },
+      "current_semantic_status": "archival_curriculum_hypothesis",
+      "authority": "none"
+    },
+    {
+      "seed_id": "mine_pred_002",
+      "domain": "mining_predictive",
+      "statement": "Hashrate trajectory forecasting: Use φ-scaled Holt smoothing (α=φ⁻²) to predict pool hashrate changes 10 minutes ahead for optimal pool switching.",
+      "provenance": "TemporalCoherenceTracker + mining pool data",
+      "memory_form": "predictive",
+      "historical_evidence_stage": "hypothesized",
+      "content_hash": "e7d183ae68681ece37375f18a697ff8774e83ad058fb6dcbb7bf71822945137f",
+      "metadata": {
+        "method": "holt_phi_smoothing",
+        "horizon": "10 minutes",
+        "alpha": 0.382
+      },
+      "current_semantic_status": "archival_curriculum_hypothesis",
+      "authority": "none"
+    },
+    {
+      "seed_id": "mine_pred_003",
+      "domain": "mining_predictive",
+      "statement": "Difficulty epoch prediction: φ-exponential trend on historical difficulty adjustments predicts next epoch difficulty within 2% error.",
+      "provenance": "Crypto Mining 101 (ViaBTC) p.23 + φ-scaling",
+      "memory_form": "predictive",
+      "historical_evidence_stage": "hypothesized",
+      "content_hash": "5365583312032807b77d48c1ffddc31c725d6e8c6561b2de2429f9f8ebc8da72",
+      "metadata": {
+        "method": "phi_exponential_trend",
+        "accuracy_target": "2%"
+      },
+      "current_semantic_status": "archival_curriculum_hypothesis",
+      "authority": "none"
+    },
+    {
+      "seed_id": "mine_pred_004",
+      "domain": "mining_predictive",
+      "statement": "Profitability trajectory: Geodesic projection of BTC price × difficulty × hashrate onto profit manifold, predicting shutdown risk 3 epochs ahead.",
+      "provenance": "SCBC geodesic projector + mining economics",
+      "memory_form": "predictive",
+      "historical_evidence_stage": "hypothesized",
+      "content_hash": "65afd9d92096b05c55c558d03d65e519e337f9a8aaab02a5004435c5b67c93e5",
+      "metadata": {
+        "method": "profit_manifold_projection",
+        "horizon": "3 epochs",
+        "risk_indicator": "shutdown_price"
+      },
+      "current_semantic_status": "archival_curriculum_hypothesis",
+      "authority": "none"
+    },
+    {
+      "seed_id": "mine_cf_001",
+      "domain": "mining_counterfactual",
+      "statement": "φ-Abacus: Simulate alternate mining strategies using Pearlian do-calculus — abduct current state, apply hardware intervention, predict counterfactual profit.",
+      "provenance": "SCBC Counterfactual Intelligence + Pearl do-calculus",
+      "memory_form": "counterfactual",
+      "historical_evidence_stage": "hypothesized",
+      "content_hash": "7c36f9e482547595eebe2b327ec8fa3022df9b8d27482dd76bd007fe5dd3ce4e",
+      "metadata": {
+        "method": "abduction_action_prediction",
+        "intervention_type": "hardware_swap"
+      },
+      "current_semantic_status": "archival_curriculum_hypothesis",
+      "authority": "none"
+    },
+    {
+      "seed_id": "mine_cf_002",
+      "domain": "mining_counterfactual",
+      "statement": "Pool switching counterfactual: What would profit have been if we switched from PPLNS to FPPS pool 3 epochs ago? Reconstruct with latent noise U preserved.",
+      "provenance": "SCBC + mining pool payout data (ViaBTC p.24)",
+      "memory_form": "counterfactual",
+      "historical_evidence_stage": "hypothesized",
+      "content_hash": "6f47ae7c1bb8ecaaa0af33f75d2da4d7660eabb4453d5bc8f4c38931fb36aacb",
+      "metadata": {
+        "method": "counterfactual_replay",
+        "pools": [
+          "PPLNS",
+          "FPPS",
+          "PPS+"
+        ]
+      },
+      "current_semantic_status": "archival_curriculum_hypothesis",
+      "authority": "none"
+    },
+    {
+      "seed_id": "mine_cf_003",
+      "domain": "mining_counterfactual",
+      "statement": "Firmware counterfactual: Apply do(firmware=v2) to SCM, simulate hashrate outcome with latent noise from current hardware state.",
+      "provenance": "SCBC + mining optimization data (ViaBTC p.33)",
+      "memory_form": "counterfactual",
+      "historical_evidence_stage": "hypothesized",
+      "content_hash": "4635615186daea9210d4a0776fbb917559657b8c602d2512118fdc3879f63790",
+      "metadata": {
+        "method": "do_calculus_firmware",
+        "gain_range": "10-25%"
+      },
+      "current_semantic_status": "archival_curriculum_hypothesis",
+      "authority": "none"
+    },
+    {
+      "seed_id": "mine_cf_004",
+      "domain": "mining_counterfactual",
+      "statement": "Energy cost counterfactual: Simulate mining profit under alternative electricity pricing (φ-structured grid load shedding).",
+      "provenance": "SCBC + φ-Grid load shedding model",
+      "memory_form": "counterfactual",
+      "historical_evidence_stage": "hypothesized",
+      "content_hash": "6784a8fd948443f88870622779461f1bf245ded64a81c5264cdcf8a9bf77c9ff",
+      "metadata": {
+        "method": "energy_cf_simulation",
+        "φ_grid_application": "load_shedding"
+      },
+      "current_semantic_status": "archival_curriculum_hypothesis",
+      "authority": "none"
+    },
+    {
+      "seed_id": "mine_topo_001",
+      "domain": "mining_topological",
+      "statement": "φ-Network: Map mining pool topology as a simplicial complex (nodes=miners, edges=stratum connections, faces=3-way relay groups). Detect Betti-1 loops indicating routing storms.",
+      "provenance": "SCBC Topological Intelligence + Stratum protocol (ViaBTC p.35)",
+      "memory_form": "topological",
+      "historical_evidence_stage": "hypothesized",
+      "content_hash": "528f1b3ac8d85951301a16d230e0db58a15f1f94ba3d76b47c25457d92218672",
+      "metadata": {
+        "method": "simplicial_complex",
+        "betti_target": "beta_1 = 0 for healthy pool"
+      },
+      "current_semantic_status": "archival_curriculum_hypothesis",
+      "authority": "none"
+    },
+    {
+      "seed_id": "mine_topo_002",
+      "domain": "mining_topological",
+      "statement": "Block propagation topology: Map Bitcoin node connections as simplicial complex. β₀ > 1 = network partition. β₁ > 0 = propagation loops.",
+      "provenance": "SCBC + Bitcoin P2P network topology",
+      "memory_form": "topological",
+      "historical_evidence_stage": "hypothesized",
+      "content_hash": "86a4c301a7923208a829d36506348ec8ac2bb0b70502eefb76fe95e1a3c9a4bc",
+      "metadata": {
+        "method": "persistent_homology",
+        "network": "bitcoin_p2p"
+      },
+      "current_semantic_status": "archival_curriculum_hypothesis",
+      "authority": "none"
+    },
+    {
+      "seed_id": "mine_topo_003",
+      "domain": "mining_topological",
+      "statement": "Hashboard failure topology: Map ASIC hashboard connectivity as simplicial complex. Persistent homology detects cascading failure patterns before complete board failure.",
+      "provenance": "SCBC + mining hardware failure data (ViaBTC p.38)",
+      "memory_form": "topological",
+      "historical_evidence_stage": "hypothesized",
+      "content_hash": "0c7af52bfea22ebe140a0f6d7ea46d519245a5ec36ba8a2561a32187405ba6ab",
+      "metadata": {
+        "method": "failure_homology",
+        "application": "predictive_maintenance"
+      },
+      "current_semantic_status": "archival_curriculum_hypothesis",
+      "authority": "none"
+    },
+    {
+      "seed_id": "mine_topo_004",
+      "domain": "mining_topological",
+      "statement": "Mining farm power topology: φ-structured power distribution graph. Euler characteristic χ = V − E + F quantifies farm electrical resilience.",
+      "provenance": "SCBC + mining farm requirements (ViaBTC p.17)",
+      "memory_form": "topological",
+      "historical_evidence_stage": "hypothesized",
+      "content_hash": "0166331c66ef9dc797325f0cbc73252e2862524026218ccbcd186c887237808b",
+      "metadata": {
+        "method": "euler_characteristic",
+        "application": "power_grid_resilience"
+      },
+      "current_semantic_status": "archival_curriculum_hypothesis",
+      "authority": "none"
+    },
+    {
+      "seed_id": "mine_geo_001",
+      "domain": "mining_geometric",
+      "statement": "φ-Hardware: Project ASIC hashrate degradation curve onto Riemannian manifold. Compute geodesic distance from nominal (optimal hashrate) to detect degradation before threshold breach.",
+      "provenance": "SCBC Geometric Intelligence + ASIC specs (ViaBTC p.32)",
+      "memory_form": "geometric",
+      "historical_evidence_stage": "hypothesized",
+      "content_hash": "9cfe2dd1277ef83e7d0cd58ba99ad272bae1dfb422b5f6a5637bc5d52523c10a",
+      "metadata": {
+        "method": "manifold_projection",
+        "nominal_reference": "optimal_hashrate",
+        "drift_threshold": 1.2
+      },
+      "current_semantic_status": "archival_curriculum_hypothesis",
+      "authority": "none"
+    },
+    {
+      "seed_id": "mine_geo_002",
+      "domain": "mining_geometric",
+      "statement": "Efficiency manifold: Project (hashrate, power, temperature) onto 3D Riemannian manifold. Parallel transport optimal efficiency vector to current operating point.",
+      "provenance": "SCBC + Christoffel symbols + mining hardware telemetry",
+      "memory_form": "geometric",
+      "historical_evidence_stage": "hypothesized",
+      "content_hash": "273de03705d45b94780e2073e9effb40313a023a34e794641d20c57a82ce8a6b",
+      "metadata": {
+        "method": "efficiency_manifold",
+        "coordinates": [
+          "hashrate",
+          "power",
+          "temperature"
+        ]
+      },
+      "current_semantic_status": "archival_curriculum_hypothesis",
+      "authority": "none"
+    },
+    {
+      "seed_id": "mine_geo_003",
+      "domain": "mining_geometric",
+      "statement": "Pool reward geodesic: Project PPLNS/FPPS/PPS+ reward curves onto 2D manifold. Geodesic distance between payout methods quantifies switching cost.",
+      "provenance": "SCBC + mining economics (ViaBTC p.24)",
+      "memory_form": "geometric",
+      "historical_evidence_stage": "hypothesized",
+      "content_hash": "f19007f31fda592cc2d7a15a6bcbf62232206330d75b545a2bcd6797a3f153a0",
+      "metadata": {
+        "method": "reward_manifold",
+        "payout_methods": [
+          "PPLNS",
+          "FPPS",
+          "PPS+"
+        ]
+      },
+      "current_semantic_status": "archival_curriculum_hypothesis",
+      "authority": "none"
+    },
+    {
+      "seed_id": "mine_geo_004",
+      "domain": "mining_geometric",
+      "statement": "Cooling manifold: Project (ambient_temp, humidity, fan_speed) onto Riemannian manifold. Christoffel-scaled curvature detects cooling inefficiency before thermal throttle.",
+      "provenance": "SCBC + mining environment specs (ViaBTC p.33)",
+      "memory_form": "geometric",
+      "historical_evidence_stage": "hypothesized",
+      "content_hash": "c0009a0fb7737519950e85ed92696431df9a89c736cf80a11e33ee9e067184c2",
+      "metadata": {
+        "method": "cooling_manifold",
+        "coordinates": [
+          "temperature",
+          "humidity",
+          "fan_speed"
+        ]
+      },
+      "current_semantic_status": "archival_curriculum_hypothesis",
+      "authority": "none"
+    },
+    {
+      "seed_id": "mine_meta_001",
+      "domain": "mining_meta",
+      "statement": "EUCLID can review mining code using provenanced semantic seeds; optimize using procedural seeds; heal using failure seeds; predict using geodesic projection; simulate using counterfactual do-calculus; detect topology using persistent homology; project hardware using Riemannian manifolds.",
+      "provenance": "EUCLID Memory Database — self-referential meta-knowledge",
+      "memory_form": "meta_memory",
+      "historical_evidence_stage": "seeded",
+      "content_hash": "7e1820c5f914a3f4e7da2502679fa15c1d8c31764c0c6446a82f45612ddd4012",
+      "metadata": {
+        "intelligence_paradigms": [
+          "predictive",
+          "counterfactual",
+          "topological",
+          "geometric",
+          "semantic",
+          "procedural",
+          "causal",
+          "failure"
+        ]
+      },
+      "current_semantic_status": "archival_curriculum_hypothesis",
+      "authority": "none"
+    },
+    {
+      "seed_id": "mine_meta_002",
+      "domain": "mining_meta",
+      "statement": "The φ^20 intelligence scaler amplifies all six paradigms simultaneously: predictive ×3571, counterfactual ×151 worlds, topological ×β₁=1, geometric ×φ^20 curvature.",
+      "provenance": "EUCLID φ^20 ASI-Level Intelligence Scaling",
+      "memory_form": "meta_memory",
+      "historical_evidence_stage": "seeded",
+      "content_hash": "665b2a969b171564bb6ff9359b9aadeb87587d9c15fa9b82470801f21249a8c1",
+      "metadata": {
+        "phi_level": 20,
+        "multiplier": 15126.999933893048
+      },
+      "current_semantic_status": "archival_curriculum_hypothesis",
+      "authority": "none"
+    }
+  ]
+}

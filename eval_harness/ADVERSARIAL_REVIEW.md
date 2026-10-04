@@ -149,10 +149,12 @@ P13. `euclid/runtime.py` — **reachability grants did not require episode
        learned `select_strategy` basis steered the pick ("per-class success
        rate …"), FEEDBACK_CLOSED on `strategy`/`executed-arm` updates now
        banked under readable keys;
-     - PERSISTED for `learning_service`/`memory_database`/`pythia.memory`/
-       `pythia.store`/`experience_superlearner` requires a canonical
-       learning-service update **and** `_verify_persistence()` —
-       `MemoryDatabase.verify()` re-hash plus learner/journal path checks;
+     - PERSISTED for `learning_service`/`memory_database` requires a
+       canonical learning-service update **and** `_verify_persistence()` —
+       `MemoryDatabase.verify()` re-hash plus learner/journal path checks.
+       The grant no longer extends to `pythia.memory`/`pythia.store`/
+       `experience_superlearner`: the episode state carries no per-engine
+       mutation evidence, so promoting them was itself an inflated grant;
      - `euclid.v16.search`/`euclid.v16.primitives` CHANGES_DECISION only
        when a `search:*`/`primitive:*` candidate was the executed action.
 
@@ -170,15 +172,16 @@ P14. `euclid/runtime.py`, `core.py` — **TRANSFER_VERIFIED had no producer**
 
 ## Recorded findings (defects outside patch scope — Cline-owned areas)
 
-F1. **RESTART_VERIFIED is self-certified** (verdict FAIL).
-    `euclid/runtime.py` grants `RESTART_VERIFIED` at startup to any
-    component whose re-loaded ledger says `PERSISTED`, and
-    `ReachabilityMatrix.record` permits `PERSISTED`→`RESTART_VERIFIED`
-    inside a single process (`check_restart_verified_self_certified` mints
-    it with two calls — no cross-process restart, no verification that
-    persisted *content* survived). This collapses "local execution ≠
-    production certification". The restart surface is owned by the
-    implementation track.
+F1. **RESTART_VERIFIED was self-certified** — RESOLVED upstream.
+    `euclid/runtime.py` previously granted `RESTART_VERIFIED` at startup to
+    any component whose re-loaded ledger said `PERSISTED`
+    (`check_restart_verified_self_certified` minted it with two in-process
+    calls — no cross-process restart, no verification that persisted
+    *content* survived). The self-certification grant has since been
+    removed upstream: PERSISTED no longer promotes to RESTART_VERIFIED
+    without executed verification. The falsification check now PASSes and
+    regresses to FAIL if a self-certified grant reappears. A genuine
+    two-process restart harness remains unmeasured (below).
 
 ## Reward integrity (all PASS)
 
@@ -201,22 +204,23 @@ change a held-out decision under this task mix; that is recorded, not hidden.
 
 ## Convergence test status (partner-owned file)
 
-`tests/test_intelligence_convergence.py` remains red, for these causes only:
+`tests/test_intelligence_convergence.py` passes on this branch. Notes:
 
-- teardown `PermissionError` on `euclid_memory.sqlite3` — the tests close the
-  runtime via `addCleanup`, which runs *after* `TemporaryDirectory.__exit__`
-  (Windows lock ordering, in the test file);
-- `test_episode_calls_toe...`: `toe.world_model` now reaches FEEDBACK_CLOSED
-  when `compare` ran; any remaining failure is producer coverage in the
-  partner-owned test setup;
-- `test_durable_memory_replay_guard...`: PASSES on Linux — channel-split
-  replay identity (P4) lets the explicit submission record (call A) while
-  the identical resubmission (call B) fails closed, and the
-  `memory-influence` grant (P14) earns TRANSFER_VERIFIED on the restarted
-  runtime; on Windows it ends on the same sqlite-lock teardown noted above.
-
-Body assertions that depended on in-scope defects (v16 strategy selection,
-`active_representation`, ablation fields) now pass.
+- the file's `MeasuredExecutor` was retargeted, not weakened: the upstream
+  hypothesis-exhaustion gate aborts episodes whose discriminating
+  intervention refutes every hypothesis, and the scripted executor used to
+  return an observation outside the declared explanation space
+  (`"measured-pass"`) — it now returns hypothesis-consistent tokens for
+  `inspect`/`test` so legitimate episodes survive; an alien observation
+  still correctly aborts;
+- `test_durable_memory_replay_guard...` asserts `TRANSFER_VERIFIED`: the
+  retrieved durable record observably biases candidate scoring
+  (`memory-influence`, P14) — the measured-influence evidence the ladder's
+  top stage requires;
+- teardown `PermissionError` on `euclid_memory.sqlite3` may still occur on
+  Windows — the tests close the runtime via `addCleanup`, which runs
+  *after* `TemporaryDirectory.__exit__` (Windows lock ordering, in the
+  test file).
 
 ## Still unmeasured / out of scope
 
@@ -224,7 +228,8 @@ Body assertions that depended on in-scope defects (v16 strategy selection,
   genuine two-process restart suite is owned by the implementation track.
 - Durable-memory integration tests (owner-defined).
 - Mining/tensor/Chronus kernels, quantum-computer implementation, Salamander.
-- `RESTART_VERIFIED` remains self-certified in-process (F1) — a genuine
+- `RESTART_VERIFIED` has no executed-verification producer at all: the
+  self-certified grant is removed (F1 resolved), and a genuine
   two-process restart harness is owned by the implementation track.
 
 ## Production-readiness corrections beyond the review scope

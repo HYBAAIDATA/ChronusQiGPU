@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from environment import (  # noqa: E402
+    INTERVENTION_RESULTS,
     ScriptedExecutor,
     close_runtime,
     episode_summary,
@@ -97,7 +98,7 @@ def _run(name, items, result=None, prob=None):
     rt = production_runtime(root)
     try:
         rt.cognition.clock = pinned_clock()
-        rt.cognition.executor = ScriptedExecutor({"default": result or measured_result()})
+        rt.cognition.executor = ScriptedExecutor({**INTERVENTION_RESULTS, "default": result or measured_result()})
         _seed_memory(rt, items)
         state = rt.solve_repository_problem(prob or problem("mi-probe"))
         return state

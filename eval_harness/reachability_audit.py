@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from environment import (  # noqa: E402
+    INTERVENTION_RESULTS,
     ScriptedExecutor,
     close_runtime,
     measured_result,
@@ -182,7 +183,7 @@ def run_all():
     rt = production_runtime(root)
     try:
         rt.cognition.clock = pinned_clock()
-        rt.cognition.executor = ScriptedExecutor({"default": measured_result()})
+        rt.cognition.executor = ScriptedExecutor({**INTERVENTION_RESULTS, "default": measured_result()})
         rt.solve_repository_problem(problem("reach-audit"))
         recorded = {}
         for entry in rt.reachability._entries:
@@ -194,7 +195,7 @@ def run_all():
     root2 = state_dir("reach-audit-measured")
     rt2 = production_runtime(root2)
     try:
-        rt2.cognition.executor = ScriptedExecutor({"default": measured_result()})
+        rt2.cognition.executor = ScriptedExecutor({**INTERVENTION_RESULTS, "default": measured_result()})
         state2 = rt2.solve_repository_problem(problem("reach-audit-2"))
     finally:
         close_runtime(rt2)

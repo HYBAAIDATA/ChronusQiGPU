@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from environment import (  # noqa: E402
+    INTERVENTION_RESULTS,
     ScriptedExecutor,
     close_runtime,
     neutral_result,
@@ -90,7 +91,7 @@ def check_observation_not_reward():
     root = state_dir("obs-not-reward")
     rt = production_runtime(root)
     try:
-        rt.cognition.executor = ScriptedExecutor({"default": neutral_result()})
+        rt.cognition.executor = ScriptedExecutor({**INTERVENTION_RESULTS, "default": neutral_result()})
         rt.solve_repository_problem(problem("obs-neutral"))
         learner = rt.learning.experience_learner
         transitions = len(getattr(learner, "transitions", []))
@@ -149,7 +150,7 @@ def check_null_control_stays_null_after_restart():
     root = state_dir("null-restart")
     rt = production_runtime(root)
     try:
-        rt.cognition.executor = ScriptedExecutor({"default": neutral_result()})
+        rt.cognition.executor = ScriptedExecutor({**INTERVENTION_RESULTS, "default": neutral_result()})
         rt.solve_repository_problem(problem("null-1"))
         before = len(rt.learning.experience_learner.transitions)
     finally:

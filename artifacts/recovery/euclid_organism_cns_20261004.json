@@ -1,0 +1,44 @@
+{
+  "schema": "hyba.euclid.recovery-manifest.v1",
+  "date": "2026-10-04",
+  "tranche": "organism-cns-8",
+  "stacked_on": "startup-registry-7",
+  "archive": {
+    "name": "EUCLID_PROD_MORNING_RECOVERY_COMPLETE_20260719.zip",
+    "sha256": "30d3ddde94238b4cbb4fbb0b299775fed0b90c414669275379cab08186371229"
+  },
+  "files": [
+    {
+      "path": "resonance_intelligence/stress_testing.py",
+      "sha256": "3ed3dc4f4d01c7dc7da0993598b68ff145d12c2c78be531fea7bd8b746616748",
+      "mode": "byte-exact-recovery"
+    },
+    {
+      "path": "euclid/organism_cns.py",
+      "sha256": "530a246b05f819faa407c9f0720eae6ecc823dd71d6ceff52909b43c739a1bbb",
+      "mode": "byte-exact-recovery"
+    },
+    {
+      "path": "tests/test_euclid_organism_cns.py",
+      "sha256": "5a551f7c651309f807e12ff27a83364c42119f5c1b3e2312bcc9c376d7d40302",
+      "mode": "byte-exact-recovery"
+    },
+    {
+      "path": "tests/test_euclid_stress_harness_focused.py",
+      "sha256": "d86470f1cb8ffb3d793ccb5e7ed00824d6f649498ed2bdd922dbfea59ee0618c",
+      "mode": "new-focused-test"
+    }
+  ],
+  "validation": {
+    "compile": "passed",
+    "focused_tests": {
+      "passed": 12,
+      "failed": 0
+    },
+    "excluded_suite": {
+      "name": "tests.test_resonance_stress",
+      "reason": "imports unrelated optional SciPy-dependent ASI module"
+    }
+  },
+  "claim_boundary": "Operational CNS and bounded stress evidence only; no consciousness, AGI/ASI, production resilience, mining, or device-execution claim."
+}

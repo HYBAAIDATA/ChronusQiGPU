@@ -74,6 +74,32 @@ def neutral_result(goal_met=False):
     }
 
 
+def intervention_result(observation):
+    """A discriminating observation for the explanation-space interventions.
+
+    The declared explanation space predicts ``dependency-evidence`` /
+    ``source-evidence`` for ``inspect`` and ``test-evidence`` for ``test``;
+    an observation matching a hypothesis legitimately resolves competition,
+    while an alien observation (e.g. "measured-pass") refutes every
+    hypothesis and correctly aborts planning before compose.
+    """
+    return {
+        "observation": str(observation),
+        "goal_met": True,
+        "reward": 0.0,
+        "reward_authority": RewardAuthority.NONE.value,
+    }
+
+
+# Executor maps for scripted episodes: interventions must observe a
+# hypothesis-consistent token or every hypothesis is refuted and the episode
+# aborts before compose (fail-closed hypothesis exhaustion).
+INTERVENTION_RESULTS = {
+    "inspect": intervention_result("dependency-evidence"),
+    "test": intervention_result("test-evidence"),
+}
+
+
 def regression_result():
     return {
         "observation": "measured-regress",

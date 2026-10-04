@@ -65,9 +65,10 @@ class DocumentedFindingTests(unittest.TestCase):
     """Findings recorded by the review — assert the documented current state."""
 
     def test_restart_verified_is_self_certified(self):
-        # RESTART_VERIFIED is granted by a second call inside the same
-        # process; no producer requires a cross-process restart.
-        self.assertEqual(_falsification["restart_verified_self_certified"]["verdict"], "FAIL")
+        # The in-process self-cert grant was removed (PERSISTED no longer
+        # promotes to RESTART_VERIFIED without executed verification); the
+        # gate now pins the repaired behavior.
+        self.assertEqual(_falsification["restart_verified_self_certified"]["verdict"], "PASS")
 
     def test_strategy_feedback_loop_connected(self):
         # Measured outcomes must land under a key the decision machinery
