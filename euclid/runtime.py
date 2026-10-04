@@ -317,7 +317,14 @@ class EuclidRuntime:
         # (the "memory-influence" transition only exists when that bias was
         # applied) — a downstream decision artifact changed by the record,
         # not merely a retrieval count.
-        if "memory-influence" in phases:
+        retrieved = set(state.retrieved_memory_refs)
+        adopted_from_memory = any(
+            mapping.status.value == "adopted" and mapping.source_ref in retrieved
+            for mapping in state.analogies
+        )
+        # An adopted structural mapping sourced from a retrieved durable record
+        # is the second decision artifact a record can change.
+        if "memory-influence" in phases or adopted_from_memory:
             target("euclid.memory_database", ReachabilityStage.TRANSFER_VERIFIED)
         if "execute" in phases:
             target("repository.engineer", ReachabilityStage.OUTCOME_OBSERVED)
