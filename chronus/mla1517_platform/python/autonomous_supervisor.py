@@ -257,7 +257,7 @@ class AutonomousSupervisor:
                 except Exception as exc:
                     supervisor_status = {"error": f"{type(exc).__name__}: {exc}"}
             return {
-                "schema": "pythia.autonomous_supervisor/2",
+                "schema": "pythia.autonomous_supervisor/1",
                 "running": running,
                 "interval_s": self.interval_s,
                 "cycle_count": self._cycle_count,
@@ -309,7 +309,7 @@ def status() -> dict[str, Any]:
     with _SUPERVISOR_GUARD:
         if _SUPERVISOR is None:
             return {
-                "schema": "pythia.autonomous_supervisor/2",
+                "schema": "pythia.autonomous_supervisor/1",
                 "running": False,
                 "authority": dict(_AUTHORITY),
             }
