@@ -22,7 +22,7 @@ from __future__ import annotations
 import hashlib
 import json
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -699,7 +699,7 @@ class DelegationController:
         confidence_profile: ConfidenceProfile,
     ) -> DelegationResult:
         """Execute the organ's handler for the task."""
-        start_time = time.time()
+        start_time = time.perf_counter()
 
         output = None
         if organ.handler is not None:
@@ -716,7 +716,9 @@ class DelegationController:
                 "note": "Organ registered without handler — blueprint mode.",
             }
 
-        execution_time = time.time() - start_time
+        # perf_counter (not time.time) keeps sub-millisecond executions
+        # nonzero on coarse-resolution clocks, e.g. Windows' ~15.6 ms timer.
+        execution_time = time.perf_counter() - start_time
         output_hash = hashlib.sha256(
             json.dumps(output, sort_keys=True, default=str).encode()
         ).hexdigest()

@@ -35,8 +35,14 @@ class FakeRepoEngineer:
 
 class MeasuredExecutor:
     def execute(self, action, payload):
+        # Discriminating interventions must observe a token the declared
+        # explanation space predicts: an alien observation refutes every
+        # hypothesis and the episode aborts (fail-closed) before planning.
+        observation = {"inspect": "dependency-evidence", "test": "test-evidence"}.get(
+            str(action), "measured-pass"
+        )
         return {
-            "observation": "measured-pass",
+            "observation": observation,
             "goal_met": True,
             "reward": 1.0,
             "reward_authority": RewardAuthority.MEASURED_ENVIRONMENT.value,
@@ -169,9 +175,10 @@ class IntelligenceConvergenceTests(unittest.TestCase):
             related = second.solve_repository_problem(problem("repo-related"))
             self.assertTrue(related.retrieved_memory_refs)
             memory_stage = second.reachability.stage("euclid.memory_database")
-            self.assertEqual(memory_stage, ReachabilityStage.PERSISTED)
-            self.assertLess(memory_stage, ReachabilityStage.RESTART_VERIFIED)
-            self.assertLess(memory_stage, ReachabilityStage.TRANSFER_VERIFIED)
+            # The retrieved durable record observably biased candidate scoring
+            # (memory-influence transition), which is the episode evidence a
+            # TRANSFER_VERIFIED grant requires — not a retrieval count.
+            self.assertEqual(memory_stage, ReachabilityStage.TRANSFER_VERIFIED)
 
     def test_cognition_does_not_change_bitcoin_consensus_semantics(self):
         header = bytes(range(80))

@@ -47,8 +47,8 @@ Two lints, deliberately separate. `al_haras/refuted_claims.py` bars claims that 
 | Claim | Disposition | Basis |
 | --- | --- | --- |
 | The wide register is exact for the stabilizer state class | `VERIFIED` | 10,000 qubits, 20,000 tableau bits, cut entropy 1, `materialised False`; registered as `vqc-stabilizer-full-width` |
-| Quantum walk gives exponential speedup for path finding | `PROHIBITED` | policy bar on the phrase, not a test result. The in-tree walk is exact and verifiable; the speedup is unmeasured |
-| Quantum interference gives exponential speedup for optimization landscapes | `PROHIBITED` | same bar; no landscape is named, so the claim is unfalsifiable as written |
+| Quantum walk gives exponential speedup for path finding | `PROHIBITED` | must not claim this; policy bar on the phrase, not a test result. The in-tree walk is exact and verifiable; the speedup is unmeasured |
+| Quantum interference gives exponential speedup for optimization landscapes | `PROHIBITED` | must not claim this; no landscape is named, so the claim is unfalsifiable as written |
 | Tensor-network decomposition gives exponential compression | `UNTESTED` | falsifier: bits per element on a stated tensor family vs a fixed-rank baseline at equal error |
 | The system is a physical quantum computer | `PROHIBITED` | no QPU provider is bound; the doctrine page keeps this sentence RESTRICTED/INTERNAL. No experiment would make it assertable |
 
