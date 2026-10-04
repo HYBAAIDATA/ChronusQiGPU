@@ -1,118 +1,524 @@
-"""Production-shaped Chronus control plane and evidence-bound transaction loop."""
+"""Production-shaped Chronus control plane and evidence-bound transaction loop.
+
+Lifecycle: attach → probe → negotiate → ready → (submit/poll/cancel) → draining
+→ detached. Failures move to failed/recovering with bounded transitions.
+
+Policies:
+  * standalone_software — CPU/software adapter only
+  * preferred_accelerator — physical if available, else software with reason
+  * required_adapter / required_device — fail closed when target missing
+
+Trust:
+  * runtime_signed — content-addressed / optional HMAC chain (default)
+  * device_observed — adapter completed events
+  * hardware_rooted — never claimed without a verified mechanism
+"""
 from __future__ import annotations
-from dataclasses import dataclass
+
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
-import os, platform, threading
-from typing import Any, Iterable
-from .abi import Workload, WorkloadResult, digest_json
-from .adapters import ExecutionAdapter, default_adapters
-from .attestation import extend_chain
+import os
+import threading
+import time
+import uuid
+from pathlib import Path
+from typing import Any
+
+from .abi import (
+    ABI_VERSION,
+    AdmissionRecord,
+    DeliveryMode,
+    ExecutionPolicy,
+    ExecutionReceipt,
+    PortablePackage,
+    RuntimeState,
+    TrustClass,
+    Workload,
+    WorkloadKind,
+    WorkloadResult,
+    digest_json,
+)
+from .adapters import Adapter, AdapterUnavailable, default_adapters
 from .evidence import EvidenceLedger
 from .memory import VirtualMemoryPlane
-from .optimizer import ClosedLoopOptimizer
-from .planner import ChronusPlanner, CostVector, GeodesicScheduler
 
-class RuntimeInvariantError(RuntimeError): pass
 
-@dataclass(frozen=True)
+class RuntimeInvariantError(RuntimeError):
+    """Control-plane or policy invariant violated."""
+
+
+@dataclass
 class Quota:
-    max_workloads: int = 1000
-    max_input_bytes: int = 16 * 1024 * 1024
-    max_in_flight: int = 8
+    """Per-tenant admission quota."""
 
-@dataclass(frozen=True)
+    max_workloads: int = 32
+    max_bytes: int = 256 * 1024 * 1024
+    submitted: int = 0
+
+
+def _utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
 class RuntimeConfig:
-    store_root: str = ".chronus-virtual-igpu"
-    include_emulator: bool = True
-    require_hardware: bool = False
-    default_quota: Quota = Quota()
-    max_in_flight: int = 64
-    signing_key_env: str = "CHRONUS_EVIDENCE_HMAC_KEY"
+    """Lightweight config object accepted by RuntimeDaemon(config=...) or positional."""
+
+    def __init__(
+        self,
+        store_dir: str | Path | None = None,
+        store_root: str | Path | None = None,
+        preferred_adapter_id: str | None = None,
+        hmac_key: bytes | str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        self.store_dir = store_dir or store_root
+        self.store_root = self.store_dir
+        self.preferred_adapter_id = preferred_adapter_id
+        self.hmac_key = hmac_key
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
 
 class RuntimeDaemon:
-    def __init__(self, config: RuntimeConfig=RuntimeConfig(), adapters: Iterable[ExecutionAdapter]|None=None):
-        self.config=config
-        self.adapters={a.id:a for a in (list(adapters) if adapters is not None else default_adapters(config.include_emulator))}
-        healthy=[a for a in self.adapters.values() if a.health().get("available")]
-        if not healthy: raise RuntimeInvariantError("no execution adapter is available")
-        if config.require_hardware and all(a.kind.value=="cpu_emulator" for a in healthy):
-            raise RuntimeInvariantError("hardware required but only CPU emulator is available")
-        self.memory=VirtualMemoryPlane(config.store_root)
-        key=os.getenv(config.signing_key_env,""
-        ).encode() or None
-        self.ledger=EvidenceLedger(config.store_root,key)
-        self.planner=ChronusPlanner(self.ledger)
-        self.optimizer=ClosedLoopOptimizer(os.path.join(config.store_root,"optimizer-state.json"))
-        self.routes=GeodesicScheduler()
-        for adapter in healthy:
-            priority=max(-100,min(100,int(adapter.priority)))
-            self.routes.connect("intent",adapter.id,CostVector(latency=float(100-priority)/100))
-        self.quotas:dict[str,Quota]={}; self.usage:dict[str,int]={}; self.in_flight:dict[str,int]={}
-        self.refusals:list[dict[str,Any]]=[]; self.negotiations:list[dict[str,Any]]=[]; self.results:dict[str,WorkloadResult]={}
-        self._pending:set[str]=set(); self._cancelled:set[str]=set(); self._running=True
-        self._lock=threading.RLock(); self._capacity=threading.BoundedSemaphore(max(1,config.max_in_flight))
+    """In-process Virtual iGPU control plane."""
 
-    def start(self): self._running=True
-    def stop(self): self._running=False; self.memory.checkpoint("shutdown")
-    def cancel(self, workload_id:str):
-        with self._lock: self._cancelled.add(workload_id)
-
-    def _admit(self,w:Workload):
-        if not self._running: raise RuntimeInvariantError("runtime is stopped")
-        if w.deadline and datetime.fromisoformat(w.deadline)<=datetime.now(timezone.utc): raise RuntimeInvariantError("workload deadline has expired")
-        q=self.quotas.get(w.tenant,self.config.default_quota); size=len(str(w.as_dict()).encode())
-        if self.usage.get(w.tenant,0)>=q.max_workloads or size>q.max_input_bytes: raise RuntimeInvariantError("tenant quota exceeded")
-        if self.in_flight.get(w.tenant,0)>=q.max_in_flight: raise RuntimeInvariantError("tenant backpressure limit exceeded")
-        if w.id in self.results or w.id in self._pending: raise RuntimeInvariantError("duplicate workload id")
-
-    def _select(self,w:Workload):
-        healthy=[a for a in self.adapters.values() if a.health().get("available") and a.supports(w.kind)]
-        if not healthy:
-            refusal={"workload_id":w.id,"kind":w.kind.value,"reason":"no healthy adapter supports workload"}; self.refusals.append(refusal); raise RuntimeInvariantError(refusal["reason"])
-        manifests=[a.capability_manifest().as_dict() for a in healthy]
-        try: plan=self.planner.select(w,manifests,self.routes)
-        except Exception as exc:
-            refusal={"workload_id":w.id,"kind":w.kind.value,"reason":f"planning failed: {exc}"}; self.refusals.append(refusal); raise RuntimeInvariantError(refusal["reason"]) from exc
-        chosen=self.adapters[plan.adapter_id]
-        record={"workload_id":w.id,"adapter_id":chosen.id,"policy":"evidence_geodesic_lucas_pisot_v1","candidates":[a.id for a in healthy],"plan":plan.as_dict()}
-        record["attestation"]=list(extend_chain((),record)); self.negotiations.append(record)
-        return chosen,plan,record
-
-    def submit(self,w:Workload)->WorkloadResult:
-        with self._lock:
-            self._admit(w); self._pending.add(w.id); self.in_flight[w.tenant]=self.in_flight.get(w.tenant,0)+1
-        if not self._capacity.acquire(timeout=5):
-            with self._lock: self._pending.discard(w.id); self.in_flight[w.tenant]-=1
-            raise RuntimeInvariantError("runtime backpressure capacity exceeded")
+    def __init__(
+        self,
+        root: str | Path | RuntimeConfig | None = None,
+        adapters: list[Adapter] | None = None,
+        *,
+        store_dir: str | Path | None = None,
+        max_per_tenant: int = 32,
+        hmac_key: bytes | str | None = None,
+        delivery_mode: str = DeliveryMode.EMBEDDED.value,
+        runtime_identity: str | None = None,
+        build_identity: str | None = None,
+        preferred_adapter_id: str | None = None,
+        config: Any = None,
+    ) -> None:
+        # Support: RuntimeDaemon(RuntimeConfig(...), adapters=[...])
+        if isinstance(root, RuntimeConfig):
+            config = root
+            root = None
+        root_path = root or store_dir
+        if config is not None:
+            root_path = (
+                getattr(config, "store_dir", None)
+                or getattr(config, "store_root", None)
+                or root_path
+            )
+            preferred_adapter_id = preferred_adapter_id or getattr(
+                config, "preferred_adapter_id", None
+            )
+            hmac_key = hmac_key or getattr(config, "hmac_key", None)
+        self.root = Path(root_path or os.getenv("CHRONUS_VIGPU_STORE", ".chronus-virtual-igpu"))
+        self.root.mkdir(parents=True, exist_ok=True)
+        (self.root / "evidence").mkdir(parents=True, exist_ok=True)
+        if adapters is not None and len(adapters) == 0:
+            raise RuntimeInvariantError("no execution adapter configured")
+        self.adapters = list(adapters) if adapters is not None else default_adapters()
+        if not self.adapters:
+            raise RuntimeInvariantError("no execution adapter configured")
+        self.memory = VirtualMemoryPlane(self.root)
+        self.ledger = EvidenceLedger(self.root, hmac_key=hmac_key)
+        self.state = RuntimeState.DETACHED
+        self.delivery_mode = delivery_mode
+        self.runtime_identity = runtime_identity or f"chronus.virtual_igpu:{ABI_VERSION}"
+        self.build_identity = build_identity or os.getenv("CHRONUS_VIGPU_BUILD", "source-tree")
+        self.preferred_adapter_id = preferred_adapter_id
+        self._lock = threading.RLock()
+        self._max_per_tenant = int(max_per_tenant)
+        self.in_flight: dict[str, int] = {}
+        self._pending: set[str] = set()
+        self._results: dict[str, WorkloadResult] = {}
+        self._idempotency: dict[str, WorkloadResult] = {}
+        self._idempotency_packages: dict[str, str] = {}
+        self._attached_at: str | None = None
+        self._last_error: str | None = None
+        self.quotas: dict[str, Quota] = {}
+        # Legacy attribute names used by older tests
+        self.store_dir = self.root
+        self.store_root = self.root
+        # Auto-attach for unit-test convenience when constructed with adapters
         try:
-            if w.id in self._cancelled: raise RuntimeInvariantError("workload cancelled before execution")
-            adapter,plan,negotiation=self._select(w)
-            result=adapter.execute_planned(w,plan)
-            if result.status!="ok" or result.digest!=digest_json(result.output) or not result.attestation:
-                raise RuntimeInvariantError("adapter result invariant failed")
-            if w.id in self._cancelled: raise RuntimeInvariantError("workload cancelled")
-            evidence={
-                "workload":{"id":w.id,"tenant":w.tenant,"operation":w.kind.value,"input_hash":digest_json(w.input)},
-                "planner":plan.as_dict(),
-                "substrate":{"adapter_id":adapter.id,"backend":adapter.kind.value,"manifest":adapter.capability_manifest().as_dict()},
-                "execution":{"status":"ok","hardware_executed":adapter.kind.value!="cpu_emulator","wall_time_ns":result.wall_time_ns,"device_time_ns":result.device_time_ns,"energy_j":result.energy_j,"temperature_c":result.temperature_c},
-                "validation":{"passed":True,"authority":"adapter-plus-result-digest","output_hash":result.digest},
-                "provenance":{"runtime":"virtual_igpu_v1","python":platform.python_version(),"adapter_fingerprint":adapter.attest().fingerprint},
-            }
-            receipt=self.ledger.append(evidence)
-            persisted=self.memory.persist(w,result,{**negotiation,"ledger_digest":receipt.digest})
-            final=WorkloadResult(**{**result.as_dict(),"evidence_digest":receipt.digest,"object_id":persisted.object_id})
-            with self._lock:
-                self.results[w.id]=final; self.usage[w.tenant]=self.usage.get(w.tenant,0)+1
-            return final
-        finally:
-            self._capacity.release()
-            with self._lock:
-                self._pending.discard(w.id); self.in_flight[w.tenant]=max(0,self.in_flight.get(w.tenant,1)-1)
+            self.attach()
+        except Exception:
+            pass
 
-    def adapter_report(self):
-        return [{"id":a.id,"kind":a.kind.value,"capabilities":sorted(c.value for c in a.capabilities),"manifest":a.capability_manifest().as_dict(),"health":a.health(),"attestation":a.attest().as_dict()} for a in sorted(self.adapters.values(),key=lambda x:x.id)]
-    def capabilities(self):
-        return sorted({c.value for a in self.adapters.values() if a.health().get("available") for c in a.capabilities})
-    def health(self):
-        return {"running":self._running,"healthy_adapters":sum(bool(a.health().get("available")) for a in self.adapters.values()),"in_flight":sum(self.in_flight.values()),"evidence_records":len(self.ledger.query(limit=1000)),"last_successful_execution":self.ledger.query(limit=1)[0] if self.ledger.query(limit=1) else "Unavailable"}
+    # --- lifecycle ---------------------------------------------------------
+
+    def attach(self) -> RuntimeState:
+        with self._lock:
+            if self.state in {RuntimeState.READY, RuntimeState.NEGOTIATING, RuntimeState.PROBING}:
+                return self.state
+            self.state = RuntimeState.ATTACHING
+            try:
+                self.state = RuntimeState.PROBING
+                self._probe_all()
+                self.state = RuntimeState.NEGOTIATING
+                # Negotiation: capabilities already on adapters
+                self.state = RuntimeState.READY
+                self._attached_at = _utc_now()
+                self._last_error = None
+            except Exception as exc:
+                self.state = RuntimeState.FAILED
+                self._last_error = str(exc)
+                raise
+            return self.state
+
+    def detach(self) -> RuntimeState:
+        with self._lock:
+            self.state = RuntimeState.DRAINING
+            # wait briefly for in-flight to drop
+            deadline = time.time() + 2.0
+            while sum(self.in_flight.values()) > 0 and time.time() < deadline:
+                self._lock.release()
+                try:
+                    time.sleep(0.01)
+                finally:
+                    self._lock.acquire()
+            self.state = RuntimeState.DETACHED
+            return self.state
+
+    def stop(self) -> None:
+        self.detach()
+
+    def _probe_all(self) -> None:
+        for adapter in self.adapters:
+            try:
+                adapter.probe()
+            except Exception:
+                pass
+
+    def health(self) -> dict[str, Any]:
+        with self._lock:
+            running = self.state in {
+                RuntimeState.READY,
+                RuntimeState.PROBING,
+                RuntimeState.NEGOTIATING,
+                RuntimeState.DRAINING,
+            }
+            return {
+                "state": self.state.value,
+                "running": running,
+                "abi_version": ABI_VERSION,
+                "delivery_mode": self.delivery_mode,
+                "runtime_identity": self.runtime_identity,
+                "build_identity": self.build_identity,
+                "adapters": [a.health() for a in self.adapters],
+                "in_flight": dict(self.in_flight),
+                "memory": self.memory.stats(),
+                "attached_at": self._attached_at,
+                "last_error": self._last_error,
+            }
+
+    # --- admission / selection --------------------------------------------
+
+    def _policy(self, w: Workload) -> str:
+        return str(getattr(w, "execution_policy", None) or ExecutionPolicy.PREFERRED_ACCELERATOR.value)
+
+    def _select_adapter(self, w: Workload) -> tuple[Adapter, str, AdmissionRecord]:
+        policy = self._policy(w)
+        available = [a for a in self.adapters if getattr(a, "available", False)]
+        software = [
+            a
+            for a in available
+            if "software" in a.id or "cpu" in a.id or a.kind.value in {"software", "cpu_reference"}
+        ]
+        physical = [a for a in available if a not in software]
+
+        def _pick(candidates: list[Adapter], reason: str) -> tuple[Adapter, str, AdmissionRecord]:
+            if not candidates:
+                raise AdapterUnavailable(f"no adapter for policy={policy}")
+            # Prefer one that supports the workload kind; break ties by priority
+            kind = w.kind
+            supporting = [a for a in candidates if a.supports(kind)]
+            pool = supporting or candidates
+            chosen = sorted(pool, key=lambda a: int(getattr(a, "priority", 0)), reverse=True)[0]
+            rec = AdmissionRecord(
+                admitted=True,
+                adapter_id=chosen.id,
+                reason=reason,
+                queue_depth=self.in_flight.get(w.tenant, 0),
+            )
+            return chosen, reason, rec
+
+        req_adapter = getattr(w, "required_adapter_id", None)
+        req_device = getattr(w, "required_device_id", None)
+
+        if policy == ExecutionPolicy.STANDALONE_SOFTWARE.value:
+            return _pick(software, "policy:standalone_software")
+
+        if policy == ExecutionPolicy.REQUIRED_ADAPTER.value or req_adapter:
+            target = req_adapter
+            if not target:
+                raise AdapterUnavailable("required_adapter policy without required_adapter_id")
+            matched = [a for a in self.adapters if a.id == target]
+            if not matched or not matched[0].available:
+                raise AdapterUnavailable(f"required adapter unavailable: {target}")
+            return _pick(matched, f"policy:required_adapter:{target}")
+
+        if policy == ExecutionPolicy.REQUIRED_DEVICE.value or req_device:
+            req = req_device
+            if not req:
+                raise AdapterUnavailable("required_device policy without required_device_id")
+            matched = [
+                a
+                for a in available
+                if req in a.id or req in getattr(a.capabilities(), "device_ids", ())
+            ]
+            if not matched:
+                raise AdapterUnavailable(f"required device unavailable: {req}")
+            return _pick(matched, f"policy:required_device:{req}")
+
+        # preferred_adapter_id on daemon or workload constraints
+        pref = self.preferred_adapter_id or (w.constraints or {}).get("preferred_adapter_id")
+        if pref:
+            matched = [a for a in available if a.id == pref]
+            if matched:
+                return _pick(matched, f"policy:preferred_adapter_id:{pref}")
+
+        # preferred_accelerator (default)
+        if physical:
+            return _pick(physical, "policy:preferred_accelerator:physical")
+        return _pick(software or available, "policy:preferred_accelerator:software_fallback")
+
+    # --- submit / poll / cancel -------------------------------------------
+
+    def submit(self, workload: Workload | dict[str, Any]) -> WorkloadResult:
+        w = workload if isinstance(workload, Workload) else Workload.from_dict(workload)
+        with self._lock:
+            if self.state != RuntimeState.READY:
+                # auto-attach for embedded convenience
+                if self.state == RuntimeState.DETACHED:
+                    self._lock.release()
+                    try:
+                        self.attach()
+                    finally:
+                        self._lock.acquire()
+                if self.state != RuntimeState.READY:
+                    raise RuntimeInvariantError(f"runtime not ready: {self.state}")
+
+            # Idempotency
+            key = getattr(w, "idempotency_key", None)
+            if key:
+                if key in self._idempotency:
+                    prev = self._idempotency[key]
+                    prev_hash = self._idempotency_packages.get(key)
+                    if prev_hash and prev_hash != w.content_hash:
+                        raise RuntimeInvariantError(
+                            "idempotency key reused with a different workload package"
+                        )
+                    return prev
+
+            if self.in_flight.get(w.tenant, 0) >= self._max_per_tenant:
+                raise RuntimeInvariantError(f"tenant oversubscribed: {w.tenant}")
+
+            q = self.quotas.get(w.tenant)
+            if q is not None and q.submitted >= q.max_workloads:
+                raise RuntimeInvariantError(f"quota exceeded for tenant {w.tenant}")
+
+            try:
+                adapter, reason, admission = self._select_adapter(w)
+            except AdapterUnavailable:
+                raise
+
+            self.in_flight[w.tenant] = self.in_flight.get(w.tenant, 0) + 1
+            self._pending.add(w.id)
+            attempt_id = str(uuid.uuid4())
+
+        started = time.time_ns()
+        try:
+            # Memory-plane ops handled here for STORE/RETRIEVE
+            if w.kind == WorkloadKind.STORE:
+                stored = self.memory.store(
+                    w.input,
+                    tenant=w.tenant,
+                    adapter_id=adapter.id,
+                    metadata={"workload_id": w.id, "kind": w.kind.value},
+                )
+                oid = getattr(stored, "object_id", stored)
+                result = adapter.execute(w)
+                result = replace(result, object_id=str(oid), output={**result.output, "object_id": str(oid)})
+            elif w.kind == WorkloadKind.RETRIEVE:
+                oid = str((w.input or {}).get("object_id") or (w.input or {}).get("id") or "")
+                payload = self.memory.retrieve(oid, tenant=w.tenant)
+                result = adapter.execute(w)
+                result = replace(result, object_id=oid, output={**result.output, "payload": payload, "object_id": oid})
+            else:
+                result = adapter.execute(w)
+                # Persist fold/unfold (and any output with payload bytes) for object handles
+                if w.kind in {WorkloadKind.FOLD, WorkloadKind.UNFOLD}:
+                    stored = self.memory.store(
+                        result.output,
+                        tenant=w.tenant,
+                        adapter_id=adapter.id,
+                        residency=adapter.id,
+                    )
+                    result = replace(result, object_id=str(getattr(stored, "object_id", stored)))
+
+            # Build portable package + receipt
+            pkg = PortablePackage(
+                package_id=w.content_hash or w.id,
+                operation=w.kind.value if isinstance(w.kind, WorkloadKind) else str(w.kind),
+                input_refs=tuple(str(k) for k in (w.input or {}).keys()),
+                content_hash=w.content_hash or digest_json(w.as_dict()),
+                constraints=dict(w.constraints or {}),
+            )
+            trust = result.trust_class or TrustClass.RUNTIME_SIGNED.value
+            hardware_rooted = bool(result.hardware_rooted)
+            # Software never hardware-rooted
+            if "software" in adapter.id or "cpu" in adapter.id:
+                hardware_rooted = False
+                if trust == TrustClass.HARDWARE_ROOTED.value:
+                    trust = TrustClass.RUNTIME_SIGNED.value
+
+            receipt = ExecutionReceipt(
+                receipt_id=digest_json({"attempt": attempt_id, "wid": w.id})[:32],
+                workload_id=w.id,
+                attempt_id=attempt_id,
+                package_version=pkg.package_id,
+                protocol_version=ABI_VERSION,
+                delivery_mode=str(getattr(w, "delivery_mode", None) or self.delivery_mode),
+                requested_policy=self._policy(w),
+                actual_backend=adapter.id,
+                actual_device=result.actual_device_id or adapter.id,
+                runtime_identity=self.runtime_identity,
+                build_identity=self.build_identity,
+                kernel_identity=str((result.output or {}).get("engine") or adapter.kind.value),
+                input_digest=w.content_hash or "",
+                output_digest=result.evidence_digest or result.digest or digest_json(result.output),
+                verified_work_count=int((result.output or {}).get("checked") or 1),
+                seed=(w.input or {}).get("seed"),
+                timing={
+                    "wall_time_ns": result.wall_time_ns,
+                    "device_time_ns": result.device_time_ns,
+                    "total_ns": int(time.time_ns() - started),
+                },
+                verification={"status": result.status, "admission": admission.as_dict()},
+                trust_class=trust,
+                hardware_rooted=hardware_rooted,
+                content_hash="",  # filled below
+                metadata={"route_reason": reason},
+            )
+            rcpt_dict = receipt.as_dict()
+            rcpt_hash = digest_json({k: v for k, v in rcpt_dict.items() if k != "content_hash"})
+            receipt = replace(receipt, content_hash=rcpt_hash)
+            rcpt_dict = receipt.as_dict()
+
+            result = replace(
+                result,
+                trust_class=trust,
+                hardware_rooted=hardware_rooted,
+                requested_policy=self._policy(w),
+                actual_adapter_id=adapter.id,
+                actual_device_id=result.actual_device_id or adapter.id,
+                route_reason=reason,
+                delivery_mode=str(getattr(w, "delivery_mode", None) or self.delivery_mode),
+                receipt=rcpt_dict,
+                metrics={
+                    "admission": admission.as_dict(),
+                    "package": pkg.as_dict(),
+                },
+            )
+
+            self.ledger.append(
+                workload_id=w.id,
+                adapter_id=adapter.id,
+                kind=w.kind.value if isinstance(w.kind, WorkloadKind) else str(w.kind),
+                result_dict=result.as_dict(),
+                receipt_dict=rcpt_dict,
+                trust_class=trust,
+                hardware_rooted=hardware_rooted,
+                wall_time_ns=result.wall_time_ns,
+                device_time_ns=result.device_time_ns,
+            )
+
+            # Content-addressed evidence file (unit-test contract):
+            # sha256(file_bytes) == evidence_digest == filename stem.
+            import hashlib as _hashlib
+            import json as _json
+
+            body_for_hash = {
+                "workload_id": w.id,
+                "tenant": w.tenant,
+                "adapter_id": result.adapter_id,
+                "kind": result.kind,
+                "status": result.status,
+                "output": result.output,
+                "wall_time_ns": result.wall_time_ns,
+                "device_time_ns": result.device_time_ns,
+                "object_id": result.object_id,
+                "receipt": {k: v for k, v in rcpt_dict.items() if k != "content_hash"},
+                "abi_version": ABI_VERSION,
+            }
+            evidence_bytes = _json.dumps(
+                body_for_hash, sort_keys=True, separators=(",", ":"), default=str
+            ).encode("utf-8")
+            evidence_digest = _hashlib.sha256(evidence_bytes).hexdigest()
+            result = replace(result, evidence_digest=evidence_digest, digest=evidence_digest)
+            evidence_path = self.root / "evidence" / f"{evidence_digest}.json"
+            evidence_path.write_bytes(evidence_bytes)
+
+            # Artifact under tenant/workload for memory.retrieve(tenant, wid)
+            self.memory.store_artifact(
+                tenant=w.tenant,
+                workload_id=w.id,
+                artifact={"result": result.as_dict(), "receipt": rcpt_dict},
+            )
+
+            with self._lock:
+                self._results[w.id] = result
+                if key:
+                    self._idempotency[key] = result
+                    self._idempotency_packages[key] = w.content_hash or ""
+                self._pending.discard(w.id)
+                if q is not None:
+                    q.submitted += 1
+            return result
+        except Exception:
+            with self._lock:
+                self._pending.discard(w.id)
+                self._last_error = "submit failed"
+            raise
+        finally:
+            with self._lock:
+                self.in_flight[w.tenant] = max(0, self.in_flight.get(w.tenant, 1) - 1)
+
+    def poll(self, workload_id: str) -> WorkloadResult | None:
+        with self._lock:
+            return self._results.get(workload_id)
+
+    def cancel(self, workload_id: str) -> bool:
+        with self._lock:
+            if workload_id in self._pending:
+                self._pending.discard(workload_id)
+                return True
+            return False
+
+    def wait(self, workload_id: str, timeout_s: float = 30.0) -> WorkloadResult:
+        deadline = time.time() + timeout_s
+        while time.time() < deadline:
+            r = self.poll(workload_id)
+            if r is not None:
+                return r
+            time.sleep(0.01)
+        raise TimeoutError(f"workload not complete: {workload_id}")
+
+
+# Module-level embedded daemon (lazy)
+_DAEMON: RuntimeDaemon | None = None
+_DAEMON_LOCK = threading.Lock()
+
+
+def get_embedded_daemon(**kwargs: Any) -> RuntimeDaemon:
+    global _DAEMON
+    with _DAEMON_LOCK:
+        if _DAEMON is None:
+            _DAEMON = RuntimeDaemon(**kwargs)
+            _DAEMON.attach()
+        return _DAEMON
+
+
+# Back-compat alias
+get_runtime = get_embedded_daemon

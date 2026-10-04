@@ -1,6 +1,18 @@
-"""Durable, queryable, content-addressed Chronus execution evidence ledger."""
+"""Durable, queryable, content-addressed Chronus execution evidence ledger.
+
+Trust model (explicit):
+  * runtime_signed — content-addressed receipt + optional HMAC chain
+  * device_observed — adapter completed events / device-bound observations
+  * hardware_rooted — only when a real verified attestation mechanism supplies it
+  * unavailable — missing observations; never invented
+
+A content hash or runtime signature does **not** independently prove physical
+GPU execution. PR #95-style checks are integrity checks and are extended here;
+they alone do not establish hardware-rooted trust.
+"""
 from __future__ import annotations
-from dataclasses import dataclass
+
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import json
 import os
@@ -13,12 +25,47 @@ from .abi import canonical_json, digest_json
 from .attestation import extend_chain
 
 
-@dataclass(frozen=True)
-class EvidenceReceipt:
-    execution_id: str
-    digest: str
-    path: str
-    chain: tuple[str, ...]
+@dataclass
+class EvidenceRecord:
+    record_id: str
+    workload_id: str
+    adapter_id: str
+    kind: str
+    trust_class: str
+    hardware_rooted: bool
+    hardware_executed: bool
+    wall_time_ns: int
+    device_time_ns: int | None
+    content_hash: str
+    receipt: dict[str, Any]
+    result: dict[str, Any]
+    chain_prev: str
+    chain_digest: str
+    recorded_at: str = field(default_factory=_utc_now)
+    hmac_hex: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "record_id": self.record_id,
+            "workload_id": self.workload_id,
+            "adapter_id": self.adapter_id,
+            "kind": self.kind,
+            "trust_class": self.trust_class,
+            "hardware_rooted": self.hardware_rooted,
+            "hardware_executed": self.hardware_executed,
+            "wall_time_ns": self.wall_time_ns,
+            "device_time_ns": self.device_time_ns,
+            "content_hash": self.content_hash,
+            "receipt": self.receipt,
+            "result": self.result,
+            "chain_prev": self.chain_prev,
+            "chain_digest": self.chain_digest,
+            "recorded_at": self.recorded_at,
+            "hmac_hex": self.hmac_hex,
+            "metadata": self.metadata,
+            "abi_version": ABI_VERSION,
+        }
 
 
 class EvidenceLedger:
@@ -32,39 +79,60 @@ class EvidenceLedger:
         self.db_path = self.root / "evidence.sqlite3"
         self.signing_key = signing_key
         self._lock = threading.RLock()
-        with self._connect() as db:
-            db.execute("PRAGMA journal_mode=WAL")
-            db.execute("""CREATE TABLE IF NOT EXISTS executions(
-                execution_id TEXT PRIMARY KEY, digest TEXT UNIQUE NOT NULL,
-                workload_id TEXT NOT NULL, tenant TEXT NOT NULL,
-                operation TEXT NOT NULL, adapter_id TEXT NOT NULL,
-                status TEXT NOT NULL, wall_time_ns INTEGER,
-                device_time_ns INTEGER, created_at TEXT NOT NULL,
-                artifact_path TEXT NOT NULL, chain_head TEXT NOT NULL
-            )""")
+        self._last_chain = "genesis"
+        self._records: list[EvidenceRecord] = []
+        self._load()
 
-    def _connect(self):
-        db = sqlite3.connect(self.db_path, timeout=30)
-        db.row_factory = sqlite3.Row
-        return db
+    def _load(self) -> None:
+        if not self.path.exists():
+            return
+        for line in self.path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                data = json.loads(line)
+                rec = EvidenceRecord(
+                    record_id=str(data["record_id"]),
+                    workload_id=str(data.get("workload_id", "")),
+                    adapter_id=str(data.get("adapter_id", "")),
+                    kind=str(data.get("kind", "")),
+                    trust_class=str(data.get("trust_class", TrustClass.RUNTIME_SIGNED.value)),
+                    hardware_rooted=bool(data.get("hardware_rooted", False)),
+                    hardware_executed=bool(data.get("hardware_executed", False)),
+                    wall_time_ns=int(data.get("wall_time_ns", 0)),
+                    device_time_ns=data.get("device_time_ns"),
+                    content_hash=str(data.get("content_hash", "")),
+                    receipt=dict(data.get("receipt", {})),
+                    result=dict(data.get("result", {})),
+                    chain_prev=str(data.get("chain_prev", "")),
+                    chain_digest=str(data.get("chain_digest", "")),
+                    recorded_at=str(data.get("recorded_at", _utc_now())),
+                    hmac_hex=data.get("hmac_hex"),
+                    metadata=dict(data.get("metadata", {})),
+                )
+                self._records.append(rec)
+                self._last_chain = rec.chain_digest
+            except Exception:
+                continue
 
-    def append(self, record: dict[str, Any]) -> EvidenceReceipt:
-        required = {"workload", "planner", "substrate", "execution", "validation", "provenance"}
-        missing = sorted(required - set(record))
-        if missing:
-            raise ValueError(f"evidence missing sections: {missing}")
-        complete = dict(record)
-        complete.setdefault("schema", "chronus.execution-evidence.v2")
-        complete.setdefault("execution_id", str(uuid4()))
-        complete.setdefault("created_at", datetime.now(timezone.utc).isoformat())
-        digest = digest_json(complete)
-        chain = extend_chain((), {"execution_digest": digest}, self.signing_key)
-        # The primary artifact is exactly the canonical bytes named by its digest.
-        # Authentication is a detached receipt to avoid a circular self-hash.
-        payload = canonical_json(complete)
-        path = self.artifacts / f"{digest}.json"
-        receipt_path = self.artifacts / f"{digest}.attestation.json"
-        tmp = path.with_suffix(".tmp")
+    def append(
+        self,
+        *,
+        workload_id: str | None = None,
+        adapter_id: str | None = None,
+        kind: str | None = None,
+        result: Mapping[str, Any] | None = None,
+        receipt: Mapping[str, Any] | None = None,
+        result_dict: Mapping[str, Any] | None = None,
+        receipt_dict: Mapping[str, Any] | None = None,
+        trust_class: str | TrustClass = TrustClass.RUNTIME_SIGNED,
+        hardware_rooted: bool = False,
+        wall_time_ns: int | None = None,
+        device_time_ns: int | None = None,
+        metadata: Mapping[str, Any] | None = None,
+        **_extra: Any,
+    ) -> EvidenceRecord:
         with self._lock:
             tmp.write_bytes(payload)
             os.replace(tmp, path)
