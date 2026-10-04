@@ -112,6 +112,9 @@ def test_native_m32_executes_on_native_hasher_without_cpu_substitution(backend):
     assert record.requested_route == "opencl_m32"  # historical route token
     assert record.executed_route == "opencl_m32"
     assert record.device_backend == backend
+    assert record.kernel_identity == f"chronus_native_sha256d:{backend}:opencl_m32"
+    assert record.kernel_build_status == "native_method_bound_after_backend_self_check"
+    assert "opencl" not in record.kernel_identity.split(":", 2)[1]
     assert record.kernel_launch_count == 1
     assert record.kernel_ms == pytest.approx(0.25)
     assert record.completion_state is CompletionState.EARLY_WINNER
