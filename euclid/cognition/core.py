@@ -64,6 +64,8 @@ class AblationConfig:
     meta_learning: bool = True
     skill_composition: bool = True
     replanning: bool = True
+    representation_restructuring: bool = True
+    mathematical_structure: bool = True
 
 
 class GeneralIntelligenceCore:
@@ -169,6 +171,10 @@ class GeneralIntelligenceCore:
         ):
             if key in problem:
                 representation[key] = problem[key]
+        # A declared strategy request is a wired input, not dead data: the
+        # skill composer reads representation["requested_strategy"].
+        if "strategy" in problem:
+            representation["requested_strategy"] = str(problem["strategy"])
         state = CognitiveState(problem_id, representation, clock=self.clock)
         state.goals.append(Goal("g0", goal_text))
 
@@ -177,21 +183,25 @@ class GeneralIntelligenceCore:
             "structure": sorted(structure), "observation_count": len(observations),
         }
         if self.representation_controller is not None:
-            trial = self._select_representation(problem, structure)
-            representation_details["representation_trial"] = {
-                "kind": trial.kind,
-                "accepted": trial.accepted,
-                "baseline_utility": trial.baseline_utility,
-                "candidate_utility": trial.candidate_utility,
-                "cost": trial.cost,
-                "rationale": trial.rationale,
-            }
-            if trial.accepted:
-                state.representation["representation_kind"] = trial.kind
-                state.representation["representation_overlay"] = dict(trial.payload)
-                # The overlay is provenance; canonical top-level fields are the
-                # executable representation consumed by planners and skills.
-                state.representation.update(dict(trial.payload))
+            if self.ablations.representation_restructuring:
+                trial = self._select_representation(problem, structure)
+                representation_details["representation_trial"] = {
+                    "kind": trial.kind,
+                    "accepted": trial.accepted,
+                    "baseline_utility": trial.baseline_utility,
+                    "candidate_utility": trial.candidate_utility,
+                    "cost": trial.cost,
+                    "rationale": trial.rationale,
+                }
+                if trial.accepted:
+                    state.representation["representation_kind"] = trial.kind
+                    state.representation["active_representation"] = trial.kind
+                    state.representation["representation_overlay"] = dict(trial.payload)
+                    # The overlay is provenance; canonical top-level fields are
+                    # the executable representation consumed by planners/skills.
+                    state.representation.update(dict(trial.payload))
+            else:
+                self._ablated(state, "representation_restructuring")
         self._transition(
             state, "represent", "problem representation formed", representation_details,
         )
@@ -356,6 +366,10 @@ class GeneralIntelligenceCore:
 
             # 9. COMPOSE ----------------------------------------------------------
             if self.ablations.skill_composition:
+                if not self.ablations.mathematical_structure:
+                    if hasattr(self.skills, "mathematical_enabled"):
+                        self.skills.mathematical_enabled = False
+                    self._ablated(state, "mathematical_structure")
                 state.candidates = self.skills.compose(planning_goal, state)
             else:
                 state.candidates = []
@@ -574,10 +588,18 @@ class GeneralIntelligenceCore:
                result: Mapping[str, Any] | None = None) -> None:
         if self.episode_learner is not None:
             # Close the observed outcome into the canonical LearningService;
-            # replay protection there fails closed on duplicates.
-            self.episode_learner.record_episode(
-                state, success=success, cycle=cycle, result=dict(result or {})
-            )
+            # replay protection there fails closed on duplicates.  A duplicate
+            # rejection is recorded evidence, not a reason to kill the episode.
+            try:
+                self.episode_learner.record_episode(
+                    state, success=success, cycle=cycle, result=dict(result or {})
+                )
+            except ValueError as exc:
+                state.learning_updates.append(
+                    {"kind": "canonical-learning-service-rejected",
+                     "reason": str(exc), "cycle": cycle,
+                     "counts_for_control": False}
+                )
         if self.ablations.meta_learning and state.selected_strategy:
             self.metalearner.update(problem_class, state.selected_strategy, success,
                                     detail=f"cycle={cycle}")

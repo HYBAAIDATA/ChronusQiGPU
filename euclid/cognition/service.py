@@ -337,7 +337,9 @@ class CognitiveService:
             raise ValueError(f"unknown strategy {strategy!r}")
 
         bucket = ProgramWorldModel._bucket(float(improvement))
-        self.world_model.observe_gain(signature, f"strategy:{strategy}", float(improvement))
+        # The world model is updated exactly once per executed action, in the
+        # core loop's compare phase; observing here as well double-counted
+        # every measured transition (adversarial review finding).
         return {
             "observation": bucket,
             "goal_met": float(improvement) > 0.0,
@@ -430,7 +432,16 @@ class CognitiveService:
         episode.save(self.episodes_dir / f"{problem_id}.json")
         self._consolidate(episode)
         self._persist()
-        self._record_experience(problem_id, problem_class, goal, state, actual)
+        try:
+            self._record_experience(
+                problem_id, problem_class, goal, state, actual
+            )
+        except ValueError as exc:
+            # Replay protection fails closed; record the rejection as evidence
+            # rather than crashing a completed episode.
+            self.runtime.evidence.append("cognition-experience-rejected", {
+                "problem_id": problem_id, "reason": str(exc),
+            })
         self.runtime.evidence.append("cognition-episode-sealed", {
             "episode_id": episode.episode_id,
             "problem_id": problem_id,

@@ -21,6 +21,31 @@ _SEAL_DOMAIN = "euclid.cognition.state.seal.v1"
 _TRANSITION_DOMAIN = "euclid.cognition.transition.v1"
 
 
+def _digest_body(body: Mapping[str, Any]) -> dict[str, Any]:
+    """Hash input for transition identity.
+
+    ``timestamp`` stays recorded evidence but is excluded from the digest:
+    identical fixed-input episodes must produce identical sealed state, and
+    wall-clock time is not episode content.
+    """
+    return {key: value for key, value in body.items() if key != "timestamp"}
+
+
+def _seal_body(body: Mapping[str, Any]) -> dict[str, Any]:
+    """Seal input for a serialized cognitive state.
+
+    Transition ``timestamp`` fields stay in the payload (needed for restore)
+    but are excluded from the seal input for the same reason they are
+    excluded from transition digests: seals must be content-deterministic.
+    """
+    sealed = dict(body)
+    sealed["transitions"] = [
+        {key: value for key, value in transition.items() if key != "timestamp"}
+        for transition in body.get("transitions", ())
+    ]
+    return sealed
+
+
 class EpistemicStatus(str, Enum):
     """What the system is entitled to claim about an item."""
 
@@ -252,7 +277,9 @@ class CognitiveState:
             "timestamp": float(self._clock()),
             "previous_digest": self._transitions[-1].digest if self._transitions else None,
         }
-        record = TransitionRecord(**body, digest=domain_hash(_TRANSITION_DOMAIN, body))
+        record = TransitionRecord(
+            **body, digest=domain_hash(_TRANSITION_DOMAIN, _digest_body(body))
+        )
         self._transitions.append(record)
         return record
 
@@ -269,7 +296,7 @@ class CognitiveState:
                 "timestamp": record.timestamp,
                 "previous_digest": record.previous_digest,
             }
-            if domain_hash(_TRANSITION_DOMAIN, body) != record.digest:
+            if domain_hash(_TRANSITION_DOMAIN, _digest_body(body)) != record.digest:
                 raise ValueError("cognitive transition digest mismatch")
             previous = record.digest
 
@@ -324,7 +351,7 @@ class CognitiveState:
 
     def to_payload(self) -> dict[str, Any]:
         body = self._body()
-        return {**body, "seal": domain_hash(_SEAL_DOMAIN, body)}
+        return {**body, "seal": domain_hash(_SEAL_DOMAIN, _seal_body(body))}
 
     @classmethod
     def from_payload(
@@ -333,7 +360,7 @@ class CognitiveState:
         body = {key: payload.get(key) for key in payload if key != "seal"}
         if body.get("schema") != SCHEMA:
             raise ValueError("unsupported cognitive-state schema")
-        if payload.get("seal") != domain_hash(_SEAL_DOMAIN, body):
+        if payload.get("seal") != domain_hash(_SEAL_DOMAIN, _seal_body(body)):
             raise ValueError("cognitive-state seal mismatch")
         state = cls(str(body["problem_id"]), body["representation"] or {}, clock=clock)
         state.goals = [Goal(**g) for g in body["goals"] or []]

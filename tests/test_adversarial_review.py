@@ -1,0 +1,148 @@
+"""Independent adversarial review harness for EUCLID intelligence readiness.
+
+Pins the executable findings of ``eval_harness`` as machine-checkable gates.
+A ``FAIL`` verdict for a documented finding is asserted as ``FAIL`` — when the
+underlying defect is repaired the assertion flips and the review is rerun.
+"""
+
+from __future__ import annotations
+
+import unittest
+
+from eval_harness import (
+    falsification,
+    heldout_eval,
+    memory_influence,
+    reachability_audit,
+    reward_audit,
+)
+
+_falsification = falsification.run_all()
+_reward = reward_audit.run_all()
+_influence = memory_influence.run_all()
+_heldout = heldout_eval.run_all()
+_matrix = reachability_audit.run_all()
+
+
+class FalsificationGateTests(unittest.TestCase):
+    """Determinism, integrity and fail-closed gates that must hold."""
+
+    def test_deterministic_seal(self):
+        self.assertEqual(_falsification["deterministic_seal"]["verdict"], "PASS")
+
+    def test_replay_identity_stable(self):
+        self.assertEqual(_falsification["replay_identity_stable"]["verdict"], "PASS")
+
+    def test_duplicate_replay_fails_closed(self):
+        self.assertEqual(_falsification["duplicate_replay_closed"]["verdict"], "PASS")
+
+    def test_memory_db_tamper_rejected(self):
+        self.assertEqual(_falsification["memory_db_tamper_rejected"]["verdict"], "PASS")
+
+    def test_reachability_tamper_rejected(self):
+        self.assertEqual(_falsification["reachability_tamper_rejected"]["verdict"], "PASS")
+
+    def test_malformed_source_reaches_diagnosis(self):
+        self.assertEqual(_falsification["malformed_source_diagnosis"]["verdict"], "PASS")
+
+    def test_terminal_cycle_learned(self):
+        self.assertEqual(_falsification["terminal_cycle_learned"]["verdict"], "PASS")
+
+    def test_requested_strategy_reachable(self):
+        self.assertEqual(_falsification["requested_strategy_reachable"]["verdict"], "PASS")
+
+    def test_world_model_not_double_counted(self):
+        self.assertEqual(_falsification["world_model_single_observation"]["verdict"], "PASS")
+
+    def test_mathematical_structure_ablation(self):
+        self.assertEqual(_falsification["mathematical_structure_ablation"]["verdict"], "PASS")
+
+    def test_second_action_same_domain_learns(self):
+        self.assertEqual(_falsification["second_action_same_domain"]["verdict"], "PASS")
+
+
+class DocumentedFindingTests(unittest.TestCase):
+    """Findings recorded by the review — assert the documented current state."""
+
+    def test_restart_verified_is_self_certified(self):
+        # RESTART_VERIFIED is granted by a second call inside the same
+        # process; no producer requires a cross-process restart.
+        self.assertEqual(_falsification["restart_verified_self_certified"]["verdict"], "FAIL")
+
+    def test_strategy_feedback_loop_disconnected(self):
+        # Measured outcomes are written under meta-strategy vocabulary while
+        # executed candidates are ranked under the composer vocabulary; the
+        # two key-spaces are disjoint, so feedback can never change a ranking.
+        self.assertEqual(
+            _falsification["strategy_feedback_loop_connected"]["verdict"],
+            "FAIL",
+        )
+
+    def test_transfer_verified_never_recorded(self):
+        # No producer grants TRANSFER_VERIFIED — recorded as a verified
+        # negative rather than an absent measurement.
+        self.assertEqual(
+            _falsification["transfer_verified_never_recorded"]["verdict"],
+            "PASS",
+        )
+
+
+class RewardIntegrityTests(unittest.TestCase):
+    def test_reward_audit_all_pass(self):
+        for name, result in _reward.items():
+            self.assertEqual(
+                result["verdict"],
+                "PASS",
+                f"{name}: {result.get('detail')}",
+            )
+
+
+class MemoryInfluenceTests(unittest.TestCase):
+    def test_retrieval_has_no_decision_channel(self):
+        # Negative result: removing retrieved records changes no recorded
+        # downstream decision under deterministic conditions.
+        verdicts = _influence["influence_verdicts"]
+        self.assertFalse(verdicts["relevant_influential"])
+        self.assertFalse(verdicts["irrelevant_changes_decision"])
+        self.assertFalse(verdicts["relevant_vs_irrelevant_differ"])
+
+
+class HeldOutEvaluationTests(unittest.TestCase):
+    def test_partitions_and_controls_present(self):
+        runs = _heldout["runs"]
+        for required in (
+            "cold_runtime",
+            "warm_runtime",
+            "irrelevant_memory_control",
+            "absent_reward_control",
+            "regression_control",
+        ):
+            self.assertIn(required, runs)
+
+    def test_cold_warm_rankings_equal(self):
+        # Documented negative: learned state produces no decision difference.
+        self.assertTrue(_heldout["comparisons"]["cold_vs_warm_ranking_equal"])
+
+    def test_absent_reward_blocks_learning(self):
+        self.assertEqual(_heldout["comparisons"]["absent_reward_learner_transitions"], 0)
+
+
+class CapabilityMatrixTests(unittest.TestCase):
+    def test_matrix_covers_required_components(self):
+        for component in (
+            "euclid.learning_service",
+            "euclid.memory_database",
+            "euclid.strategy_meta_learning",
+            "euclid.v16.search",
+        ):
+            self.assertIn(component, _matrix["matrix"])
+
+    def test_inflated_claims_recorded(self):
+        # strategy_meta_learning records FEEDBACK_CLOSED while only
+        # USED_IN_EPISODE is evidenced — the inflation is recorded.
+        row = _matrix["matrix"]["euclid.strategy_meta_learning"]
+        self.assertEqual(row["verdict"], "INFLATED")
+
+
+if __name__ == "__main__":
+    unittest.main()

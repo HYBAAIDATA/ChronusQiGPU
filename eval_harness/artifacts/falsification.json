@@ -1,0 +1,122 @@
+{
+  "deterministic_seal": {
+    "claim": "identical fixed-input episodes produce identical sealed state",
+    "seals": [
+      "f5f3c5d36151f327145d0b93ad036f4f1895974af2e24c9539bde9a6b271627e",
+      "f5f3c5d36151f327145d0b93ad036f4f1895974af2e24c9539bde9a6b271627e"
+    ],
+    "verdict": "PASS"
+  },
+  "duplicate_replay_closed": {
+    "claim": "duplicate replay fails closed",
+    "verdict": "PASS"
+  },
+  "malformed_source_diagnosis": {
+    "claim": "malformed source reaches diagnosis without crashing",
+    "outcome": "solved",
+    "verdict": "PASS"
+  },
+  "mathematical_structure_ablation": {
+    "ablations": [
+      "mathematical_structure"
+    ],
+    "claim": "mathematical_structure ablation disables v16 search paths",
+    "verdict": "PASS"
+  },
+  "memory_db_tamper_rejected": {
+    "claim": "tampered durable memory is detected by verify()",
+    "verdict": "PASS"
+  },
+  "reachability_claims_recorded": {
+    "claim": "reachability stages correspond to verified evidence",
+    "euclid.memory_database stage": "PERSISTED",
+    "euclid.strategy_meta_learning stage": "FEEDBACK_CLOSED",
+    "euclid.v16.search stage": "CHANGES_DECISION",
+    "note": "runtime.py grant rules are inside the partner implementation's scope; recorded here as measured findings",
+    "pythia.memory stage": "PERSISTED",
+    "pythia.store stage": "PERSISTED",
+    "pythia_rows_written": 1,
+    "verdict": "INFO"
+  },
+  "reachability_tamper_rejected": {
+    "claim": "forged reachability entries are rejected on load",
+    "verdict": "PASS"
+  },
+  "replay_identity_stable": {
+    "claim": "replayed experiences retain stable identity",
+    "replay_ids_run1": null,
+    "replay_ids_run2": null,
+    "verdict": "PASS"
+  },
+  "requested_strategy_reachable": {
+    "candidate_origins": [
+      "euclid-v16:mcts"
+    ],
+    "claim": "declared strategy requests reach the skill composer",
+    "verdict": "PASS"
+  },
+  "restart_verified_self_certified": {
+    "claim": "RESTART_VERIFIED requires executed verification",
+    "euclid.memory_database_stage": "RESTART_VERIFIED",
+    "verdict": "FAIL"
+  },
+  "second_action_same_domain": {
+    "actions": [
+      "action-a",
+      "action-b"
+    ],
+    "claim": "a domain may learn more than one action",
+    "verdict": "PASS"
+  },
+  "strategy_feedback_loop_connected": {
+    "claim": "measured strategy feedback changes the executed strategy",
+    "composer_portfolio": [
+      "deep-mcts",
+      "evolutionary-search",
+      "greedy-surrogate"
+    ],
+    "composer_stats_keys": [
+      [
+        "fb-class",
+        "analogy-causal-plan"
+      ]
+    ],
+    "note": "feedback stats were written only for meta-strategy ids the candidate composer never reads; the executed strategy cannot respond to measured outcomes",
+    "verdict": "FAIL"
+  },
+  "terminal_cycle_learned": {
+    "claim": "terminal cycles are learned before halt",
+    "last_phase": "terminate",
+    "learning_updates": 2,
+    "verdict": "PASS"
+  },
+  "transfer_verified_never_recorded": {
+    "claim": "TRANSFER_VERIFIED is unreachable in code",
+    "max_stages": {
+      "euclid.learning_service": "PERSISTED",
+      "euclid.memory_database": "PERSISTED",
+      "euclid.objective_controller": "USED_IN_EPISODE",
+      "euclid.representation_controller": "CHANGES_DECISION",
+      "euclid.strategy_meta_learning": "FEEDBACK_CLOSED",
+      "euclid.v16.primitives": "CHANGES_DECISION",
+      "euclid.v16.search": "CHANGES_DECISION",
+      "experience_superlearner": "PERSISTED",
+      "pythia.memory": "PERSISTED",
+      "pythia.store": "PERSISTED",
+      "repository.engineer": "OUTCOME_OBSERVED",
+      "toe.meta_reasoning": "CHANGES_DECISION",
+      "toe.planning": "CHANGES_DECISION",
+      "toe.world_model": "OUTCOME_OBSERVED"
+    },
+    "note": "no producer records it; the ladder's top stage is dead code",
+    "verdict": "PASS"
+  },
+  "world_model_single_observation": {
+    "claim": "one execution -> one world-model observation",
+    "executions": 1,
+    "strategy_counts": {
+      "sig:ab76260d21f582bd|strategy:greedy-surrogate": 1
+    },
+    "verdict": "PASS"
+  }
+}

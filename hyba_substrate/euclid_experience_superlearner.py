@@ -6,7 +6,7 @@ append-only transition hash chain. Human demonstrations are not silently used.
 """
 from __future__ import annotations
 import json, math, random, time, uuid
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 from .euclid_learning_system import MemoryKind
@@ -58,6 +58,25 @@ class ExperienceSuperlearner:
   self.tasks[task_id]=candidate; self.task_rewards[task_id]=[]
   if persist:self._checkpoint()
   return candidate
+ def register_action(self,task_id:str,action:str)->ExperienceTask:
+  """Extend a registered task's declared action vocabulary in place.
+
+  A task's action set is a contract, not a cap: new measured actions widen it
+  (existing q/visit rows are backfilled) rather than crashing the episode.
+  """
+  task=self.tasks.get(task_id)
+  if task is None:raise ValueError("unknown task")
+  action=str(action).strip()
+  if not action:raise ValueError("action must be nonempty")
+  if action in task.actions:return task
+  merged=replace(task,actions=task.actions+(action,))
+  self.tasks[task_id]=merged
+  for key,row in self.q_values.items():
+   if json.loads(key)[0]==task_id:row.setdefault(action,0.0)
+  for key,row in self.action_visits.items():
+   if json.loads(key)[0]==task_id:row.setdefault(action,0)
+  self._checkpoint()
+  return merged
  def _ensure_state(self,task_id:str,state_key:str)->tuple[dict[str,float],dict[str,int]]:
   if task_id not in self.tasks:raise ValueError("unknown task")
   pair=self._pair_key(task_id,state_key)

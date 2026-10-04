@@ -1,0 +1,50 @@
+{
+  "authorities_distinguishable": {
+    "claim": "reward authorities remain distinguishable",
+    "recorded": [
+      {
+        "authority": "measured-environment",
+        "digest": "3ee02762e103c0a6"
+      },
+      {
+        "authority": "operator",
+        "digest": "67cb878e59683144"
+      },
+      {
+        "authority": "validated-simulation",
+        "digest": "7fd6b7b8c9a64d32"
+      }
+    ],
+    "verdict": "PASS"
+  },
+  "learning_cannot_redefine_boundaries": {
+    "boundary_claims": {
+      "consensus_mutation_capability": false
+    },
+    "claim": "learning cannot redefine correctness/storage/consensus/safety",
+    "memory_verify_valid": true,
+    "note": "organ registration is read-only/propose-scoped by ledger",
+    "organ_registry_ids": [],
+    "verdict": "PASS"
+  },
+  "none_cannot_mint_reward": {
+    "claim": "RewardAuthority.NONE cannot create positive reward",
+    "contract_rejects_none_plus_reward": true,
+    "stored_reward": null,
+    "verdict": "PASS"
+  },
+  "null_control_stays_null_after_restart": {
+    "claim": "null controls remain null after restart",
+    "task_rewards": {},
+    "transitions_after_restart": 0,
+    "transitions_before_restart": 0,
+    "verdict": "PASS"
+  },
+  "observation_not_reward": {
+    "claim": "observation is never silently treated as reward",
+    "memory_verify_valid": true,
+    "superlearner_transitions": 0,
+    "task_rewards": {},
+    "verdict": "PASS"
+  }
+}

@@ -159,13 +159,17 @@ class LearningService:
         applied: list[str] = []
         if self.experience_learner is not None:
             task = experience.domain
-            actions = tuple(getattr(self.experience_learner.tasks.get(task), "actions", ()))
-            if not actions:
+            spec = self.experience_learner.tasks.get(task)
+            if spec is None:
                 self.experience_learner.register_task(
                     task, (experience.action,), reward_range=(-1.0, 1.0)
                 )
-            elif experience.action not in actions:
-                raise ValueError("experience action is outside registered task contract")
+            elif experience.action not in spec.actions:
+                # First-seen actions widen the task's declared vocabulary;
+                # crashing here made any second strategy unlearnable.
+                self.experience_learner.register_action(
+                    task, experience.action
+                )
             self.experience_learner.observe(
                 task,
                 dict(experience.observation),

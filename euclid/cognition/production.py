@@ -264,7 +264,13 @@ class V16SkillSearchAdapter:
 
     def compose(self, goal: str, state: CognitiveState) -> list[CandidateAction]:
         code = str(state.representation.get("initial_code", "def candidate(x):\n    return x\n"))
-        strategy = state.selected_strategy or "primitive-compose"
+        # A caller-declared strategy request (problem["strategy"]) is the
+        # primary hint; the meta-learner's reasoning pattern is the fallback.
+        strategy = (
+            state.representation.get("requested_strategy")
+            or state.selected_strategy
+            or "primitive-compose"
+        )
         if not self.mathematical_enabled and strategy in {"mcts-v16", "evolution-v16"}:
             self.calls.append("neutral-primitive-ablation")
             strategy = "primitive-compose"
@@ -347,9 +353,24 @@ class LearningServiceEpisodeAdapter:
         self, state: CognitiveState, *, success: bool, cycle: int,
         result: Mapping[str, Any],
     ) -> str:
+        # Replay identity is derived from the *recorded content* of the
+        # episode, never from wall-clock transition timestamps: an identical
+        # replay must collide (fail closed) while distinct episodes must not.
         replay_id = domain_hash(
             "euclid.cognition.replay.v1",
-            {"problem_id": state.problem_id, "transition": state.transitions[-1].digest},
+            {
+                "problem_id": state.problem_id,
+                "cycle": int(cycle),
+                "strategy": state.selected_strategy,
+                "action": (
+                    state.candidates[0].action_id if state.candidates else None
+                ),
+                "success": bool(success),
+                "result": dict(result),
+                "evidence_ids": [
+                    item.evidence_id for item in state.evidence_items
+                ],
+            },
         )
         reward_authority = RewardAuthority.NONE
         reward = None

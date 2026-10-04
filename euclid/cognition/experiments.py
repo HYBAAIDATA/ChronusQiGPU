@@ -85,7 +85,7 @@ class BenchmarkProgramme:
             "minus-representation": AblationConfig(
                 representation_restructuring=False
             ),
-            "minus-phi-lucas-manifold": AblationConfig(
+            "minus-mathematical-structure": AblationConfig(
                 mathematical_structure=False
             ),
             "minus-replanning": AblationConfig(replanning=False),
@@ -129,12 +129,26 @@ class BenchmarkProgramme:
                                 state.prediction_errors[-1]
                                 if state.prediction_errors else None
                             ),
-                            uncertainty=state.uncertainty,
+                            uncertainty=min(
+                                1.0,
+                                max(
+                                    0.0,
+                                    max(state.prediction_errors[-1:], default=0.0),
+                                ),
+                            ),
                             retrieved_memories=len(state.retrieved_memory_refs),
-                            primitives_used=len(state.selected_capabilities),
+                            primitives_used=sum(
+                                1
+                                for candidate in state.candidates
+                                if "primitive" in candidate.action_id
+                                or "primitive" in str(candidate.origin)
+                            ),
                             representation_changed=any(
-                                item.get("accepted")
-                                for item in state.representation_history
+                                transition.phase == "represent"
+                                and transition.details.get(
+                                    "representation_trial", {}
+                                ).get("accepted")
+                                for transition in state.transitions
                             ),
                             strategy=state.selected_strategy,
                         ))

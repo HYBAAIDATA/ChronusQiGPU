@@ -1,0 +1,1018 @@
+{
+  "comparisons": {
+    "absent_reward_learner_transitions": 0,
+    "cold_vs_absent_reward_ranking_equal": true,
+    "cold_vs_irrelevant_ranking_equal": true,
+    "cold_vs_warm_ranking_equal": true,
+    "warm_learned_state_differs_from_cold": {
+      "cold_strategy": "analogy-causal-plan",
+      "warm_strategy": "analogy-causal-plan"
+    }
+  },
+  "note": "No improvement is asserted. Rows are evidence; comparisons record whether learned/seeded state changed any recorded decision.",
+  "runs": {
+    "absent_reward_control": {
+      "note": "executor returns observation only; no reward authority",
+      "superlearner_transitions": 0,
+      "tasks": [
+        {
+          "ablations": [],
+          "alternative_strategies": [
+            "abduce-intervene-deduce",
+            "rollout-search-execute"
+          ],
+          "candidate_origins": [
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives"
+          ],
+          "candidate_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "control_decisions": [
+            "replan",
+            "replan",
+            "replan",
+            "replan",
+            "replan",
+            "replan",
+            "replan",
+            "replan"
+          ],
+          "cycles": 8,
+          "execute_results": [
+            {
+              "goal_met": false,
+              "observation": "observed-neutral"
+            },
+            {
+              "goal_met": false,
+              "observation": "observed-neutral"
+            },
+            {
+              "goal_met": false,
+              "observation": "observed-neutral"
+            },
+            {
+              "goal_met": false,
+              "observation": "observed-neutral"
+            },
+            {
+              "goal_met": false,
+              "observation": "observed-neutral"
+            },
+            {
+              "goal_met": false,
+              "observation": "observed-neutral"
+            },
+            {
+              "goal_met": false,
+              "observation": "observed-neutral"
+            },
+            {
+              "goal_met": false,
+              "observation": "observed-neutral"
+            }
+          ],
+          "executed_actions": [
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign"
+          ],
+          "last_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "learning_updates": [
+            {
+              "counts_for_control": false,
+              "cycle": 0,
+              "digest": "07ec453fd12f4acb164a544656f73c09e4e8cd89a38b0abeaad4ccc51853c766",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 0,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "analogy-causal-plan",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 1,
+              "digest": "1cb76e1aa9f1871c4491536f0b3f8ce9cc6dc6e4090bc1c785f16517f4276cd7",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 1,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "analogy-causal-plan",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 2,
+              "digest": "308990a33a5bf0055f4ee0042e3fd1f25590c693263bdc75f99ea5aeb8ab3db7",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 2,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "analogy-causal-plan",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 3,
+              "digest": "04c9c985f525e16f8f979c49a71db3b14884d8e981a3d18c7b0e1965b60f13cd",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 3,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "analogy-causal-plan",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 4,
+              "digest": "d9ec93bfdd1752ac6fadd3f1608543a0d7aa7ba6dd4145d3c176a2e2f350b4dd",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 4,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "analogy-causal-plan",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 5,
+              "digest": "38269a1aae2564f67e316540c7bbe60f13ec3d6b0ffb12b1db363cb8a43edd95",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 5,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "analogy-causal-plan",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 6,
+              "digest": "7e6902ec3c661f3b695df7cd0641b13ff7aae2e9da37b4a01381ce376acf5185",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 6,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "analogy-causal-plan",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 7,
+              "digest": "b6ebce2f8a14a2c356c3e8107758598164691eb338be9f36e76a91b9ac50ea5b",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 7,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "analogy-causal-plan",
+              "success": false
+            }
+          ],
+          "objective_applications": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "outcome": "stalled",
+          "outcome_detail": "cycle budget exhausted",
+          "plan_nodes": [
+            "toe-0"
+          ],
+          "prediction_errors": [
+            0.9397392444384675,
+            0.6247540556282724,
+            0.27612932074145025,
+            0.08113676450608998,
+            0.01584982846275229,
+            0.002058416088473458,
+            0.00017772294007556422,
+            1.0201300269296887e-05
+          ],
+          "problem_id": "ctl-1",
+          "replanning_events": 8,
+          "retrieved_memory_refs": [],
+          "seal": "dca678cf5841471d468b8827f1c1b14909709e0af4622baf2a2dd16463f88d8c",
+          "selected_strategy": "analogy-causal-plan",
+          "transitions": 125
+        }
+      ]
+    },
+    "cold_runtime": {
+      "note": "fresh runtime, no prior learned state",
+      "tasks": [
+        {
+          "ablations": [],
+          "alternative_strategies": [
+            "abduce-intervene-deduce",
+            "rollout-search-execute"
+          ],
+          "candidate_origins": [
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives"
+          ],
+          "candidate_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "control_decisions": [
+            "replan"
+          ],
+          "cycles": 1,
+          "execute_results": [
+            {
+              "goal_met": true,
+              "observation": "measured-pass",
+              "reward": 1.0,
+              "reward_authority": "measured-environment"
+            }
+          ],
+          "executed_actions": [
+            "primitive:ADD:AnnAssign"
+          ],
+          "last_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "learning_updates": [
+            {
+              "counts_for_control": false,
+              "cycle": 0,
+              "digest": "9478ab73eb836e2925a673c48a69376aedfb2c081e380e0276bf04595e38e6bb",
+              "kind": "canonical-learning-service",
+              "success": true
+            },
+            {
+              "cycle": 0,
+              "kind": "strategy",
+              "problem_class": "train-class",
+              "strategy": "analogy-causal-plan",
+              "success": true
+            }
+          ],
+          "objective_applications": [
+            null
+          ],
+          "outcome": "solved",
+          "outcome_detail": "goal verified by governed execution feedback",
+          "plan_nodes": [
+            "toe-0"
+          ],
+          "prediction_errors": [
+            1.0992350039936825
+          ],
+          "problem_id": "val-1",
+          "replanning_events": 1,
+          "retrieved_memory_refs": [],
+          "seal": "6487e12458eb0848d5328a605286f845a0036a4e5e5526f0f82220400a0b4b90",
+          "selected_strategy": "analogy-causal-plan",
+          "transitions": 20
+        },
+        {
+          "ablations": [],
+          "alternative_strategies": [
+            "abduce-intervene-deduce",
+            "rollout-search-execute"
+          ],
+          "candidate_origins": [
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives"
+          ],
+          "candidate_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "control_decisions": [
+            "replan"
+          ],
+          "cycles": 1,
+          "execute_results": [
+            {
+              "goal_met": true,
+              "observation": "measured-pass",
+              "reward": 1.0,
+              "reward_authority": "measured-environment"
+            }
+          ],
+          "executed_actions": [
+            "primitive:ADD:AnnAssign"
+          ],
+          "last_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "learning_updates": [
+            {
+              "counts_for_control": false,
+              "cycle": 0,
+              "digest": "6e53f4c07278897588ed77d8e76cbcea919a8c5555f8fbe3f1d25fb8ace29e34",
+              "kind": "canonical-learning-service",
+              "success": true
+            },
+            {
+              "cycle": 0,
+              "kind": "strategy",
+              "problem_class": "train-class",
+              "strategy": "analogy-causal-plan",
+              "success": true
+            }
+          ],
+          "objective_applications": [
+            null
+          ],
+          "outcome": "solved",
+          "outcome_detail": "goal verified by governed execution feedback",
+          "plan_nodes": [
+            "toe-0"
+          ],
+          "prediction_errors": [
+            0.03442378240880961
+          ],
+          "problem_id": "val-2",
+          "replanning_events": 1,
+          "retrieved_memory_refs": [
+            "episode-9478ab73eb836e2925a673c4"
+          ],
+          "seal": "a6e7a192121feea0151d302dad7fd02b90fc778244c98cd46f051593747387f7",
+          "selected_strategy": "analogy-causal-plan",
+          "transitions": 20
+        }
+      ]
+    },
+    "irrelevant_memory_control": {
+      "tasks": [
+        {
+          "ablations": [],
+          "alternative_strategies": [
+            "abduce-intervene-deduce",
+            "rollout-search-execute"
+          ],
+          "candidate_origins": [
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives"
+          ],
+          "candidate_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "control_decisions": [
+            "replan"
+          ],
+          "cycles": 1,
+          "execute_results": [
+            {
+              "goal_met": true,
+              "observation": "measured-pass",
+              "reward": 1.0,
+              "reward_authority": "measured-environment"
+            }
+          ],
+          "executed_actions": [
+            "primitive:ADD:AnnAssign"
+          ],
+          "last_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "learning_updates": [
+            {
+              "counts_for_control": false,
+              "cycle": 0,
+              "digest": "25ec8ea3c35eeac08396da1d840500b6443f3abafd75888013bfc19789bd0bd7",
+              "kind": "canonical-learning-service",
+              "success": true
+            },
+            {
+              "cycle": 0,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "analogy-causal-plan",
+              "success": true
+            }
+          ],
+          "objective_applications": [
+            null
+          ],
+          "outcome": "solved",
+          "outcome_detail": "goal verified by governed execution feedback",
+          "plan_nodes": [
+            "toe-0"
+          ],
+          "prediction_errors": [
+            1.0785158263253134
+          ],
+          "problem_id": "ctl-1",
+          "replanning_events": 1,
+          "retrieved_memory_refs": [
+            "irrelevant-null-1"
+          ],
+          "seal": "781926ece15c96f6800b935dfcf752eec643d601f8ae9ae2a45a2de70fce3abe",
+          "selected_strategy": "analogy-causal-plan",
+          "transitions": 20
+        }
+      ]
+    },
+    "regression_control": {
+      "tasks": [
+        {
+          "ablations": [],
+          "alternative_strategies": [
+            "abduce-intervene-deduce",
+            "rollout-search-execute"
+          ],
+          "candidate_origins": [
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives"
+          ],
+          "candidate_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "control_decisions": [
+            "replan",
+            "replan",
+            "replan",
+            "replan",
+            "replan",
+            "replan",
+            "replan",
+            "replan"
+          ],
+          "cycles": 8,
+          "execute_results": [
+            {
+              "goal_met": false,
+              "measured_improvement": -0.25,
+              "observation": "measured-regress",
+              "reward": -1.0,
+              "reward_authority": "measured-environment"
+            },
+            {
+              "goal_met": false,
+              "measured_improvement": -0.25,
+              "observation": "measured-regress",
+              "reward": -1.0,
+              "reward_authority": "measured-environment"
+            },
+            {
+              "goal_met": false,
+              "measured_improvement": -0.25,
+              "observation": "measured-regress",
+              "reward": -1.0,
+              "reward_authority": "measured-environment"
+            },
+            {
+              "goal_met": false,
+              "measured_improvement": -0.25,
+              "observation": "measured-regress",
+              "reward": -1.0,
+              "reward_authority": "measured-environment"
+            },
+            {
+              "goal_met": false,
+              "measured_improvement": -0.25,
+              "observation": "measured-regress",
+              "reward": -1.0,
+              "reward_authority": "measured-environment"
+            },
+            {
+              "goal_met": false,
+              "measured_improvement": -0.25,
+              "observation": "measured-regress",
+              "reward": -1.0,
+              "reward_authority": "measured-environment"
+            },
+            {
+              "goal_met": false,
+              "measured_improvement": -0.25,
+              "observation": "measured-regress",
+              "reward": -1.0,
+              "reward_authority": "measured-environment"
+            },
+            {
+              "goal_met": false,
+              "measured_improvement": -0.25,
+              "observation": "measured-regress",
+              "reward": -1.0,
+              "reward_authority": "measured-environment"
+            }
+          ],
+          "executed_actions": [
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign"
+          ],
+          "last_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "learning_updates": [
+            {
+              "counts_for_control": false,
+              "cycle": 0,
+              "digest": "b6f3da4c775b88b5a3227d058bba402d852032ef9a877585f0c9a3a7e5bb018c",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 0,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "analogy-causal-plan",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 1,
+              "digest": "b709735be48e1b352ee555768682ef6d8fe999947e987e034abab73ac1101ee3",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 1,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "analogy-causal-plan",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 2,
+              "digest": "ae7d8bac91b9bd984fee54309f05713028d1691a6fd4c1fca0e7211de51d4a25",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 2,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "analogy-causal-plan",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 3,
+              "digest": "16b8f70103e2dbef3847e63357f6e3efa18c56de05d16f90e77da8bf498de160",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 3,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "analogy-causal-plan",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 4,
+              "digest": "94644987206ab9364627ea8ec468cc8354e0c1cc791bd15dd7c424eb0804bcf1",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 4,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "analogy-causal-plan",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 5,
+              "digest": "9179c1b89169072397012a6b648d8ad95d2ea9ad7c507f9381fd3526cbae1c9e",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 5,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "analogy-causal-plan",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 6,
+              "digest": "62f412b1ce486cf61a23a839b01ce05764e4c14df061afd20ccd1134b6e2c6d1",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 6,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "analogy-causal-plan",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 7,
+              "digest": "7884fdcca1d3a0f35abc8cc56f94848d8699dd3d614d3c7fde8818f10eef7076",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 7,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "analogy-causal-plan",
+              "success": false
+            }
+          ],
+          "objective_applications": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "outcome": "stalled",
+          "outcome_detail": "cycle budget exhausted",
+          "plan_nodes": [
+            "toe-0"
+          ],
+          "prediction_errors": [
+            0.9840163366385483,
+            0.6541901923940162,
+            0.28913952912209606,
+            0.08495963348183333,
+            0.01659661468068907,
+            0.002155401161167747,
+            0.00018609659803481282,
+            1.068194840170289e-05
+          ],
+          "problem_id": "ctl-1",
+          "replanning_events": 8,
+          "retrieved_memory_refs": [],
+          "seal": "1ea3f4a0c2a23baac41a5481416639ad72a9940d156768669c1ce94f1697f2f4",
+          "selected_strategy": "analogy-causal-plan",
+          "transitions": 125
+        }
+      ]
+    },
+    "warm_runtime": {
+      "note": "second production() boot on the trained state dir",
+      "temporal_holdout": [
+        {
+          "ablations": [],
+          "alternative_strategies": [
+            "abduce-intervene-deduce",
+            "rollout-search-execute"
+          ],
+          "candidate_origins": [
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives"
+          ],
+          "candidate_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "control_decisions": [
+            "replan"
+          ],
+          "cycles": 1,
+          "execute_results": [
+            {
+              "goal_met": true,
+              "observation": "measured-pass",
+              "reward": 1.0,
+              "reward_authority": "measured-environment"
+            }
+          ],
+          "executed_actions": [
+            "primitive:ADD:AnnAssign"
+          ],
+          "last_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "learning_updates": [
+            {
+              "counts_for_control": false,
+              "cycle": 0,
+              "digest": "b5766596e8cb7a6946d28fafb8a80e519bf5d849ca7e90c34abdf51c8e04240e",
+              "kind": "canonical-learning-service",
+              "success": true
+            },
+            {
+              "cycle": 0,
+              "kind": "strategy",
+              "problem_class": "temporal-class",
+              "strategy": "analogy-causal-plan",
+              "success": true
+            }
+          ],
+          "objective_applications": [
+            null
+          ],
+          "outcome": "solved",
+          "outcome_detail": "goal verified by governed execution feedback",
+          "plan_nodes": [
+            "toe-0"
+          ],
+          "prediction_errors": [
+            0.1374396492574218
+          ],
+          "problem_id": "temporal-1",
+          "replanning_events": 1,
+          "retrieved_memory_refs": [
+            "episode-2eda6ca921e5b33f1e1fded3",
+            "episode-6e53f4c07278897588ed77d8",
+            "episode-d259f443729b4ca8c61fcc08",
+            "episode-e64ea6f3cdacf3f4076b0075"
+          ],
+          "seal": "551d2fe88a6b37eba3aca92b48dd30b1eb0d574b36fcd3517101ff6bd7028db8",
+          "selected_strategy": "analogy-causal-plan",
+          "transitions": 20
+        }
+      ],
+      "validation_tasks": [
+        {
+          "ablations": [],
+          "alternative_strategies": [
+            "abduce-intervene-deduce",
+            "rollout-search-execute"
+          ],
+          "candidate_origins": [
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives"
+          ],
+          "candidate_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "control_decisions": [
+            "replan"
+          ],
+          "cycles": 1,
+          "execute_results": [
+            {
+              "goal_met": true,
+              "observation": "measured-pass",
+              "reward": 1.0,
+              "reward_authority": "measured-environment"
+            }
+          ],
+          "executed_actions": [
+            "primitive:ADD:AnnAssign"
+          ],
+          "last_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "learning_updates": [
+            {
+              "counts_for_control": false,
+              "cycle": 0,
+              "digest": "2eda6ca921e5b33f1e1fded32e0bb304b1fbaaa1fd03ed508a63a00383edf590",
+              "kind": "canonical-learning-service",
+              "success": true
+            },
+            {
+              "cycle": 0,
+              "kind": "strategy",
+              "problem_class": "train-class",
+              "strategy": "analogy-causal-plan",
+              "success": true
+            }
+          ],
+          "objective_applications": [
+            null
+          ],
+          "outcome": "solved",
+          "outcome_detail": "goal verified by governed execution feedback",
+          "plan_nodes": [
+            "toe-0"
+          ],
+          "prediction_errors": [
+            1.0992350039936825
+          ],
+          "problem_id": "val-1",
+          "replanning_events": 1,
+          "retrieved_memory_refs": [
+            "episode-d259f443729b4ca8c61fcc08",
+            "episode-e64ea6f3cdacf3f4076b0075"
+          ],
+          "seal": "c7264e2f96ec1f97f767ae5e2f174103e9728d81652e28e8e4ed35a5be09f372",
+          "selected_strategy": "analogy-causal-plan",
+          "transitions": 20
+        },
+        {
+          "ablations": [],
+          "alternative_strategies": [
+            "abduce-intervene-deduce",
+            "rollout-search-execute"
+          ],
+          "candidate_origins": [
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives"
+          ],
+          "candidate_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "control_decisions": [
+            "replan"
+          ],
+          "cycles": 1,
+          "execute_results": [
+            {
+              "goal_met": true,
+              "observation": "measured-pass",
+              "reward": 1.0,
+              "reward_authority": "measured-environment"
+            }
+          ],
+          "executed_actions": [
+            "primitive:ADD:AnnAssign"
+          ],
+          "last_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "learning_updates": [
+            {
+              "counts_for_control": false,
+              "cycle": 0,
+              "digest": "6e53f4c07278897588ed77d8e76cbcea919a8c5555f8fbe3f1d25fb8ace29e34",
+              "kind": "canonical-learning-service",
+              "success": true
+            },
+            {
+              "cycle": 0,
+              "kind": "strategy",
+              "problem_class": "train-class",
+              "strategy": "analogy-causal-plan",
+              "success": true
+            }
+          ],
+          "objective_applications": [
+            null
+          ],
+          "outcome": "solved",
+          "outcome_detail": "goal verified by governed execution feedback",
+          "plan_nodes": [
+            "toe-0"
+          ],
+          "prediction_errors": [
+            0.03442378240880961
+          ],
+          "problem_id": "val-2",
+          "replanning_events": 1,
+          "retrieved_memory_refs": [
+            "episode-2eda6ca921e5b33f1e1fded3",
+            "episode-d259f443729b4ca8c61fcc08",
+            "episode-e64ea6f3cdacf3f4076b0075"
+          ],
+          "seal": "600ff580eeac7786aedb1deaba0d2f8fdc8a67342bb273ec0ad9a8cf49401ff4",
+          "selected_strategy": "analogy-causal-plan",
+          "transitions": 20
+        }
+      ]
+    }
+  },
+  "schema": "euclid.adversarial.heldout-eval/1"
+}

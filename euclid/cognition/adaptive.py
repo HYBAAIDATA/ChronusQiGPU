@@ -14,7 +14,10 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
 from ..contracts import domain_hash
+from ..evidence import atomic_write
 from .interfaces import StrategyChoice
+
+_SEAL_DOMAIN = "euclid.strategy-learning.seal.v1"
 
 
 @dataclass(frozen=True)
@@ -164,6 +167,9 @@ class PersistentStrategyLearner:
             payload = json.loads(self.path.read_text(encoding="utf-8"))
             if payload.get("schema") != self.SCHEMA:
                 raise ValueError("unsupported strategy-learning schema")
+            body = {key: payload.get(key) for key in ("schema", "stats", "negative_transfer")}
+            if payload.get("seal") != domain_hash(_SEAL_DOMAIN, body):
+                raise ValueError("strategy-learning ledger seal mismatch")
             self.stats = dict(payload.get("stats", {}))
             self.negative_transfer = list(payload.get("negative_transfer", ()))
 
@@ -174,11 +180,7 @@ class PersistentStrategyLearner:
             "stats": self.stats,
             "negative_transfer": self.negative_transfer,
         }
-        temporary = self.path.with_suffix(".tmp")
-        temporary.write_text(
-            json.dumps(body, sort_keys=True, separators=(",", ":")), encoding="utf-8"
-        )
-        temporary.replace(self.path)
+        atomic_write(self.path, {**body, "seal": domain_hash(_SEAL_DOMAIN, body)})
 
     def select_strategy(
         self, problem_class: str, available: Sequence[str]
