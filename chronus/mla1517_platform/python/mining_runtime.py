@@ -10,7 +10,11 @@ import os
 import signal
 
 from chronus.mla1517.hardware import MMIOBridge
-from chronus.mla1517.mining.backend_registry import BackendRegistry
+from chronus.mla1517.mining.backend_registry import (
+    BackendRegistry,
+    BackendSelection,
+    BackendUnavailable,
+)
 from chronus.mla1517.mining.geodesic_support import GeodesicProductionMiningCoordinator
 from chronus.mla1517.mining.retarget_telemetry import RetargetWindowTracker
 from manifold_pool_coordinator import _build_parser, parse_endpoint
@@ -30,6 +34,14 @@ LOG = logging.getLogger("pythia.mining_runtime")
 # PYTHIA mines only through the pools in pool_catalog, resolved exactly as
 # the control API's startup contract resolves them.
 from pool_catalog import POOL_CATALOG, pool_names, pool_settings  # noqa: E402
+
+
+# Tokens accepted inside PYTHIA_BACKEND_ORDER. The order is deliberately an
+# operator policy, not an inferred benchmark ranking: capability probes prove
+# a lane can execute, but they do not prove it is faster than every other lane.
+_BACKEND_ORDER_TOKENS = frozenset(
+    {"cpu", "gpu", "opencl", "cuda", "metal", "remote", "remote_gpu", "asic", "super_asic"}
+)
 
 
 def _catalog_pool(host: str) -> str | None:
@@ -114,19 +126,89 @@ def _registry() -> BackendRegistry:
     )
 
 
+def backend_order() -> tuple[str, ...] | None:
+    """Return the declared auto-routing preference, if one is configured.
+
+    ``PYTHIA_BACKEND_ORDER`` is a comma-separated preference list. Every item
+    is still subject to BackendRegistry's real capability probe. CPU is not
+    appended implicitly: if an operator intentionally omits it, exhausting
+    the declared accelerator set fails closed instead of silently degrading.
+    Duplicate aliases are collapsed while preserving the declared order.
+    """
+    raw = os.getenv("PYTHIA_BACKEND_ORDER", "").strip()
+    if not raw:
+        return None
+    result: list[str] = []
+    for item in raw.split(","):
+        token = item.strip().lower()
+        if not token:
+            continue
+        if token == "auto":
+            raise SystemExit("PYTHIA_BACKEND_ORDER must list concrete backends, not 'auto'")
+        if token not in _BACKEND_ORDER_TOKENS:
+            raise SystemExit(
+                f"PYTHIA_BACKEND_ORDER contains unknown backend {token!r}; "
+                f"choose from {', '.join(sorted(_BACKEND_ORDER_TOKENS))}"
+            )
+        canonical = "remote" if token == "remote_gpu" else token
+        # gpu and opencl are intentional aliases for the same registry lane;
+        # keeping only the first prevents a duplicate probe/decision attempt.
+        alias_key = "gpu" if canonical == "opencl" else canonical
+        if any(("gpu" if prior == "opencl" else prior) == alias_key for prior in result):
+            continue
+        result.append(canonical)
+    if not result:
+        raise SystemExit("PYTHIA_BACKEND_ORDER must contain at least one concrete backend")
+    return tuple(result)
+
+
+def select_execution_backend(
+    registry: BackendRegistry,
+    requested: str,
+    *,
+    reprobe: bool = False,
+    job_id: str = "Unavailable",
+    epoch: str = "Unavailable",
+) -> BackendSelection:
+    """Bind one execution lane using declared policy and measured probes.
+
+    Explicit ``requested`` lanes remain exact/fail-closed. ``auto`` preserves
+    BackendRegistry's built-in policy unless ``PYTHIA_BACKEND_ORDER`` is set;
+    when it is set, the concrete lanes are tried exactly in that order. Every
+    refusal is persisted by BackendRegistry and no undeclared CPU fallback is
+    injected by this function.
+    """
+    key = (requested or "auto").strip().lower()
+    order = backend_order() if key == "auto" else None
+    if order is None:
+        return registry.select(key, reprobe=reprobe, job_id=job_id, epoch=epoch)
+
+    refused: list[str] = []
+    for token in order:
+        try:
+            return registry.select(
+                token,
+                reprobe=reprobe,
+                job_id=job_id,
+                epoch=epoch,
+            )
+        except BackendUnavailable as exc:
+            refused.append(f"{token}: {exc}")
+    raise BackendUnavailable(
+        "declared PYTHIA_BACKEND_ORDER exhausted with no available lane: "
+        + "; ".join(refused)
+    )
+
+
 def _execution_hasher(backend: str, registry: BackendRegistry | None = None):
     """The hasher behind the Execution Router, bound through the registry.
 
-    A lane is usable only after its real capability probe: ``auto`` probes
-    the local GPU lanes (OpenCL, then Chronus-owned CUDA and Metal), then
-    remote, then falls back to the CPU reference with the fallback
-    reason recorded; explicit lanes (``cpu``, ``gpu``/``opencl``, ``cuda``,
-    ``metal``, ``remote``, ``asic``, ``super_asic``) select only that lane
-    or fail closed. The
-    ``asic`` lane requires a live ASIC channel; ``super_asic`` runs the
-    Lucas-partitioned composite over whichever substrates genuinely bound.
+    A lane is usable only after its real capability probe. ``auto`` uses the
+    optional ``PYTHIA_BACKEND_ORDER`` policy when declared; otherwise it uses
+    BackendRegistry's built-in policy. Explicit lanes select only that lane or
+    fail closed. No unavailable lane is converted into fabricated capacity.
     """
-    return (registry or _registry()).select(backend).hasher
+    return select_execution_backend(registry or _registry(), backend).hasher
 
 
 EXECUTION_DEVICES = (
@@ -156,7 +238,7 @@ def execution_device() -> str | None:
     ``HYBRID_ASIC_PCIE``) or fails closed; ``super_asic`` binds the hybrid
     composition over every supported substrate (ASIC channel + remote fleet
     + resident GPU/CPU solver) via the Lucas-partitioned coordinator;
-    ``auto`` probes the declared lanes in policy order. Unset keeps the
+    ``auto`` probes according to the declared backend policy. Unset keeps the
     MMIO bridge as the only device.
     """
     value = os.getenv("PYTHIA_EXECUTION_DEVICE", "").strip().lower()
@@ -189,11 +271,7 @@ async def _main_async(args) -> None:
             "(or PYTHIA_EXECUTION_DEVICE=opencl|cpu|cuda|metal|remote|asic|super_asic for bridge-free mining)"
         )
     # The supervisor exports PYTHIA_IDENTITY_HMAC_SECRET to every spawned
-    # worker (startup_contract.rotate_supervisor_secret). A standalone
-    # ``--mine`` process has no supervisor to provision one; generate it
-    # here so the heartbeat channel keeps its HMAC integrity instead of
-    # dying on the first tick. setdefault: a supervisor-provided secret
-    # always wins, so supervised behaviour is unchanged.
+    # worker. A standalone --mine process has no supervisor to provision one.
     os.environ.setdefault("PYTHIA_IDENTITY_HMAC_SECRET", os.urandom(32).hex())
     backend = device if not args.device else os.getenv("PYTHIA_EXECUTION_BACKEND", "auto")
     endpoints = pool_endpoints(args)
@@ -205,9 +283,6 @@ async def _main_async(args) -> None:
     )
     try:
         with HeartbeatEmitter("agentic-mining") as heartbeat:
-            # §7 durable work history: every observed Stratum event plus
-            # bounded hashrate samples, appended as observed — the control
-            # API tails the same file for /api/v1/telemetry/history.
             history = TelemetryHistory(default_history_path())
             stratum_events = StratumEventLog(on_event=history.append)
             retarget = RetargetWindowTracker(
@@ -243,6 +318,14 @@ async def _main_async(args) -> None:
 
             os.environ.setdefault("PYTHIA_INTELLIGENCE_DIR", "data/intelligence")
             registry = _registry()
+            selection = select_execution_backend(registry, backend)
+            LOG.info(
+                "execution backend selected requested=%s lane=%s fallback=%s reason=%s",
+                backend,
+                selection.lane,
+                selection.fallback,
+                selection.reason,
+            )
             coordinator = GeodesicProductionMiningCoordinator(
                 endpoints,
                 username=args.user or endpoints[0].username,
@@ -251,10 +334,13 @@ async def _main_async(args) -> None:
                 mining_session=session,
                 chain_observer=observer,
                 stratum_status_sink=publish_stratum_status,
-                execution_hasher=registry.select(backend).hasher,
-                # Salamander restarts re-select through the registry, so a
-                # dead lane can be re-probed and rerouted under policy.
-                execution_hasher_factory=(lambda: registry.select(backend, reprobe=True).hasher),
+                execution_hasher=selection.hasher,
+                # Salamander restarts re-select through the same declared
+                # policy, so a failed lane is re-probed and rerouted only to
+                # an allowed alternative.
+                execution_hasher_factory=(
+                    lambda: select_execution_backend(registry, backend, reprobe=True).hasher
+                ),
                 backend_registry=registry,
                 causal_log_path=os.getenv("PYTHIA_CAUSAL_LOG_PATH", "data/causal_ledger.jsonl"),
             )
