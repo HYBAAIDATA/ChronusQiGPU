@@ -26,7 +26,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install focused dependencies
-        run: python -m pip install --disable-pip-version-check numpy pytest
+        # chronus.mla1517.learning imports yaml (declared core dep); the
+        # readiness tests reach it via mining.euclid_support.
+        run: python -m pip install --disable-pip-version-check numpy pytest pyyaml
       - name: Compile
         run: python -m compileall -q euclid chronus/seam tests/test_euclid_training_genetic_healing.py tests/test_euclid_training_readiness.py
       - name: EUCLID evidence and training gates

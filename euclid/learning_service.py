@@ -165,7 +165,13 @@ class LearningService:
                     task, (experience.action,), reward_range=(-1.0, 1.0)
                 )
             elif experience.action not in actions:
-                raise ValueError("experience action is outside registered task contract")
+                if not hasattr(self.experience_learner, "extend_task_actions"):
+                    raise ValueError(
+                        "experience action is outside registered task contract"
+                    )
+                self.experience_learner.extend_task_actions(
+                    task, (experience.action,)
+                )
             self.experience_learner.observe(
                 task,
                 dict(experience.observation),
