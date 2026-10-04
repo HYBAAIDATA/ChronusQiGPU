@@ -22,6 +22,7 @@ import numpy as np
 
 _OPERATIONS = ("matmul", "add", "scale", "kron", "hadamard")
 _DTYPES = ("float32",)
+_U32_MAX = (1 << 32) - 1
 
 
 class ChronusNativeTensorUnavailable(RuntimeError):
@@ -201,6 +202,16 @@ def _validate_common(
     output_shape: Sequence[int],
 ) -> None:
     out = tuple(int(v) for v in output_shape)
+    if not out or any(v < 1 for v in out):
+        raise ChronusNativeTensorValidationError(
+            "output must contain at least one element"
+        )
+    sizes = [int(array.size) for array in arrays]
+    sizes.append(int(np.prod(out, dtype=np.int64)))
+    if any(size > _U32_MAX for size in sizes):
+        raise ChronusNativeTensorValidationError(
+            "operand exceeds the uint32 kernel addressing bound"
+        )
     if operation in {"add", "hadamard"}:
         if len(arrays) != 2 or arrays[0].shape != arrays[1].shape:
             raise ChronusNativeTensorValidationError(
