@@ -299,8 +299,12 @@ class StabilizerState:
         if outcome is None:
             if random_outcome and seed is not None:
                 outcome = 1 if random.Random(seed).random() < float(p1) else 0
-            else:
+            elif random_outcome:
                 outcome = 0  # canonical deterministic collapse convention
+            else:
+                # Deterministic measurement: the outcome is fixed by the
+                # state — reporting it is not "forcing" an outcome.
+                outcome = self._deterministic_outcome(q)
         if outcome not in (0, 1):
             raise ValueError("outcome must be 0 or 1")
 

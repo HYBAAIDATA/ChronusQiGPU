@@ -139,7 +139,10 @@ def _selection_order(
         return
     if program.is_clifford():
         yield registry["stabilizer"]
-    yield registry["sparse"]
+        yield registry["sparse"]
+    # Non-Clifford beyond the dense budget is refused: sparse support cannot
+    # be bounded statically, so admitting it would be an approximation of a
+    # promise the package cannot keep.
 
 
 def select_backend(
