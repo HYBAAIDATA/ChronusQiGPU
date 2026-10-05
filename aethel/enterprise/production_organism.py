@@ -2,7 +2,7 @@
 
 This root turns the shared THESEUS/OVID relationship from an available library
 into the default governed startup path for the memory/data-bearing subsystem
-surface.  It composes real PYTHIA, TOE, Kellogg, TURING, Salamander, AL HARAS
+surface. It composes real PYTHIA, TOE, Kellogg, TURING, Salamander, AL HARAS
 and EUCLID objects over one :class:`CompositionRoot` and exposes only their
 shared-data-bound views.
 
@@ -16,7 +16,7 @@ Authority is not collapsed:
 * AL HARAS retains security/governance ownership;
 * THESEUS owns durable custody; OVID owns transform/lineage.
 
-Local journals and caches may still exist inside subsystems.  On this production
+Local journals and caches may still exist inside subsystems. On this production
 path they are subordinate working state: shared durable identities and lineage
 are committed through the one enterprise fabric.
 """
@@ -115,40 +115,68 @@ class ProductionOrganism:
             self._fail_closed_cleanup()
             raise
 
-    def _fail_closed_cleanup(self) -> None:
+    def _close_euclid(self) -> None:
         runtime = self.euclid
-        if runtime is not None:
-            raw = getattr(runtime, "raw", runtime)
-            close = getattr(raw, "close", None)
-            if callable(close):
-                try:
-                    close()
-                except Exception:
-                    pass
+        if runtime is None:
+            return
+        raw = getattr(runtime, "raw", runtime)
+        close = getattr(raw, "close", None)
+        if callable(close):
+            close()
+
+    def _fail_closed_cleanup(self) -> None:
+        try:
+            self._close_euclid()
+        except Exception:
+            # Startup cleanup is best-effort because the original startup
+            # exception is the primary evidence. THESEUS still must close.
+            pass
         try:
             self.lifecycle.stop()
         finally:
             self._started = False
 
     def stop(self) -> None:
+        """Persist final state and close every layer even when one step fails.
+
+        Shutdown is fail-closed, not fail-short. A final PYTHIA snapshot or
+        EUCLID close failure is surfaced to the caller, but it must never leave
+        the shared THESEUS/OVID custody root open merely because an earlier
+        cleanup step raised.
+        """
         if not self._started:
             self._fail_closed_cleanup()
             return
+
+        first_error: Exception | None = None
+
         # Persist PYTHIA's final live state through the shared wrapper before
         # EUCLID/consumers close and before THESEUS is sealed.
-        if self.intelligence is not None:
-            store = getattr(self.intelligence, "store", None)
-            save = getattr(store, "save", None)
-            if callable(save):
-                save()
-        runtime = self.euclid
-        if runtime is not None:
-            raw = getattr(runtime, "raw", runtime)
-            close = getattr(raw, "close", None)
-            if callable(close):
-                close()
-        self.lifecycle.stop()
-        self._started = False
+        try:
+            if self.intelligence is not None:
+                store = getattr(self.intelligence, "store", None)
+                save = getattr(store, "save", None)
+                if callable(save):
+                    save()
+        except Exception as exc:
+            first_error = exc
+
+        try:
+            self._close_euclid()
+        except Exception as exc:
+            if first_error is None:
+                first_error = exc
+
+        try:
+            self.lifecycle.stop()
+        except Exception as exc:
+            if first_error is None:
+                first_error = exc
+        finally:
+            self._started = False
+
+        if first_error is not None:
+            raise first_error
 
     def status(self) -> dict[str, Any]:
         lifecycle = self.lifecycle.readiness()
@@ -164,7 +192,9 @@ class ProductionOrganism:
                 self.euclid is not None
                 and "chronus" in {
                     item.get("organ_id")
-                    for item in getattr(getattr(self.euclid, "raw", self.euclid), "registry", ()).report()
+                    for item in getattr(
+                        getattr(self.euclid, "raw", self.euclid), "registry", ()
+                    ).report()
                 }
             )
             if self.euclid is not None
