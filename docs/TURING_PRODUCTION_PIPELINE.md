@@ -1,108 +1,173 @@
-# TURING — production VQC pipeline (v1.3 surface)
+# TURING — production VQC pipeline
 
-The canonical independent HYBA VQC composition path, implemented as
+The canonical independent HYBA VQC composition path is implemented by
 `turing_universal_quantum_computer.pipeline.VQCPipeline`:
 
-```
-request -> capability analysis -> representation choice -> contract
-validation -> compile/plan -> chronus lane -> execution -> measurement ->
-verification -> custody -> replay
+```text
+request
+-> capability analysis
+-> representation choice
+-> contract validation
+-> compile/plan
+-> chronus lane
+-> execution
+-> measurement
+-> verification
+-> custody
+-> replay
 ```
 
-This document is the engineering contract for that path. Canonical authority
-remains the TURING manual and workflows in Notion; nothing here supersedes
-them.
+This is an executable engineering contract. TURING owns VQC semantics and
+mathematics; CHRONUS owns authorised heterogeneous execution; OVID owns
+representation transformation; THESEUS owns durable custody. No subsystem may
+manufacture evidence for another.
 
 ## Stage contract
 
 | Stage | What it proves | Honest states |
 |---|---|---|
-| `request_validation` | Request is unambiguous and parseable (Program object or Clifford QASM subset) | PASS / FAIL / REFUSED |
-| `capability_analysis` | Claim boundary audited — the run cannot assert more than the matrix | PASS / FAIL |
-| `representation_choice` | A representation whose static domain covers the program; `auto` never silently weakens semantics | PASS / REFUSED |
-| `contract_validation` | Program is structurally valid; unitary verified `U†U = I` **exactly** when `n ≤ verify_max_width` | PASS / FAIL / GATED (width beyond cap) |
-| `compile_plan` | A shipped backend admitted the program (fail-closed admission) | PASS / REFUSED |
-| `chronus_lane` | Truthful hardware-lane status — probe only, never dispatch evidence | GATED / UNAVAILABLE / READY / FAIL |
+| `request_validation` | Request is unambiguous and parseable | PASS / FAIL / REFUSED |
+| `capability_analysis` | Claim boundary audited before execution | PASS / FAIL |
+| `representation_choice` | An exact/declared representation covers the program | PASS / REFUSED |
+| `contract_validation` | Program structure and bounded exact unitarity checks | PASS / FAIL / GATED |
+| `compile_plan` | A shipped backend admitted the program | PASS / REFUSED |
+| `chronus_lane` | Truthful substrate availability; presence is not execution evidence | GATED / UNAVAILABLE / READY / FAIL |
 | `execution` | Backend executed and returned a truth-classed result | PASS / FAIL |
-| `measurement` | Measurement surface recorded (counts/marginal/expectation/state) | PASS |
-| `verification` | RunWitness issued + re-verified; optional exact differential cross-backend check | PASS / FAIL (differential GATED when no second backend admits) |
-| `custody` | Program/result/witness envelopes committed to THESEUS (when requested) | PASS / FAIL / UNAVAILABLE / SKIPPED |
-| `replay` | Custody artefacts recovered, envelope digest re-verified, payload revalidated (program re-parses; witness re-verifies) | PASS / FAIL / SKIPPED |
+| `measurement` | Measurement surface recorded | PASS / FAIL |
+| `verification` | Witness plus available independent differential checks | PASS / FAIL / GATED |
+| `custody` | Program/result/witness committed to THESEUS when requested | PASS / FAIL / UNAVAILABLE / SKIPPED |
+| `replay` | Custody recovered and revalidated without dropping producer semantics | PASS / FAIL / SKIPPED |
 
-Verdicts: `PASS` (every requested stage passed), `GATED` (computation
-verified; requested custody/replay evidence unavailable), `REFUSED`
-(domain refusal, fail-closed before execution), `FAIL` (contract violated).
+Verdicts remain `PASS`, `GATED`, `REFUSED`, or `FAIL`. `GATED` is not promoted
+to PASS by optimistic defaults.
+
+## Mathematical execution domains
+
+TURING does not equate logical width with a dense `2^n` state vector.
+Representations are admitted by mathematics:
+
+- `dense_algebraic` — exact Clifford+T over `Q(sqrt(2)) + i Q(sqrt(2))`
+  inside the declared amplitude budget;
+- `tableau` — exact Clifford stabilizer evolution in O(n^2) bits, including
+  wide registers such as 10,000 qubits when the program remains Clifford;
+- `sparse_exact` — exact bounded-support states where runtime support remains
+  within the declared budget;
+- `closed_form` — exact formulas for admitted families that do not require a
+  materialised state vector;
+- reserved/unimplemented representations resolve `UNAVAILABLE`; they are not
+  silently substituted.
+
+No float truncation, hidden dense fallback, or simulated hardware identity is
+permitted to widen one representation's mathematical domain.
+
+## Stabilizer measurement production gate
+
+`StabilizerState.measure()` uses the Aaronson-Gottesman random-measurement
+update. For a measured `Z_q` with anticommuting stabilizer pivot `S_k`:
+
+1. clear every other tableau row that anticommutes with `Z_q` by multiplying
+   it by `S_k`;
+2. **exclude the paired destabilizer `D_k` from that clearing operation** —
+   `D_k` anticommutes with `S_k`, so multiplying them would create a `+-i`
+   Pauli product outside the real-phase tableau;
+3. replace `D_k` with the old `S_k`;
+4. replace `S_k` with `(-1)^outcome Z_q`.
+
+The production differential suite uses an independent dense state-vector
+reference with the same little-endian qubit convention, retains stabilizer
+signs, checks exact measurement probabilities, forces both random outcomes,
+checks symplectic tableau invariants, and continues Clifford evolution after
+collapse. The former mathematical `xfail` is removed.
+
+`tests/test_production_release_gate.py` fails the Turing release if any VQC
+mathematics test is decorated with `xfail`.
 
 ## Execution-kind truthfulness
 
-`taxonomy.ExecutionKind` is the canonical 7-class taxonomy. Every result
-classified by `classify_execution` reports exactly one of:
+`taxonomy.ExecutionKind` distinguishes mathematical formalism, classical
+reference, classical quantum simulation, TURING VQC execution,
+quantum-inspired execution, hardware acceleration and physical QPU execution.
 
-mathematical quantum formalism / classical exact-reference / classical
-quantum simulation / **Turing VQC execution** / quantum-inspired /
-hardware-accelerated / **physical QPU**.
+`PHYSICAL_QPU` is reachable only through `assert_measured_qpu` with a verified
+completed provider job. It cannot be inferred from:
 
-`PHYSICAL_QPU` is reachable only through `assert_measured_qpu` on a verified
-provider job — never through naming, logical-qubit count, Grover
-terminology, simulation output, GPU dispatch, or device presence. A
-hardware-class result without device-bound dispatch evidence reports as
-unaccelerated with `hardware_evidence="unverified_device_binding"`.
+- the word quantum;
+- a logical-qubit count;
+- Grover terminology;
+- a simulator result;
+- accelerator presence;
+- a GPU/OpenCL/CUDA/Metal device probe.
 
-## Representation planner
+A hardware-class result without device-bound dispatch evidence remains
+unverified hardware evidence.
 
-`representation.RepresentationPlanner` holds the canonical inventory
-(`REPRESENTATIONS`) and dominance map (`DOMINANCE`):
+## Enterprise transformation and custody
 
-- `dense_algebraic` dominates `tableau` and `sparse_exact` (universal
-  Clifford+T within amplitude budget); it does **not** dominate
-  `closed_form` — closed form answers families where no state exists.
-- `auto` selects the cheapest representation whose **static** domain
-  covers the program; `sparse_exact` is only ever a declared candidate
-  (support boundedness is a run-time property, not statically provable).
-- `symbolic_density` is declared RESERVED — requested, it resolves
-  `UNAVAILABLE` rather than binding a substitute.
+### OVID
 
-## Triad consumption
+`turing_universal_quantum_computer.transform` consumes OVID transformation and
+requires digest-proven round-trip equivalence for exact transformations.
+Mismatch is a refutation, not a degraded success.
 
-| Subsystem | Module | Contract exercised |
-|---|---|---|
-| OVID | `transform.py` | `metamorphose`/`materialise` fold of VQC state bytes; exactness proven by digest-identical roundtrip, never assumed |
-| THESEUS | `custody.py` | `turing.vqc.custody_envelope.v1` envelopes committed via `Theseus.put`; recovery via digest-verified `get` (heal path); `replay()` revalidates payload usability |
-| CHRONUS | `chronus_lane.py` | `ChronusContext` probe — device presence/backend identity reported truthfully; no contracted VQC kernel exists yet (cross-agent dependency on A), so execution stays on the exact classical path |
+### THESEUS
 
-When `aethel` is not importable, the adapters report UNAVAILABLE and the
-pipeline fails closed — there are no private substitute codecs or stores.
+`turing_universal_quantum_computer.custody` and `aethel.enterprise` retain
+program, result and witness evidence. Disaster-recovery replay now preserves
+operational meaning:
+
+- an `OperationalRecord` is read through `get_record()` and re-admitted through
+  `put_record()`;
+- producer identity, schema, evidence state, lineage, correlation IDs,
+  dependencies and producer metadata therefore survive replay and are
+  contract-validated again;
+- plain byte custody objects remain plain byte objects;
+- a destination unable to admit an operational contract fails rather than
+  silently demoting it to anonymous bytes.
+
+Final replay verification compares content digest and operational identity.
 
 ## Verification surface
 
-- `verify.verify_program_unitarity(program)` — exact `U†U = I` over
-  `Q(√2) + i·Q(√2)`; width-capped (default 4), REFUSED beyond, never
-  approximated. Reconciled Pythagoras `circuit_domain` capability
-  (see `docs/TURING_PYTHAGORAS_RECONCILIATION.md`).
-- Witness: `issue_witness` + `verify_witness` (schema
-  `turing.vqc.run_witness.v1`) fail closed on overclaim: hardware class
-  requires `measured_qpu` + provider job; `measured_qpu` on a non-hardware
-  class is refused; provider jobs cannot be attached to simulated runs.
-- Differential: when a second backend admits the program, the pipeline
-  compares a shared exact observable (probe-qubit `expectation_z`); no
-  second backend → GATED, not a failure.
+- exact gate/domain admission before execution;
+- bounded exact `U†U = I` verification over the algebraic field;
+- independent dense-vs-tableau differential tests at tractable widths;
+- wide-register structural/invariant tests without densification;
+- `RunWitness` issue + verification with overclaim rejection;
+- exact differential cross-backend probes where a second backend admits;
+- OVID round-trip verification;
+- THESEUS integrity, tamper detection, recovery and semantic replay;
+- claim-boundary tests preventing QPU/hardware self-assertion.
 
-## Gated items (this host)
+## Hardware evidence boundaries
 
-- Hardware-accelerated execution: GATED — no bound accelerator on this host
-  (device-bound evidence would require a Chronus lane device).
-- Physical QPU: UNAVAILABLE — no provider adapter is bundled or registered.
-- Chronus VQC kernel: UNAVAILABLE — cross-agent dependency on CHRONUS (A);
-  presence probing is implemented, kernel dispatch is not contracted.
-- Tensor-network/MPS representation: RESERVED/unbound (see reconciliation
-  doc, owner decision).
+These are not software defects and must not be faked closed:
 
-## Reproduce
+- physical QPU: `UNAVAILABLE` until a real provider adapter and completed job
+  evidence exist;
+- CHRONUS VQC device kernel: `GATED`/`UNAVAILABLE` until a contracted kernel is
+  bound and its dispatch is measured;
+- GPU/iGPU/OpenCL/CUDA/Metal execution: evidence is device-bound and may only
+  be claimed after an actual completed launch;
+- tensor-network/MPS remains unavailable until its exactness/error contract is
+  implemented and verified.
+
+TURING can be production-ready as an exact VQC without physical QPU hardware;
+it simply cannot claim physical-QPU execution or hardware speedup without that
+evidence.
+
+## Required release commands
 
 ```bash
-./.venv/Scripts/python.exe -m pytest tests/test_turing_production_pipeline.py -q
+python -m pytest turing_universal_quantum_computer/tests/test_stabilizer_measurement.py -q
+python -m pytest turing_universal_quantum_computer/tests/test_production_release_gate.py -q
+python -m pytest tests/test_turing_production_pipeline.py -q
+python -m pytest tests/test_hyba_prodrc_integration.py -q
+python -m pytest turing_universal_quantum_computer/tests -q
+python scripts/import_audit.py
+python scripts/import_graph.py cycles
+python scripts/import_graph.py layers
 ```
 
-All 37 tests exercise the real path — no standalone probes: custody tests
-go through `aethel.theseus`, transform tests through `aethel.ovid`, the
-lane probe through `aethel.chronus`.
+A release is not production-evidenced until these execute on the exact release
+commit. A GitHub Actions job with `runner_id=0` and `steps=[]` is infrastructure
+unavailability, not passing or failing execution evidence.
