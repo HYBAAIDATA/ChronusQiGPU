@@ -1,21 +1,30 @@
-"""PULVINI - Universal Golden-Exponential Scaling Operator.
+"""PULVINI — golden-structure quantum algebra for data.
 
-In honour of a friend. Phi-recursive dimensional folding, deterministic
-reversibility, spectral-gap-preserving Hamiltonian reduction, TT compression,
-MPO dynamics, and the Pythagoras orchestrator.
+Quantum comes from maths.  In this package quantum serves data: reversible
+phi-fold/unfold structure, tensor representations, Hamiltonian/data operators,
+MPO/TT evolution, and measured reconstruction/topology evidence on classical
+compute substrates.
 
-Integrated into the ONE substrate at quantum_compute_substrate.pulvini.
+PULVINI is not a mining authority and exports no nonce, Stratum, share, pool,
+or SHA-256d path.  Pythagoras is historical lineage only; the old
+``PythagorasOrchestrator`` name remains as a compatibility alias.
 """
 
-from .pulvini_scaling import PulviniOperator, PulviniAuditEnvelope, PHI
+from .pulvini_scaling import PHI, PulviniAuditEnvelope, PulviniOperator
 from .tensor_train import TensorTrain, TTPulviniHybrid, phi_guided_rank
 from .matrix_product_operator import (
-    MatrixProductOperator,
-    IsingHamiltonianMPO,
     HeisenbergHamiltonianMPO,
+    IsingHamiltonianMPO,
+    MatrixProductOperator,
     MPOPulviniTTHybrid,
 )
-from .orchestrator import PythagorasOrchestrator, SolverStrategy
+from .orchestrator import (
+    PULVINI_DATA_ROUTING_THRESHOLD,
+    QUANTUM_ROUTING_THRESHOLD,
+    PulviniDataOrchestrator,
+    PythagorasOrchestrator,
+    SolverStrategy,
+)
 
 __all__ = [
     "PHI",
@@ -28,6 +37,9 @@ __all__ = [
     "IsingHamiltonianMPO",
     "HeisenbergHamiltonianMPO",
     "MPOPulviniTTHybrid",
+    "PULVINI_DATA_ROUTING_THRESHOLD",
+    "QUANTUM_ROUTING_THRESHOLD",
+    "PulviniDataOrchestrator",
     "PythagorasOrchestrator",
     "SolverStrategy",
 ]

@@ -52,6 +52,16 @@ from .distributed import (
     SoakReport,
     SolutionsAPI,
 )
+from .entangled_custody import (
+    BINDING_SCHEMA,
+    CANONICAL_DATA_SYSTEMS,
+    SCHEMA as ENTANGLED_CUSTODY_SCHEMA,
+    EntangledAccessError,
+    EntangledCustodyError,
+    EntangledCustodyFabric,
+    EntanglementBinding,
+    SystemDataPort,
+)
 from .errors import (
     AuthenticityError,
     AuthorityBoundaryError,
@@ -110,6 +120,15 @@ __all__ = [
     "EnterpriseTheseus",
     "compose",
     "CompositionRoot",
+    # shared THESEUS / OVID data entanglement
+    "ENTANGLED_CUSTODY_SCHEMA",
+    "BINDING_SCHEMA",
+    "CANONICAL_DATA_SYSTEMS",
+    "EntangledCustodyError",
+    "EntangledAccessError",
+    "EntanglementBinding",
+    "SystemDataPort",
+    "EntangledCustodyFabric",
     # distributed / multi-root / DR / soak / API / cert
     "NodeId",
     "LogEntry",
