@@ -6,7 +6,8 @@ from pathlib import Path
 from typing import Any, Callable, Optional
 
 from .custody import EnterpriseCustody, compose
-from .entangled_custody import EntangledCustodyFabric, SystemDataPort
+from .entangled_custody import SystemDataPort
+from .persistent_entangled_custody import PersistentEntangledCustodyFabric
 from .hooks import SecurityHook
 from .telemetry import EvidenceTelemetry
 
@@ -16,7 +17,7 @@ class CompositionRoot:
 
     Start order:
       1. Open/recover enterprise custody (THESEUS).
-      2. Bind one OVID-lineage / THESEUS-custody entanglement fabric to it.
+      2. Recover one OVID-lineage / THESEUS-custody entanglement fabric.
       3. Mark the shared substrate ready.
       4. Start registered consumers; every memory/data consumer obtains a
          bounded :class:`SystemDataPort` over this same fabric.
@@ -26,9 +27,10 @@ class CompositionRoot:
       2. Flush / close THESEUS custody.
       3. Release the shared fabric reference.
 
-    The fabric is shared identity, not a private store per subsystem.  Owner
+    The fabric is shared identity, not a private store per subsystem. Owner
     authority remains with each producer; THESEUS owns custody and OVID owns
-    transformation/lineage.
+    transformation/lineage. Binding identity and parent relationships are
+    themselves durable and are rebuilt from THESEUS after restart.
     """
 
     def __init__(
@@ -56,7 +58,7 @@ class CompositionRoot:
         self._chronus_accel = chronus_accel
         self.telemetry = telemetry or EvidenceTelemetry()
         self.custody: Optional[EnterpriseCustody] = None
-        self.fabric: Optional[EntangledCustodyFabric] = None
+        self.fabric: Optional[PersistentEntangledCustodyFabric] = None
         self._consumers: list[tuple[str, Callable[[], None], Callable[[], None]]] = []
         self._started = False
         self._lock = threading.Lock()
@@ -90,10 +92,10 @@ class CompositionRoot:
             if not health.get("ready"):
                 raise RuntimeError("custody failed readiness after recover")
 
-            # 2. Bind exactly one shared OVID/THESEUS fabric to this recovered
-            # custody root.  No consumer below is allowed to create a substitute
-            # private fabric through this lifecycle.
-            self.fabric = EntangledCustodyFabric(self.custody)
+            # 2. Recover exactly one shared OVID/THESEUS relationship graph
+            # from the same custody root. No consumer below may create a
+            # substitute private fabric through this lifecycle.
+            self.fabric = PersistentEntangledCustodyFabric(self.custody)
             self.telemetry.incr("entangled_custody_ready")
 
             # 3. Start consumers only after shared custody + lineage are ready.
@@ -125,7 +127,6 @@ class CompositionRoot:
     def stop(self) -> None:
         """Halt consumers then flush/close shared custody."""
         with self._lock:
-            # Halt consumers first.
             for name, _start, stop_fn in reversed(self._consumers):
                 try:
                     stop_fn()
@@ -142,7 +143,6 @@ class CompositionRoot:
     def flush(self) -> None:
         """Ensure journal durability; recover re-seals incomplete state."""
         if self.custody is not None:
-            # Re-open journal recover is a flush surrogate for JSONL WAL.
             self.custody.journal.recover()
             self.telemetry.incr("lifecycle_flush")
 
