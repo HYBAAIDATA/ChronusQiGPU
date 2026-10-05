@@ -12,6 +12,7 @@ Claim scopes (Rule 7 — honest software measurement):
 
 Not a vendor cloud fleet; not real multi-region WAN.
 """
+
 from __future__ import annotations
 
 from .adapters import (
@@ -29,6 +30,11 @@ from .authenticity import (
     is_insecure_dev_key,
     mac_create,
     mac_verify,
+)
+from .checkpoint import (
+    CheckpointIntegrityError,
+    CheckpointManager,
+    CheckpointUnavailableError,
 )
 from .custody import EnterpriseCustody, EnterpriseTheseus, compose
 from .distributed import (
@@ -73,6 +79,22 @@ from .journal import FileLock, WriteAheadJournal
 from .lifecycle import CompositionRoot
 from .ovid_registry import DEFAULT_OVID_REGISTRY, OvidRegistry
 from .parity import assert_cpu_accel_parity
+from .records import (
+    CANONICAL_PRODUCERS,
+    DEPENDENCY_OVID_TRANSFORM,
+    DEPENDENCY_THESEUS_FORMAT,
+    EVIDENCE_STATES,
+    ContractValidationError,
+    DependencyMismatchError,
+    OperationalRecord,
+    ProducerAdmissionError,
+    ProducerContract,
+    ProducerRegistry,
+    default_dependency_policy,
+    default_producer_registry,
+)
+from .recovery import RecoveryReport
+from .retention import RetentionPolicy
 from .schema import (
     OVID_TRANSFORM_V1,
     THESEUS_FORMAT_VERSION,
@@ -80,11 +102,7 @@ from .schema import (
     CustodyEvent,
     canonical_manifest_bytes,
 )
-from .solutions_api import SolutionsAPI as SolutionsAPIFacade
 from .telemetry import EvidenceTelemetry
-
-# Prefer canonical class from distributed; façade re-export is identical
-SolutionsAPIFacade = SolutionsAPI
 
 __all__ = [
     # custody
@@ -112,6 +130,24 @@ __all__ = [
     "CustodyEnvelope",
     "CustodyEvent",
     "canonical_manifest_bytes",
+    # operational records / checkpoints / recovery / retention
+    "OperationalRecord",
+    "ProducerContract",
+    "ProducerRegistry",
+    "ProducerAdmissionError",
+    "ContractValidationError",
+    "DependencyMismatchError",
+    "EVIDENCE_STATES",
+    "CANONICAL_PRODUCERS",
+    "DEPENDENCY_THESEUS_FORMAT",
+    "DEPENDENCY_OVID_TRANSFORM",
+    "default_producer_registry",
+    "default_dependency_policy",
+    "CheckpointManager",
+    "CheckpointIntegrityError",
+    "CheckpointUnavailableError",
+    "RecoveryReport",
+    "RetentionPolicy",
     # errors
     "EnterpriseCustodyError",
     "AuthorityBoundaryError",

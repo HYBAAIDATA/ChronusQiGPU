@@ -31,8 +31,8 @@ def test_refuted_claims_remain_non_promotable():
 
 
 def test_contracts_do_not_promote_prime_db_over_ovid():
-    contracts = (ROOT / "CONTRACTS.md").read_text()
-    delivery = (ROOT / "al_haras/delivery_plan.py").read_text()
+    contracts = (ROOT / "CONTRACTS.md").read_text(encoding="utf-8")
+    delivery = (ROOT / "al_haras/delivery_plan.py").read_text(encoding="utf-8")
     assert "PRIME-DB AUTHORITATIVE OBJECT" not in contracts
     assert "OVID AUTHORITATIVE RECORD / PRIME-DB EXECUTION VIEW" in contracts
     assert "OVID remains the durable authority" in contracts
