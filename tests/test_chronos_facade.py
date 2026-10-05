@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 import warnings
 
 import numpy as np
@@ -10,6 +11,10 @@ import pytest
 
 @pytest.mark.unit
 def test_chronos_facade_reexports_v33_engine():
+    # Drop any cached facade import so the module body re-executes and the
+    # deprecation warning re-fires — a prior `import chronos` elsewhere in
+    # the pytest process would otherwise make this check order-dependent.
+    sys.modules.pop("chronos", None)
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
         import chronos

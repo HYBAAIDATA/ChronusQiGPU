@@ -95,6 +95,73 @@ def _module_path(base: Path, dotted: str) -> Path | None:
     return None
 
 
+def _str_tuple_literals(value: ast.AST) -> frozenset[str]:
+    """The literal strings in a ``("a", "b")`` tuple/list/set constant."""
+    if not isinstance(value, (ast.Tuple, ast.List, ast.Set)):
+        return frozenset()
+    return frozenset(
+        elt.value
+        for elt in value.elts
+        if isinstance(elt, ast.Constant) and isinstance(elt.value, str)
+    )
+
+
+def _assigns_sys_modules(node: ast.AST) -> bool:
+    """Whether ``node`` is a ``sys.modules[...] = ...`` assignment."""
+    if not isinstance(node, (ast.Assign, ast.AnnAssign)):
+        return False
+    targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+    for target in targets:
+        if (
+            isinstance(target, ast.Subscript)
+            and isinstance(target.value, ast.Attribute)
+            and target.value.attr == "modules"
+            and isinstance(target.value.value, ast.Name)
+            and target.value.value.id == "sys"
+        ):
+            return True
+    return False
+
+
+def _runtime_module_aliases(pkg_init: Path) -> frozenset[str]:
+    """Submodule names a package installs into ``sys.modules`` at import
+    time — facade/alias packages (e.g. ``chronos`` → ``chronus.v33``) whose
+    ``pkg.<name>`` has no file on disk but resolves at runtime.
+
+    Detects ``for <name> in <literal tuple>:`` loops whose body assigns
+    ``sys.modules[...]``; the iterable may be a literal tuple or a module
+    top-level Name bound to one.
+    """
+    try:
+        tree = ast.parse(pkg_init.read_text(encoding="utf-8", errors="replace"))
+    except (SyntaxError, OSError):
+        return frozenset()
+    bound: dict[str, frozenset[str]] = {}
+    for node in tree.body:
+        if (
+            isinstance(node, ast.Assign)
+            and len(node.targets) == 1
+            and isinstance(node.targets[0], ast.Name)
+        ):
+            vals = _str_tuple_literals(node.value)
+            if vals:
+                bound[node.targets[0].id] = vals
+    out: set[str] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.For, ast.AsyncFor)) or not isinstance(
+            node.target, ast.Name
+        ):
+            continue
+        names: frozenset[str] = frozenset()
+        if isinstance(node.iter, (ast.Tuple, ast.List, ast.Set)):
+            names = _str_tuple_literals(node.iter)
+        elif isinstance(node.iter, ast.Name):
+            names = bound.get(node.iter.id, frozenset())
+        if names and any(_assigns_sys_modules(inner) for inner in ast.walk(node)):
+            out.update(names)
+    return frozenset(out)
+
+
 @lru_cache(maxsize=None)
 def _bindings(path: Path) -> tuple[frozenset[str], bool]:
     """Names a module binds at top level, and whether it may bind anything else."""
@@ -208,11 +275,21 @@ class Auditor:
         dist = self._dist_base(top)
         bases = [b for b in (extra, dist, *self.roots) if b is not None]
         for base in bases:
-            if _module_path(base, top) is not None:
+            top_path = _module_path(base, top)
+            if top_path is not None:
                 local = True
                 found = _module_path(base, dotted)
                 if found is not None:
                     return found, True
+                # sys.modules-installed alias: pkg.<name> has no file but the
+                # package registers it at import time (facade packages).
+                rest = dotted.split(".", 1)[1]
+                if (
+                    "." not in rest
+                    and top_path.is_dir()
+                    and rest in _runtime_module_aliases(top_path / "__init__.py")
+                ):
+                    return top_path, True
         return None, local
 
     def _name_ok(self, module: Path, name: str) -> bool:
