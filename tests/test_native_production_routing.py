@@ -20,7 +20,7 @@ from chronus.mla1517.mining.execution_router import (
     NONCE_ORDER_M32,
 )
 from chronus.mla1517.mining.geodesic_support import (
-    GeodesicProductionMiningCoordinator,
+    PythiaProductionMiningCoordinator,
     ProductionExecutionRouter,
 )
 from chronus.mla1517.mining.pythia_search import (
@@ -110,8 +110,8 @@ def _lease(plan: SearchPlan) -> NonceLease:
 
 @pytest.mark.parametrize("backend", ["cuda", "metal"])
 def test_canonical_coordinator_classifies_native_backend_as_device_route(backend):
-    coordinator = GeodesicProductionMiningCoordinator.__new__(
-        GeodesicProductionMiningCoordinator
+    coordinator = PythiaProductionMiningCoordinator.__new__(
+        PythiaProductionMiningCoordinator
     )
     coordinator.execution_hasher = _NativeHasher(backend)
     coordinator._nonce_order = NONCE_ORDER_M32
@@ -142,8 +142,12 @@ def test_native_m32_executes_on_native_hasher_without_cpu_substitution(backend):
     assert record.requested_route == "opencl_m32"
     assert record.executed_route == "opencl_m32"
     assert record.device_backend == backend
-    assert record.kernel_identity == f"chronus_native_sha256d:{backend}:opencl_m32"
-    assert record.kernel_build_status == "native_method_bound_after_backend_self_check"
+    assert record.kernel_identity == (
+        f"chronus_native_sha256d:{backend}:opencl_m32"
+    )
+    assert record.kernel_build_status == (
+        "native_method_bound_after_backend_self_check"
+    )
     assert record.kernel_launch_count == 1
     assert record.kernel_ms == pytest.approx(0.25)
     assert record.completion_state is CompletionState.EARLY_WINNER
@@ -201,12 +205,13 @@ def test_search_plan_refuses_unknown_nonce_order():
 
 
 def test_coordinator_binds_canonical_search_and_workforce_intent_into_plan():
-    coordinator = GeodesicProductionMiningCoordinator.__new__(
-        GeodesicProductionMiningCoordinator
+    coordinator = PythiaProductionMiningCoordinator.__new__(
+        PythiaProductionMiningCoordinator
     )
     coordinator._nonce_order = NONCE_ORDER_HENDRIX
     coordinator.geodesic_enabled = True
     coordinator.last_mining_decision = None
+    coordinator.execution_hasher = _NativeHasher("cpu")
     coordinator.pythia_search_precompute = precompute_pythia_search()
 
     plan = coordinator._bind_plan_execution_intent(_plan())
@@ -215,10 +220,16 @@ def test_coordinator_binds_canonical_search_and_workforce_intent_into_plan():
     # evidence reference is the actual production search identity.
     assert plan.nonce_order == NONCE_ORDER_M32
     assert plan.evidence_refs["search_architecture"] == SEARCH_ARCHITECTURE_ID
-    assert plan.evidence_refs["search_precompute_digest"] == coordinator.pythia_search_precompute.digest
-    assert plan.evidence_refs["configured_traversal_refinement"] == NONCE_ORDER_HENDRIX
+    assert plan.evidence_refs["search_precompute_digest"] == (
+        coordinator.pythia_search_precompute.digest
+    )
+    assert plan.evidence_refs["configured_traversal_refinement"] == (
+        NONCE_ORDER_HENDRIX
+    )
     intent = plan.evidence_refs["technology_intent"]
     assert intent["composition_root"] == "PYTHIA"
     assert intent["dual_vertices"] == 600
     assert intent["hilbert_space"] == "11_qubits_C^2048"
-    assert intent["proof_authority"] == "sha256d_target_freshness_and_literal_pool_response_only"
+    assert intent["proof_authority"] == (
+        "sha256d_target_freshness_and_literal_pool_response_only"
+    )
