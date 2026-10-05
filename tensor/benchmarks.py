@@ -40,12 +40,17 @@ _RTOL_STRICT = {"f": 1e-12, "c": 1e-12}
 def _fold_as_deep_as(array: np.ndarray, depth: int):
     from aethel.phi_fold import PhiFoldError, phi_fold
 
-    for candidate in range(depth, 0, -1):
+    # Depth 0 is the honest floor: a degenerate fold (retained only) still
+    # round-trips, so scalars and other too-small operands land there rather
+    # than failing — and retrying depth 1 after the loop would mask the
+    # very "cannot fold" error a small operand is allowed to avoid.
+    last_err = None
+    for candidate in range(depth, -1, -1):
         try:
             return phi_fold(array, depth=candidate)
-        except PhiFoldError:
-            continue
-    return phi_fold(array, depth=1)
+        except PhiFoldError as exc:
+            last_err = exc
+    raise last_err  # pragma: no cover — phi_fold(depth=0) cannot raise for valid input
 
 
 def _workload(

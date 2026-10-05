@@ -36,6 +36,7 @@ from .abi import (
     Workload,
     WorkloadKind,
     WorkloadResult,
+    canonical_json,
     digest_json,
 )
 from .adapters import Adapter, AdapterUnavailable, default_adapters
@@ -50,11 +51,18 @@ class RuntimeInvariantError(RuntimeError):
 
 @dataclass
 class Quota:
-    """Per-tenant admission quota."""
+    """Per-tenant admission quota.
+
+    ``submitted`` counts admitted workloads; ``submitted_bytes`` counts their
+    declared input bytes (canonical JSON of the workload input). Both are
+    enforced at admission — a quota field that is never checked would be a
+    claim, not a control.
+    """
 
     max_workloads: int = 32
     max_bytes: int = 256 * 1024 * 1024
     submitted: int = 0
+    submitted_bytes: int = 0
 
 
 def _utc_now() -> str:
@@ -78,7 +86,6 @@ class RuntimeConfig:
         self.hmac_key = hmac_key
         for k, v in kwargs.items():
             setattr(self, k, v)
-
 
 
 class RuntimeDaemon:
@@ -132,12 +139,15 @@ class RuntimeDaemon:
         self._max_per_tenant = int(max_per_tenant)
         self.in_flight: dict[str, int] = {}
         self._pending: set[str] = set()
+        self._cancelled: set[str] = set()
         self._results: dict[str, WorkloadResult] = {}
         self._idempotency: dict[str, WorkloadResult] = {}
         self._idempotency_packages: dict[str, str] = {}
         self._attached_at: str | None = None
         self._last_error: str | None = None
         self.quotas: dict[str, Quota] = {}
+        self._recoveries = 0
+        self._max_recoveries = 3
         # Legacy attribute names used by older tests
         self.store_dir = self.root
         self.store_root = self.root
@@ -191,6 +201,36 @@ class RuntimeDaemon:
                 adapter.probe()
             except Exception:
                 pass
+
+    def recover(self) -> RuntimeState:
+        """Bounded recovery: re-probe adapters and return to READY.
+
+        Legal from FAILED/RECOVERING/DETACHED; from READY it performs a plain
+        re-probe refresh (the device-loss path — an adapter whose device
+        vanished fails its probe and is excluded from later selection).
+        Recovery attempts are bounded; exhausting the budget fails closed.
+        """
+        with self._lock:
+            if self.state == RuntimeState.READY:
+                self._probe_all()
+                return self.state
+            if self._recoveries >= self._max_recoveries:
+                self.state = RuntimeState.FAILED
+                self._last_error = "recovery budget exhausted"
+                raise RuntimeInvariantError(self._last_error)
+            self._recoveries += 1
+            self.state = RuntimeState.RECOVERING
+            try:
+                self._probe_all()
+                if not any(getattr(a, "available", False) for a in self.adapters):
+                    raise RuntimeInvariantError("no adapter available after recovery re-probe")
+                self.state = RuntimeState.READY
+                self._last_error = None
+            except Exception as exc:
+                self.state = RuntimeState.FAILED
+                self._last_error = str(exc)
+                raise
+            return self.state
 
     def health(self) -> dict[str, Any]:
         with self._lock:
@@ -354,8 +394,19 @@ class RuntimeDaemon:
                 raise RuntimeInvariantError(f"tenant oversubscribed: {w.tenant}")
 
             q = self.quotas.get(w.tenant)
-            if q is not None and q.submitted >= q.max_workloads:
-                raise RuntimeInvariantError(f"quota exceeded for tenant {w.tenant}")
+            declared_bytes = len(canonical_json(w.input or {}).encode("utf-8"))
+            if q is not None:
+                if q.submitted >= q.max_workloads:
+                    raise RuntimeInvariantError(f"quota exceeded for tenant {w.tenant}")
+                if q.submitted_bytes + declared_bytes > q.max_bytes:
+                    raise RuntimeInvariantError(
+                        f"byte quota exceeded for tenant {w.tenant}: "
+                        f"{q.submitted_bytes}+{declared_bytes}>{q.max_bytes}"
+                    )
+
+            deadline_ms = getattr(w, "deadline_ms", None)
+            if deadline_ms is not None and int(deadline_ms) <= 0:
+                raise RuntimeInvariantError("deadline_ms must be positive when declared")
 
             try:
                 adapter, reason, admission = self._select_adapter(w)
@@ -364,11 +415,24 @@ class RuntimeDaemon:
 
             self.in_flight[w.tenant] = self.in_flight.get(w.tenant, 0) + 1
             self._pending.add(w.id)
+            self._cancelled.discard(w.id)
             attempt_id = str(uuid.uuid4())
 
         started = time.time_ns()
         try:
             # Memory-plane ops handled here for STORE/RETRIEVE
+            # A cancel() that landed while the adapter was running marks the
+            # result honestly — the work may have executed, but the receipt
+            # must not claim an unqualified success for a cancelled request.
+            def _finalise(result: WorkloadResult) -> WorkloadResult:
+                if w.id in self._cancelled:
+                    return replace(
+                        result,
+                        status="cancelled",
+                        error="cancelled before completion was reported",
+                    )
+                return result
+
             if w.kind == WorkloadKind.STORE:
                 stored = self.memory.store(
                     w.input,
@@ -377,15 +441,15 @@ class RuntimeDaemon:
                     metadata={"workload_id": w.id, "kind": w.kind.value},
                 )
                 oid = getattr(stored, "object_id", stored)
-                result = adapter.execute(w)
+                result = self._execute_with_deadline(adapter, w, deadline_ms)
                 result = replace(result, object_id=str(oid), output={**result.output, "object_id": str(oid)})
             elif w.kind == WorkloadKind.RETRIEVE:
                 oid = str((w.input or {}).get("object_id") or (w.input or {}).get("id") or "")
                 payload = self.memory.retrieve(oid, tenant=w.tenant)
-                result = adapter.execute(w)
+                result = self._execute_with_deadline(adapter, w, deadline_ms)
                 result = replace(result, object_id=oid, output={**result.output, "payload": payload, "object_id": oid})
             else:
-                result = adapter.execute(w)
+                result = self._execute_with_deadline(adapter, w, deadline_ms)
                 # Persist fold/unfold (and any output with payload bytes) for object handles
                 if w.kind in {WorkloadKind.FOLD, WorkloadKind.UNFOLD}:
                     stored = self.memory.store(
@@ -395,6 +459,7 @@ class RuntimeDaemon:
                         residency=adapter.id,
                     )
                     result = replace(result, object_id=str(getattr(stored, "object_id", stored)))
+            result = _finalise(result)
 
             # Build portable package + receipt
             pkg = PortablePackage(
@@ -522,6 +587,7 @@ class RuntimeDaemon:
                 self._pending.discard(w.id)
                 if q is not None:
                     q.submitted += 1
+                    q.submitted_bytes += declared_bytes
             return result
         except Exception:
             with self._lock:
@@ -532,14 +598,53 @@ class RuntimeDaemon:
             with self._lock:
                 self.in_flight[w.tenant] = max(0, self.in_flight.get(w.tenant, 1) - 1)
 
+    def _execute_with_deadline(
+        self, adapter: Adapter, w: Workload, deadline_ms: int | None
+    ) -> WorkloadResult:
+        """Run ``adapter.execute`` under an optional deadline.
+
+        On expiry the attempt is recorded as ``status="timeout"`` — a real
+        timeout outcome, never rewritten to success. The late-finishing
+        worker is a daemon thread whose result is discarded; in-flight
+        accounting is released by the caller's ``finally``.
+        """
+        if deadline_ms is None:
+            return adapter.execute(w)
+        outcome: dict[str, Any] = {}
+
+        def _call() -> None:
+            try:
+                outcome["result"] = adapter.execute(w)
+            except Exception as exc:  # noqa: BLE001
+                outcome["error"] = exc
+
+        worker = threading.Thread(target=_call, name=f"vigpu-exec-{w.id}", daemon=True)
+        worker.start()
+        worker.join(max(int(deadline_ms), 1) / 1000.0)
+        if worker.is_alive():
+            return adapter._result(
+                w,
+                {"timed_out": True, "deadline_ms": int(deadline_ms)},
+                time.time_ns() - int(deadline_ms) * 1_000_000,
+                status="timeout",
+                error=f"deadline_ms={int(deadline_ms)} exceeded",
+            )
+        if "error" in outcome:
+            raise outcome["error"]
+        return outcome["result"]
+
     def poll(self, workload_id: str) -> WorkloadResult | None:
         with self._lock:
             return self._results.get(workload_id)
 
     def cancel(self, workload_id: str) -> bool:
+        """Cancel a pending workload. The completion is then reported as
+        ``status="cancelled"`` rather than success — the runtime cannot
+        retract an in-flight device call, so it records the truth instead."""
         with self._lock:
             if workload_id in self._pending:
                 self._pending.discard(workload_id)
+                self._cancelled.add(workload_id)
                 return True
             return False
 
