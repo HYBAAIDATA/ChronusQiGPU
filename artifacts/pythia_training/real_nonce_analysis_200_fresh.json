@@ -1,0 +1,49 @@
+{
+  "artifact": "real_nonce_analysis_200_fresh",
+  "description": "Fresh phi-resonance discrimination test on the REAL verified 200-block nonce corpus (963991-965900) vs an operator-produced uniform uint32 baseline. All 200 nonces were PoW-verified locally (80-byte header rebuilt, double-SHA256 meets compact-bits target). Computed from scratch; no prior verdict/report reused. Synthetic nonces_20k.csv is excluded.",
+  "corpus": {
+    "n": 200,
+    "heights": "965900..963991",
+    "source": "mempool.space API (2026-09-07), locally PoW-verified",
+    "verified": 200,
+    "rejected": 0
+  },
+  "scoring": {
+    "scorer": "python_backend.phi_grover_v4.phi_resonance",
+    "threshold": 0.5,
+    "winner_rate": 0.61,
+    "winner_rate_ci": [0.5409361758928833, 0.674917702805086],
+    "winner_hits": "122/200",
+    "mean_r_phi": 0.5694783066269564
+  },
+  "baseline": {
+    "method": "uniform uint32 draw, fixed-seed Random(0x9E3779B9), same scorer",
+    "n": 60000,
+    "rate": 0.61805,
+    "rate_ci": [0.6141548344983409, 0.6219300497734688],
+    "mean_r_phi": 0.5645573967885688
+  },
+  "statistics": {
+    "two_proportion_z": -0.2339200174249258,
+    "two_sided_p": 0.8150470726282482,
+    "bonferroni_alpha": 0.008333333333333333,
+    "n_tests": 6,
+    "threshold_sweep": [
+      {"cutoff": 0.5, "winner_rate": 0.61, "winner_hits": "122/200", "baseline_rate": 0.618, "delta_pp": -0.81, "z": -0.234, "p_two_sided": 0.815, "significant_p_lt_0.05": false},
+      {"cutoff": 0.55, "winner_rate": 0.53, "winner_hits": "106/200", "baseline_rate": 0.5359, "delta_pp": -0.59, "z": -0.168, "p_two_sided": 0.867, "significant_p_lt_0.05": false},
+      {"cutoff": 0.6, "winner_rate": 0.445, "winner_hits": "89/200", "baseline_rate": 0.4531, "delta_pp": -0.81, "z": -0.23, "p_two_sided": 0.8183, "significant_p_lt_0.05": false},
+      {"cutoff": 0.65, "winner_rate": 0.4, "winner_hits": "80/200", "baseline_rate": 0.369, "delta_pp": 3.1, "z": 0.907, "p_two_sided": 0.3644, "significant_p_lt_0.05": false},
+      {"cutoff": 0.7, "winner_rate": 0.305, "winner_hits": "61/200", "baseline_rate": 0.2757, "delta_pp": 2.93, "z": 0.925, "p_two_sided": 0.3552, "significant_p_lt_0.05": false}
+    ],
+    "phi15_ks_stat": 0.06960118186660114,
+    "phi15_ks_p": 0.27735726836906494,
+    "phi15_ks_reject_uniform": false,
+    "phi15_wasserstein": 0.019114419924628423
+  },
+  "verdict": "NOT SIGNIFICANT / UNDERPOWERED (n<1000; larger real corpus needed)",
+  "metadata": {
+    "recorded_evidence_untouched": true,
+    "related_recorded_artifact": "artifacts/phi_resonance_structure/phi_resonance_summary.json (birthday_signature 31071976)",
+    "synthetic_nonces_20k_excluded": true
+  }
+}
