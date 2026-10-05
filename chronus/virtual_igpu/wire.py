@@ -4,6 +4,7 @@ from __future__ import annotations
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
+import traceback
 from typing import Any
 from urllib.parse import urlparse
 
@@ -11,83 +12,90 @@ from .abi import ABI_VERSION, Workload
 from .runtime import RuntimeDaemon
 
 
-def build_server(runtime: RuntimeDaemon, host: str = "127.0.0.1", port: int = 8765):
-    token = os.getenv("CHRONUS_VIGPU_TOKEN", "")
-
+def make_handler(daemon: RuntimeDaemon, auth_token: str | None = None):
     class Handler(BaseHTTPRequestHandler):
-        def log_message(self, *_args): return
+        def _read_json(self) -> dict[str, Any]:
+            length = int(self.headers.get("Content-Length", "0") or 0)
+            if length <= 0:
+                return {}
+            raw = self.rfile.read(length)
+            return json.loads(raw.decode("utf-8"))
 
-        def send_json(self, code: int, value: dict[str, Any]) -> None:
-            body = json.dumps(value).encode()
+        def _auth_ok(self) -> bool:
+            if not auth_token:
+                return True
+            header = self.headers.get("Authorization", "")
+            return header == f"Bearer {auth_token}"
+
+        def _send(self, code: int, payload: Any) -> None:
+            body = json.dumps(payload, default=str).encode("utf-8")
             self.send_response(code)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
 
-        def authorized(self) -> bool:
-            return not token or self.headers.get("Authorization") == f"Bearer {token}"
+        def log_message(self, fmt: str, *args: Any) -> None:
+            return  # quiet tests
 
-        def do_GET(self):
-            if not self.authorized():
-                return self.send_json(401, {"ok": False, "error": "unauthorized"})
+        def do_GET(self) -> None:  # noqa: N802
+            if not self._auth_ok():
+                self._send(401, {"error": "unauthorized"})
+                return
             path = urlparse(self.path).path
-            if path == "/health":
-                return self.send_json(200, {"ok": True, "value": {"protocol": ABI_VERSION, **runtime.health()}})
-            if path == "/v1/adapters":
-                return self.send_json(200, {"ok": True, "value": runtime.adapter_report()})
-            if path == "/v1/capabilities":
-                return self.send_json(200, {"ok": True, "value": runtime.capabilities()})
-            if path.startswith("/v1/workloads/"):
-                wid = path.rsplit("/", 1)[-1]
-                result = runtime.results.get(wid)
-                return self.send_json(
-                    200 if result else 404,
-                    {"ok": bool(result), "value": result.as_dict() if result else None,
-                     "error": None if result else "not found"},
-                )
-            if path == "/v1/evidence":
-                return self.send_json(
-                    200,
-                    {
-                        "ok": True,
-                        "value": runtime.ledger.query(limit=100),
-                    },
-                )
-            if path == "/v1/attestation":
-                return self.send_json(
-                    200,
-                    {
-                        "ok": True,
-                        "value": {
-                            "protocol": ABI_VERSION,
-                            "adapters": [
-                                row["attestation"] for row in runtime.adapter_report()
-                            ],
-                            "negotiations": runtime.negotiations,
-                        },
-                    },
-                )
-            return self.send_json(404, {"ok": False, "error": "not found"})
-
-        def do_POST(self):
-            if not self.authorized():
-                return self.send_json(401, {"ok": False, "error": "unauthorized"})
-            request_path = urlparse(self.path).path
-            if request_path.startswith("/v1/workloads/") and request_path.endswith("/cancel"):
-                workload_id = request_path.split("/")[-2]
-                runtime.cancel(workload_id)
-                return self.send_json(202, {"ok": True, "value": {"workload_id": workload_id, "cancelled": True}})
-            if request_path != "/v1/workloads":
-                return self.send_json(404, {"ok": False, "error": "not found"})
             try:
-                length = int(self.headers.get("Content-Length", "0"))
-                workload = Workload.from_dict(json.loads(self.rfile.read(length)))
-                result = runtime.submit(workload)
+                if path in {"/health", "/v1/health"}:
+                    self._send(200, daemon.health())
+                    return
+                if path.startswith("/poll/") or path.startswith("/v1/poll/"):
+                    wid = path.rsplit("/", 1)[-1]
+                    result = daemon.poll(wid)
+                    if result is None:
+                        self._send(200, {"status": "pending", "workload_id": wid})
+                    else:
+                        self._send(200, result.as_dict())
+                    return
+                self._send(404, {"error": "not_found", "path": path})
             except Exception as exc:
-                return self.send_json(
-                    422, {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
-                )
-            return self.send_json(200, {"ok": True, "value": result.as_dict()})
+                self._send(500, {"error": str(exc), "trace": traceback.format_exc()[-500:]})
 
-    return ThreadingHTTPServer((host, port), Handler)
+        def do_POST(self) -> None:  # noqa: N802
+            if not self._auth_ok():
+                self._send(401, {"error": "unauthorized"})
+                return
+            path = urlparse(self.path).path
+            try:
+                if path in {"/submit", "/v1/submit"}:
+                    data = self._read_json()
+                    w = Workload.from_dict(data)
+                    result = daemon.submit(w)
+                    self._send(200, result.as_dict())
+                    return
+                if path.startswith("/cancel/") or path.startswith("/v1/cancel/"):
+                    wid = path.rsplit("/", 1)[-1]
+                    ok = daemon.cancel(wid)
+                    self._send(200, {"cancelled": ok, "id": wid})
+                    return
+                self._send(404, {"error": "not_found", "path": path})
+            except Exception as exc:
+                self._send(400, {"error": str(exc), "trace": traceback.format_exc()[-500:]})
+
+    return Handler
+
+
+def serve(
+    host: str = "127.0.0.1",
+    port: int = 8765,
+    *,
+    store: str | None = None,
+    auth_token: str | None = None,
+) -> ThreadingHTTPServer:
+    daemon = RuntimeDaemon(root=store)
+    daemon.attach()
+    token = auth_token or os.getenv("CHRONUS_VIGPU_TOKEN")
+    handler = make_handler(daemon, auth_token=token)
+    return ThreadingHTTPServer((host, port), handler)
+
+
+def create_server(host: str, port: int, **kwargs: Any) -> ThreadingHTTPServer:
+    return serve(host, port, **kwargs)

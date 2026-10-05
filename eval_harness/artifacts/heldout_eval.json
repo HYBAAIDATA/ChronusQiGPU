@@ -1,0 +1,1026 @@
+{
+  "comparisons": {
+    "absent_reward_learner_transitions": 0,
+    "cold_vs_absent_reward_ranking_equal": true,
+    "cold_vs_irrelevant_ranking_equal": true,
+    "cold_vs_warm_ranking_equal": true,
+    "warm_learned_state_differs_from_cold": {
+      "cold_strategy": "primitive-compose",
+      "warm_strategy": "primitive-compose"
+    }
+  },
+  "note": "No improvement is asserted. Rows are evidence; comparisons record whether learned/seeded state changed any recorded decision.",
+  "runs": {
+    "absent_reward_control": {
+      "note": "executor returns observation only; no reward authority",
+      "superlearner_transitions": 0,
+      "tasks": [
+        {
+          "ablations": [],
+          "alternative_strategies": [
+            "mcts-v16",
+            "evolution-v16",
+            "toe-plan"
+          ],
+          "candidate_origins": [
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives"
+          ],
+          "candidate_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "control_decisions": [
+            "replan",
+            "replan",
+            "replan",
+            "replan",
+            "replan",
+            "replan",
+            "replan",
+            "replan"
+          ],
+          "cycles": 8,
+          "execute_results": [
+            {
+              "goal_met": false,
+              "observation": "observed-neutral"
+            },
+            {
+              "goal_met": false,
+              "observation": "observed-neutral"
+            },
+            {
+              "goal_met": false,
+              "observation": "observed-neutral"
+            },
+            {
+              "goal_met": false,
+              "observation": "observed-neutral"
+            },
+            {
+              "goal_met": false,
+              "observation": "observed-neutral"
+            },
+            {
+              "goal_met": false,
+              "observation": "observed-neutral"
+            },
+            {
+              "goal_met": false,
+              "observation": "observed-neutral"
+            },
+            {
+              "goal_met": false,
+              "observation": "observed-neutral"
+            }
+          ],
+          "executed_actions": [
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign"
+          ],
+          "last_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "learning_updates": [
+            {
+              "counts_for_control": false,
+              "cycle": 0,
+              "digest": "88694051bc634ec1c1dcc8d032b114ebd9d8411fe3de70540192c1cfc511fcb0",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 0,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "primitive-compose",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 1,
+              "digest": "7e52e095980fb97bf7b9af23c1b8fb532f4860a5a69c9363b9edae1b762a6113",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 1,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "primitive-compose",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 2,
+              "digest": "ce6ec97b8ced27a7b8448c0c763a5539b446ca81eee25c2a8c696e2fd89445e8",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 2,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "primitive-compose",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 3,
+              "digest": "ce826fd2ba9c44ce7bc5b78c8a689164bb9293f61ef54a245390fbf2ce39f06f",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 3,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "primitive-compose",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 4,
+              "digest": "fdfdc6a56b272590fe564460e0add145b1a6ea461adf983873196a3d8d36922f",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 4,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "primitive-compose",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 5,
+              "digest": "ae41c2e7f18df5f2c51f53e31d2f2b942836141d5b8798167f7fdcbd0638eafb",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 5,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "primitive-compose",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 6,
+              "digest": "082b43e6974de358ad5d2dbd0de123357b96051c1fe3736f18e0f97ed71fe325",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 6,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "primitive-compose",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 7,
+              "digest": "24cd3bb60b5da5c02f4725d8e1474283bb59975ceee9a48bb3f3b6e4a7751ec4",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 7,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "primitive-compose",
+              "success": false
+            }
+          ],
+          "objective_applications": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "outcome": "stalled",
+          "outcome_detail": "cycle budget exhausted",
+          "plan_nodes": [
+            "toe-0"
+          ],
+          "prediction_errors": [
+            0.9397392444384675,
+            0.6247540556282724,
+            0.27612932074145025,
+            0.08113676450608998,
+            0.01584982846275229,
+            0.002058416088473458,
+            0.00017772294007556422,
+            1.0201300269296887e-05
+          ],
+          "problem_id": "ctl-1",
+          "replanning_events": 8,
+          "retrieved_memory_refs": [],
+          "seal": "08f1b1e83dcecf776463891b20e3bca3e960f39344dbb72ac81ac744ade1d99b",
+          "selected_strategy": "primitive-compose",
+          "transitions": 125
+        }
+      ]
+    },
+    "cold_runtime": {
+      "note": "fresh runtime, no prior learned state",
+      "tasks": [
+        {
+          "ablations": [],
+          "alternative_strategies": [
+            "mcts-v16",
+            "evolution-v16",
+            "toe-plan"
+          ],
+          "candidate_origins": [
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives"
+          ],
+          "candidate_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "control_decisions": [
+            "replan"
+          ],
+          "cycles": 1,
+          "execute_results": [
+            {
+              "goal_met": true,
+              "observation": "measured-pass",
+              "reward": 1.0,
+              "reward_authority": "measured-environment"
+            }
+          ],
+          "executed_actions": [
+            "primitive:ADD:AnnAssign"
+          ],
+          "last_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "learning_updates": [
+            {
+              "counts_for_control": false,
+              "cycle": 0,
+              "digest": "6ac09b6523e78912116f72d35535f62d3ac527e4cc5d44c43fe40a111208d9ae",
+              "kind": "canonical-learning-service",
+              "success": true
+            },
+            {
+              "cycle": 0,
+              "kind": "strategy",
+              "problem_class": "train-class",
+              "strategy": "primitive-compose",
+              "success": true
+            }
+          ],
+          "objective_applications": [
+            null
+          ],
+          "outcome": "solved",
+          "outcome_detail": "goal verified by governed execution feedback",
+          "plan_nodes": [
+            "toe-0"
+          ],
+          "prediction_errors": [
+            1.0992350039936825
+          ],
+          "problem_id": "val-1",
+          "replanning_events": 1,
+          "retrieved_memory_refs": [],
+          "seal": "850057035a485c99688cb4451afbc203fe59b28549d9c21a612e46af1b06da73",
+          "selected_strategy": "primitive-compose",
+          "transitions": 20
+        },
+        {
+          "ablations": [],
+          "alternative_strategies": [
+            "mcts-v16",
+            "evolution-v16",
+            "toe-plan"
+          ],
+          "candidate_origins": [
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives"
+          ],
+          "candidate_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "control_decisions": [
+            "continue"
+          ],
+          "cycles": 1,
+          "execute_results": [
+            {
+              "goal_met": true,
+              "observation": "measured-pass",
+              "reward": 1.0,
+              "reward_authority": "measured-environment"
+            }
+          ],
+          "executed_actions": [
+            "primitive:ADD:AnnAssign"
+          ],
+          "last_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "learning_updates": [
+            {
+              "counts_for_control": false,
+              "cycle": 0,
+              "digest": "8bb378a6e916197342cd2e0dd0d08dc06e32cf061c9a2755016476f3082a0c16",
+              "kind": "canonical-learning-service",
+              "success": true
+            },
+            {
+              "cycle": 0,
+              "kind": "strategy",
+              "problem_class": "train-class",
+              "strategy": "primitive-compose",
+              "success": true
+            }
+          ],
+          "objective_applications": [
+            null
+          ],
+          "outcome": "solved",
+          "outcome_detail": "goal verified by governed execution feedback",
+          "plan_nodes": [
+            "toe-0"
+          ],
+          "prediction_errors": [
+            0.03442378240880961
+          ],
+          "problem_id": "val-2",
+          "replanning_events": 0,
+          "retrieved_memory_refs": [
+            "episode-6ac09b6523e78912116f72d3"
+          ],
+          "seal": "9e5c2d499e6fc9fae5efa299d486453554a96b25f991f3892d77ad0fd9562625",
+          "selected_strategy": "primitive-compose",
+          "transitions": 20
+        }
+      ]
+    },
+    "irrelevant_memory_control": {
+      "tasks": [
+        {
+          "ablations": [],
+          "alternative_strategies": [
+            "mcts-v16",
+            "evolution-v16",
+            "toe-plan"
+          ],
+          "candidate_origins": [
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives"
+          ],
+          "candidate_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "control_decisions": [
+            "replan"
+          ],
+          "cycles": 1,
+          "execute_results": [
+            {
+              "goal_met": true,
+              "observation": "measured-pass",
+              "reward": 1.0,
+              "reward_authority": "measured-environment"
+            }
+          ],
+          "executed_actions": [
+            "primitive:ADD:AnnAssign"
+          ],
+          "last_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "learning_updates": [
+            {
+              "counts_for_control": false,
+              "cycle": 0,
+              "digest": "2151821c25094a1b06bed6998ba35f5659ac063e1be289e93423ec968e4898c7",
+              "kind": "canonical-learning-service",
+              "success": true
+            },
+            {
+              "cycle": 0,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "primitive-compose",
+              "success": true
+            }
+          ],
+          "objective_applications": [
+            null
+          ],
+          "outcome": "solved",
+          "outcome_detail": "goal verified by governed execution feedback",
+          "plan_nodes": [
+            "toe-0"
+          ],
+          "prediction_errors": [
+            1.0785158263253134
+          ],
+          "problem_id": "ctl-1",
+          "replanning_events": 1,
+          "retrieved_memory_refs": [
+            "irrelevant-null-1"
+          ],
+          "seal": "e2b997fb20f7c3ed7061a57ba7ba9d0109f10c5b6dd5a6380c2cd009b4570309",
+          "selected_strategy": "primitive-compose",
+          "transitions": 20
+        }
+      ]
+    },
+    "regression_control": {
+      "tasks": [
+        {
+          "ablations": [],
+          "alternative_strategies": [
+            "mcts-v16",
+            "evolution-v16",
+            "toe-plan"
+          ],
+          "candidate_origins": [
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives"
+          ],
+          "candidate_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "control_decisions": [
+            "replan",
+            "replan",
+            "replan",
+            "replan",
+            "replan",
+            "replan",
+            "replan",
+            "replan"
+          ],
+          "cycles": 8,
+          "execute_results": [
+            {
+              "goal_met": false,
+              "measured_improvement": -0.25,
+              "observation": "measured-regress",
+              "reward": -1.0,
+              "reward_authority": "measured-environment"
+            },
+            {
+              "goal_met": false,
+              "measured_improvement": -0.25,
+              "observation": "measured-regress",
+              "reward": -1.0,
+              "reward_authority": "measured-environment"
+            },
+            {
+              "goal_met": false,
+              "measured_improvement": -0.25,
+              "observation": "measured-regress",
+              "reward": -1.0,
+              "reward_authority": "measured-environment"
+            },
+            {
+              "goal_met": false,
+              "measured_improvement": -0.25,
+              "observation": "measured-regress",
+              "reward": -1.0,
+              "reward_authority": "measured-environment"
+            },
+            {
+              "goal_met": false,
+              "measured_improvement": -0.25,
+              "observation": "measured-regress",
+              "reward": -1.0,
+              "reward_authority": "measured-environment"
+            },
+            {
+              "goal_met": false,
+              "measured_improvement": -0.25,
+              "observation": "measured-regress",
+              "reward": -1.0,
+              "reward_authority": "measured-environment"
+            },
+            {
+              "goal_met": false,
+              "measured_improvement": -0.25,
+              "observation": "measured-regress",
+              "reward": -1.0,
+              "reward_authority": "measured-environment"
+            },
+            {
+              "goal_met": false,
+              "measured_improvement": -0.25,
+              "observation": "measured-regress",
+              "reward": -1.0,
+              "reward_authority": "measured-environment"
+            }
+          ],
+          "executed_actions": [
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign",
+            "primitive:ADD:AnnAssign"
+          ],
+          "last_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "learning_updates": [
+            {
+              "counts_for_control": false,
+              "cycle": 0,
+              "digest": "8fae4958f9a89374d89f95064deaf067985e36b04eff6eac07280c2bbabe69ec",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 0,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "primitive-compose",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 1,
+              "digest": "233cc340b19da2b78cabcdbc427fb1c73d537c2eb1c029f4639ed9d08250fe57",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 1,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "primitive-compose",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 2,
+              "digest": "ac1d51659890911b702ad0e8059b442b806b370bf1e368d412aa640034d4993c",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 2,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "primitive-compose",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 3,
+              "digest": "e0f9c3a267af1e959f66b29fc37ab259b55cc57ced15509db14558a067a6f7bb",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 3,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "primitive-compose",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 4,
+              "digest": "257de1bb8d3d8a5d74f3799d6dfb6a76d48854d4222e8ad2832e1496bbf0ab15",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 4,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "primitive-compose",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 5,
+              "digest": "cab8c3559d1e2def7773fe27a52b77e84b0dfffb4a187a52b51974c1134bfe6d",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 5,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "primitive-compose",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 6,
+              "digest": "06d0d48a84182d2802263325107299bb2ffa52d07a9b1d661a68db445595b538",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 6,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "primitive-compose",
+              "success": false
+            },
+            {
+              "counts_for_control": false,
+              "cycle": 7,
+              "digest": "b3a65642954ad4eea13ddffefcde8c1e4e38dd2c56ee610926402b5a512e7702",
+              "kind": "canonical-learning-service",
+              "success": false
+            },
+            {
+              "cycle": 7,
+              "kind": "strategy",
+              "problem_class": "ctl-class",
+              "strategy": "primitive-compose",
+              "success": false
+            }
+          ],
+          "objective_applications": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "outcome": "stalled",
+          "outcome_detail": "cycle budget exhausted",
+          "plan_nodes": [
+            "toe-0"
+          ],
+          "prediction_errors": [
+            0.9840163366385483,
+            0.6541901923940162,
+            0.28913952912209606,
+            0.08495963348183333,
+            0.01659661468068907,
+            0.002155401161167747,
+            0.00018609659803481282,
+            1.068194840170289e-05
+          ],
+          "problem_id": "ctl-1",
+          "replanning_events": 8,
+          "retrieved_memory_refs": [],
+          "seal": "66e02557ae39aa2dca9d678b5b7c16b1c3237f30487d4653ac58c57cddbe52e3",
+          "selected_strategy": "primitive-compose",
+          "transitions": 125
+        }
+      ]
+    },
+    "warm_runtime": {
+      "note": "second production() boot on the trained state dir",
+      "temporal_holdout": [
+        {
+          "ablations": [],
+          "alternative_strategies": [
+            "mcts-v16",
+            "evolution-v16",
+            "toe-plan"
+          ],
+          "candidate_origins": [
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives"
+          ],
+          "candidate_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "control_decisions": [
+            "replan"
+          ],
+          "cycles": 1,
+          "execute_results": [
+            {
+              "goal_met": true,
+              "observation": "measured-pass",
+              "reward": 1.0,
+              "reward_authority": "measured-environment"
+            }
+          ],
+          "executed_actions": [
+            "primitive:ADD:AnnAssign"
+          ],
+          "last_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "learning_updates": [
+            {
+              "counts_for_control": false,
+              "cycle": 0,
+              "digest": "f41ba871a2eef9dc8fcf9ec94378b30310e66ea1e65a33cf3dae64ce09a08e9b",
+              "kind": "canonical-learning-service",
+              "success": true
+            },
+            {
+              "cycle": 0,
+              "kind": "strategy",
+              "problem_class": "temporal-class",
+              "strategy": "primitive-compose",
+              "success": true
+            }
+          ],
+          "objective_applications": [
+            null
+          ],
+          "outcome": "solved",
+          "outcome_detail": "goal verified by governed execution feedback",
+          "plan_nodes": [
+            "toe-0"
+          ],
+          "prediction_errors": [
+            0.1374396492574218
+          ],
+          "problem_id": "temporal-1",
+          "replanning_events": 1,
+          "retrieved_memory_refs": [
+            "episode-8bb378a6e916197342cd2e0d",
+            "episode-bf7139701c07c61ca53375a0",
+            "episode-c9690278fa4f6492a2c694a3",
+            "episode-ca8fde560e8dbe81a10d9414"
+          ],
+          "seal": "cb13d1ace16cdd47b00d9d8b82b0103fb500dadaf786119c2cb518843f37cf0d",
+          "selected_strategy": "primitive-compose",
+          "transitions": 20
+        }
+      ],
+      "validation_tasks": [
+        {
+          "ablations": [],
+          "alternative_strategies": [
+            "mcts-v16",
+            "evolution-v16",
+            "toe-plan"
+          ],
+          "candidate_origins": [
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives"
+          ],
+          "candidate_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "control_decisions": [
+            "replan"
+          ],
+          "cycles": 1,
+          "execute_results": [
+            {
+              "goal_met": true,
+              "observation": "measured-pass",
+              "reward": 1.0,
+              "reward_authority": "measured-environment"
+            }
+          ],
+          "executed_actions": [
+            "primitive:ADD:AnnAssign"
+          ],
+          "last_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "learning_updates": [
+            {
+              "counts_for_control": false,
+              "cycle": 0,
+              "digest": "c9690278fa4f6492a2c694a346b845a5fdd293fb9924f5a46a3dc9e89f860792",
+              "kind": "canonical-learning-service",
+              "success": true
+            },
+            {
+              "cycle": 0,
+              "kind": "strategy",
+              "problem_class": "train-class",
+              "strategy": "primitive-compose",
+              "success": true
+            }
+          ],
+          "objective_applications": [
+            null
+          ],
+          "outcome": "solved",
+          "outcome_detail": "goal verified by governed execution feedback",
+          "plan_nodes": [
+            "toe-0"
+          ],
+          "prediction_errors": [
+            1.0992350039936825
+          ],
+          "problem_id": "val-1",
+          "replanning_events": 1,
+          "retrieved_memory_refs": [
+            "episode-bf7139701c07c61ca53375a0",
+            "episode-ca8fde560e8dbe81a10d9414"
+          ],
+          "seal": "a9ceadaed2abce43e2a15512a5e920a1fd46f36e71e4ca1e348f59fcdc6a6244",
+          "selected_strategy": "primitive-compose",
+          "transitions": 21
+        },
+        {
+          "ablations": [],
+          "alternative_strategies": [
+            "mcts-v16",
+            "evolution-v16",
+            "toe-plan"
+          ],
+          "candidate_origins": [
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives",
+            "euclid-v16:ASTPrimitives"
+          ],
+          "candidate_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "control_decisions": [
+            "continue"
+          ],
+          "cycles": 1,
+          "execute_results": [
+            {
+              "goal_met": true,
+              "observation": "measured-pass",
+              "reward": 1.0,
+              "reward_authority": "measured-environment"
+            }
+          ],
+          "executed_actions": [
+            "primitive:ADD:AnnAssign"
+          ],
+          "last_ranking": [
+            "primitive:ADD:AnnAssign",
+            "primitive:MUTATE:list_comp",
+            "primitive:MUTATE:swap_op",
+            "primitive:NON_LOCAL:class_decomposition",
+            "primitive:NON_LOCAL:conditional_flattening",
+            "primitive:NON_LOCAL:function_split_refactor"
+          ],
+          "learning_updates": [
+            {
+              "counts_for_control": false,
+              "cycle": 0,
+              "digest": "8bb378a6e916197342cd2e0dd0d08dc06e32cf061c9a2755016476f3082a0c16",
+              "kind": "canonical-learning-service",
+              "success": true
+            },
+            {
+              "cycle": 0,
+              "kind": "strategy",
+              "problem_class": "train-class",
+              "strategy": "primitive-compose",
+              "success": true
+            }
+          ],
+          "objective_applications": [
+            null
+          ],
+          "outcome": "solved",
+          "outcome_detail": "goal verified by governed execution feedback",
+          "plan_nodes": [
+            "toe-0"
+          ],
+          "prediction_errors": [
+            0.03442378240880961
+          ],
+          "problem_id": "val-2",
+          "replanning_events": 0,
+          "retrieved_memory_refs": [
+            "episode-bf7139701c07c61ca53375a0",
+            "episode-c9690278fa4f6492a2c694a3",
+            "episode-ca8fde560e8dbe81a10d9414"
+          ],
+          "seal": "8b5b2f655548af13fea8051a5c9d96951660b95f5f46c81ce3dda0e77b21754c",
+          "selected_strategy": "primitive-compose",
+          "transitions": 20
+        }
+      ]
+    }
+  },
+  "schema": "euclid.adversarial.heldout-eval/1"
+}

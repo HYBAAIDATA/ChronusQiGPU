@@ -86,14 +86,24 @@ _WORKER_SPECS = {
 # simulated twin, so it runs (and learns) on a host with no device bound.
 _DEVICE_WORKERS = frozenset({"agentic-mining", "salamander"})
 # With PYTHIA_EXECUTION_DEVICE declared, the mining worker drives the
-# Execution Router directly (OpenCL, the labelled CPU reference, or a remote
-# GPU agent) and needs no MMIO bridge. Salamander supervises the bridge, so
+# Execution Router directly (OpenCL, the Chronus-owned CUDA or Metal lanes,
+# the labelled CPU reference, or a remote GPU agent) and needs no MMIO bridge. Salamander supervises the bridge, so
 # it still waits for one. The declared vocabulary matches
 # mining_runtime.EXECUTION_DEVICES; lane availability itself is enforced by
 # the backend registry's real probes, so requesting an absent lane fails
 # closed rather than falling back silently.
 _EXECUTION_DEVICE_WORKERS = frozenset({"agentic-mining"})
-_EXECUTION_DEVICES = ("auto", "opencl", "gpu", "cpu", "remote", "asic", "super_asic")
+_EXECUTION_DEVICES = (
+    "auto",
+    "opencl",
+    "gpu",
+    "cpu",
+    "cuda",
+    "metal",
+    "remote",
+    "asic",
+    "super_asic",
+)
 _LOCK_HELD = False
 _LOCK_GUARD = threading.Lock()
 _AUDIT: AppendOnlyAudit | None = None
@@ -1841,6 +1851,39 @@ def _repo_engineer_ask(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]
     return HTTPStatus.ACCEPTED, {"ok": True, "state": "running"}
 
 
+def _euclid_cognition_solve(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
+    """Execute one real EUCLID cognition episode and return its trace."""
+    problem_id = body.get("problem_id")
+    goal = body.get("goal")
+    if not isinstance(problem_id, str) or not problem_id.strip():
+        return HTTPStatus.BAD_REQUEST, {
+            "ok": False, "error": "problem_id_required", "available": False,
+        }
+    if not isinstance(goal, str) or not goal.strip():
+        return HTTPStatus.BAD_REQUEST, {
+            "ok": False, "error": "goal_required", "available": False,
+        }
+
+    def _str_tuple(key: str, limit: int = 64) -> tuple[str, ...]:
+        raw = body.get(key) or ()
+        if not isinstance(raw, (list, tuple)):
+            return ()
+        return tuple(str(item)[:200] for item in raw[:limit])
+
+    result = system_fabric.euclid_cognition_solve(
+        problem_id.strip(),
+        goal.strip(),
+        problem_class=str(body.get("problem_class") or "repository-wiring")[:120],
+        structure=_str_tuple("structure"),
+        observations=_str_tuple("observations"),
+        strategy=str(body.get("strategy") or "")[:60],
+        initial_code=str(body.get("initial_code") or "")[:20_000],
+    )
+    if not result.get("available"):
+        return HTTPStatus.SERVICE_UNAVAILABLE, {"ok": False, **result}
+    return HTTPStatus.OK, {"ok": True, **result}
+
+
 def _mining_device_reason(control: "ControlPlane") -> str | None:
     """None when a mining device is bound; otherwise the honest reason."""
     if control.mmio_device or getattr(control, "execution_device", ""):
@@ -2329,6 +2372,7 @@ class _Handler(BaseHTTPRequestHandler):
             autonomous_supervisor.trigger_cycle(),
         ),
         "/api/v1/intelligence/engineer/ask": _repo_engineer_ask,
+        "/api/v1/intelligence/cognition/solve": _euclid_cognition_solve,
         "/api/v1/agentic/start": _agentic_start,
         "/api/v1/agentic/stop": lambda _b: _runner_stop(system_fabric.AGENTIC),
         "/api/v1/campaign/start": _campaign_start,

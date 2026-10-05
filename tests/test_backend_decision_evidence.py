@@ -46,6 +46,8 @@ class BackendDecisionEvidenceTests(unittest.TestCase):
         probes = {
             BackendLane.CPU: lambda: probe(BackendLane.CPU, True),
             BackendLane.GPU: lambda: probe(BackendLane.GPU, gpu, hasher=FakeHasher() if gpu else None, reason="GPU probe result"),
+            BackendLane.CUDA: lambda: probe(BackendLane.CUDA, False),
+            BackendLane.METAL: lambda: probe(BackendLane.METAL, False),
             BackendLane.REMOTE_GPU: lambda: probe(BackendLane.REMOTE_GPU, False),
             BackendLane.ASIC: lambda: probe(BackendLane.ASIC, False, reason="no driver"),
             BackendLane.SUPER_ASIC: lambda: probe(BackendLane.SUPER_ASIC, False, reason="no driver"),

@@ -1,0 +1,31 @@
+{
+  "schema": "hyba.euclid.recovery-manifest.v1",
+  "date": "2026-10-04",
+  "tranche": "kairos-control-plane-9",
+  "stacked_on": "organism-cns-8",
+  "archive": {
+    "name": "EUCLID_PROD_MORNING_RECOVERY_COMPLETE_20260719.zip",
+    "sha256": "30d3ddde94238b4cbb4fbb0b299775fed0b90c414669275379cab08186371229"
+  },
+  "files": [
+    {
+      "path": "euclid/kairos_control_plane.py",
+      "sha256": "9fc761c8514e8bd46cde45b77fb3759e25ae9770418697b2d1b2ded36c128d36",
+      "mode": "byte-exact-recovery-from-euclid/kairos_runtime.py"
+    },
+    {
+      "path": "tests/test_kairos_control_plane.py",
+      "sha256": "3a091bad83c3b459cb70d0a92c3ad27e0261d4afcd7f018ebfb5dad4d8849da1",
+      "mode": "test-import-path-adjustment"
+    }
+  ],
+  "activation": "disabled-pending-compatibility-adapter",
+  "validation": {
+    "compile": "passed",
+    "focused_tests": {
+      "passed": 9,
+      "failed": 0
+    }
+  },
+  "claim_boundary": "Local recovered control-plane behavior only; not current-runtime equivalence or production activation."
+}

@@ -84,9 +84,15 @@ def _probe_persistence(runtime: Any, state_dir: Path, result: CapabilityResult) 
     from euclid.runtime import EuclidRuntime
 
     restored = EuclidRuntime.restore(checkpoint, state_dir=state_dir)
-    _advance(result, "PERSISTED", "runtime checkpoint saved and restored")
-    if restored.kairos.replay_verify():
-        _advance(result, "REPLAYED", "evidence/world replay verified after restore")
+    try:
+        _advance(result, "PERSISTED", "runtime checkpoint saved and restored")
+        if restored.kairos.replay_verify():
+            _advance(result, "REPLAYED",
+                     "evidence/world replay verified after restore")
+    finally:
+        # The restored runtime owns its own SQLite handle; releasing it inside
+        # the state directory's lifetime keeps the directory deletable.
+        restored.close()
 
 
 def _probe_search_engines(runtime: Any, result: CapabilityResult) -> None:

@@ -1,0 +1,105 @@
+{
+  "ladder": [
+    "PRESENT",
+    "IMPORTABLE",
+    "ADAPTED",
+    "REGISTERED",
+    "REACHABLE",
+    "USED_IN_EPISODE",
+    "CHANGES_DECISION",
+    "EXECUTED",
+    "OUTCOME_OBSERVED",
+    "FEEDBACK_CLOSED",
+    "PERSISTED",
+    "RESTART_VERIFIED",
+    "TRANSFER_VERIFIED"
+  ],
+  "matrix": {
+    "euclid.learning_service": {
+      "assessed_stage": "PERSISTED",
+      "assessment_basis": "canonical learning-service record wrote durably",
+      "recorded_stage": "PERSISTED",
+      "verdict": "MATCH"
+    },
+    "euclid.memory_database": {
+      "assessed_stage": "PERSISTED",
+      "assessment_basis": "TRANSFER_VERIFIED only when a durable record observably biased candidate scoring (memory-influence transition); otherwise PERSISTED once the sqlite store wrote durably and verify() passes; restart verification is self-certified (no verify() on boot)",
+      "recorded_stage": "PERSISTED",
+      "verdict": "MATCH"
+    },
+    "euclid.objective_controller": {
+      "assessed_stage": "USED_IN_EPISODE",
+      "assessment_basis": "derived objectives are applied to planning_goal and passed to the rank evaluator's context",
+      "recorded_stage": "USED_IN_EPISODE",
+      "verdict": "MATCH"
+    },
+    "euclid.representation_controller": {
+      "assessed_stage": "CHANGES_DECISION",
+      "assessment_basis": "accepted restructuring changes representation consumed downstream",
+      "recorded_stage": "CHANGES_DECISION",
+      "verdict": "MATCH"
+    },
+    "euclid.strategy_meta_learning": {
+      "assessed_stage": "FEEDBACK_CLOSED",
+      "assessment_basis": "a strategy/executed-arm update banks the outcome under a key the selection machinery reads (select_strategy or composer scoring)",
+      "recorded_stage": "FEEDBACK_CLOSED",
+      "verdict": "MATCH"
+    },
+    "euclid.v16.primitives": {
+      "assessed_stage": "CHANGES_DECISION",
+      "assessment_basis": "primitives change the decision only when a primitive candidate was the executed action; composed-but-not-executed is used",
+      "recorded_stage": "CHANGES_DECISION",
+      "verdict": "MATCH"
+    },
+    "euclid.v16.search": {
+      "assessed_stage": "REACHABLE",
+      "assessment_basis": "v16 search changes the decision only when a search candidate was the executed action; composed-but-not-executed is used",
+      "recorded_stage": "REACHABLE",
+      "verdict": "MATCH"
+    },
+    "experience_superlearner": {
+      "assessed_stage": "PERSISTED",
+      "assessment_basis": "observe() runs only for reward-bearing experiences",
+      "recorded_stage": "REACHABLE",
+      "verdict": "UNDERSTATED"
+    },
+    "pythia.memory": {
+      "assessed_stage": "PERSISTED",
+      "assessment_basis": "the durable cognition memory adapter writes episode records into the sqlite store covered by verify()",
+      "recorded_stage": "REACHABLE",
+      "verdict": "UNDERSTATED"
+    },
+    "pythia.store": {
+      "assessed_stage": "PERSISTED",
+      "assessment_basis": "store.record_run appends journal rows only when a reward-bearing experience flows",
+      "recorded_stage": "REACHABLE",
+      "verdict": "UNDERSTATED"
+    },
+    "repository.engineer": {
+      "assessed_stage": "OUTCOME_OBSERVED",
+      "assessment_basis": "governed executor ran and the observation was recorded",
+      "recorded_stage": "OUTCOME_OBSERVED",
+      "verdict": "MATCH"
+    },
+    "toe.meta_reasoning": {
+      "assessed_stage": "CHANGES_DECISION",
+      "assessment_basis": "non-continue metacontrol actions are applied: replan rewrites the plan, halt_stalled ends the episode early",
+      "recorded_stage": "CHANGES_DECISION",
+      "verdict": "MATCH"
+    },
+    "toe.planning": {
+      "assessed_stage": "CHANGES_DECISION",
+      "assessment_basis": "CHANGES_DECISION requires a replan or an executed plan-node candidate; a plan composed but never consumed only ran",
+      "recorded_stage": "CHANGES_DECISION",
+      "verdict": "MATCH"
+    },
+    "toe.world_model": {
+      "assessed_stage": "FEEDBACK_CLOSED",
+      "assessment_basis": "compare phase ran; world model updated from observed outcome (TOEWorldModelAdapter holds state in memory, not persisted)",
+      "recorded_stage": "FEEDBACK_CLOSED",
+      "verdict": "MATCH"
+    }
+  },
+  "note": "assessed_stage is the highest stage supported by executable episode evidence; every grant rule requires the episode transition it records",
+  "schema": "euclid.adversarial.capability-matrix/1"
+}

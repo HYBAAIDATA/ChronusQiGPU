@@ -1091,3 +1091,40 @@ class BitcoinHasher:
             "launch_config": dict(self.launch_config),
             "fallback_reason": self.fallback_reason,
         }
+
+
+#: Backend tokens ``hasher_for_backend`` resolves. ``auto``/``cpu``/
+#: ``opencl``/``gpu`` bind the OpenCL hasher (with its declared CPU
+#: reference fallback under ``auto``); ``remote`` binds the remote GPU
+#: agent; ``cuda`` and ``metal`` bind the Chronus-owned native SHA-256d
+#: lanes in ``mining.native_sha256d`` — each a real probe: the hasher
+#: self-checks its kernels against hashlib at bind time or refuses.
+HASHER_BACKENDS = ("auto", "cpu", "opencl", "gpu", "remote", "cuda", "metal")
+
+
+def hasher_for_backend(backend: str = "auto", **kwargs):
+    """Bind the SHA-256d hasher for one backend token — the single door.
+
+    ``cuda``/``metal`` select the Chronus-owned native lanes (no CPU or
+    OpenCL substitution: an unbound runtime raises); every other token
+    keeps its historical meaning. Native hashers accept no ``backend``
+    argument — lane selection is the token itself.
+    """
+    token = (backend or "auto").strip().lower()
+    if token in ("auto", "cpu", "opencl", "gpu"):
+        return BitcoinHasher(backend=token, **kwargs)
+    if token == "remote":
+        from mining.remote_hasher import hasher_for_env
+
+        return hasher_for_env(**kwargs)
+    if token == "cuda":
+        from mining.native_sha256d import ChronusCudaSha256dHasher
+
+        return ChronusCudaSha256dHasher(**kwargs)
+    if token == "metal":
+        from mining.native_sha256d import ChronusMetalSha256dHasher
+
+        return ChronusMetalSha256dHasher(**kwargs)
+    raise ValueError(
+        f"unknown hasher backend {backend!r}; choose from {list(HASHER_BACKENDS)}"
+    )

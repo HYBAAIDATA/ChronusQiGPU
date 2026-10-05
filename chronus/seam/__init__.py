@@ -4,6 +4,10 @@ Turing remains compute. Chronus owns the iGPU offering and this seam prevents
 Kellogg, TOE, Aethel and other consumers from depending on vendor SDK handles.
 
 Public functions return Result[T]. Errors are values. Fail closed.
+
+Scale surface (Lucas/Pisot): offering-level ladder stops and effective-capacity
+envelopes live on ``chronus.seam.scale`` and are re-exported here. Rule 7 —
+ladder stops are never measured hashrate.
 """
 
 from __future__ import annotations
@@ -32,6 +36,20 @@ from .invariants import audit_chronus, audit_hyba_hybrid
 from .kernel import KernelHandle, KernelResult, cancel, dispatch, poll
 from .probe import Capability, lifecycle, probe_devices
 from .queue import QueueState, WorkItem, dequeue, enqueue, peek, queue_state
+from . import store
+from .scale import (
+    CHRONUS_SCALE_RUNGS,
+    REF_LUCAS_N,
+    RULE7_NOTE,
+    ChronusScale,
+    EffectiveCapacity,
+    compute_effective_capacity,
+    effective_capacity,
+    memory_budget_bytes,
+    scale_job,
+    scale_report,
+    snap_work_items,
+)
 from .types import (
     BufferBacking,
     DeviceClass,
@@ -80,11 +98,14 @@ __all__ = [
     "Bid",
     "Buffer",
     "BufferBacking",
+    "CHRONUS_SCALE_RUNGS",
     "Capability",
+    "ChronusScale",
     "DeviceAssignment",
     "DeviceClass",
     "DeviceState",
     "Distribution",
+    "EffectiveCapacity",
     "Err",
     "JobResult",
     "KernelClass",
@@ -94,6 +115,8 @@ __all__ = [
     "Ok",
     "PrivacyMode",
     "QueueState",
+    "REF_LUCAS_N",
+    "RULE7_NOTE",
     "Result",
     "Seam",
     "SeamError",
@@ -104,14 +127,17 @@ __all__ = [
     "audit_hyba_hybrid",
     "bid",
     "cancel",
+    "compute_effective_capacity",
     "coordinate",
     "dequeue",
     "dispatch",
+    "effective_capacity",
     "enqueue",
     "execute",
     "fallback_candidates",
     "kernel_class",
     "lifecycle",
+    "memory_budget_bytes",
     "partition",
     "peek",
     "poll",
@@ -122,6 +148,9 @@ __all__ = [
     "route",
     "run",
     "run_hybrid_stratum",
+    "scale_job",
+    "scale_report",
+    "snap_work_items",
     "supports_class",
     "write",
 ]

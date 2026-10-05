@@ -4,31 +4,32 @@ from __future__ import annotations
 import argparse
 import os
 
-from .runtime import RuntimeConfig, RuntimeDaemon
-from .wire import build_server
+from .adapters import default_adapters
+from .runtime import RuntimeDaemon
+from .wire import serve
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Chronus Virtual iGPU sidecar (virtual_igpu_v1)")
     parser.add_argument("--host", default=os.getenv("CHRONUS_VIGPU_HOST", "127.0.0.1"))
     parser.add_argument("--port", type=int, default=int(os.getenv("CHRONUS_VIGPU_PORT", "8765")))
     parser.add_argument(
         "--store", default=os.getenv("CHRONUS_VIGPU_STORE", ".chronus-virtual-igpu")
     )
-    parser.add_argument("--require-hardware", action="store_true")
-    parser.add_argument("--no-emulator", action="store_true")
-    args = parser.parse_args()
-    runtime = RuntimeDaemon(
-        RuntimeConfig(
-            store_root=args.store,
-            include_emulator=not args.no_emulator,
-            require_hardware=args.require_hardware,
-        )
+    parser.add_argument(
+        "--no-emulator",
+        action="store_true",
+        help="Exclude CPU software adapter (fail closed if no physical adapter)",
     )
-    server = build_server(runtime, args.host, args.port)
+    args = parser.parse_args()
+    adapters = default_adapters(include_cpu_emulator=not args.no_emulator)
+    daemon = RuntimeDaemon(root=args.store, adapters=adapters)
+    daemon.attach()
+    server = serve(args.host, args.port, store=args.store)
+    # serve() creates its own daemon; print bind info from args
     print(
         f"Chronus Virtual iGPU virtual_igpu_v1 listening on "
-        f"http://{args.host}:{args.port}",
+        f"http://{args.host}:{args.port} store={args.store}",
         flush=True,
     )
     try:
@@ -37,6 +38,7 @@ def main() -> int:
         pass
     finally:
         server.server_close()
+        daemon.detach()
     return 0
 
 
