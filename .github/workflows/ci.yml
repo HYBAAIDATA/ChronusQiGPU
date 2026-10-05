@@ -94,6 +94,8 @@ jobs:
         run: python scripts/import_audit.py
       - name: Import graph (no new import cycles or layer violations)
         run: python scripts/import_graph.py cycles && python scripts/import_graph.py layers
+      - name: PULVINI data authority boundary
+        run: python scripts/check_pulvini_data_boundary.py
       - name: Unit tests (pytest)
         run: python -m pytest tests/ -x -q
       # The virtual quantum computer is part of the miner; its own tests run
@@ -102,7 +104,7 @@ jobs:
         working-directory: turing_universal_quantum_computer
         run: python -m pytest tests -q
       - name: Byte-compile all Python sources
-        run: python -m compileall -q Intelligence core_engine mining hyba lucas pythagoras scripts tests chronus aethel l_hras bench experiments
+        run: python -m compileall -q Intelligence core_engine mining hyba lucas pythagoras scripts tests chronus aethel l_hras bench experiments quantum_compute_substrate python_backend tensor
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
