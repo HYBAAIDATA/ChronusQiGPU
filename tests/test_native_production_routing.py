@@ -3,9 +3,9 @@
 These are software-contract tests. They prove that a capability-proven native
 hasher reaches its real M32 method through the canonical production router,
 that its physical backend remains labelled ``cuda``/``metal``, and that the
-production router executes the nonce order sealed into the immutable
-SearchPlan. They do not claim physical GPU deployment evidence; the fake native
-hasher only exercises the software evidence contract.
+production router executes plan-bound intent. They do not claim physical GPU
+deployment evidence; the fake native hasher only exercises the software
+contract.
 """
 
 from __future__ import annotations
@@ -22,6 +22,10 @@ from chronus.mla1517.mining.execution_router import (
 from chronus.mla1517.mining.geodesic_support import (
     GeodesicProductionMiningCoordinator,
     ProductionExecutionRouter,
+)
+from chronus.mla1517.mining.pythia_search import (
+    SEARCH_ARCHITECTURE_ID,
+    precompute_pythia_search,
 )
 from chronus.mla1517.mining.search_plan import (
     CompletionState,
@@ -48,8 +52,6 @@ class _NativeHasher:
     def __init__(self, backend: str) -> None:
         self.backend = backend
         self.calls = []
-        # Make per-instance measured counters; class attributes above are only
-        # the shape expected by the production router.
         self.kernel_ms = 0.0
         self.launches = 0
 
@@ -57,8 +59,6 @@ class _NativeHasher:
         self.calls.append(("m32", base_nonce, count, tuple(lane_order)))
         self.launches += 1
         self.kernel_ms += 0.25
-        # Max target means the first probe is valid. Return a real SHA256d so
-        # the router's independent host recheck remains active in this test.
         nonce = (int(base_nonce) + int(lane_order[0])) & 0xFFFFFFFF
         return nonce, _sha256d(header, nonce), int(count)
 
@@ -139,7 +139,7 @@ def test_native_m32_executes_on_native_hasher_without_cpu_substitution(backend):
     assert candidate is not None
     assert candidate["nonce"] == 0
     assert candidate["independently_rechecked"] is True
-    assert record.requested_route == "opencl_m32"  # historical route token
+    assert record.requested_route == "opencl_m32"
     assert record.executed_route == "opencl_m32"
     assert record.device_backend == backend
     assert record.kernel_identity == f"chronus_native_sha256d:{backend}:opencl_m32"
@@ -147,9 +147,6 @@ def test_native_m32_executes_on_native_hasher_without_cpu_substitution(backend):
     assert record.kernel_launch_count == 1
     assert record.kernel_ms == pytest.approx(0.25)
     assert record.completion_state is CompletionState.EARLY_WINNER
-    # The schema is now substrate-general: a measured native launch + completed
-    # work may truthfully reach HARDWARE_EXECUTED. This fake proves the contract
-    # only; deployment still needs a real CUDA/Metal trace.
     assert record.evidence_class is EvidenceClass.HARDWARE_EXECUTED
 
 
@@ -182,8 +179,6 @@ def test_production_router_executes_plan_bound_nonce_order_not_injected_callback
         k_gold = k_m32 = k_range = None
 
     plan = _plan("cpu_reference", nonce_order=NONCE_ORDER_HENDRIX)
-    # A conflicting callback is deliberately supplied. The production seam
-    # must ignore it and consume SearchPlan.nonce_order.
     router = ProductionExecutionRouter(
         CpuHasher(),
         lambda header, target, start, count: (None, None, count),
@@ -192,7 +187,7 @@ def test_production_router_executes_plan_bound_nonce_order_not_injected_callback
     record, _candidate = router.execute_plan(
         plan,
         bytes(80),
-        bytes(32),  # impossible target for this bounded contract probe
+        bytes(32),
         lease=_lease(plan),
     )
 
@@ -205,18 +200,25 @@ def test_search_plan_refuses_unknown_nonce_order():
         _plan(nonce_order="invented-order")
 
 
-def test_coordinator_binds_technology_intent_into_plan_evidence():
+def test_coordinator_binds_canonical_search_and_workforce_intent_into_plan():
     coordinator = GeodesicProductionMiningCoordinator.__new__(
         GeodesicProductionMiningCoordinator
     )
     coordinator._nonce_order = NONCE_ORDER_HENDRIX
     coordinator.geodesic_enabled = True
     coordinator.last_mining_decision = None
+    coordinator.pythia_search_precompute = precompute_pythia_search()
 
     plan = coordinator._bind_plan_execution_intent(_plan())
 
-    assert plan.nonce_order == NONCE_ORDER_HENDRIX
-    assert plan.evidence_refs["requested_nonce_order"] == NONCE_ORDER_HENDRIX
+    # M32 is the inherited-router compatibility carrier only. The immutable
+    # evidence reference is the actual production search identity.
+    assert plan.nonce_order == NONCE_ORDER_M32
+    assert plan.evidence_refs["search_architecture"] == SEARCH_ARCHITECTURE_ID
+    assert plan.evidence_refs["search_precompute_digest"] == coordinator.pythia_search_precompute.digest
+    assert plan.evidence_refs["configured_traversal_refinement"] == NONCE_ORDER_HENDRIX
     intent = plan.evidence_refs["technology_intent"]
-    assert intent["geodesic_enabled"] is True
-    assert intent["proof_authority"] == "sha256d_target_and_literal_pool_response_only"
+    assert intent["composition_root"] == "PYTHIA"
+    assert intent["dual_vertices"] == 600
+    assert intent["hilbert_space"] == "11_qubits_C^2048"
+    assert intent["proof_authority"] == "sha256d_target_freshness_and_literal_pool_response_only"
