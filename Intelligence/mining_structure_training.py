@@ -337,20 +337,44 @@ def train_pythia_structure(
     before_totals = tuple(getattr(pythia, "_totals", ()))
 
     corpus_id = str(manifest["corpus_id"])
+    ordered_train = sorted(train_rows, key=lambda r: r.height)
+    training_ids = {
+        _pattern_id(corpus_id, row)
+        for row in ordered_train
+    }
+
+    # Consolidation in PythiaLearning is intentionally global over its current
+    # short-term buffer. Isolate this corpus so bootstrapping cannot move an
+    # unrelated live memory across the short-/long-term boundary.
+    prior_short_term = list(getattr(pythia, "_short_term", []))
+    unrelated_short_term = [
+        entry
+        for entry in prior_short_term
+        if entry.get("pattern_id") not in training_ids
+    ]
+    pythia._short_term = []
+
     newly_taught = 0
     already_known = 0
-    ordered_train = sorted(train_rows, key=lambda r: r.height)
-    for row, vector in zip(ordered_train, train_vectors):
-        if _teach_unlabelled_structure(
-            pythia,
-            vector,
-            _pattern_id(corpus_id, row),
-        ):
-            newly_taught += 1
-        else:
-            already_known += 1
+    consolidated = 0
+    try:
+        for row, vector in zip(ordered_train, train_vectors):
+            if _teach_unlabelled_structure(
+                pythia,
+                vector,
+                _pattern_id(corpus_id, row),
+            ):
+                newly_taught += 1
+            else:
+                already_known += 1
 
-    consolidated = int(pythia.consolidate()) if newly_taught else 0
+        consolidated = int(pythia.consolidate()) if pythia._short_term else 0
+    finally:
+        # On success consolidate() has emptied the isolated structural buffer.
+        # On failure retain any un-consolidated structural entries as pending,
+        # but never discard the unrelated memories that were present on entry.
+        remaining_structural = list(getattr(pythia, "_short_term", []))
+        pythia._short_term = unrelated_short_term + remaining_structural
 
     after_evidence = {
         key: list(value)
