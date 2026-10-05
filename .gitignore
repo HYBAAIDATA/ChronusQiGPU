@@ -48,6 +48,44 @@ models/
 # scratch build/output dir
 .tmp_build/
 
+# --- agent scratch / inspection output -------------------------------------
+# Transient analysis dumps written to the repo root by tooling and agents.
+# These are never source: they are regenerable output, so they are ignored
+# rather than committed (and never force-added).
+_tmp_*.py
+_tmp_*/
+_chronus_dump_ws/
+_p8.out
+_p8.err
+_d.err
+_wtest.py
+_hasher_snap.py
+_patch_hasher.py
+_hyba_leftovers.txt
+_FULL_BODIES.md
+_dump/
+_out/
+_final/
+_chunks/
+_bodies/
+_chapters/
+_tiny/
+_win/
+_rp/
+_inv_out/
+# Local backup trees (superseded working copies) — not canonical source.
+chronus_local_backup_*/
+# Nested vendored clones / older-generation snapshots that must not be
+# mistaken for the canonical packages (they contain their own .git or an
+# entire duplicate subsystem tree).
+hyba_data/
+golden_quantum_package/
+# Runtime registries written by the cognition plane.
+var/
+# Local devin environment descriptor (machine-specific paths).
+.devin/
+pytest_out.txt
+
 # L-HRAS aethel storage roots (config.example.toml defaults)
 aethel_store/
 aethel_backup/

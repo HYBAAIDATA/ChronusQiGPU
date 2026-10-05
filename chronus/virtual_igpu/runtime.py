@@ -39,6 +39,7 @@ from .abi import (
     digest_json,
 )
 from .adapters import Adapter, AdapterUnavailable, default_adapters
+from .attestation import extend_chain, verify
 from .evidence import EvidenceLedger
 from .memory import VirtualMemoryPlane
 
@@ -213,6 +214,43 @@ class RuntimeDaemon:
                 "last_error": self._last_error,
             }
 
+    # --- trust corroboration -------------------------------------------------
+
+    def _hardware_root_corroborated(self, adapter: Adapter) -> bool:
+        """Fail-closed check for a ``hardware_rooted`` claim.
+
+        The claim is only honoured when the adapter exposes a *verified
+        attestation mechanism*: a probe attestation whose recorded trust class
+        is ``hardware_rooted`` and whose fingerprint/chain digest replay to the
+        values the adapter reports. Self-assertion, unverifiable chain digests
+        and software adapters are refused, so a lying adapter cannot promote
+        itself to hardware-rooted provenance.
+        """
+        try:
+            att = adapter.probe()
+        except Exception:
+            return False
+        if not getattr(att, "hardware_rooted", False):
+            return False
+        if getattr(att, "trust_class", None) != TrustClass.HARDWARE_ROOTED.value:
+            return False
+
+        record = {
+            "adapter_id": att.adapter_id,
+            "kind": att.kind,
+            "available": bool(att.available),
+            "detail": att.detail or {},
+            "abi_version": ABI_VERSION,
+        }
+        # Replay the mechanism the runtime itself trusts. A fabricated
+        # fingerprint/chain digest cannot reproduce these digests.
+        if digest_json(record) != getattr(att, "fingerprint", None):
+            return False
+        chain = extend_chain((), record)
+        if not chain or chain[-1] != getattr(att, "chain_digest", None):
+            return False
+        return verify([record], chain)
+
     # --- admission / selection --------------------------------------------
 
     def _policy(self, w: Workload) -> str:
@@ -370,6 +408,14 @@ class RuntimeDaemon:
             hardware_rooted = bool(result.hardware_rooted)
             # Software never hardware-rooted
             if "software" in adapter.id or "cpu" in adapter.id:
+                hardware_rooted = False
+                if trust == TrustClass.HARDWARE_ROOTED.value:
+                    trust = TrustClass.RUNTIME_SIGNED.value
+            # hardware_rooted is a claim, never a fact: it survives only when a
+            # verified attestation mechanism corroborates it. An adapter that
+            # self-asserts hardware rooting without a replayable chain is
+            # downgraded to runtime_signed (never silently believed).
+            if hardware_rooted and not self._hardware_root_corroborated(adapter):
                 hardware_rooted = False
                 if trust == TrustClass.HARDWARE_ROOTED.value:
                     trust = TrustClass.RUNTIME_SIGNED.value
