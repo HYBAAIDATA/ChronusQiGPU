@@ -4,7 +4,7 @@ GATE_TARGETS := rule7-no-float abi-check refuted-claims import-audit claim-regis
 gates: $(GATE_TARGETS)
 release-gate: gates gate-rollup
 rule7-no-float:
-	python3 scripts/no_float_in_math_core.py
+	python3 scripts/rule7_no_float_gate.py
 abi-check:
 	python3 scripts/abi_check.py
 refuted-claims:
