@@ -8,7 +8,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
+import sys
 import time
+from pathlib import Path
 
 import pytest
 
@@ -273,3 +276,160 @@ def test_mining_truth_is_not_delegated_to_specialists(runtime):
     assert "sha256d" in forbidden
     for organ in ("turing", "chronus", "triad"):
         assert runtime.registry.get(organ).authority.value == "read-only"
+
+
+def _route(rt, request, **kw):
+    return rt.route_specialist(request, tenant_id="tenant-a", actor="user-1", **kw)
+
+
+def test_route_specialist_selects_organ_without_caller_naming_it(runtime):
+    """Self-directed dispatch: the organism picks the organ."""
+    out = _route(runtime, {"operation": "run-program", "program": BELL})
+    assert out["allowed"] and out["routed"] is True
+    assert out["organ"] == "turing"
+    assert out["result"]["executed"] and out["result"]["owner"] == "TURING"
+    assert out["routing"]["candidates"] == ["turing"]
+    assert (
+        runtime.reachability.stage("euclid.organism_routing") is ReachabilityStage.CHANGES_DECISION
+    )
+
+
+def test_route_specialist_refuses_unroutable_requests(runtime):
+    missing = _route(runtime, {})
+    assert missing["allowed"] is False and missing["routed"] is False
+    assert "no operation" in missing["reason"]
+
+    unknown = _route(runtime, {"operation": "not-a-real-operation"})
+    assert unknown["allowed"] is False and unknown["routed"] is False
+    assert unknown["candidates"] == []
+    assert "no specialist declares" in unknown["reason"]
+    # A refused route must not have dispatched anything.
+    assert "result" not in unknown
+
+
+def test_route_specialist_refuses_when_every_candidate_degraded(runtime):
+    runtime.registry.get("chronus").health = Health.DEGRADED
+    out = _route(runtime, {"operation": "census"})
+    assert out["allowed"] is False and out["routed"] is False
+    assert out["candidates"] == ["chronus"]
+    assert out["excluded_unhealthy"] == ["chronus"]
+
+
+def test_route_specialist_history_steers_pick_and_verifies_transfer(runtime):
+    """Recorded outcomes, not caller preference, steer selection.
+
+    Two organs declare the same operation; cold order would pick the
+    lexicographically first. A durable delegation-result record for the
+    second observably changes the pick — the first TRANSFER_VERIFIED
+    specialist-selection result."""
+    runtime.register_specialist(
+        "aux-a", lambda req: {"ok": True, "organ": "aux-a"}, operations={"probe"}
+    )
+    runtime.register_specialist(
+        "aux-b", lambda req: {"ok": True, "organ": "aux-b"}, operations={"probe"}
+    )
+    for organ_id in ("aux-a", "aux-b"):
+        runtime.rights.grant(runtime.creator_id, organ_id, f"{organ_id}.request", "dispatch")
+    # No history yet: selection falls back to deterministic default order.
+    cold = runtime.select_specialist("probe")
+    assert cold["organ_id"] == "aux-a" and cold["memory_influenced"] is False
+
+    # One recorded successful outcome for aux-b steers the next pick.
+    seeded = _dispatch(runtime, "aux-b", {"operation": "probe"})
+    assert seeded["allowed"]
+    warm = _route(runtime, {"operation": "probe"})
+    assert warm["allowed"] and warm["organ"] == "aux-b"
+    assert warm["routing"]["memory_influenced"] is True
+    assert warm["routing"]["default_pick"] == "aux-a"
+    assert (
+        runtime.reachability.stage("euclid.organism_routing") is ReachabilityStage.TRANSFER_VERIFIED
+    )
+    readiness = runtime.startup_report()["intelligence_readiness"]
+    assert readiness["transfer_verified"] is True
+    assert readiness["production_certified"] is False  # never self-declared
+
+
+CUSTODY_CHILD = Path(__file__).resolve().parent / "euclid_custody_restart_child.py"
+CUSTODY_KEY = b"organism-custody-test-key-32b!"
+
+
+def test_restart_through_theseus_custody_verified_cross_process(tmp_path):
+    """Restart custody evidence must come from a fresh interpreter reading
+    durable THESEUS storage — an in-process restore would prove nothing
+    about survival across a process boundary."""
+    from aethel.enterprise.custody import EnterpriseCustody
+
+    custody_root = tmp_path / "custody"
+    state_dir = tmp_path / "state"
+    first = EuclidRuntime.production(creator_id="creator-1", state_dir=state_dir)
+    custody = EnterpriseCustody(custody_root, hmac_key=CUSTODY_KEY)
+    try:
+        # The checkpoint embeds the chain head at snapshot time; the
+        # custody-checkpoint record itself extends the live chain after.
+        expected_head = first.evidence.head
+        checkpoint = first.save_to_custody(custody)
+    finally:
+        first.close()
+        custody.close()
+
+    child = subprocess.run(
+        [
+            sys.executable,
+            str(CUSTODY_CHILD),
+            str(custody_root),
+            checkpoint["record_id"],
+            CUSTODY_KEY.hex(),
+            str(state_dir),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=300,
+    )
+    assert child.returncode == 0, child.stderr[-3000:]
+    report = json.loads(child.stdout.strip().splitlines()[-1])
+    # The restored chain head equals the checkpointed head; the child's own
+    # custody-restart record then extends it.
+    assert report["restored_evidence_head"] == expected_head
+    assert report["evidence_head"] != expected_head
+    assert report["specialists"] == ["chronus", "triad", "turing"]
+    assert report["restart_stage"] == "RESTART_VERIFIED"
+    assert report["post_restart_dispatch"]["allowed"] is True
+    assert report["readiness"]["restart_verified"] is True
+
+    # The ledger the child wrote is durable for later sessions in the dir.
+    resumed = EuclidRuntime.production(creator_id="creator-1", state_dir=state_dir)
+    try:
+        readiness = resumed.startup_report()["intelligence_readiness"]
+        assert readiness["restart_verified"] is True
+        assert "restart requires independent cross-process verification" not in (
+            readiness["reasons"]
+        )
+    finally:
+        resumed.close()
+
+
+def test_custody_restart_refuses_unknown_record(tmp_path):
+    from aethel.enterprise.custody import EnterpriseCustody
+
+    custody = EnterpriseCustody(tmp_path / "custody", hmac_key=CUSTODY_KEY)
+    try:
+        with pytest.raises(KeyError):
+            EuclidRuntime.restore_from_custody(
+                custody, "euclid-runtime:nobody:never", state_dir=tmp_path / "state"
+            )
+    finally:
+        custody.close()
+
+
+def test_intelligence_readiness_is_computed_not_asserted(runtime):
+    readiness = runtime.startup_report()["intelligence_readiness"]
+    assert readiness["status"] == "NOT_CERTIFIED"
+    assert readiness["production_certified"] is False
+    assert readiness["restart_verified"] is False
+    assert readiness["transfer_verified"] is False
+    assert readiness["external_validation"] is False
+    assert set(readiness["reasons"]) == {
+        "restart requires independent cross-process verification",
+        "transfer requires deterministic ablation-backed decision effect",
+        "external validation is not present",
+    }
