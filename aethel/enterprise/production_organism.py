@@ -1,10 +1,10 @@
 """Canonical production composition for the shared computational organism.
 
 This root turns the shared THESEUS/OVID relationship from an available library
-into the default governed startup path for the memory/data-bearing subsystem
-surface. It composes real PYTHIA, TOE, Kellogg, TURING, Salamander, AL HARAS
-and EUCLID objects over one :class:`CompositionRoot` and exposes only their
-shared-data-bound views.
+into the governed startup path for the memory/data-bearing subsystem surface.
+It composes real PYTHIA, TOE, Kellogg, TURING, Salamander, AL HARAS and EUCLID
+objects over one :class:`CompositionRoot` and exposes only shared-data-bound
+views.
 
 Authority is not collapsed:
 
@@ -16,18 +16,113 @@ Authority is not collapsed:
 * AL HARAS retains security/governance ownership;
 * THESEUS owns durable custody; OVID owns transform/lineage.
 
-Local journals and caches may still exist inside subsystems. On this production
-path they are subordinate working state: shared durable identities and lineage
-are committed through the one enterprise fabric.
+EUCLID's ordinary organism factory historically opens a separate durable Triad
+for its custody specialist. That is forbidden here. The runtime is created with
+``organism=False`` and then composed with a shared Triad specialist backed by
+the already-started SystemDataPort. Thus the EUCLID custody organ cannot become
+a second source of truth.
 """
 
 from __future__ import annotations
 
+import base64
+import hashlib
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
+from .entangled_custody import SystemDataPort
 from .lifecycle import CompositionRoot
-from .system_relations import ProductionSystemRelations
+from .system_relations import DEFAULT_PEERS, ProductionSystemRelations
+
+
+class _SharedTriadOrgan:
+    """EUCLID's THESEUS/OVID specialist over the one shared enterprise fabric."""
+
+    organ_id = "triad"
+    owner = "THESEUS/OVID"
+
+    def __init__(self, port: SystemDataPort) -> None:
+        if port.system != "euclid":
+            raise ValueError("shared Triad specialist requires the EUCLID data port")
+        self.port = port
+
+    @staticmethod
+    def _payload_bytes(request: Mapping[str, Any]) -> bytes:
+        if "payload_b64" in request:
+            return base64.b64decode(str(request["payload_b64"]), validate=True)
+        if "payload_utf8" in request:
+            return str(request["payload_utf8"]).encode("utf-8")
+        raise ValueError("request requires payload_b64 or payload_utf8")
+
+    def _put(self, data: bytes, *, kind: str) -> Any:
+        return self.port.put(
+            kind,
+            data,
+            share_with=DEFAULT_PEERS["euclid"],
+            meta={
+                "custody_owner": "theseus",
+                "transform_lineage_owner": "ovid",
+                "euclid_specialist": "triad",
+            },
+        )
+
+    def execute(self, request: Mapping[str, Any]) -> dict[str, Any]:
+        operation = str(request.get("operation", "verify"))
+        if operation == "put":
+            data = self._payload_bytes(request)
+            binding = self._put(data, kind="euclid_triad_payload")
+            return {
+                "owner": "THESEUS",
+                "operation": operation,
+                "binding_id": binding.binding_id,
+                "custody_record_id": binding.custody_record_id,
+                "sha256": hashlib.sha256(data).hexdigest(),
+            }
+        if operation == "get":
+            binding_id = str(request["binding_id"])
+            data = self.port.read(binding_id)
+            return {
+                "owner": "THESEUS",
+                "operation": operation,
+                "binding_id": binding_id,
+                "payload_b64": base64.b64encode(data).decode("ascii"),
+                "sha256": hashlib.sha256(data).hexdigest(),
+            }
+        if operation == "fold":
+            data = self._payload_bytes(request)
+            binding = self._put(data, kind="euclid_ovid_transform")
+            restored = self.port.read(binding.binding_id)
+            verdict = self.port.fabric.verify(binding.binding_id)
+            return {
+                "owner": "OVID",
+                "operation": operation,
+                "binding_id": binding.binding_id,
+                "ovid_lineage_id": binding.ovid_lineage_id,
+                "round_trip": restored == data,
+                "verified": bool(verdict.get("passed")),
+            }
+        if operation == "verify":
+            binding_id = request.get("binding_id")
+            if binding_id is not None:
+                verdict = self.port.fabric.verify(str(binding_id))
+                return {
+                    "owner": "THESEUS/OVID",
+                    "operation": operation,
+                    "verified": bool(verdict.get("passed")),
+                    "binding_id": str(binding_id),
+                }
+            bindings = self.port.fabric.graph().get("bindings", ())
+            verified = all(
+                self.port.fabric.verify(str(item["binding_id"])).get("passed")
+                for item in bindings
+            )
+            return {
+                "owner": "THESEUS/OVID",
+                "operation": operation,
+                "verified": bool(verified),
+                "bindings_checked": len(bindings),
+            }
+        raise ValueError(f"unsupported shared Triad operation: {operation}")
 
 
 class ProductionOrganism:
@@ -69,6 +164,14 @@ class ProductionOrganism:
         self.euclid: Any | None = None
         self._started = False
 
+    @staticmethod
+    def _registered_organs(runtime: Any) -> set[str]:
+        registry = getattr(runtime, "registry", None)
+        report = getattr(registry, "report", None)
+        if not callable(report):
+            return set()
+        return {str(item.get("organ_id")) for item in report() if item.get("organ_id")}
+
     def start(self) -> "ProductionOrganism":
         if self._started:
             return self
@@ -103,10 +206,23 @@ class ProductionOrganism:
                     pythia=self.intelligence.pythia,
                     memory=self.intelligence.memory,
                     store=self.intelligence.store,
-                    guardian=self.al_haras,
+                    organism=False,
                 )
             else:
                 euclid_runtime = self._euclid_input
+                already = self._registered_organs(euclid_runtime)
+                if already & {"triad", "turing", "chronus"}:
+                    raise RuntimeError(
+                        "injected EUCLID runtime is already organism-composed; "
+                        "production root cannot prove it avoided private Triad custody"
+                    )
+
+            euclid_runtime.compose_organism(
+                guardian=self.al_haras,
+                implementations={
+                    "triad": _SharedTriadOrgan(relations.ports["euclid"]),
+                },
+            )
             self.euclid = relations.bind_euclid(euclid_runtime)
             self.relations = relations
             self._started = True
@@ -128,8 +244,6 @@ class ProductionOrganism:
         try:
             self._close_euclid()
         except Exception:
-            # Startup cleanup is best-effort because the original startup
-            # exception is the primary evidence. THESEUS still must close.
             pass
         try:
             self.lifecycle.stop()
@@ -137,21 +251,12 @@ class ProductionOrganism:
             self._started = False
 
     def stop(self) -> None:
-        """Persist final state and close every layer even when one step fails.
-
-        Shutdown is fail-closed, not fail-short. A final PYTHIA snapshot or
-        EUCLID close failure is surfaced to the caller, but it must never leave
-        the shared THESEUS/OVID custody root open merely because an earlier
-        cleanup step raised.
-        """
+        """Persist final state and close every layer even when one step fails."""
         if not self._started:
             self._fail_closed_cleanup()
             return
 
         first_error: Exception | None = None
-
-        # Persist PYTHIA's final live state through the shared wrapper before
-        # EUCLID/consumers close and before THESEUS is sealed.
         try:
             if self.intelligence is not None:
                 store = getattr(self.intelligence, "store", None)
@@ -180,25 +285,18 @@ class ProductionOrganism:
 
     def status(self) -> dict[str, Any]:
         lifecycle = self.lifecycle.readiness()
+        raw_euclid = getattr(self.euclid, "raw", self.euclid)
+        organs = self._registered_organs(raw_euclid) if raw_euclid is not None else set()
         bound = {
             "pythia": self.pythia is not None,
             "toe": self.toe is not None,
             "kellogg": self.kellogg is not None,
-            "turing": self.turing is not None,
+            "turing": self.turing is not None and "turing" in organs,
             "salamander": self.salamander is not None,
             "al_haras": self.al_haras is not None,
             "euclid": self.euclid is not None,
-            "chronus": bool(
-                self.euclid is not None
-                and "chronus" in {
-                    item.get("organ_id")
-                    for item in getattr(
-                        getattr(self.euclid, "raw", self.euclid), "registry", ()
-                    ).report()
-                }
-            )
-            if self.euclid is not None
-            else False,
+            "chronus": "chronus" in organs,
+            "theseus_ovid": "triad" in organs,
         }
         ready = bool(self._started and lifecycle.get("ready") and all(bound.values()))
         return {
@@ -209,6 +307,7 @@ class ProductionOrganism:
             "authority_preserved": True,
             "custody_owner": "theseus",
             "transform_lineage_owner": "ovid",
+            "euclid_private_triad_opened": False,
             "relations": self.relations.status() if self.relations is not None else None,
         }
 
