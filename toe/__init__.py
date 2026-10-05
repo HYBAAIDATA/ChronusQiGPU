@@ -194,6 +194,7 @@ from .expansion import (
 )
 from .operator_compilers import OperatorSpec, compile_operator
 from .system import TOEProvenanceRecord, TOESystem
+from .foundation import UNIFIED_THEORY, UnifiedTheoryFoundation
 from .engine import (
     AlgebraicFormulations,
     ExtendedAlgebraicFamily,
@@ -268,6 +269,8 @@ __all__ = [
     "TOEExpansionResult",
     "TOESystem",
     "TOEProvenanceRecord",
+    "UNIFIED_THEORY",
+    "UnifiedTheoryFoundation",
     "OperatorSpec",
     "compile_operator",
     "PredictiveEngine",

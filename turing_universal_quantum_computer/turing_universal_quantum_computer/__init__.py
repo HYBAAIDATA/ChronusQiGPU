@@ -158,6 +158,7 @@ _LAZY_MODULES = {
     "midas_vqc",
     "trotter_simulation",
     "golden_quantum",
+    "unified_theory",
     # product boundary (v1.2)
     "backends",
     "capabilities",
@@ -243,6 +244,8 @@ _LAZY_SYMBOLS = {
     "PrimeGapAddressSpace": "golden_quantum",
     "MandelbrotResonanceEngine": "golden_quantum",
     "SearchAttestation": "golden_quantum",
+    "UnifiedTheoryFoundation": "unified_theory",
+    "UNIFIED_THEORY": "unified_theory",
     # product boundary (v1.2)
     "Program": "backends",
     "Operation": "backends",

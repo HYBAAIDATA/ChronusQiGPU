@@ -317,10 +317,12 @@ class TenThousandQubitSystem:
 
     def status(self) -> Dict[str, Any]:
         from ..pisot import plan_hilbert_coverage  # lazy: pisot->turing_core cycle
+        from ..unified_theory import UNIFIED_THEORY
 
         coverage = plan_hilbert_coverage(self.n_qubits)
         return {
             "system": "TenThousandQubitSystem",
+            "unified_theory": UNIFIED_THEORY.report(),
             "n_qubits": self.n_qubits,
             "hilbert_dim": self.hilbert_dim_symbolic,
             "dense_state_bytes_if_materialised": str(coverage.state_bytes),

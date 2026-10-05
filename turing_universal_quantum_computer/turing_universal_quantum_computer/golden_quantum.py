@@ -24,6 +24,7 @@ from typing import Any, Iterable, Mapping
 
 from .capabilities import capability_report
 from .turing_core import t_phi_fold, t_phi_unfold
+from .unified_theory import UNIFIED_THEORY
 
 getcontext().prec = 50
 
@@ -164,6 +165,7 @@ class SearchAttestation:
     candidate_digest: str
     evidence_layer: EvidenceLayer
     advantage_claimed: bool
+    foundation_digest: str
     digest: str
 
 
@@ -192,6 +194,9 @@ class GoldenQuantumCore:
 
     def __init__(self, system: Any = None, *, prime_count: int = 4096):
         self.system = system
+        self.foundation = UNIFIED_THEORY
+        if not self.foundation.verify():
+            raise RuntimeError("unified theory foundation failed self-verification")
         self.constants = GOLDEN_CONSTANTS
         self.uci = UniversalConstantInterface(self.constants)
         self.memory = PrimeGapAddressSpace(prime_count)
@@ -267,6 +272,7 @@ class GoldenQuantumCore:
             "candidate_digest": candidate_digest,
             "evidence_layer": EvidenceLayer.EXPERIMENTAL.value,
             "advantage_claimed": False,
+            "foundation_digest": self.foundation.digest,
         }
         digest = hashlib.sha256(
             json.dumps(body, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -281,6 +287,7 @@ class GoldenQuantumCore:
             candidate_digest=body["candidate_digest"],
             evidence_layer=EvidenceLayer(body["evidence_layer"]),
             advantage_claimed=body["advantage_claimed"],
+            foundation_digest=body["foundation_digest"],
             digest=digest,
         )
 
@@ -303,11 +310,13 @@ class GoldenQuantumCore:
             "routing_policy": "capability-admitted; unavailable backends fail closed",
             "truth_class": "declared_and_probed_capability_surface",
             "evidence_layer": EvidenceLayer.VERIFIED.value,
+            "foundation_digest": self.foundation.digest,
         }
 
     def phase_report(self) -> dict[str, Any]:
         return {
             "schema": "turing.golden_quantum.phases.v1",
+            "foundation": self.foundation.report(),
             "phases": [
                 {
                     "phase": 1,

@@ -58,6 +58,7 @@ def test_golden_mandelbrot_order_is_a_complete_attested_permutation():
     assert attestation.complete_permutation is True
     assert attestation.evidence_layer is EvidenceLayer.EXPERIMENTAL
     assert attestation.advantage_claimed is False
+    assert attestation.foundation_digest == core.foundation.digest
     assert core.verify_attestation(attestation)
 
 
@@ -76,7 +77,10 @@ def test_profile_is_integrated_into_the_virtual_computer_core():
     core = machine.golden_quantum()
 
     assert core.system is machine
-    assert "golden_quantum_profile" in machine.status()["capabilities"]
+    status = machine.status()
+    assert "golden_quantum_profile" in status["capabilities"]
+    assert status["unified_theory"]["verified"] is True
+    assert status["unified_theory"]["digest"] == core.foundation.digest
     assert tqc.GoldenQuantumCore is GoldenQuantumCore
 
 
@@ -88,3 +92,21 @@ def test_claim_audit_rejects_unqualified_speculative_physics_claims():
     reasons = {violation.reason for violation in audit_claims(text)}
 
     assert len(reasons) == 4
+
+
+def test_turing_foundation_is_standalone_from_operational_packages():
+    import ast
+    from pathlib import Path
+
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "turing_universal_quantum_computer"
+        / "unified_theory.py"
+    )
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    imports = {
+        node.module
+        for node in ast.walk(tree)
+        if isinstance(node, ast.ImportFrom) and node.module
+    }
+    assert not any(name.startswith(("toe", "Intelligence", "chronus")) for name in imports)

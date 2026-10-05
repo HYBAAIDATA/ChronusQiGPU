@@ -1,10 +1,9 @@
 """TOE (Theory of Everything) System — Central Coordinator & Verification Arbiter.
 
-STATUS: Research/simulation coordinator — not the production mining path.
-The production mining path is the TypeScript server (server.ts +
-src/lib/stratum_*): it owns the pool socket, the consensus check, and
-share submission. This system verifies nonce *candidates* produced by
-the Python research stack (ManifoldBridge), not live pool shares.
+STATUS: Research/simulation coordinator consumed by the canonical Python
+Chronus mining path as advisory evidence. Stratum owns live work identity;
+SHA-256d and the negotiated target own local validity; literal pool responses
+own acceptance. TOE can order or gate candidates but cannot replace them.
 
 Coordinates the 5 domain intelligences across all 13 substrates:
   - Substrate 1: Predictive (Forecasts)
@@ -59,6 +58,7 @@ from .intelligences.plastic import PlasticIntelligence
 from .intelligences.counterfactual import CounterfactualIntelligence
 from .intelligences.quantum import QuantumIntelligence
 from .manifold_bridge import ManifoldBridge, PrecomputedCandidate
+from .foundation import UNIFIED_THEORY, UnifiedTheoryFoundation
 
 
 @dataclass
@@ -127,6 +127,9 @@ class TOESystem:
         self.counterfactual = counterfactual or CounterfactualIntelligence()
         self.quantum = quantum or QuantumIntelligence()
         self.bridge = bridge or ManifoldBridge()
+        self.foundation: UnifiedTheoryFoundation = UNIFIED_THEORY
+        if not self.foundation.verify():
+            raise RuntimeError("unified theory foundation failed self-verification")
 
         self.provenance_ledger: List[TOEProvenanceRecord] = []
         self.active_coordination_patterns: Dict[str, float] = {
@@ -150,17 +153,26 @@ class TOESystem:
         Each record is hash-chained to its predecessor so reordering, insertion,
         or mutation anywhere in the ledger is detectable by ``verify_provenance``.
         """
+        bound_params = dict(params)
+        supplied = bound_params.get("_unified_theory_digest")
+        if supplied is not None and supplied != self.foundation.digest:
+            raise ValueError("decision carries a conflicting unified theory digest")
+        bound_params["_unified_theory_digest"] = self.foundation.digest
         record = TOEProvenanceRecord(
             phase_name=phase_name,
             initiating_intelligence=intelligence_name,
             action_type=action,
-            parameters=params,
+            parameters=bound_params,
             contract_number=contract_no,
             verified=verified,
             prev_hash=self.provenance_ledger[-1].provenance_hash if self.provenance_ledger else "",
         )
         self.provenance_ledger.append(record)
         return record
+
+    def foundation_report(self) -> Dict[str, Any]:
+        """Return the verified foundation carried by every TOE decision."""
+        return self.foundation.report()
 
     def verify_provenance(self) -> bool:
         """Recompute every hash and every chain link across the ledger."""
