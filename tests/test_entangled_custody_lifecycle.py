@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 
+from aethel.enterprise.custody import compose
+from aethel.enterprise.entangled_custody import EntangledCustodyError
 from aethel.enterprise.lifecycle import CompositionRoot
+from aethel.enterprise.records import OperationalRecord
 
 
 TEST_KEY = b"entangled-lifecycle-test-key-32bytes"
@@ -67,6 +72,7 @@ def test_readiness_reports_shared_entangled_custody(root):
     assert status["entangled_custody"]["theseus_owner"] == "theseus"
     assert status["entangled_custody"]["ovid_owner"] == "ovid"
     assert status["entangled_custody"]["restart_recoverable"] is True
+    assert status["entangled_custody"]["restart_integrity_verified"] is True
     assert status["entangled_custody"]["bindings"] == 0
 
 
@@ -129,6 +135,7 @@ def test_binding_and_parent_lineage_survive_restart(tmp_path):
         status = second.readiness()["entangled_custody"]
         assert status["bindings"] == 2
         assert status["restart_recoverable"] is True
+        assert status["restart_integrity_verified"] is True
 
         pythia2 = second.data_port("pythia")
         assert pythia2.read(child_id) == child_bytes
@@ -136,5 +143,120 @@ def test_binding_and_parent_lineage_survive_restart(tmp_path):
         verification = second.fabric.verify(child_id)
         assert verification["passed"] is True
         assert verification["parent_lineage"] is True
+    finally:
+        second.stop()
+
+
+def _rewrite_index_with_payload(state_dir, record_id: str, mutate) -> None:
+    custody = compose(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    try:
+        original = custody.get_record(record_id)
+        payload = json.loads(original.payload.decode("utf-8"))
+        mutate(payload)
+        replacement = OperationalRecord(
+            record_id=original.record_id,
+            producer=original.producer,
+            producer_version=original.producer_version,
+            schema_version=original.schema_version,
+            kind=original.kind,
+            payload=json.dumps(
+                payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8"),
+            evidence_state=original.evidence_state,
+            sequence=original.sequence + 1,
+            epoch=original.epoch,
+            lineage=original.lineage,
+            correlation_ids=original.correlation_ids,
+            dependencies=original.dependencies,
+            meta=original.meta,
+        )
+        # This is a valid, freshly authenticated THESEUS write. The restart
+        # guard must still reject it if the entanglement structure is false.
+        custody.put_record(replacement)
+    finally:
+        custody.close()
+
+
+def test_restart_rejects_validly_serialized_participant_identity_corruption(tmp_path):
+    state_dir = tmp_path / "participant-corruption"
+    first = CompositionRoot(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    first.start()
+    try:
+        binding = first.data_port("pythia").put(
+            "shared_observation",
+            {"value": 23},
+            share_with=("toe",),
+        )
+        index_id = f"entangled-binding-{binding.binding_id}"
+    finally:
+        first.stop()
+
+    _rewrite_index_with_payload(
+        state_dir,
+        index_id,
+        lambda payload: payload.__setitem__("participants", ["pythia"]),
+    )
+
+    consumer_started = {"value": False}
+    second = CompositionRoot(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    second.register_consumer(
+        "pythia",
+        lambda: consumer_started.__setitem__("value", True),
+        lambda: None,
+    )
+    try:
+        with pytest.raises(EntangledCustodyError, match="participant identity mismatch"):
+            second.start()
+        assert consumer_started["value"] is False
+    finally:
+        second.stop()
+
+
+def test_restart_rejects_validly_serialized_content_digest_corruption(tmp_path):
+    state_dir = tmp_path / "digest-corruption"
+    first = CompositionRoot(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    first.start()
+    try:
+        binding = first.data_port("salamander").put(
+            "healing_evidence",
+            {"action": "requalify", "verified": True},
+            share_with=("pythia", "al_haras"),
+        )
+        index_id = f"entangled-binding-{binding.binding_id}"
+    finally:
+        first.stop()
+
+    _rewrite_index_with_payload(
+        state_dir,
+        index_id,
+        lambda payload: payload.__setitem__("content_sha256", "0" * 64),
+    )
+
+    second = CompositionRoot(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    try:
+        with pytest.raises(EntangledCustodyError, match="structural verification"):
+            second.start()
     finally:
         second.stop()
