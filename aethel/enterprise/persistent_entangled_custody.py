@@ -23,6 +23,7 @@ from .entangled_custody import (
     EntangledCustodyFabric,
     EntanglementBinding,
     _normalise_system,
+    _producer,
 )
 from .records import OperationalRecord
 from .schema import OVID_TRANSFORM_V1
@@ -155,37 +156,117 @@ class PersistentEntangledCustodyFabric(EntangledCustodyFabric):
                 f"binding index {record_id} durable lineage mismatch"
             )
 
-        # Re-read referenced records now. The underlying THESEUS get path
-        # performs envelope authenticity/content verification before returning.
-        self.custody.get_record(binding.custody_record_id)
-        self.custody.get_record(binding.ovid_lineage_record_id)
+        # Re-read and bind the declared source/participant identity to the
+        # durable producer records, not merely to self-consistent index fields.
+        shared_record = self.custody.get_record(binding.custody_record_id)
+        lineage_record = self.custody.get_record(binding.ovid_lineage_record_id)
+        if shared_record.producer != _producer(binding.source_system):
+            raise EntangledCustodyError(
+                f"binding {binding.binding_id} producer/source identity mismatch"
+            )
+        if shared_record.kind != binding.kind:
+            raise EntangledCustodyError(
+                f"binding {binding.binding_id} shared-record kind mismatch"
+            )
+        if shared_record.meta.get("source_system") != binding.source_system:
+            raise EntangledCustodyError(
+                f"binding {binding.binding_id} shared-record source identity mismatch"
+            )
+        if tuple(sorted(shared_record.meta.get("participants", ()))) != binding.participants:
+            raise EntangledCustodyError(
+                f"binding {binding.binding_id} shared-record participant mismatch"
+            )
+        if str(shared_record.correlation_ids.get("binding_id", "")) != binding.binding_id:
+            raise EntangledCustodyError(
+                f"binding {binding.binding_id} shared-record binding correlation mismatch"
+            )
+        if str(shared_record.correlation_ids.get("ovid_lineage_id", "")) != binding.ovid_lineage_id:
+            raise EntangledCustodyError(
+                f"binding {binding.binding_id} shared-record OVID correlation mismatch"
+            )
+        if lineage_record.producer != "ovid" or lineage_record.kind != "transform_lineage":
+            raise EntangledCustodyError(
+                f"binding {binding.binding_id} OVID lineage producer/kind mismatch"
+            )
+        if lineage_record.meta.get("source_system") != binding.source_system:
+            raise EntangledCustodyError(
+                f"binding {binding.binding_id} OVID source identity mismatch"
+            )
+        if tuple(sorted(lineage_record.meta.get("participants", ()))) != binding.participants:
+            raise EntangledCustodyError(
+                f"binding {binding.binding_id} OVID participant identity mismatch"
+            )
+        if str(lineage_record.correlation_ids.get("binding_id", "")) != binding.binding_id:
+            raise EntangledCustodyError(
+                f"binding {binding.binding_id} OVID binding correlation mismatch"
+            )
         return record, binding
 
     @staticmethod
     def _validate_parent_graph(bindings: Mapping[str, EntanglementBinding]) -> None:
-        visiting: set[str] = set()
-        visited: set[str] = set()
+        """Validate completeness/cycles without recursion-depth failure."""
 
-        def visit(binding_id: str) -> None:
-            if binding_id in visited:
-                return
-            if binding_id in visiting:
-                raise EntangledCustodyError(
-                    f"cycle in entanglement parent graph at {binding_id}"
-                )
-            visiting.add(binding_id)
-            binding = bindings[binding_id]
-            for parent_id in binding.parent_binding_ids:
-                if parent_id not in bindings:
+        state: dict[str, int] = {}
+        for root_id in sorted(bindings):
+            if state.get(root_id) == 2:
+                continue
+            stack: list[tuple[str, bool]] = [(root_id, False)]
+            while stack:
+                binding_id, expanded = stack.pop()
+                if expanded:
+                    state[binding_id] = 2
+                    continue
+                current = state.get(binding_id, 0)
+                if current == 2:
+                    continue
+                if current == 1:
                     raise EntangledCustodyError(
-                        f"binding {binding_id} references missing parent {parent_id}"
+                        f"cycle in entanglement parent graph at {binding_id}"
                     )
-                visit(parent_id)
-            visiting.remove(binding_id)
-            visited.add(binding_id)
+                state[binding_id] = 1
+                stack.append((binding_id, True))
+                binding = bindings[binding_id]
+                for parent_id in reversed(binding.parent_binding_ids):
+                    if parent_id not in bindings:
+                        raise EntangledCustodyError(
+                            f"binding {binding_id} references missing parent {parent_id}"
+                        )
+                    parent_state = state.get(parent_id, 0)
+                    if parent_state == 1:
+                        raise EntangledCustodyError(
+                            f"cycle in entanglement parent graph at {parent_id}"
+                        )
+                    if parent_state == 0:
+                        stack.append((parent_id, False))
 
-        for binding_id in sorted(bindings):
-            visit(binding_id)
+    def _verify_recovered_parent_lineage(self, binding: EntanglementBinding) -> None:
+        """Require exact equality across all durable parent representations."""
+
+        parents = tuple(self._bindings[parent_id] for parent_id in binding.parent_binding_ids)
+        shared_record = self.custody.get_record(binding.custody_record_id)
+        lineage_record = self.custody.get_record(binding.ovid_lineage_record_id)
+        stored_lineage = json.loads(lineage_record.payload.decode("utf-8"))
+
+        expected_shared_lineage = (
+            binding.ovid_lineage_record_id,
+            *(parent.custody_record_id for parent in parents),
+        )
+        if tuple(shared_record.lineage) != expected_shared_lineage:
+            raise EntangledCustodyError(
+                f"binding {binding.binding_id} parent custody lineage mismatch"
+            )
+
+        expected_lineage_records = tuple(parent.ovid_lineage_record_id for parent in parents)
+        if tuple(lineage_record.lineage) != expected_lineage_records:
+            raise EntangledCustodyError(
+                f"binding {binding.binding_id} parent OVID record lineage mismatch"
+            )
+
+        expected_parent_ids = tuple(parent.ovid_lineage_id for parent in parents)
+        if tuple(stored_lineage.get("parent_ids", ())) != expected_parent_ids:
+            raise EntangledCustodyError(
+                f"binding {binding.binding_id} parent OVID lineage-id mismatch"
+            )
 
     def _rehydrate(self) -> None:
         recovered: dict[str, EntanglementBinding] = {}
@@ -208,10 +289,12 @@ class PersistentEntangledCustodyFabric(EntangledCustodyFabric):
         self._bindings = recovered
         self._sequence = max(self._sequence, max_sequence)
 
-        # Verify the complete graph only after every parent is loaded. This
-        # proves content digest, shared identity, OVID lineage, and parent
-        # lineage before CompositionRoot starts any consumer.
+        # Verify the complete graph only after every parent is loaded. Exact
+        # parent-set equality prevents a validly authenticated index rewrite
+        # from silently dropping provenance edges.
         for binding_id in sorted(self._bindings):
+            binding = self._bindings[binding_id]
+            self._verify_recovered_parent_lineage(binding)
             verdict = super().verify(binding_id)
             if not verdict.get("passed"):
                 raise EntangledCustodyError(
