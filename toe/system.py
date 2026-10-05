@@ -59,6 +59,7 @@ from .intelligences.counterfactual import CounterfactualIntelligence
 from .intelligences.quantum import QuantumIntelligence
 from .manifold_bridge import ManifoldBridge, PrecomputedCandidate
 from .foundation import UNIFIED_THEORY, UnifiedTheoryFoundation
+from .golden_unified import GOLDEN_UNIFIED_THEORY, GoldenUnifiedTheory
 
 
 @dataclass
@@ -128,6 +129,7 @@ class TOESystem:
         self.quantum = quantum or QuantumIntelligence()
         self.bridge = bridge or ManifoldBridge()
         self.foundation: UnifiedTheoryFoundation = UNIFIED_THEORY
+        self.golden_unified: GoldenUnifiedTheory = GOLDEN_UNIFIED_THEORY
         if not self.foundation.verify():
             raise RuntimeError("unified theory foundation failed self-verification")
 
@@ -169,6 +171,46 @@ class TOESystem:
         )
         self.provenance_ledger.append(record)
         return record
+
+    def unify_observation(
+        self, data: Any, *, graph: Any = None, goal: str | None = None
+    ):
+        """Compile an observation through the Golden Unified Theory provider."""
+        observation = self.golden_unified.compile(data, graph=graph, goal=goal)
+        self.record_decision(
+            "golden_unified",
+            "GoldenUnifiedTheory",
+            "compile_observation",
+            {
+                "operator_kind": observation.operator["kind"],
+                "input_digest": observation.operator["input_digest"],
+                "admitted_theories": list(observation.admitted_theories),
+                "theory_digest": observation.theory_digest,
+            },
+            8,
+            verified=True,
+        )
+        return observation
+
+    def collapse_claims(
+        self, claims, *, problem_type: str = "interventional"
+    ):
+        """Collapse only claims that agreement or declared authority justifies."""
+        result = self.golden_unified.collapse(claims, problem_type=problem_type)
+        self.record_decision(
+            "golden_unified",
+            "GoldenUnifiedTheory",
+            "collapse_claims",
+            {
+                "status": result.status,
+                "collapsed": result.collapsed,
+                "reason": result.reason,
+                "theory_digest": result.theory_digest,
+            },
+            8,
+            verified=result.collapsed,
+        )
+        return result
 
     def foundation_report(self) -> Dict[str, Any]:
         """Return the verified foundation carried by every TOE decision."""
