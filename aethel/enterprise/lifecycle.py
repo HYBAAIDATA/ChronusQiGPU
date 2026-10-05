@@ -1,4 +1,4 @@
-"""Composition root — ordered start/stop for enterprise custody."""
+"""Composition root — ordered start/stop for shared THESEUS/OVID custody."""
 from __future__ import annotations
 
 import threading
@@ -6,21 +6,29 @@ from pathlib import Path
 from typing import Any, Callable, Optional
 
 from .custody import EnterpriseCustody, compose
+from .entangled_custody import EntangledCustodyFabric, SystemDataPort
 from .hooks import SecurityHook
 from .telemetry import EvidenceTelemetry
 
 
 class CompositionRoot:
-    """Ordered lifecycle: recover Theseus before consumers; halt consumers before close.
+    """Ordered lifecycle for the shared data substrate.
 
     Start order:
-      1. Open/recover enterprise custody (Theseus)
-      2. Mark ready
-      3. Start registered consumers
+      1. Open/recover enterprise custody (THESEUS).
+      2. Bind one OVID-lineage / THESEUS-custody entanglement fabric to it.
+      3. Mark the shared substrate ready.
+      4. Start registered consumers; every memory/data consumer obtains a
+         bounded :class:`SystemDataPort` over this same fabric.
 
     Stop order:
-      1. Halt consumers
-      2. Flush / close custody
+      1. Halt consumers.
+      2. Flush / close THESEUS custody.
+      3. Release the shared fabric reference.
+
+    The fabric is shared identity, not a private store per subsystem.  Owner
+    authority remains with each producer; THESEUS owns custody and OVID owns
+    transformation/lineage.
     """
 
     def __init__(
@@ -48,6 +56,7 @@ class CompositionRoot:
         self._chronus_accel = chronus_accel
         self.telemetry = telemetry or EvidenceTelemetry()
         self.custody: Optional[EnterpriseCustody] = None
+        self.fabric: Optional[EntangledCustodyFabric] = None
         self._consumers: list[tuple[str, Callable[[], None], Callable[[], None]]] = []
         self._started = False
         self._lock = threading.Lock()
@@ -62,9 +71,9 @@ class CompositionRoot:
 
     def start(self) -> EnterpriseCustody:
         with self._lock:
-            if self._started and self.custody is not None:
+            if self._started and self.custody is not None and self.fabric is not None:
                 return self.custody
-            # 1. Recover Theseus before any consumer.
+            # 1. Recover THESEUS before any consumer.
             self.custody = compose(
                 self._root,
                 tenant=self._tenant,
@@ -80,7 +89,14 @@ class CompositionRoot:
             health = self.custody.health()
             if not health.get("ready"):
                 raise RuntimeError("custody failed readiness after recover")
-            # 2. Start consumers
+
+            # 2. Bind exactly one shared OVID/THESEUS fabric to this recovered
+            # custody root.  No consumer below is allowed to create a substitute
+            # private fabric through this lifecycle.
+            self.fabric = EntangledCustodyFabric(self.custody)
+            self.telemetry.incr("entangled_custody_ready")
+
+            # 3. Start consumers only after shared custody + lineage are ready.
             for name, start_fn, _stop in self._consumers:
                 start_fn()
                 self.telemetry.incr(f"consumer_start:{name}")
@@ -88,18 +104,26 @@ class CompositionRoot:
             self.telemetry.incr("lifecycle_start")
             return self.custody
 
+    def data_port(self, system: str) -> SystemDataPort:
+        """Return this lifecycle's bounded port over the one shared fabric."""
+        if not self._started or self.fabric is None or self.custody is None:
+            raise RuntimeError("shared THESEUS/OVID fabric is not started")
+        return self.fabric.port(system)
+
     def readiness(self) -> dict[str, Any]:
-        if self.custody is None:
+        if self.custody is None or self.fabric is None:
             return {"ready": False, "reason": "not_started"}
         h = self.custody.health()
+        fabric = self.fabric.status()
         return {
             "ready": bool(h.get("ready") and self._started),
             "custody": h,
+            "entangled_custody": fabric,
             "consumers": [n for n, _, _ in self._consumers],
         }
 
     def stop(self) -> None:
-        """Halt consumers then flush/close custody."""
+        """Halt consumers then flush/close shared custody."""
         with self._lock:
             # Halt consumers first.
             for name, _start, stop_fn in reversed(self._consumers):
@@ -110,6 +134,8 @@ class CompositionRoot:
                     self.telemetry.incr(f"consumer_stop_error:{name}")
             if self.custody is not None:
                 self.custody.close()
+            self.fabric = None
+            self.custody = None
             self._started = False
             self.telemetry.incr("lifecycle_stop")
 
