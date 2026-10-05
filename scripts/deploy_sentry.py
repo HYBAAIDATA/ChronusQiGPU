@@ -396,6 +396,10 @@ def import_closure(
     seen: dict[Path, bool] = {}
     while pending:
         path, reached = pending.pop()
+        # A resolved path outside the repo (junction, drive root, sibling
+        # checkout) is not a local module — it cannot appear in this image.
+        if not path.resolve().is_relative_to(root):
+            continue
         if path in seen and (seen[path] or not reached):
             continue
         seen[path] = reached
@@ -562,7 +566,11 @@ class _Install:
 
 
 def _split_commands(command: str) -> list[str]:
-    return [c.strip() for c in re.split(r"&&|\|\||;|\n", command) if c.strip()]
+    # Shell line-continuations in CI run blocks join the next line; the
+    # backslash is not an argument (a bare "\" resolves to the drive root
+    # on Windows and would make a pytest target scan the whole disk).
+    joined = re.sub(r"\\\r?\n", " ", command)
+    return [c.strip() for c in re.split(r"&&|\|\||;|\n", joined) if c.strip()]
 
 
 def _words(command: str) -> list[str]:
@@ -680,7 +688,7 @@ def _test_files(target: Path, stop: Path) -> list[Path]:
         here = here.parent
 
 
-def _install_entries(install: _Install, roots: list[Path]) -> list[Path]:
+def _install_entries(install: _Install, roots: list[Path], root: Path) -> list[Path]:
     """The files the installed distribution runs: its tests, scripts and commands."""
     dist = install.dist
     project = _pyproject(dist)
@@ -696,7 +704,14 @@ def _install_entries(install: _Install, roots: list[Path]) -> list[Path]:
         for part in _split_commands(command):
             pytest = _PYTEST.search(part)
             if pytest and "pip" not in part:
-                paths = [cwd / w for w in _words(pytest.group(1)) if (cwd / w).exists()]
+                # Scan in-tree targets only: a word that escapes the repo
+                # (junction, drive root, sibling checkout) is not this
+                # distribution's code to audit.
+                paths = [
+                    cwd / w
+                    for w in _words(pytest.group(1))
+                    if (cwd / w).exists() and (cwd / w).resolve().is_relative_to(root)
+                ]
                 for target in paths or default_tests:
                     entries.extend(_test_files(target, dist))
             for match in _PY_RUN.finditer(part):
@@ -744,7 +759,7 @@ def check_distribution_deps(root: Path) -> list[Finding]:
             if install.source
             else f"nothing installs {rel}; held to all its extras"
         )
-        _, third = import_closure(root, _install_entries(install, roots), roots)
+        _, third = import_closure(root, _install_entries(install, roots, root), roots)
         for top, (importer, required) in sorted(third.items()):
             if required and top not in have:
                 severity = "error" if install.source else "warning"
