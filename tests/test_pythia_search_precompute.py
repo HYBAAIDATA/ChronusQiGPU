@@ -92,11 +92,24 @@ def test_itinerary_visits_every_dual_vertex_once_and_is_job_deterministic():
     assert other != first
 
 
+def test_pythia_preferred_face_steers_start_without_pruning_vertices():
+    header = bytes(range(80))
+    state = precompute_pythia_search()
+    face0 = vertex_itinerary(header, state, preferred_face=0)
+    face31 = vertex_itinerary(header, state, preferred_face=31)
+
+    assert len(face0) == len(face31) == 600
+    assert set(face0) == set(face31) == set(range(600))
+    assert state.coarse_anchor[face0[0]] == 0
+    assert state.coarse_anchor[face31[0]] == 31
+    assert face0 != face31
+
+
 def test_nonce_schedule_is_exact_full_lease_permutation():
     header = bytes(range(80))
     base = 4000
     window = 5000
-    order = pythia_hilbert_600_nonces(header, base, window)
+    order = pythia_hilbert_600_nonces(header, base, window, preferred_face=7)
 
     assert len(order) == window
     assert len(set(order)) == window
@@ -104,7 +117,12 @@ def test_nonce_schedule_is_exact_full_lease_permutation():
     assert max(order) == base + window - 1
     assert set(order) == set(range(base, base + window))
     assert pythia_hilbert_600_nonces(
-        header, base, window, position=211, count=97
+        header,
+        base,
+        window,
+        position=211,
+        count=97,
+        preferred_face=7,
     ) == order[211:308]
 
 
@@ -152,7 +170,11 @@ def test_canonical_itinerary_executes_as_explicit_nonce_batch_on_proven_device()
     hasher = _BatchHasher()
     plan = _plan(window=1200)
     expected = pythia_hilbert_600_nonces(
-        header, plan.base_step, plan.window, precompute=precompute_pythia_search()
+        header,
+        plan.base_step,
+        plan.window,
+        precompute=precompute_pythia_search(),
+        preferred_face=plan.preferred_face,
     )
 
     def forbidden_contiguous_cpu(*_args):
@@ -166,9 +188,6 @@ def test_canonical_itinerary_executes_as_explicit_nonce_batch_on_proven_device()
         lease=_lease(plan),
     )
 
-    # Max target returns on the first physical chunk, but that chunk must be
-    # the exact prefix of PYTHIA's precomputed itinerary rather than an M32 or
-    # contiguous substitute.
     assert hasher.seen == expected[: hasher.grind_batch]
     assert candidate is not None
     assert candidate["nonce"] == expected[0]
