@@ -566,12 +566,24 @@ def working_set_ratio(state: NumericFoldState) -> float:
 
 
 def reconstruction_error(original: np.ndarray, state: NumericFoldState) -> float:
-    """Measured max-abs error between ``original`` and ``phi_unfold(state)``."""
-    expected = np.asarray(original, dtype=np.float64).ravel()
+    """Measured max-abs error between ``original`` and ``phi_unfold(state)``.
+
+    The comparison runs in the promoted dtype of the two operands (at least
+    float64) — forcing float64 directly would discard the imaginary part of
+    complex payloads and report phantom error on an exact round-trip.
+    """
+    expected = np.asarray(original).ravel()
     got = phi_unfold(state).ravel()
     if expected.size != got.size:
         raise PhiFoldError(f"original has {expected.size} elements; unfolded state has {got.size}")
-    return float(np.max(np.abs(expected - got)))
+    compare_dtype = np.promote_types(
+        np.promote_types(expected.dtype, got.dtype), np.float64
+    )
+    diff = np.abs(
+        expected.astype(compare_dtype, copy=False)
+        - got.astype(compare_dtype, copy=False)
+    )
+    return float(np.max(diff)) if diff.size else 0.0
 
 
 __all__ = [
