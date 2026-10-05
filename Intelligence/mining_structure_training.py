@@ -15,6 +15,7 @@ import math
 import random
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -26,6 +27,11 @@ PHI15 = PHI ** 15
 UINT32_MAX = (1 << 32) - 1
 DEFAULT_HOLDOUT_FRACTION = 0.20
 DEFAULT_NULL_SEED = 0x9E3779B9
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_CORPUS_CSV = REPO_ROOT / "artifacts" / "pythia_training" / "real_nonces_200.csv"
+DEFAULT_CORPUS_MANIFEST = (
+    REPO_ROOT / "artifacts" / "pythia_training" / "real_nonces_200.manifest.json"
+)
 _ALLOWED_REAL_VERIFICATION = {
     "bundle_local_pow_verified",
     "full_header_pow_verified",
@@ -397,14 +403,37 @@ def train_pythia_structure(
     return StructureTrainingReport(**report_payload)
 
 
+def bootstrap_default_structure_training(pythia: Any, store: Any) -> StructureTrainingReport:
+    """Train the default PYTHIA store from the provenance-bound corpus.
+
+    This is called by :class:`PythiaStore` only for its canonical default
+    production location, after any pre-existing snapshot has been restored.
+    It is idempotent because each training observation has a stable pattern id.
+    """
+    if not DEFAULT_CORPUS_CSV.is_file() or not DEFAULT_CORPUS_MANIFEST.is_file():
+        raise CorpusIntegrityError(
+            "canonical PYTHIA structural corpus or manifest is missing"
+        )
+    return train_pythia_structure(
+        SimpleNamespace(pythia=pythia, store=store),
+        DEFAULT_CORPUS_CSV,
+        DEFAULT_CORPUS_MANIFEST,
+        holdout_fraction=DEFAULT_HOLDOUT_FRACTION,
+        persist=True,
+    )
+
+
 __all__ = [
     "CorpusIntegrityError",
     "NonceObservation",
     "StructureTrainingReport",
+    "DEFAULT_CORPUS_CSV",
+    "DEFAULT_CORPUS_MANIFEST",
     "load_manifest",
     "load_nonce_corpus",
     "structural_vector",
     "build_vectors",
     "split_by_height",
     "train_pythia_structure",
+    "bootstrap_default_structure_training",
 ]
