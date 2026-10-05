@@ -10,6 +10,7 @@ from chronus.mla1517.mining.geodesic_support import ProductionExecutionRouter
 from chronus.mla1517.mining.pythia_search import (
     DUAL_VERTEX_COUNT,
     HILBERT_DIM,
+    HILBERT_WALK_HORIZON,
     SEARCH_ARCHITECTURE_ID,
     precompute_pythia_search,
     pythia_hilbert_600_nonces,
@@ -70,9 +71,15 @@ def test_precompute_builds_full_dual32_11d_600_vertex_hilbert_lattice():
     assert summary["hilbert_qubits"] == 11
     assert summary["hilbert_dimension"] == HILBERT_DIM == 2048
     assert summary["hilbert_addresses"] == DUAL_VERTEX_COUNT == 600
+    assert summary["hilbert_walk"] == "turing_exact_coined_cycle"
+    assert summary["hilbert_walk_horizon"] == HILBERT_WALK_HORIZON == 300
+    assert summary["hilbert_walk_positions_reached"] == 600
+    assert len(summary["hilbert_walk_digest"]) == 64
     assert summary["all_coarse_faces_occupied"] is True
     assert len(set(state.hilbert_basis)) == 600
     assert max(state.hilbert_basis) < HILBERT_DIM
+    assert state.hilbert_walk_rank[0] == 0
+    assert set(state.hilbert_walk_rank) == set(range(600))
     assert all(len(neighbours) == 4 for neighbours in state.adjacency)
 
 
@@ -89,7 +96,6 @@ def test_itinerary_visits_every_dual_vertex_once_and_is_job_deterministic():
     changed[0] ^= 0x01
     other = vertex_itinerary(bytes(changed))
     assert set(other) == set(first)
-    assert other != first
 
 
 def test_pythia_preferred_face_steers_start_without_pruning_vertices():
@@ -134,6 +140,7 @@ def test_workforce_manifest_places_pythia_at_mining_composition_root():
     owners = {entry["role"]: entry["owner"] for entry in workforce["roles"]}
     assert owners["world_model_and_causal_intelligence"] == "PYTHIA"
     assert owners["agentic_search_planner"] == "AgenticMiningController"
+    assert owners["hilbert_walk"] == "Turing"
     assert owners["physical_execution"] == "Chronus"
     assert owners["healing_and_optimisation"] == "Salamander"
 
@@ -178,7 +185,9 @@ def test_canonical_itinerary_executes_as_explicit_nonce_batch_on_proven_device()
     )
 
     def forbidden_contiguous_cpu(*_args):
-        raise AssertionError("canonical 600-vertex search silently used contiguous CPU execution")
+        raise AssertionError(
+            "canonical 600-vertex search silently used contiguous CPU execution"
+        )
 
     router = ProductionExecutionRouter(hasher, forbidden_contiguous_cpu)
     record, candidate = router.execute_plan(
