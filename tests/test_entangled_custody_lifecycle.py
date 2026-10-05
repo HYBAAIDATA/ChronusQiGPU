@@ -5,11 +5,14 @@ import pytest
 from aethel.enterprise.lifecycle import CompositionRoot
 
 
+TEST_KEY = b"entangled-lifecycle-test-key-32bytes"
+
+
 @pytest.fixture()
 def root(tmp_path):
     lifecycle = CompositionRoot(
         tmp_path / "organism-custody",
-        hmac_key=b"entangled-lifecycle-test-key-32bytes",
+        hmac_key=TEST_KEY,
         allow_insecure_dev_key=True,
     )
     try:
@@ -63,13 +66,14 @@ def test_readiness_reports_shared_entangled_custody(root):
     assert status["ready"] is True
     assert status["entangled_custody"]["theseus_owner"] == "theseus"
     assert status["entangled_custody"]["ovid_owner"] == "ovid"
+    assert status["entangled_custody"]["restart_recoverable"] is True
     assert status["entangled_custody"]["bindings"] == 0
 
 
 def test_data_port_fails_closed_before_start(tmp_path):
     lifecycle = CompositionRoot(
         tmp_path / "not-started",
-        hmac_key=b"entangled-lifecycle-test-key-32bytes",
+        hmac_key=TEST_KEY,
         allow_insecure_dev_key=True,
     )
     with pytest.raises(RuntimeError, match="not started"):
@@ -83,3 +87,54 @@ def test_stop_releases_shared_references(root):
     assert root.fabric is None
     assert root.custody is None
     assert root.readiness() == {"ready": False, "reason": "not_started"}
+
+
+def test_binding_and_parent_lineage_survive_restart(tmp_path):
+    state_dir = tmp_path / "restartable-custody"
+    first = CompositionRoot(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    first.start()
+    try:
+        pythia = first.data_port("pythia")
+        kellogg = first.data_port("kellogg")
+        parent = kellogg.put(
+            "tensor_state",
+            {"basis": "golden", "values": [1, 1, 2, 3, 5]},
+            share_with=("pythia", "toe"),
+            evidence_state="PASS",
+        )
+        child = pythia.put(
+            "intelligence_result",
+            {"source": "kellogg", "confidence": 0.75},
+            share_with=("kellogg", "toe"),
+            parents=(parent.binding_id,),
+            evidence_state="MEASURED",
+        )
+        child_bytes = pythia.read(child.binding_id)
+        parent_id = parent.binding_id
+        child_id = child.binding_id
+    finally:
+        first.stop()
+
+    second = CompositionRoot(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    second.start()
+    try:
+        status = second.readiness()["entangled_custody"]
+        assert status["bindings"] == 2
+        assert status["restart_recoverable"] is True
+
+        pythia2 = second.data_port("pythia")
+        assert pythia2.read(child_id) == child_bytes
+        assert second.fabric.verify(parent_id)["passed"] is True
+        verification = second.fabric.verify(child_id)
+        assert verification["passed"] is True
+        assert verification["parent_lineage"] is True
+    finally:
+        second.stop()
