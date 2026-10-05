@@ -4,16 +4,18 @@ The doctrine enforced here is structural, not advisory:
 
 * active PULVINI/data modules may not import mining, Stratum, share-submission,
   or hash-pipeline modules;
-* active mining modules may not import the PULVINI data package or its exact
-  data bridges, including through literal ``import_module``/``__import__``;
-* production code may not import or reference the historical
-  ``PythagorasOrchestrator`` compatibility facade;
-* owner-specified historical HYBA Data paths that are absent on main may not
-  acquire active callers until they are intentionally restored.
+* active mining modules may not import the PULVINI data package, data bridges,
+  geodesic tensor engine, or PULVINI fold symbols from shared exact math;
+* generic Fibonacci/Binet/Cassini/Zeckendorf algebra remains substrate-neutral;
+* literal ``import_module``/``__import__`` dependency edges are inspected;
+* production code may not use the historical ``PythagorasOrchestrator``
+  compatibility facade;
+* absent owner-specified HYBA Data paths may not acquire active callers until
+  they are intentionally restored.
 
 This is intentionally a static dependency gate. Runtime importer-stack checks
-are brittle in Python and can be bypassed by import indirection; CI instead
-rejects the dependency edge before code is admitted to the repository.
+are brittle in Python and can be bypassed by indirection; CI rejects the
+forbidden dependency edge before code is admitted to the repository.
 """
 
 from __future__ import annotations
@@ -28,9 +30,11 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 PULVINI_DATA_MODULES = (
     "quantum_compute_substrate.pulvini",
     "tensor.pulvini_bridge",
-    "python_backend.core_modules.math_folding",
     "python_backend.core_modules.geodesic_tensor_engine",
+    "python_backend.core_modules.fold_pipeline",
 )
+SHARED_EXACT_MATH_MODULE = "python_backend.core_modules.math_folding"
+PULVINI_FOLD_SYMBOLS = frozenset({"PulviniFold", "pulvini_fold"})
 
 MINING_IMPORT_FRAGMENTS = (
     "pythia_mining",
@@ -52,6 +56,13 @@ HISTORICAL_ABSENT_MODULES = (
 PYTHAGORAS_COMPAT_DEFINITION_PATHS = {
     Path("quantum_compute_substrate/pulvini/orchestrator.py"),
     Path("quantum_compute_substrate/pulvini/__init__.py"),
+}
+
+# This compatibility module historically called itself a mining import even
+# though "mining" is not in its path. Keep it explicitly on the mining side of
+# the boundary so a future wildcard or PULVINI fold re-export fails the gate.
+EXPLICIT_MINING_PATHS = {
+    Path("chronus/mla1517/math_folding.py"),
 }
 
 SKIP_PARTS = {
@@ -85,6 +96,8 @@ def _is_test_path(relative: Path) -> bool:
 
 
 def _is_mining_path(relative: Path) -> bool:
+    if relative in EXPLICIT_MINING_PATHS:
+        return True
     parts = {part.lower() for part in relative.parts}
     stem = relative.stem.lower()
     return (
@@ -145,12 +158,25 @@ def _imports_and_names(path: Path) -> tuple[set[str], set[str]]:
     return imports, names
 
 
+def _imports_pulvini_fold_symbol(imports: Iterable[str]) -> str | None:
+    prefix = SHARED_EXACT_MATH_MODULE + "."
+    for module in sorted(imports):
+        if module == SHARED_EXACT_MATH_MODULE + ".*":
+            return module
+        if module.startswith(prefix):
+            symbol = module[len(prefix) :].split(".", 1)[0]
+            if symbol in PULVINI_FOLD_SYMBOLS:
+                return module
+    return None
+
+
 def check_repository(root: Path = REPO_ROOT) -> list[BoundaryViolation]:
     violations: list[BoundaryViolation] = []
     active_pulvini_paths = {
         *(root / "quantum_compute_substrate" / "pulvini").rglob("*.py"),
         root / "tensor" / "pulvini_bridge.py",
         root / "python_backend" / "core_modules" / "math_folding.py",
+        root / "python_backend" / "core_modules" / "fold_pipeline.py",
         root / "python_backend" / "core_modules" / "geodesic_tensor_engine.py",
     }
 
@@ -189,6 +215,15 @@ def check_repository(root: Path = REPO_ROOT) -> list[BoundaryViolation]:
                             module,
                         )
                     )
+            fold_import = _imports_pulvini_fold_symbol(imports)
+            if fold_import is not None:
+                violations.append(
+                    BoundaryViolation(
+                        str(relative),
+                        "mining-imports-pulvini-fold-symbol",
+                        fold_import,
+                    )
+                )
 
         if not _is_test_path(relative):
             for module in sorted(imports):
