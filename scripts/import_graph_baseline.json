@@ -146,6 +146,7 @@
     "tensor/capability.py:11: imports test module tests/test_tensor_contracts.py",
     "tensor/capability.py:124: imports test module tests/test_phi_fold_dtype_custody.py",
     "tensor/capability.py:134: imports test module tests/test_fold_store.py",
+    "tensor/capability.py:145: imports test module tests/test_committed_execution.py",
     "tensor/capability.py:151: imports test module tests/test_phi_gpu_scheduler_executor.py",
     "tensor/capability.py:166: imports test module tests/test_tensor_receipts_benchmarks.py",
     "tensor/capability.py:16: imports test module tests/test_tensor_backends.py",
