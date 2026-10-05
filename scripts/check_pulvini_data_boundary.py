@@ -19,7 +19,6 @@ rejects the dependency edge before code is admitted to the repository.
 from __future__ import annotations
 
 import ast
-import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -50,14 +49,11 @@ HISTORICAL_ABSENT_MODULES = (
     "python_backend.hyba_data.sealed_claims",
 )
 
-# The definition/export sites are allowed to mention the historical facade.
 PYTHAGORAS_COMPAT_DEFINITION_PATHS = {
     Path("quantum_compute_substrate/pulvini/orchestrator.py"),
     Path("quantum_compute_substrate/pulvini/__init__.py"),
 }
 
-# Historical, tests, generated reports, and vendored/build directories do not
-# create active runtime dependency edges.
 SKIP_PARTS = {
     ".git",
     ".venv",
@@ -164,7 +160,11 @@ def check_repository(root: Path = REPO_ROOT) -> list[BoundaryViolation]:
             imports, names = _imports_and_names(path)
         except (OSError, SyntaxError) as exc:
             violations.append(
-                BoundaryViolation(str(relative), "parse-failure", f"{type(exc).__name__}: {exc}")
+                BoundaryViolation(
+                    str(relative),
+                    "parse-failure",
+                    f"{type(exc).__name__}: {exc}",
+                )
             )
             continue
 
