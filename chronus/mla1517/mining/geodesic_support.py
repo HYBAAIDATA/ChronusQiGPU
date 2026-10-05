@@ -35,13 +35,15 @@ from .execution_router import (
     NONCE_ORDER_POINCARE_11D,
     RouteDecision,
 )
+from .h4_600_execution import promote_execution_hasher
+from .pythia_authority import PythiaMiningAuthority
 from .pythia_search import (
     SEARCH_ARCHITECTURE_ID,
     PythiaSearchPrecompute,
     precompute_pythia_search,
     pythia_hilbert_600_nonces,
 )
-from .search_plan import ExecutionRoute
+from .search_plan import ExecutionRoute, PoolOutcome
 
 _NATIVE_BACKENDS = frozenset({"cuda", "metal"})
 _NATIVE_ROUTE_METHODS = {
@@ -185,11 +187,44 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
     """Canonical production composition root for PYTHIA's agentic mining workforce."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
+        pythia_authority = kwargs.pop("pythia_authority", None)
         # Static topology/Hilbert work is complete before the inherited runtime
         # can connect to Stratum. Failure is therefore a startup failure, not a
         # half-live miner constructing its search substrate after mining.notify.
         self.pythia_search_precompute = precompute_pythia_search()
         super().__init__(*args, **kwargs)
+
+        # The current PhiMiner route already owns the canonical 32 -> 11D -> 600
+        # -> exact-Hilbert itinerary. PR #130's missing enhancement is physical
+        # promotion of the already-bound joined Chronus composite underneath it.
+        # No device is re-probed and no non-composite route is relabelled.
+        self.execution_hasher = promote_execution_hasher(self.execution_hasher)
+        raw_factory = getattr(self, "_execution_hasher_factory", None)
+        if raw_factory is not None:
+            self._execution_hasher_factory = (
+                lambda raw_factory=raw_factory: promote_execution_hasher(raw_factory())
+            )
+        backend_raw = str(getattr(self.execution_hasher, "backend", "") or "")
+        topology_id = getattr(self.execution_hasher, "topology_id", None)
+        self._chronus_fabric_state: dict[str, Any] = {
+            "schema": "pythia.chronus_search_fabric/2",
+            "canonical_topology": "chronus_h4_600_11d",
+            "logical_vertices": 600,
+            "execution_backend": backend_raw or "Unavailable",
+            "state": "ACTIVE" if topology_id == "chronus_h4_600_11d" else "NOT_BOUND",
+            "physical_fanout": topology_id == "chronus_h4_600_11d",
+            "reason": (
+                None
+                if topology_id == "chronus_h4_600_11d"
+                else "physical H4/600 fan-out requires the joined super_asic Chronus lane"
+            ),
+            "hashrate_claim": "measured completed physical SHA256d work / elapsed time only",
+            "target_hashrate_hs": 10_000_000_000_000_000_000,
+            "target_measured": False,
+        }
+        self.pythia_authority = pythia_authority or PythiaMiningAuthority()
+        self.pythia_authority.bind_backend_registry(self.backend_registry)
+
         self.geodesic_enabled = os.getenv("PYTHIA_GEODESIC_ORDERING", "1").strip() not in {
             "0",
             "false",
@@ -274,6 +309,42 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
             return "opencl_range"
         return "cpu_reference"
 
+    def _apply_pythia_authority(self, plan, identity):
+        """Run every production/fallback plan through PYTHIA without replacing the canonical itinerary."""
+        client = self.client
+        adapter = getattr(client, "proof_adapter", None) if client is not None else None
+        job = getattr(adapter, "current_job", None) if adapter is not None else None
+        if job is None or job.job_id != identity.job_id:
+            raise RuntimeError("PYTHIA planning requires the current authoritative Stratum job")
+        header = adapter.build_header(job.job_id, plan.extranonce2, job.ntime, 0)
+        directive = self.pythia_authority.plan(
+            header=header,
+            target_be=int(job.target).to_bytes(32, "big"),
+            base_step=plan.base_step,
+            window=plan.window,
+            block_context={
+                "job_id": identity.job_id,
+                "pool_session_id": identity.pool_session_id,
+                "generation": identity.generation,
+                "target_generation": identity.target_generation,
+                "clean_jobs": identity.clean_jobs,
+                "chronus_search_fabric": dict(self._chronus_fabric_state),
+            },
+        )
+        refs = dict(plan.evidence_refs)
+        refs["pythia_authority"] = directive.as_evidence()
+        refs["pythia_planning_authority"] = True
+        refs["chronus_search_fabric"] = dict(self._chronus_fabric_state)
+        # PYTHIA's coarse lane intelligence biases the existing exact-Hilbert
+        # 600-vertex itinerary; it does not replace, prune or expand the lease.
+        preferred_face = directive.lane_order[0] if directive.lane_order else plan.preferred_face
+        return replace(
+            plan,
+            lane_order=directive.lane_order,
+            preferred_face=preferred_face,
+            evidence_refs=refs,
+        )
+
     def _bind_plan_execution_intent(self, plan):
         """Seal PYTHIA's precomputed search architecture into every immutable plan."""
         decision = getattr(self, "last_mining_decision", None)
@@ -281,6 +352,7 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         refs["search_architecture"] = SEARCH_ARCHITECTURE_ID
         refs["search_precompute_digest"] = self.pythia_search_precompute.digest
         refs["configured_traversal_refinement"] = self._nonce_order
+        refs["chronus_search_fabric"] = dict(self._chronus_fabric_state)
         refs["technology_intent"] = {
             "composition_root": "PYTHIA",
             "search_architecture": SEARCH_ARCHITECTURE_ID,
@@ -315,13 +387,21 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         )
 
     def _baseline_plan(self, identity, lease, window, reason):
+        plan = super()._baseline_plan(identity, lease, window, reason)
         return self._bind_plan_execution_intent(
-            super()._baseline_plan(identity, lease, window, reason)
+            self._apply_pythia_authority(plan, identity)
         )
 
     def _build_plan(self, identity):
         plan = super()._build_plan(identity)
-        return None if plan is None else self._bind_plan_execution_intent(plan)
+        if plan is None:
+            return None
+        try:
+            plan = self._apply_pythia_authority(plan, identity)
+            return self._bind_plan_execution_intent(plan)
+        except Exception:
+            self.agentic.release_lease(plan.plan_id)
+            raise
 
     def _router_for(self, plan):
         """Preserve the parent's proof oracle and replace only production routing."""
@@ -333,6 +413,33 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
             cpu_nonce_executor=base._cpu_nonces,
             pythia_precompute=self.pythia_search_precompute,
         )
+
+    def _record_execution(self, identity, plan, lease, record, outcome, coordinate):
+        """Persist canonical execution first, then feed only measured outcome back to PYTHIA."""
+        super()._record_execution(identity, plan, lease, record, outcome, coordinate)
+        try:
+            client = self.client
+            adapter = getattr(client, "proof_adapter", None) if client is not None else None
+            job = getattr(adapter, "current_job", None) if adapter is not None else None
+            if job is None or job.job_id != identity.job_id:
+                return
+            header = adapter.build_header(job.job_id, lease.extranonce2, job.ntime, 0)
+            accepted = (
+                True
+                if outcome is PoolOutcome.ACCEPTED
+                else (False if outcome is PoolOutcome.REJECTED else None)
+            )
+            self.pythia_authority.learn_execution(
+                header=header,
+                nonce=getattr(record, "candidate_nonce", None),
+                pool_accepted=accepted,
+                execution=self.last_execution or {},
+            )
+        except Exception as exc:
+            self.last_execution = {
+                **(self.last_execution or {}),
+                "pythia_learning_error": f"{type(exc).__name__}: {exc}",
+            }
 
     def _technology_utilization_snapshot(self) -> dict[str, Any]:
         audit = self.policy_audit.snapshot()
@@ -420,6 +527,10 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                     "state": "ACTIVE_MONITORING",
                     "authority": "bounded recovery / reprobe / fail-closed return",
                 },
+                "chronus_h4_600_physical_fabric": {
+                    "state": self._chronus_fabric_state["state"],
+                    "authority": "logical 600-shard physical dispatch on joined Chronus composite only",
+                },
                 "native_cuda_execution": {
                     "state": (
                         "ACTIVE" if backend == "cuda" else "GATED_BY_CAPABILITY_PROBE"
@@ -445,6 +556,8 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         snapshot["pythia_agentic_workforce"] = (
             self.pythia_search_precompute.workforce_manifest()
         )
+        snapshot["pythia_authority"] = self.pythia_authority.snapshot()
+        snapshot["chronus_search_fabric"] = dict(self._chronus_fabric_state)
         snapshot["geodesic_ordering"] = dict(self._geodesic_state)
         snapshot["technology_utilization"] = self._technology_utilization_snapshot()
         backend = _backend_name(self.execution_hasher)
