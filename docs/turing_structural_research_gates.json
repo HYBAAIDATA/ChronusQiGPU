@@ -1,0 +1,151 @@
+{
+  "schema": "turing.structural_research_gates.v1",
+  "status": "RESEARCH_GATED",
+  "theorem_proven": false,
+  "measured_qpu": false,
+  "production_claim_allowed": false,
+  "normative_document": "docs/TURING_STRUCTURAL_RESEARCH_GATES.md",
+  "corrections": {
+    "fibonacci_anyons": "Use SU(2)_3/Fibonacci-category wording; do not label Fibonacci anyons SU(2)_2.",
+    "phi_is_smallest_pisot": false,
+    "phi_classification": "quadratic Pisot unit",
+    "pisot_exactness_boundary": "The Pisot property does not by itself make floating-point arithmetic exact; exactness requires an explicit algebraic representation and exact algorithms."
+  },
+  "gates": [
+    {
+      "claim_id": "turing.fold_gap.v1",
+      "title": "FoldGap receipt metric",
+      "status": "SPECIFIED",
+      "implementation_ref": null,
+      "exactness_class": "MEASURED_DESCRIPTION_LENGTH",
+      "state_class": "REPRESENTATION_AGNOSTIC",
+      "supported_domain": "UNAVAILABLE_UNTIL_CODEC_AND_CORPUS_ARE_DECLARED",
+      "reference_implementation": null,
+      "benchmark_spec": "Compare exact emitted bit lengths for a declared baseline codec and a losslessly replayable folded codec under one accounting policy.",
+      "benchmark_artifacts": [],
+      "proof_artifacts": [],
+      "required_receipt_fields": [
+        "object_digest",
+        "baseline_codec_id",
+        "baseline_codec_version",
+        "baseline_bits",
+        "fold_codec_id",
+        "fold_codec_version",
+        "folded_bits",
+        "model_cost_bits",
+        "decoder_cost_policy",
+        "fold_gap_bits",
+        "fold_gain_ratio",
+        "lossless_reconstruction",
+        "reconstructed_digest",
+        "benchmark_corpus_id"
+      ],
+      "formula": "FoldGap_bits(x;B,F) = L_B(x) - L_F(x)",
+      "shannon_boundary": "Shannon entropy H(P) is an ensemble quantity for a declared source model. Per-execution receipts use measured code length and may optionally report self-information -log2 P(x) when P is explicit.",
+      "theorem_proven": false,
+      "measured_qpu": false,
+      "limitations": [
+        "No codec/corpus benchmark is registered yet.",
+        "Kolmogorov complexity is not directly measurable and must not be reported as a receipt metric.",
+        "Model/decoder cost accounting must be identical across compared results."
+      ],
+      "production_claim_allowed": false
+    },
+    {
+      "claim_id": "turing.orbit_collapse.stabilizer_frontier.v1",
+      "title": "Orbit collapse beyond the stabilizer frontier",
+      "status": "SPECIFIED",
+      "implementation_ref": null,
+      "exactness_class": "EXACT_REQUIRED_FOR_STRICT_EXTENSION_CLAIM",
+      "state_class": "PROPOSED_NON_STABILIZER_STRUCTURED_FAMILY",
+      "supported_domain": "UNAVAILABLE_UNTIL_FAMILY_AND_GROUP_ACTION_ARE_DECLARED",
+      "reference_implementation": "Stim for Clifford overlap plus an independent exact dense reference for tractable non-stabilizer instances",
+      "benchmark_spec": "Exhibit a provably non-stabilizer state/circuit family, represent it losslessly through an explicit group action/orbit coordinate, verify exact parity on tractable widths, and measure time/memory against meaningful references.",
+      "benchmark_artifacts": [],
+      "proof_artifacts": [],
+      "required_evidence": [
+        "formal or independently checkable non-stabilizer witness",
+        "explicit group G and action G x S -> S",
+        "lossless representative/orbit-coordinate decoder including phase",
+        "dense-reference differential suite on tractable widths",
+        "Stim differential suite on Clifford overlap",
+        "resource benchmark",
+        "zero-unexplained-discrepancy report"
+      ],
+      "strictly_exceeds_stabilizer": false,
+      "orbit_collapse_theorem_proven": false,
+      "theorem_proven": false,
+      "measured_qpu": false,
+      "limitations": [
+        "H3/H4/icosahedral terminology alone is not an implementation.",
+        "Reference simulator failure is not evidence of correctness.",
+        "No strict-extension witness is registered yet."
+      ],
+      "production_claim_allowed": false
+    },
+    {
+      "claim_id": "turing.pisot_transform.v1",
+      "title": "Pisot-indexed transform versus cyclic QFT",
+      "status": "SPECIFIED",
+      "implementation_ref": null,
+      "exactness_class": "UNAVAILABLE_UNTIL_TRANSFORM_IS_DEFINED",
+      "state_class": "PROPOSED_PISOT_INDEXED",
+      "supported_domain": "UNAVAILABLE",
+      "reference_implementation": "Canonical cyclic QFT on matched finite workloads",
+      "benchmark_spec": "Define input/output spaces, index set, kernel, normalization, inverse and complexity; prove exact invertibility/unitarity if claimed; benchmark on a workload with declared Pisot/aperiodic structure against QFT/Fourier controls.",
+      "benchmark_artifacts": [],
+      "proof_artifacts": [],
+      "required_evidence": [
+        "transform definition",
+        "inverse/reconstruction law",
+        "exact number-field/ring representation",
+        "unitarity proof if exposed as a quantum transform",
+        "complexity model",
+        "matched QFT benchmark",
+        "structured workload/corpus declaration"
+      ],
+      "supersedes_qft": false,
+      "fourier_retired": false,
+      "theorem_proven": false,
+      "measured_qpu": false,
+      "limitations": [
+        "phi being a Pisot unit does not establish transform superiority.",
+        "Zeckendorf and Ostrowski numeration must not be conflated without a construction.",
+        "No comparative benchmark is registered yet."
+      ],
+      "production_claim_allowed": false
+    },
+    {
+      "claim_id": "turing.dimension_11.v1",
+      "title": "Definition and justification of 11D",
+      "status": "SPECIFIED",
+      "implementation_ref": "toe/poincare_golden_11d.py",
+      "exactness_class": "FLOAT64_GEOMETRIC_IMPLEMENTATION_WITH_DECLARED_NUMERICAL_BOUNDS",
+      "state_class": "B_PHI_11_SOFTWARE_MANIFOLD",
+      "supported_domain": "eleven real coordinates weighted by phi^-(i+1), i=0..10",
+      "reference_implementation": null,
+      "benchmark_spec": "Ablate dimension around 11 under a predeclared criterion and report reconstruction error, FoldGap, runtime, memory, and downstream task quality. A theoretical significance claim additionally requires a derivation of why 11 is necessary or optimal.",
+      "benchmark_artifacts": [],
+      "proof_artifacts": [],
+      "current_definition": "11D counts the eleven coordinates of the software-defined weighted ball B_phi^11 implemented by toe.poincare_golden_11d.",
+      "distinct_from": [
+        "VIRTUAL_QUANTUM_QUBITS = 11 default execution/lane width",
+        "eleven spacetime dimensions",
+        "M-theory dimensionality",
+        "eleven hardware qubits",
+        "a proof that eleven is optimal"
+      ],
+      "why_eleven": "UNPROVEN_SELECTION",
+      "ricci_boundary": "A Ricci-flow claim requires an explicit metric g(t) and evolution equation; a scalar named ricci is insufficient.",
+      "yang_mills_boundary": "Finite/discrete spectral gaps must not be promoted to the continuum Yang-Mills mass-gap claim.",
+      "poincare_boundary": "The Poincare homology sphere and an 11D Poincare/hyperbolic ball are distinct spaces.",
+      "theorem_proven": false,
+      "measured_qpu": false,
+      "limitations": [
+        "The implementation fixes dimension 11 but does not establish its necessity or optimality.",
+        "No derivation linking the 11D manifold dimension to the separate 11-qubit default is registered."
+      ],
+      "production_claim_allowed": false
+    }
+  ]
+}
