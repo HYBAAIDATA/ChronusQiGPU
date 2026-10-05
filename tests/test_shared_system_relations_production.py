@@ -1,7 +1,7 @@
 """Executable production gates for cross-system shared data custody.
 
 These tests exercise real subsystem implementations through the canonical
-SystemDataPort adapters.  A class existing is not evidence: each test performs
+SystemDataPort adapters. A class existing is not evidence: each test performs
 a real subsystem operation, observes the binding written to the one shared
 THESEUS/OVID fabric, verifies it, and where meaningful reopens the lifecycle to
 prove restart continuity.
@@ -39,6 +39,22 @@ def _bindings(lifecycle):
     return lifecycle.fabric.graph()["bindings"]
 
 
+def _guardian(tmp_path):
+    from al_haras.audit import HashChainAudit
+    from al_haras.entitlements import SubscriptionAuthority
+    from al_haras.guardian import ALHaras, GuardianPolicy
+
+    authority = SubscriptionAuthority(
+        {"k1": b"al-haras-production-organism-test-key"},
+        issuer="test-issuer",
+    )
+    return ALHaras(
+        authority,
+        GuardianPolicy(version="production-organism-test-v1"),
+        HashChainAudit(tmp_path / "al-haras-organism-audit.jsonl"),
+    )
+
+
 def test_relationship_map_covers_every_canonical_data_system():
     assert set(DEFAULT_PEERS) == set(CANONICAL_DATA_SYSTEMS)
     for owner, peers in DEFAULT_PEERS.items():
@@ -56,7 +72,12 @@ def test_pythia_real_store_uses_shared_custody_and_restores_from_it(tmp_path):
         relations = ProductionSystemRelations(lifecycle)
         memory = PythiaMemorySystem()
         learner = PythiaLearning(n_units=32)
-        raw = PythiaStore(memory, learner, store_dir=tmp_path / "pythia-local", autosave_every=1000)
+        raw = PythiaStore(
+            memory,
+            learner,
+            store_dir=tmp_path / "pythia-local",
+            autosave_every=1000,
+        )
         shared = SharedPythiaStore(raw, relations.ports["pythia"])
 
         entry = shared.record_run("integration", {"verified_value": 17})
@@ -64,7 +85,9 @@ def test_pythia_real_store_uses_shared_custody_and_restores_from_it(tmp_path):
         assert path.is_file()
         assert entry["kind"] == "integration"
 
-        snapshots = [b for b in _bindings(lifecycle) if b["kind"] == "pythia_memory_snapshot"]
+        snapshots = [
+            b for b in _bindings(lifecycle) if b["kind"] == "pythia_memory_snapshot"
+        ]
         assert len(snapshots) == 1
         binding = snapshots[0]
         assert binding["source_system"] == "pythia"
@@ -72,14 +95,17 @@ def test_pythia_real_store_uses_shared_custody_and_restores_from_it(tmp_path):
         assert "toe" in binding["participants"]
         assert lifecycle.fabric.verify(binding["binding_id"])["passed"] is True
 
-        # A new PYTHIA store with an empty local cache must recover the shared
-        # snapshot rather than requiring the old process-local directory.
         memory2 = PythiaMemorySystem()
         learner2 = PythiaLearning(n_units=32)
-        raw2 = PythiaStore(memory2, learner2, store_dir=tmp_path / "pythia-empty", autosave_every=1000)
+        raw2 = PythiaStore(
+            memory2,
+            learner2,
+            store_dir=tmp_path / "pythia-empty",
+            autosave_every=1000,
+        )
         shared2 = SharedPythiaStore(raw2, relations.ports["pythia"])
         assert shared2.load() is True
-        assert raw2.journal.count() == 0  # local journal was not mistaken for durable truth
+        assert raw2.journal.count() == 0
     finally:
         lifecycle.stop()
 
@@ -93,12 +119,9 @@ def test_toe_native_receipt_and_kellogg_tensor_enter_same_shared_graph(tmp_path)
         toe = SharedTOEBridge(TOEBridge(), relations.ports["toe"])
         kellogg = relations.kellogg()
 
-        # Real Kellogg tensor construction.
         state = kellogg.encode([1.0, 2.0, 3.0, 5.0], dim=32)
         assert state.dim == 32
 
-        # Real TOE receipt construction.  The adapter flushes the native
-        # hash-chained receipt rather than synthesising a second receipt type.
         toe.raw.receipts.issue(
             "production_binding_probe",
             inputs={"values": [1, 2, 3, 5]},
@@ -139,21 +162,13 @@ def test_salamander_real_heal_result_is_custodied_under_salamander_authority(tmp
 
 
 def test_al_haras_real_allowed_verdict_is_custodied_without_moving_authority(tmp_path):
-    from al_haras.audit import HashChainAudit
-    from al_haras.entitlements import SubscriptionAuthority, SubscriptionClaims
-    from al_haras.guardian import ALHaras, GuardianPolicy
+    from al_haras.entitlements import SubscriptionClaims
     from al_haras.models import GuardianRequest
 
     lifecycle = _root(tmp_path)
     try:
         relations = ProductionSystemRelations(lifecycle)
-        key = b"al-haras-shared-relation-test-key!!"
-        authority = SubscriptionAuthority({"k1": key}, issuer="test-issuer")
-        guardian = ALHaras(
-            authority,
-            GuardianPolicy(version="test-v1"),
-            HashChainAudit(tmp_path / "al-haras-audit.jsonl"),
-        )
+        guardian = _guardian(tmp_path)
         shared = SharedALHaras(guardian, relations.ports["al_haras"])
         now = int(time.time())
         claims = SubscriptionClaims(
@@ -167,7 +182,7 @@ def test_al_haras_real_allowed_verdict_is_custodied_without_moving_authority(tmp
             expires_at=now + 300,
             jti="shared-relations-1",
         )
-        token = authority.issue(claims)
+        token = guardian.authority.issue(claims)
         verdict = shared.evaluate(
             GuardianRequest(
                 tenant_id="tenant-1",
@@ -199,14 +214,14 @@ def test_turing_real_pipeline_uses_shared_custody_not_private_theseus(tmp_path):
             program=Program(n_qubits=2).then("h", 0).then("cx", 0, 1),
             marginal_of=(0, 1),
             differential=True,
-            # Deliberately request the old custody flags.  The canonical
-            # adapter must suppress the private adapter and use this fabric.
             custody=True,
             replay=True,
         )
         report = turing.run(request)
         assert report.verdict in {"PASS", "GATED"}
-        assert {"program", "result", "witness", "report"} <= set(turing.last_bindings)
+        assert {"program", "result", "witness", "report"} <= set(
+            turing.last_bindings
+        )
 
         for name, binding in turing.last_bindings.items():
             verdict = lifecycle.fabric.verify(binding.binding_id)
@@ -233,7 +248,14 @@ def test_binding_graph_and_cross_system_identity_survive_restart(tmp_path):
         binding = relations.ports["pythia"].put(
             "restart_probe",
             {"value": 42},
-            share_with=("toe", "kellogg", "euclid", "salamander", "al_haras", "turing"),
+            share_with=(
+                "toe",
+                "kellogg",
+                "euclid",
+                "salamander",
+                "al_haras",
+                "turing",
+            ),
         )
         binding_id = binding.binding_id
         expected = relations.ports["pythia"].read(binding_id)
@@ -257,3 +279,49 @@ def test_binding_graph_and_cross_system_identity_survive_restart(tmp_path):
         assert status["authority_preserved"] is True
     finally:
         second.stop()
+
+
+def test_production_organism_is_single_startup_root_for_live_shared_systems(tmp_path):
+    from aethel.enterprise.production_organism import ProductionOrganism
+
+    organism = ProductionOrganism(
+        tmp_path / "organism",
+        hmac_key=TEST_KEY,
+        guardian=_guardian(tmp_path),
+        allow_insecure_dev_key=True,
+    )
+    try:
+        organism.start()
+        status = organism.status()
+        assert status["ready"] is True
+        assert status["shared_custody_ready"] is True
+        assert status["authority_preserved"] is True
+        assert all(status["bound_systems"].values())
+
+        fabric = organism.lifecycle.fabric
+        assert organism.intelligence.store.port.fabric is fabric
+        assert organism.toe.port.fabric is fabric
+        assert organism.salamander.port.fabric is fabric
+        assert organism.al_haras.port.fabric is fabric
+        assert organism.kellogg.port.fabric is fabric
+        assert organism.turing.port.fabric is fabric
+        assert organism.euclid.port.fabric is fabric
+
+        organism.intelligence.store.record_run(
+            "production_root_probe",
+            {"verified": True},
+        )
+        organism.kellogg.encode([1.0, 1.0, 2.0, 3.0], dim=32)
+        proposal = organism.salamander.heal(
+            "timeout",
+            {"component": "production-root-probe"},
+        )
+        assert proposal.applied is True
+
+        graph = fabric.graph()
+        sources = {item["source_system"] for item in graph["bindings"]}
+        assert {"pythia", "kellogg", "salamander"} <= sources
+        for item in graph["bindings"]:
+            assert fabric.verify(item["binding_id"])["passed"] is True
+    finally:
+        organism.stop()
