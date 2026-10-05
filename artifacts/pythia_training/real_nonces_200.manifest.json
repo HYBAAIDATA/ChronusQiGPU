@@ -1,0 +1,37 @@
+{
+  "schema": "pythia.mining_structure_corpus/1",
+  "corpus_id": "bitcoin-mainnet-real-nonces-200-963991-965900",
+  "description": "200 Bitcoin mainnet winning nonces imported from the HYBA mining workbench bundle for PYTHIA structure-only learning.",
+  "source_type": "real",
+  "row_count": 200,
+  "height_min": 963991,
+  "height_max": 965900,
+  "height_sampling": "20 groups of 10 descending contiguous heights, groups separated by 90 heights",
+  "csv_sha256": "14eafbb7d4a209a0aa97b5499d7b0a4c0361c3cb18e685d72c4ad829e7cd09f6",
+  "analysis_sha256": "5f61ad6d95b477246af0d3d128c834c27dd57e55b4f07351d03b2898eb3d2fad",
+  "verification_level": "bundle_local_pow_verified",
+  "verification_detail": "The bundled fresh-analysis artifact reports 200/200 rows locally PoW-verified by rebuilding each 80-byte header, matching the reported block id, and checking double-SHA256 against compact bits. The bundled CSV itself contains only height and nonce, so the import additionally records independent public-chain spot checks rather than misrepresenting a second full 200-row re-verification.",
+  "source_report": {
+    "api": "mempool.space",
+    "reported_collection_date": "2026-09-07",
+    "reported_verified": 200,
+    "reported_rejected": 0
+  },
+  "external_spot_checks": [
+    {"height": 965900, "nonce": 2166572038, "nonce_hex": "0x81234406", "block_hash": "0000000000000000000056b59ff5f4af3ca8b47837f2eac5d83a271c3e6b9851", "source": "mempool.space"},
+    {"height": 965891, "nonce": 2102414398, "nonce_hex": "0x7d504c3e", "block_hash": "00000000000000000000834a58fd6a3de3e82e2cc2d675efe1ff8e2e61fcef37", "source": "mempool.space"},
+    {"height": 965800, "nonce": 1638197879, "nonce_hex": "0x61a4ea77", "block_hash": "00000000000000000001f12e86b79273d6f04a18bb7a5d9045381dd04586d268", "source": "mempool.space"},
+    {"height": 965699, "nonce": 3045852232, "nonce_hex": "0xb58c0448", "block_hash": "0000000000000000000022d7dd702c688ef16ee999fcd73fb208a58ef392bfcf", "source": "mempool.space"},
+    {"height": 965491, "nonce": 489654379, "nonce_hex": "0x1d2f886b", "block_hash": "000000000000000000001ef5f7a91d352aada381de10290d173c9f56ed4e83d1", "source": "mempool.space"},
+    {"height": 965400, "nonce": 4048652748, "nonce_hex": "0xf15189cc", "block_hash": "00000000000000000000d7ba6917def943b0f07f8c029c62c1574f1da3a8c04c", "source": "mempool.space"},
+    {"height": 964400, "nonce": 1581429679, "nonce_hex": "0x5e42b3af", "block_hash": "00000000000000000000c5b677b0406aeaf88cce82db5779359e8ae4ee879758", "source": "mempool.space"}
+  ],
+  "synthetic_excluded": true,
+  "synthetic_policy": "Synthetic/random data may be used only as an explicitly labelled null/control set and is never inserted into PYTHIA's real structural training split.",
+  "training_semantics": "unlabelled structure only; no success/failure classification label is manufactured",
+  "resonance_semantics": {
+    "r_phi_ge_0_5": "descriptive structural band/hypothesis",
+    "existing_structure_threshold_phi_inverse": "separate runtime lane-selection threshold; not changed by this import"
+  },
+  "claim_boundary": "Training may influence learned representation and search ordering only. SHA256d plus target comparison remains the sole proof/acceptance authority."
+}
