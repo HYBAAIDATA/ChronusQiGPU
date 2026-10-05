@@ -96,11 +96,12 @@ jobs:
         run: python scripts/import_graph.py cycles && python scripts/import_graph.py layers
       - name: PULVINI data authority boundary
         run: python scripts/check_pulvini_data_boundary.py
-      - name: PULVINI/THESEUS hardening regression gate
+      - name: PULVINI/THESEUS/live-system hardening regression gate
         run: >-
           python -m pytest
           tests/test_pulvini_quantum_data_doctrine.py
           tests/test_entangled_custody_lifecycle.py
+          tests/test_shared_system_relations_production.py
           -q
       - name: Unit tests (pytest)
         run: python -m pytest tests/ -x -q
