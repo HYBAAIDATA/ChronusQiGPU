@@ -1,16 +1,21 @@
-"""Geodesic ordering and production accelerator seam.
+"""PYTHIA production search, geodesic ordering and accelerator seam.
 
-The geodesic planner is deliberately downstream of real solver coverage and
-upstream of chooser ordering. It can only return a permutation of the candidate
-window already produced by the canonical solver. On any error the exact
-baseline window is returned unchanged.
+The production composition is intentionally layered:
 
-This module is also the final production coordinator composition seam. Native
-CUDA and Metal hashers implement the same M32/range callable contract as the
-historical OpenCL routes. The compatibility below executes those native methods
-without mislabeling their physical substrate. Search-order intent is bound into
-the immutable SearchPlan before dispatch, so queued work cannot be silently
-reinterpreted by later coordinator state.
+* PYTHIA owns mining cognition, search topology, planning context and learning.
+* The canonical search architecture is precomputed before pool work starts:
+  dodecahedron/icosahedron dual overlay -> 11D manifold -> 600 dual vertices
+  -> 11-qubit Hilbert addresses.
+* Chronus owns physical execution and consumes the exact nonce batches PYTHIA
+  authorises. OpenCL, CUDA, Metal, remote GPU and composite lanes may execute
+  the same explicit batch only after their normal capability/self-check gate.
+* SHA256d, target comparison, freshness and literal pool acknowledgement remain
+  external truth authorities. Search geometry never becomes proof authority.
+
+The historical M32 route token remains a compatibility detail for accelerator
+selection. When the canonical PYTHIA lattice is active the kernel provenance
+explicitly states that ``grind_target_batch`` executed the 600-vertex itinerary;
+it is never relabelled as an M32 traversal.
 """
 from __future__ import annotations
 
@@ -22,10 +27,19 @@ from python_backend.core_modules.geodesic_tensor_engine import GeodesicNoncePlan
 from .euclid_support import EuclidProductionMiningCoordinator
 from .execution_router import (
     ExecutionRouter,
+    FallbackReason,
     NONCE_ORDER_HENDRIX,
     NONCE_ORDER_M32,
     NONCE_ORDER_POINCARE_11D,
+    RouteDecision,
 )
+from .pythia_search import (
+    SEARCH_ARCHITECTURE_ID,
+    PythiaSearchPrecompute,
+    precompute_pythia_search,
+    pythia_hilbert_600_nonces,
+)
+from .search_plan import ExecutionRoute
 
 _NATIVE_BACKENDS = frozenset({"cuda", "metal"})
 _NATIVE_ROUTE_METHODS = {
@@ -48,36 +62,72 @@ def _bind_native_route_markers(hasher: Any) -> None:
             continue
         method = getattr(hasher, method_name, None)
         if callable(method):
-            # ExecutionRouter uses marker presence as route availability.
-            # Bind the actual method rather than inventing a dummy capability.
             setattr(hasher, marker, method)
 
 
 class ProductionExecutionRouter(ExecutionRouter):
-    """Canonical router with plan-bound ordering and native GPU compatibility."""
+    """Canonical router with exact PYTHIA itinerary and native GPU compatibility."""
 
-    def __init__(self, hasher: Any, *args: Any, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        hasher: Any,
+        *args: Any,
+        pythia_precompute: PythiaSearchPrecompute | None = None,
+        **kwargs: Any,
+    ) -> None:
         _bind_native_route_markers(hasher)
-        # Production SearchPlans now own WHICH ORDER. Ignore mutable/global
-        # coordinator callbacks at execution time and consume the immutable
-        # plan field instead. Generic ExecutionRouter users retain their
-        # injectable callback; this rule is specific to the production seam.
+        self._pythia_precompute = pythia_precompute or precompute_pythia_search()
+        self._pythia_order_cache: dict[str, list[int]] = {}
+        # Production SearchPlans own their execution intent. Generic
+        # ExecutionRouter callers retain their injectable callback; this seam
+        # consumes only the immutable plan field.
         kwargs["nonce_order"] = lambda plan: plan.nonce_order
         super().__init__(hasher, *args, **kwargs)
 
+    @staticmethod
+    def _is_pythia_lattice(plan) -> bool:
+        return plan.evidence_refs.get("search_architecture") == SEARCH_ARCHITECTURE_ID
+
     def _opencl_bound(self) -> bool:
-        # The inherited method name is historical. CUDA/Metal are independent
-        # runtimes and are never reported as OpenCL; this only admits them to
-        # the shared accelerator-method contract after constructor self-check.
+        # The inherited name is historical. CUDA/Metal are independent
+        # runtimes and remain truthfully labelled by device_backend.
         if _backend_name(self._hasher) in _NATIVE_BACKENDS:
             return True
         return super()._opencl_bound()
 
     def decide_route(self, plan):
-        """Use the legacy route token while keeping native kernel provenance literal."""
+        """Select physical execution while preserving literal substrate provenance."""
         decision = super().decide_route(plan)
         backend = _backend_name(self._hasher)
-        if backend not in _NATIVE_BACKENDS or decision.executed_route.value == "cpu_reference":
+
+        if self._is_pythia_lattice(plan) and decision.executed_route is not ExecutionRoute.cpu_reference:
+            batch = getattr(self._hasher, "grind_target_batch", None)
+            if callable(batch):
+                return replace(
+                    decision,
+                    kernel_identity=(
+                        f"pythia_explicit_nonce_batch:{backend or decision.device_backend}:"
+                        f"{SEARCH_ARCHITECTURE_ID}"
+                    ),
+                    kernel_build_status="explicit_nonce_batch_bound_after_backend_self_check",
+                    launch_cap=max(1, int(getattr(self._hasher, "grind_batch", 1) or 1)),
+                )
+            # A hardware route that cannot consume the exact itinerary must not
+            # silently execute another order. Fall back to the independent CPU
+            # oracle and say why.
+            return RouteDecision(
+                requested_route=decision.requested_route,
+                executed_route=ExecutionRoute.cpu_reference,
+                fallback_reason=FallbackReason.KERNEL_UNAVAILABLE,
+                device_backend="cpu_reference",
+                device_name=decision.device_name,
+                device_vendor=decision.device_vendor,
+                kernel_identity="hashlib_sha256d",
+                kernel_build_status="explicit_nonce_batch_unavailable",
+                launch_cap=max(1, int(getattr(self._hasher, "grind_batch", 1) or 1)),
+            )
+
+        if backend not in _NATIVE_BACKENDS or decision.executed_route is ExecutionRoute.cpu_reference:
             return decision
         return replace(
             decision,
@@ -85,11 +135,57 @@ class ProductionExecutionRouter(ExecutionRouter):
             kernel_build_status="native_method_bound_after_backend_self_check",
         )
 
+    def _run_chunk(self, plan, header, target, chunk, decision):
+        """Execute the exact 600-vertex itinerary on CPU or explicit-nonce hardware."""
+        if not self._is_pythia_lattice(plan):
+            return super()._run_chunk(plan, header, target, chunk, decision)
+
+        order = self._pythia_order_cache.get(plan.plan_id)
+        if order is None:
+            order = pythia_hilbert_600_nonces(
+                header,
+                plan.base_step,
+                plan.window,
+                precompute=self._pythia_precompute,
+            )
+            self._pythia_order_cache[plan.plan_id] = order
+        position = (chunk.start - plan.base_step) & 0xFFFFFFFF
+        nonces = order[position : position + chunk.count]
+        if len(nonces) != chunk.count:
+            raise RuntimeError("PYTHIA itinerary chunk does not match the leased window")
+
+        if decision.executed_route is ExecutionRoute.cpu_reference:
+            return self._cpu_nonces(header, target, nonces)
+        batch = getattr(self._hasher, "grind_target_batch", None)
+        if not callable(batch):
+            raise RuntimeError("selected hardware route cannot execute explicit nonce batches")
+        return batch(header, bytes(target)[::-1], nonces)
+
+    def _build_record(self, plan, decision, requested_order, **kwargs):
+        """Make the executed search identity literal in the evidence record."""
+        record = super()._build_record(plan, decision, requested_order, **kwargs)
+        if not self._is_pythia_lattice(plan):
+            return record
+        executed = (
+            None
+            if record.executed_nonce_order is None
+            else SEARCH_ARCHITECTURE_ID
+        )
+        return replace(
+            record,
+            requested_nonce_order=SEARCH_ARCHITECTURE_ID,
+            executed_nonce_order=executed,
+        )
+
 
 class GeodesicProductionMiningCoordinator(EuclidProductionMiningCoordinator):
-    """EUCLID production coordinator with geodesic and native-GPU routing."""
+    """PYTHIA-centred production miner with bounded EUCLID advisory support."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
+        # PYTHIA prepares the static search world before the base coordinator
+        # can connect to a pool. A failure here is a startup failure, never a
+        # degraded live miner silently constructing geometry after notify.
+        self.pythia_search_precompute = precompute_pythia_search()
         super().__init__(*args, **kwargs)
         self.geodesic_enabled = os.getenv("PYTHIA_GEODESIC_ORDERING", "1").strip() not in {
             "0",
@@ -106,7 +202,7 @@ class GeodesicProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         self._geodesic_state: dict[str, Any] = {
             "state": "ENABLED" if self.geodesic_enabled else "DISABLED",
             "consensus_authority": False,
-            "claim_boundary": "candidate ordering only",
+            "claim_boundary": "candidate ordering advice only",
             "last_error": None,
             "last_report": None,
         }
@@ -142,9 +238,8 @@ class GeodesicProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         return ordered
 
     def _execution_route(self) -> str:
-        """Select an executable route from the hasher's measured capability."""
+        """Select an executable route from measured capability, never a label."""
         if self._nonce_order == NONCE_ORDER_POINCARE_11D:
-            # No accelerator implements the canonical 11D face-ranked order.
             return super()._execution_route()
         hasher = self.execution_hasher
         if _backend_name(hasher) in _NATIVE_BACKENDS:
@@ -157,28 +252,33 @@ class GeodesicProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         return super()._execution_route()
 
     def _bind_plan_execution_intent(self, plan):
-        """Seal discovery/search intent into the immutable production plan.
-
-        Intelligence and configured search policy may decide HOW to traverse a
-        leased window, but neither can alter SHA256d, target comparison, Stratum
-        freshness or pool truth. Binding the nonce order here makes that intent
-        replayable and prevents execution from consulting mutable strategy state.
-        """
+        """Seal PYTHIA's precomputed search architecture into every immutable plan."""
         decision = getattr(self, "last_mining_decision", None)
         refs = dict(plan.evidence_refs)
-        refs["requested_nonce_order"] = self._nonce_order
+        refs["search_architecture"] = SEARCH_ARCHITECTURE_ID
+        refs["search_precompute_digest"] = self.pythia_search_precompute.digest
+        refs["configured_traversal_refinement"] = self._nonce_order
         refs["technology_intent"] = {
-            "nonce_order": self._nonce_order,
+            "composition_root": "PYTHIA",
+            "search_architecture": SEARCH_ARCHITECTURE_ID,
+            "coarse_overlay": "dodecahedron_12_plus_icosahedron_20",
+            "manifold": "phi_weighted_11d_poincare_ball",
+            "dual_vertices": 600,
+            "hilbert_space": "11_qubits_C^2048",
             "mining_policy": getattr(decision, "lead", None),
-            "candidate_ordering": (
+            "candidate_ordering_advice": (
                 getattr(getattr(decision, "policy", None), "candidate_ordering", None)
                 if decision is not None
                 else None
             ),
-            "geodesic_enabled": bool(self.geodesic_enabled),
-            "proof_authority": "sha256d_target_and_literal_pool_response_only",
+            "geodesic_advice_enabled": bool(self.geodesic_enabled),
+            "proof_authority": "sha256d_target_freshness_and_literal_pool_response_only",
         }
-        return replace(plan, nonce_order=self._nonce_order, evidence_refs=refs)
+        # M32 is only the compatibility carrier that lets the inherited router
+        # reach _run_chunk without invoking its separate Hendrix/Poincare
+        # special cases. ProductionExecutionRouter replaces the evidence with
+        # the literal 600-vertex architecture and executes its explicit batch.
+        return replace(plan, nonce_order=NONCE_ORDER_M32, evidence_refs=refs)
 
     def _baseline_plan(self, identity, lease, window, reason):
         return self._bind_plan_execution_intent(
@@ -190,64 +290,64 @@ class GeodesicProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         return None if plan is None else self._bind_plan_execution_intent(plan)
 
     def _router_for(self, plan):
-        """Preserve the parent's CPU proof oracle; replace only the router seam."""
+        """Preserve the parent's proof oracle and replace only production routing."""
         base = super()._router_for(plan)
         return ProductionExecutionRouter(
             self.execution_hasher,
             base._cpu,
             freshness=base._freshness,
             cpu_nonce_executor=base._cpu_nonces,
+            pythia_precompute=self.pythia_search_precompute,
         )
 
     def _technology_utilization_snapshot(self) -> dict[str, Any]:
-        """Truth-labelled use of mining discoveries in the canonical runtime.
-
-        ACTIVE means the capability is on the production path at the authority
-        stated here. AVAILABLE_NOT_SELECTED and GATED states are deliberate:
-        forcing unmeasured research into control would be under-governed use,
-        not fuller utilisation.
-        """
-        selected_order = self._nonce_order
         audit = self.policy_audit.snapshot()
         backend = _backend_name(self.execution_hasher)
         return {
-            "schema": "pythia.mining_technology_utilization/1",
-            "scope": "canonical production mining runtime",
+            "schema": "pythia.mining_technology_utilization/2",
+            "composition_root": "PYTHIA",
+            "enterprise_intelligence_orchestrator": "EUCLID",
             "truth_boundary": (
-                "discoveries may steer ordering, allocation, execution, recovery and audit; "
-                "only SHA256d/target/freshness and literal pool responses establish mining truth"
+                "PYTHIA directs the mining workforce and search architecture; Chronus executes; "
+                "Salamander heals/optimises; SHA256d/Stratum establish proof and pool truth"
             ),
+            "canonical_search": self.pythia_search_precompute.summary(),
             "discoveries": {
+                "dodecahedron_icosahedron_overlay": {
+                    "state": "ACTIVE_CANONICAL_ROOT",
+                    "authority": "32 coarse search directions",
+                },
+                "poincare_phi_11d_manifold": {
+                    "state": "ACTIVE_CANONICAL_ROOT",
+                    "authority": "search geometry / ranking only",
+                },
+                "h4_dual_600_vertices": {
+                    "state": "ACTIVE_PRECOMPUTED",
+                    "authority": "600 high-resolution search vertices",
+                },
+                "hilbert_11_qubit_address_space": {
+                    "state": "ACTIVE_PRECOMPUTED",
+                    "authority": "injective 600-vertex itinerary in C^2048",
+                },
+                "cassini_affine_coverage": {
+                    "state": "ACTIVE",
+                    "authority": "coverage-preserving local shard permutation",
+                },
                 "hendrix_coprime_search": {
-                    "state": (
-                        "ACTIVE" if selected_order == NONCE_ORDER_HENDRIX else "AVAILABLE_NOT_SELECTED"
-                    ),
-                    "authority": "nonce ordering only",
-                    "evidence": "SearchPlan.nonce_order -> ExecutionRecord requested/executed_nonce_order",
+                    "state": "AVAILABLE_REFINEMENT",
+                    "authority": "legacy/alternative traversal refinement, not search identity",
                 },
                 "m32_dual_solid_lane_topology": {
                     "state": "ACTIVE_SUPPORTING_TOPOLOGY",
-                    "authority": "lane ordering / accelerator dispatch only",
-                    "evidence": "SearchPlan.lane_order + dispatch certificate + execution record",
+                    "authority": "coarse lane/accelerator compatibility, not canonical search identity",
                 },
-                "poincare_cassini_11d": {
-                    "state": (
-                        "ACTIVE_CPU_REFERENCE"
-                        if selected_order == NONCE_ORDER_POINCARE_11D
-                        else "AVAILABLE_NOT_SELECTED"
-                    ),
-                    "authority": "nonce ordering only",
-                    "evidence": "plan-bound order; CPU route enforced when selected",
-                },
-                "geodesic_candidate_ordering": {
+                "geodesic_candidate_advice": {
                     "state": self._geodesic_state.get("state", "Unavailable"),
-                    "authority": "candidate permutation only",
-                    "evidence": "membership-preservation gate + geodesic_ordering telemetry",
+                    "authority": "bounded chooser advice; membership preserving",
                 },
                 "toe_causal_steering": {
                     "state": "ACTIVE" if self.last_toe_frame is not None else "AVAILABLE_UNBOUND",
                     "authority": "advisory face bias / throttle only",
-                    "evidence": "TOE frame digest + signal binding; never proof",
                 },
                 "turing_vqc_policy_audit": {
                     "state": (
@@ -260,38 +360,38 @@ class GeodesicProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                         )
                     ),
                     "authority": "independent policy cross-check; disagreement never acts",
-                    "evidence": "Kellogg-attested policy_audit receipt",
                 },
                 "lucas_scale_ladder": {
                     "state": "ACTIVE",
                     "authority": "bounded window ceiling / rung budget",
-                    "evidence": "window_basis + solver rung budget",
+                },
+                "agentic_mining_workforce": {
+                    "state": "ACTIVE",
+                    "authority": "PYTHIA composition; bounded role-specific agents",
                 },
                 "closed_loop_optimizer": {
                     "state": "ACTIVE_MEASURED_GATE",
                     "authority": "bounded mining-window retain/rollback",
-                    "evidence": "optimization trial history",
                 },
                 "salamander_recovery": {
                     "state": "ACTIVE_MONITORING",
                     "authority": "bounded recovery / reprobe / fail-closed return",
-                    "evidence": "RecoveryGovernor + SelfHealingAgent records",
                 },
                 "native_cuda_execution": {
                     "state": "ACTIVE" if backend == "cuda" else "GATED_BY_CAPABILITY_PROBE",
-                    "authority": "physical SHA256d execution only",
-                    "evidence": "backend self-check + measured launch/work before HARDWARE_EXECUTED",
+                    "authority": "physical SHA256d execution of authorised explicit batches",
                 },
                 "native_metal_execution": {
                     "state": "ACTIVE" if backend == "metal" else "GATED_BY_CAPABILITY_PROBE",
-                    "authority": "physical SHA256d execution only",
-                    "evidence": "backend self-check + measured launch/work before HARDWARE_EXECUTED",
+                    "authority": "physical SHA256d execution of authorised explicit batches",
                 },
             },
         }
 
     def evidence_snapshot(self) -> dict[str, Any]:
         snapshot = super().evidence_snapshot()
+        snapshot["pythia_search_precompute"] = self.pythia_search_precompute.summary()
+        snapshot["pythia_agentic_workforce"] = self.pythia_search_precompute.workforce_manifest()
         snapshot["geodesic_ordering"] = dict(self._geodesic_state)
         snapshot["technology_utilization"] = self._technology_utilization_snapshot()
         backend = _backend_name(self.execution_hasher)
@@ -300,6 +400,7 @@ class GeodesicProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                 "backend": backend,
                 "route": self._execution_route(),
                 "physical_backend_truthful": True,
+                "canonical_search_consumption": "explicit_nonce_batch",
                 "hardware_evidence_rule": (
                     "HARDWARE_EXECUTED only after measured kernel_launch_count > 0 "
                     "and completed_work_items > 0"
