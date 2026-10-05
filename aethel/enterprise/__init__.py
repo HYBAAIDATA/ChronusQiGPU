@@ -112,6 +112,17 @@ from .schema import (
     CustodyEvent,
     canonical_manifest_bytes,
 )
+from .system_relations import (
+    DEFAULT_PEERS,
+    ProductionSystemRelations,
+    SharedALHaras,
+    SharedEuclid,
+    SharedKellogg,
+    SharedPythiaStore,
+    SharedSalamander,
+    SharedTOEBridge,
+    SharedTuring,
+)
 from .telemetry import EvidenceTelemetry
 
 __all__ = [
@@ -129,6 +140,16 @@ __all__ = [
     "EntanglementBinding",
     "SystemDataPort",
     "EntangledCustodyFabric",
+    # live subsystem bindings over the shared fabric
+    "DEFAULT_PEERS",
+    "ProductionSystemRelations",
+    "SharedPythiaStore",
+    "SharedTOEBridge",
+    "SharedSalamander",
+    "SharedALHaras",
+    "SharedKellogg",
+    "SharedTuring",
+    "SharedEuclid",
     # distributed / multi-root / DR / soak / API / cert
     "NodeId",
     "LogEntry",
