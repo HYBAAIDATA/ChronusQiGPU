@@ -170,6 +170,23 @@ def gpu_payload() -> dict[str, Any]:
         substrate_available = detected_backend == "cpu" or detected_backend.startswith("opencl:")
         fallback_used = bool(hasher.get("fallback_reason"))
         member_count = len(devices) + int(detected_backend == "cpu")
+        # "Active" means a GPU-class device is the executing dispatch path —
+        # never merely detected. An `opencl:cpu` emulated backend and a
+        # CPU-fallback hasher are detected, not active. Punch hosts report
+        # `opencl:<device name>` without a class suffix, so a named backend
+        # counts only when it matches a GPU-class device in the same
+        # enumeration (an `opencl:<cpu device>` name alongside a GPU is not).
+        backend_active = detected_backend == "opencl:gpu"
+        if (
+            not backend_active
+            and detected_backend.startswith("opencl:")
+            and detected_backend != "opencl:cpu"
+        ):
+            bound_name = detected_backend.split(":", 1)[1].strip()
+            backend_active = bool(bound_name) and any(
+                bound_name == str(device.get("name") or "").strip()
+                for device in gpu_devices
+            )
         # The Chronus contract device is the system's declared GPU identity —
         # enumerated from the loaded spec, not probed silicon. It is reported
         # alongside (never inside) the physical device counts so hardware
@@ -191,13 +208,13 @@ def gpu_payload() -> dict[str, Any]:
             "physical_gpu_available": bool(gpu_devices),
             "physical_gpu_count": len(gpu_devices),
             "devices": devices,
-            "backend_active": False,
+            "backend_active": backend_active,
             "detected_backend": detected_backend,
             "detected_device": str(hasher.get("device") or ""),
             "logical_substrate": {
                 "name": "hyba-super-gpu",
                 "available": substrate_available,
-                "active": False,
+                "active": backend_active,
                 "host_backend": detected_backend,
                 "fallback_used": fallback_used,
             },
