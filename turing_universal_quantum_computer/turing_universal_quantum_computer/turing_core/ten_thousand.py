@@ -286,6 +286,19 @@ class TenThousandQubitSystem:
     def entanglement_ledger(self) -> List[EntanglementRegistration]:
         return list(self._entanglement_ledger)
 
+    # -- Golden Quantum evidence-scoped profile -------------------------------
+
+    def golden_quantum(self):
+        """Return the Golden Quantum profile bound to this virtual computer.
+
+        The profile exposes verified transforms and capability reports,
+        experimental search ordering, and non-executable speculative metadata.
+        It never upgrades an ordering heuristic into a proof or hardware claim.
+        """
+        from ..golden_quantum import GoldenQuantumCore
+
+        return GoldenQuantumCore(self)
+
     # -- Aethel persistence (folded evidence, never raw amplitudes) -----------
 
     def aethel_store_manifest(self, address: str = "ten_thousand:manifest") -> Dict[str, Any]:
@@ -325,6 +338,7 @@ class TenThousandQubitSystem:
                 "annealing",
                 "tunnelling",
                 "swarming",
+                "golden_quantum_profile",
             ],
             "zeckendorf_protection": "non-adjacent Fibonacci index constraint",
             "cassini_anchor_ok": bool(_tc.cassini_check(7)),

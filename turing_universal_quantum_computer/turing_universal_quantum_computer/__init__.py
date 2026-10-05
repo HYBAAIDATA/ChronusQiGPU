@@ -157,6 +157,7 @@ _LAZY_MODULES = {
     "phi_machine",
     "midas_vqc",
     "trotter_simulation",
+    "golden_quantum",
     # product boundary (v1.2)
     "backends",
     "capabilities",
@@ -234,6 +235,14 @@ _LAZY_SYMBOLS = {
     "MidasPhiVQCRanker": "midas_vqc",
     "VQCConfig": "midas_vqc",
     "TrotterHamiltonianSimulator": "trotter_simulation",
+    "GoldenQuantumCore": "golden_quantum",
+    "GoldenConstants": "golden_quantum",
+    "GOLDEN_CONSTANTS": "golden_quantum",
+    "EvidenceLayer": "golden_quantum",
+    "UniversalConstantInterface": "golden_quantum",
+    "PrimeGapAddressSpace": "golden_quantum",
+    "MandelbrotResonanceEngine": "golden_quantum",
+    "SearchAttestation": "golden_quantum",
     # product boundary (v1.2)
     "Program": "backends",
     "Operation": "backends",
