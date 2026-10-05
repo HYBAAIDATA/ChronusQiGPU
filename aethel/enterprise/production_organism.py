@@ -162,6 +162,7 @@ class ProductionOrganism:
         self.salamander: Any | None = None
         self.al_haras: Any | None = None
         self.euclid: Any | None = None
+        self._euclid_raw: Any | None = None
         self._started = False
 
     @staticmethod
@@ -217,6 +218,7 @@ class ProductionOrganism:
                         "production root cannot prove it avoided private Triad custody"
                     )
 
+            self._euclid_raw = euclid_runtime
             euclid_runtime.compose_organism(
                 guardian=self.al_haras,
                 implementations={
@@ -233,12 +235,13 @@ class ProductionOrganism:
 
     def _close_euclid(self) -> None:
         runtime = self.euclid
-        if runtime is None:
+        raw = getattr(runtime, "raw", runtime) if runtime is not None else self._euclid_raw
+        if raw is None:
             return
-        raw = getattr(runtime, "raw", runtime)
         close = getattr(raw, "close", None)
         if callable(close):
             close()
+        self._euclid_raw = None
 
     def _fail_closed_cleanup(self) -> None:
         try:
