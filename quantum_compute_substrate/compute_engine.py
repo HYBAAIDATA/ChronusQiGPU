@@ -1,7 +1,7 @@
 """
 Parallel Tensor Compute Engine
 ==============================
-Implements a parallel tensor computation engine using multiple PhiTensorCore
+Implements a parallel tensor computation engine using multiple QuantumFoldTensorCore
 instances. All performance is MEASURED by timing actual operations.
 
 Claim lane: INTERNAL — real computation with measured performance.
@@ -11,7 +11,7 @@ No exascale or quantum advantage claim.
 import numpy as np
 from typing import List, Dict
 import time
-from .phi_tensor_core import PhiTensorCore, FoldState
+from .phi_tensor_core import QuantumFoldTensorCore, FoldState
 from .gpu_advances_2026 import PrecisionMode, PRECISION_THROUGHPUT
 
 
@@ -19,7 +19,7 @@ class ComputeEngine:
     """
     Parallel tensor computation engine.
 
-    Manages multiple PhiTensorCore instances and distributes tensor
+    Manages multiple QuantumFoldTensorCore instances and distributes tensor
     operations across them. Performance is MEASURED, not projected.
     """
 
@@ -34,7 +34,7 @@ class ComputeEngine:
         self.num_cores = num_cores
         self.core_dim = core_dim
         self.cores = [
-            PhiTensorCore(core_id=i, dim=core_dim, seed=seed + i) for i in range(num_cores)
+            QuantumFoldTensorCore(core_id=i, dim=core_dim, seed=seed + i) for i in range(num_cores)
         ]
         self._total_ops = 0
         self._total_time = 0.0

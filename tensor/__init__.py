@@ -25,7 +25,9 @@ from __future__ import annotations
 from .contracts import (
     BackendIdentity,
     DEFAULT_MAX_TENSOR_BYTES,
+    DependencyScope,
     ExactnessMode,
+    MAX_TENSOR_ELEMENTS,
     MemoryBudget,
     ModelIdentity,
     Precision,
@@ -33,12 +35,16 @@ from .contracts import (
     ResidualBounds,
     TensorMeasurement,
     TensorOperationSpec,
+    TensorOpKind,
     TensorRequest,
     TensorResult,
     TensorShape,
     TruthClass,
     estimate_bytes,
 )
+from .api import TensorRuntime, default_runtime
+from .benchmarks import BenchmarkReport, BenchmarkRow, run_benchmarks
+from .dependency import DependencyCone, InputCone, dependency_cone
 from .engine import execute
 from .errors import (
     TensorBackendUnavailableError,
@@ -49,15 +55,21 @@ from .errors import (
     TensorTimeoutError,
     TensorValidationError,
 )
+from .receipts import ExecutionReceipt
 from .router import RouteDecision, default_registry, route
 from .runtime import CancellationToken, Deadline, preflight_memory, telemetry_record, timed_execute
 
 __all__ = [
     "BackendIdentity",
+    "BenchmarkReport",
+    "BenchmarkRow",
     "CancellationToken",
     "DEFAULT_MAX_TENSOR_BYTES",
     "Deadline",
+    "DependencyCone",
+    "DependencyScope",
     "ExactnessMode",
+    "MAX_TENSOR_ELEMENTS",
     "MemoryBudget",
     "ModelIdentity",
     "Precision",
@@ -68,20 +80,27 @@ __all__ = [
     "TensorCancelledError",
     "TensorError",
     "TensorExactnessError",
+    "InputCone",
+    "ExecutionReceipt",
     "TensorMeasurement",
     "TensorMemoryError",
     "TensorOperationSpec",
+    "TensorOpKind",
     "TensorRequest",
     "TensorResult",
+    "TensorRuntime",
     "TensorShape",
     "TensorTimeoutError",
     "TensorValidationError",
     "TruthClass",
     "default_registry",
+    "default_runtime",
+    "dependency_cone",
     "estimate_bytes",
     "execute",
     "preflight_memory",
     "route",
+    "run_benchmarks",
     "telemetry_record",
     "timed_execute",
 ]

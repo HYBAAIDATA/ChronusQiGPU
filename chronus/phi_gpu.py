@@ -58,6 +58,7 @@ class KernelTask:
     result: Any = None
     assigned_core: int = -1
     geodesic_distance: float = 0.0
+    depends_on: Tuple[str, ...] = ()
 
 
 GeodesicTask = KernelTask
@@ -80,9 +81,11 @@ class GeodesicScheduler:
         self.far_depth = int(far_depth)
         self.num_cores = int(num_cores)
         self._queue: List[_ScheduledItem] = []
+        self._blocked: List[_ScheduledItem] = []
         self._sequence = 0
         self.scheduled_log: List[str] = []
         self.completed_tasks: List[KernelTask] = []
+        self._completed_names: set = set()
         self.scheduling_decisions = 0
         self.total_geodesic_distance = 0.0
         self.current_position = np.array([1.0], dtype=np.float64)
@@ -99,6 +102,10 @@ class GeodesicScheduler:
             return float("inf")
         return abs(math.log(center / reference) / math.log(PHI))
 
+    def is_ready(self, task: KernelTask) -> bool:
+        """A task is dispatchable only when every named dependency completed."""
+        return all(name in self._completed_names for name in task.depends_on)
+
     def submit(
         self,
         task: KernelTask | KernelBoundary,
@@ -107,13 +114,21 @@ class GeodesicScheduler:
         operands: Any = None,
         operation: str = "fma",
         resident: Optional[str] = None,
+        kernel: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        depends_on: Tuple[str, ...] = (),
     ) -> float:
         if isinstance(task, KernelBoundary):
             task = KernelTask(
                 name=f"{operation}:{self._sequence}",
                 position=float(task.offset + task.length / 2.0),
-                payload={"boundary": task, "operands": operands, "operation": operation},
+                payload={
+                    "boundary": task,
+                    "operands": operands,
+                    "operation": operation,
+                    "kernel": kernel,
+                },
                 resident=resident,
+                depends_on=tuple(depends_on),
             )
         if not isinstance(task, KernelTask):
             raise PhiGPUError("submit requires a KernelTask or KernelBoundary")
@@ -134,11 +149,44 @@ class GeodesicScheduler:
         except Exception as exc:
             logger.debug("depth settle for %r skipped: %s", task.resident, exc)
 
+    def _pop_ready(self) -> Optional[_ScheduledItem]:
+        """Pop the nearest dispatchable item; hold blocked items aside.
+
+        Blocked tasks stay pending — selection order is defined over the
+        ready queue, so a dependency-locked task cannot shadow nearer ready
+        work nor launch before its dependencies complete.
+        """
+        skipped: List[_ScheduledItem] = []
+        found: Optional[_ScheduledItem] = None
+        while self._queue and found is None:
+            item = heapq.heappop(self._queue)
+            if self.is_ready(item.task):
+                found = item
+            else:
+                skipped.append(item)
+        for item in skipped:
+            self._blocked.append(item)
+        return found
+
+    def _dispatch(self, item: _ScheduledItem, median: float) -> KernelTask:
+        task = item.task
+        task.assigned_core = self.scheduling_decisions % self.num_cores
+        task.geodesic_distance = item.distance
+        self.scheduled_log.append(task.name)
+        self.scheduling_decisions += 1
+        self.total_geodesic_distance += item.distance
+        self.current_position = np.array([task.position], dtype=np.float64)
+        self._apply_depth_policy(item, median)
+        return task
+
     def schedule(self) -> List[KernelTask]:
-        """Drain pending work nearest-first; preserves the modern live contract."""
+        """Drain pending ready work nearest-first; blocked work stays queued."""
         drained: List[_ScheduledItem] = []
-        while self._queue:
-            drained.append(heapq.heappop(self._queue))
+        while True:
+            item = self._pop_ready()
+            if item is None:
+                break
+            drained.append(item)
         if not drained:
             return []
         median = drained[len(drained) // 2].distance
@@ -156,18 +204,11 @@ class GeodesicScheduler:
         return ordered
 
     def schedule_next(self) -> Optional[KernelTask]:
-        if not self._queue:
+        """Select the nearest *ready* task, or None when none can dispatch."""
+        item = self._pop_ready()
+        if item is None:
             return None
-        item = heapq.heappop(self._queue)
-        task = item.task
-        task.assigned_core = self.scheduling_decisions % self.num_cores
-        task.geodesic_distance = item.distance
-        self.scheduled_log.append(task.name)
-        self.scheduling_decisions += 1
-        self.total_geodesic_distance += item.distance
-        self.current_position = np.array([task.position], dtype=np.float64)
-        self._apply_depth_policy(item, item.distance)
-        return task
+        return self._dispatch(item, item.distance)
 
     def schedule_batch(self, batch_size: Optional[int] = None) -> List[KernelTask]:
         limit = self.num_cores if batch_size is None else int(batch_size)
@@ -186,11 +227,21 @@ class GeodesicScheduler:
         task.completed = True
         task.result = result
         self.completed_tasks.append(task)
+        self._completed_names.add(task.name)
+        # Unblock any dependents now that their readiness may hold.
+        still_blocked: List[_ScheduledItem] = []
+        for item in self._blocked:
+            if self.is_ready(item.task):
+                heapq.heappush(self._queue, item)
+            else:
+                still_blocked.append(item)
+        self._blocked = still_blocked
 
     def get_metrics(self) -> Dict[str, Any]:
         return {
             "num_cores": self.num_cores,
             "pending_tasks": len(self._queue),
+            "blocked_tasks": len(self._blocked),
             "completed_tasks": len(self.completed_tasks),
             "scheduling_decisions": self.scheduling_decisions,
             "total_geodesic_distance": self.total_geodesic_distance,
@@ -270,6 +321,83 @@ class PhiGPU:
 
     def store(self, name: str, array: np.ndarray, tier: MemoryTier = MemoryTier.HBM):
         return self.memory.store(name, array, tier)
+
+    def submit_task(
+        self,
+        task: KernelTask | KernelBoundary,
+        reference: float = 0.0,
+        *,
+        kernel: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        resident: Optional[str] = None,
+        operands: Any = None,
+        operation: str = "fma",
+        depends_on: Tuple[str, ...] = (),
+    ) -> float:
+        """Queue work through the scheduler — the production submission path."""
+        return self.scheduler.submit(
+            task,
+            reference,
+            operands=operands,
+            operation=operation,
+            resident=resident,
+            kernel=kernel,
+            depends_on=depends_on,
+        )
+
+    def _task_launch_config(self, task: KernelTask) -> KernelLaunchConfig:
+        """Build the launch config the *selected* task dictates.
+
+        The boundary comes from the task payload — scheduler selection is
+        what controls which region executes, never a local default.
+        """
+        payload = task.payload if isinstance(task.payload, dict) else {}
+        boundary = payload.get("boundary")
+        if not isinstance(boundary, KernelBoundary):
+            raise PhiGPUError(
+                f"scheduled task {task.name!r} carries no KernelBoundary payload"
+            )
+        kernel = payload.get("kernel")
+        if not callable(kernel):
+            raise PhiGPUError(
+                f"scheduled task {task.name!r} carries no kernel payload"
+            )
+        resident = task.resident or payload.get("resident")
+        if not resident:
+            raise PhiGPUError(
+                f"scheduled task {task.name!r} names no resident operand"
+            )
+        return KernelLaunchConfig(
+            name=resident,
+            work_items=int(payload.get("work_items") or boundary.length),
+            kernel=kernel,
+            boundary=boundary,
+        )
+
+    def run_next(self) -> Optional[np.ndarray]:
+        """Scheduler-driven execution: the selected task controls the launch."""
+        task = self.scheduler.schedule_next()
+        if task is None:
+            return None
+        result = self.launch_kernel(self._task_launch_config(task))
+        self.scheduler.mark_completed(task, result)
+        return result
+
+    def run_ready(self, limit: Optional[int] = None) -> List[np.ndarray]:
+        """Drain the ready queue under scheduler control.
+
+        Execution order is exactly the scheduler's selection order;
+        dependency-locked tasks run only after their dependencies complete.
+        """
+        results: List[np.ndarray] = []
+        remaining = None if limit is None else int(limit)
+        while remaining is None or remaining > 0:
+            result = self.run_next()
+            if result is None:
+                break
+            results.append(result)
+            if remaining is not None:
+                remaining -= 1
+        return results
 
     def launch_kernel(self, config: KernelLaunchConfig) -> np.ndarray:
         """Execute a kernel using only the addressed folded-state slice."""

@@ -47,7 +47,7 @@ from . import pulvini  # noqa: F401
 __claim_lane__ = "RESTRICTED"
 __status__ = "INTERNAL_RESEARCH_PROTOTYPE"
 
-from .phi_tensor_core import PhiTensorCore, FoldState, PHI
+from .phi_tensor_core import QuantumFoldTensorCore, FoldState, PHI
 from .hilbert_space import QuantumComputeState, HilbertSpaceProcessor
 from .unitary_transforms import UnitaryHashTransform
 from .density_operators import DensityMatrixProcessor

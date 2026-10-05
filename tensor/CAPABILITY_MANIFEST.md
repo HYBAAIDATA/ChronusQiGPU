@@ -15,6 +15,17 @@ The current consolidation adds three evidence classes: software-complete, hardwa
 - Profile-driven hybrid Tensor router.
 - Folded linear-inference pilot with bit-exact weight custody and measured end-to-end latency/TFLOPS.
 - Mining tensor advice remains permutation-only and non-consensus.
+- **Folded-state runtime (elevation 2026-10)**: persistent versioned fold
+  store with checkpoint/restore and device-loss invalidation
+  (`aethel/fold_store.py`); dtype-exact custody incl. complex; arbitrary
+  region decode and dependency cones on both planes; lifted folded
+  operators (`add`/`hadamard`/`fma`/`scale`) with zero measured decoded
+  bytes and bit-identical output; declared-materializing
+  `transpose`/`reduce_sum`/`matmul`/`kron` with measured decode on the
+  receipt; canonical `TensorRuntime` + `python -m tensor` CLI +
+  guardian-preflighted `/api/v1/tensor/*` endpoints; bound execution
+  receipts and a validated benchmark matrix
+  (`tensor/receipts.py`, `tensor/benchmarks.py`).
 
 ## Hardware evidence required
 

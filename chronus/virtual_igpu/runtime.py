@@ -79,6 +79,7 @@ class RuntimeConfig:
             setattr(self, k, v)
 
 
+
 class RuntimeDaemon:
     """In-process Virtual iGPU control plane."""
 

@@ -17,7 +17,7 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 
-from .phi_tensor_core import PhiTensorCore, FoldState
+from .phi_tensor_core import QuantumFoldTensorCore, FoldState
 
 
 def _try_import(name: str) -> Optional[Any]:
@@ -92,7 +92,7 @@ class ScalingStudy:
         """Measure Grover-diffusion latency for a range of state sizes."""
         results = {}
         for N in sizes:
-            tc = PhiTensorCore(core_id=0, dim=N)
+            tc = QuantumFoldTensorCore(core_id=0, dim=N)
             state = FoldState(np.ones(N, dtype=np.complex128) / np.sqrt(N), 0, N)
             # Warmup
             tc.amplitude_amplification(state)
