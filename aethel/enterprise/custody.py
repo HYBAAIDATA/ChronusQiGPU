@@ -53,6 +53,22 @@ from .schema import (
 from .telemetry import EvidenceTelemetry
 
 
+def _contracted_ovid_versions(ovid: Any) -> tuple[int, ...]:
+    """OVID transform versions admissible as record dependencies.
+
+    Fail closed on registered-but-undeclared versions: when the registry can
+    report its declared contracts (OvidRegistry.contracts), a version without
+    a declared TransformContract is excluded from the dependency policy so a
+    stale ovid-transform dependency fails at admission rather than at
+    envelope-verify time. Registries without a contracts surface keep the
+    prior registered-version behaviour.
+    """
+    contracts = getattr(ovid, "contracts", None)
+    if contracts is None:
+        return tuple(ovid.supported())
+    return tuple(v for v, declared in contracts().items() if declared is not None)
+
+
 def _atomic_write_json(path: Path, data: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
@@ -119,7 +135,7 @@ class EnterpriseCustody:
             if dependency_policy is not None
             else default_dependency_policy(
                 theseus_format_version=THESEUS_FORMAT_VERSION,
-                ovid_transform_versions=self.ovid.supported(),
+                ovid_transform_versions=_contracted_ovid_versions(self.ovid),
             )
         )
         # A stored record does not create authority to access it. Access is
