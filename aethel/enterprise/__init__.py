@@ -89,6 +89,7 @@ from .journal import FileLock, WriteAheadJournal
 from .lifecycle import CompositionRoot
 from .ovid_registry import DEFAULT_OVID_REGISTRY, OvidRegistry
 from .parity import assert_cpu_accel_parity
+from .production_organism import ProductionOrganism
 from .records import (
     CANONICAL_PRODUCERS,
     DEPENDENCY_OVID_TRANSFORM,
@@ -131,6 +132,7 @@ __all__ = [
     "EnterpriseTheseus",
     "compose",
     "CompositionRoot",
+    "ProductionOrganism",
     # shared THESEUS / OVID data entanglement
     "ENTANGLED_CUSTODY_SCHEMA",
     "BINDING_SCHEMA",
