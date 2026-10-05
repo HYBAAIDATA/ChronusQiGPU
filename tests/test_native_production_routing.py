@@ -1,9 +1,11 @@
 """Production routing proofs for native CUDA/Metal mining lanes.
 
 These are software-contract tests. They prove that a capability-proven native
-hasher reaches its real M32 method through the canonical production router and
-that its physical backend remains labelled ``cuda``/``metal``. They do not
-claim physical GPU execution; that remains a deployment evidence gate.
+hasher reaches its real M32 method through the canonical production router,
+that its physical backend remains labelled ``cuda``/``metal``, and that the
+production router executes the nonce order sealed into the immutable
+SearchPlan. They do not claim physical GPU deployment evidence; the fake native
+hasher only exercises the software evidence contract.
 """
 
 from __future__ import annotations
@@ -13,6 +15,10 @@ import time
 
 import pytest
 
+from chronus.mla1517.mining.execution_router import (
+    NONCE_ORDER_HENDRIX,
+    NONCE_ORDER_M32,
+)
 from chronus.mla1517.mining.geodesic_support import (
     GeodesicProductionMiningCoordinator,
     ProductionExecutionRouter,
@@ -42,6 +48,10 @@ class _NativeHasher:
     def __init__(self, backend: str) -> None:
         self.backend = backend
         self.calls = []
+        # Make per-instance measured counters; class attributes above are only
+        # the shape expected by the production router.
+        self.kernel_ms = 0.0
+        self.launches = 0
 
     def grind_target_m32(self, header, target_be, base_nonce, lane_order, count):
         self.calls.append(("m32", base_nonce, count, tuple(lane_order)))
@@ -63,7 +73,12 @@ class _NativeHasher:
         raise AssertionError("gold route is not expected in this proof")
 
 
-def _plan(route: str = "opencl_m32") -> SearchPlan:
+def _plan(
+    route: str = "opencl_m32",
+    *,
+    nonce_order: str = NONCE_ORDER_M32,
+    evidence_refs=None,
+) -> SearchPlan:
     return SearchPlan(
         job_fingerprint="fp-native-production",
         pool_session_id="session-native-production",
@@ -76,9 +91,10 @@ def _plan(route: str = "opencl_m32") -> SearchPlan:
         dispatch_breadth=32,
         executor_route=route,
         policy_id="native-production-proof",
-        evidence_refs={},
+        evidence_refs={} if evidence_refs is None else evidence_refs,
         created_at=time.monotonic(),
         plan_id="plan-native-production",
+        nonce_order=nonce_order,
     )
 
 
@@ -98,7 +114,7 @@ def test_canonical_coordinator_classifies_native_backend_as_device_route(backend
         GeodesicProductionMiningCoordinator
     )
     coordinator.execution_hasher = _NativeHasher(backend)
-    coordinator._nonce_order = "m32"
+    coordinator._nonce_order = NONCE_ORDER_M32
 
     assert coordinator._execution_route() == "opencl_m32"
 
@@ -131,10 +147,10 @@ def test_native_m32_executes_on_native_hasher_without_cpu_substitution(backend):
     assert record.kernel_launch_count == 1
     assert record.kernel_ms == pytest.approx(0.25)
     assert record.completion_state is CompletionState.EARLY_WINNER
-    # The current evidence schema only permits HARDWARE_EXECUTED for its
-    # OpenCL/remote/ASIC set. Native physical proof is therefore deliberately
-    # under-claimed until that schema is generalized.
-    assert record.evidence_class is EvidenceClass.SOFTWARE_VERIFIED
+    # The schema is now substrate-general: a measured native launch + completed
+    # work may truthfully reach HARDWARE_EXECUTED. This fake proves the contract
+    # only; deployment still needs a real CUDA/Metal trace.
+    assert record.evidence_class is EvidenceClass.HARDWARE_EXECUTED
 
 
 @pytest.mark.parametrize("backend", ["cuda", "metal"])
@@ -153,3 +169,54 @@ def test_non_native_hasher_does_not_receive_synthetic_capabilities():
     assert not hasattr(hasher, "k_m32")
     assert not hasattr(hasher, "k_range")
     assert not hasattr(hasher, "k_gold")
+
+
+def test_production_router_executes_plan_bound_nonce_order_not_injected_callback():
+    class CpuHasher:
+        backend = "cpu"
+        device = "CPU"
+        vendor = None
+        grind_batch = 64
+        launches = 0
+        kernel_ms = 0.0
+        k_gold = k_m32 = k_range = None
+
+    plan = _plan("cpu_reference", nonce_order=NONCE_ORDER_HENDRIX)
+    # A conflicting callback is deliberately supplied. The production seam
+    # must ignore it and consume SearchPlan.nonce_order.
+    router = ProductionExecutionRouter(
+        CpuHasher(),
+        lambda header, target, start, count: (None, None, count),
+        nonce_order=lambda _plan: NONCE_ORDER_M32,
+    )
+    record, _candidate = router.execute_plan(
+        plan,
+        bytes(80),
+        bytes(32),  # impossible target for this bounded contract probe
+        lease=_lease(plan),
+    )
+
+    assert record.requested_nonce_order == NONCE_ORDER_HENDRIX
+    assert record.executed_nonce_order == NONCE_ORDER_HENDRIX
+
+
+def test_search_plan_refuses_unknown_nonce_order():
+    with pytest.raises(ValueError, match="unsupported nonce_order"):
+        _plan(nonce_order="invented-order")
+
+
+def test_coordinator_binds_technology_intent_into_plan_evidence():
+    coordinator = GeodesicProductionMiningCoordinator.__new__(
+        GeodesicProductionMiningCoordinator
+    )
+    coordinator._nonce_order = NONCE_ORDER_HENDRIX
+    coordinator.geodesic_enabled = True
+    coordinator.last_mining_decision = None
+
+    plan = coordinator._bind_plan_execution_intent(_plan())
+
+    assert plan.nonce_order == NONCE_ORDER_HENDRIX
+    assert plan.evidence_refs["requested_nonce_order"] == NONCE_ORDER_HENDRIX
+    intent = plan.evidence_refs["technology_intent"]
+    assert intent["geodesic_enabled"] is True
+    assert intent["proof_authority"] == "sha256d_target_and_literal_pool_response_only"
