@@ -29,6 +29,7 @@ from chronus.mla1517.mining.telemetry_history import (
     default_history_path,
 )
 from manifold_pool_coordinator import PoolEndpoint
+from salamander.runtime import MiningAutonomyBridge
 
 LOG = logging.getLogger("pythia.mining_runtime")
 
@@ -392,6 +393,7 @@ async def _main_async(args) -> None:
             retarget = RetargetWindowTracker(
                 os.getenv("PYTHIA_RETARGET_TELEMETRY_PATH", "data/retarget_windows.json")
             )
+            autonomy = MiningAutonomyBridge.from_environment()
 
             def publish_stratum_status(snapshot: dict) -> None:
                 enriched = dict(snapshot)
@@ -414,10 +416,44 @@ async def _main_async(args) -> None:
                 )
 
             def publish_mining_evidence(snapshot: dict) -> None:
+                try:
+                    autonomy_snapshot = autonomy.observe_mining_snapshot(snapshot)
+                except Exception as exc:
+                    LOG.exception("Salamander runtime evidence bridge failed")
+                    autonomy_snapshot = {
+                        "schema": "salamander.runtime-autonomy.v1",
+                        "health": "UNAVAILABLE",
+                        "evidence_source": "Unavailable",
+                        "reason": type(exc).__name__,
+                    }
+
+                # Close the same PYTHIA agentic cycle with the real Salamander
+                # observation/result. Salamander remains the actuator; this is
+                # correlation only, so no second healing path is introduced.
+                try:
+                    coordinator.record_salamander_autonomy(autonomy_snapshot)
+                except Exception:
+                    LOG.exception("Could not correlate Salamander evidence with PYTHIA cycle")
+
+                enriched = dict(snapshot)
+                try:
+                    current_cycle = coordinator.pythia_authority.snapshot().get("agentic_mining")
+                    if current_cycle is not None:
+                        enriched["agentic_mining"] = current_cycle
+                except Exception:
+                    LOG.exception("Could not refresh PYTHIA agentic evidence after Salamander")
+                enriched["salamander_autonomy"] = autonomy_snapshot
+
                 heartbeat.report(
                     mining_evidence=json.dumps(
-                        snapshot, sort_keys=True, separators=(",", ":"), default=str
-                    )
+                        enriched, sort_keys=True, separators=(",", ":"), default=str
+                    ),
+                    salamander_autonomy=json.dumps(
+                        autonomy_snapshot,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                        default=str,
+                    ),
                 )
 
             os.environ.setdefault("PYTHIA_INTELLIGENCE_DIR", "data/intelligence")
