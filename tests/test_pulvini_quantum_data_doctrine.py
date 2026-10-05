@@ -122,6 +122,32 @@ def test_boundary_gate_rejects_dynamic_mining_import_of_pulvini(tmp_path: Path) 
     assert any(v.rule == "mining-imports-pulvini-data" for v in violations)
 
 
+def test_boundary_gate_rejects_direct_import_module_helper_alias(tmp_path: Path) -> None:
+    source = tmp_path / "mining" / "dynamic_helper_alias.py"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "from importlib import import_module as loader\n"
+        "P = loader('quantum_compute_substrate.pulvini')\n",
+        encoding="utf-8",
+    )
+    violations = check_repository(tmp_path)
+    assert any(v.rule == "mining-imports-pulvini-data" for v in violations)
+
+
+def test_boundary_gate_rejects_aliased_importlib_module(tmp_path: Path) -> None:
+    source = tmp_path / "mining" / "dynamic_module_alias.py"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "import importlib as il\n"
+        "exact_math = il.import_module('python_backend.core_modules.math_folding')\n",
+        encoding="utf-8",
+    )
+    violations = check_repository(tmp_path)
+    assert any(
+        v.rule == "mining-imports-pulvini-fold-authority" for v in violations
+    )
+
+
 def test_boundary_gate_rejects_pulvini_fold_symbol_in_mining(tmp_path: Path) -> None:
     source = tmp_path / "mining" / "bad_fold.py"
     source.parent.mkdir(parents=True)
