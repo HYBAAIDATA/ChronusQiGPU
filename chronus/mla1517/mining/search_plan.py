@@ -25,6 +25,17 @@ from typing import Any, Mapping
 
 _LANES = 32
 _VALID_ROUTES = frozenset(("cpu_reference", "opencl_m32", "opencl_gold", "opencl_range"))
+_VALID_NONCE_ORDERS = frozenset(
+    (
+        "m32_turing_complete",
+        "klein_poincare_numerical",
+        "sequential",
+        "golden_stride",
+        "poincare_cassini_11d",
+        "hendrix_coprime_stride",
+    )
+)
+_DEFAULT_NONCE_ORDER = "m32_turing_complete"
 
 
 class PlanSource(str, Enum):
@@ -208,7 +219,9 @@ class SearchPlan:
 
     ``base_step``/``window`` are the leased nonce range start and requested
     budget on the header built from ``extranonce2``. The executor scans
-    exactly that range; it does not re-derive or expand any field.
+    exactly that range; it does not re-derive or expand any field. ``nonce_order``
+    is plan-bound so queued work cannot be reinterpreted by later coordinator
+    configuration or strategy-state changes.
     """
 
     job_fingerprint: str
@@ -225,6 +238,7 @@ class SearchPlan:
     evidence_refs: Mapping[str, Any]
     created_at: float
     plan_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    nonce_order: str = _DEFAULT_NONCE_ORDER
     toe_frame_id: str | None = None
     source: PlanSource = PlanSource.AGENTIC_PRECOMPUTED
     schedule: tuple[int, ...] = ()
@@ -249,6 +263,8 @@ class SearchPlan:
             raise ValueError("dispatch_breadth must be positive")
         if self.executor_route not in _VALID_ROUTES:
             raise ValueError(f"unsupported executor_route: {self.executor_route!r}")
+        if self.nonce_order not in _VALID_NONCE_ORDERS:
+            raise ValueError(f"unsupported nonce_order: {self.nonce_order!r}")
         if not self.policy_id:
             raise ValueError("policy_id is required")
         if self.created_at <= 0:
@@ -415,16 +431,16 @@ class ExecutionRecord:
         # HARDWARE_EXECUTED requires measured device work, not availability.
         if self.evidence_class is EvidenceClass.HARDWARE_EXECUTED:
             backend = str(self.device_backend or "")
-            # remote_opencl is a measured OpenCL device reached over the
-            # verified remote_opencl_v1 wire — hardware work, not a mock.
-            # asic/super_asic lanes are bound dispatch channels/composites
-            # whose members executed real windows — measured device work.
+            substrate = backend.split(":", 1)[0]
+            # Every admitted backend below is a physical execution surface.
+            # Presence is never sufficient: the launch-count and completed-work
+            # gates immediately below remain mandatory for promotion.
             if not (
                 backend.startswith("opencl")
                 or backend == "remote_opencl"
-                or backend.split(":", 1)[0] in ("asic", "super_asic")
+                or substrate in ("cuda", "metal", "asic", "super_asic")
             ):
-                raise ValueError("HARDWARE_EXECUTED requires a measured OpenCL device backend")
+                raise ValueError("HARDWARE_EXECUTED requires a measured physical device backend")
             if self.kernel_launch_count <= 0:
                 raise ValueError("HARDWARE_EXECUTED requires at least one measured kernel launch")
             if self.completed_work_items <= 0:
