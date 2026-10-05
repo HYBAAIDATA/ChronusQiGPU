@@ -1,0 +1,96 @@
+name: EUCLID v17 release evidence
+
+on:
+  pull_request:
+    paths:
+      - "euclid/**"
+      - "toe/**"
+      - "Intelligence/**"
+      - "hyba_substrate/**"
+      - "tests/test_cognition_loop.py"
+      - "tests/test_intelligence_convergence.py"
+      - "tests/test_adaptive_intelligence.py"
+      - "scripts/build_euclid_intelligence_release.py"
+      - "scripts/run_euclid_v17_benchmark.py"
+      - "docs/EUCLID_V17_RESEARCH_RELEASE.md"
+      - "pyproject.toml"
+      - ".github/workflows/euclid-v17-release.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install canonical runtime
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ./turing_universal_quantum_computer
+          python -m pip install -e ".[dev]"
+
+      - name: Compile integrated intelligence
+        run: |
+          python -m compileall -q euclid toe Intelligence hyba_substrate
+
+      - name: Run focused intelligence tests
+        run: |
+          python -m pytest \
+            tests/test_cognition_loop.py \
+            tests/test_intelligence_convergence.py \
+            tests/test_adaptive_intelligence.py \
+            -q --tb=short \
+            | tee euclid-v17-focused-tests.txt
+
+      - name: Run held-out comparison and required ablations
+        run: |
+          python scripts/run_euclid_v17_benchmark.py \
+            --output euclid-v17-release/benchmark.json \
+            --repeats 3 \
+            | tee euclid-v17-benchmark.txt
+
+      - name: Build wheel, install it, and emit integrity archive
+        run: |
+          python scripts/build_euclid_intelligence_release.py \
+            --output euclid-v17-release \
+            | tee euclid-v17-release-build.txt
+
+      - name: Verify emitted SHA-256 independently
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          manifests = list(Path("euclid-v17-release").glob("*.manifest.json"))
+          if len(manifests) != 1:
+              raise SystemExit(f"expected one release manifest, found {len(manifests)}")
+          manifest = json.loads(manifests[0].read_text(encoding="utf-8"))
+          archive = manifests[0].parent / manifest["archive"]
+          actual = hashlib.sha256(archive.read_bytes()).hexdigest()
+          if actual != manifest["archive_sha256"]:
+              raise SystemExit("release archive SHA-256 mismatch")
+          print(f"ARCHIVE={archive}")
+          print(f"SHA256={actual}")
+          PY
+
+      - name: Upload release evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: euclid-v17-release-evidence
+          if-no-files-found: error
+          path: |
+            euclid-v17-focused-tests.txt
+            euclid-v17-benchmark.txt
+            euclid-v17-release-build.txt
+            euclid-v17-release/**
