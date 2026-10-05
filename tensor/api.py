@@ -107,7 +107,10 @@ class TensorRuntime:
         want = self.default_depth if depth is None else int(depth)
         block = None
         last_err: Optional[Exception] = None
-        for candidate in range(want, 0, -1):
+        # Depth 0 is the honest floor: a degenerate fold still round-trips,
+        # so scalars and other too-small operands land there rather than
+        # failing custody outright.
+        for candidate in range(want, -1, -1):
             try:
                 block = self.store.create(
                     name, arr, depth=candidate, device_id=device_id
