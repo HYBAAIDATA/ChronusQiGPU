@@ -7,19 +7,23 @@ from __future__ import annotations
 
 import os
 
-from .virtual_igpu.client import VirtualIGPUClient
+from .virtual_igpu.abi import DeliveryMode
+from .virtual_igpu.client import ChronusClient
 
 
-def virtual_igpu_client_from_env(*, verify_remote: bool = True) -> VirtualIGPUClient:
+def virtual_igpu_client_from_env(*, verify_remote: bool = True) -> ChronusClient:
     endpoint = os.getenv("CHRONUS_VIGPU_ENDPOINT", "").strip()
     if not endpoint:
         raise RuntimeError("CHRONUS_VIGPU_ENDPOINT is required")
-    return VirtualIGPUClient(
-        endpoint,
-        token=os.getenv("CHRONUS_VIGPU_TOKEN") or None,
-        timeout=float(os.getenv("CHRONUS_VIGPU_TIMEOUT", "30")),
-        verify_remote=verify_remote,
+    client = ChronusClient(
+        delivery_mode=DeliveryMode.REMOTE_SERVICE.value,
+        endpoint=endpoint,
+        auth_token=os.getenv("CHRONUS_VIGPU_TOKEN") or None,
+        timeout_s=float(os.getenv("CHRONUS_VIGPU_TIMEOUT", "30")),
     )
+    if verify_remote:
+        client.health()
+    return client
 
 
-__all__ = ["VirtualIGPUClient", "virtual_igpu_client_from_env"]
+__all__ = ["ChronusClient", "virtual_igpu_client_from_env"]

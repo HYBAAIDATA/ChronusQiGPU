@@ -181,6 +181,7 @@ from .phi_fold import (
     phi_fold,
     phi_unfold,
     reconstruction_error,
+    splice_region,
     unfold_partial,
     unfold_partial_with_stats,
     working_set_ratio,
@@ -192,6 +193,16 @@ from .phi_memory import (
     PhiMemoryHierarchy,
     TierResident,
     TopologicalIntegrityGate,
+)
+from .fold_store import (
+    CHECKPOINT_FORMAT,
+    CommitConflictError,
+    CommitRecord,
+    DeviceLostError,
+    FoldBlock,
+    FoldBlockVersion,
+    FoldStoreError,
+    PersistentFoldStore,
 )
 from .storage import (
     DEFAULT_MAX_STEP,
@@ -269,7 +280,10 @@ __all__ = [
     "GeodesicHandoff", "ManifoldPoint",
     "KernelBoundary", "NumericFoldState", "PartialUnfoldStats", "PhiFoldError",
     "phi_fold", "phi_unfold", "unfold_partial", "unfold_partial_with_stats", "fold_result",
+    "splice_region",
     "reconstruction_error", "working_set_ratio",
+    "PersistentFoldStore", "FoldBlock", "FoldBlockVersion", "CommitRecord",
+    "FoldStoreError", "CommitConflictError", "DeviceLostError", "CHECKPOINT_FORMAT",
     "MemoryTier", "TierResident", "PhiMemoryHierarchy",
     "TopologicalIntegrityGate", "IntegrityVerdict", "MemoryHierarchyError",
     "OpCost", "OverheadMeter", "container_bytes", "measure_alloc", "metered",

@@ -27,6 +27,19 @@ from euclid.runtime import EuclidRuntime  # noqa: E402
 
 CREATOR = "restart-probe"
 
+#: What the environment would plausibly observe for each composed action,
+#: mirroring the ``explanations`` table in ``EuclidRuntime._compose_cognition``.
+#: Reporting a token no hypothesis predicted would refute every competing
+#: hypothesis and the loop would (correctly) refuse to plan.
+_OBSERVED_BY_ACTION = {
+    "inspect": "dependency-evidence",
+    "test": "test-evidence",
+    "verify": "test-evidence",
+}
+
+
+INTERVENTION_OBSERVATIONS = {"inspect": "dependency-evidence", "test": "test-evidence"}
+
 
 class DeterministicExecutor:
     """Deterministic stand-in for the repository organ.
@@ -44,7 +57,12 @@ class DeterministicExecutor:
     def execute(self, action: str, payload: Mapping[str, Any]) -> Mapping[str, Any]:
         self.calls.append(str(action))
         return {
-            "observation": f"observed:{action}",
+            # Discriminating interventions observe a token from the declared
+            # explanation space; an alien token refutes every hypothesis and
+            # the episode aborts fail-closed before planning.
+            "observation": INTERVENTION_OBSERVATIONS.get(
+                str(action), f"observed:{action}"
+            ),
             "goal_met": self.meet_goal,
             "cycle": payload.get("cycle"),
             # No measured reward: authority stays NONE so absent reward can

@@ -63,7 +63,13 @@ class MemoryTier(IntEnum):
 
 @dataclass
 class TierResident:
-    """One named resident held at a fold depth."""
+    """One named resident held at a fold depth.
+
+    Custody identity is carried by the state itself: ``dtype`` and ``layout``
+    are what the payload was folded as, and ``content_hash`` is the SHA-256
+    content digest computed at fold time (see
+    :meth:`NumericFoldState.compute_content_hash`).
+    """
 
     name: str
     tier: MemoryTier
@@ -76,6 +82,22 @@ class TierResident:
     @property
     def original_size(self) -> int:
         return self.state.original_size
+
+    @property
+    def dtype(self) -> np.dtype:
+        return np.dtype(self.state.dtype)
+
+    @property
+    def layout(self) -> str:
+        return self.state.layout
+
+    @property
+    def content_hash(self) -> str:
+        return self.state.content_hash
+
+    def verify_integrity(self) -> bool:
+        """Re-derive the content digest; False means the resident was altered."""
+        return self.state.verify_content_hash()
 
 
 class PhiMemoryHierarchy:
@@ -254,6 +276,10 @@ class PhiMemoryHierarchy:
                 "fold_depth": resident.state.depth,
                 "retained_size": resident.retained_size,
                 "original_size": resident.original_size,
+                "dtype": resident.dtype.name,
+                "layout": resident.layout,
+                "content_hash": resident.content_hash,
+                "integrity_verified": resident.verify_integrity(),
                 "measured_working_set_ratio": ratio,
                 "effective_bandwidth_tbs_model": traditional_bandwidth_tbs * ratio,
             }

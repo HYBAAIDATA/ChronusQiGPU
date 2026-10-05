@@ -89,6 +89,173 @@ def sample_offsets(samples_per_pixel: int) -> List[Tuple[float, float]]:
     return [(_radical_inverse(i, 2), _radical_inverse(i, 3)) for i in range(1, spp + 1)]
 
 
+def numpy_ray_box(
+    origin: np.ndarray, dirs: np.ndarray, center: np.ndarray, extents: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Axis-aligned slab intersection (vectorised). Returns (t, hit_mask).
+
+    ``extents`` are half-extents: the box spans center +/- extents per axis.
+    For a ray origin inside the box the exit face is returned (t = tmax), the
+    standard nearest-surface convention for enclosed viewpoints.
+    """
+    lo = np.asarray(center, dtype=np.float64) - np.asarray(extents, dtype=np.float64)
+    hi = np.asarray(center, dtype=np.float64) + np.asarray(extents, dtype=np.float64)
+    o = np.asarray(origin, dtype=np.float64)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        inv = 1.0 / dirs
+        t1 = (lo - o) * inv
+        t2 = (hi - o) * inv
+    t_lo = np.minimum(t1, t2)
+    t_hi = np.maximum(t1, t2)
+    tmin = np.max(t_lo, axis=1)
+    tmax = np.min(t_hi, axis=1)
+    eps = 1e-12
+    hit = (tmax >= np.maximum(tmin, 0.0)) & (tmax > eps)
+    t = np.where(tmin > eps, tmin, tmax)
+    t = np.where(hit, t, 0.0)
+    return t, hit
+
+
+def numpy_ray_plane(
+    origin: np.ndarray, dirs: np.ndarray, normal: np.ndarray, offset: float
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Infinite plane {x : n.x = offset} intersection. Returns (t, hit_mask)."""
+    n = np.asarray(normal, dtype=np.float64)
+    norm = float(np.linalg.norm(n))
+    if norm < 1e-12:
+        n = np.array([0.0, 1.0, 0.0])
+    else:
+        n = n / norm
+    o = np.asarray(origin, dtype=np.float64)
+    nd = dirs @ n
+    no = o @ n
+    eps = 1e-12
+    with np.errstate(divide="ignore", invalid="ignore"):
+        t = (float(offset) - no) / nd
+    hit = (np.abs(nd) > eps) & (t > eps)
+    t = np.where(hit, t, 0.0)
+    return t, hit
+
+
+def intersect_object_rays(
+    origin: np.ndarray, dirs: np.ndarray, obj: Dict
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Intersect one compiled QSDL object. Returns (t, hit_mask, hit_normals).
+
+    Supported geometry types: sphere (the validated v3.0/v3.1 path), box
+    (axis-aligned, center/extents or center/size), plane (normal/offset or
+    point). ``mesh``/``procedural`` remain declared-but-unbuilt geometry and
+    fail closed here (no hits), never silently sphere-ified.
+    """
+    geom = obj.get("geometry", {})
+    gtype = str(geom.get("type", "sphere"))
+    if gtype == "sphere":
+        center = np.array(geom.get("center", (0, 0, 0)), dtype=np.float64)
+        radius = float(geom.get("radius", 1.0))
+        t, hit = numpy_ray_sphere(origin, dirs, center, radius)
+        normals = np.zeros_like(dirs, dtype=np.float64)
+        if hit.any():
+            hit_points = origin[None, :] + dirs[hit] * t[hit, None]
+            normals[hit] = (hit_points - center) / max(radius, 1e-9)
+        return t, hit, normals
+    if gtype == "box":
+        center = np.array(geom.get("center", (0, 0, 0)), dtype=np.float64)
+        if "extents" in geom:
+            extents = np.asarray(geom["extents"], dtype=np.float64)
+        elif "size" in geom:
+            extents = np.asarray(geom["size"], dtype=np.float64) / 2.0
+        else:
+            extents = np.ones(3, dtype=np.float64)
+        t, hit = numpy_ray_box(origin, dirs, center, extents)
+        normals = np.zeros_like(dirs, dtype=np.float64)
+        if hit.any():
+            lo = center - extents
+            hi = center + extents
+            o = np.asarray(origin, dtype=np.float64)
+            with np.errstate(divide="ignore", invalid="ignore"):
+                inv = 1.0 / dirs[hit]
+                t1 = (lo - o) * inv
+                t2 = (hi - o) * inv
+            t_lo = np.minimum(t1, t2)
+            t_hi = np.maximum(t1, t2)
+            tmin = np.max(t_lo, axis=1)
+            eps = 1e-12
+            entered = tmin > eps
+            # entry face: axis realising tmin, normal opposing the ray
+            # exit face (origin inside): axis realising tmax, normal along the ray
+            axis_in = np.argmax(t_lo, axis=1)
+            axis_out = np.argmin(t_hi, axis=1)
+            axis = np.where(entered, axis_in, axis_out)
+            t_hi_min = np.min(t_hi, axis=1)
+            d_hit = dirs[hit]
+            sign = np.sign(np.take_along_axis(d_hit, axis[:, None], axis=1))
+            sign = np.where(entered[:, None], -sign, sign)
+            nrm = np.zeros((int(hit.sum()), 3), dtype=np.float64)
+            nrm[np.arange(nrm.shape[0]), axis] = sign[:, 0]
+            normals[hit] = nrm
+        return t, hit, normals
+    if gtype == "plane":
+        normal = np.array(geom.get("normal", (0, 1, 0)), dtype=np.float64)
+        if "offset" in geom:
+            offset = float(geom["offset"])
+        elif "point" in geom:
+            offset = float(np.asarray(geom["point"], dtype=np.float64) @ normal)
+        else:
+            offset = 0.0
+        t, hit = numpy_ray_plane(origin, dirs, normal, offset)
+        n = np.asarray(normal, dtype=np.float64)
+        norm = float(np.linalg.norm(n))
+        n = n / norm if norm > 1e-12 else np.array([0.0, 1.0, 0.0])
+        normals = np.zeros_like(dirs, dtype=np.float64)
+        normals[hit] = n
+        return t, hit, normals
+    # mesh / procedural: declared in the QSDL grammar, not yet built as
+    # ray geometry. Fail closed -- zero hits -- rather than pretending a
+    # sphere stands in for the declared surface.
+    n_rays = dirs.shape[0]
+    return (
+        np.zeros(n_rays, dtype=np.float64),
+        np.zeros(n_rays, dtype=bool),
+        np.zeros((n_rays, 3), dtype=np.float64),
+    )
+
+
+def intersect_scene_nearest(
+    origin: np.ndarray, dirs: np.ndarray, scene_objects: List[Dict]
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Nearest-hit composition across all scene objects.
+
+    Returns (t, hit_mask, normals). Each pixel takes its closest hit across
+    objects (ties resolve to the earlier object, deterministically).
+    """
+    n_rays = dirs.shape[0]
+    best_t = np.full(n_rays, np.inf, dtype=np.float64)
+    best_hit = np.zeros(n_rays, dtype=bool)
+    best_n = np.zeros((n_rays, 3), dtype=np.float64)
+    for obj in scene_objects:
+        t, hit, normals = intersect_object_rays(origin, dirs, obj)
+        improved = hit & (t < best_t)
+        best_t[improved] = t[improved]
+        best_hit |= hit
+        best_n[improved] = normals[improved]
+    best_t = np.where(best_hit, best_t, 0.0)
+    return best_t, best_hit, best_n
+
+
+def is_composite_scene(scene_objects: Optional[List[Dict]]) -> bool:
+    """True when the scene needs the multi-object composition path.
+
+    A single sphere object keeps the validated v3.1 fast path bit-for-bit;
+    any additional object, or any non-sphere geometry, routes to the
+    composite nearest-hit path.
+    """
+    if not scene_objects:
+        return False
+    if len(scene_objects) == 1:
+        return str(scene_objects[0].get("geometry", {}).get("type", "sphere")) != "sphere"
+    return True
+
+
 class ReconstructionEngine:
     def __init__(
         self,
@@ -243,6 +410,11 @@ class ReconstructionEngine:
         n_faces = 0 if self.face_positions is None else self.face_positions.shape[0]
         obj = (scene_objects or [None])[0]
 
+        if n_faces > 0 and obj is not None and is_composite_scene(scene_objects):
+            return self._reconstruct_composite(
+                expectation_values, distribution, camera_params, scene_objects
+            )
+
         if n_faces > 0 and obj is not None:
             geom = obj.get("geometry", {})
             center = np.array(geom.get("center", (0, 0, 0)), dtype=np.float64)
@@ -382,6 +554,133 @@ class ReconstructionEngine:
                 "dense_frame_bytes": dense_bytes,
                 "energy": expectation_values.get("intensity", 0.0),
                 # Same semantics as v3.0: pixels whose depth buffer is set.
+                "rendered_pixels_hit": int(np.count_nonzero(depth)),
+            },
+        )
+
+    def _reconstruct_composite(
+        self,
+        expectation_values: Dict[str, float],
+        distribution: Optional[np.ndarray],
+        camera_params: Dict,
+        scene_objects: List[Dict],
+    ) -> Frame8K:
+        """Multi-object, multi-geometry nearest-hit rendering.
+
+        v3.2 elevation: the QSDL grammar declares scenes with several objects
+        (sphere/box/plane/mesh/procedural); until now the renderer intersected
+        only the first object, as a sphere. Composite scenes now compose the
+        nearest hit across every object with real box (slab) and plane
+        intersections; declared-but-unbuilt geometry (mesh/procedural) fails
+        closed with zero hits instead of being silently sphere-ified. The
+        validated single-sphere path above is untouched and stays
+        bit-identical. Shading remains the manifold face distribution -- the
+        per-object materials already enter through the Hamiltonian/resonance
+        path, and no second shading model is invented here.
+        """
+        w, h = self.res
+        rgb = np.zeros((h, w, 3), dtype=np.float32)
+        depth = np.zeros((h, w), dtype=np.float32)
+        normal = np.zeros((h, w, 3), dtype=np.float32)
+
+        n_faces = self.face_positions.shape[0]
+        base_intensity = expectation_values.get("intensity", 0.5)
+        if distribution is not None and len(distribution) == n_faces:
+            dist = np.asarray(distribution, dtype=np.float64)
+        else:
+            dist = np.full(n_faces, 1.0 / n_faces)
+        face_shading = dist * n_faces
+
+        spp = camera_params.get("supersampling", 1)
+        try:
+            spp = int(spp)
+        except (TypeError, ValueError):
+            spp = 1
+        spp = max(1, min(16, spp))
+        offsets = sample_offsets(spp)
+
+        geometry_types = sorted(
+            {str(o.get("geometry", {}).get("type", "sphere")) for o in scene_objects}
+        )
+        backend_evidence = {
+            "backend": "numpy",
+            "composition": "nearest_hit",
+            "objects_composited": len(scene_objects),
+            "geometry_types": geometry_types,
+            "samples_per_pixel": spp,
+            "note": (
+                "The GPU lane accelerates the single-sphere ray sweep only; "
+                "composite scenes execute on the numpy reference path "
+                "(fail-closed posture, no silent substitution)."
+            ),
+        }
+
+        basis = self._camera_basis(camera_params)
+        _f, _r, _u, _hh, _hw, origin = basis
+
+        for r0 in range(0, h, self.block_rows):
+            rows = min(self.block_rows, h - r0)
+            rgb_view = rgb[r0 : r0 + rows].reshape(-1, 3)
+            depth_view = depth[r0 : r0 + rows].reshape(-1)
+            normal_view = normal[r0 : r0 + rows].reshape(-1, 3)
+
+            if spp == 1:
+                dirs_flat = self._dirs_block(r0, rows, w, h, basis, offsets[0]).reshape(-1, 3)
+                t, hit, normals = intersect_scene_nearest(origin, dirs_flat, scene_objects)
+                if hit.any():
+                    face_idx = np.argmax(normals[hit] @ self.face_positions.T, axis=1)
+                    shade = (base_intensity * face_shading[face_idx]).astype(np.float32)
+                    rgb_view[hit] = shade[:, None]
+                    depth_view[hit] = t[hit].astype(np.float32)
+                    normal_view[hit] = normals[hit].astype(np.float32)
+            else:
+                n_flat = rows * w
+                acc_shade = np.zeros((n_flat, 3), dtype=np.float64)
+                acc_t = np.zeros(n_flat, dtype=np.float64)
+                acc_n = np.zeros((n_flat, 3), dtype=np.float64)
+                hits = np.zeros(n_flat, dtype=np.int64)
+                for off in offsets:
+                    dirs_flat = self._dirs_block(r0, rows, w, h, basis, off).reshape(-1, 3)
+                    t, hit, normals = intersect_scene_nearest(origin, dirs_flat, scene_objects)
+                    if not hit.any():
+                        continue
+                    face_idx = np.argmax(normals[hit] @ self.face_positions.T, axis=1)
+                    shade64 = base_intensity * face_shading[face_idx]
+                    acc_shade[hit] += shade64[:, None]
+                    acc_t[hit] += t[hit]
+                    acc_n[hit] += normals[hit]
+                    hits[hit] += 1
+                pixel_hit = hits > 0
+                if pixel_hit.any():
+                    counts = hits[pixel_hit].astype(np.float64)
+                    rgb_view[pixel_hit] = (
+                        acc_shade[pixel_hit] / counts[:, None]
+                    ).astype(np.float32)
+                    depth_view[pixel_hit] = (acc_t[pixel_hit] / counts).astype(np.float32)
+                    mean_n = acc_n[pixel_hit] / counts[:, None]
+                    norm_len = np.linalg.norm(mean_n, axis=1, keepdims=True)
+                    mean_n = np.where(
+                        norm_len > 1e-12, mean_n / np.maximum(norm_len, 1e-12), mean_n
+                    )
+                    normal_view[pixel_hit] = mean_n.astype(np.float32)
+
+        state_bytes = int(np.asarray(distribution).nbytes) if distribution is not None else 0
+        dense_bytes = int(rgb.nbytes + depth.nbytes + normal.nbytes)
+        raster_ratio = (dense_bytes / state_bytes) if state_bytes else float("nan")
+
+        return Frame8K(
+            rgb=rgb,
+            depth=depth,
+            normal=normal,
+            metadata={
+                "resolution": self.res,
+                "supersampling": int(spp),
+                "samples_per_pixel": int(spp),
+                "render_backend": backend_evidence,
+                "raster_compression_ratio": raster_ratio,
+                "state_bytes": state_bytes,
+                "dense_frame_bytes": dense_bytes,
+                "energy": expectation_values.get("intensity", 0.0),
                 "rendered_pixels_hit": int(np.count_nonzero(depth)),
             },
         )

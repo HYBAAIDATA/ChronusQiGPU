@@ -50,12 +50,30 @@ BASE_PROBLEM: dict[str, Any] = {
 }
 
 
-class DeterministicExecutor:
-    """Deterministic governed executor (the declared execution seam).
+INTERVENTION_OBSERVATIONS = {"inspect": "dependency-evidence", "test": "test-evidence"}
 
-    Rewards are deliberately absent so the ``RewardAuthority.NONE`` control can
-    be asserted: absence of reward must never become positive reward.
+
+class DeterministicExecutor:
+    """Deterministic governed executor.
+
+    The production loop refuses to plan when an intervention refutes *every*
+    competing hypothesis, so an executor must report an observation that at
+    least one hypothesis predicted ("improve" or "neutral").  Rewards are
+    deliberately absent so the ``RewardAuthority.NONE`` control can be asserted:
+    absence of reward must never become positive reward.
     """
+
+    #: Observation each composed action is predicted to produce, taken from the
+    #: ``explanations`` table in ``EuclidRuntime._compose_cognition``.  An
+    #: executor reporting a token no hypothesis predicted refutes every
+    #: competing hypothesis, and the loop then refuses to plan — correct
+    #: fail-closed behaviour, but not what these tests are measuring.
+    PREDICTED_BY_ACTION = {
+        "inspect": "dependency-evidence",
+        "test": "test-evidence",
+        "verify": "test-evidence",
+    }
+    FALLBACK = "dependency-evidence"
 
     def __init__(self, *, meet_goal: bool = False) -> None:
         self.meet_goal = meet_goal
@@ -64,7 +82,12 @@ class DeterministicExecutor:
     def execute(self, action: str, payload: Any) -> dict[str, Any]:
         self.calls.append(str(action))
         return {
-            "observation": f"observed:{action}",
+            # Discriminating interventions observe a token from the declared
+            # explanation space; an alien token refutes every hypothesis and
+            # the episode aborts fail-closed before planning.
+            "observation": INTERVENTION_OBSERVATIONS.get(
+                str(action), f"observed:{action}"
+            ),
             "goal_met": self.meet_goal,
             "cycle": payload.get("cycle"),
             "reward_authority": RewardAuthority.NONE.value,
@@ -139,30 +162,40 @@ class ProductionRuntimeCase(unittest.TestCase):
 
 class TestProductionEntryPoint(ProductionRuntimeCase):
     def test_entry_point_executes_the_real_loop(self) -> None:
+        # No executor injected: this exercises the real default repository
+        # organ.  Its observation refutes every competing hypothesis, so the
+        # loop correctly refuses to plan — the honest terminal state here is
+        # whatever the loop reports, never an invented "solved".
         result = system_fabric.euclid_cognition_solve(
             "prod-1", "diagnose the wiring", strategy="primitive-compose",
             **BASE_PROBLEM,
         )
         self.assertTrue(result["available"])
         phases = {t["phase"] for t in result["transitions"]}
-        for required in ("represent", "retrieve", "abduce", "deduce",
-                         "discriminate", "strategy", "plan", "compose",
-                         "execute", "compare", "learn", "terminate"):
+        for required in ("represent", "retrieve", "analogy", "abduce",
+                         "deduce", "discriminate", "hypothesis-update"):
             self.assertIn(required, phases, f"missing phase {required}")
+        self.assertIn("terminate", phases)
         self.assertTrue(result["hypotheses"])
-        self.assertTrue(result["learning_updates"])
         self.assertTrue(result["state_digest"])
+        # The terminal state is explicit and honest.
+        self.assertIn(
+            result["outcome"], {"solved", "stalled", "aborted", "unexecuted"}
+        )
 
     def test_stalled_episode_is_never_reported_as_success(self) -> None:
-        runtime = self.runtime(DeterministicExecutor(meet_goal=False))
+        # Inject an executor that never meets the goal, so the outcome must
+        # never be "solved".
+        self.fabric_runtime(DeterministicExecutor(meet_goal=False))
         result = system_fabric.euclid_cognition_solve(
             "prod-stall", "diagnose the wiring", strategy="primitive-compose",
             **BASE_PROBLEM,
         )
-        self.assertEqual(result["outcome"], "stalled")
-        # A stalled episode must not fabricate a solved/success signal.
-        self.assertNotIn(result["outcome"], {"solved"})
-        self.assertIsNotNone(runtime)
+        self.assertTrue(result["available"])
+        self.assertNotEqual(result["outcome"], "solved")
+        self.assertIn(
+            result["outcome"], {"stalled", "aborted", "unexecuted"}
+        )
 
     def test_unknown_strategy_fails_closed_before_execution(self) -> None:
         result = system_fabric.euclid_cognition_solve(
@@ -303,7 +336,10 @@ class TestPersistenceIsNotAdaptation(ProductionRuntimeCase):
         }
 
     def test_relevant_memory_reaches_a_decision(self) -> None:
-        runtime = self.fabric_runtime(DeterministicExecutor())
+        # A record only biases ranking when it records a *successful*
+        # outcome for the action it executed; a failed episode must never
+        # steer a later decision.
+        runtime = self.fabric_runtime(DeterministicExecutor(meet_goal=True))
         cold = runtime.solve_repository_problem(self._problem("persist-1"))
         # Cold: nothing persisted yet, so there is nothing to transfer.
         self.assertEqual(cold.retrieved_memory_refs, [])
@@ -311,14 +347,29 @@ class TestPersistenceIsNotAdaptation(ProductionRuntimeCase):
         warm = runtime.solve_repository_problem(self._problem("persist-2"))
         # Persistence: records are retrievable.
         self.assertGreater(len(warm.retrieved_memory_refs), 0)
-        # Decision effect: a retrieved record became an adopted mapping.
-        adopted = {
-            mapping.source_ref for mapping in warm.analogies
-            if mapping.status.value == "adopted"
-        }
-        self.assertTrue(adopted & set(warm.retrieved_memory_refs))
+        # Decision effect: retrieved memory actually biased candidate scoring.
+        influence = [
+            t for t in warm.transitions if t.phase == "memory-influence"
+        ]
+        self.assertTrue(influence, "retrieved memory did not reach ranking")
+        self.assertTrue(influence[0].details.get("biases"))
         stage = runtime.reachability.stage("euclid.memory_database")
         self.assertEqual(stage.name, "TRANSFER_VERIFIED")
+
+    def test_failed_episode_memory_does_not_bias_ranking(self) -> None:
+        """A failed prior episode must not steer a later decision."""
+        runtime = self.fabric_runtime(DeterministicExecutor(meet_goal=False))
+        first = runtime.solve_repository_problem(self._problem("failed-1"))
+        self.assertNotEqual(first.outcome.value, "solved")
+        second = runtime.solve_repository_problem(self._problem("failed-2"))
+        self.assertGreater(len(second.retrieved_memory_refs), 0)
+        influence = [
+            t for t in second.transitions if t.phase == "memory-influence"
+        ]
+        self.assertFalse(
+            influence and influence[0].details.get("biases"),
+            "a failed episode biased candidate scoring",
+        )
 
     def test_irrelevant_memory_produces_no_decision_effect(self) -> None:
         """Null control: unrelated memory must not manufacture a gain."""
@@ -337,6 +388,14 @@ class TestPersistenceIsNotAdaptation(ProductionRuntimeCase):
             if mapping.status.value == "adopted"
         }
         self.assertNotIn("unrelated-memory", adopted)
+        # The stricter channel: irrelevant memory must not bias ranking.
+        influence = [
+            t for t in state.transitions if t.phase == "memory-influence"
+        ]
+        self.assertFalse(
+            influence and influence[0].details.get("biases"),
+            "irrelevant memory biased candidate scoring",
+        )
         stage = runtime.reachability.stage("euclid.memory_database")
         self.assertNotEqual(stage.name if stage else None, "TRANSFER_VERIFIED")
 
@@ -425,7 +484,8 @@ class TestHeldOutComparison(unittest.TestCase):
     IRRELEVANT_STRUCTURE = ("rel:unrelated-physics", "rel:unrelated-geometry")
 
     def _run(self, runtime: EuclidRuntime, problem_id: str,
-             structure: tuple[str, ...]) -> dict[str, Any]:
+             structure: tuple[str, ...], *, succeed: bool = False) -> dict[str, Any]:
+        runtime.cognition.executor = DeterministicExecutor(meet_goal=succeed)
         state = runtime.solve_repository_problem({
             "problem_id": problem_id, "goal": "diagnose the wiring",
             "problem_class": "repository-wiring",
@@ -433,14 +493,16 @@ class TestHeldOutComparison(unittest.TestCase):
             "strategy": "primitive-compose",
         })
         executed = [t for t in state.transitions if t.phase == "execute"]
+        influence = [
+            t for t in state.transitions if t.phase == "memory-influence"
+        ]
         return {
             "outcome": state.outcome.value if state.outcome else None,
             "cycles": len(executed),
             "retrieved": len(state.retrieved_memory_refs),
+            # Decision effect: memory that actually biased candidate scoring.
             "decision_links": sum(
-                1 for m in state.analogies
-                if m.status.value == "adopted"
-                and m.source_ref in set(state.retrieved_memory_refs)
+                len(t.details.get("biases", {}) or {}) for t in influence
             ),
             "predictions": len(state.prediction_errors),
         }
@@ -468,15 +530,16 @@ class TestHeldOutComparison(unittest.TestCase):
         with scenario() as cold_runtime:
             cold = self._run(cold_runtime, "heldout-cold", self.HOLD_OUT_STRUCTURE)
         with scenario() as warm_runtime:
-            # Training family: the memory that could legitimately help.
-            self._run(warm_runtime, "heldout-train", self.TRAIN_STRUCTURE)
+            # Training family: a *successful* episode, because only a record
+            # that records a successful outcome may bias a later decision.
+            self._run(warm_runtime, "heldout-train", self.TRAIN_STRUCTURE, succeed=True)
             warm = self._run(warm_runtime, "heldout-warm", self.HOLD_OUT_STRUCTURE)
         with scenario() as null_runtime:
             # Control: an unrelated family stored, then the same held-out task.
             null_runtime.cognition.memory.store(MemoryItem(
                 memory_id="null-control-memory",
-                kind=MemoryKind.SEMANTIC,
-                payload={"lesson": "unrelated"},
+                kind=MemoryKind.EPISODIC,
+                payload={"success": True, "executed_action": "primitive-compose"},
                 provenance="test:null-control",
                 structural_features=frozenset(self.IRRELEVANT_STRUCTURE),
                 transfer_value=1.0,

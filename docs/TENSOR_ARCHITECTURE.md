@@ -189,7 +189,86 @@ See `tensor/CAPABILITY_MANIFEST.md` (generated from
 feature-to-implementation-to-test table and the remaining external
 hardware gates (a physical OpenCL device plus new Chronus tensor kernels).
 
-## 9. Test commands run for this change
+## 9. Folded-state runtime (elevation, 2026-10)
+
+The tensor stack gained a phi-native folded-state runtime layered on the
+contract layer above:
+
+```
+consumers ──► tensor.api.TensorRuntime ──► tensor/folded.py catalogue
+     │                  │                     (lifted | materialized)
+     │                  ▼
+     │            aethel/fold_store.py  (persistent folded-state graph:
+     │                  versioned blocks, lineage, content hash,
+     │                  splice_region/commit_region, checkpoint/restore,
+     │                  evict/regenerate, device-loss invalidation)
+     │                  ▼
+     │            aethel/phi_fold.py  (region reads: unfold_region,
+     │                  region_flat_boundaries; dtype-exact custody)
+     │
+     └──► backends via engine.py  (unchanged routing/provenance)
+```
+
+- **Canonical entry.** `TensorRuntime.execute(operation, operands)` is the
+  single entry: operands that are all resident names run on folded state
+  (lifted when the catalogue promotes them); otherwise arrays route
+  through `engine.execute` as before. Results publish atomically — output
+  block custody and the receipt appear together under the request id.
+  Reachability: `python -m tensor` CLI and the control API
+  `POST /api/v1/tensor/execute` + `GET /api/v1/tensor/capabilities`
+  (guardian-preflighted) call it; `FoldedLinearPilot` executes through it.
+- **Lifted operators.** `add`, `hadamard`, `fma`, `scale` execute on
+  resident segments with **zero decoded bytes** and bit-identical output
+  (the partition fold's segments are disjoint logical slices, so
+  coordinate-local ops commute with it). `transpose`, `reduce_sum`,
+  `matmul`, `kron` are **declared-materializing** — they decode and say
+  so on the receipt. `evaluate_operator` promotes only on verified
+  correctness plus measured improvement; rejections are recorded.
+- **Receipts.** `tensor/receipts.py::ExecutionReceipt` binds request/op
+  identity, input/output content hashes, backend/device, declared vs
+  measured work, precision, residency/transfers, timing scope, and the
+  correctness result. `bytes_decoded`/`bytes_transferred` are measured;
+  `bytes_analytical` is the dense estimate — the fields never merge.
+- **Benchmarks.** `tensor/benchmarks.py::run_benchmarks` sweeps
+  operators x sizes x dtypes x layouts x {resident, nonresident} x
+  {cold, warm} and validates **every** sampled output against the NumPy
+  reference; failures are recorded, not hidden.
+- **Ownership.** `tests/test_canonical_tensor_ownership.py` gates the
+  consolidated symbol set: `PhiTensorCore` lives in `kellogg` (numeric)
+  and the exact engine; the quantum-amplitude unit is renamed
+  `QuantumFoldTensorCore`; the virtual-iGPU route planner is
+  `GeodesicRouter`. The numeric family may not fork further.
+
+## 10. Test commands run for this change
+
+```
+PYTHONPATH=.:chronus/mla1517_platform/python python -m pytest \
+  tests/test_tensor_package.py \
+  tests/test_tensor_contracts.py \
+  tests/test_tensor_backends.py \
+  tests/test_tensor_runtime.py \
+  tests/test_tensor_receipts_benchmarks.py \
+  tests/test_folded_operators.py \
+  tests/test_fold_store.py \
+  tests/test_region_decode.py \
+  tests/test_dependency_cone.py \
+  tests/test_phi_gpu_scheduler_executor.py \
+  tests/test_canonical_tensor_ownership.py \
+  tests/test_tensor_advisor_safety.py \
+  tests/test_tensor_gpu_compat.py \
+  tests/test_gpu_reference.py \
+  tests/test_kellogg_tensor.py \
+  tests/test_toe_tensor_ml.py \
+  tests/test_three_layer_runtime.py \
+  tests/test_package_layout.py \
+  -q
+```
+
+`tests/test_intelligence_convergence.py` has 4 failures that reproduce
+identically on `main` @ `f311eac` (pre-existing, unrelated to this
+change; verified by running the file against the base commit).
+
+## 11. Prior test commands (pre-elevation consolidation)
 
 ```
 PYTHONPATH=.:chronus/mla1517_platform/python python -m pytest \
@@ -215,3 +294,5 @@ iGPU SKU class in `aethel.device`) that are not touched by
 this change (verified by running the same test against the base commit).
 A full repository-wide test run was not attempted; this list is the
 focused set relevant to the tensor consolidation.
+
+

@@ -109,7 +109,7 @@ def digest_t11(job_id: str, payload: str = "") -> Tuple[float, ...]:
 
 def scale_job(job_id: str, requested: int, payload: str = "") -> ChronusScale:
     work_items = snap_work_items(requested)
-    wind = pisot_wind(digest_t11(job_id, payload), steps=1)[-1]
+    wind = pisot_wind(digest_t11(job_id, payload), 1)
     return ChronusScale(
         int(requested),
         work_items,

@@ -154,17 +154,18 @@ class IntelligenceConvergenceTests(unittest.TestCase):
                 candidate.origin == "planner" for candidate in ablated.candidates
             ))
 
-                runtime.cognition.ablations = AblationConfig(
-                    mathematical_structure=False
-                )
-                ablated = runtime.solve_repository_problem(
-                    problem("repo-math-ablation", "mcts-v16")
-                )
-                self.assertIn("mathematical_structure", ablated.ablations)
-                self.assertTrue(all(
-                    candidate.origin == "euclid-v16:ASTPrimitives"
-                    for candidate in ablated.candidates
-                ))
+            runtime.cognition.ablations = AblationConfig(
+                mathematical_structure=False
+            )
+            ablated = runtime.solve_repository_problem(
+                problem("repo-math-ablation", "mcts-v16")
+            )
+            self.assertIn("mathematical_structure", ablated.ablations)
+            self.assertTrue(all(
+                candidate.origin == "euclid-v16:ASTPrimitives"
+                for candidate in ablated.candidates
+            ))
+
     def test_durable_memory_replay_guard_restart_and_transfer(self):
         with self._production_dir() as make:
             first = make()

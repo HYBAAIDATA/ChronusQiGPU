@@ -18,7 +18,7 @@ speedup claim on classical hardware.
 
 import numpy as np
 from typing import Optional, List, Dict
-from .phi_tensor_core import PhiTensorCore
+from .phi_tensor_core import QuantumFoldTensorCore
 
 
 class GroverSearch:
@@ -36,7 +36,7 @@ class GroverSearch:
 
     def __init__(self, dim: int = 1024, seed: Optional[int] = None):
         self.dim = dim
-        self.core = PhiTensorCore(core_id=0, dim=dim, seed=seed)
+        self.core = QuantumFoldTensorCore(core_id=0, dim=dim, seed=seed)
 
     def search(self, target: int, num_iterations: Optional[int] = None) -> Dict:
         """

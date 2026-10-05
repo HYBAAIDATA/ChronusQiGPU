@@ -10,7 +10,7 @@ Claim lane: INTERNAL — measured performance on test hardware.
 import numpy as np
 import time
 from typing import Dict
-from .phi_tensor_core import PhiTensorCore, FoldState
+from .phi_tensor_core import QuantumFoldTensorCore, FoldState
 from .grover_search import GroverSearch
 from .error_correction import SurfaceCodeQEC
 from .quantum_neural_net import QuantumNeuralNetwork
@@ -76,7 +76,7 @@ class BenchmarkSuite:
 
     def benchmark_tensor_core(self) -> Dict:
         """Benchmark tensor core operations with REAL measurements."""
-        core = PhiTensorCore(core_id=0, dim=4096, seed=42)
+        core = QuantumFoldTensorCore(core_id=0, dim=4096, seed=42)
 
         # Tensor product benchmark
         a = FoldState(

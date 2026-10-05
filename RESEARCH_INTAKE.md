@@ -39,3 +39,26 @@ The virtual quantum computer the miner ships registers its own invariants in the
 Sources: stabilizer simulation (UT Austin, Waterloo), Heisenberg representation (Los Alamos), exact Clifford+T synthesis (Waterloo, Dalhousie), entanglement measures (Imperial, Ulm), and the NISQ-era honesty boundary (Caltech).[^https://arxiv.org/abs/quant-ph/0406196] [^https://arxiv.org/abs/quant-ph/9807006] [^https://arxiv.org/abs/1212.0506] [^https://arxiv.org/abs/quant-ph/0504163] [^https://arxiv.org/abs/1801.00862]
 
 A node that **skips** is reported as `skipped` and counted against the run. An invariant that was not checked in this environment is not a passing one, and `--execute` exits non-zero for it.
+
+## Structural-research gates (not production capabilities)
+
+The next Turing research programme is governed by `docs/TURING_STRUCTURAL_RESEARCH_GATES.md` and the machine-readable manifest `docs/turing_structural_research_gates.json`.
+
+The four gated claims are:
+
+| Claim ID | Current status | Promotion evidence required |
+| --- | --- | --- |
+| `turing.fold_gap.v1` | `SPECIFIED` | versioned baseline/fold codecs, exact bit accounting, lossless replay, corpus benchmark |
+| `turing.orbit_collapse.stabilizer_frontier.v1` | `SPECIFIED` | provably non-stabilizer witness, explicit group action, dense differential tests, Stim overlap tests, resource benchmark |
+| `turing.pisot_transform.v1` | `SPECIFIED` | transform/inverse definition, exact algebraic representation, unitarity if claimed, matched QFT benchmark |
+| `turing.dimension_11.v1` | `SPECIFIED` | precise coordinate definition plus a derivation or predeclared dimension-ablation benchmark explaining why 11 |
+
+These claims are deliberately **not** inserted into the production capability matrix. `turing_universal_quantum_computer/tests/test_structural_research_claim_gates.py` fails closed if they are silently promoted without the evidence demanded by the manifest.
+
+Normative claim boundaries:
+
+- Shannon entropy remains a valid ensemble/source-coding baseline; receipt-level structural savings are reported as measured code-length differences, not as a claim that Shannon is wrong.
+- Gottesman–Knill remains exact for the stabilizer/Clifford class; any claim that a folded family strictly exceeds it requires a non-stabilizer witness and independent differential verification.
+- Fourier/QFT remains the control until a fully defined Pisot-indexed transform wins a matched benchmark on a declared structured workload.
+- `11D` currently means the eleven-coordinate software manifold in `toe.poincare_golden_11d.py`; it is not automatically an M-theory/spacetime claim and is distinct from the separate `VIRTUAL_QUANTUM_QUBITS = 11` default.
+- Finite/discrete Yang–Mills spectral results must not be promoted to the continuum Yang–Mills mass-gap problem; Poincaré homology-sphere and Poincaré-ball objects remain distinct.

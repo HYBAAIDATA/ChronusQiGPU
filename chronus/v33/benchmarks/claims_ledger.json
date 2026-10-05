@@ -1,0 +1,111 @@
+{
+  "schema": "chronos-v33-claim-ledger-v1",
+  "protocol_version": "1.0.0",
+  "summary": {
+    "total_claims": 9,
+    "measured": 4,
+    "gated": 4,
+    "unmeasured": 1
+  },
+  "claims": [
+    {
+      "claim_id": "frame-time-8k",
+      "source_doc": "Whitepaper \u00a73 / Benchmark table / Pitch deck slide 5",
+      "claim": "Frame time 8-16 ms (60-120 FPS at 8K) on classical GPU substrate.",
+      "status": "GATED",
+      "current_best": "CPU reference path measured 2.68 s at 8K (v3.1, 1.77x over v3.0); the documented 8-16 ms number requires a bound GPU device, which no committed run has had (fail-closed lane reports measured:false).",
+      "gate_to_measured": "Run render_elevation on a host with a bound CuPy device; commit render_elevation_results.json with gpu_lane.measured=true.",
+      "evidence_path": "benchmarks/render_elevation_results.json",
+      "evidence_reader": "full_render_8k.samples_per_pixel_1.wall_seconds",
+      "evidence_artifact_present": true
+    },
+    {
+      "claim_id": "supersampling-4x",
+      "source_doc": "Whitepaper \u00a73 / Benchmark table",
+      "claim": "4x mathematical supersampling (true antialiasing, not upscaling).",
+      "status": "MEASURED",
+      "current_best": "4 spp traced at 8K: 11.16 s, hits 1,833,696, antialiases 1,584 silhouette pixels; exact per-sample oracle reproduction in tests.",
+      "gate_to_measured": "",
+      "evidence_path": "benchmarks/render_elevation_results.json",
+      "evidence_reader": "full_render_8k.samples_per_pixel_4",
+      "evidence_artifact_present": true
+    },
+    {
+      "claim_id": "multi-object-scene",
+      "source_doc": "Whitepaper \u00a72 (QSDL scenes with multiple objects/materials/lights)",
+      "claim": "Scenes with multiple objects, materials and lights render as composed scenes.",
+      "status": "MEASURED",
+      "current_best": "v3.2 composite elevation: nearest-hit composition across sphere/box/plane objects; two-sphere and studio scenes measured at 1080p and 8K; single-sphere baseline path bit-identical.",
+      "gate_to_measured": "",
+      "evidence_path": "benchmarks/real_workload_results.json",
+      "evidence_reader": "real_workloads[].frame_facts",
+      "evidence_artifact_present": true
+    },
+    {
+      "claim_id": "gi-quality",
+      "source_doc": "Benchmark table ('GI quality: perfect by construction')",
+      "claim": "Perfect global illumination by construction.",
+      "status": "GATED",
+      "current_best": "Honest relabelling stands: the validated demo scene resolves 32 distinct distribution values; 'perfect' is the mathematical design goal of the exact-diagonalisation pipeline, not a measured frame property. The code path (exact dense eigendecomposition, no Monte Carlo, no denoiser) is the construction the documents describe.",
+      "gate_to_measured": "Define and measure an accepted GI-error metric (e.g. vs an analytic reference scene) so 'perfect' becomes a number.",
+      "evidence_path": "benchmarks/results.json",
+      "evidence_reader": "full_render_at_scale.32.distinct_distribution_values",
+      "evidence_artifact_present": false
+    },
+    {
+      "claim_id": "pulvini-11.5x",
+      "source_doc": "Whitepaper \u00a73 / Benchmark table ('Memory compression 11.5x via PULVINI')",
+      "claim": "11.5x memory compression on the final frame buffer.",
+      "status": "UNMEASURED",
+      "current_best": "The v33 render path measures raster_compression_ratio (3,628,800x on the demo scene: parametric state vs dense frame) -- an ordinary procedural-vs-raster ratio, NOT the 11.5x PULVINI phi-fold claim. PULVINI folding is a separate (enterprise/mining) plane capability and is not asserted by this artifact.",
+      "gate_to_measured": "Run the PULVINI fold over a rendered frame on its owning plane and commit that plane's measured artifact.",
+      "evidence_path": "benchmarks/render_elevation_results.json",
+      "evidence_reader": "full_render_8k.samples_per_pixel_1.raster_compression_ratio",
+      "evidence_artifact_present": true
+    },
+    {
+      "claim_id": "first-principles-physics",
+      "source_doc": "Market positioning \u00a73 ('Physics = Hamiltonian updates; real QED terms')",
+      "claim": "First-principles physics via real Hamiltonian terms (incl. SCF material bridge).",
+      "status": "MEASURED",
+      "current_best": "Theory domains (superconductivity BCS self-consistent solver, chemistry SCF bridge, photonics, metrology, control, error correction, anyons, QCD, cryogenics, oscillator arrays) self-test PASS on the committed run; HamiltonianLibrary builds real cost/driving terms from QSDL geometry/material/light.",
+      "gate_to_measured": "",
+      "evidence_path": "benchmarks/results.json",
+      "evidence_reader": "theory_self_tests + bcs_gap_solver",
+      "evidence_artifact_present": false
+    },
+    {
+      "claim_id": "qsdl-compiler",
+      "source_doc": "Whitepaper \u00a72.1 (QSDL compiler: full grammar, types, constraints)",
+      "claim": "QSDL scene language compiles to manifold-mapped Hamiltonian terms.",
+      "status": "MEASURED",
+      "current_best": "Parser + compiler measured (parse 0.288 ms, compile 0.649 ms on the committed host); grammar covers scenes, objects, geometry (sphere/box/plane/mesh/procedural), materials, quantum blocks, transforms, animation, lights, camera readout, quality.",
+      "gate_to_measured": "",
+      "evidence_path": "benchmarks/results.json",
+      "evidence_reader": "qsdl_parse_compile",
+      "evidence_artifact_present": false
+    },
+    {
+      "claim_id": "gpu-substrate-lane",
+      "source_doc": "Whitepaper \u00a73 ('Substrate: Classical GPU Numba/CuPy/Metal')",
+      "claim": "Runs on classical GPU substrate (CuPy lane shipped; OpenCL/Metal lanes follow).",
+      "status": "GATED",
+      "current_best": "CuPy lane shipped fail-closed (bind-time self-check battery, per-dispatch sampled CPU recheck, explicit-request-raises). No committed run has bound a device; gpu_lane.measured=false with the recorded reason. OpenCL/Metal render lanes not yet built.",
+      "gate_to_measured": "Bind a real CUDA/Metal device, run the elevation benchmark, commit the artifact with a true gpu_lane measurement.",
+      "evidence_path": "benchmarks/render_elevation_results.json",
+      "evidence_reader": "gpu_lane",
+      "evidence_artifact_present": true
+    },
+    {
+      "claim_id": "phi-power-scaling",
+      "source_doc": "Implementation record (phi-power benchmark tiers)",
+      "claim": "phi^n scaling study with exact Lucas-number identity cross-check.",
+      "status": "GATED",
+      "current_best": "phi^10/12/15 measured on the committed host; phi^18/phi^20 are measured:false (runner caps at phi^15) -- the 20.2 s phi^18 number in the implementation record is amended by this ledger. Unmeasured tiers are never cited as achieved.",
+      "gate_to_measured": "Raise max_measured_power on a host with the memory for the 5,778-face (phi^18) dense eigendecomposition and re-run.",
+      "evidence_path": "benchmarks/results.json",
+      "evidence_reader": "phi_power_scaling.tiers",
+      "evidence_artifact_present": false
+    }
+  ]
+}
