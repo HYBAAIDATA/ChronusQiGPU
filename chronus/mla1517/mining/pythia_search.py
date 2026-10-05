@@ -9,11 +9,12 @@ The static search substrate is prepared before Stratum work starts:
       -> injective addresses in the exact 11-qubit Hilbert basis C^2048
       -> coverage-preserving nonce shards and Cassini affine schedules
 
-A real job supplies the 76-byte header prefix. That observation ranks the
-precomputed coarse directions and then the 600 dual vertices; it never changes
-the membership of the nonce lease. The result is a deterministic permutation
-of exactly the leased nonce interval. SHA256d, negotiated target, freshness and
-literal pool acknowledgement remain the sole mining truth authorities.
+A real job supplies the 76-byte header prefix. The live PYTHIA plan may also
+supply a preferred coarse face. Those observations rank the precomputed coarse
+directions and then the 600 dual vertices; they never change membership of the
+nonce lease. The result is a deterministic permutation of exactly the leased
+nonce interval. SHA256d, negotiated target, freshness and literal pool
+acknowledgement remain the sole mining truth authorities.
 
 No search-advantage claim is made here. This module proves composition,
 coverage, determinism and provenance so measured production outcomes can test
@@ -65,18 +66,15 @@ def _header_direction(header_prefix: bytes) -> tuple[float, ...]:
         raise ValueError("header_prefix must be exactly 76 bytes")
     digest = hashlib.sha256(header_prefix).digest()
     raw = tuple((digest[index] - 127.5) / 127.5 for index in range(DIM))
-    norm_sq = sum((PHI ** (-(i + 1))) * value * value for i, value in enumerate(raw))
+    norm_sq = sum(
+        (PHI ** (-(i + 1))) * value * value for i, value in enumerate(raw)
+    )
     scale = 1.0 / math.sqrt(1.0 + norm_sq)
     return tuple(value * scale for value in raw)
 
 
 def _dual_adjacency(cells: Sequence[Sequence[int]]) -> tuple[tuple[int, ...], ...]:
-    """Adjacency of the dual 120-cell: 600 vertices, degree four.
-
-    Each vertex in the dual corresponds to one tetrahedral cell of the
-    600-cell. Two dual vertices are adjacent exactly when those tetrahedra
-    share one triangular face.
-    """
+    """Adjacency of the dual 120-cell: 600 vertices, degree four."""
     face_to_cells: dict[tuple[int, int, int], list[int]] = {}
     for cell_id, tetrahedron in enumerate(cells):
         for face in itertools.combinations(tetrahedron, 3):
@@ -90,7 +88,9 @@ def _dual_adjacency(cells: Sequence[Sequence[int]]) -> tuple[tuple[int, ...], ..
         adjacency[left].add(right)
         adjacency[right].add(left)
     result = tuple(tuple(sorted(neighbours)) for neighbours in adjacency)
-    if len(result) != DUAL_VERTEX_COUNT or any(len(neighbours) != 4 for neighbours in result):
+    if len(result) != DUAL_VERTEX_COUNT or any(
+        len(neighbours) != 4 for neighbours in result
+    ):
         raise ArithmeticError("dual 120-cell adjacency must contain 600 degree-four vertices")
     return result
 
@@ -155,7 +155,7 @@ class PythiaSearchPrecompute:
                 {
                     "role": "physical_execution",
                     "owner": "Chronus",
-                    "authority": "execute exact authorised nonce batches on capability-proven lanes",
+                    "authority": "execute exact authorised nonce batches on proven lanes",
                 },
                 {
                     "role": "proof_and_epoch_guardian",
@@ -196,15 +196,17 @@ def precompute_pythia_search() -> PythiaSearchPrecompute:
 
     # The normalized cell-centroid directions are the vertices of the dual
     # 120-cell up to a common radial scale: exactly 600 high-resolution search
-    # directions, preserving the existing H4 construction rather than adding a
-    # second hand-written polytope implementation.
+    # directions, preserving the repository's existing H4 construction.
     dual_vertices = tuple(cell_normals(h4_vertices, h4_cells))
     if len(dual_vertices) != DUAL_VERTEX_COUNT:
         raise ArithmeticError("dual 120-cell must contain exactly 600 vertices")
     frames_11d = tuple(tuple(lift_fold_11d(vertex)[0]) for vertex in dual_vertices)
 
     coarse_anchor = tuple(
-        max(range(COARSE_FACE_COUNT), key=lambda face_id: _phi_dot(frame, coarse_frames[face_id]))
+        max(
+            range(COARSE_FACE_COUNT),
+            key=lambda face_id: _phi_dot(frame, coarse_frames[face_id]),
+        )
         for frame in frames_11d
     )
     if len(set(coarse_anchor)) != COARSE_FACE_COUNT:
@@ -212,9 +214,6 @@ def precompute_pythia_search() -> PythiaSearchPrecompute:
 
     adjacency = _dual_adjacency(h4_cells)
 
-    # 600 search vertices fit injectively into the exact 11-qubit Hilbert
-    # basis. The geometry remains in the 11D frames/graph; the basis addresses
-    # are a lossless identity map, not a fabricated amplitude claim.
     register = QuantumRegister(HILBERT_QUBITS)
     if register.dim != HILBERT_DIM or DUAL_VERTEX_COUNT > register.dim:
         raise ArithmeticError("600 vertices must fit inside the exact 11-qubit Hilbert basis")
@@ -246,26 +245,39 @@ def precompute_pythia_search() -> PythiaSearchPrecompute:
 def vertex_itinerary(
     header: bytes,
     precompute: PythiaSearchPrecompute | None = None,
+    *,
+    preferred_face: int | None = None,
 ) -> tuple[int, ...]:
     """Rank and graph-traverse all 600 Hilbert-addressed search vertices.
 
-    The header is real job data. The 32-face dual overlay supplies coarse
-    ranking; the 600 11D directions supply fine ranking. A best-first walk over
-    the precomputed dual graph ensures every newly visited vertex is connected
-    to the already explored search manifold. Membership is never pruned.
+    The real header determines the geometric affinities. If the live PYTHIA
+    plan supplies ``preferred_face`` then that coarse face becomes the first
+    exploration basin; within it and thereafter the real header affinity still
+    ranks the graph frontier. Every vertex remains reachable and visited once.
     """
     if len(header) != 80:
         raise ValueError("header must be exactly 80 bytes")
+    if preferred_face is not None and not 0 <= int(preferred_face) < COARSE_FACE_COUNT:
+        raise ValueError("preferred_face must be in [0, 31]")
     state = precompute or precompute_pythia_search()
     direction = _header_direction(bytes(header[:76]))
 
-    coarse = sorted(
-        range(COARSE_FACE_COUNT),
-        key=lambda face_id: (-_phi_dot(direction, state.coarse_frames_11d[face_id]), face_id),
-    )
+    def coarse_key(face_id: int) -> tuple[int, float, int]:
+        preferred_rank = 0 if preferred_face is not None and face_id == preferred_face else 1
+        return (
+            preferred_rank,
+            -_phi_dot(direction, state.coarse_frames_11d[face_id]),
+            face_id,
+        )
+
+    coarse = sorted(range(COARSE_FACE_COUNT), key=coarse_key)
     coarse_rank = {face_id: rank for rank, face_id in enumerate(coarse)}
     score = [
-        (coarse_rank[state.coarse_anchor[vertex_id]], -_phi_dot(direction, frame), vertex_id)
+        (
+            coarse_rank[state.coarse_anchor[vertex_id]],
+            -_phi_dot(direction, frame),
+            vertex_id,
+        )
         for vertex_id, frame in enumerate(state.frames_11d)
     ]
     root = min(range(DUAL_VERTEX_COUNT), key=lambda vertex_id: score[vertex_id])
@@ -297,6 +309,7 @@ def pythia_hilbert_600_nonces(
     position: int = 0,
     count: int | None = None,
     precompute: PythiaSearchPrecompute | None = None,
+    preferred_face: int | None = None,
 ) -> list[int]:
     """Coverage-complete nonce permutation driven by the 600-vertex itinerary."""
     if len(header) != 80:
@@ -314,7 +327,11 @@ def pythia_hilbert_600_nonces(
         return []
 
     state = precompute or precompute_pythia_search()
-    itinerary = vertex_itinerary(header, state)
+    itinerary = vertex_itinerary(
+        header,
+        state,
+        preferred_face=preferred_face,
+    )
     shards = partition_interval(base, window, DUAL_VERTEX_COUNT)
     seed = int.from_bytes(hashlib.sha256(bytes(header[:76])).digest()[:8], "big")
 
