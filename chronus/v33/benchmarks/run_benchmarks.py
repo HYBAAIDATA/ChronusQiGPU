@@ -25,6 +25,8 @@ from chronus.v33.theory.superconductivity import bcs_gap_self_consistent, K_B
 from chronus.v33.academic.report import run_academic_enhancements
 from chronus.v33.phi_scaling import run_phi_power_scaling_benchmark, phi_power_exact
 from chronus.v33.benchmarks.render_elevation import main as run_render_elevation
+from chronus.v33.benchmarks.protocol import PROTOCOL_VERSION, SCHEMA_NAME, capture_environment
+from chronus.v33.benchmarks import claims as claim_ledger
 
 DEMO_QSDL_SOURCE = (
     "scene sunset { "
@@ -137,6 +139,9 @@ def main() -> None:
     # (chronus/v33/benchmarks/render_elevation_results.json).
     run_render_elevation()
     results = {
+        "schema": SCHEMA_NAME,
+        "protocol_version": PROTOCOL_VERSION,
+        "environment": capture_environment(),
         "platform": platform.platform(),
         "python": sys.version.split()[0],
         "numpy": np.__version__,
@@ -154,6 +159,17 @@ def main() -> None:
     out_path.write_text(json.dumps(results, indent=2, default=str))
     print(json.dumps(results, indent=2, default=str))
     print(f"\nWrote {out_path}")
+
+    # Marketing-claim reconciliation: every document claim vs the artifacts
+    # this suite (and the elevation suite before it) actually produced.
+    ledger = claim_ledger.evaluate()
+    ledger_path = Path(__file__).resolve().parent / "claims_ledger.json"
+    ledger_path.write_text(json.dumps(ledger, indent=2, default=str))
+    s = ledger["summary"]
+    print(
+        f"\nClaim ledger: {s['measured']} MEASURED / {s['gated']} GATED / "
+        f"{s['unmeasured']} UNMEASURED -> {ledger_path}"
+    )
 
 
 if __name__ == "__main__":

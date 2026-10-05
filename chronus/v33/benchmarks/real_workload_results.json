@@ -1,0 +1,226 @@
+{
+  "schema": "chronos-v33-benchmarks-v2",
+  "protocol_version": "1.0.0",
+  "environment": {
+    "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+    "python": "3.13.14",
+    "numpy": "2.5.3",
+    "cpu_count": 2,
+    "utc_timestamp": "2026-10-05T00:11:18+00:00",
+    "protocol_version": "1.0.0",
+    "thread_environment": {
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null,
+      "MKL_NUM_THREADS": null,
+      "NUMEXPR_NUM_THREADS": null,
+      "CHRONUS_V33_RENDER_BACKEND": null
+    }
+  },
+  "real_workloads": [
+    {
+      "workload": "demo_sunset_sphere_8k",
+      "description": "Continuity baseline: one glass sphere, one directional light, 8K. The validated v3.1 single-sphere path (bit-identical contract, hits 1,832,112 at 8K).",
+      "tags": [
+        "baseline",
+        "sphere",
+        "8k"
+      ],
+      "resolution": [
+        7680,
+        4320
+      ],
+      "n_faces": 32,
+      "layers": 4,
+      "supersampling": 1,
+      "wall_time": {
+        "measured": true,
+        "repetitions": 1,
+        "single_sample": true,
+        "samples_seconds": [
+          4.887069
+        ],
+        "median_seconds": 4.887069,
+        "mean_seconds": 4.887069,
+        "min_seconds": 4.887069,
+        "max_seconds": 4.887069
+      },
+      "frame_facts": {
+        "energy": -7.387995809305449,
+        "energy_measured": true,
+        "rendered_pixels_hit": 1832112,
+        "total_pixels": 33177600,
+        "frame_shape": [
+          4320,
+          7680,
+          3
+        ],
+        "samples_per_pixel": 1,
+        "render_backend": {
+          "backend": "numpy",
+          "samples_per_pixel": 1
+        },
+        "distinct_distribution_values": 10
+      }
+    },
+    {
+      "workload": "binary_two_sphere_8k",
+      "description": "Real multi-object scene: two spheres with different materials and two lights, composed by nearest hit.",
+      "tags": [
+        "multi-object",
+        "sphere",
+        "8k"
+      ],
+      "resolution": [
+        7680,
+        4320
+      ],
+      "n_faces": 32,
+      "layers": 4,
+      "supersampling": 1,
+      "wall_time": {
+        "measured": true,
+        "repetitions": 1,
+        "single_sample": true,
+        "samples_seconds": [
+          6.059355
+        ],
+        "median_seconds": 6.059355,
+        "mean_seconds": 6.059355,
+        "min_seconds": 6.059355,
+        "max_seconds": 6.059355
+      },
+      "frame_facts": {
+        "energy": -10.020437001274777,
+        "energy_measured": true,
+        "rendered_pixels_hit": 2896186,
+        "total_pixels": 33177600,
+        "frame_shape": [
+          4320,
+          7680,
+          3
+        ],
+        "samples_per_pixel": 1,
+        "render_backend": {
+          "backend": "numpy",
+          "composition": "nearest_hit",
+          "objects_composited": 2,
+          "geometry_types": [
+            "sphere"
+          ],
+          "samples_per_pixel": 1,
+          "note": "The GPU lane accelerates the single-sphere ray sweep only; composite scenes execute on the numpy reference path (fail-closed posture, no silent substitution)."
+        },
+        "distinct_distribution_values": 32
+      }
+    },
+    {
+      "workload": "studio_composite_box_plane_8k",
+      "description": "Real geometry spread: glass sphere + axis-aligned metal box + ground plane, two lights, nearest-hit composition (v3.2).",
+      "tags": [
+        "multi-object",
+        "box",
+        "plane",
+        "composite",
+        "8k"
+      ],
+      "resolution": [
+        7680,
+        4320
+      ],
+      "n_faces": 32,
+      "layers": 4,
+      "supersampling": 1,
+      "wall_time": {
+        "measured": true,
+        "repetitions": 1,
+        "single_sample": true,
+        "samples_seconds": [
+          14.565593
+        ],
+        "median_seconds": 14.565593,
+        "mean_seconds": 14.565593,
+        "min_seconds": 14.565593,
+        "max_seconds": 14.565593
+      },
+      "frame_facts": {
+        "energy": -10.509403037326104,
+        "energy_measured": true,
+        "rendered_pixels_hit": 18608899,
+        "total_pixels": 33177600,
+        "frame_shape": [
+          4320,
+          7680,
+          3
+        ],
+        "samples_per_pixel": 1,
+        "render_backend": {
+          "backend": "numpy",
+          "composition": "nearest_hit",
+          "objects_composited": 3,
+          "geometry_types": [
+            "box",
+            "plane",
+            "sphere"
+          ],
+          "samples_per_pixel": 1,
+          "note": "The GPU lane accelerates the single-sphere ray sweep only; composite scenes execute on the numpy reference path (fail-closed posture, no silent substitution)."
+        },
+        "distinct_distribution_values": 32
+      }
+    },
+    {
+      "workload": "gallery_composite_4spp_8k",
+      "description": "The composite studio scene with real 4x supersampling -- the documented design factor, traced not asserted.",
+      "tags": [
+        "multi-object",
+        "composite",
+        "supersampling",
+        "8k"
+      ],
+      "resolution": [
+        7680,
+        4320
+      ],
+      "n_faces": 32,
+      "layers": 4,
+      "supersampling": 4,
+      "wall_time": {
+        "measured": true,
+        "repetitions": 1,
+        "single_sample": true,
+        "samples_seconds": [
+          57.600152
+        ],
+        "median_seconds": 57.600152,
+        "mean_seconds": 57.600152,
+        "min_seconds": 57.600152,
+        "max_seconds": 57.600152
+      },
+      "frame_facts": {
+        "energy": -10.509403037326104,
+        "energy_measured": true,
+        "rendered_pixels_hit": 18609755,
+        "total_pixels": 33177600,
+        "frame_shape": [
+          4320,
+          7680,
+          3
+        ],
+        "samples_per_pixel": 4,
+        "render_backend": {
+          "backend": "numpy",
+          "composition": "nearest_hit",
+          "objects_composited": 3,
+          "geometry_types": [
+            "box",
+            "plane",
+            "sphere"
+          ],
+          "samples_per_pixel": 4,
+          "note": "The GPU lane accelerates the single-sphere ray sweep only; composite scenes execute on the numpy reference path (fail-closed posture, no silent substitution)."
+        },
+        "distinct_distribution_values": 32
+      }
+    }
+  ]
+}
