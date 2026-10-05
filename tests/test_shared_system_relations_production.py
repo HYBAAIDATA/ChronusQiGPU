@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import time
 
+import pytest
+
 from aethel.enterprise.entangled_custody import CANONICAL_DATA_SYSTEMS
 from aethel.enterprise.lifecycle import CompositionRoot
 from aethel.enterprise.system_relations import (
@@ -325,3 +327,28 @@ def test_production_organism_is_single_startup_root_for_live_shared_systems(tmp_
             assert fabric.verify(item["binding_id"])["passed"] is True
     finally:
         organism.stop()
+
+
+def test_production_organism_shutdown_closes_custody_when_final_snapshot_fails(
+    tmp_path,
+    monkeypatch,
+):
+    from aethel.enterprise.production_organism import ProductionOrganism
+
+    organism = ProductionOrganism(
+        tmp_path / "organism-stop-failure",
+        hmac_key=TEST_KEY,
+        guardian=_guardian(tmp_path),
+        allow_insecure_dev_key=True,
+    )
+    organism.start()
+
+    def fail_save():
+        raise RuntimeError("final snapshot failed")
+
+    monkeypatch.setattr(organism.intelligence.store, "save", fail_save)
+    with pytest.raises(RuntimeError, match="final snapshot failed"):
+        organism.stop()
+
+    assert organism.lifecycle.readiness()["ready"] is False
+    assert organism.status()["ready"] is False
