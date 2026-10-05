@@ -3,19 +3,24 @@
 The doctrine enforced here is structural, not advisory:
 
 * active PULVINI/data modules may not import mining, Stratum, share-submission,
-  or hash-pipeline modules;
+  hash-pipeline, miner, or mining-runtime modules;
 * active mining modules may not import the PULVINI data package, data bridges,
-  geodesic tensor engine, or PULVINI fold symbols from shared exact math;
-* generic Fibonacci/Binet/Cassini/Zeckendorf algebra remains substrate-neutral;
+  geodesic tensor engine, fold pipeline, or any shared exact-math namespace that
+  exposes PULVINI fold authority;
+* mining may import explicitly named substrate-neutral Fibonacci/Binet/Cassini/
+  Zeckendorf helpers from shared exact math;
 * literal ``import_module``/``__import__`` dependency edges are inspected;
 * production code may not use the historical ``PythagorasOrchestrator``
-  compatibility facade;
+  compatibility facade, including aliased direct imports;
 * absent owner-specified HYBA Data paths may not acquire active callers until
   they are intentionally restored.
 
 This is intentionally a static dependency gate. Runtime importer-stack checks
-are brittle in Python and can be bypassed by indirection; CI rejects the
-forbidden dependency edge before code is admitted to the repository.
+are brittle in Python and can be bypassed by indirection; CI rejects forbidden
+repository dependency edges before code is admitted. Importing the complete
+shared exact-math namespace from mining is also rejected because that namespace
+contains PULVINI fold symbols even if a particular caller currently uses only a
+neutral helper.
 """
 
 from __future__ import annotations
@@ -35,15 +40,19 @@ PULVINI_DATA_MODULES = (
 )
 SHARED_EXACT_MATH_MODULE = "python_backend.core_modules.math_folding"
 PULVINI_FOLD_SYMBOLS = frozenset({"PulviniFold", "pulvini_fold"})
+PYTHAGORAS_COMPAT_SYMBOL = "PythagorasOrchestrator"
 
-MINING_IMPORT_FRAGMENTS = (
-    "pythia_mining",
-    "mining.stratum",
-    "mining.hash_pipeline",
-    "mining.production_miner",
-    "mining.bitcoin_hasher",
-    "stratum_client",
-    "mining.submit",
+MINING_MODULE_PARTS = frozenset(
+    {
+        "mining",
+        "pythia_mining",
+        "stratum_client",
+        "hash_pipeline",
+        "bitcoin_hasher",
+        "production_miner",
+        "headless_miner",
+        "mining_runtime",
+    }
 )
 
 HISTORICAL_ABSENT_MODULES = (
@@ -89,6 +98,11 @@ class BoundaryViolation:
 
 def _module_matches(module: str, prefixes: Iterable[str]) -> bool:
     return any(module == prefix or module.startswith(prefix + ".") for prefix in prefixes)
+
+
+def _is_mining_import(module: str) -> bool:
+    parts = {part.lower() for part in module.split(".") if part}
+    return bool(parts & MINING_MODULE_PARTS)
 
 
 def _is_test_path(relative: Path) -> bool:
@@ -158,9 +172,19 @@ def _imports_and_names(path: Path) -> tuple[set[str], set[str]]:
     return imports, names
 
 
-def _imports_pulvini_fold_symbol(imports: Iterable[str]) -> str | None:
+def _forbidden_pulvini_fold_import(imports: Iterable[str]) -> str | None:
+    """Return the first mining import that exposes PULVINI fold authority.
+
+    Direct symbol/wildcard imports are forbidden. Importing the whole shared
+    exact-math module is also forbidden on the mining side: that namespace
+    itself exposes ``PulviniFold`` and ``pulvini_fold``. Neutral exact helpers
+    remain available through explicit named imports.
+    """
+
     prefix = SHARED_EXACT_MATH_MODULE + "."
     for module in sorted(imports):
+        if module == SHARED_EXACT_MATH_MODULE:
+            return module
         if module == SHARED_EXACT_MATH_MODULE + ".*":
             return module
         if module.startswith(prefix):
@@ -168,6 +192,16 @@ def _imports_pulvini_fold_symbol(imports: Iterable[str]) -> str | None:
             if symbol in PULVINI_FOLD_SYMBOLS:
                 return module
     return None
+
+
+def _uses_pythagoras_compatibility(imports: Iterable[str], names: Iterable[str]) -> bool:
+    if PYTHAGORAS_COMPAT_SYMBOL in names:
+        return True
+    return any(
+        module == PYTHAGORAS_COMPAT_SYMBOL
+        or module.endswith("." + PYTHAGORAS_COMPAT_SYMBOL)
+        for module in imports
+    )
 
 
 def check_repository(root: Path = REPO_ROOT) -> list[BoundaryViolation]:
@@ -196,7 +230,7 @@ def check_repository(root: Path = REPO_ROOT) -> list[BoundaryViolation]:
 
         if path in active_pulvini_paths:
             for module in sorted(imports):
-                if any(fragment in module for fragment in MINING_IMPORT_FRAGMENTS):
+                if _is_mining_import(module):
                     violations.append(
                         BoundaryViolation(
                             str(relative),
@@ -215,12 +249,12 @@ def check_repository(root: Path = REPO_ROOT) -> list[BoundaryViolation]:
                             module,
                         )
                     )
-            fold_import = _imports_pulvini_fold_symbol(imports)
+            fold_import = _forbidden_pulvini_fold_import(imports)
             if fold_import is not None:
                 violations.append(
                     BoundaryViolation(
                         str(relative),
-                        "mining-imports-pulvini-fold-symbol",
+                        "mining-imports-pulvini-fold-authority",
                         fold_import,
                     )
                 )
@@ -239,7 +273,7 @@ def check_repository(root: Path = REPO_ROOT) -> list[BoundaryViolation]:
         if (
             not _is_test_path(relative)
             and relative not in PYTHAGORAS_COMPAT_DEFINITION_PATHS
-            and "PythagorasOrchestrator" in names
+            and _uses_pythagoras_compatibility(imports, names)
         ):
             violations.append(
                 BoundaryViolation(
