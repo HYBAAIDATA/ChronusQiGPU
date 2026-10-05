@@ -37,10 +37,13 @@ import numpy as np
 
 from .errors import AethelError
 from .phi_fold import (
+    KernelBoundary,
     NumericFoldState,
+    PhiFoldError,
     phi_fold,
     phi_unfold,
     reconstruction_error,
+    splice_region,
     working_set_ratio,
 )
 
@@ -175,6 +178,25 @@ class PhiMemoryHierarchy:
         if resident is None:
             raise MemoryHierarchyError(f"no resident named {name!r}")
         return resident
+
+    def commit_region(
+        self, name: str, boundary: KernelBoundary, values: np.ndarray
+    ) -> Tuple[int, ...]:
+        """Splice ``values`` into resident ``name`` at ``boundary``.
+
+        The folded-state write-back: only the segments owning the declared
+        coordinates are updated — no unfold, no re-fold, tier and dtype
+        custody preserved. ``splice_region`` enforces dtype and bounds;
+        the resident's content hash is recomputed on the new state so
+        ``verify_integrity`` keeps tracking custody.
+        """
+        resident = self._resident(name)
+        try:
+            new_state, affected = splice_region(resident.state, boundary, values)
+        except PhiFoldError as exc:
+            raise MemoryHierarchyError(str(exc)) from exc
+        resident.state = new_state
+        return affected
 
     # -- tier transitions --------------------------------------------------
 

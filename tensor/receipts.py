@@ -53,7 +53,7 @@ class ExecutionReceipt:
     operation: str
     backend: str
     device: str
-    path: str  # "lifted" | "materialized" | "backend"
+    path: str  # "lifted" | "committed" | "materialized" | "backend"
     precision: str
     input_ids: Tuple[str, ...]
     input_hashes: Tuple[str, ...]
@@ -172,7 +172,11 @@ def build_folded_receipt(
         fallback_used=fold_receipt.path != "lifted",
         fallback_reason=(
             "" if fold_receipt.path == "lifted"
-            else "no lifted implementation; declared materializing"
+            else (
+                "committed coordinate write-back; dependency cone decoded"
+                if fold_receipt.path == "committed"
+                else "no lifted implementation; declared materializing"
+            )
         ),
         correctness=CORRECTNESS_UNVALIDATED,
         max_residual=None,

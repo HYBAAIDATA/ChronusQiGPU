@@ -271,12 +271,28 @@ class KernelLaunchConfig:
     work_items: int
     kernel: Callable[[np.ndarray], np.ndarray]
     boundary: Optional[KernelBoundary] = None
+    #: Optional ``(resident_name, KernelBoundary)``: when declared, the
+    #: *verified* result is spliced into that resident's folded state at the
+    #: declared coordinates exactly once. A failed integrity verdict
+    #: withholds the commit — unverified output never reaches custody.
+    commit_to: Optional[Tuple[str, KernelBoundary]] = None
 
     def __post_init__(self) -> None:
         if self.work_items < 1:
             raise PhiGPUError("work_items must be >= 1")
         if not callable(self.kernel):
             raise PhiGPUError("kernel must be callable")
+        if self.commit_to is not None:
+            target, boundary = self.commit_to
+            if not target or not isinstance(boundary, KernelBoundary):
+                raise PhiGPUError(
+                    "commit_to must be (resident_name, KernelBoundary)"
+                )
+            if boundary.length != self.work_items:
+                raise PhiGPUError(
+                    f"commit boundary spans {boundary.length} elements but the "
+                    f"launch produces {self.work_items}"
+                )
 
     @property
     def total_threads(self) -> int:
@@ -287,6 +303,44 @@ class KernelLaunchConfig:
         return max(1, math.ceil(self.work_items / PHI_GPU_CORES))
 
 
+class CoordinateCommit:
+    """Exactly-once output assembly by declared flat coordinates.
+
+    Each kernel partial commits its output span at a declared offset;
+    overlapping or out-of-span commits fail closed, and ``finish`` rejects
+    an incomplete coverage map. Whole-state concatenation cannot express
+    this contract — a partial writing the wrong span is silently ordered,
+    not verified.
+    """
+
+    def __init__(self, total: int, dtype: np.dtype) -> None:
+        if total < 1:
+            raise PhiGPUError("coordinate-committed output requires >= 1 element")
+        self._buffer = np.empty(int(total), dtype=np.dtype(dtype))
+        self._written = np.zeros(int(total), dtype=bool)
+
+    def commit(self, offset: int, values: np.ndarray) -> None:
+        flat = np.asarray(values).ravel()
+        start, stop = int(offset), int(offset) + flat.size
+        if start < 0 or stop > self._buffer.size:
+            raise PhiGPUError(
+                f"commit [{start}, {stop}) lies outside output span {self._buffer.size}"
+            )
+        if self._written[start:stop].any():
+            raise PhiGPUError(
+                f"coordinates [{start}, {stop}) already committed — exactly-once violated"
+            )
+        self._buffer[start:stop] = flat
+        self._written[start:stop] = True
+
+    def finish(self) -> np.ndarray:
+        if not self._written.all():
+            raise PhiGPUError(
+                "output span incomplete — uncommitted coordinates remain"
+            )
+        return self._buffer
+
+
 @dataclass(frozen=True)
 class KernelResult:
     name: str
@@ -295,6 +349,9 @@ class KernelResult:
     output_norm: float
     integrity_passed: bool
     boundary: Tuple[int, int]
+    #: ``(resident, offset, length)`` when the verified output was committed
+    #: into resident folded state; ``None`` for a read-only launch.
+    committed: Optional[Tuple[str, int, int]] = None
 
 
 class PhiGPU:
@@ -366,11 +423,21 @@ class PhiGPU:
             raise PhiGPUError(
                 f"scheduled task {task.name!r} names no resident operand"
             )
+        commit_to = payload.get("commit_to")
+        if commit_to is not None and not (
+            isinstance(commit_to, tuple)
+            and len(commit_to) == 2
+            and isinstance(commit_to[1], KernelBoundary)
+        ):
+            raise PhiGPUError(
+                "scheduled commit_to must be (resident_name, KernelBoundary)"
+            )
         return KernelLaunchConfig(
             name=resident,
             work_items=int(payload.get("work_items") or boundary.length),
             kernel=kernel,
             boundary=boundary,
+            commit_to=commit_to,
         )
 
     def run_next(self) -> Optional[np.ndarray]:
@@ -420,9 +487,22 @@ class PhiGPU:
                 f"boundary exposes {work.size} elements for {config.work_items} work items"
             )
         work = work[: config.work_items]
-        slices = np.array_split(work, self.cores)
-        partials = [np.asarray(config.kernel(s)) for s in slices if s.size]
-        result = self._reduce_results(partials)
+        slices = [s for s in np.array_split(work, self.cores) if s.size]
+        # Each partial commits its output at the declared coordinates of the
+        # slice it was computed from — coordinate-preserving kernels only.
+        partials: List[Tuple[int, np.ndarray]] = []
+        offset = 0
+        for piece in slices:
+            partial = np.asarray(config.kernel(piece))
+            if partial.size != piece.size:
+                raise PhiGPUError(
+                    f"kernel output span {partial.size} does not match declared "
+                    f"coordinates [{offset}, {offset + piece.size}) — non "
+                    f"coordinate-preserving kernels must declare a reduce boundary"
+                )
+            partials.append((offset, partial))
+            offset += piece.size
+        result = self._reduce_results(partials, total=work.size)
         reference = np.asarray(config.kernel(work)).ravel()
         seq = self.gate.next_sequence()
         verdict = self.gate.verify(
@@ -433,6 +513,18 @@ class PhiGPU:
             input_norm=float(np.linalg.norm(work)),
             output_norm=float(np.linalg.norm(result)),
         )
+        committed: Optional[Tuple[str, int, int]] = None
+        if config.commit_to is not None:
+            target_name, commit_boundary = config.commit_to
+            if not verdict.passed:
+                raise PhiGPUError(
+                    f"integrity verdict failed — output withheld from resident "
+                    f"{target_name!r}"
+                )
+            self.memory.commit_region(
+                target_name, commit_boundary, result.ravel()
+            )
+            committed = (target_name, commit_boundary.offset, commit_boundary.length)
         self.launch_log.append(
             KernelResult(
                 name=config.name,
@@ -441,14 +533,25 @@ class PhiGPU:
                 output_norm=float(np.linalg.norm(result)),
                 integrity_passed=verdict.passed,
                 boundary=(boundary.offset, boundary.length),
+                committed=committed,
             )
         )
         return result
 
-    def _reduce_results(self, partials: Sequence[np.ndarray]) -> np.ndarray:
+    def _reduce_results(
+        self, partials: Sequence[Tuple[int, np.ndarray]], *, total: int
+    ) -> np.ndarray:
+        """Assemble partials by declared coordinates — exactly-once coverage.
+
+        Output dtype follows the first partial; uncommitted or doubly
+        committed coordinates fail closed inside :class:`CoordinateCommit`.
+        """
         if not partials:
             return np.zeros(0, dtype=np.float64)
-        return np.concatenate([np.asarray(p).ravel() for p in partials])
+        commit = CoordinateCommit(total, np.asarray(partials[0][1]).dtype)
+        for offset, partial in partials:
+            commit.commit(offset, partial)
+        return commit.finish()
 
     def get_system_report(self) -> Dict[str, Any]:
         return {

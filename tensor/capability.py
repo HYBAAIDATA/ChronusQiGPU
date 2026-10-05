@@ -135,9 +135,15 @@ CAPABILITY_MANIFEST: Dict[str, Dict[str, Any]] = {
     },
     "folded.operator_catalogue": {
         "status": "implemented_tested",
-        "implementation": "tensor/folded.py (add/hadamard/fma/scale lifted with zero decoded bytes; transpose/reduce_sum/matmul/kron declared-materializing; evaluate_operator promotion evidence)",
-        "tests": "tests/test_folded_operators.py",
-        "claim_boundary": "Lifted residency claims are measured per-op; declared-materializing ops report decoded bytes honestly on the receipt.",
+        "implementation": "tensor/folded.py (add/hadamard/fma/scale lifted with zero decoded bytes; matmul/kron committed row-block contraction; transpose/reduce_sum declared-materializing; evaluate_operator promotion evidence)",
+        "tests": "tests/test_folded_operators.py, tests/test_committed_execution.py",
+        "claim_boundary": "Lifted residency claims are measured per-op; declared-materializing ops report decoded bytes honestly on the receipt. Committed matmul reassociates (~1e-16) — declared bit_identical=False; kron remains bit-identical.",
+    },
+    "folded.committed_execution": {
+        "status": "implemented_tested",
+        "implementation": "tensor/folded.py committed row-block contraction (region-decoded operands, output spliced by declared coordinates exactly once); chronus/phi_gpu.py CoordinateCommit + KernelLaunchConfig.commit_to resident write-back gated on the integrity verdict; aethel/phi_memory.py commit_region",
+        "tests": "tests/test_committed_execution.py",
+        "claim_boundary": "Committed path still decodes the full dependency cone — the measured win is peak materialisation and exactly-once write-back, not decode volume. Failed verdicts withhold the write.",
     },
     "folded.scheduler_executor_coupling": {
         "status": "implemented_tested",
@@ -151,8 +157,8 @@ CAPABILITY_MANIFEST: Dict[str, Dict[str, Any]] = {
     },
     "runtime.control_api_endpoints": {
         "status": "implemented_tested",
-        "implementation": "chronus/mla1517_platform/python/control_api.py (guardian-preflighted POST /api/v1/tensor/execute, GET /api/v1/tensor/capabilities)",
-        "tests": "tests/test_tensor_runtime.py",
+        "implementation": "chronus/mla1517_platform/python/control_api.py (guardian-preflighted POST /api/v1/tensor/execute, GET /api/v1/tensor/capabilities; ops allowlisted in al_haras_pythia._PYTHIA_ALLOWED_OPERATIONS; execute synthesizes the GET-style observation)",
+        "tests": "tests/test_tensor_runtime.py, tests/test_al_haras_pythia_wiring.py (allowlist regression)",
     },
     "runtime.execution_receipts": {
         "status": "implemented_tested",
