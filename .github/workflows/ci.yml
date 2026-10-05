@@ -89,6 +89,7 @@ jobs:
         run: >-
           python -m pytest
           tests/test_pulvini_quantum_data_doctrine.py
+          tests/test_pulvini_boundary_canonical_mining_paths.py
           tests/test_entangled_custody_lifecycle.py
           tests/test_geodesic_tensor_engine.py
           tests/test_hyba_intelligence.py
