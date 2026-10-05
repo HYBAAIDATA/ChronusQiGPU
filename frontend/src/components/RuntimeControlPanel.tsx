@@ -88,7 +88,7 @@ export const RuntimeControlPanel: React.FC<{ onChanged?: () => void }> = ({ onCh
   const pools = config?.pools ?? [];
   const bounds = config?.bounds ?? {};
   const armRange = bounds.arms ?? [1, 600];
-  const ceiling = bounds.hashrate_ceiling_hs ?? 1e18;
+  const ceiling = bounds.hashrate_ceiling_hs;
   const live = config?.live_submit;
 
   const writePools = (next: RuntimePool[]) => put({ pools: next });
@@ -113,6 +113,14 @@ export const RuntimeControlPanel: React.FC<{ onChanged?: () => void }> = ({ onCh
     const v = Number(hashrateInput);
     if (!Number.isFinite(v) || v < 0) {
       setError("hashrate must be a non-negative number (H/s)");
+      return;
+    }
+    if (ceiling == null) {
+      setError("hashrate ceiling unavailable — refresh runtime configuration");
+      return;
+    }
+    if (v > ceiling) {
+      setError(`hashrate target must not exceed ${formatHs(ceiling)}`);
       return;
     }
     put({ hashrate: { target_hs: v, ceiling_hs: ceiling } });
@@ -223,7 +231,7 @@ export const RuntimeControlPanel: React.FC<{ onChanged?: () => void }> = ({ onCh
             </div>
             <p className="mt-1 text-[11px] font-telemetry-mono text-[#42566f]">
               current {formatHs(config?.hashrate?.target_hs ?? 0)} · ceiling{" "}
-              {formatHs(ceiling)} · measured rate converges to min(target, physical)
+              {ceiling == null ? "Unavailable" : formatHs(ceiling)} · measured rate converges to min(target, physical)
             </p>
           </div>
 
