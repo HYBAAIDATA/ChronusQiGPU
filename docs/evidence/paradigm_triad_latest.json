@@ -1,0 +1,233 @@
+{
+  "artifact_digest": "786610f9ac2e9490a8c22bb64fa02365184dec21bf632a0a4112f74ecafb32bc",
+  "claim_ids": [
+    "c-paradigm-thesis-v1",
+    "c-paradigm-golden-stride",
+    "c-paradigm-vigpu-conformance",
+    "c-paradigm-bakeoff",
+    "c-paradigm-honesty-chaos"
+  ],
+  "legs": [
+    {
+      "detail": {
+        "ok": true,
+        "sentence": "Chronus provides a versioned, fail-closed virtual accelerator ABI whose receipts bind workload, backend, digest, and trust class; algebraic schedules may reorder classical work but never substitute for SHA256d or pool acknowledgement.",
+        "thesis_id": "c-paradigm-thesis-v1",
+        "track": "systems"
+      },
+      "name": "thesis_bounds",
+      "ok": true
+    },
+    {
+      "detail": {
+        "claim_id": "c-paradigm-golden-stride",
+        "not_a_proof_of": [
+          "any_prediction_about_sha256d_output",
+          "any_speedup_beyond_coverage_and_sequencing",
+          "quantum_advantage",
+          "any_Millennium_problem"
+        ],
+        "theorem_proven": false,
+        "unique_50k": true,
+        "verdicts": [
+          {
+            "mode": "gcd(stride, 2^32) == 1 (stride odd)",
+            "stride": 2654435769,
+            "theorem_proven": false,
+            "verdict": "HOLDS"
+          }
+        ]
+      },
+      "name": "lemma_golden_stride",
+      "ok": true
+    },
+    {
+      "detail": {
+        "abi_version": "virtual_igpu_v1",
+        "checks": [
+          {
+            "claim_id": "c-paradigm-vigpu-conformance",
+            "detail": "ok",
+            "name": "abi_identity",
+            "passed": true
+          },
+          {
+            "claim_id": "",
+            "detail": "ok",
+            "name": "workload_fail_closed",
+            "passed": true
+          },
+          {
+            "claim_id": "",
+            "detail": "ok",
+            "name": "no_empty_adapters",
+            "passed": true
+          },
+          {
+            "claim_id": "",
+            "detail": "ok",
+            "name": "software_store_and_trust",
+            "passed": true
+          },
+          {
+            "claim_id": "",
+            "detail": "ok",
+            "name": "required_adapter_missing",
+            "passed": true
+          },
+          {
+            "claim_id": "",
+            "detail": "ok",
+            "name": "evidence_chain",
+            "passed": true
+          },
+          {
+            "claim_id": "",
+            "detail": "ok",
+            "name": "attestation_tamper",
+            "passed": true
+          },
+          {
+            "claim_id": "",
+            "detail": "ok",
+            "name": "receipt_validation_soft",
+            "passed": true
+          }
+        ],
+        "claim_id": "c-paradigm-vigpu-conformance",
+        "metadata": {
+          "store": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\paradigm-vigpu-o8dre2jn"
+        },
+        "ok": true,
+        "pending": [
+          "physical_opencl_device_gate",
+          "hardware_rooted_attestation",
+          "live_pool_ack_truth_class",
+          "unified_enterprise_fork_abi_lock"
+        ]
+      },
+      "name": "systems_vigpu_conformance",
+      "ok": true
+    },
+    {
+      "detail": {
+        "claim_id": "c-paradigm-bakeoff",
+        "ok": true,
+        "report": {
+          "claim_id": "c-paradigm-bakeoff",
+          "header_digest": "c97339b470e77827ed22f491ec3ce5c072b9a301a413140a93190450a3a32f78",
+          "metadata": {
+            "accept_predicate": "sha256d_le_u256 <= target",
+            "advantage_claimed": false,
+            "count": 512,
+            "seed": 1,
+            "stride": 2654435769
+          },
+          "negative_result": "structured schedules did not beat sequential on first-hit index for this header/target/seed; ordering\u2260advantage",
+          "ok": true,
+          "results": [
+            {
+              "count": 512,
+              "first_hit_index": 1,
+              "first_hit_nonce": 2,
+              "hashes": 512,
+              "hashes_per_s": 714385.3774243058,
+              "hits": 266,
+              "name": "sequential",
+              "notes": "accept = sha256d(header||nonce) little-endian <= target",
+              "seed": 1,
+              "unique": true,
+              "wall_ns": 716700
+            },
+            {
+              "count": 512,
+              "first_hit_index": 2,
+              "first_hit_nonce": 1013904243,
+              "hashes": 512,
+              "hashes_per_s": 679315.3774711423,
+              "hits": 269,
+              "name": "golden_stride",
+              "notes": "accept = sha256d(header||nonce) little-endian <= target",
+              "seed": 1,
+              "unique": true,
+              "wall_ns": 753700
+            },
+            {
+              "count": 512,
+              "first_hit_index": 3,
+              "first_hit_nonce": 3303696920,
+              "hashes": 512,
+              "hashes_per_s": 703489.9697719153,
+              "hits": 252,
+              "name": "phi_tier",
+              "notes": "accept = sha256d(header||nonce) little-endian <= target",
+              "seed": 1,
+              "unique": true,
+              "wall_ns": 727800
+            }
+          ],
+          "structured_beats_sequential_first_hit": false,
+          "target_hex": "8000000000000000000000000000000000000000000000000000000000000000",
+          "winner_first_hit": "sequential",
+          "winner_throughput": "sequential"
+        }
+      },
+      "name": "measurement_schedule_bakeoff",
+      "ok": true
+    },
+    {
+      "detail": {
+        "cases": [
+          {
+            "detail": "refused_or_contained",
+            "name": "digest_tamper_detected",
+            "passed": true
+          },
+          {
+            "detail": "refused_or_contained",
+            "name": "quota_enforced",
+            "passed": true
+          },
+          {
+            "detail": "refused_or_contained",
+            "name": "missing_required_device",
+            "passed": true
+          },
+          {
+            "detail": "refused_or_contained",
+            "name": "hardware_root_not_trusted_from_liar",
+            "passed": true
+          },
+          {
+            "detail": "refused_or_contained",
+            "name": "evidence_hmac_binds_chain",
+            "passed": true
+          },
+          {
+            "detail": "refused_or_contained",
+            "name": "abi_version_present",
+            "passed": true
+          }
+        ],
+        "claim_id": "c-paradigm-honesty-chaos",
+        "metadata": {
+          "store": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\paradigm-honesty-uvo3h_y5"
+        },
+        "ok": true
+      },
+      "name": "honesty_chaos",
+      "ok": true
+    }
+  ],
+  "ok": true,
+  "pending_external": [
+    "live_opencl_device_measurement",
+    "hardware_rooted_attestation_keys",
+    "real_pool_ack_truth_class",
+    "third_party_conformance_repro",
+    "osdi_style_external_bakeoff"
+  ],
+  "recorded_at": "2026-10-05T02:25:49.033023+00:00",
+  "thesis": "Chronus provides a versioned, fail-closed virtual accelerator ABI whose receipts bind workload, backend, digest, and trust class; algebraic schedules may reorder classical work but never substitute for SHA256d or pool acknowledgement.",
+  "thesis_id": "c-paradigm-thesis-v1"
+}
