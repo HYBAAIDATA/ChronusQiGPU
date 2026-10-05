@@ -69,8 +69,14 @@ PYTHAGORAS_COMPAT_DEFINITION_PATHS = {
     Path("quantum_compute_substrate/pulvini/__init__.py"),
 }
 
+# Explicitly classify production mining surfaces whose path/name does not carry
+# the generic "mining" token. These files are part of the canonical production
+# pool/coordinator route and must receive the same PULVINI boundary checks as
+# chronus.mla1517.mining.* modules.
 EXPLICIT_MINING_PATHS = {
     Path("chronus/mla1517/math_folding.py"),
+    Path("chronus/mla1517_platform/python/coordinator.py"),
+    Path("chronus/mla1517_platform/python/manifold_pool_coordinator.py"),
 }
 
 SKIP_PARTS = {
