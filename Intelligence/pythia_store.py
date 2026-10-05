@@ -296,14 +296,10 @@ class PythiaCurator:
         self.journal = journal
         self._history: List[Dict[str, Any]] = []
 
-    # -- utility signals ---------------------------------------------------
-
     @staticmethod
     def _recency(last_accessed: float, written_ts: float, now: float) -> float:
         if last_accessed:
             return math.exp(-0.01 * max(0.0, now - last_accessed))
-        # Never retrieved: half-credit decayed from write time — she has
-        # not found it useful yet, so it earns no full freshness bonus.
         if written_ts:
             return 0.5 * math.exp(-0.01 * max(0.0, now - written_ts))
         return 0.0
@@ -326,8 +322,6 @@ class PythiaCurator:
         r = min(1.0, accesses / 4.0)
         rec = self._recency(last_accessed, written_ts, now)
         net = min(1.0, degree / 8.0)
-        # Golden-ratio weights, self-modulated by the emergence signal:
-        # low emergence -> explore (recency up); high -> exploit (confidence up).
         w_act = INV_PHI * (1.0 + 0.25 * emergence)
         w_conf = INV_PHI2 * (1.0 + 0.5 * emergence)
         w_use = INV_PHI * INV_PHI2
@@ -363,13 +357,9 @@ class PythiaCurator:
         idx = min(len(s) - 1, max(0, int(len(s) * q)))
         return s[idx]
 
-    # -- per-tier evaluation ------------------------------------------------
-
     def _evaluate(self, emergence: float) -> Tuple[List[CurationDecision], Dict[str, float]]:
         decisions: List[CurationDecision] = []
         utils: Dict[str, float] = {}
-
-        # Episodic events.
         for e in self.memory.episodic.events():
             u, reasons = self._utility(
                 activation=1,
@@ -382,7 +372,6 @@ class PythiaCurator:
             )
             utils[f"ep:{e.event_id}"] = u
             decisions.append(CurationDecision("episodic", str(e.event_id), "keep", u, reasons))
-        # Semantic concepts.
         for n in self.memory.semantic.nodes():
             degree = len(n.associations)
             u, reasons = self._utility(
@@ -390,7 +379,7 @@ class PythiaCurator:
                 confidence=n.confidence,
                 accesses=n.activation_count,
                 last_accessed=n.last_accessed,
-                written_ts=0.0,  # concepts have no write ts; access governs
+                written_ts=0.0,
                 degree=degree,
                 emergence=emergence,
             )
@@ -398,43 +387,33 @@ class PythiaCurator:
                 reasons.append("seeded knowledge")
             utils[f"sem:{n.concept}"] = u
             decisions.append(CurationDecision("semantic", n.concept, "keep", u, reasons))
-        # Archival entries.
         for e in self.memory.archival.entries():
             u, reasons = self._utility(
                 activation=1,
                 confidence=0.5 + min(0.5, float(e.metadata.get("reward", 0.0)) * 0.5),
                 accesses=e.access_count,
                 last_accessed=e.last_accessed,
-                written_ts=0.0,  # no write timestamp; access history governs
+                written_ts=0.0,
                 emergence=emergence,
             )
             utils[f"arc:{e.entry_id}"] = u
             decisions.append(CurationDecision("archival", str(e.entry_id), "keep", u, reasons))
-        # Consolidated learning patterns.
         for m in self.pythia.patterns():
             u, reasons = self._utility(
                 activation=m.activation_count,
                 confidence=m.confidence,
                 accesses=m.activation_count,
                 last_accessed=m.last_accessed,
-                written_ts=0.0,  # no write timestamp; access history governs
+                written_ts=0.0,
                 germ_line=m.cell_fate == "germ_line",
                 emergence=emergence,
             )
             utils[f"lt:{m.pattern_id}"] = u
             decisions.append(CurationDecision("long_term", str(m.pattern_id), "keep", u, reasons))
-
         return decisions, utils
 
-    # -- the decision ------------------------------------------------------
-
     def curate(self, emergence_signal: float = 0.0) -> Dict[str, Any]:
-        """Run one curation pass. Returns the decision report.
-
-        PYTHIA evaluates every memory, derives her cutoffs from the
-        utility distribution, applies her vetoes, executes the decisions,
-        and journals the whole thing.
-        """
+        """Run one curation pass. Returns the decision report."""
         decisions, utils = self._evaluate(emergence_signal)
         values = list(utils.values())
         prune_cut = min(self._quantile(values, INV_PHI2), 0.5)
@@ -449,7 +428,6 @@ class PythiaCurator:
         qudit_prune: set = set()
 
         for d in decisions:
-            # Resolve the item's utility under its store key.
             if d.tier == "episodic":
                 u = utils.get(f"ep:{d.item_id}", d.utility)
             elif d.tier == "semantic":
@@ -481,7 +459,7 @@ class PythiaCurator:
                 )
                 germ = pat is not None and pat.cell_fate == "germ_line"
                 if germ and u >= prune_cut * INV_PHI:
-                    d.action = "keep"  # germ-line veto
+                    d.action = "keep"
                     continue
                 if u < prune_cut:
                     d.action = "prune"
@@ -517,8 +495,6 @@ class PythiaCurator:
                     qudit_prune.add(f"arc:{d.item_id}")
                 continue
 
-        # Execute: demotions fold the item into archival (cold storage)
-        # before removal from the hot tier.
         for ev in ep_demote:
             self.memory.archival.store(
                 ev.embedding,
@@ -577,7 +553,6 @@ class PythiaCurator:
             ],
         }
         self._history.append(report)
-        # Every decision is journaled — her reasoning is auditable.
         self.journal.append("curation", report)
         return report
 
@@ -586,20 +561,13 @@ class PythiaCurator:
         return list(self._history[-limit:])
 
 
-# ---------------------------------------------------------------------------
-# PythiaStore — journal + qudits + snapshots + curator, one object
-# ---------------------------------------------------------------------------
-
-
 class PythiaStore:
     """Persistent backing store for PYTHIA's memory.
 
-    - ``record_run`` appends to the journal (every run is logged).
-    - ``ingest`` feeds journal entries back into the learning substrate
-      (every run is fed to the AI).
-    - ``save`` / ``load`` persist the memory tiers, learning substrate,
-      and qudit traces to disk (memory survives restarts).
-    - ``curate`` lets PYTHIA prune what she no longer finds useful.
+    The canonical default store also bootstraps the provenance-bound real
+    nonce structural corpus after restoring any existing snapshot. Custom
+    stores stay isolated so tests and experiments do not acquire production
+    training state implicitly.
     """
 
     def __init__(
@@ -610,6 +578,7 @@ class PythiaStore:
         qudit_dim: int = 32,
         autosave_every: int = 10,
     ) -> None:
+        self._default_store = store_dir is None
         self.dir = Path(store_dir) if store_dir is not None else DEFAULT_STORE_DIR
         self.dir.mkdir(parents=True, exist_ok=True)
         self.memory = memory
@@ -619,8 +588,17 @@ class PythiaStore:
         self.curator = PythiaCurator(memory, pythia, self.qudits, self.journal)
         self.autosave_every = max(1, int(autosave_every))
         self._since_save = 0
-
-    # -- journal + feed-back ------------------------------------------------
+        enabled = os.getenv("PYTHIA_STRUCTURE_BOOTSTRAP", "true").strip().lower() not in {
+            "0",
+            "false",
+            "no",
+            "off",
+        }
+        self._structure_bootstrap_enabled = self._default_store and enabled
+        self._structure_training: Dict[str, Any] = {
+            "state": "pending" if self._structure_bootstrap_enabled else "not_applicable",
+            "default_store": self._default_store,
+        }
 
     @property
     def snapshot_path(self) -> Path:
@@ -635,16 +613,11 @@ class PythiaStore:
         return entry
 
     def ingest(self, limit: int = 32, mining_success: bool = False) -> int:
-        """Feed recent journal entries into the learning substrate.
-
-        Returns the number of patterns taught.
-        """
+        """Feed recent journal entries into the learning substrate."""
         patterns = self.journal.tail_as_patterns(limit=limit, n_units=self.pythia.n)
         if patterns:
             self.pythia.learning_step(patterns, [mining_success] * len(patterns))
         return len(patterns)
-
-    # -- persistence --------------------------------------------------------
 
     def _refresh_qudits(self) -> None:
         """Re-encode current memories into qudit traces."""
@@ -662,9 +635,6 @@ class PythiaStore:
 
     def save(self) -> Path:
         """Persist memory tiers + learning substrate + qudit traces."""
-        # The snapshot dir is created in __init__ but may be removed at any
-        # point during the process (e.g. temp-dir teardown under tests); a
-        # write without the parent present must not crash close().
         self.dir.mkdir(parents=True, exist_ok=True)
         self._refresh_qudits()
         snap = {
@@ -683,26 +653,65 @@ class PythiaStore:
         logger.info("PYTHIA store saved: %s", self.snapshot_path)
         return self.snapshot_path
 
-    def load(self) -> bool:
-        """Restore persisted memory. Returns True if a snapshot was loaded."""
-        if not self.snapshot_path.is_file():
-            return False
+    def _bootstrap_structure_training(self) -> None:
+        if not self._structure_bootstrap_enabled:
+            return
         try:
-            snap = json.loads(self.snapshot_path.read_text(encoding="utf-8"))
-            self.memory.load_snapshot(snap.get("memory", {}))
-            self.pythia.load_snapshot(snap.get("learning", {}))
-            self.qudits.load_snapshot(snap.get("qudits", {}))
-            logger.info(
-                "PYTHIA store loaded: %d journal entries, memory restored from %s",
-                snap.get("journal_entries", 0),
-                self.snapshot_path,
-            )
-            return True
-        except Exception as e:  # pragma: no cover - defensive
-            logger.warning("Failed to load PYTHIA store snapshot: %s", e)
-            return False
+            from .mining_structure_training import bootstrap_default_structure_training
 
-    # -- curation -----------------------------------------------------------
+            report = bootstrap_default_structure_training(self.pythia, self)
+            self._structure_training = {"state": "ready", **report.to_dict()}
+            logger.info(
+                "PYTHIA structural corpus ready: %d train / %d holdout (%d newly taught)",
+                report.rows_train,
+                report.rows_holdout,
+                report.rows_newly_taught,
+            )
+        except Exception as exc:
+            self._structure_training = {
+                "state": "error",
+                "default_store": True,
+                "error": f"{type(exc).__name__}: {exc}",
+            }
+            raise RuntimeError(
+                "PYTHIA default store cannot become ready without verified structural training"
+            ) from exc
+
+    def load(self) -> bool:
+        """Restore persisted memory, then enforce canonical structural training.
+
+        For the default production store, failure to verify/train the bound
+        real-nonce corpus is a readiness failure. A custom store remains an
+        isolated test/experiment surface and does not auto-bootstrap.
+        """
+        loaded = False
+        if self.snapshot_path.is_file():
+            try:
+                snap = json.loads(self.snapshot_path.read_text(encoding="utf-8"))
+                self.memory.load_snapshot(snap.get("memory", {}))
+                self.pythia.load_snapshot(snap.get("learning", {}))
+                self.qudits.load_snapshot(snap.get("qudits", {}))
+                logger.info(
+                    "PYTHIA store loaded: %d journal entries, memory restored from %s",
+                    snap.get("journal_entries", 0),
+                    self.snapshot_path,
+                )
+                loaded = True
+            except Exception as e:
+                logger.warning("Failed to load PYTHIA store snapshot: %s", e)
+                if self._structure_bootstrap_enabled:
+                    self._structure_training = {
+                        "state": "error",
+                        "default_store": True,
+                        "error": f"snapshot_load_failed: {type(e).__name__}: {e}",
+                    }
+                    raise RuntimeError(
+                        "PYTHIA default snapshot is unreadable; refusing to overwrite it during structural bootstrap"
+                    ) from e
+                return False
+
+        self._bootstrap_structure_training()
+        return loaded
 
     def curate(self, emergence_signal: Optional[float] = None) -> Dict[str, Any]:
         """Let PYTHIA decide what to keep, demote, and prune."""
@@ -719,6 +728,7 @@ class PythiaStore:
             "qudits": self.qudits.status(),
             "snapshot_exists": self.snapshot_path.is_file(),
             "autosave_every": self.autosave_every,
+            "structure_training": dict(self._structure_training),
         }
 
 
