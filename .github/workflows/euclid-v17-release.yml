@@ -11,6 +11,7 @@ on:
       - "tests/test_intelligence_convergence.py"
       - "tests/test_adaptive_intelligence.py"
       - "scripts/build_euclid_intelligence_release.py"
+      - "scripts/run_euclid_v17_benchmark.py"
       - "docs/EUCLID_V17_RESEARCH_RELEASE.md"
       - "pyproject.toml"
       - ".github/workflows/euclid-v17-release.yml"
@@ -50,6 +51,13 @@ jobs:
             -q --tb=short \
             | tee euclid-v17-focused-tests.txt
 
+      - name: Run held-out comparison and required ablations
+        run: |
+          python scripts/run_euclid_v17_benchmark.py \
+            --output euclid-v17-release/benchmark.json \
+            --repeats 3 \
+            | tee euclid-v17-benchmark.txt
+
       - name: Build wheel, install it, and emit integrity archive
         run: |
           python scripts/build_euclid_intelligence_release.py \
@@ -83,5 +91,6 @@ jobs:
           if-no-files-found: error
           path: |
             euclid-v17-focused-tests.txt
+            euclid-v17-benchmark.txt
             euclid-v17-release-build.txt
             euclid-v17-release/**
