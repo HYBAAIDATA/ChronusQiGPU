@@ -7,6 +7,7 @@ owners' real implementations; unavailable substrates are asserted unavailable.
 from __future__ import annotations
 
 import hashlib
+import json
 import time
 
 import pytest
@@ -115,6 +116,53 @@ def test_triad_custody_and_transformation_keep_owners(runtime):
     fold = _dispatch(runtime, "triad", {"operation": "fold", "payload_utf8": payload})["result"]
     assert fold["owner"] == "OVID" and fold["round_trip"] is True
     assert _dispatch(runtime, "triad", {"operation": "verify"})["result"]["verified"] is True
+
+
+def test_restart_restores_the_whole_organism_not_just_state(tmp_path):
+    """A restored runtime must be able to reach the same organs as a fresh one.
+
+    Regression: ``EuclidRuntime.restore`` re-created the organ registry after
+    ``production()`` had already composed TURING/CHRONUS/Triad, silently
+    dropping every specialist. State survived the restart while the compute,
+    quantum and custody planes did not — a restored organism that could no
+    longer do anything the original could.
+    """
+    checkpoint = tmp_path / "runtime.json"
+    first = EuclidRuntime.production(creator_id="creator-1", state_dir=tmp_path)
+    try:
+        expected = sorted(item["organ_id"] for item in first.registry.report())
+        assert expected, "the production root must compose specialists"
+        first.save(checkpoint)
+    finally:
+        first.close()
+
+    restored = EuclidRuntime.restore(checkpoint, state_dir=tmp_path)
+    try:
+        assert sorted(item["organ_id"] for item in restored.registry.report()) == expected
+        # Reachability must be restored too: a restarted organism that reports
+        # its organs as unreachable would misreport its own capability.
+        for component in ("turing.backends", "chronus.backend_registry", "aethel.triad"):
+            assert restored.reachability.stage(component) is ReachabilityStage.REACHABLE
+        # And a specialist must actually execute after the restart.
+        out = _dispatch(restored, "turing", {"operation": "run-program", "program": BELL})
+        assert out["allowed"] and out["result"]["executed"]
+    finally:
+        restored.close()
+
+
+def test_restored_checkpoint_rejects_tampering(tmp_path):
+    """A mutated checkpoint must fail closed rather than restore partially."""
+    checkpoint = tmp_path / "runtime.json"
+    first = EuclidRuntime.production(creator_id="creator-1", state_dir=tmp_path)
+    try:
+        first.save(checkpoint)
+    finally:
+        first.close()
+    payload = json.loads(checkpoint.read_text(encoding="utf-8"))
+    payload["creator_id"] = "attacker"
+    checkpoint.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError):
+        EuclidRuntime.restore(checkpoint, state_dir=tmp_path)
 
 
 def _guardian(allowed):

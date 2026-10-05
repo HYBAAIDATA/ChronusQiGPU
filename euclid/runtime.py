@@ -750,7 +750,12 @@ class EuclidRuntime:
         )
         if runtime.rights.creator_id != runtime.creator_id:
             raise ValueError("rights creator differs from runtime creator")
-        runtime.registry = OrganRegistry()
+        # Rebuild the delegator against the registry production() already
+        # composed.  Re-creating OrganRegistry() here would silently discard
+        # every registered specialist (TURING/CHRONUS/Triad), leaving a
+        # restored runtime that persisted its state but could no longer reach
+        # any organ.  Restore replaces the evidence chain and the rights
+        # ledger; the organ surface itself is composed, not reconstructed.
         runtime.delegator = Delegator(runtime.registry, runtime.evidence, runtime.rights)
         runtime.learning.evidence = runtime.evidence
         # The durable memory database is already attached by production()
