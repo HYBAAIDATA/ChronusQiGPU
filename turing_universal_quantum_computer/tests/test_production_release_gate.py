@@ -2,9 +2,9 @@
 
 A production release may not hide a mathematical failure behind pytest xfail,
 may not resolve the canonical stabilizer from a committed test-fixture copy,
-and must prove the canonical measurement invariant on the production package.
-Hardware/QPU unavailability is a separate evidence state and is not converted
-into a software pass here.
+and must prove the canonical measurement and state-constructor invariants on
+the production package. Hardware/QPU unavailability is a separate evidence
+state and is not converted into a software pass here.
 """
 
 from __future__ import annotations
@@ -49,6 +49,31 @@ def test_no_duplicate_test_fixture_stabilizer_shadows_the_package() -> None:
         "distribution root contains a duplicate stabilizer.py; the canonical "
         "implementation must live only inside the package"
     )
+
+
+def test_exact_stabilizer_constructors_are_canonical_tableaux() -> None:
+    constructors = (
+        StabilizerState.basis,
+        StabilizerState.plus,
+        StabilizerState.ghz,
+        StabilizerState.cluster_chain,
+    )
+    for width in (1, 2, 3, 8, 32):
+        for constructor in constructors:
+            state = constructor(width)
+            state.validate_invariants()
+
+
+def test_cluster_chain_has_graph_state_stabilizers() -> None:
+    state = StabilizerState.cluster_chain(5)
+    assert state.stabilizer_strings() == [
+        "+XZIII",
+        "+ZXZII",
+        "+IZXZI",
+        "+IIZXZ",
+        "+IIIZX",
+    ]
+    state.validate_invariants()
 
 
 def test_canonical_stabilizer_measurement_preserves_symplectic_invariants() -> None:
