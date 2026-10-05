@@ -47,7 +47,6 @@ from chronus.h4_600 import (
     generate_600cell_vertices,
     lift_fold_11d,
 )
-from turing_universal_quantum_computer.quantum_walk import CoinedCycleWalk
 
 SEARCH_ARCHITECTURE_ID = "pythia_dual32_11d_h4_600_hilbert"
 HILBERT_QUBITS = 11
@@ -59,6 +58,22 @@ COARSE_FACE_COUNT = 32
 # cycle position has been reachable at some time. It is a structural coverage
 # horizon, not a performance-tuned mining parameter.
 HILBERT_WALK_HORIZON = DUAL_VERTEX_COUNT // 2
+
+
+def _load_coined_cycle_walk():
+    """Load Turing's exact walk in installed-package or checkout layout."""
+    try:
+        from turing_universal_quantum_computer.quantum_walk import CoinedCycleWalk
+    except ModuleNotFoundError:
+        try:
+            from turing_universal_quantum_computer.turing_universal_quantum_computer.quantum_walk import (
+                CoinedCycleWalk,
+            )
+        except Exception as exc:
+            raise RuntimeError(
+                "PYTHIA canonical search requires Turing's exact quantum_walk package"
+            ) from exc
+    return CoinedCycleWalk
 
 
 def _phi_dot(a: Sequence[float], b: Sequence[float]) -> float:
@@ -110,6 +125,7 @@ def _exact_hilbert_walk_rank() -> tuple[tuple[int, ...], str]:
     remains the root of the job-specific manifold traversal; the remaining 599
     positions are ranked by exact cumulative mass with a stable index tie-break.
     """
+    CoinedCycleWalk = _load_coined_cycle_walk()
     walk = CoinedCycleWalk(DUAL_VERTEX_COUNT, start=0)
     if walk.n_qubits != HILBERT_QUBITS or walk.register.dim != HILBERT_DIM:
         raise ArithmeticError("600-position Turing walk must occupy exactly 11 qubits")
