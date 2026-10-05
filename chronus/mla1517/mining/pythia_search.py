@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import hashlib
 import heapq
+import importlib
 import itertools
 import json
 import math
@@ -62,23 +63,32 @@ HILBERT_WALK_HORIZON = DUAL_VERTEX_COUNT // 2
 
 def _load_coined_cycle_walk():
     """Load Turing's exact walk in installed-package or checkout layout."""
-    try:
-        from turing_universal_quantum_computer.quantum_walk import CoinedCycleWalk
-    except ModuleNotFoundError:
+    module_names = (
+        "turing_universal_quantum_computer.quantum_walk",
+        (
+            "turing_universal_quantum_computer."
+            "turing_universal_quantum_computer.quantum_walk"
+        ),
+    )
+    failures: list[str] = []
+    for module_name in module_names:
         try:
-            from turing_universal_quantum_computer.turing_universal_quantum_computer.quantum_walk import (
-                CoinedCycleWalk,
-            )
-        except Exception as exc:
-            raise RuntimeError(
-                "PYTHIA canonical search requires Turing's exact quantum_walk package"
-            ) from exc
-    return CoinedCycleWalk
+            module = importlib.import_module(module_name)
+            return module.CoinedCycleWalk
+        except ModuleNotFoundError as exc:
+            failures.append(f"{module_name}: {exc}")
+    raise RuntimeError(
+        "PYTHIA canonical search requires Turing's exact quantum_walk package: "
+        + "; ".join(failures)
+    )
 
 
 def _phi_dot(a: Sequence[float], b: Sequence[float]) -> float:
     n = min(len(a), len(b), DIM)
-    return sum((PHI ** (-(i + 1))) * float(a[i]) * float(b[i]) for i in range(n))
+    return sum(
+        (PHI ** (-(i + 1))) * float(a[i]) * float(b[i])
+        for i in range(n)
+    )
 
 
 def _header_direction(header_prefix: bytes) -> tuple[float, ...]:
@@ -87,13 +97,16 @@ def _header_direction(header_prefix: bytes) -> tuple[float, ...]:
     digest = hashlib.sha256(header_prefix).digest()
     raw = tuple((digest[index] - 127.5) / 127.5 for index in range(DIM))
     norm_sq = sum(
-        (PHI ** (-(i + 1))) * value * value for i, value in enumerate(raw)
+        (PHI ** (-(i + 1))) * value * value
+        for i, value in enumerate(raw)
     )
     scale = 1.0 / math.sqrt(1.0 + norm_sq)
     return tuple(value * scale for value in raw)
 
 
-def _dual_adjacency(cells: Sequence[Sequence[int]]) -> tuple[tuple[int, ...], ...]:
+def _dual_adjacency(
+    cells: Sequence[Sequence[int]],
+) -> tuple[tuple[int, ...], ...]:
     """Adjacency of the dual 120-cell: 600 vertices, degree four."""
     face_to_cells: dict[tuple[int, int, int], list[int]] = {}
     for cell_id, tetrahedron in enumerate(cells):
@@ -103,7 +116,9 @@ def _dual_adjacency(cells: Sequence[Sequence[int]]) -> tuple[tuple[int, ...], ..
     adjacency = [set() for _ in cells]
     for owners in face_to_cells.values():
         if len(owners) != 2:
-            raise ArithmeticError("600-cell triangular face must have exactly two owners")
+            raise ArithmeticError(
+                "600-cell triangular face must have exactly two owners"
+            )
         left, right = owners
         adjacency[left].add(right)
         adjacency[right].add(left)
@@ -111,7 +126,9 @@ def _dual_adjacency(cells: Sequence[Sequence[int]]) -> tuple[tuple[int, ...], ..
     if len(result) != DUAL_VERTEX_COUNT or any(
         len(neighbours) != 4 for neighbours in result
     ):
-        raise ArithmeticError("dual 120-cell adjacency must contain 600 degree-four vertices")
+        raise ArithmeticError(
+            "dual 120-cell adjacency must contain 600 degree-four vertices"
+        )
     return result
 
 
@@ -128,7 +145,9 @@ def _exact_hilbert_walk_rank() -> tuple[tuple[int, ...], str]:
     CoinedCycleWalk = _load_coined_cycle_walk()
     walk = CoinedCycleWalk(DUAL_VERTEX_COUNT, start=0)
     if walk.n_qubits != HILBERT_QUBITS or walk.register.dim != HILBERT_DIM:
-        raise ArithmeticError("600-position Turing walk must occupy exactly 11 qubits")
+        raise ArithmeticError(
+            "600-position Turing walk must occupy exactly 11 qubits"
+        )
 
     cumulative: dict[int, Any] = {}
     reached: set[int] = set()
@@ -142,7 +161,9 @@ def _exact_hilbert_walk_rank() -> tuple[tuple[int, ...], str]:
             walk.step()
 
     if reached != set(range(DUAL_VERTEX_COUNT)):
-        raise ArithmeticError("exact Hilbert walk horizon did not reach all 600 positions")
+        raise ArithmeticError(
+            "exact Hilbert walk horizon did not reach all 600 positions"
+        )
 
     ranked_tail = sorted(
         range(1, DUAL_VERTEX_COUNT),
@@ -150,7 +171,9 @@ def _exact_hilbert_walk_rank() -> tuple[tuple[int, ...], str]:
     )
     rank = (0, *ranked_tail)
     if len(rank) != DUAL_VERTEX_COUNT or len(set(rank)) != DUAL_VERTEX_COUNT:
-        raise ArithmeticError("exact Hilbert walk rank must contain all 600 positions once")
+        raise ArithmeticError(
+            "exact Hilbert walk rank must contain all 600 positions once"
+        )
 
     digest = hashlib.sha256(
         json.dumps(
@@ -201,7 +224,9 @@ class PythiaSearchPrecompute:
             "hilbert_walk_horizon": HILBERT_WALK_HORIZON,
             "hilbert_walk_positions_reached": len(self.hilbert_walk_rank),
             "hilbert_walk_digest": self.hilbert_walk_digest,
-            "all_coarse_faces_occupied": len(set(self.coarse_anchor)) == COARSE_FACE_COUNT,
+            "all_coarse_faces_occupied": (
+                len(set(self.coarse_anchor)) == COARSE_FACE_COUNT
+            ),
             "digest": self.digest,
             "claim_boundary": (
                 "exact Hilbert evolution and coverage-preserving search ordering only; "
@@ -234,12 +259,16 @@ class PythiaSearchPrecompute:
                 {
                     "role": "hilbert_walk",
                     "owner": "Turing",
-                    "authority": "exact 600-position traversal ranking; never Bitcoin proof",
+                    "authority": (
+                        "exact 600-position traversal ranking; never Bitcoin proof"
+                    ),
                 },
                 {
                     "role": "physical_execution",
                     "owner": "Chronus",
-                    "authority": "execute exact authorised nonce batches on proven lanes",
+                    "authority": (
+                        "execute exact authorised nonce batches on proven lanes"
+                    ),
                 },
                 {
                     "role": "proof_and_epoch_guardian",
@@ -254,12 +283,16 @@ class PythiaSearchPrecompute:
                 {
                     "role": "healing_and_optimisation",
                     "owner": "Salamander",
-                    "authority": "bounded detect/repair/reprobe and measured retain/rollback",
+                    "authority": (
+                        "bounded detect/repair/reprobe and measured retain/rollback"
+                    ),
                 },
                 {
                     "role": "outcome_learning",
                     "owner": "PYTHIA",
-                    "authority": "learn from measured execution and literal pool outcomes",
+                    "authority": (
+                        "learn from measured execution and literal pool outcomes"
+                    ),
                 },
             ],
         }
@@ -270,13 +303,17 @@ def precompute_pythia_search() -> PythiaSearchPrecompute:
     """Build and validate the job-independent search substrate once per process."""
     coarse_faces = build_search_crystal()
     if len(coarse_faces) != COARSE_FACE_COUNT:
-        raise ArithmeticError("PYTHIA coarse dual overlay must contain 12 + 20 = 32 faces")
+        raise ArithmeticError(
+            "PYTHIA coarse dual overlay must contain 12 + 20 = 32 faces"
+        )
     coarse_frames = tuple(tuple(face.direction_11d) for face in coarse_faces)
 
     h4_vertices = generate_600cell_vertices()
     h4_cells = generate_600cell_cells(h4_vertices)
     if len(h4_vertices) != 120 or len(h4_cells) != DUAL_VERTEX_COUNT:
-        raise ArithmeticError("H4 600-cell must contain 120 vertices and 600 tetrahedral cells")
+        raise ArithmeticError(
+            "H4 600-cell must contain 120 vertices and 600 tetrahedral cells"
+        )
 
     # The normalized cell-centroid directions are the vertices of the dual
     # 120-cell up to a common radial scale: exactly 600 high-resolution search
@@ -284,7 +321,9 @@ def precompute_pythia_search() -> PythiaSearchPrecompute:
     dual_vertices = tuple(cell_normals(h4_vertices, h4_cells))
     if len(dual_vertices) != DUAL_VERTEX_COUNT:
         raise ArithmeticError("dual 120-cell must contain exactly 600 vertices")
-    frames_11d = tuple(tuple(lift_fold_11d(vertex)[0]) for vertex in dual_vertices)
+    frames_11d = tuple(
+        tuple(lift_fold_11d(vertex)[0]) for vertex in dual_vertices
+    )
 
     coarse_anchor = tuple(
         max(
@@ -294,7 +333,9 @@ def precompute_pythia_search() -> PythiaSearchPrecompute:
         for frame in frames_11d
     )
     if len(set(coarse_anchor)) != COARSE_FACE_COUNT:
-        raise ArithmeticError("all 32 dodecahedron/icosahedron directions must own dual vertices")
+        raise ArithmeticError(
+            "all 32 dodecahedron/icosahedron directions must own dual vertices"
+        )
 
     adjacency = _dual_adjacency(h4_cells)
 
@@ -303,7 +344,9 @@ def precompute_pythia_search() -> PythiaSearchPrecompute:
     # amplitudes over the 600-position subspace before mining begins.
     hilbert_basis = tuple(range(DUAL_VERTEX_COUNT))
     if max(hilbert_basis) >= HILBERT_DIM:
-        raise ArithmeticError("600 vertices must fit inside the exact 11-qubit Hilbert basis")
+        raise ArithmeticError(
+            "600 vertices must fit inside the exact 11-qubit Hilbert basis"
+        )
     hilbert_walk_rank, hilbert_walk_digest = _exact_hilbert_walk_rank()
 
     digest_body = {
@@ -317,7 +360,11 @@ def precompute_pythia_search() -> PythiaSearchPrecompute:
         "hilbert_walk_digest": hilbert_walk_digest,
     }
     digest = hashlib.sha256(
-        json.dumps(digest_body, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        json.dumps(
+            digest_body,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
     ).hexdigest()
 
     return PythiaSearchPrecompute(
@@ -350,7 +397,10 @@ def vertex_itinerary(
     """
     if len(header) != 80:
         raise ValueError("header must be exactly 80 bytes")
-    if preferred_face is not None and not 0 <= int(preferred_face) < COARSE_FACE_COUNT:
+    if (
+        preferred_face is not None
+        and not 0 <= int(preferred_face) < COARSE_FACE_COUNT
+    ):
         raise ValueError("preferred_face must be in [0, 31]")
     state = precompute or precompute_pythia_search()
     direction = _header_direction(bytes(header[:76]))
@@ -375,7 +425,10 @@ def vertex_itinerary(
         )
         for vertex_id, frame in enumerate(state.frames_11d)
     ]
-    root = min(range(DUAL_VERTEX_COUNT), key=lambda vertex_id: score[vertex_id])
+    root = min(
+        range(DUAL_VERTEX_COUNT),
+        key=lambda vertex_id: score[vertex_id],
+    )
 
     visited = {root}
     geometric_order = [root]
@@ -391,12 +444,21 @@ def vertex_itinerary(
         for neighbour in state.adjacency[vertex_id]:
             if neighbour not in visited:
                 heapq.heappush(frontier, (score[neighbour], neighbour))
-    if len(geometric_order) != DUAL_VERTEX_COUNT or len(set(geometric_order)) != DUAL_VERTEX_COUNT:
-        raise ArithmeticError("600-vertex geometric itinerary lost manifold coverage")
+    if (
+        len(geometric_order) != DUAL_VERTEX_COUNT
+        or len(set(geometric_order)) != DUAL_VERTEX_COUNT
+    ):
+        raise ArithmeticError(
+            "600-vertex geometric itinerary lost manifold coverage"
+        )
 
-    order = tuple(geometric_order[position] for position in state.hilbert_walk_rank)
+    order = tuple(
+        geometric_order[position] for position in state.hilbert_walk_rank
+    )
     if len(order) != DUAL_VERTEX_COUNT or len(set(order)) != DUAL_VERTEX_COUNT:
-        raise ArithmeticError("exact Hilbert traversal lost 600-vertex manifold coverage")
+        raise ArithmeticError(
+            "exact Hilbert traversal lost 600-vertex manifold coverage"
+        )
     return order
 
 
@@ -432,7 +494,10 @@ def pythia_hilbert_600_nonces(
         preferred_face=preferred_face,
     )
     shards = partition_interval(base, window, DUAL_VERTEX_COUNT)
-    seed = int.from_bytes(hashlib.sha256(bytes(header[:76])).digest()[:8], "big")
+    seed = int.from_bytes(
+        hashlib.sha256(bytes(header[:76])).digest()[:8],
+        "big",
+    )
 
     entries = []
     for vertex_id in itinerary:
@@ -444,25 +509,44 @@ def pythia_hilbert_600_nonces(
     if not entries:
         return []
 
-    starts = np.array([interval.start for interval, _ in entries], dtype=np.int64)
-    widths = np.array([interval.size for interval, _ in entries], dtype=np.int64)
-    strides = np.array([schedule.stride for _, schedule in entries], dtype=np.int64)
-    origins = np.array([schedule.origin for _, schedule in entries], dtype=np.int64)
+    starts = np.array(
+        [interval.start for interval, _ in entries],
+        dtype=np.int64,
+    )
+    widths = np.array(
+        [interval.size for interval, _ in entries],
+        dtype=np.int64,
+    )
+    strides = np.array(
+        [schedule.stride for _, schedule in entries],
+        dtype=np.int64,
+    )
+    origins = np.array(
+        [schedule.origin for _, schedule in entries],
+        dtype=np.int64,
+    )
     shortest = int(widths.min())
     positions = np.arange(shortest, dtype=np.int64)
     block = starts[:, None] + (
-        (origins[:, None] + positions[None, :] * strides[:, None]) % widths[:, None]
+        (origins[:, None] + positions[None, :] * strides[:, None])
+        % widths[:, None]
     )
     order = block.T.ravel().tolist()
     for p in range(shortest, int(widths.max())):
         mask = widths > p
         if mask.any():
-            order.extend((starts + (origins + p * strides) % widths)[mask].tolist())
+            order.extend(
+                (starts + (origins + p * strides) % widths)[mask].tolist()
+            )
 
     if len(order) != window or len(set(order)) != window:
-        raise ArithmeticError("PYTHIA 600-vertex schedule failed unique full-window coverage")
+        raise ArithmeticError(
+            "PYTHIA 600-vertex schedule failed unique full-window coverage"
+        )
     if order and (min(order) < base or max(order) >= base + window):
-        raise ArithmeticError("PYTHIA 600-vertex schedule escaped its nonce lease")
+        raise ArithmeticError(
+            "PYTHIA 600-vertex schedule escaped its nonce lease"
+        )
     return [int(value) for value in order[position : position + take]]
 
 
