@@ -131,7 +131,38 @@ def test_boundary_gate_rejects_pulvini_fold_symbol_in_mining(tmp_path: Path) -> 
     )
     violations = check_repository(tmp_path)
     assert any(
-        v.rule == "mining-imports-pulvini-fold-symbol" for v in violations
+        v.rule == "mining-imports-pulvini-fold-authority" for v in violations
+    )
+
+
+def test_boundary_gate_rejects_shared_exact_math_namespace_in_mining(tmp_path: Path) -> None:
+    source = tmp_path / "mining" / "namespace_bypass.py"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "import python_backend.core_modules.math_folding as exact_math\n"
+        "value = exact_math.fibonacci_cassini(4)\n",
+        encoding="utf-8",
+    )
+    violations = check_repository(tmp_path)
+    assert any(
+        v.rule == "mining-imports-pulvini-fold-authority" for v in violations
+    )
+
+
+def test_boundary_gate_rejects_dynamic_shared_exact_namespace_in_mining(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "mining" / "dynamic_namespace_bypass.py"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "import importlib\n"
+        "exact_math = importlib.import_module('python_backend.core_modules.math_folding')\n"
+        "value = exact_math.fibonacci_cassini(4)\n",
+        encoding="utf-8",
+    )
+    violations = check_repository(tmp_path)
+    assert any(
+        v.rule == "mining-imports-pulvini-fold-authority" for v in violations
     )
 
 
@@ -149,6 +180,14 @@ def test_boundary_gate_rejects_pulvini_import_of_mining(tmp_path: Path) -> None:
     source = tmp_path / "quantum_compute_substrate" / "pulvini" / "bad_operator.py"
     source.parent.mkdir(parents=True)
     source.write_text("from mining.hash_pipeline import grind\n", encoding="utf-8")
+    violations = check_repository(tmp_path)
+    assert any(v.rule == "pulvini-imports-mining" for v in violations)
+
+
+def test_boundary_gate_rejects_pulvini_import_of_mining_root(tmp_path: Path) -> None:
+    source = tmp_path / "quantum_compute_substrate" / "pulvini" / "bad_root_import.py"
+    source.parent.mkdir(parents=True)
+    source.write_text("import mining\n", encoding="utf-8")
     violations = check_repository(tmp_path)
     assert any(v.rule == "pulvini-imports-mining" for v in violations)
 
@@ -174,6 +213,22 @@ def test_boundary_gate_rejects_production_pythagoras_compatibility_use(
     source.write_text(
         "from quantum_compute_substrate.pulvini import PythagorasOrchestrator\n"
         "router = PythagorasOrchestrator()\n",
+        encoding="utf-8",
+    )
+    violations = check_repository(tmp_path)
+    assert any(
+        v.rule == "production-uses-pythagoras-compatibility" for v in violations
+    )
+
+
+def test_boundary_gate_rejects_aliased_pythagoras_compatibility_import(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "euclid" / "aliased_bad_authority.py"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "from quantum_compute_substrate.pulvini import PythagorasOrchestrator as Legacy\n"
+        "router = Legacy()\n",
         encoding="utf-8",
     )
     violations = check_repository(tmp_path)
