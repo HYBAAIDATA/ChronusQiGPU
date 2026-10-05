@@ -142,12 +142,33 @@ def no_float(root):
     from al_haras.no_float_guard import FloatForbidden
     from al_haras.no_float_guard import scan_paths
 
-    candidates = []
-    for pattern in (
+    # The declared exact core: the canonical paths plus the 14-module exact
+    # math core under chronus/mla1517 (the same set scripts/no_float_in_math_core.py
+    # declares for the console report).
+    exact_core = (
+        "constants.py",
+        "fibonacci_store.py",
+        "zeckendorf_codec.py",
+        "binet_view.py",
+        "pisot_fold.py",
+        "lucas_scale.py",
+        "cassini.py",
+        "m32_geometry.py",
+        "prime_address.py",
+        "state.py",
+        "prime_db.py",
+        "query.py",
+        "rings.py",
+        "quantum.py",
+    )
+    patterns = (
         "chronus/mla1517/core.py",
         "chronus/mla1517/math_folding.py",
         "python_backend/core_modules/math_folding.py",
-    ):
+        *[f"chronus/mla1517/{name}" for name in exact_core],
+    )
+    candidates = []
+    for pattern in patterns:
         p = root / pattern
         if p.exists():
             candidates.append(p)
@@ -210,11 +231,14 @@ def conformance(root):
 
 
 def resilience(root):
+    # The resilience suite as it exists in this repository: supervisor crash
+    # recovery, custody replay, attestation policy, and adversarial
+    # hardware-root compound failure.
     names = (
-        "test_crash_recovery.py",
-        "test_replay.py",
-        "test_policy_rotation.py",
-        "test_compound_failure.py",
+        "test_b_salamander_recovery.py",
+        "test_theseus_recovery_replay.py",
+        "test_chronus_attestation_policy.py",
+        "test_chronus_hardware_rooted_adversarial.py",
     )
     found = [str(p) for n in names for p in root.rglob(n)]
     return Outcome(

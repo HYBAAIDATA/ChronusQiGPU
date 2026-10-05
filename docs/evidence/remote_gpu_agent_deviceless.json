@@ -1,0 +1,32 @@
+{
+  "gate": "remote-gpu-agent-deviceless-contract",
+  "platform": "win32",
+  "verdict": "PASS",
+  "detail": "health 200 device_count:0; POST 503 fail-closed; malformed 400; unknown 404",
+  "requests": {
+    "health": {
+      "status": 200,
+      "body": "{\"status\": \"ok\", \"service\": \"mla1517-remote-gpu-agent\", \"protocol\": \"remote_opencl_v2\", \"device_count\": 0, \"opencl_error\": \"OpenCL runtime reported no platforms: clGetPlatformIDs failed: PLATFORM_NOT_FOUND_KHR\", \"endpoints\": [\"ladder\", \"sha256d\", \"telemetry\"]}"
+    },
+    "devices": {
+      "status": 200,
+      "body": "{\"protocol\": \"remote_opencl_v2\", \"devices\": [], \"error\": \"OpenCL runtime reported no platforms: clGetPlatformIDs failed: PLATFORM_NOT_FOUND_KHR\"}"
+    },
+    "sha256d_valid_deviceless": {
+      "status": 503,
+      "body": "{\"error\": \"RuntimeError: OpenCL runtime reported no platforms: clGetPlatformIDs failed: PLATFORM_NOT_FOUND_KHR\"}"
+    },
+    "sha256d_malformed": {
+      "status": 400,
+      "body": "{\"error\": \"header and target must be valid hex: non-hexadecimal number found in fromhex() arg at position 0\"}"
+    },
+    "unknown_path": {
+      "status": 404,
+      "body": "{\"error\": \"unknown path /v1/nope\"}"
+    },
+    "get_on_post_path": {
+      "status": 404,
+      "body": "{\"error\": \"unknown path /v1/sha256d\"}"
+    }
+  }
+}

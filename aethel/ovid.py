@@ -21,6 +21,7 @@ Not a claim of physical shape-shifting or universe history reversal.
 from __future__ import annotations
 
 import hashlib
+import itertools
 import json
 import time
 from dataclasses import dataclass, field
@@ -264,15 +265,30 @@ def working_form_digest(vector: Any) -> str:
     return hashlib.sha256(_canonical_working_doc(vector)).hexdigest()
 
 
+#: Process-wide execution counter. `time.time_ns()` is not guaranteed to
+#: advance between two folds on every platform (Windows timer granularity can
+#: span two calls in one tick), so the nanosecond stamp alone cannot
+#: distinguish executions; this sequence does.
+_EXECUTION_SEQ = itertools.count()
+
+
 def _lineage_id(
     transform_id: str,
     input_sha256: str,
     output_digest: str,
     transform_ns: int,
+    execution_seq: int,
     parents: Tuple[str, ...],
 ) -> str:
     material = "|".join(
-        (transform_id, input_sha256, output_digest, str(transform_ns), *parents)
+        (
+            transform_id,
+            input_sha256,
+            output_digest,
+            str(transform_ns),
+            str(execution_seq),
+            *parents,
+        )
     )
     return hashlib.sha256(material.encode("utf-8")).hexdigest()[:32]
 
@@ -536,6 +552,7 @@ class Ovid:
                 digest,
                 working_form_digest(vector),
                 transform_ns,
+                next(_EXECUTION_SEQ),
                 tuple(str(p) for p in parents),
             ),
             transform_id=ZECKENDORF_TRANSFORM_ID,
