@@ -17,8 +17,8 @@ The doctrine enforced here is structural, not advisory:
   they are intentionally restored.
 
 The transitive check resolves repository-local imports (including relative
-imports) into an internal module graph.  A mining module therefore cannot hide
-a PULVINI dependency behind an apparently neutral helper.  Symbol-sensitive
+imports) into an internal module graph. A mining module therefore cannot hide
+a PULVINI dependency behind an apparently neutral helper. Symbol-sensitive
 handling of ``math_folding`` preserves the approved neutral exact algebra:
 explicit Fibonacci/Binet/Cassini/Zeckendorf imports do not become PULVINI
 authority, while ``PulviniFold`` / ``pulvini_fold`` or the complete mixed
@@ -30,7 +30,7 @@ from __future__ import annotations
 import ast
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Mapping
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
