@@ -153,7 +153,11 @@ class TensorRuntime:
                 name: {
                     "kind": op.kind.value,
                     "arity": op.arity,
-                    "path": "lifted" if op.lifted is not None else "materialized",
+                    "path": (
+                        "lifted"
+                        if op.lifted is not None
+                        else "committed" if op.committed is not None else "materialized"
+                    ),
                     "bit_identical": op.bit_identical,
                     "domain": op.domain,
                 }
@@ -281,6 +285,9 @@ class TensorRuntime:
                 "output": out_name,
                 "output_hash": out_state.content_hash,
                 "decoded_bytes": fold_receipt.decoded_bytes,
+                "peak_materialized_bytes": fold_receipt.peak_materialized_bytes,
+                "commit_regions": fold_receipt.commit_regions,
+                "commit_bytes": fold_receipt.commit_bytes,
                 "elapsed_ns": receipt.elapsed_ns,
                 "truth_class": TruthClass.MEASURED.value,
                 "receipt": receipt.as_dict(),

@@ -28,10 +28,13 @@ from typing import Callable, Dict, Optional, Sequence, Tuple
 import numpy as np
 
 from aethel.phi_fold import (
+    KernelBoundary,
     NumericFoldState,
     PhiFoldError,
     phi_fold,
     phi_unfold,
+    splice_region,
+    unfold_region,
 )
 from .contracts import TensorOpKind
 
@@ -211,6 +214,116 @@ def _np_transpose(a):
     return np.transpose(a)
 
 
+def _committed_rows(
+    states: Tuple[NumericFoldState, ...],
+    *,
+    out_cols: int,
+    rows_per_a_row: int,
+    block_for: Callable[[np.ndarray, np.ndarray], np.ndarray],
+) -> Tuple[NumericFoldState, Dict[str, int]]:
+    """Row-block-committed contraction — the closed-loop folded write path.
+
+    A contiguous row-block of the output depends on a contiguous row-range
+    of the first operand plus ALL of the second: ``b`` is decoded once
+    (global dependency, declared on the receipt) and each ``a`` row-range
+    is fetched by region decode — no full-``a`` materialisation ahead of
+    need. Every computed block is spliced into the allocated output fold
+    at its declared flat coordinates, so the output exists *only* as
+    committed folded lineage — never a whole-state replica assembled then
+    re-folded.
+
+    ``rows_per_a_row`` is how many output rows one ``a`` row spans (1 for
+    matmul, ``b.shape[0]`` for kron); ``block_for(a_rows, b)`` computes
+    the ``(a1 - a0) * rows_per_a_row`` output rows for an ``a`` row-block.
+    """
+    a_state, b_state = states
+    a_rows, a_cols = a_state.original_shape
+    b = np.asarray(phi_unfold(b_state))
+    itemsize = np.dtype(a_state.dtype).itemsize
+    decoded = b_state.original_size * itemsize
+    out_rows = a_rows * rows_per_a_row
+    out = phi_fold(
+        np.zeros((out_rows, out_cols), dtype=a_state.dtype),
+        depth=a_state.depth,
+    )
+    a_block_rows = max(1, a_rows // 8)
+    peak = b.nbytes
+    commit_regions = 0
+    a0 = 0
+    while a0 < a_rows:
+        a1 = min(a_rows, a0 + a_block_rows)
+        block, stats = unfold_region(a_state, (slice(a0, a1), slice(0, a_cols)))
+        decoded += stats.decoded_bytes
+        a_block = np.asarray(block).reshape(a1 - a0, a_cols)
+        c_block = block_for(a_block, b)
+        expected = (a1 - a0) * rows_per_a_row
+        if c_block.shape != (expected, out_cols):
+            raise FoldedOpError(  # pragma: no cover — invariant
+                f"committed block shape {c_block.shape}, expected "
+                f"({expected}, {out_cols})"
+            )
+        out, _ = splice_region(
+            out,
+            KernelBoundary(a0 * rows_per_a_row * out_cols, expected * out_cols),
+            c_block,
+        )
+        peak = max(peak, b.nbytes + stats.decoded_bytes + c_block.nbytes)
+        commit_regions += 1
+        a0 = a1
+    return out, {
+        "decoded_bytes": int(decoded),
+        "peak_materialized_bytes": int(peak),
+        "commit_regions": commit_regions,
+        "commit_bytes": out_rows * out_cols * itemsize,
+    }
+
+
+def _committed_matmul(
+    states: Tuple[NumericFoldState, ...]
+) -> Optional[Tuple[NumericFoldState, Dict[str, int]]]:
+    """matmul with committed folded output: A row-blocks + global B.
+
+    Dependency is honest: B is a global cone (decoded once, full); each
+    output row-block decodes only its A rows. ``None`` when the operands
+    are not rank-2 conformable — the caller falls back to the declared
+    materializing path.
+    """
+    a_state, b_state = states
+    if len(a_state.original_shape) != 2 or len(b_state.original_shape) != 2:
+        return None
+    if a_state.original_shape[1] != b_state.original_shape[0]:
+        return None
+    n = b_state.original_shape[1]
+    return _committed_rows(
+        states,
+        out_cols=n,
+        rows_per_a_row=1,
+        block_for=lambda a_rows, b: np.matmul(a_rows, b),
+    )
+
+
+def _committed_kron(
+    states: Tuple[NumericFoldState, ...]
+) -> Optional[Tuple[NumericFoldState, Dict[str, int]]]:
+    """kron with committed folded output: A row-blocks + global B.
+
+    Output rows ``i*b_rows .. i*b_rows+b_rows-1`` belong to A row ``i`` —
+    the same contiguous A-block cone as matmul. ``None`` for non-rank-2
+    operands (mixed-radix kron stays declared-materializing).
+    """
+    a_state, b_state = states
+    if len(a_state.original_shape) != 2 or len(b_state.original_shape) != 2:
+        return None
+    b_rows, b_cols = b_state.original_shape
+    out_cols = a_state.original_shape[1] * b_cols
+    return _committed_rows(
+        states,
+        out_cols=out_cols,
+        rows_per_a_row=b_rows,
+        block_for=lambda a_rows, b: np.kron(a_rows, b),
+    )
+
+
 def _np_reduce_sum(a):
     return np.asarray(np.sum(a))
 
@@ -232,6 +345,11 @@ class FoldedOperator:
     arity: int
     np_reference: Callable
     lifted: Optional[Callable] = None
+    #: Optional closed-loop implementation: still decodes its full
+    #: dependency cone honestly, but the output is committed into folded
+    #: custody by declared coordinates (no whole-state replica). Returns
+    #: ``(state, info)`` or ``None`` when the operands are out of domain.
+    committed: Optional[Callable] = None
     bit_identical: bool = True
     domain: str = "iufc dtypes, shared fold geometry"
 
@@ -276,7 +394,11 @@ FOLDED_OPERATOR_CATALOGUE: Dict[str, FoldedOperator] = {
         TensorOpKind.MATMUL,
         2,
         _np_matmul,
-        None,  # global dependency — declared materializing, measured
+        None,  # global B dependency — committed output path below
+        committed=_committed_matmul,
+        # Row-block contraction reassociates vs one BLAS call — measured
+        # ~1e-16 residual, so this is exact only up to declared tolerance.
+        bit_identical=False,
         domain="iufc dtypes; rank-2 operands with conformable inner dims",
     ),
     "kron": FoldedOperator(
@@ -284,7 +406,8 @@ FOLDED_OPERATOR_CATALOGUE: Dict[str, FoldedOperator] = {
         TensorOpKind.KRON,
         2,
         _np_kron,
-        None,  # mixed-radix cone — declared materializing, measured
+        None,  # global B dependency — committed output path below
+        committed=_committed_kron,
         domain="iufc dtypes",
     ),
 }
@@ -295,12 +418,18 @@ class FoldedReceipt:
     """Measurement + provenance for one folded-domain execution."""
 
     operation: str
-    path: str  # "lifted" | "materialized"
+    path: str  # "lifted" | "committed" | "materialized"
     decoded_bytes: int
     output_elements: int
     output_hash: str
     elapsed_ns: int
     bit_identical: bool
+    #: Committed-path measurements (0 on lifted/materialized paths):
+    #: peak bytes held decoded at once, number of coordinate commits, and
+    #: bytes written through commits.
+    peak_materialized_bytes: int = 0
+    commit_regions: int = 0
+    commit_bytes: int = 0
 
 
 def folded_execute(
@@ -325,10 +454,17 @@ def folded_execute(
             f"{operation} requires a numeric foldable dtype, got {state.dtype}",
         )
     start = time.perf_counter_ns()
+    info: Dict[str, int] = {}
     if op.lifted is not None:
         out = op.lifted(states)
         decoded = 0
         path = "lifted"
+    elif op.committed is not None and (
+        committed := op.committed(states)
+    ) is not None:
+        out, info = committed
+        decoded = info["decoded_bytes"]
+        path = "committed"
     else:
         decoded = sum(
             s.original_size * np.dtype(s.dtype).itemsize for s in states
@@ -344,6 +480,9 @@ def folded_execute(
         output_hash=out.content_hash,
         elapsed_ns=elapsed,
         bit_identical=op.bit_identical,
+        peak_materialized_bytes=info.get("peak_materialized_bytes", 0),
+        commit_regions=info.get("commit_regions", 0),
+        commit_bytes=info.get("commit_bytes", 0),
     )
     return out, receipt
 
@@ -414,6 +553,50 @@ def evaluate_operator(
     )
 
     if op.lifted is None:
+        if op.committed is not None:
+            out = None
+
+            def _commit_once() -> None:
+                nonlocal out
+                out = op.committed(states)
+
+            commit_ns = min(_time_call(_commit_once, repeats))
+            if out is not None:
+                out_state, info = out
+                unfolded = np.asarray(phi_unfold(out_state))
+                residual = float(
+                    np.max(np.abs(unfolded - np.asarray(reference)))
+                    if np.asarray(reference).size
+                    else 0.0
+                )
+                if op.bit_identical:
+                    correct = bool(
+                        unfolded.dtype == np.asarray(reference).dtype
+                        and np.array_equal(unfolded, np.asarray(reference))
+                    )
+                else:
+                    correct = residual <= rtol
+                rationale = (
+                    f"verified vs reference; committed row-block path: decoded "
+                    f"{info['decoded_bytes']}B (full dependency cone), peak "
+                    f"{info['peak_materialized_bytes']}B materialized, "
+                    f"{info['commit_regions']} coordinate commits "
+                    f"(committed {commit_ns}ns vs materialized {mat_ns}ns)"
+                    if correct
+                    else f"rejected: committed residual {residual} exceeds {rtol}"
+                )
+                return PromotionEvidence(
+                    operation=operation,
+                    promoted=correct,
+                    path="committed" if correct else "materialized",
+                    correct=correct,
+                    max_residual=residual,
+                    lifted_ns=commit_ns,
+                    materialized_ns=mat_ns,
+                    decoded_bytes=info["decoded_bytes"],
+                    materialized_decoded_bytes=mat_decoded,
+                    rationale=rationale,
+                )
         out = _materialize(states, op.np_reference)
         residual = float(
             np.max(np.abs(np.asarray(phi_unfold(out)) - np.asarray(reference)))

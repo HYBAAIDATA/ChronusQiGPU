@@ -20,10 +20,17 @@ The current consolidation adds three evidence classes: software-complete, hardwa
   (`aethel/fold_store.py`); dtype-exact custody incl. complex; arbitrary
   region decode and dependency cones on both planes; lifted folded
   operators (`add`/`hadamard`/`fma`/`scale`) with zero measured decoded
-  bytes and bit-identical output; declared-materializing
-  `transpose`/`reduce_sum`/`matmul`/`kron` with measured decode on the
-  receipt; canonical `TensorRuntime` + `python -m tensor` CLI +
-  guardian-preflighted `/api/v1/tensor/*` endpoints; bound execution
+  bytes and bit-identical output; **committed row-block contraction**
+  (`matmul`/`kron`) that region-decodes operands and splices the result
+  into the output fold by declared coordinates exactly once —
+  `matmul` declares `bit_identical=False` (~1e-16 reassociation), `kron`
+  is bit-identical; declared-materializing `transpose`/`reduce_sum` with
+  measured decode on the receipt; coordinate-committed kernel output
+  (`CoordinateCommit`, `KernelLaunchConfig.commit_to`) written back to
+  resident state only when the integrity verdict passes; canonical
+  `TensorRuntime` + `python -m tensor` CLI + guardian-preflighted
+  `/api/v1/tensor/*` endpoints (operations allowlisted, live-verified
+  end-to-end with a minted subscription token); bound execution
   receipts and a validated benchmark matrix
   (`tensor/receipts.py`, `tensor/benchmarks.py`).
 

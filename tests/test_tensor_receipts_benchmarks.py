@@ -48,11 +48,22 @@ def test_lifted_receipt_binds_all_fields_with_zero_decode():
     assert receipt["elapsed_ns"] >= 1
 
 
-def test_materialized_receipt_reports_full_decode():
+def test_committed_receipt_reports_full_cone_decode():
     rt = TensorRuntime()
     rt.store_tensor("a", np.eye(8))
     rt.store_tensor("b", np.eye(8) * 2)
     record = rt.execute("matmul", ["a", "b"], out="c")
+    receipt = record["receipt"]
+    assert receipt["path"] == "committed"
+    assert receipt["bytes_decoded"] == receipt["bytes_logical_inputs"] > 0
+    assert receipt["fallback_used"] is True
+    assert "committed" in receipt["fallback_reason"]
+
+
+def test_materialized_receipt_reports_full_decode():
+    rt = TensorRuntime()
+    rt.store_tensor("a", np.eye(8))
+    record = rt.execute("transpose", ["a"], out="c")
     receipt = record["receipt"]
     assert receipt["path"] == "materialized"
     assert receipt["bytes_decoded"] == receipt["bytes_logical_inputs"] > 0
@@ -109,7 +120,7 @@ def test_benchmark_matrix_validates_every_output():
 
 def test_benchmark_matrix_materializing_ops_decode():
     report = run_benchmarks(
-        operations=["matmul"],
+        operations=["transpose"],
         sizes=((16, 16),),
         dtypes=("float64",),
         layouts=("C",),
@@ -120,6 +131,19 @@ def test_benchmark_matrix_materializing_ops_decode():
     assert all(r.bytes_decoded == r.bytes_logical_inputs
                if hasattr(r, "bytes_logical_inputs") else r.bytes_decoded > 0
                for r in report.rows)
+
+
+def test_benchmark_matrix_committed_ops_report_the_cone():
+    report = run_benchmarks(
+        operations=["matmul"],
+        sizes=((16, 16),),
+        dtypes=("float64",),
+        layouts=("C",),
+        repeats=1,
+    )
+    assert report.all_valid
+    assert all(r.path == "committed" for r in report.rows)
+    assert all(r.bytes_decoded > 0 for r in report.rows)
 
 
 def test_cli_benchmark_emits_report(tmp_path):

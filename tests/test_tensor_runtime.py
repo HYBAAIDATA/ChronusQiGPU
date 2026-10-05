@@ -96,7 +96,9 @@ def test_capabilities_surface_is_honest():
     rt = _runtime()
     caps = rt.capabilities()
     assert caps["operators"]["add"]["path"] == "lifted"
-    assert caps["operators"]["matmul"]["path"] == "materialized"
+    assert caps["operators"]["matmul"]["path"] == "committed"
+    assert caps["operators"]["kron"]["path"] == "committed"
+    assert caps["operators"]["transpose"]["path"] == "materialized"
     assert "numpy-cpu" in caps["backends"]
     assert caps["schema_version"] == "tensor.capabilities/1"
 
@@ -138,7 +140,7 @@ def test_control_api_tensor_endpoints():
     np.testing.assert_array_equal(
         np.asarray(payload["values"]), np.array([[1.5, 2.5], [3.5, 4.5]])
     )
-    assert payload["path"] in {"lifted", "materialized"}
+    assert payload["path"] in {"lifted", "committed", "materialized"}
     assert payload["truth_class"] == "measured"
 
     # Inline arrays take the backend path.

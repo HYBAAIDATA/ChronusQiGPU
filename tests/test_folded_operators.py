@@ -80,14 +80,11 @@ def test_lifted_ops_work_on_complex():
     assert receipt.decoded_bytes == 0
 
 
-@pytest.mark.parametrize("name", ["transpose", "matmul", "kron", "reduce_sum"])
+@pytest.mark.parametrize("name", ["transpose", "reduce_sum"])
 def test_materializing_ops_are_declared_and_correct(name):
     a = np.linspace(-1, 1, 36).reshape(6, 6)
-    b = np.linspace(0.5, 1.5, 36).reshape(6, 6)
     ops = {
         "transpose": ((a,), np.transpose(a)),
-        "matmul": ((a, b), a @ b),
-        "kron": ((a, b), np.kron(a, b)),
         "reduce_sum": ((a,), np.asarray(np.sum(a))),
     }
     arrays, ref = ops[name]
@@ -112,10 +109,18 @@ def test_promotion_evidence_is_measured_not_assumed():
     assert promoted.correct and promoted.promoted
     assert promoted.decoded_bytes == 0
     assert "verified vs reference" in promoted.rationale
-    # Declared-materializing ops are not promoted — the record says why.
+    # Committed row-block ops promote on verified correctness — the
+    # rationale carries their honest decode (full cone) and measured peak.
     for name, operands in (
         ("matmul", (a, b)),
         ("kron", (a[:4], b[:8, :8])),
+    ):
+        ev = evaluate_operator(name, operands)
+        assert ev.correct
+        assert ev.promoted and ev.path == "committed"
+        assert ev.decoded_bytes == ev.materialized_decoded_bytes > 0
+    # Declared-materializing ops are not promoted — the record says why.
+    for name, operands in (
         ("transpose", (a,)),
         ("reduce_sum", (a,)),
     ):
@@ -132,4 +137,8 @@ def test_catalogue_report_covers_every_entry():
     assert report["scale"].promoted
     assert report["fma"].promoted
     assert report["hadamard"].promoted
+    assert report["matmul"].promoted and report["matmul"].path == "committed"
+    assert report["kron"].promoted and report["kron"].path == "committed"
+    assert not report["transpose"].promoted
+    assert not report["reduce_sum"].promoted
     assert all(e.correct for e in report.values())

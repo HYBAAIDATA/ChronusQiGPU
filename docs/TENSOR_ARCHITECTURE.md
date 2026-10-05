@@ -220,10 +220,34 @@ consumers ──► tensor.api.TensorRuntime ──► tensor/folded.py catalogu
 - **Lifted operators.** `add`, `hadamard`, `fma`, `scale` execute on
   resident segments with **zero decoded bytes** and bit-identical output
   (the partition fold's segments are disjoint logical slices, so
-  coordinate-local ops commute with it). `transpose`, `reduce_sum`,
-  `matmul`, `kron` are **declared-materializing** — they decode and say
-  so on the receipt. `evaluate_operator` promotes only on verified
-  correctness plus measured improvement; rejections are recorded.
+  coordinate-local ops commute with it). `transpose`, `reduce_sum` are
+  **declared-materializing** — they decode and say so on the receipt.
+  `evaluate_operator` promotes only on verified correctness plus
+  measured improvement; rejections are recorded.
+- **Committed operators.** `matmul`, `kron` run as **committed row-block
+  contraction**: each output row-block depends on a contiguous slice of
+  A-rows plus all of B, so A is region-decoded per block, B is decoded
+  once (a declared global), and every block is spliced into the output
+  fold by declared coordinates — exactly once, gaps and overlaps
+  refused. The committed path still decodes the full dependency cone;
+  the measured win is **peak materialisation** (bounded by a block, not
+  the whole product) and exactly-once write-back. `matmul` declares
+  `bit_identical=False` — row-block BLAS reassociates at ~1e-16; `kron`
+  is bit-identical. `chronus/phi_gpu.py` carries the same contract down
+  to kernel launches: `CoordinateCommit` assembles partial results by
+  declared offset, and `KernelLaunchConfig.commit_to` writes the
+  verified result back into a resident block via
+  `aethel.phi_memory.commit_region` — a failed integrity verdict
+  withholds the write.
+- **Guardian reachability.** The control-API tensor ops
+  (`tensor.execute`, `tensor.capabilities`) are allowlisted in
+  `al_haras_pythia._PYTHIA_ALLOWED_OPERATIONS` — verified live
+  end-to-end with a minted subscription token (a privileged prefix
+  without an allowlisted op denies every caller 403). `POST
+  /api/v1/tensor/execute` synthesizes the same minimal `observation`
+  map GET requests receive when the caller omits one, so a natural
+  execute body is admissible; the guardian evidence provider still
+  evaluates it.
 - **Receipts.** `tensor/receipts.py::ExecutionReceipt` binds request/op
   identity, input/output content hashes, backend/device, declared vs
   measured work, precision, residency/transfers, timing scope, and the

@@ -39,6 +39,8 @@ _PYTHIA_ALLOWED_OPERATIONS: frozenset[str] = DEFAULT_ALLOWED_OPERATIONS | frozen
         "mining.switch",
         "security.status",
         "security.subscribe",
+        "tensor.capabilities",
+        "tensor.execute",
     }
 )
 

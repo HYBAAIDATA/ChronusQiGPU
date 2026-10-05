@@ -2032,6 +2032,22 @@ def tensor_capabilities_payload() -> dict[str, Any]:
     return _tensor_runtime().capabilities()
 
 
+def _synthesize_preflight_observation(path: str, body: dict[str, Any] | None) -> None:
+    """Give tensor.execute the same synthesized observation GETs receive.
+
+    The execute payload IS the caller's declared intent — requiring a
+    separate ``observation`` map would deny every natural body with
+    OBSERVATION_REQUIRED. The guardian's evidence provider still runs on
+    the synthesized map. Any caller-supplied observation wins.
+    """
+    if path != "/api/v1/tensor/execute" or not isinstance(body, dict):
+        return
+    body.setdefault(
+        "observation",
+        {"operation": "tensor.execute", "resource": "tensor/execute"},
+    )
+
+
 def _tensor_execute(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
     """POST /api/v1/tensor/execute — canonical tensor.execute surface.
 
@@ -2562,6 +2578,7 @@ class _Handler(BaseHTTPRequestHandler):
             self._json(status, {"error": err})
             return
         if privileged:
+            _synthesize_preflight_observation(parsed.path, body)
             if not self._guardian_preflight(parsed.path, body):
                 return
         try:
