@@ -15,6 +15,7 @@ plans and evaluates but never acts, and says so in the outcome.
 
 from __future__ import annotations
 
+import inspect
 import time
 from dataclasses import dataclass, replace
 from typing import Any, Callable, Mapping, Sequence
@@ -120,12 +121,6 @@ class GeneralIntelligenceCore:
         self.max_cycles = max_cycles
         self.ablations = ablations or AblationConfig()
         self.analogy_adopt_threshold = analogy_adopt_threshold
-        # Optional production wiring (EuclidRuntime._compose_cognition).  Each
-        # component is exercised only through measured, recorded signals; when
-        # absent the loop behaves exactly as before.
-        self.episode_learner = episode_learner
-        self.representation_controller = representation_controller
-        self.objective_controller = objective_controller
 
     # -- instrumentation ----------------------------------------------------
     def _transition(
@@ -203,46 +198,10 @@ class GeneralIntelligenceCore:
         state.goals.append(Goal("g0", goal_text))
 
         # 1. REPRESENT -----------------------------------------------------
-        representation_details: dict[str, Any] = {
-            "structure": sorted(structure),
-            "observation_count": len(observations),
-        }
-        if self.representation_controller is not None:
-            if self.ablations.representation_restructuring:
-                trial = self._select_representation(problem, structure)
-                representation_details["representation_trial"] = {
-                    "kind": trial.kind,
-                    "accepted": trial.accepted,
-                    "baseline_utility": trial.baseline_utility,
-                    "candidate_utility": trial.candidate_utility,
-                    "cost": trial.cost,
-                    "rationale": trial.rationale,
-                }
-                if trial.accepted:
-                    state.representation["representation_kind"] = trial.kind
-                    state.representation["active_representation"] = trial.kind
-                    state.representation["representation_overlay"] = dict(trial.payload)
-                    # The overlay is provenance; canonical top-level fields are
-                    # the executable representation consumed by planners/skills.
-                    state.representation.update(dict(trial.payload))
-                    # An adopted representation must also re-key retrieval, so
-                    # restructuring genuinely changes which prior experience
-                    # this episode sees.  Only declared relations and edges
-                    # become keys; opaque payload internals must never enter the
-                    # retrieval vocabulary.
-                    state.representation["retrieval_structure"] = sorted(
-                        self._retrieval_tokens(structure, trial.payload)
-                    )
-            else:
-                self._ablated(state, "representation_restructuring")
-        state.representation.setdefault(
-            "retrieval_structure", sorted(structure)
-        )
-        self._transition(
-            state,
-            "represent",
-            "problem representation formed",
-            representation_details,
+        self._represent(state, problem, structure)
+        representation_kind = str(state.representation.get("representation_kind", "literal"))
+        retrieval_structure = frozenset(
+            str(s) for s in state.representation.get("retrieval_structure", structure)
         )
         # Retrieval keys follow the adopted representation's overlay, so a
         # restructured problem genuinely sees different prior experience.
@@ -258,10 +217,10 @@ class GeneralIntelligenceCore:
         memories = self.memory.retrieve(structure, ALL_MEMORY_KINDS)
         state.retrieved_memory_refs.extend(m.memory_id for m in memories)
         self._transition(
-            state,
-            "retrieve",
-            "memory retrieved by structural relevance",
-            {"retrieved": [m.memory_id for m in memories]},
+            state, "retrieve", "experience retrieved by causal relevance",
+            {"structure": sorted(structure),
+             "representation_kind": representation_kind,
+             "retrieved": [m.memory_id for m in memories]},
         )
 
         # 3. ANALOGY ----------------------------------------------------------
@@ -420,17 +379,18 @@ class GeneralIntelligenceCore:
                 break
 
             # 7. STRATEGY SELECTION --------------------------------------------
-            available_strategies = tuple(
-                getattr(
-                    self.skills,
-                    "available_strategies",
-                    lambda: (
-                        "analogy-causal-plan",
-                        "abduce-intervene-deduce",
-                        "rollout-search-execute",
-                    ),
-                )()
-            )
+            # The portfolio is whatever the skill composer can really execute.
+            # A hardcoded tuple would silently starve the composed strategies
+            # (v16 MCTS/evolution), which is exactly how they became
+            # unreachable from the loop while still passing their own tests.
+            available_strategies = tuple(self._executable_strategies())
+            if not available_strategies:
+                # A composer that declares no portfolio can still be driven by
+                # the loop's own reasoning strategies.
+                available_strategies = (
+                    "analogy-causal-plan", "abduce-intervene-deduce",
+                    "rollout-search-execute",
+                )
             if self.ablations.meta_learning:
                 requested = str(problem.get("strategy") or "").strip()
                 if requested:
@@ -454,14 +414,11 @@ class GeneralIntelligenceCore:
                 state.selected_strategy = choice.strategy_id
                 state.alternative_strategies = list(choice.alternatives)
                 self._transition(
-                    state,
-                    "strategy",
-                    "reasoning strategy selected",
-                    {
-                        "selected": choice.strategy_id,
-                        "alternatives": list(choice.alternatives),
-                        "basis": choice.basis,
-                    },
+                    state, "strategy", "reasoning strategy selected",
+                    {"selected": choice.strategy_id,
+                     "alternatives": list(choice.alternatives),
+                     "basis": choice.basis,
+                     "available": list(available_strategies)},
                 )
             else:
                 state.selected_strategy = available_strategies[0]
@@ -903,6 +860,11 @@ class GeneralIntelligenceCore:
         state.representation["active_representation"] = chosen
         state.representation["representation_adopted"] = bool(trial.accepted)
         state.representation["representation_trial"] = trial.rationale
+        if trial.accepted and trial.payload:
+            # The overlay is provenance; canonical top-level fields are the
+            # executable representation consumed by planners/skills.
+            state.representation["representation_overlay"] = dict(trial.payload)
+            state.representation.update(dict(trial.payload))
         if chosen != "literal":
             state.representation["retrieval_structure"] = sorted(
                 self._retrieval_tokens(structure, payload)
@@ -917,7 +879,15 @@ class GeneralIntelligenceCore:
              "baseline_utility": trial.baseline_utility,
              "candidate_utility": trial.candidate_utility,
              "cost": trial.cost,
-             "rationale": trial.rationale},
+             "rationale": trial.rationale,
+             "representation_trial": {
+                 "kind": chosen,
+                 "accepted": bool(trial.accepted),
+                 "baseline_utility": trial.baseline_utility,
+                 "candidate_utility": trial.candidate_utility,
+                 "cost": trial.cost,
+                 "rationale": trial.rationale,
+             }},
         )
 
     def _represent(
@@ -988,6 +958,11 @@ class GeneralIntelligenceCore:
         state.representation["active_representation"] = chosen
         state.representation["representation_trial"] = trial.rationale
         state.representation["representation_adopted"] = bool(trial.accepted)
+        if trial.accepted and trial.payload:
+            # The overlay is provenance; canonical top-level fields are the
+            # executable representation consumed by planners/skills.
+            state.representation["representation_overlay"] = dict(trial.payload)
+            state.representation.update(dict(trial.payload))
         if chosen != "literal":
             state.representation["retrieval_structure"] = sorted(
                 self._retrieval_tokens(structure, trial.payload)
@@ -1001,7 +976,15 @@ class GeneralIntelligenceCore:
              "baseline_utility": trial.baseline_utility,
              "candidate_utility": trial.candidate_utility,
              "cost": trial.cost,
-             "rationale": trial.rationale},
+             "rationale": trial.rationale,
+             "representation_trial": {
+                 "kind": chosen,
+                 "accepted": bool(trial.accepted),
+                 "baseline_utility": trial.baseline_utility,
+                 "candidate_utility": trial.candidate_utility,
+                 "cost": trial.cost,
+                 "rationale": trial.rationale,
+             }},
         )
 
     def _compare_hypotheses(
@@ -1045,35 +1028,6 @@ class GeneralIntelligenceCore:
                 "remaining_active": [h.hypothesis_id for h in state.active_hypotheses()],
             },
         )
-
-    def _select_representation(self, problem: Mapping[str, Any], structure: frozenset) -> Any:
-        """Measured representation selection: utility is the candidate's
-        structural coverage of THIS problem (fraction of declared structure
-        recoverable from the candidate payload, plus any extracted edge or
-        symbol sets); cost is a declared per-evaluation proxy scaled by
-        payload size.  No external capability claim is made."""
-        import json as _json
-
-        declared = problem.get("representation_evidence") or {}
-
-        def evaluate(kind: str, payload: Mapping[str, Any]) -> tuple[float, float]:
-            entry = declared.get(kind)
-            if isinstance(entry, Mapping) and "utility" in entry:
-                # The problem declares measured evidence for this kind;
-                # trust it over the structural proxy (both are bounded
-                # per-evaluation values, not capability claims).
-                return float(entry["utility"]), float(entry.get("cost", 0.0))
-            encoded = _json.dumps(payload, sort_keys=True, default=str)
-            covered = sum(1 for item in structure if str(item) in encoded)
-            utility = covered / max(1, len(structure))
-            for key in ("edges", "symbols", "unit_direction"):
-                if payload.get(key):
-                    utility += 0.1
-            utility = min(1.0, utility)
-            cost = 0.05 + min(0.2, len(encoded) / 100_000.0)
-            return utility, cost
-
-        return self.representation_controller.select(problem, evaluate)
 
     def _memory_biases(self, memories: Sequence[Any], structure: frozenset) -> dict[str, float]:
         """Map candidate action ids to a scoring boost earned by retrieved
@@ -1120,17 +1074,22 @@ class GeneralIntelligenceCore:
     ) -> None:
         if self.episode_learner is not None:
             # Close the observed outcome into the canonical LearningService;
-            # replay protection there fails closed on duplicates.  A duplicate
-            # rejection is recorded evidence, not a reason to kill the episode.
+            # replay protection there fails closed on duplicates.  A learner
+            # rejection is recorded evidence, never a reason to kill the episode.
+            payload = dict(result or {})
+            payload.setdefault("goal_met", success)
+            payload.setdefault("problem_class", problem_class)
             try:
-                self.episode_learner.record_episode(
-                    state,
-                    success=success,
-                    cycle=cycle,
-                    result=dict(result or {}),
-                    channel="consolidation",
+                record = self.episode_learner.record_episode
+                extra = (
+                    {"channel": "consolidation"}
+                    if "channel" in inspect.signature(record).parameters
+                    else {}
                 )
-            except ValueError as exc:
+                recorded = record(
+                    state, success=success, cycle=cycle, result=payload, **extra
+                )
+            except Exception as exc:  # noqa: BLE001 - learner is advisory
                 state.learning_updates.append(
                     {
                         "kind": "canonical-learning-service-rejected",
@@ -1138,6 +1097,17 @@ class GeneralIntelligenceCore:
                         "cycle": cycle,
                         "counts_for_control": False,
                     }
+                )
+                self._transition(
+                    state, "learn", "episode learner rejected the outcome",
+                    {"error": f"{type(exc).__name__}: {exc}",
+                     "problem_class": problem_class, "cycle": cycle},
+                )
+            else:
+                self._transition(
+                    state, "learn", "episode closed into LearningService",
+                    {"experience_id": recorded, "success": success,
+                     "problem_class": problem_class, "cycle": cycle},
                 )
         if self.ablations.meta_learning and state.selected_strategy:
             self.metalearner.update(

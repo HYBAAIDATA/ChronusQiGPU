@@ -32,6 +32,16 @@ from .math_folding import PulviniFold, pulvini_fold
 PHI = (1.0 + math.sqrt(5.0)) / 2.0
 
 
+def _hash_fractions(values) -> str:
+    import hashlib
+
+    digest = hashlib.sha256()
+    for value in values:
+        digest.update(repr(value).encode("utf-8"))
+        digest.update(b"\x00")
+    return digest.hexdigest()
+
+
 def _fraction(value: int | Fraction) -> Fraction:
     if isinstance(value, bool):
         return Fraction(int(value))
@@ -75,12 +85,18 @@ class PartialUnfoldStats:
     source_values_read: int
     depth: int
     full_length: int
+    cone_indices: tuple[int, ...] = ()
 
     @property
     def reconstructed_fraction(self) -> float:
         if self.full_length == 0:
             return 0.0
         return self.requested_values / self.full_length
+
+    @property
+    def dependency_cone(self) -> tuple[int, ...]:
+        """Sorted folded-state source indices the decode actually read."""
+        return self.cone_indices
 
 
 @dataclass(frozen=True)
@@ -89,6 +105,30 @@ class ExactFoldState:
     original_length: int
     depth: int
     shape: tuple[int, ...]
+    content_hash: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.content_hash:
+            object.__setattr__(
+                self,
+                "content_hash",
+                self._digest_header() + _hash_fractions(self.values),
+            )
+
+    def _digest_header(self) -> str:
+        import hashlib
+
+        digest = hashlib.sha256()
+        digest.update(repr(tuple(self.shape)).encode("utf-8"))
+        digest.update(int(self.original_length).to_bytes(8, "little"))
+        digest.update(int(self.depth).to_bytes(8, "little"))
+        return digest.hexdigest() + ":"
+
+    def verify_content_hash(self) -> bool:
+        """Recompute the content digest; False means custody was altered."""
+        return bool(self.content_hash) and self.content_hash == (
+            self._digest_header() + _hash_fractions(self.values)
+        )
 
     def unfold(self) -> tuple[Fraction, ...]:
         """Canonical full inverse, retained as the reference implementation."""
@@ -149,6 +189,21 @@ def unfold_partial_with_stats(
     shares dependencies, and returned statistics make the bounded work testable.
     """
     start, stop = boundary.normalize(state.original_length)
+    values, stats = unfold_values_at(state, range(start, stop))
+    return values, stats
+
+
+def unfold_values_at(
+    state: ExactFoldState, indices: Iterable[int]
+) -> tuple[tuple[Fraction, ...], PartialUnfoldStats]:
+    """Reconstruct an arbitrary set of flat indices and expose its cone.
+
+    One memoized recovery pass serves every requested index, so shared
+    dependencies are read once. ``PartialUnfoldStats.cone_indices`` is the
+    sorted set of folded-state source positions the decode touched — the
+    exact dependency cone of the requested outputs.
+    """
+    flat_indices = [int(i) for i in indices]
     source_indices: set[int] = set()
 
     @lru_cache(maxsize=None)
@@ -162,14 +217,74 @@ def unfold_partial_with_stats(
             return recover(level - 1, index + 1)
         return recover(level - 1, index - 1) - recover(level - 1, index)
 
-    values = tuple(recover(state.depth, index) for index in range(start, stop))
+    values = tuple(recover(state.depth, index) for index in flat_indices)
     stats = PartialUnfoldStats(
-        requested_values=stop - start,
+        requested_values=len(flat_indices),
         source_values_read=len(source_indices),
         depth=state.depth,
         full_length=state.original_length,
+        cone_indices=tuple(sorted(source_indices)),
     )
     return values, stats
+
+
+def unfold_region(
+    state: ExactFoldState, slices: tuple[object, ...]
+) -> tuple[tuple[Fraction, ...], PartialUnfoldStats, tuple[int, ...]]:
+    """Reconstruct a shaped region (per-axis box) and return its cone.
+
+    ``slices`` is one ``slice`` (or ``int``) per axis of ``state.shape``.
+    Returns ``(values_in_region_order, stats, region_shape)`` — the values in
+    C-order region layout plus the measured dependency cone.
+    """
+    if len(slices) != len(state.shape):
+        raise ValueError(
+            f"region has {len(slices)} entries for a rank-{len(state.shape)} tensor"
+        )
+    region_shape: list[int] = []
+    per_axis: list[list[int]] = []
+    strides = _strides(state.shape)
+    for axis, (dim, spec) in enumerate(zip(state.shape, slices)):
+        if isinstance(spec, slice):
+            if (spec.step or 1) != 1:
+                raise ValueError("region decode supports unit-step slices only")
+            for bound in (spec.start, spec.stop):
+                if bound is not None and (
+                    int(bound) > int(dim) or int(bound) < -int(dim)
+                ):
+                    raise ValueError(
+                        f"region axis {axis} slice {spec!r} is outside dim {dim}"
+                    )
+            start, stop, _ = spec.indices(int(dim))
+            if start < 0 or stop > int(dim) or stop < start:
+                raise ValueError(f"region axis {axis} slice outside dim {dim}")
+            coords = list(range(start, stop))
+        elif isinstance(spec, int) and not isinstance(spec, bool):
+            pos = int(spec) % int(dim)
+            coords = [pos]
+        else:
+            raise ValueError(f"unsupported region specifier {spec!r} on axis {axis}")
+        if not coords:
+            raise ValueError("region is empty")
+        per_axis.append(coords)
+        region_shape.append(len(coords))
+    import itertools as _it
+
+    flat_indices = [
+        sum(coord * stride for coord, stride in zip(point, strides))
+        for point in _it.product(*per_axis)
+    ]
+    values, stats = unfold_values_at(state, flat_indices)
+    return values, stats, tuple(region_shape)
+
+
+def _strides(shape: tuple[int, ...]) -> tuple[int, ...]:
+    strides: list[int] = []
+    running = 1
+    for dim in reversed(shape):
+        strides.append(running)
+        running *= int(dim)
+    return tuple(reversed(strides))
 
 
 def unfold_partial(state: ExactFoldState, boundary: KernelBoundary) -> tuple[Fraction, ...]:
@@ -888,4 +1003,6 @@ __all__ = [
     "fold_exact",
     "unfold_partial",
     "unfold_partial_with_stats",
+    "unfold_region",
+    "unfold_values_at",
 ]

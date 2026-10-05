@@ -4,127 +4,207 @@
 
 ```text
 pythia-mine / mining_runtime.main
-→ configuration and pool endpoint policy
-→ GeodesicProductionMiningCoordinator
-→ Stratum connect / subscribe / authorize / notify
-→ canonical WorkIdentity (pool session + generation + job fingerprint)
-→ agentic SearchPlan and exclusive nonce lease
-→ backend registry capability probe and declared-policy selection
+→ configuration + allowlisted pool/failover policy
+→ capability-probed execution-lane selection
+→ GeodesicProductionMiningCoordinator / IntelligentPoolCoordinator
+→ Stratum connect → subscribe → authorize → difficulty/target → notify
+→ immutable WorkIdentity (pool session + generation + job fingerprint)
+→ AgenticMiningController SearchPlan + exclusive nonce lease
+→ Chronus/Hendrix/M32/Poincaré ordering advice where selected
+→ dispatch algebra certificate
 → ExecutionRouter
-→ host SHA256d and target recheck
-→ current-session/current-work submission gate
+→ CPU | OpenCL | CUDA | Metal | remote GPU | ASIC | SUPER ASIC lane when capability-proven
+→ independent host SHA256d / target / freshness recheck
+→ current-session/current-work/duplicate submission gate
 → serialized mining.submit
-→ literal pool acknowledgement
-→ causal, session, telemetry and learning evidence
-→ bounded measured optimisation or Salamander recovery
-→ next leased window
+→ literal pool acknowledgement (or OUTCOME_UNKNOWN after uncertain write)
+→ DecisionJournal + CausalLedger + MiningSession + telemetry evidence
+→ ClosedLoopOptimizer measured trial / RecoveryGovernor + SelfHealingAgent
+→ learning / next leased window
 ```
 
-`mining_runtime.py` is the production composition root. `GeodesicProductionMiningCoordinator` is the single owner of search, execution correlation and submission. Legacy and seam workflows are not production entry points.
+`chronus/mla1517_platform/python/mining_runtime.py` is the production
+composition root. `IntelligentPoolCoordinator` is the sole owner of mining
+search/execution correlation and submission. The historical
+`AutonomousExecutionLoop` under `legacy/` is not a production entry point.
 
-## Ownership and role boundaries
+## Authority and agent boundaries
 
-| Role | Owner | Authority |
+| Responsibility | Authoritative owner | Boundary |
 |---|---|---|
-| Supervisor | production runtime + coordinator | lifecycle, signals, reconnect loop |
-| Pool | canonical Stratum coordinator/client | transport, session, jobs, submission and acknowledgement |
-| Planning | AgenticMiningController + chooser/Chronus adapters | SearchPlan, nonce leases, ordering and bounded routing advice |
-| Execution | ExecutionRouter + capability-proven hasher | execute a leased window only |
-| Verification | Stratum proof adapter + independent host checks | header, SHA256d, target and current-work validation |
-| Recovery | RecoveryGovernor + Salamander agents | detect, isolate, bounded restart, verify or fault closed |
-| Optimisation | ClosedLoopOptimizer | one-at-a-time measured trials; accept or rollback |
+| Process lifecycle | `control_api` + `autonomous_supervisor` | may revive crashed worker processes; does not mutate mining parameters |
+| Pool/session/job epochs | Stratum runtime + `StratumAdapter` | network truth only |
+| Planning / nonce leases | `AgenticMiningController` | bounded SearchPlans and non-overlapping leases |
+| Search ordering | Chronus/Hendrix/M32/Poincaré adapters | ordering/scheduling only; never proof authority |
+| Backend availability | `BackendRegistry` | real capability probe required |
+| Backend preference | `PYTHIA_BACKEND_ORDER` or explicit device policy | declared order; unavailable lanes refused; no undeclared CPU fallback |
+| Execution | `ExecutionRouter` + capability-proven hasher | leased work only |
+| Verification | proof adapter + independent host checks | SHA256d, target, epoch, freshness, header/extranonce |
+| Submission | `IntelligentPoolCoordinator` + `MiningSession` | one serialized submit authority with duplicate guard |
+| Mining recovery | `RecoveryGovernor` + `SelfHealingAgent` | detect/isolate/rebuild/reprobe/verify or fail closed |
+| Mining optimisation | `ClosedLoopOptimizer` | measured, bounded retain/rollback trials only |
+| Learning | learning ledger / knowledge fabric / intelligence memory | outcome evidence only; never bypasses proof gates |
 
-Agents exchange immutable identities, plans, leases, execution records and causal coordinates. Only the coordinator submits.
+The outer `autonomous_supervisor` is intentionally **not** a second mining
+optimiser. CUOP is observation-only there; mining-window mutation belongs only
+to `ClosedLoopOptimizer` in the canonical coordinator.
 
 ## Backend matrix
 
-| Backend | PRESENT | WIRED | ACTIVE | TESTED | PRODUCTION-EVIDENCED | Limitation |
-|---|---:|---:|---:|---:|---:|---|
-| CPU | yes | yes | capability-dependent | registry unit tested; existing SHA256d tests | only when runtime evidence exists | reference throughput only |
-| GPU/OpenCL | yes | yes | only after real bind/self-check | existing GPU suites plus registry rejection path | unavailable without a real device trace | explicit request fails closed; no CPU downgrade |
-| Remote GPU | yes | yes | only with configured healthy endpoint | existing remote-hasher tests | unavailable without endpoint trace | explicit request fails closed |
-| ASIC | named only | no | no | unavailable-path tested | no | no production transport implementation |
-| SUPER ASIC | named only | no | no | unavailable-path tested | no | no production transport implementation |
+| Backend | PRESENT | WIRED | ACTIVE when probe passes | TESTED | Current production-evidence boundary |
+|---|---:|---:|---:|---:|---|
+| CPU reference | yes | yes | yes | yes | software/runtime evidence exists; throughput is measured per run |
+| OpenCL GPU | yes | yes | yes | yes | requires a real bound OpenCL device + kernel self-check on deployment |
+| Native CUDA | yes | yes | yes | yes | requires CuPy/CUDA device + Chronus kernel self-check on deployment |
+| Native Metal | yes | yes | yes | yes | requires MLX/Apple GPU + kernel self-check on deployment |
+| Remote GPU | yes | yes | yes | yes | requires configured healthy remote endpoint + wire attestation |
+| ASIC | yes | yes | yes | yes | requires a configured responsive physical ASIC channel; absence is explicit |
+| SUPER ASIC | yes | yes | yes | yes | real composite over substrates that actually bind; a CPU-only composition is labelled as such and is not evidence of ASIC speedup |
 
-The backend registry reports CPU/GPU/ASIC/SUPER_ASIC separately. Documentation or environment names do not make a backend available. `auto` follows `PYTHIA_BACKEND_ORDER`; an explicit lane never silently falls back.
+`BackendRegistry` is the capability authority. Documentation, environment
+labels, or requested names do not make a lane available. Explicit lane
+requests fail closed. For `auto`, an operator may declare
+`PYTHIA_BACKEND_ORDER`; every listed lane is probed in order and CPU is not
+silently appended if the operator omitted it.
 
-## Pool workflow
+## Pool lifecycle
 
-| Phase | Status | Evidence boundary |
-|---|---|---|
-| connect / subscribe / authorize | WIRED | correlated Stratum responses |
-| target / difficulty / notify | WIRED | adapter runtime state and immutable work identity |
-| stale replacement | WIRED | identity refresh invalidates plans and freshness callback stops obsolete work |
-| submit | WIRED, policy gated | proof adapter + chain/session/current-work + duplicate gates |
-| acknowledge | WIRED | literal pool response only; disconnect after write is `OUTCOME_UNKNOWN` |
-| reconnect / failover | WIRED | bounded exponential backoff over configured endpoints |
+| Phase | Production behaviour |
+|---|---|
+| connect | bounded transport, endpoint roster and failover evidence |
+| subscribe | correlated Stratum response; separate lifecycle state |
+| authorize | correlated response; auth failure is not session health |
+| difficulty / target | captured independently from transport state |
+| notify | creates/refreshes immutable work generation |
+| replacement job | freshness callback invalidates obsolete execution; stale candidate cannot submit |
+| submit | current session + job + target + header + extranonce + duplicate gates |
+| acknowledge | only literal pool response becomes ACCEPTED/REJECTED |
+| disconnect after possible write | recorded `OUTCOME_UNKNOWN`, never inferred accepted/rejected |
+| reconnect/failover | bounded exponential backoff over configured endpoints |
+| shutdown | cooperative signal cancellation and session close |
 
-A connected socket alone is not an operational session. Submission remains unavailable until subscription, authorization, target, current job, valid extranonce/session identity and policy approval are all present.
+A connected socket alone is never treated as a healthy mining session.
+Transport, subscription, authorization, target, job availability, mining
+activity and submission readiness remain distinguishable runtime facts.
 
-## Healing and optimisation
+## Operational state machines
 
-```text
-execution observation → classify → RecoveryGovernor proposal
-→ isolate/freeze planning → bounded restart through configured factory
-→ fresh health observation → return to service or FAULTED
-```
-
-```text
-completed ExecutionRecord baseline → bounded candidate window
-→ real useful-work/second measurements → threshold comparison
-→ retain or rollback → cooldown and durable integrity-checked history
-```
-
-Trials do not restore in flight after restart. Job epochs, sessions, extranonce state and unverified shares are not durable recovery inputs.
-
-## Component classification
-
-| Component | Classification | Basis |
-|---|---|---|
-| Production entry point | PRESENT / WIRED / ACTIVE | `pythia-mine` → `mining_runtime.main` |
-| AutonomousExecutionLoop under legacy papers | SUPERSEDED / DORMANT | legacy path, not production entry point |
-| Stratum lifecycle | PRESENT / WIRED / TESTED | canonical coordinator and local-pool tests |
-| Agentic planner and nonce leases | PRESENT / WIRED / ACTIVE / TESTED | plans affect real ExecutionRouter dispatch |
-| Chronus/search ordering | PRESENT / WIRED | ordering/planning only; not a proof predicate |
-| Local SHA256d verification | PRESENT / WIRED / ACTIVE / TESTED | proof adapter and host recheck |
-| Duplicate submission protection | PRESENT / WIRED | MiningSession plus serialized submission lock |
-| Salamander recovery | PRESENT / WIRED / PARTIAL | bridge and bridge-free recovery; real-device evidence environment-dependent |
-| Closed-loop optimisation | PRESENT / WIRED / ACTIVE / TESTED | measured bounded trial controller |
-| CPU backend | PRESENT / WIRED | capability probe and declared selection |
-| GPU backend | PRESENT / WIRED / UNKNOWN at deployment | requires real device probe |
-| ASIC / SUPER ASIC | DORMANT / NOT IMPLEMENTED | surfaced unavailable; never claimed active |
-| CEO dashboard | UNKNOWN in this tranche | no access policy changed |
-
-## Verification performed in this tranche
+The mining-cycle ledger drives real transitions rather than decorative logs:
 
 ```text
-PYTHONPATH=/data/PYTHIPhiMiner-direct python -m unittest -v tests.test_backend_registry
-Ran 4 tests in 0.004s — OK
-
-python -m py_compile \
-  chronus/mla1517/mining/backend_registry.py \
-  chronus/mla1517_platform/python/mining_runtime.py \
-  tests/test_backend_registry.py
+SCAN → PLAN → MINE → VERIFY → SUBMIT → ACKNOWLEDGE
+                                  ↘ EVALUATE
+failure → HEAL → NEXT_CYCLE
+stale   → EVALUATE → NEXT_CYCLE
 ```
 
-The focused tests prove declared-policy `auto` selection, explicit-GPU fail-closed behavior, unhealthy-backend rejection, durable decision evidence, and explicit unavailable ASIC/SUPER_ASIC states. Full repository CI and hardware/live-pool evidence remain separate acceptance gates.
+`MiningSession` separately owns durable share lifecycle states, and the
+Stratum runtime owns connection/session phases. Invalid transitions and stale
+work fail closed; a new generation is never restored from persisted local
+state as current external truth.
 
-## Remaining limitations and truthful final status
+## Decision and idempotency evidence
 
-- **Software gaps:** no production ASIC or SUPER ASIC transport; full state-by-state timeout table remains distributed across existing contracts.
-- **Unavailable backend:** availability depends on a successful runtime capability probe.
-- **External infrastructure:** live credentials, pool availability, devices and chain observer are deployment inputs.
-- **Discovered share:** none claimed by this change.
-- **Live-pool evidence:** none newly generated by this change.
+`DecisionJournal` records decisions before effect and resolves them from
+measured outcomes. Its contract includes decision id, pool session, job
+generation/fingerprint, observation, available actions, selected action,
+reason, execution target, result/disposition, timestamp and software
+revision. No synthetic confidence field is required.
+
+Nonce leases prevent overlapping dispatch. `MiningSession.already_submitted`
+and the coordinator's submission lock prevent duplicate shares. A possible
+network write followed by disconnect is not retried as if it were known safe;
+it becomes `OUTCOME_UNKNOWN`.
+
+## Healing
+
+```text
+execution observation
+→ classify fault
+→ freeze/admission gate
+→ RecoveryGovernor proposal
+→ SelfHealingAgent / execution-hasher factory
+→ capability reprobe under the same declared backend policy
+→ swap only a successfully rebuilt lane
+→ fresh health observation
+→ return to service or remain faulted/fail closed
+```
+
+Process death is a separate outer-layer concern: `autonomous_supervisor` may
+restart the worker process through `control_api`, after which the canonical
+mining recovery authority resumes ownership.
+
+## Optimisation
+
+```text
+completed production ExecutionRecord
+→ baseline
+→ one bounded candidate window
+→ real completed-work / elapsed-time measurement
+→ threshold comparison
+→ retain or rollback
+→ durable optimisation evidence
+```
+
+A device fault forces rollback/fail-closed handling. The control-plane daemon
+does not write the nonce window, preventing competing optimisation authorities.
+
+## Evidence-first telemetry
+
+The canonical worker publishes observed Stratum lifecycle, job identity,
+target/difficulty, selected backend/device, hashes completed, measured
+hashrate, executions, candidates/shares, pool outcomes, recovery state,
+optimisation state, decision history and persisted evidence references. Missing
+facts remain unavailable; pool acceptance is never inferred.
+
+Control endpoints are authenticated and guardian-mediated according to the
+control-plane policy. This audit does **not** claim that every read-only mining
+telemetry surface is CEO-only: the current repository supports mapped `ceo`
+and `operator` control principals. If product policy requires CEO-only viewing,
+that is a separate presentation/entitlement gate and must be tested as such.
+
+## Tests expected at the production gate
+
+The repository contains executable coverage for:
+
+- fresh-process production-entry startup against a scripted Stratum peer;
+- connect / subscribe / authorize / notify / execution;
+- deterministic local share verification → submission → literal acknowledgement;
+- stale-job invalidation and freshness cancellation;
+- reconnect and primary/failover behaviour;
+- backend unavailability / fail-closed selection;
+- duplicate submission prevention;
+- bounded optimisation retain/rollback;
+- recovery-governor and self-healing mechanics;
+- restart/fresh external truth semantics;
+- backend policy ordering and prohibition of undeclared CPU fallback;
+- control-plane supervisor authority isolation from mining optimisation.
+
+Live-pool shares and hardware throughput are deployment evidence and are never
+manufactured by these tests.
+
+## Remaining limitations
+
+- Physical lane availability is deployment-specific; code presence is not
+  production hardware evidence.
+- A SUPER ASIC composition may legally bind only one real substrate; its
+  backend label must be read literally.
+- No new live-pool accepted share is claimed by this audit/update.
+- No physical ASIC/CUDA/Metal/OpenCL trace is claimed unless a deployment run
+  actually produced it.
+- The current control API recognises both `ceo` and `operator` mapped control
+  roles; CEO-only dashboard visibility is not asserted by this document.
+
+## Final software status
 
 | Capability | Status |
 |---|---|
 | AGENTIC CONTROL | ACTIVE in canonical coordinator |
-| AUTOMATED MINING | ACTIVE when a configured pool and capability-proven backend are present |
-| POOL WORKFLOW | ACTIVE in code; deployment evidence external |
-| EXECUTION FABRIC | PARTIAL — CPU/GPU/remote implemented, ASIC lanes unavailable |
+| AUTOMATED MINING | ACTIVE when pool + capability-proven backend are configured |
+| POOL WORKFLOW | ACTIVE in software; live deployment remains external evidence |
+| EXECUTION FABRIC | ACTIVE in software, deployment-dependent per physical lane |
 | SHARE VERIFICATION | ACTIVE |
-| SHARE SUBMISSION | ACTIVE only when explicitly enabled and all gates pass |
-| SELF-HEALING | PARTIAL — recovery is wired, device-specific proof required |
-| SELF-OPTIMISATION | ACTIVE for bounded window trials |
-| PRODUCTION-EVIDENCED | PARTIAL |
+| SHARE SUBMISSION | ACTIVE, policy gated and fail closed |
+| SELF-HEALING | ACTIVE in software; device-specific production evidence varies |
+| SELF-OPTIMISATION | ACTIVE with one canonical mining authority |
+| PRODUCTION-EVIDENCED | PARTIAL until the exact deployment supplies current live-pool/hardware evidence |

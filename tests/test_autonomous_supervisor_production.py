@@ -1,4 +1,4 @@
-"""Production wiring and evidence tests for the autonomy daemon."""
+"""Production wiring and authority-boundary tests for the autonomy daemon."""
 
 from types import SimpleNamespace
 
@@ -36,6 +36,8 @@ def test_builds_real_autonomy_supervisor_without_telemetry(monkeypatch):
     assert status["cuop"]["evidence_class"] == "Unavailable"
     assert status["cuop"]["reason"] == "power_telemetry_unavailable"
     assert status["supervisor"]["optimiser_attached"] is False
+    assert status["authority"]["mining_parameter_writes"] is False
+    assert status["authority"]["mining_optimisation_owner"] == "ClosedLoopOptimizer"
 
 
 def test_configured_power_is_not_a_measurement(monkeypatch):
@@ -65,7 +67,7 @@ def test_unmeasured_worker_hashrate_is_unavailable_not_zero(monkeypatch):
     assert status["supervisor"]["optimiser_attached"] is False
 
 
-def test_attaches_optimizer_only_with_measured_telemetry(monkeypatch):
+def test_measured_cuop_is_observation_only_not_a_second_mining_optimizer(monkeypatch):
     control = _ControlPlane([SimpleNamespace(hashrate=250.0, liveness=True)])
     monkeypatch.setattr("control_api._control_plane", lambda: control)
     daemon = autonomous_supervisor.AutonomousSupervisor(interval_s=5.0, power_meter=lambda: 12.5)
@@ -75,15 +77,37 @@ def test_attaches_optimizer_only_with_measured_telemetry(monkeypatch):
     status = daemon.status()
     assert status["cuop"]["available"] is True
     assert status["cuop"]["evidence_class"] == "Measured"
+    assert status["cuop"]["mode"] == "observation_only"
     assert status["cuop"]["reading"]["useful_ops"] == 1250.0
-    assert status["supervisor"]["optimiser_attached"] is True
-def test_losing_telemetry_mid_run_does_not_block_healing(monkeypatch):
+    assert status["supervisor"]["optimiser_attached"] is False
+    assert daemon._optimiser is None
+
+
+def test_supervisor_never_writes_runtime_mining_window(monkeypatch):
+    control = _ControlPlane([SimpleNamespace(hashrate=250.0, liveness=True)])
+    control.autostart = True
+    monkeypatch.setattr("control_api._control_plane", lambda: control)
+
+    def forbidden_save(_cfg):
+        raise AssertionError("control-plane supervisor must not write mining runtime_config")
+
+    monkeypatch.setattr("runtime_config.save", forbidden_save)
+    daemon = autonomous_supervisor.AutonomousSupervisor(interval_s=5.0, power_meter=lambda: 12.5)
+
+    daemon._build()
+    outcome = daemon.trigger_cycle()
+
+    assert outcome["ok"] is True
+    assert daemon.status()["authority"]["mining_parameter_writes"] is False
+
+
+def test_losing_telemetry_mid_run_does_not_block_process_healing(monkeypatch):
     control = _ControlPlane([SimpleNamespace(hashrate=250.0, liveness=True)])
     control.autostart = True
     monkeypatch.setattr("control_api._control_plane", lambda: control)
     daemon = autonomous_supervisor.AutonomousSupervisor(interval_s=5.0, power_meter=lambda: 12.5)
     daemon._build()
-    assert daemon.status()["supervisor"]["optimiser_attached"] is True
+    assert daemon.status()["supervisor"]["optimiser_attached"] is False
 
     control._records = [SimpleNamespace(hashrate=None, liveness=False)]
     outcome = daemon.trigger_cycle()

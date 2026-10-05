@@ -38,6 +38,9 @@ _OBSERVED_BY_ACTION = {
 }
 
 
+INTERVENTION_OBSERVATIONS = {"inspect": "dependency-evidence", "test": "test-evidence"}
+
+
 class DeterministicExecutor:
     """Deterministic stand-in for the repository organ.
 
@@ -54,10 +57,12 @@ class DeterministicExecutor:
     def execute(self, action: str, payload: Mapping[str, Any]) -> Mapping[str, Any]:
         self.calls.append(str(action))
         return {
-            # Report what the environment would plausibly observe for this action, using
-            # the composed explanations' predictions, so an intervention confirms
-            # at least one competing hypothesis instead of refuting all of them.
-            "observation": _OBSERVED_BY_ACTION.get(str(action), "dependency-evidence"),
+            # Discriminating interventions observe a token from the declared
+            # explanation space; an alien token refutes every hypothesis and
+            # the episode aborts fail-closed before planning.
+            "observation": INTERVENTION_OBSERVATIONS.get(
+                str(action), f"observed:{action}"
+            ),
             "goal_met": self.meet_goal,
             "cycle": payload.get("cycle"),
             # No measured reward: authority stays NONE so absent reward can

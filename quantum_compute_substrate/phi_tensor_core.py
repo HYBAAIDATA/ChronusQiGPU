@@ -107,7 +107,7 @@ class FoldState:
         return self._reconstruction_error
 
 
-class PhiTensorCore:
+class QuantumFoldTensorCore:
     """
     Quantum-mathematical tensor processing unit operating on FoldState objects.
 

@@ -348,11 +348,16 @@ class RepositoryIntelligenceExecutor:
         )
         evidence = report.get("evidence", {})
         findings = evidence.get("import_audit", {}).get("finding_count")
+        summary = json.dumps(
+            {"routes": report.get("routes", ()), "finding_count": findings},
+            sort_keys=True,
+        )
+        observation = summary
+        if payload.get("kind") == "intervention":
+            observation = self.intervention_observation(str(action), evidence)
         result = {
-            "observation": json.dumps(
-                {"routes": report.get("routes", ()), "finding_count": findings},
-                sort_keys=True,
-            ),
+            "observation": observation,
+            "evidence_summary": summary,
             "goal_met": findings == 0 if findings is not None else bool(evidence),
             "task_id": report.get("task_id"),
             "governed": True,
@@ -360,6 +365,22 @@ class RepositoryIntelligenceExecutor:
         }
         self.results.append(result)
         return result
+
+    @staticmethod
+    def intervention_observation(action: str, evidence: Mapping[str, Any]) -> str:
+        """Project measured RepoEngineer evidence onto the declared explanation
+        tokens so a discriminating intervention can confirm or refute the
+        competing hypotheses.  Missing evidence is ``unobserved`` (which
+        refutes every hypothesis and aborts fail-closed), never a guess."""
+        if action == "inspect":
+            findings = evidence.get("import_audit", {}).get("finding_count")
+            if findings is None:
+                return "unobserved"
+            return "dependency-evidence" if int(findings) > 0 else "source-evidence"
+        if action == "test":
+            tests = evidence.get("focused_tests", {})
+            return "test-evidence" if "returncode" in tests else "unobserved"
+        return "unobserved"
 
 
 def _last_executed_action(state: CognitiveState) -> str | None:
