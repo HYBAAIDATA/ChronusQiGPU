@@ -162,6 +162,14 @@ _LAZY_MODULES = {
     "capabilities",
     "certificates",
     "console",
+    # production path (v1.3)
+    "taxonomy",
+    "representation",
+    "verify",
+    "transform",
+    "custody",
+    "chronus_lane",
+    "pipeline",
 }
 
 _LAZY_SYMBOLS = {
@@ -255,6 +263,37 @@ _LAZY_SYMBOLS = {
     "issue_witness": "certificates",
     "verify_witness": "certificates",
     "QuantumConsole": "console",
+    # production path (v1.3)
+    "ExecutionKind": "taxonomy",
+    "EvidenceState": "taxonomy",
+    "ExecutionKindReport": "taxonomy",
+    "classify_execution": "taxonomy",
+    "evidence_states": "taxonomy",
+    "REPRESENTATIONS": "representation",
+    "DOMINANCE": "representation",
+    "RepresentationChoice": "representation",
+    "RepresentationPlanner": "representation",
+    "plan_representation": "representation",
+    "UnitarityReport": "verify",
+    "verify_program_unitarity": "verify",
+    "program_unitary_columns": "verify",
+    "OvidTransform": "transform",
+    "TransformRecord": "transform",
+    "open_transform": "transform",
+    "ovid_available": "transform",
+    "TuringCustody": "custody",
+    "CustodyReceipt": "custody",
+    "ReplayReport": "custody",
+    "open_custody": "custody",
+    "theseus_available": "custody",
+    "ChronusLaneStatus": "chronus_lane",
+    "probe_chronus_lane": "chronus_lane",
+    "chronus_available": "chronus_lane",
+    "VQCRequest": "pipeline",
+    "PipelineReport": "pipeline",
+    "StageEvidence": "pipeline",
+    "VQCPipeline": "pipeline",
+    "run_pipeline": "pipeline",
 }
 
 __version__ = "1.2.0"

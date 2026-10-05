@@ -18,9 +18,9 @@ The governing rule is simple: **large claims are settled by theorem or benchmark
 Turing must distinguish mathematical objects that are often collapsed into one rhetorical label.
 
 - **Gottesman–Knill / stabilizer simulation** is an exact, efficient description of the Clifford/stabilizer class. Turing does not "refute" it. A stronger Turing claim would have to exhibit a precisely defined state/circuit family outside that class which Turing evaluates exactly and efficiently on a declared representation.
-- **Shannon entropy** is not wrong. It is an ensemble quantity attached to a declared source distribution, and source-coding theorems constrain expected code length under their hypotheses. Per-instance structural compression is a different question and must account for the model/decoder used to exploit structure.
+- **Shannon entropy is not wrong.** It is an ensemble quantity attached to a declared source distribution, and source-coding theorems constrain expected code length under their hypotheses. Per-instance structural compression is a different question and must account for the model/decoder used to exploit structure.
 - **Kolmogorov complexity** is a theoretical per-object notion and is not computable in general. Repository receipts therefore must report concrete encoded lengths under named, replayable codecs rather than claiming to have measured `K(x)`.
-- **QFT/Fourier methods** remain canonical where the relevant symmetry is cyclic/abelian. A Pisot-indexed transform is a proposed alternative for a declared structured workload, not a replacement by vocabulary.
+- **QFT/Fourier methods remain canonical** where the relevant symmetry is cyclic/abelian. A Pisot-indexed transform is a proposed alternative for a declared structured workload, not a replacement by vocabulary.
 - **Poincaré, Ricci, Yang–Mills, and 11D** are not interchangeable labels. Any use of them must name the mathematical object, equation, domain, and evidence class.
 
 Two corrections are normative for future text:
