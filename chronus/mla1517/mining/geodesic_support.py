@@ -1,4 +1,4 @@
-"""PYTHIA production search, geodesic ordering and accelerator seam.
+"""PYTHIA production search, topology, intelligence and accelerator seam.
 
 The production composition is intentionally layered:
 
@@ -11,6 +11,9 @@ The production composition is intentionally layered:
   the same explicit batch only after their normal capability/self-check gate.
 * EUCLID remains the wider enterprise-intelligence orchestrator and a bounded
   advisory layer inherited by this coordinator; it is not the mining identity.
+* PULVINI/HYBA Data is not a mining dependency. Geometric/topological mining
+  reasoning is composed through PYTHIA and the mining-local canonical search
+  architecture, not through the HYBA Data geodesic tensor engine.
 * SHA256d, target comparison, freshness and literal pool acknowledgement remain
   external truth authorities. Search geometry never becomes proof authority.
 
@@ -21,11 +24,9 @@ it is never relabelled as an M32 traversal.
 """
 from __future__ import annotations
 
-import os
 from dataclasses import replace
-from typing import Any
+from typing import Any, Mapping
 
-from python_backend.core_modules.geodesic_tensor_engine import GeodesicNoncePlanner
 from .euclid_support import EuclidProductionMiningCoordinator
 from .execution_router import (
     ExecutionRouter,
@@ -36,7 +37,7 @@ from .execution_router import (
     RouteDecision,
 )
 from .h4_600_execution import promote_execution_hasher
-from .pythia_authority import PythiaMiningAuthority
+from .pythia_agentic_cycle import PythiaAgenticMiningAuthority
 from .pythia_search import (
     SEARCH_ARCHITECTURE_ID,
     PythiaSearchPrecompute,
@@ -195,7 +196,7 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         super().__init__(*args, **kwargs)
 
         # The current PhiMiner route already owns the canonical 32 -> 11D -> 600
-        # -> exact-Hilbert itinerary. PR #130's missing enhancement is physical
+        # -> exact-Hilbert itinerary. The donor enhancement is physical
         # promotion of the already-bound joined Chronus composite underneath it.
         # No device is re-probed and no non-composite route is relabelled.
         self.execution_hasher = promote_execution_hasher(self.execution_hasher)
@@ -222,63 +223,34 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
             "target_hashrate_hs": 10_000_000_000_000_000_000,
             "target_measured": False,
         }
-        self.pythia_authority = pythia_authority or PythiaMiningAuthority()
+        self.pythia_authority = pythia_authority or PythiaAgenticMiningAuthority()
         self.pythia_authority.bind_backend_registry(self.backend_registry)
 
-        self.geodesic_enabled = os.getenv("PYTHIA_GEODESIC_ORDERING", "1").strip() not in {
-            "0",
-            "false",
-            "False",
-            "off",
-            "OFF",
-        }
-        try:
-            depth = int(os.getenv("PYTHIA_GEODESIC_FOLD_DEPTH", "3"))
-        except ValueError:
-            depth = 3
-        self.geodesic_planner = GeodesicNoncePlanner(
-            fold_depth=max(0, min(depth, 32))
-        )
+        # Mining may use geometric/topological intelligence, but it must not
+        # import PULVINI/HYBA Data's geodesic tensor engine. The canonical
+        # mining-local 32 -> 11D -> 600 -> Hilbert architecture remains intact;
+        # any additional geometric/topological bias is composed through PYTHIA.
         self._geodesic_state: dict[str, Any] = {
-            "state": "ENABLED" if self.geodesic_enabled else "DISABLED",
+            "state": "DELEGATED_TO_PYTHIA",
             "consensus_authority": False,
-            "claim_boundary": "candidate ordering advice only",
+            "data_authority": False,
+            "direct_pulvini_dependency": False,
+            "claim_boundary": (
+                "geometric/topological mining intelligence is composed by PYTHIA; "
+                "PULVINI/HYBA Data transforms are not imported by mining"
+            ),
             "last_error": None,
             "last_report": None,
         }
 
     def _observed_candidate_window(self) -> list[int]:
-        baseline = super()._observed_candidate_window()
-        if not self.geodesic_enabled or len(baseline) < 2:
-            return baseline
-        try:
-            ordered = self.geodesic_planner.order_window(
-                baseline,
-                anchor=self._base_step,
-            )
-        except Exception as exc:
-            self._geodesic_state = {
-                **self._geodesic_state,
-                "state": "DEGRADED_BASELINE",
-                "last_error": f"{type(exc).__name__}: {exc}",
-                "last_report": None,
-            }
-            return baseline
-        if len(ordered) != len(baseline) or sorted(ordered) != sorted(baseline):
-            self._geodesic_state = {
-                **self._geodesic_state,
-                "state": "DEGRADED_BASELINE",
-                "last_error": "planner did not preserve candidate membership",
-                "last_report": None,
-            }
-            return baseline
-        self._geodesic_state = {
-            **self._geodesic_state,
-            "state": "ACTIVE",
-            "last_error": None,
-            "last_report": self.geodesic_planner.last_report,
-        }
-        return ordered
+        """Return the untouched canonical observed window to PYTHIA.
+
+        The old direct HYBA Data geodesic ordering step is intentionally absent.
+        The production agentic/PYTHIA planning layer may bias the canonical
+        mining-local topology without crossing the PULVINI data boundary.
+        """
+        return super()._observed_candidate_window()
 
     def _execution_route(self) -> str:
         """Select an executable route from measured capability, never a label."""
@@ -309,6 +281,22 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
             return "opencl_range"
         return "cpu_reference"
 
+    @staticmethod
+    def _upstream_agentic_plan(plan) -> dict[str, Any]:
+        return {
+            "plan_id": plan.plan_id,
+            "source": getattr(plan.source, "value", str(plan.source)),
+            "policy_id": plan.policy_id,
+            "executor_route": plan.executor_route,
+            "dispatch_breadth": plan.dispatch_breadth,
+            "preferred_face": plan.preferred_face,
+            "lane_order": list(plan.lane_order),
+            "schedule_count": len(plan.schedule),
+            "schedule_head": list(plan.schedule[:32]),
+            "fallback_reason": plan.plan_fallback_reason,
+            "toe_frame_id": plan.toe_frame_id,
+        }
+
     def _apply_pythia_authority(self, plan, identity):
         """Run every production/fallback plan through PYTHIA without replacing the canonical itinerary."""
         client = self.client
@@ -317,6 +305,7 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         if job is None or job.job_id != identity.job_id:
             raise RuntimeError("PYTHIA planning requires the current authoritative Stratum job")
         header = adapter.build_header(job.job_id, plan.extranonce2, job.ntime, 0)
+        upstream_agentic = self._upstream_agentic_plan(plan)
         directive = self.pythia_authority.plan(
             header=header,
             target_be=int(job.target).to_bytes(32, "big"),
@@ -328,13 +317,23 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                 "generation": identity.generation,
                 "target_generation": identity.target_generation,
                 "clean_jobs": identity.clean_jobs,
+                "upstream_agentic_plan": upstream_agentic,
                 "chronus_search_fabric": dict(self._chronus_fabric_state),
+                "geometric_topological_planning": dict(self._geodesic_state),
             },
         )
         refs = dict(plan.evidence_refs)
+        refs["upstream_agentic_plan"] = upstream_agentic
         refs["pythia_authority"] = directive.as_evidence()
         refs["pythia_planning_authority"] = True
         refs["chronus_search_fabric"] = dict(self._chronus_fabric_state)
+        refs["pulvini_data_boundary"] = {
+            "mining_imports_pulvini": False,
+            "geometric_topological_owner": "PYTHIA",
+        }
+        agentic_cycle = self.pythia_authority.snapshot().get("agentic_mining")
+        if agentic_cycle is not None:
+            refs["pythia_agentic_cycle"] = agentic_cycle
         # PYTHIA's coarse lane intelligence biases the existing exact-Hilbert
         # 600-vertex itinerary; it does not replace, prune or expand the lease.
         preferred_face = directive.lane_order[0] if directive.lane_order else plan.preferred_face
@@ -353,6 +352,10 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         refs["search_precompute_digest"] = self.pythia_search_precompute.digest
         refs["configured_traversal_refinement"] = self._nonce_order
         refs["chronus_search_fabric"] = dict(self._chronus_fabric_state)
+        refs["pulvini_data_boundary"] = {
+            "mining_imports_pulvini": False,
+            "generic_exact_golden_math_allowed": True,
+        }
         refs["technology_intent"] = {
             "composition_root": "PYTHIA",
             "search_architecture": SEARCH_ARCHITECTURE_ID,
@@ -371,7 +374,8 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                 if decision is not None
                 else None
             ),
-            "geodesic_advice_enabled": bool(self.geodesic_enabled),
+            "geometric_topological_planning": "PYTHIA",
+            "direct_pulvini_dependency": False,
             "proof_authority": (
                 "sha256d_target_freshness_and_literal_pool_response_only"
             ),
@@ -435,10 +439,40 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                 pool_accepted=accepted,
                 execution=self.last_execution or {},
             )
+            agentic_cycle = self.pythia_authority.snapshot().get("agentic_mining")
+            if agentic_cycle is not None:
+                self.last_execution = {
+                    **(self.last_execution or {}),
+                    "pythia_agentic_cycle_id": agentic_cycle.get("cycle_id"),
+                }
         except Exception as exc:
             self.last_execution = {
                 **(self.last_execution or {}),
                 "pythia_learning_error": f"{type(exc).__name__}: {exc}",
+            }
+
+    def record_salamander_autonomy(self, autonomy: Mapping[str, Any]) -> None:
+        """Correlate already-produced Salamander evidence with the current PYTHIA cycle."""
+        cycle = getattr(self.pythia_authority, "last_agentic_cycle", None)
+        if not isinstance(cycle, dict):
+            return
+        stages = dict(cycle.get("stages") or {})
+        classification = autonomy.get("classification") if isinstance(autonomy, Mapping) else None
+        wired = bool(classification.get("WIRED")) if isinstance(classification, Mapping) else False
+        stages["HEAL_OPTIMISE"] = {
+            "state": "COMPLETE" if wired else "UNAVAILABLE",
+            "authority": "Salamander",
+            "evidence": dict(autonomy),
+        }
+        updated = dict(cycle)
+        updated["stages"] = stages
+        updated["salamander_evidence_head"] = autonomy.get("evidence_head")
+        self.pythia_authority.last_agentic_cycle = updated
+        if isinstance(self.last_execution, dict):
+            self.last_execution = {
+                **self.last_execution,
+                "salamander_evidence_head": autonomy.get("evidence_head"),
+                "salamander_health": autonomy.get("health"),
             }
 
     def _technology_utilization_snapshot(self) -> dict[str, Any]:
@@ -487,9 +521,9 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                         "coarse lane/accelerator compatibility, not canonical search identity"
                     ),
                 },
-                "geodesic_candidate_advice": {
+                "geometric_topological_planning": {
                     "state": self._geodesic_state.get("state", "Unavailable"),
-                    "authority": "bounded chooser advice; membership preserving",
+                    "authority": "PYTHIA; no direct PULVINI/HYBA Data dependency",
                 },
                 "toe_causal_steering": {
                     "state": (
@@ -556,9 +590,15 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         snapshot["pythia_agentic_workforce"] = (
             self.pythia_search_precompute.workforce_manifest()
         )
-        snapshot["pythia_authority"] = self.pythia_authority.snapshot()
+        authority = self.pythia_authority.snapshot()
+        snapshot["pythia_authority"] = authority
+        snapshot["agentic_mining"] = authority.get("agentic_mining")
         snapshot["chronus_search_fabric"] = dict(self._chronus_fabric_state)
-        snapshot["geodesic_ordering"] = dict(self._geodesic_state)
+        snapshot["geometric_topological_planning"] = dict(self._geodesic_state)
+        snapshot["pulvini_data_boundary"] = {
+            "mining_imports_pulvini": False,
+            "generic_exact_golden_math_allowed": True,
+        }
         snapshot["technology_utilization"] = self._technology_utilization_snapshot()
         backend = _backend_name(self.execution_hasher)
         if backend in _NATIVE_BACKENDS:
