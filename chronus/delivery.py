@@ -86,11 +86,6 @@ def probe_embedded(
         probes = native_probes
     else:
         from .native_tensor import probe_cuda, probe_metal
-        try:
-            from .native_hash import probe_cuda as probe_hash_cuda
-            from .native_hash import probe_metal as probe_hash_metal
-        except Exception:  # noqa: BLE001
-            probe_hash_cuda = probe_hash_metal = None  # type: ignore
         from .tensor_compute import probe as opencl_probe
 
         probes = (

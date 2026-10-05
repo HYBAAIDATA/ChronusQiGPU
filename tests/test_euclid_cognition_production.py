@@ -50,6 +50,9 @@ BASE_PROBLEM: dict[str, Any] = {
 }
 
 
+INTERVENTION_OBSERVATIONS = {"inspect": "dependency-evidence", "test": "test-evidence"}
+
+
 class DeterministicExecutor:
     """Deterministic governed executor (the declared execution seam).
 
@@ -64,7 +67,12 @@ class DeterministicExecutor:
     def execute(self, action: str, payload: Any) -> dict[str, Any]:
         self.calls.append(str(action))
         return {
-            "observation": f"observed:{action}",
+            # Discriminating interventions observe a token from the declared
+            # explanation space; an alien token refutes every hypothesis and
+            # the episode aborts fail-closed before planning.
+            "observation": INTERVENTION_OBSERVATIONS.get(
+                str(action), f"observed:{action}"
+            ),
             "goal_met": self.meet_goal,
             "cycle": payload.get("cycle"),
             "reward_authority": RewardAuthority.NONE.value,
