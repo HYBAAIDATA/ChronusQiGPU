@@ -9,7 +9,8 @@ The doctrine enforced here is structural, not advisory:
   exposes PULVINI fold authority;
 * mining may import explicitly named substrate-neutral Fibonacci/Binet/Cassini/
   Zeckendorf helpers from shared exact math;
-* literal ``import_module``/``__import__`` dependency edges are inspected;
+* literal ``import_module``/``__import__`` dependency edges are inspected,
+  including ordinary import aliases;
 * production code may not use the historical ``PythagorasOrchestrator``
   compatibility facade, including aliased direct imports;
 * absent owner-specified HYBA Data paths may not acquire active callers until
@@ -132,19 +133,37 @@ def _iter_active_python(root: Path) -> Iterable[Path]:
 
 
 def _literal_dynamic_imports(tree: ast.AST) -> set[str]:
+    """Return literal dynamic-import targets for all normal importlib spellings."""
+
+    importlib_module_aliases = {"importlib"}
+    import_module_aliases: set[str] = set()
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name == "importlib":
+                    importlib_module_aliases.add(alias.asname or "importlib")
+        elif isinstance(node, ast.ImportFrom) and node.module == "importlib":
+            for alias in node.names:
+                if alias.name == "import_module":
+                    import_module_aliases.add(alias.asname or "import_module")
+
     found: set[str] = set()
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call) or not node.args:
             continue
         target = node.func
         is_import = False
-        if isinstance(target, ast.Name) and target.id == "__import__":
-            is_import = True
+        if isinstance(target, ast.Name):
+            is_import = (
+                target.id == "__import__"
+                or target.id in import_module_aliases
+            )
         elif (
             isinstance(target, ast.Attribute)
             and target.attr == "import_module"
             and isinstance(target.value, ast.Name)
-            and target.value.id == "importlib"
+            and target.value.id in importlib_module_aliases
         ):
             is_import = True
         if is_import and isinstance(node.args[0], ast.Constant):
