@@ -428,7 +428,7 @@ def train_pythia_structure(
 
 
 def bootstrap_default_structure_training(pythia: Any, store: Any) -> StructureTrainingReport:
-    """Train the default PYTHIA store from the provenance-bound corpus.
+    """Train the default PYTHIA store and activate its read-only runtime model.
 
     This is called by :class:`PythiaStore` only for its canonical default
     production location, after any pre-existing snapshot has been restored.
@@ -438,13 +438,20 @@ def bootstrap_default_structure_training(pythia: Any, store: Any) -> StructureTr
         raise CorpusIntegrityError(
             "canonical PYTHIA structural corpus or manifest is missing"
         )
-    return train_pythia_structure(
+    report = train_pythia_structure(
         SimpleNamespace(pythia=pythia, store=store),
         DEFAULT_CORPUS_CSV,
         DEFAULT_CORPUS_MANIFEST,
         holdout_fraction=DEFAULT_HOLDOUT_FRACTION,
         persist=True,
     )
+    # Import lazily to avoid a module cycle: the advisor depends on the feature
+    # encoder above, while the trainer remains usable by itself in tests/tools.
+    from .mining_structure_advisor import install_from_pythia
+
+    advisor = install_from_pythia(pythia)
+    store.record_run("pythia_structure_advisor", advisor.metadata())
+    return report
 
 
 __all__ = [
