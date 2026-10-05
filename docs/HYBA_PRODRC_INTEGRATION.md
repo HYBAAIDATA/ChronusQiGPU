@@ -196,4 +196,8 @@ git checkout devin/hyba-prodrc-integration
 
 ## 10. Artifact digests
 
-Filled at commit time; see section below.
+- Integration merge heads: C merge `726172d`, A merge `e198fee`, D merge `bf72e5c`; B already on main (`ef23a5c`).
+- Integration wiring commit: `cb1055a943b4a5ec44b67ef04a10ba5d7a3596ad` (`integration: wire cross-agent THESEUS contracts + integration test suite`). This document is appended by a follow-up commit recording final digests; branch HEAD is authoritative — `git rev-parse HEAD` on `devin/hyba-prodrc-integration`.
+- sha256 `tests/test_hyba_prodrc_integration.py` @ cb1055a: `ca574962378a97728cd8b401c1a3959aa87f114141d50fc0a0aeed9a7a4e13ff`
+- sha256 of this document at its first commit: `219263c67c70ef16dffeb1e6b9d0087eec98f5ce7dd498ad95189eaaeaa1f347` (superseded by the digest-recording commit; compute current with `sha256sum docs/HYBA_PRODRC_INTEGRATION.md`)
+- Workstream heads: A `5ef8b8e71288dfdd7c7ca8ddb940adf229ba3966`, B `7af8ea73f010f245694ad5eac34d15f0b6467fbf`, C `6e6e0a59d02b3319bd804e02cd074acac313af63`, D `1eef82d6f6fc9237cae46a433446dc05d1dd9346`
