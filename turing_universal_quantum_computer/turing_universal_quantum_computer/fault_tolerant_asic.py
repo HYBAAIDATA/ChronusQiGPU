@@ -13,7 +13,7 @@ import json
 import math
 from dataclasses import asdict, dataclass, field
 from enum import Enum
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping
 
 SCHEMA = "turing.quantum_asic/v1"
 
@@ -118,6 +118,7 @@ class TransmonCoherence:
     q_quasiparticle: float = 1e7
     q_radiation: float = 1e8
     q_purcell: float = 1e6
+    pure_dephasing_s: float = 300e-6
 
     def __post_init__(self) -> None:
         for name, value in asdict(self).items():
@@ -139,6 +140,10 @@ class TransmonCoherence:
     @property
     def t1_seconds(self) -> float:
         return self.quality_factor / (2.0 * math.pi * self.frequency_hz)
+
+    @property
+    def t2_seconds(self) -> float:
+        return 1.0 / (1.0 / (2.0 * self.t1_seconds) + 1.0 / self.pure_dephasing_s)
 
     def operations(self, gate_time_s: float) -> int:
         return math.floor(self.t1_seconds / _positive("gate_time_s", gate_time_s))
@@ -676,7 +681,7 @@ class QuantumAsicStack:
         return ThresholdEvaluation(
             self.surface_code.physical_error_rate < self.surface_code.threshold,
             int(physical_qubits) >= 100_000,
-            self.coherence.t1_seconds > 10 * self.decoder.cycle_time_s,
+            self.coherence.t2_seconds > 10 * self.decoder.cycle_time_s,
             self.decoder.ready and self.decoder.throughput_bits_s >= 1e12,
         )
 
@@ -694,6 +699,7 @@ class QuantumAsicStack:
     ) -> dict[str, Any]:
         evidence = evidence or ProductionEvidence()
         thresholds = self.thresholds(physical_qubits)
+        production_ready = evidence.physical_stack_ready and thresholds.all_crossed
         payload = {
             "schema": SCHEMA,
             "truth_class": "deterministic_engineering_model",
@@ -722,7 +728,7 @@ class QuantumAsicStack:
             "thresholds": {**asdict(thresholds), "all_crossed": thresholds.all_crossed},
             "production": {
                 "software_model_ready": evidence.software_model_ready,
-                "physical_stack_ready": evidence.physical_stack_ready,
+                "physical_stack_ready": production_ready,
                 "missing_evidence": evidence.missing,
             },
             "claim_boundary": (

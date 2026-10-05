@@ -50,6 +50,7 @@ class QuantumAsicModelTests(unittest.TestCase):
         qubit = TransmonQubit()
         self.assertGreater(coherence.quality_factor, 0)
         self.assertGreater(coherence.t1_seconds, 0)
+        self.assertGreater(coherence.t2_seconds, 0)
         self.assertAlmostEqual(qubit.ej_ec_ratio, 50)
         self.assertTrue(qubit.report(coherence)["transmon_regime"])
         coupler = TunableCoupler()
@@ -148,10 +149,14 @@ class QuantumAsicModelTests(unittest.TestCase):
         self.assertTrue(evidence.software_model_ready)
         self.assertTrue(evidence.physical_stack_ready)
         self.assertEqual(evidence.missing, ())
-        report = QuantumAsicStack().report(physical_qubits=100_000, evidence=evidence)
+        stack = QuantumAsicStack(decoder=Decoder(throughput_bits_s=1e12))
+        report = stack.report(physical_qubits=100_000, evidence=evidence)
         self.assertTrue(report["physical_qpu_present"])
         self.assertTrue(report["production"]["physical_stack_ready"])
         self.assertEqual(len(report["report_digest"]), 64)
+        self.assertEqual(stack.application("qaoa").name, "qaoa")
+        with self.assertRaises(ValueError):
+            stack.application("unknown")
 
     def test_invalid_parameters_and_evidence_fail_closed(self):
         with self.assertRaises(ValueError):
