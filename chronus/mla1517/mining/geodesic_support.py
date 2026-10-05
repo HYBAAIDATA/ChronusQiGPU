@@ -97,7 +97,10 @@ class ProductionExecutionRouter(ExecutionRouter):
         decision = super().decide_route(plan)
         backend = _backend_name(self._hasher)
 
-        if self._is_pythia_lattice(plan) and decision.executed_route is not ExecutionRoute.cpu_reference:
+        if (
+            self._is_pythia_lattice(plan)
+            and decision.executed_route is not ExecutionRoute.cpu_reference
+        ):
             batch = getattr(self._hasher, "grind_target_batch", None)
             if callable(batch):
                 return replace(
@@ -107,7 +110,10 @@ class ProductionExecutionRouter(ExecutionRouter):
                         f"{SEARCH_ARCHITECTURE_ID}"
                     ),
                     kernel_build_status="explicit_nonce_batch_bound_after_backend_self_check",
-                    launch_cap=max(1, int(getattr(self._hasher, "grind_batch", 1) or 1)),
+                    launch_cap=max(
+                        1,
+                        int(getattr(self._hasher, "grind_batch", 1) or 1),
+                    ),
                 )
             return RouteDecision(
                 requested_route=decision.requested_route,
@@ -118,10 +124,16 @@ class ProductionExecutionRouter(ExecutionRouter):
                 device_vendor=decision.device_vendor,
                 kernel_identity="hashlib_sha256d",
                 kernel_build_status="explicit_nonce_batch_unavailable",
-                launch_cap=max(1, int(getattr(self._hasher, "grind_batch", 1) or 1)),
+                launch_cap=max(
+                    1,
+                    int(getattr(self._hasher, "grind_batch", 1) or 1),
+                ),
             )
 
-        if backend not in _NATIVE_BACKENDS or decision.executed_route is ExecutionRoute.cpu_reference:
+        if (
+            backend not in _NATIVE_BACKENDS
+            or decision.executed_route is ExecutionRoute.cpu_reference
+        ):
             return decision
         return replace(
             decision,
@@ -141,6 +153,7 @@ class ProductionExecutionRouter(ExecutionRouter):
                 plan.base_step,
                 plan.window,
                 precompute=self._pythia_precompute,
+                preferred_face=plan.preferred_face,
             )
             self._pythia_order_cache[plan.plan_id] = order
         position = (chunk.start - plan.base_step) & 0xFFFFFFFF
@@ -188,7 +201,9 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
             depth = int(os.getenv("PYTHIA_GEODESIC_FOLD_DEPTH", "3"))
         except ValueError:
             depth = 3
-        self.geodesic_planner = GeodesicNoncePlanner(fold_depth=max(0, min(depth, 32)))
+        self.geodesic_planner = GeodesicNoncePlanner(
+            fold_depth=max(0, min(depth, 32))
+        )
         self._geodesic_state: dict[str, Any] = {
             "state": "ENABLED" if self.geodesic_enabled else "DISABLED",
             "consensus_authority": False,
@@ -202,7 +217,10 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         if not self.geodesic_enabled or len(baseline) < 2:
             return baseline
         try:
-            ordered = self.geodesic_planner.order_window(baseline, anchor=self._base_step)
+            ordered = self.geodesic_planner.order_window(
+                baseline,
+                anchor=self._base_step,
+            )
         except Exception as exc:
             self._geodesic_state = {
                 **self._geodesic_state,
@@ -270,14 +288,21 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
             "manifold": "phi_weighted_11d_poincare_ball",
             "dual_vertices": 600,
             "hilbert_space": "11_qubits_C^2048",
+            "preferred_face": plan.preferred_face,
             "mining_policy": getattr(decision, "lead", None),
             "candidate_ordering_advice": (
-                getattr(getattr(decision, "policy", None), "candidate_ordering", None)
+                getattr(
+                    getattr(decision, "policy", None),
+                    "candidate_ordering",
+                    None,
+                )
                 if decision is not None
                 else None
             ),
             "geodesic_advice_enabled": bool(self.geodesic_enabled),
-            "proof_authority": "sha256d_target_freshness_and_literal_pool_response_only",
+            "proof_authority": (
+                "sha256d_target_freshness_and_literal_pool_response_only"
+            ),
         }
         # M32 is only a compatibility carrier to avoid the inherited router's
         # separate Hendrix/Poincare special cases. The production router emits
@@ -317,8 +342,9 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
             "composition_root": "PYTHIA",
             "enterprise_intelligence_orchestrator": "EUCLID",
             "truth_boundary": (
-                "PYTHIA directs the mining workforce and search architecture; Chronus executes; "
-                "Salamander heals/optimises; SHA256d/Stratum establish proof and pool truth"
+                "PYTHIA directs the mining workforce and search architecture; "
+                "Chronus executes; Salamander heals/optimises; SHA256d/Stratum "
+                "establish proof and pool truth"
             ),
             "canonical_search": self.pythia_search_precompute.summary(),
             "discoveries": {
@@ -344,18 +370,26 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                 },
                 "hendrix_coprime_search": {
                     "state": "AVAILABLE_REFINEMENT",
-                    "authority": "legacy/alternative traversal refinement, not search identity",
+                    "authority": (
+                        "legacy/alternative traversal refinement, not search identity"
+                    ),
                 },
                 "m32_dual_solid_lane_topology": {
                     "state": "ACTIVE_SUPPORTING_TOPOLOGY",
-                    "authority": "coarse lane/accelerator compatibility, not canonical search identity",
+                    "authority": (
+                        "coarse lane/accelerator compatibility, not canonical search identity"
+                    ),
                 },
                 "geodesic_candidate_advice": {
                     "state": self._geodesic_state.get("state", "Unavailable"),
                     "authority": "bounded chooser advice; membership preserving",
                 },
                 "toe_causal_steering": {
-                    "state": "ACTIVE" if self.last_toe_frame is not None else "AVAILABLE_UNBOUND",
+                    "state": (
+                        "ACTIVE"
+                        if self.last_toe_frame is not None
+                        else "AVAILABLE_UNBOUND"
+                    ),
                     "authority": "advisory face bias / throttle only",
                 },
                 "turing_vqc_policy_audit": {
@@ -387,12 +421,20 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                     "authority": "bounded recovery / reprobe / fail-closed return",
                 },
                 "native_cuda_execution": {
-                    "state": "ACTIVE" if backend == "cuda" else "GATED_BY_CAPABILITY_PROBE",
-                    "authority": "physical SHA256d execution of authorised explicit batches",
+                    "state": (
+                        "ACTIVE" if backend == "cuda" else "GATED_BY_CAPABILITY_PROBE"
+                    ),
+                    "authority": (
+                        "physical SHA256d execution of authorised explicit batches"
+                    ),
                 },
                 "native_metal_execution": {
-                    "state": "ACTIVE" if backend == "metal" else "GATED_BY_CAPABILITY_PROBE",
-                    "authority": "physical SHA256d execution of authorised explicit batches",
+                    "state": (
+                        "ACTIVE" if backend == "metal" else "GATED_BY_CAPABILITY_PROBE"
+                    ),
+                    "authority": (
+                        "physical SHA256d execution of authorised explicit batches"
+                    ),
                 },
             },
         }
@@ -400,7 +442,9 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
     def evidence_snapshot(self) -> dict[str, Any]:
         snapshot = super().evidence_snapshot()
         snapshot["pythia_search_precompute"] = self.pythia_search_precompute.summary()
-        snapshot["pythia_agentic_workforce"] = self.pythia_search_precompute.workforce_manifest()
+        snapshot["pythia_agentic_workforce"] = (
+            self.pythia_search_precompute.workforce_manifest()
+        )
         snapshot["geodesic_ordering"] = dict(self._geodesic_state)
         snapshot["technology_utilization"] = self._technology_utilization_snapshot()
         backend = _backend_name(self.execution_hasher)
