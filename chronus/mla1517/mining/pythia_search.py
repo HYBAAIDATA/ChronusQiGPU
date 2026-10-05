@@ -6,19 +6,19 @@ The static search substrate is prepared before Stratum work starts:
       -> dodecahedron/icosahedron 12+20 dual overlay (32 coarse directions)
       -> H4 600-cell tetrahedra
       -> 600 dual directions (the 120-cell's vertex set, up to radial scale)
-      -> injective addresses in the exact 11-qubit Hilbert basis C^2048
+      -> exact Turing 600-position Hilbert walk (10 position qubits + 1 coin)
       -> coverage-preserving nonce shards and Cassini affine schedules
 
 A real job supplies the 76-byte header prefix. The live PYTHIA plan may also
 supply a preferred coarse face. Those observations rank the precomputed coarse
-directions and then the 600 dual vertices; they never change membership of the
-nonce lease. The result is a deterministic permutation of exactly the leased
-nonce interval. SHA256d, negotiated target, freshness and literal pool
-acknowledgement remain the sole mining truth authorities.
+directions and then the 600 dual vertices. Turing's exact Hilbert walk then
+reorders that complete 600-vertex manifold itinerary; it never removes a vertex
+or a nonce from the lease. SHA256d, negotiated target, freshness and literal
+pool acknowledgement remain the sole mining truth authorities.
 
 No search-advantage claim is made here. This module proves composition,
-coverage, determinism and provenance so measured production outcomes can test
-whether the architecture is useful.
+coverage, deterministic exact-Hilbert traversal and provenance so measured
+production outcomes can test whether the architecture is useful.
 """
 
 from __future__ import annotations
@@ -47,13 +47,18 @@ from chronus.h4_600 import (
     generate_600cell_vertices,
     lift_fold_11d,
 )
-from mtheory.hilbert import QuantumRegister
+from turing_universal_quantum_computer.quantum_walk import CoinedCycleWalk
 
 SEARCH_ARCHITECTURE_ID = "pythia_dual32_11d_h4_600_hilbert"
 HILBERT_QUBITS = 11
 HILBERT_DIM = 1 << HILBERT_QUBITS
 DUAL_VERTEX_COUNT = 600
 COARSE_FACE_COUNT = 32
+# C_600 has graph diameter 300. Accumulating the exact Born distribution from
+# t=0 through t=300 is the smallest start-centred horizon over which every
+# cycle position has been reachable at some time. It is a structural coverage
+# horizon, not a performance-tuned mining parameter.
+HILBERT_WALK_HORIZON = DUAL_VERTEX_COUNT // 2
 
 
 def _phi_dot(a: Sequence[float], b: Sequence[float]) -> float:
@@ -95,6 +100,58 @@ def _dual_adjacency(cells: Sequence[Sequence[int]]) -> tuple[tuple[int, ...], ..
     return result
 
 
+def _exact_hilbert_walk_rank() -> tuple[tuple[int, ...], str]:
+    """Return a complete 600-position rank from Turing's exact Hilbert walk.
+
+    ``CoinedCycleWalk(600)`` uses ten position qubits plus one coin qubit, so
+    the walk itself lives in an exact 11-qubit sparse Hilbert register. We
+    accumulate exact Born mass over the cycle-diameter horizon. Position zero
+    is retained as the first element so a live PYTHIA preferred-face decision
+    remains the root of the job-specific manifold traversal; the remaining 599
+    positions are ranked by exact cumulative mass with a stable index tie-break.
+    """
+    walk = CoinedCycleWalk(DUAL_VERTEX_COUNT, start=0)
+    if walk.n_qubits != HILBERT_QUBITS or walk.register.dim != HILBERT_DIM:
+        raise ArithmeticError("600-position Turing walk must occupy exactly 11 qubits")
+
+    cumulative: dict[int, Any] = {}
+    reached: set[int] = set()
+    for step in range(HILBERT_WALK_HORIZON + 1):
+        distribution = walk.position_distribution()
+        for position, probability in distribution.items():
+            cumulative[position] = cumulative.get(position, 0) + probability
+            if probability != 0:
+                reached.add(int(position))
+        if step != HILBERT_WALK_HORIZON:
+            walk.step()
+
+    if reached != set(range(DUAL_VERTEX_COUNT)):
+        raise ArithmeticError("exact Hilbert walk horizon did not reach all 600 positions")
+
+    ranked_tail = sorted(
+        range(1, DUAL_VERTEX_COUNT),
+        key=lambda position: (-cumulative.get(position, 0), position),
+    )
+    rank = (0, *ranked_tail)
+    if len(rank) != DUAL_VERTEX_COUNT or len(set(rank)) != DUAL_VERTEX_COUNT:
+        raise ArithmeticError("exact Hilbert walk rank must contain all 600 positions once")
+
+    digest = hashlib.sha256(
+        json.dumps(
+            {
+                "walk": "turing_exact_coined_cycle",
+                "positions": DUAL_VERTEX_COUNT,
+                "qubits": HILBERT_QUBITS,
+                "horizon": HILBERT_WALK_HORIZON,
+                "rank": rank,
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    return rank, digest
+
+
 @dataclass(frozen=True)
 class PythiaSearchPrecompute:
     """Immutable startup artifact consumed by every PYTHIA mining plan."""
@@ -106,12 +163,14 @@ class PythiaSearchPrecompute:
     coarse_anchor: tuple[int, ...]
     adjacency: tuple[tuple[int, ...], ...]
     hilbert_basis: tuple[int, ...]
+    hilbert_walk_rank: tuple[int, ...]
+    hilbert_walk_digest: str
     digest: str
 
     def summary(self) -> dict[str, Any]:
         edges = sum(len(neighbours) for neighbours in self.adjacency) // 2
         return {
-            "schema": "pythia.search_precompute/1",
+            "schema": "pythia.search_precompute/2",
             "architecture_id": self.architecture_id,
             "state": "READY",
             "prepared_before_pool_work": True,
@@ -122,11 +181,15 @@ class PythiaSearchPrecompute:
             "hilbert_qubits": HILBERT_QUBITS,
             "hilbert_dimension": HILBERT_DIM,
             "hilbert_addresses": len(self.hilbert_basis),
+            "hilbert_walk": "turing_exact_coined_cycle",
+            "hilbert_walk_horizon": HILBERT_WALK_HORIZON,
+            "hilbert_walk_positions_reached": len(self.hilbert_walk_rank),
+            "hilbert_walk_digest": self.hilbert_walk_digest,
             "all_coarse_faces_occupied": len(set(self.coarse_anchor)) == COARSE_FACE_COUNT,
             "digest": self.digest,
             "claim_boundary": (
-                "precomputed coverage/search ordering only; SHA256d, target, freshness and "
-                "literal pool acknowledgement remain authoritative"
+                "exact Hilbert evolution and coverage-preserving search ordering only; "
+                "SHA256d, target, freshness and literal pool acknowledgement remain authoritative"
             ),
         }
 
@@ -151,6 +214,11 @@ class PythiaSearchPrecompute:
                     "role": "search_topology",
                     "owner": "PYTHIA",
                     "authority": self.architecture_id,
+                },
+                {
+                    "role": "hilbert_walk",
+                    "owner": "Turing",
+                    "authority": "exact 600-position traversal ranking; never Bitcoin proof",
                 },
                 {
                     "role": "physical_execution",
@@ -214,10 +282,13 @@ def precompute_pythia_search() -> PythiaSearchPrecompute:
 
     adjacency = _dual_adjacency(h4_cells)
 
-    register = QuantumRegister(HILBERT_QUBITS)
-    if register.dim != HILBERT_DIM or DUAL_VERTEX_COUNT > register.dim:
-        raise ArithmeticError("600 vertices must fit inside the exact 11-qubit Hilbert basis")
+    # 600 manifold vertices are injectively labelled inside Turing's exact
+    # 11-qubit basis. The separate exact coined walk below actually evolves
+    # amplitudes over the 600-position subspace before mining begins.
     hilbert_basis = tuple(range(DUAL_VERTEX_COUNT))
+    if max(hilbert_basis) >= HILBERT_DIM:
+        raise ArithmeticError("600 vertices must fit inside the exact 11-qubit Hilbert basis")
+    hilbert_walk_rank, hilbert_walk_digest = _exact_hilbert_walk_rank()
 
     digest_body = {
         "architecture_id": SEARCH_ARCHITECTURE_ID,
@@ -225,6 +296,9 @@ def precompute_pythia_search() -> PythiaSearchPrecompute:
         "coarse_anchor": list(coarse_anchor),
         "adjacency": [list(neighbours) for neighbours in adjacency],
         "hilbert_basis": list(hilbert_basis),
+        "hilbert_walk_horizon": HILBERT_WALK_HORIZON,
+        "hilbert_walk_rank": list(hilbert_walk_rank),
+        "hilbert_walk_digest": hilbert_walk_digest,
     }
     digest = hashlib.sha256(
         json.dumps(digest_body, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -238,6 +312,8 @@ def precompute_pythia_search() -> PythiaSearchPrecompute:
         coarse_anchor=coarse_anchor,
         adjacency=adjacency,
         hilbert_basis=hilbert_basis,
+        hilbert_walk_rank=hilbert_walk_rank,
+        hilbert_walk_digest=hilbert_walk_digest,
         digest=digest,
     )
 
@@ -248,12 +324,13 @@ def vertex_itinerary(
     *,
     preferred_face: int | None = None,
 ) -> tuple[int, ...]:
-    """Rank and graph-traverse all 600 Hilbert-addressed search vertices.
+    """Return the complete job-ranked manifold after exact Hilbert traversal.
 
-    The real header determines the geometric affinities. If the live PYTHIA
-    plan supplies ``preferred_face`` then that coarse face becomes the first
-    exploration basin; within it and thereafter the real header affinity still
-    ranks the graph frontier. Every vertex remains reachable and visited once.
+    First, the real header and optional PYTHIA preferred face produce a
+    connected best-first traversal of the 600-vertex dual manifold. Second,
+    the precomputed exact Turing walk rank is applied to the *positions* of
+    that complete manifold traversal. Position zero remains first, preserving
+    PYTHIA's selected search basin; all 600 vertices remain present exactly once.
     """
     if len(header) != 80:
         raise ValueError("header must be exactly 80 bytes")
@@ -263,7 +340,9 @@ def vertex_itinerary(
     direction = _header_direction(bytes(header[:76]))
 
     def coarse_key(face_id: int) -> tuple[int, float, int]:
-        preferred_rank = 0 if preferred_face is not None and face_id == preferred_face else 1
+        preferred_rank = (
+            0 if preferred_face is not None and face_id == preferred_face else 1
+        )
         return (
             preferred_rank,
             -_phi_dot(direction, state.coarse_frames_11d[face_id]),
@@ -283,7 +362,7 @@ def vertex_itinerary(
     root = min(range(DUAL_VERTEX_COUNT), key=lambda vertex_id: score[vertex_id])
 
     visited = {root}
-    order = [root]
+    geometric_order = [root]
     frontier: list[tuple[tuple[int, float, int], int]] = []
     for neighbour in state.adjacency[root]:
         heapq.heappush(frontier, (score[neighbour], neighbour))
@@ -292,13 +371,17 @@ def vertex_itinerary(
         if vertex_id in visited:
             continue
         visited.add(vertex_id)
-        order.append(vertex_id)
+        geometric_order.append(vertex_id)
         for neighbour in state.adjacency[vertex_id]:
             if neighbour not in visited:
                 heapq.heappush(frontier, (score[neighbour], neighbour))
+    if len(geometric_order) != DUAL_VERTEX_COUNT or len(set(geometric_order)) != DUAL_VERTEX_COUNT:
+        raise ArithmeticError("600-vertex geometric itinerary lost manifold coverage")
+
+    order = tuple(geometric_order[position] for position in state.hilbert_walk_rank)
     if len(order) != DUAL_VERTEX_COUNT or len(set(order)) != DUAL_VERTEX_COUNT:
-        raise ArithmeticError("600-vertex Hilbert itinerary lost manifold coverage")
-    return tuple(order)
+        raise ArithmeticError("exact Hilbert traversal lost 600-vertex manifold coverage")
+    return order
 
 
 def pythia_hilbert_600_nonces(
@@ -372,6 +455,7 @@ __all__ = [
     "DUAL_VERTEX_COUNT",
     "HILBERT_DIM",
     "HILBERT_QUBITS",
+    "HILBERT_WALK_HORIZON",
     "PythiaSearchPrecompute",
     "SEARCH_ARCHITECTURE_ID",
     "precompute_pythia_search",
