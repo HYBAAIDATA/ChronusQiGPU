@@ -122,6 +122,29 @@ def test_boundary_gate_rejects_dynamic_mining_import_of_pulvini(tmp_path: Path) 
     assert any(v.rule == "mining-imports-pulvini-data" for v in violations)
 
 
+def test_boundary_gate_rejects_pulvini_fold_symbol_in_mining(tmp_path: Path) -> None:
+    source = tmp_path / "mining" / "bad_fold.py"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "from python_backend.core_modules.math_folding import pulvini_fold\n",
+        encoding="utf-8",
+    )
+    violations = check_repository(tmp_path)
+    assert any(
+        v.rule == "mining-imports-pulvini-fold-symbol" for v in violations
+    )
+
+
+def test_boundary_gate_allows_substrate_neutral_exact_math_in_mining(tmp_path: Path) -> None:
+    source = tmp_path / "mining" / "exact_sequence.py"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "from python_backend.core_modules.math_folding import fibonacci_cassini\n",
+        encoding="utf-8",
+    )
+    assert check_repository(tmp_path) == []
+
+
 def test_boundary_gate_rejects_pulvini_import_of_mining(tmp_path: Path) -> None:
     source = tmp_path / "quantum_compute_substrate" / "pulvini" / "bad_operator.py"
     source.parent.mkdir(parents=True)
@@ -157,6 +180,14 @@ def test_boundary_gate_rejects_production_pythagoras_compatibility_use(
     assert any(
         v.rule == "production-uses-pythagoras-compatibility" for v in violations
     )
+
+
+def test_chronus_compatibility_surface_does_not_export_pulvini_fold() -> None:
+    from chronus.mla1517 import math_folding as chronus_math
+
+    assert hasattr(chronus_math, "fibonacci_cassini")
+    assert not hasattr(chronus_math, "PulviniFold")
+    assert not hasattr(chronus_math, "pulvini_fold")
 
 
 def test_pulvini_public_api_exposes_no_mining_authority() -> None:
