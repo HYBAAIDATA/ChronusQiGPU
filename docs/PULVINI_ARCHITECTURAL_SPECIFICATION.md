@@ -146,7 +146,86 @@ Every system with memory/data may consume the shared THESEUS/OVID substrate
 through the governed inter-system relationship, without creating private
 copies that silently become competing sources of truth.
 
-## 9. Legacy mining references
+## 9. Executable enforcement
+
+The authority boundary is enforced by
+`scripts/check_pulvini_data_boundary.py`, run explicitly in the Python CI job.
+The gate is bidirectional:
+
+1. active PULVINI/data modules may not import mining, Stratum, share-submission,
+   or hash-pipeline modules;
+2. active mining modules may not import PULVINI, its exact folding core, or its
+   data bridge;
+3. literal dynamic imports through `importlib.import_module()` or
+   `__import__()` are inspected as dependency edges;
+4. production code may not import or reference `PythagorasOrchestrator`;
+5. active code may not call the owner-specified historical HYBA Data module
+   paths while they remain absent.
+
+This is intentionally a static architecture gate rather than runtime
+importer-stack inspection. Python caller-stack import checks are brittle and can
+be defeated by indirection; the repository gate rejects the forbidden
+dependency before it enters an admitted build. Runtime results additionally
+carry `authority=pulvini.data`, `domain=data`, and `mining_path=false`.
+
+`PythagorasOrchestrator` remains available only as a deprecated compatibility
+facade. It is a distinct class, becomes read-only after construction, emits a
+`DeprecationWarning`, and delegates execution to the same PULVINI data
+semantics. It cannot emit or acquire a Pythagoras authority identity. The CI
+architecture gate prevents production repository code from consuming that
+compatibility facade.
+
+## 10. Shared THESEUS/OVID durability and restart verification
+
+Cross-system data entanglement is serialized as THREE linked durable records in
+the same THESEUS custody root:
+
+1. the producer's shared operational data record;
+2. the OVID transform-lineage operational record;
+3. an OVID-authored entanglement-binding index containing the participant set,
+   source identity, parent binding IDs, shared custody record ID, OVID lineage
+   record ID, OVID lineage ID, and payload digest.
+
+THESEUS supplies envelope authenticity/integrity and durable primary/replica
+custody. The persistent entanglement layer adds structural verification before
+any consumer starts. Rehydration discovers binding-index IDs from both verified
+inventory and the physical primary/replica index filenames so an unrecoverable
+index cannot silently disappear merely because inventory omitted it.
+
+For every recovered binding, startup verifies:
+
+- binding-index schema, producer and kind;
+- binding ID ↔ durable record-ID agreement;
+- canonical subsystem identities and participant set;
+- correlation IDs and durable lineage pointers;
+- existence and readability of the shared THESEUS and OVID-lineage records;
+- parent-binding existence and an acyclic parent graph;
+- shared-record content digest;
+- OVID lineage identity and parent lineage.
+
+A mismatch raises `EntangledCustodyError` during `CompositionRoot.start()`.
+Consumers are started only after this gate passes. Therefore PYTHIA,
+Salamander, AL HARAS, TURING, TOE, Kellogg, EUCLID and Chronus cannot attach to
+a silently corrupted shared relationship graph through this composition root.
+
+## 11. Missing historical HYBA Data paths
+
+The absent owner-specified paths are **not stubbed**. A stub that imports and
+then raises `NotImplementedError` would make the path appear reachable to
+import audits and could create false integration confidence.
+
+Instead:
+
+- the paths remain explicitly absent;
+- the architectural specification records their intended lineage;
+- the CI boundary gate fails if active production code imports them;
+- an intentional future restoration must add real implementation plus its own
+  evidence before the gate is changed.
+
+This preserves the distinction between historical/design authority and current
+runtime reachability.
+
+## 12. Legacy mining references
 
 `legacy/Intelligence/pulvini_runtime.py` and related historical mining tests
 record an earlier architecture in which PULVINI terminology was used to rank
