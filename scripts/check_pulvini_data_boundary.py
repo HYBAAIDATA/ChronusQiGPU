@@ -162,7 +162,10 @@ def _imports_and_names(path: Path) -> tuple[set[str], set[str]]:
         if isinstance(node, ast.Import):
             imports.update(alias.name for alias in node.names)
         elif isinstance(node, ast.ImportFrom) and node.module:
-            imports.add(node.module)
+            # Record the imported targets, not the parent module itself. This
+            # distinction lets mining import a named substrate-neutral helper
+            # without treating it as a whole-namespace import that would also
+            # expose PULVINI fold authority.
             imports.update(f"{node.module}.{alias.name}" for alias in node.names)
         elif isinstance(node, ast.Name):
             names.add(node.id)
