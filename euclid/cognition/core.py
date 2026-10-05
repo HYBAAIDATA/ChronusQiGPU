@@ -203,6 +203,13 @@ class GeneralIntelligenceCore:
         retrieval_structure = frozenset(
             str(s) for s in state.representation.get("retrieval_structure", structure)
         )
+        # Retrieval keys follow the adopted representation's overlay, so a
+        # restructured problem genuinely sees different prior experience.
+        retrieval_structure = frozenset(
+            str(token) for token in state.representation.get(
+                "retrieval_structure", sorted(structure)
+            )
+        )
         if retrieval_structure != structure:
             structure = retrieval_structure
 

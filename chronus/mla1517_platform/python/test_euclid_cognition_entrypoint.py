@@ -29,11 +29,24 @@ from euclid.runtime import EuclidRuntime  # noqa: E402
 
 
 class _DeterministicExecutor:
-    """Deterministic governed executor: pure function of the action."""
+    """Deterministic governed executor.
+
+    Reports what the environment would plausibly observe for the requested
+    action, mirroring the composed ``explanations`` predictions, so an
+    intervention confirms at least one hypothesis rather than refuting all.
+    """
+
+    _OBSERVED_BY_ACTION = {
+        "inspect": "dependency-evidence",
+        "test": "test-evidence",
+        "verify": "test-evidence",
+    }
 
     def execute(self, action: str, payload: Mapping[str, Any]) -> Mapping[str, Any]:
         return {
-            "observation": f"observed:{action}",
+            "observation": self._OBSERVED_BY_ACTION.get(
+                str(action), "dependency-evidence"
+            ),
             "goal_met": False,
             "cycle": payload.get("cycle"),
             "reward_authority": "none",

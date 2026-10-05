@@ -27,6 +27,16 @@ from euclid.runtime import EuclidRuntime  # noqa: E402
 
 CREATOR = "restart-probe"
 
+#: What the environment would plausibly observe for each composed action,
+#: mirroring the ``explanations`` table in ``EuclidRuntime._compose_cognition``.
+#: Reporting a token no hypothesis predicted would refute every competing
+#: hypothesis and the loop would (correctly) refuse to plan.
+_OBSERVED_BY_ACTION = {
+    "inspect": "dependency-evidence",
+    "test": "test-evidence",
+    "verify": "test-evidence",
+}
+
 
 INTERVENTION_OBSERVATIONS = {"inspect": "dependency-evidence", "test": "test-evidence"}
 

@@ -382,7 +382,8 @@ class TestProductionComponentWiring(unittest.TestCase):
         episodes: list[tuple[bool, int]] = []
 
         class _RecordingEpisodeLearner:
-            def record_episode(self, state, *, success, cycle, result):
+            def record_episode(self, state, *, success, cycle, result,
+                               channel="submission"):
                 episodes.append((bool(success), int(cycle)))
                 state.learning_updates.append(
                     {"kind": "canonical-learning-service", "cycle": int(cycle)}
@@ -489,7 +490,8 @@ class TestProductionReviewRegressions(unittest.TestCase):
                 return ControlAssessment("halt_stalled", "test halt", {})
 
         class _Learner:
-            def record_episode(self, state, *, success, cycle, result):
+            def record_episode(self, state, *, success, cycle, result,
+                               channel="submission"):
                 episodes.append((success, cycle, dict(result)))
 
         core = build_core(SyntheticDomain(succeed_on_plan=False), episode_learner=_Learner())
