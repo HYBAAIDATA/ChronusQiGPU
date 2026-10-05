@@ -202,6 +202,60 @@ def test_boundary_gate_allows_substrate_neutral_exact_math_in_mining(tmp_path: P
     assert check_repository(tmp_path) == []
 
 
+def test_boundary_gate_rejects_transitive_mining_to_pulvini_route(tmp_path: Path) -> None:
+    helper = tmp_path / "helpers" / "data_helper.py"
+    helper.parent.mkdir(parents=True)
+    helper.write_text(
+        "from quantum_compute_substrate.pulvini import PulviniDataOrchestrator\n"
+        "router = PulviniDataOrchestrator()\n",
+        encoding="utf-8",
+    )
+    mining = tmp_path / "mining" / "indirect_route.py"
+    mining.parent.mkdir(parents=True)
+    mining.write_text("from helpers import data_helper\n", encoding="utf-8")
+
+    violations = check_repository(tmp_path)
+    assert any(
+        v.rule == "mining-transitively-reaches-pulvini-data" for v in violations
+    )
+
+
+def test_boundary_gate_rejects_transitive_relative_import_route(tmp_path: Path) -> None:
+    package = tmp_path / "helpers"
+    package.mkdir(parents=True)
+    (package / "__init__.py").write_text("", encoding="utf-8")
+    (package / "pulvini_inner.py").write_text(
+        "from quantum_compute_substrate.pulvini import PulviniDataOrchestrator\n",
+        encoding="utf-8",
+    )
+    (package / "facade.py").write_text(
+        "from . import pulvini_inner\n",
+        encoding="utf-8",
+    )
+    mining = tmp_path / "mining" / "relative_indirect.py"
+    mining.parent.mkdir(parents=True)
+    mining.write_text("from helpers import facade\n", encoding="utf-8")
+
+    violations = check_repository(tmp_path)
+    assert any(
+        v.rule == "mining-transitively-reaches-pulvini-data" for v in violations
+    )
+
+
+def test_boundary_gate_allows_transitive_neutral_math_helper(tmp_path: Path) -> None:
+    helper = tmp_path / "helpers" / "neutral_math.py"
+    helper.parent.mkdir(parents=True)
+    helper.write_text(
+        "from python_backend.core_modules.math_folding import fibonacci_cassini\n",
+        encoding="utf-8",
+    )
+    mining = tmp_path / "mining" / "neutral_route.py"
+    mining.parent.mkdir(parents=True)
+    mining.write_text("from helpers import neutral_math\n", encoding="utf-8")
+
+    assert check_repository(tmp_path) == []
+
+
 def test_boundary_gate_rejects_pulvini_import_of_mining(tmp_path: Path) -> None:
     source = tmp_path / "quantum_compute_substrate" / "pulvini" / "bad_operator.py"
     source.parent.mkdir(parents=True)
