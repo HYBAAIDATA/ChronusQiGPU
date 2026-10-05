@@ -41,6 +41,23 @@ async def _stop(task: asyncio.Task) -> None:
         await task
 
 
+async def _close(server: asyncio.AbstractServer) -> None:
+    """Close the reference pool server without blocking the suite forever.
+
+    Python 3.12 changed ``Server.wait_closed()`` to wait for every connection
+    handler task, not just the listening socket. A coordinator that is still
+    retrying an authorization failure keeps such handlers alive, so an
+    unbounded ``wait_closed()`` never returns and hangs collection teardown.
+
+    The server is already stopped by ``close()``; this only bounds how long the
+    test waits for in-flight handler tasks to notice. The wait is bounded so a
+    leaked handler can never wedge CI.
+    """
+    server.close()
+    with contextlib.suppress(asyncio.TimeoutError):
+        await asyncio.wait_for(server.wait_closed(), timeout=5)
+
+
 def _dead_port() -> int:
     with socket.socket() as probe:
         probe.bind(("127.0.0.1", 0))
@@ -96,8 +113,7 @@ async def _mines_reports_and_reconnects(tmp_path):
         assert not task.done()
     finally:
         await _stop(task)
-        server.close()
-        await server.wait_closed()
+        await _close(server)
 
 
 def test_bridge_free_loop_mines_reports_and_reconnects(tmp_path):
@@ -122,8 +138,7 @@ async def _fails_over_to_the_secondary(tmp_path):
         assert coord.client.endpoint.name == "viabtc"
     finally:
         await _stop(task)
-        server.close()
-        await server.wait_closed()
+        await _close(server)
 
 
 def test_bridge_free_loop_fails_over_to_the_secondary(tmp_path):
@@ -149,8 +164,7 @@ async def _survives_refused_authorization(tmp_path):
         assert any(s["state"] == "AUTH_FAILED" for s in snapshots)
     finally:
         await _stop(task)
-        server.close()
-        await server.wait_closed()
+        await _close(server)
 
 
 def test_bridge_free_loop_survives_refused_authorization(tmp_path):

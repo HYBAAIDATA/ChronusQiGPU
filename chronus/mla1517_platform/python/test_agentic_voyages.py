@@ -124,7 +124,14 @@ class FakePool:
                 accepted = self.submit_policy == "accept"
                 writer.write(_line({"id": message["id"], "result": accepted, "error": None}))
                 await writer.drain()
-        except (ConnectionError, asyncio.IncompleteReadError):
+        except (ConnectionError, asyncio.IncompleteReadError, json.JSONDecodeError):
+            # A peer that closes mid-frame makes readline() return b"", which
+            # json.loads rejects with JSONDecodeError — a ValueError, not a
+            # ConnectionError.  That is an ordinary disconnect, not a harness
+            # failure: without this arm the exception escapes the client
+            # callback ("Unhandled exception in client_connected_cb") and the
+            # reference server keeps a pending connection task, which hangs the
+            # whole platform suite at teardown.
             pass
         finally:
             writer.close()
