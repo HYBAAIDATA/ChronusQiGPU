@@ -7,9 +7,10 @@ baseline window is returned unchanged.
 
 This module is also the final production coordinator composition seam. Native
 CUDA and Metal hashers implement the same M32/range callable contract as the
-historical OpenCL routes, but the route enum and top evidence tier still carry
-OpenCL-era names. The compatibility below executes those native methods without
-mislabeling their physical substrate or inflating their assurance class.
+historical OpenCL routes. The compatibility below executes those native methods
+without mislabeling their physical substrate. Search-order intent is bound into
+the immutable SearchPlan before dispatch, so queued work cannot be silently
+reinterpreted by later coordinator state.
 """
 from __future__ import annotations
 
@@ -19,7 +20,12 @@ from typing import Any
 
 from python_backend.core_modules.geodesic_tensor_engine import GeodesicNoncePlanner
 from .euclid_support import EuclidProductionMiningCoordinator
-from .execution_router import ExecutionRouter, NONCE_ORDER_POINCARE_11D
+from .execution_router import (
+    ExecutionRouter,
+    NONCE_ORDER_HENDRIX,
+    NONCE_ORDER_M32,
+    NONCE_ORDER_POINCARE_11D,
+)
 
 _NATIVE_BACKENDS = frozenset({"cuda", "metal"})
 _NATIVE_ROUTE_METHODS = {
@@ -48,10 +54,15 @@ def _bind_native_route_markers(hasher: Any) -> None:
 
 
 class ProductionExecutionRouter(ExecutionRouter):
-    """Canonical router with truthful native CUDA/Metal route compatibility."""
+    """Canonical router with plan-bound ordering and native GPU compatibility."""
 
     def __init__(self, hasher: Any, *args: Any, **kwargs: Any) -> None:
         _bind_native_route_markers(hasher)
+        # Production SearchPlans now own WHICH ORDER. Ignore mutable/global
+        # coordinator callbacks at execution time and consume the immutable
+        # plan field instead. Generic ExecutionRouter users retain their
+        # injectable callback; this rule is specific to the production seam.
+        kwargs["nonce_order"] = lambda plan: plan.nonce_order
         super().__init__(hasher, *args, **kwargs)
 
     def _opencl_bound(self) -> bool:
@@ -73,25 +84,6 @@ class ProductionExecutionRouter(ExecutionRouter):
             kernel_identity=f"chronus_native_sha256d:{backend}:{decision.executed_route.value}",
             kernel_build_status="native_method_bound_after_backend_self_check",
         )
-
-    def _build_record(self, *args: Any, **kwargs: Any):
-        """Keep native provenance truthful without abusing an OpenCL-only tier.
-
-        ExecutionRecord currently permits HARDWARE_EXECUTED only for its
-        OpenCL/remote/ASIC backend set. A truthful ``cuda`` or ``metal`` label
-        would therefore be rejected after a real launch. Build the record at
-        the conservative SOFTWARE_VERIFIED tier, then restore the *measured*
-        native launch count. The backend label, kernel time and work counters
-        remain literal; only the assurance tier is deliberately under-claimed
-        until the evidence schema is made substrate-general.
-        """
-        launches = int(kwargs.get("launches", 0) or 0)
-        if _backend_name(self._hasher) not in _NATIVE_BACKENDS or launches <= 0:
-            return super()._build_record(*args, **kwargs)
-        conservative = dict(kwargs)
-        conservative["launches"] = 0
-        record = super()._build_record(*args, **conservative)
-        return replace(record, kernel_launch_count=launches)
 
 
 class GeodesicProductionMiningCoordinator(EuclidProductionMiningCoordinator):
@@ -164,6 +156,39 @@ class GeodesicProductionMiningCoordinator(EuclidProductionMiningCoordinator):
             return "cpu_reference"
         return super()._execution_route()
 
+    def _bind_plan_execution_intent(self, plan):
+        """Seal discovery/search intent into the immutable production plan.
+
+        Intelligence and configured search policy may decide HOW to traverse a
+        leased window, but neither can alter SHA256d, target comparison, Stratum
+        freshness or pool truth. Binding the nonce order here makes that intent
+        replayable and prevents execution from consulting mutable strategy state.
+        """
+        decision = getattr(self, "last_mining_decision", None)
+        refs = dict(plan.evidence_refs)
+        refs["requested_nonce_order"] = self._nonce_order
+        refs["technology_intent"] = {
+            "nonce_order": self._nonce_order,
+            "mining_policy": getattr(decision, "lead", None),
+            "candidate_ordering": (
+                getattr(getattr(decision, "policy", None), "candidate_ordering", None)
+                if decision is not None
+                else None
+            ),
+            "geodesic_enabled": bool(self.geodesic_enabled),
+            "proof_authority": "sha256d_target_and_literal_pool_response_only",
+        }
+        return replace(plan, nonce_order=self._nonce_order, evidence_refs=refs)
+
+    def _baseline_plan(self, identity, lease, window, reason):
+        return self._bind_plan_execution_intent(
+            super()._baseline_plan(identity, lease, window, reason)
+        )
+
+    def _build_plan(self, identity):
+        plan = super()._build_plan(identity)
+        return None if plan is None else self._bind_plan_execution_intent(plan)
+
     def _router_for(self, plan):
         """Preserve the parent's CPU proof oracle; replace only the router seam."""
         base = super()._router_for(plan)
@@ -171,20 +196,114 @@ class GeodesicProductionMiningCoordinator(EuclidProductionMiningCoordinator):
             self.execution_hasher,
             base._cpu,
             freshness=base._freshness,
-            nonce_order=base._nonce_order,
             cpu_nonce_executor=base._cpu_nonces,
         )
+
+    def _technology_utilization_snapshot(self) -> dict[str, Any]:
+        """Truth-labelled use of mining discoveries in the canonical runtime.
+
+        ACTIVE means the capability is on the production path at the authority
+        stated here. AVAILABLE_NOT_SELECTED and GATED states are deliberate:
+        forcing unmeasured research into control would be under-governed use,
+        not fuller utilisation.
+        """
+        selected_order = self._nonce_order
+        audit = self.policy_audit.snapshot()
+        backend = _backend_name(self.execution_hasher)
+        return {
+            "schema": "pythia.mining_technology_utilization/1",
+            "scope": "canonical production mining runtime",
+            "truth_boundary": (
+                "discoveries may steer ordering, allocation, execution, recovery and audit; "
+                "only SHA256d/target/freshness and literal pool responses establish mining truth"
+            ),
+            "discoveries": {
+                "hendrix_coprime_search": {
+                    "state": (
+                        "ACTIVE" if selected_order == NONCE_ORDER_HENDRIX else "AVAILABLE_NOT_SELECTED"
+                    ),
+                    "authority": "nonce ordering only",
+                    "evidence": "SearchPlan.nonce_order -> ExecutionRecord requested/executed_nonce_order",
+                },
+                "m32_dual_solid_lane_topology": {
+                    "state": "ACTIVE_SUPPORTING_TOPOLOGY",
+                    "authority": "lane ordering / accelerator dispatch only",
+                    "evidence": "SearchPlan.lane_order + dispatch certificate + execution record",
+                },
+                "poincare_cassini_11d": {
+                    "state": (
+                        "ACTIVE_CPU_REFERENCE"
+                        if selected_order == NONCE_ORDER_POINCARE_11D
+                        else "AVAILABLE_NOT_SELECTED"
+                    ),
+                    "authority": "nonce ordering only",
+                    "evidence": "plan-bound order; CPU route enforced when selected",
+                },
+                "geodesic_candidate_ordering": {
+                    "state": self._geodesic_state.get("state", "Unavailable"),
+                    "authority": "candidate permutation only",
+                    "evidence": "membership-preservation gate + geodesic_ordering telemetry",
+                },
+                "toe_causal_steering": {
+                    "state": "ACTIVE" if self.last_toe_frame is not None else "AVAILABLE_UNBOUND",
+                    "authority": "advisory face bias / throttle only",
+                    "evidence": "TOE frame digest + signal binding; never proof",
+                },
+                "turing_vqc_policy_audit": {
+                    "state": (
+                        "ACTIVE_AUDITING"
+                        if audit.get("audits", 0) > 0
+                        else (
+                            "AVAILABLE_AWAITING_AUDIT_INTERVAL"
+                            if audit.get("vqc_available")
+                            else "UNAVAILABLE"
+                        )
+                    ),
+                    "authority": "independent policy cross-check; disagreement never acts",
+                    "evidence": "Kellogg-attested policy_audit receipt",
+                },
+                "lucas_scale_ladder": {
+                    "state": "ACTIVE",
+                    "authority": "bounded window ceiling / rung budget",
+                    "evidence": "window_basis + solver rung budget",
+                },
+                "closed_loop_optimizer": {
+                    "state": "ACTIVE_MEASURED_GATE",
+                    "authority": "bounded mining-window retain/rollback",
+                    "evidence": "optimization trial history",
+                },
+                "salamander_recovery": {
+                    "state": "ACTIVE_MONITORING",
+                    "authority": "bounded recovery / reprobe / fail-closed return",
+                    "evidence": "RecoveryGovernor + SelfHealingAgent records",
+                },
+                "native_cuda_execution": {
+                    "state": "ACTIVE" if backend == "cuda" else "GATED_BY_CAPABILITY_PROBE",
+                    "authority": "physical SHA256d execution only",
+                    "evidence": "backend self-check + measured launch/work before HARDWARE_EXECUTED",
+                },
+                "native_metal_execution": {
+                    "state": "ACTIVE" if backend == "metal" else "GATED_BY_CAPABILITY_PROBE",
+                    "authority": "physical SHA256d execution only",
+                    "evidence": "backend self-check + measured launch/work before HARDWARE_EXECUTED",
+                },
+            },
+        }
 
     def evidence_snapshot(self) -> dict[str, Any]:
         snapshot = super().evidence_snapshot()
         snapshot["geodesic_ordering"] = dict(self._geodesic_state)
+        snapshot["technology_utilization"] = self._technology_utilization_snapshot()
         backend = _backend_name(self.execution_hasher)
         if backend in _NATIVE_BACKENDS:
             snapshot["native_execution"] = {
                 "backend": backend,
                 "route": self._execution_route(),
                 "physical_backend_truthful": True,
-                "hardware_evidence_class": "SOFTWARE_VERIFIED_PENDING_SCHEMA_GENERALISATION",
+                "hardware_evidence_rule": (
+                    "HARDWARE_EXECUTED only after measured kernel_launch_count > 0 "
+                    "and completed_work_items > 0"
+                ),
             }
         return snapshot
 
