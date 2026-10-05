@@ -70,6 +70,9 @@ class ReachabilityMatrix:
         self._entries.append(entry)
         return entry
 
+    def entries(self) -> tuple[CapabilityEvidence, ...]:
+        return tuple(self._entries)
+
     def stage(self, component: str) -> ReachabilityStage | None:
         names = [e.stage for e in self._entries if e.component == component]
         return ReachabilityStage[names[-1]] if names else None

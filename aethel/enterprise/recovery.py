@@ -13,6 +13,12 @@ Two jobs:
    exactly. ``replay_into`` re-executes the sealed op stream into a second
    custody instance and verifies the reconstructed digests match.
 
+Operational records are replayed as operational records: producer identity,
+schema, evidence state, lineage, correlations and dependency manifests are
+re-admitted through ``put_record`` and therefore pass the same producer and
+dependency contracts as the original durable write. Plain byte records remain
+plain byte records. No replay path silently strips producer meaning.
+
 This module never imports custody — custody objects are passed in and used
 via their public surface only.
 """
@@ -109,7 +115,6 @@ def fold_journal_ops(
     yields identical output.
     """
     intents: dict[str, Mapping[str, Any]] = {}
-    sealed_ids: set[str] = set()
     materialized: list[Mapping[str, Any]] = []
     for row in rows:
         op_id = str(row.get("op_id", ""))
@@ -117,7 +122,6 @@ def fold_journal_ops(
         if status == "intent" and op_id:
             intents[op_id] = row
         elif status == "sealed" and op_id:
-            sealed_ids.add(op_id)
             materialized.append(row)
     expected: dict[str, dict[str, Any]] = {}
     order: list[str] = []
@@ -138,9 +142,8 @@ def fold_journal_ops(
                 "content_digest": str(merged.get("content_digest", "")),
                 "present": True,
             }
-        elif op == "delete":
-            if rid in expected:
-                expected[rid]["present"] = False
+        elif op == "delete" and rid in expected:
+            expected[rid]["present"] = False
     return {rid: expected[rid] for rid in order}
 
 
@@ -148,18 +151,16 @@ def verify_replay(
     expected: Mapping[str, Mapping[str, Any]],
     actual: Iterable[Mapping[str, Any]],
 ) -> dict[str, Any]:
-    """Diff folded journal expectation vs verified store records.
-
-    ``actual`` yields dicts with ``record_id``, ``generation``,
-    ``content_digest``. Returns a deterministic divergence report.
-    """
+    """Diff folded journal expectation vs verified store records."""
     actual_map = {str(r["record_id"]): r for r in actual}
     divergences: list[dict[str, Any]] = []
     for rid, exp in expected.items():
         act = actual_map.get(rid)
         if not exp.get("present", True):
             if act is not None:
-                divergences.append({"record_id": rid, "kind": "expected_deleted_present"})
+                divergences.append(
+                    {"record_id": rid, "kind": "expected_deleted_present"}
+                )
             continue
         if act is None:
             divergences.append({"record_id": rid, "kind": "missing"})
@@ -186,23 +187,44 @@ def verify_replay(
         divergences.append({"record_id": rid, "kind": "unexpected_present"})
     return {
         "deterministic": True,
-        "expected_records": sum(1 for e in expected.values() if e.get("present", True)),
+        "expected_records": sum(
+            1 for e in expected.values() if e.get("present", True)
+        ),
         "actual_records": len(actual_map),
         "divergences": divergences,
         "match": not divergences,
     }
 
 
+def _replay_put(source: Any, dest: Any, record_id: str) -> str:
+    """Replay one present record without discarding operational semantics.
+
+    ``get_record`` is the authoritative public surface for records carrying a
+    producer manifest. If the record is a plain custody byte object,
+    ``get_record`` raises ``KeyError`` and replay falls back to ``get``/``put``.
+    Contract failures from ``put_record`` are deliberately not swallowed: a
+    destination that cannot admit the producer/dependency contract must fail
+    replay rather than silently demote the record to anonymous bytes.
+    """
+    try:
+        record = source.get_record(record_id)
+    except KeyError:
+        data = source.get(record_id)
+        dest.put(data, record_id=record_id)
+        return "bytes"
+    dest.put_record(record)
+    return "operational_record"
+
+
 def replay_into(source: Any, dest: Any) -> dict[str, Any]:
     """Re-execute the sealed op stream from ``source`` into ``dest`` custody.
 
-    Both arguments are custody-like objects (public surface only: journal
-    rows, get, put, delete, list_records). Replay order is journal order —
-    deterministic by construction. Payloads are the verified ingress bytes
-    read back from the source store, re-admitted through the destination's
-    normal put path (same MAC key -> identical envelopes).
+    Replay order is journal order. Operational records are re-admitted through
+    ``dest.put_record`` so producer, evidence, lineage, correlation and
+    dependency manifests survive disaster-recovery replay and are validated
+    again. Plain custody objects use ``dest.put``. Final content digests are
+    compared against the verified source inventory.
     """
-    # Merge intent+seal by op_id — op shape lives on the intent row.
     intents: dict[str, Mapping[str, Any]] = {}
     ops: list[dict[str, Any]] = []
     for row in source.journal.iter_rows():
@@ -214,19 +236,25 @@ def replay_into(source: Any, dest: Any) -> dict[str, Any]:
             merged.update(row)
             if merged.get("op") in {"put", "delete"}:
                 ops.append(merged)
+
     applied = 0
     skipped_missing = 0
+    operational_records = 0
+    byte_records = 0
     for row in ops:
         rid = str(row.get("record_id", ""))
         if not rid:
             continue
         if row["op"] == "put":
             try:
-                data = source.get(rid)
+                replay_kind = _replay_put(source, dest, rid)
             except KeyError:
                 skipped_missing += 1
                 continue
-            dest.put(data, record_id=rid)
+            if replay_kind == "operational_record":
+                operational_records += 1
+            else:
+                byte_records += 1
             applied += 1
         else:
             try:
@@ -235,6 +263,7 @@ def replay_into(source: Any, dest: Any) -> dict[str, Any]:
                 skipped_missing += 1
                 continue
             applied += 1
+
     src_records = {r["record_id"]: r for r in source.list_records()}
     dst_records = {r["record_id"]: r for r in dest.list_records()}
     mismatched = sorted(
@@ -242,10 +271,15 @@ def replay_into(source: Any, dest: Any) -> dict[str, Any]:
         for rid, rec in src_records.items()
         if rid not in dst_records
         or dst_records[rid].get("content_digest") != rec.get("content_digest")
+        or dst_records[rid].get("producer") != rec.get("producer")
+        or dst_records[rid].get("kind") != rec.get("kind")
+        or dst_records[rid].get("evidence_state") != rec.get("evidence_state")
     )
     return {
         "ops_replayed": applied,
         "ops_skipped_missing": skipped_missing,
+        "operational_records_replayed": operational_records,
+        "byte_records_replayed": byte_records,
         "source_records": len(src_records),
         "dest_records": len(dst_records),
         "digest_mismatches": mismatched,

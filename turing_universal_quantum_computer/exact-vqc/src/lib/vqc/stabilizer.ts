@@ -1,7 +1,11 @@
 /**
- * Exact CHP stabilizer tableau.
- * Port of `turing_universal_quantum_computer/stabilizer.py` (bitmasks as bigint,
- * so n = 10_000 stays exact).
+ * Exact Aaronson-Gottesman/CHP stabilizer tableau.
+ *
+ * bigint bitmasks keep the Clifford representation exact at wide logical
+ * widths without materialising 2^n amplitudes. Measurement follows the same
+ * canonical random-measurement update as the Python production engine: the
+ * anticommuting stabilizer pivot clears every other row except its paired
+ * destabilizer, which is replaced by the old pivot after clearing.
  */
 
 export class StabilizerDomainError extends Error {
@@ -37,6 +41,10 @@ function gsum(x1: bigint, z1: bigint, x2: bigint, z2: bigint): number {
   );
 }
 
+function symplecticProduct(x1: bigint, z1: bigint, x2: bigint, z2: bigint): number {
+  return (popcount(x1 & z2) + popcount(z1 & x2)) & 1;
+}
+
 export class StabilizerState {
   readonly n: number;
   private _x: bigint[];
@@ -44,7 +52,9 @@ export class StabilizerState {
   private _r: number[];
 
   constructor(nQubits: number) {
-    if (!Number.isInteger(nQubits) || nQubits < 1) throw new Error("n_qubits must be >= 1");
+    if (!Number.isInteger(nQubits) || nQubits < 1) {
+      throw new Error("n_qubits must be >= 1");
+    }
     this.n = nQubits;
     const rows = 2 * nQubits;
     this._x = new Array(rows).fill(0n);
@@ -59,12 +69,19 @@ export class StabilizerState {
 
   clone(): StabilizerState {
     const s = Object.create(StabilizerState.prototype) as StabilizerState;
-    Object.assign(s, { n: this.n, _x: this._x.slice(), _z: this._z.slice(), _r: this._r.slice() });
+    Object.assign(s, {
+      n: this.n,
+      _x: this._x.slice(),
+      _z: this._z.slice(),
+      _r: this._r.slice(),
+    });
     return s;
   }
 
   private qubit(q: number): void {
-    if (!Number.isInteger(q) || q < 0 || q >= this.n) throw new RangeError(`qubit ${q} out of range [0,${this.n})`);
+    if (!Number.isInteger(q) || q < 0 || q >= this.n) {
+      throw new RangeError(`qubit ${q} out of range [0,${this.n})`);
+    }
   }
 
   private rowsum(h: number, i: number): void {
@@ -73,7 +90,11 @@ export class StabilizerState {
     const mod = ((p % 4) + 4) % 4;
     if (mod === 0) this._r[h] = 0;
     else if (mod === 2) this._r[h] = 1;
-    else throw new StabilizerDomainError("rowsum produced an imaginary Pauli product");
+    else {
+      throw new StabilizerDomainError(
+        "rowsum produced an imaginary Pauli product; rows do not commute",
+      );
+    }
     this._x[h] ^= this._x[i];
     this._z[h] ^= this._z[i];
   }
@@ -118,21 +139,27 @@ export class StabilizerState {
 
   x(q: number): this {
     this.qubit(q);
-    for (let i = 0; i < 2 * this.n; i++) this._r[i] ^= Number((this._z[i] >> BigInt(q)) & 1n);
+    for (let i = 0; i < 2 * this.n; i++) {
+      this._r[i] ^= Number((this._z[i] >> BigInt(q)) & 1n);
+    }
     return this;
   }
 
   y(q: number): this {
     this.qubit(q);
     for (let i = 0; i < 2 * this.n; i++) {
-      this._r[i] ^= Number((this._x[i] >> BigInt(q)) & 1n) ^ Number((this._z[i] >> BigInt(q)) & 1n);
+      this._r[i] ^=
+        Number((this._x[i] >> BigInt(q)) & 1n) ^
+        Number((this._z[i] >> BigInt(q)) & 1n);
     }
     return this;
   }
 
   z(q: number): this {
     this.qubit(q);
-    for (let i = 0; i < 2 * this.n; i++) this._r[i] ^= Number((this._x[i] >> BigInt(q)) & 1n);
+    for (let i = 0; i < 2 * this.n; i++) {
+      this._r[i] ^= Number((this._x[i] >> BigInt(q)) & 1n);
+    }
     return this;
   }
 
@@ -183,29 +210,36 @@ export class StabilizerState {
     this.qubit(q);
     const [p0, p1] = this.measurementProbabilities(q);
     const random = p0.n === p1.n && p0.d === p1.d;
-    let anticommuting: number | null = null;
+
+    let pivot: number | null = null;
     for (let p = this.n; p < 2 * this.n; p++) {
       if ((this._x[p] >> BigInt(q)) & 1n) {
-        anticommuting = p;
+        pivot = p;
         break;
       }
     }
-    if (anticommuting !== null) {
-      const p = anticommuting;
+
+    if (pivot !== null) {
+      const pairedDestabilizer = pivot - this.n;
       for (let i = 0; i < 2 * this.n; i++) {
-        if (i !== p && (this._x[i] >> BigInt(q)) & 1n) this.rowsum(i, p);
+        if (i === pivot || i === pairedDestabilizer) continue;
+        if ((this._x[i] >> BigInt(q)) & 1n) this.rowsum(i, pivot);
       }
-      this._x[p - this.n] = this._x[p];
-      this._z[p - this.n] = this._z[p];
-      this._r[p - this.n] = this._r[p];
-      this._x[p] = 0n;
-      this._z[p] = 1n << BigInt(q);
-      this._r[p] = outcome;
+
+      this._x[pairedDestabilizer] = this._x[pivot];
+      this._z[pairedDestabilizer] = this._z[pivot];
+      this._r[pairedDestabilizer] = this._r[pivot];
+      this._x[pivot] = 0n;
+      this._z[pivot] = 1n << BigInt(q);
+      this._r[pivot] = outcome;
       return { outcome, random };
     }
+
     const actual = this.deterministicOutcome(q) as 0 | 1;
     if (outcome !== actual) {
-      throw new Error(`deterministic measurement outcome is ${actual}; cannot force ${outcome}`);
+      throw new Error(
+        `deterministic measurement outcome is ${actual}; cannot force ${outcome}`,
+      );
     }
     return { outcome: actual, random: false };
   }
@@ -219,13 +253,63 @@ export class StabilizerState {
         const g = gsum(this._x[this.n + i], this._z[this.n + i], sx, sz);
         const p = 2 * this._r[this.n + i] + 2 * sr + g;
         const mod = ((p % 4) + 4) % 4;
-        if (mod !== 0 && mod !== 2) throw new StabilizerDomainError("deterministic measurement produced imaginary phase");
+        if (mod !== 0 && mod !== 2) {
+          throw new StabilizerDomainError(
+            "deterministic measurement produced imaginary phase",
+          );
+        }
         sr = mod === 2 ? 1 : 0;
         sx ^= this._x[this.n + i];
         sz ^= this._z[this.n + i];
       }
     }
     return sr;
+  }
+
+  /** Verify the canonical destabilizer/stabilizer symplectic basis. */
+  validateInvariants(): void {
+    if (
+      this._x.length !== 2 * this.n ||
+      this._z.length !== 2 * this.n ||
+      this._r.length !== 2 * this.n
+    ) {
+      throw new StabilizerDomainError("tableau has the wrong number of rows");
+    }
+    if (this._r.some((phase) => phase !== 0 && phase !== 1)) {
+      throw new StabilizerDomainError("tableau phase bits must be binary");
+    }
+
+    const stabilizerRows: bigint[] = [];
+    const shift = BigInt(this.n);
+    for (let i = 0; i < this.n; i++) {
+      const di = i;
+      const si = this.n + i;
+      stabilizerRows.push(this._x[si] | (this._z[si] << shift));
+      for (let j = 0; j < this.n; j++) {
+        const dj = j;
+        const sj = this.n + j;
+        if (symplecticProduct(this._x[di], this._z[di], this._x[dj], this._z[dj])) {
+          throw new StabilizerDomainError(`destabilizers D_${i}, D_${j} anticommute`);
+        }
+        if (symplecticProduct(this._x[si], this._z[si], this._x[sj], this._z[sj])) {
+          throw new StabilizerDomainError(`stabilizers S_${i}, S_${j} anticommute`);
+        }
+        const pairing = symplecticProduct(
+          this._x[di],
+          this._z[di],
+          this._x[sj],
+          this._z[sj],
+        );
+        if (pairing !== (i === j ? 1 : 0)) {
+          throw new StabilizerDomainError(
+            `canonical pairing violated for D_${i}, S_${j}`,
+          );
+        }
+      }
+    }
+    if (gf2Rank(stabilizerRows) !== this.n) {
+      throw new StabilizerDomainError("stabilizer generators are not independent");
+    }
   }
 
   /** S(A) = |A| − (n − rank of stabilizers restricted to the complement). */
@@ -235,7 +319,9 @@ export class StabilizerState {
       this.qubit(q);
       A.add(q);
     }
-    if (A.size === 0 || A.size === this.n) throw new Error("subset must be a proper nonempty subset");
+    if (A.size === 0 || A.size === this.n) {
+      throw new Error("subset must be a proper nonempty subset");
+    }
     const rows: bigint[] = [];
     const shift = BigInt(this.n);
     for (let i = this.n; i < 2 * this.n; i++) {
@@ -253,6 +339,9 @@ export class StabilizerState {
   }
 
   stabilizerLabel(index: number, maxChars = 10_000): string {
+    if (!Number.isInteger(index) || index < 0 || index >= this.n) {
+      throw new RangeError(`stabilizer index ${index} out of range [0,${this.n})`);
+    }
     const row = this.n + index;
     const sign = this._r[row] ? "-" : "+";
     let body = "";

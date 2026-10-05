@@ -50,6 +50,9 @@ class EuclidRuntime:
         self.reachability = (
             ReachabilityMatrix.load(matrix_path) if matrix_path.is_file() else ReachabilityMatrix()
         )
+        # operation name -> set at register_specialist; the router only ever
+        # selects organs that declared the requested operation.
+        self._organ_operations: dict[str, frozenset[str]] = {}
 
     @classmethod
     def production(
@@ -100,13 +103,19 @@ class EuclidRuntime:
         return runtime
 
     # Specialist organs composed under EUCLID: organ id -> (reachability
-    # component, adapter factory, read-only health probe request).
-    ORGANISM_SPECIALISTS: ClassVar[dict[str, tuple[str, str, dict[str, Any]]]] = {
+    # component, adapter factory, read-only health probe request, declared
+    # operations the router may select the organ for).
+    ORGANISM_SPECIALISTS: ClassVar[
+        dict[str, tuple[str, str, dict[str, Any], frozenset[str]]]
+    ] = {
         "turing": ("turing.backends", "TuringQuantumOrgan",
-                   {"operation": "capability-matrix"}),
+                   {"operation": "capability-matrix"},
+                   frozenset({"capability-matrix", "run-program"})),
         "chronus": ("chronus.backend_registry", "ChronusComputeOrgan",
-                    {"operation": "census"}),
-        "triad": ("aethel.triad", "TriadCustodyOrgan", {"operation": "verify"}),
+                    {"operation": "census"},
+                    frozenset({"census", "select", "sha256d-scan"})),
+        "triad": ("aethel.triad", "TriadCustodyOrgan", {"operation": "verify"},
+                  frozenset({"put", "get", "fold", "verify"})),
     }
 
     def compose_organism(
@@ -135,7 +144,9 @@ class EuclidRuntime:
         self.organism_unavailable: dict[str, str] = {}
         self._organ_probes: dict[str, dict[str, Any]] = {}
         provided = dict(implementations or {})
-        for organ_id, (component, factory, probe) in self.ORGANISM_SPECIALISTS.items():
+        for organ_id, (component, factory, probe, operations) in (
+            self.ORGANISM_SPECIALISTS.items()
+        ):
             try:
                 implementation = provided.get(organ_id) or getattr(adapters, factory)()
             except Exception as exc:  # noqa: BLE001 - absence is recorded evidence
@@ -145,7 +156,7 @@ class EuclidRuntime:
                     {"organ_id": organ_id, "reason": self.organism_unavailable[organ_id]},
                 )
                 continue
-            self.register_specialist(organ_id, implementation)
+            self.register_specialist(organ_id, implementation, operations=operations)
             self.rights.grant(self.creator_id, organ_id, f"{organ_id}.request", "dispatch")
             self._organ_probes[organ_id] = dict(probe)
             self._advance(component, ReachabilityStage.REACHABLE, "organism-startup")
@@ -254,6 +265,138 @@ class EuclidRuntime:
         return {"allowed": True, "organ": organ_id, "operation": operation,
                 "governance": governance, "result": result,
                 "evidence_head": self.evidence.head}
+
+    ROUTING_COMPONENT = "euclid.organism_routing"
+
+    def select_specialist(self, operation: str) -> dict[str, Any]:
+        """Self-directed specialist selection.
+
+        The organism picks which organ serves ``operation`` from what each
+        organ declared at registration — the caller no longer names it.
+        Recorded dispatch outcomes (the durable evidence chain) rank the
+        candidates; when that history steers the pick away from the default
+        ordering the selection is a verified transfer effect. No capable
+        organ means a refusal is returned, never a guessed organ."""
+        from .contracts import Health
+
+        registered = {item["organ_id"] for item in self.registry.report()}
+        capable = sorted(
+            organ_id
+            for organ_id, operations in self._organ_operations.items()
+            if organ_id in registered and operation in operations
+        )
+        if not capable:
+            return {
+                "organ_id": None,
+                "operation": operation,
+                "candidates": [],
+                "reason": f"no specialist declares operation {operation!r}",
+            }
+        healthy = [
+            organ_id
+            for organ_id in capable
+            if self.registry.get(organ_id).health is Health.HEALTHY
+        ]
+        excluded = [organ_id for organ_id in capable if organ_id not in healthy]
+        if not healthy:
+            return {
+                "organ_id": None,
+                "operation": operation,
+                "candidates": capable,
+                "excluded_unhealthy": excluded,
+                "reason": "every candidate specialist is degraded or unavailable",
+            }
+        scores = {organ_id: 0 for organ_id in healthy}
+        for record in self.evidence.records:
+            if record.kind != "delegation-result":
+                continue
+            payload = record.payload
+            organ_id = payload.get("organ")
+            request = payload.get("request") or {}
+            result = payload.get("result") or {}
+            if organ_id not in scores or request.get("operation") != operation:
+                continue
+            if not isinstance(result, Mapping):
+                continue
+            # A refusal is not a success signal for future ranking.
+            refused = result.get("executed") is False or result.get("verified") is False
+            if not refused:
+                scores[organ_id] += 1
+        default_pick = healthy[0]
+        organ_id = min(healthy, key=lambda oid: (-scores[oid], oid))
+        memory_influenced = organ_id != default_pick and scores[organ_id] > 0
+        return {
+            "organ_id": organ_id,
+            "operation": operation,
+            "candidates": healthy,
+            "excluded_unhealthy": excluded,
+            "scores": scores,
+            "default_pick": default_pick,
+            "memory_influenced": memory_influenced,
+            "reason": "selected by declared capability and recorded outcomes",
+        }
+
+    def route_specialist(
+        self,
+        request: Mapping[str, Any],
+        *,
+        tenant_id: str,
+        actor: str,
+        subscription_token: str | None = None,
+    ) -> dict[str, Any]:
+        """Self-directed dispatch: select the organ, then run the same
+        governed path as an explicit dispatch (AL HARAS + delegation gates)."""
+        from .cognition.reachability import ReachabilityStage
+
+        operation = request.get("operation")
+        if not operation:
+            return {
+                "allowed": False,
+                "routed": False,
+                "reason": "unroutable: request declares no operation",
+            }
+        selection = self.select_specialist(str(operation))
+        organ_id = selection.get("organ_id")
+        episode = f"route:{operation}"
+        if organ_id is None:
+            self.evidence.append("routing-refusal", dict(selection))
+            return {"allowed": False, "routed": False, **selection}
+        self.evidence.append(
+            "routing-decision",
+            {**selection, "tenant_id": tenant_id, "actor": actor},
+        )
+        # The organism decided placement — a routing decision, not a
+        # caller-provided one.
+        self._advance(
+            self.ROUTING_COMPONENT,
+            ReachabilityStage.CHANGES_DECISION,
+            episode,
+            {"selected": organ_id, "candidates": selection["candidates"]},
+        )
+        if selection["memory_influenced"]:
+            # TRANSFER_VERIFIED for the routing component: durable dispatch
+            # evidence observably changed which specialist was selected —
+            # a decision artifact altered by a recorded prior outcome.
+            self._advance(
+                self.ROUTING_COMPONENT,
+                ReachabilityStage.TRANSFER_VERIFIED,
+                episode,
+                {
+                    "selected": organ_id,
+                    "default_pick": selection["default_pick"],
+                    "scores": selection["scores"],
+                },
+            )
+        result = self.dispatch_specialist(
+            organ_id,
+            request,
+            tenant_id=tenant_id,
+            actor=actor,
+            subscription_token=subscription_token,
+        )
+        result["routed"] = True
+        result["routing"] = selection
+        return result
 
     def heal_organ(self, organ_id: str, *, reason: str) -> Any:
         """Salamander-bounded requalification of one degraded specialist."""
@@ -404,8 +547,18 @@ class EuclidRuntime:
                         evidence_ref=self.evidence.head or "genesis",
                     )
 
-    def register_specialist(self, organ_id: str, implementation: Any) -> None:
-        """Expose a specialist without transferring its domain authority."""
+    def register_specialist(
+        self,
+        organ_id: str,
+        implementation: Any,
+        *,
+        operations: Any = None,
+    ) -> None:
+        """Expose a specialist without transferring its domain authority.
+
+        ``operations`` declares which request operations the organ admits;
+        it is what self-directed routing selects on. An organ that declares
+        none can still be dispatched by name but is never routed to."""
         if hasattr(implementation, "handle"):
             handler = implementation.handle
         elif hasattr(implementation, "execute"):
@@ -422,6 +575,9 @@ class EuclidRuntime:
                 Authority.READ_ONLY,
                 lambda request, _handler=handler: _handler(request),
             )
+        )
+        self._organ_operations[organ_id] = frozenset(
+            str(operation) for operation in (operations or ())
         )
 
     def solve_repository_problem(
@@ -692,15 +848,42 @@ class EuclidRuntime:
                 if self.learning.memory_database is not None
                 else {"valid": False, "reason": "not configured"}
             ),
-            "intelligence_readiness": {
-                "status": "NOT_CERTIFIED",
-                "production_certified": False,
-                "reasons": [
-                    "restart requires independent cross-process verification",
-                    "transfer requires deterministic ablation-backed decision effect",
-                    "external validation is not present",
-                ],
-            },
+            "intelligence_readiness": self._intelligence_readiness(),
+        }
+
+    def _intelligence_readiness(self) -> dict[str, Any]:
+        """Readiness is computed from recorded evidence, never asserted.
+
+        restart_verified: a fresh runtime restored state through durable
+        THESEUS custody (cross-process by construction of the test that
+        produces it).  transfer_verified: a durable record observably
+        changed a decision artifact.  External validation cannot be
+        produced from inside the runtime, so NOT_CERTIFIED stands until an
+        external reviewer supplies it — that is the owner's call, not a
+        gate this code can clear."""
+        from .cognition.reachability import ReachabilityStage
+
+        restart_stage = self.reachability.stage("euclid.runtime")
+        restart_verified = (
+            restart_stage is not None and restart_stage >= ReachabilityStage.RESTART_VERIFIED
+        )
+        transfer_verified = any(
+            ReachabilityStage[entry.stage] is ReachabilityStage.TRANSFER_VERIFIED
+            for entry in self.reachability.entries()
+        )
+        reasons = []
+        if not restart_verified:
+            reasons.append("restart requires independent cross-process verification")
+        if not transfer_verified:
+            reasons.append("transfer requires deterministic ablation-backed decision effect")
+        reasons.append("external validation is not present")
+        return {
+            "status": "NOT_CERTIFIED",
+            "production_certified": False,
+            "restart_verified": restart_verified,
+            "transfer_verified": transfer_verified,
+            "external_validation": False,
+            "reasons": reasons,
         }
 
     def snapshot(self) -> dict[str, Any]:
@@ -763,4 +946,69 @@ class EuclidRuntime:
         # here would leak the first handle (and break tempdir cleanup on
         # platforms that lock open database files).
         runtime.kairos.replay_verify()
+        return runtime
+
+    def save_to_custody(self, custody: Any, *, meta: Mapping[str, Any] | None = None) -> dict[str, Any]:
+        """Persist the sealed runtime checkpoint into THESEUS enterprise custody.
+
+        The checkpoint document keeps its own seal; custody adds the durable
+        primary+replica+journal write path. Returns the custody record
+        identity for a later cross-process restore."""
+        import hashlib
+        import json
+        import re
+
+        payload = json.dumps(
+            self.snapshot(), sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")
+        # Custody record ids become filenames: keep to portable characters.
+        safe_creator = re.sub(r"[^A-Za-z0-9_.-]", "-", self.creator_id)
+        record_id = (
+            f"euclid-runtime-{safe_creator}-"
+            f"{(self.evidence.head or 'genesis')[:16]}"
+        )
+        envelope = custody.put(
+            payload,
+            record_id=record_id,
+            idempotency_key=record_id,
+            meta={**dict(meta or {}), "kind": "euclid.runtime-checkpoint"},
+        )
+        self.evidence.append(
+            "custody-checkpoint",
+            {"record_id": record_id, "content_digest": envelope.content_digest},
+        )
+        return {
+            "record_id": record_id,
+            "content_digest": envelope.content_digest,
+            "payload_sha256": hashlib.sha256(payload).hexdigest(),
+        }
+
+    @classmethod
+    def restore_from_custody(
+        cls, custody: Any, record_id: str, *, state_dir: str | Path
+    ) -> "EuclidRuntime":
+        """Restore a runtime from a THESEUS-custodied checkpoint.
+
+        Reading through custody exercises the durable path (authorization,
+        envelope integrity, OVID unfold); the checkpoint's own seal then
+        verifies content. A successful restore records RESTART_VERIFIED —
+        restart evidence that survives a process boundary only counts when
+        the restoring side is a fresh runtime reading durable custody."""
+        from .cognition.reachability import ReachabilityStage
+
+        payload = custody.get(record_id)
+        checkpoint_path = Path(state_dir) / "custody_checkpoint.json"
+        checkpoint_path.write_bytes(payload)
+        runtime = cls.restore(checkpoint_path, state_dir=state_dir)
+        runtime.evidence.append(
+            "custody-restart",
+            {"record_id": record_id, "restored_evidence_head": runtime.evidence.head},
+        )
+        runtime._advance(
+            "euclid.runtime",
+            ReachabilityStage.RESTART_VERIFIED,
+            "custody-restart",
+            {"record_id": record_id},
+        )
+        runtime.reachability.save(runtime.state_dir / "cognition_reachability.json")
         return runtime
