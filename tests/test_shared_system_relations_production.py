@@ -52,7 +52,16 @@ def _guardian(tmp_path):
     )
     return ALHaras(
         authority,
-        GuardianPolicy(version="production-organism-test-v1"),
+        GuardianPolicy(
+            version="production-organism-test-v1",
+            allowed_operations=frozenset(
+                {
+                    "security.evaluate",
+                    "turing.capability-matrix",
+                    "chronus.census",
+                }
+            ),
+        ),
         HashChainAudit(tmp_path / "al-haras-organism-audit.jsonl"),
     )
 
@@ -325,6 +334,55 @@ def test_production_organism_is_single_startup_root_for_live_shared_systems(tmp_
         assert {"pythia", "kellogg", "salamander"} <= sources
         for item in graph["bindings"]:
             assert fabric.verify(item["binding_id"])["passed"] is True
+    finally:
+        organism.stop()
+
+
+def test_euclid_turing_specialist_is_guarded_and_handoff_enters_turing_custody(tmp_path):
+    from al_haras.entitlements import SubscriptionClaims
+    from aethel.enterprise.production_organism import ProductionOrganism
+
+    organism = ProductionOrganism(
+        tmp_path / "organism-euclid-turing",
+        hmac_key=TEST_KEY,
+        guardian=_guardian(tmp_path),
+        allow_insecure_dev_key=True,
+    )
+    try:
+        organism.start()
+        now = int(time.time())
+        claims = SubscriptionClaims(
+            subscription_id="sub-turing",
+            tenant_id="default",
+            issuer="test-issuer",
+            key_id="k1",
+            capabilities=("hyba.security",),
+            actors=("operator",),
+            not_before=now - 1,
+            expires_at=now + 300,
+            jti="euclid-turing-handoff-1",
+        )
+        token = organism.al_haras.authority.issue(claims)
+
+        result = organism.euclid.dispatch_specialist(
+            "turing",
+            {"operation": "capability-matrix"},
+            tenant_id="default",
+            actor="operator",
+            subscription_token=token,
+        )
+        assert result["allowed"] is True
+        assert result["organ"] == "turing"
+        assert result["result"]["owner"] == "TURING"
+
+        handoffs = [
+            binding
+            for binding in organism.lifecycle.fabric.graph()["bindings"]
+            if binding["source_system"] == "turing"
+            and binding["kind"] == "turing_euclid_handoff"
+        ]
+        assert len(handoffs) == 1
+        assert organism.lifecycle.fabric.verify(handoffs[0]["binding_id"])["passed"] is True
     finally:
         organism.stop()
 
