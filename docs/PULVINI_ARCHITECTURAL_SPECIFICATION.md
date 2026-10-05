@@ -14,6 +14,13 @@ Stratum authority, and no share-acceptance authority. Historical code that
 used PULVINI terminology in mining is lineage only and must not be promoted
 into the active architecture.
 
+The canonical production geodesic nonce planner is now mining-owned at
+`chronus/mla1517/mining/geodesic_nonce_planner.py`. It is a bounded permutation
+planner with no PULVINI/data dependency and no proof or consensus authority.
+Any older `GeodesicNoncePlanner` symbol retained in a data-engine compatibility
+surface is non-canonical lineage; active mining code is forbidden from importing
+that data-engine path.
+
 ## 2. Mathematical role
 
 | Concept | Canonical PULVINI realization |
@@ -106,6 +113,11 @@ Hamiltonian/data-operator paths. Any reduced Hamiltonian or TT/MPO result must
 carry its measured reconstruction/error/topology evidence. A lossy reduction
 must never be relabelled as an invertible fold.
 
+Mining-local geodesic ordering may use mathematically similar distance concepts,
+but it is independently implemented in the mining package and may only reorder
+an existing valid uint32 nonce set. It does not invoke PULVINI folding, consume
+the PULVINI data engine, or acquire a PULVINI authority identity.
+
 ## 7. Claim boundary
 
 ### External / supportable when backed by executable evidence
@@ -152,14 +164,19 @@ The authority boundary is enforced by
 `scripts/check_pulvini_data_boundary.py`, run explicitly in the Python CI job.
 The gate is bidirectional:
 
-1. active PULVINI/data modules may not import mining, Stratum, share-submission,
-   or hash-pipeline modules;
-2. active mining modules may not import PULVINI, its exact folding core, or its
-   data bridge;
-3. literal dynamic imports through `importlib.import_module()` or
-   `__import__()` are inspected as dependency edges;
-4. production code may not import or reference `PythagorasOrchestrator`;
-5. active code may not call the owner-specified historical HYBA Data module
+1. active PULVINI/data modules may not import the canonical mining package,
+   Stratum, share-submission, hash-pipeline, miner, or mining-runtime modules;
+2. active mining modules may not import PULVINI, the data bridge, Geodesic
+   Tensor Engine, fold pipeline, PULVINI fold symbols, or the complete mixed
+   exact-math namespace;
+3. mining may import specifically named substrate-neutral exact helpers such as
+   Fibonacci/Binet/Cassini/Zeckendorf functions without acquiring data authority;
+4. literal dynamic imports through `importlib.import_module()`, aliased
+   `importlib`, directly imported/aliased `import_module`, or `__import__()` are
+   inspected as dependency edges;
+5. production code may not import or reference `PythagorasOrchestrator`,
+   including through import aliases;
+6. active code may not call the owner-specified historical HYBA Data module
    paths while they remain absent.
 
 This is intentionally a static architecture gate rather than runtime
@@ -197,9 +214,13 @@ For every recovered binding, startup verifies:
 - binding-index schema, producer and kind;
 - binding ID ↔ durable record-ID agreement;
 - canonical subsystem identities and participant set;
+- source identity against the actual producer and both shared/OVID metadata;
 - correlation IDs and durable lineage pointers;
 - existence and readability of the shared THESEUS and OVID-lineage records;
-- parent-binding existence and an acyclic parent graph;
+- exact parent-set equality across binding index, shared custody lineage, OVID
+  record lineage and OVID `parent_ids`;
+- parent-binding existence and an acyclic parent graph using iterative
+  validation that does not fail at Python recursion depth;
 - shared-record content digest;
 - OVID lineage identity and parent lineage.
 
@@ -231,6 +252,11 @@ runtime reachability.
 record an earlier architecture in which PULVINI terminology was used to rank
 mining candidates. They remain historical evidence. They are **not** the
 canonical PULVINI runtime and must not be used to infer the current doctrine.
+
+The production mining intelligence path no longer runs a PULVINI fold/custody
+stage. The canonical mining geodesic planner is
+`chronus/mla1517/mining/geodesic_nonce_planner.py`; it records
+`pulvini_dependency=false` and `folding_used=false` in its evidence report.
 
 Any active inventory or documentation that describes PULVINI as a mining
 planner must be corrected to this specification rather than reviving the legacy
