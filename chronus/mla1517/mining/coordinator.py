@@ -337,6 +337,17 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self.self_healing = SelfHealingAgent()
         self.recovery_queue = NonBlockingRecoveryQueue()
         self.solver = M32SearchSolver()
+        solve_first_value = os.getenv("PYTHIA_SOLVE_FIRST_ENABLED", "0")
+        self._solve_first_enabled = solve_first_value.strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }
+        self._solve_first_runtime = None
+        self._solve_first_error: str | None = None
+        self._solve_first_outcomes: deque[bool] = deque(maxlen=256)
+        self._last_solve_first: dict[str, Any] | None = None
         self.last_mining_decision = None
         self.last_toe_context = None
         self.last_toe_frame: TOEMiningDecisionFrame | None = None
@@ -1811,6 +1822,17 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 if self.intelligence_memory is not None
                 else None
             ),
+            "solve_first": {
+                "enabled": self._solve_first_enabled,
+                "last": self._last_solve_first,
+                "error": self._solve_first_error,
+                "observed_windows": len(self._solve_first_outcomes),
+                "locally_valid_windows": sum(self._solve_first_outcomes),
+                "claim_boundary": (
+                    "candidate ordering only; SHA256d, target checks, and Stratum "
+                    "remain the sole validity authorities"
+                ),
+            },
         }
 
     def _execution_route(self) -> str:
@@ -1863,24 +1885,24 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 done += take
             return None, None, attempts
 
-        nonce_order = self._nonce_order
         return ExecutionRouter(
-            self.execution_hasher, cpu_sweep, nonce_order=lambda _plan: nonce_order
+            self.execution_hasher, cpu_sweep, nonce_order=lambda bound_plan: bound_plan.nonce_order
         )
 
-    def _effective_nonce_order(self) -> str:
-        """The order the router will execute for the current route."""
+    def _effective_nonce_order(self, plan: SearchPlan | None = None) -> str:
+        """The plan-bound order the router will execute for the current route."""
         route = self._execution_route()
-        if self._nonce_order == NONCE_ORDER_HENDRIX and route == "opencl_m32":
+        requested = plan.nonce_order if plan is not None else self._nonce_order
+        if requested == NONCE_ORDER_HENDRIX and route == "opencl_m32":
             on_device = bool(getattr(self.execution_hasher, "hendrix_on_device", False))
             return NONCE_ORDER_HENDRIX if on_device else NONCE_ORDER_M32
-        return self._nonce_order
+        return requested
 
     def _certify_dispatch(
         self, plan: SearchPlan, job_id: str, header: bytes, target_le: bytes
     ) -> dict[str, Any]:
         """Exact-algebra certificate for one dispatch; a failure refuses it."""
-        order = self._effective_nonce_order()
+        order = self._effective_nonce_order(plan)
         schedule = None
         if order == NONCE_ORDER_HENDRIX and plan.window > 0:
             try:
@@ -1911,7 +1933,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
     def _baseline_plan(
         self, identity: WorkIdentity, lease: LeaseRecord, window: int, reason: str
     ) -> SearchPlan:
-        order, order_source = self._lane_order_for(lease.start)
+        order, order_source, solve_first = self._lane_order_for(lease.start, identity)
         return SearchPlan(
             job_fingerprint=identity.job_fingerprint,
             pool_session_id=identity.pool_session_id,
@@ -1924,12 +1946,14 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             dispatch_breadth=self._dispatch_breadth,
             executor_route=self._execution_route(),
             policy_id=_BASELINE_POLICY,
+            nonce_order=(NONCE_ORDER_M32 if solve_first is not None else self._nonce_order),
             evidence_refs={
                 "lane_order_source": order_source,
                 "chronus107": self.production_integration.plan_evidence(
                     window, min(256, max(1, window))
                 ),
                 "toe_advice_reason": self._toe_advice_reason(),
+                "solve_first": solve_first,
                 **(self.last_toe_frame.evidence_refs() if self.last_toe_frame else {}),
             },
             created_at=time.monotonic(),
@@ -1939,12 +1963,87 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             plan_fallback_reason=reason,
         )
 
-    def _lane_order_for(self, start: int) -> tuple[tuple[int, ...], str]:
-        """The exact order the baseline would sweep: winner rotation or solver order."""
+    def _solve_first_lane_order(
+        self, identity: WorkIdentity, start: int
+    ) -> tuple[tuple[int, ...], str, dict[str, Any]] | None:
+        """Run PULVINI S1-S6 before choosing the exhaustive lane order.
+
+        The result can only reorder the 32 complete M32 lanes. It cannot alter
+        the leased interval, SHA256d, the target, host recheck, or submission.
+        Any unavailable experimental dependency fails open to the canonical
+        complete solver and is reported in evidence.
+        """
+        if not self._solve_first_enabled:
+            return None
+        route = self._execution_route()
+        if route not in ("cpu_reference", "opencl_m32"):
+            self._last_solve_first = {
+                "enabled": True,
+                "path_used": "canonical_fallback",
+                "reason": f"route_does_not_support_lane_order:{route}",
+            }
+            return None
+        try:
+            if self._solve_first_runtime is None:
+                from Intelligence.pulvini_runtime import get_runtime
+
+                checkpoint = os.getenv(
+                    "PYTHIA_PULVINI_CHECKPOINT", "data/intelligence/pulvini.json"
+                )
+                self._solve_first_runtime = get_runtime(checkpoint_path=checkpoint)
+            state = hashlib.sha256(
+                f"{identity.pool_session_id}:{identity.generation}:"
+                f"{identity.job_fingerprint}:{start}".encode("utf-8")
+            ).digest()
+            result = self._solve_first_runtime.solve(
+                job_id=identity.job_fingerprint,
+                worker_state=state,
+                window=LANES,
+                base_nonce=start,
+                top_k=LANES,
+                solve_path_outcomes=list(self._solve_first_outcomes),
+            )
+            lanes: list[int] = []
+            seen: set[int] = set()
+            for candidate in result.candidates:
+                lane = int(candidate) % LANES
+                if lane not in seen:
+                    seen.add(lane)
+                    lanes.append(lane)
+            lanes.extend(lane for lane in range(LANES) if lane not in seen)
+            evidence = {
+                "enabled": True,
+                "regime": result.regime,
+                "path_used": result.path_used,
+                "stage_outputs": result.stage_outputs,
+                "candidate_lanes": len(seen),
+                "complete_lane_coverage": sorted(lanes) == list(range(LANES)),
+            }
+            self._last_solve_first = evidence
+            self._solve_first_error = None
+            return tuple(lanes), f"pulvini_{result.path_used.lower()}", evidence
+        except Exception as exc:
+            self._solve_first_error = f"{type(exc).__name__}: {exc}"
+            self._last_solve_first = {
+                "enabled": True,
+                "path_used": "canonical_fallback",
+                "error": self._solve_first_error,
+            }
+            LOG.warning("PULVINI solve-first ordering unavailable; using canonical solver: %s", exc)
+            return None
+
+    def _lane_order_for(
+        self, start: int, identity: WorkIdentity
+    ) -> tuple[tuple[int, ...], str, dict[str, Any] | None]:
+        """Choose solve-first ordering, then winner memory, then the complete solver."""
+        structured = self._solve_first_lane_order(identity, start)
+        if structured is not None:
+            return structured
         remembered = self.session.memory.lane_order()
         if remembered is not None:
-            return tuple(remembered), "winner_memory"
-        return tuple(lane for _nonce, lane in self.solver.candidates(start, LANES)), "solver"
+            return tuple(remembered), "winner_memory", self._last_solve_first
+        order = tuple(lane for _nonce, lane in self.solver.candidates(start, LANES))
+        return order, "solver", self._last_solve_first
 
     def _build_plan(self, identity: WorkIdentity) -> SearchPlan | None:
         adapter = self.client.proof_adapter
@@ -1955,7 +2054,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         except (LeaseConflict, LeaseExhausted, StratumAdapterError) as exc:
             LOG.debug("precompute lease unavailable: %s", exc)
             return None
-        order, order_source = self._lane_order_for(lease.start)
+        order, order_source, solve_first = self._lane_order_for(lease.start, identity)
         decision = self.last_mining_decision
         tuning = self.tuning.last_decision
         try:
@@ -1971,6 +2070,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 dispatch_breadth=self._dispatch_breadth,
                 executor_route=self._execution_route(),
                 policy_id=decision.lead if decision is not None else "flat_exhaustive",
+                nonce_order=(NONCE_ORDER_M32 if solve_first is not None else self._nonce_order),
                 evidence_refs={
                     "lane_order_source": order_source,
                     "chronus107": self.production_integration.plan_evidence(
@@ -1987,6 +2087,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                         self.last_toe_signal.face_bias if self.last_toe_signal is not None else None
                     ),
                     "toe_advice_reason": self._toe_advice_reason(),
+                    "solve_first": solve_first,
                     **(self.last_toe_frame.evidence_refs() if self.last_toe_frame else {}),
                 },
                 created_at=time.monotonic(),
@@ -2330,6 +2431,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                         "locally_valid_shares": record.locally_valid_shares,
                     },
                 )
+                if plan.evidence_refs.get("solve_first") is not None:
+                    self._solve_first_outcomes.append(candidate is not None)
                 record = replace(
                     record,
                     job_id=job.job_id,
