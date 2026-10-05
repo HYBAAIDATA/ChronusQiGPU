@@ -108,14 +108,20 @@ class StabilizerState:
 
     @classmethod
     def cluster_chain(cls, n_qubits: int) -> "StabilizerState":
-        """Return the 1-D graph/cluster state exactly."""
+        """Return the 1-D graph/cluster state exactly.
+
+        The state is CZ edges applied to |+>^n. Under that Clifford
+        conjugation the plus-state destabilizers Z_i remain Z_i while the
+        stabilizers X_i become Z_{i-1} X_i Z_{i+1}. Using X_i as the
+        destabilizers would commute with S_i and break the canonical tableau.
+        """
         s = cls(n_qubits)
         n = s.n
         s._x = [0] * (2 * n)
         s._z = [0] * (2 * n)
         s._r = [0] * (2 * n)
         for i in range(n):
-            s._x[i] = 1 << i
+            s._z[i] = 1 << i
             s._x[n + i] = 1 << i
             if i > 0:
                 s._z[n + i] |= 1 << (i - 1)
