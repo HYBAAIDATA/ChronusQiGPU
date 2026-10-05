@@ -97,6 +97,30 @@ def test_training_is_idempotent_for_same_corpus(tmp_path):
     assert len(learner.patterns()) == 160
 
 
+def test_training_preserves_unrelated_pending_short_term_memory(tmp_path):
+    learner = PythiaLearning(n_units=32)
+    store = _Store(tmp_path)
+    orchestrator = SimpleNamespace(pythia=learner, store=store)
+
+    pending_id = learner.learn(
+        np.linspace(0.0, 1.0, 32),
+        mining_success=True,
+        pattern_id=123456789,
+    )
+    assert len(learner._short_term) == 1
+    evidence_before = {key: list(value) for key, value in learner._evidence.items()}
+    totals_before = list(learner._totals)
+
+    report = train_pythia_structure(orchestrator, CSV, MANIFEST, persist=False)
+
+    assert report.rows_newly_taught == 160
+    assert len(learner.patterns()) == 160
+    assert len(learner._short_term) == 1
+    assert learner._short_term[0]["pattern_id"] == pending_id
+    assert learner._evidence == evidence_before
+    assert learner._totals == totals_before
+
+
 def test_synthetic_or_unbound_manifest_fails_closed(tmp_path):
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     manifest["source_type"] = "synthetic"
