@@ -24,6 +24,7 @@ from chronus.v33.theory.report import self_test_all, run_unbuilt_maths
 from chronus.v33.theory.superconductivity import bcs_gap_self_consistent, K_B
 from chronus.v33.academic.report import run_academic_enhancements
 from chronus.v33.phi_scaling import run_phi_power_scaling_benchmark, phi_power_exact
+from chronus.v33.benchmarks.render_elevation import main as run_render_elevation
 
 DEMO_QSDL_SOURCE = (
     "scene sunset { "
@@ -132,6 +133,9 @@ def bench_phi_scaling() -> dict:
 
 def main() -> None:
     suite_t0 = time.perf_counter()
+    # v3.1 elevation benchmark runs first and writes its own artifact
+    # (chronus/v33/benchmarks/render_elevation_results.json).
+    run_render_elevation()
     results = {
         "platform": platform.platform(),
         "python": sys.version.split()[0],
