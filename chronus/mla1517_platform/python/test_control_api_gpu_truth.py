@@ -35,6 +35,7 @@ class GPUTruthTests(unittest.TestCase):
         self.assertFalse(payload["physical_gpu_available"])
         self.assertEqual(payload["physical_gpu_count"], 0)
         self.assertFalse(payload["backend_active"])
+        self.assertFalse(payload["logical_substrate"]["active"])
         self.assertEqual(payload["detected_backend"], "opencl:cpu")
         self.assertEqual(payload["logical_substrate"]["host_backend"], "opencl:cpu")
         self.assertTrue(payload["logical_substrate"]["available"])
@@ -58,6 +59,31 @@ class GPUTruthTests(unittest.TestCase):
         self.assertEqual(payload["opencl_device_count"], 2)
         self.assertTrue(payload["physical_gpu_available"])
         self.assertEqual(payload["physical_gpu_count"], 1)
+        self.assertTrue(payload["backend_active"])
+        self.assertTrue(payload["logical_substrate"]["active"])
+
+    def test_named_punch_backend_must_match_a_gpu_class_device(self):
+        # opencl:<device name> has no class suffix — active only when the
+        # bound name matches a GPU-class device in the enumeration.
+        devices = [
+            {"name": "PoCL CPU", "vendor": "PoCL", "is_gpu": False},
+            {"name": "Discrete GPU", "vendor": "Vendor", "is_gpu": True},
+        ]
+        with patch(
+            "chronus.report.report",
+            return_value={"opencl": {"devices": devices}, "punch": {"backend": "opencl:PoCL CPU"}},
+        ):
+            payload = control_api.gpu_payload()
+        self.assertTrue(payload["physical_gpu_available"])
+        self.assertFalse(payload["backend_active"])
+        self.assertFalse(payload["logical_substrate"]["active"])
+        control_api._GPU_CACHE.update({"at": 0.0, "payload": None})
+        with patch(
+            "chronus.report.report",
+            return_value={"opencl": {"devices": devices}, "punch": {"backend": "opencl:Discrete GPU"}},
+        ):
+            payload = control_api.gpu_payload()
+        self.assertTrue(payload["backend_active"])
 
     def test_cpu_reference_keeps_the_logical_substrate_available(self):
         report = {
@@ -74,6 +100,8 @@ class GPUTruthTests(unittest.TestCase):
         self.assertEqual(payload["count"], 1)
         self.assertEqual(payload["opencl_device_count"], 0)
         self.assertFalse(payload["physical_gpu_available"])
+        self.assertFalse(payload["backend_active"])
+        self.assertFalse(payload["logical_substrate"]["active"])
         self.assertEqual(payload["logical_substrate"]["host_backend"], "cpu")
         self.assertTrue(payload["logical_substrate"]["fallback_used"])
 
