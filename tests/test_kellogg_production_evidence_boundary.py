@@ -68,7 +68,9 @@ def test_attestation_replay_binds_computation_and_boundary_metadata():
         verify_attestation(payload, future_version)
 
     corrupt_cassini = deepcopy(evidence)
-    corrupt_cassini["cassini"][0][0] += 1
+    first_cassini = list(corrupt_cassini["cassini"][0])
+    first_cassini[0] += 1
+    corrupt_cassini["cassini"][0] = first_cassini
     with pytest.raises(AttestationError, match="cassini"):
         verify_attestation(payload, corrupt_cassini)
 
