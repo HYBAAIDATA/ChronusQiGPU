@@ -33,7 +33,7 @@ PRODUCTION-EVIDENCED = observed working in a real run.
 | Telemetry (`evidence_snapshot`, `agents_snapshot`, heartbeat metrics) | `coordinator.py`, `worker_lifecycle.py` | PRESENT, WIRED, ACTIVE, PRODUCTION-EVIDENCED |
 | Persistence (`MiningSession` atomic journal, optimizer sha256 envelope, agentic policy, intelligence dir) | `session.py`, `closed_loop.py`, `agentic_controller.py` | PRESENT, WIRED, ACTIVE, TESTED |
 | Learning (`LearningLedger`, `KnowledgeFabric`, `IntelligenceMemory`) | `learning`, `knowledge`, `intelligence_memory.py` | PRESENT, WIRED, ACTIVE (925 `learning_observed` records), TESTED |
-| Supposition / inference engines | `Intelligence/agentic_mining.py` | PRESENT, **DORMANT (research lifecycle)** — its own header declares it is not the production miner; it does not compete with the canonical loop |
+| Supposition / inference | `pythia_authority.py`, `pythia_agentic_cycle.py`; historical lineage in `Intelligence/agentic_mining.py` | PRESENT and WIRED into PYTHIA final plan composition; the `SUPPOSE` stage emits the plan-bound search supposition. The historical six-phase workflow remains a non-writing advisory lineage. Fresh execution evidence for this branch remains a separate gate. |
 | Control-plane autonomy supervisor (`autonomous_supervisor`) | `mla1517_platform/python/autonomous_supervisor.py` | PRESENT, WIRED into the control API — a **second, distinct healing/optimisation authority** for API-plane subsystems. Not dead code; flagged as DUPLICATED-AUTHORITY-class and bounded to the API plane |
 | ASIC / SUPER ASIC backend | `asic/` | **PRESENT as design only** — `asic/` contains a README and a Verilog stub. No driver, no probe, no contract: NOT WIRED, NOT AVAILABLE |
 | GPU / OpenCL backend | `execution_router.py` routes `opencl_gold`/`opencl_m32`/`opencl_range` | PRESENT, WIRED, policy-gated (binds only on a bound device + compiled kernel + arm kernel); no OpenCL hardware on the demo host — declared unavailable |
@@ -41,12 +41,14 @@ PRODUCTION-EVIDENCED = observed working in a real run.
 
 ## 2. Canonical loop — ownership
 
-One canonical workflow; each phase has exactly one owner:
+One canonical workflow. The provisional lease planner and PYTHIA final
+composition are successive stages, not competing mining authorities. Hendrix is
+the default search algorithm in the final immutable plan.
 
 | Phase | Owner | Evidence emitted |
 |---|---|---|
 | Job state / epochs | `StratumRuntimeState` + `StratumAdapter` (fingerprinted `StratumJobGeneration`) | `identity_bound`, generation/invalidation counters |
-| Planning | `AgenticMiningController` (precompute task) | `plan_created` (plan_id, lease_id, window, route, evidence_refs) |
+| Planning | `AgenticMiningController` creates the provisional lease/plan; PYTHIA performs final intelligence, supposition and composition | `plan_created` plus PYTHIA authority/agentic-cycle evidence bound into the final SearchPlan |
 | Nonce-range allocation | `NonceLeaseLedger` (lease per plan; reserve_lease/reserve_fallback disjoint) | lease axes on every downstream record |
 | Execution | `ExecutionRouter` (route policy + host rehash) | `execution_started`/`execution_finished` with requested vs executed route |
 | Decisions (submit gates) | `IntelligentPoolCoordinator._submit_candidate_locked` | `submission_gate_refused` with literal reason, or `submission_sent` |

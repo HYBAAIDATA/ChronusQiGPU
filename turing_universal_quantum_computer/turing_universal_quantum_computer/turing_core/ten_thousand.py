@@ -286,6 +286,43 @@ class TenThousandQubitSystem:
     def entanglement_ledger(self) -> List[EntanglementRegistration]:
         return list(self._entanglement_ledger)
 
+    # -- Golden Quantum evidence-scoped profile -------------------------------
+
+    def golden_quantum(self):
+        """Return the Golden Quantum profile bound to this virtual computer.
+
+        The profile exposes verified transforms and capability reports,
+        experimental search ordering, and non-executable speculative metadata.
+        It never upgrades an ordering heuristic into a proof or hardware claim.
+        """
+        from ..golden_quantum import GoldenQuantumCore
+
+        return GoldenQuantumCore(self)
+
+    # -- Fault-tolerant quantum-ASIC engineering model ------------------------
+
+    def pure_quantum_asic(self):
+        """Return the canonical first-principles mathematical quantum ASIC."""
+        from ..fault_tolerant_asic import PureQuantumMathASIC
+
+        return PureQuantumMathASIC()
+
+    def fault_tolerant_asic(self):
+        """Compatibility alias for :meth:`pure_quantum_asic`."""
+        return self.pure_quantum_asic()
+
+    def verify_pure_quantum_asic(self):
+        """Execute exact first-principles invariants for the abstraction."""
+        return self.pure_quantum_asic().verify_first_principles()
+
+    def deterministic_10eh_system(self):
+        """Return the exact mathematical 10 EH/s capacity certificate."""
+        return self.pure_quantum_asic().deterministic_hashrate_system()
+
+    def heterogeneous_10eh_certificate(self):
+        """Return the exact heterogeneous formal-capacity certificate."""
+        return self.pure_quantum_asic().heterogeneous_hashrate_certificate()
+
     # -- Aethel persistence (folded evidence, never raw amplitudes) -----------
 
     def aethel_store_manifest(self, address: str = "ten_thousand:manifest") -> Dict[str, Any]:
@@ -304,10 +341,18 @@ class TenThousandQubitSystem:
 
     def status(self) -> Dict[str, Any]:
         from ..pisot import plan_hilbert_coverage  # lazy: pisot->turing_core cycle
+        from ..unified_theory import UNIFIED_THEORY
 
         coverage = plan_hilbert_coverage(self.n_qubits)
         return {
             "system": "TenThousandQubitSystem",
+            "unified_theory": UNIFIED_THEORY.report(),
+            "pure_quantum_asic": {
+                "schema": "turing.pure_quantum_math_asic/v1",
+                "truth_class": "pure_quantum_mathematical_abstraction",
+                "physical_qpu_present": False,
+                "first_principles": True,
+            },
             "n_qubits": self.n_qubits,
             "hilbert_dim": self.hilbert_dim_symbolic,
             "dense_state_bytes_if_materialised": str(coverage.state_bytes),
@@ -325,6 +370,10 @@ class TenThousandQubitSystem:
                 "annealing",
                 "tunnelling",
                 "swarming",
+                "golden_quantum_profile",
+                "pure_quantum_math_asic",
+                "first_principles_self_verification",
+                "deterministic_10eh_capacity_certificate",
             ],
             "zeckendorf_protection": "non-adjacent Fibonacci index constraint",
             "cassini_anchor_ok": bool(_tc.cassini_check(7)),

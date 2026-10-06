@@ -14,6 +14,10 @@ attestation gap — never to a simulated ASIC.
 from hyba.hybrid.asic_solver import ASICSolver
 from hyba.hybrid.coordinator import HybridCoordinator, JobResult, StratumJob
 from hyba.hybrid.gpu_solver import GPUSolver
+from hyba.hybrid.hybrid_asic_profile import (
+    DEFAULT_HYBRID_ASIC_PROFILE,
+    HybridAsicDesignProfile,
+)
 from hyba.hybrid.lucas_partition import (
     CoverageCertificate,
     FACE_COUNT,
@@ -65,6 +69,7 @@ __all__ = [
     "AttestationViolation",
     "CoverageCertificate",
     "DEFAULT_HASHRATE_FLOOR_HPS",
+    "DEFAULT_HYBRID_ASIC_PROFILE",
     "DeviceCapability",
     "DeviceUnsupportedError",
     "DispatchHandle",
@@ -72,6 +77,7 @@ __all__ = [
     "FACE_COUNT",
     "GPUSolver",
     "HashrateFloorViolation",
+    "HybridAsicDesignProfile",
     "HybridCoordinator",
     "IdentityWindowRanker",
     "JobResult",

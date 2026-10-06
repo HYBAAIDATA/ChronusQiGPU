@@ -164,6 +164,21 @@ def test_native_route_markers_are_bound_to_real_callable_methods(backend):
     assert hasher.k_gold == hasher.grind_target_gold
 
 
+def test_pythia_explicit_batch_certifies_hendrix_even_without_device_hendrix_kernel():
+    coordinator = PythiaProductionMiningCoordinator.__new__(
+        PythiaProductionMiningCoordinator
+    )
+    coordinator.execution_hasher = _NativeHasher("cuda")
+    coordinator._nonce_order = NONCE_ORDER_HENDRIX
+
+    plan = _plan(
+        nonce_order=NONCE_ORDER_HENDRIX,
+        evidence_refs={"search_architecture": SEARCH_ARCHITECTURE_ID},
+    )
+
+    assert coordinator._effective_nonce_order(plan) == NONCE_ORDER_HENDRIX
+
+
 def test_non_native_hasher_does_not_receive_synthetic_capabilities():
     hasher = _NativeHasher("cpu")
     ProductionExecutionRouter(hasher, lambda *_args: (None, None, 0))
@@ -209,16 +224,21 @@ def test_coordinator_binds_canonical_search_and_workforce_intent_into_plan():
         PythiaProductionMiningCoordinator
     )
     coordinator._nonce_order = NONCE_ORDER_HENDRIX
-    coordinator.geodesic_enabled = True
     coordinator.last_mining_decision = None
+    coordinator._chronus_fabric_state = {
+        "schema": "pythia.chronus_search_fabric/2",
+        "state": "NOT_BOUND",
+        "logical_vertices": 600,
+    }
     coordinator.execution_hasher = _NativeHasher("cpu")
     coordinator.pythia_search_precompute = precompute_pythia_search()
 
     plan = coordinator._bind_plan_execution_intent(_plan())
 
-    # M32 is the inherited-router compatibility carrier only. The immutable
-    # evidence reference is the actual production search identity.
-    assert plan.nonce_order == NONCE_ORDER_M32
+    # Hendrix is the immutable production search algorithm. The structural
+    # architecture is supporting evidence, not a replacement search identity.
+    assert plan.nonce_order == NONCE_ORDER_HENDRIX
+    assert plan.evidence_refs["search_algorithm"] == NONCE_ORDER_HENDRIX
     assert plan.evidence_refs["search_architecture"] == SEARCH_ARCHITECTURE_ID
     assert plan.evidence_refs["search_precompute_digest"] == (
         coordinator.pythia_search_precompute.digest
