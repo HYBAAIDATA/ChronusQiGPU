@@ -78,6 +78,63 @@ class M3MiningSubmissionGate:
             "policy_version": self.guardian_api.guardian.policy.version,
         }
 
+    def authorize_lease(self, *, context: Mapping[str, Any]) -> Mapping[str, Any]:
+        """Authorize one Stratum work identity before PYTHIA reserves leases."""
+        storage_health = self.recorder.health(reconcile=True)
+        if storage_health.get("healthy") is not True:
+            return {
+                "allowed": False,
+                "reason": "THESEUS_STORAGE_UNHEALTHY",
+                "storage_health": storage_health,
+            }
+        payload = {
+            "pool_endpoint": context.get("endpoint"),
+            "worker": context.get("worker"),
+            "pool_session_id": context.get("pool_session_id"),
+            "generation": context.get("generation"),
+            "job_id": context.get("job_id"),
+            "job_fingerprint": context.get("job_fingerprint"),
+            "target_generation": context.get("target_generation"),
+            "clean_jobs": context.get("clean_jobs"),
+            "search_authority": "PYTHIA",
+            "search_algorithm": "hendrix_coprime_stride",
+        }
+        request = GuardianRequest(
+            tenant_id=self.tenant,
+            operation="mining.lease",
+            resource=f"stratum://{context.get('endpoint') or 'unavailable'}",
+            payload=payload,
+            actor=self.actor,
+            request_id=f"lease:{context.get('pool_session_id')}:{context.get('generation')}:{context.get('job_fingerprint')}",
+        )
+        try:
+            verdict = self.guardian_api.guardian.evaluate(
+                request,
+                subscription_token=self.subscription_token,
+            )
+        except Exception as exc:
+            return {
+                "allowed": False,
+                "reason": f"AL_HARAS_UNAVAILABLE:{type(exc).__name__}",
+            }
+        verdict_dict = verdict.to_dict()
+        try:
+            version_id = self.recorder.persist_authorization(
+                verdict_dict,
+                context=payload,
+            )
+        except Exception as exc:
+            raise M3StorageError(
+                f"could not custody AL HARAS lease authorization: {type(exc).__name__}: {exc}"
+            ) from exc
+        return {
+            "allowed": bool(verdict.allowed),
+            "reason": verdict.reason,
+            "authorization_evidence_id": verdict.evidence_id,
+            "authorization_version_id": version_id,
+            "policy_version": verdict.policy_version,
+        }
+
     def authorize_and_custody(self, *, context: Mapping[str, Any], proof: Any) -> Mapping[str, Any]:
         # Reconcile immediately before an external side effect. Startup
         # readiness alone is insufficient because custody may degrade later.
