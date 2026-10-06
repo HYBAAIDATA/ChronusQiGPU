@@ -35,8 +35,8 @@ manufacture evidence for another.
 | `execution` | Backend executed and returned a truth-classed result | PASS / FAIL |
 | `measurement` | Measurement surface recorded | PASS / FAIL |
 | `verification` | Witness plus available independent differential checks | PASS / FAIL / GATED |
-| `custody` | Program/result/witness committed to THESEUS when requested | PASS / FAIL / UNAVAILABLE / SKIPPED |
-| `replay` | Custody recovered and revalidated without dropping producer semantics | PASS / FAIL / SKIPPED |
+| `custody` | Program/result/witness/certificate committed to THESEUS when requested | PASS / FAIL / UNAVAILABLE / SKIPPED |
+| `replay` | Custody recovered; program/result/witness/certificate bindings revalidated as one bundle | PASS / FAIL / SKIPPED |
 
 Verdicts remain `PASS`, `GATED`, `REFUSED`, or `FAIL`. `GATED` is not promoted
 to PASS by optimistic defaults.

@@ -16,7 +16,7 @@ from chronus.mla1517.mining.backend_registry import (
     BackendSelection,
     BackendUnavailable,
 )
-from chronus.mla1517.mining.geodesic_support import GeodesicProductionMiningCoordinator
+from chronus.mla1517.mining.m3_coordinator import M3PythiaProductionMiningCoordinator
 from chronus.mla1517.mining.retarget_telemetry import RetargetWindowTracker
 from manifold_pool_coordinator import _build_parser, parse_endpoint
 from worker_lifecycle import HeartbeatEmitter
@@ -32,6 +32,16 @@ from manifold_pool_coordinator import PoolEndpoint
 from salamander.runtime import MiningAutonomyBridge
 
 LOG = logging.getLogger("pythia.mining_runtime")
+
+
+def _truthy(value: str | None) -> bool:
+    return str(value or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def m3_required() -> bool:
+    """Whether the runtime must enforce the complete M3 custody/security gate."""
+    return _truthy(os.getenv("PYTHIA_M3_REQUIRED"))
+
 
 # PYTHIA mines only through the pools in pool_catalog, resolved exactly as
 # the control API's startup contract resolves them.
@@ -369,6 +379,7 @@ async def _main_async(args) -> None:
     # worker. A standalone --mine process has no supervisor to provision one.
     os.environ.setdefault("PYTHIA_IDENTITY_HMAC_SECRET", os.urandom(32).hex())
     backend = device if not args.device else os.getenv("PYTHIA_EXECUTION_BACKEND", "auto")
+    strict_m3 = m3_required()
     endpoints = pool_endpoints(args)
     observer = BitcoinChainObserver.from_environment()
     assert_declared_chain(observer)
@@ -378,6 +389,8 @@ async def _main_async(args) -> None:
     )
     try:
         with HeartbeatEmitter("agentic-mining") as heartbeat:
+            storage_recorder = None
+            m3_gate = None
             history = TelemetryHistory(default_history_path())
             stratum_events = StratumEventLog(on_event=history.append)
             retarget = RetargetWindowTracker(
@@ -433,6 +446,26 @@ async def _main_async(args) -> None:
                 except Exception:
                     LOG.exception("Could not refresh PYTHIA agentic evidence after Salamander")
                 enriched["salamander_autonomy"] = autonomy_snapshot
+                storage_health = (
+                    storage_recorder.health(reconcile=False)
+                    if storage_recorder is not None
+                    else {
+                        "schema": "pythia.m3-storage-health/1",
+                        "configured": False,
+                        "strict": strict_m3,
+                        "healthy": False,
+                        "reason": "storage recorder not configured",
+                    }
+                )
+                authorization = (
+                    m3_gate.status()
+                    if m3_gate is not None
+                    else {
+                        "schema": "pythia.m3-authorization/1",
+                        "configured": False,
+                    }
+                )
+                runtime_m3 = coordinator.m3_status()
 
                 heartbeat.report(
                     mining_evidence=json.dumps(
@@ -443,6 +476,15 @@ async def _main_async(args) -> None:
                         sort_keys=True,
                         separators=(",", ":"),
                         default=str,
+                    ),
+                    m3_storage=json.dumps(
+                        storage_health, sort_keys=True, separators=(",", ":"), default=str
+                    ),
+                    m3_authorization=json.dumps(
+                        authorization, sort_keys=True, separators=(",", ":"), default=str
+                    ),
+                    m3_runtime=json.dumps(
+                        runtime_m3, sort_keys=True, separators=(",", ":"), default=str
                     ),
                 )
 
@@ -457,7 +499,33 @@ async def _main_async(args) -> None:
                 selection.reason,
             )
             username = args.user or endpoints[0].username
-            coordinator = GeodesicProductionMiningCoordinator(
+
+            from chronus.mla1517.mining.storage_recorder import MiningStorageRecorder
+            from m3_mining_guard import M3MiningSubmissionGate
+
+            storage_recorder = MiningStorageRecorder.from_env(
+                worker=username,
+                strict=strict_m3,
+            )
+            if strict_m3:
+                if storage_recorder is None:  # defensive; strict from_env raises first
+                    raise SystemExit("strict M3 mode requires THESEUS storage")
+                initial_storage_health = storage_recorder.health(reconcile=True)
+                if initial_storage_health.get("healthy") is not True:
+                    raise SystemExit(
+                        "M3 storage/reconciliation gate failed: "
+                        + str(initial_storage_health.get("unresolved") or initial_storage_health)
+                    )
+                try:
+                    m3_gate = M3MiningSubmissionGate.from_env(storage_recorder)
+                except Exception as exc:
+                    raise SystemExit(f"M3 AL HARAS gate unavailable: {exc}") from exc
+                if not m3_gate.configured():
+                    raise SystemExit(
+                        "M3 AL HARAS gate is not fully configured/durable"
+                    )
+
+            coordinator = M3PythiaProductionMiningCoordinator(
                 endpoints,
                 username=username,
                 password=args.password,
@@ -474,25 +542,56 @@ async def _main_async(args) -> None:
                 ),
                 backend_registry=registry,
                 causal_log_path=os.getenv("PYTHIA_CAUSAL_LOG_PATH", "data/causal_ledger.jsonl"),
+                m3_required=strict_m3,
+                m3_gate=m3_gate,
             )
             if coordinator.chain_observer is None:
                 coordinator.chain_observer = PoolChainObserver(lambda: coordinator.client)
                 LOG.info("chain evidence: pool Stratum jobs (no bitcoind configured)")
-            # M3 storage plane: when declared via PYTHIA_STORAGE_* the causal
-            # voyage is projected into hyba_db — custodied, content-addressed,
-            # reconcilable. Absent config leaves mining untouched.
-            from chronus.mla1517.mining.storage_recorder import (
-                MiningStorageRecorder,
-            )
-
-            storage_recorder = MiningStorageRecorder.from_env(worker=username)
             if storage_recorder is not None:
-                coordinator.causal.set_observer(storage_recorder.observe)
+                coordinator.causal.set_observer(
+                    storage_recorder.observe,
+                    fail_closed=strict_m3,
+                )
                 LOG.info(
-                    "M3 storage plane recording tenant=%s root=%s",
+                    "M3 storage plane recording tenant=%s root=%s strict=%s",
                     storage_recorder.tenant_id,
                     storage_recorder.root,
+                    strict_m3,
                 )
+                storage_health = storage_recorder.health(reconcile=True)
+            else:
+                storage_health = {
+                    "schema": "pythia.m3-storage-health/1",
+                    "configured": False,
+                    "strict": False,
+                    "healthy": False,
+                    "reason": "storage recorder not configured",
+                }
+            heartbeat.report(
+                m3_storage=json.dumps(
+                    storage_health, sort_keys=True, separators=(",", ":"), default=str
+                ),
+                m3_authorization=json.dumps(
+                    (
+                        m3_gate.status()
+                        if m3_gate is not None
+                        else {
+                            "schema": "pythia.m3-authorization/1",
+                            "configured": False,
+                        }
+                    ),
+                    sort_keys=True,
+                    separators=(",", ":"),
+                    default=str,
+                ),
+                m3_runtime=json.dumps(
+                    coordinator.m3_status(),
+                    sort_keys=True,
+                    separators=(",", ":"),
+                    default=str,
+                ),
+            )
             coordinator.set_evidence_sink(publish_mining_evidence)
             coordinator.set_metrics_sink(
                 lambda counters: (

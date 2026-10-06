@@ -21,6 +21,10 @@ _EXPORTS = {
     "EvidenceLedger": ("chronus.virtual_igpu.evidence", "EvidenceLedger"),
     "validate_receipt": ("chronus.virtual_igpu.evidence", "validate_receipt"),
     "default_adapters": ("chronus.virtual_igpu.adapters", "default_adapters"),
+    "verify_workload_result": (
+        "chronus.virtual_igpu.verifier",
+        "verify_workload_result",
+    ),
     "CPUEmulatorAdapter": ("chronus.virtual_igpu.adapters", "CPUEmulatorAdapter"),
     "AdapterUnavailable": ("chronus.virtual_igpu.adapters", "AdapterUnavailable"),
 }

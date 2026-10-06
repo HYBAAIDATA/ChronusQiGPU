@@ -166,10 +166,13 @@ from .traversal import (
     geodesic_step,
 )
 from .attest import (
+    ATTESTATION_SCHEMA,
     CONSENSUS_AUTHORITY,
+    AttestationError,
     ProofBoundary,
     VersionLockError,
     attest,
+    verify_attestation,
     verify_version,
 )
 
@@ -456,10 +459,13 @@ __all__ = [
     "face_bias",
     "geodesic_step",
     # attestation (Layer 7)
+    "ATTESTATION_SCHEMA",
     "CONSENSUS_AUTHORITY",
+    "AttestationError",
     "ProofBoundary",
     "VersionLockError",
     "attest",
+    "verify_attestation",
     "verify_version",
     # golden substrate + tensor data plane + ML (lazy)
     *_LAZY_SUBMODULE_ATTRS["dphi_transform"],

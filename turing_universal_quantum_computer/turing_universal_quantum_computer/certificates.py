@@ -34,6 +34,7 @@ __all__ = [
     "WitnessError",
     "RunWitness",
     "VQCComputationCertificate",
+    "canonicalize_certificate_value",
     "issue_witness",
     "issue_computation_certificate",
     "replay_computation_certificate",
@@ -125,6 +126,15 @@ def _canonical(value: Any) -> bytes:
         ensure_ascii=True,
         allow_nan=False,
     ).encode("ascii")
+
+
+def canonicalize_certificate_value(value: Any) -> Any:
+    """Return the exact JSON-safe value form used by certificate hashing.
+
+    Persisted execution evidence must use this representation if it is expected
+    to reproduce a computation certificate after custody/restart.
+    """
+    return _jsonable(value)
 
 
 def _digest(domain: str, value: Any) -> str:

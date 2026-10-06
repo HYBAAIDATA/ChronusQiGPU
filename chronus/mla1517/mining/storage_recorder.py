@@ -112,6 +112,10 @@ _RECEIPT_CLASS: Mapping[str, str] = {
 _SUBMITTED_OUTCOMES = {"ACCEPTED", "REJECTED", "OUTCOME_UNKNOWN"}
 
 
+class M3StorageError(RuntimeError):
+    """A required M3 custody/reconciliation operation failed."""
+
+
 class MiningStorageRecorder:
     """CausalLedger observer that writes the durable mining evidence chain."""
 
@@ -122,26 +126,43 @@ class MiningStorageRecorder:
         root: str | Path,
         *,
         transform_plane: Any | None = None,
+        strict: bool = False,
     ) -> None:
         self.files = files
         self.tenant_id = tenant_id
         self.root = Path(root)
         self.transform_plane = transform_plane
+        self.strict = bool(strict)
         self._lock = threading.Lock()
         self._heads: dict[str, str] = {}
         self._seen: set[str] = set()
         self.records: dict[str, str] = {}  # record_id -> kind
         self.receipts: dict[str, str] = {}  # record_id -> file_version_id
         self.errors: int = 0
+        self.last_error: str | None = None
+        self._last_health: dict[str, Any] | None = None
 
     # -- construction ----------------------------------------------------- #
 
     @classmethod
-    def from_env(cls, *, worker: str | None = None) -> "MiningStorageRecorder | None":
-        """Build a recorder from ``PYTHIA_STORAGE_*`` env, or ``None``."""
+    def from_env(
+        cls,
+        *,
+        worker: str | None = None,
+        strict: bool = False,
+    ) -> "MiningStorageRecorder | None":
+        """Build a recorder from ``PYTHIA_STORAGE_*`` env, or ``None``.
+
+        In strict M3 mode absent storage configuration is a startup failure,
+        not permission to mine without custody.
+        """
         db = os.getenv("PYTHIA_STORAGE_DB", "").strip()
         root = os.getenv("PYTHIA_STORAGE_ROOT", "").strip()
         if not db or not root:
+            if strict:
+                raise M3StorageError(
+                    "strict M3 mode requires PYTHIA_STORAGE_DB and PYTHIA_STORAGE_ROOT"
+                )
             return None
         integrity_hex = os.getenv("PYTHIA_STORAGE_INTEGRITY_KEY_HEX", "").strip()
         custody_hex = os.getenv("PYTHIA_STORAGE_CUSTODY_KEY_HEX", "").strip()
@@ -181,19 +202,29 @@ class MiningStorageRecorder:
                 namespace, Quota(max_records=10**9, max_blob_bytes=10**12)
             )
             tenant_id = client.tenant_id
-        recorder = cls(store.files, tenant_id, root)
+        recorder = cls(store.files, tenant_id, root, strict=strict)
         recorder._store = store  # keep the connection reachable via the recorder
         return recorder
 
     # -- observer entry ---------------------------------------------------- #
 
     def observe(self, event: Any) -> None:
-        """CausalLedger observer. Never raises into the mining path."""
+        """Project one causal event into THESEUS custody.
+
+        Ordinary development mode preserves the historical best-effort observer
+        behavior.  Strict M3 mode raises ``M3StorageError`` after the causal
+        JSONL mirror has already retained the source event, allowing the runtime
+        to fail closed without losing replay material.
+        """
         try:
             self._handle(event)
-        except Exception:
+            self.last_error = None
+        except Exception as exc:
             self.errors += 1
+            self.last_error = f"{type(exc).__name__}: {exc}"
             LOG.exception("storage recorder failed on %s", getattr(event, "kind", "?"))
+            if self.strict:
+                raise M3StorageError(self.last_error) from exc
 
     def _handle(self, event: Any) -> None:
         key = (
@@ -202,11 +233,17 @@ class MiningStorageRecorder:
         with self._lock:
             if key in self._seen:
                 return
-            self._seen.add(key)
             coordinate = event.coordinate.as_dict()
             detail = dict(event.detail)
             emitted = []
             for kind, producer, _cls in _CHAIN_EVENTS.get(event.kind, ()):
+                if kind == "verified_proof" and self.strict:
+                    if "verified_proof" not in self._heads:
+                        raise M3StorageError(
+                            "submission boundary reached without a synchronously custodied verified proof"
+                        )
+                    emitted.append(kind)
+                    continue
                 if kind == "pool_outcome" and "submission" not in self._heads:
                     continue  # no real submission to hang the outcome on
                 if (
@@ -226,6 +263,9 @@ class MiningStorageRecorder:
             # record; everything else links to the current chain head.
             receipt_class = _RECEIPT_CLASS[emitted[-1]] if emitted else "durable_evidence"
             self._receipt(event, receipt_class, emitted)
+            # Mark the event seen only after every durable operation succeeds.
+            # A failed write therefore remains retryable/replayable.
+            self._seen.add(key)
 
     # -- record emission --------------------------------------------------- #
 
@@ -294,6 +334,10 @@ class MiningStorageRecorder:
         for parent_kind in _PARENT_OF.get(kind, ()):
             head = self._heads.get(parent_kind)
             if head is None:
+                if self.strict:
+                    raise M3StorageError(
+                        f"strict M3 chain missing required parent {parent_kind!r} for {kind!r}"
+                    )
                 head = self._materialize(parent_kind)
             parent_ids.append(head)
         return parent_ids
@@ -380,6 +424,154 @@ class MiningStorageRecorder:
             self.transform_plane.fold_into(self.tenant_id, self.root, version_id)
         return version_id
 
+    def persist_authorization(
+        self,
+        verdict: Mapping[str, Any],
+        *,
+        context: Mapping[str, Any],
+    ) -> str:
+        """Custody an AL HARAS decision before a live submission can proceed."""
+        with self._lock:
+            body = _stable_json(
+                {
+                    "schema": "pythia.m3-authorization-receipt/1",
+                    "verdict": dict(verdict),
+                    "context": dict(context),
+                }
+            ).encode()
+            links: list[tuple[str, str, str]] = []
+            candidate = self._heads.get("candidate_verification")
+            if candidate is not None:
+                links.append(("mining", candidate, "authorizes"))
+            else:
+                links.append(("external:al_haras", str(verdict.get("evidence_id") or "decision"), "decision"))
+            _object_id, version_id = self.files.put_file(
+                self.tenant_id,
+                self.root,
+                logical_name=f"authorization-{verdict.get('evidence_id') or 'unknown'}.json",
+                file_class="audit",
+                semantic_owner="al_haras",
+                domain="mining:authorization",
+                content=body,
+                producer="al_haras",
+                evidence_state="PASS" if verdict.get("allowed") is True else "FAIL",
+                links=links,
+            )
+            return version_id
+
+    def persist_verified_proof(
+        self,
+        *,
+        context: Mapping[str, Any],
+        proof: Any,
+        authorization_evidence_id: str,
+        authorization_version_id: str,
+        policy_version: str,
+    ) -> tuple[str, str]:
+        """Persist the host-verified proof before any Stratum network write."""
+        with self._lock:
+            candidate = self._heads.get("candidate_verification")
+            if candidate is None:
+                raise M3StorageError(
+                    "verified proof refused: candidate_verification is not durably custodied"
+                )
+            payload = {
+                "target_met": True,
+                "host_verified": True,
+                "job_id": context.get("job_id"),
+                "generation": context.get("generation"),
+                "pool_session_id": context.get("pool_session_id"),
+                "nonce": getattr(proof, "nonce", context.get("nonce")),
+                "block_hash": getattr(proof, "digest", b"")[::-1].hex(),
+                "target": f"{int(getattr(proof, 'target')):064x}",
+                "authorization_evidence_id": authorization_evidence_id,
+                "authorization_version_id": authorization_version_id,
+                "authorization_policy_version": policy_version,
+                "basis": "independent host SHA256d + target validation before mining.submit",
+            }
+            record_id = self.files.record_mining(
+                self.tenant_id,
+                "verified_proof",
+                payload,
+                parent_ids=(candidate,),
+                evidence_state="PASS",
+                producer="sha256d",
+            )
+            body = _stable_json(
+                {
+                    "schema": "pythia.m3-verified-proof/1",
+                    "record_id": record_id,
+                    "payload": payload,
+                }
+            ).encode()
+            _object_id, version_id = self.files.put_file(
+                self.tenant_id,
+                self.root,
+                logical_name=f"verified-proof-{record_id}.json",
+                file_class="verified_proof",
+                semantic_owner="sha256d",
+                domain="mining:verified_proof",
+                content=body,
+                producer="sha256d",
+                evidence_state="PASS",
+                links=(("mining", record_id, "receipt"),),
+            )
+            self._heads["verified_proof"] = record_id
+            self.records[record_id] = "verified_proof"
+            self.receipts[record_id] = version_id
+            return record_id, version_id
+
+    def health(self, *, reconcile: bool = True) -> dict[str, Any]:
+        """Return measured M3 storage/custody health; never synthesize PASS."""
+        try:
+            verification = self.files.verify_database(self.tenant_id)
+            report = (
+                self.files.reconcile_files(self.tenant_id, self.root)
+                if reconcile
+                else None
+            )
+            reconciliation_ok = (
+                report.passed
+                if report is not None
+                else bool((self._last_health or {}).get("reconciliation_ok", False))
+            )
+            healthy = bool(
+                verification.get("passed")
+                and reconciliation_ok
+                and self.errors == 0
+            )
+            result = {
+                "schema": "pythia.m3-storage-health/1",
+                "configured": True,
+                "strict": self.strict,
+                "healthy": healthy,
+                "errors": self.errors,
+                "last_error": self.last_error,
+                "file_plane_ok": bool(verification.get("file_plane_ok")),
+                "mining_chain_ok": bool(self.files.verify_mining(self.tenant_id)),
+                "reconciliation_ok": bool(reconciliation_ok),
+                "unresolved": (
+                    list(report.unresolved)
+                    if report is not None
+                    else list((self._last_health or {}).get("unresolved", ()))
+                ),
+            }
+        except Exception as exc:
+            result = {
+                "schema": "pythia.m3-storage-health/1",
+                "configured": True,
+                "strict": self.strict,
+                "healthy": False,
+                "errors": self.errors + 1,
+                "last_error": f"{type(exc).__name__}: {exc}",
+                "file_plane_ok": False,
+                "mining_chain_ok": False,
+                "reconciliation_ok": False,
+                "unresolved": [f"{type(exc).__name__}: {exc}"],
+            }
+        self._last_health = result
+        return dict(result)
+
     # -- observability ----------------------------------------------------- #
 
     def snapshot(self) -> dict[str, Any]:
@@ -394,6 +586,10 @@ class MiningStorageRecorder:
                 "records_by_kind": by_kind,
                 "heads": dict(self._heads),
                 "errors": self.errors,
+                "strict": self.strict,
+                "healthy": self.errors == 0 and self.last_error is None,
+                "last_error": self.last_error,
+                "last_health": dict(self._last_health) if self._last_health else None,
             }
 
 
@@ -403,4 +599,4 @@ def _stable_json(value: Any) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
 
 
-__all__ = ["MiningStorageRecorder"]
+__all__ = ["M3StorageError", "MiningStorageRecorder"]

@@ -42,6 +42,7 @@ from .abi import (
 from .adapters import Adapter, AdapterUnavailable, default_adapters
 from .evidence import EvidenceLedger
 from .memory import VirtualMemoryPlane
+from .verifier import verify_workload_result
 
 
 class RuntimeInvariantError(RuntimeError):
@@ -281,12 +282,12 @@ class RuntimeDaemon:
     def _hardware_root_corroborated(self, adapter: Adapter) -> bool:
         """Fail-closed check for a ``hardware_rooted`` claim.
 
-        The claim is only honoured when the adapter exposes a *verified
-        attestation mechanism*: a probe attestation whose recorded trust class
-        is ``hardware_rooted`` and whose fingerprint/chain digest replay to the
-        values the adapter reports. Self-assertion, unverifiable chain digests
-        and software adapters are refused, so a lying adapter cannot promote
-        itself to hardware-rooted provenance.
+        The claim is honoured only when a caller-supplied
+        ``hardware_attestation_verifier`` accepts the adapter's probe
+        attestation (which must itself assert ``hardware_rooted`` trust).
+        Without that external mechanism nothing here corroborates device
+        grounding — self-assertion is refused, so a lying adapter cannot
+        promote itself to hardware-rooted provenance.
         """
         verifier = self.hardware_attestation_verifier
         if verifier is None:
@@ -500,6 +501,31 @@ class RuntimeDaemon:
                     result = replace(result, object_id=str(getattr(stored, "object_id", stored)))
             result = _finalise(result)
 
+            # Independent result verification: the receipt must bind more
+            # than the fact that an adapter returned bytes. For workload
+            # kinds with a deterministic oracle the control plane recomputes
+            # the output and compares; a mismatch demotes the result to
+            # ``verification_failed`` — the dishonest attempt is still
+            # ledgered below as forensic evidence, never as success.
+            verify_report = (
+                verify_workload_result(w, result)
+                if result.status == "ok"
+                else {
+                    "recomputed": False,
+                    "verifier": "none",
+                    "verdict": "skipped_not_ok",
+                }
+            )
+            if verify_report["verdict"] == "mismatch":
+                result = replace(
+                    result,
+                    status="verification_failed",
+                    error=(
+                        "independent recompute mismatch: "
+                        f"{verify_report.get('detail', 'unspecified')}"
+                    ),
+                )
+
             # Build portable package + receipt
             pkg = PortablePackage(
                 package_id=w.content_hash or w.id,
@@ -546,7 +572,11 @@ class RuntimeDaemon:
                     "device_time_ns": result.device_time_ns,
                     "total_ns": int(time.time_ns() - started),
                 },
-                verification={"status": result.status, "admission": admission.as_dict()},
+                verification={
+                    "status": result.status,
+                    "admission": admission.as_dict(),
+                    **verify_report,
+                },
                 trust_class=trust,
                 hardware_rooted=hardware_rooted,
                 content_hash="",  # filled below
