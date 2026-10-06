@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import time
 
-from chronus.mla1517.mining.execution_router import NONCE_ORDER_M32
+from chronus.mla1517.mining.execution_router import NONCE_ORDER_HENDRIX
 from chronus.mla1517.mining.geodesic_support import ProductionExecutionRouter
 from chronus.mla1517.mining.pythia_search import (
     DUAL_VERTEX_COUNT,
@@ -13,6 +13,7 @@ from chronus.mla1517.mining.pythia_search import (
     HILBERT_WALK_HORIZON,
     SEARCH_ARCHITECTURE_ID,
     precompute_pythia_search,
+    pythia_hendrix_nonces,
     pythia_hilbert_600_nonces,
     vertex_itinerary,
 )
@@ -44,7 +45,7 @@ def _plan(window: int = 1200) -> SearchPlan:
         },
         created_at=time.monotonic(),
         plan_id="plan-pythia-600",
-        nonce_order=NONCE_ORDER_M32,
+        nonce_order=NONCE_ORDER_HENDRIX,
     )
 
 
@@ -96,6 +97,34 @@ def test_itinerary_visits_every_dual_vertex_once_and_is_job_deterministic():
     changed[0] ^= 0x01
     other = vertex_itinerary(bytes(changed))
     assert set(other) == set(first)
+
+
+def test_hendrix_is_default_traversal_over_complete_structured_itinerary():
+    header = bytes(range(80))
+    base = 4000
+    window = 5000
+    structural = pythia_hilbert_600_nonces(
+        header,
+        base,
+        window,
+        preferred_face=7,
+    )
+    canonical = pythia_hendrix_nonces(
+        header,
+        base,
+        window,
+        preferred_face=7,
+    )
+
+    from chronus.mla1517.mining.hendrix_order import hendrix_schedule
+
+    schedule = hendrix_schedule(window)
+    expected = [structural[schedule.nonce_at(index)] for index in range(window)]
+
+    assert canonical == expected
+    assert len(canonical) == window
+    assert len(set(canonical)) == window
+    assert set(canonical) == set(range(base, base + window))
 
 
 def test_pythia_preferred_face_steers_start_without_pruning_vertices():
@@ -176,7 +205,7 @@ def test_canonical_itinerary_executes_as_explicit_nonce_batch_on_proven_device()
     header = bytes(80)
     hasher = _BatchHasher()
     plan = _plan(window=1200)
-    expected = pythia_hilbert_600_nonces(
+    expected = pythia_hendrix_nonces(
         header,
         plan.base_step,
         plan.window,
@@ -201,8 +230,8 @@ def test_canonical_itinerary_executes_as_explicit_nonce_batch_on_proven_device()
     assert candidate is not None
     assert candidate["nonce"] == expected[0]
     assert candidate["independently_rechecked"] is True
-    assert record.requested_nonce_order == SEARCH_ARCHITECTURE_ID
-    assert record.executed_nonce_order == SEARCH_ARCHITECTURE_ID
+    assert record.requested_nonce_order == NONCE_ORDER_HENDRIX
+    assert record.executed_nonce_order == NONCE_ORDER_HENDRIX
     assert record.kernel_identity.endswith(SEARCH_ARCHITECTURE_ID)
     assert record.kernel_launch_count == 1
     assert record.evidence_class is EvidenceClass.HARDWARE_EXECUTED
