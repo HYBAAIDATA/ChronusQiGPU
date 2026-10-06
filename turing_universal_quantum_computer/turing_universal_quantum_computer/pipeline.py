@@ -463,9 +463,13 @@ class VQCPipeline:
         )
 
         verdict = "PASS"
-        if custody_state in (EvidenceState.UNAVAILABLE.value, EvidenceState.FAIL.value) or \
-           replay_state in (EvidenceState.UNAVAILABLE.value, EvidenceState.FAIL.value):
-            verdict = "GATED"  # computation verified; durability evidence gated
+        if custody_state == EvidenceState.FAIL.value or replay_state == EvidenceState.FAIL.value:
+            verdict = "FAIL"  # integrity/replay failure is evidence, not mere unavailability
+        elif (
+            custody_state == EvidenceState.UNAVAILABLE.value
+            or replay_state == EvidenceState.UNAVAILABLE.value
+        ):
+            verdict = "GATED"  # computation verified; durability evidence unavailable
         return self._finish(
             stages, verdict, program.digest(), result, witness,
             tuple(custody_records), tuple(replay_records), refusals, request,
