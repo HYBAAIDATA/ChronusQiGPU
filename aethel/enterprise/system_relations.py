@@ -524,10 +524,11 @@ class SharedTuring(_BoundAdapter):
     result, computation certificate, witness and final pipeline report are
     instead committed to the single shared data port with parent lineage
 
-        program -> result -> certificate -> witness -> pipeline_report
+        program -> result -> certificate -> witness -> pipeline_report -> replay
 
-    and the certificate/witness boundary is semantically validated before any
-    of it enters custody.
+    The certificate/witness boundary is semantically validated before custody,
+    then the committed artefacts are read back and revalidated before a
+    successful execution is returned as production-accepted.
     """
 
     def __init__(self, port: SystemDataPort, pipeline: Any | None = None) -> None:
