@@ -16,7 +16,14 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from plugin_status import JOURNAL, ROOT, build_status, write_runtime_receipt
+from plugin_status import (
+    JOURNAL,
+    ROOT,
+    WORKSPACE_AVAILABLE,
+    build_status,
+    write_runtime_receipt,
+)
+
 
 def _canonical(value: Any) -> bytes:
     return json.dumps(
@@ -138,6 +145,10 @@ def _verify_pack(path: Path, *, task_id: str, plugin_source_sha: str) -> tuple[b
 
 
 def main() -> int:
+    if not WORKSPACE_AVAILABLE:
+        # No PhiMiner workspace: the session was never aptitude-gated, so the
+        # stop gate has nothing to enforce.
+        return 0
     status = build_status(event="Stop")
     write_runtime_receipt(status)
 

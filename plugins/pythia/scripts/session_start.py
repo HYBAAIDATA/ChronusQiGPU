@@ -12,6 +12,7 @@ import sys
 from plugin_status import (
     INTELLIGENCE_SKILLS_ROOT,
     PLUGIN_ROOT,
+    WORKSPACE_AVAILABLE,
     build_status,
     write_runtime_receipt,
 )
@@ -38,6 +39,11 @@ def _skill_bundle() -> str:
 
 
 def main() -> int:
+    if not WORKSPACE_AVAILABLE:
+        # The plugin is managed-installed and fires in every session, but its
+        # aptitude surface is PhiMiner-repo-local. Outside that workspace the
+        # hook is a quiet no-op rather than a hard failure.
+        return 0
     status = build_status(event="SessionStart", invoke_all=True)
     write_runtime_receipt(status)
 
