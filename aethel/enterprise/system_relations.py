@@ -662,7 +662,7 @@ def verify_turing_custody_boundary(
     from turing_universal_quantum_computer.certificates import (
         RunWitness,
         VQCComputationCertificate,
-        verify_computation_certificate,
+        verify_serialized_computation_certificate,
         verify_witness,
     )
 
@@ -733,7 +733,6 @@ def verify_turing_custody_boundary(
     )
 
     result = result_payload if isinstance(result_payload, Mapping) else None
-    typed_result = None
     if result is not None:
         try:
             embedded_certificate = result.get("certificate")
@@ -744,7 +743,7 @@ def verify_turing_custody_boundary(
             backend_payload = result.get("payload", {})
             if not isinstance(backend_payload, Mapping):
                 raise TypeError("backend payload must be a mapping")
-            typed_result = ExecutionResult(
+            ExecutionResult(
                 backend=str(result["backend"]),
                 execution_class=ExecutionClass(str(result["execution_class"])),
                 truth_class=TruthClass(str(result["truth_class"])),
@@ -766,34 +765,12 @@ def verify_turing_custody_boundary(
     else:
         checks["result_reconstructs"] = False
 
-    certified_options: dict[str, Any] = {}
-    if certificate is not None and certificate.trace:
-        first = certificate.trace[0]
-        if isinstance(first, Mapping):
-            raw_options = first.get("options", {})
-            if isinstance(raw_options, Mapping):
-                certified_options = dict(raw_options)
     checks["certificate_options_recovered"] = bool(
         certificate is not None
         and certificate.trace
         and isinstance(certificate.trace[0], Mapping)
         and isinstance(certificate.trace[0].get("options", {}), Mapping)
     )
-
-    try:
-        checks["certificate_binds_program_and_result"] = bool(
-            program is not None
-            and typed_result is not None
-            and certificate is not None
-            and verify_computation_certificate(
-                program,
-                typed_result,
-                certificate,
-                options=certified_options,
-            )
-        )
-    except Exception:
-        checks["certificate_binds_program_and_result"] = False
 
     checks["certificate_binds_witness"] = bool(
         certificate is not None
