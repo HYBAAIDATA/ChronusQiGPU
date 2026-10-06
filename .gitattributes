@@ -5,3 +5,8 @@ tests/fixtures/** -text
 # Skill grafts are verified byte-for-byte against PROVENANCE.json
 # (Intelligence/skill_graft.py): EOL translation would reject every graft.
 Intelligence/skills/** -text
+
+# Bound training corpus is verified by sha256 of raw bytes (manifest
+# csv_sha256): CRLF materialization on Windows checkouts corrupts the digest
+# and crash-loops agentic-mining (CorpusIntegrityError → RestartBudgetExhausted).
+artifacts/pythia_training/** -text
