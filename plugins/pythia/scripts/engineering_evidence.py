@@ -177,6 +177,10 @@ def build_pack(task_id: str, path: Path | None = None) -> dict[str, Any]:
     runtime_status = build_status()
     session_aptitude = {
         "augmentation": runtime_status.get("augmentation", "UNAVAILABLE"),
+        "aptitude_digest_sha256": runtime_status.get(
+            "aptitude_digest_sha256",
+            "UNAVAILABLE",
+        ),
         "mandatory_skills_complete": bool(
             runtime_status.get("mandatory_skills_complete")
         ),
