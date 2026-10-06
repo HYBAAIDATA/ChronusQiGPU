@@ -36,6 +36,7 @@ from .certificates import (
     issue_witness,
     validate_certificate_inputs,
     verify_computation_certificate,
+    verify_serialized_computation_certificate,
     verify_witness,
 )
 from .chronus_lane import probe_chronus_lane
@@ -669,6 +670,17 @@ class VQCPipeline:
             raise WitnessError(
                 "recovered certificate input trace is bound to a different program"
             )
+        certified_options = certificate.trace[0].get("options", {})
+        if not isinstance(certified_options, dict):
+            raise WitnessError(
+                "recovered certificate input options are not a mapping"
+            )
+        verify_serialized_computation_certificate(
+            program,
+            result,
+            certificate,
+            options=certified_options,
+        )
 
         return {
             "program_digest": program_digest,
