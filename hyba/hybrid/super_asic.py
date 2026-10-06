@@ -431,6 +431,7 @@ class SuperAsicHasher:
             "h4_job_count": 0,
             "h4_active_shards": 0,
             "h4_full_600_shard_jobs": 0,
+            "h4_completed_600_shard_jobs": 0,
             "h4_topology_observed": False,
             "full_600_shard_dispatch_observed": False,
             "physical_fanout_observed": False,
@@ -464,7 +465,11 @@ class SuperAsicHasher:
                         int(evidence["h4_full_600_shard_jobs"]) + 1
                     )
                     evidence["full_600_shard_dispatch_observed"] = True
-                    evidence["physical_fanout_observed"] = True
+                    if int(done) == int(run_len):
+                        evidence["h4_completed_600_shard_jobs"] = (
+                            int(evidence["h4_completed_600_shard_jobs"]) + 1
+                        )
+                        evidence["physical_fanout_observed"] = True
             evidence["completed_work_items"] = total
             if nonce is not None:
                 evidence["candidate_found"] = True
