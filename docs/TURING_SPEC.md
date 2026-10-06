@@ -130,7 +130,27 @@ product certificates; callers must use the registry.
 
 Floating evidence is serialized with exact IEEE-754 hexadecimal strings.
 NaN, infinity, memory-address representations, unknown fields, altered trace
-order, and digest substitution fail closed.
+order, and digest substitution fail closed. Pipeline result evidence uses the
+same certificate-canonical value encoding so the result can reproduce its
+computation certificate after custody and restart.
+
+### Canonical production custody
+
+`VQCPipeline` owns the VQC computation/certificate stages. The canonical
+production integration is the Turing adapter created from an already-started
+`aethel.enterprise.lifecycle.CompositionRoot` by
+`ProductionSystemRelations.turing()`.
+
+That `SharedTuring` path suppresses the pipeline's historical private custody
+switches and writes one lineage-linked shared chain:
+
+`program -> result -> certificate -> witness -> pipeline_report -> replay`.
+
+A successful execution is not returned as production-accepted until the four
+execution artefacts are read back from the shared THESEUS/OVID fabric and the
+recovered result reproduces the recovered computation certificate. The
+recovered witness must also bind the same program, execution class, truth
+class, materialisation/QPU status, gate counts and provider job when relevant.
 
 ## Verification and reproduction
 
