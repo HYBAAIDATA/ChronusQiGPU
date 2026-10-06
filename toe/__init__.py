@@ -194,6 +194,13 @@ from .expansion import (
 )
 from .operator_compilers import OperatorSpec, compile_operator
 from .system import TOEProvenanceRecord, TOESystem
+from .foundation import UNIFIED_THEORY, UnifiedTheoryFoundation
+from .golden_unified import (
+    CollapseResult,
+    GOLDEN_UNIFIED_THEORY,
+    GoldenUnifiedTheory,
+    UnifiedObservation,
+)
 from .engine import (
     AlgebraicFormulations,
     ExtendedAlgebraicFamily,
@@ -268,6 +275,12 @@ __all__ = [
     "TOEExpansionResult",
     "TOESystem",
     "TOEProvenanceRecord",
+    "UNIFIED_THEORY",
+    "UnifiedTheoryFoundation",
+    "CollapseResult",
+    "GOLDEN_UNIFIED_THEORY",
+    "GoldenUnifiedTheory",
+    "UnifiedObservation",
     "OperatorSpec",
     "compile_operator",
     "PredictiveEngine",
