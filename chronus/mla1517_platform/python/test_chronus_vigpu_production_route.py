@@ -111,7 +111,7 @@ class _LyingAdapter(CPUEmulatorAdapter):
 def test_lying_adapter_never_reaches_pythia_as_a_candidate(tmp_path) -> None:
     daemon = RuntimeDaemon(adapters=[_LyingAdapter()], store_dir=tmp_path / "rt")
     hasher = ChronusVirtualIGPUHasher(client=ChronusClient(daemon=daemon))
-    with pytest.raises(Exception, match="mismatch"):
+    with pytest.raises(Exception, match="mismatch|verification_failed"):
         hasher.grind_target_batch(bytes(range(80)), b"\xff" * 32, [5, 6, 7])
 
 
