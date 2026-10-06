@@ -164,6 +164,21 @@ def test_native_route_markers_are_bound_to_real_callable_methods(backend):
     assert hasher.k_gold == hasher.grind_target_gold
 
 
+def test_pythia_explicit_batch_certifies_hendrix_even_without_device_hendrix_kernel():
+    coordinator = PythiaProductionMiningCoordinator.__new__(
+        PythiaProductionMiningCoordinator
+    )
+    coordinator.execution_hasher = _NativeHasher("cuda")
+    coordinator._nonce_order = NONCE_ORDER_HENDRIX
+
+    plan = _plan(
+        nonce_order=NONCE_ORDER_HENDRIX,
+        evidence_refs={"search_architecture": SEARCH_ARCHITECTURE_ID},
+    )
+
+    assert coordinator._effective_nonce_order(plan) == NONCE_ORDER_HENDRIX
+
+
 def test_non_native_hasher_does_not_receive_synthetic_capabilities():
     hasher = _NativeHasher("cpu")
     ProductionExecutionRouter(hasher, lambda *_args: (None, None, 0))
