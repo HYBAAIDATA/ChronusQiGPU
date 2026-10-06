@@ -13,7 +13,10 @@ triggers:
 
 # Agent Fabric
 
-Record use first.
+## Session activation
+
+This aptitude is invoked automatically at SessionStart and remains active for the entire Devin session. Do not treat it as an optional per-task capability.
+
 
 When parallel work is useful:
 
