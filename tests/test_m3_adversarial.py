@@ -416,3 +416,92 @@ def test_wrong_integrity_key_fails_reconcile(tmp_path):
     assert version_id in report.attestation_invalid
     foreign.close()
     custody.close()
+
+
+# 12.1 (enumerated) — deterministic recovery at each commit boundary.
+# Stages map to: before temp write / after temp write / after placement /
+# after registry commit / after custody / before domain link / before publish.
+def _stage_intent(store, tenant_id, root, name, *, blob, version, link):
+    """Fabricate a crash-interrupted write at a given boundary."""
+    content = f"stage:{name}".encode()
+    digest = hashlib.sha256(content).hexdigest()
+    object_id = store.files.create_object(
+        tenant_id, f"{name}.bin", "durable_evidence", "chronus", "mining:stage"
+    )
+    final = root / tenant_id / "durable_evidence" / digest[:2] / digest
+    if blob == "temp":
+        tmp = final.parent / f".{digest}.zzz.tmp"
+        tmp.parent.mkdir(parents=True, exist_ok=True)
+        tmp.write_bytes(content)
+    elif blob == "final":
+        final.parent.mkdir(parents=True, exist_ok=True)
+        final.write_bytes(content)
+    version_id = None
+    if version:
+        final.parent.mkdir(parents=True, exist_ok=True)
+        final.write_bytes(content)
+        version_id = store.files.register_version(
+            tenant_id,
+            object_id,
+            content,
+            storage_uri=f"file://{final}",
+            logical_path=str(final),
+            producer="chronus",
+        )
+        if link:
+            store.files.link(
+                tenant_id,
+                version_id,
+                "external:stage",
+                name,
+                relationship="describes",
+            )
+    intent_id = f"fi_{name}"
+    with store._tx() as db:
+        db.execute(
+            "INSERT INTO file_intents VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                tenant_id,
+                intent_id,
+                object_id,
+                version_id,
+                "",
+                str(final),
+                digest,
+                len(content),
+                "DECLARED",
+                "{}",
+                "t",
+                "t",
+            ),
+        )
+    return intent_id, version_id
+
+
+@pytest.mark.parametrize(
+    "stage,blob,version,link,expect,also",
+    [
+        ("before_tmp", "none", False, False, "QUARANTINED", "intent"),
+        ("after_tmp", "temp", False, False, "QUARANTINED", "intent"),
+        ("after_place", "final", False, False, "QUARANTINED", "orphan"),
+        ("after_register", "final", True, False, "RECOVERED", "link"),
+        ("before_publish", "final", True, True, "RECOVERED", "intent"),
+    ],
+)
+def test_failpoint_at_each_commit_boundary(tmp_path, stage, blob, version, link, expect, also):
+    store, custody, tenant_id = _plane(tmp_path)
+    root = _root()
+    intent_id, version_id = _stage_intent(
+        store, tenant_id, root, stage, blob=blob, version=version, link=link
+    )
+    results = store.files.recover_intents(tenant_id, root)
+    assert results[0]["state"] == expect, (stage, results)
+    report = store.files.reconcile_files(tenant_id, root)
+    # Every interrupted write stays visible — deterministic, never silent.
+    assert any(f"intent:{intent_id}" in u for u in report.unresolved)
+    if also == "orphan":
+        assert report.orphan_files, report.to_dict()
+    if also == "link":
+        assert version_id in report.domain_link_missing
+    store.close()
+    custody.close()

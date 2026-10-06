@@ -924,11 +924,16 @@ class FileRegistry:
             )
         return {"imported": imported, "count": len(imported)}
 
-    def stats(self, tenant_id: str | None = None) -> dict[str, Any]:
+    def stats(
+        self, tenant_id: str | None = None, *, root: str | Path | None = None
+    ) -> dict[str, Any]:
         """§16 observability surface: counts, health and chain state.
 
         Read-only projection over the file plane — every number here is
-        measured from the tables, not derived from flags.
+        measured from the tables, not derived from flags. Statuses are
+        derived, never optimistic: anything that cannot be measured from
+        the given inputs reports ``UNAVAILABLE`` (e.g. reconcile truth needs
+        the storage root; custody truth needs a custody adapter).
         """
         if tenant_id:
             self._tenant(tenant_id)
@@ -990,6 +995,61 @@ class FileRegistry:
                 "FROM tenants WHERE tenant_id=?",
                 (tid,),
             ).fetchone()
+            pending_recovery = sum(n for state, n in intents.items() if state not in {"COMMITTED"})
+            # Post-recovery semantic revalidation belongs to the producing
+            # subsystem; these versions carry a state that still owes one.
+            pending_revalidation = sum(
+                by_status.get(s, 0) for s in ("QUARANTINED", "RECOVERED", "MISSING")
+            )
+            last_verified = db.execute(
+                "SELECT MAX(created_at) FROM file_events WHERE tenant_id=? "
+                "AND event_type IN ('RECONCILED','CUSTODIED','RECOVERED')",
+                (tid,),
+            ).fetchone()[0]
+            last_event = db.execute(
+                "SELECT MAX(created_at) FROM file_events WHERE tenant_id=?", (tid,)
+            ).fetchone()[0]
+            if self.custody is None:
+                custody_status = "VERIFIED" if custody_checked else "UNAVAILABLE"
+            elif custody_unverified:
+                custody_status = "VIOLATIONS"
+            else:
+                custody_status = "VERIFIED" if custody_checked else "EMPTY"
+            if not by_status:
+                registry_status = "EMPTY"
+            elif uncustodied or pending_recovery:
+                registry_status = "VIOLATIONS"
+            else:
+                registry_status = "VERIFIED"
+            status: dict[str, Any] = {
+                "registry_status": registry_status,
+                "custody_status": custody_status,
+                "pending_recovery": pending_recovery,
+                "pending_semantic_revalidation": pending_revalidation,
+                "last_verified_at": last_verified if last_verified else "UNAVAILABLE",
+                "last_event_at": last_event if last_event else "UNAVAILABLE",
+            }
+            if root is not None:
+                report = self.reconcile_files(tid, root)
+                status.update(
+                    {
+                        "reconciliation_status": ("VERIFIED" if report.passed else "VIOLATIONS"),
+                        "orphan_files": len(report.orphan_files),
+                        "orphan_records": len(report.orphan_records),
+                        "missing_blobs": len(report.missing_blobs),
+                        "hash_mismatches": len(report.hash_mismatches),
+                    }
+                )
+            else:
+                status.update(
+                    {
+                        "reconciliation_status": "UNAVAILABLE",
+                        "orphan_files": "UNAVAILABLE",
+                        "orphan_records": "UNAVAILABLE",
+                        "missing_blobs": "UNAVAILABLE",
+                        "hash_mismatches": "UNAVAILABLE",
+                    }
+                )
             out["tenants"][tid] = {
                 "file_objects_by_class": by_class,
                 "file_versions_by_status": by_status,
@@ -1002,6 +1062,7 @@ class FileRegistry:
                 "quota_used_blob_bytes": usage["used_blob_bytes"] if usage else 0,
                 "quota_max_records": usage["max_records"] if usage else 0,
                 "quota_max_blob_bytes": usage["max_blob_bytes"] if usage else 0,
+                "status": status,
                 "links": db.execute(
                     "SELECT COUNT(*) FROM file_links WHERE tenant_id=?", (tid,)
                 ).fetchone()[0],
