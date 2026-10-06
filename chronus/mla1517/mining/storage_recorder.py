@@ -63,10 +63,10 @@ _CHAIN_EVENTS: Mapping[str, tuple[tuple[str, str, str], ...]] = {
         ("execution", "chronus", "execution"),
     ),
     "candidate_found": (("candidate_verification", "sha256d", "candidate_verification"),),
-    # In strict M3 production the verified proof is synchronously custodied
-    # before the network write.  submission_sent therefore records only the
-    # submission boundary and must find that proof already present.
-    "submission_sent": (("submission", "stratum", "submission"),),
+    "submission_sent": (
+        ("verified_proof", "sha256d", "verified_proof"),
+        ("submission", "stratum", "submission"),
+    ),
     "learning_observed": (
         ("pool_outcome", "pool", "pool_outcome"),
         ("learning", "pythia", "durable_evidence"),
@@ -237,6 +237,13 @@ class MiningStorageRecorder:
             detail = dict(event.detail)
             emitted = []
             for kind, producer, _cls in _CHAIN_EVENTS.get(event.kind, ()):
+                if kind == "verified_proof" and self.strict:
+                    if "verified_proof" not in self._heads:
+                        raise M3StorageError(
+                            "submission boundary reached without a synchronously custodied verified proof"
+                        )
+                    emitted.append(kind)
+                    continue
                 if kind == "pool_outcome" and "submission" not in self._heads:
                     continue  # no real submission to hang the outcome on
                 if (
