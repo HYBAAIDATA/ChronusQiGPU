@@ -10,6 +10,7 @@ Skill activation is session-scoped. Task evidence is separate.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import subprocess
 from datetime import datetime, timezone
@@ -73,6 +74,31 @@ def mandatory_skills() -> list[str]:
         {f"plugin:{name}" for name in plugin_skills()}
         | {f"euclid:{name}" for name in euclid_aptitude_skills()}
     )
+
+
+def _aptitude_files() -> list[Path]:
+    files: list[Path] = []
+    for root in (PLUGIN_ROOT, INTELLIGENCE_SKILLS_ROOT):
+        if not root.is_dir():
+            continue
+        for path in root.rglob("*"):
+            if not path.is_file():
+                continue
+            if "__pycache__" in path.parts or path.suffix in {".pyc", ".pyo"}:
+                continue
+            files.append(path)
+    return sorted(files, key=lambda item: item.relative_to(ROOT).as_posix())
+
+
+def aptitude_digest_sha256() -> str:
+    digest = hashlib.sha256()
+    for path in _aptitude_files():
+        relative = path.relative_to(ROOT).as_posix().encode("utf-8")
+        data = path.read_bytes()
+        digest.update(relative)
+        digest.update(b"\x00")
+        digest.update(hashlib.sha256(data).digest())
+    return digest.hexdigest()
 
 
 def _journal_state() -> tuple[int, dict[str, Any] | None]:
@@ -147,6 +173,7 @@ def build_status(
         "plugin": manifest.get("name", "pythia"),
         "plugin_version": manifest.get("version", "UNAVAILABLE"),
         "augmentation": "EUCLID_APTITUDE",
+        "aptitude_digest_sha256": aptitude_digest_sha256(),
         "plugin_source_sha": source_sha,
         "workspace_head_sha": _git("rev-parse", "HEAD"),
         "generated_at": _now(),
