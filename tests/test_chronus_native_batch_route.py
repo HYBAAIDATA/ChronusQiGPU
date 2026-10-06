@@ -315,7 +315,7 @@ def test_plan_binding_declares_chronus_authority_not_vendor_runtime():
     coordinator.geodesic_enabled = True
     coordinator.last_mining_decision = None
     coordinator._chronus_fabric_state = {
-        "schema": "pythia.chronus_search_fabric/2",
+        "schema": "pythia.chronus_search_fabric/3",
         "state": "NOT_BOUND",
         "logical_vertices": 600,
     }
