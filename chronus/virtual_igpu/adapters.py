@@ -3,6 +3,13 @@
 Software (CPU reference) is real classical computation and a valid product mode.
 Physical adapters (OpenCL/CUDA/ROCm/oneAPI/Metal) report typed unavailability when
 SDKs or devices are absent — they never invent hardware.
+
+Exactness contract (per workload kind):
+  * lucas_transform, pisot_transform — exact integer arithmetic
+  * sha256d_scan, fold, unfold — bit-exact
+  * phi_transform, cgemv, tensor_op — IEEE-754 float64/complex128
+    approximation; scalar phi_transform is declared only for n<=1474
+    (float64 ceiling), never silently inf.
 """
 from __future__ import annotations
 
@@ -169,7 +176,22 @@ class CPUEmulatorAdapter(Adapter):
             max_bytes=256 * 1024 * 1024,
             evidence_support=("runtime_signed", "content_hash"),
             limits={"max_work_group": 1, "local_memory_bytes": 0},
-            arithmetic={"ieee754": True, "fp64": True},
+            arithmetic={
+                "ieee754": True,
+                "fp64": True,
+                "exact_integer_ops": (
+                    WorkloadKind.LUCAS_TRANSFORM.value,
+                    WorkloadKind.PISOT_TRANSFORM.value,
+                    WorkloadKind.SHA256D_SCAN.value,
+                    WorkloadKind.FOLD.value,
+                    WorkloadKind.UNFOLD.value,
+                ),
+                "float64_approximation_ops": (
+                    WorkloadKind.PHI_TRANSFORM.value,
+                    WorkloadKind.CGEMV.value,
+                    WorkloadKind.TENSOR_OP.value,
+                ),
+            },
             available=True,
             software_impl=True,
             physical_run_status="n/a_software",
@@ -369,6 +391,16 @@ class CPUEmulatorAdapter(Adapter):
             started,
         )
 
+    @staticmethod
+    def _lucas(n: int) -> int:
+        """Exact integer L_n (L_0=2, L_1=1)."""
+        if n == 0:
+            return 2
+        a, b = 2, 1
+        for _ in range(2, n + 1):
+            a, b = b, a + b
+        return b
+
     def _phi_family(
         self, workload: Workload, kind: WorkloadKind, value: dict[str, Any], started: int
     ) -> WorkloadResult:
@@ -377,35 +409,41 @@ class CPUEmulatorAdapter(Adapter):
             raise AdapterUnavailable(f"n out of supported domain 0..10000: {n}")
         phi = (1.0 + 5.0**0.5) / 2.0
         if kind == WorkloadKind.PHI_TRANSFORM:
-            # φ^n via Binet-adjacent float path + integer Lucas cross-check when small
+            # φ^n in float64; the float64 ceiling is φ^1474 — fail closed
+            # beyond it rather than overflow or return a silent inf.
+            if n > 1474:
+                raise AdapterUnavailable(
+                    f"phi_pow outside float64 domain n<=1474: {n}"
+                )
             val = phi**n
             return self._result(
                 workload,
-                {"n": n, "phi_pow": val, "engine": "float_phi_pow", "domain": "n=0..10000"},
+                {"n": n, "phi_pow": val, "engine": "float_phi_pow", "domain": "n=0..1474"},
                 started,
             )
         if kind == WorkloadKind.LUCAS_TRANSFORM:
-            # L_n recurrence
-            if n == 0:
-                ln = 2
-            elif n == 1:
-                ln = 1
-            else:
-                a, b = 2, 1
-                for _ in range(2, n + 1):
-                    a, b = b, a + b
-                ln = b
             return self._result(
                 workload,
-                {"n": n, "lucas": ln, "engine": "exact_recurrence", "domain": "n=0..10000"},
+                {"n": n, "lucas": self._lucas(n), "engine": "exact_recurrence", "domain": "n=0..10000"},
                 started,
             )
-        # Pisot-ish: nearest integer to φ^n
-        val = phi**n
-        nearest = int(round(val))
+        # Pisot: the nearest integer to φ^n is exact-integer computable — for
+        # n >= 2 it equals L_n because |ψ^n| < 1/2 (ψ = -1/φ, the Pisot
+        # property); n in {0, 1} are the boundary cases where the literal
+        # rounding differs from L_n. The old float64 round() path overflowed
+        # for n >= 1475; the integer path serves the whole declared domain.
+        nearest = 1 if n == 0 else 2 if n == 1 else self._lucas(n)
+        phi_pow = phi**n if n <= 1474 else None  # float64 ceiling, never inf
         return self._result(
             workload,
-            {"n": n, "pisot_nearest": nearest, "phi_pow": val, "engine": "round_phi_pow"},
+            {
+                "n": n,
+                "pisot_nearest": nearest,
+                "phi_pow": phi_pow,
+                "phi_pow_float64_bound": "n<=1474",
+                "engine": "exact_pisot_via_lucas",
+                "domain": "n=0..10000",
+            },
             started,
         )
 
@@ -441,10 +479,28 @@ class CPUEmulatorAdapter(Adapter):
             raise AdapterUnavailable(
                 f"SHA256d scan requires a 76-byte header prefix, got {len(header_prefix)}"
             )
-        if count <= 0 or count > 1_000_000:
-            raise AdapterUnavailable("count out of bounds")
-        if start < 0 or start > 0xFFFFFFFF or start + count - 1 > 0xFFFFFFFF:
-            raise AdapterUnavailable("nonce range exceeds uint32")
+        explicit = value.get("nonces")
+        if explicit is not None:
+            # Exact ordered batch authorised by the caller (PYTHIA itinerary).
+            # Order is preserved; the first hit in submitted order ends the scan.
+            if not isinstance(explicit, (list, tuple)):
+                raise AdapterUnavailable("nonces must be a list of uint32 integers")
+            nonce_seq = []
+            for raw in explicit:
+                if isinstance(raw, bool) or not isinstance(raw, int):
+                    raise AdapterUnavailable("nonces must be a list of uint32 integers")
+                if not 0 <= raw <= 0xFFFFFFFF:
+                    raise AdapterUnavailable("nonce exceeds uint32")
+                nonce_seq.append(raw)
+            count = len(nonce_seq)
+            if count <= 0 or count > 1_000_000:
+                raise AdapterUnavailable("count out of bounds")
+        else:
+            if count <= 0 or count > 1_000_000:
+                raise AdapterUnavailable("count out of bounds")
+            if start < 0 or start > 0xFFFFFFFF or start + count - 1 > 0xFFFFFFFF:
+                raise AdapterUnavailable("nonce range exceeds uint32")
+            nonce_seq = range(start, start + count)
         target = value.get("target", value.get("target_hex"))
         if target is None:
             raise AdapterUnavailable("target or target_hex is required")
@@ -459,8 +515,7 @@ class CPUEmulatorAdapter(Adapter):
             raise AdapterUnavailable("target is outside the uint256 range")
         hits: list[dict[str, Any]] = []
         checked = 0
-        for i in range(count):
-            nonce = start + i
+        for nonce in nonce_seq:
             header_b = header_prefix + int(nonce).to_bytes(4, "little")
             d1 = hashlib.sha256(header_b).digest()
             d2 = hashlib.sha256(d1).digest()
@@ -573,7 +628,6 @@ class OpenCLUhdAdapter(Adapter):
             self.probe()
         if not self.available:
             raise AdapterUnavailable(self.capabilities().reason or "opencl uhd unavailable")
-        started = time.time_ns()
         # Fail closed: prefer software for correctness unless tensor runtime path is proven
         # Physical execution evidence remains host-specific (gate PENDING without device).
         raise AdapterUnavailable(

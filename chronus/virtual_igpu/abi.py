@@ -77,7 +77,21 @@ class RuntimeState(str, Enum):
 
 
 class DeliveryMode(str, Enum):
-    """Where the client talks to the runtime (not the GPU backend)."""
+    """Where the client talks to the runtime (not the GPU backend).
+
+    Canonical delivery contract (single vocabulary for every caller):
+
+    * ``embedded`` -- in-process daemon; no endpoint, no network, no
+      authentication; software fallback only per the workload's policy.
+    * ``local_sidecar`` -- loopback HTTP daemon; endpoint required and must be
+      loopback; no silent switch to embedded on failure.
+    * ``remote_service`` -- network service; endpoint required, HTTPS required
+      off-loopback, bearer token required off-loopback; a failed request never
+      falls back to local execution.
+
+    Receipts record the mode actually used. The mode is never inferred from a
+    stray endpoint: supplying an endpoint with ``embedded`` is rejected.
+    """
 
     EMBEDDED = "embedded"
     LOCAL_SIDECAR = "local_sidecar"
@@ -286,14 +300,19 @@ class Workload:
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "Workload":
+        if not isinstance(value, Mapping):
+            raise ValueError("serialized workload must be a mapping")
         version = str(value.get("abi_version", ABI_VERSION))
         if version != ABI_VERSION:
             raise ValueError(
                 f"unsupported ABI version {version!r}; expected {ABI_VERSION!r}"
             )
+        for required in ("id", "kind"):
+            if required not in value:
+                raise ValueError(f"serialized workload is missing {required!r}")
         return cls(
             id=str(value["id"]),
-            kind=value.get("kind", WorkloadKind.CUSTOM),
+            kind=value["kind"],  # explicit: a missing kind is never defaulted to CUSTOM
             tenant=str(value.get("tenant", "default")),
             input=dict(value.get("input", {})),
             constraints=dict(value.get("constraints", {})),

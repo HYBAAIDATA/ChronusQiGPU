@@ -118,17 +118,25 @@ class CausalLedger:
         self._max_file_bytes = max_file_bytes
         self._revision = revision if revision is not None else software_revision()
         self._observer = observer
+        self._observer_fail_closed = False
         self.file_errors = 0
         self.observer_errors = 0
 
-    def set_observer(self, observer: Callable[[CausalEvent], None] | None) -> None:
+    def set_observer(
+        self,
+        observer: Callable[[CausalEvent], None] | None,
+        *,
+        fail_closed: bool = False,
+    ) -> None:
         """Attach an after-record observer (e.g. the M3 storage recorder).
 
-        Observers receive events after the event is durably recorded; a
-        raising observer is counted and logged, never allowed to interrupt
-        the mining path.
+        The source event is mirrored before observer notification. Ordinary
+        observers remain best-effort. A production custody observer may set
+        fail_closed=True so its failure aborts the affected transition while
+        preserving the causal event for replay.
         """
         self._observer = observer
+        self._observer_fail_closed = bool(fail_closed)
 
     @property
     def software_revision(self) -> str:
@@ -157,6 +165,8 @@ class CausalLedger:
         except Exception:
             self.observer_errors += 1
             LOG.exception("causal observer failed for %s", event.kind)
+            if self._observer_fail_closed:
+                raise
 
     def _mirror(self, event: CausalEvent) -> None:
         if self._path is None:

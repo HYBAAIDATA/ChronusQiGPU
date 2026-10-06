@@ -109,6 +109,7 @@ _EXECUTION_DEVICES = (
     "remote",
     "asic",
     "super_asic",
+    "chronus",
 )
 _LOCK_HELD = False
 _LOCK_GUARD = threading.Lock()
@@ -849,10 +850,33 @@ def _readiness_components() -> dict[str, Any]:
         if remote_eps
         else {"state": "not_configured", "reason": "no remote endpoints declared"}
     )
-    components["custody"] = {
-        "state": "not_mounted",
-        "reason": "control plane holds no THESEUS handle; custody is a typed contract, not a socket",
-    }
+    m3_storage = _metrics_json("agentic-mining", "m3_storage")
+    if isinstance(m3_storage, dict):
+        components["custody"] = {
+            "state": "ready" if m3_storage.get("healthy") is True else "not_ready",
+            "configured": bool(m3_storage.get("configured")),
+            "reconciliation_ok": bool(m3_storage.get("reconciliation_ok")),
+            "file_plane_ok": bool(m3_storage.get("file_plane_ok")),
+            "mining_chain_ok": bool(m3_storage.get("mining_chain_ok")),
+            "errors": m3_storage.get("errors"),
+            "reason": m3_storage.get("last_error")
+            or (None if m3_storage.get("healthy") is True else "M3 custody evidence unavailable"),
+        }
+    else:
+        components["custody"] = {
+            "state": "not_mounted",
+            "reason": "mining worker has not published THESEUS/M3 storage health",
+        }
+    m3_authorization = _metrics_json("agentic-mining", "m3_authorization")
+    components["m3_authorization"] = (
+        {
+            "state": "ready" if m3_authorization.get("configured") is True else "not_ready",
+            "configured": bool(m3_authorization.get("configured")),
+            "policy_version": m3_authorization.get("policy_version"),
+        }
+        if isinstance(m3_authorization, dict)
+        else {"state": "unavailable", "configured": False}
+    )
     return components
 
 
@@ -982,6 +1006,44 @@ def _stratum_status_payload(
     return payload
 
 
+def _m3_dependency_reason() -> tuple[bool, str]:
+    """Strict M3 dependency gate derived only from worker-published evidence."""
+    if not _is_truthy(os.getenv("PYTHIA_M3_REQUIRED")):
+        return True, "not_required"
+    storage = _metrics_json("agentic-mining", "m3_storage")
+    authorization = _metrics_json("agentic-mining", "m3_authorization")
+    runtime = _metrics_json("agentic-mining", "m3_runtime")
+    if not isinstance(storage, dict):
+        return False, "m3_storage_evidence_unavailable"
+    if storage.get("healthy") is not True:
+        return False, "m3_storage_unhealthy"
+    if storage.get("reconciliation_ok") is not True:
+        return False, "m3_storage_unreconciled"
+    if storage.get("file_plane_ok") is not True or storage.get("mining_chain_ok") is not True:
+        return False, "m3_storage_integrity_failed"
+    if not isinstance(authorization, dict) or authorization.get("configured") is not True:
+        return False, "m3_al_haras_unavailable"
+    if not isinstance(runtime, dict):
+        return False, "m3_runtime_evidence_unavailable"
+    if runtime.get("blocked") is True:
+        return False, "m3_runtime_blocked"
+    if runtime.get("gate_configured") is not True:
+        return False, "m3_submission_gate_unavailable"
+    last_gate = runtime.get("last_submission_gate")
+    if isinstance(last_gate, dict) and last_gate.get("allowed") is False:
+        return False, str(last_gate.get("reason") or "m3_submission_denied").lower()
+    if runtime.get("search_authority") != "PYTHIA":
+        return False, "m3_pythia_authority_unavailable"
+    if runtime.get("search_algorithm") != "hendrix_coprime_stride":
+        return False, "m3_hendrix_not_bound"
+    if runtime.get("search_architecture_ready") is not True:
+        return False, "m3_search_architecture_unavailable"
+    fabric = runtime.get("chronus_fabric")
+    if not isinstance(fabric, dict) or int(fabric.get("logical_vertices") or 0) != 600:
+        return False, "m3_chronus_fabric_unavailable"
+    return True, "ok"
+
+
 def _ready_to_mine_reason(
     records: list[WorkerRecord],
     stratum: dict[str, Any],
@@ -993,6 +1055,9 @@ def _ready_to_mine_reason(
         return False, "supervisor_degraded"
     if not any(record.readiness for record in records):
         return False, "worker_unavailable"
+    m3_ready, m3_reason = _m3_dependency_reason()
+    if not m3_ready:
+        return False, m3_reason
     primary = stratum.get("primary", {})
     job = stratum.get("job", {})
     if primary.get("transport") != "CONNECTED":
@@ -2440,13 +2505,19 @@ class _Handler(BaseHTTPRequestHandler):
             return
         if path in {"/readyz", "/api/v1/readyz"}:
             identity = _identity_payload()
-            status = HTTPStatus.OK if identity["ok"] else HTTPStatus.SERVICE_UNAVAILABLE
+            m3_ready, m3_reason = _m3_dependency_reason()
+            ready = bool(identity["ok"]) and m3_ready
+            reason = (
+                str(identity["reason"])
+                if not identity["ok"]
+                else (m3_reason if not m3_ready else "ok")
+            )
             self._json(
-                status,
+                HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE,
                 {
                     "schema_version": _READY_SCHEMA_VERSION,
-                    "ready": bool(identity["ok"]),
-                    "reason": identity["reason"] if not identity["ok"] else "ok",
+                    "ready": ready,
+                    "reason": reason,
                     "components": _readiness_components(),
                     "generated_at": now_iso(),
                 },

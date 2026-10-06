@@ -17,6 +17,7 @@ import hashlib
 import json
 import os
 import threading
+import urllib.parse
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -330,12 +331,23 @@ class VirtualMemoryPlane:
 
     # --- legacy unit-test helpers -----------------------------------------
 
+    @staticmethod
+    def _artifact_filename(workload_id: str) -> str:
+        """Filesystem-safe filename for a workload id.
+
+        Workload ids are arbitrary strings (canonical contract ids carry
+        ``/`` separators, e.g. ``chronus.first-workload/1``); quoting keeps
+        them inside the tenant artifact dir and prevents ``..``/separator
+        traversal. Same mapping on store and retrieve.
+        """
+        return urllib.parse.quote(str(workload_id), safe="") + ".json"
+
     def store_artifact(self, *, tenant: str, workload_id: str, artifact: Mapping[str, Any]) -> None:
         """Persist tenant/workload artifact for retrieve(tenant, workload_id)."""
         with self._lock:
             path = self.root / "artifacts" / tenant
             path.mkdir(parents=True, exist_ok=True)
-            (path / f"{workload_id}.json").write_text(
+            (path / self._artifact_filename(workload_id)).write_text(
                 json.dumps(artifact, sort_keys=True, default=str),
                 encoding="utf-8",
             )
@@ -353,7 +365,12 @@ class VirtualMemoryPlane:
                 art = self._artifacts.get((tenant, workload_id))
                 if art is not None:
                     return art
-                path = self.root / "artifacts" / tenant / f"{workload_id}.json"
+                path = (
+                    self.root
+                    / "artifacts"
+                    / tenant
+                    / self._artifact_filename(workload_id)
+                )
                 if path.exists():
                     return json.loads(path.read_text(encoding="utf-8"))
                 raise KeyError(f"artifact not found: {tenant}/{workload_id}")

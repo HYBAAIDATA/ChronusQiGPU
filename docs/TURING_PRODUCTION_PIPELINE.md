@@ -1,7 +1,10 @@
 # TURING — production VQC pipeline
 
-The canonical independent HYBA VQC composition path is implemented by
-`turing_universal_quantum_computer.pipeline.VQCPipeline`:
+The canonical TURING computation path is implemented by
+`turing_universal_quantum_computer.pipeline.VQCPipeline`. The canonical
+production integration is the shared Turing binding created from
+`aethel.enterprise.lifecycle.CompositionRoot` through
+`ProductionSystemRelations.turing()`.
 
 ```text
 request
@@ -13,9 +16,16 @@ request
 -> execution
 -> measurement
 -> verification
--> custody
--> replay
+-> shared THESEUS/OVID custody
+-> post-custody semantic replay
 ```
+
+`SharedTuring` suppresses the pipeline's historical private custody flags so
+production has one durable-truth authority, not two. It commits
+`program -> result -> certificate -> witness -> pipeline_report -> replay`
+and refuses production acceptance when the recovered result cannot reproduce
+the computation certificate or the recovered witness no longer binds the same
+execution.
 
 This is an executable engineering contract. TURING owns VQC semantics and
 mathematics; CHRONUS owns authorised heterogeneous execution; OVID owns
@@ -35,8 +45,12 @@ manufacture evidence for another.
 | `execution` | Backend executed and returned a truth-classed result | PASS / FAIL |
 | `measurement` | Measurement surface recorded | PASS / FAIL |
 | `verification` | Witness plus available independent differential checks | PASS / FAIL / GATED |
-| `custody` | Program/result/witness committed to THESEUS when requested | PASS / FAIL / UNAVAILABLE / SKIPPED |
-| `replay` | Custody recovered and revalidated without dropping producer semantics | PASS / FAIL / SKIPPED |
+| `custody` | Program/result/witness/certificate committed to THESEUS when requested | PASS / FAIL / UNAVAILABLE / SKIPPED |
+| `replay` | Custody recovered; program/result/witness/certificate bindings revalidated as one bundle | PASS / FAIL / SKIPPED |
+
+The table describes the composable pipeline stages. On the shared production
+path, successful computation additionally requires the post-custody
+`turing_replay` binding to be PASS before control returns to the caller.
 
 Verdicts remain `PASS`, `GATED`, `REFUSED`, or `FAIL`. `GATED` is not promoted
 to PASS by optimistic defaults.
@@ -125,6 +139,9 @@ operational meaning:
   silently demoting it to anonymous bytes.
 
 Final replay verification compares content digest and operational identity.
+For TURING's shared production path it also replays the computation
+certificate against the recovered canonical result and records that verdict as
+the child `turing_replay` binding of the pipeline report.
 
 ## Verification surface
 
@@ -162,6 +179,7 @@ python -m pytest turing_universal_quantum_computer/tests/test_stabilizer_measure
 python -m pytest turing_universal_quantum_computer/tests/test_production_release_gate.py -q
 python -m pytest tests/test_turing_production_pipeline.py -q
 python -m pytest tests/test_hyba_prodrc_integration.py -q
+python -m pytest tests/test_shared_system_relations_production.py -q
 python -m pytest turing_universal_quantum_computer/tests -q
 python scripts/import_audit.py
 python scripts/import_graph.py cycles
