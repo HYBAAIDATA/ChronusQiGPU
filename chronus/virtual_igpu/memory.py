@@ -172,7 +172,17 @@ class VirtualMemoryPlane:
                 cid = str(identity["content_id"])
             else:
                 cid = content_id_for(payload, representation_version=representation_version)
-            oid = object_id or (str(identity.get("object_id")) if identity and identity.get("object_id") else cid)
+            requested_oid = object_id or (
+                str(identity.get("object_id"))
+                if identity and identity.get("object_id")
+                else cid
+            )
+            # Handles are tenant-scoped even when the immutable content digest
+            # is shared. One tenant can never replace another tenant's owner
+            # record merely by storing identical content.
+            oid = hashlib.sha256(
+                _canonical({"tenant": tenant_s, "object_id": requested_oid})
+            ).hexdigest()
             raw = _canonical(payload)
             logical = len(raw)
             folded = logical

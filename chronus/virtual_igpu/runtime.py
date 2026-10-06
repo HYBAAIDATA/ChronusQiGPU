@@ -22,7 +22,7 @@ import threading
 import time
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Mapping
 
 from .abi import (
     ABI_VERSION,
@@ -40,7 +40,6 @@ from .abi import (
     digest_json,
 )
 from .adapters import Adapter, AdapterUnavailable, default_adapters
-from .attestation import extend_chain, verify
 from .evidence import EvidenceLedger
 from .memory import VirtualMemoryPlane
 
@@ -103,6 +102,7 @@ class RuntimeDaemon:
         runtime_identity: str | None = None,
         build_identity: str | None = None,
         preferred_adapter_id: str | None = None,
+        hardware_attestation_verifier: Callable[[Mapping[str, Any]], bool] | None = None,
         config: Any = None,
     ) -> None:
         # Support: RuntimeDaemon(RuntimeConfig(...), adapters=[...])
@@ -135,6 +135,7 @@ class RuntimeDaemon:
         self.runtime_identity = runtime_identity or f"chronus.virtual_igpu:{ABI_VERSION}"
         self.build_identity = build_identity or os.getenv("CHRONUS_VIGPU_BUILD", "source-tree")
         self.preferred_adapter_id = preferred_adapter_id
+        self.hardware_attestation_verifier = hardware_attestation_verifier
         self._lock = threading.RLock()
         self._max_per_tenant = int(max_per_tenant)
         self.in_flight: dict[str, int] = {}
@@ -266,6 +267,9 @@ class RuntimeDaemon:
         and software adapters are refused, so a lying adapter cannot promote
         itself to hardware-rooted provenance.
         """
+        verifier = self.hardware_attestation_verifier
+        if verifier is None:
+            return False
         try:
             att = adapter.probe()
         except Exception:
@@ -275,26 +279,20 @@ class RuntimeDaemon:
         if getattr(att, "trust_class", None) != TrustClass.HARDWARE_ROOTED.value:
             return False
 
-        record = {
-            "adapter_id": att.adapter_id,
-            "kind": att.kind,
-            "available": bool(att.available),
-            "detail": att.detail or {},
-            "abi_version": ABI_VERSION,
-        }
-        # Replay the mechanism the runtime itself trusts. A fabricated
-        # fingerprint/chain digest cannot reproduce these digests.
-        if digest_json(record) != getattr(att, "fingerprint", None):
+        try:
+            return bool(verifier(att.as_dict()))
+        except Exception:
             return False
-        chain = extend_chain((), record)
-        if not chain or chain[-1] != getattr(att, "chain_digest", None):
-            return False
-        return verify([record], chain)
 
     # --- admission / selection --------------------------------------------
 
     def _policy(self, w: Workload) -> str:
-        return str(getattr(w, "execution_policy", None) or ExecutionPolicy.PREFERRED_ACCELERATOR.value)
+        return ExecutionPolicy(
+            str(
+                getattr(w, "execution_policy", None)
+                or ExecutionPolicy.PREFERRED_ACCELERATOR.value
+            )
+        ).value
 
     def _select_adapter(self, w: Workload) -> tuple[Adapter, str, AdmissionRecord]:
         policy = self._policy(w)
@@ -309,11 +307,16 @@ class RuntimeDaemon:
         def _pick(candidates: list[Adapter], reason: str) -> tuple[Adapter, str, AdmissionRecord]:
             if not candidates:
                 raise AdapterUnavailable(f"no adapter for policy={policy}")
-            # Prefer one that supports the workload kind; break ties by priority
-            kind = w.kind
-            supporting = [a for a in candidates if a.supports(kind)]
-            pool = supporting or candidates
-            chosen = sorted(pool, key=lambda a: int(getattr(a, "priority", 0)), reverse=True)[0]
+            supporting = [a for a in candidates if a.supports(w.kind)]
+            if not supporting:
+                raise AdapterUnavailable(
+                    f"no {policy} adapter supports workload kind={w.kind.value}"
+                )
+            chosen = sorted(
+                supporting,
+                key=lambda a: int(getattr(a, "priority", 0)),
+                reverse=True,
+            )[0]
             rec = AdmissionRecord(
                 admitted=True,
                 adapter_id=chosen.id,
@@ -360,6 +363,10 @@ class RuntimeDaemon:
         # preferred_accelerator (default)
         if physical:
             return _pick(physical, "policy:preferred_accelerator:physical")
+        if not w.allow_software_fallback:
+            raise AdapterUnavailable(
+                "preferred accelerator unavailable and software fallback is disabled"
+            )
         return _pick(software or available, "policy:preferred_accelerator:software_fallback")
 
     # --- submit / poll / cancel -------------------------------------------
@@ -500,7 +507,7 @@ class RuntimeDaemon:
                 kernel_identity=str((result.output or {}).get("engine") or adapter.kind.value),
                 input_digest=w.content_hash or "",
                 output_digest=result.evidence_digest or result.digest or digest_json(result.output),
-                verified_work_count=int((result.output or {}).get("checked") or 1),
+                verified_work_count=int((result.output or {}).get("checked") or 0),
                 seed=(w.input or {}).get("seed"),
                 timing={
                     "wall_time_ns": result.wall_time_ns,

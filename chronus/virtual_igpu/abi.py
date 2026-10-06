@@ -218,21 +218,52 @@ class Workload:
         if isinstance(self.kind, str):
             try:
                 self.kind = WorkloadKind(self.kind)
-            except ValueError:
-                self.kind = WorkloadKind.CUSTOM
-        if self.content_hash is None:
-            self.content_hash = digest_json(
-                {
-                    "id": self.id,
-                    "kind": self.kind.value if isinstance(self.kind, WorkloadKind) else str(self.kind),
-                    "tenant": self.tenant,
-                    "input": self.input,
-                    "constraints": self.constraints,
-                    "execution_policy": self.execution_policy,
-                    "required_adapter_id": self.required_adapter_id,
-                    "required_device_id": self.required_device_id,
-                }
-            )
+            except ValueError as exc:
+                raise ValueError(f"unsupported workload kind: {self.kind!r}") from exc
+        try:
+            self.execution_policy = ExecutionPolicy(self.execution_policy).value
+        except ValueError as exc:
+            raise ValueError(
+                f"unsupported execution policy: {self.execution_policy!r}"
+            ) from exc
+        try:
+            self.delivery_mode = DeliveryMode(self.delivery_mode).value
+        except ValueError as exc:
+            raise ValueError(f"unsupported delivery mode: {self.delivery_mode!r}") from exc
+        if self.deadline_ms is not None:
+            if isinstance(self.deadline_ms, bool) or int(self.deadline_ms) <= 0:
+                raise ValueError("deadline_ms must be a positive integer")
+            self.deadline_ms = int(self.deadline_ms)
+        if (
+            self.execution_policy == ExecutionPolicy.REQUIRED_ADAPTER.value
+            and not self.required_adapter_id
+        ):
+            raise ValueError("required_adapter policy requires required_adapter_id")
+        if (
+            self.execution_policy == ExecutionPolicy.REQUIRED_DEVICE.value
+            and not self.required_device_id
+        ):
+            raise ValueError("required_device policy requires required_device_id")
+        expected_hash = digest_json(self._identity_payload())
+        if self.content_hash is not None and self.content_hash != expected_hash:
+            raise ValueError("workload content_hash does not match canonical request")
+        self.content_hash = expected_hash
+
+    def _identity_payload(self) -> dict[str, Any]:
+        return {
+            "abi_version": ABI_VERSION,
+            "id": self.id,
+            "kind": self.kind.value,
+            "tenant": self.tenant,
+            "input": self.input,
+            "constraints": self.constraints,
+            "execution_policy": self.execution_policy,
+            "required_adapter_id": self.required_adapter_id,
+            "required_device_id": self.required_device_id,
+            "delivery_mode": self.delivery_mode,
+            "deadline_ms": self.deadline_ms,
+            "allow_software_fallback": bool(self.allow_software_fallback),
+        }
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -249,11 +280,17 @@ class Workload:
             "deadline_ms": self.deadline_ms,
             "content_hash": self.content_hash,
             "metadata": self.metadata,
+            "allow_software_fallback": self.allow_software_fallback,
             "abi_version": ABI_VERSION,
         }
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "Workload":
+        version = str(value.get("abi_version", ABI_VERSION))
+        if version != ABI_VERSION:
+            raise ValueError(
+                f"unsupported ABI version {version!r}; expected {ABI_VERSION!r}"
+            )
         return cls(
             id=str(value["id"]),
             kind=value.get("kind", WorkloadKind.CUSTOM),

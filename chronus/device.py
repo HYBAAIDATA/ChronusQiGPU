@@ -1,8 +1,8 @@
-"""Chronus — HYBA's canonical iGPU offering device/runtime object.
+"""Chronus — HYBA's canonical heterogeneous execution and Virtual iGPU object.
 
-Turing is the computation substrate. Chronus binds that computation to measured
-hardware, resident execution, the punch ISA, hashing, state operations and
-telemetry. Construction is lazy and does not touch hardware.
+TURING remains the independent VQC and quantum-semantics authority and may use
+Chronus as an execution lane. THESEUS owns durable custody and OVID owns
+representation transformation. Construction is lazy and does not touch hardware.
 """
 
 from __future__ import annotations
@@ -21,8 +21,9 @@ logger = logging.getLogger("chronus.device")
 
 DEVICE_ID = "chronus"
 CLAIM_BOUNDARY = (
-    "Chronus is HYBA's iGPU offering over the Turing compute substrate "
-    "and the Chronus·Theseus·Ovid triad compute owner. "
+    "Chronus owns heterogeneous execution, acceleration and Virtual iGPU. "
+    "TURING remains the independent VQC/quantum-semantics authority; THESEUS "
+    "owns durable custody and OVID owns representation transformation. "
     "The 32-face frame and 11D Poincaré-golden manifold order/compose work; "
     "they do not bypass an operation's verification authority. For mining, "
     "sha256d(header80) <= target is the sole accept authority. Throughput is "
