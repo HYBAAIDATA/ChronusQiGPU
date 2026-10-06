@@ -401,3 +401,18 @@ def test_retired_without_retention_event_is_violation(tmp_path):
     assert version_id in report.retention_violations
     store.close()
     custody.close()
+
+
+def test_wrong_integrity_key_fails_reconcile(tmp_path):
+    """Read-side attestation: a wrong integrity key must not reconcile clean."""
+    store, custody, tenant_id = _plane(tmp_path)
+    root = _root()
+    _, version_id = _put(store, tenant_id, root)
+    store.close()
+    foreign = OntologyStore(tmp_path / "adv.db", b"wrong-integrity-key-0123456789abcdef")
+    foreign._db.execute("SELECT 1 FROM tenants LIMIT 1").fetchone()  # DB opens fine
+    report = foreign.files.reconcile_files(tenant_id, root)
+    assert not report.passed
+    assert version_id in report.attestation_invalid
+    foreign.close()
+    custody.close()

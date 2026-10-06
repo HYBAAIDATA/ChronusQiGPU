@@ -248,6 +248,7 @@ class ReconciliationReport:
     domain_link_missing: tuple[str, ...]
     transform_mismatches: tuple[str, ...]
     retention_violations: tuple[str, ...]
+    attestation_invalid: tuple[str, ...]
     unresolved: tuple[str, ...]
     generated_at: str
 
@@ -271,6 +272,7 @@ class ReconciliationReport:
             "domain_link_missing": list(self.domain_link_missing),
             "transform_mismatches": list(self.transform_mismatches),
             "retention_violations": list(self.retention_violations),
+            "attestation_invalid": list(self.attestation_invalid),
             "unresolved": list(self.unresolved),
             "generated_at": self.generated_at,
             "passed": self.passed,
@@ -1106,6 +1108,8 @@ class FileRegistry:
         domain_link_missing: list[str] = []
         transform_mismatches: list[str] = []
         retention_violations: list[str] = []
+        attestation_invalid: list[str] = []
+        attestation_cache: dict[str, bool] = {}
         for row in rows:
             version_id = row["file_version_id"]
             uri = str(row["storage_uri"])
@@ -1155,6 +1159,18 @@ class FileRegistry:
             ):
                 custody_missing.append(version_id)
                 continue
+            # Read-side integrity: every version's attestation must verify
+            # under the store's integrity key, or a wrong/forged key silently
+            # 'reconciles' rows it cannot vouch for.
+            aid = str(row["attestation_id"])
+            if aid not in attestation_cache:
+                try:
+                    attestation_cache[aid] = bool(self.store.verify_attestation(tenant_id, aid))
+                except IntegrityFailure:
+                    attestation_cache[aid] = False
+            if not attestation_cache[aid]:
+                attestation_invalid.append(version_id)
+                continue
             if not self.store._db.execute(
                 "SELECT 1 FROM file_links WHERE tenant_id=? AND file_version_id=?",
                 (tenant_id, version_id),
@@ -1193,6 +1209,7 @@ class FileRegistry:
             + domain_link_missing
             + transform_mismatches
             + retention_violations
+            + attestation_invalid
             + orphan_files
         )
         unresolved_list.extend(f"intent:{row['intent_id']}" for row in pending_intents)
@@ -1210,6 +1227,7 @@ class FileRegistry:
             domain_link_missing=tuple(sorted(domain_link_missing)),
             transform_mismatches=tuple(sorted(transform_mismatches)),
             retention_violations=tuple(sorted(retention_violations)),
+            attestation_invalid=tuple(sorted(attestation_invalid)),
             unresolved=tuple(sorted(set(unresolved_list))),
             generated_at=_now(),
         )
