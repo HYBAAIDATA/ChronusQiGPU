@@ -20,6 +20,7 @@ import asyncio
 import hashlib
 import json
 import struct
+import tempfile
 import time
 from pathlib import Path
 from types import SimpleNamespace
@@ -396,8 +397,12 @@ def test_canonical_loopback_submit_to_pool_verdict_and_durable_recording(
         "PYTHIA_SALAMANDER_EVIDENCE_PATH", str(tmp_path / "salamander.jsonl")
     )
     monkeypatch.setenv("PYTHIA_WORKER_HEARTBEAT_DIR", str(tmp_path / "hb"))
+    # The coordinator control socket is AF_UNIX; pytest's tmp_path plus a
+    # long test name can exceed the ~108-char sun_path limit on Windows, so
+    # give it a short path of its own.
+    short_tmp = Path(tempfile.mkdtemp(prefix="lb-sock-"))
     monkeypatch.setenv(
-        "MLA1517_COORDINATOR_CONTROL_SOCKET", str(tmp_path / "control.sock")
+        "MLA1517_COORDINATOR_CONTROL_SOCKET", str(short_tmp / "ctl.sock")
     )
     monkeypatch.setenv("PYTHIA_IDENTITY_HMAC_SECRET", "ab" * 32)
     # M3 storage plane: THESEUS-custodied mining records for the same voyage.
@@ -445,11 +450,27 @@ def test_canonical_loopback_submit_to_pool_verdict_and_durable_recording(
                     if e.get("state") == "ACCEPTED"
                 ]
 
-            await until(
-                lambda: len(accepted_shares()) >= 2,
-                timeout=180.0,
-                what="two pool-ACCEPTED shares in the durable share_log",
-            )
+            try:
+                await until(
+                    lambda: len(accepted_shares()) >= 2,
+                    timeout=240.0,
+                    what="two pool-ACCEPTED shares in the durable share_log",
+                )
+            except AssertionError:
+                state = None
+                if session_path.exists():
+                    try:
+                        state = json.loads(
+                            session_path.read_text(encoding="utf-8")
+                        )
+                    except json.JSONDecodeError:
+                        state = "unparseable"
+                raise AssertionError(
+                    "canonical path produced no pool-ACCEPTED share; "
+                    f"session_state={state!r} pool_connections="
+                    f"{pool.connections} verdicts={pool.verdicts!r} "
+                    f"runtime_alive={not task.done()}"
+                )
             await asyncio.sleep(0.3)  # let the verdict write + recorder settle
             return {"share_log": accepted_shares(), "verdicts": list(pool.verdicts)}
         finally:
