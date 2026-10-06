@@ -23,6 +23,18 @@
       ]
     }
   ],
+  "PreToolUse": [
+    {
+      "matcher": "",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "python \"${DEVIN_PLUGIN_ROOT:-plugins/pythia}/scripts/plugin_status.py\" --require-active",
+          "timeout": 10
+        }
+      ]
+    }
+  ],
   "Stop": [
     {
       "matcher": "",

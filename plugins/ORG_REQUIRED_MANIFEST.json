@@ -46,7 +46,7 @@
     "evidence_ledger": "artifacts/pythia/devin-engineering-evidence.jsonl",
     "publish_root": "evidence/devin",
     "evaluation_command": "python plugins/pythia/scripts/evaluate_augmentation.py evidence/devin",
-    "rule": "SessionStart must record complete EUCLID aptitude invocation. Task evidence is separate and may snapshot that session state."
+    "rule": "SessionStart must record complete EUCLID aptitude invocation. Task evidence is downstream and must fail closed unless SessionStart is observed and the complete mandatory invoked-skill set is present; sealing an incomplete pack is forbidden."
   },
   "evidence_claim_boundary": "The runtime receipt proves mandatory EUCLID aptitude invocation. A task pack proves recorded task outcomes. Causal uplift requires comparable baseline and augmented cohorts."
 }
