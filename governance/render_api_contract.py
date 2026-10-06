@@ -63,6 +63,13 @@ def render_markdown(reg: dict) -> str:
     a("auth-class enforcement, reserved-namespace non-masquerade, internal")
     a("contracts, and mutation self-tests proving the gate detects drift.")
     a("")
+    a("Schema `pythia.api_registry/2` elevates this registry to the service")
+    a("constitution: every interface carries authority, tier, SLO, dependency,")
+    a("fallback, security, observability, lifecycle and evidence declarations.")
+    a("`governance/service_fabric.yaml` holds the shared fabric (failure")
+    a("taxonomy, dependency graph, journeys, SLOs, degradation matrix, recovery")
+    a("objectives); `tests/test_service_constitution.py` enforces it.")
+    a("")
     a("## Canonical authority register")
     a("")
     a("| Authority | Owns |")
@@ -102,9 +109,14 @@ def render_markdown(reg: dict) -> str:
                 a(f"- `{api['method']}`")
                 a("")
             rows = [
+                ("Capability", _md_escape(api["capability"])),
                 ("Interface", api["interface_type"]),
                 ("Implementation", f"`{_md_escape(api['implementation_path'])}`"),
                 ("Consumers", ", ".join(api["consumers"])),
+                ("Authority", api["authority"]),
+                ("Reliability tier", api["reliability_tier"]),
+                ("Lifecycle", api["lifecycle"]),
+                ("SLO", f"`{api['slo']}`"),
                 ("Auth", api["authentication_class"]),
                 ("Authorisation authority", api["authorisation_authority"]),
                 ("Truth class", api["truth_class"]),
@@ -115,6 +127,13 @@ def render_markdown(reg: dict) -> str:
                 ("Retry", api["retry"]),
                 ("Failure semantics", _md_escape(api["failure_semantics"])),
                 ("Availability semantics", _md_escape(api["availability_semantics"])),
+                ("Fallback policy", _md_escape(api["fallback_policy"])),
+                ("Dependencies", ", ".join(f"`{d}`" for d in api["dependencies"]) or "none"),
+                ("Security classification", api["security_classification"]),
+                ("Observability", _md_escape(api["observability_requirement"])),
+                ("Compatibility window", _md_escape(api["compatibility_window"])),
+                ("Support owner", api["support_owner"]),
+                ("Runtime evidence", api["runtime_evidence"]),
                 ("Side effects", _md_escape(api["side_effects"])),
                 ("Custody", _md_escape(api["custody_requirement"])),
                 ("Stability", api["stability"]),
@@ -179,6 +198,9 @@ def render_openapi(reg: dict) -> str:
                 "x-pythia-api-id": api["api_id"],
                 "x-pythia-truth-class": api["truth_class"],
                 "x-pythia-deprecation-state": api["deprecation_state"],
+                "x-pythia-reliability-tier": api["reliability_tier"],
+                "x-pythia-lifecycle": api["lifecycle"],
+                "x-pythia-slo": api["slo"],
             }
             if security:
                 entry["security"] = security
@@ -187,7 +209,7 @@ def render_openapi(reg: dict) -> str:
         "openapi": "3.1.0",
         "info": {
             "title": "PYTHIA production control API",
-            "version": "pythia.api_registry/1",
+            "version": reg["schema"],
             "description": (
                 "Generated from governance/api_registry.yaml. Route/auth parity "
                 "is enforced by tests/test_production_api_contract.py."

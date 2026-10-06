@@ -5,3 +5,7 @@ tests/fixtures/** -text
 # Skill grafts are verified byte-for-byte against PROVENANCE.json
 # (Intelligence/skill_graft.py): EOL translation would reject every graft.
 Intelligence/skills/** -text
+
+# Training corpus bytes are digest-bound in real_nonces_200.manifest.json —
+# EOL translation on Windows checkouts breaks the integrity gate.
+artifacts/pythia_training/** -text

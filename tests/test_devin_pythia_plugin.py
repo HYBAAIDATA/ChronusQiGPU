@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import sys
@@ -25,7 +26,7 @@ def test_plugin_metadata_is_private_and_has_status_skill():
         )
     )
     assert manifest["name"] == "pythia"
-    assert manifest["version"] == "0.2.0"
+    assert manifest["version"] == "0.3.0"
     assert manifest["license"] == "UNLICENSED"
     assert (ROOT / "plugins" / "pythia" / "skills" / "pythia-plugin-status" / "SKILL.md").is_file()
 
@@ -48,7 +49,7 @@ def test_plugin_status_reports_source_revision_and_available_skills(tmp_path, mo
     status = plugin_status.build_status(record_skill="pythia-plugin-status")
 
     assert status["plugin"] == "pythia"
-    assert status["plugin_version"] == "0.2.0"
+    assert status["plugin_version"] == "0.3.0"
     assert status["private_repo_local"] is True
     assert status["plugin_source_sha"] != "UNAVAILABLE"
     assert "pythia-plugin-status" in status["available_skills"]
@@ -85,10 +86,28 @@ def test_stop_gate_requires_bound_revision_skills_and_verification(tmp_path, mon
     finally:
         sys.path.remove(str(SCRIPTS))
 
+    # The gate only accepts a content-addressed evidence pack inside the repo.
+    monkeypatch.setattr(stop_gate, "ROOT", tmp_path)
+    pack = {
+        "schema": "pythia.devin-engineering-pack/1",
+        "task_id": "unit-task",
+        "plugin_source_shas": ["abc"],
+        "skills_invoked": sorted(stop_gate._REQUIRED_PACK_SKILLS),
+        "verification": {"runs": 1},
+        "completion_gate": {"decision": "pass"},
+    }
+    pack["pack_sha256"] = hashlib.sha256(stop_gate._canonical(pack)).hexdigest()
+    pack_path = (
+        tmp_path / "evidence" / "devin" / "unit-task" / f"{pack['pack_sha256']}.json"
+    )
+    pack_path.parent.mkdir(parents=True)
+    pack_path.write_text(json.dumps(pack), encoding="utf-8")
+
     journal = tmp_path / "checkpoint.jsonl"
     journal.write_text(
         json.dumps(
             {
+                "task_id": "unit-task",
                 "goal": "audit",
                 "done": "verified",
                 "next": "done",
@@ -96,6 +115,7 @@ def test_stop_gate_requires_bound_revision_skills_and_verification(tmp_path, mon
                 "plugin_source_sha": "abc",
                 "skills_invoked": sorted(stop_gate._REQUIRED_SKILLS),
                 "verification": ["pytest tests/example.py -q -> passed"],
+                "evidence_pack": str(pack_path),
             }
         )
         + "\n",

@@ -1,15 +1,26 @@
-# PYTHIA canonical API & service-communication registry.
+# PYTHIA canonical service constitution (second-pass elevation).
 #
 # This file is the authoritative machine-readable contract for every
 # production API/service interface in the repository.  It is the contract
 # against which implementation is tested (tests/test_production_api_contract.py
-# enumerates it); it is not generated from route scraping — routes and
-# interfaces are tested against what is declared here.
+# and tests/test_service_constitution.py enumerate it); it is not generated
+# from route scraping — routes and interfaces are tested against what is
+# declared here.
+#
+# The constitution fields added in schema /2 — capability, reliability_tier
+# (R0–R4, defined in governance/service_fabric.yaml), dependencies, slo,
+# fallback_policy, security_classification, observability_requirement,
+# compatibility_window, support_owner, runtime_evidence and lifecycle — are
+# enforced by the constitution suite; an interface without them fails the
+# gate. The dependency lists are kept in sync with the canonical
+# service_fabric.yaml dependency_graph by the same suite.
 #
 # Ownership model is the frozen canonical authority register (section 0 of
-# the production API closure spec); no entry here may move it.
+# the production API closure spec); no entry here may move it. No resilience,
+# fallback or orchestration mechanism may transfer authority away from the
+# named owner.
 
-schema: pythia.api_registry/1
+schema: pythia.api_registry/2
 repository: QuantumPhi2/PhiMiner
 baseline_sha: f50f2e97fb850f83dc68c2b0713d6fcfd75e53e8
 
@@ -93,6 +104,18 @@ apis:
     availability_semantics: serving process implies live
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'process liveness probe'
+    authority: PYTHIA
+    reliability_tier: R4
+    dependencies: []
+    slo: slo.projection.read
+    fallback_policy: 'none — a live process is the truth; load balancer sees connection state'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'golden_signals'
+    compatibility_window: 'compatible within chronus.mla1517.status/1'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
 
   - api_id: pythia.readiness
@@ -108,7 +131,7 @@ apis:
       - path: /readyz
         status: LEGACY
     request_schema: none
-    response_schema: '{schema_version, ready, reason, components{identity,boot_audit,worker_heartbeat_dir,guardian}, generated_at}'
+    response_schema: '{schema_version, ready, reason, components{identity,boot_audit,worker_heartbeat_dir,guardian,runtime_config,stratum,remote_opencl,custody}, generated_at}'
     schema_version: chronus.mla1517.ready/1
     authentication_class: NONE
     authorisation_authority: none
@@ -122,6 +145,18 @@ apis:
     availability_semantics: NOT hardware or pool-acceptance readiness
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'declared dependency/config readiness'
+    authority: PYTHIA
+    reliability_tier: R4
+    dependencies: [pythia.worker_heartbeat, pythia.boot_audit, al_haras.guardian]
+    slo: slo.projection.read
+    fallback_policy: 'component-level truth; missing component reports not-ready, never ready'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'golden_signals'
+    compatibility_window: 'compatible within chronus.mla1517.ready/1'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py, chronus/mla1517_platform/python/test_phase4_api.py]
 
   - api_id: pythia.ready_to_mine
@@ -151,6 +186,18 @@ apis:
     availability_semantics: requires observed pool transport + live worker
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'domain readiness for mining start'
+    authority: PYTHIA
+    reliability_tier: R4
+    dependencies: [stratum.v1, pythia.worker_heartbeat]
+    slo: slo.projection.read
+    fallback_policy: 'reports blocked/unavailable truthfully; never substitutes a ready verdict'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'golden_signals'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py, chronus/mla1517_platform/python/test_phase4_api.py]
 
   - api_id: pythia.metrics
@@ -180,6 +227,18 @@ apis:
     availability_semantics: absent metric = not measured
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'measured operational counters'
+    authority: PYTHIA
+    reliability_tier: R4
+    dependencies: [pythia.worker_heartbeat, stratum.v1]
+    slo: slo.projection.read
+    fallback_policy: 'absent workers excluded; never zeroed fabrication'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'golden_signals'
+    compatibility_window: 'additive fields only within schema version'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
 
   - api_id: pythia.status
@@ -206,6 +265,18 @@ apis:
     availability_semantics: device/backend fields reflect probes, not aspiration
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'operator runtime status projection'
+    authority: PYTHIA
+    reliability_tier: R4
+    dependencies: [pythia.worker_heartbeat, stratum.v1, pythia.boot_audit]
+    slo: slo.projection.read
+    fallback_policy: 'degrades to unavailable sections; no synthetic backend state'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'golden_signals'
+    compatibility_window: 'additive fields only within schema version'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py, chronus/mla1517_platform/python/test_phase4_api.py]
 
   - api_id: pythia.config.read
@@ -232,6 +303,18 @@ apis:
     availability_semantics: reflects declared config, not observed pool state
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'redacted runtime configuration view'
+    authority: PYTHIA
+    reliability_tier: R4
+    dependencies: [pythia.runtime_config_file]
+    slo: slo.projection.read
+    fallback_policy: 'secrets always redacted; missing config reports not_configured'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'golden_signals'
+    compatibility_window: 'additive fields only; secret keys never appear'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
 
   - api_id: pythia.config.update
@@ -258,6 +341,18 @@ apis:
     availability_semantics: applied.note reports armed_no_device honestly
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'operator runtime configuration mutation'
+    authority: PYTHIA
+    reliability_tier: R1
+    dependencies: [pythia.runtime_config_file, pythia.boot_audit]
+    slo: slo.operator.mutation
+    fallback_policy: 'invalid config rejected atomically; partial write never committed'
+    security_classification: OPERATOR_AUTHENTICATED
+    observability_requirement: 'audit_trail'
+    compatibility_window: 'compatible within declared schema; unknown sections rejected'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py, chronus/mla1517_platform/python/test_control_auth.py]
 
   - api_id: pythia.system.map
@@ -284,6 +379,18 @@ apis:
     availability_semantics: reflects live probes (opencl count, mmio, credentials)
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'system topology projection'
+    authority: PYTHIA
+    reliability_tier: R4
+    dependencies: [pythia.boot_audit]
+    slo: slo.projection.read
+    fallback_policy: 'map reflects declared registry, not invented services'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'golden_signals'
+    compatibility_window: 'additive fields only'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
 
   - api_id: pythia.system.verify.read
@@ -310,6 +417,18 @@ apis:
     availability_semantics: per-component states READY/DEGRADED/UNAVAILABLE/NOT_CONFIGURED/NOT_APPLICABLE/FAILED
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'verification run status projection'
+    authority: PYTHIA
+    reliability_tier: R4
+    dependencies: [euclid.orchestration, pythia.boot_audit]
+    slo: slo.projection.read
+    fallback_policy: 'missing run reports not_found'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'golden_signals'
+    compatibility_window: 'additive fields only'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
 
   - api_id: pythia.system.verify.start
@@ -336,6 +455,18 @@ apis:
     availability_semantics: acceptance only — not a pass claim
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'start a system verification run'
+    authority: PYTHIA
+    reliability_tier: R1
+    dependencies: [euclid.orchestration, pythia.boot_audit]
+    slo: slo.operator.mutation
+    fallback_policy: 'busy state is a truthful conflict, not queued fiction'
+    security_classification: OPERATOR_AUTHENTICATED
+    observability_requirement: 'audit_trail'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
 
   - api_id: pythia.intelligence.status
@@ -362,6 +493,18 @@ apis:
     availability_semantics: mirrors runner state
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'EUCLID status projection'
+    authority: EUCLID
+    reliability_tier: R4
+    dependencies: [euclid.orchestration]
+    slo: slo.projection.read
+    fallback_policy: 'unavailable EUCLID reports unavailable'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'golden_signals'
+    compatibility_window: 'additive fields only'
+    support_owner: EUCLID
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
 
   - api_id: pythia.intelligence.selftest
@@ -388,6 +531,18 @@ apis:
     availability_semantics: self-test verdict is the runner's real result
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'EUCLID self-test status/run'
+    authority: EUCLID
+    reliability_tier: R2
+    dependencies: [euclid.orchestration, pythia.boot_audit]
+    slo: slo.specialist
+    fallback_policy: 'self-test failure is a verdict, never masked'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'audit_trail'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: EUCLID
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
 
   - api_id: pythia.intelligence.maintenance
@@ -418,6 +573,18 @@ apis:
     availability_semantics: diagnosis state is the real runner state
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'EUCLID maintenance status/run'
+    authority: EUCLID
+    reliability_tier: R2
+    dependencies: [euclid.orchestration, pythia.boot_audit]
+    slo: slo.specialist
+    fallback_policy: 'maintenance outcome is truthful'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'audit_trail'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: EUCLID
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py, chronus/mla1517_platform/python/test_phase4_api.py]
 
   - api_id: pythia.intelligence.autonomous
@@ -444,6 +611,18 @@ apis:
     availability_semantics: reports real cycle outcome
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'EUCLID autonomous loop status/control'
+    authority: EUCLID
+    reliability_tier: R2
+    dependencies: [euclid.orchestration]
+    slo: slo.specialist
+    fallback_policy: 'loop state is observed, not assumed'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'audit_trail'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: EUCLID
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
 
   - api_id: pythia.intelligence.engineer
@@ -470,6 +649,18 @@ apis:
     availability_semantics: NOT_CONFIGURED is a first-class answer
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'EUCLID repo-engineer command'
+    authority: EUCLID
+    reliability_tier: R2
+    dependencies: [euclid.orchestration]
+    slo: slo.specialist
+    fallback_policy: 'not_configured is a first-class refusal'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'audit_trail'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: EUCLID
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py, chronus/mla1517_platform/python/test_phase4_api.py]
 
   - api_id: pythia.intelligence.cognition_solve
@@ -496,6 +687,18 @@ apis:
     availability_semantics: available:false is honest, not a failure mask
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'EUCLID deterministic solve verdict'
+    authority: EUCLID
+    reliability_tier: R2
+    dependencies: [euclid.orchestration]
+    slo: slo.specialist
+    fallback_policy: 'unproven stays unproven'
+    security_classification: OPERATOR_AUTHENTICATED
+    observability_requirement: 'golden_signals'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: EUCLID
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
 
   - api_id: pythia.agentic
@@ -525,6 +728,18 @@ apis:
     availability_semantics: runner state is truth
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'agentic mining orchestration status/control'
+    authority: EUCLID
+    reliability_tier: R1
+    dependencies: [euclid.orchestration, pythia.worker_heartbeat, stratum.v1]
+    slo: slo.mining.control
+    fallback_policy: 'no fabricated mining state; stopped stays stopped'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'audit_trail'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: EUCLID
+    runtime_evidence: LOCAL_CROSS_SERVICE_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
 
   - api_id: pythia.campaign
@@ -554,6 +769,18 @@ apis:
     availability_semantics: arm counters measured from live sidecars only
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'mining campaign status/control'
+    authority: EUCLID
+    reliability_tier: R1
+    dependencies: [euclid.orchestration, pythia.worker_heartbeat]
+    slo: slo.mining.control
+    fallback_policy: 'campaign counters come from worker metrics only'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'audit_trail'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: EUCLID
+    runtime_evidence: LOCAL_CROSS_SERVICE_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
 
   - api_id: pythia.mining.control
@@ -586,6 +813,18 @@ apis:
     availability_semantics: armed_no_device is a first-class honest state
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'guardian-mediated mining start/stop/control'
+    authority: PYTHIA
+    reliability_tier: R1
+    dependencies: [al_haras.guardian, pythia.worker_heartbeat, stratum.v1, theseus.custody]
+    slo: slo.mining.control
+    fallback_policy: 'guardian deny = zero mutation; unavailable dependency refuses the command'
+    security_classification: GUARDIAN_MEDIATED
+    observability_requirement: 'audit_trail+evidence'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_CROSS_SERVICE_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py, chronus/mla1517_platform/python/test_control_auth.py]
 
   - api_id: pythia.mining.evidence
@@ -612,6 +851,18 @@ apis:
     availability_semantics: publishes only after Stratum connects; stale/absent sidecar stays honest
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'guardian-mediated mining evidence surface'
+    authority: PYTHIA
+    reliability_tier: R1
+    dependencies: [al_haras.guardian, pythia.worker_heartbeat]
+    slo: slo.mining.read
+    fallback_policy: 'no sidecar evidence = unavailable, not zeros'
+    security_classification: GUARDIAN_MEDIATED
+    observability_requirement: 'evidence'
+    compatibility_window: 'additive fields only'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_CROSS_SERVICE_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
 
   - api_id: pythia.stratum.status
@@ -638,6 +889,18 @@ apis:
     availability_semantics: worker identity redacted; pool acceptance never implied by transport
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'stratum connectivity projection'
+    authority: PYTHIA
+    reliability_tier: R4
+    dependencies: [stratum.v1]
+    slo: slo.projection.read
+    fallback_policy: 'disconnected pool reports disconnected; reconnects are events'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'golden_signals'
+    compatibility_window: 'additive fields only'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
 
   - api_id: pythia.telemetry
@@ -670,6 +933,18 @@ apis:
     availability_semantics: distinguishes AVAILABLE/UNAVAILABLE/NOT_MEASURED
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'operator telemetry snapshot'
+    authority: PYTHIA
+    reliability_tier: R4
+    dependencies: [pythia.worker_heartbeat, stratum.v1]
+    slo: slo.projection.read
+    fallback_policy: 'stale/absent telemetry stays unavailable'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'golden_signals'
+    compatibility_window: 'additive fields only'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py, chronus/mla1517_platform/python/test_ops_telemetry.py]
 
   - api_id: pythia.telemetry.stream
@@ -696,6 +971,18 @@ apis:
     availability_semantics: frames carry the honest ops payload
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'SSE telemetry stream'
+    authority: PYTHIA
+    reliability_tier: R4
+    dependencies: [pythia.worker_heartbeat, stratum.v1]
+    slo: slo.projection.stream
+    fallback_policy: 'dropped events are counted and reported, never silent'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'golden_signals'
+    compatibility_window: 'additive event fields only'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
 
   - api_id: pythia.audit.tail
@@ -722,6 +1009,18 @@ apis:
     availability_semantics: reflects the boot audit log exactly
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'boot/ops audit tail projection'
+    authority: PYTHIA
+    reliability_tier: R4
+    dependencies: [pythia.boot_audit]
+    slo: slo.projection.read
+    fallback_policy: 'missing log reads as empty tail'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'evidence'
+    compatibility_window: 'additive fields only'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
 
   - api_id: pythia.knowledge
@@ -748,6 +1047,18 @@ apis:
     availability_semantics: honest
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'knowledge projection'
+    authority: EUCLID
+    reliability_tier: R4
+    dependencies: [euclid.orchestration]
+    slo: slo.projection.read
+    fallback_policy: 'unavailable corpus reports unavailable'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'golden_signals'
+    compatibility_window: 'additive fields only'
+    support_owner: EUCLID
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
 
   - api_id: pythia.gpu
@@ -774,6 +1085,18 @@ apis:
     availability_semantics: no device = available:false, count:0
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'GPU inventory observation'
+    authority: CHRONUS
+    reliability_tier: R4
+    dependencies: [chronus.execution]
+    slo: slo.projection.read
+    fallback_policy: 'absent devices report absent — never fabricated'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'golden_signals'
+    compatibility_window: 'additive fields only'
+    support_owner: CHRONUS
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py, chronus/mla1517_platform/python/test_control_api_gpu_truth.py]
 
   - api_id: pythia.hardware.status
@@ -800,6 +1123,18 @@ apis:
     availability_semantics: device truth only
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'hardware status observation'
+    authority: CHRONUS
+    reliability_tier: R4
+    dependencies: [chronus.execution]
+    slo: slo.projection.read
+    fallback_policy: 'unmeasured hardware reports unmeasured'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'golden_signals'
+    compatibility_window: 'additive fields only'
+    support_owner: CHRONUS
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
 
   - api_id: al_haras.security.status
@@ -826,6 +1161,18 @@ apis:
     availability_semantics: denial is evidence, not an error mask
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'AL HARAS security posture'
+    authority: AL_HARAS
+    reliability_tier: R0
+    dependencies: [al_haras.guardian, hyba_db.store]
+    slo: slo.constitutional
+    fallback_policy: 'none — unavailable = denied posture, never permissive'
+    security_classification: GUARDIAN_MEDIATED
+    observability_requirement: 'audit_trail'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: AL_HARAS
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py, tests/test_al_haras_pythia_wiring.py]
 
   - api_id: al_haras.security.subscribe
@@ -852,6 +1199,18 @@ apis:
     availability_semantics: honest
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'subscription issuance/configuration'
+    authority: AL_HARAS
+    reliability_tier: R0
+    dependencies: [al_haras.guardian, hyba_db.store]
+    slo: slo.constitutional
+    fallback_policy: 'misconfigured authority refuses to issue'
+    security_classification: GUARDIAN_MEDIATED
+    observability_requirement: 'audit_trail+evidence'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: AL_HARAS
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
 
   - api_id: al_haras.security.evaluate
@@ -878,6 +1237,18 @@ apis:
     availability_semantics: dependency failure is 503, never an implicit deny/allow
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'AL HARAS authorisation verdict'
+    authority: AL_HARAS
+    reliability_tier: R0
+    dependencies: [al_haras.guardian, hyba_db.store]
+    slo: slo.constitutional
+    fallback_policy: 'fail closed; no verdict means denied'
+    security_classification: GUARDIAN_MEDIATED
+    observability_requirement: 'audit_trail+evidence'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: AL_HARAS
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py, tests/test_al_haras_pythia_wiring.py, chronus/mla1517_platform/python/test_control_auth.py]
 
   - api_id: kellogg.tensor.capabilities
@@ -904,6 +1275,18 @@ apis:
     availability_semantics: backend lists are probed, not declared
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'KELLOGG capability surface'
+    authority: KELLOGG
+    reliability_tier: R2
+    dependencies: [al_haras.guardian, kellogg.tensor.runtime]
+    slo: slo.specialist
+    fallback_policy: 'unavailable device reports unavailable'
+    security_classification: GUARDIAN_MEDIATED
+    observability_requirement: 'golden_signals'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: KELLOGG
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py, tests/test_tensor_runtime.py]
 
   - api_id: kellogg.tensor.execute
@@ -930,6 +1313,18 @@ apis:
     availability_semantics: result cannot masquerade as mining proof or VQC authority
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'KELLOGG tensor execution'
+    authority: KELLOGG
+    reliability_tier: R2
+    dependencies: [al_haras.guardian, kellogg.tensor.runtime, theseus.custody]
+    slo: slo.specialist
+    fallback_policy: 'typed failure; fallback only when caller plan permits'
+    security_classification: GUARDIAN_MEDIATED
+    observability_requirement: 'golden_signals+evidence'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: KELLOGG
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py, tests/test_tensor_runtime.py]
 
   - api_id: toe.collapse
@@ -956,6 +1351,18 @@ apis:
     availability_semantics: each bridge section reports available honestly
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'EUCLID collapse verdict'
+    authority: EUCLID
+    reliability_tier: R2
+    dependencies: [al_haras.guardian, euclid.orchestration]
+    slo: slo.specialist
+    fallback_policy: 'unproven stays unproven'
+    security_classification: GUARDIAN_MEDIATED
+    observability_requirement: 'golden_signals'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: EUCLID
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
 
   - api_id: salamander.fault
@@ -982,6 +1389,18 @@ apis:
     availability_semantics: recorded:true means persisted to audit, not remediated
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'SALAMANDER fault/remediation command'
+    authority: SALAMANDER
+    reliability_tier: R3
+    dependencies: [salamander.control_plane, theseus.custody]
+    slo: slo.healing
+    fallback_policy: 'bounded remediation; rollback on failed postcondition'
+    security_classification: OPERATOR_AUTHENTICATED
+    observability_requirement: 'audit_trail+evidence'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: SALAMANDER
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
 
   - api_id: pythia.static_spa
@@ -1008,6 +1427,18 @@ apis:
     availability_semantics: files served exactly as built
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'operator SPA static assets'
+    authority: PYTHIA
+    reliability_tier: R4
+    dependencies: []
+    slo: slo.projection.read
+    fallback_policy: 'missing build reports 404 on assets; api paths never serve index'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'none'
+    compatibility_window: 'asset paths only'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
 
 # ---------------------------------------------------------------------------
@@ -1039,6 +1470,18 @@ apis:
     availability_semantics: never implies an implemented endpoint
     stability: reserved
     deprecation_state: RESERVED_NAMESPACE
+    capability: 'reserved /api/v1/policy namespace'
+    authority: AL_HARAS
+    reliability_tier: R0
+    dependencies: [al_haras.guardian]
+    slo: slo.constitutional
+    fallback_policy: 'deny at boundary; reserved never masquerades'
+    security_classification: GUARDIAN_MEDIATED
+    observability_requirement: 'audit_trail'
+    compatibility_window: 'n/a — no implementation'
+    support_owner: AL_HARAS
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: RESERVED
     tests: [tests/test_production_api_contract.py]
 
   - api_id: namespace.worker
@@ -1065,6 +1508,18 @@ apis:
     availability_semantics: never implies an implemented endpoint
     stability: reserved
     deprecation_state: RESERVED_NAMESPACE
+    capability: 'reserved /api/v1/worker namespace'
+    authority: AL_HARAS
+    reliability_tier: R0
+    dependencies: [al_haras.guardian]
+    slo: slo.constitutional
+    fallback_policy: 'deny at boundary; reserved never masquerades'
+    security_classification: GUARDIAN_MEDIATED
+    observability_requirement: 'audit_trail'
+    compatibility_window: 'n/a — no implementation'
+    support_owner: AL_HARAS
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: RESERVED
     tests: [tests/test_production_api_contract.py]
 
   - api_id: namespace.recovery
@@ -1091,6 +1546,18 @@ apis:
     availability_semantics: never implies an implemented endpoint
     stability: reserved
     deprecation_state: RESERVED_NAMESPACE
+    capability: 'reserved /api/v1/recovery namespace'
+    authority: AL_HARAS
+    reliability_tier: R0
+    dependencies: [al_haras.guardian]
+    slo: slo.constitutional
+    fallback_policy: 'deny at boundary; reserved never masquerades'
+    security_classification: GUARDIAN_MEDIATED
+    observability_requirement: 'audit_trail'
+    compatibility_window: 'n/a — no implementation'
+    support_owner: AL_HARAS
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: RESERVED
     tests: [tests/test_production_api_contract.py]
 
   - api_id: namespace.admin
@@ -1117,6 +1584,18 @@ apis:
     availability_semantics: never implies an implemented endpoint
     stability: reserved
     deprecation_state: RESERVED_NAMESPACE
+    capability: 'reserved /api/v1/admin namespace'
+    authority: AL_HARAS
+    reliability_tier: R0
+    dependencies: [al_haras.guardian]
+    slo: slo.constitutional
+    fallback_policy: 'deny at boundary; reserved never masquerades'
+    security_classification: GUARDIAN_MEDIATED
+    observability_requirement: 'audit_trail'
+    compatibility_window: 'n/a — no implementation'
+    support_owner: AL_HARAS
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: RESERVED
     tests: [tests/test_production_api_contract.py]
 
   - api_id: namespace.quantum
@@ -1143,6 +1622,18 @@ apis:
     availability_semantics: never implies a REST TURING service exists
     stability: reserved
     deprecation_state: RESERVED_NAMESPACE
+    capability: 'reserved /api/v1/quantum namespace'
+    authority: TURING
+    reliability_tier: R0
+    dependencies: [al_haras.guardian]
+    slo: slo.constitutional
+    fallback_policy: 'deny at boundary; reserved never masquerades'
+    security_classification: GUARDIAN_MEDIATED
+    observability_requirement: 'audit_trail'
+    compatibility_window: 'n/a — no implementation'
+    support_owner: TURING
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: RESERVED
     tests: [tests/test_production_api_contract.py]
 
   - api_id: namespace.scale
@@ -1169,6 +1660,18 @@ apis:
     availability_semantics: never implies an implemented endpoint
     stability: reserved
     deprecation_state: RESERVED_NAMESPACE
+    capability: 'reserved /api/v1/scale namespace'
+    authority: AL_HARAS
+    reliability_tier: R0
+    dependencies: [al_haras.guardian]
+    slo: slo.constitutional
+    fallback_policy: 'deny at boundary; reserved never masquerades'
+    security_classification: GUARDIAN_MEDIATED
+    observability_requirement: 'audit_trail'
+    compatibility_window: 'n/a — no implementation'
+    support_owner: AL_HARAS
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: RESERVED
     tests: [tests/test_production_api_contract.py]
 
   - api_id: namespace.assembly
@@ -1195,6 +1698,18 @@ apis:
     availability_semantics: never implies an implemented endpoint
     stability: reserved
     deprecation_state: RESERVED_NAMESPACE
+    capability: 'reserved /api/v1/assembly namespace'
+    authority: AL_HARAS
+    reliability_tier: R0
+    dependencies: [al_haras.guardian]
+    slo: slo.constitutional
+    fallback_policy: 'deny at boundary; reserved never masquerades'
+    security_classification: GUARDIAN_MEDIATED
+    observability_requirement: 'audit_trail'
+    compatibility_window: 'n/a — no implementation'
+    support_owner: AL_HARAS
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: RESERVED
     tests: [tests/test_production_api_contract.py]
 
 # ---------------------------------------------------------------------------
@@ -1222,6 +1737,18 @@ apis:
     availability_semantics: unavailable backends report unavailable, never substitute
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'independent VQC execution + certificate'
+    authority: TURING
+    reliability_tier: R2
+    dependencies: [theseus.custody]
+    slo: slo.specialist
+    fallback_policy: 'typed failure; unavailable backend reports unavailable; no impersonation'
+    security_classification: INTERNAL_TYPED
+    observability_requirement: 'evidence'
+    compatibility_window: 'compatible within turing.vqc/1'
+    support_owner: TURING
+    runtime_evidence: LOCAL_TEST_PASSED
+    lifecycle: STABLE
     tests: [tests/test_turing_production_pipeline.py]
 
   - api_id: theseus.custody
@@ -1246,6 +1773,18 @@ apis:
     availability_semantics: missing record is a miss, never a fabricate
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'durable custody/integrity/provenance store'
+    authority: THESEUS
+    reliability_tier: R0
+    dependencies: []
+    slo: slo.constitutional
+    fallback_policy: 'none — custody failure stops the dependent operation'
+    security_classification: INTERNAL_TYPED
+    observability_requirement: 'evidence'
+    compatibility_window: 'content-addressed records are append-stable'
+    support_owner: THESEUS
+    runtime_evidence: LOCAL_TEST_PASSED
+    lifecycle: STABLE
     tests: [tests/test_aethel_storage.py, tests/test_enterprise_custody_substrate.py]
 
   - api_id: ovid.transform
@@ -1270,6 +1809,18 @@ apis:
     availability_semantics: UNSUPPORTED contracts never execute
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'representation/state transformation + lineage'
+    authority: OVID
+    reliability_tier: R2
+    dependencies: [theseus.custody]
+    slo: slo.specialist
+    fallback_policy: 'equivalence failure is a verdict; no silent approximate substitute'
+    security_classification: INTERNAL_TYPED
+    observability_requirement: 'evidence'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: OVID
+    runtime_evidence: LOCAL_TEST_PASSED
+    lifecycle: STABLE
     tests: [tests/test_ovid_contracts.py]
 
   - api_id: kellogg.tensor.runtime
@@ -1294,6 +1845,18 @@ apis:
     availability_semantics: result is tensor evidence only — never mining proof or VQC authority
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'KELLOGG tensor runtime contract'
+    authority: KELLOGG
+    reliability_tier: R2
+    dependencies: [theseus.custody]
+    slo: slo.specialist
+    fallback_policy: 'typed failure; caller chooses authorised alternative'
+    security_classification: INTERNAL_TYPED
+    observability_requirement: 'evidence'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: KELLOGG
+    runtime_evidence: LOCAL_TEST_PASSED
+    lifecycle: STABLE
     tests: [tests/test_tensor_runtime.py]
 
   - api_id: chronus.execution
@@ -1318,6 +1881,18 @@ apis:
     availability_semantics: never silently substitutes a backend
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'heterogeneous execution contract'
+    authority: CHRONUS
+    reliability_tier: R1
+    dependencies: [theseus.custody, chronus.remote_opencl_v2]
+    slo: slo.mining.execution
+    fallback_policy: 'backend unavailability is explicit; re-derived verification is the receipt'
+    security_classification: INTERNAL_TYPED
+    observability_requirement: 'evidence'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: CHRONUS
+    runtime_evidence: LOCAL_TEST_PASSED
+    lifecycle: STABLE
     tests: [tests/test_backend_registry.py, chronus/mla1517_platform/python/test_execution_receipt.py]
 
   - api_id: al_haras.guardian
@@ -1342,6 +1917,18 @@ apis:
     availability_semantics: dependency failure is 503 not an implicit allow
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'guardian mediation for privileged operations'
+    authority: AL_HARAS
+    reliability_tier: R0
+    dependencies: [hyba_db.store]
+    slo: slo.constitutional
+    fallback_policy: 'deny closed; mediated routes return signed denial receipts'
+    security_classification: GUARDIAN_MEDIATED
+    observability_requirement: 'audit_trail+evidence'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: AL_HARAS
+    runtime_evidence: LOCAL_TEST_PASSED
+    lifecycle: STABLE
     tests: [tests/test_al_haras_pythia_wiring.py, chronus/mla1517_platform/python/test_control_auth.py]
 
   - api_id: salamander.control_plane
@@ -1366,6 +1953,18 @@ apis:
     availability_semantics: UNKNOWN/UNAVAILABLE are first-class health states
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'SALAMANDER healing control plane'
+    authority: SALAMANDER
+    reliability_tier: R3
+    dependencies: [theseus.custody]
+    slo: slo.healing
+    fallback_policy: 'bounded remediation with postcondition verification and rollback'
+    security_classification: INTERNAL_TYPED
+    observability_requirement: 'evidence'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: SALAMANDER
+    runtime_evidence: LOCAL_TEST_PASSED
+    lifecycle: STABLE
     tests: [tests/test_salamander_autonomic.py, tests/test_b_salamander_recovery.py]
 
   - api_id: euclid.orchestration
@@ -1390,6 +1989,18 @@ apis:
     availability_semantics: EUCLID never duplicates the specialist algorithm
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'EUCLID intelligence orchestration'
+    authority: EUCLID
+    reliability_tier: R1
+    dependencies: [turing.vqc_pipeline, kellogg.tensor.runtime, ovid.transform, chronus.execution, theseus.custody]
+    slo: slo.mining.plan
+    fallback_policy: 'specialist unavailability returns to the plan; no service impersonates another'
+    security_classification: INTERNAL_TYPED
+    observability_requirement: 'evidence'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: EUCLID
+    runtime_evidence: LOCAL_TEST_PASSED
+    lifecycle: STABLE
     tests: [chronus/mla1517_platform/python/test_euclid_core.py, chronus/mla1517_platform/python/test_euclid_cognition_entrypoint.py]
 
   - api_id: hyba_db.store
@@ -1414,6 +2025,18 @@ apis:
     availability_semantics: projection validity is a producer fact, not THESEUS/OVID
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'tenant-scoped ontology/query persistence'
+    authority: HYBA_DB
+    reliability_tier: R1
+    dependencies: []
+    slo: slo.tenant_store
+    fallback_policy: 'tenant failure never bleeds across tenant boundary'
+    security_classification: TENANT_SCOPED
+    observability_requirement: 'evidence'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: HYBA_DB
+    runtime_evidence: LOCAL_TEST_PASSED
+    lifecycle: STABLE
     tests: [tests/test_salamander_autonomic.py]
 
 # ---------------------------------------------------------------------------
@@ -1441,6 +2064,18 @@ apis:
     availability_semantics: pool acceptance is established ONLY by the literal pool response — never by socket write or local SHA256d pass
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'Stratum V1 pool wire protocol'
+    authority: POOL
+    reliability_tier: R1
+    dependencies: []
+    slo: slo.stratum
+    fallback_policy: 'bounded reconnect; stale work rejected; submit never auto-retried'
+    security_classification: WIRE_CREDENTIAL
+    observability_requirement: 'evidence'
+    compatibility_window: 'stratum.v1 protocol'
+    support_owner: POOL
+    runtime_evidence: LOCAL_CROSS_SERVICE_EXECUTED
+    lifecycle: STABLE
     tests: [chronus/mla1517_platform/python/test_pool_only_mining.py, tests/test_b_pool_outcomes.py]
 
   - api_id: chronus.remote_opencl_v2
@@ -1466,6 +2101,18 @@ apis:
     availability_semantics: imported devices are measured, never declared
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'remote OpenCL execution wire protocol'
+    authority: CHRONUS
+    reliability_tier: R1
+    dependencies: []
+    slo: slo.remote_execution
+    fallback_policy: 'circuit breaker on persistent failure; results always re-verified'
+    security_classification: WIRE_CREDENTIAL
+    observability_requirement: 'evidence'
+    compatibility_window: 'remote_opencl_v2 protocol version'
+    support_owner: CHRONUS
+    runtime_evidence: LOCAL_CROSS_SERVICE_EXECUTED
+    lifecycle: STABLE
     tests: [chronus/mla1517_platform/python/test_remote_gpu.py, tests/test_chronus_delivery.py, tests/test_remote_hasher.py]
 
 # ---------------------------------------------------------------------------
@@ -1493,6 +2140,18 @@ apis:
     availability_semantics: absent file = worker not reporting, never zeros
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'worker metrics sidecar contract'
+    authority: PYTHIA
+    reliability_tier: R1
+    dependencies: []
+    slo: slo.mining.telemetry
+    fallback_policy: 'stale sidecar excluded from counters'
+    security_classification: HMAC_SIDECAR
+    observability_requirement: 'evidence'
+    compatibility_window: 'additive fields only within pythia.worker_metrics/1'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_TEST_PASSED
+    lifecycle: STABLE
     tests: [chronus/mla1517_platform/python/test_phase4_api.py]
 
   - api_id: pythia.boot_audit
@@ -1517,6 +2176,18 @@ apis:
     availability_semantics: exact log contents only
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'append-only boot/ops audit log'
+    authority: PYTHIA
+    reliability_tier: R1
+    dependencies: []
+    slo: slo.evidence
+    fallback_policy: 'append-only; readers see exact log'
+    security_classification: FILESYSTEM
+    observability_requirement: 'evidence'
+    compatibility_window: 'additive event fields only within pythia.boot_audit/1'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_TEST_PASSED
+    lifecycle: STABLE
     tests: [tests/test_startup_contract.py]
 
   - api_id: pythia.runtime_config_file
@@ -1541,6 +2212,18 @@ apis:
     availability_semantics: secrets never serialised to public view
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'runtime configuration artifact'
+    authority: PYTHIA
+    reliability_tier: R1
+    dependencies: []
+    slo: slo.configuration
+    fallback_policy: 'invalid config fails boot closed'
+    security_classification: FILESYSTEM
+    observability_requirement: 'evidence'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_TEST_PASSED
+    lifecycle: STABLE
     tests: [chronus/mla1517_platform/python/test_phase4_api.py]
 
 # ---------------------------------------------------------------------------
@@ -1568,6 +2251,18 @@ apis:
     availability_semantics: fails fast on absent/placeholder worker identity
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'control API process entrypoint'
+    authority: PYTHIA
+    reliability_tier: R1
+    dependencies: [pythia.boot_audit]
+    slo: slo.cli
+    fallback_policy: 'misconfiguration exits non-zero with reason'
+    security_classification: ENVIRONMENT
+    observability_requirement: 'evidence'
+    compatibility_window: 'flags stable within major version'
+    support_owner: PYTHIA
+    runtime_evidence: INSTALLED_ARTIFACT_EXECUTED
+    lifecycle: STABLE
     tests: [tests/test_startup_contract.py, chronus/mla1517_platform/python/test_startup_optional_services.py]
 
   - api_id: pythia.cli.miner
@@ -1592,6 +2287,18 @@ apis:
     availability_semantics: honest
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'headless miner entrypoint'
+    authority: PYTHIA
+    reliability_tier: R1
+    dependencies: [stratum.v1]
+    slo: slo.cli
+    fallback_policy: 'missing worker identity fails fast'
+    security_classification: ENVIRONMENT
+    observability_requirement: 'evidence'
+    compatibility_window: 'flags stable within major version'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_TEST_PASSED
+    lifecycle: STABLE
     tests: [chronus/mla1517_platform/python/test_pool_only_mining.py]
 
   - api_id: chronus.cli.remote_agent
@@ -1616,6 +2323,18 @@ apis:
     availability_semantics: advertises only measured devices
     stability: stable
     deprecation_state: CANONICAL
+    capability: 'remote GPU agent entrypoint'
+    authority: CHRONUS
+    reliability_tier: R1
+    dependencies: [chronus.remote_opencl_v2]
+    slo: slo.cli
+    fallback_policy: 'unreachable auth/config fails fast'
+    security_classification: WIRE_CREDENTIAL
+    observability_requirement: 'evidence'
+    compatibility_window: 'flags stable within major version'
+    support_owner: CHRONUS
+    runtime_evidence: LOCAL_TEST_PASSED
+    lifecycle: STABLE
     tests: [chronus/mla1517_platform/python/test_remote_gpu.py]
 
 # ---------------------------------------------------------------------------
@@ -1645,4 +2364,16 @@ apis:
     stability: frozen
     deprecation_state: COMPATIBILITY_ALIAS
     canonical_successor: /api/v1/healthz
+    capability: 'legacy health alias'
+    authority: PYTHIA
+    reliability_tier: R4
+    dependencies: [pythia.health]
+    slo: slo.projection.read
+    fallback_policy: 'alias of canonical health'
+    security_classification: PUBLIC_READ
+    observability_requirement: 'golden_signals'
+    compatibility_window: 'frozen surface until retirement approval'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: LEGACY
     tests: [tests/test_production_api_contract.py]
