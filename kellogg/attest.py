@@ -229,7 +229,7 @@ def verify_attestation(
         version_lock=version_lock,
     )
     for field in ("digest", "zeckendorf", "cassini"):
-        if attestation.get(field) != expected[field]:
+        if _canonical_bytes(attestation.get(field)) != _canonical_bytes(expected[field]):
             raise AttestationError(f"Kellogg attestation {field} mismatch")
 
     bound_digest = attestation.get("attestation_digest")
