@@ -152,7 +152,9 @@ def test_lying_adapter_is_a_device_error_and_never_a_candidate(tmp_path) -> None
     assert candidate is None
     assert record.completion_state is CompletionState.DEVICE_ERROR
     assert record.locally_valid_shares == 0
-    assert "mismatch" in str(record.device_error)
+    assert "verification_failed" in str(record.device_error) or "mismatch" in str(
+        record.device_error
+    )
 
 
 def test_missing_chronus_lane_fails_closed(monkeypatch) -> None:

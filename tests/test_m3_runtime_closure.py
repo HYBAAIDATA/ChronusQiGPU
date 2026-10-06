@@ -140,6 +140,100 @@ def test_strict_verified_proof_refuses_missing_candidate_parent(tmp_path):
     custody.close()
 
 
+def test_m3_lease_authorization_is_cached_per_work_identity():
+    calls = []
+
+    class Gate:
+        def authorize_lease(self, *, context):
+            calls.append(dict(context))
+            return {
+                "allowed": True,
+                "reason": "ALLOWED",
+                "authorization_evidence_id": f"auth-{len(calls)}",
+                "authorization_version_id": f"fv-{len(calls)}",
+                "policy_version": "policy-v1",
+            }
+
+    coord = M3PythiaProductionMiningCoordinator.__new__(
+        M3PythiaProductionMiningCoordinator
+    )
+    coord._m3_required = True
+    coord._m3_gate = Gate()
+    coord._m3_blocked_reason = None
+    coord._last_m3_lease_gate = None
+    coord._m3_authorized_identity_key = None
+    coord.mining_enabled = True
+    coord._last_pool_outcome = PoolOutcome.NOT_SUBMITTED
+    coord.username = "acct.worker"
+    coord.client = SimpleNamespace(endpoint=SimpleNamespace(host="pool.example", port=3333))
+    recorded = []
+    coord.causal = SimpleNamespace(
+        record=lambda kind, coordinate, **detail: recorded.append((kind, detail))
+    )
+
+    first = SimpleNamespace(
+        key=("session-1", 7, "fp-1"),
+        pool_session_id="session-1",
+        generation=7,
+        job_id="job-1",
+        job_fingerprint="fp-1",
+        target_generation=3,
+        clean_jobs=True,
+    )
+    second = SimpleNamespace(
+        key=("session-1", 8, "fp-2"),
+        pool_session_id="session-1",
+        generation=8,
+        job_id="job-2",
+        job_fingerprint="fp-2",
+        target_generation=4,
+        clean_jobs=True,
+    )
+
+    assert coord._authorize_m3_identity(first) is True
+    assert coord._authorize_m3_identity(first) is True
+    assert len(calls) == 1
+    assert calls[0]["generation"] == 7
+    assert recorded[0][0] == "lease_authorized"
+
+    assert coord._authorize_m3_identity(second) is True
+    assert len(calls) == 2
+    assert calls[1]["generation"] == 8
+
+
+def test_m3_lease_denial_freezes_mining_route():
+    class Gate:
+        def authorize_lease(self, *, context):
+            return {"allowed": False, "reason": "SUBSCRIPTION_DENIED:test"}
+
+    coord = M3PythiaProductionMiningCoordinator.__new__(M3PythiaProductionMiningCoordinator)
+    coord._m3_required = True
+    coord._m3_gate = Gate()
+    coord._m3_blocked_reason = None
+    coord._last_m3_lease_gate = None
+    coord._m3_authorized_identity_key = None
+    coord.mining_enabled = True
+    coord._last_pool_outcome = PoolOutcome.NOT_SUBMITTED
+    coord.username = "acct.worker"
+    coord.client = SimpleNamespace(
+        endpoint=SimpleNamespace(host="pool.example", port=3333)
+    )
+    coord.causal = SimpleNamespace(record=lambda *args, **kwargs: None)
+    identity = SimpleNamespace(
+        key=("session-1", 7, "fp-1"),
+        pool_session_id="session-1",
+        generation=7,
+        job_id="job-1",
+        job_fingerprint="fp-1",
+        target_generation=3,
+        clean_jobs=True,
+    )
+
+    assert coord._authorize_m3_identity(identity) is False
+    assert coord.mining_enabled is False
+    assert coord._m3_blocked_reason == "SUBSCRIPTION_DENIED:test"
+
+
 def test_stale_job_is_refused_without_killing_m3_coordinator():
     coord = M3PythiaProductionMiningCoordinator.__new__(M3PythiaProductionMiningCoordinator)
     coord._pending_correlation = {}
