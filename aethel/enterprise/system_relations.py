@@ -813,9 +813,33 @@ def verify_turing_custody_boundary(
         and result is not None
         and result.get("certificate") == certificate.to_dict()
     )
+
+    certified_options: dict[str, Any] = {}
+    if certificate is not None and certificate.trace:
+        first = certificate.trace[0]
+        if isinstance(first, Mapping):
+            raw_options = first.get("options", {})
+            if isinstance(raw_options, Mapping):
+                certified_options = dict(raw_options)
+    try:
+        checks["certificate_binds_program_and_result"] = bool(
+            program is not None
+            and result is not None
+            and certificate is not None
+            and verify_serialized_computation_certificate(
+                program,
+                result,
+                certificate,
+                options=certified_options,
+            )
+        )
+    except Exception:
+        checks["certificate_binds_program_and_result"] = False
+
     checks["witness_binds_result"] = bool(
         witness is not None
         and result is not None
+        and program is not None
         and witness.backend == result.get("backend")
         and witness.execution_class == result.get("execution_class")
         and witness.truth_class == result.get("truth_class")
