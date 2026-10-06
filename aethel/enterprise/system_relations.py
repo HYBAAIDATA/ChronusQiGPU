@@ -657,6 +657,7 @@ def verify_turing_custody_boundary(
     from turing_universal_quantum_computer.certificates import (
         RunWitness,
         VQCComputationCertificate,
+        verify_serialized_computation_certificate,
         verify_witness,
     )
 
@@ -745,12 +746,50 @@ def verify_turing_custody_boundary(
         and result is not None
         and result.get("certificate") == certificate.to_dict()
     )
+
+    certified_options: dict[str, Any] = {}
+    if certificate is not None and certificate.trace:
+        first = certificate.trace[0]
+        if isinstance(first, Mapping):
+            raw_options = first.get("options", {})
+            if isinstance(raw_options, Mapping):
+                certified_options = dict(raw_options)
+    try:
+        checks["certificate_binds_program_and_result"] = bool(
+            program is not None
+            and result is not None
+            and certificate is not None
+            and verify_serialized_computation_certificate(
+                program,
+                result,
+                certificate,
+                options=certified_options,
+            )
+        )
+    except Exception:
+        checks["certificate_binds_program_and_result"] = False
+
     checks["witness_binds_result"] = bool(
         witness is not None
         and result is not None
+        and program is not None
         and witness.backend == result.get("backend")
+        and witness.execution_class == result.get("execution_class")
+        and witness.truth_class == result.get("truth_class")
         and witness.n_qubits == result.get("n_qubits")
         and witness.program_digest == result.get("program_digest")
+        and witness.materialised == bool(result.get("materialised"))
+        and witness.measured_qpu == bool(result.get("measured_qpu", False))
+        and witness.gate_counts == program.gate_counts()
+    )
+    checks["witness_provider_job_matches_result"] = bool(
+        witness is not None
+        and result is not None
+        and (
+            not witness.measured_qpu
+            or witness.provider_job_id
+            == str((result.get("payload") or {}).get("job_id", ""))
+        )
     )
 
     return {
@@ -768,10 +807,11 @@ class SharedTuring(_BoundAdapter):
     result, computation certificate, witness and final pipeline report are
     instead committed to the single shared data port with parent lineage
 
-        program -> result -> certificate -> witness -> pipeline_report
+        program -> result -> certificate -> witness -> pipeline_report -> replay
 
-    and the certificate/witness boundary is semantically validated before any
-    of it enters custody.
+    The certificate/witness boundary is semantically validated before custody.
+    A successful execution is then read back from shared custody and replayed
+    before it is returned as production-accepted.
     """
 
     def __init__(self, port: SystemDataPort, pipeline: Any | None = None) -> None:
@@ -858,6 +898,29 @@ class SharedTuring(_BoundAdapter):
             meta={"custody_mode": "shared_theseus_ovid_entanglement"},
         )
         self.last_bindings["report"] = report_binding
+
+        if (
+            getattr(report, "result", None) is not None
+            and certificate_payload is not None
+            and witness_payload is not None
+        ):
+            replay = self.replay()
+            replay_binding = self._put(
+                "turing_replay",
+                replay,
+                parents=(report_binding.binding_id,),
+                evidence_state="PASS" if replay["passed"] else "FAIL",
+                meta={"production_gate": "post_custody_semantic_replay"},
+            )
+            self.last_bindings["replay"] = replay_binding
+            if not replay["passed"]:
+                failed = sorted(
+                    name for name, ok in replay["checks"].items() if not ok
+                )
+                raise EntangledCustodyError(
+                    "TURING shared-custody replay failed after commit "
+                    f"({', '.join(failed)}); refusing production acceptance"
+                )
         return report
 
     def replay(self) -> dict[str, Any]:
