@@ -225,19 +225,19 @@ export const RuntimeControlPanel: React.FC<{ onChanged?: () => void }> = ({ onCh
                 value={hashrateInput}
                 onChange={(e) => setHashrateInput(e.target.value)}
               />
-              <button className={btnCls} disabled={busy} onClick={setTarget}>
+              <button className={btnCls} disabled={busy || ceiling == null} onClick={setTarget}>
                 set
               </button>
             </div>
             <p className="mt-1 text-[11px] font-telemetry-mono text-[#42566f]">
               current {formatHs(config?.hashrate?.target_hs ?? 0)} · ceiling{" "}
-              {ceiling == null ? "Unavailable" : formatHs(ceiling)} · measured rate converges to min(target, physical)
+              {ceiling == null ? "Unavailable" : formatHs(ceiling)} · measured rate is reported separately
             </p>
           </div>
 
           <div>
             <p className="text-[10px] font-telemetry-mono uppercase tracking-wider text-[#6b7c93]">
-              Solver arms (intelligence manifold)
+              Physical execution arms
             </p>
             <div className="mt-2 flex items-center gap-2">
               <input
