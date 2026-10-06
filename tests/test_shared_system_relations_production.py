@@ -444,6 +444,19 @@ def test_production_organism_is_single_startup_root_for_live_shared_systems(tmp_
             {"verified": True},
         )
         organism.kellogg.encode([1.0, 1.0, 2.0, 3.0], dim=32)
+        diagnostic_replay = organism.kellogg.replay_latest()
+        assert diagnostic_replay["passed"] is True
+        assert diagnostic_replay["plane"] == "diagnostic"
+
+        exact_state = organism.kellogg.encode_exact(
+            {"production_root_probe": "exact"},
+            num_qubits=3,
+        )
+        assert exact_state.num_qubits == 3
+        exact_replay = organism.kellogg.replay_latest()
+        assert exact_replay["passed"] is True
+        assert exact_replay["plane"] == "exact"
+
         proposal = organism.salamander.heal(
             "timeout",
             {"component": "production-root-probe"},
