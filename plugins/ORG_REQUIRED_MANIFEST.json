@@ -1,19 +1,20 @@
 {
-  "note": "Add the unified PYTHIA plugin (cloud + CLI + Desktop, one install) via the Devin UI dialog 'Add plugin from repository'. Devin reads the plugin from the repository each time it runs, so changes there take effect without re-adding it.",
+  "note": "Add the unified PYTHIA plugin (cloud + CLI + Desktop, one install) through this Devin UI dialog. Values below are exactly what the form is filled with.",
   "ui": {
     "dialog": "Add plugin from repository",
+    "description": "Devin reads the plugin from the repository each time it runs, so changes there take effect without re-adding it",
     "fields": {
       "Repository": {
-        "value": "QuantumPhi2/PhiMiner",
-        "accepted_forms": [
-          "QuantumPhi2/PhiMiner",
-          "https://github.com/QuantumPhi2/PhiMiner"
-        ],
-        "note": "Don't include plaintext secrets. Use plugin secret references instead."
+        "placeholder": "owner/repo or https://github.com/owner/repo",
+        "value": "https://github.com/QuantumPhi2/PhiMiner",
+        "hint": "Don't include plaintext secrets. Use plugin secret references instead"
       },
       "Subdirectory": {
+        "optional": true,
+        "placeholder": "plugins/my-plugin",
+        "hint": "Optional. The plugin's root inside the repository",
         "value": "plugins/pythia",
-        "note": "The plugin's root inside the repository: the folder containing .devin-plugin/plugin.json. Never enter this file's path (plugins/ORG_REQUIRED_MANIFEST.json) here — this file is a handoff doc, not a plugin root."
+        "warning": "The value must be the plugin root: the folder containing .devin-plugin/plugin.json. Never enter this file's path (plugins/ORG_REQUIRED_MANIFEST.json) here — this file is a handoff doc, not a plugin root."
       }
     }
   },
