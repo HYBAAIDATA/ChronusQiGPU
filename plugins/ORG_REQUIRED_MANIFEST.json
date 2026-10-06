@@ -18,7 +18,7 @@
         "source": "git-subdir",
         "url": "https://github.com/QuantumPhi2/PhiMiner.git",
         "path": "plugins/pythia",
-        "sha": "PIN_AFTER_PUSH"
+        "sha": "712a10eccd89d5d0884172345de456090a6d3d9a"
       }
     ]
   },
