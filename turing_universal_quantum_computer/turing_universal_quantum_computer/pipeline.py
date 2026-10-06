@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 from typing import Any, Sequence
 
 from .backends import default_backends, select_backend
-from .backends.base import ExecutionResult, Program, TruthClass
+from .backends.base import ExecutionResult, Program
 from .backends.qpu import QPUJob
 from .capabilities import capability_report
 from .certificates import (
