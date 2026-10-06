@@ -7,17 +7,17 @@ The production composition is intentionally layered:
   dodecahedron/icosahedron dual overlay -> 11D manifold -> 600 dual vertices
   -> 11-qubit Hilbert addresses.
 * Chronus owns physical execution and consumes the exact nonce batches PYTHIA
-  authorises. OpenCL, CUDA, Metal, remote GPU and composite lanes may execute
-  the same explicit batch only after their normal capability/self-check gate.
+  authorises. Vendor runtimes may exist beneath Chronus only after their normal
+  capability/self-check gate; they do not define the Chronus architecture.
 * EUCLID remains the wider enterprise-intelligence orchestrator and a bounded
   advisory layer inherited by this coordinator; it is not the mining identity.
 * SHA256d, target comparison, freshness and literal pool acknowledgement remain
   external truth authorities. Search geometry never becomes proof authority.
 
-The historical M32 route token remains a compatibility detail for accelerator
-selection. When the canonical PYTHIA lattice is active the kernel provenance
-explicitly states that ``grind_target_batch`` executed the 600-vertex itinerary;
-it is never relabelled as an M32 traversal.
+The canonical PYTHIA lattice uses the first-class ``chronus_batch`` execution
+route whenever the bound Chronus substrate can consume explicit nonce batches.
+The physical backend remains separate provenance and is never used as the
+architectural identity of Chronus.
 """
 from __future__ import annotations
 
@@ -39,7 +39,7 @@ from .pythia_search import (
     SEARCH_ARCHITECTURE_ID,
     PythiaSearchPrecompute,
     precompute_pythia_search,
-    pythia_hilbert_600_nonces,
+    pythia_hendrix_nonces,
 )
 from .search_plan import ExecutionRoute
 
@@ -68,7 +68,7 @@ def _bind_native_route_markers(hasher: Any) -> None:
 
 
 class ProductionExecutionRouter(ExecutionRouter):
-    """Canonical router with exact PYTHIA itinerary and native GPU compatibility."""
+    """Canonical router with exact PYTHIA itinerary and Chronus batch execution."""
 
     def __init__(
         self,
@@ -93,9 +93,41 @@ class ProductionExecutionRouter(ExecutionRouter):
         return super()._opencl_bound()
 
     def decide_route(self, plan):
-        """Select physical execution while preserving literal substrate provenance."""
-        decision = super().decide_route(plan)
+        """Select physical execution while preserving Chronus as route authority."""
         backend = _backend_name(self._hasher)
+
+        if (
+            self._is_pythia_lattice(plan)
+            and plan.executor_route == ExecutionRoute.chronus_batch.value
+        ):
+            prov = self._device_provenance()
+            batch = getattr(self._hasher, "grind_target_batch", None)
+            cap = max(1, int(getattr(self._hasher, "grind_batch", 1) or 1))
+            requested = ExecutionRoute.chronus_batch
+            if backend in ("", "cpu", "cpu_reference") or not callable(batch):
+                return RouteDecision(
+                    requested_route=requested,
+                    executed_route=ExecutionRoute.cpu_reference,
+                    fallback_reason=FallbackReason.CHRONUS_BATCH_UNAVAILABLE,
+                    device_backend="cpu_reference",
+                    device_name=prov["device_name"],
+                    device_vendor=prov["device_vendor"],
+                    kernel_identity="hashlib_sha256d",
+                    kernel_build_status="chronus_batch_unbound",
+                    launch_cap=cap,
+                )
+            return RouteDecision(
+                requested_route=requested,
+                executed_route=requested,
+                device_backend=prov["device_backend"],
+                device_name=prov["device_name"],
+                device_vendor=prov["device_vendor"],
+                kernel_identity=f"chronus_ordered_batch_v1:{SEARCH_ARCHITECTURE_ID}",
+                kernel_build_status="bound_contract_after_backend_self_check",
+                launch_cap=cap,
+            )
+
+        decision = super().decide_route(plan)
 
         if (
             self._is_pythia_lattice(plan)
@@ -142,13 +174,17 @@ class ProductionExecutionRouter(ExecutionRouter):
         )
 
     def _run_chunk(self, plan, header, target, chunk, decision):
-        """Execute the exact 600-vertex itinerary on CPU or explicit-nonce hardware."""
+        """Execute the exact 600-vertex itinerary on CPU or Chronus batch execution."""
         if not self._is_pythia_lattice(plan):
             return super()._run_chunk(plan, header, target, chunk, decision)
 
+        if plan.nonce_order != NONCE_ORDER_HENDRIX:
+            raise RuntimeError(
+                "PYTHIA canonical search requires the Hendrix plan-bound order"
+            )
         order = self._pythia_order_cache.get(plan.plan_id)
         if order is None:
-            order = pythia_hilbert_600_nonces(
+            order = pythia_hendrix_nonces(
                 header,
                 plan.base_step,
                 plan.window,
@@ -165,7 +201,7 @@ class ProductionExecutionRouter(ExecutionRouter):
             return self._cpu_nonces(header, target, nonces)
         batch = getattr(self._hasher, "grind_target_batch", None)
         if not callable(batch):
-            raise RuntimeError("selected hardware route cannot execute explicit nonce batches")
+            raise RuntimeError("selected Chronus route cannot execute explicit nonce batches")
         return batch(header, bytes(target)[::-1], nonces)
 
     def _build_record(self, plan, decision, requested_order, **kwargs):
@@ -173,10 +209,10 @@ class ProductionExecutionRouter(ExecutionRouter):
         record = super()._build_record(plan, decision, requested_order, **kwargs)
         if not self._is_pythia_lattice(plan):
             return record
-        executed = None if record.executed_nonce_order is None else SEARCH_ARCHITECTURE_ID
+        executed = None if record.executed_nonce_order is None else plan.nonce_order
         return replace(
             record,
-            requested_nonce_order=SEARCH_ARCHITECTURE_ID,
+            requested_nonce_order=plan.nonce_order,
             executed_nonce_order=executed,
         )
 
@@ -260,19 +296,14 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         return super()._execution_route()
 
     def _pythia_batch_route(self) -> str:
-        """Route token that can faithfully consume the explicit 600-vertex batch."""
+        """Chronus route for the exact 600-vertex itinerary, or explicit CPU fallback."""
         hasher = self.execution_hasher
         backend = _backend_name(hasher)
         if backend in ("", "cpu", "cpu_reference") or not callable(
             getattr(hasher, "grind_target_batch", None)
         ):
             return "cpu_reference"
-        _bind_native_route_markers(hasher)
-        if getattr(hasher, "k_m32", None) is not None:
-            return "opencl_m32"
-        if getattr(hasher, "k_range", None) is not None:
-            return "opencl_range"
-        return "cpu_reference"
+        return "chronus_batch"
 
     def _bind_plan_execution_intent(self, plan):
         """Seal PYTHIA's precomputed search architecture into every immutable plan."""
@@ -280,9 +311,13 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         refs = dict(plan.evidence_refs)
         refs["search_architecture"] = SEARCH_ARCHITECTURE_ID
         refs["search_precompute_digest"] = self.pythia_search_precompute.digest
+        refs["search_algorithm"] = NONCE_ORDER_HENDRIX
         refs["configured_traversal_refinement"] = self._nonce_order
         refs["technology_intent"] = {
             "composition_root": "PYTHIA",
+            "execution_authority": "CHRONUS",
+            "execution_contract": "chronus_batch",
+            "search_algorithm": NONCE_ORDER_HENDRIX,
             "search_architecture": SEARCH_ARCHITECTURE_ID,
             "coarse_overlay": "dodecahedron_12_plus_icosahedron_20",
             "manifold": "phi_weighted_11d_poincare_ball",
@@ -304,12 +339,12 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                 "sha256d_target_freshness_and_literal_pool_response_only"
             ),
         }
-        # M32 is only a compatibility carrier to avoid the inherited router's
-        # separate Hendrix/Poincare special cases. The production router emits
-        # the literal 600-vertex architecture as requested/executed order.
+        # Hendrix remains the canonical plan-bound search algorithm. Chronus
+        # executes the explicit ordered batches produced by the structured
+        # PYTHIA itinerary without changing search identity.
         return replace(
             plan,
-            nonce_order=NONCE_ORDER_M32,
+            nonce_order=NONCE_ORDER_HENDRIX,
             executor_route=self._pythia_batch_route(),
             evidence_refs=refs,
         )
@@ -338,8 +373,9 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         audit = self.policy_audit.snapshot()
         backend = _backend_name(self.execution_hasher)
         return {
-            "schema": "pythia.mining_technology_utilization/2",
+            "schema": "pythia.mining_technology_utilization/3",
             "composition_root": "PYTHIA",
+            "execution_authority": "CHRONUS",
             "enterprise_intelligence_orchestrator": "EUCLID",
             "truth_boundary": (
                 "PYTHIA directs the mining workforce and search architecture; "
@@ -347,6 +383,12 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                 "establish proof and pool truth"
             ),
             "canonical_search": self.pythia_search_precompute.summary(),
+            "execution": {
+                "route": self._pythia_batch_route(),
+                "contract": "ordered_explicit_nonce_batch",
+                "physical_backend": backend or None,
+                "vendor_runtime_is_adapter_only": True,
+            },
             "discoveries": {
                 "dodecahedron_icosahedron_overlay": {
                     "state": "ACTIVE_CANONICAL_ROOT",
@@ -369,9 +411,9 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                     "authority": "coverage-preserving local shard permutation",
                 },
                 "hendrix_coprime_search": {
-                    "state": "AVAILABLE_REFINEMENT",
+                    "state": "ACTIVE_CANONICAL_SEARCH",
                     "authority": (
-                        "legacy/alternative traversal refinement, not search identity"
+                        "default complete traversal; Chronus executes its ordered batches"
                     ),
                 },
                 "m32_dual_solid_lane_topology": {
@@ -425,7 +467,7 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                         "ACTIVE" if backend == "cuda" else "GATED_BY_CAPABILITY_PROBE"
                     ),
                     "authority": (
-                        "physical SHA256d execution of authorised explicit batches"
+                        "physical SHA256d execution beneath the Chronus batch contract"
                     ),
                 },
                 "native_metal_execution": {
@@ -433,7 +475,7 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                         "ACTIVE" if backend == "metal" else "GATED_BY_CAPABILITY_PROBE"
                     ),
                     "authority": (
-                        "physical SHA256d execution of authorised explicit batches"
+                        "physical SHA256d execution beneath the Chronus batch contract"
                     ),
                 },
             },
@@ -447,18 +489,17 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         )
         snapshot["geodesic_ordering"] = dict(self._geodesic_state)
         snapshot["technology_utilization"] = self._technology_utilization_snapshot()
-        backend = _backend_name(self.execution_hasher)
-        if backend in _NATIVE_BACKENDS:
-            snapshot["native_execution"] = {
-                "backend": backend,
-                "route": self._pythia_batch_route(),
-                "physical_backend_truthful": True,
-                "canonical_search_consumption": "explicit_nonce_batch",
-                "hardware_evidence_rule": (
-                    "HARDWARE_EXECUTED only after measured kernel_launch_count > 0 "
-                    "and completed_work_items > 0"
-                ),
-            }
+        snapshot["chronus_execution"] = {
+            "authority": "CHRONUS",
+            "route": self._pythia_batch_route(),
+            "physical_backend": _backend_name(self.execution_hasher) or None,
+            "canonical_search_consumption": "explicit_nonce_batch",
+            "vendor_runtime_is_adapter_only": True,
+            "hardware_evidence_rule": (
+                "HARDWARE_EXECUTED only after measured kernel_launch_count > 0 "
+                "and completed_work_items > 0"
+            ),
+        }
         return snapshot
 
 
