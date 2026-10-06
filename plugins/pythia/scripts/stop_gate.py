@@ -4,7 +4,7 @@ A completion claim requires:
 - a valid final checkpoint;
 - stable task id;
 - checkpoint bound to the executing plugin source SHA;
-- required skills runtime-observed;
+- the complete mandatory EUCLID aptitude set runtime-observed for the session;
 - fresh verification evidence;
 - a valid content-addressed evidence pack for the same task/plugin revision.
 """
@@ -17,15 +17,6 @@ from pathlib import Path
 from typing import Any
 
 from plugin_status import JOURNAL, ROOT, build_status, write_runtime_receipt
-
-_REQUIRED_PACK_SKILLS = {
-    "pythia-plugin-status",
-    "pythia-long-context",
-    "pythia-engineering-quality",
-    "pythia-evidence-pack",
-}
-_REQUIRED_SKILLS = _REQUIRED_PACK_SKILLS | {"pythia-finish-the-job"}
-
 
 def _canonical(value: Any) -> bytes:
     return json.dumps(
@@ -122,10 +113,13 @@ def _verify_pack(path: Path, *, task_id: str, plugin_source_sha: str) -> tuple[b
     if plugin_source_sha not in plugin_shas:
         return False, "evidence pack does not contain current plugin source SHA"
 
-    skills = set(str(x) for x in pack.get("skills_invoked") or [])
-    missing = sorted(_REQUIRED_PACK_SKILLS - skills)
-    if missing:
-        return False, "evidence pack is missing required skill events: " + ", ".join(missing)
+    aptitude = pack.get("session_aptitude")
+    if not isinstance(aptitude, dict):
+        return False, "evidence pack lacks session EUCLID aptitude snapshot"
+    if aptitude.get("augmentation") != "EUCLID_APTITUDE":
+        return False, "evidence pack augmentation is not EUCLID_APTITUDE"
+    if not aptitude.get("mandatory_skills_complete"):
+        return False, "evidence pack shows incomplete mandatory session aptitude"
 
     verification = pack.get("verification")
     if not isinstance(verification, dict) or int(verification.get("runs", 0)) < 1:
@@ -172,12 +166,11 @@ def main() -> int:
             f"(checkpoint={checkpoint_sha or 'missing'}, current={source_sha})."
         )
 
-    invoked = set(status.get("skills_invoked") or [])
-    missing = sorted(_REQUIRED_SKILLS - invoked)
-    if missing:
+    if not status.get("mandatory_skills_complete"):
+        missing = ", ".join(status.get("mandatory_skills_missing") or [])
         return _block(
-            "Required PYTHIA skills were not runtime-observed in this workspace: "
-            + ", ".join(missing)
+            "Mandatory EUCLID aptitude was not fully invoked for this session: "
+            + missing
         )
 
     if not _terminal_next(last.get("next")):
