@@ -38,12 +38,17 @@ class M3PythiaProductionMiningCoordinator(PythiaProductionMiningCoordinator):
         super().__init__(*args, **kwargs)
 
     def m3_status(self) -> dict[str, Any]:
+        fabric = dict(getattr(self, "_chronus_fabric_state", {}) or {})
         return {
             "schema": "pythia.m3-runtime/1",
             "required": self._m3_required,
             "blocked": self._m3_blocked_reason is not None,
             "reason": self._m3_blocked_reason,
             "gate_configured": self._m3_gate is not None,
+            "search_authority": "PYTHIA",
+            "search_algorithm": getattr(self, "_nonce_order", None),
+            "search_architecture_ready": getattr(self, "pythia_search_precompute", None) is not None,
+            "chronus_fabric": fabric,
             "last_submission_gate": self._last_m3_gate,
         }
 
