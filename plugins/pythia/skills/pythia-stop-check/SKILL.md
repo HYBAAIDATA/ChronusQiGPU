@@ -13,7 +13,10 @@ triggers:
 
 # Stop Check
 
-## Invocation receipt
+## Session activation
+
+This aptitude is invoked automatically at SessionStart and remains active for the entire Devin session. Do not treat it as an optional per-task capability.
+
 
 First run:
 
