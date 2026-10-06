@@ -4,6 +4,13 @@
 
 PYTHIA mining is a Bitcoin mining intelligence and execution system. PYTHIA does not change Bitcoin consensus. It composes intelligence, memory, mathematical search structure, Turing quantum/VQC capabilities, Kellogg tensor mathematics and Chronus execution to decide how an already-authorised nonce lease is searched. Every candidate is still judged by exact SHA256d, the negotiated target, current Stratum work identity and stale/epoch rules. Pool acceptance exists only when the pool literally acknowledges the submission.
 
+The search has structure, and PYTHIA uses that structure to search. Hendrix is
+the default production search algorithm. PYTHIA composes supposition and its
+available Turing support arsenal — including tunnelling, annealing, swarming
+and entanglement — around that search. The 32-face, 11D, H4/600 and Turing
+Hilbert structures support the complete itinerary Hendrix traverses; they do
+not replace Hendrix as the search identity.
+
 The production objective is to improve useful search/execution efficiency while preserving complete truth and evidence boundaries. The engineering target of 10 EH/s aggregate remains a capacity target until measured on the actual fleet.
 
 ## Canonical authority
@@ -17,8 +24,9 @@ Stratum / Bitcoin Core
          predictive + causal + counterfactual + topological + geometric intelligence
          supposition
          compose Turing + Quantum GPU + Kellogg tensor + historical corpus + Chronus context
-         issue final SearchPlan
-    -> H4/600 logical search fabric
+         use 32-face -> 11D -> H4/600 -> Hilbert search structure
+         issue final SearchPlan with Hendrix as the default traversal
+    -> Hendrix complete structured search
     -> Chronus physical/fleet execution
     -> SHA256d + target + stale/epoch recheck
     -> mining.submit
@@ -31,7 +39,10 @@ Stratum / Bitcoin Core
 
 PYTHIA is the canonical mining-intelligence and final plan-composition authority. Both precomputed production-agentic plans and fallback plans pass through PYTHIA. A queue miss is not permission to bypass intelligence.
 
-The final plan retains upstream agentic provenance, memory recall, five-modal intelligence evidence, supposition, available compute/mathematical surfaces, preferred search order and H4/600 execution context.
+The final plan retains upstream agentic provenance, memory recall, intelligence
+evidence, supposition, available compute/mathematical surfaces, preferred
+search support and H4/600 execution context. Its default plan-bound nonce order
+is Hendrix.
 
 ## Agentic mining
 
@@ -45,7 +56,14 @@ A proposed search ordering is a supposition until real hashing evaluates it. The
 
 ## Turing and quantum/search capability
 
-PYTHIA may compose the repository's available Turing/quantum capabilities, including exact and Grover-style search, Hendrix, quantum walks including Szegedy-family surfaces, swarming, entanglement/state operations, collapse/measurement, VQE, QAOA, QFT, simulation, annealing and the recovered 32-face VQC lineage. Availability does not imply every algorithm is forced into every job.
+Hendrix is PYTHIA's default production search algorithm. PYTHIA may compose
+the repository's available Turing/quantum capabilities in support of that
+search, including tunnelling, annealing, swarming, entanglement/state
+operations, exact and Grover-style search, quantum walks including
+Szegedy-family surfaces, collapse/measurement, VQE, QAOA, QFT, simulation and
+the recovered 32-face VQC lineage. Supporting capability need not execute on
+every job, but it must remain reachable and may not silently replace Hendrix
+as the default search identity.
 
 A trained historical VQC checkpoint can contribute candidate ordering only. It cannot prune an authorised lease, establish a valid share or create a pool outcome.
 
