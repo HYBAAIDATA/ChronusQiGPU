@@ -51,7 +51,8 @@ def _safe_task_id(value: str) -> str:
     return cleaned[:120]
 
 
-def _read_events(path: Path = EVENT_LOG) -> list[dict[str, Any]]:
+def _read_events(path: Path | None = None) -> list[dict[str, Any]]:
+    path = EVENT_LOG if path is None else path
     if not path.is_file():
         return []
     events: list[dict[str, Any]] = []
@@ -93,8 +94,9 @@ def record_event(
     task_id: str,
     payload: dict[str, Any] | None = None,
     skill: str | None = None,
-    path: Path = EVENT_LOG,
+    path: Path | None = None,
 ) -> dict[str, Any]:
+    path = EVENT_LOG if path is None else path
     task_id = _safe_task_id(task_id)
     path.parent.mkdir(parents=True, exist_ok=True)
     events = _read_events(path)
@@ -156,12 +158,13 @@ def run_verification(task_id: str, command: list[str]) -> int:
     return proc.returncode
 
 
-def _task_events(task_id: str, path: Path = EVENT_LOG) -> list[dict[str, Any]]:
+def _task_events(task_id: str, path: Path | None = None) -> list[dict[str, Any]]:
     safe = _safe_task_id(task_id)
     return [event for event in _read_events(path) if event.get("task_id") == safe]
 
 
-def build_pack(task_id: str, path: Path = EVENT_LOG) -> dict[str, Any]:
+def build_pack(task_id: str, path: Path | None = None) -> dict[str, Any]:
+    path = EVENT_LOG if path is None else path
     events = _read_events(path)
     ok, reason = verify_chain(events)
     if not ok:
@@ -171,31 +174,32 @@ def build_pack(task_id: str, path: Path = EVENT_LOG) -> dict[str, Any]:
         raise ValueError(f"no evidence for task {task_id!r}")
 
     verification = [e for e in selected if e.get("event_type") == "VERIFICATION"]
-    skills = sorted(
-        {
-            str(e.get("skill"))
-            for e in selected
-            if e.get("skill") and e.get("event_type") == "SKILL_INVOKED"
-        }
-    )
+    runtime_status = build_status()
+    ledger_skills = {
+        str(e.get("skill"))
+        for e in selected
+        if e.get("skill") and e.get("event_type") == "SKILL_INVOKED"
+    }
+    skills = sorted(ledger_skills | set(runtime_status.get("skills_invoked") or []))
     completion = [e for e in selected if e.get("event_type") == "COMPLETION_GATE"]
     workspace_shas = [
         str(e.get("workspace_head_sha"))
         for e in selected
         if e.get("workspace_head_sha")
     ]
-    plugin_shas = sorted(
-        {
-            str(e.get("plugin_source_sha"))
-            for e in selected
-            if e.get("plugin_source_sha")
-        }
-    )
+    plugin_shas = {
+        str(e.get("plugin_source_sha"))
+        for e in selected
+        if e.get("plugin_source_sha")
+    }
+    current_plugin_sha = str(runtime_status.get("plugin_source_sha") or "")
+    if current_plugin_sha:
+        plugin_shas.add(current_plugin_sha)
     pack: dict[str, Any] = {
         "schema": SCHEMA_PACK,
         "task_id": _safe_task_id(task_id),
         "sealed_at": _now(),
-        "plugin_source_shas": plugin_shas,
+        "plugin_source_shas": sorted(plugin_shas),
         "workspace_start_sha": workspace_shas[0] if workspace_shas else "UNAVAILABLE",
         "workspace_end_sha": workspace_shas[-1] if workspace_shas else "UNAVAILABLE",
         "skills_invoked": skills,
