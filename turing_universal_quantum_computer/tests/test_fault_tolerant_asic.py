@@ -166,13 +166,17 @@ class QuantumAsicModelTests(unittest.TestCase):
         self.assertTrue(bundle.verified)
         self.assertTrue(all(bundle.checks.values()))
         self.assertEqual(bundle.evidence.missing, ("independent_model_review",))
-        self.assertEqual(
-            bundle.artifacts["unitarity_verification"]["unitary_error_sq"],
-            "0",
-        )
+        unitarity = bundle.artifacts["unitarity_verification"]
+        self.assertEqual(unitarity["rational_rotation_error_sq"], "0")
+        self.assertEqual(unitarity["clifford_state"], "PASS")
+        self.assertGreater(unitarity["clifford_checked_pairs"], 0)
         self.assertTrue(
             bundle.artifacts["deterministic_replay"]["certificate_valid"]
         )
+        error_proof = bundle.artifacts["error_correction_invariants"]
+        self.assertEqual(error_proof["css_noncommuting_pairs"], ())
+        self.assertTrue(error_proof["logical_anticommutation"])
+        self.assertGreater(error_proof["css_pairs_checked"], 0)
 
     def test_pure_quantum_math_abstraction_requires_math_evidence_only(self):
         empty = PureQuantumMathASIC().report(logical_scale=10_000)

@@ -64,7 +64,7 @@ Production readiness is based on mathematical and software evidence, not hardwar
 
 The independent review record must be `independently_reproduced`. All other proof records must be `measured` or `independently_reproduced`. Missing evidence is returned explicitly; nothing is promoted by assertion alone.
 
-`FirstPrinciplesVerifier` and `TenThousandQubitSystem.verify_pure_quantum_asic()` now execute the internal proof obligations directly using exact `Q(i)` arithmetic. They verify zero unitary error, state-norm preservation, Born-probability normalization, surface-code identities, and byte-for-byte deterministic certificate replay. The verifier emits hash-addressed evidence for every successful internal check. It deliberately cannot issue `independent_model_review`; that final production gate must come from an external reproducer.
+`FirstPrinciplesVerifier` and `TenThousandQubitSystem.verify_pure_quantum_asic()` execute the internal proof obligations directly. Rational rotations use exact `Q(i)` arithmetic. Hadamard/Clifford verification uses the larger exact field `Q(sqrt(2)) + i Q(sqrt(2))`, because `1/sqrt(2)` is not an element of `Q(i)`. They verify zero unitary error, state-norm preservation, Born-probability normalization, exact GF(2) surface-code commutation and logical anticommutation, deterministic 10 EH/s capacity, and byte-for-byte certificate replay. The verifier emits hash-addressed evidence for every successful internal check. It deliberately cannot issue `independent_model_review`; that final production gate must come from an external reproducer.
 
 The abstraction’s report always states:
 
@@ -79,3 +79,9 @@ This does not weaken the implementation. It defines its substrate correctly: exa
 The physical-parameter calculator remains available because its equations are useful formal constraints and can support a future realization study. It is no longer the canonical identity of the ASIC. The canonical identity is `PureQuantumMathASIC`, integrated directly into `TenThousandQubitSystem`.
 
 No method may silently convert a symbolic `2^n` state into a dense array, approximate an exact invariant, or promote a resource estimate into executed evidence.
+
+## Clean-room CI and independent reproduction
+
+`.github/workflows/pure-quantum-math.yml` executes the focused proof obligations on Python 3.11, 3.12, and 3.13. Each job emits a canonical reproduction artifact. A dependent consensus job requires all three artifacts to contain the identical reproduction digest.
+
+`scripts/verify_pure_quantum_math.py` is the independent-review entry point. It reproduces the first-principles checks, exact surface-code algebra, deterministic 10 EH/s certificate, and proof obligations without issuing its own `independent_model_review`. Reviewers can pin an expected digest with `--expected-digest`; a mismatch fails closed.

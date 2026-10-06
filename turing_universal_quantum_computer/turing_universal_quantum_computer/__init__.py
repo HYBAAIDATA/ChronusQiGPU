@@ -161,6 +161,7 @@ _LAZY_MODULES = {
     "unified_theory",
     "fault_tolerant_asic",
     "deterministic_hashrate",
+    "surface_code_exact",
     # product boundary (v1.2)
     "backends",
     "capabilities",
@@ -289,6 +290,10 @@ _LAZY_SYMBOLS = {
     "minimum_chips": "deterministic_hashrate",
     "minimum_chips_for_window": "deterministic_hashrate",
     "verify_hashrate_certificate": "deterministic_hashrate",
+    "PauliCheck": "surface_code_exact",
+    "PlanarSurfaceCodeAlgebra": "surface_code_exact",
+    "SurfaceCodeAlgebraReport": "surface_code_exact",
+    "verify_surface_code_algebra": "surface_code_exact",
     # product boundary (v1.2)
     "Program": "backends",
     "Operation": "backends",

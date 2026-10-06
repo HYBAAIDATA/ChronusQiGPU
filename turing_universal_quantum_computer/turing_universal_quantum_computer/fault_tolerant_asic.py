@@ -827,22 +827,33 @@ class FirstPrinciplesVerifier:
             state_from_bytes,
             verify_certificate,
         )
+        from .backends.base import Program
         from .deterministic_hashrate import verify_hashrate_certificate
+        from .surface_code_exact import verify_surface_code_algebra
+        from .verify import verify_program_unitarity
 
         unitary = rational_rotation()
+        clifford_program = Program(2).then("h", 0).then("s", 1).then("cnot", 0, 1)
+        clifford_unitarity = verify_program_unitarity(clifford_program)
         initial = state_from_bytes(b"first-principles-quantum", dimension=2)
         evolved = initial.apply(unitary)
         probabilities = evolved.born_probabilities()
         certificate_a = certify_work_window(header76, 0, 32)
         certificate_b = certify_work_window(header76, 0, 32)
         code = stack.surface_code
+        surface_proof = verify_surface_code_algebra(code.distance)
         deterministic_system = PureQuantumMathASIC(stack).deterministic_hashrate_system()
         hashrate_certificate = deterministic_system.certificate
 
         artifacts = {
             "unitarity_verification": {
-                "field": "Q(i)",
-                "unitary_error_sq": str(unitary.unitary_error()),
+                "rational_rotation_field": "Q(i)",
+                "rational_rotation_error_sq": str(unitary.unitary_error()),
+                "clifford_field": "Q(sqrt(2)) + i Q(sqrt(2))",
+                "clifford_program_digest": clifford_unitarity.program_digest,
+                "clifford_checked_pairs": clifford_unitarity.checked_pairs,
+                "clifford_state": clifford_unitarity.state,
+                "clifford_reason": clifford_unitarity.reason,
             },
             "normalization_verification": {
                 "initial_norm_sq": str(initial.norm_sq),
@@ -854,6 +865,10 @@ class FirstPrinciplesVerifier:
                 "physical_symbols": code.physical_qubits,
                 "correctable_weight": code.correctable_errors,
                 "logical_error_rate": code.logical_error_rate,
+                "css_pairs_checked": surface_proof.mixed_pairs_checked,
+                "css_noncommuting_pairs": surface_proof.noncommuting_pairs,
+                "logical_anticommutation": surface_proof.logicals_anticommute,
+                "surface_code_proof_digest": surface_proof.proof_digest,
             },
             "deterministic_replay": {
                 "certificate_digest": _digest(certificate_a),
@@ -868,7 +883,9 @@ class FirstPrinciplesVerifier:
             },
         }
         checks = {
-            "unitarity_verification": unitary.unitary_error() == 0,
+            "unitarity_verification": (
+                unitary.unitary_error() == 0 and clifford_unitarity.verified
+            ),
             "normalization_verification": (
                 initial.norm_sq == evolved.norm_sq and sum(probabilities) == 1
             ),
@@ -876,6 +893,8 @@ class FirstPrinciplesVerifier:
                 code.physical_qubits == 2 * code.distance**2 - 1
                 and code.correctable_errors == (code.distance - 1) // 2
                 and 0 < code.logical_error_rate < code.physical_error_rate
+                and surface_proof.verified
+                and surface_proof.correction_bound == code.correctable_errors
             ),
             "deterministic_replay": (
                 certificate_a == certificate_b and verify_certificate(certificate_a)

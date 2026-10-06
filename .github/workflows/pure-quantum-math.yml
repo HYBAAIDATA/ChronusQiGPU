@@ -1,0 +1,79 @@
+name: Pure Quantum Mathematics
+
+on:
+  pull_request:
+    paths:
+      - "turing_universal_quantum_computer/**"
+      - "scripts/verify_pure_quantum_math.py"
+      - ".github/workflows/pure-quantum-math.yml"
+  push:
+    branches: [main]
+    paths:
+      - "turing_universal_quantum_computer/**"
+      - "scripts/verify_pure_quantum_math.py"
+      - ".github/workflows/pure-quantum-math.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  exact-first-principles:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install exact virtual quantum computer
+        run: python -m pip install -e ./turing_universal_quantum_computer
+      - name: Compile exact implementation
+        run: >-
+          python -m py_compile
+          turing_universal_quantum_computer/turing_universal_quantum_computer/fault_tolerant_asic.py
+          turing_universal_quantum_computer/turing_universal_quantum_computer/deterministic_hashrate.py
+          turing_universal_quantum_computer/turing_universal_quantum_computer/surface_code_exact.py
+      - name: Run focused exact proof obligations
+        run: |
+          tests=turing_universal_quantum_computer/tests
+          python -m unittest discover -v -s "$tests" -p test_fault_tolerant_asic.py
+          python -m unittest discover -v -s "$tests" -p test_deterministic_hashrate.py
+          python -m unittest discover -v -s "$tests" -p test_surface_code_exact.py
+          python -m unittest discover -v -s "$tests" -p test_quantum_asic_integration.py
+      - name: Reproduce canonical proof bundle
+        run: >-
+          python scripts/verify_pure_quantum_math.py
+          --output artifacts/pure-quantum-math/reproduction.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pure-quantum-math-${{ matrix.python-version }}
+          path: artifacts/pure-quantum-math/reproduction.json
+          if-no-files-found: error
+
+
+  cross-version-reproduction:
+    needs: exact-first-principles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: pure-quantum-math-*
+          path: reproductions
+      - name: Require identical reproduction digests
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          files = sorted(Path("reproductions").glob("**/reproduction.json"))
+          if len(files) != 3:
+              raise SystemExit(f"expected 3 reproduction artifacts, found {len(files)}")
+          rows = [(str(path), json.loads(path.read_text())["reproduction_digest"]) for path in files]
+          digests = {digest for _path, digest in rows}
+          if len(digests) != 1:
+              raise SystemExit(f"cross-version reproduction mismatch: {rows}")
+          print(f"reproduction digest: {rows[0][1]}")
+          PY
