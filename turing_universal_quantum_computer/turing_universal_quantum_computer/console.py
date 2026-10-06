@@ -31,6 +31,7 @@ approximately.
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable, Sequence
@@ -49,7 +50,12 @@ from .backends import (
     select_backend,
 )
 from .capabilities import capability_report, render_matrix
-from .certificates import issue_witness, verify_witness
+from .certificates import (
+    VQCComputationCertificate,
+    issue_witness,
+    verify_computation_certificate,
+    verify_witness,
+)
 
 __all__ = ["QuantumConsole", "main", "render_circuit", "render_amplitudes", "DEMO_SCRIPT"]
 
@@ -215,7 +221,9 @@ class ConsoleState:
 
     @property
     def representation(self) -> str:
-        return "dense_algebraic" if self.state is not None else ("tableau" if self.tableau else "none")
+        if self.state is not None:
+            return "dense_algebraic"
+        return "tableau" if self.tableau else "none"
 
     @property
     def dense(self) -> bool:
@@ -382,7 +390,8 @@ class QuantumConsole:
         limit = int(args[0]) if args else 6
         lines = [
             f"|ψ⟩ on |q{program.n_qubits}⟩ — {_states_label(program.n_qubits)}",
-            f"  representation  tableau ({payload.get('tableau_bits', 2 * program.n_qubits)} bits, exact)",
+            "  representation  tableau "
+            f"({payload.get('tableau_bits', 2 * program.n_qubits)} bits, exact)",
             f"  field           GF(2) Pauli group (Clifford)",
             f"  generators      {len(generators)} — showing {min(limit, len(generators))}",
         ]
@@ -650,8 +659,19 @@ class QuantumConsole:
             self.session.program, result, notes="issued from the VQC console"
         )
         verified = verify_witness(witness)
+        if result.certificate is None:
+            return "certificate boundary failure: public execution returned no certificate"
+        certificate = VQCComputationCertificate.from_dict(result.certificate)
+        certificate_verified = verify_computation_certificate(
+            self.session.program,
+            result,
+            certificate,
+        )
         return (
-            "run witness issued and verified\n"
+            "computation certificate and run witness issued and verified\n"
+            + json.dumps(certificate.to_dict(), sort_keys=True, indent=2)
+            + f"\ncertificate digest: {certificate.certificate_digest}"
+            + f"\ncertificate verified: {certificate_verified}\n"
             + witness.to_json()
             + f"\nwitness digest: {witness.digest()}\nverified: {verified}"
         )
@@ -679,7 +699,11 @@ class QuantumConsole:
             ("register", "init <n> | reset | status"),
             ("gates", " ".join(_ONE_QUBIT) + " <q>  |  " + " ".join(_TWO_QUBIT) + " <q> <q>"),
             ("readout", "psi | amps | prob [q...] | diagram"),
-            ("quantum", "measure [shots] [--seed s] [--readout q,q] | expect <q> | entropy <q...> | product <q> <q>"),
+            (
+                "quantum",
+                "measure [shots] [--seed s] [--readout q,q] | expect <q> | "
+                "entropy <q...> | product <q> <q>",
+            ),
             ("tableau", "generators [n]"),
             ("machine", "backends | capabilities | certify | qpu"),
             ("session", "help | quit"),

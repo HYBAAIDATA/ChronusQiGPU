@@ -210,6 +210,8 @@ class ExecutionResult:
     refusals: tuple[str, ...] = ()
     #: True only when a real, non-simulator provider job completed.
     measured_qpu: bool = False
+    #: Canonical certificate attached by the public registry/pipeline boundary.
+    certificate: dict[str, Any] | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -222,6 +224,7 @@ class ExecutionResult:
             "refusals": list(self.refusals),
             "measured_qpu": self.measured_qpu,
             "payload": self.payload,
+            "certificate": self.certificate,
         }
 
 

@@ -1,8 +1,9 @@
 # Turing Core Specification
 
-Status: **elevation in progress**. This document is the canonical boundary and
-verification contract. It does not claim that every legacy or experimental
-quantum path is already certified.
+Status: **elevated canonical product boundary**. This document is the canonical
+verification contract. Experimental and legacy modules are not silently
+promoted into this boundary; they must enter through the certified backend
+registry or remain explicitly outside it.
 
 ## Discovery
 
@@ -109,14 +110,39 @@ altering trace entries changes the root.
 `FoldCertificate` binds source, folded value, replayed value, algorithm name,
 source length, exactness, and a three-leaf Merkle attestation.
 
+### Public VQC computation certificate
+
+Every call through `backends.execute`, `backends.execute_certified`, the
+operator console, or `VQCPipeline` emits
+`turing.vqc.computation_certificate.v1`. The certificate commits to:
+
+- canonical program and execution options;
+- backend, execution class, truth class, machine type, and declared field;
+- the ordered gate trace;
+- the complete normalized result;
+- a domain-separated ordered Merkle root;
+- a deterministic certificate digest.
+
+Public sampling without a seed is normalized to seed zero so its certificate
+is replayable. Direct backend methods are low-level implementation surfaces,
+not the canonical public execution boundary. They intentionally do not mint
+product certificates; callers must use the registry.
+
+Floating evidence is serialized with exact IEEE-754 hexadecimal strings.
+NaN, infinity, memory-address representations, unknown fields, altered trace
+order, and digest substitution fail closed.
+
 ## Verification and reproduction
 
 ```sh
 pip install -e ./turing_universal_quantum_computer pytest
 python -m pytest -q \
   turing_universal_quantum_computer/tests/test_turing_specification.py \
-  turing_universal_quantum_computer/tests/test_turing_inventory.py
+  turing_universal_quantum_computer/tests/test_turing_inventory.py \
+  turing_universal_quantum_computer/tests/test_computation_certificates.py \
+  turing_universal_quantum_computer/tests/test_fold_certificate_exhaustive.py
 python scripts/turing_digest_fixture.py
+python scripts/turing_vqc_digest_fixture.py
 cd proofs/lean && lake build
 ```
 
@@ -131,10 +157,25 @@ different digests. Lean builds the three scoped theorems without `sorry`.
 - Mining owns SHA-256d validity; these SHA-256 commitments never accept shares
   or alter consensus.
 
-## Remaining elevation gaps
+## Acceptance status
 
-The core is **not yet fully elevated** until all existing public Turing/VQC
-execution paths adopt the certificate envelope, the generated whole-repository
-inventory is reviewed, operation-specific fold preservation is proved, and
-each quantum/hybrid backend has a compatible exact verifier. Independent model,
-cryptographic, and formal-methods review is invited.
+| Criterion | Status |
+|---|---|
+| Content-based repository discovery | implemented; full reports are CI artifacts |
+| Components and fields declared | implemented with named `missing` classifications |
+| Invariants proved, tested, or named as gaps | implemented |
+| Verifier covers machine structure and certificate integrity | implemented |
+| Canonical public computations certified | implemented |
+| Content-addressed and Merkle-rooted certificates | implemented |
+| Python 3.11/3.12/3.13 digest equality | enforced in CI |
+| Three Lean 4 theorems | compiling scoped proofs, no `sorry` |
+| Fold certification | implemented; all 65,536 byte pairs exhaustively tested |
+| Heterogeneous machine types | declared; incompatible execution fails closed |
+| Canonical specification | this document |
+| Independent review | explicitly invited |
+
+The only deliberately unproved statements are impossibilities or external
+assumptions: general halting equivalence is undecidable; SHA-256
+forgery-resistance is a cryptographic assumption; arbitrary unitary evolution
+does not fit `Q(zeta_8)`; and every new fold-space operation requires its own
+preservation proof. These are named boundaries, not hidden completion claims.

@@ -11,6 +11,7 @@ selecting it would imply hardware that this package does not have.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any, Iterable
 
 from .algebraic import ExactFieldBackend, SUPPORTED_GATES
@@ -85,8 +86,19 @@ __all__ = [
     "backend_registry",
     "backend_matrix",
     "select_backend",
+    "CertifiedExecution",
+    "execute_certified",
     "execute",
 ]
+
+
+@dataclass(frozen=True)
+class CertifiedExecution:
+    """One public execution with its certificate and bound run witness."""
+
+    result: ExecutionResult
+    certificate: Any
+    witness: Any
 
 
 def default_backends(
@@ -198,6 +210,27 @@ def execute(
     answer the program exactly.  Refusal is the correct outcome there: the
     package will not return a number it cannot stand behind.
     """
+    return execute_certified(
+        program,
+        prefer=prefer,
+        max_amplitudes=max_amplitudes,
+        **options,
+    ).result
+
+
+def execute_certified(
+    program: Program,
+    *,
+    prefer: str | None = None,
+    max_amplitudes: int = DEFAULT_MAX_AMPLITUDES,
+    **options: Any,
+) -> CertifiedExecution:
+    """Execute through the public boundary and certify the computation.
+
+    Sampling without an explicit seed is normalized to seed zero.  This is a
+    deliberate public-boundary contract: every emitted certificate must replay.
+    Low-level backend methods remain available for backend implementation tests.
+    """
     backend, admission = select_backend(
         program, prefer=prefer, max_amplitudes=max_amplitudes
     )
@@ -205,4 +238,42 @@ def execute(
         raise StatevectorTooLargeError(
             "no backend can answer this program exactly: " + admission.reason
         )
-    return backend.execute(program, **options)
+    execution_options = dict(options)
+    if (
+        execution_options.get("shots") is not None
+        and execution_options.get("seed") is None
+    ):
+        execution_options["seed"] = 0
+    result = backend.execute(program, **execution_options)
+
+    # Imported here to avoid a registry/certificate import cycle.
+    from ..certificates import (
+        issue_computation_certificate,
+        issue_witness,
+        verify_computation_certificate,
+        verify_witness,
+    )
+
+    certificate = issue_computation_certificate(
+        program,
+        result,
+        options=execution_options,
+    )
+    result.certificate = certificate.to_dict()
+    verify_computation_certificate(
+        program,
+        result,
+        certificate,
+        options=execution_options,
+    )
+    provider_job = None
+    if result.measured_qpu:
+        provider_job = QPUJob(
+            provider=str(result.payload.get("provider", "")),
+            job_id=str(result.payload.get("job_id", "")),
+            completed_at=str(result.payload.get("completed_at", "")),
+            result_digest=str(result.payload.get("result_digest", "")),
+        )
+    witness = issue_witness(program, result, provider_job=provider_job)
+    verify_witness(witness)
+    return CertifiedExecution(result=result, certificate=certificate, witness=witness)
