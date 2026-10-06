@@ -83,3 +83,6 @@ jobs:
       - uses: leanprover/lean-action@v1
         with:
           lake-package-directory: proofs/lean
+      - uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: turing_universal_quantum_computer/formal

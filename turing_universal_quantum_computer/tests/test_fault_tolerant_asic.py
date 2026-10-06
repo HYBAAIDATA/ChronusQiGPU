@@ -94,8 +94,15 @@ class QuantumAsicModelTests(unittest.TestCase):
         self.assertEqual(room.network_bits_s, 100e9)
         cryo = CryoCMOS()
         self.assertEqual(cryo.tiles(10_000), 100)
-        self.assertAlmostEqual(cryo.power_w(10_000), 0.1)
-        self.assertTrue(cryo.supports(10_000))
+        # The current-reference profile is 10 mW/tile: 100 tiles draw 1.0 W,
+        # which a single 4 K stage at 20% reserve (0.8 W) cannot carry.
+        self.assertAlmostEqual(cryo.power_w(10_000), 1.0)
+        self.assertFalse(cryo.supports(10_000))
+        # The labelled ten-year target profile (1 mW/tile) does fit — the
+        # model distinguishes declared targets from current measurements.
+        target = CryoCMOS.ten_year_target()
+        self.assertAlmostEqual(target.power_w(10_000), 0.1)
+        self.assertTrue(target.supports(10_000))
         self.assertAlmostEqual(RSFQ().power_w(1000), 10e-6)
 
     def test_application_catalog_is_modelled_not_executed(self):

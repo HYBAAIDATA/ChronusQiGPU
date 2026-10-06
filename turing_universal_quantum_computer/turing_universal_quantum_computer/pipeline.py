@@ -103,6 +103,7 @@ class VQCRequest:
     differential: bool = True
     custody: bool = False
     replay: bool = False
+    custody_dir: str | None = None
     notes: str = ""
 
 
@@ -431,12 +432,18 @@ class VQCPipeline:
         # -- stage 10: custody -------------------------------------------------
         custody_state = SKIPPED
         if request.custody:
-            custody_state, custody_records = self._custody(program, result, witness)
+            custody_state, custody_records = self._custody(
+                request, program, result, witness
+            )
             if custody_state in (EvidenceState.UNAVAILABLE.value, EvidenceState.FAIL.value):
                 refusals.append(f"custody: requested but {custody_state}")
         record(
             "custody", custody_state,
-            "committed program/result/witness envelopes to THESEUS"
+            (
+                "committed program/result/witness envelopes to durable THESEUS"
+                if request.custody_dir
+                else "committed program/result/witness envelopes to THESEUS"
+            )
             if custody_state == EvidenceState.PASS.value
             else (
                 "custody not requested"
@@ -444,6 +451,7 @@ class VQCPipeline:
                 else "custody unavailable or failed"
             ),
             receipts=len(custody_records),
+            durable_dir=request.custody_dir,
         )
 
         # -- stage 11: replay ---------------------------------------------------
@@ -453,7 +461,7 @@ class VQCPipeline:
                 replay_state = EvidenceState.UNAVAILABLE.value
                 refusals.append("replay: requested but custody did not commit")
             else:
-                replay_state, replay_records = self._replay(custody_records)
+                replay_state, replay_records = self._replay(request, custody_records)
                 if replay_state != EvidenceState.PASS.value:
                     refusals.append(f"replay: {replay_state}")
         record(
@@ -475,14 +483,18 @@ class VQCPipeline:
     # -- custody / replay helpers ----------------------------------------------
 
     def _custody(
-        self, program: Program, result: ExecutionResult, witness: RunWitness | None
+        self,
+        request: VQCRequest,
+        program: Program,
+        result: ExecutionResult,
+        witness: RunWitness | None,
     ) -> tuple[str, list[dict[str, Any]]]:
         try:
             from .custody import open_custody
         except Exception:
             return EvidenceState.UNAVAILABLE.value, []
         try:
-            custody = open_custody()
+            custody = open_custody(durable_dir=request.custody_dir)
             self._last_custody = custody
             records = [
                 custody.commit("program", program.to_dict(), meta={"stage": "request"}).as_dict(),
@@ -510,15 +522,27 @@ class VQCPipeline:
         except Exception as exc:
             return EvidenceState.FAIL.value, [{"error": str(exc)}]
 
-    def _replay(self, custody_records: list[dict[str, Any]]) -> tuple[str, list[dict[str, Any]]]:
-        # Replay must run against the same custody instance that holds the
-        # records; the pipeline keeps its custody adapter for the report's
-        # lifetime via the stored adapter reference.
-        custody = getattr(self, "_last_custody", None)
-        if custody is None:
+    def _replay(
+        self, request: VQCRequest, custody_records: list[dict[str, Any]]
+    ) -> tuple[str, list[dict[str, Any]]]:
+        committed = getattr(self, "_last_custody", None)
+        if committed is None:
             return EvidenceState.FAIL.value, [
                 {"error": "no live custody adapter for replay"}
             ]
+        custody = committed
+        if request.custody_dir is not None:
+            # With durable custody bound, replay re-opens the store fresh:
+            # the re-attached adapter holds no live records, so every
+            # envelope is re-parsed from the on-disk index and re-admitted
+            # from the durable block store — restart-grade evidence, not
+            # an in-process trust of live objects.
+            try:
+                custody = committed.reopen()
+            except Exception as exc:
+                return EvidenceState.FAIL.value, [
+                    {"error": f"durable custody re-attach failed: {exc}"}
+                ]
         reports = [custody.replay(rec["uid"]).as_dict() for rec in custody_records]
         ok = all(r["state"] == "PASS" for r in reports)
         return (EvidenceState.PASS.value if ok else EvidenceState.FAIL.value), reports

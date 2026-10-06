@@ -271,7 +271,12 @@ def test_pipeline_full_pass_with_custody_and_replay():
         assert states[stage] == "PASS", (stage, states)
     assert states["chronus_lane"] == "GATED"
     assert report.witness is not None
-    assert len(report.custody) == 3  # program + result + witness
+    assert {r["kind"] for r in report.custody} == {
+        "program",
+        "result",
+        "witness",
+        "certificate",
+    }
     assert all(r["state"] == "PASS" for r in report.replay)
 
 

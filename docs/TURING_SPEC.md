@@ -144,10 +144,13 @@ python -m pytest -q \
 python scripts/turing_digest_fixture.py
 python scripts/turing_vqc_digest_fixture.py
 cd proofs/lean && lake build
+cd turing_universal_quantum_computer/formal && lake build
 ```
 
 CI repeats the Python tests and fixture under 3.11, 3.12, and 3.13 and rejects
-different digests. Lean builds the three scoped theorems without `sorry`.
+different digests. Lean builds both scoped kernels — `proofs/lean` (the
+machine theorems) and `turing_universal_quantum_computer/formal` (the
+`PureQuantumMath` kernel) — without `sorry` or axioms.
 
 ## Package boundaries
 
