@@ -1,5 +1,5 @@
 # Registry <-> handler parity: three directions (api_registry.yaml vs chronus/mla1517_platform/python/control_api.py)
-# executed: 2026-10-06T17:51:38Z @ 7912c392f0e8e5cb4c7a92dcd5c43d11e436c1c5
+# executed: 2026-10-06T17:51:38Z @ 11d4434c9b8060d099e185d88bbb78d95a3a6523
 
 declared concrete HTTP routes : 58
 implemented HTTP routes       : 58
