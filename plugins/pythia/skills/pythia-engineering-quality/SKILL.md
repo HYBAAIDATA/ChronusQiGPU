@@ -13,11 +13,10 @@ triggers:
 
 # Engineering Quality
 
-Record use first:
+## Session activation
 
-```text
-python plugins/pythia/scripts/plugin_status.py --record-skill pythia-engineering-quality --write-receipt
-```
+This aptitude is invoked automatically at SessionStart and remains active for the entire Devin session. Do not treat it as an optional per-task capability.
+
 
 Evaluate the change across independent channels. Do not collapse them into one
 optimistic score.

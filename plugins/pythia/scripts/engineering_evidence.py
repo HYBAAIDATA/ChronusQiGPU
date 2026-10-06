@@ -175,12 +175,18 @@ def build_pack(task_id: str, path: Path | None = None) -> dict[str, Any]:
 
     verification = [e for e in selected if e.get("event_type") == "VERIFICATION"]
     runtime_status = build_status()
-    ledger_skills = {
-        str(e.get("skill"))
-        for e in selected
-        if e.get("skill") and e.get("event_type") == "SKILL_INVOKED"
+    session_aptitude = {
+        "augmentation": runtime_status.get("augmentation", "UNAVAILABLE"),
+        "aptitude_digest_sha256": runtime_status.get(
+            "aptitude_digest_sha256",
+            "UNAVAILABLE",
+        ),
+        "mandatory_skills_complete": bool(
+            runtime_status.get("mandatory_skills_complete")
+        ),
+        "mandatory_skills": list(runtime_status.get("mandatory_skills") or []),
+        "skills_invoked": list(runtime_status.get("skills_invoked") or []),
     }
-    skills = sorted(ledger_skills | set(runtime_status.get("skills_invoked") or []))
     completion = [e for e in selected if e.get("event_type") == "COMPLETION_GATE"]
     workspace_shas = [
         str(e.get("workspace_head_sha"))
@@ -202,7 +208,7 @@ def build_pack(task_id: str, path: Path | None = None) -> dict[str, Any]:
         "plugin_source_shas": sorted(plugin_shas),
         "workspace_start_sha": workspace_shas[0] if workspace_shas else "UNAVAILABLE",
         "workspace_end_sha": workspace_shas[-1] if workspace_shas else "UNAVAILABLE",
-        "skills_invoked": skills,
+        "session_aptitude": session_aptitude,
         "event_count": len(selected),
         "event_hashes": [e["event_sha256"] for e in selected],
         "verification": {
@@ -213,8 +219,9 @@ def build_pack(task_id: str, path: Path | None = None) -> dict[str, Any]:
         "completion_gate": completion[-1].get("payload") if completion else None,
         "ledger_tip_sha256": events[-1]["event_sha256"] if events else "GENESIS",
         "claim_boundary": (
-            "This pack proves observed plugin/task events and recorded verification "
-            "outcomes. It does not by itself establish causal performance uplift."
+            "This pack proves the recorded task outcome and snapshots the session-"
+            "wide EUCLID aptitude activation. Skills are not task-owned. The pack "
+            "does not by itself establish causal performance uplift."
         ),
     }
     pack["pack_sha256"] = _sha256(_canonical(pack))

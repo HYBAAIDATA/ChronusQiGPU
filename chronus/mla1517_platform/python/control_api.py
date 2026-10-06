@@ -61,6 +61,8 @@ _TOE_SCHEMA_VERSION = "chronus.mla1517.toe_collapse/1"
 _TOE_MAX_BODY_BYTES = 4 * 1024 * 1024
 _STATUS_BACKEND = "Python/C/OpenCL"
 _CANONICAL_DEVICE = "canonical-python-backend"
+# sane X-Request-Id/X-Correlation-Id = 1–128 chars, ASCII-alphanumeric
+# leading character, then alphanumerics or any of . _ : @ - ; nothing else.
 _REQUEST_ID_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:@-]{0,127}")
 PRIVILEGED_MEDIATION_INSTALLED = True
 _PRIVILEGED_PREFIXES = (

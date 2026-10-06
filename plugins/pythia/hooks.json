@@ -5,8 +5,8 @@
       "hooks": [
         {
           "type": "command",
-          "command": "python plugins/pythia/scripts/session_start.py",
-          "timeout": 10
+          "command": "python \"${DEVIN_PLUGIN_ROOT:-plugins/pythia}/scripts/session_start.py\"",
+          "timeout": 30
         }
       ]
     }
@@ -17,8 +17,8 @@
       "hooks": [
         {
           "type": "command",
-          "command": "python plugins/pythia/scripts/post_compaction.py",
-          "timeout": 10
+          "command": "python \"${DEVIN_PLUGIN_ROOT:-plugins/pythia}/scripts/post_compaction.py\"",
+          "timeout": 30
         }
       ]
     }
@@ -29,7 +29,7 @@
       "hooks": [
         {
           "type": "command",
-          "command": "python plugins/pythia/scripts/stop_gate.py",
+          "command": "python \"${DEVIN_PLUGIN_ROOT:-plugins/pythia}/scripts/stop_gate.py\"",
           "timeout": 10
         }
       ]

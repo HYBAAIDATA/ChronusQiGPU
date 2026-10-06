@@ -6,6 +6,6 @@ tests/fixtures/** -text
 # (Intelligence/skill_graft.py): EOL translation would reject every graft.
 Intelligence/skills/** -text
 
-# Training corpus bytes are digest-bound in real_nonces_200.manifest.json —
-# EOL translation on Windows checkouts breaks the integrity gate.
+# PYTHIA structural corpus is verified by manifest sha256 at store bootstrap —
+# EOL translation corrupts the recorded digest binding.
 artifacts/pythia_training/** -text

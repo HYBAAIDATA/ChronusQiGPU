@@ -228,6 +228,28 @@ class ProductionExecutionRouter(ExecutionRouter):
         )
 
 
+def chronus_fabric_state_for(execution_hasher: Any) -> dict[str, Any]:
+    """Derive the Chronus search-fabric state bound to a promoted hasher."""
+    backend_raw = str(getattr(execution_hasher, "backend", "") or "")
+    topology_id = getattr(execution_hasher, "topology_id", None)
+    return {
+        "schema": "pythia.chronus_search_fabric/2",
+        "canonical_topology": "chronus_h4_600_11d",
+        "logical_vertices": 600,
+        "execution_backend": backend_raw or "Unavailable",
+        "state": "ACTIVE" if topology_id == "chronus_h4_600_11d" else "NOT_BOUND",
+        "physical_fanout": topology_id == "chronus_h4_600_11d",
+        "reason": (
+            None
+            if topology_id == "chronus_h4_600_11d"
+            else "physical H4/600 fan-out requires the joined super_asic Chronus lane"
+        ),
+        "hashrate_claim": "measured completed physical SHA256d work / elapsed time only",
+        "target_hashrate_hs": 10_000_000_000_000_000_000,
+        "target_measured": False,
+    }
+
+
 class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
     """Canonical production composition root for PYTHIA's agentic mining workforce."""
 
@@ -249,24 +271,9 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
             self._execution_hasher_factory = (
                 lambda raw_factory=raw_factory: promote_execution_hasher(raw_factory())
             )
-        backend_raw = str(getattr(self.execution_hasher, "backend", "") or "")
-        topology_id = getattr(self.execution_hasher, "topology_id", None)
-        self._chronus_fabric_state: dict[str, Any] = {
-            "schema": "pythia.chronus_search_fabric/2",
-            "canonical_topology": "chronus_h4_600_11d",
-            "logical_vertices": 600,
-            "execution_backend": backend_raw or "Unavailable",
-            "state": "ACTIVE" if topology_id == "chronus_h4_600_11d" else "NOT_BOUND",
-            "physical_fanout": topology_id == "chronus_h4_600_11d",
-            "reason": (
-                None
-                if topology_id == "chronus_h4_600_11d"
-                else "physical H4/600 fan-out requires the joined super_asic Chronus lane"
-            ),
-            "hashrate_claim": "measured completed physical SHA256d work / elapsed time only",
-            "target_hashrate_hs": 10_000_000_000_000_000_000,
-            "target_measured": False,
-        }
+        self._chronus_fabric_state: dict[str, Any] = chronus_fabric_state_for(
+            self.execution_hasher
+        )
         self.pythia_authority = pythia_authority or PythiaAgenticMiningAuthority()
         self.pythia_authority.bind_backend_registry(self.backend_registry)
 

@@ -1,16 +1,17 @@
 {
   "name": "pythia",
-  "version": "0.3.0",
-  "description": "Private repo-local PYTHIA engineering-intelligence augmentation for Devin: semantic repo context, disciplined debugging/TDD, bounded agent delegation, quality and promotion gates, deploy/rollback awareness, checkpoint continuity, and tamper-evident engineering evidence.",
+  "version": "0.4.1",
+  "description": "Private Devin augmentation plugin delivering mandatory session-wide EUCLID aptitude: long-context continuity, landscape assessment, counterfactual reasoning, systematic debugging, TDD, review rigor, codebase healing, bounded delegation, quality gates, evidence/proof, promotion discipline, deploy/rollback awareness, and tamper-evident outcome evidence.",
   "author": { "name": "PYTHIA Contributors" },
   "license": "UNLICENSED",
   "keywords": [
     "devin",
     "plugin",
-    "pythia",
+    "euclid",
+    "aptitude",
     "engineering-intelligence",
-    "memory",
-    "ontology",
+    "context",
+    "reasoning",
     "quality",
     "evidence",
     "private"

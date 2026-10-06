@@ -1,0 +1,152 @@
+{
+  "claims": {
+    "custody_verified": {
+      "evidence": "TheseusFileCustody.verify() per row; tamper test",
+      "status": "IMPLEMENTED"
+    },
+    "defects_1_to_6_fixed": {
+      "evidence": "tests/test_m3_file_registry.py + adversarial suite",
+      "status": "IMPLEMENTED"
+    },
+    "ovid_exactness": {
+      "evidence": "OvidTransformPlane.fold_into + equivalence verdict",
+      "status": "IMPLEMENTED"
+    },
+    "production_wiring": {
+      "evidence": "MiningStorageRecorder on CausalLedger; voyage test drives the real coordinator to a literal ACCEPTED outcome",
+      "status": "IMPLEMENTED"
+    },
+    "reconciliation": {
+      "evidence": "reconcile_files returns 0 unresolved on clean plane",
+      "status": "IMPLEMENTED"
+    },
+    "replay": {
+      "evidence": "replay_lineage re-hashes chain post-restart",
+      "status": "IMPLEMENTED"
+    }
+  },
+  "commands": {
+    "pytest_m3": {
+      "cmd": [
+        "C:\\Users\\Administrator\\repos\\PhiMiner\\.venv\\Scripts\\python.exe",
+        "-m",
+        "pytest",
+        "tests/test_m3_file_registry.py",
+        "tests/test_m3_adversarial.py",
+        "tests/test_m3_storage_voyage.py",
+        "tests/test_m3_bootstrap_adapters.py",
+        "-q",
+        "--tb=short"
+      ],
+      "exit_code": 0,
+      "seconds": 16.8,
+      "tail": [
+        "..............................                                           [100%]",
+        "30 passed in 16.32s"
+      ]
+    },
+    "storage_registry_check": {
+      "cmd": [
+        "C:\\Users\\Administrator\\repos\\PhiMiner\\.venv\\Scripts\\python.exe",
+        "scripts/check_storage_registry.py",
+        "governance/storage_registry.yaml"
+      ],
+      "exit_code": 0,
+      "seconds": 0.1,
+      "tail": [
+        "{",
+        "  \"entries\": 21,",
+        "  \"errors\": [],",
+        "  \"passed\": true,",
+        "  \"schema\": \"pythia.storage-registry/v1\"",
+        "}"
+      ]
+    }
+  },
+  "commit_sha": "60d9c466e7676fa0aa1497e2493d5b717623209f",
+  "environment": {
+    "ci": "CI_UNAVAILABLE",
+    "platform": "win32",
+    "python": "C:\\Users\\Administrator\\repos\\PhiMiner\\.venv\\Scripts\\python.exe"
+  },
+  "evidence_class": "LOCAL_TEST_PASSED",
+  "exercised_plane": {
+    "custody_verified": true,
+    "file_object_id": "fo_9fedbd0764871cfd254e502f2529ec93",
+    "file_version_id": "fv_a6238b4fdab11f832d387399d730966e",
+    "ovid_equivalent": true,
+    "ovid_exactness": "EXACT",
+    "ovid_lineage": "ovt_c21e405ded964791076fa8f70f3477c2",
+    "reconcile": {
+      "custody_missing": [],
+      "domain_link_missing": [],
+      "generated_at": "2026-10-06T16:51:05.185702Z",
+      "hash_mismatches": [],
+      "healthy": [
+        "fv_40446d5e78857bd30186dbab9bdebf84",
+        "fv_a6238b4fdab11f832d387399d730966e"
+      ],
+      "missing_blobs": [],
+      "orphan_files": [],
+      "orphan_records": [],
+      "passed": true,
+      "retention_violations": [],
+      "root": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\m3pack_vfv70_5u\\storage",
+      "schema": "hyba.file-reconciliation/v1",
+      "tenant_id": "tenant_30cf85290ecc470285baa6f6568beecd",
+      "tenant_mismatches": [],
+      "transform_mismatches": [],
+      "unresolved": [],
+      "version_conflicts": []
+    },
+    "reconcile_passed": true,
+    "replay_digest_ok": true,
+    "stats": {
+      "custody_checked": 2,
+      "custody_unverified": 0,
+      "events": 11,
+      "file_objects_by_class": {
+        "durable_evidence": 1,
+        "transform": 1
+      },
+      "file_versions_by_status": {
+        "ACTIVE": 2
+      },
+      "intents_by_state": {
+        "COMMITTED": 1
+      },
+      "links": 2,
+      "mining_records_by_kind": {
+        "job": 1
+      },
+      "quota_max_blob_bytes": 100000000,
+      "quota_max_records": 1000000,
+      "quota_used_blob_bytes": 155,
+      "quota_used_records": 2,
+      "uncustodied_versions": 0
+    },
+    "tenant_id": "tenant_30cf85290ecc470285baa6f6568beecd"
+  },
+  "file_digests": {
+    "chronus/mla1517/mining/causal.py": "536dafc96d0d8d805279ca48b1e3cc73b1d6c8c7c143e16280293041943a6a6e",
+    "chronus/mla1517/mining/storage_recorder.py": "40debef1ed7a37758687c67c49c65534108c619433505dd2f17b4e6f91fad4d0",
+    "chronus/mla1517_platform/python/mining_runtime.py": "b25e5694ead34fb8b6ca7f7ccec0aa02aa199951e319c59b0e912c97bc992a6e",
+    "docs/M3_STORAGE_DATABASE_CLOSURE.md": "00e6f3db5f44e3266cdcb9a661acbe068924e35517145d7a9b080c69766bd723",
+    "governance/storage_registry.yaml": "a6302644088db9ba5529b32eb99417471cbf66e6b8ea680d3337229ec31bbbce",
+    "hyba_db/file_registry.py": "e7e863be4710a326ab348620d4ec31ce17179d4c9fe659b387651f8480f1518e",
+    "hyba_db/models.py": "7a857fa34e20818b7c3075d053620d593b1fb922858932e74f1f7b43c5d7536b",
+    "hyba_db/module_adapter.py": "0474db5dc99512dc659a144b501eb64f37a2fecca7c5d36cef13acfe53c29e93",
+    "hyba_db/ovid_transform.py": "81ee4be25d612a9974cb8af5bd9345d2e115a86dded4a53c0e364be4c9bd1fb8",
+    "hyba_db/store.py": "27a276263b840fccb2ae7dd60ee5246f247136c16c1cd666205d0308ebd8ae42",
+    "hyba_db/theseus_custody.py": "2ad18f57336f1f2cb640f205f36d67c0cb07b1cb6167beb290e221849f3d7126",
+    "scripts/check_storage_registry.py": "f3aa87044c184fa966d60928835b56aeb61439bb94028cd39add367c77e517d9",
+    "scripts/reconcile_storage.py": "1daf5b6c0569cdb802627659cfdf68ae9213df9eaed73791751d4cfa3012322d",
+    "scripts/storage_status.py": "ddc7b78967c6c2ebc2caf73aa9d3d5da71c9cdbd5cbf31c892177cd26d862789",
+    "tests/test_m3_adversarial.py": "7521cf617c22c82d046b0007c1712e6716d88d5169e049ecd4ce1d740ac14050",
+    "tests/test_m3_bootstrap_adapters.py": "c6fd33879faeb71d3778ce7995fe24b7efefef30b6fbf582a696c97de56ae22a",
+    "tests/test_m3_file_registry.py": "16de0a7624d9d7c4b85f7047ca0ea4139ebccf2c924a9b72deb7e58be010f1f1",
+    "tests/test_m3_storage_voyage.py": "99873437817d607f72a65c0c295391b14af1628b5a5342cdf4359088bfc68b64"
+  },
+  "generated_at": "2026-10-06T16:51:05Z",
+  "schema": "pythia.m3-storage-evidence-pack/1"
+}

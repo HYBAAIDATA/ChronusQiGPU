@@ -1,0 +1,524 @@
+# GENERATED — do not edit.
+# sources: governance/service_constitution.yaml + governance/api_registry.yaml
+# regenerate: python governance/render_service_constitution.py
+schema: pythia.dependency_graph/1
+repository: QuantumPhi2/PhiMiner
+provenance:
+  generated_by: governance/render_service_constitution.py
+  source: governance/service_constitution.yaml
+reliability_tiers:
+  R0: Constitutional
+  R1: Mining-critical
+  R2: Specialist computation
+  R3: Recovery / optimisation
+  R4: Experience / observability
+external_authorities:
+  POOL: external share-acceptance authority (stratum endpoint)
+  OPERATOR: human operator principal (operator-console credentials)
+  FILESYSTEM: OS filesystem boundary (paths, permissions, atomicity)
+  REMOTE_DEVICE: remote GPU host at the far end of remote_opencl_v2
+nodes:
+  al_haras.guardian:
+    owner: AL_HARAS
+    criticality: R0
+    interface: INTERNAL_PYTHON
+  al_haras.security.evaluate:
+    owner: AL_HARAS
+    criticality: R0
+    interface: HTTP_PRIVILEGED
+  al_haras.security.status:
+    owner: AL_HARAS
+    criticality: R0
+    interface: HTTP_PRIVILEGED
+  al_haras.security.subscribe:
+    owner: AL_HARAS
+    criticality: R0
+    interface: HTTP_PRIVILEGED
+  chronus.cli.remote_agent:
+    owner: CHRONUS
+    criticality: R1
+    interface: CLI
+  chronus.execution:
+    owner: CHRONUS
+    criticality: R1
+    interface: INTERNAL_PYTHON
+  chronus.remote_opencl_v2:
+    owner: CHRONUS
+    criticality: R1
+    interface: WIRE_PROTOCOL
+  euclid.orchestration:
+    owner: EUCLID
+    criticality: R2
+    interface: INTERNAL_PYTHON
+  hyba_db.store:
+    owner: HYBA_DB
+    criticality: R2
+    interface: INTERNAL_PYTHON
+  kellogg.tensor.capabilities:
+    owner: KELLOGG
+    criticality: R2
+    interface: HTTP_PRIVILEGED
+  kellogg.tensor.execute:
+    owner: KELLOGG
+    criticality: R2
+    interface: HTTP_PRIVILEGED
+  kellogg.tensor.runtime:
+    owner: KELLOGG
+    criticality: R2
+    interface: INTERNAL_PYTHON
+  legacy.api_health:
+    owner: PYTHIA
+    criticality: R4
+    interface: LEGACY
+  namespace.admin:
+    owner: AL_HARAS
+    criticality: R0
+    interface: RESERVED_NAMESPACE
+  namespace.assembly:
+    owner: AL_HARAS
+    criticality: R0
+    interface: RESERVED_NAMESPACE
+  namespace.policy:
+    owner: AL_HARAS
+    criticality: R0
+    interface: RESERVED_NAMESPACE
+  namespace.quantum:
+    owner: TURING
+    criticality: R0
+    interface: RESERVED_NAMESPACE
+  namespace.recovery:
+    owner: AL_HARAS
+    criticality: R0
+    interface: RESERVED_NAMESPACE
+  namespace.scale:
+    owner: AL_HARAS
+    criticality: R0
+    interface: RESERVED_NAMESPACE
+  namespace.worker:
+    owner: AL_HARAS
+    criticality: R0
+    interface: RESERVED_NAMESPACE
+  ovid.transform:
+    owner: OVID
+    criticality: R2
+    interface: INTERNAL_PYTHON
+  pythia.agentic:
+    owner: EUCLID
+    criticality: R2
+    interface: HTTP_OPERATOR
+  pythia.audit.tail:
+    owner: PYTHIA
+    criticality: R4
+    interface: HTTP_OPERATOR
+  pythia.boot_audit:
+    owner: PYTHIA
+    criticality: R4
+    interface: FILE/ARTIFACT_CONTRACT
+  pythia.campaign:
+    owner: EUCLID
+    criticality: R2
+    interface: HTTP_OPERATOR
+  pythia.cli.api:
+    owner: PYTHIA
+    criticality: R1
+    interface: CLI
+  pythia.cli.miner:
+    owner: PYTHIA
+    criticality: R1
+    interface: CLI
+  pythia.config.read:
+    owner: PYTHIA
+    criticality: R4
+    interface: HTTP_OPERATOR
+  pythia.config.update:
+    owner: PYTHIA
+    criticality: R4
+    interface: HTTP_OPERATOR
+  pythia.gpu:
+    owner: CHRONUS
+    criticality: R4
+    interface: HTTP_OPERATOR
+  pythia.hardware.status:
+    owner: CHRONUS
+    criticality: R4
+    interface: HTTP_OPERATOR
+  pythia.health:
+    owner: PYTHIA
+    criticality: R4
+    interface: HTTP_PUBLIC
+  pythia.intelligence.autonomous:
+    owner: EUCLID
+    criticality: R2
+    interface: HTTP_OPERATOR
+  pythia.intelligence.cognition_solve:
+    owner: EUCLID
+    criticality: R2
+    interface: HTTP_OPERATOR
+  pythia.intelligence.engineer:
+    owner: EUCLID
+    criticality: R2
+    interface: HTTP_OPERATOR
+  pythia.intelligence.maintenance:
+    owner: EUCLID
+    criticality: R2
+    interface: HTTP_OPERATOR
+  pythia.intelligence.selftest:
+    owner: EUCLID
+    criticality: R2
+    interface: HTTP_OPERATOR
+  pythia.intelligence.status:
+    owner: EUCLID
+    criticality: R2
+    interface: HTTP_OPERATOR
+  pythia.knowledge:
+    owner: EUCLID
+    criticality: R2
+    interface: HTTP_OPERATOR
+  pythia.metrics:
+    owner: PYTHIA
+    criticality: R4
+    interface: HTTP_PUBLIC
+  pythia.mining.control:
+    owner: PYTHIA
+    criticality: R1
+    interface: HTTP_PRIVILEGED
+  pythia.mining.evidence:
+    owner: PYTHIA
+    criticality: R1
+    interface: HTTP_PRIVILEGED
+  pythia.readiness:
+    owner: PYTHIA
+    criticality: R4
+    interface: HTTP_PUBLIC
+  pythia.ready_to_mine:
+    owner: PYTHIA
+    criticality: R4
+    interface: HTTP_PUBLIC
+  pythia.runtime_config_file:
+    owner: PYTHIA
+    criticality: R4
+    interface: FILE/ARTIFACT_CONTRACT
+  pythia.static_spa:
+    owner: PYTHIA
+    criticality: R4
+    interface: HTTP_PUBLIC
+  pythia.status:
+    owner: PYTHIA
+    criticality: R4
+    interface: HTTP_OPERATOR
+  pythia.stratum.status:
+    owner: PYTHIA
+    criticality: R1
+    interface: HTTP_OPERATOR
+  pythia.system.map:
+    owner: PYTHIA
+    criticality: R4
+    interface: HTTP_OPERATOR
+  pythia.system.verify.read:
+    owner: PYTHIA
+    criticality: R4
+    interface: HTTP_OPERATOR
+  pythia.system.verify.start:
+    owner: PYTHIA
+    criticality: R4
+    interface: HTTP_OPERATOR
+  pythia.telemetry:
+    owner: PYTHIA
+    criticality: R4
+    interface: HTTP_OPERATOR
+  pythia.telemetry.stream:
+    owner: PYTHIA
+    criticality: R4
+    interface: EVENT_STREAM
+  pythia.worker_heartbeat:
+    owner: PYTHIA
+    criticality: R4
+    interface: FILE/ARTIFACT_CONTRACT
+  salamander.control_plane:
+    owner: SALAMANDER
+    criticality: R3
+    interface: INTERNAL_PYTHON
+  salamander.fault:
+    owner: SALAMANDER
+    criticality: R3
+    interface: HTTP_OPERATOR
+  stratum.v1:
+    owner: POOL
+    criticality: R1
+    interface: WIRE_PROTOCOL
+  theseus.custody:
+    owner: THESEUS
+    criticality: R0
+    interface: INTERNAL_PYTHON
+  toe.collapse:
+    owner: EUCLID
+    criticality: R2
+    interface: HTTP_PRIVILEGED
+  turing.vqc_pipeline:
+    owner: TURING
+    criticality: R2
+    interface: INTERNAL_PYTHON
+edges:
+- from: al_haras.security.evaluate
+  to: al_haras.guardian
+  kind: api
+- from: al_haras.security.status
+  to: al_haras.guardian
+  kind: api
+- from: al_haras.security.subscribe
+  to: al_haras.guardian
+  kind: api
+- from: chronus.cli.remote_agent
+  to: chronus.remote_opencl_v2
+  kind: api
+- from: chronus.cli.remote_agent
+  to: REMOTE_DEVICE
+  kind: external
+- from: chronus.execution
+  to: theseus.custody
+  kind: api
+- from: chronus.remote_opencl_v2
+  to: REMOTE_DEVICE
+  kind: external
+- from: euclid.orchestration
+  to: al_haras.guardian
+  kind: api
+- from: euclid.orchestration
+  to: turing.vqc_pipeline
+  kind: api
+- from: euclid.orchestration
+  to: chronus.execution
+  kind: api
+- from: euclid.orchestration
+  to: ovid.transform
+  kind: api
+- from: euclid.orchestration
+  to: theseus.custody
+  kind: api
+- from: hyba_db.store
+  to: theseus.custody
+  kind: api
+- from: kellogg.tensor.capabilities
+  to: al_haras.guardian
+  kind: api
+- from: kellogg.tensor.capabilities
+  to: kellogg.tensor.runtime
+  kind: api
+- from: kellogg.tensor.execute
+  to: al_haras.guardian
+  kind: api
+- from: kellogg.tensor.execute
+  to: kellogg.tensor.runtime
+  kind: api
+- from: kellogg.tensor.execute
+  to: theseus.custody
+  kind: api
+- from: kellogg.tensor.runtime
+  to: theseus.custody
+  kind: api
+- from: legacy.api_health
+  to: pythia.health
+  kind: api
+- from: namespace.admin
+  to: al_haras.guardian
+  kind: api
+- from: namespace.assembly
+  to: al_haras.guardian
+  kind: api
+- from: namespace.policy
+  to: al_haras.guardian
+  kind: api
+- from: namespace.quantum
+  to: al_haras.guardian
+  kind: api
+- from: namespace.recovery
+  to: al_haras.guardian
+  kind: api
+- from: namespace.scale
+  to: al_haras.guardian
+  kind: api
+- from: namespace.worker
+  to: al_haras.guardian
+  kind: api
+- from: ovid.transform
+  to: theseus.custody
+  kind: api
+- from: pythia.agentic
+  to: euclid.orchestration
+  kind: api
+- from: pythia.agentic
+  to: chronus.execution
+  kind: api
+- from: pythia.agentic
+  to: pythia.boot_audit
+  kind: api
+- from: pythia.audit.tail
+  to: pythia.boot_audit
+  kind: api
+- from: pythia.boot_audit
+  to: FILESYSTEM
+  kind: external
+- from: pythia.campaign
+  to: euclid.orchestration
+  kind: api
+- from: pythia.cli.api
+  to: pythia.runtime_config_file
+  kind: api
+- from: pythia.cli.api
+  to: pythia.boot_audit
+  kind: api
+- from: pythia.cli.api
+  to: pythia.worker_heartbeat
+  kind: api
+- from: pythia.cli.miner
+  to: stratum.v1
+  kind: api
+- from: pythia.cli.miner
+  to: chronus.execution
+  kind: api
+- from: pythia.cli.miner
+  to: pythia.boot_audit
+  kind: api
+- from: pythia.config.read
+  to: pythia.runtime_config_file
+  kind: api
+- from: pythia.config.update
+  to: pythia.runtime_config_file
+  kind: api
+- from: pythia.config.update
+  to: pythia.boot_audit
+  kind: api
+- from: pythia.gpu
+  to: chronus.execution
+  kind: api
+- from: pythia.hardware.status
+  to: chronus.execution
+  kind: api
+- from: pythia.intelligence.autonomous
+  to: euclid.orchestration
+  kind: api
+- from: pythia.intelligence.cognition_solve
+  to: euclid.orchestration
+  kind: api
+- from: pythia.intelligence.engineer
+  to: euclid.orchestration
+  kind: api
+- from: pythia.intelligence.maintenance
+  to: euclid.orchestration
+  kind: api
+- from: pythia.intelligence.selftest
+  to: euclid.orchestration
+  kind: api
+- from: pythia.intelligence.status
+  to: euclid.orchestration
+  kind: api
+- from: pythia.knowledge
+  to: euclid.orchestration
+  kind: api
+- from: pythia.metrics
+  to: pythia.worker_heartbeat
+  kind: api
+- from: pythia.mining.control
+  to: al_haras.guardian
+  kind: api
+- from: pythia.mining.control
+  to: chronus.execution
+  kind: api
+- from: pythia.mining.control
+  to: stratum.v1
+  kind: api
+- from: pythia.mining.control
+  to: pythia.boot_audit
+  kind: api
+- from: pythia.mining.evidence
+  to: al_haras.guardian
+  kind: api
+- from: pythia.mining.evidence
+  to: pythia.worker_heartbeat
+  kind: api
+- from: pythia.readiness
+  to: pythia.boot_audit
+  kind: api
+- from: pythia.readiness
+  to: pythia.worker_heartbeat
+  kind: api
+- from: pythia.readiness
+  to: al_haras.guardian
+  kind: api
+- from: pythia.ready_to_mine
+  to: stratum.v1
+  kind: api
+- from: pythia.ready_to_mine
+  to: pythia.worker_heartbeat
+  kind: api
+- from: pythia.ready_to_mine
+  to: chronus.execution
+  kind: api
+- from: pythia.runtime_config_file
+  to: FILESYSTEM
+  kind: external
+- from: pythia.status
+  to: chronus.execution
+  kind: api
+- from: pythia.status
+  to: stratum.v1
+  kind: api
+- from: pythia.status
+  to: pythia.worker_heartbeat
+  kind: api
+- from: pythia.stratum.status
+  to: stratum.v1
+  kind: api
+- from: pythia.system.map
+  to: euclid.orchestration
+  kind: api
+- from: pythia.system.verify.read
+  to: chronus.execution
+  kind: api
+- from: pythia.system.verify.start
+  to: chronus.execution
+  kind: api
+- from: pythia.telemetry
+  to: pythia.worker_heartbeat
+  kind: api
+- from: pythia.telemetry
+  to: chronus.execution
+  kind: api
+- from: pythia.telemetry.stream
+  to: pythia.worker_heartbeat
+  kind: api
+- from: pythia.telemetry.stream
+  to: chronus.execution
+  kind: api
+- from: pythia.worker_heartbeat
+  to: FILESYSTEM
+  kind: external
+- from: salamander.control_plane
+  to: theseus.custody
+  kind: api
+- from: salamander.fault
+  to: salamander.control_plane
+  kind: api
+- from: salamander.fault
+  to: pythia.boot_audit
+  kind: api
+- from: stratum.v1
+  to: POOL
+  kind: external
+- from: toe.collapse
+  to: al_haras.guardian
+  kind: api
+- from: toe.collapse
+  to: kellogg.tensor.runtime
+  kind: api
+- from: turing.vqc_pipeline
+  to: theseus.custody
+  kind: api
+invariants:
+- every edge endpoint is a registered api_id or external authority
+- the api-edge graph is acyclic
+- an R0 API never depends on an R3/R4 API
+- 'bare authorisation_authority: AL_HARAS requires an al_haras.guardian edge'
+- custody_requirement mentioning THESEUS requires a theseus.custody edge
+- custody_requirement mentioning guardian_mediated requires an al_haras.guardian edge
+- RESERVED_NAMESPACE entries depend only on al_haras.guardian
