@@ -85,22 +85,26 @@ def run_workload(workdir: Path) -> dict:
     }
 
     # -- Stage 3: attestation --------------------------------------------
-    from kellogg.attest import attest
+    from kellogg.attest import attest, verify_attestation
 
+    attested_payload = {
+        "workload": WORKLOAD_ID,
+        "request_id": record["request_id"],
+        "output_hash": record["output_hash"],
+        "steps": ["store", "execute", "verify"],
+    }
     attestation = attest(
-        {
-            "workload": WORKLOAD_ID,
-            "request_id": record["request_id"],
-            "output_hash": record["output_hash"],
-            "steps": ["store", "execute", "verify"],
-        },
+        attested_payload,
         notes=["integrity binding only — correctness is receipt-level"],
     )
+    attestation_ok = verify_attestation(attested_payload, attestation)
     stages["attest"] = {
         "digest": attestation["digest"],
+        "attestation_digest": attestation["attestation_digest"],
         "version_lock": attestation["version_lock"],
         "theorem_proven": attestation["boundary"]["theorem_proven"],
-        "verdict": "pass",
+        "verified": attestation_ok,
+        "verdict": "pass" if attestation_ok else "fail",
     }
 
     # -- Stage 4: custody checkpoint → fresh restore ----------------------
