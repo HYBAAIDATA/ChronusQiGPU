@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 __all__ = [
@@ -42,14 +42,25 @@ __all__ = [
 CUSTODY_ENVELOPE_SCHEMA = "turing.vqc.custody_envelope.v1"
 
 #: Artefact kinds TURING may place into custody.
-_ENVELOPE_KINDS = ("program", "state", "result", "witness", "checkpoint")
+_ENVELOPE_KINDS = (
+    "program",
+    "state",
+    "result",
+    "witness",
+    "certificate",
+    "checkpoint",
+)
 
 
 def _canonical(obj: dict[str, Any]) -> bytes:
     return json.dumps(obj, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
-def canonical_envelope_bytes(kind: str, payload: dict[str, Any], meta: dict[str, Any] | None = None) -> bytes:
+def canonical_envelope_bytes(
+    kind: str,
+    payload: dict[str, Any],
+    meta: dict[str, Any] | None = None,
+) -> bytes:
     """Canonical serialisation of one custody envelope (payload embedded)."""
     if kind not in _ENVELOPE_KINDS:
         raise ValueError(f"unknown custody kind {kind!r}; expected {_ENVELOPE_KINDS}")
@@ -262,6 +273,16 @@ def _validate_payload(kind: str, payload: dict[str, Any]) -> tuple[bool, dict[st
                 "schema": witness.schema,
                 "backend": witness.backend,
                 "program_digest": witness.program_digest,
+            }
+        if kind == "certificate":
+            from .certificates import VQCComputationCertificate
+
+            certificate = VQCComputationCertificate.from_dict(payload)
+            certificate.verify_integrity()
+            return True, {
+                "schema": certificate.schema,
+                "backend": certificate.backend,
+                "certificate_digest": certificate.certificate_digest,
             }
         if kind == "checkpoint":
             ok = "program_digest" in payload

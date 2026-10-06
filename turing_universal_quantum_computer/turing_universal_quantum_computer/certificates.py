@@ -17,8 +17,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
+from enum import Enum
 from typing import Any
 
 from .backends import ExecutionClass, ExecutionResult, Program, TruthClass
@@ -26,17 +28,187 @@ from .backends.qpu import QPUJob, assert_measured_qpu
 
 __all__ = [
     "WITNESS_SCHEMA",
+    "WITNESS_SCHEMA_V1",
+    "WITNESS_SCHEMA_V2",
     "WitnessError",
     "RunWitness",
+    "VQCComputationCertificate",
     "issue_witness",
+    "issue_computation_certificate",
+    "replay_computation_certificate",
+    "verify_computation_certificate",
     "verify_witness",
 ]
 
-WITNESS_SCHEMA = "turing.vqc.run_witness.v1"
+WITNESS_SCHEMA_V1 = "turing.vqc.run_witness.v1"
+WITNESS_SCHEMA_V2 = "turing.vqc.run_witness.v2"
+WITNESS_SCHEMA = WITNESS_SCHEMA_V2
+COMPUTATION_CERTIFICATE_SCHEMA = "turing.vqc.computation_certificate.v1"
 
 
 class WitnessError(RuntimeError):
     """Refusal: a witness is malformed or claims more than was proven."""
+
+
+def _jsonable(value: Any) -> Any:
+    """Canonical value encoding with deterministic IEEE-754 handling."""
+    if isinstance(value, Enum):
+        return value.value
+    if isinstance(value, (str, int, bool)) or value is None:
+        return value
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise WitnessError("NaN and infinity cannot be certified")
+        return {"$float_hex": value.hex()}
+    if isinstance(value, dict):
+        return {
+            str(key): _jsonable(item)
+            for key, item in sorted(value.items(), key=lambda pair: str(pair[0]))
+        }
+    if isinstance(value, (list, tuple)):
+        return [_jsonable(item) for item in value]
+    if isinstance(value, (set, frozenset)):
+        raise WitnessError(
+            "unordered set values cannot be certified; supply a sorted sequence"
+        )
+    to_dict = getattr(value, "to_dict", None)
+    if callable(to_dict):
+        return _jsonable(to_dict())
+    # Exact algebraic values in this package define a stable mathematical
+    # string form.  Tagging the type prevents cross-type aliasing.
+    rendered = str(value)
+    if " at 0x" in rendered:
+        raise WitnessError(f"non-canonical object cannot be certified: {type(value).__name__}")
+    return {
+        "$type": f"{type(value).__module__}.{type(value).__qualname__}",
+        "$value": rendered,
+    }
+
+
+def _canonical(value: Any) -> bytes:
+    return json.dumps(
+        _jsonable(value),
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        allow_nan=False,
+    ).encode("ascii")
+
+
+def _digest(domain: str, value: Any) -> str:
+    prefix = b"turing-vqc-certificate-v1\0" + domain.encode("ascii") + b"\0"
+    return hashlib.sha256(prefix + _canonical(value)).hexdigest()
+
+
+def _merkle_root(leaves: tuple[dict[str, Any], ...]) -> str:
+    if not leaves:
+        return hashlib.sha256(b"turing-vqc-merkle-empty-v1").hexdigest()
+    level = [
+        hashlib.sha256(b"turing-vqc-merkle-leaf-v1\0" + _canonical(leaf)).digest()
+        for leaf in leaves
+    ]
+    while len(level) > 1:
+        if len(level) & 1:
+            level.append(level[-1])
+        level = [
+            hashlib.sha256(
+                b"turing-vqc-merkle-node-v1\0" + level[index] + level[index + 1]
+            ).digest()
+            for index in range(0, len(level), 2)
+        ]
+    return level[0].hex()
+
+
+def _field_name(result: ExecutionResult) -> str:
+    raw = str((result.payload or {}).get("field", "missing"))
+    lowered = raw.lower().replace(" ", "")
+    if "gf(2)" in lowered or lowered == "gf2":
+        return "GF2"
+    if "sqrt(2)" in lowered and ("i" in lowered or "complex" in lowered):
+        return "Q_zeta8"
+    if lowered in {"q(i)", "q_i"}:
+        return "Q_i"
+    if lowered in {"q", "rational"}:
+        return "Q"
+    if result.truth_class is TruthClass.APPROXIMATE:
+        return "float"
+    return raw
+
+
+def _machine_type(result: ExecutionResult) -> str:
+    if result.execution_class is ExecutionClass.HARDWARE:
+        return "hybrid"
+    if _field_name(result) == "GF2":
+        return "quantum_folded"
+    if result.execution_class in (
+        ExecutionClass.EXACT_ALGEBRAIC,
+        ExecutionClass.EXACT_SYMBOLIC,
+        ExecutionClass.BOUNDED_EXACT,
+    ):
+        return "quantum_unitary"
+    return "hybrid"
+
+
+@dataclass(frozen=True)
+class VQCComputationCertificate:
+    """Content-addressed proof envelope for one public VQC execution."""
+
+    schema: str
+    input: str
+    machine: str
+    trace: tuple[dict[str, Any], ...]
+    output: str
+    halted: bool
+    steps: int
+    certificate_digest: str
+    attestation: str
+    replayable: bool
+    machine_type: str
+    field: str
+    backend: str
+    execution_class: str
+    truth_class: str
+
+    def to_dict(self) -> dict[str, Any]:
+        payload = asdict(self)
+        payload["trace"] = [dict(item) for item in self.trace]
+        return payload
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> "VQCComputationCertificate":
+        if payload.get("schema") != COMPUTATION_CERTIFICATE_SCHEMA:
+            raise WitnessError(
+                f"unsupported computation certificate schema {payload.get('schema')!r}"
+            )
+        known = set(cls.__dataclass_fields__)  # type: ignore[attr-defined]
+        unknown = sorted(set(payload) - known)
+        if unknown:
+            raise WitnessError(f"certificate has unknown field(s): {unknown}")
+        converted = dict(payload)
+        converted["trace"] = tuple(dict(item) for item in payload.get("trace", ()))
+        return cls(**converted)
+
+    def unsigned_payload(self) -> dict[str, Any]:
+        payload = self.to_dict()
+        payload.pop("certificate_digest")
+        return payload
+
+    def verify_integrity(self) -> bool:
+        if not self.halted:
+            raise WitnessError("finite VQC program certificate must be halted")
+        if self.steps != max(len(self.trace) - 2, 0):
+            raise WitnessError("certificate step count does not match operation trace")
+        if self.attestation != _merkle_root(self.trace):
+            raise WitnessError("certificate Merkle attestation mismatch")
+        if self.certificate_digest != _digest(
+            "computation-certificate", self.unsigned_payload()
+        ):
+            raise WitnessError("computation certificate digest mismatch")
+        for name in ("input", "machine", "output", "certificate_digest", "attestation"):
+            value = getattr(self, name)
+            if len(value) != 64 or any(ch not in "0123456789abcdef" for ch in value):
+                raise WitnessError(f"{name} is not a lowercase SHA-256 digest")
+        return True
 
 
 @dataclass(frozen=True)
@@ -62,6 +234,7 @@ class RunWitness:
     consensus_authority: bool = False
     issued_at: str = ""
     notes: str = ""
+    computation_certificate_digest: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -71,7 +244,7 @@ class RunWitness:
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "RunWitness":
-        if payload.get("schema") != WITNESS_SCHEMA:
+        if payload.get("schema") not in (WITNESS_SCHEMA_V1, WITNESS_SCHEMA_V2):
             raise WitnessError(f"unsupported witness schema {payload.get('schema')!r}")
         known = {f for f in cls.__dataclass_fields__}  # type: ignore[attr-defined]
         unknown = sorted(set(payload) - known)
@@ -80,8 +253,16 @@ class RunWitness:
         return cls(**payload)
 
     def digest(self) -> str:
-        canonical = json.dumps(self.to_dict(), sort_keys=True, separators=(",", ":"))
-        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        payload = self.to_dict()
+        if self.schema == WITNESS_SCHEMA_V1:
+            if payload.get("computation_certificate_digest") is None:
+                payload.pop("computation_certificate_digest")
+            canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+            return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        # Wall-clock metadata is useful operationally but is not part of the
+        # reproducible content identity.
+        payload.pop("issued_at")
+        return _digest("run-witness", payload)
 
 
 def issue_witness(
@@ -121,12 +302,17 @@ def issue_witness(
         provider_job_id=(provider_job.job_id if provider_job else None),
         issued_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
         notes=notes,
+        computation_certificate_digest=(
+            result.certificate.get("certificate_digest")
+            if result.certificate is not None
+            else None
+        ),
     )
 
 
 def verify_witness(witness: RunWitness) -> bool:
     """Fail-closed verification of a witness.  Raises on any overclaim."""
-    if witness.schema != WITNESS_SCHEMA:
+    if witness.schema not in (WITNESS_SCHEMA_V1, WITNESS_SCHEMA_V2):
         raise WitnessError(f"unsupported witness schema {witness.schema!r}")
     if witness.theorem_proven:
         raise WitnessError("refused: this package proves no theorems")
@@ -139,6 +325,10 @@ def verify_witness(witness: RunWitness) -> bool:
         raise WitnessError("refused: n_qubits must be >= 1")
     if len(witness.program_digest) != 64:
         raise WitnessError("refused: program_digest must be a SHA-256 hex digest")
+    if witness.computation_certificate_digest is not None:
+        digest = witness.computation_certificate_digest
+        if len(digest) != 64 or any(ch not in "0123456789abcdef" for ch in digest):
+            raise WitnessError("refused: malformed computation certificate digest")
 
     hardware = witness.execution_class == ExecutionClass.HARDWARE.value
     if witness.measured_qpu and not hardware:
@@ -168,3 +358,121 @@ def verify_witness(witness: RunWitness) -> bool:
     if witness.materialised and witness.execution_class == ExecutionClass.EXACT_SYMBOLIC.value:
         raise WitnessError("refused: a symbolic backend never materialises a state")
     return True
+
+
+def issue_computation_certificate(
+    program: Program,
+    result: ExecutionResult,
+    *,
+    options: dict[str, Any] | None = None,
+) -> VQCComputationCertificate:
+    """Bind a program, backend identity, operation trace, and exact result."""
+    if result.program_digest != program.digest():
+        raise WitnessError("result is bound to a different program")
+    execution_options = dict(options or {})
+    replayable = not result.measured_qpu
+    if execution_options.get("shots") is not None and execution_options.get("seed") is None:
+        replayable = False
+
+    trace: list[dict[str, Any]] = [
+        {
+            "kind": "input",
+            "program": program.to_dict(),
+            "options": _jsonable(execution_options),
+        }
+    ]
+    for index, operation in enumerate(program.operations):
+        trace.append(
+            {
+                "kind": "operation",
+                "index": index,
+                "gate": operation.gate,
+                "qubits": list(operation.qubits),
+            }
+        )
+    result_payload = result.as_dict()
+    result_payload["certificate"] = None
+    trace.append(
+        {
+            "kind": "output",
+            "backend": result.backend,
+            "truth_class": result.truth_class.value,
+            "output_digest": _digest("output", result_payload),
+        }
+    )
+    field_name = _field_name(result)
+    machine_type = _machine_type(result)
+    unsigned = {
+        "schema": COMPUTATION_CERTIFICATE_SCHEMA,
+        "input": _digest(
+            "input",
+            {"program": program.to_dict(), "options": execution_options},
+        ),
+        "machine": _digest(
+            "machine",
+            {
+                "backend": result.backend,
+                "execution_class": result.execution_class.value,
+                "truth_class": result.truth_class.value,
+                "machine_type": machine_type,
+                "field": field_name,
+            },
+        ),
+        "trace": tuple(trace),
+        "output": _digest("output", result_payload),
+        "halted": True,
+        "steps": len(program.operations),
+        "attestation": _merkle_root(tuple(trace)),
+        "replayable": replayable,
+        "machine_type": machine_type,
+        "field": field_name,
+        "backend": result.backend,
+        "execution_class": result.execution_class.value,
+        "truth_class": result.truth_class.value,
+    }
+    certificate = VQCComputationCertificate(
+        **unsigned,
+        certificate_digest=_digest("computation-certificate", unsigned),
+    )
+    certificate.verify_integrity()
+    return certificate
+
+
+def verify_computation_certificate(
+    program: Program,
+    result: ExecutionResult,
+    certificate: VQCComputationCertificate,
+    *,
+    options: dict[str, Any] | None = None,
+) -> bool:
+    certificate.verify_integrity()
+    expected = issue_computation_certificate(program, result, options=options)
+    if expected != certificate:
+        raise WitnessError("computation certificate does not match program and result")
+    return True
+
+
+def replay_computation_certificate(
+    program: Program,
+    certificate: VQCComputationCertificate,
+    executor: Any,
+    *,
+    options: dict[str, Any] | None = None,
+) -> ExecutionResult:
+    """Re-execute with the bound backend and require an identical certificate."""
+    certificate.verify_integrity()
+    if not certificate.replayable:
+        raise WitnessError("certificate is not replayable; stochastic execution lacked a seed")
+    execution_options = dict(options or {})
+    result = executor(program, prefer=certificate.backend, **execution_options)
+    if result.certificate is None:
+        replayed = issue_computation_certificate(
+            program,
+            result,
+            options=execution_options,
+        )
+    else:
+        replayed = VQCComputationCertificate.from_dict(result.certificate)
+    if replayed != certificate:
+        raise WitnessError("certificate replay diverged")
+    return result

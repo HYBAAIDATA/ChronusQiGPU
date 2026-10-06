@@ -24,9 +24,17 @@ from dataclasses import dataclass, field
 from typing import Any, Sequence
 
 from .backends import default_backends, select_backend
-from .backends.base import ExecutionResult, Program, TruthClass
+from .backends.base import ExecutionResult, Program
+from .backends.qpu import QPUJob
 from .capabilities import capability_report
-from .certificates import RunWitness, issue_witness, verify_witness
+from .certificates import (
+    RunWitness,
+    VQCComputationCertificate,
+    issue_computation_certificate,
+    issue_witness,
+    verify_computation_certificate,
+    verify_witness,
+)
 from .chronus_lane import probe_chronus_lane
 from .representation import RepresentationPlanner
 from .taxonomy import EvidenceState, classify_execution
@@ -124,6 +132,7 @@ class PipelineReport:
     stages: tuple[StageEvidence, ...]
     execution_kind: dict[str, Any] | None
     result: dict[str, Any] | None
+    certificate: dict[str, Any] | None
     witness: dict[str, Any] | None
     custody: tuple[dict[str, Any], ...]
     replay: tuple[dict[str, Any], ...]
@@ -138,6 +147,7 @@ class PipelineReport:
             "stages": [s.as_dict() for s in self.stages],
             "execution_kind": self.execution_kind,
             "result": self.result,
+            "certificate": self.certificate,
             "witness": self.witness,
             "custody": list(self.custody),
             "replay": list(self.replay),
@@ -161,6 +171,7 @@ class VQCPipeline:
         program: Program | None = None
         result: ExecutionResult | None = None
         witness: RunWitness | None = None
+        computation_certificate: VQCComputationCertificate | None = None
         custody_records: list[dict[str, Any]] = []
         replay_records: list[dict[str, Any]] = []
         kind_report: dict[str, Any] | None = None
@@ -216,7 +227,9 @@ class VQCPipeline:
         )
         if not boundary_clean:
             refusals.append("capability_analysis: claim boundary violation")
-            return self._finish(stages, "FAIL", program.digest(), None, None, (), (), refusals, request)
+            return self._finish(
+                stages, "FAIL", program.digest(), None, None, (), (), refusals, request
+            )
 
         # -- stage 3: representation_choice ----------------------------------
         planner = RepresentationPlanner(max_amplitudes=request.max_amplitudes)
@@ -230,7 +243,9 @@ class VQCPipeline:
         if not choice.admitted:
             refusals.append(f"representation_choice: {choice.rationale}")
             refusals.extend(choice.refusals)
-            return self._finish(stages, "REFUSED", program.digest(), None, None, (), (), refusals, request)
+            return self._finish(
+                stages, "REFUSED", program.digest(), None, None, (), (), refusals, request
+            )
 
         # -- stage 4: contract_validation ------------------------------------
         validation_detail = ["gate/qubit domains checked at Program construction"]
@@ -248,7 +263,9 @@ class VQCPipeline:
             )
             if ureport.state == "FAIL":
                 refusals.append(f"contract_validation: {ureport.reason}")
-                return self._finish(stages, "FAIL", program.digest(), None, None, (), (), refusals, request)
+                return self._finish(
+                    stages, "FAIL", program.digest(), None, None, (), (), refusals, request
+                )
         else:
             record(
                 "contract_validation", EvidenceState.PASS.value,
@@ -269,15 +286,23 @@ class VQCPipeline:
                 str(exc),
             )
             refusals.append(f"compile_plan: {exc}")
-            return self._finish(stages, "REFUSED", program.digest(), None, None, (), (), refusals, request)
+            return self._finish(
+                stages, "REFUSED", program.digest(), None, None, (), (), refusals, request
+            )
         if backend is None or not admission.admitted:
             record(
                 "compile_plan", REFUSED,
                 admission.reason,
-                admission=admission.as_dict() if hasattr(admission, "as_dict") else {"admitted": False},
+                admission=(
+                    admission.as_dict()
+                    if hasattr(admission, "as_dict")
+                    else {"admitted": False}
+                ),
             )
             refusals.append(f"compile_plan: {admission.reason}")
-            return self._finish(stages, "REFUSED", program.digest(), None, None, (), (), refusals, request)
+            return self._finish(
+                stages, "REFUSED", program.digest(), None, None, (), (), refusals, request
+            )
         record(
             "compile_plan", EvidenceState.PASS.value,
             f"admitted by {backend.name}: {admission.reason}",
@@ -295,19 +320,26 @@ class VQCPipeline:
         # -- stage 7: execution -----------------------------------------------
         options = {
             "shots": request.shots,
-            "seed": request.seed,
+            "seed": (
+                0
+                if request.shots is not None and request.seed is None
+                else request.seed
+            ),
             "readout": request.readout,
             "marginal_of": request.marginal_of,
             "expectation": request.expectation,
             "measurement": request.measurement_qubit,
             "entanglement": request.entanglement_cut,
         }
+        execution_options = {key: value for key, value in options.items() if value is not None}
         try:
-            result = backend.execute(program, **{k: v for k, v in options.items() if v is not None})
+            result = backend.execute(program, **execution_options)
         except Exception as exc:
             record("execution", EvidenceState.FAIL.value, f"execution raised: {exc}")
             refusals.append(f"execution: {exc}")
-            return self._finish(stages, "FAIL", program.digest(), None, None, (), (), refusals, request)
+            return self._finish(
+                stages, "FAIL", program.digest(), None, None, (), (), refusals, request
+            )
         record(
             "execution", EvidenceState.PASS.value,
             f"{backend.name} executed; truth_class={result.truth_class.value}",
@@ -329,9 +361,36 @@ class VQCPipeline:
         verify_notes: list[str] = []
         verify_ok = True
         try:
-            witness = issue_witness(program, result, notes=request.notes)
+            computation_certificate = issue_computation_certificate(
+                program,
+                result,
+                options=execution_options,
+            )
+            result.certificate = computation_certificate.to_dict()
+            verify_computation_certificate(
+                program,
+                result,
+                computation_certificate,
+                options=execution_options,
+            )
+            provider_job = None
+            if result.measured_qpu:
+                provider_job = QPUJob(
+                    provider=str(result.payload.get("provider", "")),
+                    job_id=str(result.payload.get("job_id", "")),
+                    completed_at=str(result.payload.get("completed_at", "")),
+                    result_digest=str(result.payload.get("result_digest", "")),
+                )
+            witness = issue_witness(
+                program,
+                result,
+                provider_job=provider_job,
+                notes=request.notes,
+            )
             verify_witness(witness)
-            verify_notes.append("witness issued and re-verified")
+            verify_notes.append(
+                "computation certificate and witness issued and re-verified"
+            )
         except Exception as exc:
             verify_ok = False
             verify_notes.append(f"witness verification failed: {exc}")
@@ -366,7 +425,11 @@ class VQCPipeline:
             "custody", custody_state,
             "committed program/result/witness envelopes to THESEUS"
             if custody_state == EvidenceState.PASS.value
-            else ("custody not requested" if custody_state == SKIPPED else "custody unavailable or failed"),
+            else (
+                "custody not requested"
+                if custody_state == SKIPPED
+                else "custody unavailable or failed"
+            ),
             receipts=len(custody_records),
         )
 
@@ -422,6 +485,14 @@ class VQCPipeline:
                         "witness", witness.to_dict(), meta={"stage": "verification"}
                     ).as_dict()
                 )
+            if result.certificate is not None:
+                records.append(
+                    custody.commit(
+                        "certificate",
+                        result.certificate,
+                        meta={"stage": "verification"},
+                    ).as_dict()
+                )
             return EvidenceState.PASS.value, records
         except Exception as exc:
             return EvidenceState.FAIL.value, [{"error": str(exc)}]
@@ -459,6 +530,11 @@ class VQCPipeline:
             stages=tuple(stages),
             execution_kind=kind_report,
             result=_result_payload(result) if result is not None else None,
+            certificate=(
+                result.certificate
+                if result is not None
+                else None
+            ),
             witness=witness.to_dict() if witness is not None else None,
             custody=custody_records,
             replay=replay_records,
@@ -507,6 +583,7 @@ def _result_payload(result: ExecutionResult) -> dict[str, Any]:
         "materialised": result.materialised,
         "measured_qpu": result.measured_qpu,
         "payload": _jsonable(result.payload or {}),
+        "certificate": result.certificate,
     }
 
 

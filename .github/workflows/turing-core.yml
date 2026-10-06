@@ -6,6 +6,8 @@ on:
       - "turing_universal_quantum_computer/**"
       - "proofs/lean/**"
       - "scripts/turing_digest_fixture.py"
+      - "scripts/turing_vqc_digest_fixture.py"
+      - "scripts/turing_acceptance_gate.py"
       - ".github/workflows/turing-core.yml"
   push:
     branches: [main]
@@ -31,14 +33,23 @@ jobs:
           python -m pytest -q
           turing_universal_quantum_computer/tests/test_turing_specification.py
           turing_universal_quantum_computer/tests/test_turing_inventory.py
+          turing_universal_quantum_computer/tests/test_computation_certificates.py
+          turing_universal_quantum_computer/tests/test_fold_certificate_exhaustive.py
       - name: Build deterministic digest fixture
         run: |
           python scripts/turing_digest_fixture.py > turing-digest-${{ matrix.python }}.txt
+          python scripts/turing_vqc_digest_fixture.py \
+            >> turing-digest-${{ matrix.python }}.txt
           COMMIT_TIME="$(git show -s --format=%cI "$GITHUB_SHA")"
           python -m turing_universal_quantum_computer.turing_core.inventory \
             . --commit "$GITHUB_SHA" --timestamp "$COMMIT_TIME" \
             --output turing-discovery-${{ matrix.python }}.json
+          python scripts/turing_acceptance_gate.py \
+            --report turing-discovery-${{ matrix.python }}.json \
+            --output turing-acceptance-${{ matrix.python }}.json
           python -c 'import json; print(json.load(open("turing-discovery-${{ matrix.python }}.json"))["report_digest"])' \
+            >> turing-digest-${{ matrix.python }}.txt
+          python -c 'import json; print(json.load(open("turing-acceptance-${{ matrix.python }}.json"))["acceptance_digest"])' \
             >> turing-digest-${{ matrix.python }}.txt
       - uses: actions/upload-artifact@v4
         with:
@@ -46,6 +57,7 @@ jobs:
           path: |
             turing-digest-${{ matrix.python }}.txt
             turing-discovery-${{ matrix.python }}.json
+            turing-acceptance-${{ matrix.python }}.json
 
   cross-version:
     name: Cross-version digest equality
@@ -60,6 +72,7 @@ jobs:
         run: |
           test "$(sha256sum turing-digest-*.txt | cut -d' ' -f1 | sort -u | wc -l)" -eq 1
           test "$(sha256sum turing-discovery-*.json | cut -d' ' -f1 | sort -u | wc -l)" -eq 1
+          test "$(sha256sum turing-acceptance-*.json | cut -d' ' -f1 | sort -u | wc -l)" -eq 1
           cat turing-digest-*.txt
 
   lean:

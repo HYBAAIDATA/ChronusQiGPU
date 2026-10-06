@@ -31,6 +31,7 @@ approximately.
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable, Sequence
@@ -46,10 +47,16 @@ from .backends import (
     QPUUnavailableError,
     StatevectorTooLargeError,
     execute as execute_program,
+    execute_certified,
     select_backend,
 )
 from .capabilities import capability_report, render_matrix
-from .certificates import issue_witness, verify_witness
+from .certificates import (
+    VQCComputationCertificate,
+    issue_witness,
+    verify_computation_certificate,
+    verify_witness,
+)
 
 __all__ = ["QuantumConsole", "main", "render_circuit", "render_amplitudes", "DEMO_SCRIPT"]
 
@@ -215,7 +222,9 @@ class ConsoleState:
 
     @property
     def representation(self) -> str:
-        return "dense_algebraic" if self.state is not None else ("tableau" if self.tableau else "none")
+        if self.state is not None:
+            return "dense_algebraic"
+        return "tableau" if self.tableau else "none"
 
     @property
     def dense(self) -> bool:
@@ -382,7 +391,8 @@ class QuantumConsole:
         limit = int(args[0]) if args else 6
         lines = [
             f"|ψ⟩ on |q{program.n_qubits}⟩ — {_states_label(program.n_qubits)}",
-            f"  representation  tableau ({payload.get('tableau_bits', 2 * program.n_qubits)} bits, exact)",
+            "  representation  tableau "
+            f"({payload.get('tableau_bits', 2 * program.n_qubits)} bits, exact)",
             f"  field           GF(2) Pauli group (Clifford)",
             f"  generators      {len(generators)} — showing {min(limit, len(generators))}",
         ]
@@ -650,8 +660,19 @@ class QuantumConsole:
             self.session.program, result, notes="issued from the VQC console"
         )
         verified = verify_witness(witness)
+        if result.certificate is None:
+            return "certificate boundary failure: public execution returned no certificate"
+        certificate = VQCComputationCertificate.from_dict(result.certificate)
+        certificate_verified = verify_computation_certificate(
+            self.session.program,
+            result,
+            certificate,
+        )
         return (
-            "run witness issued and verified\n"
+            "computation certificate and run witness issued and verified\n"
+            + json.dumps(certificate.to_dict(), sort_keys=True, indent=2)
+            + f"\ncertificate digest: {certificate.certificate_digest}"
+            + f"\ncertificate verified: {certificate_verified}\n"
             + witness.to_json()
             + f"\nwitness digest: {witness.digest()}\nverified: {verified}"
         )
@@ -665,13 +686,22 @@ class QuantumConsole:
         ]
         if self.session.program is not None:
             try:
-                backend.execute(self.session.program)
+                execution = execute_certified(
+                    self.session.program,
+                    prefer="qpu",
+                    max_amplitudes=self.max_amplitudes,
+                )
+                lines[0] = "QPU boundary   available=True   measured_qpu=True"
+                lines.append(
+                    "  certified hardware result: "
+                    + execution.certificate.certificate_digest
+                )
             except QPUUnavailableError:
                 lines.append("  submission attempt: REFUSED")
-        lines.append(
-            "  Every result from this console is an exact classical evaluation of "
-            "quantum algebra. None of them is a measured hardware result."
-        )
+        if not available:
+            lines.append(
+                "  Exact classical quantum algebra is not relabelled as measured hardware."
+            )
         return "\n".join(lines)
 
     def _cmd_help(self, args: list[str]) -> str:
@@ -679,7 +709,11 @@ class QuantumConsole:
             ("register", "init <n> | reset | status"),
             ("gates", " ".join(_ONE_QUBIT) + " <q>  |  " + " ".join(_TWO_QUBIT) + " <q> <q>"),
             ("readout", "psi | amps | prob [q...] | diagram"),
-            ("quantum", "measure [shots] [--seed s] [--readout q,q] | expect <q> | entropy <q...> | product <q> <q>"),
+            (
+                "quantum",
+                "measure [shots] [--seed s] [--readout q,q] | expect <q> | "
+                "entropy <q...> | product <q> <q>",
+            ),
             ("tableau", "generators [n]"),
             ("machine", "backends | capabilities | certify | qpu"),
             ("session", "help | quit"),
