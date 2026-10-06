@@ -1028,6 +1028,9 @@ def _m3_dependency_reason() -> tuple[bool, str]:
         return False, "m3_runtime_blocked"
     if runtime.get("gate_configured") is not True:
         return False, "m3_submission_gate_unavailable"
+    last_gate = runtime.get("last_submission_gate")
+    if isinstance(last_gate, dict) and last_gate.get("allowed") is False:
+        return False, str(last_gate.get("reason") or "m3_submission_denied").lower()
     if runtime.get("search_authority") != "PYTHIA":
         return False, "m3_pythia_authority_unavailable"
     if runtime.get("search_algorithm") != "hendrix_coprime_stride":
