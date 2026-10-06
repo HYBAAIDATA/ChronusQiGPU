@@ -20,13 +20,14 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Iterable, Iterator, Sequence
+from typing import Any, Iterable, Iterator, Mapping, Sequence
 
 from .models import (
     AccessDenied, Attestation, Certificate, Client, DatabaseVerification,
     EdgeRecord, FoldRecord, IntegrityFailure, InvalidRecord, NodeRecord,
     Quota, QuotaExceeded, TensorRecord,
 )
+from .file_registry import FILE_REGISTRY_SCHEMA, FileRegistry
 
 
 class NodeKind(StrEnum):
@@ -215,7 +216,7 @@ CREATE VIEW IF NOT EXISTS mps AS SELECT * FROM tensors WHERE kind='mps';
 CREATE VIEW IF NOT EXISTS tt AS SELECT * FROM tensors WHERE kind='tt';
 CREATE VIEW IF NOT EXISTS mpo AS SELECT * FROM tensors WHERE kind='mpo';
 CREATE VIEW IF NOT EXISTS fold_children AS SELECT tenant_id,parent_id,id AS child_id FROM folds WHERE parent_id IS NOT NULL;
-"""
+""" + FILE_REGISTRY_SCHEMA
 
 
 class OntologyStore:
@@ -223,7 +224,7 @@ class OntologyStore:
 
     SCALE = 1_000_000_000
 
-    def __init__(self, path: str | Path, integrity_key: bytes):
+    def __init__(self, path: str | Path, integrity_key: bytes, *, custody: Any | None = None):
         if len(integrity_key) < 32:
             raise InvalidRecord("integrity_key must contain at least 32 bytes")
         self._key = bytes(integrity_key)
@@ -234,9 +235,13 @@ class OntologyStore:
         self._db.execute("PRAGMA journal_mode=WAL")
         self._db.execute("PRAGMA synchronous=FULL")
         self._db.executescript(_SCHEMA)
-        self._db.execute("INSERT OR IGNORE INTO metadata VALUES('schema_version','1')")
+        self._db.execute("INSERT OR REPLACE INTO metadata VALUES('schema_version','2')")
+        self.files = FileRegistry(self, custody=custody)
 
     def close(self) -> None:
+        custody_close = getattr(self.files.custody, "close", None)
+        if callable(custody_close):
+            custody_close()
         self._db.close()
 
     def __enter__(self) -> "OntologyStore": return self
@@ -593,7 +598,7 @@ class OntologyStore:
     def pool_to_shares(self, tenant_id: str, pool_node_id: str, *, max_depth: int=8) -> tuple[NodeRecord,...]:
         return tuple(n for n in self.traverse(tenant_id,pool_node_id,max_depth=max_depth) if n.kind==NodeKind.SHARE.value)
 
-    def verify_database(self, tenant_id: str|None=None) -> DatabaseVerification:
+    def verify_database(self, tenant_id: str|None=None, *, storage_roots: Mapping[str, str]|None=None) -> DatabaseVerification:
         errors=[]; tenants=[tenant_id] if tenant_id else [r[0] for r in self._db.execute("SELECT tenant_id FROM tenants")]
         fk=list(self._db.execute("PRAGMA foreign_key_check")); foreign_keys_ok=not fk
         if fk: errors.append(f"foreign key violations: {len(fk)}")
@@ -638,4 +643,28 @@ class OntologyStore:
             row=self._db.execute("SELECT used_records,used_blob_bytes FROM tenants WHERE tenant_id=?",(tid,)).fetchone(); sums=self._db.execute("SELECT COALESCE(SUM(record_delta),0),COALESCE(SUM(byte_delta),0) FROM quota_events WHERE tenant_id=?",(tid,)).fetchone()
             if tuple(row)!=tuple(sums): tenant_usage_ok=False; errors.append(f"{tid} quota ledger mismatch")
             if self._components(tid)!=1: graph_connected=False; errors.append(f"{tid} graph is disconnected")
-        return DatabaseVerification(foreign_keys_ok,attestations_ok,certificates_ok,fold_dag_ok,tenant_usage_ok,graph_connected,tuple(errors))
+        file_report = self.files.verify_database(tenant_id)
+        file_plane_ok = bool(file_report.get("passed"))
+        if not file_plane_ok:
+            errors.extend(str(item) for item in file_report.get("errors", ()))
+        mining_chain_ok = self.files.verify_mining(tenant_id)
+        if not mining_chain_ok:
+            errors.append("mining lifecycle continuity failed")
+        # reconciliation_ok is computed, never assumed: True only when a
+        # reconciliation ran against declared storage roots and reported zero
+        # unresolved violations. Absent roots mean unreconciled, not healthy.
+        reconciliation_ok = False
+        if storage_roots:
+            reconciliation_ok = True
+            for tid, root in storage_roots.items():
+                report = self.files.reconcile_files(tid, root)
+                if not report.passed:
+                    reconciliation_ok = False
+                    for item in report.unresolved:
+                        errors.append(f"reconciliation {tid}: {item}")
+        return DatabaseVerification(
+            foreign_keys_ok, attestations_ok, certificates_ok, fold_dag_ok,
+            tenant_usage_ok, graph_connected, tuple(errors),
+            file_plane_ok=file_plane_ok, mining_chain_ok=mining_chain_ok,
+            reconciliation_ok=reconciliation_ok,
+        )

@@ -6,7 +6,6 @@ tests/fixtures/** -text
 # (Intelligence/skill_graft.py): EOL translation would reject every graft.
 Intelligence/skills/** -text
 
-# Bound training corpus is verified by sha256 of raw bytes (manifest
-# csv_sha256): CRLF materialization on Windows checkouts corrupts the digest
-# and crash-loops agentic-mining (CorpusIntegrityError → RestartBudgetExhausted).
+# PYTHIA structural corpus is verified by manifest sha256 at store bootstrap —
+# EOL translation corrupts the recorded digest binding.
 artifacts/pythia_training/** -text

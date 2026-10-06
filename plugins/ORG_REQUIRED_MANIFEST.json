@@ -1,20 +1,19 @@
 {
-  "note": "Add the unified PYTHIA plugin (cloud + CLI + Desktop, one install) through this Devin UI dialog. Values below are exactly what the form is filled with.",
+  "note": "Private unified PYTHIA Devin Engineering Intelligence plugin for cloud, CLI, and Desktop.",
+  "privacy": {
+    "distribution": "private repository access only",
+    "license": "UNLICENSED",
+    "public_marketplace_required": false
+  },
   "ui": {
     "dialog": "Add plugin from repository",
-    "description": "Devin reads the plugin from the repository each time it runs, so changes there take effect without re-adding it",
     "fields": {
       "Repository": {
-        "placeholder": "owner/repo or https://github.com/owner/repo",
-        "value": "https://github.com/QuantumPhi2/PhiMiner",
-        "hint": "Don't include plaintext secrets. Use plugin secret references instead"
+        "value": "https://github.com/QuantumPhi2/PhiMiner"
       },
       "Subdirectory": {
-        "optional": true,
-        "placeholder": "plugins/my-plugin",
-        "hint": "Optional. The plugin's root inside the repository",
         "value": "plugins/pythia",
-        "warning": "The value must be the plugin root: the folder containing .devin-plugin/plugin.json. Never enter this file's path (plugins/ORG_REQUIRED_MANIFEST.json) here — this file is a handoff doc, not a plugin root."
+        "warning": "Use the folder containing .devin-plugin/plugin.json."
       }
     }
   },
@@ -30,20 +29,28 @@
       }
     ]
   },
-  "pinned": {
-    "requiredPlugins": [
-      {
-        "source": "git-subdir",
-        "url": "https://github.com/QuantumPhi2/PhiMiner.git",
-        "path": "plugins/pythia",
-        "sha": "712a10eccd89d5d0884172345de456090a6d3d9a"
-      }
-    ]
+  "runtime_provenance": {
+    "status_command": "python plugins/pythia/scripts/plugin_status.py --write-receipt",
+    "runtime_receipt": "artifacts/pythia/devin-plugin-runtime.json",
+    "evidence_ledger": "artifacts/pythia/devin-engineering-evidence.jsonl",
+    "publish_root": "evidence/devin",
+    "evaluation_command": "python plugins/pythia/scripts/evaluate_augmentation.py evidence/devin",
+    "rule": "Every task uses one stable task_id and seals a content-addressed evidence pack before a completion claim."
   },
+  "evidence_claim_boundary": "A pack proves observed augmentation use and recorded outcomes. Causal uplift requires comparable baseline and augmented task cohorts.",
   "skills_installed_as": [
+    "/pythia:pythia-plugin-status",
     "/pythia:pythia-long-context",
-    "/pythia:pythia-finish-the-job",
+    "/pythia:pythia-repo-ontology",
+    "/pythia:pythia-systematic-debugging",
+    "/pythia:pythia-tdd",
+    "/pythia:pythia-agent-fabric",
+    "/pythia:pythia-engineering-quality",
+    "/pythia:pythia-promotion-gate",
+    "/pythia:pythia-deploy-rollback",
+    "/pythia:pythia-evidence-pack",
     "/pythia:hyba-products",
+    "/pythia:pythia-finish-the-job",
     "/pythia:pythia-stop-check"
   ]
 }

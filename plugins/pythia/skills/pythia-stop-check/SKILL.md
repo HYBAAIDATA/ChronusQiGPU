@@ -1,25 +1,41 @@
 ---
 name: pythia-stop-check
-description: Stop checklist for any session where the Stop hook did not run (cloud or hook fail-open). Recite before ending: checkpoint next is done/blocked/none, fresh verification quoted, final checkpoint appended.
+description: Explicit pre-stop verification for Devin sessions. Confirm runtime plugin provenance, terminal checkpoint state, observed core skill use, and fresh verification evidence before ending.
 allowed-tools:
   - read
   - grep
   - glob
+  - exec
 triggers:
   - user
   - model
 ---
 
-# Stop Check (fallback — hooks are fail-open)
+# Stop Check
 
-Hooks are best-effort and fail-open: if the Stop hook did not run, YOU are
-the stop gate. Before ending any job, verify all three:
+## Invocation receipt
 
-1. **Checkpoint closed** — last line of
-   `artifacts/pythia/devin-checkpoint.jsonl` has `next` equal to `done`,
-   `blocked: <reason>`, or `none`. If it names real work, do the work.
-2. **Evidence quoted** — fresh test/lint/build output from THIS session is in
-   hand. "Should pass" is not evidence.
-3. **Final checkpoint appended** — goal/done/next/files-touched written.
+First run:
 
-Missing journal file = honest absence: state it, do not block on it.
+```text
+python plugins/pythia/scripts/plugin_status.py --record-skill pythia-stop-check --write-receipt
+```
+
+Before ending any job, verify:
+
+1. The runtime receipt reports the current `plugin_source_sha`.
+2. The final checkpoint exists and is valid JSON.
+3. The checkpoint is bound to that same plugin source SHA.
+4. `next` is exactly:
+   - `done`;
+   - `none`; or
+   - `blocked: <reason>`.
+5. Runtime-observed skill use includes:
+   - `pythia-plugin-status`;
+   - `pythia-long-context`;
+   - `pythia-finish-the-job`.
+6. The checkpoint's `verification` field contains fresh, non-pending evidence
+   from this session.
+
+A missing or malformed journal is not a successful close-out condition.
+Installation alone is not proof that this plugin or its skills were used.

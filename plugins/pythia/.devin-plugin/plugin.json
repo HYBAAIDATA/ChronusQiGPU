@@ -1,8 +1,18 @@
 {
   "name": "pythia",
-  "version": "0.1.0",
-  "description": "PYTHIA intelligence + four-tier memory for Devin cloud, CLI, and Desktop: checkpoint skills, completion discipline, lifecycle hooks (fail-open), HYBA products",
+  "version": "0.3.0",
+  "description": "Private repo-local PYTHIA engineering-intelligence augmentation for Devin: semantic repo context, disciplined debugging/TDD, bounded agent delegation, quality and promotion gates, deploy/rollback awareness, checkpoint continuity, and tamper-evident engineering evidence.",
   "author": { "name": "PYTHIA Contributors" },
-  "license": "MIT",
-  "keywords": ["devin", "plugin", "pythia", "memory", "intelligence", "hyba"]
+  "license": "UNLICENSED",
+  "keywords": [
+    "devin",
+    "plugin",
+    "pythia",
+    "engineering-intelligence",
+    "memory",
+    "ontology",
+    "quality",
+    "evidence",
+    "private"
+  ]
 }
