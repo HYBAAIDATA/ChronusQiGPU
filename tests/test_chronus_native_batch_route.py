@@ -16,6 +16,7 @@ from chronus.mla1517.mining.execution_router import NONCE_ORDER_HENDRIX
 from chronus.mla1517.mining.geodesic_support import (
     PythiaProductionMiningCoordinator,
     ProductionExecutionRouter,
+    chronus_fabric_state_for,
 )
 from chronus.mla1517.mining.pythia_search import (
     SEARCH_ARCHITECTURE_ID,
@@ -203,6 +204,9 @@ def test_plan_binding_declares_chronus_authority_not_vendor_runtime():
     coordinator.geodesic_enabled = True
     coordinator.last_mining_decision = None
     coordinator.execution_hasher = _ChronusBatchHasher("metal")
+    coordinator._chronus_fabric_state = chronus_fabric_state_for(
+        coordinator.execution_hasher
+    )
     coordinator.pythia_search_precompute = precompute_pythia_search()
 
     plan = coordinator._bind_plan_execution_intent(_plan("cpu_reference"))
