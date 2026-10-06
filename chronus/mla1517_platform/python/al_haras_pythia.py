@@ -33,6 +33,7 @@ _PYTHIA_ALLOWED_OPERATIONS: frozenset[str] = DEFAULT_ALLOWED_OPERATIONS | frozen
     {
         "mining.elevate",
         "mining.escalate",
+        "mining.lease",
         "mining.evidence",
         "mining.start",
         "mining.submit",
