@@ -1,0 +1,141 @@
+"""Executable contract for the canonical Chronus H4/600 mining fabric."""
+from __future__ import annotations
+
+from chronus.mla1517.mining.h4_600_execution import (
+    H4600HybridCoordinator,
+    promote_execution_hasher,
+)
+from hyba.hybrid.coordinator import HybridCoordinator, StratumJob
+from hyba.hybrid.lucas_partition import H4_FACE_COUNT, partition
+from hyba.hybrid.nonce_scheduler import (
+    DeviceCapability,
+    DispatchHandle,
+    next_handle_id,
+)
+
+
+class _Scheduler:
+    """Deterministic physical-worker fixture; every assigned nonce is executed."""
+
+    def __init__(self, device_id: str, hps: float, device_class: str = "gpu") -> None:
+        self._cap = DeviceCapability(
+            device_id=device_id,
+            device_class=device_class,
+            measured_hashes_per_sec=hps,
+            supported=True,
+        )
+        self._done: dict[int, int] = {}
+        self._pending: dict[int, DispatchHandle] = {}
+        self.prepared: list[str] = []
+
+    def capability(self) -> DeviceCapability:
+        return self._cap
+
+    def prepare(self, job_id: str, header80: bytes) -> None:
+        assert len(header80) == 80
+        self.prepared.append(job_id)
+
+    def dispatch(self, window):
+        handle = DispatchHandle(
+            handle_id=next_handle_id(),
+            device_id=self._cap.device_id,
+            window=window,
+            dispatched_ns=1,
+        )
+        self._pending[handle.handle_id] = handle
+        return handle
+
+    def poll(self, handle):
+        pending = self._pending.pop(handle.handle_id, None)
+        if pending is not None:
+            self._done[handle.handle_id] = handle.window.span
+        return None
+
+    def is_done(self, handle) -> bool:
+        return handle.handle_id in self._done
+
+    def hashed_count(self, handle) -> int:
+        return self._done.get(handle.handle_id, 0)
+
+    def cancel(self, handle, reason="cancelled") -> None:
+        pending = self._pending.pop(handle.handle_id, None)
+        if pending is not None:
+            self._done[handle.handle_id] = 0
+
+
+def test_h4_partition_is_600_disjoint_11d_logical_vertices():
+    fast = _Scheduler("chronus-a", 9.0)
+    slow = _Scheduler("chronus-b", 1.0)
+    spans, cert = partition(6000, [fast, slow], strategy="h4_600")
+
+    assert cert.verify()
+    assert cert.topology == "chronus_h4_600_11d"
+    assert cert.as_dict()["logical_vertex_count"] == H4_FACE_COUNT == 600
+    assert len(spans) == 600
+    assert [span.face for span in spans] == list(range(600))
+    assert sum(span.span for span in spans) == 6000
+    assert spans[0].base_nonce == 0
+    assert spans[-1].base_nonce + spans[-1].span == 6000
+
+    # Measured capacity controls physical allocation; topology does not invent
+    # hashrate. 9:1 workers receive an exact 9:1 nonce budget here.
+    by_device = {}
+    for span in spans:
+        by_device[span.device_id] = by_device.get(span.device_id, 0) + span.span
+    assert by_device == {"chronus-a": 5400, "chronus-b": 600}
+
+
+def test_small_lease_folds_only_empty_vertices_without_losing_coverage():
+    worker = _Scheduler("chronus-a", 1.0)
+    spans, cert = partition(32, [worker], strategy="h4_600")
+    assert cert.verify()
+    assert len(spans) == 32
+    assert all(span.span == 1 for span in spans)
+    assert len(cert.folded_faces) == 568
+    assert sum(span.span for span in spans) == 32
+
+
+def test_h4_coordinator_dispatches_all_600_before_polling():
+    a = _Scheduler("chronus-a", 1.0)
+    b = _Scheduler("chronus-b", 1.0)
+    coordinator = H4600HybridCoordinator(a, extra_devices=[b])
+    job = StratumJob(
+        job_id="h4-e2e",
+        header80=bytes(80),
+        target=bytes(32),
+        nonce_space=600,
+    )
+
+    result = coordinator.run_job(job)
+    assert result.certificate.verify()
+    assert result.certificate.topology == "chronus_h4_600_11d"
+    assert len(result.handles) == 600
+    assert result.total_nonces_tried == 600
+    assert result.share is None
+    assert {handle["window"]["face"] for handle in result.handles} == set(range(600))
+
+
+def test_super_asic_promotion_reuses_bound_devices_and_changes_only_topology():
+    worker = _Scheduler("chronus-a", 1.0)
+    original = HybridCoordinator(worker)
+
+    class _Hasher:
+        backend = "super_asic:gpu"
+        _coord = original
+
+    hasher = _Hasher()
+    promoted = promote_execution_hasher(hasher)
+    assert promoted is hasher
+    assert isinstance(hasher._coord, H4600HybridCoordinator)
+    assert hasher._coord.gpu is worker
+    assert hasher.topology_id == "chronus_h4_600_11d"
+    assert hasher.logical_vertices == 600
+
+
+def test_non_composite_hasher_is_not_falsely_promoted():
+    class _Hasher:
+        backend = "opencl:gpu"
+
+    hasher = _Hasher()
+    assert promote_execution_hasher(hasher) is hasher
+    assert not hasattr(hasher, "topology_id")
