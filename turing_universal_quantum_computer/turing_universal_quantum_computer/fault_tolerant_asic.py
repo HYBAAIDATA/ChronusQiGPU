@@ -43,6 +43,7 @@ class EvidenceState(str, Enum):
     MODELLED = "modelled"
     SIMULATED = "simulated"
     MEASURED = "measured"
+    EXACT_VERIFIED = "exact_verified"
     INDEPENDENTLY_REPRODUCED = "independently_reproduced"
 
 
@@ -710,7 +711,7 @@ class MathematicalEvidence:
                 if record.state is not EvidenceState.INDEPENDENTLY_REPRODUCED:
                     return False
             elif record.state not in {
-                EvidenceState.MEASURED,
+                EvidenceState.EXACT_VERIFIED,
                 EvidenceState.INDEPENDENTLY_REPRODUCED,
             }:
                 return False
@@ -827,7 +828,7 @@ class FirstPrinciplesVerifier:
     def _record(category: str, artifact: Any) -> EvidenceRecord:
         return EvidenceRecord(
             category=category,
-            state=EvidenceState.MEASURED,
+            state=EvidenceState.EXACT_VERIFIED,
             artifact_digest=_digest(artifact),
             source="PureQuantumMathASIC.FirstPrinciplesVerifier",
             observed_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),

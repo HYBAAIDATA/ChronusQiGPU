@@ -203,7 +203,7 @@ class QuantumAsicModelTests(unittest.TestCase):
                 category,
                 EvidenceState.INDEPENDENTLY_REPRODUCED
                 if category == "independent_model_review"
-                else EvidenceState.MEASURED,
+                else EvidenceState.EXACT_VERIFIED,
             )
             for category in categories
         )

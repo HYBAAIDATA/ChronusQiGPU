@@ -26,6 +26,9 @@ tolerance, a placeholder, or self-issued independent review as proof.
 9. Formal mathematical capacity is not executed protocol work.
 10. Independent review cannot be self-issued.
 
+Exact computational proof evidence is labeled `exact_verified`, never
+`measured`; the latter is reserved for physical observations.
+
 ## 3. Unified exact field
 
 The representation `Q(sqrt(2)) + i Q(sqrt(2))` is the degree-four cyclotomic
