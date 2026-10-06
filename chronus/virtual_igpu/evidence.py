@@ -121,7 +121,10 @@ class EvidenceLedger:
     def _load(self) -> None:
         if not self.path.exists():
             return
-        for line in self.path.read_text(encoding="utf-8").splitlines():
+        expected_prev = "genesis"
+        for line_number, line in enumerate(
+            self.path.read_text(encoding="utf-8").splitlines(), start=1
+        ):
             line = line.strip()
             if not line:
                 continue
@@ -146,10 +149,57 @@ class EvidenceLedger:
                     hmac_hex=data.get("hmac_hex"),
                     metadata=dict(data.get("metadata", {})),
                 )
-                self._records.append(rec)
-                self._last_chain = rec.chain_digest
-            except Exception:
-                continue
+            except Exception as exc:
+                raise ValueError(
+                    f"invalid evidence ledger record at line {line_number}"
+                ) from exc
+            body = {
+                "workload_id": rec.workload_id,
+                "adapter_id": rec.adapter_id,
+                "kind": rec.kind,
+                "trust_class": rec.trust_class,
+                "hardware_rooted": rec.hardware_rooted,
+                "hardware_executed": rec.hardware_executed,
+                "wall_time_ns": rec.wall_time_ns,
+                "device_time_ns": rec.device_time_ns,
+                "receipt": rec.receipt,
+                "result": rec.result,
+                "metadata": rec.metadata,
+                "chain_prev": rec.chain_prev,
+            }
+            expected_hash = digest_json(body)
+            expected_chain = hashlib.sha256(
+                f"{expected_prev}:{expected_hash}".encode("utf-8")
+            ).hexdigest()
+            if rec.chain_prev != expected_prev:
+                raise ValueError(
+                    f"evidence chain predecessor mismatch at line {line_number}"
+                )
+            if rec.content_hash != expected_hash:
+                raise ValueError(
+                    f"evidence content hash mismatch at line {line_number}"
+                )
+            if rec.chain_digest != expected_chain:
+                raise ValueError(
+                    f"evidence chain digest mismatch at line {line_number}"
+                )
+            if rec.hmac_hex is not None:
+                if self.hmac_key is None:
+                    raise ValueError(
+                        "evidence ledger requires its configured HMAC key"
+                    )
+                expected_hmac = hmac.new(
+                    self.hmac_key,
+                    rec.content_hash.encode("utf-8"),
+                    hashlib.sha256,
+                ).hexdigest()
+                if not hmac.compare_digest(expected_hmac, rec.hmac_hex):
+                    raise ValueError(
+                        f"evidence HMAC mismatch at line {line_number}"
+                    )
+            self._records.append(rec)
+            expected_prev = rec.chain_digest
+            self._last_chain = rec.chain_digest
 
     def append(
         self,
@@ -441,9 +491,16 @@ def validate_receipt(
             report["errors"].append("digest mismatch")
             report["integrity"] = "digest_mismatch"
 
-    if expected_runtime and art.get("runtime_identity") not in {None, expected_runtime}:
-        if art.get("runtime_identity") != expected_runtime:
+    actual_runtime = art.get("runtime_identity") or prov.get("runtime_identity")
+    actual_kernel = art.get("kernel_identity") or prov.get("kernel_identity")
+    actual_package = art.get("package_version") or prov.get("package_version")
+    if expected_runtime and actual_runtime != expected_runtime:
+        if actual_runtime != expected_runtime:
             report["errors"].append("runtime_identity mismatch")
+    if expected_kernel and actual_kernel != expected_kernel:
+        report["errors"].append("kernel_identity mismatch")
+    if expected_package and actual_package != expected_package:
+        report["errors"].append("package_version mismatch")
 
     if hmac_key and art.get("hmac_hex"):
         expected = hmac.new(
@@ -458,7 +515,20 @@ def validate_receipt(
         hw_rooted and softwareish
     ):
         # only mark not-ok for hard integrity errors when not using raise path
-        hard = [e for e in report["errors"] if "digest" in e or "HMAC" in e or "runtime" in e]
+        hard = [
+            e
+            for e in report["errors"]
+            if any(
+                token in e
+                for token in (
+                    "digest",
+                    "HMAC",
+                    "runtime",
+                    "kernel",
+                    "package",
+                )
+            )
+        ]
         if hard:
             report["ok"] = False
         # hardware_rooted without mechanism stays ok=False only if strict
@@ -477,7 +547,7 @@ def validate_receipt(
     if trust == TrustClass.RUNTIME_SIGNED.value and not hw_rooted:
         # strip soft hardware_rooted config errors if any slipped in
         report["errors"] = [e for e in report["errors"] if "hardware_rooted=true" not in e]
-        if not any("digest" in e or "HMAC" in e for e in report["errors"]):
+        if not report["errors"]:
             report["ok"] = True
 
     return report

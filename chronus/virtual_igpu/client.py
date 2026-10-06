@@ -15,6 +15,7 @@ import json
 import os
 import urllib.error
 import urllib.request
+from urllib.parse import urlparse
 
 from .abi import (
     ABI_VERSION,
@@ -41,13 +42,24 @@ class ChronusClient:
         daemon: RuntimeDaemon | None = None,
         auth_token: str | None = None,
     ) -> None:
-        self.delivery_mode = str(delivery_mode)
+        try:
+            self.delivery_mode = DeliveryMode(str(delivery_mode)).value
+        except ValueError as exc:
+            raise ChronusClientError(
+                f"unsupported delivery mode: {delivery_mode!r}"
+            ) from exc
         self.endpoint = endpoint or os.getenv("CHRONUS_VIGPU_ENDPOINT")
         self.timeout_s = float(timeout_s)
+        if self.timeout_s <= 0:
+            raise ChronusClientError("timeout_s must be positive")
         self.store = store or store_dir
         self.auth_token = auth_token or os.getenv("CHRONUS_VIGPU_TOKEN")
         self._daemon = daemon
         if self.delivery_mode == DeliveryMode.EMBEDDED.value:
+            if endpoint is not None:
+                raise ChronusClientError(
+                    "endpoint cannot be supplied for embedded delivery"
+                )
             if self._daemon is None:
                 kwargs: dict[str, Any] = {}
                 if self.store:
@@ -62,6 +74,27 @@ class ChronusClient:
             if not self.endpoint:
                 raise ChronusClientError(
                     f"{self.delivery_mode} requires endpoint= or CHRONUS_VIGPU_ENDPOINT"
+                )
+            parsed = urlparse(self.endpoint)
+            if self.delivery_mode == DeliveryMode.REMOTE_SERVICE.value:
+                loopback = parsed.hostname in {"127.0.0.1", "::1", "localhost"}
+                if parsed.scheme != "https" and not (
+                    loopback and parsed.scheme == "http"
+                ):
+                    raise ChronusClientError(
+                        "remote_service requires HTTPS except on loopback"
+                    )
+                if not loopback and not self.auth_token:
+                    raise ChronusClientError(
+                        "remote_service requires an authentication token"
+                    )
+            elif parsed.scheme != "http" or parsed.hostname not in {
+                "127.0.0.1",
+                "::1",
+                "localhost",
+            }:
+                raise ChronusClientError(
+                    "local_sidecar must use loopback HTTP"
                 )
 
     def health(self) -> dict[str, Any]:
@@ -83,6 +116,8 @@ class ChronusClient:
         # Remote: fail closed — no local fallback
         try:
             data = self._rpc("POST", "/submit", w.as_dict())
+            if not isinstance(data, dict) or data.get("abi_version") != ABI_VERSION:
+                raise ChronusClientError("remote response has incompatible ABI version")
             return WorkloadResult.from_dict(data)
         except Exception as exc:
             raise ChronusClientError(f"remote submit failed (no local fallback): {exc}") from exc

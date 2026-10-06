@@ -410,11 +410,22 @@ class CPUEmulatorAdapter(Adapter):
         )
 
     def _sha256d_scan(self, workload: Workload, value: dict[str, Any], started: int) -> WorkloadResult:
-        # Prefer mining hasher when present; else pure hashlib double SHA-256
         if "header80_hex" in value:
-            header80 = bytes.fromhex(str(value["header80_hex"]))
-            header_prefix = header80[:76] if len(header80) >= 76 else header80
-            start = int.from_bytes(header80[76:80], "little") if len(header80) >= 80 else int(value.get("start_nonce", 0))
+            try:
+                header80 = bytes.fromhex(str(value["header80_hex"]))
+            except ValueError as exc:
+                raise AdapterUnavailable("header80_hex is not valid hexadecimal") from exc
+            if len(header80) != 80:
+                raise AdapterUnavailable(
+                    f"header80_hex must encode exactly 80 bytes, got {len(header80)}"
+                )
+            header_prefix = header80[:76]
+            start = int(
+                value.get(
+                    "start_nonce",
+                    int.from_bytes(header80[76:80], "little"),
+                )
+            )
             count = int(value.get("count", 1))
         else:
             prefix = value.get("prefix_b64")
@@ -426,33 +437,36 @@ class CPUEmulatorAdapter(Adapter):
                 header_prefix = self._payload_bytes(value)
             start = int(value.get("start_nonce", 0))
             count = int(value.get("count", 1))
-        if count < 0 or count > 1_000_000:
+        if len(header_prefix) != 76:
+            raise AdapterUnavailable(
+                f"SHA256d scan requires a 76-byte header prefix, got {len(header_prefix)}"
+            )
+        if count <= 0 or count > 1_000_000:
             raise AdapterUnavailable("count out of bounds")
+        if start < 0 or start > 0xFFFFFFFF or start + count - 1 > 0xFFFFFFFF:
+            raise AdapterUnavailable("nonce range exceeds uint32")
         target = value.get("target", value.get("target_hex"))
-        target_int = None
-        if target is not None:
-            if isinstance(target, str) and not target.isdigit():
-                try:
-                    target_int = int(target, 16)
-                except ValueError:
-                    target_int = None
+        if target is None:
+            raise AdapterUnavailable("target or target_hex is required")
+        try:
+            if isinstance(target, str):
+                target_int = int(target, 16)
             else:
                 target_int = int(target)
+        except (TypeError, ValueError) as exc:
+            raise AdapterUnavailable("target is malformed") from exc
+        if target_int < 0 or target_int >= 1 << 256:
+            raise AdapterUnavailable("target is outside the uint256 range")
         hits: list[dict[str, Any]] = []
         checked = 0
         for i in range(count):
             nonce = start + i
-            if len(header_prefix) >= 76:
-                header = bytearray(header_prefix[:76])
-                header[76 - 4 : 76] = int(nonce).to_bytes(4, "little")
-                header_b = bytes(header)
-            else:
-                header_b = header_prefix + int(nonce).to_bytes(4, "little")
+            header_b = header_prefix + int(nonce).to_bytes(4, "little")
             d1 = hashlib.sha256(header_b).digest()
             d2 = hashlib.sha256(d1).digest()
             digest_int = int.from_bytes(d2[::-1], "big")
             checked += 1
-            if target_int is None or digest_int <= target_int:
+            if digest_int <= target_int:
                 hits.append(
                     {
                         "nonce": nonce,
@@ -460,8 +474,7 @@ class CPUEmulatorAdapter(Adapter):
                         "digest_int": digest_int,
                     }
                 )
-                if target_int is not None:
-                    break
+                break
         return self._result(
             workload,
             {
