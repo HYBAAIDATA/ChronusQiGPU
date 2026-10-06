@@ -1,0 +1,527 @@
+# PYTHIA service constitution — governance overlay.
+#
+# This file is the authored governance half of the service constitution.
+# governance/render_service_constitution.py merges it with
+# governance/api_registry.yaml into docs/SERVICE_CONSTITUTION.yaml, which
+# carries the full fifteen-field constitution record per API:
+#
+#   capability, authority, interface, consumer, schema, dependency,
+#   criticality, slo, failure_mode, retry_idempotency, evidence_owner,
+#   observability, lifecycle_owner, version, deprecation_policy
+#
+# Fields sourced from the registry (authority/interface/consumer/schema/
+# failure_mode/retry_idempotency/version/deprecation_state) are NOT repeated
+# here — single source of truth per field.  This overlay is authoritative
+# for capability, criticality, slo, dependency, evidence_owner,
+# observability, lifecycle_owner and the deprecation policy mapping.
+#
+# Never edit docs/SERVICE_CONSTITUTION.yaml or docs/DEPENDENCY_GRAPH.yaml
+# directly — edit this file and re-run the renderer.
+
+schema: pythia.service_constitution_overlay/1
+repository: QuantumPhi2/PhiMiner
+produces:
+  - docs/SERVICE_CONSTITUTION.yaml
+  - docs/DEPENDENCY_GRAPH.yaml
+
+# ---------------------------------------------------------------------------
+# Reliability tiers — the frozen tier table.  `slo` is the tier-level
+# objective; a per-API `slo` entry overrides it.  SLOs here are DECLARED
+# objectives; Phase 4B measures them — no measured claim is made by this
+# document.
+# ---------------------------------------------------------------------------
+reliability_tiers:
+  R0:
+    name: Constitutional
+    required_behaviour: Fail closed. No semantic fallback.
+    slo: >-
+      verdict integrity 100% — every decision emits signed evidence; any
+      dependency failure resolves to a closed verdict, never an open one
+  R1:
+    name: Mining-critical
+    required_behaviour: >-
+      Fail closed for invalid work; controlled reconnect; no fabricated state
+    slo: >-
+      invalid work never accepted; disconnects surface as DISCONNECTED;
+      reconnect is bounded and logged
+  R2:
+    name: Specialist computation
+    required_behaviour: >-
+      Explicit UNAVAILABLE; alternative only when policy authorises
+    slo: >-
+      unavailable dependencies surface as explicit UNAVAILABLE/503-class
+      states; no specialist may silently substitute another authority's result
+  R3:
+    name: Recovery / optimisation
+    required_behaviour: >-
+      Bounded degradation; retain evidence; cannot rewrite authority
+    slo: >-
+      degradation stays inside the declared bound; every intervention leaves
+      a ledger entry; no verdict of another subsystem is rewritten
+  R4:
+    name: Experience / observability
+    required_behaviour: >-
+      May degrade independently; never change backend truth
+    slo: >-
+      degradation is local to the projection; a stale or unavailable view
+      is marked as such rather than presenting last-known state as current
+
+# ---------------------------------------------------------------------------
+# External authorities — dependency-graph nodes that are not registry APIs.
+# ---------------------------------------------------------------------------
+external_authorities:
+  POOL: external share-acceptance authority (stratum endpoint)
+  OPERATOR: human operator principal (operator-console credentials)
+  FILESYSTEM: OS filesystem boundary (paths, permissions, atomicity)
+  REMOTE_DEVICE: remote GPU host at the far end of remote_opencl_v2
+
+# ---------------------------------------------------------------------------
+# Named lifecycle owners (2B.3).  `accountable` is the named human owner —
+# the repository owner of record in .github/CODEOWNERS.  `authority` is the
+# subsystem whose engineering line owns deprecation/version policy for the
+# interface.
+# ---------------------------------------------------------------------------
+lifecycle_owners:
+  PYTHIA:
+    accountable: '@bollingertm'
+    authority: PYTHIA
+  EUCLID:
+    accountable: '@bollingertm'
+    authority: EUCLID
+  TURING:
+    accountable: '@bollingertm'
+    authority: TURING
+  KELLOGG:
+    accountable: '@bollingertm'
+    authority: KELLOGG
+  CHRONUS:
+    accountable: '@bollingertm'
+    authority: CHRONUS
+  THESEUS:
+    accountable: '@bollingertm'
+    authority: THESEUS
+  OVID:
+    accountable: '@bollingertm'
+    authority: OVID
+  SALAMANDER:
+    accountable: '@bollingertm'
+    authority: SALAMANDER
+  AL_HARAS:
+    accountable: '@bollingertm'
+    authority: AL_HARAS
+  SHA256D_VERIFIER:
+    accountable: '@bollingertm'
+    authority: SHA256D_VERIFIER
+  POOL:
+    accountable: '@bollingertm'
+    authority: POOL
+  HYBA_DB:
+    accountable: '@bollingertm'
+    authority: HYBA_DB
+
+# ---------------------------------------------------------------------------
+# Field defaults.  `observability` and `deprecation_policy` resolve by
+# interface_type / deprecation_state unless the API overrides them.
+# `evidence_owner` defaults to the registry `owner`.
+# ---------------------------------------------------------------------------
+defaults:
+  observability_by_interface:
+    HTTP_PUBLIC: >-
+      X-Request-Id correlation on every response; /api/v1/metrics counters;
+      boot audit records plane state
+    HTTP_OPERATOR: >-
+      X-Request-Id correlation on every response; /api/v1/metrics counters;
+      operator mutations append audit events
+    HTTP_PRIVILEGED: >-
+      X-Request-Id correlation; guardian-mediated evidence receipt per call;
+      denial receipts audited
+    EVENT_STREAM: >-
+      X-Request-Id on stream handshake; per-event sequence; disconnect is an
+      observable event, never silent
+    INTERNAL_PYTHON: >-
+      typed verdict/evidence objects; producer-side evidence ledger where
+      declared in custody_requirement
+    WIRE_PROTOCOL: >-
+      session transcript; share-outcome evidence in worker metrics sidecars
+    FILE/ARTIFACT_CONTRACT: >-
+      append-only on-disk record; staleness TTL where declared
+    CLI: 'process exit codes; stdout/stderr log; boot audit where applicable'
+    RESERVED_NAMESPACE: 'signed denial receipts audited at the boundary'
+    LEGACY: 'identical to the canonical successor'
+  deprecation_policy_by_state:
+    CANONICAL: >-
+      per docs/API_LIFECYCLE_POLICY.md — additive changes within the major
+      version; breaking change requires a new schema_version plus a
+      deprecation window
+    COMPATIBILITY_ALIAS: >-
+      frozen alias; removed only when the canonical successor has served a
+      full deprecation window with zero recorded consumers
+    DEPRECATED: >-
+      removal candidate per docs/API_LIFECYCLE_POLICY.md; must not gain new
+      consumers
+    RESERVED_NAMESPACE: >-
+      permanently reserved — promotion to an implemented API requires a new
+      canonical entry plus architecture sign-off; never silently gains a
+      handler
+
+# ---------------------------------------------------------------------------
+# Per-API governance records.  capability + criticality + dependency are
+# mandatory for every registry api_id; slo/evidence_owner/observability/
+# deprecation_policy/lifecycle_owner may override the resolved default.
+# ---------------------------------------------------------------------------
+apis:
+
+  # -- HTTP: liveness / readiness / metrics -------------------------------
+  pythia.health:
+    capability: process-liveness verdict for the PYTHIA control plane
+    criticality: R4
+    dependencies: []
+  pythia.readiness:
+    capability: declared dependency/config readiness projection
+    criticality: R4
+    dependencies:
+      - pythia.boot_audit
+      - pythia.worker_heartbeat
+      - al_haras.guardian
+  pythia.ready_to_mine:
+    capability: observed mining-readiness verdict over stratum transport, live workers, and execution backend
+    criticality: R4
+    dependencies:
+      - stratum.v1
+      - pythia.worker_heartbeat
+      - chronus.execution
+  pythia.metrics:
+    capability: prometheus exposition of measured runtime counters
+    criticality: R4
+    dependencies:
+      - pythia.worker_heartbeat
+  pythia.status:
+    capability: operator status projection over backend, workers, and stratum transport
+    criticality: R4
+    dependencies:
+      - chronus.execution
+      - stratum.v1
+      - pythia.worker_heartbeat
+
+  # -- HTTP: operator configuration & fabric -------------------------------
+  pythia.config.read:
+    capability: public (secret-redacted) view of declared runtime configuration
+    criticality: R4
+    dependencies:
+      - pythia.runtime_config_file
+  pythia.config.update:
+    capability: validated update of declared runtime configuration, audited
+    criticality: R4
+    dependencies:
+      - pythia.runtime_config_file
+      - pythia.boot_audit
+  pythia.system.map:
+    capability: forensic map of the composed subsystem fabric
+    criticality: R4
+    dependencies:
+      - euclid.orchestration
+  pythia.system.verify.read:
+    capability: last system-fabric verification report projection
+    criticality: R4
+    dependencies:
+      - chronus.execution
+  pythia.system.verify.start:
+    capability: command acceptance for a system-fabric verification run
+    criticality: R4
+    dependencies:
+      - chronus.execution
+
+  # -- HTTP: intelligence surface (EUCLID-owned truth) ---------------------
+  pythia.intelligence.status:
+    capability: projection of EUCLID organism status and readiness
+    criticality: R2
+    dependencies:
+      - euclid.orchestration
+  pythia.intelligence.selftest:
+    capability: command acceptance for an EUCLID self-test run
+    criticality: R2
+    dependencies:
+      - euclid.orchestration
+  pythia.intelligence.maintenance:
+    capability: command acceptance for EUCLID maintenance operations
+    criticality: R2
+    dependencies:
+      - euclid.orchestration
+  pythia.intelligence.autonomous:
+    capability: autonomous-supervisor status/control projection over EUCLID
+    criticality: R2
+    dependencies:
+      - euclid.orchestration
+  pythia.intelligence.engineer:
+    capability: command acceptance for the repo-engineer specialist run
+    criticality: R2
+    dependencies:
+      - euclid.orchestration
+  pythia.intelligence.cognition_solve:
+    capability: command acceptance for a single EUCLID cognition-loop solve
+    criticality: R2
+    dependencies:
+      - euclid.orchestration
+  pythia.agentic:
+    capability: command acceptance/status for the agentic-mining worker runner
+    criticality: R2
+    dependencies:
+      - euclid.orchestration
+      - chronus.execution
+      - pythia.boot_audit
+  pythia.campaign:
+    capability: command acceptance for a bounded EUCLID campaign run
+    criticality: R2
+    dependencies:
+      - euclid.orchestration
+  pythia.knowledge:
+    capability: projection of shared intelligence knowledge replayed from the fabric journal
+    criticality: R2
+    dependencies:
+      - euclid.orchestration
+
+  # -- HTTP: mining control / evidence (privileged) -------------------------
+  pythia.mining.control:
+    capability: guardian-mediated mining start/stop/pool-switch command acceptance
+    criticality: R1
+    dependencies:
+      - al_haras.guardian
+      - chronus.execution
+      - stratum.v1
+      - pythia.boot_audit
+  pythia.mining.evidence:
+    capability: projection of worker-produced mining evidence (attestations, share outcomes)
+    criticality: R1
+    dependencies:
+      - al_haras.guardian
+      - pythia.worker_heartbeat
+  pythia.stratum.status:
+    capability: observed stratum transport/session state projection
+    criticality: R1
+    dependencies:
+      - stratum.v1
+
+  # -- HTTP: telemetry / audit / knowledge observation ----------------------
+  pythia.telemetry:
+    capability: ops-telemetry summary, events, history, causal ledger, and mining-session projections
+    criticality: R4
+    dependencies:
+      - pythia.worker_heartbeat
+      - chronus.execution
+  pythia.telemetry.stream:
+    capability: server-sent event stream of live telemetry events
+    criticality: R4
+    dependencies:
+      - pythia.worker_heartbeat
+      - chronus.execution
+  pythia.audit.tail:
+    capability: tail projection of the append-only boot audit ledger
+    criticality: R4
+    dependencies:
+      - pythia.boot_audit
+  pythia.gpu:
+    capability: observed GPU capability/state projection
+    criticality: R4
+    dependencies:
+      - chronus.execution
+  pythia.hardware.status:
+    capability: observed hardware capability matrix projection
+    criticality: R4
+    dependencies:
+      - chronus.execution
+
+  # -- HTTP: AL HARAS security surface (privileged) -------------------------
+  al_haras.security.status:
+    capability: guardian-mediated projection of the security plane's public status
+    criticality: R0
+    dependencies:
+      - al_haras.guardian
+  al_haras.security.subscribe:
+    capability: guardian-mediated issuance of subscription credentials
+    criticality: R0
+    dependencies:
+      - al_haras.guardian
+  al_haras.security.evaluate:
+    capability: guardian-mediated admission verdict for an operation
+    criticality: R0
+    dependencies:
+      - al_haras.guardian
+
+  # -- HTTP: tensor / TOE surface (privileged) ------------------------------
+  kellogg.tensor.capabilities:
+    capability: guardian-mediated projection of the tensor runtime's measured capabilities
+    criticality: R2
+    dependencies:
+      - al_haras.guardian
+      - kellogg.tensor.runtime
+  kellogg.tensor.execute:
+    capability: guardian-mediated tensor execution verdict (coordinate-committed)
+    criticality: R2
+    dependencies:
+      - al_haras.guardian
+      - kellogg.tensor.runtime
+      - theseus.custody
+  toe.collapse:
+    capability: guardian-mediated TOE trajectory-collapse prediction verdict
+    criticality: R2
+    dependencies:
+      - al_haras.guardian
+      - kellogg.tensor.runtime
+
+  # -- HTTP: recovery surface -----------------------------------------------
+  salamander.fault:
+    capability: command acceptance for supervised fault-injection / recovery drills
+    criticality: R3
+    dependencies:
+      - salamander.control_plane
+      - pythia.boot_audit
+
+  # -- HTTP: static SPA -------------------------------------------------------
+  pythia.static_spa:
+    capability: serves the operator-console single-page application and its assets
+    criticality: R4
+    dependencies: []
+
+  # -- Reserved namespaces (fail-closed by design) ---------------------------
+  namespace.policy:
+    capability: reserved privileged namespace — policy plane; deliberately unimplemented, fail-closed at the AL HARAS boundary
+    criticality: R0
+    dependencies:
+      - al_haras.guardian
+  namespace.worker:
+    capability: reserved privileged namespace — worker plane; deliberately unimplemented, fail-closed at the AL HARAS boundary
+    criticality: R0
+    dependencies:
+      - al_haras.guardian
+  namespace.recovery:
+    capability: reserved privileged namespace — recovery plane; deliberately unimplemented, fail-closed at the AL HARAS boundary
+    criticality: R0
+    dependencies:
+      - al_haras.guardian
+  namespace.admin:
+    capability: reserved privileged namespace — admin plane; deliberately unimplemented, fail-closed at the AL HARAS boundary
+    criticality: R0
+    dependencies:
+      - al_haras.guardian
+  namespace.quantum:
+    capability: reserved privileged namespace — quantum plane (TURING authority); deliberately unimplemented, fail-closed at the AL HARAS boundary
+    criticality: R0
+    dependencies:
+      - al_haras.guardian
+  namespace.scale:
+    capability: reserved privileged namespace — scale plane; deliberately unimplemented, fail-closed at the AL HARAS boundary
+    criticality: R0
+    dependencies:
+      - al_haras.guardian
+  namespace.assembly:
+    capability: reserved privileged namespace — assembly plane; deliberately unimplemented, fail-closed at the AL HARAS boundary
+    criticality: R0
+    dependencies:
+      - al_haras.guardian
+
+  # -- Internal Python contracts ---------------------------------------------
+  turing.vqc_pipeline:
+    capability: typed in-process VQC execution — TURING's canonical interface
+    criticality: R2
+    dependencies:
+      - theseus.custody
+  theseus.custody:
+    capability: durable custody boundary — content-addressed records, integrity, provenance
+    criticality: R0
+    dependencies: []
+  ovid.transform:
+    capability: representation/state transformation authority with exactness classification and transform lineage
+    criticality: R2
+    dependencies:
+      - theseus.custody
+  kellogg.tensor.runtime:
+    capability: tensor capability runtime — matmul/kron/execute with coordinate-committed receipts
+    criticality: R2
+    dependencies:
+      - theseus.custody
+  chronus.execution:
+    capability: heterogeneous execution router across the registered device lanes
+    criticality: R1
+    dependencies:
+      - theseus.custody
+  al_haras.guardian:
+    capability: admission verdict authority — subscription-scoped evaluation with signed receipts
+    criticality: R0
+    dependencies: []
+  salamander.control_plane:
+    capability: bounded self-healing orchestration with hash-chained evidence ledger
+    criticality: R3
+    dependencies:
+      - theseus.custody
+  euclid.orchestration:
+    capability: governed organism orchestration — cognition loop and specialist dispatch under the AL HARAS boundary
+    criticality: R2
+    dependencies:
+      - al_haras.guardian
+      - turing.vqc_pipeline
+      - chronus.execution
+      - ovid.transform
+      - theseus.custody
+  hyba_db.store:
+    capability: tenant-scoped ontology store — registry, versions, events, reconciliation
+    criticality: R2
+    dependencies:
+      - theseus.custody
+
+  # -- Wire protocols ---------------------------------------------------------
+  stratum.v1:
+    capability: stratum V1 pool wire protocol — job stream and share submission
+    criticality: R1
+    dependencies:
+      - POOL
+  chronus.remote_opencl_v2:
+    capability: remote OpenCL execution wire protocol — client-verified remote device results
+    criticality: R1
+    dependencies:
+      - REMOTE_DEVICE
+
+  # -- File/artifact contracts -------------------------------------------------
+  pythia.worker_heartbeat:
+    capability: worker liveness/metrics sidecars read by the control plane
+    criticality: R4
+    dependencies:
+      - FILESYSTEM
+  pythia.boot_audit:
+    capability: append-only boot/operational audit ledger
+    criticality: R4
+    dependencies:
+      - FILESYSTEM
+  pythia.runtime_config_file:
+    capability: durable declared-configuration artifact, atomic read/write, secrets redacted on public view
+    criticality: R4
+    dependencies:
+      - FILESYSTEM
+
+  # -- CLI entrypoints -----------------------------------------------------------
+  pythia.cli.api:
+    capability: boots the PYTHIA control plane and workers under env gates
+    criticality: R1
+    dependencies:
+      - pythia.runtime_config_file
+      - pythia.boot_audit
+      - pythia.worker_heartbeat
+  pythia.cli.miner:
+    capability: headless stratum miner entrypoint, fail-closed without device/credentials
+    criticality: R1
+    dependencies:
+      - stratum.v1
+      - chronus.execution
+      - pythia.boot_audit
+  chronus.cli.remote_agent:
+    capability: remote GPU agent entrypoint serving remote_opencl_v2
+    criticality: R1
+    dependencies:
+      - chronus.remote_opencl_v2
+      - REMOTE_DEVICE
+
+  # -- Legacy aliases -----------------------------------------------------------
+  legacy.api_health:
+    capability: frozen compatibility alias of the health endpoint for older monitors
+    criticality: R4
+    dependencies:
+      - pythia.health
