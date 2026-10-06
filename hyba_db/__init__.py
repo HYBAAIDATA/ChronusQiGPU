@@ -17,7 +17,10 @@ from .models import (
     TensorRecord,
 )
 from .file_registry import FileRegistry, ReconciliationReport
+from .module_adapter import ModuleEvidenceAdapter
+from .ovid_transform import OvidTransformPlane
 from .store import EdgeKind, NodeKind, OntologyStore, ProofStatus
+from .theseus_custody import TheseusFileCustody
 
 __all__ = [
     "AccessDenied",
@@ -31,12 +34,15 @@ __all__ = [
     "FoldRecord",
     "IntegrityFailure",
     "InvalidRecord",
+    "ModuleEvidenceAdapter",
     "NodeKind",
     "OntologyStore",
+    "OvidTransformPlane",
     "OntologyStoreError",
     "ProofStatus",
     "Quota",
     "QuotaExceeded",
     "ReconciliationReport",
     "TensorRecord",
+    "TheseusFileCustody",
 ]

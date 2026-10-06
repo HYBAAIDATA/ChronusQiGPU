@@ -5,3 +5,7 @@ tests/fixtures/** -text
 # Skill grafts are verified byte-for-byte against PROVENANCE.json
 # (Intelligence/skill_graft.py): EOL translation would reject every graft.
 Intelligence/skills/** -text
+
+# PYTHIA structural corpus is verified by manifest sha256 at store bootstrap —
+# EOL translation corrupts the recorded digest binding.
+artifacts/pythia_training/** -text

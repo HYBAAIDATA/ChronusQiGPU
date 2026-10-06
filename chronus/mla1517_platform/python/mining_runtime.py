@@ -37,7 +37,6 @@ LOG = logging.getLogger("pythia.mining_runtime")
 # the control API's startup contract resolves them.
 from pool_catalog import POOL_CATALOG, pool_names, pool_settings  # noqa: E402
 
-
 # Tokens accepted inside PYTHIA_BACKEND_ORDER. The order is deliberately an
 # operator policy, not an inferred benchmark ranking: capability probes prove
 # a lane can execute, but they do not prove it is faster than every other lane.
@@ -122,9 +121,7 @@ def _registry() -> BackendRegistry:
     """The lane registry for this process; probes and decisions are evidence."""
     return BackendRegistry(
         software_revision=os.getenv("PYTHIA_SOFTWARE_REVISION", "unknown"),
-        evidence_path=os.getenv(
-            "PYTHIA_BACKEND_EVIDENCE_PATH", "data/backend_decisions.jsonl"
-        ),
+        evidence_path=os.getenv("PYTHIA_BACKEND_EVIDENCE_PATH", "data/backend_decisions.jsonl"),
     )
 
 
@@ -236,9 +233,8 @@ def select_execution_backend(
                 "reason": concrete.reason,
             }
         )
-        reason = (
-            f"declared PYTHIA_BACKEND_ORDER {list(order)} selected {concrete.lane}"
-            + (f" after refusals: {'; '.join(refused)}" if refused else "")
+        reason = f"declared PYTHIA_BACKEND_ORDER {list(order)} selected {concrete.lane}" + (
+            f" after refusals: {'; '.join(refused)}" if refused else ""
         )
         hasher = concrete.hasher
         if index > 0 and hasher is not None:
@@ -259,9 +255,7 @@ def select_execution_backend(
                 "policy_source": "PYTHIA_BACKEND_ORDER",
                 "policy_order": list(order),
                 "attempts": attempts,
-                "probes": {
-                    name: probe.as_dict() for name, probe in aggregate_probes.items()
-                },
+                "probes": {name: probe.as_dict() for name, probe in aggregate_probes.items()},
             },
             available_actions=tuple(
                 name for name, probe in aggregate_probes.items() if probe.available
@@ -274,10 +268,7 @@ def select_execution_backend(
         _record_aggregate_backend_selection(registry, aggregate)
         return aggregate
 
-    reason = (
-        "declared PYTHIA_BACKEND_ORDER exhausted with no available lane: "
-        + "; ".join(refused)
-    )
+    reason = "declared PYTHIA_BACKEND_ORDER exhausted with no available lane: " + "; ".join(refused)
     last = getattr(registry, "last_selection", None)
     if isinstance(last, BackendSelection):
         aggregate = replace(
@@ -291,9 +282,7 @@ def select_execution_backend(
                 "policy_source": "PYTHIA_BACKEND_ORDER",
                 "policy_order": list(order),
                 "attempts": attempts,
-                "probes": {
-                    name: probe.as_dict() for name, probe in aggregate_probes.items()
-                },
+                "probes": {name: probe.as_dict() for name, probe in aggregate_probes.items()},
             },
             available_actions=(),
             selected_action="Unavailable",
@@ -487,6 +476,21 @@ async def _main_async(args) -> None:
             if coordinator.chain_observer is None:
                 coordinator.chain_observer = PoolChainObserver(lambda: coordinator.client)
                 LOG.info("chain evidence: pool Stratum jobs (no bitcoind configured)")
+            # M3 storage plane: when declared via PYTHIA_STORAGE_* the causal
+            # voyage is projected into hyba_db — custodied, content-addressed,
+            # reconcilable. Absent config leaves mining untouched.
+            from chronus.mla1517.mining.storage_recorder import (
+                MiningStorageRecorder,
+            )
+
+            storage_recorder = MiningStorageRecorder.from_env(worker=username)
+            if storage_recorder is not None:
+                coordinator.causal.set_observer(storage_recorder.observe)
+                LOG.info(
+                    "M3 storage plane recording tenant=%s root=%s",
+                    storage_recorder.tenant_id,
+                    storage_recorder.root,
+                )
             coordinator.set_evidence_sink(publish_mining_evidence)
             coordinator.set_metrics_sink(
                 lambda counters: (

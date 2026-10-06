@@ -78,13 +78,65 @@ artifact; otherwise the report explicitly says `artifact_registered=false`.
 Database verification includes the file plane and mining-chain invariants.
 Missing data is `UNAVAILABLE`; no optimistic status is emitted.
 
+## Custody, transforms and production wiring
+
+- `hyba_db/theseus_custody.py` — a real THESEUS custody adapter: per-tenant
+  HMAC-tagged records on disk, tamper-detecting `verify()`, `revoke()` for
+  retire. A version without a `custody_record_id` is never reported
+  verified; reconciliation `passed` requires `custody_checked > 0` and
+  `custody_unverified = 0`. With no custody adapter wired the gate fails
+  closed rather than trusting `0 = PASS`.
+- `hyba_db/ovid_transform.py` — `OvidTransformPlane`: transcode/render/roll/
+  fold transforms, each with an `exactness` contract (`exact`, `lossy` only
+  with an explicit policy, `offered`/`requested` as candidate proof states),
+  a `receipt_json` audited against the written artifact, and a fail-closed
+  `equivalence` verdict (`equivalent` requires exactness and at least one
+  verified equivalence step). Promotion state derives from `TRANSFORMED` vs
+  `EQUIVALENT` events — a version can never promote without the recorded
+  step.
+- `chronus/mla1517/mining/storage_recorder.py` — `MiningStorageRecorder`,
+  attached to `CausalLedger` via `set_observer`, projects every real mining
+  transition (candidate_offer / candidate_verified / submission_sent /
+  resolved / pruned / rejected) into the registry: domain record + file
+  version + custody + link. `_mining_stage` uses the real acceptance keys
+  (`accepted`, `pool_result`, `verification`, `result`) so it does not
+  misclassify the causal lifecycle. `MiningRuntime` wires it when
+  `PYTHIA_STORAGE_DB`/`PYTHIA_STORAGE_ROOT`/`PYTHIA_INTEGRITY_KEY_HEX` are
+  set; absent config leaves mining untouched.
+- `hyba_db/module_adapter.py` — `ModuleEvidenceAdapter` for TURING, EUCLID,
+  SALAMANDER, OVID, OVIDBIS, ATHENA, HELIOS, THESEUS, VULCAN, AL HARAS,
+  KELLOGG, PYTHIA, CHRONUS, STRATUM, FILE_PLANE, MINING_CONTROL: `emit()`
+  writes bytes through the registry under the module's real producer name.
+
+## Observability
+
+`FileRegistry.stats(tenant_id=None)` returns per-tenant measured numbers:
+`file_objects_by_class`, `file_versions`, `custody_checked`,
+`custody_unverified`, `uncustodied_versions`, `events`, `unresolved_intents`,
+`orphan_records`, `orphan_versions`, `unlinked_versions`, `transforms`,
+`quota_used_records`, `quota_used_blob_bytes`. CLI:
+
+```text
+python scripts/storage_status.py --db path/to/store.sqlite --root path --tenant TENANT --integrity-key-hex HEX
+```
+
 ## Existing stores and migration
 
-Existing PrimeDB, SQLite, snapshots, journals, reports, manifests, caches and
-subsystem stores remain producers or adapters until an explicit retirement
-decision. The inventory classifies them; bootstrap/import must register their
-current digest, original path, discovery source/time, classification and
-known semantic owner without inventing historical timestamps or lineage.
+`FileRegistry.import_existing` registers the current digest, original path,
+classification and known semantic owner of pre-M3 stores without inventing
+historical timestamps or lineage — implemented and exercised in
+`tests/test_m3_bootstrap_adapters.py`.
+
+## Evidence pack
+
+```text
+python scripts/m3_evidence_pack.py --out evidence/m3_storage_gate
+```
+
+Runs the four M3 test files, provisions a tenant end-to-end (put → custody →
+OVID lineage → replay → reconcile → stats), digests every touched file, and
+writes a `pack.json` bound to the current commit SHA plus a companion
+`pack.sha256`.
 
 The storage gate is closed only after the implementation and acceptance
 commands have executed on an exact commit, including corruption, orphan,
