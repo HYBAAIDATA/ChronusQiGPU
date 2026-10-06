@@ -105,6 +105,8 @@ _NAMED_ALIASES: dict[str, tuple[str, str]] = {
     "szegedy_walk": ("quantum2026", "ModernQWalk"),
     "szegedy_operator": ("quantum2026", "szegedy_walk_operator"),
     "swarming": ("turing.swarm", "QuantumSwarm"),
+    "annealing": ("turing.annealing", "TransverseFieldIsing"),
+    "tunnelling": ("turing.annealing", "landau_zener"),
     "entanglement": ("turing.stabilizer", "StabilizerState"),
     "collapse": ("turing.exact_state_vector", "ExactStateVector"),
     "vqe": ("quantum2026", "ModernVQE"),
@@ -152,6 +154,7 @@ class PythiaMiningDirective:
     def as_evidence(self) -> dict[str, Any]:
         return {
             "schema": SCHEMA,
+            "search_algorithm": "hendrix_coprime_stride",
             "lane_order": list(self.lane_order),
             "preferred_nonce_count": len(self.preferred_nonces),
             "preferred_nonce_head": list(self.preferred_nonces[:32]),
@@ -425,9 +428,22 @@ class PythiaMiningAuthority:
                 "proposal_count": len(preferred),
             },
         )
+        quantum_inventory = self.quantum.inventory()
+        aliases = quantum_inventory.get("named_aliases", {})
         resources = {
             "intelligence_registry": self.orchestrator.registry.summary(),
-            "quantum": self.quantum.inventory(),
+            "quantum": quantum_inventory,
+            "search_support": {
+                "default_algorithm": "hendrix",
+                "supposition": {
+                    "available": True,
+                    "state": "ACTIVE_IN_PLAN",
+                },
+                "tunnelling": aliases.get("tunnelling", {"available": False}),
+                "annealing": aliases.get("annealing", {"available": False}),
+                "swarming": aliases.get("swarming", {"available": False}),
+                "entanglement": aliases.get("entanglement", {"available": False}),
+            },
             "tensor": {
                 "authority": "Kellogg tensor only",
                 "kellogg": self._availability("kellogg"),
