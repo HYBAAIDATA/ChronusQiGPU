@@ -32,7 +32,6 @@ from .execution_router import (
     ExecutionRouter,
     FallbackReason,
     NONCE_ORDER_HENDRIX,
-    NONCE_ORDER_M32,
     NONCE_ORDER_POINCARE_11D,
     RouteDecision,
 )
