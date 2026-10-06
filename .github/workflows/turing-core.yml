@@ -32,11 +32,20 @@ jobs:
           turing_universal_quantum_computer/tests/test_turing_specification.py
           turing_universal_quantum_computer/tests/test_turing_inventory.py
       - name: Build deterministic digest fixture
-        run: python scripts/turing_digest_fixture.py > turing-digest-${{ matrix.python }}.txt
+        run: |
+          python scripts/turing_digest_fixture.py > turing-digest-${{ matrix.python }}.txt
+          COMMIT_TIME="$(git show -s --format=%cI "$GITHUB_SHA")"
+          python -m turing_universal_quantum_computer.turing_core.inventory \
+            . --commit "$GITHUB_SHA" --timestamp "$COMMIT_TIME" \
+            --output turing-discovery-${{ matrix.python }}.json
+          python -c 'import json; print(json.load(open("turing-discovery-${{ matrix.python }}.json"))["report_digest"])' \
+            >> turing-digest-${{ matrix.python }}.txt
       - uses: actions/upload-artifact@v4
         with:
           name: turing-digest-${{ matrix.python }}
-          path: turing-digest-${{ matrix.python }}.txt
+          path: |
+            turing-digest-${{ matrix.python }}.txt
+            turing-discovery-${{ matrix.python }}.json
 
   cross-version:
     name: Cross-version digest equality
@@ -49,7 +58,8 @@ jobs:
           merge-multiple: true
       - name: Require one identical digest
         run: |
-          test "$(cat turing-digest-*.txt | sort -u | wc -l)" -eq 1
+          test "$(sha256sum turing-digest-*.txt | cut -d' ' -f1 | sort -u | wc -l)" -eq 1
+          test "$(sha256sum turing-discovery-*.json | cut -d' ' -f1 | sort -u | wc -l)" -eq 1
           cat turing-digest-*.txt
 
   lean:

@@ -440,10 +440,18 @@ def main(argv: Iterable[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("root", nargs="?", default=".")
     parser.add_argument("--commit")
+    parser.add_argument(
+        "--timestamp",
+        help="report metadata timestamp; excluded from report_digest",
+    )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args(list(argv) if argv is not None else None)
     root = Path(args.root)
-    report = discover_repository(root, commit=args.commit or git_commit(root))
+    report = discover_repository(
+        root,
+        commit=args.commit or git_commit(root),
+        timestamp=args.timestamp,
+    )
     rendered = report.to_json()
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
