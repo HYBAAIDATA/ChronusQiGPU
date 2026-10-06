@@ -161,6 +161,32 @@ attempted — workers read as `armed_no_device`. Booting WITH the device but
 WITHOUT PYTHONPATH is worse than without either: it converts a passive
 `armed_no_device` into a crash loop + 500s.
 
+### Corpus CRLF trap (Windows, verified Oct 2026)
+
+`agentic-mining` (`mining_runtime.py`) bootstraps the default PythiaStore,
+which verifies `artifacts/pythia_training/real_nonces_200.csv` against
+`real_nonces_200.manifest.json` (`csv_sha256`) over raw bytes. The committed
+blob is LF-only; on Windows checkouts with `core.autocrlf=true` the file
+materializes CRLF, the digest mismatches, and the worker raises
+`CorpusIntegrityError: corpus digest mismatch` → `RuntimeError: PYTHIA
+default store cannot become ready without verified structural training` →
+crash-loop → `RestartBudgetExhausted` → `/api/v1/mla1517/status` and
+`/telemetry/*` return HTTP 500 (stratum reads DISCONNECTED, "runtime
+evidence unavailable") — the same 500 signature as the PYTHONPATH trap
+above, so check both.
+
+Diagnose: `sha256(csv)` should equal manifest `csv_sha256`; if it only
+matches after `data.replace(b'\r\n', b'\n')`, this is the bug. Fix for
+testing: rewrite the csv to LF:
+
+```bash
+python -c "p=r'artifacts/pythia_training/real_nonces_200.csv'; d=open(p,'rb').read(); open(p,'wb').write(d.replace(b'\r\n',b'\n'))"
+```
+
+Do NOT `git checkout --` the file afterward on Windows — autocrlf would
+restore CRLF and the worker dies again. Proper fix landed via
+`.gitattributes` (`artifacts/pythia_training/** -text`, PR #79).
+
 ### Env recovered from a live worktree process (for reference)
 
 ```
