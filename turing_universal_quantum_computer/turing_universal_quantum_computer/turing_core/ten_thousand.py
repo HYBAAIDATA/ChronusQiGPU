@@ -301,17 +301,27 @@ class TenThousandQubitSystem:
 
     # -- Fault-tolerant quantum-ASIC engineering model ------------------------
 
+    def pure_quantum_asic(self):
+        """Return the canonical first-principles mathematical quantum ASIC."""
+        from ..fault_tolerant_asic import PureQuantumMathASIC
+
+        return PureQuantumMathASIC()
+
     def fault_tolerant_asic(self):
-        """Return the evidence-scoped physical-stack engineering model.
+        """Compatibility alias for :meth:`pure_quantum_asic`."""
+        return self.pure_quantum_asic()
 
-        This calculator models refrigeration, transmons, surface-code
-        overhead, decoding, control, scaling, and readiness. It is separate
-        from this virtual exact-mathematics engine and never implies that a
-        physical QPU exists.
-        """
-        from ..fault_tolerant_asic import QuantumAsicStack
+    def verify_pure_quantum_asic(self):
+        """Execute exact first-principles invariants for the abstraction."""
+        return self.pure_quantum_asic().verify_first_principles()
 
-        return QuantumAsicStack()
+    def deterministic_10eh_system(self):
+        """Return the exact mathematical 10 EH/s capacity certificate."""
+        return self.pure_quantum_asic().deterministic_hashrate_system()
+
+    def heterogeneous_10eh_certificate(self):
+        """Return the exact heterogeneous formal-capacity certificate."""
+        return self.pure_quantum_asic().heterogeneous_hashrate_certificate()
 
     # -- Aethel persistence (folded evidence, never raw amplitudes) -----------
 
@@ -332,16 +342,16 @@ class TenThousandQubitSystem:
     def status(self) -> Dict[str, Any]:
         from ..pisot import plan_hilbert_coverage  # lazy: pisot->turing_core cycle
         from ..unified_theory import UNIFIED_THEORY
-        from ..fault_tolerant_asic import SCHEMA as QUANTUM_ASIC_SCHEMA
 
         coverage = plan_hilbert_coverage(self.n_qubits)
         return {
             "system": "TenThousandQubitSystem",
             "unified_theory": UNIFIED_THEORY.report(),
-            "fault_tolerant_asic": {
-                "schema": QUANTUM_ASIC_SCHEMA,
-                "truth_class": "deterministic_engineering_model",
+            "pure_quantum_asic": {
+                "schema": "turing.pure_quantum_math_asic/v1",
+                "truth_class": "pure_quantum_mathematical_abstraction",
                 "physical_qpu_present": False,
+                "first_principles": True,
             },
             "n_qubits": self.n_qubits,
             "hilbert_dim": self.hilbert_dim_symbolic,
@@ -361,7 +371,9 @@ class TenThousandQubitSystem:
                 "tunnelling",
                 "swarming",
                 "golden_quantum_profile",
-                "fault_tolerant_quantum_asic_engineering_model",
+                "pure_quantum_math_asic",
+                "first_principles_self_verification",
+                "deterministic_10eh_capacity_certificate",
             ],
             "zeckendorf_protection": "non-adjacent Fibonacci index constraint",
             "cassini_anchor_ok": bool(_tc.cassini_check(7)),

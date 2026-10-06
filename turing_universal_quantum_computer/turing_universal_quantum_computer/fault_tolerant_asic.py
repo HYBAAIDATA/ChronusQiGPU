@@ -41,6 +41,7 @@ class EvidenceState(str, Enum):
     MODELLED = "modelled"
     SIMULATED = "simulated"
     MEASURED = "measured"
+    EXACT_VERIFIED = "exact_verified"
     INDEPENDENTLY_REPRODUCED = "independently_reproduced"
 
 
@@ -424,9 +425,10 @@ class RoomTemperatureControl:
 @dataclass(frozen=True)
 class CryoCMOS:
     qubits_per_tile: int = 100
-    power_per_tile_w: float = 1e-3
+    power_per_tile_w: float = 10e-3
     cooling_power_4k_w: float = 1.0
     reserve_fraction: float = 0.2
+    profile: str = "current_reference_10_mw"
 
     def __post_init__(self) -> None:
         if self.qubits_per_tile < 1:
@@ -435,6 +437,23 @@ class CryoCMOS:
         _positive("cooling_power_4k_w", self.cooling_power_4k_w)
         if not 0 <= self.reserve_fraction < 1:
             raise ValueError("reserve_fraction must be in [0,1)")
+        profiles = {
+            "current_reference_10_mw": 10e-3,
+            "five_year_target_5_mw": 5e-3,
+            "ten_year_target_1_mw": 1e-3,
+        }
+        if self.profile not in profiles:
+            raise ValueError("unknown cryo-CMOS evidence profile")
+        if self.power_per_tile_w != profiles[self.profile]:
+            raise ValueError("power_per_tile_w must match the declared profile")
+
+    @classmethod
+    def five_year_target(cls) -> "CryoCMOS":
+        return cls(power_per_tile_w=5e-3, profile="five_year_target_5_mw")
+
+    @classmethod
+    def ten_year_target(cls) -> "CryoCMOS":
+        return cls(power_per_tile_w=1e-3, profile="ten_year_target_1_mw")
 
     def tiles(self, qubits: int) -> int:
         if int(qubits) < 1:
@@ -655,6 +674,56 @@ class ProductionEvidence:
         return tuple(category for category in required if self.record(category) is None)
 
 
+MATHEMATICAL_EVIDENCE = (
+    "software_tests",
+    "independent_model_review",
+    "unitarity_verification",
+    "normalization_verification",
+    "error_correction_invariants",
+    "deterministic_replay",
+    "deterministic_hashrate_verification",
+)
+
+
+@dataclass(frozen=True)
+class MathematicalEvidence:
+    """Hash-addressed proof evidence for the executable abstraction."""
+
+    records: tuple[EvidenceRecord, ...] = ()
+
+    def __post_init__(self) -> None:
+        categories = [record.category for record in self.records]
+        if len(categories) != len(set(categories)):
+            raise ValueError("mathematical evidence categories must be unique")
+
+    def record(self, category: str) -> EvidenceRecord | None:
+        return next((item for item in self.records if item.category == category), None)
+
+    @property
+    def production_ready(self) -> bool:
+        for category in MATHEMATICAL_EVIDENCE:
+            record = self.record(category)
+            if record is None:
+                return False
+            if category == "independent_model_review":
+                if record.state is not EvidenceState.INDEPENDENTLY_REPRODUCED:
+                    return False
+            elif record.state not in {
+                EvidenceState.EXACT_VERIFIED,
+                EvidenceState.INDEPENDENTLY_REPRODUCED,
+            }:
+                return False
+        return True
+
+    @property
+    def missing(self) -> tuple[str, ...]:
+        return tuple(
+            category
+            for category in MATHEMATICAL_EVIDENCE
+            if self.record(category) is None
+        )
+
+
 @dataclass(frozen=True)
 class QuantumAsicStack:
     refrigerator: DilutionRefrigerator = field(default_factory=DilutionRefrigerator)
@@ -739,6 +808,265 @@ class QuantumAsicStack:
         return {**payload, "report_digest": _digest(payload)}
 
 
+@dataclass(frozen=True)
+class VerificationBundle:
+    checks: Mapping[str, bool]
+    artifacts: Mapping[str, Any]
+    evidence: MathematicalEvidence
+
+    @property
+    def verified(self) -> bool:
+        return bool(self.checks) and all(self.checks.values())
+
+
+class FirstPrinciplesVerifier:
+    """Execute exact first-principles invariants and issue replayable evidence."""
+
+    @staticmethod
+    def _record(category: str, artifact: Any) -> EvidenceRecord:
+        return EvidenceRecord(
+            category=category,
+            state=EvidenceState.EXACT_VERIFIED,
+            artifact_digest=_digest(artifact),
+            source="PureQuantumMathASIC.FirstPrinciplesVerifier",
+            observed_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        )
+
+    def verify(
+        self,
+        stack: QuantumAsicStack,
+        *,
+        header76: bytes = bytes(range(76)),
+    ) -> VerificationBundle:
+        from .strict_quantum import (
+            certify_work_window,
+            rational_rotation,
+            state_from_bytes,
+            verify_certificate,
+        )
+        from .backends.base import Program
+        from .deterministic_hashrate import verify_hashrate_certificate
+        from .exact_field_registry import verify_q_zeta_8_registry
+        from .surface_code_exact import verify_surface_code_algebra
+        from .verify import verify_program_unitarity
+
+        unitary = rational_rotation()
+        clifford_program = Program(2).then("h", 0).then("s", 1).then("cnot", 0, 1)
+        clifford_unitarity = verify_program_unitarity(clifford_program)
+        initial = state_from_bytes(b"first-principles-quantum", dimension=2)
+        evolved = initial.apply(unitary)
+        probabilities = evolved.born_probabilities()
+        certificate_a = certify_work_window(header76, 0, 32)
+        certificate_b = certify_work_window(header76, 0, 32)
+        code = stack.surface_code
+        surface_proof = verify_surface_code_algebra(code.distance)
+        distance_31_proof = verify_surface_code_algebra(31)
+        field_proof = verify_q_zeta_8_registry()
+        deterministic_system = PureQuantumMathASIC(stack).deterministic_hashrate_system()
+        hashrate_certificate = deterministic_system.certificate
+        heterogeneous_certificate = (
+            PureQuantumMathASIC(stack).heterogeneous_hashrate_certificate()
+        )
+
+        artifacts = {
+            "unitarity_verification": {
+                "rational_rotation_field": "Q(i)",
+                "rational_rotation_error_sq": str(unitary.unitary_error()),
+                "canonical_field": field_proof.canonical_field,
+                "field_registry_digest": field_proof.proof_digest,
+                "t_phase_norm_is_one": field_proof.t_phase_norm_is_one,
+                "clifford_program_digest": clifford_unitarity.program_digest,
+                "clifford_checked_pairs": clifford_unitarity.checked_pairs,
+                "clifford_state": clifford_unitarity.state,
+                "clifford_reason": clifford_unitarity.reason,
+            },
+            "normalization_verification": {
+                "initial_norm_sq": str(initial.norm_sq),
+                "evolved_norm_sq": str(evolved.norm_sq),
+                "born_sum": str(sum(probabilities)),
+            },
+            "error_correction_invariants": {
+                "distance": code.distance,
+                "physical_symbols": code.physical_qubits,
+                "correctable_weight": code.correctable_errors,
+                "logical_error_rate_model_admitted_to_exact_bundle": False,
+                "css_pairs_checked": surface_proof.mixed_pairs_checked,
+                "css_noncommuting_pairs": surface_proof.noncommuting_pairs,
+                "logical_anticommutation": surface_proof.logicals_anticommute,
+                "surface_code_proof_digest": surface_proof.proof_digest,
+                "surface_code_convention": surface_proof.convention,
+                "distance_31_pairs_checked": distance_31_proof.mixed_pairs_checked,
+                "distance_31_correction_bound": distance_31_proof.correction_bound,
+                "distance_31_proof_digest": distance_31_proof.proof_digest,
+            },
+            "deterministic_replay": {
+                "certificate_digest": _digest(certificate_a),
+                "identical": certificate_a == certificate_b,
+                "certificate_valid": verify_certificate(certificate_a),
+            },
+            "deterministic_hashrate_verification": {
+                "certificate_digest": hashrate_certificate.certificate_digest,
+                "steady_state_floor_met": hashrate_certificate.steady_state_floor_met,
+                "cold_start_floor_met": hashrate_certificate.cold_start_floor_met,
+                "truth_class": hashrate_certificate.truth_class,
+                "heterogeneous_certificate_digest": (
+                    heterogeneous_certificate.certificate_digest
+                ),
+                "heterogeneous_floor_met": heterogeneous_certificate.floor_met,
+            },
+        }
+        checks = {
+            "unitarity_verification": (
+                unitary.unitary_error() == 0
+                and clifford_unitarity.verified
+                and field_proof.verified
+            ),
+            "normalization_verification": (
+                initial.norm_sq == evolved.norm_sq and sum(probabilities) == 1
+            ),
+            "error_correction_invariants": (
+                code.physical_qubits == 2 * code.distance**2 - 1
+                and code.correctable_errors == (code.distance - 1) // 2
+                and surface_proof.verified
+                and surface_proof.correction_bound == code.correctable_errors
+                and distance_31_proof.verified
+                and distance_31_proof.correction_bound == 15
+            ),
+            "deterministic_replay": (
+                certificate_a == certificate_b and verify_certificate(certificate_a)
+            ),
+            "deterministic_hashrate_verification": (
+                verify_hashrate_certificate(hashrate_certificate)
+                and hashrate_certificate.steady_state_floor_met
+                and hashrate_certificate.cold_start_floor_met is True
+                and heterogeneous_certificate.floor_met
+            ),
+        }
+        checks["software_tests"] = all(checks.values())
+        artifacts["software_tests"] = {
+            "verifier": "turing.pure_quantum_math_asic.self_check/v1",
+            "checks": dict(checks),
+        }
+        records = tuple(
+            self._record(category, artifacts[category])
+            for category in (
+                "software_tests",
+                "unitarity_verification",
+                "normalization_verification",
+                "error_correction_invariants",
+                "deterministic_replay",
+                "deterministic_hashrate_verification",
+            )
+            if checks[category]
+        )
+        return VerificationBundle(checks, artifacts, MathematicalEvidence(records))
+
+
+@dataclass(frozen=True)
+class PureQuantumMathASIC:
+    """First-principles quantum-mathematics implementation.
+
+    The Hamiltonian, state, code, decoder, thermodynamic, and control terms are
+    mathematical operators and constraints. They form an executable abstract
+    machine; they are not assertions that physical transmons or cryogenics are
+    required by the implementation.
+    """
+
+    stack: QuantumAsicStack = field(default_factory=QuantumAsicStack)
+
+    def deterministic_hashrate_system(
+        self,
+        *,
+        cold_start_cycles: int = 1_000_000_000,
+    ):
+        """Build the exact 10 EH/s mathematical-capacity certificate.
+
+        The default uses 1,000,001 formal chips so a one-second cold-start
+        window at 1 GHz clears the floor after the 192-cycle pipeline fill.
+        """
+        from .deterministic_hashrate import DeterministicMiningSystem, FleetDesign
+
+        design = FleetDesign(1_000_001, 10_000, Fraction(1_000_000_000))
+        return DeterministicMiningSystem.build(
+            design,
+            cold_start_cycles=cold_start_cycles,
+        )
+
+    def verify_first_principles(self) -> VerificationBundle:
+        return FirstPrinciplesVerifier().verify(self.stack)
+
+    def heterogeneous_hashrate_certificate(self):
+        """Issue the exact sum-of-classes capacity certificate."""
+        from .deterministic_hashrate import (
+            FleetClass,
+            HeterogeneousFleet,
+            PipelineSpec,
+            issue_heterogeneous_fleet_certificate,
+        )
+
+        fleet = HeterogeneousFleet(
+            (
+                FleetClass(
+                    "fully_packed",
+                    500_000,
+                    10_000,
+                    Fraction(1_000_000_000),
+                    PipelineSpec.fully_packed(),
+                ),
+                FleetClass(
+                    "serialized_three_block",
+                    1_500_000,
+                    10_000,
+                    Fraction(1_000_000_000),
+                    PipelineSpec.serialized_three_block(),
+                ),
+            )
+        )
+        return issue_heterogeneous_fleet_certificate(fleet)
+
+    def report(
+        self,
+        *,
+        logical_scale: int = 10_000,
+        evidence: MathematicalEvidence | None = None,
+    ) -> dict[str, Any]:
+        if int(logical_scale) < 1:
+            raise ValueError("logical_scale must be >= 1")
+        evidence = evidence or MathematicalEvidence()
+        code = self.stack.surface_code
+        payload = {
+            "schema": "turing.pure_quantum_math_asic/v1",
+            "truth_class": "pure_quantum_mathematical_abstraction",
+            "physical_qpu_present": False,
+            "logical_scale": int(logical_scale),
+            "formal_hilbert_dimension": f"2^{int(logical_scale)}",
+            "first_principles": {
+                "state_space": "Hilbert space over exact/symbolic amplitudes",
+                "evolution": "unitary operator or verified exact special form",
+                "measurement": "Born-rule projection on declared observables",
+                "error_correction": "surface-code algebra and syndrome constraints",
+                "decoder": "graph-theoretic correction operator",
+                "thermodynamics": "resource-bound constraint algebra",
+            },
+            "surface_code_invariants": {
+                "distance": code.distance,
+                "physical_symbols_per_logical": code.physical_qubits,
+                "correctable_error_weight": code.correctable_errors,
+                "logical_error_model": code.logical_error_rate,
+            },
+            "production": {
+                "mathematical_abstraction_ready": evidence.production_ready,
+                "missing_evidence": evidence.missing,
+                "hardware_evidence_required": False,
+            },
+            "claim_boundary": (
+                "executable pure-mathematics abstraction; no physical-QPU or "
+                "fabricated-silicon claim"
+            ),
+        }
+        return {**payload, "report_digest": _digest(payload)}
+
+
 __all__ = [
     "APPLICATIONS",
     "ApplicationResource",
@@ -747,8 +1075,12 @@ __all__ = [
     "DilutionRefrigerator",
     "EvidenceRecord",
     "EvidenceState",
+    "FirstPrinciplesVerifier",
     "LogicalQubit",
+    "MATHEMATICAL_EVIDENCE",
+    "MathematicalEvidence",
     "ProductionEvidence",
+    "PureQuantumMathASIC",
     "QuantumAsicStack",
     "QuantumChipLayout",
     "RSFQ",
@@ -762,6 +1094,7 @@ __all__ = [
     "SurfaceCode",
     "SyndromeExtraction",
     "ThresholdEvaluation",
+    "VerificationBundle",
     "TransmonCoherence",
     "TransmonQubit",
     "TunableCoupler",

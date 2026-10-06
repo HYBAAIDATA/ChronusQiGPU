@@ -1,0 +1,72 @@
+name: Turing core
+
+on:
+  pull_request:
+    paths:
+      - "turing_universal_quantum_computer/**"
+      - "proofs/lean/**"
+      - "scripts/turing_digest_fixture.py"
+      - ".github/workflows/turing-core.yml"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  python:
+    name: Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: pip install -e ./turing_universal_quantum_computer pytest
+      - name: Exact specification and inventory tests
+        run: >-
+          python -m pytest -q
+          turing_universal_quantum_computer/tests/test_turing_specification.py
+          turing_universal_quantum_computer/tests/test_turing_inventory.py
+      - name: Build deterministic digest fixture
+        run: |
+          python scripts/turing_digest_fixture.py > turing-digest-${{ matrix.python }}.txt
+          COMMIT_TIME="$(git show -s --format=%cI "$GITHUB_SHA")"
+          python -m turing_universal_quantum_computer.turing_core.inventory \
+            . --commit "$GITHUB_SHA" --timestamp "$COMMIT_TIME" \
+            --output turing-discovery-${{ matrix.python }}.json
+          python -c 'import json; print(json.load(open("turing-discovery-${{ matrix.python }}.json"))["report_digest"])' \
+            >> turing-digest-${{ matrix.python }}.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: turing-digest-${{ matrix.python }}
+          path: |
+            turing-digest-${{ matrix.python }}.txt
+            turing-discovery-${{ matrix.python }}.json
+
+  cross-version:
+    name: Cross-version digest equality
+    needs: python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: turing-digest-*
+          merge-multiple: true
+      - name: Require one identical digest
+        run: |
+          test "$(sha256sum turing-digest-*.txt | cut -d' ' -f1 | sort -u | wc -l)" -eq 1
+          test "$(sha256sum turing-discovery-*.json | cut -d' ' -f1 | sort -u | wc -l)" -eq 1
+          cat turing-digest-*.txt
+
+  lean:
+    name: Lean 4 proofs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: proofs/lean

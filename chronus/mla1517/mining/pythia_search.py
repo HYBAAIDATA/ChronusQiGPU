@@ -11,7 +11,9 @@ The static search substrate is prepared before Stratum work starts:
 
 A real job supplies the 76-byte header prefix. The live PYTHIA plan may also
 supply a preferred coarse face. Those observations rank the precomputed coarse
-directions and then the 600 dual vertices. Turing's exact Hilbert walk then
+directions and then the 600 dual vertices. A provenance-bound PYTHIA structural
+model may refine the remaining coarse-face order after that explicit preferred
+face; it never changes candidate membership. Turing's exact Hilbert walk then
 reorders that complete 600-vertex manifold itinerary; it never removes a vertex
 or a nonce from the lease. SHA256d, negotiated target, freshness and literal
 pool acknowledgement remain the sole mining truth authorities.
