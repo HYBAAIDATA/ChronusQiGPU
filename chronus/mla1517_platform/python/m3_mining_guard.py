@@ -14,6 +14,7 @@ from typing import Any, Mapping
 from al_haras import GuardianRequest
 
 from al_haras_pythia import pythia_guardian_api
+from chronus.mla1517.mining.storage_recorder import M3StorageError
 
 
 class M3MiningSubmissionGate:
@@ -77,7 +78,74 @@ class M3MiningSubmissionGate:
             "policy_version": self.guardian_api.guardian.policy.version,
         }
 
+    def authorize_lease(self, *, context: Mapping[str, Any]) -> Mapping[str, Any]:
+        """Authorize one Stratum work identity before PYTHIA reserves leases."""
+        storage_health = self.recorder.health(reconcile=True)
+        if storage_health.get("healthy") is not True:
+            return {
+                "allowed": False,
+                "reason": "THESEUS_STORAGE_UNHEALTHY",
+                "storage_health": storage_health,
+            }
+        payload = {
+            "pool_endpoint": context.get("endpoint"),
+            "worker": context.get("worker"),
+            "pool_session_id": context.get("pool_session_id"),
+            "generation": context.get("generation"),
+            "job_id": context.get("job_id"),
+            "job_fingerprint": context.get("job_fingerprint"),
+            "target_generation": context.get("target_generation"),
+            "clean_jobs": context.get("clean_jobs"),
+            "search_authority": "PYTHIA",
+            "search_algorithm": "hendrix_coprime_stride",
+        }
+        request = GuardianRequest(
+            tenant_id=self.tenant,
+            operation="mining.lease",
+            resource=f"stratum://{context.get('endpoint') or 'unavailable'}",
+            payload=payload,
+            actor=self.actor,
+            request_id=f"lease:{context.get('pool_session_id')}:{context.get('generation')}:{context.get('job_fingerprint')}",
+        )
+        try:
+            verdict = self.guardian_api.guardian.evaluate(
+                request,
+                subscription_token=self.subscription_token,
+            )
+        except Exception as exc:
+            return {
+                "allowed": False,
+                "reason": f"AL_HARAS_UNAVAILABLE:{type(exc).__name__}",
+            }
+        verdict_dict = verdict.to_dict()
+        try:
+            version_id = self.recorder.persist_authorization(
+                verdict_dict,
+                context=payload,
+            )
+        except Exception as exc:
+            raise M3StorageError(
+                f"could not custody AL HARAS lease authorization: {type(exc).__name__}: {exc}"
+            ) from exc
+        return {
+            "allowed": bool(verdict.allowed),
+            "reason": verdict.reason,
+            "authorization_evidence_id": verdict.evidence_id,
+            "authorization_version_id": version_id,
+            "policy_version": verdict.policy_version,
+        }
+
     def authorize_and_custody(self, *, context: Mapping[str, Any], proof: Any) -> Mapping[str, Any]:
+        # Reconcile immediately before an external side effect. Startup
+        # readiness alone is insufficient because custody may degrade later.
+        storage_health = self.recorder.health(reconcile=True)
+        if storage_health.get("healthy") is not True:
+            return {
+                "allowed": False,
+                "reason": "THESEUS_STORAGE_UNHEALTHY",
+                "storage_health": storage_health,
+            }
+
         payload = {
             "pool_endpoint": context.get("endpoint"),
             "worker": context.get("worker"),
@@ -101,16 +169,27 @@ class M3MiningSubmissionGate:
             actor=self.actor,
             request_id=str(context.get("candidate_id") or uuid.uuid4().hex),
         )
-        verdict = self.guardian_api.guardian.evaluate(
-            request,
-            subscription_token=self.subscription_token,
-        )
+        try:
+            verdict = self.guardian_api.guardian.evaluate(
+                request,
+                subscription_token=self.subscription_token,
+            )
+        except Exception as exc:
+            return {
+                "allowed": False,
+                "reason": f"AL_HARAS_UNAVAILABLE:{type(exc).__name__}",
+            }
         verdict_dict = verdict.to_dict()
 
-        authorization_version_id = self.recorder.persist_authorization(
-            verdict_dict,
-            context=payload,
-        )
+        try:
+            authorization_version_id = self.recorder.persist_authorization(
+                verdict_dict,
+                context=payload,
+            )
+        except Exception as exc:
+            raise M3StorageError(
+                f"could not custody AL HARAS authorization: {type(exc).__name__}: {exc}"
+            ) from exc
         if not verdict.allowed:
             return {
                 "allowed": False,
@@ -120,13 +199,20 @@ class M3MiningSubmissionGate:
                 "policy_version": verdict.policy_version,
             }
 
-        proof_record_id, proof_version_id = self.recorder.persist_verified_proof(
-            context=payload,
-            proof=proof,
-            authorization_evidence_id=verdict.evidence_id,
-            authorization_version_id=authorization_version_id,
-            policy_version=verdict.policy_version,
-        )
+        try:
+            proof_record_id, proof_version_id = self.recorder.persist_verified_proof(
+                context=payload,
+                proof=proof,
+                authorization_evidence_id=verdict.evidence_id,
+                authorization_version_id=authorization_version_id,
+                policy_version=verdict.policy_version,
+            )
+        except Exception as exc:
+            if isinstance(exc, M3StorageError):
+                raise
+            raise M3StorageError(
+                f"could not custody verified proof: {type(exc).__name__}: {exc}"
+            ) from exc
         return {
             "allowed": True,
             "reason": verdict.reason,
