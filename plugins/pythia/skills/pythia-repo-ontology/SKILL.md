@@ -13,11 +13,10 @@ triggers:
 
 # Repo Ontology
 
-Record use first:
+## Session activation
 
-```text
-python plugins/pythia/scripts/plugin_status.py --record-skill pythia-repo-ontology --write-receipt
-```
+This aptitude is invoked automatically at SessionStart and remains active for the entire Devin session. Do not treat it as an optional per-task capability.
+
 
 If a task id exists, also record:
 
