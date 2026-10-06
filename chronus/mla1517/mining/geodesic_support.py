@@ -39,7 +39,7 @@ from .pythia_search import (
     SEARCH_ARCHITECTURE_ID,
     PythiaSearchPrecompute,
     precompute_pythia_search,
-    pythia_hilbert_600_nonces,
+    pythia_hendrix_nonces,
 )
 from .search_plan import ExecutionRoute
 
@@ -178,9 +178,13 @@ class ProductionExecutionRouter(ExecutionRouter):
         if not self._is_pythia_lattice(plan):
             return super()._run_chunk(plan, header, target, chunk, decision)
 
+        if plan.nonce_order != NONCE_ORDER_HENDRIX:
+            raise RuntimeError(
+                "PYTHIA canonical search requires the Hendrix plan-bound order"
+            )
         order = self._pythia_order_cache.get(plan.plan_id)
         if order is None:
-            order = pythia_hilbert_600_nonces(
+            order = pythia_hendrix_nonces(
                 header,
                 plan.base_step,
                 plan.window,
@@ -205,10 +209,10 @@ class ProductionExecutionRouter(ExecutionRouter):
         record = super()._build_record(plan, decision, requested_order, **kwargs)
         if not self._is_pythia_lattice(plan):
             return record
-        executed = None if record.executed_nonce_order is None else SEARCH_ARCHITECTURE_ID
+        executed = None if record.executed_nonce_order is None else plan.nonce_order
         return replace(
             record,
-            requested_nonce_order=SEARCH_ARCHITECTURE_ID,
+            requested_nonce_order=plan.nonce_order,
             executed_nonce_order=executed,
         )
 
@@ -307,11 +311,13 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         refs = dict(plan.evidence_refs)
         refs["search_architecture"] = SEARCH_ARCHITECTURE_ID
         refs["search_precompute_digest"] = self.pythia_search_precompute.digest
+        refs["search_algorithm"] = NONCE_ORDER_HENDRIX
         refs["configured_traversal_refinement"] = self._nonce_order
         refs["technology_intent"] = {
             "composition_root": "PYTHIA",
             "execution_authority": "CHRONUS",
             "execution_contract": "chronus_batch",
+            "search_algorithm": NONCE_ORDER_HENDRIX,
             "search_architecture": SEARCH_ARCHITECTURE_ID,
             "coarse_overlay": "dodecahedron_12_plus_icosahedron_20",
             "manifold": "phi_weighted_11d_poincare_ball",
@@ -333,11 +339,12 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                 "sha256d_target_freshness_and_literal_pool_response_only"
             ),
         }
-        # M32 remains only the inherited ordering carrier. Physical execution
-        # is the vendor-neutral Chronus batch route when that contract is bound.
+        # Hendrix remains the canonical plan-bound search algorithm. Chronus
+        # executes the explicit ordered batches produced by the structured
+        # PYTHIA itinerary without changing search identity.
         return replace(
             plan,
-            nonce_order=NONCE_ORDER_M32,
+            nonce_order=NONCE_ORDER_HENDRIX,
             executor_route=self._pythia_batch_route(),
             evidence_refs=refs,
         )
@@ -404,9 +411,9 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                     "authority": "coverage-preserving local shard permutation",
                 },
                 "hendrix_coprime_search": {
-                    "state": "AVAILABLE_REFINEMENT",
+                    "state": "ACTIVE_CANONICAL_SEARCH",
                     "authority": (
-                        "legacy/alternative traversal refinement, not search identity"
+                        "default complete traversal; Chronus executes its ordered batches"
                     ),
                 },
                 "m32_dual_solid_lane_topology": {
