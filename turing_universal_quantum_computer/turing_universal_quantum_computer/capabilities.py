@@ -123,6 +123,22 @@ FORBIDDEN_CLAIM_PATTERNS: tuple[tuple[str, str], ...] = (
         r"\bbreak(s|ing)?\s+(RSA|ECDSA|AES|SHA-?256)\b",
         "asserts cryptanalytic capability",
     ),
+    (
+        r"\binfinite\s+(physical\s+)?memory\b|\bzero\s+physical\s+memory\s+allocation\b",
+        "asserts infinite memory without naming a finite symbolic address space",
+    ),
+    (
+        r"\b(mutating|manipulating|changing)\s+(physical\s+)?constants\b",
+        "asserts physical-constant mutation rather than simulation parameters",
+    ),
+    (
+        r"\bmanifest(ing|s|ed)?\s+results?\b",
+        "asserts direct manifestation instead of computation",
+    ),
+    (
+        r"\bzero[-\s]?latency\s+(communication|transmission)\b",
+        "asserts zero-latency communication",
+    ),
 )
 
 
