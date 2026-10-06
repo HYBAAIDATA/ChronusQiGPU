@@ -35,6 +35,8 @@ class M3PythiaProductionMiningCoordinator(PythiaProductionMiningCoordinator):
         self._m3_gate = kwargs.pop("m3_gate", None)
         self._m3_blocked_reason: str | None = None
         self._last_m3_gate: dict[str, Any] | None = None
+        self._last_m3_lease_gate: dict[str, Any] | None = None
+        self._m3_authorized_identity_key: Any | None = None
         super().__init__(*args, **kwargs)
 
     def m3_status(self) -> dict[str, Any]:
@@ -49,6 +51,7 @@ class M3PythiaProductionMiningCoordinator(PythiaProductionMiningCoordinator):
             "search_algorithm": getattr(self, "_nonce_order", None),
             "search_architecture_ready": getattr(self, "pythia_search_precompute", None) is not None,
             "chronus_fabric": fabric,
+            "last_lease_gate": self._last_m3_lease_gate,
             "last_submission_gate": self._last_m3_gate,
         }
 
@@ -57,6 +60,65 @@ class M3PythiaProductionMiningCoordinator(PythiaProductionMiningCoordinator):
         self.mining_enabled = False
         self._last_pool_outcome = PoolOutcome.NOT_SUBMITTED
         LOG.error("M3 mining route blocked: %s", reason)
+
+    def _m3_identity_context(self, identity: Any) -> dict[str, Any]:
+        endpoint = getattr(getattr(self, "client", None), "endpoint", None)
+        return {
+            "pool_session_id": getattr(identity, "pool_session_id", None),
+            "generation": getattr(identity, "generation", None),
+            "job_id": getattr(identity, "job_id", None),
+            "job_fingerprint": getattr(identity, "job_fingerprint", None),
+            "target_generation": getattr(identity, "target_generation", None),
+            "clean_jobs": getattr(identity, "clean_jobs", None),
+            "endpoint": (
+                f"{getattr(endpoint, 'host', '')}:{getattr(endpoint, 'port', '')}"
+                if endpoint is not None
+                else None
+            ),
+            "worker": self.username,
+        }
+
+    def _authorize_m3_identity(self, identity: Any) -> bool:
+        """Authorize one live Stratum identity before any nonce lease is reserved."""
+        if not self._m3_required:
+            return True
+        if self._m3_blocked_reason is not None or self._m3_gate is None:
+            return False
+        key = getattr(identity, "key", None)
+        if key is not None and key == self._m3_authorized_identity_key:
+            return True
+        try:
+            gate = dict(
+                self._m3_gate.authorize_lease(
+                    context=self._m3_identity_context(identity)
+                )
+            )
+        except M3StorageError as exc:
+            self._block_m3(f"THESEUS_CUSTODY_FAILURE:{exc}")
+            return False
+        self._last_m3_lease_gate = gate
+        if gate.get("allowed") is not True:
+            self._block_m3(str(gate.get("reason") or "M3_LEASE_DENIED"))
+            return False
+        self._m3_authorized_identity_key = key
+        self.causal.record(
+            "lease_authorized",
+            CausalCoordinate(
+                pool_session_id=getattr(identity, "pool_session_id", None),
+                generation=getattr(identity, "generation", None),
+                job_fingerprint=getattr(identity, "job_fingerprint", None),
+                job_id=getattr(identity, "job_id", None),
+            ),
+            authorization_evidence_id=gate.get("authorization_evidence_id"),
+            authorization_version_id=gate.get("authorization_version_id"),
+            policy_version=gate.get("policy_version"),
+        )
+        return True
+
+    def _build_plan(self, identity: Any):
+        if not self._authorize_m3_identity(identity):
+            return None
+        return super()._build_plan(identity)
 
     async def submit_candidate(
         self,
@@ -137,6 +199,7 @@ class M3PythiaProductionMiningCoordinator(PythiaProductionMiningCoordinator):
         self._last_m3_gate = gate
         if gate.get("allowed") is not True:
             reason = str(gate.get("reason") or "AL_HARAS_DENIED")
+            self._block_m3(reason)
             self._record_submission_gate(reason, job_id)
             self._last_pool_outcome = PoolOutcome.NOT_SUBMITTED
             self.cycle.try_transition(
@@ -170,6 +233,10 @@ class M3PythiaProductionMiningCoordinator(PythiaProductionMiningCoordinator):
     async def search_current_job(self) -> bool:
         """Turn stale/custody faults into explicit fail-closed runtime states."""
         try:
+            if self._m3_required:
+                identity = self.agentic.current_identity()
+                if identity is not None and not self._authorize_m3_identity(identity):
+                    return False
             return await super().search_current_job()
         except StaleJobError as exc:
             self._last_pool_outcome = PoolOutcome.STALE
