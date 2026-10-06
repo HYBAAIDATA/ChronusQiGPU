@@ -19,6 +19,7 @@ import hashlib
 import json
 import math
 from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 
@@ -27,6 +28,8 @@ from .backends.qpu import QPUJob, assert_measured_qpu
 
 __all__ = [
     "WITNESS_SCHEMA",
+    "WITNESS_SCHEMA_V1",
+    "WITNESS_SCHEMA_V2",
     "WitnessError",
     "RunWitness",
     "VQCComputationCertificate",
@@ -37,7 +40,9 @@ __all__ = [
     "verify_witness",
 ]
 
-WITNESS_SCHEMA = "turing.vqc.run_witness.v1"
+WITNESS_SCHEMA_V1 = "turing.vqc.run_witness.v1"
+WITNESS_SCHEMA_V2 = "turing.vqc.run_witness.v2"
+WITNESS_SCHEMA = WITNESS_SCHEMA_V2
 COMPUTATION_CERTIFICATE_SCHEMA = "turing.vqc.computation_certificate.v1"
 
 
@@ -62,6 +67,10 @@ def _jsonable(value: Any) -> Any:
         }
     if isinstance(value, (list, tuple)):
         return [_jsonable(item) for item in value]
+    if isinstance(value, (set, frozenset)):
+        raise WitnessError(
+            "unordered set values cannot be certified; supply a sorted sequence"
+        )
     to_dict = getattr(value, "to_dict", None)
     if callable(to_dict):
         return _jsonable(to_dict())
@@ -235,7 +244,7 @@ class RunWitness:
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "RunWitness":
-        if payload.get("schema") != WITNESS_SCHEMA:
+        if payload.get("schema") not in (WITNESS_SCHEMA_V1, WITNESS_SCHEMA_V2):
             raise WitnessError(f"unsupported witness schema {payload.get('schema')!r}")
         known = {f for f in cls.__dataclass_fields__}  # type: ignore[attr-defined]
         unknown = sorted(set(payload) - known)
@@ -245,6 +254,11 @@ class RunWitness:
 
     def digest(self) -> str:
         payload = self.to_dict()
+        if self.schema == WITNESS_SCHEMA_V1:
+            if payload.get("computation_certificate_digest") is None:
+                payload.pop("computation_certificate_digest")
+            canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+            return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
         # Wall-clock metadata is useful operationally but is not part of the
         # reproducible content identity.
         payload.pop("issued_at")
@@ -286,7 +300,7 @@ def issue_witness(
         gate_counts=program.gate_counts(),
         measured_qpu=measured_qpu,
         provider_job_id=(provider_job.job_id if provider_job else None),
-        issued_at="",
+        issued_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
         notes=notes,
         computation_certificate_digest=(
             result.certificate.get("certificate_digest")
@@ -298,7 +312,7 @@ def issue_witness(
 
 def verify_witness(witness: RunWitness) -> bool:
     """Fail-closed verification of a witness.  Raises on any overclaim."""
-    if witness.schema != WITNESS_SCHEMA:
+    if witness.schema not in (WITNESS_SCHEMA_V1, WITNESS_SCHEMA_V2):
         raise WitnessError(f"unsupported witness schema {witness.schema!r}")
     if witness.theorem_proven:
         raise WitnessError("refused: this package proves no theorems")

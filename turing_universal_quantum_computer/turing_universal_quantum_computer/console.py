@@ -47,6 +47,7 @@ from .backends import (
     QPUUnavailableError,
     StatevectorTooLargeError,
     execute as execute_program,
+    execute_certified,
     select_backend,
 )
 from .capabilities import capability_report, render_matrix
@@ -685,13 +686,22 @@ class QuantumConsole:
         ]
         if self.session.program is not None:
             try:
-                backend.execute(self.session.program)
+                execution = execute_certified(
+                    self.session.program,
+                    prefer="qpu",
+                    max_amplitudes=self.max_amplitudes,
+                )
+                lines[0] = "QPU boundary   available=True   measured_qpu=True"
+                lines.append(
+                    "  certified hardware result: "
+                    + execution.certificate.certificate_digest
+                )
             except QPUUnavailableError:
                 lines.append("  submission attempt: REFUSED")
-        lines.append(
-            "  Every result from this console is an exact classical evaluation of "
-            "quantum algebra. None of them is a measured hardware result."
-        )
+        if not available:
+            lines.append(
+                "  Exact classical quantum algebra is not relabelled as measured hardware."
+            )
         return "\n".join(lines)
 
     def _cmd_help(self, args: list[str]) -> str:

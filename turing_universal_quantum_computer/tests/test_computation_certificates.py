@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import hashlib
+import json
 
 import pytest
 
@@ -12,8 +14,13 @@ from turing_universal_quantum_computer.backends import (
     execute_certified,
 )
 from turing_universal_quantum_computer.certificates import (
+    RunWitness,
     VQCComputationCertificate,
+    WITNESS_SCHEMA_V1,
+    WITNESS_SCHEMA_V2,
     WitnessError,
+    issue_computation_certificate,
+    issue_witness,
     replay_computation_certificate,
     verify_computation_certificate,
 )
@@ -42,6 +49,8 @@ def test_certified_execution_binds_witness_to_certificate() -> None:
         == execution.certificate.certificate_digest
     )
     assert execution.result.certificate == execution.certificate.to_dict()
+    assert execution.witness.schema == WITNESS_SCHEMA_V2
+    assert execution.witness.issued_at
 
 
 def test_identical_exact_runs_have_identical_digests() -> None:
@@ -78,6 +87,34 @@ def test_output_and_trace_tampering_fail_closed() -> None:
     )
     with pytest.raises(WitnessError, match="Merkle"):
         bad_trace.verify_integrity()
+
+
+def test_unordered_certificate_values_fail_closed() -> None:
+    program = bell_program()
+    result = execute(program)
+    result.payload["unordered"] = {"a", "b"}
+    with pytest.raises(WitnessError, match="unordered"):
+        issue_computation_certificate(program, result)
+
+
+def test_v1_witness_digest_remains_backward_compatible() -> None:
+    program = bell_program()
+    result = execute(program)
+    current = issue_witness(program, result)
+    payload = current.to_dict()
+    payload["schema"] = WITNESS_SCHEMA_V1
+    payload.pop("computation_certificate_digest")
+    legacy = RunWitness.from_dict(payload)
+    expected = hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    assert legacy.digest() == expected
+
+
+def test_v2_witness_timestamp_does_not_change_content_identity() -> None:
+    execution = execute_certified(bell_program())
+    later = replace(execution.witness, issued_at="2099-01-01T00:00:00+00:00")
+    assert execution.witness.digest() == later.digest()
 
 
 def test_pipeline_exposes_and_verifies_certificate() -> None:

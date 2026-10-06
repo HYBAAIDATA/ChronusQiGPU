@@ -6,6 +6,8 @@ on:
       - "turing_universal_quantum_computer/**"
       - "proofs/lean/**"
       - "scripts/turing_digest_fixture.py"
+      - "scripts/turing_vqc_digest_fixture.py"
+      - "scripts/turing_acceptance_gate.py"
       - ".github/workflows/turing-core.yml"
   push:
     branches: [main]
