@@ -1,4 +1,4 @@
-"""Fail-closed Stop hook for PYTHIA Devin Engineering Intelligence v0.3.
+"""Fail-closed Stop hook for Devin EUCLID Aptitude v0.4.
 
 A completion claim requires:
 - a valid final checkpoint;
@@ -141,7 +141,7 @@ def main() -> int:
     last = _load_last_checkpoint(JOURNAL)
     if last is None:
         return _block(
-            "PYTHIA checkpoint is missing. Create the final append-only checkpoint "
+            "Devin checkpoint is missing. Create the final append-only checkpoint "
             "before ending the job."
         )
     if last.get("_malformed"):
@@ -157,7 +157,7 @@ def main() -> int:
     checkpoint_sha = str(last.get("plugin_source_sha") or "")
     if not source_sha or source_sha == "UNAVAILABLE":
         return _block(
-            "Current PYTHIA plugin source SHA is unavailable; completion "
+            "Current plugin/aptitude source SHA is unavailable; completion "
             "provenance is unproven."
         )
     if checkpoint_sha != source_sha:

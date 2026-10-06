@@ -1,6 +1,6 @@
 ---
 name: pythia-plugin-status
-description: Prove which private PYTHIA Devin plugin revision is actually running. Report plugin version/source SHA, available and invoked skills, hook events, checkpoint count, and last checkpoint without claiming that installation alone proves use.
+description: Inspect the private Devin plugin that delivers mandatory EUCLID aptitude. Report the exact source SHA, complete plugin and Euclidean skill inventories, mandatory invocation state, lifecycle hooks, and continuity state.
 allowed-tools:
   - read
   - grep
@@ -11,35 +11,46 @@ triggers:
   - model
 ---
 
-# PYTHIA Plugin Status
+# EUCLID Aptitude Runtime Status
 
-SessionStart invokes this aptitude automatically. For manual status inspection:
+## Session activation
+
+This aptitude is invoked automatically by SessionStart. It is not optional.
+
+For manual inspection:
 
 ```text
-python plugins/pythia/scripts/plugin_status.py --record-skill pythia-plugin-status --write-receipt
+python plugins/pythia/scripts/plugin_status.py --write-receipt
 ```
 
-Report, exactly as observed:
+Report exactly as observed:
 
 - `plugin_version`;
+- `augmentation`;
 - `plugin_source_sha`;
 - `workspace_head_sha`;
-- `available_skills`;
+- `plugin_skills`;
+- `euclid_aptitude_skills`;
+- `mandatory_skills`;
 - `skills_invoked`;
+- `mandatory_skills_complete`;
+- `mandatory_skills_missing`;
 - `hook_events`;
-- `journal_present`;
-- `checkpoint_count`;
-- `last_checkpoint`.
+- checkpoint/continuity state.
 
 ## Evidence rule
 
-The repository containing the plugin proves **PLUGIN_CONFIGURED**.
+Repository configuration proves only `PLUGIN_CONFIGURED`.
 
-A runtime receipt produced by this command or a lifecycle hook proves the plugin
-code executed in the current workspace: **PLUGIN_RUNTIME_OBSERVED**.
+A SessionStart receipt with:
 
-Do not claim a skill was invoked merely because it appears in
-`available_skills`. It must appear in `skills_invoked`.
+```text
+augmentation = EUCLID_APTITUDE
+mandatory_skills_complete = true
+SessionStart ∈ hook_events
+```
 
-Do not claim the full PYTHIA four-tier memory stack ran merely because the
-checkpoint hook ran. The receipt's `memory_mode` states the boundary.
+proves `EUCLID_APTITUDE_SESSION_OBSERVED`.
+
+The skills are session-wide capabilities. They do not belong to individual
+tasks, and a task does not separately choose whether they are loaded.
