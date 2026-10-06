@@ -1,5 +1,22 @@
 {
-  "note": "Org-admin manifest entries for the unified PYTHIA plugin (cloud + CLI + Desktop, one install). Paste into Customize -> Plugins -> Organization scope -> Edit manifest. Pinned block recommended; re-pin after each release merge.",
+  "note": "Add the unified PYTHIA plugin (cloud + CLI + Desktop, one install) via the Devin UI dialog 'Add plugin from repository'. Devin reads the plugin from the repository each time it runs, so changes there take effect without re-adding it.",
+  "ui": {
+    "dialog": "Add plugin from repository",
+    "fields": {
+      "Repository": {
+        "value": "QuantumPhi2/PhiMiner",
+        "accepted_forms": [
+          "QuantumPhi2/PhiMiner",
+          "https://github.com/QuantumPhi2/PhiMiner"
+        ],
+        "note": "Don't include plaintext secrets. Use plugin secret references instead."
+      },
+      "Subdirectory": {
+        "value": "plugins/pythia",
+        "note": "The plugin's root inside the repository: the folder containing .devin-plugin/plugin.json. Never enter this file's path (plugins/ORG_REQUIRED_MANIFEST.json) here — this file is a handoff doc, not a plugin root."
+      }
+    }
+  },
   "repo": "QuantumPhi2/PhiMiner",
   "path": "plugins/pythia",
   "branch_following": {
