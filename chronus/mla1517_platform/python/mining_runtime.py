@@ -455,9 +455,10 @@ async def _main_async(args) -> None:
                 selection.fallback,
                 selection.reason,
             )
+            username = args.user or endpoints[0].username
             coordinator = GeodesicProductionMiningCoordinator(
                 endpoints,
-                username=args.user or endpoints[0].username,
+                username=username,
                 password=args.password,
                 submit_enabled=args.submit,
                 mining_session=session,

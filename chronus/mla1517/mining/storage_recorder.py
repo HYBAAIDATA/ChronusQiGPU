@@ -158,9 +158,16 @@ class MiningStorageRecorder:
         custody_root = os.getenv("PYTHIA_STORAGE_CUSTODY_ROOT", db + ".custody")
         custody = TheseusFileCustody(root=custody_root, hmac_key=bytes.fromhex(custody_hex))
         store = OntologyStore(db, bytes.fromhex(integrity_hex), custody=custody)
-        namespace = re.sub(r"[^a-z0-9-]", "-", (worker or "pythia-miner").lower())
-        namespace = re.sub(r"-{2,}", "-", namespace).strip("-") or "pythia-miner"
-        namespace = ("mn-" + namespace)[:63]
+        explicit = os.getenv("PYTHIA_STORAGE_TENANT", "").strip()
+        if explicit:
+            namespace = re.sub(r"[^a-z0-9-]", "-", explicit.lower())
+            namespace = re.sub(r"-{2,}", "-", namespace).strip("-")[:63]
+            if not namespace:
+                raise RuntimeError("PYTHIA_STORAGE_TENANT sanitizes to empty")
+        else:
+            namespace = re.sub(r"[^a-z0-9-]", "-", (worker or "pythia-miner").lower())
+            namespace = re.sub(r"-{2,}", "-", namespace).strip("-") or "pythia-miner"
+            namespace = ("mn-" + namespace)[:63]
         existing = [
             row[0]
             for row in store._db.execute(

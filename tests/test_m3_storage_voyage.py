@@ -12,6 +12,7 @@ content addresses.
 from __future__ import annotations
 
 import asyncio
+import pytest
 import json
 import tempfile
 import uuid
@@ -297,3 +298,40 @@ def test_raw_observer_failure_surfaces_on_ledger(tmp_path):
     ledger.record("identity_bound", CausalCoordinate(), job_id="x")
     assert ledger.observer_errors == 1
     assert len(ledger.events()) == 1
+
+
+def test_from_env_honors_tenant_and_requires_keys(tmp_path, monkeypatch):
+    """The live-wiring seam: from_env binds PYTHIA_STORAGE_* correctly."""
+    from chronus.mla1517.mining.storage_recorder import MiningStorageRecorder
+
+    monkeypatch.delenv("PYTHIA_STORAGE_DB", raising=False)
+    monkeypatch.delenv("PYTHIA_STORAGE_ROOT", raising=False)
+    assert MiningStorageRecorder.from_env() is None  # absent config: untouched
+
+    monkeypatch.setenv("PYTHIA_STORAGE_DB", str(tmp_path / "s.db"))
+    monkeypatch.setenv("PYTHIA_STORAGE_ROOT", str(tmp_path / "root"))
+    with pytest.raises(RuntimeError, match="KEY_HEX"):
+        MiningStorageRecorder.from_env()
+
+    monkeypatch.setenv("PYTHIA_STORAGE_INTEGRITY_KEY_HEX", "ab" * 32)
+    monkeypatch.setenv("PYTHIA_STORAGE_CUSTODY_KEY_HEX", "cd" * 32)
+    monkeypatch.setenv("PYTHIA_STORAGE_TENANT", "Ops Tenant!")
+    rec = MiningStorageRecorder.from_env(worker="w1")
+    assert rec is not None
+    row = rec._store._db.execute(
+        "SELECT namespace FROM tenants WHERE tenant_id=?", (rec.tenant_id,)
+    ).fetchone()
+    assert row[0] == "ops-tenant"
+    rec._store.close()
+
+
+def test_from_env_rejects_empty_sanitized_tenant(tmp_path, monkeypatch):
+    from chronus.mla1517.mining.storage_recorder import MiningStorageRecorder
+
+    monkeypatch.setenv("PYTHIA_STORAGE_DB", str(tmp_path / "s.db"))
+    monkeypatch.setenv("PYTHIA_STORAGE_ROOT", str(tmp_path / "root"))
+    monkeypatch.setenv("PYTHIA_STORAGE_INTEGRITY_KEY_HEX", "ab" * 32)
+    monkeypatch.setenv("PYTHIA_STORAGE_CUSTODY_KEY_HEX", "cd" * 32)
+    monkeypatch.setenv("PYTHIA_STORAGE_TENANT", "!!!")
+    with pytest.raises(RuntimeError, match="sanitizes to empty"):
+        MiningStorageRecorder.from_env()
