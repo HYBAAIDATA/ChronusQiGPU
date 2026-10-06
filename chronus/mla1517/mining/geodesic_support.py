@@ -278,6 +278,20 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
             return "cpu_reference"
         return super()._execution_route()
 
+    def _effective_nonce_order(self, plan=None) -> str:
+        """Report the literal order executed by PYTHIA's explicit-batch route."""
+        if (
+            plan is not None
+            and self._is_pythia_plan(plan)
+            and plan.nonce_order == NONCE_ORDER_HENDRIX
+        ):
+            return NONCE_ORDER_HENDRIX
+        return super()._effective_nonce_order(plan)
+
+    @staticmethod
+    def _is_pythia_plan(plan) -> bool:
+        return plan.evidence_refs.get("search_architecture") == SEARCH_ARCHITECTURE_ID
+
     def _pythia_batch_route(self) -> str:
         """Route token that can faithfully consume the explicit 600-vertex batch."""
         hasher = self.execution_hasher
