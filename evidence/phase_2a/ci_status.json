@@ -1,0 +1,33 @@
+{
+  "head_sha": "ed3e3dfd953f5b36b6c0f9318171fc68f3b7f799",
+  "generated_utc": "2026-10-06T17:56:19Z",
+  "github_actions": {
+    "triggered_on": "ed3e3dfd953f5b36b6c0f9318171fc68f3b7f799",
+    "classification": "CI_UNAVAILABLE \u2014 RUNNER DID NOT EXECUTE",
+    "checks_registered": 18,
+    "checks_runner_id_gt_0": 0,
+    "job_log_fetch": "BlobNotFound on every probed job (e.g. job_id 112417848063, 112417847741) \u2014 jobs were scheduled and failed without a runner ever executing a step",
+    "pr_url": "https://github.com/QuantumPhi2/PhiMiner/pull/83"
+  },
+  "manual_equivalent": {
+    "gate": "pytest tests/test_production_api_contract.py -x -q",
+    "results": {
+      "3.11": {
+        "interpreter": "C:/Users/Administrator/python311/pkg/tools/python.exe (3.11.9)",
+        "result": "43 passed, 59 subtests",
+        "log": "ci_manual_3.11.txt"
+      },
+      "3.12": {
+        "interpreter": "C:/Python312/python.exe (3.12.10)",
+        "result": "43 passed, 59 subtests",
+        "log": "ci_manual_3.12.txt"
+      },
+      "3.13": {
+        "interpreter": ".venv/Scripts/python.exe (3.13.12)",
+        "result": "43 passed, 59 subtests",
+        "log": "ci_manual_3.13.txt"
+      }
+    },
+    "classification": "TESTED (manual)"
+  }
+}
