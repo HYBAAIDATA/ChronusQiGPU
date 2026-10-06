@@ -13,12 +13,10 @@ triggers:
 
 # Engineering Evidence Pack
 
-Record invocation:
+## Session activation
 
-```text
-python plugins/pythia/scripts/plugin_status.py --record-skill pythia-evidence-pack --write-receipt
-python plugins/pythia/scripts/engineering_evidence.py record --task-id <task> --event SKILL_INVOKED --skill pythia-evidence-pack
-```
+This aptitude is invoked automatically at SessionStart and remains active for the entire Devin session. Do not treat it as an optional per-task capability.
+
 
 ## During the task
 

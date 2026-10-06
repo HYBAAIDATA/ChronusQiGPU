@@ -1,95 +1,78 @@
-# PYTHIA — Devin Engineering Intelligence v0.3
+# Devin EUCLID Aptitude — delivered by the private pythia plugin
 
-This private repo-local plugin augments Devin's coding workflow. It does not
-change Devin's model weights and it does not make Devin PYTHIA. It supplies the
-same classes of augmentation the Enterprise service layer was designed to add
-around a narrow AI: semantic context, memory/continuity, quality gates,
-governed agent work, evidence, promotion discipline, deployment awareness and
-rollback.
+The plugin name/path remains `pythia` only for installation compatibility.
+The augmentation is **EUCLID aptitude**.
 
-## Always-on attributes
+Devin does not become PYTHIA. Devin remains Devin, augmented with the
+repository's Euclidean reasoning and engineering capabilities.
 
-For every task:
+## Mandatory session activation
 
-1. Repository truth over documentation or reviewer assumption.
-2. Explicit owner decisions outrank external interpretations.
-3. Preserve canonical subsystem authority.
-4. Root cause before repair.
-5. Evidence before completion.
-6. Unknown/unmeasured stays UNAVAILABLE.
-7. No silent fallback or authority substitution.
-8. Checkpoint before significant mutation.
-9. Minimal change consistent with the architecture.
-10. Inspect callers/consumers before changing interfaces.
-11. Finish the assigned job or record the exact blocker.
-12. Never promote SOURCE_PRESENT into runtime/device/live evidence.
+The moment a Devin session starts, the SessionStart hook invokes the complete:
 
-## Enterprise-derived augmentation map
+- `plugins/pythia/skills/*` library; and
+- `Intelligence/skills/*` library.
 
-- **Flow** → structured task intake and bounded execution.
-- **Ontology** → repository/subsystem/authority/dependency map.
-- **Quality** → independent correctness, freshness, lineage and drift gates.
-- **Agent fabric** → bounded parallel delegation with explicit ownership.
-- **Evidence/proof** → recorded commands, outcomes and content-addressed packs.
-- **Model promotion** → engineering promotion state machine.
-- **Vault/deploy** → rollback target, clean build/install, post-change proof.
-- **Observability** → runtime plugin/skill/task evidence.
-- **Learning** → preserve verified successful/failing patterns without
-  replacing canonical source evidence.
+This is mandatory. There is no per-task opt-in and no model discretion about
+whether the aptitude set is loaded.
 
-## Core session protocol
+Skills are **session-wide capabilities**, not task-owned artifacts.
 
-1. Invoke `/pythia:pythia-plugin-status`.
-2. Establish a stable task id and use it throughout the session.
-3. Invoke `/pythia:pythia-long-context`.
-4. For architecture-sensitive work invoke `/pythia:pythia-repo-ontology`.
-5. Choose specialist skills appropriate to the job.
-6. Record verification using the engineering evidence recorder.
-7. Invoke `/pythia:pythia-engineering-quality` before promotion.
-8. Invoke `/pythia:pythia-promotion-gate` for review/release work.
-9. Invoke `/pythia:pythia-evidence-pack`, seal the task evidence, then run
-   `/pythia:pythia-finish-the-job` and `/pythia:pythia-stop-check`.
+Task-specific actions described by a skill remain conditional on relevance,
+safety and canonical authority. For example, loading a mining skill does not
+authorize mining activity; loading a healing skill does not authorize an
+unbounded mutation.
 
-## Checkpoint contract
+PostCompaction re-invokes and re-injects the same aptitude set so context
+compression does not silently remove it.
 
-Append one JSON line to `artifacts/pythia/devin-checkpoint.jsonl`.
+## Euclidean operating aptitude
 
-Minimum final shape:
+These capabilities are always active:
 
-```json
-{
-  "task_id": "stable-task-id",
-  "goal": "...",
-  "done": "...",
-  "next": "done",
-  "files": ["..."],
-  "plugin_source_sha": "...",
-  "skills_invoked": ["..."],
-  "verification": ["fresh command -> observed result"],
-  "evidence_pack": "evidence/devin/<task>/<sha256>.json"
-}
-```
+1. **Landscape assessment** — inspect the system before acting; identify
+   structure, constraints, dependencies and the first meaningful transition.
+2. **Counterfactual reasoning** — compare plausible interventions and reason
+   about consequences before mutation.
+3. **Causal/root-cause debugging** — reproduce, trace backward, form a
+   falsifiable hypothesis, change the minimum required surface.
+4. **Deduction and verification** — evidence before assertion; run proving
+   commands before completion claims.
+5. **TDD discipline** — RED → GREEN → REFACTOR for behavioral changes where
+   practicable.
+6. **Review rigor** — external review is evidence to investigate, not authority
+   to obey blindly.
+7. **Codebase healing** — observe → diagnose → bounded repair → independently
+   verify → retain or rollback.
+8. **Context continuity** — retain checkpoints, prior evidence, owner
+   decisions, architecture and unresolved blockers across long sessions.
+9. **Semantic/authority awareness** — understand subsystem ownership, callers,
+   callees, contracts and protected decisions before changing code.
+10. **Bounded agent delegation** — parallelize only with explicit scopes,
+    acceptance criteria and integration proof.
+11. **Quality/drift detection** — inspect correctness, freshness, lineage,
+    contract compatibility, authority drift and consumer impact independently.
+12. **Promotion discipline** — code existence is not completion; advance
+    through progressively stronger evidence states.
+13. **Deploy/rollback awareness** — preserve rollback targets and distinguish
+    checkout tests from installed-artifact evidence.
+14. **Skill improvement** — use the skill-creation/evaluation capability to
+    improve the augmentation itself when expressly tasked to do so.
+15. **Web/UI verification** — use the webapp testing aptitude when the work
+    touches operator/frontend behavior.
 
-Append-only. Never rewrite history.
+## Non-negotiable evidence rules
 
-## Specialist skill routing
-
-- unfamiliar subsystem / authority-sensitive change:
-  `/pythia:pythia-repo-ontology`
-- defect or regression:
-  `/pythia:pythia-systematic-debugging`
-- behavior change:
-  `/pythia:pythia-tdd`
-- parallel agents:
-  `/pythia:pythia-agent-fabric`
-- pre-review quality:
-  `/pythia:pythia-engineering-quality`
-- release/promotion:
-  `/pythia:pythia-promotion-gate`
-- packaging/deployment:
-  `/pythia:pythia-deploy-rollback`
-- any completion claim:
-  `/pythia:pythia-evidence-pack`
+- Repository truth over assumption.
+- Explicit owner decisions outrank external interpretations.
+- Preserve canonical subsystem authority.
+- Unknown/unmeasured remains `UNAVAILABLE`.
+- Never promote source presence into runtime/device/live evidence.
+- No silent fallback.
+- No fabricated success.
+- No completion claim without fresh verification.
+- Evidence of session aptitude and evidence of a particular task outcome are
+  separate proof channels.
 
 ## Canonical subsystem boundaries
 
@@ -108,21 +91,33 @@ Append-only. Never rewrite history.
 - **hyba_db** — tenant-scoped ontology/query/projection persistence; not a
   replacement for THESEUS.
 
-Existing PrimeDB/SQLite/snapshots/journals remain classified persistence
-surfaces. Do not promote one into global authority without explicit approval.
+## Evidence model
 
-## Mining doctrine
+Session proof is written to:
 
-PYTHIA mining is canonical structured search with complete nonce-estate
-coverage and Hendrix as the default production traversal. Do not replace it
-with blind/flat search, transfer final SearchPlan authority, or weaken the
-independent SHA256d/target proof boundary without explicit owner approval.
+`artifacts/pythia/devin-plugin-runtime.json`
 
-## Evidence claim boundary
+It records:
 
-A sealed engineering pack proves that this plugin revision and recorded skills
-were observed and that the recorded commands produced the recorded outcomes.
-It does not, by itself, prove that the plugin caused Devin to perform better.
+- exact plugin/aptitude source SHA;
+- plugin version;
+- `augmentation = EUCLID_APTITUDE`;
+- complete mandatory skill inventory;
+- complete invoked skill inventory;
+- whether mandatory invocation completed;
+- SessionStart/PostCompaction hook observations.
 
-Causal uplift requires comparable baseline and augmented task cohorts using the
-same acceptance criteria.
+Task proof remains separate:
+
+`artifacts/pythia/devin-engineering-evidence.jsonl`
+
+and sealed packs under:
+
+`evidence/devin/<task>/<sha256>.json`
+
+A task pack may snapshot the active session aptitude, but skills do not belong
+to that task.
+
+A valid session receipt proves invocation. A valid task pack proves the
+recorded engineering outcome. Neither alone proves causal uplift; uplift is
+measured across comparable work.

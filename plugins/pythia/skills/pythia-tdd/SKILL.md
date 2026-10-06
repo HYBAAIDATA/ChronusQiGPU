@@ -13,11 +13,10 @@ triggers:
 
 # TDD
 
-Record use first:
+## Session activation
 
-```text
-python plugins/pythia/scripts/plugin_status.py --record-skill pythia-tdd --write-receipt
-```
+This aptitude is invoked automatically at SessionStart and remains active for the entire Devin session. Do not treat it as an optional per-task capability.
+
 
 Follow `Intelligence/skills/test-driven-development/SKILL.md`.
 

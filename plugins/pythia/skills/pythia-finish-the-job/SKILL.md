@@ -1,6 +1,6 @@
 ---
 name: pythia-finish-the-job
-description: Complete jobs end-to-end with evidence-before-completion, root-cause debugging, TDD where applicable, exact plugin provenance, and no stranded checkpoint work.
+description: Complete jobs end-to-end with evidence-before-completion, root-cause debugging, TDD where applicable, exact plugin provenance, sealed task evidence, and no stranded checkpoint work.
 allowed-tools:
   - read
   - grep
@@ -13,9 +13,12 @@ triggers:
 
 # Finish The Job
 
-## Invocation receipt
+## Session activation
 
-First run:
+This aptitude is invoked automatically at SessionStart and remains active for the entire Devin session. Do not treat it as an optional per-task capability.
+
+
+SessionStart invokes this aptitude automatically. For manual re-check:
 
 ```text
 python plugins/pythia/scripts/plugin_status.py --record-skill pythia-finish-the-job --write-receipt
@@ -23,34 +26,44 @@ python plugins/pythia/scripts/plugin_status.py --record-skill pythia-finish-the-
 
 ## Discipline
 
-Use the repository's existing verification-before-completion,
-systematic-debugging, TDD, code-review and healing skills as appropriate.
+Use the repository's verification-before-completion, systematic-debugging, TDD,
+code-review and healing skills as appropriate.
 
-The rules are:
+Rules:
 
 1. No completion claim without fresh evidence from this session.
 2. Reproduce and identify root cause before changing code.
 3. For code fixes, prefer RED → GREEN → REFACTOR where practicable.
 4. Verify review feedback against repository reality before applying it.
 5. Do not strand unfinished work behind a summary.
+6. A sealed evidence pack is required for a successful close-out.
 
 ## Close-out sequence
 
-1. Read the current runtime receipt and final checkpoint.
-2. Ensure the checkpoint's `plugin_source_sha` matches the running plugin.
-3. Ensure runtime-observed skills include:
+1. Read the runtime receipt and final checkpoint.
+2. Confirm the checkpoint `task_id` is stable for the assignment.
+3. Confirm the checkpoint `plugin_source_sha` matches the running plugin.
+4. Confirm runtime-observed skills include at least:
    - `pythia-plugin-status`;
    - `pythia-long-context`;
+   - `pythia-engineering-quality`;
+   - `pythia-evidence-pack`;
    - `pythia-finish-the-job`.
-4. Run the proving test/lint/build/inspection command fresh.
-5. Append the final checkpoint with:
+5. Run the proving command fresh through
+   `engineering_evidence.py verify --task-id <task> -- <command>`.
+6. Record a truthful `COMPLETION_GATE`.
+7. Seal/publish the evidence pack.
+8. Append the final checkpoint with:
+   - `task_id`;
    - `goal`;
    - `done`;
    - `next` = `done`, `none`, or `blocked: <reason>`;
    - files touched;
    - `plugin_source_sha`;
    - `skills_invoked`;
-   - non-pending `verification` evidence.
-6. Invoke `/pythia:pythia-stop-check`.
+   - non-pending `verification`;
+   - `evidence_pack` path.
+9. Invoke `/pythia:pythia-stop-check`.
 
-The Stop hook blocks if the provenance or evidence contract is not met.
+The Stop hook independently verifies the pack and blocks stale, missing,
+tampered or mismatched evidence.

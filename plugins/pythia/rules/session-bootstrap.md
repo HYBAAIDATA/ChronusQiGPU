@@ -1,62 +1,46 @@
 ---
-description: Session bootstrap — prove plugin revision, establish a stable task id, restore context, and open the engineering evidence trail before task work.
+description: Mandatory EUCLID aptitude bootstrap. SessionStart invokes the complete plugin and Intelligence skill libraries before Devin works.
 trigger: always_on
 ---
 
-# Session Bootstrap
+# Mandatory Session Bootstrap
 
-Before touching the assigned task:
+No task work begins before SessionStart has completed.
 
-1. Invoke `/pythia:pythia-plugin-status`.
-2. Record `plugin_version` and `plugin_source_sha`.
-3. Establish one stable `task_id` for the assignment. Reuse it for every
-   checkpoint, skill event, verification run and evidence pack.
-4. Read the last line of `artifacts/pythia/devin-checkpoint.jsonl`.
-5. If it belongs to this task, resume it. Otherwise create a fresh opening
-   checkpoint.
-6. Invoke `/pythia:pythia-long-context`.
-7. Record the opening event:
+SessionStart must:
 
-   ```text
-   python plugins/pythia/scripts/engineering_evidence.py record      --task-id <task> --event TASK_STARTED
-   ```
+1. identify the exact plugin/aptitude source SHA;
+2. enumerate every `plugins/pythia/skills/*/SKILL.md`;
+3. enumerate every `Intelligence/skills/*/SKILL.md`;
+4. mark the complete set invoked;
+5. write the runtime receipt;
+6. inject the active Euclidean aptitude instructions into context;
+7. restore the latest continuity checkpoint if present.
 
-8. For architecture-sensitive work invoke
-   `/pythia:pythia-repo-ontology` before mutation.
-9. Only then begin implementation.
+If mandatory invocation is incomplete, block the session rather than silently
+continuing with reduced aptitude.
 
-## Available augmentation skills
+## Skills are not task-scoped
 
-Core:
+Do not ask whether a task "needs" a skill before loading it.
 
-- `/pythia:pythia-plugin-status`
-- `/pythia:pythia-long-context`
-- `/pythia:pythia-engineering-quality`
-- `/pythia:pythia-evidence-pack`
-- `/pythia:pythia-finish-the-job`
-- `/pythia:pythia-stop-check`
+All skills are active from SessionStart.
 
-Specialist:
+Relevance determines which instructions/actions are applied during the work,
+not whether the aptitude exists.
 
-- `/pythia:pythia-repo-ontology`
-- `/pythia:pythia-systematic-debugging`
-- `/pythia:pythia-tdd`
-- `/pythia:pythia-agent-fabric`
-- `/pythia:pythia-promotion-gate`
-- `/pythia:pythia-deploy-rollback`
-- `/pythia:hyba-products`
+## Task evidence is separate
 
-## Final sequence
+When a concrete assignment begins, establish its task identity and record its
+engineering evidence. That task ledger proves the work performed and observed
+outcomes. It does not own or control the session's skills.
 
-Before ending:
+Before completion:
 
-1. Run proving commands through the engineering evidence recorder.
-2. Invoke `/pythia:pythia-engineering-quality`.
-3. Record `COMPLETION_GATE` with a truthful decision.
-4. Invoke `/pythia:pythia-evidence-pack` and publish/seal the pack.
-5. Append the final checkpoint with `task_id`, exact plugin SHA, verification
-   evidence and `evidence_pack` path.
-6. Invoke `/pythia:pythia-finish-the-job`.
-7. Invoke `/pythia:pythia-stop-check`.
-
-A completion claim without a valid evidence pack is blocked.
+1. run proving commands through the engineering evidence recorder;
+2. record a truthful completion decision;
+3. seal/publish the task evidence pack where required;
+4. append the final continuity checkpoint;
+5. allow the Stop hook to verify both:
+   - complete session-wide EUCLID aptitude activation; and
+   - valid task outcome evidence.

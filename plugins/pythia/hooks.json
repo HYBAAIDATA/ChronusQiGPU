@@ -6,7 +6,7 @@
         {
           "type": "command",
           "command": "python plugins/pythia/scripts/session_start.py",
-          "timeout": 10
+          "timeout": 30
         }
       ]
     }
@@ -18,7 +18,7 @@
         {
           "type": "command",
           "command": "python plugins/pythia/scripts/post_compaction.py",
-          "timeout": 10
+          "timeout": 30
         }
       ]
     }
