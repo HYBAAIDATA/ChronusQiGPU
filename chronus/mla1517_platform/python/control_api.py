@@ -109,6 +109,7 @@ _EXECUTION_DEVICES = (
     "remote",
     "asic",
     "super_asic",
+    "chronus",
 )
 _LOCK_HELD = False
 _LOCK_GUARD = threading.Lock()

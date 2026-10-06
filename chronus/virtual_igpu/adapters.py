@@ -441,10 +441,28 @@ class CPUEmulatorAdapter(Adapter):
             raise AdapterUnavailable(
                 f"SHA256d scan requires a 76-byte header prefix, got {len(header_prefix)}"
             )
-        if count <= 0 or count > 1_000_000:
-            raise AdapterUnavailable("count out of bounds")
-        if start < 0 or start > 0xFFFFFFFF or start + count - 1 > 0xFFFFFFFF:
-            raise AdapterUnavailable("nonce range exceeds uint32")
+        explicit = value.get("nonces")
+        if explicit is not None:
+            # Exact ordered batch authorised by the caller (PYTHIA itinerary).
+            # Order is preserved; the first hit in submitted order ends the scan.
+            if not isinstance(explicit, (list, tuple)):
+                raise AdapterUnavailable("nonces must be a list of uint32 integers")
+            nonce_seq = []
+            for raw in explicit:
+                if isinstance(raw, bool) or not isinstance(raw, int):
+                    raise AdapterUnavailable("nonces must be a list of uint32 integers")
+                if not 0 <= raw <= 0xFFFFFFFF:
+                    raise AdapterUnavailable("nonce exceeds uint32")
+                nonce_seq.append(raw)
+            count = len(nonce_seq)
+            if count <= 0 or count > 1_000_000:
+                raise AdapterUnavailable("count out of bounds")
+        else:
+            if count <= 0 or count > 1_000_000:
+                raise AdapterUnavailable("count out of bounds")
+            if start < 0 or start > 0xFFFFFFFF or start + count - 1 > 0xFFFFFFFF:
+                raise AdapterUnavailable("nonce range exceeds uint32")
+            nonce_seq = range(start, start + count)
         target = value.get("target", value.get("target_hex"))
         if target is None:
             raise AdapterUnavailable("target or target_hex is required")
@@ -459,8 +477,7 @@ class CPUEmulatorAdapter(Adapter):
             raise AdapterUnavailable("target is outside the uint256 range")
         hits: list[dict[str, Any]] = []
         checked = 0
-        for i in range(count):
-            nonce = start + i
+        for nonce in nonce_seq:
             header_b = header_prefix + int(nonce).to_bytes(4, "little")
             d1 = hashlib.sha256(header_b).digest()
             d2 = hashlib.sha256(d1).digest()
@@ -573,7 +590,6 @@ class OpenCLUhdAdapter(Adapter):
             self.probe()
         if not self.available:
             raise AdapterUnavailable(self.capabilities().reason or "opencl uhd unavailable")
-        started = time.time_ns()
         # Fail closed: prefer software for correctness unless tensor runtime path is proven
         # Physical execution evidence remains host-specific (gate PENDING without device).
         raise AdapterUnavailable(

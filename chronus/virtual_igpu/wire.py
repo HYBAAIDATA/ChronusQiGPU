@@ -6,16 +6,37 @@ import hmac
 import ipaddress
 import json
 import os
-from typing import Any
+from typing import Any, Callable, Mapping
 from urllib.parse import urlparse
 
-from .abi import ABI_VERSION, Workload
+from .abi import Workload
 from .runtime import RuntimeDaemon
 
 MAX_REQUEST_BYTES = 8 * 1024 * 1024
 
 
-def make_handler(daemon: RuntimeDaemon, auth_token: str | None = None):
+def make_handler(
+    daemon: RuntimeDaemon,
+    auth_token: str | None = None,
+    *,
+    production: bool = False,
+    authorizer: Callable[[str, str, Mapping[str, str]], bool] | None = None,
+):
+    """Build the request handler.
+
+    ``production`` fails closed: authentication is mandatory and error bodies
+    carry only a typed code, never exception text. ``authorizer(method, path,
+    headers)`` is the policy hook (AL HARAS mediates; CHRONUS only enforces it).
+    """
+
+    if production and not auth_token:
+        raise ValueError("production mode requires an authentication token")
+
+    def _error(exc: Exception) -> dict[str, Any]:
+        if production:
+            return {"error": type(exc).__name__}
+        return {"error": type(exc).__name__, "detail": str(exc)}
+
     class Handler(BaseHTTPRequestHandler):
         def _read_json(self) -> dict[str, Any]:
             try:
@@ -30,10 +51,20 @@ def make_handler(daemon: RuntimeDaemon, auth_token: str | None = None):
             return json.loads(raw.decode("utf-8"))
 
         def _auth_ok(self) -> bool:
-            if not auth_token:
-                return True
-            header = self.headers.get("Authorization", "")
-            return hmac.compare_digest(header, f"Bearer {auth_token}")
+            if auth_token:
+                header = self.headers.get("Authorization", "")
+                if not hmac.compare_digest(header.encode(), f"Bearer {auth_token}".encode()):
+                    return False
+            elif production:
+                return False
+            if authorizer is not None:
+                try:
+                    return bool(
+                        authorizer(self.command, urlparse(self.path).path, dict(self.headers))
+                    )
+                except Exception:
+                    return False
+            return True
 
         def _send(self, code: int, payload: Any) -> None:
             body = json.dumps(payload, default=str).encode("utf-8")
@@ -65,7 +96,7 @@ def make_handler(daemon: RuntimeDaemon, auth_token: str | None = None):
                     return
                 self._send(404, {"error": "not_found", "path": path})
             except Exception as exc:
-                self._send(500, {"error": type(exc).__name__, "detail": str(exc)})
+                self._send(500, _error(exc))
 
         def do_POST(self) -> None:  # noqa: N802
             if not self._auth_ok():
@@ -86,7 +117,7 @@ def make_handler(daemon: RuntimeDaemon, auth_token: str | None = None):
                     return
                 self._send(404, {"error": "not_found", "path": path})
             except Exception as exc:
-                self._send(400, {"error": type(exc).__name__, "detail": str(exc)})
+                self._send(400, _error(exc))
 
     return Handler
 
@@ -97,7 +128,18 @@ def serve(
     *,
     store: str | None = None,
     auth_token: str | None = None,
+    production: bool | None = None,
+    tls_terminated_externally: bool = False,
+    authorizer: Callable[[str, str, Mapping[str, str]], bool] | None = None,
+    daemon: RuntimeDaemon | None = None,
 ) -> ThreadingHTTPServer:
+    if production is None:
+        production = os.getenv("CHRONUS_VIGPU_PRODUCTION", "").lower() in {"1", "true", "yes"}
+    if production and not tls_terminated_externally:
+        raise ValueError(
+            "production mode serves plain HTTP: transport security must be provided by an "
+            "external TLS terminator, acknowledged with tls_terminated_externally=True"
+        )
     try:
         loopback = ipaddress.ip_address(host).is_loopback
     except ValueError:
@@ -107,10 +149,13 @@ def serve(
             "the stdlib Virtual iGPU sidecar is loopback-only; "
             "use an authenticated HTTPS service for remote delivery"
         )
-    daemon = RuntimeDaemon(root=store)
-    daemon.attach()
     token = auth_token or os.getenv("CHRONUS_VIGPU_TOKEN")
-    handler = make_handler(daemon, auth_token=token)
+    if production and not token:
+        raise ValueError("production mode requires an authentication token")
+    if daemon is None:
+        daemon = RuntimeDaemon(root=store)
+    daemon.attach()
+    handler = make_handler(daemon, auth_token=token, production=production, authorizer=authorizer)
     return ThreadingHTTPServer((host, port), handler)
 
 

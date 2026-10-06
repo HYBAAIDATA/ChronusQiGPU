@@ -54,7 +54,7 @@ def realize(job_id: str, requested: int, payload: str = "") -> Dict[str, Any]:
     )
     return {
         "product": "Chronus",
-        "compute_substrate": "Turing",
+        "compute_substrate": "chronus_execution_plane",
         "scale": scale.as_dict(),
         "norm_phi_sq": phi_norm(folded),
         "reflections": reflections,

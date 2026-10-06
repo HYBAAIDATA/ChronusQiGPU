@@ -143,7 +143,7 @@ def _chronus() -> Dict[str, Any]:
     fabric = ChronusFabric.compose(inventory)
     return {
         "product": "Chronus",
-        "compute_substrate": "Turing",
+        "compute_substrate": "chronus_execution_plane",
         "fabric": fabric.as_dict(),
         "routes": {
             op: fabric.route(op).as_dict()

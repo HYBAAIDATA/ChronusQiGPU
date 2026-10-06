@@ -41,7 +41,7 @@ from pool_catalog import POOL_CATALOG, pool_names, pool_settings  # noqa: E402
 # operator policy, not an inferred benchmark ranking: capability probes prove
 # a lane can execute, but they do not prove it is faster than every other lane.
 _BACKEND_ORDER_TOKENS = frozenset(
-    {"cpu", "gpu", "opencl", "cuda", "metal", "remote", "remote_gpu", "asic", "super_asic"}
+    {"cpu", "gpu", "opencl", "cuda", "metal", "remote", "remote_gpu", "asic", "super_asic", "chronus"}
 )
 
 
@@ -315,6 +315,7 @@ EXECUTION_DEVICES = (
     "remote",
     "asic",
     "super_asic",
+    "chronus",
 )
 
 

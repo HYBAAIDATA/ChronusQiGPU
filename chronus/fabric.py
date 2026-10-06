@@ -1,8 +1,8 @@
 """Chronus measured-device fabric.
 
 Chronus composes every measured execution device in :class:`ClusterInventory`
-into one product/runtime routing surface. Turing remains the computation
-substrate; this module decides where Turing-backed operations execute and
+into one product/runtime routing surface. TURING remains an independent
+VQC authority; this module decides where Chronus-executed operations run and
 attests what actually ran.
 
 Nothing here simulates hardware. The fabric reports only measured members and
@@ -295,7 +295,7 @@ class ChronusFabric:
         return {
             "name": "chronus-fabric",
             "product": "Chronus",
-            "compute_substrate": "Turing",
+            "compute_substrate": "chronus_execution_plane",
             "compute_units": self.compute_units,
             "global_mem_mb": self.global_mem_mb,
             "device_count": len(self.devices),

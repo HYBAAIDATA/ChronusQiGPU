@@ -123,8 +123,10 @@ def test_workload_count_quota_still_enforced(tmp_path):
 
 def test_nonpositive_deadline_rejected(tmp_path):
     daemon = _daemon([CPUEmulatorAdapter()], tmp_path, "dl0")
-    with pytest.raises(RuntimeInvariantError, match="deadline_ms"):
-        daemon.submit(_workload(deadline_ms=0))
+    # Rejected at the ABI boundary (typed), before the daemon is reached.
+    with pytest.raises(ValueError, match="deadline_ms"):
+        _workload(deadline_ms=0)
+    assert daemon.in_flight == {}
 
 
 def test_deadline_records_timeout_not_success(tmp_path):
