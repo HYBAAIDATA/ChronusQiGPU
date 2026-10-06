@@ -286,6 +286,33 @@ class TenThousandQubitSystem:
     def entanglement_ledger(self) -> List[EntanglementRegistration]:
         return list(self._entanglement_ledger)
 
+    # -- Golden Quantum evidence-scoped profile -------------------------------
+
+    def golden_quantum(self):
+        """Return the Golden Quantum profile bound to this virtual computer.
+
+        The profile exposes verified transforms and capability reports,
+        experimental search ordering, and non-executable speculative metadata.
+        It never upgrades an ordering heuristic into a proof or hardware claim.
+        """
+        from ..golden_quantum import GoldenQuantumCore
+
+        return GoldenQuantumCore(self)
+
+    # -- Fault-tolerant quantum-ASIC engineering model ------------------------
+
+    def fault_tolerant_asic(self):
+        """Return the evidence-scoped physical-stack engineering model.
+
+        This calculator models refrigeration, transmons, surface-code
+        overhead, decoding, control, scaling, and readiness. It is separate
+        from this virtual exact-mathematics engine and never implies that a
+        physical QPU exists.
+        """
+        from ..fault_tolerant_asic import QuantumAsicStack
+
+        return QuantumAsicStack()
+
     # -- Aethel persistence (folded evidence, never raw amplitudes) -----------
 
     def aethel_store_manifest(self, address: str = "ten_thousand:manifest") -> Dict[str, Any]:
@@ -304,10 +331,18 @@ class TenThousandQubitSystem:
 
     def status(self) -> Dict[str, Any]:
         from ..pisot import plan_hilbert_coverage  # lazy: pisot->turing_core cycle
+        from ..unified_theory import UNIFIED_THEORY
+        from ..fault_tolerant_asic import SCHEMA as QUANTUM_ASIC_SCHEMA
 
         coverage = plan_hilbert_coverage(self.n_qubits)
         return {
             "system": "TenThousandQubitSystem",
+            "unified_theory": UNIFIED_THEORY.report(),
+            "fault_tolerant_asic": {
+                "schema": QUANTUM_ASIC_SCHEMA,
+                "truth_class": "deterministic_engineering_model",
+                "physical_qpu_present": False,
+            },
             "n_qubits": self.n_qubits,
             "hilbert_dim": self.hilbert_dim_symbolic,
             "dense_state_bytes_if_materialised": str(coverage.state_bytes),
@@ -325,6 +360,8 @@ class TenThousandQubitSystem:
                 "annealing",
                 "tunnelling",
                 "swarming",
+                "golden_quantum_profile",
+                "fault_tolerant_quantum_asic_engineering_model",
             ],
             "zeckendorf_protection": "non-adjacent Fibonacci index constraint",
             "cassini_anchor_ok": bool(_tc.cassini_check(7)),
