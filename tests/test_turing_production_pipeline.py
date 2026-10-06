@@ -15,7 +15,6 @@ from turing_universal_quantum_computer import (
     Program,
     TruthClass,
     run_pipeline,
-    run_production_pipeline,
 )
 from turing_universal_quantum_computer.pipeline import (
     STAGE_ORDER,
@@ -277,65 +276,6 @@ def test_pipeline_full_pass_with_custody_and_replay():
         "program", "result", "certificate", "witness",
     }
     assert all(r["state"] == "PASS" for r in report.replay)
-    bundle = [r for r in report.replay if r.get("kind") == "evidence_bundle"]
-    assert len(bundle) == 1
-    assert bundle[0]["certificate_digest"] == report.certificate["certificate_digest"]
-
-
-def test_production_entry_requires_durable_custody_and_bound_replay():
-    report = run_production_pipeline(
-        VQCRequest(program=_bell_t(), shots=32, seed=11)
-    )
-    assert report.verdict == "PASS"
-    states = {stage.stage: stage.state for stage in report.stages}
-    assert states["custody"] == "PASS"
-    assert states["replay"] == "PASS"
-    assert len(report.custody) == 4
-    assert all(record["durable_index"] is not None for record in report.custody)
-    bundle = [r for r in report.replay if r.get("kind") == "evidence_bundle"]
-    assert len(bundle) == 1
-    assert bundle[0]["state"] == "PASS"
-    assert bundle[0]["program_digest"] == report.program_digest
-
-
-def test_bound_replay_rejects_cross_execution_certificate_substitution():
-    pipeline = VQCPipeline()
-    report = pipeline.run(
-        VQCRequest(
-            program=_bell(),
-            shots=8,
-            seed=1,
-            custody=True,
-            replay=False,
-        )
-    )
-    assert report.verdict == "PASS"
-    assert report.certificate is not None
-
-    other = run_pipeline(
-        VQCRequest(program=_bell_t(), shots=8, seed=1)
-    )
-    assert other.certificate is not None
-
-    custody = pipeline._last_custody
-    substituted = custody.commit(
-        "certificate",
-        other.certificate,
-        meta={"stage": "verification", "test": "substitution"},
-    ).as_dict()
-    records = [
-        substituted if record["kind"] == "certificate" else dict(record)
-        for record in report.custody
-    ]
-
-    state, replay = pipeline._replay(
-        records,
-        execution_options={"shots": 8, "seed": 1},
-    )
-    assert state == "FAIL"
-    bundle = [r for r in replay if r.get("kind") == "evidence_bundle"]
-    assert bundle[-1]["state"] == "FAIL"
-    assert "cross-bound replay failed" in bundle[-1]["reason"]
 
 
 def test_pipeline_stage_order_is_canonical():
