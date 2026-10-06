@@ -13,7 +13,7 @@ triggers:
 
 # PYTHIA Plugin Status
 
-Run this first in every Devin session:
+SessionStart invokes this aptitude automatically. For manual status inspection:
 
 ```text
 python plugins/pythia/scripts/plugin_status.py --record-skill pythia-plugin-status --write-receipt
