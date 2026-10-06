@@ -1,8 +1,19 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 
+from aethel.enterprise.custody import compose
+from aethel.enterprise.entangled_custody import (
+    EntangledCustodyError,
+    EntanglementBinding,
+)
 from aethel.enterprise.lifecycle import CompositionRoot
+from aethel.enterprise.persistent_entangled_custody import (
+    PersistentEntangledCustodyFabric,
+)
+from aethel.enterprise.records import OperationalRecord
 
 
 TEST_KEY = b"entangled-lifecycle-test-key-32bytes"
@@ -67,6 +78,7 @@ def test_readiness_reports_shared_entangled_custody(root):
     assert status["entangled_custody"]["theseus_owner"] == "theseus"
     assert status["entangled_custody"]["ovid_owner"] == "ovid"
     assert status["entangled_custody"]["restart_recoverable"] is True
+    assert status["entangled_custody"]["restart_integrity_verified"] is True
     assert status["entangled_custody"]["bindings"] == 0
 
 
@@ -129,6 +141,7 @@ def test_binding_and_parent_lineage_survive_restart(tmp_path):
         status = second.readiness()["entangled_custody"]
         assert status["bindings"] == 2
         assert status["restart_recoverable"] is True
+        assert status["restart_integrity_verified"] is True
 
         pythia2 = second.data_port("pythia")
         assert pythia2.read(child_id) == child_bytes
@@ -138,3 +151,297 @@ def test_binding_and_parent_lineage_survive_restart(tmp_path):
         assert verification["parent_lineage"] is True
     finally:
         second.stop()
+
+
+def _rewrite_record(
+    state_dir,
+    record_id: str,
+    *,
+    mutate_payload=None,
+    mutate_meta=None,
+    mutate_lineage=None,
+) -> None:
+    custody = compose(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    try:
+        original = custody.get_record(record_id)
+        payload_bytes = original.payload
+        if mutate_payload is not None:
+            payload = json.loads(original.payload.decode("utf-8"))
+            mutate_payload(payload)
+            payload_bytes = json.dumps(
+                payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+
+        meta = dict(original.meta)
+        if mutate_meta is not None:
+            mutate_meta(meta)
+
+        lineage = tuple(original.lineage)
+        if mutate_lineage is not None:
+            lineage = tuple(mutate_lineage(lineage))
+
+        replacement = OperationalRecord(
+            record_id=original.record_id,
+            producer=original.producer,
+            producer_version=original.producer_version,
+            schema_version=original.schema_version,
+            kind=original.kind,
+            payload=payload_bytes,
+            evidence_state=original.evidence_state,
+            sequence=original.sequence + 1,
+            epoch=original.epoch,
+            lineage=lineage,
+            correlation_ids=original.correlation_ids,
+            dependencies=original.dependencies,
+            meta=meta,
+        )
+        # This is a valid, freshly authenticated THESEUS write. Restart must
+        # still reject it when the relationship semantics are false.
+        custody.put_record(replacement)
+    finally:
+        custody.close()
+
+
+def test_restart_rejects_validly_serialized_participant_identity_corruption(tmp_path):
+    state_dir = tmp_path / "participant-corruption"
+    first = CompositionRoot(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    first.start()
+    try:
+        binding = first.data_port("pythia").put(
+            "shared_observation",
+            {"value": 23},
+            share_with=("toe",),
+        )
+        index_id = f"entangled-binding-{binding.binding_id}"
+    finally:
+        first.stop()
+
+    _rewrite_record(
+        state_dir,
+        index_id,
+        mutate_payload=lambda payload: payload.__setitem__("participants", ["pythia"]),
+    )
+
+    consumer_started = {"value": False}
+    second = CompositionRoot(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    second.register_consumer(
+        "pythia",
+        lambda: consumer_started.__setitem__("value", True),
+        lambda: None,
+    )
+    try:
+        with pytest.raises(EntangledCustodyError, match="participant identity mismatch"):
+            second.start()
+        assert consumer_started["value"] is False
+    finally:
+        second.stop()
+
+
+def test_restart_rejects_validly_serialized_content_digest_corruption(tmp_path):
+    state_dir = tmp_path / "digest-corruption"
+    first = CompositionRoot(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    first.start()
+    try:
+        binding = first.data_port("salamander").put(
+            "healing_evidence",
+            {"action": "requalify", "verified": True},
+            share_with=("pythia", "al_haras"),
+        )
+        index_id = f"entangled-binding-{binding.binding_id}"
+    finally:
+        first.stop()
+
+    _rewrite_record(
+        state_dir,
+        index_id,
+        mutate_payload=lambda payload: payload.__setitem__("content_sha256", "0" * 64),
+    )
+
+    second = CompositionRoot(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    try:
+        with pytest.raises(EntangledCustodyError, match="structural verification"):
+            second.start()
+    finally:
+        second.stop()
+
+
+def test_restart_rejects_authenticated_parent_edge_removal(tmp_path):
+    state_dir = tmp_path / "parent-removal"
+    first = CompositionRoot(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    first.start()
+    try:
+        parent = first.data_port("kellogg").put(
+            "tensor_state",
+            {"value": 3},
+            share_with=("pythia",),
+        )
+        child = first.data_port("pythia").put(
+            "derived_state",
+            {"value": 5},
+            share_with=("kellogg",),
+            parents=(parent.binding_id,),
+        )
+        index_id = f"entangled-binding-{child.binding_id}"
+    finally:
+        first.stop()
+
+    # Rewrite the index consistently with an empty parent declaration. The
+    # underlying child/OVID records still retain the real parent and must win.
+    _rewrite_record(
+        state_dir,
+        index_id,
+        mutate_payload=lambda payload: payload.__setitem__("parent_binding_ids", []),
+        mutate_lineage=lambda lineage: lineage[:2],
+    )
+
+    second = CompositionRoot(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    try:
+        with pytest.raises(EntangledCustodyError, match="parent custody lineage mismatch"):
+            second.start()
+    finally:
+        second.stop()
+
+
+def test_restart_rejects_authenticated_source_rewrite_against_real_producer(tmp_path):
+    state_dir = tmp_path / "source-rewrite"
+    first = CompositionRoot(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    first.start()
+    try:
+        binding = first.data_port("pythia").put(
+            "shared_observation",
+            {"value": 29},
+            share_with=("toe",),
+        )
+        index_id = f"entangled-binding-{binding.binding_id}"
+        shared_id = binding.custody_record_id
+        lineage_id = binding.ovid_lineage_record_id
+    finally:
+        first.stop()
+
+    participants = ["euclid", "toe"]
+    _rewrite_record(
+        state_dir,
+        index_id,
+        mutate_payload=lambda payload: (
+            payload.__setitem__("source_system", "euclid"),
+            payload.__setitem__("participants", participants),
+        ),
+        mutate_meta=lambda meta: (
+            meta.__setitem__("source_system", "euclid"),
+            meta.__setitem__("participants", participants),
+        ),
+    )
+    _rewrite_record(
+        state_dir,
+        shared_id,
+        mutate_meta=lambda meta: (
+            meta.__setitem__("source_system", "euclid"),
+            meta.__setitem__("participants", participants),
+        ),
+    )
+    _rewrite_record(
+        state_dir,
+        lineage_id,
+        mutate_meta=lambda meta: (
+            meta.__setitem__("source_system", "euclid"),
+            meta.__setitem__("participants", participants),
+        ),
+    )
+
+    second = CompositionRoot(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    try:
+        with pytest.raises(EntangledCustodyError, match="producer/source identity mismatch"):
+            second.start()
+    finally:
+        second.stop()
+
+
+def test_parent_graph_validation_handles_deep_valid_lineage_without_recursion():
+    bindings: dict[str, EntanglementBinding] = {}
+    previous: str | None = None
+    for index in range(1500):
+        binding_id = f"binding-{index}"
+        bindings[binding_id] = EntanglementBinding(
+            binding_id=binding_id,
+            source_system="pythia",
+            participants=("pythia",),
+            kind="test",
+            custody_record_id=f"record-{index}",
+            ovid_lineage_record_id=f"lineage-record-{index}",
+            ovid_lineage_id=f"lineage-{index}",
+            content_sha256="0" * 64,
+            parent_binding_ids=() if previous is None else (previous,),
+            created_at=0.0,
+        )
+        previous = binding_id
+
+    PersistentEntangledCustodyFabric._validate_parent_graph(bindings)
+
+
+def test_parent_graph_validation_still_rejects_cycles():
+    bindings = {
+        "a": EntanglementBinding(
+            binding_id="a",
+            source_system="pythia",
+            participants=("pythia",),
+            kind="test",
+            custody_record_id="record-a",
+            ovid_lineage_record_id="lineage-record-a",
+            ovid_lineage_id="lineage-a",
+            content_sha256="0" * 64,
+            parent_binding_ids=("b",),
+            created_at=0.0,
+        ),
+        "b": EntanglementBinding(
+            binding_id="b",
+            source_system="pythia",
+            participants=("pythia",),
+            kind="test",
+            custody_record_id="record-b",
+            ovid_lineage_record_id="lineage-record-b",
+            ovid_lineage_id="lineage-b",
+            content_sha256="0" * 64,
+            parent_binding_ids=("a",),
+            created_at=0.0,
+        ),
+    }
+    with pytest.raises(EntangledCustodyError, match="cycle"):
+        PersistentEntangledCustodyFabric._validate_parent_graph(bindings)

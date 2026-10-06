@@ -1,21 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 import pytest
 
 from chronus.mla1517.mining.hyba_intelligence import (
     CandidateBoundaryError,
     HYBAIntelligencePipeline,
 )
-
-
-@dataclass
-class _Folded:
-    values: tuple[int, ...]
-
-    def unfold(self):
-        return self.values
 
 
 class _Geodesic:
@@ -43,7 +33,6 @@ def _profile(fn):
 
 def _pipeline(**kwargs):
     return HYBAIntelligencePipeline(
-        fold=lambda values, depth: _Folded(tuple(values)),
         memory_custody=lambda values: _Table(values),
         geodesic=_Geodesic(),
         vqc=_VQC(),
@@ -57,7 +46,6 @@ def test_all_stages_preserve_candidate_membership_and_report_no_authority():
     assert result.candidates == (1, 2, 4, 8)
     assert [stage.name for stage in result.stages] == [
         "chronus_v33_memory",
-        "pulvini_custody",
         "geodesic",
         "phi_vqc",
     ]
@@ -85,7 +73,6 @@ def test_stage_cannot_add_or_remove_candidates_even_when_fail_open():
             return list(candidates) + [99]
 
     pipeline = HYBAIntelligencePipeline(
-        fold=lambda values, depth: _Folded(tuple(values)),
         memory_custody=lambda values: _Table(values),
         geodesic=Malicious(),
         vqc=_VQC(),
@@ -102,7 +89,7 @@ def test_unavailable_advisory_stage_degrades_to_baseline():
             raise RuntimeError("backend unavailable")
 
     pipeline = HYBAIntelligencePipeline(
-        fold=lambda values, depth: _Folded(tuple(values)),
+        memory_custody=lambda values: _Table(values),
         geodesic=Failed(),
         vqc=_VQC(),
         profiler=_profile,
@@ -110,21 +97,19 @@ def test_unavailable_advisory_stage_degrades_to_baseline():
     )
     result = pipeline.prepare({}, [3, 1, 2])
     assert result.candidates == (1, 2, 3)
-    assert result.stages[2].state == "DEGRADED_BASELINE"
-    assert "backend unavailable" in result.stages[2].detail
+    assert result.stages[1].state == "DEGRADED_BASELINE"
+    assert "backend unavailable" in result.stages[1].detail
 
 
-def test_exact_custody_mismatch_always_fails_closed():
-    pipeline = HYBAIntelligencePipeline(
-        fold=lambda values, depth: _Folded(tuple(reversed(values))),
-        memory_custody=lambda values: _Table(values),
-        geodesic=_Geodesic(),
-        vqc=_VQC(),
-        profiler=_profile,
-        fail_open=True,
-    )
-    with pytest.raises(CandidateBoundaryError):
-        pipeline.prepare({}, [1, 2, 3])
+def test_pulvini_fold_injection_is_rejected_at_production_boundary():
+    with pytest.raises(ValueError, match="PULVINI/data fold injection is forbidden"):
+        HYBAIntelligencePipeline(
+            fold=lambda values, depth: values,
+            memory_custody=lambda values: _Table(values),
+            geodesic=_Geodesic(),
+            vqc=_VQC(),
+            profiler=_profile,
+        )
 
 
 def test_candidate_limit_is_enforced_before_any_backend_call():
@@ -135,7 +120,6 @@ def test_candidate_limit_is_enforced_before_any_backend_call():
 
 def test_default_chronus_v33_memory_custody_roundtrips_uint32_candidates():
     pipeline = HYBAIntelligencePipeline(
-        fold=lambda values, depth: _Folded(tuple(values)),
         enable_geodesic=False,
         enable_vqc=False,
         profiler=_profile,

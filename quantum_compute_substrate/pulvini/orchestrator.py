@@ -1,17 +1,19 @@
 """PULVINI data orchestrator.
 
-Quantum comes from maths.  In this package quantum algebra serves data:
+Quantum comes from maths. In this package quantum algebra serves data:
 representation, reversible phi-folding, tensor evolution, Hamiltonian/data
-operators, and measured reconstruction/topology evidence.  This module is not
+operators, and measured reconstruction/topology evidence. This module is not
 a mining planner and exposes no nonce, SHA-256d, Stratum, share, or pool API.
 
-Pythagoras is historical lineage only.  ``PythagorasOrchestrator`` remains as a
-compatibility alias for older imports; canonical code should use
-``PulviniDataOrchestrator``.
+Pythagoras is historical lineage only. ``PythagorasOrchestrator`` remains as a
+deprecated compatibility facade for older imports. It cannot acquire a second
+authority domain and becomes read-only after construction. Canonical code must
+use ``PulviniDataOrchestrator``.
 """
 
 from __future__ import annotations
 
+import warnings
 from enum import Enum, auto
 from typing import Any, Dict, Optional
 
@@ -31,7 +33,7 @@ class SolverStrategy(Enum):
 
 
 PULVINI_DATA_ROUTING_THRESHOLD = 10_000
-# Historical compatibility only.  This constant does not define a separate
+# Historical compatibility only. This constant does not define a separate
 # "quantum" authority or a mining path.
 QUANTUM_ROUTING_THRESHOLD = PULVINI_DATA_ROUTING_THRESHOLD
 
@@ -40,9 +42,12 @@ class PulviniDataOrchestrator:
     """Route data/tensor payloads through the PULVINI mathematical substrate.
 
     ``data_threshold`` selects when the higher-order MPO/PULVINI/TT data path
-    is used.  ``quantum_threshold`` is accepted only for backwards-compatible
-    callers and is mapped to the same data-routing threshold.
+    is used. ``quantum_threshold`` is accepted only for backwards-compatible
+    callers and maps to the same data-routing threshold.
     """
+
+    AUTHORITY = "pulvini.data"
+    DOMAIN = "data"
 
     def __init__(
         self,
@@ -58,7 +63,7 @@ class PulviniDataOrchestrator:
         self.max_tt_rank = max_tt_rank
         self.mpo_bond_dim = mpo_bond_dim
         self.data_threshold = int(data_threshold)
-        # Compatibility attribute for older consumers.  It is intentionally an
+        # Compatibility attribute for older consumers. It is intentionally an
         # alias of the data threshold, not a distinct quantum/mining control.
         self.quantum_threshold = self.data_threshold
 
@@ -95,8 +100,8 @@ class PulviniDataOrchestrator:
             reason = f"explicit strategy override: {strategy.name}"
 
         audit = {
-            "authority": "pulvini.data",
-            "domain": "data",
+            "authority": self.AUTHORITY,
+            "domain": self.DOMAIN,
             "mining_path": False,
             "strategy_used": resolved.name,
             "routing_reason": reason,
@@ -129,15 +134,15 @@ class PulviniDataOrchestrator:
 
     def _hamiltonian_solve(self, tensor: np.ndarray) -> Dict[str, Any]:
         pulvini = PulviniOperator(tolerance=self.tolerance)
-        H_reduced, envelope = pulvini.hamiltonian_reduction(tensor)
+        reduced, envelope = pulvini.hamiltonian_reduction(tensor)
         return {
-            "solution": H_reduced,
+            "solution": reduced,
             "audit_envelope": envelope.as_dict(),
             "reconstruction_error": envelope.reconstruction_error_bound,
             "topology_preserved": envelope.topology_preserved,
-            # Mathematical dimensional ratio for this result only.  It is not
+            # Mathematical dimensional ratio for this result only. It is not
             # a fleet/storage compression claim.
-            "compression_ratio": tensor.size / max(1, H_reduced.size),
+            "compression_ratio": tensor.size / max(1, reduced.size),
         }
 
     def _pulvini_tt_solve(self, tensor: np.ndarray) -> Dict[str, Any]:
@@ -166,8 +171,55 @@ class PulviniDataOrchestrator:
         return {"solution": result["reconstructed"], **result}
 
 
-# Historical import compatibility.  Pythagoras has no active authority here.
-PythagorasOrchestrator = PulviniDataOrchestrator
+class PythagorasOrchestrator(PulviniDataOrchestrator):
+    """Deprecated read-only compatibility facade.
+
+    The historical name can still execute the same data-domain computation so
+    old callers do not break, but it cannot mutate its routing configuration
+    after construction and it never emits a Pythagoras authority identity.
+    Repository production code is separately forbidden by the architecture
+    gate from importing this facade.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        object.__setattr__(self, "_compat_initialising", True)
+        super().__init__(*args, **kwargs)
+        object.__setattr__(self, "_compat_initialising", False)
+        warnings.warn(
+            "PythagorasOrchestrator is historical compatibility only; use "
+            "PulviniDataOrchestrator",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name == "_compat_initialising" or getattr(
+            self, "_compat_initialising", True
+        ):
+            object.__setattr__(self, name, value)
+            return
+        raise AttributeError(
+            "PythagorasOrchestrator is a read-only compatibility facade"
+        )
+
+    def solve(
+        self,
+        tensor: np.ndarray,
+        strategy: SolverStrategy = SolverStrategy.AUTO,
+        mpo: Optional[MatrixProductOperator] = None,
+        num_time_steps: int = 1,
+    ) -> Dict[str, Any]:
+        result = super().solve(
+            tensor,
+            strategy=strategy,
+            mpo=mpo,
+            num_time_steps=num_time_steps,
+        )
+        result["compatibility_alias"] = "PythagorasOrchestrator"
+        result["authority"] = self.AUTHORITY
+        result["domain"] = self.DOMAIN
+        result["mining_path"] = False
+        return result
 
 
 __all__ = [

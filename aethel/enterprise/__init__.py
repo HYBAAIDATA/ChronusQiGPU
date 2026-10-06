@@ -89,6 +89,7 @@ from .journal import FileLock, WriteAheadJournal
 from .lifecycle import CompositionRoot
 from .ovid_registry import DEFAULT_OVID_REGISTRY, OvidRegistry
 from .parity import assert_cpu_accel_parity
+from .production_organism import ProductionOrganism
 from .records import (
     CANONICAL_PRODUCERS,
     DEPENDENCY_OVID_TRANSFORM,
@@ -112,6 +113,17 @@ from .schema import (
     CustodyEvent,
     canonical_manifest_bytes,
 )
+from .system_relations import (
+    DEFAULT_PEERS,
+    ProductionSystemRelations,
+    SharedALHaras,
+    SharedEuclid,
+    SharedKellogg,
+    SharedPythiaStore,
+    SharedSalamander,
+    SharedTOEBridge,
+    SharedTuring,
+)
 from .telemetry import EvidenceTelemetry
 
 __all__ = [
@@ -120,6 +132,7 @@ __all__ = [
     "EnterpriseTheseus",
     "compose",
     "CompositionRoot",
+    "ProductionOrganism",
     # shared THESEUS / OVID data entanglement
     "ENTANGLED_CUSTODY_SCHEMA",
     "BINDING_SCHEMA",
@@ -129,6 +142,16 @@ __all__ = [
     "EntanglementBinding",
     "SystemDataPort",
     "EntangledCustodyFabric",
+    # live subsystem bindings over the shared fabric
+    "DEFAULT_PEERS",
+    "ProductionSystemRelations",
+    "SharedPythiaStore",
+    "SharedTOEBridge",
+    "SharedSalamander",
+    "SharedALHaras",
+    "SharedKellogg",
+    "SharedTuring",
+    "SharedEuclid",
     # distributed / multi-root / DR / soak / API / cert
     "NodeId",
     "LogEntry",

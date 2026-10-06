@@ -29,7 +29,7 @@ ARMS_MAX = 600  # solver-arm processes supervised by the control API
 WORKERS_MIN = 1
 WORKERS_MAX = 600  # virtual solver workers inside a scaled execution arm
 LANES_PER_ARM = 32  # M32 lane topology inside every arm (fixed)
-HASHRATE_CEILING_HS = 1e18  # pool-facing hard cap: 1 EH/s, never exceeded
+HASHRATE_CEILING_HS = 1e19  # governed engineering target ceiling: 10 EH/s
 WINDOW_MIN = 1
 WINDOW_MAX = 1 << 22  # 4,194,304 nonces per batch window
 CAMPAIGN_PHASES_MAX = 32  # ordered phases in one pool campaign
@@ -201,7 +201,7 @@ def validate(cfg: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("hashrate.target_hs must be a number")
     target = float(target)
     if not 0.0 <= target <= HASHRATE_CEILING_HS:
-        raise ValueError("hashrate.target_hs must be in [0, 1e18] (1 EH/s ceiling)")
+        raise ValueError("hashrate.target_hs must be in [0, 1e19] (10 EH/s ceiling)")
 
     live = cfg.get("live_submit", {})
     if not isinstance(live, dict):
@@ -252,7 +252,7 @@ def validate(cfg: dict[str, Any]) -> dict[str, Any]:
         phase_target = float(phase_target)
         if not 0.0 < phase_target <= HASHRATE_CEILING_HS:
             raise ValueError(
-                f"campaign.phases[{i}].target_hs must be in (0, 1e18] (1 EH/s ceiling)"
+                f"campaign.phases[{i}].target_hs must be in (0, 1e19] (10 EH/s ceiling)"
             )
         phase_arms = ph.get("arms", ARMS_MIN)
         if not isinstance(phase_arms, int) or not ARMS_MIN <= phase_arms <= ARMS_MAX:

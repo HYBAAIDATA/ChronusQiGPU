@@ -10,6 +10,7 @@ layer never decides on its own that two Stratum jobs are equivalent.
 
 Separation of authority:
   - Intelligence issues plans (WHEN, WHERE, HOW MUCH, WHICH LANE, WHICH ORDER)
+  - Chronus owns vendor-neutral physical execution admission and dispatch
   - SHA256d / target comparison / Stratum remain the sole proof authorities
   - A plan is never a proof; it is a search direction over a leased range
 """
@@ -24,7 +25,9 @@ from types import MappingProxyType
 from typing import Any, Mapping
 
 _LANES = 32
-_VALID_ROUTES = frozenset(("cpu_reference", "opencl_m32", "opencl_gold", "opencl_range"))
+_VALID_ROUTES = frozenset(
+    ("cpu_reference", "chronus_batch", "opencl_m32", "opencl_gold", "opencl_range")
+)
 _VALID_NONCE_ORDERS = frozenset(
     (
         "m32_turing_complete",
@@ -46,13 +49,16 @@ class PlanSource(str, Enum):
 class ExecutionRoute(str, Enum):
     """Routes the executor can physically run.
 
-    These mirror the real runtime: three OpenCL kernel arms plus the CPU
-    reference. Names are taken from the modules that actually implement them
-    (bitcoin_sha256d_gold / _m32 / _range and the hashlib oracle) -- no route
-    is declared that the runtime cannot execute.
+    ``chronus_batch`` is the canonical vendor-neutral Chronus route. It
+    consumes an exact ordered nonce batch through the bound execution
+    contract, so Chronus is not defined in terms of CUDA, NVIDIA, OpenCL,
+    Metal, or another vendor runtime. The OpenCL-named routes remain
+    compatibility routes for implementations that physically expose those
+    kernel arms. ``cpu_reference`` remains the independent software oracle.
     """
 
     cpu_reference = "cpu_reference"
+    chronus_batch = "chronus_batch"
     opencl_gold = "opencl_gold"
     opencl_m32 = "opencl_m32"
     opencl_range = "opencl_range"
@@ -82,6 +88,7 @@ class FallbackReason(str, Enum):
     """
 
     NONE = "NONE"
+    CHRONUS_BATCH_UNAVAILABLE = "CHRONUS_BATCH_UNAVAILABLE"
     OPENCL_UNAVAILABLE = "OPENCL_UNAVAILABLE"
     KERNEL_UNAVAILABLE = "KERNEL_UNAVAILABLE"
     ROUTE_REFUSED = "ROUTE_REFUSED"

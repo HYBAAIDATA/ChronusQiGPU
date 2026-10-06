@@ -42,18 +42,12 @@ jobs:
           cache: pip
       - run: pip install -e ./turing_universal_quantum_computer -e ".[ml,dev,graph]"
       - name: Lint (flake8)
-        # Ratchet: lint every Python file this change touches. A repo-wide
-        # count fails on thousands of pre-existing violations the
-        # consolidation inherited (measured: 9391 on main), so the gate
-        # enforces lint-clean on files the change touches instead.
         run: |
           BASE="${{ github.base_ref || 'main' }}"
           git fetch --depth=1 origin "$BASE"
           CHANGED=$(git diff --name-only --diff-filter=d "origin/$BASE"...HEAD -- '*.py')
           if [ -n "$CHANGED" ]; then python -m flake8 --count $CHANGED; else echo "no changed .py files"; fi
       - name: Fatal lint gate (ruff E9/F)
-        # Same ratchet as flake8: 209 pre-existing E9/F findings sit on main;
-        # the fatal gate keeps its teeth on every file this change touches.
         run: |
           BASE="${{ github.base_ref || 'main' }}"
           git fetch --depth=1 origin "$BASE"
@@ -63,13 +57,8 @@ jobs:
         run: |
           rm -rf dist /tmp/pythia-wheel-smoke
           python -m pip wheel . --no-deps --wheel-dir dist
-          # pythia-mla1517 declares turing-universal-quantum-computer>=1.0
-          # (in-tree, not on PyPI): build it too so dist/*.whl resolves
-          # the dependency from the local wheels.
           python -m pip wheel ./turing_universal_quantum_computer --no-deps --wheel-dir dist
           python -m venv /tmp/pythia-wheel-smoke
-          # --no-deps: the wheel declares turing-universal-quantum-computer
-          # (in-tree, not on PyPI); the smoke imports need only stdlib+numpy.
           /tmp/pythia-wheel-smoke/bin/pip install --quiet --no-deps numpy dist/*.whl
           cd /tmp
           /tmp/pythia-wheel-smoke/bin/python - <<'PY'
@@ -94,15 +83,26 @@ jobs:
         run: python scripts/import_audit.py
       - name: Import graph (no new import cycles or layer violations)
         run: python scripts/import_graph.py cycles && python scripts/import_graph.py layers
+      - name: PULVINI data authority boundary
+        run: python scripts/check_pulvini_data_boundary.py
+      - name: PULVINI/THESEUS/mining/live-system hardening regression gate
+        run: >-
+          python -m pytest
+          tests/test_pulvini_quantum_data_doctrine.py
+          tests/test_pulvini_boundary_canonical_mining_paths.py
+          tests/test_entangled_custody_lifecycle.py
+          tests/test_geodesic_tensor_engine.py
+          tests/test_hyba_intelligence.py
+          tests/test_shared_system_relations_production.py
+          tests/test_production_organism_shared_triad.py
+          -q
       - name: Unit tests (pytest)
         run: python -m pytest tests/ -x -q
-      # The virtual quantum computer is part of the miner; its own tests run
-      # from its folder so the installed package, not the folder, is imported.
       - name: Virtual quantum computer tests
         working-directory: turing_universal_quantum_computer
         run: python -m pytest tests -q
       - name: Byte-compile all Python sources
-        run: python -m compileall -q Intelligence core_engine mining hyba lucas pythagoras scripts tests chronus aethel l_hras bench experiments
+        run: python -m compileall -q Intelligence core_engine mining hyba lucas pythagoras scripts tests chronus aethel l_hras bench experiments quantum_compute_substrate python_backend tensor
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4

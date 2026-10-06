@@ -561,14 +561,7 @@ def pythia_hendrix_nonces(
     precompute: PythiaSearchPrecompute | None = None,
     preferred_face: int | None = None,
 ) -> list[int]:
-    """PYTHIA's canonical Hendrix traversal over the complete structured itinerary.
-
-    PYTHIA first constructs the complete 32 -> 11D -> 600-vertex/Turing
-    structural itinerary. Hendrix then supplies the default traversal of that
-    complete itinerary by applying its verified coprime-stride permutation to
-    itinerary positions. The composition changes order only: every nonce in
-    the authorised lease remains present exactly once.
-    """
+    """Traverse PYTHIA's complete structured itinerary with Hendrix."""
     if type(window) is not int or window < 0:
         raise ValueError("window must be a non-negative integer")
     if type(position) is not int or not 0 <= position <= window:

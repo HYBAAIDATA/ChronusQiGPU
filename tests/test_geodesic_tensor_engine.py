@@ -2,8 +2,8 @@ from fractions import Fraction
 
 import pytest
 
+from chronus.mla1517.mining.geodesic_nonce_planner import GeodesicNoncePlanner
 from python_backend.core_modules.geodesic_tensor_engine import (
-    GeodesicNoncePlanner,
     GeodesicTensorEngine,
     ManifoldType,
     MemoryTier,
@@ -44,7 +44,7 @@ def test_memory_tiers_refold_without_changing_values():
         assert moved.unfold() == tuple(Fraction(v) for v in [3, 1, 4, 1, 5, 9])
 
 
-def test_geodesic_planner_preserves_candidate_membership():
+def test_geodesic_planner_preserves_candidate_membership_without_pulvini_dependency():
     planner = GeodesicNoncePlanner(
         MetricTensor(ManifoldType.HYPERBOLIC), fold_depth=5
     )
@@ -52,9 +52,12 @@ def test_geodesic_planner_preserves_candidate_membership():
     ordered = planner.order_window(window, anchor=80)
     assert sorted(ordered) == sorted(window)
     assert len(ordered) == len(window)
-    assert planner.last_report["exact_roundtrip"] is True
+    assert planner.last_report["membership_verified"] is True
     assert planner.last_report["permutation_preserved"] is True
     assert planner.last_report["consensus_authority"] is False
+    assert planner.last_report["proof_authority"] is False
+    assert planner.last_report["pulvini_dependency"] is False
+    assert planner.last_report["folding_used"] is False
 
 
 def test_geodesic_planner_rejects_invalid_or_duplicate_nonces():
