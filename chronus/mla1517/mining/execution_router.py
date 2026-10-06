@@ -766,7 +766,11 @@ class ExecutionRouter:
             and launches > 0
             and completed_items > 0
         )
-        if device_executed:
+        if device_executed and getattr(self._hasher, "physical_device_executed", True) is False:
+            # A Chronus Virtual iGPU run on the software emulator is verified
+            # software execution, never hardware evidence.
+            evidence = EvidenceClass.SOFTWARE_VERIFIED
+        elif device_executed:
             evidence = EvidenceClass.HARDWARE_EXECUTED
         elif (
             device_backend.startswith("opencl")

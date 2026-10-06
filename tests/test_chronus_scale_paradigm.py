@@ -112,7 +112,7 @@ def test_scale_report_combines_honest_fields():
     assert report["capacity"]["physical"] == 80
     assert "note" in report
     assert report["scale"]["product"] == "Chronus"
-    assert report["scale"]["compute_substrate"] == "Turing"
+    assert report["scale"]["compute_substrate"] == "chronus_execution_plane"
 
 
 def test_independent_or_overlay_does_not_mint_gpus():

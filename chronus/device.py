@@ -268,7 +268,7 @@ class Chronus:
         return {
             "device": DEVICE_ID,
             "product": "Chronus",
-            "compute_substrate": "Turing",
+            "compute_substrate": "chronus_execution_plane",
             "hardware_contract_product": _spec.product(self.spec),
             "contract_version": self.spec.get("contract_version", ""),
             "ontology": _spec.ontology(self.spec),

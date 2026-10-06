@@ -1,8 +1,9 @@
 """Chronus — HYBA's canonical iGPU offering.
 
-Turing is the computation substrate. Chronus is the hardware-facing offering
-that binds Turing computation to measured device discovery, resident execution,
-state memory, kernel dispatch, telemetry, routing and attestation.
+Chronus is the heterogeneous execution and acceleration plane (Virtual iGPU):
+measured device discovery, resident execution, state memory, kernel dispatch,
+telemetry, routing and attestation. TURING remains the independent VQC
+authority, THESEUS owns durable custody and OVID owns representation transforms.
 
 Hardware probing stays lazy: importing :mod:`chronus` never requires OpenCL,
 CUDA, Metal or a physical accelerator. Public runtime objects are loaded only

@@ -260,7 +260,7 @@ class WorkflowResult:
     def to_dict(self) -> Dict[str, Any]:
         return {
             "product": "Chronus",
-            "compute_substrate": "Turing",
+            "compute_substrate": "chronus_execution_plane",
             "accepted": self.accepted,
             "fail_fast": self.fail_fast,
             "layers": list(LAYER_IDS),
@@ -478,7 +478,7 @@ async def _run_workflow(bridge, host, port, *, window, heal, fail_fast):
         "job_id": job.job_id,
         "difficulty": job.difficulty,
         "product": "Chronus",
-        "compute_substrate": "Turing",
+        "compute_substrate": "chronus_execution_plane",
         "backend": ticket.backend,
         "path": oi.path,
         "oi": oi.reason,

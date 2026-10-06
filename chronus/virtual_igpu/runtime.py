@@ -49,6 +49,14 @@ class RuntimeInvariantError(RuntimeError):
     """Control-plane or policy invariant violated."""
 
 
+class CustodyError(RuntimeInvariantError):
+    """Required THESEUS custody was unavailable or did not commit/verify."""
+
+
+class AdmissionDenied(RuntimeInvariantError):
+    """The injected admission-policy authority refused the workload."""
+
+
 @dataclass
 class Quota:
     """Per-tenant admission quota.
@@ -105,7 +113,16 @@ class RuntimeDaemon:
         preferred_adapter_id: str | None = None,
         hardware_attestation_verifier: Callable[[Mapping[str, Any]], bool] | None = None,
         config: Any = None,
+        custody: Any | None = None,
+        admission_policy: Callable[[Workload], Any] | None = None,
     ) -> None:
+        # ``custody``: THESEUS custody (``put_record(tenant, record)`` / ``verify(tenant, id)``,
+        # e.g. hyba_db.theseus_custody.TheseusFileCustody). Used only for workloads declaring
+        # constraints={"custody": "required"}; absent custody then fails closed.
+        # ``admission_policy``: policy authority hook (AL HARAS); called with the workload,
+        # it must return True/None to admit. CHRONUS enforces it; it never embeds policy.
+        self.custody = custody
+        self.admission_policy = admission_policy
         # Support: RuntimeDaemon(RuntimeConfig(...), adapters=[...])
         if isinstance(root, RuntimeConfig):
             config = root
@@ -140,6 +157,9 @@ class RuntimeDaemon:
         self._lock = threading.RLock()
         self._max_per_tenant = int(max_per_tenant)
         self.in_flight: dict[str, int] = {}
+        # Workloads whose deadline expired while the adapter call is still running.
+        # The tenant reservation stays held until the worker actually terminates.
+        self._draining: dict[str, str] = {}
         self._pending: set[str] = set()
         self._cancelled: set[str] = set()
         self._results: dict[str, WorkloadResult] = {}
@@ -251,6 +271,7 @@ class RuntimeDaemon:
                 "build_identity": self.build_identity,
                 "adapters": [a.health() for a in self.adapters],
                 "in_flight": dict(self.in_flight),
+                "draining": sorted(self._draining),
                 "memory": self.memory.stats(),
                 "attached_at": self._attached_at,
                 "last_error": self._last_error,
@@ -415,6 +436,17 @@ class RuntimeDaemon:
             deadline_ms = getattr(w, "deadline_ms", None)
             if deadline_ms is not None and int(deadline_ms) <= 0:
                 raise RuntimeInvariantError("deadline_ms must be positive when declared")
+
+            if self.admission_policy is not None:
+                try:
+                    verdict = self.admission_policy(w)
+                except Exception as exc:
+                    raise AdmissionDenied(f"admission policy refused workload: {exc}") from exc
+                if verdict is False:
+                    raise AdmissionDenied("admission policy refused workload")
+            custody_required = (w.constraints or {}).get("custody") == "required"
+            if custody_required and self.custody is None:
+                raise CustodyError("custody required but no THESEUS custody is configured")
 
             try:
                 adapter, reason, admission = self._select_adapter(w)
@@ -616,6 +648,9 @@ class RuntimeDaemon:
                 artifact={"result": result.as_dict(), "receipt": rcpt_dict},
             )
 
+            if custody_required:
+                result = self._commit_custody(w, attempt_id, rcpt_dict, evidence_bytes, result)
+
             with self._lock:
                 self._results[w.id] = result
                 if key:
@@ -633,7 +668,59 @@ class RuntimeDaemon:
             raise
         finally:
             with self._lock:
-                self.in_flight[w.tenant] = max(0, self.in_flight.get(w.tenant, 1) - 1)
+                if w.id not in self._draining:
+                    self._release_reservation(w.tenant)
+
+    def _commit_custody(
+        self,
+        w: Workload,
+        attempt_id: str,
+        rcpt_dict: dict[str, Any],
+        evidence_bytes: bytes,
+        result: WorkloadResult,
+    ) -> WorkloadResult:
+        """Durably commit the evidence envelope to THESEUS; fail closed otherwise."""
+        from aethel.enterprise.records import OperationalRecord
+
+        record_id = f"vigpu:{w.id}:{attempt_id}"
+        try:
+            record = OperationalRecord(
+                record_id=record_id,
+                producer="chronus",
+                producer_version=ABI_VERSION,
+                schema_version=1,
+                kind="vigpu_execution_evidence",
+                payload=evidence_bytes,
+                evidence_state="PASS" if result.status == "ok" else "FAIL",
+                correlation_ids={
+                    "workload_id": w.id,
+                    "attempt_id": attempt_id,
+                    "receipt_id": str(rcpt_dict.get("receipt_id", "")),
+                    "evidence_digest": result.evidence_digest,
+                },
+            )
+            committed = self.custody.put_record(w.tenant, record)
+            if not self.custody.verify(w.tenant, str(committed)):
+                raise CustodyError("custody record did not verify after commit")
+        except CustodyError:
+            raise
+        except Exception as exc:
+            raise CustodyError(f"THESEUS custody commit failed: {exc}") from exc
+        return replace(
+            result,
+            metrics={
+                **dict(result.metrics),
+                "custody": {
+                    "authority": "theseus",
+                    "state": "committed",
+                    "record_id": str(committed),
+                    "tenant": w.tenant,
+                },
+            },
+        )
+
+    def _release_reservation(self, tenant: str) -> None:
+        self.in_flight[tenant] = max(0, self.in_flight.get(tenant, 1) - 1)
 
     def _execute_with_deadline(
         self, adapter: Adapter, w: Workload, deadline_ms: int | None
@@ -654,17 +741,33 @@ class RuntimeDaemon:
                 outcome["result"] = adapter.execute(w)
             except Exception as exc:  # noqa: BLE001
                 outcome["error"] = exc
+            finally:
+                with self._lock:
+                    outcome["done"] = True
+                    # A timed-out attempt's reservation belongs to the live worker:
+                    # release it only now that the worker has terminated.
+                    tenant = self._draining.pop(w.id, None)
+                    if tenant is not None:
+                        self._release_reservation(tenant)
 
         worker = threading.Thread(target=_call, name=f"vigpu-exec-{w.id}", daemon=True)
         worker.start()
         worker.join(max(int(deadline_ms), 1) / 1000.0)
-        if worker.is_alive():
+        with self._lock:
+            still_running = not outcome.get("done")
+            if still_running:
+                self._draining[w.id] = w.tenant
+        if still_running:
             return adapter._result(
                 w,
-                {"timed_out": True, "deadline_ms": int(deadline_ms)},
+                {
+                    "timed_out": True,
+                    "deadline_ms": int(deadline_ms),
+                    "execution_state": "TIMED_OUT_BUT_EXECUTION_DRAINING",
+                },
                 time.time_ns() - int(deadline_ms) * 1_000_000,
                 status="timeout",
-                error=f"deadline_ms={int(deadline_ms)} exceeded",
+                error=f"deadline_ms={int(deadline_ms)} exceeded; execution still draining",
             )
         if "error" in outcome:
             raise outcome["error"]
