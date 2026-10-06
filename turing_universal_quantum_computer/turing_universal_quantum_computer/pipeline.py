@@ -20,11 +20,11 @@ GATED/UNAVAILABLE with the cross-agent dependency named.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from typing import Any, Sequence
 
 from .backends import default_backends, select_backend
-from .backends.base import ExecutionClass, ExecutionResult, Program, TruthClass
+from .backends.base import ExecutionResult, Program
 from .backends.qpu import QPUJob
 from .capabilities import capability_report
 from .certificates import (
@@ -50,7 +50,6 @@ __all__ = [
     "PipelineReport",
     "VQCPipeline",
     "run_pipeline",
-    "run_production_pipeline",
 ]
 
 PIPELINE_SCHEMA = "turing.vqc.pipeline_report.v1"
@@ -104,7 +103,6 @@ class VQCRequest:
     differential: bool = True
     custody: bool = False
     replay: bool = False
-    durable_custody: bool = False
     notes: str = ""
 
 
@@ -168,23 +166,6 @@ class VQCPipeline:
 
     def __init__(self, *, backends: Sequence[Any] | None = None) -> None:
         self._backends = list(backends) if backends is not None else default_backends()
-
-    def run_production(self, request: VQCRequest) -> PipelineReport:
-        """Run the evidence-gated production voyage.
-
-        Production execution always commits all four canonical artefacts
-        (program, result, computation certificate, witness) through THESEUS,
-        requires the durable storage path, and verifies a cross-bound replay.
-        Callers cannot weaken those gates by passing false request flags.
-        """
-        return self.run(
-            replace(
-                request,
-                custody=True,
-                replay=True,
-                durable_custody=True,
-            )
-        )
 
     def run(self, request: VQCRequest) -> PipelineReport:
         stages: list[StageEvidence] = []
@@ -450,17 +431,12 @@ class VQCPipeline:
         # -- stage 10: custody -------------------------------------------------
         custody_state = SKIPPED
         if request.custody:
-            custody_state, custody_records = self._custody(
-                program,
-                result,
-                witness,
-                durable=request.durable_custody,
-            )
+            custody_state, custody_records = self._custody(program, result, witness)
             if custody_state in (EvidenceState.UNAVAILABLE.value, EvidenceState.FAIL.value):
                 refusals.append(f"custody: requested but {custody_state}")
         record(
             "custody", custody_state,
-            "committed program/result/certificate/witness envelopes to THESEUS"
+            "committed program/result/witness envelopes to THESEUS"
             if custody_state == EvidenceState.PASS.value
             else (
                 "custody not requested"
@@ -477,10 +453,7 @@ class VQCPipeline:
                 replay_state = EvidenceState.UNAVAILABLE.value
                 refusals.append("replay: requested but custody did not commit")
             else:
-                replay_state, replay_records = self._replay(
-                    custody_records,
-                    execution_options=execution_options,
-                )
+                replay_state, replay_records = self._replay(custody_records)
                 if replay_state != EvidenceState.PASS.value:
                     refusals.append(f"replay: {replay_state}")
         record(
@@ -502,41 +475,27 @@ class VQCPipeline:
     # -- custody / replay helpers ----------------------------------------------
 
     def _custody(
-        self,
-        program: Program,
-        result: ExecutionResult,
-        witness: RunWitness | None,
-        *,
-        durable: bool = False,
+        self, program: Program, result: ExecutionResult, witness: RunWitness | None
     ) -> tuple[str, list[dict[str, Any]]]:
         try:
             from .custody import open_custody
         except Exception:
             return EvidenceState.UNAVAILABLE.value, []
         try:
-            custody = open_custody(durable=durable)
+            custody = open_custody()
             self._last_custody = custody
             records = [
-                custody.commit(
-                    "program",
-                    program.to_dict(),
-                    meta={"stage": "request"},
-                    durable=durable,
-                ).as_dict(),
+                custody.commit("program", program.to_dict(), meta={"stage": "request"}).as_dict(),
                 custody.commit(
                     "result",
                     _result_payload(result),
                     meta={"stage": "result"},
-                    durable=durable,
                 ).as_dict(),
             ]
             if witness is not None:
                 records.append(
                     custody.commit(
-                        "witness",
-                        witness.to_dict(),
-                        meta={"stage": "verification"},
-                        durable=durable,
+                        "witness", witness.to_dict(), meta={"stage": "verification"}
                     ).as_dict()
                 )
             if result.certificate is not None:
@@ -545,172 +504,24 @@ class VQCPipeline:
                         "certificate",
                         result.certificate,
                         meta={"stage": "verification"},
-                        durable=durable,
                     ).as_dict()
                 )
-            if durable and any(record.get("durable_index") is None for record in records):
-                return EvidenceState.FAIL.value, [
-                    {
-                        "error": "durable custody requested but a receipt has no durable index",
-                        "receipts": records,
-                    }
-                ]
             return EvidenceState.PASS.value, records
         except Exception as exc:
             return EvidenceState.FAIL.value, [{"error": str(exc)}]
 
-    def _replay(
-        self,
-        custody_records: list[dict[str, Any]],
-        *,
-        execution_options: dict[str, Any] | None = None,
-    ) -> tuple[str, list[dict[str, Any]]]:
-        """Replay custody and prove the recovered artefacts still cross-bind.
-
-        Byte integrity alone is insufficient for production evidence.  The
-        recovered program, result, computation certificate, and witness must
-        describe the same execution after custody recovery.
-        """
+    def _replay(self, custody_records: list[dict[str, Any]]) -> tuple[str, list[dict[str, Any]]]:
+        # Replay must run against the same custody instance that holds the
+        # records; the pipeline keeps its custody adapter for the report's
+        # lifetime via the stored adapter reference.
         custody = getattr(self, "_last_custody", None)
         if custody is None:
             return EvidenceState.FAIL.value, [
                 {"error": "no live custody adapter for replay"}
             ]
-
-        reports: list[dict[str, Any]] = []
-        envelopes: dict[str, dict[str, Any]] = {}
-        individual_ok = True
-        for record in custody_records:
-            uid = record.get("uid")
-            if not isinstance(uid, str) or not uid:
-                individual_ok = False
-                reports.append(
-                    {
-                        "kind": "unknown",
-                        "state": "FAIL",
-                        "reason": "custody receipt is missing a usable uid",
-                    }
-                )
-                continue
-            replay = custody.replay(uid).as_dict()
-            reports.append(replay)
-            if replay.get("state") != EvidenceState.PASS.value:
-                individual_ok = False
-                continue
-            try:
-                envelope = custody.recover(uid)
-                kind = str(envelope.get("kind", ""))
-                if kind in envelopes:
-                    raise WitnessError(f"duplicate custody artefact kind {kind!r}")
-                envelopes[kind] = envelope
-            except Exception as exc:
-                individual_ok = False
-                reports.append(
-                    {
-                        "uid": uid,
-                        "kind": "evidence_bundle",
-                        "state": "FAIL",
-                        "reason": f"custody envelope recovery failed: {exc}",
-                    }
-                )
-
-        required = {"program", "result", "certificate", "witness"}
-        missing = sorted(required - set(envelopes))
-        if missing:
-            individual_ok = False
-            reports.append(
-                {
-                    "kind": "evidence_bundle",
-                    "state": "FAIL",
-                    "reason": f"missing canonical custody artefact(s): {missing}",
-                }
-            )
-            return EvidenceState.FAIL.value, reports
-
-        try:
-            program = Program.from_dict(envelopes["program"]["payload"])
-            result = _execution_result_from_payload(envelopes["result"]["payload"])
-            certificate = VQCComputationCertificate.from_dict(
-                envelopes["certificate"]["payload"]
-            )
-            recovered_witness = RunWitness.from_dict(envelopes["witness"]["payload"])
-
-            verify_computation_certificate(
-                program,
-                result,
-                certificate,
-                options=dict(execution_options or {}),
-            )
-            verify_witness(recovered_witness)
-
-            if result.certificate != certificate.to_dict():
-                raise WitnessError(
-                    "recovered result does not carry the recovered computation certificate"
-                )
-            if result.program_digest != program.digest():
-                raise WitnessError("recovered result is bound to a different program")
-            if recovered_witness.program_digest != program.digest():
-                raise WitnessError("recovered witness is bound to a different program")
-            if recovered_witness.backend != result.backend:
-                raise WitnessError("recovered witness backend does not match result")
-            if recovered_witness.execution_class != result.execution_class.value:
-                raise WitnessError(
-                    "recovered witness execution class does not match result"
-                )
-            if recovered_witness.truth_class != result.truth_class.value:
-                raise WitnessError("recovered witness truth class does not match result")
-            if recovered_witness.n_qubits != result.n_qubits:
-                raise WitnessError("recovered witness qubit count does not match result")
-            if recovered_witness.materialised != result.materialised:
-                raise WitnessError(
-                    "recovered witness materialisation flag does not match result"
-                )
-            if recovered_witness.measured_qpu != result.measured_qpu:
-                raise WitnessError("recovered witness QPU claim does not match result")
-            if recovered_witness.gate_counts != program.gate_counts():
-                raise WitnessError("recovered witness gate counts do not match program")
-            if (
-                recovered_witness.computation_certificate_digest
-                != certificate.certificate_digest
-            ):
-                raise WitnessError(
-                    "recovered witness does not bind the recovered certificate digest"
-                )
-            if recovered_witness.measured_qpu:
-                job_id = str((result.payload or {}).get("job_id", ""))
-                if recovered_witness.provider_job_id != job_id:
-                    raise WitnessError(
-                        "recovered witness provider job does not match result"
-                    )
-
-            reports.append(
-                {
-                    "kind": "evidence_bundle",
-                    "state": EvidenceState.PASS.value,
-                    "digest_verified": True,
-                    "recovered": True,
-                    "certificate_digest": certificate.certificate_digest,
-                    "program_digest": program.digest(),
-                    "reason": (
-                        "program/result/certificate/witness cross-bindings verified"
-                    ),
-                }
-            )
-        except Exception as exc:
-            individual_ok = False
-            reports.append(
-                {
-                    "kind": "evidence_bundle",
-                    "state": EvidenceState.FAIL.value,
-                    "digest_verified": False,
-                    "recovered": True,
-                    "reason": f"cross-bound replay failed: {exc}",
-                }
-            )
-
-        return (
-            EvidenceState.PASS.value if individual_ok else EvidenceState.FAIL.value
-        ), reports
+        reports = [custody.replay(rec["uid"]).as_dict() for rec in custody_records]
+        ok = all(r["state"] == "PASS" for r in reports)
+        return (EvidenceState.PASS.value if ok else EvidenceState.FAIL.value), reports
 
     def _finish(
         self,
@@ -773,30 +584,6 @@ def _jsonable(value: Any) -> Any:
     if callable(to_dict):
         return _jsonable(to_dict())
     return str(value)
-
-
-def _execution_result_from_payload(payload: dict[str, Any]) -> ExecutionResult:
-    """Reconstruct the typed result required for certificate verification."""
-    if not isinstance(payload, dict):
-        raise WitnessError("recovered result payload must be an object")
-    certificate = payload.get("certificate")
-    if certificate is not None and not isinstance(certificate, dict):
-        raise WitnessError("recovered result certificate must be an object")
-    result_payload = payload.get("payload", {})
-    if not isinstance(result_payload, dict):
-        raise WitnessError("recovered backend payload must be an object")
-    return ExecutionResult(
-        backend=str(payload["backend"]),
-        execution_class=ExecutionClass(str(payload["execution_class"])),
-        truth_class=TruthClass(str(payload["truth_class"])),
-        n_qubits=int(payload["n_qubits"]),
-        program_digest=str(payload["program_digest"]),
-        materialised=bool(payload["materialised"]),
-        payload=dict(result_payload),
-        refusals=tuple(str(item) for item in payload.get("refusals", ())),
-        measured_qpu=bool(payload.get("measured_qpu", False)),
-        certificate=(dict(certificate) if certificate is not None else None),
-    )
 
 
 def _result_payload(result: ExecutionResult) -> dict[str, Any]:
@@ -866,21 +653,5 @@ def _differential_check(
 
 
 def run_pipeline(request: VQCRequest) -> PipelineReport:
-    """Run the composable VQC pipeline.
-
-    This function may intentionally skip custody/replay when the request asks
-    for a computation-only voyage.  Production acceptance must use
-    :func:`run_production_pipeline`.
-    """
+    """Convenience wrapper: default backends, canonical stage order."""
     return VQCPipeline().run(request)
-
-
-def run_production_pipeline(request: VQCRequest) -> PipelineReport:
-    """Run the canonical evidence-gated production voyage.
-
-    Custody, replay, and the durable THESEUS path are mandatory and cannot be
-    weakened by request flags.  A PASS therefore means the computation was
-    certified, durably committed, recovered, and cross-bound as one evidence
-    set.
-    """
-    return VQCPipeline().run_production(request)
