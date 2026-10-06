@@ -120,6 +120,16 @@ class M3PythiaProductionMiningCoordinator(PythiaProductionMiningCoordinator):
             return None
         return super()._build_plan(identity)
 
+    def _refresh_work_identity(self):
+        identity = super()._refresh_work_identity()
+        if (
+            identity is not None
+            and self._m3_required
+            and not self._authorize_m3_identity(identity)
+        ):
+            return None
+        return identity
+
     async def submit_candidate(
         self,
         *,
