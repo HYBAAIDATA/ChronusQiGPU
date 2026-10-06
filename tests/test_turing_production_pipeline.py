@@ -314,6 +314,36 @@ def test_pipeline_replay_rejects_cross_run_certificate_bundle():
     assert "certificate" in replay[-1]["reason"]
 
 
+def test_pipeline_replay_rejects_result_payload_substitution():
+    pipeline = VQCPipeline()
+    report = pipeline.run(VQCRequest(program=_bell_t(), custody=True))
+    assert report.verdict == "PASS"
+    assert report.result is not None
+    assert len(report.custody) == 4
+
+    tampered = dict(report.result)
+    payload = dict(tampered["payload"])
+    payload["substituted_after_execution"] = True
+    tampered["payload"] = payload
+
+    bad_result = pipeline._last_custody.commit(  # noqa: SLF001 - adversarial test
+        "result",
+        tampered,
+        meta={"stage": "result"},
+    ).as_dict()
+    mixed = [
+        dict(receipt)
+        for receipt in report.custody
+        if receipt["kind"] != "result"
+    ] + [bad_result]
+
+    state, replay = pipeline._replay(mixed)  # noqa: SLF001 - adversarial test
+    assert state == "FAIL"
+    assert replay[-1]["kind"] == "bundle"
+    assert replay[-1]["state"] == "FAIL"
+    assert "computation certificate" in replay[-1]["reason"]
+
+
 def test_pipeline_stage_order_is_canonical():
     report = run_pipeline(VQCRequest(program=_bell()))
     seen = [s.stage for s in report.stages]
