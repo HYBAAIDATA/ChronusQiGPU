@@ -35,7 +35,6 @@ __all__ = [
     "RunWitness",
     "VQCComputationCertificate",
     "canonicalize_certificate_value",
-    "verify_serialized_computation_certificate",
     "issue_witness",
     "issue_computation_certificate",
     "replay_computation_certificate",
@@ -130,10 +129,10 @@ def _canonical(value: Any) -> bytes:
 
 
 def canonicalize_certificate_value(value: Any) -> Any:
-    """Return the exact JSON-safe representation committed by certificates.
+    """Return the exact JSON-safe value form used by certificate hashing.
 
-    Evidence persisted for later certificate replay must use this form; a
-    display-oriented serializer may otherwise erase type information.
+    Persisted execution evidence must use this representation if it is expected
+    to reproduce a computation certificate after custody/restart.
     """
     return _jsonable(value)
 

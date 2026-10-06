@@ -1,14 +1,16 @@
 """Chronus delivery contract.
 
-Chronus has two first-class delivery modes:
+Delivery modes use the canonical Virtual iGPU vocabulary
+(:class:`chronus.virtual_igpu.abi.DeliveryMode`):
 
 * ``embedded`` — Chronus executes inside the customer's/container environment
   and binds directly to a local GPU/accelerator surface.
-* ``cloud_instance`` — the customer uses a HYBA Chronus instance deployed into
+* ``remote_service`` — the customer uses a HYBA Chronus instance deployed into
   their chosen cloud and reached through the existing verified remote protocol.
+* ``local_sidecar`` — loopback daemon; not probed by this descriptive module.
 
-Neither mode is a fallback for the other. Selection is explicit and this
-module never silently moves work between execution locations.
+No mode is a fallback for another. Selection is explicit and this module never
+silently moves work between execution locations.
 
 This surface is intentionally descriptive/provisioning-only. It does not
 replace, cap, throttle, or reroute any existing Chronus execution path.
@@ -16,13 +18,9 @@ replace, cap, throttle, or reroute any existing Chronus execution path.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
 from typing import Any, Callable, Dict, Iterable, Optional, Sequence, Tuple
 
-
-class DeliveryMode(str, Enum):
-    EMBEDDED = "embedded"
-    CLOUD_INSTANCE = "cloud_instance"
+from .virtual_igpu.abi import DeliveryMode
 
 
 @dataclass(frozen=True)
@@ -162,7 +160,7 @@ def probe_cloud_instance(
     client, devices, reason = remote_probe(selected)
     if client is None or not devices:
         return ChronusDelivery(
-            mode=DeliveryMode.CLOUD_INSTANCE,
+            mode=DeliveryMode.REMOTE_SERVICE,
             available=False,
             execution_location="hyba_instance_in_customer_cloud",
             transport=PROTOCOL_VERSION,
@@ -195,7 +193,7 @@ def probe_cloud_instance(
         capabilities.add(f"remote:{name}")
 
     return ChronusDelivery(
-        mode=DeliveryMode.CLOUD_INSTANCE,
+        mode=DeliveryMode.REMOTE_SERVICE,
         available=True,
         execution_location="hyba_instance_in_customer_cloud",
         transport=PROTOCOL_VERSION,
@@ -220,6 +218,8 @@ def probe_delivery(
 ) -> ChronusDelivery:
     """Probe exactly the requested delivery mode; never cross-fallback."""
     selected = DeliveryMode(mode)
+    if selected is DeliveryMode.LOCAL_SIDECAR:
+        raise ValueError("local_sidecar delivery is not probed by chronus.delivery")
     if selected is DeliveryMode.EMBEDDED:
         return probe_embedded(
             tensor_probe=tensor_probe,

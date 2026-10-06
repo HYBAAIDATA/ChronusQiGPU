@@ -734,7 +734,12 @@ def _program_from_qasm(qasm: str) -> Program:
 
 
 def _result_payload(result: ExecutionResult) -> dict[str, Any]:
-    """Persist the same canonical value form committed by the certificate."""
+    """Persist the exact certificate-canonical view of an execution result.
+
+    This prevents custody from flattening values (for example complex display
+    values or IEEE-754 floats) into a representation that can no longer
+    reproduce the computation certificate after restart.
+    """
     payload = canonicalize_certificate_value(result.as_dict())
     if not isinstance(payload, dict):
         raise WitnessError("canonical execution result must be an object")

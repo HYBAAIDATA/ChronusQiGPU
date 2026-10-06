@@ -377,7 +377,11 @@ def test_turing_boundary_replay_rejects_foreign_certificate(tmp_path):
 
 
 def test_turing_boundary_replay_rejects_result_payload_substitution(tmp_path):
-    """A changed result cannot survive behind an otherwise intact certificate."""
+    """An intact certificate embedded beside a changed result is insufficient.
+
+    The shared-custody replay must recompute the computation certificate
+    against the recovered result payload, not merely compare identity fields.
+    """
     from turing_universal_quantum_computer import Program
     from turing_universal_quantum_computer.pipeline import VQCRequest
 
@@ -391,6 +395,7 @@ def test_turing_boundary_replay_rejects_result_payload_substitution(tmp_path):
             )
         )
         assert report.verdict in {"PASS", "GATED"}
+
         recovered = {
             name: json.loads(
                 turing.port.read(binding.binding_id).decode("utf-8")
@@ -398,7 +403,6 @@ def test_turing_boundary_replay_rejects_result_payload_substitution(tmp_path):
             for name, binding in turing.last_bindings.items()
             if name in ("program", "result", "certificate", "witness")
         }
-
         tampered_result = dict(recovered["result"])
         tampered_payload = dict(tampered_result["payload"])
         tampered_payload["substituted_after_execution"] = True
