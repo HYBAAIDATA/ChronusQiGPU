@@ -60,6 +60,15 @@ class ConsoleSessionTests(unittest.TestCase):
         second = self.console.do("measure 512 --seed 7")
         self.assertEqual(first, second)
 
+    def test_unseeded_measure_reports_the_effective_seed_zero(self):
+        # The public boundary normalizes omitted seeds to 0; the console must
+        # report what actually ran, not the omitted request value.
+        self.console.do("init 2")
+        self.console.do("h 0")
+        output = self.console.do("measure 64")
+        self.assertIn("seed 0", output)
+        self.assertNotIn("seed None", output)
+
     def test_expectation_values_are_exact(self):
         self.console.do("init 2")
         self.console.do("h 0")

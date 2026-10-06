@@ -519,8 +519,11 @@ class QuantumConsole:
         counts = result.payload.get("counts", {})
         used = result.payload.get("readout_qubits", readout)
         total = sum(counts.values()) or 1
+        # The public boundary normalizes unseeded sampling to seed 0; report
+        # the effective seed, not the omitted request value.
+        effective_seed = 0 if seed is None else seed
         lines = [
-            f"job  {shots} shots   backend {result.backend}   seed {seed}",
+            f"job  {shots} shots   backend {result.backend}   seed {effective_seed}",
             f"readout  {_readout_label(used)}"
             + (f"   (auto: first {len(used)} of {program.n_qubits})" if auto else ""),
         ]

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -42,10 +43,46 @@ def _report_digest(report: dict[str, Any]) -> str:
     return hashlib.sha256(b"turing-discovery-v1\0" + canonical).hexdigest()
 
 
+def _head_commit(root: Path) -> str:
+    try:
+        return subprocess.check_output(
+            ["git", "-C", str(root), "rev-parse", "HEAD"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return ""
+
+
 def evaluate(report_path: Path) -> dict[str, Any]:
     report = json.loads(_read(report_path))
     _require(report.get("schema") == "turing.discovery.report.v1", "wrong report schema")
     _require(report.get("report_digest") == _report_digest(report), "report digest mismatch")
+
+    # The report must describe THIS checkout, not merely be internally valid:
+    # a stale but well-formed report may not drive ``elevated: true``.
+    commit = _head_commit(ROOT)
+    _require(bool(commit), "cannot resolve the checked-out commit for acceptance binding")
+    _require(
+        report.get("commit") == commit,
+        f"discovery report describes commit {report.get('commit')!r}, "
+        f"not the checked-out source {commit[:12]}",
+    )
+    try:
+        from turing_universal_quantum_computer.turing_core.inventory import (
+            discover_repository,
+        )
+    except Exception as exc:
+        raise RuntimeError(
+            "cannot re-run discovery for checkout binding: "
+            f"{type(exc).__name__}: {exc}"
+        ) from exc
+    current = discover_repository(ROOT, commit=commit, timestamp=report.get("timestamp"))
+    _require(
+        current.report_digest == report["report_digest"],
+        "discovery report no longer describes the checked-out source tree "
+        "(module set or module digests differ)",
+    )
     modules = report.get("modules", [])
     _require(bool(modules), "discovery found no Turing candidates")
     component_keys = {

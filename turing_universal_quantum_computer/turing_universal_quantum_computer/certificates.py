@@ -18,6 +18,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import sys
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
@@ -36,6 +37,7 @@ __all__ = [
     "issue_witness",
     "issue_computation_certificate",
     "replay_computation_certificate",
+    "validate_certificate_inputs",
     "verify_computation_certificate",
     "verify_witness",
 ]
@@ -50,20 +52,50 @@ class WitnessError(RuntimeError):
     """Refusal: a witness is malformed or claims more than was proven."""
 
 
+#: Bit length below which an integer can never hit the decimal
+#: conversion cap, whatever ``sys.get_int_max_str_digits()`` reports.  A
+#: B-bit integer has at most ``ceil(B * log10(2))`` decimal digits, so
+#: ``bit_length <= 3 * limit`` is always safe.
+_INT_ALWAYS_SAFE_BITS = int(
+    getattr(sys, "get_int_max_str_digits", lambda: 4300)() * 3.0
+)
+
+
 def _jsonable(value: Any) -> Any:
     """Canonical value encoding with deterministic IEEE-754 handling."""
     if isinstance(value, Enum):
         return value.value
-    if isinstance(value, (str, int, bool)) or value is None:
+    if isinstance(value, (str, bool)) or value is None:
+        return value
+    if isinstance(value, int):
+        # CPython caps int<->str decimal conversions (default 4300 digits).
+        # Stabilizer results carry ``state_dimension = 1 << n_qubits``, which
+        # exceeds the cap for large legal registers.  Values that cannot
+        # round-trip are tagged in hex — uncapped and still exact.
+        if value.bit_length() > _INT_ALWAYS_SAFE_BITS:
+            try:
+                str(value)
+            except ValueError:
+                return {"$bigint": hex(value)}
         return value
     if isinstance(value, float):
         if not math.isfinite(value):
             raise WitnessError("NaN and infinity cannot be certified")
         return {"$float_hex": value.hex()}
     if isinstance(value, dict):
+        # String keys keep the plain object form.  Anything else is tagged
+        # pairwise: ``{1: "x"}`` and ``{"1": "x"}`` must not collapse into
+        # the same committed bytes.  A dict that already contains "$map"
+        # is tagged as well so the two forms can never alias.
+        if all(isinstance(key, str) for key in value) and "$map" not in value:
+            return {key: _jsonable(item) for key, item in sorted(value.items())}
         return {
-            str(key): _jsonable(item)
-            for key, item in sorted(value.items(), key=lambda pair: str(pair[0]))
+            "$map": [
+                [_jsonable(key), _jsonable(item)]
+                for key, item in sorted(
+                    value.items(), key=lambda pair: _canonical(pair[0])
+                )
+            ]
         }
     if isinstance(value, (list, tuple)):
         return [_jsonable(item) for item in value]
@@ -436,6 +468,32 @@ def issue_computation_certificate(
     )
     certificate.verify_integrity()
     return certificate
+
+
+def validate_certificate_inputs(
+    program: Program,
+    options: dict[str, Any] | None = None,
+) -> None:
+    """Prove program + options canonicalize *before* any backend executes.
+
+    The public boundary is certificate-first: a caller must not be able to
+    cause an execution — in particular an irreversible, provider-billable
+    QPU submission — that could never be certified.  This computes the same
+    ``input`` digest payload the certificate will embed, so a value that
+    would fail certification fails here first, ahead of the side effect.
+    """
+    if not isinstance(program, Program):
+        raise WitnessError("certificate inputs require a Program")
+    try:
+        program_payload = program.to_dict()
+    except Exception as exc:
+        raise WitnessError(
+            f"program cannot be canonicalized for certification: {exc}"
+        ) from exc
+    _digest(
+        "input",
+        {"program": program_payload, "options": dict(options or {})},
+    )
 
 
 def verify_computation_certificate(
