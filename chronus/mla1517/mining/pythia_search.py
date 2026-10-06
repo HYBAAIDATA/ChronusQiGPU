@@ -505,9 +505,9 @@ def pythia_hilbert_600_nonces(
     if window == 0 or take == 0:
         return []
 
-    # The structural advisor is process-local and installed only after PYTHIA
-    # has verified, trained and persisted the bound corpus. Calls made without
-    # that production bootstrap retain the exact pre-existing header geometry.
+    # Structural training refines the supporting itinerary only. Hendrix
+    # remains the plan-bound default search algorithm and candidate membership
+    # remains the complete authorised lease.
     from Intelligence.mining_structure_advisor import advise_faces
 
     structure_advice = advise_faces(base, window)
@@ -589,7 +589,14 @@ def pythia_hendrix_nonces(
     precompute: PythiaSearchPrecompute | None = None,
     preferred_face: int | None = None,
 ) -> list[int]:
-    """Traverse PYTHIA's complete structured itinerary with Hendrix."""
+    """PYTHIA's canonical Hendrix traversal over the complete structured itinerary.
+
+    PYTHIA first constructs the complete 32 -> 11D -> 600-vertex/Turing
+    structural itinerary. Hendrix then supplies the default traversal of that
+    complete itinerary by applying its verified coprime-stride permutation to
+    itinerary positions. The composition changes order only: every nonce in
+    the authorised lease remains present exactly once.
+    """
     if type(window) is not int or window < 0:
         raise ValueError("window must be a non-negative integer")
     if type(position) is not int or not 0 <= position <= window:

@@ -1,101 +1,93 @@
-# Pure Quantum Mathematics ASIC — First-Principles Implementation
+# Fault-Tolerant Quantum ASIC Engineering Model
 
-## Exact-field and code convention
+## Delivered scope
 
-The canonical field is `Q(zeta_8) = Q(i, sqrt(2))`; the existing
-`Q(sqrt(2)) + i Q(sqrt(2))` representation is the same degree-four field. The
-T phase is verified exactly, with no floating-point tolerance.
+The quantum-ASIC specification is implemented as a deterministic, fail-closed engineering model in `turing_universal_quantum_computer.fault_tolerant_asic`. It is also exposed separately from `TenThousandQubitSystem` through `fault_tolerant_asic()`.
 
-Surface-code reports declare the unrotated square edge-code convention. The
-distance-31 extension checks all 984,064 star/plaquette pairs over GF(2),
-verifies the declared logical anticommutation, and records correction bound 15.
+The implementation covers every computable subsystem in the supplied specification:
 
-Cryo-CMOS values are evidence-labeled: current reference 10 mW/tile, five-year
-target 5 mW/tile, and ten-year target 1 mW/tile. Targets are projections and
-are excluded from the pure-mathematics production gate.
+| Specification surface | Implementation |
+| --- | --- |
+| Refrigeration cascade | `RefrigerationStage`, `DilutionRefrigerator` |
+| Cooling-power law and Carnot minimum | `cooling_power()`, `minimum_work()` |
+| Wiring heat and capacity | `wiring_heat()`, `line_capacity()`, `WiringBudget` |
+| Transmon loss budget | `TransmonCoherence` |
+| Transmon electrical/gate contract | `TransmonQubit` |
+| Tunable coupling and residual ZZ | `TunableCoupler` |
+| Dispersive readout | `ReadoutResonator` |
+| Die geometry and I/O count | `QuantumChipLayout` |
+| Surface-code threshold and overhead | `SurfaceCode` |
+| Syndrome cycle | `SyndromeExtraction` |
+| MWPM planning envelope | `Decoder` |
+| Logical-qubit lifetime and gates | `LogicalQubit` |
+| Room-temperature control | `RoomTemperatureControl` |
+| Cryogenic control | `CryoCMOS` |
+| Superconducting control estimate | `RSFQ` |
+| Attenuation/amplification chain | `SignalChain` |
+| Shor/Grover/chemistry/QAOA/boson resources | `APPLICATIONS` |
+| Refrigerator/power/cost/runtime scaling | `ScalingModel` |
+| Four-threshold gate | `ThresholdEvaluation` |
+| Production evidence and promotion | `EvidenceRecord`, `ProductionEvidence` |
+| Complete stack and digest report | `QuantumAsicStack` |
 
-## Canonical interpretation
+## Production behavior
 
-The implementation is an **executable mathematical abstraction**. Quantum behavior originates from the mathematics: Hilbert space, exact or symbolic amplitudes, unitary evolution, Born-rule measurement, tensor structure, error-correcting codes, graph-theoretic decoding, and resource constraints.
+The software model is designed for production use as a calculator and validation boundary:
 
-It does not depend on physical transmons, cryogenics, or fabricated QPU silicon. The names inherited from the supplied specification are formal operator families and constraint models. They can also be used to study a future physical realization, but physical hardware is not the implementation authority.
+- all physical quantities are validated for finite, legal ranges;
+- impossible or internally inconsistent configurations raise immediately;
+- refrigerator counts use ceiling division—partial refrigerators are impossible;
+- surface-code distance must be odd and at least three;
+- logical and stack code parameters must match;
+- decoder latency and throughput are both checked;
+- application estimates are labelled `modelled`, never `executed`;
+- reports are content-addressed with SHA-256;
+- hardware readiness cannot be asserted using booleans alone;
+- each readiness claim requires a unique, hash-addressed evidence record;
+- independent review must be `independently_reproduced`;
+- the physical stack is ready only after all cryogenic, chip, decoder, control, logical-qubit, and application evidence is present.
 
-The canonical entry points are:
+## Corrected scientific boundary
+
+The attached document combines sound formulas, engineering assumptions, forecasts, and several claims that cannot be promoted to theorems from those assumptions alone. The implementation therefore applies these corrections:
+
+1. The four threshold checks are necessary planning gates, not a mathematical proof that a useful machine is sufficient or buildable.
+2. The decoder model distinguishes per-patch syndrome rate from the document’s system-wide `10^12 bit/s` promotion threshold.
+3. Surface-code logical-error estimates are model outputs, not hardware measurements.
+4. Application resources are estimates. No RSA-2048, AES-256, FeMoco, QAOA, or boson-sampling execution is claimed.
+5. Landauer accounting applies to logically irreversible information erasure, not exclusively to quantum measurement.
+6. Cooling, wiring, decoder, control, and qubit parameters are configurable because the values in the specification are design assumptions—not universal constants.
+7. The Turing virtual quantum computer remains an exact mathematical engine. It is not relabelled as physical transmon hardware.
+
+## Evidence promotion
+
+A production evidence record contains:
 
 ```python
-system = TenThousandQubitSystem()
-asic = system.pure_quantum_asic()
-report = asic.report(logical_scale=10_000)
+EvidenceRecord(
+    category="qubit_chip_measurements",
+    state=EvidenceState.MEASURED,
+    artifact_digest="<sha256 of immutable result artifact>",
+    source="<laboratory or test system>",
+    observed_at="<ISO-8601 timestamp>",
+)
 ```
 
-`fault_tolerant_asic()` remains as a compatibility alias and returns the same pure-mathematics abstraction.
-
-## First-principles foundation
-
-`PureQuantumMathASIC` binds:
-
-1. **State:** exact/symbolic vectors in a declared Hilbert space.
-2. **Evolution:** unitary operators or verified exact special forms.
-3. **Measurement:** Born-rule projection against declared observables.
-4. **Error correction:** surface-code algebra, stabilizers, syndrome constraints, and logical operators.
-5. **Decoding:** graph-theoretic correction operators with deterministic complexity and latency models.
-6. **Resource semantics:** coherence, thermal, wiring, and control quantities treated as mathematical constraints—not required physical substrates.
-7. **Scale:** symbolic Hilbert dimensions such as `2^10000`, never silently materialized or truncated.
-
-## Implemented surfaces
-
-| Mathematical surface | Implementation |
-| --- | --- |
-| Resource-stage constraint algebra | `RefrigerationStage`, `DilutionRefrigerator` |
-| Coherence/loss operators | `TransmonCoherence` |
-| Qubit parameter manifold | `TransmonQubit` |
-| Coupling operator | `TunableCoupler` |
-| Measurement/readout operator | `ReadoutResonator` |
-| Topological layout constraints | `QuantumChipLayout` |
-| Surface-code invariants | `SurfaceCode` |
-| Syndrome evolution | `SyndromeExtraction` |
-| Graph correction operator | `Decoder` |
-| Encoded logical state | `LogicalQubit` |
-| Control/resource constraint families | `RoomTemperatureControl`, `CryoCMOS`, `RSFQ`, `SignalChain` |
-| Algorithm resource maps | `APPLICATIONS` |
-| Scaling transformation | `ScalingModel` |
-| Constraint conjunction | `ThresholdEvaluation` |
-| Pure-math proof evidence | `EvidenceRecord`, `MathematicalEvidence` |
-| Canonical abstraction | `PureQuantumMathASIC` |
-| Optional physical-realization study | `QuantumAsicStack`, `ProductionEvidence` |
-
-## Production readiness for the abstraction
-
-Production readiness is based on mathematical and software evidence, not hardware evidence. `MathematicalEvidence` requires unique SHA-256-addressed records for:
+Required categories:
 
 - `software_tests`
 - `independent_model_review`
-- `unitarity_verification`
-- `normalization_verification`
-- `error_correction_invariants`
-- `deterministic_replay`
-- `deterministic_hashrate_verification`
+- `cryogenic_measurements`
+- `qubit_chip_measurements`
+- `decoder_hardware_measurements`
+- `control_stack_measurements`
+- `logical_qubit_demonstration`
+- `application_execution`
 
-The independent review record must be `independently_reproduced`. All other proof records must be `measured` or `independently_reproduced`. Missing evidence is returned explicitly; nothing is promoted by assertion alone.
+Missing evidence is returned explicitly by `ProductionEvidence.missing`.
 
-`FirstPrinciplesVerifier` and `TenThousandQubitSystem.verify_pure_quantum_asic()` execute the internal proof obligations directly. Rational rotations use exact `Q(i)` arithmetic. Hadamard/Clifford verification uses the larger exact field `Q(sqrt(2)) + i Q(sqrt(2))`, because `1/sqrt(2)` is not an element of `Q(i)`. They verify zero unitary error, state-norm preservation, Born-probability normalization, exact GF(2) surface-code commutation and logical anticommutation, deterministic 10 EH/s capacity, and byte-for-byte certificate replay. The verifier emits hash-addressed evidence for every successful internal check. It deliberately cannot issue `independent_model_review`; that final production gate must come from an external reproducer.
+## Verification
 
-The abstraction’s report always states:
+The focused standard-library test suite covers thermodynamics, wiring, coherence, transmon and coupler contracts, readout, chip geometry, surface-code calculations, syndrome extraction, decoder limits, logical qubits, room/cryo control, RSFQ, signal chain, all application profiles, scaling, threshold gates, evidence promotion, digest reports, invalid configurations, lazy package exports, and the separate `TenThousandQubitSystem` integration.
 
-- `truth_class = pure_quantum_mathematical_abstraction`
-- `physical_qpu_present = false`
-- `hardware_evidence_required = false`
-
-This does not weaken the implementation. It defines its substrate correctly: exact and symbolic mathematics executed on available classical compute.
-
-## Compatibility boundary
-
-The physical-parameter calculator remains available because its equations are useful formal constraints and can support a future realization study. It is no longer the canonical identity of the ASIC. The canonical identity is `PureQuantumMathASIC`, integrated directly into `TenThousandQubitSystem`.
-
-No method may silently convert a symbolic `2^n` state into a dense array, approximate an exact invariant, or promote a resource estimate into executed evidence.
-
-## Clean-room CI and independent reproduction
-
-`.github/workflows/pure-quantum-math.yml` executes the focused proof obligations on Python 3.11, 3.12, and 3.13. Each job emits a canonical reproduction artifact. A dependent consensus job requires all three artifacts to contain the identical reproduction digest.
-
-`scripts/verify_pure_quantum_math.py` is the independent-review entry point. It reproduces the first-principles checks, exact surface-code algebra, deterministic 10 EH/s certificate, and proof obligations without issuing its own `independent_model_review`. Reviewers can pin an expected digest with `--expected-digest`; a mismatch fails closed.
+Passing these tests establishes correctness of the software model against its declared contracts. It does not establish physical feasibility, fabricated-silicon performance, or fault-tolerant quantum computation.

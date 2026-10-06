@@ -7,8 +7,8 @@ The production composition is intentionally layered:
   dodecahedron/icosahedron dual overlay -> 11D manifold -> 600 dual vertices
   -> 11-qubit Hilbert addresses.
 * Chronus owns physical execution and consumes the exact nonce batches PYTHIA
-  authorises. Vendor runtimes may exist beneath Chronus only after their normal
-  capability/self-check gate; they do not define the Chronus architecture.
+  authorises. OpenCL, CUDA, Metal, remote GPU and composite lanes may execute
+  the same explicit batch only after their normal capability/self-check gate.
 * EUCLID remains the wider enterprise-intelligence orchestrator and a bounded
   advisory layer inherited by this coordinator; it is not the mining identity.
 * PULVINI/HYBA Data is not a mining dependency. Geometric/topological mining
@@ -17,10 +17,10 @@ The production composition is intentionally layered:
 * SHA256d, target comparison, freshness and literal pool acknowledgement remain
   external truth authorities. Search geometry never becomes proof authority.
 
-The canonical PYTHIA lattice uses the first-class ``chronus_batch`` execution
-route whenever the bound Chronus substrate can consume explicit nonce batches.
-The physical backend remains separate provenance and is never used as the
-architectural identity of Chronus.
+The historical M32 route token remains a compatibility detail for accelerator
+selection. When the canonical PYTHIA lattice is active the kernel provenance
+explicitly states that ``grind_target_batch`` executed the 600-vertex itinerary;
+it is never relabelled as an M32 traversal.
 """
 from __future__ import annotations
 
@@ -35,7 +35,8 @@ from .execution_router import (
     NONCE_ORDER_POINCARE_11D,
     RouteDecision,
 )
-from .geodesic_nonce_planner import GeodesicNoncePlanner
+from .h4_600_execution import promote_execution_hasher
+from .pythia_agentic_cycle import PythiaAgenticMiningAuthority
 from .pythia_search import (
     SEARCH_ARCHITECTURE_ID,
     PythiaSearchPrecompute,
@@ -70,7 +71,7 @@ def _bind_native_route_markers(hasher: Any) -> None:
 
 
 class ProductionExecutionRouter(ExecutionRouter):
-    """Canonical router with exact PYTHIA itinerary and Chronus batch execution."""
+    """Canonical router with exact PYTHIA itinerary and native GPU compatibility."""
 
     def __init__(
         self,
@@ -184,7 +185,7 @@ class ProductionExecutionRouter(ExecutionRouter):
         )
 
     def _run_chunk(self, plan, header, target, chunk, decision):
-        """Execute the exact 600-vertex itinerary on CPU or Chronus batch execution."""
+        """Execute PYTHIA's canonical Hendrix traversal on CPU or hardware."""
         if not self._is_pythia_lattice(plan):
             return super()._run_chunk(plan, header, target, chunk, decision)
 
@@ -211,7 +212,7 @@ class ProductionExecutionRouter(ExecutionRouter):
             return self._cpu_nonces(header, target, nonces)
         batch = getattr(self._hasher, "grind_target_batch", None)
         if not callable(batch):
-            raise RuntimeError("selected Chronus route cannot execute explicit nonce batches")
+            raise RuntimeError("selected hardware route cannot execute explicit nonce batches")
         return batch(header, bytes(target)[::-1], nonces)
 
     def _build_record(self, plan, decision, requested_order, **kwargs):
@@ -324,7 +325,7 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         return plan.evidence_refs.get("search_architecture") == SEARCH_ARCHITECTURE_ID
 
     def _pythia_batch_route(self) -> str:
-        """Chronus route for the exact 600-vertex itinerary, or explicit CPU fallback."""
+        """Chronus route for the exact Hendrix-ordered structured itinerary."""
         hasher = self.execution_hasher
         backend = _backend_name(hasher)
         if backend in ("", "cpu", "cpu_reference") or not callable(
@@ -436,9 +437,9 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                 "sha256d_target_freshness_and_literal_pool_response_only"
             ),
         }
-        # Hendrix remains the canonical plan-bound search algorithm. Chronus
-        # executes the explicit ordered batches produced by the structured
-        # PYTHIA itinerary without changing search identity.
+        # Hendrix is the canonical production search algorithm. PYTHIA's
+        # 32 -> 11D -> 600/Turing structure supplies the complete itinerary
+        # that Hendrix traverses; it does not replace Hendrix.
         return replace(
             plan,
             nonce_order=NONCE_ORDER_HENDRIX,
@@ -575,7 +576,8 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                 "hendrix_coprime_search": {
                     "state": "ACTIVE_CANONICAL_SEARCH",
                     "authority": (
-                        "default complete traversal; Chronus executes its ordered batches"
+                        "default complete structured traversal; supporting intelligence "
+                        "may order its itinerary but may not replace it"
                     ),
                 },
                 "m32_dual_solid_lane_topology": {
@@ -633,7 +635,7 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                         "ACTIVE" if backend == "cuda" else "GATED_BY_CAPABILITY_PROBE"
                     ),
                     "authority": (
-                        "physical SHA256d execution beneath the Chronus batch contract"
+                        "physical SHA256d execution of authorised explicit batches"
                     ),
                 },
                 "native_metal_execution": {
@@ -641,7 +643,7 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                         "ACTIVE" if backend == "metal" else "GATED_BY_CAPABILITY_PROBE"
                     ),
                     "authority": (
-                        "physical SHA256d execution beneath the Chronus batch contract"
+                        "physical SHA256d execution of authorised explicit batches"
                     ),
                 },
             },
@@ -663,10 +665,13 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
             "generic_exact_golden_math_allowed": True,
         }
         snapshot["technology_utilization"] = self._technology_utilization_snapshot()
+        backend = _backend_name(self.execution_hasher)
         snapshot["chronus_execution"] = {
             "authority": "CHRONUS",
             "route": self._pythia_batch_route(),
-            "physical_backend": _backend_name(self.execution_hasher) or None,
+            "physical_backend": backend or None,
+            "search_algorithm": NONCE_ORDER_HENDRIX,
+            "supporting_structure": SEARCH_ARCHITECTURE_ID,
             "canonical_search_consumption": "explicit_nonce_batch",
             "vendor_runtime_is_adapter_only": True,
             "hardware_evidence_rule": (
@@ -674,6 +679,17 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                 "and completed_work_items > 0"
             ),
         }
+        if backend in _NATIVE_BACKENDS:
+            snapshot["native_execution"] = {
+                "backend": backend,
+                "route": self._pythia_batch_route(),
+                "physical_backend_truthful": True,
+                "canonical_search_consumption": "explicit_nonce_batch",
+                "hardware_evidence_rule": (
+                    "HARDWARE_EXECUTED only after measured kernel_launch_count > 0 "
+                    "and completed_work_items > 0"
+                ),
+            }
         return snapshot
 
 

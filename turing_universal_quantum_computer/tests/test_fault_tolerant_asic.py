@@ -9,9 +9,7 @@ from turing_universal_quantum_computer.fault_tolerant_asic import (
     EvidenceRecord,
     EvidenceState,
     LogicalQubit,
-    MathematicalEvidence,
     ProductionEvidence,
-    PureQuantumMathASIC,
     QuantumAsicStack,
     QuantumChipLayout,
     RSFQ,
@@ -96,11 +94,8 @@ class QuantumAsicModelTests(unittest.TestCase):
         self.assertEqual(room.network_bits_s, 100e9)
         cryo = CryoCMOS()
         self.assertEqual(cryo.tiles(10_000), 100)
-        self.assertAlmostEqual(cryo.power_w(10_000), 1.0)
-        self.assertFalse(cryo.supports(10_000))
-        projected = CryoCMOS.ten_year_target()
-        self.assertAlmostEqual(projected.power_w(10_000), 0.1)
-        self.assertTrue(projected.supports(10_000))
+        self.assertAlmostEqual(cryo.power_w(10_000), 0.1)
+        self.assertTrue(cryo.supports(10_000))
         self.assertAlmostEqual(RSFQ().power_w(1000), 10e-6)
 
     def test_application_catalog_is_modelled_not_executed(self):
@@ -162,58 +157,6 @@ class QuantumAsicModelTests(unittest.TestCase):
         self.assertEqual(stack.application("qaoa").name, "qaoa")
         with self.assertRaises(ValueError):
             stack.application("unknown")
-
-    def test_first_principles_verifier_issues_exact_replayable_evidence(self):
-        machine = PureQuantumMathASIC()
-        bundle = machine.verify_first_principles()
-        self.assertTrue(bundle.verified)
-        self.assertTrue(all(bundle.checks.values()))
-        self.assertEqual(bundle.evidence.missing, ("independent_model_review",))
-        unitarity = bundle.artifacts["unitarity_verification"]
-        self.assertEqual(unitarity["rational_rotation_error_sq"], "0")
-        self.assertEqual(unitarity["clifford_state"], "PASS")
-        self.assertGreater(unitarity["clifford_checked_pairs"], 0)
-        self.assertTrue(
-            bundle.artifacts["deterministic_replay"]["certificate_valid"]
-        )
-        error_proof = bundle.artifacts["error_correction_invariants"]
-        self.assertEqual(error_proof["css_noncommuting_pairs"], ())
-        self.assertTrue(error_proof["logical_anticommutation"])
-        self.assertGreater(error_proof["css_pairs_checked"], 0)
-
-    def test_pure_quantum_math_abstraction_requires_math_evidence_only(self):
-        empty = PureQuantumMathASIC().report(logical_scale=10_000)
-        self.assertEqual(
-            empty["truth_class"],
-            "pure_quantum_mathematical_abstraction",
-        )
-        self.assertFalse(empty["physical_qpu_present"])
-        self.assertFalse(empty["production"]["mathematical_abstraction_ready"])
-        categories = (
-            "software_tests",
-            "independent_model_review",
-            "unitarity_verification",
-            "normalization_verification",
-            "error_correction_invariants",
-            "deterministic_replay",
-            "deterministic_hashrate_verification",
-        )
-        records = tuple(
-            _record(
-                category,
-                EvidenceState.INDEPENDENTLY_REPRODUCED
-                if category == "independent_model_review"
-                else EvidenceState.EXACT_VERIFIED,
-            )
-            for category in categories
-        )
-        report = PureQuantumMathASIC().report(
-            logical_scale=10_000,
-            evidence=MathematicalEvidence(records),
-        )
-        self.assertTrue(report["production"]["mathematical_abstraction_ready"])
-        self.assertFalse(report["production"]["hardware_evidence_required"])
-        self.assertEqual(report["formal_hilbert_dimension"], "2^10000")
 
     def test_invalid_parameters_and_evidence_fail_closed(self):
         with self.assertRaises(ValueError):
