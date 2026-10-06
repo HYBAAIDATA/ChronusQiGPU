@@ -140,7 +140,6 @@ def test_strict_verified_proof_refuses_missing_candidate_parent(tmp_path):
     custody.close()
 
 
-
 def test_m3_lease_authorization_is_cached_per_work_identity():
     calls = []
 
@@ -155,7 +154,9 @@ def test_m3_lease_authorization_is_cached_per_work_identity():
                 "policy_version": "policy-v1",
             }
 
-    coord = M3PythiaProductionMiningCoordinator.__new__(M3PythiaProductionMiningCoordinator)
+    coord = M3PythiaProductionMiningCoordinator.__new__(
+        M3PythiaProductionMiningCoordinator
+    )
     coord._m3_required = True
     coord._m3_gate = Gate()
     coord._m3_blocked_reason = None
@@ -164,9 +165,7 @@ def test_m3_lease_authorization_is_cached_per_work_identity():
     coord.mining_enabled = True
     coord._last_pool_outcome = PoolOutcome.NOT_SUBMITTED
     coord.username = "acct.worker"
-    coord.client = SimpleNamespace(
-        endpoint=SimpleNamespace(host="pool.example", port=3333)
-    )
+    coord.client = SimpleNamespace(endpoint=SimpleNamespace(host="pool.example", port=3333))
     recorded = []
     coord.causal = SimpleNamespace(
         record=lambda kind, coordinate, **detail: recorded.append((kind, detail))
@@ -233,7 +232,6 @@ def test_m3_lease_denial_freezes_mining_route():
     assert coord._authorize_m3_identity(identity) is False
     assert coord.mining_enabled is False
     assert coord._m3_blocked_reason == "SUBSCRIPTION_DENIED:test"
-
 
 
 def test_stale_job_is_refused_without_killing_m3_coordinator():
