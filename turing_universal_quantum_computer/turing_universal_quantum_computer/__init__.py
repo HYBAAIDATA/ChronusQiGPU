@@ -379,9 +379,10 @@ _LAZY_SYMBOLS = {
     "StageEvidence": "pipeline",
     "VQCPipeline": "pipeline",
     "run_pipeline": "pipeline",
+    "run_production_pipeline": "pipeline",
 }
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 
 def __getattr__(name: str):
