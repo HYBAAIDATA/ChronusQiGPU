@@ -1,0 +1,5 @@
+# render_api_contract.py --check — byte-for-byte regeneration proof
+# executed: 2026-10-06T17:51:18Z
+
+contract docs are in sync
+exit: 0

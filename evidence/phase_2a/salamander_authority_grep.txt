@@ -1,0 +1,12 @@
+# SALAMANDER authority grep — stale-copy proof
+# command: grep -Rni 'OvidRecordIdentity\|TheseusProjection' . --exclude-dir=.git --exclude-dir=.venv
+# executed: 2026-10-06T17:51:07Z @ 7912c392f0e8e5cb4c7a92dcd5c43d11e436c1c5
+
+## raw output
+(no matches)
+
+## verdict
+Zero occurrences of OvidRecordIdentity or TheseusProjection in the tree.
+Both symbols are introduced by the (still unmerged) M3 storage plane branch;
+on main there are no definitions, no copies, and no stale references —
+nothing to correct, no merge-blocking staleness.

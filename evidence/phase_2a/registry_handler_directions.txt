@@ -1,0 +1,16 @@
+# Registry <-> handler parity: three directions (api_registry.yaml vs chronus/mla1517_platform/python/control_api.py)
+# executed: 2026-10-06T17:51:38Z @ 7912c392f0e8e5cb4c7a92dcd5c43d11e436c1c5
+
+declared concrete HTTP routes : 58
+implemented HTTP routes       : 58
+
+Direction A (every declared route has a handler):      PASS
+Direction B (every handler has a registry entry):      PASS
+Direction C (every RESERVED_NAMESPACE has no handler): PASS
+  reserved prefixes: ['/api/v1/policy/', '/api/v1/worker/', '/api/v1/recovery/', '/api/v1/admin/', '/api/v1/quantum/', '/api/v1/scale/', '/api/v1/assembly/']
+  behind guardian: True; served under prefix: []
+
+Gate: tests/test_production_api_contract.py
+  RouteParityTests.test_implemented_surface_equals_declared_surface (A+B)
+  RouteParityTests.test_reserved_namespaces_have_no_implementation  (C)
+  MutationGateTests (mutation self-tests for A, B, C)

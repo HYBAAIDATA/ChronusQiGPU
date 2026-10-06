@@ -209,10 +209,15 @@ def main(argv: list[str]) -> int:
     drifted = []
     for path, content in rendered.items():
         if check:
-            if not path.is_file() or path.read_text(encoding="utf-8") != content:
+            # Byte-for-byte: a one-byte drift in either generated artifact
+            # fails the check — the docs are derived views, never edited.
+            if not path.is_file() or path.read_bytes() != content.encode("utf-8"):
                 drifted.append(path.name)
         else:
-            path.write_text(content, encoding="utf-8")
+            # write_bytes: the committed artifacts are LF-terminated bytes;
+            # text-mode writes would translate to CRLF on Windows and the
+            # --check comparison could never converge.
+            path.write_bytes(content.encode("utf-8"))
             print(f"wrote {path.relative_to(REPO_ROOT)}")
     if check:
         if drifted:
