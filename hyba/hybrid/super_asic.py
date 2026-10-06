@@ -450,7 +450,15 @@ class SuperAsicHasher:
 
         total = 0
         for run_base, run_len in runs:
-            nonce, digest, done = self._run(header80, target_be, run_base, run_len)
+            try:
+                nonce, digest, done = self._run(header80, target_be, run_base, run_len)
+            except Exception as exc:
+                evidence["completion_state"] = "DEVICE_ERROR"
+                evidence["error"] = f"{type(exc).__name__}: {exc}"
+                evidence["completed_work_items"] = total
+                evidence["physical_fanout_observed"] = False
+                self.last_batch_evidence = dict(evidence)
+                raise
             total += int(done)
             result = self.last_result
             certificate = getattr(result, "certificate", None)
@@ -465,7 +473,14 @@ class SuperAsicHasher:
                         int(evidence["h4_full_600_shard_jobs"]) + 1
                     )
                     evidence["full_600_shard_dispatch_observed"] = True
-                    if int(done) == int(run_len):
+                    fully_completed = all(
+                        bool(handle.get("terminal_observed"))
+                        and bool(handle.get("fully_completed"))
+                        and int(handle.get("completed_nonces", -1))
+                        == int((handle.get("window") or {}).get("span", -2))
+                        for handle in handles
+                    )
+                    if fully_completed:
                         evidence["h4_completed_600_shard_jobs"] = (
                             int(evidence["h4_completed_600_shard_jobs"]) + 1
                         )
