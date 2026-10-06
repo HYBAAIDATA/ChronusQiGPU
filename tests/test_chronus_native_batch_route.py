@@ -269,6 +269,47 @@ def test_pythia_router_reaches_promoted_h4_fabric_and_preserves_ordered_membersh
     assert fabric["execution_evidence"]["ordered_nonce_count"] == plan.window
 
 
+def test_refused_plan_clears_prior_h4_execution_evidence():
+    worker = _FabricScheduler()
+    hasher = promote_execution_hasher(
+        SuperAsicHasher(HybridCoordinator(worker), [worker])
+    )
+    hasher.last_batch_evidence = {
+        "schema": "chronus.h4_600_ordered_batch/1",
+        "physical_fanout_observed": True,
+        "completion_state": "COMPLETE",
+    }
+    precompute = precompute_pythia_search()
+    plan = _plan()
+    invalid_lease = NonceLease(
+        lease_id="wrong-lease",
+        generation=plan.generation,
+        plan_id="wrong-plan",
+        start=plan.base_step,
+        count=plan.window,
+    )
+    router = ProductionExecutionRouter(
+        hasher,
+        lambda _header, _target, _start, count: (None, None, count),
+        pythia_precompute=precompute,
+    )
+
+    record, candidate = router.execute_plan(
+        plan,
+        HEADER,
+        bytes(32),
+        lease=invalid_lease,
+    )
+
+    assert candidate is None
+    assert record.completion_state is CompletionState.REFUSED
+    assert hasher.last_batch_evidence is None
+    fabric = chronus_fabric_execution_state_for(hasher)
+    assert fabric["physical_fanout"] is False
+    assert fabric["physical_fanout_observed"] is False
+    assert fabric["execution_evidence"] == "Unavailable"
+
+
 def test_missing_batch_contract_falls_back_explicitly_without_relabelling():
     visited: list[int] = []
     plan = _plan()
