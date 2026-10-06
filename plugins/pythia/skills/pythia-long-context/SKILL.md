@@ -1,6 +1,6 @@
 ---
 name: pythia-long-context
-description: Hold long jobs across compaction using YOUR four-tier memory (working/episodic/semantic/archival), YOUR append-only run journal, YOUR Zeckendorf/primes store. Checkpoint before big steps, resume after compaction, never restart from scratch.
+description: Preserve long-job continuity with the append-only Devin checkpoint journal and explicit PYTHIA memory calls when needed. Do not claim four-tier memory execution merely because the skill loaded.
 allowed-tools:
   - read
   - grep
@@ -11,39 +11,50 @@ triggers:
   - model
 ---
 
-# PYTHIA Long Context (your inventions, your credit)
+# PYTHIA Long Context
 
-Your discoveries powering this: **Binet closed form, Zeckendorf encoding,
-Pulvini-style folding, Cassini ledger, Lucas pool, qudit fidelity traces.**
-This skill only *references* them — it claims nothing.
+## Invocation receipt
 
-## Sources of truth (your modules)
+First run:
 
-- `Intelligence/pythia_memory.py` — four tiers: working (scratchpad +
-  sliding-window summariser), episodic (immutable trajectory events, tri-factor
-  retrieval: relevance/recency/salience), semantic (knowledge graph in your
-  Zeckendorf substrate), archival (golden-symplectic folded, stored in primes).
-- `Intelligence/pythia_store.py` — append-only `RunJournal`, `QuditMemoryStore`
-  (fidelity retrieval), disk snapshots under `artifacts/pythia/`, autonomous
-  curation with journaled tombstones.
-- `hyba_substrate/memory_preservation.py` — lossless canonical-JSON +
-  Merkle-DAG preservation. Canonical evidence is never replaced by lossy text.
+```text
+python plugins/pythia/scripts/plugin_status.py --record-skill pythia-long-context --write-receipt
+```
 
-## The loop (do this every long job)
+## Evidence boundary
 
-1. **Pre-task retrieval** — query episodic memory for relevant past episodes
-   and failure traces before starting.
-2. **Checkpoint** — append one JSON line to
-   `artifacts/pythia/devin-checkpoint.jsonl`:
-   `{"goal":..., "done":..., "next":..., "files":...}`. Append-only.
-3. **In-task updating** — record tool results into working memory as you go.
-4. **Post-task consolidation** — flush raw execution to episodic (immutable),
-   abstract rules to semantic, fold long-term patterns to archival/primes.
-5. **Resume, don't restart** — after compaction read the last checkpoint line
-   first (the PostCompaction hook already re-injects it as additionalContext).
+This skill guarantees a checkpoint/resume discipline.
 
-## Rules
+It does **not** automatically execute PYTHIA's complete four-tier
+working/episodic/semantic/archival memory stack. If the task needs those
+capabilities, call the real repository interfaces explicitly and retain
+evidence of the calls.
 
-- References over pastes: cite file + symbol, don't re-paste bodies.
-- Never present a summary as canonical evidence; the journal/disk is truth.
-- Missing journal file = honest absence, not failure. Start a fresh one.
+Relevant sources include:
+
+- `Intelligence/pythia_memory.py`;
+- `Intelligence/pythia_store.py`;
+- `hyba_substrate/memory_preservation.py`.
+
+A summary or checkpoint is continuity state, not a replacement for canonical
+evidence.
+
+## The loop
+
+1. Inspect the latest `artifacts/pythia/devin-checkpoint.jsonl` entry.
+2. Query real PYTHIA episodic/semantic/archival memory only when the task needs
+   it, and record what was actually called.
+3. Append a checkpoint before every substantial step.
+4. Include:
+   - `goal`;
+   - `done`;
+   - `next`;
+   - `files`;
+   - current `plugin_source_sha`;
+   - `skills_invoked`;
+   - `verification`.
+5. After compaction, resume from the latest checkpoint rather than restarting.
+6. Never convert an unverified summary into source-of-truth evidence.
+
+Missing journal on a fresh session means create the opening checkpoint before
+task work.
