@@ -48,6 +48,7 @@ from chronus.h4_600 import (
     generate_600cell_vertices,
     lift_fold_11d,
 )
+from .hendrix_order import hendrix_schedule
 
 SEARCH_ARCHITECTURE_ID = "pythia_dual32_11d_h4_600_hilbert"
 HILBERT_QUBITS = 11
@@ -550,6 +551,45 @@ def pythia_hilbert_600_nonces(
     return [int(value) for value in order[position : position + take]]
 
 
+def pythia_hendrix_nonces(
+    header: bytes,
+    base: int,
+    window: int,
+    *,
+    position: int = 0,
+    count: int | None = None,
+    precompute: PythiaSearchPrecompute | None = None,
+    preferred_face: int | None = None,
+) -> list[int]:
+    """Traverse PYTHIA's complete structured itinerary with Hendrix."""
+    if type(window) is not int or window < 0:
+        raise ValueError("window must be a non-negative integer")
+    if type(position) is not int or not 0 <= position <= window:
+        raise ValueError("position must be inside the window")
+    take = window - position if count is None else count
+    if type(take) is not int or take < 0 or position + take > window:
+        raise ValueError("count must fit inside the remaining window")
+    if window == 0 or take == 0:
+        return []
+
+    structural = pythia_hilbert_600_nonces(
+        header,
+        base,
+        window,
+        precompute=precompute,
+        preferred_face=preferred_face,
+    )
+    schedule = hendrix_schedule(window)
+    if not schedule.verify():
+        raise ArithmeticError("Hendrix schedule invariant failure")
+    order = [structural[schedule.nonce_at(index)] for index in range(window)]
+    if len(order) != window or len(set(order)) != window:
+        raise ArithmeticError("Hendrix composition lost full-window coverage")
+    if order and (min(order) < base or max(order) >= base + window):
+        raise ArithmeticError("Hendrix composition escaped its nonce lease")
+    return order[position : position + take]
+
+
 __all__ = [
     "COARSE_FACE_COUNT",
     "DUAL_VERTEX_COUNT",
@@ -560,5 +600,6 @@ __all__ = [
     "SEARCH_ARCHITECTURE_ID",
     "precompute_pythia_search",
     "pythia_hilbert_600_nonces",
+    "pythia_hendrix_nonces",
     "vertex_itinerary",
 ]
