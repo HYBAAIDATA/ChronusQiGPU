@@ -40,6 +40,7 @@ from typing import Dict, List, Optional, Sequence
 from hyba.hybrid.asic_solver import ASICSolver
 from hyba.hybrid.coordinator import HybridCoordinator, JobResult, StratumJob
 from hyba.hybrid.gpu_solver import GPUSolver
+from hyba.hybrid.hybrid_asic_profile import DEFAULT_HYBRID_ASIC_PROFILE
 from hyba.hybrid.nonce_scheduler import (
     AttestationRegistry,
     DeviceCapability,
@@ -194,6 +195,7 @@ class SuperAsicHasher:
         if not members:
             raise DeviceUnsupportedError("super_asic lane bound zero substrates")
         self._coord = coordinator
+        self.design_profile = DEFAULT_HYBRID_ASIC_PROFILE
         self._members = list(members)
         # Per-substrate join evidence: which classes were probed, which
         # joined, and the measured reason for every exclusion — a
@@ -295,9 +297,46 @@ class SuperAsicHasher:
                     "reason": "no remote endpoints configured",
                 }
             )
-        coord = HybridCoordinator(gpu, asic, extra_devices=members)
+        unified_enabled = os.environ.get(
+            "PYTHIA_UNIFIED_THEORY_HYBRID", "0"
+        ).strip().lower() in {"1", "true", "yes", "on"}
+        if unified_enabled:
+            from hyba.hybrid.unified_theory_ranker import GoldenUnifiedWindowRanker
+
+            ranker = GoldenUnifiedWindowRanker()
+        else:
+            ranker = None
+        bind_report.append(
+            {
+                "substrate": "unified_theory_ranker",
+                "joined": bool(ranker),
+                "device_id": ranker.model_id if ranker else "ranker:disabled",
+                "reason": None if ranker else "PYTHIA_UNIFIED_THEORY_HYBRID is disabled",
+                "effect": "dispatch_order_only",
+            }
+        )
+        coord = HybridCoordinator(
+            gpu,
+            asic,
+            tensor_ranker=ranker,
+            extra_devices=members,
+        )
         joined = coord._devices()
         return cls(coord, joined, bind_report=bind_report)
+
+    def design_report(self) -> Dict[str, object]:
+        """Return evidence-scoped design metadata, not fabricated silicon data."""
+        return {
+            "profile": self.design_profile.report(),
+            "backend": self.backend,
+            "members": [cap.as_dict() for cap in self._caps.values()],
+            "bind_report": list(self.bind_report),
+            "tensor_ranker": (
+                self._coord.tensor_ranker.model_id
+                if self._coord.tensor_ranker is not None
+                else None
+            ),
+        }
 
     @staticmethod
     def _remote_endpoints() -> List[str]:
