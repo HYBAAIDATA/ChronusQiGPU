@@ -22,4 +22,4 @@ the stop gate. Before ending any job, verify all three:
    hand. "Should pass" is not evidence.
 3. **Final checkpoint appended** — goal/done/next/files-touched written.
 
-Missing journal file = honest absence: state it, do not block on it.
+A missing or malformed journal is no longer a successful close-out condition. Create a valid final checkpoint, bind it to the current plugin source SHA, and record fresh verification evidence before ending.
