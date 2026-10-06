@@ -38,7 +38,7 @@ _VALID_NONCE_ORDERS = frozenset(
         "hendrix_coprime_stride",
     )
 )
-_DEFAULT_NONCE_ORDER = "m32_turing_complete"
+_DEFAULT_NONCE_ORDER = "hendrix_coprime_stride"
 
 
 class PlanSource(str, Enum):
