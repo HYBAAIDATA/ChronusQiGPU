@@ -1,0 +1,9 @@
+# Owner-locked canonical PYTHIA mining-search doctrine.
+# These paths require repository-owner review wherever CODEOWNERS review is enforced.
+/README.md @bollingertm
+/README_MINING.md @bollingertm
+/docs/CANONICAL_PYTHIA_SEARCH_DOCTRINE.md @bollingertm
+/docs/PYTHIA_STRUCTURE_TRAINING.md @bollingertm
+/governance/canonical_mining_search.yaml @bollingertm
+/scripts/check_canonical_mining_search.py @bollingertm
+/tests/test_canonical_mining_search_doctrine.py @bollingertm
