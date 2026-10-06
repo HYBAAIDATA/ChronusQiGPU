@@ -63,6 +63,14 @@ print(result.measurement.as_dict()["hashrate_hps"])  # always None — never H/s
   certified set of nonce windows; any mutation (resize, retarget, add,
   remove, duplicate) raises `TensorAdviceViolation`. SHA-256d verification
   remains the sole acceptance boundary.
+- `TensorRuntime.execute` independently re-derives every executed output
+  on a disjoint codepath before custody (`tensor/verification.py`):
+  folded results recompute via the unfolded NumPy reference, backend
+  results via the folded resident path. Divergence raises
+  `TensorVerificationError`; only a passing re-check sets receipt
+  `correctness="verified"`. Uncheckable operations report `unverified`.
+  See [`../docs/kellogg/README.md`](../docs/kellogg/README.md) for the
+  production-readiness statement.
 
 ## Migrating off `gpu.tensor`
 
