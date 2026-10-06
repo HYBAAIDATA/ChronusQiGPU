@@ -57,6 +57,28 @@ machinery while leaving `_evidence` and `_totals` unchanged.
 
 Real pool outcomes remain a separate feedback channel.
 
+## Canonical architectural interpretation
+
+The statistical discrimination result and the production architecture are separate
+questions.
+
+By project definition, `R_phi >= 0.5` is a structural band used by PYTHIA's
+representation and ordering surfaces. The currently bound 200-row artifact records
+122/200 real winning nonces in that band (61.0%) and a fixed-seed uniform control
+rate of 61.805%. Those figures must not be swapped: this particular sample does not
+show winner-vs-uniform discrimination at the 0.5 threshold.
+
+That does **not** reclassify PYTHIA mining as blind search. The owner-locked
+production doctrine remains structured search with complete nonce-estate coverage,
+Hendrix as the default traversal, and the 32-face -> 11D -> H4/600 ->
+Turing/Hilbert itinerary available in support. Search ordering may learn from
+structure; share validity still comes only from exact SHA256d plus the negotiated
+target.
+
+See `docs/CANONICAL_PYTHIA_SEARCH_DOCTRINE.md`. A new sample may refine evidence
+or ordering, but it may not silently revoke the canonical structured-search
+architecture.
+
 ## Truth boundary
 
 Training may influence learned representation and search ordering only.

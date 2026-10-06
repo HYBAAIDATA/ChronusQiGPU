@@ -1,5 +1,18 @@
 # PYTHIA Mining — Production Thesis and Canonical Flow
 
+> **CANONICAL — OWNER-LOCKED STRUCTURED-SEARCH DOCTRINE**
+>
+> PYTHIA mining is a structured-search system with complete nonce-estate coverage.
+> Hendrix is the default production traversal. No agent, contributor, audit,
+> refactor or external convention is authorised to replace this with blind/flat
+> search, demote Hendrix, weaken full coverage, or transfer final SearchPlan
+> authority away from PYTHIA without explicit written repository-owner approval.
+> Conflicting changes must be rejected.
+>
+> Governing doctrine: `docs/CANONICAL_PYTHIA_SEARCH_DOCTRINE.md`
+> Machine policy: `governance/canonical_mining_search.yaml`
+
+
 ## Thesis
 
 PYTHIA mining is a Bitcoin mining intelligence and execution system. PYTHIA does not change Bitcoin consensus. It composes intelligence, memory, mathematical search structure, Turing quantum/VQC capabilities, Kellogg tensor mathematics and Chronus execution to decide how an already-authorised nonce lease is searched. Every candidate is still judged by exact SHA256d, the negotiated target, current Stratum work identity and stale/epoch rules. Pool acceptance exists only when the pool literally acknowledges the submission.

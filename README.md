@@ -1,5 +1,15 @@
 # PYTHIA
 
+> **CANONICAL MINING-SEARCH CONTRACT**
+>
+> PYTHIA's production mining path is **structured search with complete nonce-estate
+> coverage**, with **Hendrix** as the default traversal. The owner-locked governing
+> doctrine is `docs/CANONICAL_PYTHIA_SEARCH_DOCTRINE.md`; the machine-readable
+> policy is `governance/canonical_mining_search.yaml`. A change that reclassifies
+> the production search as blind/flat, demotes Hendrix, prunes authorised coverage,
+> transfers PYTHIA's final SearchPlan authority, or weakens SHA256d/target proof
+> semantics is not authorised without explicit written repository-owner approval.
+
 **PYTHIA is HYBA's operational mining product.** Its singular function is to run the mining system, obtain honest device and pool measurements, sustain HYBA, and support Enterprise's route to market. Enterprise PRIME-DB, storage, treasury, and customer-product implementation are separate products and are not imported into PYTHIA.
 
 ## Runtime boundary
