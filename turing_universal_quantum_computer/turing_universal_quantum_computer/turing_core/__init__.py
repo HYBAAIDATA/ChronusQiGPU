@@ -1,18 +1,4 @@
-"""TURING Core — exact Q[sqrt(5)] / Pisot algebraic substrate + schedule.
-
-This subpackage consolidates the repository's ``turing_core`` module:
-
-- ``core``      — the TURING quantum core & PYTHIA mining engine (exact
-  golden/Pisot algebra, Zeckendorf, T_phi fold, 32-node dual overlay,
-  sha256d midstate engine).
-- ``schedule``  — the deterministic complete nonce-window permutation
-  substrate (formerly ``chronus/mla1517_platform/python/turing_core.py``).
-- ``discovery`` — ``MathematicalDiscoveryEngine`` / ``TheoreticalSpaceExplorer``
-  (optional: requires numpy/scipy/networkx).
-- ``ten_thousand`` — ``TenThousandQubitSystem``, the universal n-qubit
-  engine (default 10_000): stabilizer + sparse + closed-form exact
-  backends, entanglement broadcast, Zeckendorf protection.
-"""
+"""TURING Core — exact arithmetic, deterministic scheduling, and certification."""
 
 from .core import *  # noqa: F401,F403
 from .schedule import (  # noqa: F401
@@ -29,3 +15,24 @@ from .ten_thousand import (  # noqa: F401
     zeckendorf_valid,
 )
 from . import ten_thousand  # noqa: F401
+from .inventory import (  # noqa: F401
+    TuringDiscoveryReport,
+    TuringModule,
+    discover_repository,
+)
+from .specification import (  # noqa: F401
+    Direction,
+    ExactField,
+    FoldCertificate,
+    MachineDescription,
+    MachineType,
+    Transition,
+    TuringCertificate,
+    TuringSpecError,
+    certify_fold,
+    certify_t_phi_fold,
+    execute,
+    replay,
+    verify_fold_replay,
+    verify_machine,
+)

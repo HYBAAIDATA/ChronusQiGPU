@@ -1,0 +1,140 @@
+# Turing Core Specification
+
+Status: **elevation in progress**. This document is the canonical boundary and
+verification contract. It does not claim that every legacy or experimental
+quantum path is already certified.
+
+## Discovery
+
+Discovery is performed by
+`turing_universal_quantum_computer.turing_core.inventory`. It walks Python and
+notebook sources and selects candidates from content evidence, not paths or
+names. The report records file SHA-256, symbols, evidence patterns, component
+classifications, fields, and named gaps.
+
+```sh
+python -m turing_universal_quantum_computer.turing_core.inventory \
+  . --commit "$(git rev-parse HEAD)" \
+  --output artifacts/turing-discovery.json
+```
+
+The report schema is `turing.discovery.report.v1`. Its `report_digest` is
+SHA-256 over canonical JSON prefixed by `turing-discovery-v1\0`. Timestamp and
+the digest field itself are excluded from the committed payload; module order,
+symbols, evidence, and map keys are sorted. Thus identical source and commit
+produce identical digests on Python 3.11, 3.12, and 3.13.
+
+The initial inspection found multiple distinct Turing-related surfaces rather
+than one assumed package:
+
+- `turing_universal_quantum_computer/turing_universal_quantum_computer/`:
+  exact, symbolic, approximate, stabilizer, state-vector, backend, witness, and
+  orchestration modules.
+- its `turing_core/` subpackage: exact/Pisot arithmetic, reversible `T_phi`
+  byte fold, nonce scheduling, large-register orchestration, and a heuristic
+  mathematical-discovery module.
+- root `turing_core.py` and
+  `chronus/mla1517_platform/python/pythia_turing_math.py`: compatibility and
+  runtime entry points.
+- `quantum_compute_substrate/cathedral/turing.py`: a separate Turing-named
+  substrate surface.
+
+The generated report, not this prose summary, is authoritative and is expected
+to reveal additional candidates elsewhere in the repository.
+
+## Declared executable machine
+
+`MachineDescription` declares:
+
+| Component | Representation |
+|---|---|
+| Machine type | `MachineType` enum |
+| Tape | sparse, two-way-unbounded symbol map |
+| Head | deterministic read/write/left/stay/right |
+| State | finite classical set |
+| Transition | total lookup table on every non-halting `(state, symbol)` |
+| Halting | explicit accept/reject states or a caller-supplied step bound |
+| Clock | non-negative discrete ticks |
+| Field | explicit `ExactField`; the executable reference machine uses `GF2` or exact symbols |
+| Certificate | canonical SHA-256 plus an ordered, domain-separated Merkle trace root |
+
+Only `classical_deterministic` is executable by this reference verifier.
+Quantum, nondeterministic, folded, and hybrid types are declared but fail closed
+until a compatible verifier is selected. There is no implicit type promotion.
+
+## Field policy
+
+- Classical bit machines: `GF(2)`.
+- Exact rational algorithms: `Q`.
+- Exact Gaussian-rational algorithms: `Q(i)`.
+- Clifford+T/cyclotomic algorithms whose gates are representable there:
+  `Q(zeta_8)`.
+- Floating or mixed arithmetic remains labelled `float` or `mixed`.
+
+`Q(zeta_8)` is **not** a representation of arbitrary unitary evolution.
+Unsupported gates must be rejected or named as gaps; they must not be rounded
+and relabelled exact.
+
+## Invariants and evidence
+
+| ID | Invariant | Status |
+|---|---|---|
+| T1 | Tape is a well-formed symbol map | tested |
+| T2 | Head is an integer on a declared two-way-unbounded tape | tested |
+| T3 | State belongs to the finite state set | tested |
+| T4 | Transition table is total on non-halting state × alphabet | tested |
+| T5 | A run accepts, rejects, or reports `step_limit` | tested; general halting is deliberately not claimed |
+| U1 | Machine description is well formed | tested |
+| U2 | Bounded interpreter implements the declared step function | tested and scoped Lean theorem |
+| U3 | General universal-machine halting equivalence | named gap; undecidable without a restricted model |
+| F1 | `unfold(fold(x)) = x` on the supported domain | tested for `T_phi`; abstract sequence law proved in Lean |
+| F2 | Fold preserves all computations | named gap; must be proved per operation |
+| F3 | Folded byte form is finite | tested by finite output |
+| C1 | Certificate is content addressed | tested |
+| C2 | Certificate replay returns the committed result | tested and scoped Lean theorem |
+| C3 | Forgery resistance | reduced to SHA-256 collision/second-preimage assumptions; not an unconditional theorem |
+
+## Certificate format
+
+`TuringCertificate` contains input and machine digests, the canonical trace,
+output digest, halted flag, halt reason, step count, certificate digest, and
+Merkle attestation. Canonical JSON accepts no floats, NaN, process data, wall
+clock, absolute path, locale-dependent value, or unordered serialization.
+
+Hash domains are prefixed with `turing-core-v1\0<domain>\0`. Merkle leaves use
+`turing-merkle-leaf-v1\0`; internal nodes use
+`turing-merkle-node-v1\0`; odd levels duplicate the final node. Reordering or
+altering trace entries changes the root.
+
+`FoldCertificate` binds source, folded value, replayed value, algorithm name,
+source length, exactness, and a three-leaf Merkle attestation.
+
+## Verification and reproduction
+
+```sh
+pip install -e ./turing_universal_quantum_computer pytest
+python -m pytest -q \
+  turing_universal_quantum_computer/tests/test_turing_specification.py \
+  turing_universal_quantum_computer/tests/test_turing_inventory.py
+python scripts/turing_digest_fixture.py
+cd proofs/lean && lake build
+```
+
+CI repeats the Python tests and fixture under 3.11, 3.12, and 3.13 and rejects
+different digests. Lean builds the three scoped theorems without `sorry`.
+
+## Package boundaries
+
+- Kellogg owns tensor mathematics; this specification does not reimplement it.
+- Aethel owns fold custody; the Turing layer emits/verifies fold certificates.
+- Chronus owns execution control; this module supplies a bounded pure executor.
+- Mining owns SHA-256d validity; these SHA-256 commitments never accept shares
+  or alter consensus.
+
+## Remaining elevation gaps
+
+The core is **not yet fully elevated** until all existing public Turing/VQC
+execution paths adopt the certificate envelope, the generated whole-repository
+inventory is reviewed, operation-specific fold preservation is proved, and
+each quantum/hybrid backend has a compatible exact verifier. Independent model,
+cryptographic, and formal-methods review is invited.
