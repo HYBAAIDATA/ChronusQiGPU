@@ -2,6 +2,8 @@ import asyncio
 import io
 import json
 
+import pytest
+
 from chronus.seam.workflow import LAYER_IDS, PASS_MEANS, run_workflow
 
 
@@ -103,13 +105,22 @@ def test_full_workflow_one_job():
     async def _run():
         server, port = await _pool()
         async with server:
-            return await run_workflow("127.0.0.1", port, "pythia", "x", window=64, heal=True)
+            return await run_workflow(
+                "127.0.0.1",
+                port,
+                "pythia",
+                "x",
+                window=64,
+                heal=True,
+                attest_key=b"test-workflow-custody",
+            )
 
     result = asyncio.run(_bounded(_run(), 60.0))
     result.assert_all()
     assert result.accepted is True
     assert set(PASS_MEANS) == set(LAYER_IDS)
     assert result.extra["forgery_rejected"] is True
+    assert result.extra["attest_scheme"] == "hmac-sha256"
     assert result.extra["stale_extranonce1"] != ""
     assert result.extra["live_extranonce1"] != ""
     for layer in LAYER_IDS:
@@ -119,6 +130,82 @@ def test_full_workflow_one_job():
     payload = result.to_dict()
     assert payload["layers"] == list(LAYER_IDS)
     assert all(payload["verdicts"][name]["passed"] for name in LAYER_IDS)
+
+
+def test_full_workflow_binds_the_certificate_into_a_chained_ledger(tmp_path):
+    """custody_dir → HMAC'd EvidenceLedger record + durable HyperscalerSku."""
+
+    async def _run():
+        server, port = await _pool()
+        async with server:
+            return await run_workflow(
+                "127.0.0.1",
+                port,
+                "pythia",
+                "x",
+                window=64,
+                heal=True,
+                attest_key=b"test-workflow-custody",
+                custody_dir=tmp_path / "custody",
+            )
+
+    result = asyncio.run(_bounded(_run(), 60.0))
+    result.assert_all()
+    assert result.extra["custody_state"].startswith("chained:")
+    assert result.extra["ledger_chain_digest"]
+
+    from chronus.virtual_igpu.evidence import EvidenceLedger
+    from aethel.storage import AddressSpace
+
+    ledger_root = tmp_path / "custody" / "seam-attest"
+    ledger_file = ledger_root / "evidence_ledger.jsonl"
+    assert ledger_file.exists()
+    # Re-loading under the same key re-verifies chain + HMAC.
+    EvidenceLedger(ledger_root, hmac_key=b"test-workflow-custody")
+    # Re-loading under the wrong key fails closed on the HMAC.
+    with pytest.raises(ValueError):
+        EvidenceLedger(ledger_root, hmac_key=b"attacker-key")
+    # A tampered record fails chain verification on reload.
+    lines = ledger_file.read_text(encoding="utf-8").splitlines()
+    record = json.loads(lines[-1])
+    record["result"]["nonce"] = "deadbeef"
+    lines[-1] = json.dumps(record, sort_keys=True)
+    ledger_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    with pytest.raises(ValueError):
+        EvidenceLedger(ledger_root, hmac_key=b"test-workflow-custody")
+
+    # The certificate store's snapshot is durable: journal + blocks on disk,
+    # replayable through AddressSpace.attach.
+    snapshot_root = tmp_path / "custody" / "hyperscaler"
+    assert (snapshot_root / "ledger.jsonl").exists()
+    assert any((snapshot_root / "blocks").iterdir())
+    AddressSpace.attach(snapshot_root)
+
+
+def test_full_workflow_fails_closed_without_an_attest_key(monkeypatch):
+    """No custody key → L8 records FAIL, never an unkeyed signature."""
+    for name in (
+        "PYTHIA_SEAM_ATTEST_KEY_HEX",
+        "PYTHIA_SEAM_ATTEST_KEY",
+        "PYTHIA_IDENTITY_HMAC_SECRET",
+    ):
+        monkeypatch.delenv(name, raising=False)
+
+    async def _run():
+        server, port = await _pool()
+        async with server:
+            return await run_workflow(
+                "127.0.0.1",
+                port,
+                "pythia",
+                "x",
+                window=64,
+                heal=True,
+                fail_fast=False,
+            )
+
+    with pytest.raises(AssertionError, match="L8_attest.*custody key"):
+        asyncio.run(_bounded(_run(), 60.0))
 
 
 def test_waiting_for_a_job_honours_its_timeout_when_the_pool_is_silent():
