@@ -20,9 +20,10 @@ from datetime import datetime, timezone
 import os
 import threading
 import time
+import urllib.parse
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Mapping
 
 from .abi import (
     ABI_VERSION,
@@ -40,13 +41,21 @@ from .abi import (
     digest_json,
 )
 from .adapters import Adapter, AdapterUnavailable, default_adapters
-from .attestation import extend_chain, verify
 from .evidence import EvidenceLedger
 from .memory import VirtualMemoryPlane
+from .verifier import verify_workload_result
 
 
 class RuntimeInvariantError(RuntimeError):
     """Control-plane or policy invariant violated."""
+
+
+class CustodyError(RuntimeInvariantError):
+    """Required THESEUS custody was unavailable or did not commit/verify."""
+
+
+class AdmissionDenied(RuntimeInvariantError):
+    """The injected admission-policy authority refused the workload."""
 
 
 @dataclass
@@ -103,8 +112,18 @@ class RuntimeDaemon:
         runtime_identity: str | None = None,
         build_identity: str | None = None,
         preferred_adapter_id: str | None = None,
+        hardware_attestation_verifier: Callable[[Mapping[str, Any]], bool] | None = None,
         config: Any = None,
+        custody: Any | None = None,
+        admission_policy: Callable[[Workload], Any] | None = None,
     ) -> None:
+        # ``custody``: THESEUS custody (``put_record(tenant, record)`` / ``verify(tenant, id)``,
+        # e.g. hyba_db.theseus_custody.TheseusFileCustody). Used only for workloads declaring
+        # constraints={"custody": "required"}; absent custody then fails closed.
+        # ``admission_policy``: policy authority hook (AL HARAS); called with the workload,
+        # it must return True/None to admit. CHRONUS enforces it; it never embeds policy.
+        self.custody = custody
+        self.admission_policy = admission_policy
         # Support: RuntimeDaemon(RuntimeConfig(...), adapters=[...])
         if isinstance(root, RuntimeConfig):
             config = root
@@ -135,9 +154,13 @@ class RuntimeDaemon:
         self.runtime_identity = runtime_identity or f"chronus.virtual_igpu:{ABI_VERSION}"
         self.build_identity = build_identity or os.getenv("CHRONUS_VIGPU_BUILD", "source-tree")
         self.preferred_adapter_id = preferred_adapter_id
+        self.hardware_attestation_verifier = hardware_attestation_verifier
         self._lock = threading.RLock()
         self._max_per_tenant = int(max_per_tenant)
         self.in_flight: dict[str, int] = {}
+        # Workloads whose deadline expired while the adapter call is still running.
+        # The tenant reservation stays held until the worker actually terminates.
+        self._draining: dict[str, str] = {}
         self._pending: set[str] = set()
         self._cancelled: set[str] = set()
         self._results: dict[str, WorkloadResult] = {}
@@ -249,6 +272,7 @@ class RuntimeDaemon:
                 "build_identity": self.build_identity,
                 "adapters": [a.health() for a in self.adapters],
                 "in_flight": dict(self.in_flight),
+                "draining": sorted(self._draining),
                 "memory": self.memory.stats(),
                 "attached_at": self._attached_at,
                 "last_error": self._last_error,
@@ -259,13 +283,16 @@ class RuntimeDaemon:
     def _hardware_root_corroborated(self, adapter: Adapter) -> bool:
         """Fail-closed check for a ``hardware_rooted`` claim.
 
-        The claim is only honoured when the adapter exposes a *verified
-        attestation mechanism*: a probe attestation whose recorded trust class
-        is ``hardware_rooted`` and whose fingerprint/chain digest replay to the
-        values the adapter reports. Self-assertion, unverifiable chain digests
-        and software adapters are refused, so a lying adapter cannot promote
-        itself to hardware-rooted provenance.
+        The claim is honoured only when a caller-supplied
+        ``hardware_attestation_verifier`` accepts the adapter's probe
+        attestation (which must itself assert ``hardware_rooted`` trust).
+        Without that external mechanism nothing here corroborates device
+        grounding — self-assertion is refused, so a lying adapter cannot
+        promote itself to hardware-rooted provenance.
         """
+        verifier = self.hardware_attestation_verifier
+        if verifier is None:
+            return False
         try:
             att = adapter.probe()
         except Exception:
@@ -275,26 +302,20 @@ class RuntimeDaemon:
         if getattr(att, "trust_class", None) != TrustClass.HARDWARE_ROOTED.value:
             return False
 
-        record = {
-            "adapter_id": att.adapter_id,
-            "kind": att.kind,
-            "available": bool(att.available),
-            "detail": att.detail or {},
-            "abi_version": ABI_VERSION,
-        }
-        # Replay the mechanism the runtime itself trusts. A fabricated
-        # fingerprint/chain digest cannot reproduce these digests.
-        if digest_json(record) != getattr(att, "fingerprint", None):
+        try:
+            return bool(verifier(att.as_dict()))
+        except Exception:
             return False
-        chain = extend_chain((), record)
-        if not chain or chain[-1] != getattr(att, "chain_digest", None):
-            return False
-        return verify([record], chain)
 
     # --- admission / selection --------------------------------------------
 
     def _policy(self, w: Workload) -> str:
-        return str(getattr(w, "execution_policy", None) or ExecutionPolicy.PREFERRED_ACCELERATOR.value)
+        return ExecutionPolicy(
+            str(
+                getattr(w, "execution_policy", None)
+                or ExecutionPolicy.PREFERRED_ACCELERATOR.value
+            )
+        ).value
 
     def _select_adapter(self, w: Workload) -> tuple[Adapter, str, AdmissionRecord]:
         policy = self._policy(w)
@@ -309,11 +330,16 @@ class RuntimeDaemon:
         def _pick(candidates: list[Adapter], reason: str) -> tuple[Adapter, str, AdmissionRecord]:
             if not candidates:
                 raise AdapterUnavailable(f"no adapter for policy={policy}")
-            # Prefer one that supports the workload kind; break ties by priority
-            kind = w.kind
-            supporting = [a for a in candidates if a.supports(kind)]
-            pool = supporting or candidates
-            chosen = sorted(pool, key=lambda a: int(getattr(a, "priority", 0)), reverse=True)[0]
+            supporting = [a for a in candidates if a.supports(w.kind)]
+            if not supporting:
+                raise AdapterUnavailable(
+                    f"no {policy} adapter supports workload kind={w.kind.value}"
+                )
+            chosen = sorted(
+                supporting,
+                key=lambda a: int(getattr(a, "priority", 0)),
+                reverse=True,
+            )[0]
             rec = AdmissionRecord(
                 admitted=True,
                 adapter_id=chosen.id,
@@ -360,6 +386,10 @@ class RuntimeDaemon:
         # preferred_accelerator (default)
         if physical:
             return _pick(physical, "policy:preferred_accelerator:physical")
+        if not w.allow_software_fallback:
+            raise AdapterUnavailable(
+                "preferred accelerator unavailable and software fallback is disabled"
+            )
         return _pick(software or available, "policy:preferred_accelerator:software_fallback")
 
     # --- submit / poll / cancel -------------------------------------------
@@ -407,6 +437,17 @@ class RuntimeDaemon:
             deadline_ms = getattr(w, "deadline_ms", None)
             if deadline_ms is not None and int(deadline_ms) <= 0:
                 raise RuntimeInvariantError("deadline_ms must be positive when declared")
+
+            if self.admission_policy is not None:
+                try:
+                    verdict = self.admission_policy(w)
+                except Exception as exc:
+                    raise AdmissionDenied(f"admission policy refused workload: {exc}") from exc
+                if verdict is False:
+                    raise AdmissionDenied("admission policy refused workload")
+            custody_required = (w.constraints or {}).get("custody") == "required"
+            if custody_required and self.custody is None:
+                raise CustodyError("custody required but no THESEUS custody is configured")
 
             try:
                 adapter, reason, admission = self._select_adapter(w)
@@ -461,6 +502,31 @@ class RuntimeDaemon:
                     result = replace(result, object_id=str(getattr(stored, "object_id", stored)))
             result = _finalise(result)
 
+            # Independent result verification: the receipt must bind more
+            # than the fact that an adapter returned bytes. For workload
+            # kinds with a deterministic oracle the control plane recomputes
+            # the output and compares; a mismatch demotes the result to
+            # ``verification_failed`` — the dishonest attempt is still
+            # ledgered below as forensic evidence, never as success.
+            verify_report = (
+                verify_workload_result(w, result)
+                if result.status == "ok"
+                else {
+                    "recomputed": False,
+                    "verifier": "none",
+                    "verdict": "skipped_not_ok",
+                }
+            )
+            if verify_report["verdict"] == "mismatch":
+                result = replace(
+                    result,
+                    status="verification_failed",
+                    error=(
+                        "independent recompute mismatch: "
+                        f"{verify_report.get('detail', 'unspecified')}"
+                    ),
+                )
+
             # Build portable package + receipt
             pkg = PortablePackage(
                 package_id=w.content_hash or w.id,
@@ -500,14 +566,18 @@ class RuntimeDaemon:
                 kernel_identity=str((result.output or {}).get("engine") or adapter.kind.value),
                 input_digest=w.content_hash or "",
                 output_digest=result.evidence_digest or result.digest or digest_json(result.output),
-                verified_work_count=int((result.output or {}).get("checked") or 1),
+                verified_work_count=int((result.output or {}).get("checked") or 0),
                 seed=(w.input or {}).get("seed"),
                 timing={
                     "wall_time_ns": result.wall_time_ns,
                     "device_time_ns": result.device_time_ns,
                     "total_ns": int(time.time_ns() - started),
                 },
-                verification={"status": result.status, "admission": admission.as_dict()},
+                verification={
+                    "status": result.status,
+                    "admission": admission.as_dict(),
+                    **verify_report,
+                },
                 trust_class=trust,
                 hardware_rooted=hardware_rooted,
                 content_hash="",  # filled below
@@ -579,6 +649,9 @@ class RuntimeDaemon:
                 artifact={"result": result.as_dict(), "receipt": rcpt_dict},
             )
 
+            if custody_required:
+                result = self._commit_custody(w, attempt_id, rcpt_dict, evidence_bytes, result)
+
             with self._lock:
                 self._results[w.id] = result
                 if key:
@@ -596,7 +669,63 @@ class RuntimeDaemon:
             raise
         finally:
             with self._lock:
-                self.in_flight[w.tenant] = max(0, self.in_flight.get(w.tenant, 1) - 1)
+                if w.id not in self._draining:
+                    self._release_reservation(w.tenant)
+
+    def _commit_custody(
+        self,
+        w: Workload,
+        attempt_id: str,
+        rcpt_dict: dict[str, Any],
+        evidence_bytes: bytes,
+        result: WorkloadResult,
+    ) -> WorkloadResult:
+        """Durably commit the evidence envelope to THESEUS; fail closed otherwise."""
+        from aethel.enterprise.records import OperationalRecord
+
+        # record_id becomes a filesystem path component inside custody —
+        # canonical ids carry `/` and the `:` separators are illegal on
+        # Windows, so quote the whole id (unsanitised ids survive in the
+        # correlation map inside the payload).
+        record_id = "vigpu-" + urllib.parse.quote(f"{w.id}-{attempt_id}", safe="")
+        try:
+            record = OperationalRecord(
+                record_id=record_id,
+                producer="chronus",
+                producer_version=ABI_VERSION,
+                schema_version=1,
+                kind="vigpu_execution_evidence",
+                payload=evidence_bytes,
+                evidence_state="PASS" if result.status == "ok" else "FAIL",
+                correlation_ids={
+                    "workload_id": w.id,
+                    "attempt_id": attempt_id,
+                    "receipt_id": str(rcpt_dict.get("receipt_id", "")),
+                    "evidence_digest": result.evidence_digest,
+                },
+            )
+            committed = self.custody.put_record(w.tenant, record)
+            if not self.custody.verify(w.tenant, str(committed)):
+                raise CustodyError("custody record did not verify after commit")
+        except CustodyError:
+            raise
+        except Exception as exc:
+            raise CustodyError(f"THESEUS custody commit failed: {exc}") from exc
+        return replace(
+            result,
+            metrics={
+                **dict(result.metrics),
+                "custody": {
+                    "authority": "theseus",
+                    "state": "committed",
+                    "record_id": str(committed),
+                    "tenant": w.tenant,
+                },
+            },
+        )
+
+    def _release_reservation(self, tenant: str) -> None:
+        self.in_flight[tenant] = max(0, self.in_flight.get(tenant, 1) - 1)
 
     def _execute_with_deadline(
         self, adapter: Adapter, w: Workload, deadline_ms: int | None
@@ -617,17 +746,33 @@ class RuntimeDaemon:
                 outcome["result"] = adapter.execute(w)
             except Exception as exc:  # noqa: BLE001
                 outcome["error"] = exc
+            finally:
+                with self._lock:
+                    outcome["done"] = True
+                    # A timed-out attempt's reservation belongs to the live worker:
+                    # release it only now that the worker has terminated.
+                    tenant = self._draining.pop(w.id, None)
+                    if tenant is not None:
+                        self._release_reservation(tenant)
 
         worker = threading.Thread(target=_call, name=f"vigpu-exec-{w.id}", daemon=True)
         worker.start()
         worker.join(max(int(deadline_ms), 1) / 1000.0)
-        if worker.is_alive():
+        with self._lock:
+            still_running = not outcome.get("done")
+            if still_running:
+                self._draining[w.id] = w.tenant
+        if still_running:
             return adapter._result(
                 w,
-                {"timed_out": True, "deadline_ms": int(deadline_ms)},
+                {
+                    "timed_out": True,
+                    "deadline_ms": int(deadline_ms),
+                    "execution_state": "TIMED_OUT_BUT_EXECUTION_DRAINING",
+                },
                 time.time_ns() - int(deadline_ms) * 1_000_000,
                 status="timeout",
-                error=f"deadline_ms={int(deadline_ms)} exceeded",
+                error=f"deadline_ms={int(deadline_ms)} exceeded; execution still draining",
             )
         if "error" in outcome:
             raise outcome["error"]

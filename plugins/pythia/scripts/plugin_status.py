@@ -10,13 +10,54 @@ Skill activation is session-scoped. Task evidence is separate.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[3]
+
+def _looks_like_workspace(candidate: Path) -> bool:
+    return (candidate / "plugins" / "pythia" / "skills").is_dir() and (
+        candidate / "Intelligence" / "skills"
+    ).is_dir()
+
+
+def _resolve_workspace_root() -> Path:
+    """Locate the PhiMiner workspace that owns this plugin's runtime state.
+
+    Hook commands may execute from the installed plugin cache with any
+    working directory (the process cwd is not reliable). Resolve the
+    workspace from the session project directory or the plugin's in-repo
+    location; never from the process cwd alone.
+    """
+    plugin_dir = Path(__file__).resolve().parent.parent
+    candidates: list[Path] = []
+    for var in ("DEVIN_PROJECT_DIR", "CLAUDE_PROJECT_DIR"):
+        raw = os.environ.get(var, "").strip()
+        if raw:
+            candidates.append(Path(raw))
+    if plugin_dir.parent.name == "plugins" and plugin_dir.name == "pythia":
+        candidates.append(plugin_dir.parent.parent)
+    candidates.append(Path.cwd())
+    fallback = candidates[0]
+    for candidate in candidates:
+        try:
+            resolved = candidate.resolve()
+        except OSError:
+            continue
+        if _looks_like_workspace(resolved):
+            return resolved
+    try:
+        return fallback.resolve()
+    except OSError:
+        return Path.cwd()
+
+
+ROOT = _resolve_workspace_root()
+WORKSPACE_AVAILABLE = _looks_like_workspace(ROOT)
 PLUGIN_ROOT = ROOT / "plugins" / "pythia"
 INTELLIGENCE_SKILLS_ROOT = ROOT / "Intelligence" / "skills"
 MANIFEST = PLUGIN_ROOT / ".devin-plugin" / "plugin.json"
@@ -73,6 +114,31 @@ def mandatory_skills() -> list[str]:
         {f"plugin:{name}" for name in plugin_skills()}
         | {f"euclid:{name}" for name in euclid_aptitude_skills()}
     )
+
+
+def _aptitude_files() -> list[Path]:
+    files: list[Path] = []
+    for root in (PLUGIN_ROOT, INTELLIGENCE_SKILLS_ROOT):
+        if not root.is_dir():
+            continue
+        for path in root.rglob("*"):
+            if not path.is_file():
+                continue
+            if "__pycache__" in path.parts or path.suffix in {".pyc", ".pyo"}:
+                continue
+            files.append(path)
+    return sorted(files, key=lambda item: item.relative_to(ROOT).as_posix())
+
+
+def aptitude_digest_sha256() -> str:
+    digest = hashlib.sha256()
+    for path in _aptitude_files():
+        relative = path.relative_to(ROOT).as_posix().encode("utf-8")
+        data = path.read_bytes()
+        digest.update(relative)
+        digest.update(b"\x00")
+        digest.update(hashlib.sha256(data).digest())
+    return digest.hexdigest()
 
 
 def _journal_state() -> tuple[int, dict[str, Any] | None]:
@@ -147,10 +213,12 @@ def build_status(
         "plugin": manifest.get("name", "pythia"),
         "plugin_version": manifest.get("version", "UNAVAILABLE"),
         "augmentation": "EUCLID_APTITUDE",
+        "aptitude_digest_sha256": aptitude_digest_sha256(),
         "plugin_source_sha": source_sha,
         "workspace_head_sha": _git("rev-parse", "HEAD"),
         "generated_at": _now(),
         "private_repo_local": True,
+        "workspace_available": WORKSPACE_AVAILABLE,
         "plugin_skills": plugin_skills(),
         "euclid_aptitude_skills": euclid_aptitude_skills(),
         "mandatory_skills": mandatory,

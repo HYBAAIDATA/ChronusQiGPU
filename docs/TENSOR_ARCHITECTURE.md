@@ -253,6 +253,16 @@ consumers ──► tensor.api.TensorRuntime ──► tensor/folded.py catalogu
   measured work, precision, residency/transfers, timing scope, and the
   correctness result. `bytes_decoded`/`bytes_transferred` are measured;
   `bytes_analytical` is the dense estimate — the fields never merge.
+- **Verification.** `tensor/verification.py` independently re-derives
+  every executed output before publication: folded/lifted results are
+  recomputed on the unfolded NumPy reference (`np_reference`), backend
+  results are recomputed on the folded resident path, and a divergent
+  verdict raises `TensorVerificationError` — the result never reaches
+  custody or the receipt. The receipt's `verification` block records
+  `recomputed`, the method, verdict, residual, and both digests;
+  `correctness` is `verified` only when the independent re-check
+  passes. Ops with no independent path report `unverified` — never a
+  fabricated pass.
 - **Benchmarks.** `tensor/benchmarks.py::run_benchmarks` sweeps
   operators x sizes x dtypes x layouts x {resident, nonresident} x
   {cold, warm} and validates **every** sampled output against the NumPy

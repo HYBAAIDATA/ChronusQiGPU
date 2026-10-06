@@ -100,7 +100,7 @@ def test_cloud_delivery_uses_measured_remote_inventory():
         remote_probe=remote_probe,
     )
     assert seen["endpoints"] == ["https://chronus.example"]
-    assert out.mode is DeliveryMode.CLOUD_INSTANCE
+    assert out.mode is DeliveryMode.REMOTE_SERVICE
     assert out.available is True
     assert out.execution_location == "hyba_instance_in_customer_cloud"
     assert out.transport == PROTOCOL_VERSION
@@ -125,13 +125,13 @@ def test_cloud_unavailable_does_not_fall_back_to_embedded():
         return None, [], "cloud endpoint unreachable"
 
     out = probe_delivery(
-        DeliveryMode.CLOUD_INSTANCE,
+        DeliveryMode.REMOTE_SERVICE,
         endpoints=["https://missing.example"],
         tensor_probe=embedded_probe,
         remote_probe=remote_probe,
     )
     assert out.available is False
-    assert out.mode is DeliveryMode.CLOUD_INSTANCE
+    assert out.mode is DeliveryMode.REMOTE_SERVICE
     assert "unreachable" in out.reason
     assert embedded_called is False
 

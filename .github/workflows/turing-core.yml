@@ -8,6 +8,8 @@ on:
       - "scripts/turing_digest_fixture.py"
       - "scripts/turing_vqc_digest_fixture.py"
       - "scripts/turing_acceptance_gate.py"
+      - "tests/test_turing_production_pipeline.py"
+      - "tests/test_turing_acceptance_gate.py"
       - ".github/workflows/turing-core.yml"
   push:
     branches: [main]
@@ -27,7 +29,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-      - run: pip install -e ./turing_universal_quantum_computer pytest
+      - run: pip install -e "./turing_universal_quantum_computer[dev]"
       - name: Exact specification and inventory tests
         run: >-
           python -m pytest -q
@@ -35,6 +37,8 @@ jobs:
           turing_universal_quantum_computer/tests/test_turing_inventory.py
           turing_universal_quantum_computer/tests/test_computation_certificates.py
           turing_universal_quantum_computer/tests/test_fold_certificate_exhaustive.py
+          tests/test_turing_production_pipeline.py
+          tests/test_turing_acceptance_gate.py
       - name: Build deterministic digest fixture
         run: |
           python scripts/turing_digest_fixture.py > turing-digest-${{ matrix.python }}.txt
@@ -83,3 +87,6 @@ jobs:
       - uses: leanprover/lean-action@v1
         with:
           lake-package-directory: proofs/lean
+      - uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: turing_universal_quantum_computer/formal

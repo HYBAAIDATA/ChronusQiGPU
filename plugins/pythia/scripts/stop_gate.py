@@ -1,4 +1,4 @@
-"""Fail-closed Stop hook for PYTHIA Devin Engineering Intelligence v0.3.
+"""Fail-closed Stop hook for Devin EUCLID Aptitude v0.4.
 
 A completion claim requires:
 - a valid final checkpoint;
@@ -16,7 +16,14 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from plugin_status import JOURNAL, ROOT, build_status, write_runtime_receipt
+from plugin_status import (
+    JOURNAL,
+    ROOT,
+    WORKSPACE_AVAILABLE,
+    build_status,
+    write_runtime_receipt,
+)
+
 
 def _canonical(value: Any) -> bytes:
     return json.dumps(
@@ -120,6 +127,9 @@ def _verify_pack(path: Path, *, task_id: str, plugin_source_sha: str) -> tuple[b
         return False, "evidence pack augmentation is not EUCLID_APTITUDE"
     if not aptitude.get("mandatory_skills_complete"):
         return False, "evidence pack shows incomplete mandatory session aptitude"
+    aptitude_digest = str(aptitude.get("aptitude_digest_sha256") or "").strip()
+    if len(aptitude_digest) != 64:
+        return False, "evidence pack lacks valid EUCLID aptitude digest"
 
     verification = pack.get("verification")
     if not isinstance(verification, dict) or int(verification.get("runs", 0)) < 1:
@@ -135,13 +145,17 @@ def _verify_pack(path: Path, *, task_id: str, plugin_source_sha: str) -> tuple[b
 
 
 def main() -> int:
+    if not WORKSPACE_AVAILABLE:
+        # No PhiMiner workspace: the session was never aptitude-gated, so the
+        # stop gate has nothing to enforce.
+        return 0
     status = build_status(event="Stop")
     write_runtime_receipt(status)
 
     last = _load_last_checkpoint(JOURNAL)
     if last is None:
         return _block(
-            "PYTHIA checkpoint is missing. Create the final append-only checkpoint "
+            "Devin checkpoint is missing. Create the final append-only checkpoint "
             "before ending the job."
         )
     if last.get("_malformed"):
@@ -157,7 +171,7 @@ def main() -> int:
     checkpoint_sha = str(last.get("plugin_source_sha") or "")
     if not source_sha or source_sha == "UNAVAILABLE":
         return _block(
-            "Current PYTHIA plugin source SHA is unavailable; completion "
+            "Current plugin/aptitude source SHA is unavailable; completion "
             "provenance is unproven."
         )
     if checkpoint_sha != source_sha:

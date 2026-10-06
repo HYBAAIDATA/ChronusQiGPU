@@ -1,0 +1,21 @@
+# X-Request-Id sanity policy
+# executed: 2026-10-06T17:51:54Z @ 11d4434c9b8060d099e185d88bbb78d95a3a6523
+
+Definition (chronus/mla1517_platform/python/control_api.py, at _REQUEST_ID_RE):
+  sane = 1-128 chars, ASCII-alphanumeric leading character, then alphanumerics
+        or any of . _ : @ - ; nothing else.
+  regex: [A-Za-z0-9][A-Za-z0-9._:@-]{0,127}
+
+Policy: every HTTP response carries X-Request-Id. A caller-supplied
+X-Request-Id/X-Correlation-Id is echoed only when it fullmatches the sane
+pattern; a malformed value is never echoed — a fresh 32-hex id is minted.
+Denials are not exempt.
+
+Enforcement: test_correlation_envelope (echo + mint),
+test_correlation_envelope_rejects_malformed_ids in
+tests/test_production_api_contract.py — sends malformed ids over the wire
+('not sane!', 'has space', '(paren)', 'semi;colon') and asserts a minted
+32-hex response, never an echo.
+
+Status: CLOSED — policy stated in code, malformed-input rejection tested
+over the wire. No remaining hardening item named.

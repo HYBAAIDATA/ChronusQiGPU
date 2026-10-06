@@ -1,13 +1,26 @@
-"""One-job mining workflow: Stratum → OI → genetic → Chronus → share → Aethel."""
+"""One-job mining workflow: Stratum → OI → genetic → Chronus → share → Aethel.
+
+CANONICITY: this harness drives ``mining.stratum_bridge.StratumBridge`` — the
+LEGACY Stratum client — and is NOT the canonical production mining path. The
+canonical path is ``pythia-mine`` →
+``chronus.mla1517_platform.python.mining_runtime`` →
+``GeodesicProductionMiningCoordinator`` → ``StratumClient`` +
+``StratumProofAdapter`` → ``MiningSession`` (submit → pool verdict → durable
+share_log). A PASS here is protocol-layer evidence only, never a production
+mining claim.
+"""
 
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import logging
+import os
 import time
 from dataclasses import dataclass, field
 from fractions import Fraction
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from aethel.device import ChronusSku
@@ -15,6 +28,7 @@ from aethel.hyperscaler import HyperscalerSku
 from aethel.storage import FibonacciAddress
 from chronus.seam.scale import scale_job
 from chronus.seam.genetic_mining import evolve_mining_config
+from chronus.virtual_igpu.evidence import EvidenceLedger
 from mining.stratum_bridge import (
     LiveJob,
     StratumBridge,
@@ -53,7 +67,7 @@ PASS_MEANS = {
     "L5_seam": "Aethel ledger ok and Chronus work_items > 0",
     "L6_search": "a nonce in [0, window) meets the 256-bit target",
     "L7_share": "int.from_bytes(sha256d[::-1], 'big') <= target (full 256-bit)",
-    "L8_attest": "64-char lowercase hex signature verifies over the cert body",
+    "L8_attest": "HMAC-SHA256 under a custody key verifies over the cert body",
     "L9_submit": "pool mining.submit result is True",
     "L10_aethel": "write + replay + forgery reject path executed",
     "L11_heal": "new socket handshake after stale extranonce1 cleared",
@@ -98,13 +112,53 @@ def is_hex64(value: str) -> bool:
     return value == value.lower()
 
 
-def attest_sign(body: Dict[str, Any]) -> str:
+ATTEST_KEY_HEX_ENV = "PYTHIA_SEAM_ATTEST_KEY_HEX"
+ATTEST_KEY_ENV = "PYTHIA_SEAM_ATTEST_KEY"
+
+
+def resolve_attest_key(key: bytes | str | None = None) -> bytes:
+    """Custody key material for L8 attestations: explicit bytes, then env.
+
+    Signing never degrades to an unkeyed digest — without custody material
+    this raises instead of emitting a signature anyone can recompute.
+    ``PYTHIA_SEAM_ATTEST_KEY_HEX`` carries hex-encoded key bytes;
+    ``PYTHIA_SEAM_ATTEST_KEY`` (or the supervisor-provisioned
+    ``PYTHIA_IDENTITY_HMAC_SECRET``) carries the raw secret string.
+    """
+    if key is not None:
+        material = key.encode("utf-8") if isinstance(key, str) else bytes(key)
+        if not material:
+            raise ValueError("attest custody key must be non-empty")
+        return material
+    raw_hex = (os.getenv(ATTEST_KEY_HEX_ENV) or "").strip()
+    if raw_hex:
+        return bytes.fromhex(raw_hex)
+    raw = os.getenv(ATTEST_KEY_ENV) or os.getenv("PYTHIA_IDENTITY_HMAC_SECRET")
+    if raw:
+        return raw.encode("utf-8")
+    raise RuntimeError(
+        f"no attest custody key configured: set {ATTEST_KEY_HEX_ENV} (hex) "
+        f"or {ATTEST_KEY_ENV}"
+    )
+
+
+def attest_sign(body: Dict[str, Any], key: bytes | str | None = None) -> str:
+    """HMAC-SHA256 the canonical JSON body under the seam custody key."""
     payload = json.dumps(body, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    return hashlib.sha256(payload).hexdigest()
+    return hmac.new(resolve_attest_key(key), payload, hashlib.sha256).hexdigest()
 
 
-def attest_verify(body: Dict[str, Any], signature: str) -> bool:
-    return is_hex64(signature) and attest_sign(body) == signature
+def attest_verify(
+    body: Dict[str, Any], signature: str, key: bytes | str | None = None
+) -> bool:
+    if not is_hex64(signature):
+        return False
+    try:
+        expected = attest_sign(body, key)
+    except (RuntimeError, ValueError):
+        # No custody key — nothing can be verified; refuse rather than guess.
+        return False
+    return hmac.compare_digest(expected, signature)
 
 
 @dataclass
@@ -260,7 +314,7 @@ class WorkflowResult:
     def to_dict(self) -> Dict[str, Any]:
         return {
             "product": "Chronus",
-            "compute_substrate": "Turing",
+            "compute_substrate": "chronus_execution_plane",
             "accepted": self.accepted,
             "fail_fast": self.fail_fast,
             "layers": list(LAYER_IDS),
@@ -345,6 +399,8 @@ async def run_workflow(
     window=4096,
     heal=True,
     fail_fast=True,
+    attest_key=None,
+    custody_dir=None,
 ):
     bridge = StratumBridge(host, port, worker=worker, password=password)
     try:
@@ -355,15 +411,34 @@ async def run_workflow(
             window=window,
             heal=heal,
             fail_fast=fail_fast,
+            attest_key=attest_key,
+            custody_dir=custody_dir,
         )
     finally:
         await bridge.disconnect()
 
 
-async def _run_workflow(bridge, host, port, *, window, heal, fail_fast):
+async def _run_workflow(
+    bridge,
+    host,
+    port,
+    *,
+    window,
+    heal,
+    fail_fast,
+    attest_key=None,
+    custody_dir=None,
+):
     result = WorkflowResult(fail_fast=fail_fast)
     chronus = ChronusSku("standalone")
     store = HyperscalerSku()
+    try:
+        attest_material = resolve_attest_key(attest_key)
+        attest_error: Optional[Exception] = None
+    except (RuntimeError, ValueError) as exc:
+        attest_material = None
+        attest_error = exc
+    custody_root = Path(custody_dir) if custody_dir is not None else None
 
     started = time.perf_counter_ns()
     await bridge.connect()
@@ -478,7 +553,7 @@ async def _run_workflow(bridge, host, port, *, window, heal, fail_fast):
         "job_id": job.job_id,
         "difficulty": job.difficulty,
         "product": "Chronus",
-        "compute_substrate": "Turing",
+        "compute_substrate": "chronus_execution_plane",
         "backend": ticket.backend,
         "path": oi.path,
         "oi": oi.reason,
@@ -486,12 +561,21 @@ async def _run_workflow(bridge, host, port, *, window, heal, fail_fast):
         "ts": time.time(),
         "merkle": root.hex(),
     }
-    signature = attest_sign(body)
-    result.record_or_raise(
-        "L8_attest",
-        attest_verify(body, signature),
-        f"Certificate generated: id={signature[:16]}",
-    )
+    signature = ""
+    if attest_material is None:
+        result.record_or_raise(
+            "L8_attest",
+            False,
+            f"attest custody key unavailable: {attest_error}",
+            exc=attest_error,
+        )
+    else:
+        signature = attest_sign(body, attest_material)
+        result.record_or_raise(
+            "L8_attest",
+            attest_verify(body, signature, attest_material),
+            f"Certificate generated: id={signature[:16]} scheme=hmac-sha256",
+        )
     certificate = dict(body)
     certificate["signature"] = signature
 
@@ -516,18 +600,47 @@ async def _run_workflow(bridge, host, port, *, window, heal, fail_fast):
     replay_ok = replayed.get("signature") == signature and attest_verify(
         {key: value for key, value in replayed.items() if key != "signature"},
         replayed.get("signature", ""),
+        attest_material,
     )
     forged_body = dict(body)
     forged_body["nonce"] = "deadbeef"
-    forgery_rejected = (not attest_verify(forged_body, signature)) and (
-        not attest_verify(body, "z" * 64)
+    forgery_rejected = (not attest_verify(forged_body, signature, attest_material)) and (
+        not attest_verify(body, "z" * 64, attest_material)
     )
+
+    ledger_record = None
+    custody_state = "in-process"
+    if custody_root is not None:
+        try:
+            if attest_material is None:
+                raise RuntimeError("custody binding requires the attest key")
+            ledger = EvidenceLedger(custody_root / "seam-attest", hmac_key=attest_material)
+            ledger_record = ledger.append(
+                workload_id=str(job.job_id),
+                adapter_id="chronus.seam.legacy-harness",
+                kind="seam.attest",
+                result=certificate,
+                receipt={"scheme": "hmac-sha256", "signature": signature},
+                metadata={"harness": "legacy-seam", "canonical_path": False},
+            )
+            # The HyperscalerSku's AddressSpace is in-memory unless snapshotted;
+            # a declared custody dir makes the certificate store durable too.
+            store.space.snapshot(custody_root / "hyperscaler")
+            custody_state = f"chained:{ledger_record.chain_digest[:16]}"
+        except Exception as exc:
+            custody_state = f"FAILED:{type(exc).__name__}"
+            log.exception("custody binding failed")
+    custody_ok = custody_root is None or ledger_record is not None
     result.record_or_raise(
         "L10_aethel",
-        record.address is not None and replay_ok and forgery_rejected,
+        record.address is not None
+        and replay_ok
+        and forgery_rejected
+        and custody_ok,
         (
             f"Certificate written: address={record.address.index} "
-            f"replay={replay_ok} forgery_rejected={forgery_rejected}"
+            f"replay={replay_ok} forgery_rejected={forgery_rejected} "
+            f"custody={custody_state}"
         ),
     )
 
@@ -590,6 +703,11 @@ async def _run_workflow(bridge, host, port, *, window, heal, fail_fast):
         "nonce": nonce,
         "replay_ok": replay_ok,
         "forgery_rejected": forgery_rejected,
+        "attest_scheme": "hmac-sha256",
+        "custody_state": custody_state,
+        "ledger_chain_digest": (
+            ledger_record.chain_digest if ledger_record is not None else None
+        ),
         "stale_extranonce1": stale_extranonce1,
         "live_extranonce1": live_extranonce1,
         "verdicts": {

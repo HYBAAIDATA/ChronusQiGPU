@@ -12,11 +12,10 @@ import sys
 from plugin_status import (
     INTELLIGENCE_SKILLS_ROOT,
     PLUGIN_ROOT,
+    WORKSPACE_AVAILABLE,
     build_status,
     write_runtime_receipt,
 )
-
-_MAX_CONTEXT = 90000
 
 
 def _skill_bundle() -> str:
@@ -36,16 +35,15 @@ def _skill_bundle() -> str:
             blocks.append(
                 f"\n--- {family}: {path.parent.name} ---\n{body.strip()}\n"
             )
-    bundle = "".join(blocks)
-    if len(bundle) > _MAX_CONTEXT:
-        bundle = bundle[:_MAX_CONTEXT] + (
-            "\n[skill bundle truncated for transport; all skills remain mandatory "
-            "in the runtime receipt and available in-repo]\n"
-        )
-    return bundle
+    return "".join(blocks)
 
 
 def main() -> int:
+    if not WORKSPACE_AVAILABLE:
+        # The plugin is managed-installed and fires in every session, but its
+        # aptitude surface is PhiMiner-repo-local. Outside that workspace the
+        # hook is a quiet no-op rather than a hard failure.
+        return 0
     status = build_status(event="SessionStart", invoke_all=True)
     write_runtime_receipt(status)
 
@@ -69,6 +67,8 @@ def main() -> int:
         "Apply every skill as an aptitude. Execute task-specific actions only when relevant and authorised.",
         "plugin_version=%s" % status.get("plugin_version", "UNAVAILABLE"),
         "plugin_source_sha=%s" % status.get("plugin_source_sha", "UNAVAILABLE"),
+        "aptitude_digest_sha256=%s"
+        % status.get("aptitude_digest_sha256", "UNAVAILABLE"),
         "mandatory_skill_count=%s" % len(status.get("mandatory_skills") or []),
         "mandatory_skills_complete=true",
     ]

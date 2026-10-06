@@ -1,62 +1,87 @@
-# Devin Engineering Intelligence Evidence
+# Devin EUCLID Aptitude Evidence
 
-This directory stores **published, content-addressed task evidence packs** from
-the private PYTHIA Devin plugin.
+The proof model separates **session augmentation** from **task outcome**.
 
-## What one evidence pack proves
+## Session augmentation proof
 
-A valid pack can prove that, for the recorded task:
+SessionStart writes:
 
-- a specific plugin source SHA was observed;
-- named plugin skills were runtime-observed;
-- the append-only engineering event ledger verified;
-- one or more proving commands ran and their exit codes/output digests were
-  recorded;
-- a completion decision was recorded;
-- the pack itself has not changed since sealing;
-- if committed, Git history binds the pack to repository history.
+`artifacts/pythia/devin-plugin-runtime.json`
 
-It does **not** prove that the plugin caused better engineering performance.
+A valid receipt records:
 
-## Evidence states
+- exact plugin/aptitude source SHA;
+- plugin version;
+- SHA-256 digest of the full active aptitude surface;
+- `augmentation = EUCLID_APTITUDE`;
+- complete plugin skill inventory;
+- complete `Intelligence/skills` aptitude inventory;
+- complete mandatory invocation set;
+- `mandatory_skills_complete = true`;
+- observed SessionStart/PostCompaction lifecycle events.
 
-Use these terms precisely:
+Skills are session-wide capabilities. They are not owned by individual tasks.
 
-1. `PLUGIN_CONFIGURED` — repository declares the plugin.
-2. `PLUGIN_RUNTIME_OBSERVED` — runtime hook/status receipt executed.
-3. `SKILL_RUNTIME_OBSERVED` — skill invocation recorded.
-4. `VERIFICATION_OBSERVED` — proving command outcome recorded.
-5. `TASK_OUTCOME_VERIFIED` — completion gate plus sealed pack pass.
-6. `UPLIFT_OBSERVED` — comparable baseline and augmented cohorts show a
-   better measured outcome.
-7. `CAUSAL_EFFECT_ESTABLISHED` — reserved for a controlled design strong
-   enough to support causality.
+Evidence state:
 
-## Evaluating whether the augmentation helps
+`EUCLID_APTITUDE_SESSION_OBSERVED`
 
-Use comparable tasks and the same acceptance criteria. Prefer prospective
-paired or matched task sets over anecdotes.
+## Task outcome proof
 
-Useful outcome measures:
+Task work is recorded independently in:
 
-- first review pass versus changes requested;
-- escaped defects found after completion;
-- regressions introduced;
+`artifacts/pythia/devin-engineering-evidence.jsonl`
+
+Published content-addressed packs live under:
+
+`evidence/devin/<task>/<sha256>.json`
+
+A task pack can prove:
+
+- task identity;
+- exact workspace/plugin revisions;
+- tamper-evident event-chain integrity;
+- verification commands and exit status;
+- output digests;
+- completion decision;
+- a snapshot showing mandatory EUCLID aptitude was active during that session.
+
+Evidence state:
+
+`TASK_OUTCOME_VERIFIED`
+
+## Measuring whether it helps
+
+Neither a session receipt nor one successful task proves causal improvement.
+
+Use comparable tasks and identical acceptance criteria. Useful measures include:
+
+- first-review pass rate;
+- post-completion changes requested;
+- escaped defects;
+- regressions;
 - authority/boundary drift findings;
 - unsupported evidence claims;
-- verification failures before final pass;
+- failed verification attempts before final pass;
 - reopen/rework rate;
 - post-merge verification success;
-- percentage of tasks with complete evidence packs.
+- long-session continuity failures;
+- percentage of tasks with valid evidence packs.
 
-Do not optimize for lines changed, endpoint count, token count, or self-reported
-confidence.
+Then distinguish:
 
-Aggregate published packs with:
+```text
+PLUGIN_CONFIGURED
+→ EUCLID_APTITUDE_SESSION_OBSERVED
+→ TASK_OUTCOME_VERIFIED
+→ UPLIFT_OBSERVED
+→ CAUSAL_EFFECT_ESTABLISHED
+```
+
+Aggregate published task packs with:
 
 ```text
 python plugins/pythia/scripts/evaluate_augmentation.py evidence/devin
 ```
 
-The evaluator reports observed outcomes only and preserves the causal claim
-boundary.
+Do not infer causal uplift from ordinary PR success.

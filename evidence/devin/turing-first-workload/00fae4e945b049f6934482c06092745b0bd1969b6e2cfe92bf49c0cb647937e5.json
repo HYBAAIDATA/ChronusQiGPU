@@ -1,0 +1,66 @@
+{
+  "claim_boundary": "This pack proves the recorded task outcome and snapshots the session-wide EUCLID aptitude activation. Skills are not task-owned. The pack does not by itself establish causal performance uplift.",
+  "completion_gate": {
+    "decision": "READY_FOR_REVIEW",
+    "state": "DRAFT_PR",
+    "summary": "Durable custody closed on both surfaces; audit evidence executed; first-workload proposal drafted for owner decision."
+  },
+  "event_count": 7,
+  "event_hashes": [
+    "5ab5e9b0ef58f21790180d854a29fb8d77260079b21a07de3c39995456ca0dd6",
+    "211d0a37e04c60042d59b2e2759edb47bc82a2a77e96aa288f20f85c8e696bf0",
+    "5697f3e3bd35bc1dd116b5895f35dbe7fbd605c520035c822fa87435c34341b9",
+    "5f4543ec4e1cb26532b85fe1e1d9edeca3a04e750c4c305a0879da7673ee15af",
+    "189f3bd5c96f0b579389e1fb7f3cc65d6c872e6bcd50ecb27167be5532e00614",
+    "51f94c525a9ca5dc314ec5c92ba75a8a074f301d2bb707d1a2ad74405ba44b85",
+    "48edbfe6cb56da8d7050cb187bb39c11b0fa4b3bdd4ed9daf06f9b92eb023d6e"
+  ],
+  "ledger_tip_sha256": "48edbfe6cb56da8d7050cb187bb39c11b0fa4b3bdd4ed9daf06f9b92eb023d6e",
+  "pack_sha256": "00fae4e945b049f6934482c06092745b0bd1969b6e2cfe92bf49c0cb647937e5",
+  "plugin_source_shas": [
+    "1c5fb8edcd620b642c6c3ce82874bfb2edc8bc3f"
+  ],
+  "schema": "pythia.devin-engineering-pack/1",
+  "sealed_at": "2026-10-06T20:02:47Z",
+  "session_aptitude": {
+    "aptitude_digest_sha256": "4da6f922b599da44672c9b595ae187801a5c5ec8f3dd5676eb1e72c261712a08",
+    "augmentation": "EUCLID_APTITUDE",
+    "mandatory_skills": [
+      "euclid:assess-landscape",
+      "euclid:codebase-healing",
+      "euclid:counterfactual-analysis",
+      "euclid:feed-block-data",
+      "euclid:receiving-code-review",
+      "euclid:skill-creator",
+      "euclid:solve-nonce",
+      "euclid:systematic-debugging",
+      "euclid:test-driven-development",
+      "euclid:verification-before-completion",
+      "euclid:webapp-testing",
+      "plugin:euclid-cognition-aptitude",
+      "plugin:hyba-products",
+      "plugin:pythia-agent-fabric",
+      "plugin:pythia-deploy-rollback",
+      "plugin:pythia-engineering-quality",
+      "plugin:pythia-evidence-pack",
+      "plugin:pythia-finish-the-job",
+      "plugin:pythia-long-context",
+      "plugin:pythia-plugin-status",
+      "plugin:pythia-promotion-gate",
+      "plugin:pythia-repo-ontology",
+      "plugin:pythia-stop-check",
+      "plugin:pythia-systematic-debugging",
+      "plugin:pythia-tdd"
+    ],
+    "mandatory_skills_complete": false,
+    "skills_invoked": []
+  },
+  "task_id": "turing-first-workload",
+  "verification": {
+    "failed": 1,
+    "passed": 5,
+    "runs": 6
+  },
+  "workspace_end_sha": "05e2cb7eaed9fb2c010847d38760dede30981a73",
+  "workspace_start_sha": "1d1f2729d3812b72dbd91673c1747c471debcd62"
+}

@@ -15,14 +15,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: {ref: '${{ inputs.commit_sha }}'}
-      - run: MLA1517_STRICT_HARDWARE_CI=1 MLA1517_GPU_BACKEND=opencl make strict-hardware-gate
+      - id: strict_hardware
+        run: MLA1517_STRICT_HARDWARE_CI=1 MLA1517_GPU_BACKEND=opencl make strict-hardware-gate
       - name: Build and install the exact wheel under acceptance
         run: |
           rm -rf dist /tmp/pythia-hardware-wheel
           python -m pip wheel . --no-deps --wheel-dir dist
           python -m venv --system-site-packages /tmp/pythia-hardware-wheel
           /tmp/pythia-hardware-wheel/bin/pip install --no-deps dist/*.whl
-      - name: Generate authenticated real-device endpoint evidence
+      - id: chronus_measurement
+        name: Generate authenticated real-device endpoint evidence
         run: |
           TOKEN=$(python -c 'import secrets; print(secrets.token_hex(32))')
           export MLA1517_REMOTE_GPU_TOKEN="$TOKEN"

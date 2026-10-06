@@ -1,0 +1,8 @@
+# pytest tests/test_production_api_contract.py under Python 3.11
+# interpreter: C:/Users/Administrator/python311/pkg/tools/python.exe (nuget python 3.11.9)
+Python 3.11.9
+# deps: pytest, pyyaml, numpy, sympy, scipy
+# executed: 2026-10-06T17:56:19Z
+
+...........................................                                           [100%]
+43 passed, 59 subtests passed in 12.25s

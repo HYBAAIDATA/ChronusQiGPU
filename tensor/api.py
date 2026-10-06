@@ -51,6 +51,11 @@ from .receipts import (
 )
 from .router import default_registry
 from .runtime import CancellationToken, timed_execute
+from .verification import (
+    refuse_on_divergence,
+    verify_backend_output,
+    verify_folded_output,
+)
 
 _DTYPE_NAMES = {
     "float32": np.float32,
@@ -264,6 +269,12 @@ class TensorRuntime:
             timeout_ns=timeout_ns,
             cancel_token=token,
         )
+        # Independent verification: re-derive the output on the unfolded
+        # reference path before anything is committed. A divergence
+        # refuses publication — the divergent state never enters custody
+        # and no receipt is issued.
+        verdict = verify_folded_output(operation, states, out_state)
+        refuse_on_divergence(verdict, f"folded {operation}")
         out_name = out or f"{request_id}:out"
         receipt = build_folded_receipt(
             request_id=request_id,
@@ -275,6 +286,7 @@ class TensorRuntime:
             elapsed_ns=measurement.elapsed_ns,
             cancelled=token.cancelled,
             started_ns=started_ns,
+            verification=verdict,
         )
         with self._lock:
             # Atomic publication: custody of the produced folded state and
@@ -293,6 +305,7 @@ class TensorRuntime:
                 "commit_bytes": fold_receipt.commit_bytes,
                 "elapsed_ns": receipt.elapsed_ns,
                 "truth_class": TruthClass.MEASURED.value,
+                "verification": verdict.as_dict(),
                 "receipt": receipt.as_dict(),
                 "published_ns": receipt.published_ns,
             }
@@ -364,6 +377,11 @@ class TensorRuntime:
             registry=self.registry,
             cancel_token=token,
         )
+        # Independent verification: re-derive the output through the
+        # folded-resident catalogue before publication. Divergence
+        # refuses the result the same way the folded path does.
+        verdict = verify_backend_output(operation, arrays, result.data)
+        refuse_on_divergence(verdict, f"backend {operation}")
         receipt = build_backend_receipt(
             request_id=request_id,
             operation=operation,
@@ -373,6 +391,7 @@ class TensorRuntime:
             output_id=f"{request_id}:out",
             elapsed_ns=result.measurement.elapsed_ns,
             started_ns=started_ns,
+            verification=verdict,
         )
         with self._lock:
             record = {
@@ -385,6 +404,7 @@ class TensorRuntime:
                 "elapsed_ns": result.measurement.elapsed_ns,
                 "truth_class": result.truth_class.value,
                 "fallback_used": result.measurement.fallback_used,
+                "verification": verdict.as_dict(),
                 "receipt": receipt.as_dict(),
                 "published_ns": receipt.published_ns,
             }

@@ -42,6 +42,14 @@ class TensorExactnessError(TensorError):
     """An exact operation would lose information without explicit opt-in."""
 
 
+class TensorVerificationError(TensorError):
+    """Independent re-verification diverged from the executed result.
+
+    Raised instead of publishing a wrong-but-well-formed output: the
+    divergent result never enters custody and no receipt is issued.
+    """
+
+
 __all__ = [
     "TensorError",
     "TensorValidationError",
@@ -50,4 +58,5 @@ __all__ = [
     "TensorCancelledError",
     "TensorBackendUnavailableError",
     "TensorExactnessError",
+    "TensorVerificationError",
 ]

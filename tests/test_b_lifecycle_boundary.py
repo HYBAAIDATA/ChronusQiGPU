@@ -344,7 +344,7 @@ def test_config_put_rejects_unknown_sections_and_bad_bounds(tmp_path, monkeypatc
         {"solvers": {"arms": 999}},
         {"solvers": {"workers": 0}},
         {"hashrate": {"target_hs": -1.0}},
-        {"hashrate": {"target_hs": 2e19}},
+        {"hashrate": {"target_hs": 1e20}},  # above the 1e19 governed ceiling
         {"pools": [{"endpoint": "no port", "worker": "w", "password": "p"}]},
     ):
         status, _body = control_api._config_put(bad)

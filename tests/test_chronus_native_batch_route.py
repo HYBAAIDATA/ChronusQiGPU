@@ -10,13 +10,17 @@ from __future__ import annotations
 
 import importlib.util
 import time
+from dataclasses import replace
 from pathlib import Path
 
 from chronus.mla1517.mining.execution_router import NONCE_ORDER_HENDRIX
 from chronus.mla1517.mining.geodesic_support import (
     PythiaProductionMiningCoordinator,
     ProductionExecutionRouter,
+    chronus_fabric_execution_state_for,
+    chronus_fabric_state_for,
 )
+from chronus.mla1517.mining.h4_600_execution import promote_execution_hasher
 from chronus.mla1517.mining.pythia_search import (
     SEARCH_ARCHITECTURE_ID,
     precompute_pythia_search,
@@ -28,6 +32,13 @@ from chronus.mla1517.mining.search_plan import (
     NonceLease,
     SearchPlan,
 )
+from hyba.hybrid.coordinator import HybridCoordinator
+from hyba.hybrid.nonce_scheduler import (
+    DeviceCapability,
+    DispatchHandle,
+    next_handle_id,
+)
+from hyba.hybrid.super_asic import SuperAsicHasher
 
 HEADER = bytes(range(80))
 BASE = 0x0020_0000
@@ -62,6 +73,53 @@ class _NoBatchHasher:
     grind_batch = 320
     kernel_ms = 0.0
     launches = 0
+
+
+class _FabricScheduler:
+    def __init__(self) -> None:
+        self._cap = DeviceCapability(
+            device_id="chronus-fabric-test",
+            device_class="gpu",
+            measured_hashes_per_sec=1.0,
+            supported=True,
+        )
+        self._pending: dict[int, DispatchHandle] = {}
+        self._done: dict[int, int] = {}
+        self.dispatched = []
+
+    def capability(self):
+        return self._cap
+
+    def prepare(self, _job_id, header80):
+        assert len(header80) == 80
+
+    def dispatch(self, window):
+        self.dispatched.append(window)
+        handle = DispatchHandle(
+            handle_id=next_handle_id(),
+            device_id=self._cap.device_id,
+            window=window,
+            dispatched_ns=1,
+        )
+        self._pending[handle.handle_id] = handle
+        return handle
+
+    def poll(self, handle):
+        pending = self._pending.pop(handle.handle_id, None)
+        if pending is not None:
+            self._done[handle.handle_id] = handle.window.span
+        return None
+
+    def is_done(self, handle):
+        return handle.handle_id in self._done
+
+    def hashed_count(self, handle):
+        return self._done.get(handle.handle_id, 0)
+
+    def cancel(self, handle, reason="cancelled"):
+        del reason
+        self._pending.pop(handle.handle_id, None)
+        self._done.setdefault(handle.handle_id, 0)
 
 
 def _plan(route: str = "chronus_batch") -> SearchPlan:
@@ -157,6 +215,101 @@ def test_chronus_batch_executes_exact_600_vertex_itinerary_without_vendor_route_
     assert sorted(hasher.seen) == list(range(BASE, BASE + WINDOW))
 
 
+def test_pythia_router_reaches_promoted_h4_fabric_and_preserves_ordered_membership():
+    worker = _FabricScheduler()
+    hasher = promote_execution_hasher(
+        SuperAsicHasher(HybridCoordinator(worker), [worker])
+    )
+    precompute = precompute_pythia_search()
+    plan = replace(
+        _plan(),
+        window=24,
+        dispatch_breadth=24,
+        plan_id="plan-chronus-h4-seam",
+    )
+    router = ProductionExecutionRouter(
+        hasher,
+        lambda _header, _target, _start, count: (None, None, count),
+        pythia_precompute=precompute,
+    )
+
+    record, candidate = router.execute_plan(
+        plan,
+        HEADER,
+        bytes(32),
+        lease=_lease(plan),
+    )
+
+    expected = pythia_hendrix_nonces(
+        HEADER,
+        BASE,
+        plan.window,
+        precompute=precompute,
+        preferred_face=plan.preferred_face,
+    )
+    dispatched = []
+    for window in worker.dispatched:
+        dispatched.extend(range(window.base_nonce, window.base_nonce + window.span))
+
+    assert candidate is None
+    assert record.completion_state is CompletionState.COMPLETE
+    assert record.executed_route == "chronus_batch"
+    assert record.hash_count == plan.window
+    assert dispatched == expected
+
+    evidence = hasher.last_batch_evidence
+    assert evidence is not None
+    assert evidence["h4_topology_observed"] is True
+    assert evidence["completed_work_items"] == plan.window
+    assert evidence["physical_fanout_observed"] is False
+
+    fabric = chronus_fabric_execution_state_for(hasher)
+    assert fabric["capability_bound"] is True
+    assert fabric["physical_fanout"] is False
+    assert fabric["execution_evidence"]["ordered_nonce_count"] == plan.window
+
+
+def test_refused_plan_clears_prior_h4_execution_evidence():
+    worker = _FabricScheduler()
+    hasher = promote_execution_hasher(
+        SuperAsicHasher(HybridCoordinator(worker), [worker])
+    )
+    hasher.last_batch_evidence = {
+        "schema": "chronus.h4_600_ordered_batch/1",
+        "physical_fanout_observed": True,
+        "completion_state": "COMPLETE",
+    }
+    precompute = precompute_pythia_search()
+    plan = _plan()
+    invalid_lease = NonceLease(
+        lease_id="wrong-lease",
+        generation=plan.generation,
+        plan_id="wrong-plan",
+        start=plan.base_step,
+        count=plan.window,
+    )
+    router = ProductionExecutionRouter(
+        hasher,
+        lambda _header, _target, _start, count: (None, None, count),
+        pythia_precompute=precompute,
+    )
+
+    record, candidate = router.execute_plan(
+        plan,
+        HEADER,
+        bytes(32),
+        lease=invalid_lease,
+    )
+
+    assert candidate is None
+    assert record.completion_state is CompletionState.REFUSED
+    assert hasher.last_batch_evidence is None
+    fabric = chronus_fabric_execution_state_for(hasher)
+    assert fabric["physical_fanout"] is False
+    assert fabric["physical_fanout_observed"] is False
+    assert fabric["execution_evidence"] == "Unavailable"
+
+
 def test_missing_batch_contract_falls_back_explicitly_without_relabelling():
     visited: list[int] = []
     plan = _plan()
@@ -202,7 +355,15 @@ def test_plan_binding_declares_chronus_authority_not_vendor_runtime():
     coordinator._nonce_order = NONCE_ORDER_HENDRIX
     coordinator.geodesic_enabled = True
     coordinator.last_mining_decision = None
+    coordinator._chronus_fabric_state = {
+        "schema": "pythia.chronus_search_fabric/3",
+        "state": "NOT_BOUND",
+        "logical_vertices": 600,
+    }
     coordinator.execution_hasher = _ChronusBatchHasher("metal")
+    coordinator._chronus_fabric_state = chronus_fabric_state_for(
+        coordinator.execution_hasher
+    )
     coordinator.pythia_search_precompute = precompute_pythia_search()
     coordinator._chronus_fabric_state = {
         "schema": "pythia.chronus_search_fabric/2",

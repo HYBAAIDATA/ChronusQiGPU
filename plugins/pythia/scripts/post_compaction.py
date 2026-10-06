@@ -4,11 +4,13 @@ from __future__ import annotations
 import json
 import sys
 
-from plugin_status import build_status, write_runtime_receipt
+from plugin_status import WORKSPACE_AVAILABLE, build_status, write_runtime_receipt
 from session_start import _skill_bundle
 
 
 def main() -> int:
+    if not WORKSPACE_AVAILABLE:
+        return 0
     status = build_status(event="PostCompaction", invoke_all=True)
     write_runtime_receipt(status)
 

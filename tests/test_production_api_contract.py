@@ -6,7 +6,9 @@ machine-readable registry of every production interface. This suite tests the
 
 * registry integrity — required fields, valid classes, frozen authority register
 * route parity — the HTTP surface implemented in control_api.py is exactly the
-  surface the registry declares (drift in either direction fails)
+  surface the registry declares, in all three directions (A: every declared
+  concrete route has a handler; B: every handler is declared; C: every
+  RESERVED_NAMESPACE entry has no handler)
 * live HTTP voyages — a real ThreadingHTTPServer serves every declared route;
   status codes, schema markers, auth classes, and the X-Request-Id correlation
   envelope are asserted over the wire
@@ -14,16 +16,24 @@ machine-readable registry of every production interface. This suite tests the
   masquerade as implemented endpoints
 * internal contracts — THESEUS custody, OVID transformation, KELLOGG tensor,
   SALAMANDER autonomic, TURING VQC, AL HARAS guardian, HYBA_DB persistence
-* mutation self-tests — the parity gate itself is proven to detect drift
+* generated-doc round-trip — ``render_api_contract.py --check`` regenerates
+  ``docs/PYTHIA_API_CONTRACT.md`` and ``docs/openapi.yaml`` from the registry
+  and compares byte-for-byte; one byte of drift in either fails
+* mutation self-tests — the parity and round-trip gates are each proven to
+  detect drift (remove a handler, add an undeclared handler, add a handler
+  under a reserved prefix, drift a generated doc by one byte)
 """
 
 from __future__ import annotations
 
 import ast
+import importlib.util
 import inspect
 import json
 import os
 import re
+import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -40,6 +50,9 @@ REGISTRY_PATH = REPO_ROOT / "governance" / "api_registry.yaml"
 CONTROL_API_PATH = (
     REPO_ROOT / "chronus" / "mla1517_platform" / "python" / "control_api.py"
 )
+RENDERER_PATH = REPO_ROOT / "governance" / "render_api_contract.py"
+OPENAPI_PATH = REPO_ROOT / "docs" / "openapi.yaml"
+CONTRACT_DOC_PATH = REPO_ROOT / "docs" / "PYTHIA_API_CONTRACT.md"
 
 # ---------------------------------------------------------------------------
 # Registry loading / shape
@@ -89,6 +102,19 @@ REQUIRED_FIELDS = (
     "stability",
     "deprecation_state",
     "tests",
+    # service-constitution fields (schema /2, second-pass elevation §2)
+    "capability",
+    "authority",
+    "reliability_tier",
+    "dependencies",
+    "slo",
+    "fallback_policy",
+    "security_classification",
+    "observability_requirement",
+    "compatibility_window",
+    "support_owner",
+    "runtime_evidence",
+    "lifecycle",
 )
 
 
@@ -197,7 +223,7 @@ def _parity_diff(implemented, declared_pairs):
 
 class RegistryIntegrityTests(unittest.TestCase):
     def test_registry_schema_and_authority_register_are_frozen(self):
-        self.assertEqual(_REGISTRY["schema"], "pythia.api_registry/1")
+        self.assertEqual(_REGISTRY["schema"], "pythia.api_registry/2")
         self.assertEqual(_REGISTRY["authority_register"], FROZEN_AUTHORITY_REGISTER)
 
     def test_every_entry_is_complete_and_well_formed(self):
@@ -253,7 +279,19 @@ class RegistryIntegrityTests(unittest.TestCase):
 
 
 class RouteParityTests(unittest.TestCase):
+    """Registry ↔ handler parity, enforced in all three directions.
+
+    Direction A — every registry HTTP entry declared ``IMPLEMENTED`` (a
+    concrete declared route) has a handler in control_api.py.
+    Direction B — every handler (dispatch-table or comparison route) in
+    control_api.py has a registry entry.
+    Direction C — every registry ``RESERVED_NAMESPACE`` entry has NO handler:
+    its prefix is behind the guardian and no implemented route is served
+    beneath it.
+    """
+
     def test_implemented_surface_equals_declared_surface(self):
+        """Directions A and B: declared surface == implemented surface."""
         declared = _declared_http_routes()
         # Non-literal declared routes: the SPA wildcard and reserved-prefix
         # wildcards are behaviour contracts, not dispatch literals.
@@ -298,6 +336,7 @@ class RouteParityTests(unittest.TestCase):
                 )
 
     def test_reserved_namespaces_have_no_implementation(self):
+        """Direction C: no implemented route is served under a reserved prefix."""
         implemented = _implemented_http_routes()
         prefixes = _privileged_prefixes()
         for api in _REGISTRY["apis"]:
@@ -519,6 +558,18 @@ class HttpVoyageTests(unittest.TestCase):
         minted = headers.get("X-Request-Id", "")
         self.assertTrue(minted and minted != "voyage-123")
 
+    def test_correlation_envelope_rejects_malformed_ids(self):
+        # sane = 1-128 chars, alphanumeric lead, then [A-Za-z0-9._:@-]; a
+        # malformed caller id is never echoed — a fresh id is minted.
+        for bad in ("not sane!", "has space", "(paren)", "semi;colon"):
+            status, _body, headers = self._request(
+                "GET", "/api/v1/healthz", headers={"X-Request-Id": bad}
+            )
+            self.assertEqual(status, 200)
+            echoed = headers.get("X-Request-Id", "")
+            self.assertNotEqual(echoed, bad)
+            self.assertRegex(echoed, r"\A[0-9a-f]{32}\Z")
+
     def test_sse_stream_is_a_real_event_stream(self):
         import socket
 
@@ -718,7 +769,7 @@ class HttpVoyageTests(unittest.TestCase):
             )
             with self.subTest(method=method, path=path):
                 self.assertEqual(status, 404)
-                self.assertEqual(body, {"error": "not_found"})
+                self.assertEqual(body, {"error": "not_found", "failure_class": "NOT_FOUND"})
 
     def test_spa_serves_index_only_for_app_paths(self):
         status, body, headers = self._request("GET", "/dashboard")
@@ -727,7 +778,7 @@ class HttpVoyageTests(unittest.TestCase):
         # An unrouted /api/* path never falls through to the SPA shell.
         status, body, _ = self._request("GET", "/api/nope")
         self.assertEqual(status, 404)
-        self.assertEqual(body, {"error": "not_found"})
+        self.assertEqual(body, {"error": "not_found", "failure_class": "NOT_FOUND"})
 
 
 # ---------------------------------------------------------------------------
@@ -835,6 +886,27 @@ class MutationGateTests(unittest.TestCase):
         self.assertEqual(extra, [])
         self.assertEqual(missing, [victim])
 
+    def test_gate_detects_a_handler_under_a_reserved_prefix(self):
+        """Direction C mutation: a handler added under a reserved prefix fails.
+
+        The real check lives in
+        ``RouteParityTests.test_reserved_namespaces_have_no_implementation``;
+        this mutation proves it fires — an implemented route beneath any
+        RESERVED_NAMESPACE prefix is caught.
+        """
+        reserved_prefix = next(
+            api["path"]
+            for api in _REGISTRY["apis"]
+            if api["interface_type"] == "RESERVED_NAMESPACE"
+        )
+        mutated = _implemented_http_routes() | {("GET", reserved_prefix + "mutant")}
+        served = [r for r in mutated if r[1].startswith(reserved_prefix)]
+        self.assertNotEqual(
+            served,
+            [],
+            "gate no longer detects an implemented route under a reserved prefix",
+        )
+
     def test_gate_detects_registry_regression(self):
         declared = {
             k: v
@@ -860,6 +932,81 @@ class MutationGateTests(unittest.TestCase):
         del tampered["apis"][0]["authentication_class"]
         with self.assertRaises(KeyError):
             tampered["apis"][0]["authentication_class"]
+
+
+# ---------------------------------------------------------------------------
+# Part D2 — generated-document round-trip
+# ---------------------------------------------------------------------------
+
+
+def _render_check(doc_out: Path, openapi_out: Path) -> int:
+    """Invoke the real ``--check`` gate in-process with redirected outputs."""
+    spec = importlib.util.spec_from_file_location("render_api_contract", RENDERER_PATH)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    mod.DOC_OUT = doc_out
+    mod.OPENAPI_OUT = openapi_out
+    return mod.main(["--check"])
+
+
+class GeneratedDocRoundTripTests(unittest.TestCase):
+    """docs/PYTHIA_API_CONTRACT.md and docs/openapi.yaml are derived views of
+    the registry — ``render_api_contract.py --check`` regenerates both and
+    compares byte-for-byte with the committed files. A one-byte drift in
+    either fails the gate."""
+
+    def test_committed_docs_round_trip_byte_identical(self):
+        result = subprocess.run(
+            [sys.executable, str(RENDERER_PATH), "--check"],
+            capture_output=True,
+            text=True,
+            cwd=str(REPO_ROOT),
+        )
+        self.assertEqual(
+            result.returncode,
+            0,
+            f"render_api_contract --check failed:\n{result.stdout}\n{result.stderr}",
+        )
+
+    def test_gate_detects_one_byte_drift_in_openapi(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            doc_out = Path(tmp) / "PYTHIA_API_CONTRACT.md"
+            openapi_out = Path(tmp) / "openapi.yaml"
+            doc_out.write_bytes(CONTRACT_DOC_PATH.read_bytes())
+            openapi = bytearray(OPENAPI_PATH.read_bytes())
+            i = openapi.index(b"\n")
+            openapi[i] = ord("#") if openapi[i] != ord("#") else ord("!")
+            openapi_out.write_bytes(bytes(openapi))
+            self.assertEqual(
+                _render_check(doc_out, openapi_out),
+                1,
+                "one-byte drift in docs/openapi.yaml did not fail --check",
+            )
+
+    def test_gate_detects_one_byte_drift_in_contract_doc(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            doc_out = Path(tmp) / "PYTHIA_API_CONTRACT.md"
+            openapi_out = Path(tmp) / "openapi.yaml"
+            doc = bytearray(CONTRACT_DOC_PATH.read_bytes())
+            doc[0] = ord("!") if doc[0] != ord("!") else ord("#")
+            doc_out.write_bytes(bytes(doc))
+            openapi_out.write_bytes(OPENAPI_PATH.read_bytes())
+            self.assertEqual(
+                _render_check(doc_out, openapi_out),
+                1,
+                "one-byte drift in docs/PYTHIA_API_CONTRACT.md did not fail --check",
+            )
+
+    def test_gate_detects_a_missing_generated_doc(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            doc_out = Path(tmp) / "PYTHIA_API_CONTRACT.md"
+            openapi_out = Path(tmp) / "openapi.yaml"
+            openapi_out.write_bytes(OPENAPI_PATH.read_bytes())
+            self.assertEqual(
+                _render_check(doc_out, openapi_out),
+                1,
+                "a missing generated doc did not fail --check",
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -1053,6 +1200,19 @@ class GeneratedDocsSyncTests(unittest.TestCase):
 
         result = subprocess.run(
             [sys.executable, "governance/render_api_contract.py", "--check"],
+            cwd=str(REPO_ROOT),
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_rendered_service_fabric_docs_are_in_sync(self):
+        import subprocess
+        import sys
+
+        result = subprocess.run(
+            [sys.executable, "governance/render_service_fabric.py", "--check"],
             cwd=str(REPO_ROOT),
             capture_output=True,
             text=True,

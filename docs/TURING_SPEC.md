@@ -130,7 +130,29 @@ product certificates; callers must use the registry.
 
 Floating evidence is serialized with exact IEEE-754 hexadecimal strings.
 NaN, infinity, memory-address representations, unknown fields, altered trace
-order, and digest substitution fail closed.
+order, and digest substitution fail closed. Pipeline result evidence uses the
+same certificate-canonical serialization so a recovered result can reproduce
+the computation certificate exactly after custody and restart.
+
+### Canonical production custody
+
+`VQCPipeline` is the computation/certificate boundary; it is not a second
+durable-truth authority. The canonical production path is the Turing binding
+created by an already-started `aethel.enterprise.lifecycle.CompositionRoot`
+through `ProductionSystemRelations.turing()` / `SharedTuring`.
+
+That binding suppresses the pipeline's legacy private custody flags and commits
+one lineage-linked shared record chain:
+
+`program -> result -> certificate -> witness -> pipeline_report -> replay`.
+
+Before custody, the certificate and witness are semantically cross-checked.
+After custody, the stored program, result, certificate, and witness are read
+back from the shared THESEUS/OVID fabric and checked again. Production
+acceptance fails closed if the recovered computation certificate cannot be
+reproduced from the recovered program and result or if any witness binding is
+inconsistent. Refused or failed computations remain evidence but are not
+misrepresented as completed replayable executions.
 
 ## Verification and reproduction
 
@@ -144,10 +166,13 @@ python -m pytest -q \
 python scripts/turing_digest_fixture.py
 python scripts/turing_vqc_digest_fixture.py
 cd proofs/lean && lake build
+cd turing_universal_quantum_computer/formal && lake build
 ```
 
 CI repeats the Python tests and fixture under 3.11, 3.12, and 3.13 and rejects
-different digests. Lean builds the three scoped theorems without `sorry`.
+different digests. Lean builds both scoped kernels — `proofs/lean` (the
+machine theorems) and `turing_universal_quantum_computer/formal` (the
+`PureQuantumMath` kernel) — without `sorry` or axioms.
 
 ## Package boundaries
 

@@ -1077,7 +1077,7 @@ def _local_module(root: Path, dotted: str) -> tuple[bool, bool]:
     """(is_local, exists) for ``dotted`` against the repository's source roots."""
     top = dotted.split(".")[0]
     local = exists = False
-    for base in (root, root / PLATFORM):
+    for base in source_roots(root):
         if (base / top).is_dir() or (base / f"{top}.py").is_file():
             local = True
             target = base.joinpath(*dotted.split("."))

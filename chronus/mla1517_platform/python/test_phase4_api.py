@@ -278,5 +278,63 @@ class Phase4ApiTests(unittest.TestCase):
         start.assert_called_once_with("Find the highest-value runtime cleanup")
 
 
+    def test_strict_m3_dependency_gate_refuses_unhealthy_storage(self) -> None:
+        evidence = {
+            "m3_storage": {
+                "configured": True,
+                "healthy": False,
+                "reconciliation_ok": False,
+                "file_plane_ok": False,
+                "mining_chain_ok": False,
+            },
+            "m3_authorization": {"configured": True},
+            "m3_runtime": {
+                "blocked": False,
+                "gate_configured": True,
+                "search_authority": "PYTHIA",
+                "search_algorithm": "hendrix_coprime_stride",
+                "search_architecture_ready": True,
+                "chronus_fabric": {"logical_vertices": 600},
+            },
+        }
+
+        def metric(_worker, key):
+            return evidence.get(key)
+
+        with patch.dict(os.environ, {"PYTHIA_M3_REQUIRED": "1"}, clear=False):
+            with patch.object(control_api, "_metrics_json", side_effect=metric):
+                self.assertEqual(
+                    control_api._m3_dependency_reason(),
+                    (False, "m3_storage_unhealthy"),
+                )
+
+    def test_strict_m3_dependency_gate_accepts_complete_runtime_evidence(self) -> None:
+        evidence = {
+            "m3_storage": {
+                "configured": True,
+                "healthy": True,
+                "reconciliation_ok": True,
+                "file_plane_ok": True,
+                "mining_chain_ok": True,
+            },
+            "m3_authorization": {"configured": True, "policy_version": "policy"},
+            "m3_runtime": {
+                "blocked": False,
+                "gate_configured": True,
+                "search_authority": "PYTHIA",
+                "search_algorithm": "hendrix_coprime_stride",
+                "search_architecture_ready": True,
+                "chronus_fabric": {"logical_vertices": 600},
+            },
+        }
+
+        def metric(_worker, key):
+            return evidence.get(key)
+
+        with patch.dict(os.environ, {"PYTHIA_M3_REQUIRED": "1"}, clear=False):
+            with patch.object(control_api, "_metrics_json", side_effect=metric):
+                self.assertEqual(control_api._m3_dependency_reason(), (True, "ok"))
+
+
 if __name__ == "__main__":
     unittest.main()

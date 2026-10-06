@@ -1,6 +1,6 @@
 ---
 name: pythia-stop-check
-description: Explicit pre-stop verification for Devin sessions. Confirm task identity, runtime plugin provenance, required skill use, fresh verification, and a valid content-addressed evidence pack.
+description: Explicit pre-stop verification for Devin sessions. Confirm task identity, mandatory session-wide EUCLID aptitude, fresh verification, and a valid content-addressed evidence pack.
 allowed-tools:
   - read
   - grep
@@ -18,11 +18,6 @@ triggers:
 This aptitude is invoked automatically at SessionStart and remains active for the entire Devin session. Do not treat it as an optional per-task capability.
 
 
-First run:
-
-```text
-python plugins/pythia/scripts/plugin_status.py --record-skill pythia-stop-check --write-receipt
-```
 
 Before ending any job, verify:
 
@@ -34,7 +29,7 @@ Before ending any job, verify:
    - `done`;
    - `none`; or
    - `blocked: <reason>`.
-6. Runtime-observed required skills are present.
+6. Runtime receipt reports `EUCLID_APTITUDE` and `mandatory_skills_complete = true`.
 7. Fresh verification evidence from this session is present.
 8. `evidence_pack` exists inside the repository.
 9. Its filename equals its SHA-256 digest.
@@ -43,5 +38,4 @@ Before ending any job, verify:
 
 Then allow the Stop hook to perform the same checks independently.
 
-Installation alone is not evidence of use. Skill availability is not evidence
-of skill invocation. A successful task claim requires the sealed pack.
+Installation alone is not evidence that the aptitude ran. The SessionStart runtime receipt proves mandatory session activation; the sealed task pack proves the recorded task outcome.

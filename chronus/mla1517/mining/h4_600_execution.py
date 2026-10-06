@@ -164,11 +164,15 @@ class H4600HybridCoordinator(HybridCoordinator):
             winner_probe_index = prior + winner.probe_index
 
         per_device: Dict[str, int] = {device_id: 0 for device_id in device_by_id}
-        for _, handle, _ in all_handles:
-            scheduler = device_by_id.get(handle.device_id)
-            counter = getattr(scheduler, "hashed_count", None) if scheduler else None
-            if callable(counter):
-                per_device[handle.device_id] += max(0, int(counter(handle)))
+        for record, (scheduler, handle, window) in zip(handle_records, all_handles):
+            counter = getattr(scheduler, "hashed_count", None)
+            completed = max(0, int(counter(handle))) if callable(counter) else 0
+            terminal = _done(scheduler, handle)
+            record["assigned_nonces"] = int(window.span)
+            record["completed_nonces"] = completed
+            record["terminal_observed"] = terminal
+            record["fully_completed"] = terminal and completed == int(window.span)
+            per_device[handle.device_id] += completed
         total_tried = sum(per_device.values())
         if total_tried == 0 and winner is not None:
             per_device[winner.device_id] = max(0, int(winner.nonces_tried))

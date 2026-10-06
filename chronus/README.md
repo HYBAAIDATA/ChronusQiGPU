@@ -13,6 +13,9 @@ future accelerator substrates.
 > scheduled, prove what executed, and promote only those mathematical or hardware
 > advantages that survive reproducible measurement.
 
+> **Start here:** §19 shows what Chronus has actually been measured doing on real data;
+> §20 is the one-page map of where every Chronus-related piece lives.
+
 ---
 
 ## 1. Canonical identity and ownership
@@ -578,3 +581,66 @@ Chronus reports what ran.
 - A missing instrument produces `UNAVAILABLE`, not a guessed number.
 
 The ambition of Chronus is intentionally high. The evidence standard is equally high.
+
+---
+
+## 19. Measured capabilities (software execution, real data)
+
+Produced by `python scripts/chronus_capability_probe.py` at commit `3b456aa`; the raw artifact
+is `evidence/chronus/capability_probe_3b456aa.json`. Everything below ran on one host:
+Intel Xeon @ 2.10 GHz, 4 logical CPUs, 15.7 GB RAM, Python 3.13, **no GPU runtime present**
+(`pyopencl`, `cupy`, `mlx`, `torch` all absent). Only the software (CPU) adapter exists here, so
+nothing in this section is a hardware claim. Rates are single-process wall-clock over the **full
+submit path** (admission, execution, independent control-plane recompute, receipt, evidence
+ledger), not kernel peaks.
+
+**Real data.** Three Bitcoin block headers (heights 0, 1 and 125,552), accepted only because
+SHA-256d of each reproduces its published block hash, plus this repository's own files.
+Dense numeric kernels use seeded *synthetic* matrices (no real dataset is shipped); they are
+labelled as such.
+
+| Capability | Result on this host |
+|---|---|
+| Reproduce real blocks through the Virtual iGPU | All 3 real nonces recovered from a 3,000-nonce window; digests equal the published block hashes; control-plane recompute `match` (~4 ms each) |
+| PYTHIA production route (`chronus_batch`) on the same blocks | Real nonce found in a 1,200-nonce Hendrix-ordered window for all 3 (1,192 / 1,132 / 67 hashes before the hit, 15–43 ms); every candidate host-verified; recorded `SOFTWARE_VERIFIED`, never hardware |
+| SHA-256d throughput, verified | ~0.43–0.45 M hashes/s end-to-end (100k–1M nonces/workload) vs ~1.15 M/s for a bare single-core `hashlib` loop; the gap is the independent recompute and receipts |
+| Exact integer transforms | Lucas L(10000) 3.3 ms, Pisot n=10,000 4.7 ms, φⁿ n=1,474 0.7 ms; all verified `match` |
+| Fold / unfold on real bytes | 24,594 B (this README + 3 headers) -> 110,474 B folded (**4.49x larger**); round-trip exact. The aethel fold is a representation transform here, **not compression** |
+| Tensor `matmul`, float64, synthetic | 64² 39 ms, 256² 261 ms, 512² 1.04 s end-to-end, all verified against the `tensor` layer; max error vs NumPy 0.0. End-to-end 0.01–0.26 GFLOP/s: JSON serialisation and verification dominate, so this is **not** a compute peak |
+| Complex GEMV, 128, synthetic | 24 ms, verified |
+| Control plane | Cheapest workload median 0.59 ms, p95 0.90 ms; receipt identity binding ok; evidence ledger reloads (216 records) with hash-chain intact |
+| THESEUS custody (required) | Commit + verify median 11.4 ms (HMAC file custody); fresh-process recovery covered by `tests/test_chronus_theseus_restart_contract.py` |
+| Built-in `chronus.measurement` harness | Memory/compute/cache/interconnect topology, roofline, hashrate, tensor, MPS/TT/MPO, stress, throttle, regression and replay stages run; **power, thermal, energy and perf-per-watt are `UNAVAILABLE`** (no sensors) |
+
+**Scale math (independently verified, 119 tests in `tests/test_chronus_scale_math_independent.py`).**
+Lucas numbers match an independent recurrence to n=10,000 and the Fibonacci/Cassini identities;
+the ladder literals (L10=123 ... L76=7,639,424,778,862,807) are exact; delta15 = phi^-15 = 7.3314e-4;
+`effective = physical * L_n // L_10` matches a from-scratch implementation and is monotone. Three
+behaviours are pinned because they are easy to misread:
+
+1. Below rung 10 a non-zero fleet can round to **0** effective capacity (1 unit at rung 9 -> 0).
+2. `memory_budget_bytes` never goes below the base allocation, even for rungs under L10.
+3. The Pisot drift step is exact (<2e-12 vs a 120-digit reference) but decays to ~0 for m >~ 60, so
+   `pisot_wind` is a one-step observational rotation for small m, not an ergodic orbit.
+
+**Not measured, not claimed:** any GPU/accelerator execution or performance; multi-core or fleet
+scaling; hardware-rooted attestation; pool acknowledgement or accepted shares; the governed
+1e19 H/s hashrate ceiling (an engineering ceiling in `runtime_config`; this host sustains ~4.5e5 H/s
+through the verified path).
+
+---
+
+## 20. One Chronus: where everything lives
+
+| Piece | Home | Role |
+|---|---|---|
+| Product, device, fabric, scale law | `chronus/` | Canonical Chronus |
+| **Execution plane** | `chronus/virtual_igpu/` | The single execution seam (`virtual_igpu_v1`): workloads, adapters, admission policy hook, receipts, evidence ledger, THESEUS custody hook, control-plane verifier |
+| Mining execution | `chronus/mla1517/`, `chronus/mla1517_platform/` | PYTHIA's route into Chronus (`chronus` backend lane, `chronus_batch` route); control API |
+| Measurement | `chronus/measurement/`, `scripts/chronus_capability_probe.py` | Attested measurements; the probe behind §19 |
+| Chronos v3.3 maths engine | `chronus/v33/` | Retained inside Chronus |
+| `chronos` (top-level) | `chronos/` | **Deprecated import facade -> `chronus.v33`**, zero logic; kept for the documented compatibility policy, its tests and `packaging/chronos-core` |
+| Tensor semantics | `tensor/` | **Independent logical layer** (contracts, router, verification, receipts). Chronus is an execution backend under it; `tensor` never imports `chronus`; the Virtual iGPU delegates tensor-result verification to `tensor.verification` |
+| Exact maths / VQC | `kellogg/`, `turing_universal_quantum_computer/` | Bridged lazily by `tensor`; Turing stays the independent VQC |
+| Hybrid hasher / scheduler / vendors | `hyba/` | Still outside `chronus/` (used by the H4/600 route); moving it is a staged follow-up, not done |
+| Execution backends | `gpu/` | `gpu.tensor` is a deprecated shim over `tensor` |

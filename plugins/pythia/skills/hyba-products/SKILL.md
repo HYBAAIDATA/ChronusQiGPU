@@ -18,11 +18,6 @@ triggers:
 This aptitude is invoked automatically at SessionStart and remains active for the entire Devin session. Do not treat it as an optional per-task capability.
 
 
-SessionStart invokes this aptitude automatically. For manual re-check:
-
-```text
-python plugins/pythia/scripts/plugin_status.py --record-skill hyba-products --write-receipt
-```
 
 ## Non-negotiable distinction
 

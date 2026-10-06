@@ -9,6 +9,7 @@ prove restart continuity.
 
 from __future__ import annotations
 
+import json
 import time
 
 import pytest
@@ -22,6 +23,7 @@ from aethel.enterprise.system_relations import (
     SharedPythiaStore,
     SharedSalamander,
     SharedTOEBridge,
+    verify_turing_custody_boundary,
 )
 
 TEST_KEY = b"shared-system-relations-test-key-32b"
@@ -230,18 +232,242 @@ def test_turing_real_pipeline_uses_shared_custody_not_private_theseus(tmp_path):
         )
         report = turing.run(request)
         assert report.verdict in {"PASS", "GATED"}
-        assert {"program", "result", "witness", "report"} <= set(
-            turing.last_bindings
-        )
+        assert {
+            "program", "result", "certificate", "witness", "report", "replay",
+        } <= set(turing.last_bindings)
 
         for name, binding in turing.last_bindings.items():
             verdict = lifecycle.fabric.verify(binding.binding_id)
             assert verdict["passed"] is True, (name, verdict)
+        # Canonical lineage: program -> result -> certificate -> witness -> report
         assert turing.last_bindings["result"].parent_binding_ids == (
             turing.last_bindings["program"].binding_id,
         )
+        assert turing.last_bindings["certificate"].parent_binding_ids == (
+            turing.last_bindings["program"].binding_id,
+            turing.last_bindings["result"].binding_id,
+        )
+        assert turing.last_bindings["witness"].parent_binding_ids == (
+            turing.last_bindings["program"].binding_id,
+            turing.last_bindings["result"].binding_id,
+            turing.last_bindings["certificate"].binding_id,
+        )
         assert turing.last_bindings["report"].source_system == "turing"
         assert "chronus" in turing.last_bindings["report"].participants
+        assert turing.last_bindings["replay"].parent_binding_ids == (
+            turing.last_bindings["report"].binding_id,
+        )
+        replay_payload = json.loads(
+            turing.port.read(turing.last_bindings["replay"].binding_id).decode(
+                "utf-8"
+            )
+        )
+        assert replay_payload["passed"] is True
+
+        # Semantic replay of the shared-custody boundary: the certificate is
+        # parsed and re-verified, the witness re-verified, and program/result/
+        # certificate/witness identities cross-bound — not just byte integrity.
+        boundary = turing.replay()
+        assert boundary["passed"] is True, boundary["checks"]
+    finally:
+        lifecycle.stop()
+
+
+def test_turing_certificate_boundary_recovers_and_verifies_after_restart(tmp_path):
+    from turing_universal_quantum_computer import Program
+    from turing_universal_quantum_computer.pipeline import VQCRequest
+
+    state_dir = tmp_path / "turing-boundary-restart"
+    first = CompositionRoot(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    first.start()
+    try:
+        relations = ProductionSystemRelations(first)
+        turing = relations.turing()
+        report = turing.run(
+            VQCRequest(
+                program=Program(n_qubits=2).then("h", 0).then("cx", 0, 1),
+                marginal_of=(0, 1),
+            )
+        )
+        assert report.verdict in {"PASS", "GATED"}
+        binding_ids = {
+            name: binding.binding_id
+            for name, binding in turing.last_bindings.items()
+        }
+    finally:
+        first.stop()
+
+    second = CompositionRoot(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    second.start()
+    try:
+        port = second.data_port("turing")
+        recovered = {
+            name: json.loads(port.read(binding_ids[name]).decode("utf-8"))
+            for name in ("program", "result", "certificate", "witness")
+        }
+        boundary = verify_turing_custody_boundary(
+            program_payload=recovered["program"],
+            result_payload=recovered["result"],
+            certificate_payload=recovered["certificate"],
+            witness_payload=recovered["witness"],
+        )
+        assert boundary["passed"] is True, boundary["checks"]
+        for name in ("program", "result", "certificate", "witness"):
+            assert second.fabric.verify(binding_ids[name])["passed"] is True
+    finally:
+        second.stop()
+
+
+def test_turing_replay_recovers_boundary_from_durable_graph_after_restart(tmp_path):
+    """After a real CompositionRoot restart, ``turing.replay()`` has no live
+    ``last_bindings`` — it must resolve this run's artefacts from the
+    durable binding graph and still prove the certificate boundary."""
+    from turing_universal_quantum_computer import Program
+    from turing_universal_quantum_computer.pipeline import VQCRequest
+
+    state_dir = tmp_path / "turing-replay-restart"
+    first = CompositionRoot(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    first.start()
+    try:
+        turing = ProductionSystemRelations(first).turing()
+        report = turing.run(
+            VQCRequest(
+                program=Program(n_qubits=2).then("h", 0).then("cx", 0, 1),
+                marginal_of=(0, 1),
+            )
+        )
+        assert report.verdict in {"PASS", "GATED"}
+        same_process = turing.replay()
+        assert same_process["passed"] is True
+        assert same_process["replay_source"] == "last_bindings"
+        report_binding_id = same_process["report_binding_id"]
+    finally:
+        first.stop()
+
+    second = CompositionRoot(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    second.start()
+    try:
+        turing = ProductionSystemRelations(second).turing()
+        assert turing.last_bindings == {}
+        boundary = turing.replay()
+        assert boundary["passed"] is True, boundary["checks"]
+        assert boundary["replay_source"] == "durable_graph"
+        assert boundary["report_binding_id"] == report_binding_id
+        assert {"program", "result", "certificate", "witness"} <= set(
+            boundary["record_kinds"]
+        )
+    finally:
+        second.stop()
+
+
+def test_turing_boundary_replay_rejects_foreign_certificate(tmp_path):
+    """Adversarial: an individually-valid certificate from a DIFFERENT
+    execution must not replay as part of this run's record set."""
+    from turing_universal_quantum_computer import Program
+    from turing_universal_quantum_computer.backends import execute_certified
+    from turing_universal_quantum_computer.certificates import (
+        VQCComputationCertificate,
+    )
+    from turing_universal_quantum_computer.pipeline import VQCRequest
+
+    lifecycle = _root(tmp_path)
+    try:
+        relations = ProductionSystemRelations(lifecycle)
+        turing = relations.turing()
+        report = turing.run(
+            VQCRequest(
+                program=Program(n_qubits=2).then("h", 0).then("cx", 0, 1)
+            )
+        )
+        assert report.verdict in {"PASS", "GATED"}
+        recovered = {
+            name: json.loads(
+                turing.port.read(binding.binding_id).decode("utf-8")
+            )
+            for name, binding in turing.last_bindings.items()
+            if name in ("program", "result", "certificate", "witness")
+        }
+
+        # A different, individually valid certificate — it passes its own
+        # integrity check, but it does not belong to this execution.
+        foreign = execute_certified(
+            Program(n_qubits=2).then("x", 0)
+        ).certificate.to_dict()
+        foreign_certificate = VQCComputationCertificate.from_dict(foreign)
+        assert foreign_certificate.verify_integrity() is True
+
+        swapped = verify_turing_custody_boundary(
+            program_payload=recovered["program"],
+            result_payload=recovered["result"],
+            certificate_payload=foreign,
+            witness_payload=recovered["witness"],
+        )
+        assert swapped["passed"] is False
+        assert swapped["checks"]["certificate_integrity"] is True
+        assert swapped["checks"]["certificate_binds_witness"] is False
+        assert swapped["checks"]["program_matches_certificate_trace"] is False
+    finally:
+        lifecycle.stop()
+
+
+def test_turing_boundary_replay_rejects_result_payload_substitution(tmp_path):
+    """An intact certificate embedded beside a changed result is insufficient.
+
+    The shared-custody replay must recompute the computation certificate
+    against the recovered result payload, not merely compare identity fields.
+    """
+    from turing_universal_quantum_computer import Program
+    from turing_universal_quantum_computer.pipeline import VQCRequest
+
+    lifecycle = _root(tmp_path)
+    try:
+        relations = ProductionSystemRelations(lifecycle)
+        turing = relations.turing()
+        report = turing.run(
+            VQCRequest(
+                program=Program(n_qubits=2).then("h", 0).then("cx", 0, 1)
+            )
+        )
+        assert report.verdict in {"PASS", "GATED"}
+
+        recovered = {
+            name: json.loads(
+                turing.port.read(binding.binding_id).decode("utf-8")
+            )
+            for name, binding in turing.last_bindings.items()
+            if name in ("program", "result", "certificate", "witness")
+        }
+        tampered_result = dict(recovered["result"])
+        tampered_payload = dict(tampered_result["payload"])
+        tampered_payload["substituted_after_execution"] = True
+        tampered_result["payload"] = tampered_payload
+
+        checked = verify_turing_custody_boundary(
+            program_payload=recovered["program"],
+            result_payload=tampered_result,
+            certificate_payload=recovered["certificate"],
+            witness_payload=recovered["witness"],
+        )
+        assert checked["passed"] is False
+        assert checked["checks"]["certificate_integrity"] is True
+        assert checked["checks"]["result_embeds_certificate"] is True
+        assert checked["checks"]["certificate_binds_program_and_result"] is False
     finally:
         lifecycle.stop()
 
@@ -323,6 +549,19 @@ def test_production_organism_is_single_startup_root_for_live_shared_systems(tmp_
             {"verified": True},
         )
         organism.kellogg.encode([1.0, 1.0, 2.0, 3.0], dim=32)
+        diagnostic_replay = organism.kellogg.replay_latest()
+        assert diagnostic_replay["passed"] is True
+        assert diagnostic_replay["plane"] == "diagnostic"
+
+        exact_state = organism.kellogg.encode_exact(
+            {"production_root_probe": "exact"},
+            num_qubits=3,
+        )
+        assert exact_state.num_qubits == 3
+        exact_replay = organism.kellogg.replay_latest()
+        assert exact_replay["passed"] is True
+        assert exact_replay["plane"] == "exact"
+
         proposal = organism.salamander.heal(
             "timeout",
             {"component": "production-root-probe"},

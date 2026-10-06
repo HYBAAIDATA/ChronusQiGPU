@@ -90,7 +90,7 @@ class BackendRegistryTests(unittest.TestCase):
         snapshot = registry.snapshot()
         self.assertEqual(
             set(snapshot["lanes"]),
-            {"cpu", "gpu", "cuda", "metal", "remote_gpu", "asic", "super_asic"},
+            {"cpu", "gpu", "cuda", "metal", "remote_gpu", "asic", "super_asic", "chronus"},
         )
         self.assertEqual(
             snapshot["policy"]["auto"], ["gpu", "cuda", "metal", "remote_gpu", "cpu"]

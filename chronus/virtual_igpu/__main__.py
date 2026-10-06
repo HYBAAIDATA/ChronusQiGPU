@@ -25,8 +25,7 @@ def main() -> int:
     adapters = default_adapters(include_cpu_emulator=not args.no_emulator)
     daemon = RuntimeDaemon(root=args.store, adapters=adapters)
     daemon.attach()
-    server = serve(args.host, args.port, store=args.store)
-    # serve() creates its own daemon; print bind info from args
+    server = serve(args.host, args.port, store=args.store, daemon=daemon)
     print(
         f"Chronus Virtual iGPU virtual_igpu_v1 listening on "
         f"http://{args.host}:{args.port} store={args.store}",

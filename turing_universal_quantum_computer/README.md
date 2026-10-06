@@ -66,6 +66,36 @@ The production mining plane keeps `VIRTUAL_QUANTUM_QUBITS = 11` as its
 *default* lane width — a default, not a limit; the executor accepts any
 `n_qubits >= 1`.
 
+## Two public surfaces
+
+The package exposes two public surfaces; they answer different questions
+and neither stands in for the other.
+
+**`TenThousandQubitSystem` / `PureQuantumMathASIC` — the capacity
+surface.**  Exact algebra over Q(ζ₈): 10,000-qubit stabilizer states,
+closed-form walks, the deterministic-10 EH/s capacity certificate,
+surface-code correctability.  Its verdicts are *mathematical capacity* —
+`truth_class: "exact_mathematical_capacity_not_executed_work"` — not an
+executed workload.
+
+**`VQCRequest` / `execute_certified` / `run_pipeline` — the run
+surface.**  One program through the canonical execution pipeline:
+validated, executed on an admitted backend, witnessed (`RunWitness`),
+certified (`VQCComputationCertificate`), and optionally placed in
+THESEUS custody.  Its artefacts are *evidence of a specific run* — the
+replayable record a first workload is judged against.
+
+| Question | Surface |
+| --- | --- |
+| What can the algebra verify? | `TenThousandQubitSystem`, `PureQuantumMathASIC` |
+| What did this run do, byte for byte? | `VQCRequest` → `PipelineReport` |
+
+Custody contract: `custody=True` alone is in-process scope.  Binding
+`custody_dir=<path>` commits to an on-disk THESEUS store — receipts carry
+a non-`None` `durable_index` and replay from a fresh process
+(`TuringCustody.reopen()`); without it the receipt honestly reports the
+shorter guarantee.
+
 ## Operator console
 
 `turing-vqc` is the operator surface of the machine. It allocates a register,

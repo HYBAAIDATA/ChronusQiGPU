@@ -18,11 +18,6 @@ triggers:
 This aptitude is invoked automatically at SessionStart and remains active for the entire Devin session. Do not treat it as an optional per-task capability.
 
 
-SessionStart invokes this aptitude automatically. For manual re-check:
-
-```text
-python plugins/pythia/scripts/plugin_status.py --record-skill pythia-finish-the-job --write-receipt
-```
 
 ## Discipline
 
@@ -43,12 +38,10 @@ Rules:
 1. Read the runtime receipt and final checkpoint.
 2. Confirm the checkpoint `task_id` is stable for the assignment.
 3. Confirm the checkpoint `plugin_source_sha` matches the running plugin.
-4. Confirm runtime-observed skills include at least:
-   - `pythia-plugin-status`;
-   - `pythia-long-context`;
-   - `pythia-engineering-quality`;
-   - `pythia-evidence-pack`;
-   - `pythia-finish-the-job`.
+4. Confirm the session runtime receipt reports:
+   - `augmentation = EUCLID_APTITUDE`;
+   - `mandatory_skills_complete = true`;
+   - no `mandatory_skills_missing`.
 5. Run the proving command fresh through
    `engineering_evidence.py verify --task-id <task> -- <command>`.
 6. Record a truthful `COMPLETION_GATE`.
@@ -60,10 +53,9 @@ Rules:
    - `next` = `done`, `none`, or `blocked: <reason>`;
    - files touched;
    - `plugin_source_sha`;
-   - `skills_invoked`;
    - non-pending `verification`;
    - `evidence_pack` path.
-9. Invoke `/pythia:pythia-stop-check`.
+9. Apply the already-active stop-check aptitude; the Stop hook performs the independent gate.
 
 The Stop hook independently verifies the pack and blocks stale, missing,
 tampered or mismatched evidence.
