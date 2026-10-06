@@ -11,6 +11,19 @@ target and the literal pool response remain mining truth.
 No search topology, Hilbert-space operation, intelligence decision or device
 result can bypass those proof boundaries.
 
+## Search theory
+
+The mining search has structure, and PYTHIA uses that structure to search.
+Hendrix is the default production search algorithm. PYTHIA may use supposition
+and the available Turing quantum arsenal — including tunnelling, annealing,
+swarming and entanglement — to support how the structured search is composed.
+Those capabilities support Hendrix; they do not replace it as the default
+search algorithm.
+
+The 32-face, 11D, H4/600-vertex and Turing Hilbert structures are search
+structure available to PYTHIA. They are not separate competing miners and they
+must not silently replace Hendrix in the final immutable SearchPlan.
+
 ## Canonical production search
 
 The production miner prepares its job-independent search substrate before it
@@ -38,7 +51,8 @@ PYTHIA
   -> complete 600-vertex traversal rank
   -> 600 nonce shards
   -> Cassini-certified local affine permutations
-  -> exact leased nonce itinerary
+  -> complete structured leased-nonce itinerary
+  -> Hendrix coprime-stride traversal of that complete itinerary
   -> Chronus explicit-nonce execution
   -> independent SHA-256d / target / freshness verification
   -> serialized mining.submit
@@ -92,10 +106,13 @@ When a real job arrives, PYTHIA uses the observed header and its bounded
 `preferred_face` decision to choose the first 32-face search basin. It builds a
 connected 600-vertex manifold ordering, then applies the precomputed exact
 Turing Hilbert-walk rank to that **complete** manifold basis. Position zero is
-kept first so the live PYTHIA basin decision remains effective.
+kept first so the live PYTHIA basin decision remains effective. The resulting
+complete leased-nonce itinerary is then traversed by the verified Hendrix
+coprime-stride schedule.
 
-No vertex is pruned. No nonce is skipped. The final nonce order is verified to
-be a complete, unique permutation of the exact lease.
+No vertex is pruned. No nonce is skipped. Hendrix changes traversal order, not
+membership. The final nonce order is verified to be a complete, unique
+permutation of the exact lease.
 
 ## Agentic mining workforce
 
@@ -131,28 +148,24 @@ reachable only after a measured physical launch and completed work. CUDA,
 Metal, OpenCL, remote GPU, ASIC and SUPER ASIC remain independently gated by
 real capability and deployment evidence.
 
-## Hendrix, M32, geodesic and other discoveries
+## Hendrix and supporting search structure
 
-These are retained and utilised at their justified authority level:
-
-- **M32** is the 32-lane/coarse dual-solid execution compatibility structure;
-  it is not the identity of the complete production search.
-- **Hendrix** remains an available coprime-stride traversal refinement and
-  compatibility/reference path; it is not the canonical production search
-  identity.
-- **Geodesic ordering** remains bounded, membership-preserving advice to the
-  chooser.
-- **TOE** may supply bounded causal steering and throttle evidence; it cannot
+- **Hendrix** is the canonical default production search algorithm. Its
+  coprime-stride schedule traverses the complete authorised nonce itinerary.
+- **PYTHIA supposition** is active in planning: a proposed search ordering
+  remains a supposition until hashing evaluates it.
+- **Tunnelling, annealing, swarming and entanglement** are part of the Turing
+  arsenal available to PYTHIA as search support.
+- **32-face / M32**, **11D**, **H4/600**, **Turing Hilbert traversal**,
+  **Cassini**, **geodesic** and related structures support how PYTHIA composes
+  the complete itinerary Hendrix traverses.
+- **TOE** may supply bounded steering and throttle evidence; it cannot
   establish proof.
-- **Lucas** continues to bound scale/window/rung behaviour.
-- **Turing VQC policy audit** remains an independent exact cross-check of
-  operating-policy choices; a disagreement does not override the authoritative
-  production choice.
-- **Turing exact coined walk** is now directly used in the canonical startup
-  precompute to rank the complete 600-position Hilbert traversal.
+- **Lucas** continues to support the Hendrix scale/schedule and bounded
+  window/rung behaviour.
 
-This separation prevents a discovery from being either abandoned or promoted
-beyond its evidence.
+None of these supporting structures is permitted to silently demote or replace
+Hendrix as the final plan-bound default search algorithm.
 
 ## Claim boundary
 
@@ -162,7 +175,9 @@ The new search architecture currently establishes software-level facts:
 - they are composed into the production mining path;
 - the search is precomputed before pool work;
 - the live job affects the actual execution order;
-- the 600-vertex/Hilbert/Cassini itinerary preserves exact nonce coverage;
+- Hendrix is the final plan-bound default traversal;
+- the 600-vertex/Hilbert/Cassini support itinerary preserves exact nonce coverage;
+- Hendrix over that itinerary preserves exact nonce coverage;
 - capability-proven executors can consume the explicit itinerary;
 - every reported candidate remains independently rehashed.
 
