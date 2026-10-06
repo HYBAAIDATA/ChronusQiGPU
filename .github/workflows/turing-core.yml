@@ -8,6 +8,8 @@ on:
       - "scripts/turing_digest_fixture.py"
       - "scripts/turing_vqc_digest_fixture.py"
       - "scripts/turing_acceptance_gate.py"
+      - "tests/test_turing_production_pipeline.py"
+      - "tests/test_turing_acceptance_gate.py"
       - ".github/workflows/turing-core.yml"
   push:
     branches: [main]
