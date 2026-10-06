@@ -7,7 +7,7 @@ currently evidenced in this repository; it is not a ranking.
 |---|---|---|
 | Placement | Customer/container environment | HYBA Chronus instance in customer's chosen cloud |
 | Selection | Explicit `embedded` | Explicit `cloud_instance` |
-| Transport | In-process | `remote_opencl_v1` |
+| Transport | In-process | `remote_opencl_v2` |
 | Measured device inventory | Local Chronus probes across OpenCL/CUDA/Metal tensor surfaces | `/v1/devices` remote measured inventory |
 | Tensor execution | Local `chronus-opencl`, `chronus-cuda`, or `chronus-metal` when that physical runtime is available | Not yet exposed by current remote wire protocol |
 | SHA-256d | Existing local OpenCL/mining path or explicit CPU path | Existing verified `/v1/sha256d` path |

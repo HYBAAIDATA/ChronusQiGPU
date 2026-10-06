@@ -8,6 +8,7 @@ from chronus.delivery import (
     probe_delivery,
     probe_embedded,
 )
+from chronus.mla1517.remote_gpu import PROTOCOL_VERSION
 
 
 @dataclass
@@ -47,7 +48,7 @@ class _RemoteClient:
     def health(self):
         return {
             "status": "ok",
-            "protocol": "remote_opencl_v1",
+            "protocol": PROTOCOL_VERSION,
             "endpoints": ["ladder", "sha256d"],
         }
 
@@ -102,7 +103,7 @@ def test_cloud_delivery_uses_measured_remote_inventory():
     assert out.mode is DeliveryMode.CLOUD_INSTANCE
     assert out.available is True
     assert out.execution_location == "hyba_instance_in_customer_cloud"
-    assert out.transport == "remote_opencl_v1"
+    assert out.transport == PROTOCOL_VERSION
     assert out.endpoint == "https://chronus.example"
     assert "sha256d_kernel" in out.capabilities
     assert "lucas_ladder_kernel" in out.capabilities

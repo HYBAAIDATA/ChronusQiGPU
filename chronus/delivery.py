@@ -153,6 +153,8 @@ def probe_cloud_instance(
     The existing remote protocol remains the authority. It verifies endpoint
     reachability and imports only measured GPU/Chronus/accelerator devices.
     """
+    from .mla1517.remote_gpu import PROTOCOL_VERSION
+
     if remote_probe is None:
         from .mla1517.remote_gpu import probe_first_reachable as remote_probe
 
@@ -163,7 +165,7 @@ def probe_cloud_instance(
             mode=DeliveryMode.CLOUD_INSTANCE,
             available=False,
             execution_location="hyba_instance_in_customer_cloud",
-            transport="remote_opencl_v1",
+            transport=PROTOCOL_VERSION,
             endpoint="",
             devices=(),
             capabilities=(),
@@ -196,14 +198,14 @@ def probe_cloud_instance(
         mode=DeliveryMode.CLOUD_INSTANCE,
         available=True,
         execution_location="hyba_instance_in_customer_cloud",
-        transport="remote_opencl_v1",
+        transport=PROTOCOL_VERSION,
         endpoint=endpoint,
         devices=tuple(records),
         capabilities=_tuple_capabilities(capabilities),
         reason=str(reason or ""),
         evidence=(
             "chronus.mla1517.remote_gpu.probe_first_reachable",
-            "remote_opencl_v1:/v1/devices",
+            f"{PROTOCOL_VERSION}:/v1/devices",
         ),
     )
 

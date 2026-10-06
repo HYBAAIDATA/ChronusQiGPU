@@ -1,0 +1,1648 @@
+# PYTHIA canonical API & service-communication registry.
+#
+# This file is the authoritative machine-readable contract for every
+# production API/service interface in the repository.  It is the contract
+# against which implementation is tested (tests/test_production_api_contract.py
+# enumerates it); it is not generated from route scraping — routes and
+# interfaces are tested against what is declared here.
+#
+# Ownership model is the frozen canonical authority register (section 0 of
+# the production API closure spec); no entry here may move it.
+
+schema: pythia.api_registry/1
+repository: QuantumPhi2/PhiMiner
+baseline_sha: f50f2e97fb850f83dc68c2b0713d6fcfd75e53e8
+
+authority_register:
+  EUCLID: intelligence orchestration
+  PYTHIA: predictive/causal intelligence, mining intelligence, final SearchPlan
+  TURING: independent VQC
+  KELLOGG: tensor capability
+  CHRONUS: heterogeneous execution
+  THESEUS: durable custody, integrity, continuity, records, recovery, provenance
+  OVID: representation/state transformation and transform lineage
+  SALAMANDER: bounded self-healing and optimisation
+  AL_HARAS: security, identity, capability, authorisation, governance
+  SHA256D_VERIFIER: candidate validity
+  POOL: external share acceptance
+  HYBA_DB: tenant-scoped ontology/query/projection persistence
+
+interface_types:
+  - HTTP_PUBLIC          # unauthenticated read-only operational truth
+  - HTTP_OPERATOR        # operator-console surface; mutations need operator auth
+  - HTTP_PRIVILEGED      # AL HARAS guardian-mediated
+  - INTERNAL_PYTHON      # typed in-process contract; no transport
+  - WIRE_PROTOCOL        # external wire protocol (Stratum V1, remote_opencl_v2)
+  - EVENT_STREAM         # SSE stream
+  - FILE/ARTIFACT_CONTRACT  # on-disk contract between processes
+  - CLI                  # command-line entrypoint
+  - RESERVED_NAMESPACE   # secured prefix reserved by design; no implementation
+  - LEGACY               # compatibility alias kept for older clients
+
+authentication_classes:
+  NONE: no credential required (read-only operational truth)
+  OPERATOR_PRINCIPAL: PYTHIA_OPERATOR_PRINCIPALS_JSON principal, or EUCLID_ADMIN_API_KEY bearer, or PYTHIA_ALLOW_UNAUTHENTICATED_CONTROL dev flag
+  AL_HARAS_SUBSCRIPTION: X-HYBA-Tenant + X-HYBA-Actor + Bearer subscription token issued by SubscriptionAuthority, mediated by pythia_guardian_api
+  WIRE_TOKEN: transport credential of the wire protocol (bearer token / stratum worker credentials)
+  TYPED_CALL: in-process typed interface — authority model carried by the caller
+  TENANT_SCOPED: tenant-scoped persistence boundary (HYBA_DB)
+  FILESYSTEM: OS file permissions on the artifact path
+  HMAC_SIDECAR: HMAC-signed heartbeat sidecar (PYTHIA_IDENTITY_HMAC_SECRET)
+  ENVIRONMENT: process environment of the CLI
+
+truth_classes:
+  - LIVENESS              # process serving
+  - READINESS             # declared dependency/config readiness
+  - RUNTIME_OBSERVATION   # measured runtime state; unavailable stays unavailable
+  - COMMAND_ACCEPTANCE    # request accepted by the authority; not an outcome claim
+  - VERDICT               # an authority's decision on a request
+  - EVIDENCE              # custody-grade evidence record
+  - CONFIGURATION         # declared (not observed) configuration
+
+# ---------------------------------------------------------------------------
+# HTTP control-plane surface (chronus/mla1517_platform/python/control_api.py)
+# ---------------------------------------------------------------------------
+apis:
+
+  - api_id: pythia.health
+    owner: PYTHIA
+    interface_type: HTTP_PUBLIC
+    implementation_path: chronus/mla1517_platform/python/control_api.py::_route_get
+    consumers: [operator-console, load-balancer]
+    transport: HTTP
+    method: GET
+    path: /api/v1/healthz
+    routes: ["GET /api/v1/healthz", "GET /api/health", "GET /healthz"]
+    aliases:
+      - path: /api/health
+        status: LEGACY
+      - path: /healthz
+        status: LEGACY
+    request_schema: none
+    response_schema: '{schema_version, status, generated_at}'
+    schema_version: chronus.mla1517.status/1
+    authentication_class: NONE
+    authorisation_authority: none
+    truth_class: LIVENESS
+    side_effects: none
+    custody_requirement: none
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: process down = connection refused; never a body lie
+    availability_semantics: serving process implies live
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: pythia.readiness
+    owner: PYTHIA
+    interface_type: HTTP_PUBLIC
+    implementation_path: chronus/mla1517_platform/python/control_api.py::_route_get
+    consumers: [operator-console, load-balancer]
+    transport: HTTP
+    method: GET
+    path: /api/v1/readyz
+    routes: ["GET /api/v1/readyz", "GET /readyz"]
+    aliases:
+      - path: /readyz
+        status: LEGACY
+    request_schema: none
+    response_schema: '{schema_version, ready, reason, components{identity,boot_audit,worker_heartbeat_dir,guardian}, generated_at}'
+    schema_version: chronus.mla1517.ready/1
+    authentication_class: NONE
+    authorisation_authority: none
+    truth_class: READINESS
+    side_effects: none
+    custody_requirement: none
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: 503 {ready:false, reason} when identity/config not ready
+    availability_semantics: NOT hardware or pool-acceptance readiness
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py, chronus/mla1517_platform/python/test_phase4_api.py]
+
+  - api_id: pythia.ready_to_mine
+    owner: PYTHIA
+    interface_type: HTTP_PUBLIC
+    implementation_path: chronus/mla1517_platform/python/control_api.py::status_payload
+    consumers: [operator-console]
+    transport: HTTP
+    method: GET
+    path: /api/v1/ready-to-mine
+    routes: ["GET /api/v1/ready-to-mine", "GET /ready-to-mine"]
+    aliases:
+      - path: /ready-to-mine
+        status: LEGACY
+    request_schema: none
+    response_schema: '{ready, reason, blockers, schema_version, generated_at}'
+    schema_version: chronus.mla1517.ready/1
+    authentication_class: NONE
+    authorisation_authority: none
+    truth_class: RUNTIME_OBSERVATION
+    side_effects: none
+    custody_requirement: none
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: 503 when not ready; reasons enumerated never faked
+    availability_semantics: requires observed pool transport + live worker
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py, chronus/mla1517_platform/python/test_phase4_api.py]
+
+  - api_id: pythia.metrics
+    owner: PYTHIA
+    interface_type: HTTP_PUBLIC
+    implementation_path: chronus/mla1517_platform/python/control_api.py::metrics_payload
+    consumers: [prometheus, operator-console]
+    transport: HTTP
+    method: GET
+    path: /api/v1/metrics
+    routes: ["GET /api/v1/metrics", "GET /metrics"]
+    aliases:
+      - path: /metrics
+        status: LEGACY
+    request_schema: none
+    response_schema: 'text/plain; version=0.0.4 (prometheus exposition)'
+    schema_version: prometheus.exposition/0.0.4
+    authentication_class: NONE
+    authorisation_authority: none
+    truth_class: RUNTIME_OBSERVATION
+    side_effects: none
+    custody_requirement: none
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: counters only ever increase truthfully
+    availability_semantics: absent metric = not measured
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: pythia.status
+    owner: PYTHIA
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/control_api.py::status_payload
+    consumers: [frontend SystemFabricPanel, operator-console]
+    transport: HTTP
+    method: GET
+    path: /api/v1/mla1517/status
+    routes: ["GET /api/v1/mla1517/status"]
+    request_schema: none
+    response_schema: '{schema_version, backend, host, canonicalEngine, workers, stratum, ready_to_mine, generated_at}'
+    schema_version: chronus.mla1517.status/1
+    authentication_class: NONE
+    authorisation_authority: none
+    truth_class: RUNTIME_OBSERVATION
+    side_effects: none
+    custody_requirement: none
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: worker states degrade to their honest last-known/disabled state
+    availability_semantics: device/backend fields reflect probes, not aspiration
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py, chronus/mla1517_platform/python/test_phase4_api.py]
+
+  - api_id: pythia.config.read
+    owner: PYTHIA
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/control_api.py::_config_public_payload
+    consumers: [frontend RuntimeControlPanel, frontend SystemFabricPanel]
+    transport: HTTP
+    method: GET
+    path: /api/v1/config
+    routes: ["GET /api/v1/config"]
+    request_schema: none
+    response_schema: 'runtime_config.public_view(cfg): pools redacted of passwords'
+    schema_version: pythia.runtime_config/1
+    authentication_class: NONE
+    authorisation_authority: none
+    truth_class: CONFIGURATION
+    side_effects: none
+    custody_requirement: none
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: pool passwords never serialised in the public view
+    availability_semantics: reflects declared config, not observed pool state
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: pythia.config.update
+    owner: PYTHIA
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/control_api.py::_config_put
+    consumers: [frontend RuntimeControlPanel]
+    transport: HTTP
+    method: PUT
+    path: /api/v1/config
+    routes: ["PUT /api/v1/config"]
+    request_schema: 'subset of {pools, solvers, hashrate, window, campaign, live_submit}; unknown sections rejected'
+    response_schema: '{ok, applied:{spawned,retired,restarted,note?}, config}'
+    schema_version: pythia.runtime_config/1
+    authentication_class: OPERATOR_PRINCIPAL
+    authorisation_authority: PYTHIA
+    truth_class: COMMAND_ACCEPTANCE
+    side_effects: writes data/runtime_config.json; restarts running arms when a device is bound
+    custody_requirement: append-only audit event runtime_config_applied
+    timeout: immediate
+    idempotency: section-merge semantics; replaying the same body is a no-op
+    retry: safe to retry identical body
+    failure_semantics: 400 unknown section / invalid value; 401/403 unauthenticated; closed when no key configured
+    availability_semantics: applied.note reports armed_no_device honestly
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py, chronus/mla1517_platform/python/test_control_auth.py]
+
+  - api_id: pythia.system.map
+    owner: PYTHIA
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/system_fabric.py::forensic_map
+    consumers: [frontend SystemFabricPanel]
+    transport: HTTP
+    method: GET
+    path: /api/v1/system/map
+    routes: ["GET /api/v1/system/map"]
+    request_schema: none
+    response_schema: 'forensic map of subsystems with truth-class fields'
+    schema_version: pythia.system_map/1
+    authentication_class: NONE
+    authorisation_authority: none
+    truth_class: RUNTIME_OBSERVATION
+    side_effects: none
+    custody_requirement: none
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: unknown subsystems report unavailable, never invented
+    availability_semantics: reflects live probes (opencl count, mmio, credentials)
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: pythia.system.verify.read
+    owner: PYTHIA
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/system_fabric.py::verification_status
+    consumers: [frontend SystemFabricPanel]
+    transport: HTTP
+    method: GET
+    path: /api/v1/system/verify
+    routes: ["GET /api/v1/system/verify"]
+    request_schema: none
+    response_schema: 'per-component verification state machine'
+    schema_version: pythia.system_verify/1
+    authentication_class: NONE
+    authorisation_authority: none
+    truth_class: RUNTIME_OBSERVATION
+    side_effects: none
+    custody_requirement: none
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: component states reported individually
+    availability_semantics: per-component states READY/DEGRADED/UNAVAILABLE/NOT_CONFIGURED/NOT_APPLICABLE/FAILED
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: pythia.system.verify.start
+    owner: PYTHIA
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/system_fabric.py::start_verification
+    consumers: [frontend SystemFabricPanel]
+    transport: HTTP
+    method: POST
+    path: /api/v1/system/verify
+    routes: ["POST /api/v1/system/verify"]
+    request_schema: '{}'
+    response_schema: '{ok, state}'
+    schema_version: pythia.runner/1
+    authentication_class: OPERATOR_PRINCIPAL
+    authorisation_authority: PYTHIA
+    truth_class: COMMAND_ACCEPTANCE
+    side_effects: starts the verification runner
+    custody_requirement: audit event via runner record
+    timeout: immediate (runner is async)
+    idempotency: 409 runner_busy while running
+    retry: do not retry on 409; poll GET instead
+    failure_semantics: 409 runner_busy; 400 invalid; 401/403 unauthenticated
+    availability_semantics: acceptance only — not a pass claim
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: pythia.intelligence.status
+    owner: EUCLID
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/system_fabric.py::intelligence_status
+    consumers: [frontend IntelligenceView]
+    transport: HTTP
+    method: GET
+    path: /api/v1/intelligence/status
+    routes: ["GET /api/v1/intelligence/status"]
+    request_schema: none
+    response_schema: 'runner status {state, last_result, ...}'
+    schema_version: pythia.runner/1
+    authentication_class: NONE
+    authorisation_authority: none
+    truth_class: RUNTIME_OBSERVATION
+    side_effects: none
+    custody_requirement: none
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: unavailable intelligence reports unavailable
+    availability_semantics: mirrors runner state
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: pythia.intelligence.selftest
+    owner: EUCLID
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/system_fabric.py::selftest_status / start_selftest
+    consumers: [frontend IntelligenceView, frontend SystemFabricPanel]
+    transport: HTTP
+    method: GET+POST
+    path: /api/v1/intelligence/selftest
+    routes: ["GET /api/v1/intelligence/selftest", "POST /api/v1/intelligence/selftest"]
+    request_schema: 'POST {}'
+    response_schema: 'runner status / {ok, state}'
+    schema_version: pythia.runner/1
+    authentication_class: 'GET: NONE; POST: OPERATOR_PRINCIPAL'
+    authorisation_authority: PYTHIA
+    truth_class: 'GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE'
+    side_effects: 'POST starts the self-test runner'
+    custody_requirement: runner record
+    timeout: immediate (async runner)
+    idempotency: 409 runner_busy
+    retry: poll GET; do not repost on 409
+    failure_semantics: unavailable subsystem reports unavailable, not pass
+    availability_semantics: self-test verdict is the runner's real result
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: pythia.intelligence.maintenance
+    owner: EUCLID
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/system_fabric.py::self_repair_status, start_self_repair, run_self_repair_now, stop_self_repair
+    consumers: [frontend IntelligenceView]
+    transport: HTTP
+    method: 'GET /api/v1/intelligence/maintenance; POST .../maintenance/start|run|stop'
+    path: /api/v1/intelligence/maintenance
+    routes: ["GET /api/v1/intelligence/maintenance", "POST /api/v1/intelligence/maintenance/start", "POST /api/v1/intelligence/maintenance/run", "POST /api/v1/intelligence/maintenance/stop"]
+    subpaths:
+      - POST /api/v1/intelligence/maintenance/start
+      - POST /api/v1/intelligence/maintenance/run
+      - POST /api/v1/intelligence/maintenance/stop
+    request_schema: '{}'
+    response_schema: '{ok, state, detail?}'
+    schema_version: pythia.runner/1
+    authentication_class: 'GET: NONE; POST: OPERATOR_PRINCIPAL'
+    authorisation_authority: PYTHIA
+    truth_class: 'GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE'
+    side_effects: maintenance cycle (read-only diagnosis by default)
+    custody_requirement: runner record
+    timeout: immediate
+    idempotency: start/run 409 runner_busy; stop idempotent
+    retry: stop retryable; start/run not while busy
+    failure_semantics: 409 runner_busy
+    availability_semantics: diagnosis state is the real runner state
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py, chronus/mla1517_platform/python/test_phase4_api.py]
+
+  - api_id: pythia.intelligence.autonomous
+    owner: EUCLID
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/system_fabric.py::autonomous_supervisor_status, autonomous_supervisor.trigger_cycle
+    consumers: [operator-console]
+    transport: HTTP
+    method: 'GET /api/v1/intelligence/autonomous; POST /api/v1/intelligence/autonomous/trigger'
+    path: /api/v1/intelligence/autonomous
+    routes: ["GET /api/v1/intelligence/autonomous", "POST /api/v1/intelligence/autonomous/trigger"]
+    request_schema: 'POST {}'
+    response_schema: 'supervisor status / trigger result'
+    schema_version: pythia.autonomous/1
+    authentication_class: 'GET: NONE; POST: OPERATOR_PRINCIPAL'
+    authorisation_authority: PYTHIA
+    truth_class: 'GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE'
+    side_effects: 'POST runs one supervisor cycle synchronously'
+    custody_requirement: supervisor record
+    timeout: supervisor cycle bound
+    idempotency: serialised by supervisor lock
+    retry: do not retry a trigger while a cycle is in flight
+    failure_semantics: error class surfaced, never silent
+    availability_semantics: reports real cycle outcome
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: pythia.intelligence.engineer
+    owner: EUCLID
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/system_fabric.py::repo_engineer_status, start_repo_engineer
+    consumers: [frontend IntelligenceView]
+    transport: HTTP
+    method: 'GET /api/v1/intelligence/engineer/status; POST /api/v1/intelligence/engineer/ask'
+    path: /api/v1/intelligence/engineer
+    routes: ["GET /api/v1/intelligence/engineer/status", "POST /api/v1/intelligence/engineer/ask"]
+    request_schema: 'POST {prompt: 1..2000 chars}'
+    response_schema: '{ok, state} / readiness block'
+    schema_version: pythia.runner/1
+    authentication_class: 'GET: NONE; POST: OPERATOR_PRINCIPAL'
+    authorisation_authority: PYTHIA
+    truth_class: COMMAND_ACCEPTANCE
+    side_effects: dispatches a governed repo-engineer prompt (read-only execution)
+    custody_requirement: runner record
+    timeout: immediate (async runner)
+    idempotency: 409 runner_busy
+    retry: do not retry on 409
+    failure_semantics: 503 repo_engineer_not_configured with readiness detail; 400 invalid prompt
+    availability_semantics: NOT_CONFIGURED is a first-class answer
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py, chronus/mla1517_platform/python/test_phase4_api.py]
+
+  - api_id: pythia.intelligence.cognition_solve
+    owner: EUCLID
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/system_fabric.py::euclid_cognition_solve
+    consumers: [operator-console]
+    transport: HTTP
+    method: POST
+    path: /api/v1/intelligence/cognition/solve
+    routes: ["POST /api/v1/intelligence/cognition/solve"]
+    request_schema: '{problem_id, goal, problem_class?, structure?[], observations?[], strategy?, initial_code?}'
+    response_schema: '{ok, available, ...cognition trace}'
+    schema_version: pythia.cognition_solve/1
+    authentication_class: OPERATOR_PRINCIPAL
+    authorisation_authority: PYTHIA
+    truth_class: VERDICT
+    side_effects: executes one EUCLID cognition episode
+    custody_requirement: cognition trace in audit where durable
+    timeout: episode bound
+    idempotency: none — each call is a new episode
+    retry: retryable; each retry is a distinct episode
+    failure_semantics: 503 {available:false} when EUCLID runtime unavailable; 400 missing problem_id/goal
+    availability_semantics: available:false is honest, not a failure mask
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: pythia.agentic
+    owner: EUCLID
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/system_fabric.py::agentic_status, start_agentic, AGENTIC.stop
+    consumers: [frontend SystemFabricPanel, frontend IntelligenceView]
+    transport: HTTP
+    method: 'GET /api/v1/agentic/status; POST /api/v1/agentic/start|stop'
+    path: /api/v1/agentic/status
+    routes: ["GET /api/v1/agentic/status", "POST /api/v1/agentic/start", "POST /api/v1/agentic/stop"]
+    subpaths:
+      - POST /api/v1/agentic/start
+      - POST /api/v1/agentic/stop
+    request_schema: 'start {count?: int (default 128), cycles?: int (default 3)}'
+    response_schema: 'runner status / {ok, state}'
+    schema_version: pythia.runner/1
+    authentication_class: 'GET: NONE; POST: OPERATOR_PRINCIPAL'
+    authorisation_authority: PYTHIA
+    truth_class: 'GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE'
+    side_effects: starts/stops the agentic runner
+    custody_requirement: runner record
+    timeout: immediate (async)
+    idempotency: start 409 runner_busy; stop idempotent
+    retry: stop retryable
+    failure_semantics: 409 runner_busy
+    availability_semantics: runner state is truth
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: pythia.campaign
+    owner: EUCLID
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/system_fabric.py::campaign_status, start_campaign, CAMPAIGN.stop
+    consumers: [frontend SystemFabricPanel]
+    transport: HTTP
+    method: 'GET /api/v1/campaign/status; POST /api/v1/campaign/start|stop'
+    path: /api/v1/campaign/status
+    routes: ["GET /api/v1/campaign/status", "POST /api/v1/campaign/start", "POST /api/v1/campaign/stop"]
+    subpaths:
+      - POST /api/v1/campaign/start
+      - POST /api/v1/campaign/stop
+    request_schema: '{}'
+    response_schema: 'runner status / {ok, state}'
+    schema_version: pythia.runner/1
+    authentication_class: 'GET: NONE; POST: OPERATOR_PRINCIPAL'
+    authorisation_authority: PYTHIA
+    truth_class: 'GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE'
+    side_effects: campaign runner applies config and retires/arms workers
+    custody_requirement: campaign record
+    timeout: immediate (async)
+    idempotency: start 409 runner_busy; stop idempotent
+    retry: stop retryable
+    failure_semantics: 409 runner_busy
+    availability_semantics: arm counters measured from live sidecars only
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: pythia.mining.control
+    owner: PYTHIA
+    interface_type: HTTP_PRIVILEGED
+    implementation_path: chronus/mla1517_platform/python/control_api.py::_mining_start, _mining_stop, _mining_switch, _mining_elevate, _mining_escalate
+    consumers: [frontend SystemFabricPanel (operator action), operator-console]
+    transport: HTTP
+    method: POST
+    path: /api/v1/mining/start
+    routes: ["POST /api/v1/mining/start", "POST /api/v1/mining/stop", "POST /api/v1/mining/switch", "POST /api/v1/mining/elevate", "POST /api/v1/mining/escalate"]
+    subpaths:
+      - POST /api/v1/mining/stop
+      - POST /api/v1/mining/switch
+      - POST /api/v1/mining/elevate
+      - POST /api/v1/mining/escalate
+    request_schema: 'start/stop {}; switch {pool}; elevate {target_hs}; escalate {arms}'
+    response_schema: '{ok, reason?|workers?|applied?|config?|retired?}'
+    schema_version: pythia.mining_control/1
+    authentication_class: AL_HARAS_SUBSCRIPTION
+    authorisation_authority: AL_HARAS
+    downstream: [PYTHIA control plane, CHRONUS execution arms, Stratum worker]
+    truth_class: COMMAND_ACCEPTANCE
+    side_effects: 'start: arms supervised workers; stop: retires them; switch: rewrites pool selection and disarms live_submit; elevate/escalate: config merge + arm restart'
+    custody_requirement: append-only audit events mining_start/mining_stop/mining_pool_switch; guardian_mediated evidence per call
+    timeout: immediate (workers spawn async)
+    idempotency: 'start/stop idempotent; switch/elevate/escalate converge to declared config'
+    retry: 'safe to retry identical intent; do not retry a rejected command'
+    failure_semantics: '400 invalid body; guardian denial receipt; ok:false + reason when no mining device (honest refuse, not a 500)'
+    availability_semantics: armed_no_device is a first-class honest state
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py, chronus/mla1517_platform/python/test_control_auth.py]
+
+  - api_id: pythia.mining.evidence
+    owner: PYTHIA
+    interface_type: HTTP_PRIVILEGED
+    implementation_path: chronus/mla1517_platform/python/control_api.py::mining_evidence_payload
+    consumers: [operator-console, frontend MiningEvidencePanel]
+    transport: HTTP
+    method: GET
+    path: /api/v1/mining/evidence
+    routes: ["GET /api/v1/mining/evidence"]
+    request_schema: none
+    response_schema: 'heartbeat-derived mining evidence incl. euclid_support snapshot'
+    schema_version: pythia.mining_evidence/1
+    authentication_class: AL_HARAS_SUBSCRIPTION
+    authorisation_authority: AL_HARAS
+    truth_class: RUNTIME_OBSERVATION
+    side_effects: none
+    custody_requirement: none (evidence is produced by the worker, not this route)
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: absent worker evidence reports unavailable fields, never zeros
+    availability_semantics: publishes only after Stratum connects; stale/absent sidecar stays honest
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: pythia.stratum.status
+    owner: PYTHIA
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/control_api.py::stratum_status_payload
+    consumers: [operator-console]
+    transport: HTTP
+    method: GET
+    path: /api/v1/stratum/status
+    routes: ["GET /api/v1/stratum/status"]
+    request_schema: none
+    response_schema: '{state, transport, subscribed, authorized, worker (redacted), job, submission, worker_live}'
+    schema_version: pythia.stratum_status/1
+    authentication_class: NONE
+    authorisation_authority: none
+    truth_class: RUNTIME_OBSERVATION
+    side_effects: none
+    custody_requirement: none
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: disconnected/configured states are explicit
+    availability_semantics: worker identity redacted; pool acceptance never implied by transport
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: pythia.telemetry
+    owner: PYTHIA
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/control_api.py::telemetry_summary_payload, telemetry_events_payload, ops_telemetry_payload, telemetry_history_payload, causal_events_payload, mining_session_payload
+    consumers: [frontend TelemetryPanel, frontend ObservabilityView, frontend ops.ts]
+    transport: HTTP
+    method: GET
+    path: /api/v1/telemetry/summary
+    routes: ["GET /api/v1/telemetry/summary", "GET /api/v1/telemetry/events", "GET /api/v1/telemetry/ops", "GET /api/v1/telemetry/history", "GET /api/v1/telemetry/causal", "GET /api/v1/telemetry/session"]
+    subpaths:
+      - GET /api/v1/telemetry/events?n=
+      - GET /api/v1/telemetry/ops
+      - GET /api/v1/telemetry/history?n=&kind=
+      - GET /api/v1/telemetry/causal?n=
+      - GET /api/v1/telemetry/session
+    request_schema: 'query params n:int, kind:str'
+    response_schema: 'pythia.telemetry_*/1 documents; unavailable blocks carry available:false + reason'
+    schema_version: pythia.telemetry/1
+    authentication_class: NONE
+    authorisation_authority: none
+    truth_class: RUNTIME_OBSERVATION
+    side_effects: none
+    custody_requirement: none
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: absent streams are unavailable, never empty success
+    availability_semantics: distinguishes AVAILABLE/UNAVAILABLE/NOT_MEASURED
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py, chronus/mla1517_platform/python/test_ops_telemetry.py]
+
+  - api_id: pythia.telemetry.stream
+    owner: PYTHIA
+    interface_type: EVENT_STREAM
+    implementation_path: chronus/mla1517_platform/python/control_api.py::_telemetry_stream
+    consumers: [frontend ops.ts EventSource]
+    transport: HTTP+SSE
+    method: GET
+    path: /api/v1/telemetry/stream
+    routes: ["GET /api/v1/telemetry/stream"]
+    request_schema: none
+    response_schema: 'text/event-stream frames {type:ops, seq, ops, new_events} + : keepalive'
+    schema_version: pythia.ops_telemetry/1
+    authentication_class: NONE
+    authorisation_authority: none
+    truth_class: RUNTIME_OBSERVATION
+    side_effects: none
+    custody_requirement: none
+    timeout: bounded ~120 ticks then clean close
+    idempotency: read-only; client resumes from last_seq
+    retry: EventSource auto-reconnect; seq resumes
+    failure_semantics: connection close is clean; staleness surfaced client-side
+    availability_semantics: frames carry the honest ops payload
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: pythia.audit.tail
+    owner: PYTHIA
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/control_api.py::audit_tail_payload
+    consumers: [frontend TelemetryPanel]
+    transport: HTTP
+    method: GET
+    path: /api/v1/audit/tail
+    routes: ["GET /api/v1/audit/tail"]
+    request_schema: 'query n:int (default 50)'
+    response_schema: 'append-only audit tail'
+    schema_version: pythia.audit_tail/1
+    authentication_class: NONE
+    authorisation_authority: none
+    truth_class: EVIDENCE
+    side_effects: none
+    custody_requirement: none
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: missing audit reports empty tail honestly
+    availability_semantics: reflects the boot audit log exactly
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: pythia.knowledge
+    owner: EUCLID
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/control_api.py::knowledge_payload
+    consumers: [operator-console]
+    transport: HTTP
+    method: GET
+    path: /api/v1/knowledge
+    routes: ["GET /api/v1/knowledge"]
+    request_schema: none
+    response_schema: 'knowledge fabric state'
+    schema_version: pythia.knowledge/1
+    authentication_class: NONE
+    authorisation_authority: none
+    truth_class: RUNTIME_OBSERVATION
+    side_effects: none
+    custody_requirement: none
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: unavailable knowledge fabric reports unavailable
+    availability_semantics: honest
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: pythia.gpu
+    owner: CHRONUS
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/control_api.py::gpu_payload
+    consumers: [operator-console]
+    transport: HTTP
+    method: GET
+    path: /api/v1/gpu
+    routes: ["GET /api/v1/gpu"]
+    request_schema: none
+    response_schema: '{available, count, devices, opencl_device_count, ...}'
+    schema_version: chronus.gpu_truth/1
+    authentication_class: NONE
+    authorisation_authority: none
+    truth_class: RUNTIME_OBSERVATION
+    side_effects: OpenCL enumeration probe (cached 30s)
+    custody_requirement: none
+    timeout: probe bound
+    idempotency: read-only (cached)
+    retry: freely retryable
+    failure_semantics: probe failure degrades to unavailable substrate — never raises, never invents
+    availability_semantics: no device = available:false, count:0
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py, chronus/mla1517_platform/python/test_control_api_gpu_truth.py]
+
+  - api_id: pythia.hardware.status
+    owner: CHRONUS
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/control_api.py::hardware_status_payload
+    consumers: [operator-console]
+    transport: HTTP
+    method: GET
+    path: /api/v1/hardware/status
+    routes: ["GET /api/v1/hardware/status"]
+    request_schema: none
+    response_schema: '{execution.backend, mining_device.bound, opencl.device_count, physical_gpu_count, salamander state}'
+    schema_version: pythia.hardware_status/1
+    authentication_class: NONE
+    authorisation_authority: none
+    truth_class: RUNTIME_OBSERVATION
+    side_effects: none
+    custody_requirement: none
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: armed_no_device is honest; no fabricated GPU counts
+    availability_semantics: device truth only
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: al_haras.security.status
+    owner: AL_HARAS
+    interface_type: HTTP_PRIVILEGED
+    implementation_path: chronus/mla1517_platform/python/control_api.py::security_status_payload
+    consumers: [operator-console]
+    transport: HTTP
+    method: GET
+    path: /api/v1/security/status
+    routes: ["GET /api/v1/security/status"]
+    request_schema: none
+    response_schema: '{capability, subscription_url, ...} or signed denial'
+    schema_version: al_haras.security_status/1
+    authentication_class: AL_HARAS_SUBSCRIPTION
+    authorisation_authority: AL_HARAS
+    truth_class: RUNTIME_OBSERVATION
+    side_effects: none
+    custody_requirement: guardian_mediated audit event
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: signed denial receipt; 503 guardian_dependency_unavailable when AL HARAS absent
+    availability_semantics: denial is evidence, not an error mask
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py, tests/test_al_haras_pythia_wiring.py]
+
+  - api_id: al_haras.security.subscribe
+    owner: AL_HARAS
+    interface_type: HTTP_PRIVILEGED
+    implementation_path: chronus/mla1517_platform/python/control_api.py::_route_get /api/v1/security/subscribe
+    consumers: [operator-console]
+    transport: HTTP
+    method: GET
+    path: /api/v1/security/subscribe
+    routes: ["GET /api/v1/security/subscribe"]
+    request_schema: none
+    response_schema: '{product, capability, subscription_required, subscription_url}'
+    schema_version: al_haras.subscribe/1
+    authentication_class: AL_HARAS_SUBSCRIPTION
+    authorisation_authority: AL_HARAS
+    truth_class: CONFIGURATION
+    side_effects: none
+    custody_requirement: guardian_mediated audit event
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: propagates security/status failure verbatim
+    availability_semantics: honest
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: al_haras.security.evaluate
+    owner: AL_HARAS
+    interface_type: HTTP_PRIVILEGED
+    implementation_path: chronus/mla1517_platform/python/control_api.py::_route_post → pythia_guardian_api().evaluate
+    consumers: [operator-console, internal preflight]
+    transport: HTTP
+    method: POST
+    path: /api/v1/security/evaluate
+    routes: ["POST /api/v1/security/evaluate"]
+    request_schema: '{operation, resource, payload?, observation?}'
+    response_schema: 'guardian decision receipt {allowed, ...} (signed denial on refuse)'
+    schema_version: al_haras.evaluate/1
+    authentication_class: AL_HARAS_SUBSCRIPTION
+    authorisation_authority: AL_HARAS
+    truth_class: VERDICT
+    side_effects: guardian evaluation is audited
+    custody_requirement: decision evidence retained by AL HARAS
+    timeout: guardian bound
+    idempotency: evaluation is pure — safe to repeat
+    retry: retryable
+    failure_semantics: '400 malformed; 503 guardian_dependency_unavailable; signed denial ladder'
+    availability_semantics: dependency failure is 503, never an implicit deny/allow
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py, tests/test_al_haras_pythia_wiring.py, chronus/mla1517_platform/python/test_control_auth.py]
+
+  - api_id: kellogg.tensor.capabilities
+    owner: KELLOGG
+    interface_type: HTTP_PRIVILEGED
+    implementation_path: chronus/mla1517_platform/python/control_api.py::tensor_capabilities_payload → tensor.api.default_runtime().capabilities()
+    consumers: [operator-console]
+    transport: HTTP
+    method: GET
+    path: /api/v1/tensor/capabilities
+    routes: ["GET /api/v1/tensor/capabilities"]
+    request_schema: none
+    response_schema: 'runtime honest capability catalogue'
+    schema_version: tensor.capabilities/1
+    authentication_class: AL_HARAS_SUBSCRIPTION
+    authorisation_authority: AL_HARAS
+    truth_class: RUNTIME_OBSERVATION
+    side_effects: none
+    custody_requirement: guardian_mediated audit event
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: unavailable runtime surfaces unavailable catalogue entries
+    availability_semantics: backend lists are probed, not declared
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py, tests/test_tensor_runtime.py]
+
+  - api_id: kellogg.tensor.execute
+    owner: KELLOGG
+    interface_type: HTTP_PRIVILEGED
+    implementation_path: chronus/mla1517_platform/python/control_api.py::_tensor_execute → TensorRuntime.execute
+    consumers: [operator-console]
+    transport: HTTP
+    method: POST
+    path: /api/v1/tensor/execute
+    routes: ["POST /api/v1/tensor/execute"]
+    request_schema: '{operation, inputs?|operands?|tensors?, dtype?, backend?, depth?, out?, request_id?}'
+    response_schema: '{schema_version:tensor.execute/1, ...record, values?}'
+    schema_version: tensor.execute/1
+    authentication_class: AL_HARAS_SUBSCRIPTION
+    authorisation_authority: AL_HARAS
+    truth_class: VERDICT
+    side_effects: executes a bounded tensor operation; takes custody of named tensors
+    custody_requirement: 'THESEUS when the operation is durable (store_tensor); guardian_mediated audit event'
+    timeout: operation bound
+    idempotency: request_id correlates; execution itself is not deduplicated
+    retry: retryable read-type ops; mutating store ops are replayed under caller's request_id
+    failure_semantics: '400 invalid body/unknown operation; guardian denial; dtype/shape validation fails closed'
+    availability_semantics: result cannot masquerade as mining proof or VQC authority
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py, tests/test_tensor_runtime.py]
+
+  - api_id: toe.collapse
+    owner: EUCLID
+    interface_type: HTTP_PRIVILEGED
+    implementation_path: chronus/mla1517_platform/python/control_api.py::_route_post → toe.bridge.TOEBridge.predict
+    consumers: [operator-console]
+    transport: HTTP
+    method: POST
+    path: /api/v1/toe/collapse
+    routes: ["POST /api/v1/toe/collapse"]
+    request_schema: '{data: {...}} (non-empty object, ≤4 MiB)'
+    response_schema: '{schema_version, generated_at, guardian_receipt, execution_evidence, ...per-section available results}'
+    schema_version: chronus.mla1517.toe_collapse/1
+    authentication_class: AL_HARAS_SUBSCRIPTION
+    authorisation_authority: AL_HARAS
+    truth_class: VERDICT
+    side_effects: runs the bridge prediction (tomography, causal analysis, tensor witness)
+    custody_requirement: execution evidence + guardian receipt returned and audited
+    timeout: bridge bound
+    idempotency: pure — safe to repeat
+    retry: retryable
+    failure_semantics: '400 empty/malformed; 413 oversize; signed denial; per-section available:false instead of fabrication'
+    availability_semantics: each bridge section reports available honestly
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: salamander.fault
+    owner: SALAMANDER
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/control_api.py::_salamander_fault
+    consumers: [frontend lib/audit.ts escalation]
+    transport: HTTP
+    method: POST
+    path: /api/v1/salamander/fault
+    routes: ["POST /api/v1/salamander/fault"]
+    request_schema: '{kind?, source?, detail?, at?}'
+    response_schema: '{ok, recorded}'
+    schema_version: pythia.salamander_fault/1
+    authentication_class: OPERATOR_PRINCIPAL
+    authorisation_authority: PYTHIA
+    truth_class: COMMAND_ACCEPTANCE
+    side_effects: append-only audit event salamander_fault + prometheus counter
+    custody_requirement: boot audit log
+    timeout: immediate
+    idempotency: each report is a distinct event
+    retry: retryable (distinct events)
+    failure_semantics: fields sanitised/bounded; never silently dropped
+    availability_semantics: recorded:true means persisted to audit, not remediated
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: pythia.static_spa
+    owner: PYTHIA
+    interface_type: HTTP_PUBLIC
+    implementation_path: chronus/mla1517_platform/python/control_api.py::_static_or_404
+    consumers: [browser]
+    transport: HTTP
+    method: GET
+    path: '/* (non-/api/)'
+    routes: ["GET /*"]
+    request_schema: none
+    response_schema: static file bytes
+    schema_version: none
+    authentication_class: NONE
+    authorisation_authority: none
+    truth_class: LIVENESS
+    side_effects: none
+    custody_requirement: none
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: real 404 JSON for unrouted /api/*; SPA index only for app paths; path traversal contained to web_root
+    availability_semantics: files served exactly as built
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_production_api_contract.py]
+
+# ---------------------------------------------------------------------------
+# Reserved namespaces — secured by the AL HARAS boundary, deliberately not
+# implemented. A request reaching past the guardian gets a real 404; without
+# credentials it gets the signed denial. Neither may masquerade as a service.
+# ---------------------------------------------------------------------------
+  - api_id: namespace.policy
+    owner: AL_HARAS
+    interface_type: RESERVED_NAMESPACE
+    implementation_path: chronus/mla1517_platform/python/control_api.py::_PRIVILEGED_PREFIXES
+    consumers: [future policy service]
+    transport: HTTP
+    method: '*'
+    path: /api/v1/policy/
+    routes: ["* /api/v1/policy/"]
+    request_schema: none
+    response_schema: 'guardian denial receipt or {"error":"not_found"}'
+    schema_version: none
+    authentication_class: AL_HARAS_SUBSCRIPTION
+    authorisation_authority: AL_HARAS
+    truth_class: VERDICT
+    side_effects: none
+    custody_requirement: denial receipts audited
+    timeout: immediate
+    idempotency: n/a
+    retry: n/a
+    failure_semantics: real 404 past the boundary
+    availability_semantics: never implies an implemented endpoint
+    stability: reserved
+    deprecation_state: RESERVED_NAMESPACE
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: namespace.worker
+    owner: AL_HARAS
+    interface_type: RESERVED_NAMESPACE
+    implementation_path: chronus/mla1517_platform/python/control_api.py::_PRIVILEGED_PREFIXES
+    consumers: [future worker control]
+    transport: HTTP
+    method: '*'
+    path: /api/v1/worker/
+    routes: ["* /api/v1/worker/"]
+    request_schema: none
+    response_schema: 'guardian denial receipt or {"error":"not_found"}'
+    schema_version: none
+    authentication_class: AL_HARAS_SUBSCRIPTION
+    authorisation_authority: AL_HARAS
+    truth_class: VERDICT
+    side_effects: none
+    custody_requirement: denial receipts audited
+    timeout: immediate
+    idempotency: n/a
+    retry: n/a
+    failure_semantics: real 404 past the boundary
+    availability_semantics: never implies an implemented endpoint
+    stability: reserved
+    deprecation_state: RESERVED_NAMESPACE
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: namespace.recovery
+    owner: AL_HARAS
+    interface_type: RESERVED_NAMESPACE
+    implementation_path: chronus/mla1517_platform/python/control_api.py::_PRIVILEGED_PREFIXES
+    consumers: [future recovery control]
+    transport: HTTP
+    method: '*'
+    path: /api/v1/recovery/
+    routes: ["* /api/v1/recovery/"]
+    request_schema: none
+    response_schema: 'guardian denial receipt or {"error":"not_found"}'
+    schema_version: none
+    authentication_class: AL_HARAS_SUBSCRIPTION
+    authorisation_authority: AL_HARAS
+    truth_class: VERDICT
+    side_effects: none
+    custody_requirement: denial receipts audited
+    timeout: immediate
+    idempotency: n/a
+    retry: n/a
+    failure_semantics: real 404 past the boundary
+    availability_semantics: never implies an implemented endpoint
+    stability: reserved
+    deprecation_state: RESERVED_NAMESPACE
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: namespace.admin
+    owner: AL_HARAS
+    interface_type: RESERVED_NAMESPACE
+    implementation_path: chronus/mla1517_platform/python/control_api.py::_PRIVILEGED_PREFIXES
+    consumers: [future admin console]
+    transport: HTTP
+    method: '*'
+    path: /api/v1/admin/
+    routes: ["* /api/v1/admin/"]
+    request_schema: none
+    response_schema: 'guardian denial receipt or {"error":"not_found"}'
+    schema_version: none
+    authentication_class: AL_HARAS_SUBSCRIPTION
+    authorisation_authority: AL_HARAS
+    truth_class: VERDICT
+    side_effects: none
+    custody_requirement: denial receipts audited
+    timeout: immediate
+    idempotency: n/a
+    retry: n/a
+    failure_semantics: real 404 past the boundary
+    availability_semantics: never implies an implemented endpoint
+    stability: reserved
+    deprecation_state: RESERVED_NAMESPACE
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: namespace.quantum
+    owner: TURING
+    interface_type: RESERVED_NAMESPACE
+    implementation_path: chronus/mla1517_platform/python/control_api.py::_PRIVILEGED_PREFIXES
+    consumers: [future operator TURING surface]
+    transport: HTTP
+    method: '*'
+    path: /api/v1/quantum/
+    routes: ["* /api/v1/quantum/"]
+    request_schema: none
+    response_schema: 'guardian denial receipt or {"error":"not_found"}'
+    schema_version: none
+    authentication_class: AL_HARAS_SUBSCRIPTION
+    authorisation_authority: AL_HARAS
+    truth_class: VERDICT
+    side_effects: none
+    custody_requirement: denial receipts audited
+    timeout: immediate
+    idempotency: n/a
+    retry: n/a
+    failure_semantics: 'real 404 past the boundary — TURING''s canonical interface is INTERNAL_PYTHON VQCPipeline, not REST'
+    availability_semantics: never implies a REST TURING service exists
+    stability: reserved
+    deprecation_state: RESERVED_NAMESPACE
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: namespace.scale
+    owner: AL_HARAS
+    interface_type: RESERVED_NAMESPACE
+    implementation_path: chronus/mla1517_platform/python/control_api.py::_PRIVILEGED_PREFIXES
+    consumers: [future scale control]
+    transport: HTTP
+    method: '*'
+    path: /api/v1/scale/
+    routes: ["* /api/v1/scale/"]
+    request_schema: none
+    response_schema: 'guardian denial receipt or {"error":"not_found"}'
+    schema_version: none
+    authentication_class: AL_HARAS_SUBSCRIPTION
+    authorisation_authority: AL_HARAS
+    truth_class: VERDICT
+    side_effects: none
+    custody_requirement: denial receipts audited
+    timeout: immediate
+    idempotency: n/a
+    retry: n/a
+    failure_semantics: real 404 past the boundary
+    availability_semantics: never implies an implemented endpoint
+    stability: reserved
+    deprecation_state: RESERVED_NAMESPACE
+    tests: [tests/test_production_api_contract.py]
+
+  - api_id: namespace.assembly
+    owner: AL_HARAS
+    interface_type: RESERVED_NAMESPACE
+    implementation_path: chronus/mla1517_platform/python/control_api.py::_PRIVILEGED_PREFIXES
+    consumers: [future assembly control]
+    transport: HTTP
+    method: '*'
+    path: /api/v1/assembly/
+    routes: ["* /api/v1/assembly/"]
+    request_schema: none
+    response_schema: 'guardian denial receipt or {"error":"not_found"}'
+    schema_version: none
+    authentication_class: AL_HARAS_SUBSCRIPTION
+    authorisation_authority: AL_HARAS
+    truth_class: VERDICT
+    side_effects: none
+    custody_requirement: denial receipts audited
+    timeout: immediate
+    idempotency: n/a
+    retry: n/a
+    failure_semantics: real 404 past the boundary
+    availability_semantics: never implies an implemented endpoint
+    stability: reserved
+    deprecation_state: RESERVED_NAMESPACE
+    tests: [tests/test_production_api_contract.py]
+
+# ---------------------------------------------------------------------------
+# Internal Python contracts — canonical typed interfaces, not REST.
+# ---------------------------------------------------------------------------
+  - api_id: turing.vqc_pipeline
+    owner: TURING
+    interface_type: INTERNAL_PYTHON
+    implementation_path: turing_universal_quantum_computer/turing_universal_quantum_computer/pipeline.py::VQCPipeline.run(VQCRequest)
+    consumers: [PYTHIA, EUCLID]
+    method: 'VQCRequest → validation → representation → exact execution → PipelineReport {verdict, stages, certificate, witness, custody, replay}'
+    path: 'turing_universal_quantum_computer.pipeline.VQCPipeline'
+    request_schema: 'VQCRequest dataclass (program | qasm, shots, seed, verify_unitary, custody, replay)'
+    response_schema: 'PipelineReport dataclass — verdict PASS/FAIL/REFUSED/GATED; certificate dict when issued'
+    schema_version: turing.vqc/1
+    authentication_class: TYPED_CALL
+    authorisation_authority: AL_HARAS (caller-side mediation where privileged)
+    truth_class: EVIDENCE
+    side_effects: computation certificate issued and re-verified; THESEUS custody when durable
+    custody_requirement: certificate + result to THESEUS where durable
+    timeout: execution bound by request
+    idempotency: deterministic per request
+    retry: replayable; certificates verify
+    failure_semantics: invalid program/unknown gate/representation or backend mismatch raise; tampered certificate fails verification
+    availability_semantics: unavailable backends report unavailable, never substitute
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_turing_production_pipeline.py]
+
+  - api_id: theseus.custody
+    owner: THESEUS
+    interface_type: INTERNAL_PYTHON
+    implementation_path: aethel/theseus.py::Theseus (open_theseus)
+    consumers: [PYTHIA, TURING, CHRONUS, OVID, KELLOGG, SALAMANDER, AL_HARAS, EUCLID]
+    method: 'put(payload) → TheseusRecord / get(uuid) / record(uuid) / verify() / snapshot(dir) / lookup_digest(digest) / get_working_form(uuid)'
+    path: aethel.theseus.Theseus
+    request_schema: 'typed methods; TheseusRecord'
+    response_schema: 'bytes / TheseusRecord / bool / snapshot dict'
+    schema_version: aethel.theseus/1
+    authentication_class: TYPED_CALL
+    authorisation_authority: THESEUS validates the custody contract; producer owns semantics
+    truth_class: EVIDENCE
+    side_effects: durable record writes; healing of corrupt records where configured
+    custody_requirement: self — it IS the custody boundary
+    timeout: io bound
+    idempotency: put is content-addressed; replay is stable
+    retry: io retry per store policy
+    failure_semantics: TheseusError on contract violation; corrupt records heal or fail closed
+    availability_semantics: missing record is a miss, never a fabricate
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_aethel_storage.py, tests/test_enterprise_custody_substrate.py]
+
+  - api_id: ovid.transform
+    owner: OVID
+    interface_type: INTERNAL_PYTHON
+    implementation_path: aethel/ovid.py::Ovid (open_ovid)
+    consumers: [PYTHIA, CHRONUS, EUCLID, THESEUS producers]
+    method: 'metamorphose / verify_equivalence / round_trip / materialise / transform_contract / contract_report'
+    path: aethel.ovid.Ovid
+    request_schema: 'TransformContract declaration; input representation'
+    response_schema: 'FoldedWorkingForm / TransformLineage / EquivalenceVerdict'
+    schema_version: aethel.ovid/1
+    authentication_class: TYPED_CALL
+    authorisation_authority: OVID (transformation only — never custody)
+    truth_class: EVIDENCE
+    side_effects: emits execution-unique TransformLineage; durable lineage goes to THESEUS
+    custody_requirement: THESEUS for durable lineage
+    timeout: transform bound
+    idempotency: lineage_id is execution-unique by construction
+    retry: replayable; equivalence re-verifies
+    failure_semantics: unknown transform / unsupported version / inconsistent contract / tampered output fail closed
+    availability_semantics: UNSUPPORTED contracts never execute
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_ovid_contracts.py]
+
+  - api_id: kellogg.tensor.runtime
+    owner: KELLOGG
+    interface_type: INTERNAL_PYTHON
+    implementation_path: tensor/api.py::default_runtime → tensor/runtime.py::TensorRuntime
+    consumers: [control_api tensor.execute, EUCLID where authorised]
+    method: 'capabilities / store_tensor / execute / read_tensor'
+    path: tensor.api
+    request_schema: 'bounded operation + shapes + dtype'
+    response_schema: 'execution record {path, output|output_digest, receipt: tensor.receipt/1, truth_class, dtype}'
+    schema_version: tensor.execute/1
+    authentication_class: TYPED_CALL
+    authorisation_authority: KELLOGG owns tensor capability only
+    truth_class: VERDICT
+    side_effects: tensor execution; custody of stored tensors
+    custody_requirement: THESEUS when durable
+    timeout: operation bound
+    idempotency: per request_id correlation
+    retry: read-type ops retryable
+    failure_semantics: shape/dtype/unknown-op validation fails closed
+    availability_semantics: result is tensor evidence only — never mining proof or VQC authority
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_tensor_runtime.py]
+
+  - api_id: chronus.execution
+    owner: CHRONUS
+    interface_type: INTERNAL_PYTHON
+    implementation_path: chronus backend registry / execution router (chronus/)
+    consumers: [PYTHIA mining runtime, TURING workloads, control plane workers]
+    method: 'execution request → backend selection → backend → receipt/provenance'
+    path: chronus
+    request_schema: 'workload + requested backend'
+    response_schema: 'receipt {requested_backend, actual_backend, result, provenance}'
+    schema_version: chronus.execution/1
+    authentication_class: TYPED_CALL
+    authorisation_authority: CHRONUS
+    truth_class: EVIDENCE
+    side_effects: real backend execution
+    custody_requirement: execution receipt to THESEUS where durable
+    timeout: workload bound
+    idempotency: per execution id
+    retry: 'fail closed on unavailable requested backend unless explicitly authorised fallback policy applies'
+    failure_semantics: requested_backend ≠ actual_backend is always explicit; unavailable backend fails closed
+    availability_semantics: never silently substitutes a backend
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_backend_registry.py, chronus/mla1517_platform/python/test_execution_receipt.py]
+
+  - api_id: al_haras.guardian
+    owner: AL_HARAS
+    interface_type: INTERNAL_PYTHON
+    implementation_path: chronus/mla1517_platform/python/al_haras_pythia.py::pythia_guardian_api().evaluate(headers, body)
+    consumers: [control_api privileged preflight, security/evaluate route]
+    method: 'evaluate(headers{authorization,x-hyba-tenant,x-hyba-actor}, body{operation,resource,payload,observation})'
+    path: al_haras_pythia.pythia_guardian_api
+    request_schema: 'guardian evaluate envelope'
+    response_schema: '(HTTPStatus, decision receipt) — denial receipts are signed'
+    schema_version: al_haras.evaluate/1
+    authentication_class: AL_HARAS_SUBSCRIPTION
+    authorisation_authority: AL_HARAS
+    truth_class: VERDICT
+    side_effects: audit evidence per decision
+    custody_requirement: AL HARAS audit trail
+    timeout: immediate
+    idempotency: evaluation is pure
+    retry: retryable
+    failure_semantics: full denial ladder (missing/malformed credential, wrong tenant/actor, insufficient capability, expired/revoked, guardian unavailable, dependency unavailable) — handler never executes before decision
+    availability_semantics: dependency failure is 503 not an implicit allow
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_al_haras_pythia_wiring.py, chronus/mla1517_platform/python/test_control_auth.py]
+
+  - api_id: salamander.control_plane
+    owner: SALAMANDER
+    interface_type: INTERNAL_PYTHON
+    implementation_path: salamander/control_plane.py::AutonomicControlPlane
+    consumers: [salamander_engine worker, control plane]
+    method: 'observe / discover / qualify / chronus_envelope / admit / execute / recover / verify_theseus_custody / verify_ovid_transform / verify_projection / api_snapshot'
+    path: salamander.control_plane.AutonomicControlPlane
+    request_schema: 'typed models (HealthObservation, ActionRequest, RecoveryPlan, TheseusRecordIdentity, OvidTransformEvidence, RebuildableProjection)'
+    response_schema: 'HealthDecision / ActionResult / ActionVerification / api_snapshot dict'
+    schema_version: salamander.autonomic-control-plane.v1
+    authentication_class: TYPED_CALL
+    authorisation_authority: SALAMANDER orchestrates; never alters subsystem ownership
+    truth_class: EVIDENCE
+    side_effects: bounded remediation via registered actuators + independent verifiers
+    custody_requirement: hash-chained EvidenceLedger; durable events to THESEUS
+    timeout: per-action bounds + recovery deadline
+    idempotency: ActionRequest.idempotency_key required and enforced
+    retry: 'bounded by circuit breaker + recovery budget'
+    failure_semantics: FailClosed on contract violation; unverified action is never recovery proof
+    availability_semantics: UNKNOWN/UNAVAILABLE are first-class health states
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_salamander_autonomic.py, tests/test_b_salamander_recovery.py]
+
+  - api_id: euclid.orchestration
+    owner: EUCLID
+    interface_type: INTERNAL_PYTHON
+    implementation_path: euclid/ runtime + chronus/mla1517_platform/python/system_fabric.py::euclid_cognition_solve
+    consumers: [control_api cognition/solve, mining support]
+    method: 'typed handoffs to PYTHIA/TURING/KELLOGG/SALAMANDER preserving request identity, correlation id, tenant, actor, authority, provenance, custody linkage'
+    path: euclid
+    request_schema: 'cognition episode request'
+    response_schema: 'episode trace {available, ...}'
+    schema_version: euclid.cognition/1
+    authentication_class: TYPED_CALL
+    authorisation_authority: EUCLID orchestrates; specialist semantics stay with the specialist
+    truth_class: VERDICT
+    side_effects: orchestrates specialist calls
+    custody_requirement: evidence bundle / THESEUS where durable
+    timeout: episode bound
+    idempotency: per episode id
+    retry: retryable as new episode
+    failure_semantics: unavailable specialist propagates available:false
+    availability_semantics: EUCLID never duplicates the specialist algorithm
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [chronus/mla1517_platform/python/test_euclid_core.py, chronus/mla1517_platform/python/test_euclid_cognition_entrypoint.py]
+
+  - api_id: hyba_db.store
+    owner: HYBA_DB
+    interface_type: INTERNAL_PYTHON
+    implementation_path: hyba_db/store.py::OntologyStore (verify_database)
+    consumers: [SALAMANDER projection verification, enterprise projections]
+    method: 'tenant-scoped ontology/query/projection persistence; verify_database()'
+    path: hyba_db.store.OntologyStore
+    request_schema: 'store/verify calls'
+    response_schema: 'verify verdict {valid|ok, projection_sha256, ...}'
+    schema_version: hyba_db.store/1
+    authentication_class: TENANT_SCOPED
+    authorisation_authority: producer contract
+    truth_class: VERDICT
+    side_effects: projection persistence
+    custody_requirement: durable anchor in THESEUS
+    timeout: io bound
+    idempotency: verify is pure
+    retry: retryable
+    failure_semantics: drift detected against projection_sha256
+    availability_semantics: projection validity is a producer fact, not THESEUS/OVID
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_salamander_autonomic.py]
+
+# ---------------------------------------------------------------------------
+# Wire protocols — external transports, distinct from the HTTP control API.
+# ---------------------------------------------------------------------------
+  - api_id: stratum.v1
+    owner: POOL
+    interface_type: WIRE_PROTOCOL
+    implementation_path: chronus/mla1517_platform/python/manifold_pool_coordinator.py::StratumClient
+    consumers: [agentic-mining worker]
+    method: 'mining.subscribe → mining.authorize → mining.notify (+ set_difficulty) → job → mining.submit → literal pool result'
+    path: 'stratum+tcp:// / stratum+ssl:// endpoint from pool catalog'
+    request_schema: 'JSON-RPC Stratum V1 methods'
+    response_schema: 'literal pool replies; submit result is a boolean verdict'
+    schema_version: stratum.v1
+    authentication_class: WIRE_TOKEN
+    authorisation_authority: POOL
+    truth_class: VERDICT
+    side_effects: submits shares only via the SHA256d proof boundary
+    custody_requirement: submission/pool-outcome evidence in worker metrics
+    timeout: per-request transport timeout
+    idempotency: mining.submit is NEVER auto-retried — an unknown prior outcome cannot be safely replayed without protocol idempotency
+    retry: 'subscribe/authorize/notify handling retry via reconnect; submit only by explicit canonical resubmission policy'
+    failure_semantics: StratumProtocolError/StratumAuthorizationError; malformed reply/duplicate or unknown request id/job replacement all handled explicitly
+    availability_semantics: pool acceptance is established ONLY by the literal pool response — never by socket write or local SHA256d pass
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [chronus/mla1517_platform/python/test_pool_only_mining.py, tests/test_b_pool_outcomes.py]
+
+  - api_id: chronus.remote_opencl_v2
+    owner: CHRONUS
+    interface_type: WIRE_PROTOCOL
+    implementation_path: chronus/mla1517/remote_gpu.py (client) + chronus/mla1517/remote_gpu_agent.py (server)
+    consumers: [chronus.delivery cloud_instance, hybrid solver]
+    transport: HTTP(S)
+    method: 'GET /v1/health; GET /v1/devices; GET /v1/telemetry; POST /v1/ladder; POST /v1/sha256d'
+    path: 'MLA1517_REMOTE_GPU_ENDPOINT / HYBA_REMOTE_OPENCL_ENDPOINTS'
+    request_schema: 'remote_opencl_v2 envelopes; sha256d window ≤2^24 nonces, batch ≤2^20'
+    response_schema: '{protocol: remote_opencl_v2, ...}; attestation token binds sha256d results to the job'
+    schema_version: remote_opencl_v2
+    authentication_class: WIRE_TOKEN
+    authorisation_authority: CHRONUS
+    truth_class: EVIDENCE
+    side_effects: remote device execution
+    custody_requirement: re-derived exact verification is the evidence
+    timeout: 'DEFAULT_TIMEOUT_S=5 probes; SHA256D_DEFAULT_TIMEOUT_S=300 scans'
+    idempotency: ladder/sha256d are pure computations — replay safe
+    retry: probe_first_reachable rotates endpoints; results always re-verified
+    failure_semantics: wrong protocol version rejected; tampered results fail re-verification; unreachable/deviceless endpoints report honest unavailability — no fabricated devices, no silent fallback
+    availability_semantics: imported devices are measured, never declared
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [chronus/mla1517_platform/python/test_remote_gpu.py, tests/test_chronus_delivery.py, tests/test_remote_hasher.py]
+
+# ---------------------------------------------------------------------------
+# File/artifact contracts between processes.
+# ---------------------------------------------------------------------------
+  - api_id: pythia.worker_heartbeat
+    owner: PYTHIA
+    interface_type: FILE/ARTIFACT_CONTRACT
+    implementation_path: worker_lifecycle.HeartbeatReader + mining_runtime metrics sidecars
+    consumers: [control_api status/telemetry/mining.evidence, campaign counters]
+    method: 'write/read <worker>.metrics.json (+ .bin HMAC-signed heartbeat)'
+    path: 'PYTHIA_WORKER_HEARTBEAT_DIR (default %LOCALAPPDATA%/pythia/hb)'
+    request_schema: 'n/a'
+    response_schema: 'metrics.json {state, ready, counters, job, submission, mining_evidence?}; .bin signed by PYTHIA_IDENTITY_HMAC_SECRET'
+    schema_version: pythia.worker_metrics/1
+    authentication_class: HMAC_SIDECAR
+    authorisation_authority: PYTHIA
+    truth_class: RUNTIME_OBSERVATION
+    side_effects: file writes per heartbeat tick; clean exit removes the sidecar
+    custody_requirement: sidecar staleness TTL 30s default (PYTHIA_METRICS_SIDECAR_TTL_S)
+    timeout: n/a
+    idempotency: last-writer-wins per worker file
+    retry: readers tolerate missing/stale files as unavailable
+    failure_semantics: stale sidecar belongs to a killed arm — excluded from counters
+    availability_semantics: absent file = worker not reporting, never zeros
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [chronus/mla1517_platform/python/test_phase4_api.py]
+
+  - api_id: pythia.boot_audit
+    owner: PYTHIA
+    interface_type: FILE/ARTIFACT_CONTRACT
+    implementation_path: startup_contract.AppendOnlyAudit
+    consumers: [control_api audit/tail, operators]
+    method: 'append-only JSONL audit events'
+    path: 'PYTHIA_BOOT_AUDIT'
+    request_schema: 'n/a'
+    response_schema: 'JSONL events {event, at, fields...}'
+    schema_version: pythia.boot_audit/1
+    authentication_class: FILESYSTEM
+    authorisation_authority: PYTHIA
+    truth_class: EVIDENCE
+    side_effects: append-only writes
+    custody_requirement: self
+    timeout: n/a
+    idempotency: append-only
+    retry: n/a
+    failure_semantics: missing log reads as empty tail
+    availability_semantics: exact log contents only
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_startup_contract.py]
+
+  - api_id: pythia.runtime_config_file
+    owner: PYTHIA
+    interface_type: FILE/ARTIFACT_CONTRACT
+    implementation_path: runtime_config.load/save/public_view
+    consumers: [control_api config routes, workers on (re)spawn]
+    method: 'atomic JSON read/write'
+    path: '<checkout>/data/runtime_config.json'
+    request_schema: 'n/a'
+    response_schema: 'declared config; public_view redacts pool passwords'
+    schema_version: pythia.runtime_config/1
+    authentication_class: FILESYSTEM
+    authorisation_authority: PYTHIA
+    truth_class: CONFIGURATION
+    side_effects: durable config writes
+    custody_requirement: config is declaration, not observation
+    timeout: n/a
+    idempotency: save is idempotent per content
+    retry: n/a
+    failure_semantics: ValueError on invalid config
+    availability_semantics: secrets never serialised to public view
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [chronus/mla1517_platform/python/test_phase4_api.py]
+
+# ---------------------------------------------------------------------------
+# CLI entrypoints.
+# ---------------------------------------------------------------------------
+  - api_id: pythia.cli.api
+    owner: PYTHIA
+    interface_type: CLI
+    implementation_path: main.py → chronus/mla1517_platform/python/control_api.py::main (console script pythia-api)
+    consumers: [operators, systemd/containers]
+    method: 'python main.py --host H --port P --web-root DIR'
+    path: main.py
+    request_schema: 'argparse flags'
+    response_schema: 'process exit codes; stdout log'
+    schema_version: pythia.cli/1
+    authentication_class: ENVIRONMENT
+    authorisation_authority: PYTHIA
+    truth_class: LIVENESS
+    side_effects: starts the control plane + workers per env gates
+    custody_requirement: boot lock + audit log
+    timeout: n/a
+    idempotency: boot lock makes a second instance fail fast
+    retry: n/a
+    failure_semantics: StartupConfigError → nonzero exit with reason; RestartBudgetExhausted → fail loud
+    availability_semantics: fails fast on absent/placeholder worker identity
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [tests/test_startup_contract.py, chronus/mla1517_platform/python/test_startup_optional_services.py]
+
+  - api_id: pythia.cli.miner
+    owner: PYTHIA
+    interface_type: CLI
+    implementation_path: chronus/mla1517_platform/python/mining_runtime.py::main (console script pythia-mine)
+    consumers: [operators]
+    method: 'pythia-mine [flags]'
+    path: chronus/mla1517_platform/python/mining_runtime.py
+    request_schema: 'argparse flags'
+    response_schema: 'process exit codes'
+    schema_version: pythia.cli/1
+    authentication_class: ENVIRONMENT
+    authorisation_authority: PYTHIA
+    truth_class: LIVENESS
+    side_effects: headless stratum miner (fail-closed without device/credentials)
+    custody_requirement: worker metrics + audit
+    timeout: n/a
+    idempotency: n/a
+    retry: n/a
+    failure_semantics: fail-closed on absent device/pool identity
+    availability_semantics: honest
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [chronus/mla1517_platform/python/test_pool_only_mining.py]
+
+  - api_id: chronus.cli.remote_agent
+    owner: CHRONUS
+    interface_type: CLI
+    implementation_path: chronus/mla1517/remote_gpu_agent.py
+    consumers: [operators deploying remote GPU agents]
+    method: 'python -m chronus.mla1517.remote_gpu_agent'
+    path: chronus/mla1517/remote_gpu_agent.py
+    request_schema: 'argparse flags'
+    response_schema: 'process exit codes; serves /v1/* remote_opencl_v2'
+    schema_version: remote_opencl_v2
+    authentication_class: WIRE_TOKEN
+    authorisation_authority: CHRONUS
+    truth_class: LIVENESS
+    side_effects: serves verified remote device execution
+    custody_requirement: none (verification is client-side)
+    timeout: n/a
+    idempotency: n/a
+    retry: n/a
+    failure_semantics: fails closed on no device
+    availability_semantics: advertises only measured devices
+    stability: stable
+    deprecation_state: CANONICAL
+    tests: [chronus/mla1517_platform/python/test_remote_gpu.py]
+
+# ---------------------------------------------------------------------------
+# Legacy/compat aliases (see the canonical entries they alias).
+# ---------------------------------------------------------------------------
+  - api_id: legacy.api_health
+    owner: PYTHIA
+    interface_type: LEGACY
+    implementation_path: control_api.py::_route_get
+    consumers: [older monitors]
+    method: GET
+    path: /api/health
+    routes: ["GET /api/health"]
+    request_schema: none
+    response_schema: 'same as pythia.health'
+    schema_version: chronus.mla1517.status/1
+    authentication_class: NONE
+    authorisation_authority: none
+    truth_class: LIVENESS
+    side_effects: none
+    custody_requirement: none
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: same as canonical
+    availability_semantics: same as canonical
+    stability: frozen
+    deprecation_state: COMPATIBILITY_ALIAS
+    canonical_successor: /api/v1/healthz
+    tests: [tests/test_production_api_contract.py]

@@ -1,8 +1,16 @@
 """Production #108 homeostasis, recovery and bounded adaptation.
 
 The control plane coordinates existing authorities.  It does not mine, verify
-shares, own OVID/Aethel, own THESEUS/hyba_db, manufacture reward, mutate source
-at runtime, or execute arbitrary commands/SQL/filesystem operations.
+shares, decide OVID transformation verdicts, own THESEUS/hyba_db custody,
+manufacture reward, mutate source at runtime, or execute arbitrary
+commands/SQL/filesystem operations.
+
+Canonical authority boundary (governance register):
+  OVID     — representation transformation + transform lineage/equivalence
+  THESEUS  — durable record/custody/integrity/recovery/provenance
+  producer — rebuildable projections under the hyba_db contract
+SALAMANDER verifies each of those facts independently; no authority may
+impersonate another.
 """
 from __future__ import annotations
 
@@ -31,13 +39,14 @@ from .models import (
     HealthObservation,
     HealthState,
     LearningExperience,
-    OvidRecordIdentity,
     OptimizationTrial,
+    OvidTransformEvidence,
     PolicyLifecycle,
     PolicyVersion,
+    RebuildableProjection,
     RewardAuthority,
     Severity,
-    TheseusProjection,
+    TheseusRecordIdentity,
     digest,
 )
 
@@ -515,33 +524,67 @@ class AutonomicControlPlane:
                 break
         return tuple(results)
 
-    # ------------------------------------------------------ OVID / THESEUS
-    def verify_ovid(
+    # ------------------------------------------- THESEUS / OVID / projection
+    def verify_theseus_custody(
         self,
-        identity: OvidRecordIdentity,
-        verifier: Callable[[OvidRecordIdentity], Mapping[str, Any]],
+        identity: TheseusRecordIdentity,
+        verifier: Callable[[TheseusRecordIdentity], Mapping[str, Any]],
     ) -> Mapping[str, Any]:
+        """Independent check that a THESEUS custody record is intact.
+
+        Custody/integrity facts are THESEUS's alone: the verifier re-reads
+        the durable record and reports its observed digest.  A producer's
+        claim never substitutes for the custody check.
+        """
         result = dict(verifier(identity))
         if result.get("payload_sha256") != identity.payload_sha256 or not result.get("valid"):
-            raise FailClosed("OVID/Aethel authoritative verification failed")
-        self.ledger.append("ovid-verified", result, at_ns=self.clock_ns())
+            raise FailClosed("THESEUS custody verification failed")
+        self.ledger.append("theseus-custody-verified", result, at_ns=self.clock_ns())
         return result
 
-    def verify_theseus(
+    def verify_ovid_transform(
         self,
-        projection: TheseusProjection,
-        verifier: Callable[[], Any],
-        ovid_verifier: Callable[[OvidRecordIdentity], Mapping[str, Any]],
+        evidence: OvidTransformEvidence,
+        verifier: Callable[[OvidTransformEvidence], Mapping[str, Any]],
     ) -> Mapping[str, Any]:
-        # OVID authority is proven independently and first.
-        self.verify_ovid(projection.ovid_identity, ovid_verifier)
+        """Independent check that an OVID transformation is valid.
+
+        The verifier answers the OVID equivalence question for the declared
+        lineage.  A verdict not bound to this lineage id and its input/output
+        digests is not evidence for this transform.
+        """
+        result = dict(verifier(evidence))
+        bound = (
+            result.get("lineage_id") == evidence.lineage_id
+            and result.get("input_sha256") == evidence.input_sha256
+            and result.get("output_digest") == evidence.output_digest
+        )
+        if not result.get("valid") or not bound:
+            raise FailClosed("OVID transformation verification failed")
+        self.ledger.append("ovid-transform-verified", result, at_ns=self.clock_ns())
+        return result
+
+    def verify_projection(
+        self,
+        projection: RebuildableProjection,
+        verifier: Callable[[], Any],
+        custody_verifier: Callable[[TheseusRecordIdentity], Mapping[str, Any]],
+    ) -> Mapping[str, Any]:
+        """Projection/database validity under the producer contract.
+
+        A rebuildable projection is only as good as its durable anchor, so
+        THESEUS custody is proven independently and first; the projection
+        check itself is the producer/hyba_db contract, not a THESEUS or OVID
+        fact.
+        """
+        self.verify_theseus_custody(projection.custody_identity, custody_verifier)
         raw = verifier()  # expected to be OntologyStore.verify_database()
         result = asdict(raw) if hasattr(raw, "__dataclass_fields__") else dict(raw)
         valid = bool(result.get("valid", result.get("ok", False)))
         observed = result.get("projection_sha256")
         drift = observed is not None and observed != projection.projection_sha256
         status = {"valid": valid and not drift, "drift": drift, "details": result}
-        self.ledger.append("theseus-projection-verified", status, at_ns=self.clock_ns())
+        self.ledger.append("projection-verified", status, at_ns=self.clock_ns())
         return status
 
     # ------------------------------------------------ learning and deployment

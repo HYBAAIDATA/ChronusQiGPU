@@ -67,8 +67,8 @@ cannot erase unresolved inherited gates.
 evidence reconciliation → controlled merge`
 
 The plan does not merge enterprise code. Compatibility must preserve mining
-truth, the new EUCLID identity, OVID authority, THESEUS rebuildability, Chronus
-contracts, Kairos rehearsal boundaries, and Salamander controls.
+truth, the new EUCLID identity, OVID transformation authority, THESEUS durable
+custody, Chronus contracts, Kairos rehearsal boundaries, and Salamander controls.
 
 ## Non-claims and acceptance state
 

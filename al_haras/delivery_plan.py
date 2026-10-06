@@ -19,7 +19,7 @@ _OUTCOMES = (
     "Baseline and scope lock",
     "Canonical contracts",
     "Assembly Compiler v0.1",
-    "OVID authoritative transaction core; THESEUS/PRIME-DB rebuildable projection",
+    "THESEUS durable transaction custody; OVID transform lineage; PRIME-DB rebuildable projection",
     "Identity, policy, tenancy, keys",
     "HYBA Evidence and compliance receipts",
     "Multimodel query and semantic plane",
