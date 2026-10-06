@@ -20,7 +20,7 @@ receipt/attestation → custody → replay/verify`.
 | Inputs | `a`: 4×4 float64 (seed 11, `np.random.default_rng`), `b`: 4×4 float64 (seed 13) |
 | Output | 16×16 float64 resident block + `tensor.execute/1` record |
 | Plane selection | float64 committed; `bit_identical=True` (element-exact vs `np.kron`) |
-| Certificate binding | `receipt.verification` (independent re-check) + `kellogg.attest()` over the published record |
+| Certificate binding | `receipt.verification` (independent re-check) + `kellogg.attest()` over the published record + fail-closed `verify_attestation()` replay |
 | Custody | `aethel.fold_store.PersistentFoldStore` checkpoint (`.npz`) → `restore` in a fresh store → content-hash verification on every version |
 | Replay/verify | re-execute `kron` on the restored store; output `content_hash` must equal the original run's |
 
@@ -34,10 +34,12 @@ receipt/attestation → custody → replay/verify`.
    `content_hash` (integrity-verified restore, fail-closed on tamper).
 3. Replay: a second `execute("kron", ["a","b"])` against the restored
    store produces an `output_hash` identical to the first run's.
-4. Attestation: `kellogg.attest()` binds the record digest + version
-   lock + Zeckendorf/Cassini tokens — an integrity certificate,
-   explicitly *not* a correctness proof (`theorem_proven=False`,
-   correctly).
+4. Attestation: `kellogg.attest()` binds the computation and complete
+   evidence envelope (including the proof boundary), and
+   `verify_attestation()` must recompute the digest, version lock,
+   Zeckendorf/Cassini material, and envelope digest before this stage can
+   pass. It remains explicitly *not* a correctness proof
+   (`theorem_proven=False`).
 
 ## Custody-contract resolution (audit P1 #5)
 
