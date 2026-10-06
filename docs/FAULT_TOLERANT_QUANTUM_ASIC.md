@@ -60,6 +60,7 @@ Production readiness is based on mathematical and software evidence, not hardwar
 - `normalization_verification`
 - `error_correction_invariants`
 - `deterministic_replay`
+- `deterministic_hashrate_verification`
 
 The independent review record must be `independently_reproduced`. All other proof records must be `measured` or `independently_reproduced`. Missing evidence is returned explicitly; nothing is promoted by assertion alone.
 

@@ -14,6 +14,7 @@ import math
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
+from fractions import Fraction
 from typing import Any, Mapping
 
 SCHEMA = "turing.quantum_asic/v1"
@@ -663,6 +664,7 @@ MATHEMATICAL_EVIDENCE = (
     "normalization_verification",
     "error_correction_invariants",
     "deterministic_replay",
+    "deterministic_hashrate_verification",
 )
 
 
@@ -825,6 +827,7 @@ class FirstPrinciplesVerifier:
             state_from_bytes,
             verify_certificate,
         )
+        from .deterministic_hashrate import verify_hashrate_certificate
 
         unitary = rational_rotation()
         initial = state_from_bytes(b"first-principles-quantum", dimension=2)
@@ -833,6 +836,8 @@ class FirstPrinciplesVerifier:
         certificate_a = certify_work_window(header76, 0, 32)
         certificate_b = certify_work_window(header76, 0, 32)
         code = stack.surface_code
+        deterministic_system = PureQuantumMathASIC(stack).deterministic_hashrate_system()
+        hashrate_certificate = deterministic_system.certificate
 
         artifacts = {
             "unitarity_verification": {
@@ -855,6 +860,12 @@ class FirstPrinciplesVerifier:
                 "identical": certificate_a == certificate_b,
                 "certificate_valid": verify_certificate(certificate_a),
             },
+            "deterministic_hashrate_verification": {
+                "certificate_digest": hashrate_certificate.certificate_digest,
+                "steady_state_floor_met": hashrate_certificate.steady_state_floor_met,
+                "cold_start_floor_met": hashrate_certificate.cold_start_floor_met,
+                "truth_class": hashrate_certificate.truth_class,
+            },
         }
         checks = {
             "unitarity_verification": unitary.unitary_error() == 0,
@@ -868,6 +879,11 @@ class FirstPrinciplesVerifier:
             ),
             "deterministic_replay": (
                 certificate_a == certificate_b and verify_certificate(certificate_a)
+            ),
+            "deterministic_hashrate_verification": (
+                verify_hashrate_certificate(hashrate_certificate)
+                and hashrate_certificate.steady_state_floor_met
+                and hashrate_certificate.cold_start_floor_met is True
             ),
         }
         checks["software_tests"] = all(checks.values())
@@ -883,6 +899,7 @@ class FirstPrinciplesVerifier:
                 "normalization_verification",
                 "error_correction_invariants",
                 "deterministic_replay",
+                "deterministic_hashrate_verification",
             )
             if checks[category]
         )
@@ -900,6 +917,24 @@ class PureQuantumMathASIC:
     """
 
     stack: QuantumAsicStack = field(default_factory=QuantumAsicStack)
+
+    def deterministic_hashrate_system(
+        self,
+        *,
+        cold_start_cycles: int = 1_000_000_000,
+    ):
+        """Build the exact 10 EH/s mathematical-capacity certificate.
+
+        The default uses 1,000,001 formal chips so a one-second cold-start
+        window at 1 GHz clears the floor after the 192-cycle pipeline fill.
+        """
+        from .deterministic_hashrate import DeterministicMiningSystem, FleetDesign
+
+        design = FleetDesign(1_000_001, 10_000, Fraction(1_000_000_000))
+        return DeterministicMiningSystem.build(
+            design,
+            cold_start_cycles=cold_start_cycles,
+        )
 
     def verify_first_principles(self) -> VerificationBundle:
         return FirstPrinciplesVerifier().verify(self.stack)

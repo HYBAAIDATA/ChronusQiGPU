@@ -29,6 +29,9 @@ class QuantumAsicIntegrationTests(unittest.TestCase):
         self.assertTrue(status["pure_quantum_asic"]["first_principles"])
         verification = system.verify_pure_quantum_asic()
         self.assertTrue(verification.verified)
+        capacity = system.deterministic_10eh_system()
+        self.assertTrue(capacity.certificate.steady_state_floor_met)
+        self.assertTrue(capacity.certificate.cold_start_floor_met)
         self.assertEqual(
             verification.evidence.missing,
             ("independent_model_review",),

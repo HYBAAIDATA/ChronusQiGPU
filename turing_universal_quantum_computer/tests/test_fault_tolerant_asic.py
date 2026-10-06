@@ -189,6 +189,7 @@ class QuantumAsicModelTests(unittest.TestCase):
             "normalization_verification",
             "error_correction_invariants",
             "deterministic_replay",
+            "deterministic_hashrate_verification",
         )
         records = tuple(
             _record(
