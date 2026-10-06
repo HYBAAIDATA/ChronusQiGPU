@@ -30,8 +30,10 @@ from .capabilities import capability_report
 from .certificates import (
     RunWitness,
     VQCComputationCertificate,
+    WitnessError,
     issue_computation_certificate,
     issue_witness,
+    validate_certificate_inputs,
     verify_computation_certificate,
     verify_witness,
 )
@@ -332,6 +334,17 @@ class VQCPipeline:
             "entanglement": request.entanglement_cut,
         }
         execution_options = {key: value for key, value in options.items() if value is not None}
+        try:
+            validate_certificate_inputs(program, execution_options)
+        except WitnessError as exc:
+            record(
+                "execution", REFUSED,
+                f"refused before backend submission: {exc}",
+            )
+            refusals.append(f"execution: {exc}")
+            return self._finish(
+                stages, "REFUSED", program.digest(), None, None, (), (), refusals, request
+            )
         try:
             result = backend.execute(program, **execution_options)
         except Exception as exc:
