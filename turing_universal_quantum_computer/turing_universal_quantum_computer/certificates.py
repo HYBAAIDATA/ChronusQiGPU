@@ -35,6 +35,7 @@ __all__ = [
     "RunWitness",
     "VQCComputationCertificate",
     "canonicalize_certificate_value",
+    "verify_serialized_computation_certificate",
     "issue_witness",
     "issue_computation_certificate",
     "replay_computation_certificate",
@@ -527,13 +528,7 @@ def verify_serialized_computation_certificate(
     *,
     options: Mapping[str, Any] | None = None,
 ) -> bool:
-    """Verify a custody-safe serialized result against its certificate.
-
-    result_payload must be the certificate-canonical form of
-    ExecutionResult.as_dict(). Tagged values are intentionally left tagged:
-    feeding them through the certificate canonicalizer again is idempotent and
-    reproduces the digest that was committed at execution time.
-    """
+    """Verify a custody-safe serialized result against its certificate."""
     if not isinstance(result_payload, Mapping):
         raise WitnessError("serialized execution result must be a mapping")
     backend_payload = result_payload.get("payload", {})
@@ -542,7 +537,6 @@ def verify_serialized_computation_certificate(
     embedded = result_payload.get("certificate")
     if embedded is not None and not isinstance(embedded, Mapping):
         raise WitnessError("serialized certificate must be a mapping")
-
     try:
         result = ExecutionResult(
             backend=str(result_payload["backend"]),
@@ -562,7 +556,6 @@ def verify_serialized_computation_certificate(
         raise WitnessError(
             f"serialized execution result is malformed: {exc}"
         ) from exc
-
     return verify_computation_certificate(
         program,
         result,

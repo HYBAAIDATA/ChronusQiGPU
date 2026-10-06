@@ -132,7 +132,8 @@ def test_bridge_rejects_lying_adapter(tmp_path, monkeypatch) -> None:
 
     daemon = _daemon(tmp_path, [_Liar()])
     monkeypatch.setattr(client_mod, "get_embedded_daemon", lambda **_: daemon)
-    with pytest.raises(RuntimeError, match="candidate rejected: candidate digest mismatch"):
+    # Two independent boundaries: the runtime's recompute verifier, then the host verifier.
+    with pytest.raises(RuntimeError, match="verification_failed|candidate digest mismatch"):
         submit_via_virtual_igpu(
             {"windows": [{"start": 0, "count": 4}]},
             header80=HEADER,
@@ -159,7 +160,7 @@ def test_bridge_rejects_out_of_range_candidate(tmp_path, monkeypatch) -> None:
 
     daemon = _daemon(tmp_path, [OutOfRange()])
     monkeypatch.setattr(client_mod, "get_embedded_daemon", lambda **_: daemon)
-    with pytest.raises(RuntimeError, match="outside the admitted range"):
+    with pytest.raises(RuntimeError, match="verification_failed|outside the admitted range"):
         submit_via_virtual_igpu(
             {"windows": [{"start": 0, "count": 4}]},
             header80=HEADER,
@@ -403,3 +404,44 @@ def test_fast_workload_with_deadline_releases_immediately(tmp_path) -> None:
     assert d.submit(_probe("quick", tenant="t", deadline_ms=5000)).status == "ok"
     assert d.in_flight["t"] == 0
     assert d.health()["draining"] == []
+
+
+# --- control-plane verifier understands explicit ordered nonce batches ------------------------
+
+
+def test_runtime_verifier_checks_explicit_nonce_batches(tmp_path) -> None:
+    import hashlib
+
+    daemon = _daemon(tmp_path)
+    nonces = [41, 7, 99]
+    result = daemon.submit(
+        Workload(
+            id="explicit-ok",
+            kind=WorkloadKind.SHA256D_SCAN,
+            execution_policy="standalone_software",
+            input={"header80_hex": HEADER.hex(), "target_hex": EASY, "nonces": nonces},
+        )
+    )
+    assert result.status == "ok"
+    assert result.receipt["verification"]["verdict"] == "match"
+    assert result.output["hits"][0]["nonce"] == 41  # first in submitted order, not smallest
+    digest = hashlib.sha256(hashlib.sha256(HEADER[:76] + (41).to_bytes(4, "little")).digest())
+    assert result.output["hits"][0]["hash_hex"] == digest.hexdigest()
+
+
+def test_runtime_verifier_rejects_wrong_probe_order(tmp_path) -> None:
+    class Reordering(CPUEmulatorAdapter):
+        def _sha256d_scan(self, workload, value, started):
+            reordered = dict(value, nonces=sorted(value["nonces"]))
+            return super()._sha256d_scan(workload, reordered, started)
+
+    daemon = _daemon(tmp_path, [Reordering()])
+    result = daemon.submit(
+        Workload(
+            id="explicit-reordered",
+            kind=WorkloadKind.SHA256D_SCAN,
+            execution_policy="standalone_software",
+            input={"header80_hex": HEADER.hex(), "target_hex": EASY, "nonces": [41, 7, 99]},
+        )
+    )
+    assert result.status == "verification_failed"

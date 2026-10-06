@@ -105,7 +105,10 @@ class M3MiningSubmissionGate:
             resource=f"stratum://{context.get('endpoint') or 'unavailable'}",
             payload=payload,
             actor=self.actor,
-            request_id=f"lease:{context.get('pool_session_id')}:{context.get('generation')}:{context.get('job_fingerprint')}",
+            request_id=(
+                f"lease:{context.get('pool_session_id')}:"
+                f"{context.get('generation')}:{context.get('job_fingerprint')}"
+            ),
         )
         try:
             verdict = self.guardian_api.guardian.evaluate(
@@ -135,7 +138,9 @@ class M3MiningSubmissionGate:
             "policy_version": verdict.policy_version,
         }
 
-    def authorize_and_custody(self, *, context: Mapping[str, Any], proof: Any) -> Mapping[str, Any]:
+    def authorize_and_custody(
+        self, *, context: Mapping[str, Any], proof: Any
+    ) -> Mapping[str, Any]:
         # Reconcile immediately before an external side effect. Startup
         # readiness alone is insufficient because custody may degrade later.
         storage_health = self.recorder.health(reconcile=True)

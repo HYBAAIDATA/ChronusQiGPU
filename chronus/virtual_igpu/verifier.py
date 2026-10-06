@@ -111,6 +111,20 @@ def _verify_sha256d_scan(value: Mapping[str, Any], out: Mapping[str, Any]) -> li
         count = int(value.get("count", 1))
     if len(prefix) != 76:
         return [f"input prefix is {len(prefix)} bytes; scan contract is 76"]
+    explicit = value.get("nonces")
+    if explicit is not None:
+        # Exact ordered batch authorised by the caller: probe in submitted order.
+        if (
+            not isinstance(explicit, (list, tuple))
+            or not explicit
+            or any(isinstance(n, bool) or not isinstance(n, int) for n in explicit)
+            or any(not 0 <= n <= 0xFFFFFFFF for n in explicit)
+        ):
+            return ["nonces must be a non-empty list of uint32 integers"]
+        count = len(explicit)
+        nonce_seq: Any = list(explicit)
+    else:
+        nonce_seq = None
     if count <= 0 or count > VERIFY_MAX_SCAN_NONCES:
         raise _OutOfBound(f"count={count} outside verify bound 1..{VERIFY_MAX_SCAN_NONCES}")
     target = value.get("target", value.get("target_hex"))
@@ -121,7 +135,7 @@ def _verify_sha256d_scan(value: Mapping[str, Any], out: Mapping[str, Any]) -> li
     expected_hits: list[dict[str, Any]] = []
     checked = 0
     for i in range(count):
-        nonce = start + i
+        nonce = nonce_seq[i] if nonce_seq is not None else start + i
         d2 = hashlib.sha256(
             hashlib.sha256(prefix + nonce.to_bytes(4, "little")).digest()
         ).digest()
