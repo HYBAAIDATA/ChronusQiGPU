@@ -12,12 +12,52 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[3]
+
+def _looks_like_workspace(candidate: Path) -> bool:
+    return (candidate / "plugins" / "pythia" / "skills").is_dir() and (
+        candidate / "Intelligence" / "skills"
+    ).is_dir()
+
+
+def _resolve_workspace_root() -> Path:
+    """Locate the PhiMiner workspace that owns this plugin's runtime state.
+
+    Hook commands may execute from the installed plugin cache with any
+    working directory (the process cwd is not reliable). Resolve the
+    workspace from the session project directory or the plugin's in-repo
+    location; never from the process cwd alone.
+    """
+    plugin_dir = Path(__file__).resolve().parent.parent
+    candidates: list[Path] = []
+    for var in ("DEVIN_PROJECT_DIR", "CLAUDE_PROJECT_DIR"):
+        raw = os.environ.get(var, "").strip()
+        if raw:
+            candidates.append(Path(raw))
+    if plugin_dir.parent.name == "plugins" and plugin_dir.name == "pythia":
+        candidates.append(plugin_dir.parent.parent)
+    candidates.append(Path.cwd())
+    fallback = candidates[0]
+    for candidate in candidates:
+        try:
+            resolved = candidate.resolve()
+        except OSError:
+            continue
+        if _looks_like_workspace(resolved):
+            return resolved
+    try:
+        return fallback.resolve()
+    except OSError:
+        return Path.cwd()
+
+
+ROOT = _resolve_workspace_root()
+WORKSPACE_AVAILABLE = _looks_like_workspace(ROOT)
 PLUGIN_ROOT = ROOT / "plugins" / "pythia"
 INTELLIGENCE_SKILLS_ROOT = ROOT / "Intelligence" / "skills"
 MANIFEST = PLUGIN_ROOT / ".devin-plugin" / "plugin.json"
@@ -178,6 +218,7 @@ def build_status(
         "workspace_head_sha": _git("rev-parse", "HEAD"),
         "generated_at": _now(),
         "private_repo_local": True,
+        "workspace_available": WORKSPACE_AVAILABLE,
         "plugin_skills": plugin_skills(),
         "euclid_aptitude_skills": euclid_aptitude_skills(),
         "mandatory_skills": mandatory,

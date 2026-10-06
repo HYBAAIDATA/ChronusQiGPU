@@ -33,7 +33,7 @@ def test_plugin_metadata_is_private_v04_euclid_aptitude():
         (PLUGIN / ".devin-plugin" / "plugin.json").read_text(encoding="utf-8")
     )
     assert manifest["name"] == "pythia"
-    assert manifest["version"] == "0.4.0"
+    assert manifest["version"] == "0.4.1"
     assert manifest["license"] == "UNLICENSED"
     assert "EUCLID aptitude" in manifest["description"]
 
@@ -72,7 +72,7 @@ def test_plugin_status_invokes_complete_plugin_and_euclid_skill_set(
     mandatory = set(status["mandatory_skills"])
     invoked = set(status["skills_invoked"])
     assert status["plugin"] == "pythia"
-    assert status["plugin_version"] == "0.4.0"
+    assert status["plugin_version"] == "0.4.1"
     assert len(status["aptitude_digest_sha256"]) == 64
     assert status["mandatory_skills_complete"] is True
     assert status["mandatory_skills_missing"] == []
@@ -99,6 +99,72 @@ def test_lifecycle_hooks_force_invocation_on_start_and_after_compaction():
     assert "_skill_bundle()" in compact
 
 
+def test_lifecycle_hooks_resolve_via_plugin_root_not_cwd():
+    """Hook commands must not depend on the session working directory.
+
+    The plugin is managed-installed, so its hooks fire in sessions whose cwd
+    is not the repository root (observed: C:\\Windows\\system32). Commands
+    must anchor on DEVIN_PLUGIN_ROOT, which plugin hooks receive.
+    """
+    hooks = json.loads((PLUGIN / "hooks.json").read_text(encoding="utf-8"))
+    commands = [
+        hook["command"]
+        for entries in hooks.values()
+        for entry in entries
+        for hook in entry["hooks"]
+    ]
+    assert len(commands) == 3
+    for command in commands:
+        assert "DEVIN_PLUGIN_ROOT" in command
+        assert command.startswith("python ")
+
+
+def test_workspace_resolution_prefers_session_project_dir(
+    tmp_path, monkeypatch
+):
+    plugin_status = _load(
+        "plugin_status_workspace_test", SCRIPTS / "plugin_status.py"
+    )
+    workspace = tmp_path / "PhiMiner"
+    (workspace / "plugins" / "pythia" / "skills").mkdir(parents=True)
+    (workspace / "Intelligence" / "skills").mkdir(parents=True)
+    monkeypatch.setenv("DEVIN_PROJECT_DIR", str(workspace))
+
+    assert plugin_status._resolve_workspace_root() == workspace.resolve()
+    assert plugin_status._looks_like_workspace(workspace)
+
+
+def test_workspace_resolution_rejects_foreign_directories(
+    tmp_path, monkeypatch
+):
+    plugin_status = _load(
+        "plugin_status_foreign_test", SCRIPTS / "plugin_status.py"
+    )
+    foreign = tmp_path / "Windows" / "system32"
+    foreign.mkdir(parents=True)
+    monkeypatch.setenv("DEVIN_PROJECT_DIR", str(foreign))
+    monkeypatch.delenv("CLAUDE_PROJECT_DIR", raising=False)
+    monkeypatch.chdir(foreign)
+    # Simulate the script running from the managed-plugin cache instead of
+    # the repository checkout.
+    monkeypatch.setattr(
+        plugin_status, "__file__", str(foreign / "cache" / "plugin_status.py")
+    )
+
+    assert not plugin_status._looks_like_workspace(foreign)
+    assert plugin_status._resolve_workspace_root() == foreign.resolve()
+
+
+def test_stop_gate_noops_outside_workspace(tmp_path, monkeypatch, capsys):
+    stop_gate = _load_with_scripts(
+        "stop_gate_noworkspace_test",
+        SCRIPTS / "stop_gate.py",
+    )
+    monkeypatch.setattr(stop_gate, "WORKSPACE_AVAILABLE", False)
+    assert stop_gate.main() == 0
+    assert capsys.readouterr().out == ""
+
+
 def test_plugin_product_skill_preserves_canonical_authority_language():
     skill = (PLUGIN / "skills" / "hyba-products" / "SKILL.md").read_text(
         encoding="utf-8"
@@ -116,7 +182,7 @@ def _aptitude_status(plugin_sha: str = "plugin-sha") -> dict:
         "euclid:verification-before-completion",
     ]
     return {
-        "plugin_version": "0.4.0",
+        "plugin_version": "0.4.1",
         "augmentation": "EUCLID_APTITUDE",
         "plugin_source_sha": plugin_sha,
         "workspace_head_sha": "work-sha",
