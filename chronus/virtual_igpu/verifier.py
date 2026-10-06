@@ -60,15 +60,18 @@ def _float_close(a: Any, b: Any) -> bool:
         return False
 
 
-def _seq_close(reported: Any, expected: list[float]) -> bool:
+def _seq_close(reported: Any, expected: Any) -> bool:
+    """Element-wise tolerance compare of equal-shape numeric arrays of any rank."""
     try:
-        rep = [float(v) for v in reported]
+        rep = np.asarray(reported, dtype=np.float64)
+        exp = np.asarray(expected, dtype=np.float64)
     except (TypeError, ValueError):
         return False
-    return len(rep) == len(expected) and all(
-        math.isclose(r, e, rel_tol=FLOAT_RTOL, abs_tol=FLOAT_ATOL)
-        for r, e in zip(rep, expected)
-    )
+    if rep.shape != exp.shape:
+        return False
+    diff = np.abs(rep - exp)
+    bound = np.maximum(FLOAT_RTOL * np.maximum(np.abs(rep), np.abs(exp)), FLOAT_ATOL)
+    return bool(np.all((rep == exp) | (diff <= bound)))
 
 
 def _payload_bytes(value: Mapping[str, Any]) -> bytes:
@@ -281,6 +284,61 @@ def _verify_cgemv(value: Mapping[str, Any], out: Mapping[str, Any]) -> list[str]
     return problems
 
 
+#: tensor_op names the canonical ``tensor`` layer can independently re-derive.
+_TENSOR_LAYER_OPS = {
+    "scale": "scale",
+    "mul_scalar": "scale",
+    "add": "add",
+    "elementwise_add": "add",
+    "matmul": "matmul",
+}
+
+
+def _tensor_layer_operands(
+    canonical: str, a: np.ndarray, value: Mapping[str, Any]
+) -> list[np.ndarray] | None:
+    """Operands in the ``tensor`` layer's convention, or None when it cannot express the op."""
+    if canonical == "scale":
+        scalar = float(value.get("scalar", value.get("alpha", 1.0)))
+        return [a, np.asarray([scalar], dtype=np.float64)]
+    if canonical == "add":
+        b = np.asarray(value.get("b", 0.0), dtype=np.float64)
+        if np.broadcast_shapes(a.shape, b.shape) != a.shape:
+            return None
+        return [a, np.broadcast_to(b, a.shape).copy()]
+    return [a, np.asarray(value.get("b"), dtype=np.float64)]
+
+
+def _verify_via_tensor_layer(
+    op: str, a: np.ndarray, value: Mapping[str, Any], out: Mapping[str, Any]
+) -> list[str] | None:
+    """Single source of tensor verification: ``tensor.verification`` (folded-resident recompute).
+
+    Returns the problem list, or None when the tensor layer could not run its re-check
+    (the caller then falls back to the local NumPy recompute rather than skip verification).
+    """
+    canonical = _TENSOR_LAYER_OPS.get(op)
+    if canonical is None:
+        return None
+    operands = _tensor_layer_operands(canonical, a, value)
+    if operands is None:
+        return None
+    try:
+        from tensor.verification import VERDICT_FAIL, VERDICT_PASS, verify_backend_output
+
+        actual = np.asarray(out.get("data"), dtype=np.float64)
+        verdict = verify_backend_output(canonical, operands, actual)
+    except ValueError:
+        return [f"{op} output is not a rectangular numeric array"]
+    except Exception:  # tensor layer unavailable: caller falls back to the local recompute
+        return None
+    if verdict.verdict == VERDICT_PASS:
+        return []
+    if verdict.verdict == VERDICT_FAIL:
+        return [f"{op} output mismatch ({verdict.method}): {verdict.detail}"]
+    return None
+
+
 def _verify_tensor_op(value: Mapping[str, Any], out: Mapping[str, Any]) -> list[str]:
     op = str(value.get("op", "scale"))
     a = np.asarray(value.get("a", value.get("x", [])), dtype=np.float64)
@@ -289,21 +347,24 @@ def _verify_tensor_op(value: Mapping[str, Any], out: Mapping[str, Any]) -> list[
             f"tensor_op input {a.size} elems exceeds verify bound "
             f"{VERIFY_MAX_TENSOR_ELEMS}"
         )
+    delegated = _verify_via_tensor_layer(op, a, value, out)
+    if delegated is not None:
+        return delegated
     problems: list[str] = []
     if op in {"scale", "mul_scalar"}:
         scalar = float(value.get("scalar", value.get("alpha", 1.0)))
         expected = a * scalar
-        if not _seq_close(out.get("data"), expected.tolist()):
+        if not _seq_close(out.get("data"), expected):
             problems.append("scale output mismatch")
     elif op in {"add", "elementwise_add"}:
         b = np.asarray(value.get("b", 0.0), dtype=np.float64)
         expected = a + b
-        if not _seq_close(out.get("data"), expected.tolist()):
+        if not _seq_close(out.get("data"), expected):
             problems.append("add output mismatch")
     elif op == "matmul":
         b = np.asarray(value.get("b"), dtype=np.float64)
         expected = a @ b
-        if not _seq_close(out.get("data"), expected.tolist()):
+        if not _seq_close(out.get("data"), expected):
             problems.append("matmul output mismatch")
     elif op == "svd":
         # Backend-independent check: verify the *reconstruction property*
