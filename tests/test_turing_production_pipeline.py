@@ -271,11 +271,47 @@ def test_pipeline_full_pass_with_custody_and_replay():
         assert states[stage] == "PASS", (stage, states)
     assert states["chronus_lane"] == "GATED"
     assert report.witness is not None
-    assert len(report.custody) == 4  # program + result + certificate + witness
-    assert {record["kind"] for record in report.custody} == {
-        "program", "result", "certificate", "witness",
+    assert report.certificate is not None
+    assert len(report.custody) == 4
+    assert {receipt["kind"] for receipt in report.custody} == {
+        "program", "result", "witness", "certificate",
     }
+    assert (
+        report.witness["computation_certificate_digest"]
+        == report.certificate["certificate_digest"]
+    )
     assert all(r["state"] == "PASS" for r in report.replay)
+    assert report.replay[-1]["kind"] == "bundle"
+    assert report.replay[-1]["payload_summary"]["certificate_digest"] == (
+        report.certificate["certificate_digest"]
+    )
+
+
+def test_pipeline_replay_rejects_cross_run_certificate_bundle():
+    from turing_universal_quantum_computer.backends import execute_certified
+
+    pipeline = VQCPipeline()
+    first = pipeline.run(VQCRequest(program=_bell(), custody=True))
+    assert first.verdict == "PASS"
+    assert len(first.custody) == 4
+
+    foreign = execute_certified(_bell_t())
+    bad_certificate = pipeline._last_custody.commit(  # noqa: SLF001 - adversarial test
+        "certificate",
+        foreign.certificate.to_dict(),
+        meta={"stage": "verification"},
+    ).as_dict()
+    mixed = [
+        dict(receipt)
+        for receipt in first.custody
+        if receipt["kind"] != "certificate"
+    ] + [bad_certificate]
+
+    state, replay = pipeline._replay(mixed)  # noqa: SLF001 - adversarial test
+    assert state == "FAIL"
+    assert replay[-1]["kind"] == "bundle"
+    assert replay[-1]["state"] == "FAIL"
+    assert "certificate" in replay[-1]["reason"]
 
 
 def test_pipeline_stage_order_is_canonical():
