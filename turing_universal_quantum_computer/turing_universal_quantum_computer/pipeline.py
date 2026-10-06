@@ -31,10 +31,12 @@ from .certificates import (
     RunWitness,
     VQCComputationCertificate,
     WitnessError,
+    canonicalize_certificate_value,
     issue_computation_certificate,
     issue_witness,
     validate_certificate_inputs,
     verify_computation_certificate,
+    verify_serialized_computation_certificate,
     verify_witness,
 )
 from .chronus_lane import probe_chronus_lane
@@ -436,7 +438,7 @@ class VQCPipeline:
                 refusals.append(f"custody: requested but {custody_state}")
         record(
             "custody", custody_state,
-            "committed program/result/witness envelopes to THESEUS"
+            "committed program/result/witness/certificate envelopes to THESEUS"
             if custody_state == EvidenceState.PASS.value
             else (
                 "custody not requested"
@@ -463,9 +465,13 @@ class VQCPipeline:
         )
 
         verdict = "PASS"
-        if custody_state in (EvidenceState.UNAVAILABLE.value, EvidenceState.FAIL.value) or \
-           replay_state in (EvidenceState.UNAVAILABLE.value, EvidenceState.FAIL.value):
-            verdict = "GATED"  # computation verified; durability evidence gated
+        if custody_state == EvidenceState.FAIL.value or replay_state == EvidenceState.FAIL.value:
+            verdict = "FAIL"  # integrity/replay failure is evidence, not mere unavailability
+        elif (
+            custody_state == EvidenceState.UNAVAILABLE.value
+            or replay_state == EvidenceState.UNAVAILABLE.value
+        ):
+            verdict = "GATED"  # computation verified; durability evidence unavailable
         return self._finish(
             stages, verdict, program.digest(), result, witness,
             tuple(custody_records), tuple(replay_records), refusals, request,
@@ -519,9 +525,169 @@ class VQCPipeline:
             return EvidenceState.FAIL.value, [
                 {"error": "no live custody adapter for replay"}
             ]
-        reports = [custody.replay(rec["uid"]).as_dict() for rec in custody_records]
-        ok = all(r["state"] == "PASS" for r in reports)
-        return (EvidenceState.PASS.value if ok else EvidenceState.FAIL.value), reports
+
+        reports: list[dict[str, Any]] = []
+        recovered: dict[str, dict[str, Any]] = {}
+        duplicate_kinds: set[str] = set()
+        for record in custody_records:
+            replay = custody.replay(record["uid"]).as_dict()
+            reports.append(replay)
+            if replay["state"] != EvidenceState.PASS.value:
+                continue
+            try:
+                envelope = custody.recover(record["uid"])
+            except Exception as exc:
+                reports.append(
+                    {
+                        "uid": record["uid"],
+                        "kind": "bundle",
+                        "digest_verified": False,
+                        "theseus_verify": False,
+                        "recovered": False,
+                        "payload_summary": {},
+                        "state": EvidenceState.FAIL.value,
+                        "reason": f"bundle recovery failed: {exc}",
+                    }
+                )
+                return EvidenceState.FAIL.value, reports
+            kind = str(envelope.get("kind", ""))
+            if kind in recovered:
+                duplicate_kinds.add(kind)
+            else:
+                payload = envelope.get("payload")
+                if not isinstance(payload, dict):
+                    reports.append(
+                        {
+                            "uid": "bundle",
+                            "kind": "bundle",
+                            "digest_verified": True,
+                            "theseus_verify": True,
+                            "recovered": True,
+                            "payload_summary": {},
+                            "state": EvidenceState.FAIL.value,
+                            "reason": f"recovered {kind!r} payload is not a mapping",
+                        }
+                    )
+                    return EvidenceState.FAIL.value, reports
+                recovered[kind] = payload
+
+        if not all(report["state"] == EvidenceState.PASS.value for report in reports):
+            return EvidenceState.FAIL.value, reports
+        try:
+            summary = self._verify_recovered_bundle(recovered, duplicate_kinds)
+        except Exception as exc:
+            reports.append(
+                {
+                    "uid": "bundle",
+                    "kind": "bundle",
+                    "digest_verified": True,
+                    "theseus_verify": True,
+                    "recovered": True,
+                    "payload_summary": {},
+                    "state": EvidenceState.FAIL.value,
+                    "reason": f"custody bundle validation failed: {exc}",
+                }
+            )
+            return EvidenceState.FAIL.value, reports
+
+        reports.append(
+            {
+                "uid": "bundle",
+                "kind": "bundle",
+                "digest_verified": True,
+                "theseus_verify": True,
+                "recovered": True,
+                "payload_summary": summary,
+                "state": EvidenceState.PASS.value,
+                "reason": (
+                    "custody replay: program/result/witness/certificate "
+                    "cross-artifact bindings verified"
+                ),
+            }
+        )
+        return EvidenceState.PASS.value, reports
+
+    @staticmethod
+    def _verify_recovered_bundle(
+        recovered: dict[str, dict[str, Any]],
+        duplicate_kinds: set[str],
+    ) -> dict[str, Any]:
+        """Fail closed unless the four custody artefacts describe one execution."""
+        required = {"program", "result", "witness", "certificate"}
+        missing = sorted(required - set(recovered))
+        if missing:
+            raise WitnessError(f"custody bundle missing artefact(s): {missing}")
+        if duplicate_kinds:
+            raise WitnessError(
+                f"custody bundle has duplicate artefact kind(s): {sorted(duplicate_kinds)}"
+            )
+
+        program = Program.from_dict(recovered["program"])
+        result = recovered["result"]
+        witness = RunWitness.from_dict(recovered["witness"])
+        certificate = VQCComputationCertificate.from_dict(recovered["certificate"])
+        verify_witness(witness)
+        certificate.verify_integrity()
+
+        program_digest = program.digest()
+        if result.get("program_digest") != program_digest:
+            raise WitnessError("recovered result is bound to a different program")
+        if witness.program_digest != program_digest:
+            raise WitnessError("recovered witness is bound to a different program")
+        if (
+            witness.computation_certificate_digest
+            != certificate.certificate_digest
+        ):
+            raise WitnessError(
+                "recovered witness is bound to a different computation certificate"
+            )
+        if result.get("certificate") != certificate.to_dict():
+            raise WitnessError(
+                "recovered result embeds a different computation certificate"
+            )
+
+        for field_name, certificate_value, witness_value in (
+            ("backend", certificate.backend, witness.backend),
+            ("execution_class", certificate.execution_class, witness.execution_class),
+            ("truth_class", certificate.truth_class, witness.truth_class),
+        ):
+            result_value = result.get(field_name)
+            if result_value != certificate_value or result_value != witness_value:
+                raise WitnessError(
+                    f"recovered {field_name} disagrees across result/witness/certificate"
+                )
+
+        if int(result.get("n_qubits", -1)) != program.n_qubits:
+            raise WitnessError("recovered result qubit count disagrees with program")
+        if witness.n_qubits != program.n_qubits:
+            raise WitnessError("recovered witness qubit count disagrees with program")
+        if certificate.steps != len(program.operations):
+            raise WitnessError("recovered certificate step count disagrees with program")
+
+        if not certificate.trace or certificate.trace[0].get("kind") != "input":
+            raise WitnessError("recovered certificate has no canonical input trace")
+        if certificate.trace[0].get("program") != program.to_dict():
+            raise WitnessError(
+                "recovered certificate input trace is bound to a different program"
+            )
+        certified_options = certificate.trace[0].get("options", {})
+        if not isinstance(certified_options, dict):
+            raise WitnessError(
+                "recovered certificate input options are not a mapping"
+            )
+        verify_serialized_computation_certificate(
+            program,
+            result,
+            certificate,
+            options=certified_options,
+        )
+
+        return {
+            "program_digest": program_digest,
+            "certificate_digest": certificate.certificate_digest,
+            "backend": certificate.backend,
+            "artefacts": sorted(required),
+        }
 
     def _finish(
         self,
@@ -567,37 +733,17 @@ def _program_from_qasm(qasm: str) -> Program:
     return program
 
 
-def _jsonable(value: Any) -> Any:
-    """Make a backend payload JSON-serialisable without losing claim content.
-
-    States become their canonical ``to_dict`` (exact string amplitudes);
-    other non-JSON values become ``str`` — the string form is the exact form
-    for the algebraic types used here, so no value is silently weakened.
-    """
-    if isinstance(value, (str, int, float, bool)) or value is None:
-        return value
-    if isinstance(value, dict):
-        return {str(k): _jsonable(v) for k, v in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [_jsonable(v) for v in value]
-    to_dict = getattr(value, "to_dict", None)
-    if callable(to_dict):
-        return _jsonable(to_dict())
-    return str(value)
-
-
 def _result_payload(result: ExecutionResult) -> dict[str, Any]:
-    return {
-        "backend": result.backend,
-        "execution_class": result.execution_class.value,
-        "truth_class": result.truth_class.value,
-        "n_qubits": result.n_qubits,
-        "program_digest": result.program_digest,
-        "materialised": result.materialised,
-        "measured_qpu": result.measured_qpu,
-        "payload": _jsonable(result.payload or {}),
-        "certificate": result.certificate,
-    }
+    """Persist the exact certificate-canonical view of an execution result.
+
+    This prevents custody from flattening values (for example complex display
+    values or IEEE-754 floats) into a representation that can no longer
+    reproduce the computation certificate after restart.
+    """
+    payload = canonicalize_certificate_value(result.as_dict())
+    if not isinstance(payload, dict):
+        raise WitnessError("canonical execution result must be an object")
+    return payload
 
 
 def _differential_check(

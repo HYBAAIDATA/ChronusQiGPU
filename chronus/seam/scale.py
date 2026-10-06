@@ -1,8 +1,7 @@
 """Lucas/Pisot Chronus scale contract.
 
 The batch size is a ladder stop. It is not a hashrate multiplier and is never
-reported as measured throughput. Chronus owns the offering-level scale policy;
-Turing remains the compute substrate underneath.
+reported as measured throughput. Chronus owns the offering-level scale policy.
 
 Lucas/Pisot scales EVERYTHING in Chronus: work envelopes, memory budgets, and
 logical capacity contracts — not intelligence alone. Effective capacity is a
@@ -49,7 +48,7 @@ class ChronusScale:
     def as_dict(self) -> Dict[str, Any]:
         return {
             "product": "Chronus",
-            "compute_substrate": "Turing",
+            "compute_substrate": "chronus_execution_plane",
             "requested": self.requested,
             "work_items": self.work_items,
             "rungs": self.rungs,
@@ -213,7 +212,7 @@ def scale_report(
     capacity = compute_effective_capacity(physical_gpus, n)
     return {
         "product": "Chronus",
-        "compute_substrate": "Turing",
+        "compute_substrate": "chronus_execution_plane",
         "physical_gpus": int(physical_gpus),
         "ladder_index": n,
         "scale": scale.as_dict(),

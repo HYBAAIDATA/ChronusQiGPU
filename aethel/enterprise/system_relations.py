@@ -653,10 +653,16 @@ def verify_turing_custody_boundary(
 
     Returns ``{"schema": ..., "passed": bool, "checks": {name: bool}}``.
     """
-    from turing_universal_quantum_computer.backends.base import Program
+    from turing_universal_quantum_computer.backends.base import (
+        ExecutionClass,
+        ExecutionResult,
+        Program,
+        TruthClass,
+    )
     from turing_universal_quantum_computer.certificates import (
         RunWitness,
         VQCComputationCertificate,
+        verify_computation_certificate,
         verify_witness,
     )
 
@@ -727,6 +733,68 @@ def verify_turing_custody_boundary(
     )
 
     result = result_payload if isinstance(result_payload, Mapping) else None
+    typed_result = None
+    if result is not None:
+        try:
+            embedded_certificate = result.get("certificate")
+            if embedded_certificate is not None and not isinstance(
+                embedded_certificate, Mapping
+            ):
+                raise TypeError("embedded certificate must be a mapping")
+            backend_payload = result.get("payload", {})
+            if not isinstance(backend_payload, Mapping):
+                raise TypeError("backend payload must be a mapping")
+            typed_result = ExecutionResult(
+                backend=str(result["backend"]),
+                execution_class=ExecutionClass(str(result["execution_class"])),
+                truth_class=TruthClass(str(result["truth_class"])),
+                n_qubits=int(result["n_qubits"]),
+                program_digest=str(result["program_digest"]),
+                materialised=bool(result["materialised"]),
+                payload=dict(backend_payload),
+                refusals=tuple(str(item) for item in result.get("refusals", ())),
+                measured_qpu=bool(result.get("measured_qpu", False)),
+                certificate=(
+                    dict(embedded_certificate)
+                    if isinstance(embedded_certificate, Mapping)
+                    else None
+                ),
+            )
+            checks["result_reconstructs"] = True
+        except Exception:
+            checks["result_reconstructs"] = False
+    else:
+        checks["result_reconstructs"] = False
+
+    certified_options: dict[str, Any] = {}
+    if certificate is not None and certificate.trace:
+        first = certificate.trace[0]
+        if isinstance(first, Mapping):
+            raw_options = first.get("options", {})
+            if isinstance(raw_options, Mapping):
+                certified_options = dict(raw_options)
+    checks["certificate_options_recovered"] = bool(
+        certificate is not None
+        and certificate.trace
+        and isinstance(certificate.trace[0], Mapping)
+        and isinstance(certificate.trace[0].get("options", {}), Mapping)
+    )
+
+    try:
+        checks["certificate_binds_program_and_result"] = bool(
+            program is not None
+            and typed_result is not None
+            and certificate is not None
+            and verify_computation_certificate(
+                program,
+                typed_result,
+                certificate,
+                options=certified_options,
+            )
+        )
+    except Exception:
+        checks["certificate_binds_program_and_result"] = False
+
     checks["certificate_binds_witness"] = bool(
         certificate is not None
         and witness is not None
@@ -749,8 +817,23 @@ def verify_turing_custody_boundary(
         witness is not None
         and result is not None
         and witness.backend == result.get("backend")
+        and witness.execution_class == result.get("execution_class")
+        and witness.truth_class == result.get("truth_class")
         and witness.n_qubits == result.get("n_qubits")
         and witness.program_digest == result.get("program_digest")
+        and witness.materialised == bool(result.get("materialised"))
+        and witness.measured_qpu == bool(result.get("measured_qpu", False))
+        and program is not None
+        and witness.gate_counts == program.gate_counts()
+    )
+    checks["witness_provider_job_matches_result"] = bool(
+        witness is not None
+        and result is not None
+        and (
+            not witness.measured_qpu
+            or witness.provider_job_id
+            == str((result.get("payload") or {}).get("job_id", ""))
+        )
     )
 
     return {
@@ -768,10 +851,11 @@ class SharedTuring(_BoundAdapter):
     result, computation certificate, witness and final pipeline report are
     instead committed to the single shared data port with parent lineage
 
-        program -> result -> certificate -> witness -> pipeline_report
+        program -> result -> certificate -> witness -> pipeline_report -> replay
 
-    and the certificate/witness boundary is semantically validated before any
-    of it enters custody.
+    The certificate/witness boundary is semantically validated before custody,
+    then the committed artefacts are read back and revalidated before a
+    successful execution is returned as production-accepted.
     """
 
     def __init__(self, port: SystemDataPort, pipeline: Any | None = None) -> None:
@@ -854,10 +938,40 @@ class SharedTuring(_BoundAdapter):
             "turing_pipeline_report",
             report,
             parents=parents,
-            evidence_state="PASS" if getattr(report, "verdict", "") == "PASS" else "MEASURED",
+            evidence_state=(
+                "PASS" if getattr(report, "verdict", "") == "PASS" else "MEASURED"
+            ),
             meta={"custody_mode": "shared_theseus_ovid_entanglement"},
         )
         self.last_bindings["report"] = report_binding
+
+        # A successful computation is not a production-accepted voyage until
+        # the artefacts that actually entered the shared durable fabric are
+        # read back and semantically cross-bound.  Refused/failed computations
+        # remain valid evidence records but have no completed result bundle to
+        # replay.
+        if (
+            getattr(report, "result", None) is not None
+            and certificate_payload is not None
+            and witness_payload is not None
+        ):
+            replay = self.replay()
+            replay_binding = self._put(
+                "turing_replay",
+                replay,
+                parents=(report_binding.binding_id,),
+                evidence_state="PASS" if replay["passed"] else "FAIL",
+                meta={"production_gate": "post_custody_semantic_replay"},
+            )
+            self.last_bindings["replay"] = replay_binding
+            if not replay["passed"]:
+                failed = sorted(
+                    name for name, ok in replay["checks"].items() if not ok
+                )
+                raise EntangledCustodyError(
+                    "TURING shared-custody replay failed after commit "
+                    f"({', '.join(failed)}); refusing production acceptance"
+                )
         return report
 
     def replay(self) -> dict[str, Any]:

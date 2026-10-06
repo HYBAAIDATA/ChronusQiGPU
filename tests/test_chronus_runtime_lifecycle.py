@@ -123,7 +123,9 @@ def test_workload_count_quota_still_enforced(tmp_path):
 
 def test_nonpositive_deadline_rejected(tmp_path):
     daemon = _daemon([CPUEmulatorAdapter()], tmp_path, "dl0")
-    with pytest.raises(RuntimeInvariantError, match="deadline_ms"):
+    # Fail-closed either way: Workload.__post_init__ rejects a nonpositive
+    # deadline with ValueError; submit re-checks with RuntimeInvariantError.
+    with pytest.raises((RuntimeInvariantError, ValueError), match="deadline_ms"):
         daemon.submit(_workload(deadline_ms=0))
 
 

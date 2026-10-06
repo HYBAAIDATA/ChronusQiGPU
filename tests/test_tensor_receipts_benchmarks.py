@@ -44,7 +44,11 @@ def test_lifted_receipt_binds_all_fields_with_zero_decode():
     # Timing + truth
     assert receipt["timing_scope"] == "end_to_end"
     assert receipt["truth_class"] == TruthClass.MEASURED.value
-    assert receipt["correctness"] == "unvalidated"
+    # Independently re-verified on the unfolded reference path at
+    # execution time — see tensor.verification.
+    assert receipt["correctness"] == "verified"
+    assert receipt["verification"]["recomputed"] is True
+    assert receipt["verification"]["verdict"] == "pass"
     assert receipt["elapsed_ns"] >= 1
 
 

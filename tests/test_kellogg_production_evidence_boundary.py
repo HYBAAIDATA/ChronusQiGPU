@@ -62,6 +62,24 @@ def test_attestation_replay_binds_computation_and_boundary_metadata():
     with pytest.raises(AttestationError, match="theorem_proven"):
         verify_attestation(payload, overclaim)
 
+    future_version = deepcopy(evidence)
+    future_version["version_lock"] = "999.0.0"
+    with pytest.raises(AttestationError, match="below the required floor"):
+        verify_attestation(payload, future_version)
+
+    corrupt_cassini = deepcopy(evidence)
+    first_cassini = list(corrupt_cassini["cassini"][0])
+    first_cassini[0] += 1
+    corrupt_cassini["cassini"][0] = first_cassini
+    with pytest.raises(AttestationError, match="cassini"):
+        verify_attestation(payload, corrupt_cassini)
+
+    legacy = deepcopy(evidence)
+    legacy.pop("attestation_digest")
+    with pytest.raises(AttestationError, match="legacy"):
+        verify_attestation(payload, legacy)
+    assert verify_attestation(payload, legacy, allow_legacy_unbound=True) is True
+
 
 def test_shared_kellogg_diagnostic_state_is_attested_and_semantically_replayed(tmp_path):
     lifecycle = _root(tmp_path / "diagnostic")

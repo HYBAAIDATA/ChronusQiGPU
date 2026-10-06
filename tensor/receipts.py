@@ -77,6 +77,11 @@ class ExecutionReceipt:
     cancelled: bool
     started_ns: int
     published_ns: int
+    #: Independent re-verification evidence (see ``tensor.verification``):
+    #: the alternate-path verdict bound to this receipt. ``None`` means no
+    #: re-check ran — emitted as an explicit unverified record, never a
+    #: silent pass.
+    verification: Optional[dict] = None
 
     def as_dict(self) -> dict:
         return {
@@ -109,7 +114,39 @@ class ExecutionReceipt:
             "cancelled": self.cancelled,
             "started_ns": self.started_ns,
             "published_ns": self.published_ns,
+            "verification": (
+                self.verification
+                if self.verification is not None
+                else {
+                    "recomputed": False,
+                    "method": "none",
+                    "verdict": "unverified",
+                    "detail": "no independent re-verification ran",
+                }
+            ),
         }
+
+
+def _correctness_for(verification) -> str:
+    """Correctness verdict driven by the independent re-check.
+
+    A passing alternate-path recompute is the only source of
+    ``verified``; a ``fail`` verdict never reaches this point (the runtime
+    refuses publication first), and anything else stays honestly
+    ``unvalidated``.
+    """
+    if verification is not None and getattr(verification, "verdict", None) == "pass":
+        return CORRECTNESS_VERIFIED
+    return CORRECTNESS_UNVALIDATED
+
+
+def _verification_dict(verification) -> Optional[dict]:
+    """Bind the verdict's evidence dict to the receipt (or None)."""
+    if verification is None:
+        return None
+    if hasattr(verification, "as_dict"):
+        return verification.as_dict()
+    return dict(verification)
 
 
 def resident_bytes(state) -> int:
@@ -139,12 +176,15 @@ def build_folded_receipt(
     cancelled: bool = False,
     started_ns: int = 0,
     published_ns: Optional[int] = None,
+    verification=None,
 ) -> ExecutionReceipt:
     """Receipt for a folded-resident execution.
 
     ``fold_receipt`` is the :class:`tensor.folded.FoldedReceipt` from
     ``folded_execute``; ``elapsed_ns`` is the end-to-end measurement that
-    wrapped it (>= the inner elapsed).
+    wrapped it (>= the inner elapsed). ``verification`` is the
+    :class:`tensor.verification.VerificationVerdict` from the independent
+    re-check; a passing verdict promotes correctness to ``verified``.
     """
     bytes_in = sum(logical_bytes(s) for s in states)
     bytes_out = logical_bytes(out_state)
@@ -178,12 +218,13 @@ def build_folded_receipt(
                 else "no lifted implementation; declared materializing"
             )
         ),
-        correctness=CORRECTNESS_UNVALIDATED,
+        correctness=_correctness_for(verification),
         max_residual=None,
         truth_class=TruthClass.MEASURED.value,
         cancelled=cancelled,
         started_ns=started_ns,
         published_ns=published_ns if published_ns is not None else time.perf_counter_ns(),
+        verification=_verification_dict(verification),
     )
 
 
@@ -198,6 +239,7 @@ def build_backend_receipt(
     elapsed_ns: int,
     started_ns: int = 0,
     published_ns: Optional[int] = None,
+    verification=None,
 ) -> ExecutionReceipt:
     """Receipt for a backend-engine execution.
 
@@ -234,12 +276,13 @@ def build_backend_receipt(
         timing_scope=TIMING_END_TO_END,
         fallback_used=measurement.fallback_used,
         fallback_reason=measurement.fallback_reason,
-        correctness=CORRECTNESS_UNVALIDATED,
+        correctness=_correctness_for(verification),
         max_residual=None,
         truth_class=result.truth_class.value,
         cancelled=False,
         started_ns=started_ns,
         published_ns=published_ns if published_ns is not None else time.perf_counter_ns(),
+        verification=_verification_dict(verification),
     )
 
 
