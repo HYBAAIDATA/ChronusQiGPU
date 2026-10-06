@@ -16,14 +16,17 @@ from __future__ import annotations
 
 import itertools
 import json
+import logging
 import threading
 import time
 from collections import deque
 from dataclasses import asdict, dataclass, fields, replace
 from pathlib import Path
-from typing import Any, Deque, Iterable
+from typing import Any, Callable, Deque, Iterable
 
 from .software_revision import software_revision
+
+LOG = logging.getLogger(__name__)
 
 _AXES = (
     "pool_session_id",
@@ -104,6 +107,7 @@ class CausalLedger:
         path: str | Path | None = None,
         max_file_bytes: int = 32 * 1024 * 1024,
         revision: str | None = None,
+        observer: Callable[[CausalEvent], None] | None = None,
     ) -> None:
         if capacity <= 0 or max_file_bytes <= 0:
             raise ValueError("ledger bounds must be positive")
@@ -113,7 +117,18 @@ class CausalLedger:
         self._path = Path(path) if path is not None else None
         self._max_file_bytes = max_file_bytes
         self._revision = revision if revision is not None else software_revision()
+        self._observer = observer
         self.file_errors = 0
+        self.observer_errors = 0
+
+    def set_observer(self, observer: Callable[[CausalEvent], None] | None) -> None:
+        """Attach an after-record observer (e.g. the M3 storage recorder).
+
+        Observers receive events after the event is durably recorded; a
+        raising observer is counted and logged, never allowed to interrupt
+        the mining path.
+        """
+        self._observer = observer
 
     @property
     def software_revision(self) -> str:
@@ -131,7 +146,17 @@ class CausalLedger:
             )
             self._events.append(event)
         self._mirror(event)
+        self._notify(event)
         return event
+
+    def _notify(self, event: CausalEvent) -> None:
+        if self._observer is None:
+            return
+        try:
+            self._observer(event)
+        except Exception:
+            self.observer_errors += 1
+            LOG.exception("causal observer failed for %s", event.kind)
 
     def _mirror(self, event: CausalEvent) -> None:
         if self._path is None:
