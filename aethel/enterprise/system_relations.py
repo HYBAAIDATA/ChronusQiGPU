@@ -287,25 +287,352 @@ class SharedALHaras(_BoundAdapter):
 
 
 class SharedKellogg(_BoundAdapter):
-    """Kellogg exact/intelligence tensor entry point on the shared fabric."""
+    """Canonical KELLOGG tensor boundary over the shared THESEUS/OVID fabric.
+
+    KELLOGG remains the owner of tensor mathematics. This adapter adds only
+    production evidence: an input commitment, a state artefact, a verified
+    KELLOGG attestation, lineage-linked custody, and semantic replay.
+    """
 
     def __init__(self, port: SystemDataPort) -> None:
         super().__init__(component=None, port=port, system="kellogg")
+        self.last_bindings: dict[str, EntanglementBinding] = {}
+        self.last_attestation: dict[str, Any] | None = None
+        self.last_replay: dict[str, Any] | None = None
+
+    def _commit_state(
+        self,
+        *,
+        input_digest: str,
+        state_payload: Mapping[str, Any],
+        attestation: Mapping[str, Any],
+    ) -> None:
+        replay = verify_kellogg_custody_boundary(
+            input_payload={
+                "schema": "kellogg.input_commitment/v1",
+                "input_digest": input_digest,
+            },
+            state_payload=state_payload,
+            attestation_payload=attestation,
+        )
+        if not replay["passed"]:
+            failed = sorted(name for name, passed in replay["checks"].items() if not passed)
+            raise RuntimeError(
+                "KELLOGG semantic pre-custody verification failed: " + ", ".join(failed)
+            )
+
+        input_binding = self._put(
+            "kellogg_input_commitment",
+            {
+                "schema": "kellogg.input_commitment/v1",
+                "input_digest": input_digest,
+            },
+            meta={"authority": "kellogg"},
+        )
+        state_binding = self._put(
+            "kellogg_tensor_state",
+            dict(state_payload),
+            parents=(input_binding.binding_id,),
+            meta={
+                "authority": "kellogg",
+                "representation": str(state_payload.get("representation", "unknown")),
+                "plane": str(state_payload.get("plane", "unknown")),
+            },
+        )
+        attestation_binding = self._put(
+            "kellogg_attestation",
+            dict(attestation),
+            parents=(state_binding.binding_id,),
+            meta={
+                "authority": "kellogg",
+                "attestation_schema": str(attestation.get("schema", "")),
+                "attestation_digest": str(attestation.get("attestation_digest", "")),
+            },
+        )
+
+        for name, binding in (
+            ("input", input_binding),
+            ("state", state_binding),
+            ("attestation", attestation_binding),
+        ):
+            verdict = self.port.fabric.verify(binding.binding_id)
+            if not verdict.get("passed"):
+                raise RuntimeError(
+                    f"KELLOGG shared custody verification failed for {name}: {verdict}"
+                )
+
+        self.last_bindings = {
+            "input": input_binding,
+            "state": state_binding,
+            "attestation": attestation_binding,
+        }
+        self.last_attestation = dict(attestation)
+        self.last_replay = replay
 
     def encode(self, data: Any, *, dim: int = 32) -> Any:
+        """Encode through the declared finite-precision diagnostic plane."""
+        from kellogg.attest import attest
+        from kellogg.exact_tensor import canonical_digest
         from kellogg.quantum_tensor import encode_data_to_state
 
         state = encode_data_to_state(data, dim=dim)
+        input_digest = canonical_digest(data)
         payload = {
+            "schema": "kellogg.tensor_state/v1",
+            "plane": "diagnostic",
+            "exact": False,
+            "representation": "quantum_tensor",
+            "field": "IEEE-754 complex",
             "dim": int(state.dim),
+            "input_digest": input_digest,
             "amplitudes": [[float(a.re), float(a.im)] for a in state.amplitudes],
         }
-        self._put(
-            "kellogg_tensor_state",
+        attestation = attest(
             payload,
-            meta={"authority": "kellogg", "representation": "quantum_tensor"},
+            float_boundaries=("kellogg.quantum_tensor.encode_data_to_state",),
+            notes=("canonical production diagnostic-plane custody",),
+        )
+        self._commit_state(
+            input_digest=input_digest,
+            state_payload=payload,
+            attestation=attestation,
         )
         return state
+
+    def encode_exact(
+        self,
+        data: Any,
+        *,
+        num_qubits: int = 5,
+        max_amplitudes: int | None = None,
+    ) -> Any:
+        """Encode to the exact F4 plane and custody the exact amplitudes."""
+        from kellogg.attest import attest
+        from kellogg.exact_tensor import ExactTOETensor
+
+        tensor = ExactTOETensor(
+            num_qubits=num_qubits,
+            max_amplitudes=max_amplitudes,
+        )
+        state, input_digest = tensor.encode(data)
+        payload = {
+            "schema": "kellogg.exact_tensor_state/v1",
+            "plane": "exact",
+            "exact": True,
+            "representation": "exact_tensor",
+            "field": "Q(sqrt(2)) + iQ(sqrt(2))",
+            "num_qubits": int(state.num_qubits),
+            "amplitude_count": len(state.amplitudes),
+            "input_digest": input_digest,
+            "state_commitment": tensor.commitment(state),
+            "normalized_exact": bool(state.normalized_exact()),
+            "amplitudes": [amplitude.to_json() for amplitude in state.amplitudes],
+        }
+        attestation = attest(
+            payload,
+            notes=("canonical production exact-plane custody",),
+        )
+        self._commit_state(
+            input_digest=input_digest,
+            state_payload=payload,
+            attestation=attestation,
+        )
+        return state
+
+    def replay_latest(self) -> dict[str, Any]:
+        """Recover and semantically replay the newest KELLOGG custody set."""
+        attestation_binding = _latest_binding(
+            self.port,
+            source="kellogg",
+            kind="kellogg_attestation",
+        )
+        if attestation_binding is None:
+            raise RuntimeError("no KELLOGG attestation is available for replay")
+
+        state_parents = tuple(attestation_binding.get("parent_binding_ids", ()))
+        if len(state_parents) != 1:
+            raise RuntimeError("KELLOGG attestation does not have exactly one state parent")
+        state_binding_id = str(state_parents[0])
+        graph = self.port.fabric.graph().get("bindings", ())
+        state_binding = next(
+            (
+                item
+                for item in graph
+                if str(item.get("binding_id")) == state_binding_id
+                and item.get("source_system") == "kellogg"
+                and item.get("kind") == "kellogg_tensor_state"
+            ),
+            None,
+        )
+        if state_binding is None:
+            raise RuntimeError("KELLOGG state parent is missing from shared custody")
+
+        input_parents = tuple(state_binding.get("parent_binding_ids", ()))
+        if len(input_parents) != 1:
+            raise RuntimeError("KELLOGG state does not have exactly one input parent")
+        input_binding_id = str(input_parents[0])
+
+        input_payload = json.loads(self.port.read(input_binding_id).decode("utf-8"))
+        state_payload = json.loads(self.port.read(state_binding_id).decode("utf-8"))
+        attestation_payload = json.loads(
+            self.port.read(str(attestation_binding["binding_id"])).decode("utf-8")
+        )
+        report = verify_kellogg_custody_boundary(
+            input_payload=input_payload,
+            state_payload=state_payload,
+            attestation_payload=attestation_payload,
+        )
+        report["custody"] = {
+            "input": bool(self.port.fabric.verify(input_binding_id).get("passed")),
+            "state": bool(self.port.fabric.verify(state_binding_id).get("passed")),
+            "attestation": bool(
+                self.port.fabric.verify(str(attestation_binding["binding_id"])).get("passed")
+            ),
+        }
+        report["passed"] = bool(report["passed"] and all(report["custody"].values()))
+        self.last_replay = report
+        return report
+
+
+def verify_kellogg_custody_boundary(
+    *,
+    input_payload: Mapping[str, Any] | None,
+    state_payload: Mapping[str, Any] | None,
+    attestation_payload: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    """Semantically verify one recovered KELLOGG state/attestation custody set."""
+    import math
+
+    from kellogg.attest import verify_attestation
+    from kellogg.exact_tensor import ExactStateVector, ExactTOETensor, F4
+
+    checks: dict[str, bool] = {}
+    input_record = input_payload if isinstance(input_payload, Mapping) else {}
+    state_record = state_payload if isinstance(state_payload, Mapping) else {}
+    attestation_record = (
+        attestation_payload if isinstance(attestation_payload, Mapping) else {}
+    )
+
+    checks["input_schema"] = (
+        input_record.get("schema") == "kellogg.input_commitment/v1"
+    )
+    input_digest = input_record.get("input_digest")
+    checks["input_digest_present"] = bool(
+        isinstance(input_digest, str) and len(input_digest) == 64
+    )
+    checks["state_binds_input"] = bool(
+        checks["input_digest_present"]
+        and state_record.get("input_digest") == input_digest
+    )
+
+    try:
+        checks["attestation_verifies"] = bool(
+            verify_attestation(state_record, attestation_record)
+        )
+    except Exception:
+        checks["attestation_verifies"] = False
+
+    plane = state_record.get("plane")
+    checks["plane_declared"] = plane in {"exact", "diagnostic"}
+    checks["exact_flag_matches_plane"] = (
+        state_record.get("exact") is (plane == "exact")
+    )
+
+    if plane == "exact":
+        checks["state_schema"] = (
+            state_record.get("schema") == "kellogg.exact_tensor_state/v1"
+        )
+        checks["representation"] = state_record.get("representation") == "exact_tensor"
+        checks["field"] = (
+            state_record.get("field") == "Q(sqrt(2)) + iQ(sqrt(2))"
+        )
+        amplitudes = state_record.get("amplitudes")
+        try:
+            parsed = tuple(F4.from_json(value) for value in amplitudes)
+            num_qubits = int(state_record.get("num_qubits"))
+            exact_state = ExactStateVector(
+                num_qubits,
+                parsed,
+                max_amplitudes=len(parsed),
+            )
+            checks["exact_amplitudes_reconstruct"] = True
+            checks["amplitude_count"] = (
+                int(state_record.get("amplitude_count")) == len(parsed)
+            )
+            checks["normalization"] = bool(
+                state_record.get("normalized_exact") is True
+                and exact_state.normalized_exact()
+            )
+            checks["state_commitment"] = (
+                state_record.get("state_commitment")
+                == ExactTOETensor.commitment(exact_state)
+            )
+        except Exception:
+            checks["exact_amplitudes_reconstruct"] = False
+            checks["amplitude_count"] = False
+            checks["normalization"] = False
+            checks["state_commitment"] = False
+        boundary = attestation_record.get("boundary")
+        checks["no_float_boundary_on_exact_plane"] = bool(
+            isinstance(boundary, Mapping)
+            and boundary.get("float_boundaries") == []
+        )
+    elif plane == "diagnostic":
+        checks["state_schema"] = (
+            state_record.get("schema") == "kellogg.tensor_state/v1"
+        )
+        checks["representation"] = (
+            state_record.get("representation") == "quantum_tensor"
+        )
+        checks["field"] = state_record.get("field") == "IEEE-754 complex"
+        amplitudes = state_record.get("amplitudes")
+        try:
+            dim = int(state_record.get("dim"))
+            pairs = list(amplitudes)
+            finite = all(
+                isinstance(pair, list)
+                and len(pair) == 2
+                and all(math.isfinite(float(value)) for value in pair)
+                for pair in pairs
+            )
+            checks["diagnostic_amplitudes_reconstruct"] = bool(
+                finite and dim == len(pairs)
+            )
+            norm_sq = sum(
+                float(pair[0]) * float(pair[0])
+                + float(pair[1]) * float(pair[1])
+                for pair in pairs
+            )
+            checks["normalization"] = bool(
+                checks["diagnostic_amplitudes_reconstruct"]
+                and abs(norm_sq - 1.0) <= 1e-12
+            )
+        except Exception:
+            checks["diagnostic_amplitudes_reconstruct"] = False
+            checks["normalization"] = False
+        boundary = attestation_record.get("boundary")
+        checks["float_boundary_declared"] = bool(
+            isinstance(boundary, Mapping)
+            and boundary.get("float_boundaries")
+            and all(
+                isinstance(item, str)
+                for item in boundary.get("float_boundaries", ())
+            )
+        )
+    else:
+        checks["state_schema"] = False
+        checks["representation"] = False
+        checks["field"] = False
+        checks["normalization"] = False
+
+    return {
+        "schema": "aethel.kellogg-custody-replay/1",
+        "passed": all(checks.values()),
+        "checks": checks,
+        "plane": plane,
+        "input_digest": input_digest,
+        "attestation_digest": attestation_record.get("attestation_digest"),
+    }
 
 
 def verify_turing_custody_boundary(
