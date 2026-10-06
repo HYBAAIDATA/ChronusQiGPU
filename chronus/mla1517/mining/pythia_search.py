@@ -11,7 +11,9 @@ The static search substrate is prepared before Stratum work starts:
 
 A real job supplies the 76-byte header prefix. The live PYTHIA plan may also
 supply a preferred coarse face. Those observations rank the precomputed coarse
-directions and then the 600 dual vertices. Turing's exact Hilbert walk then
+directions and then the 600 dual vertices. A provenance-bound PYTHIA structural
+model may refine the remaining coarse-face order after that explicit preferred
+face; it never changes candidate membership. Turing's exact Hilbert walk then
 reorders that complete 600-vertex manifold itinerary; it never removes a vertex
 or a nonce from the lease. SHA256d, negotiated target, freshness and literal
 pool acknowledgement remain the sole mining truth authorities.
@@ -387,13 +389,16 @@ def vertex_itinerary(
     precompute: PythiaSearchPrecompute | None = None,
     *,
     preferred_face: int | None = None,
+    structure_face_scores: Sequence[float | None] | None = None,
 ) -> tuple[int, ...]:
     """Return the complete job-ranked manifold after exact Hilbert traversal.
 
     First, the real header and optional PYTHIA preferred face produce a
-    connected best-first traversal of the 600-vertex dual manifold. Second,
-    the precomputed exact Turing walk rank is applied to the *positions* of
-    that complete manifold traversal. Position zero remains first, preserving
+    connected best-first traversal of the 600-vertex dual manifold. When the
+    trained structural model is active, its 32 coarse-face similarities refine
+    the remaining face order after the explicit preferred face. Second, the
+    precomputed exact Turing walk rank is applied to the *positions* of that
+    complete manifold traversal. Position zero remains first, preserving
     PYTHIA's selected search basin; all 600 vertices remain present exactly once.
     """
     if len(header) != 80:
@@ -403,15 +408,27 @@ def vertex_itinerary(
         and not 0 <= int(preferred_face) < COARSE_FACE_COUNT
     ):
         raise ValueError("preferred_face must be in [0, 31]")
+    if structure_face_scores is not None:
+        if len(structure_face_scores) != COARSE_FACE_COUNT:
+            raise ValueError("structure_face_scores must contain exactly 32 entries")
+        for value in structure_face_scores:
+            if value is not None and not math.isfinite(float(value)):
+                raise ValueError("structure_face_scores must be finite or None")
     state = precompute or precompute_pythia_search()
     direction = _header_direction(bytes(header[:76]))
 
-    def coarse_key(face_id: int) -> tuple[int, float, int]:
+    def coarse_key(face_id: int) -> tuple[int, float, float, int]:
         preferred_rank = (
             0 if preferred_face is not None and face_id == preferred_face else 1
         )
+        learned_score = (
+            0.0
+            if structure_face_scores is None or structure_face_scores[face_id] is None
+            else float(structure_face_scores[face_id])
+        )
         return (
             preferred_rank,
+            -learned_score,
             -_phi_dot(direction, state.coarse_frames_11d[face_id]),
             face_id,
         )
@@ -488,11 +505,22 @@ def pythia_hilbert_600_nonces(
     if window == 0 or take == 0:
         return []
 
+    # The structural advisor is process-local and installed only after PYTHIA
+    # has verified, trained and persisted the bound corpus. Calls made without
+    # that production bootstrap retain the exact pre-existing header geometry.
+    from Intelligence.mining_structure_advisor import advise_faces
+
+    structure_advice = advise_faces(base, window)
+    structure_scores = (
+        structure_advice.scores if structure_advice.state == "ACTIVE" else None
+    )
+
     state = precompute or precompute_pythia_search()
     itinerary = vertex_itinerary(
         header,
         state,
         preferred_face=preferred_face,
+        structure_face_scores=structure_scores,
     )
     shards = partition_interval(base, window, DUAL_VERTEX_COUNT)
     seed = int.from_bytes(
