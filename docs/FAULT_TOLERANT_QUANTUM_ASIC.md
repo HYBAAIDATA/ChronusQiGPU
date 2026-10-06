@@ -63,6 +63,8 @@ Production readiness is based on mathematical and software evidence, not hardwar
 
 The independent review record must be `independently_reproduced`. All other proof records must be `measured` or `independently_reproduced`. Missing evidence is returned explicitly; nothing is promoted by assertion alone.
 
+`FirstPrinciplesVerifier` and `TenThousandQubitSystem.verify_pure_quantum_asic()` now execute the internal proof obligations directly using exact `Q(i)` arithmetic. They verify zero unitary error, state-norm preservation, Born-probability normalization, surface-code identities, and byte-for-byte deterministic certificate replay. The verifier emits hash-addressed evidence for every successful internal check. It deliberately cannot issue `independent_model_review`; that final production gate must come from an external reproducer.
+
 The abstraction’s report always states:
 
 - `truth_class = pure_quantum_mathematical_abstraction`

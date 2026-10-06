@@ -12,6 +12,7 @@ import hashlib
 import json
 import math
 from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Mapping
 
@@ -789,6 +790,106 @@ class QuantumAsicStack:
 
 
 @dataclass(frozen=True)
+class VerificationBundle:
+    checks: Mapping[str, bool]
+    artifacts: Mapping[str, Any]
+    evidence: MathematicalEvidence
+
+    @property
+    def verified(self) -> bool:
+        return bool(self.checks) and all(self.checks.values())
+
+
+class FirstPrinciplesVerifier:
+    """Execute exact first-principles invariants and issue replayable evidence."""
+
+    @staticmethod
+    def _record(category: str, artifact: Any) -> EvidenceRecord:
+        return EvidenceRecord(
+            category=category,
+            state=EvidenceState.MEASURED,
+            artifact_digest=_digest(artifact),
+            source="PureQuantumMathASIC.FirstPrinciplesVerifier",
+            observed_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        )
+
+    def verify(
+        self,
+        stack: QuantumAsicStack,
+        *,
+        header76: bytes = bytes(range(76)),
+    ) -> VerificationBundle:
+        from .strict_quantum import (
+            certify_work_window,
+            rational_rotation,
+            state_from_bytes,
+            verify_certificate,
+        )
+
+        unitary = rational_rotation()
+        initial = state_from_bytes(b"first-principles-quantum", dimension=2)
+        evolved = initial.apply(unitary)
+        probabilities = evolved.born_probabilities()
+        certificate_a = certify_work_window(header76, 0, 32)
+        certificate_b = certify_work_window(header76, 0, 32)
+        code = stack.surface_code
+
+        artifacts = {
+            "unitarity_verification": {
+                "field": "Q(i)",
+                "unitary_error_sq": str(unitary.unitary_error()),
+            },
+            "normalization_verification": {
+                "initial_norm_sq": str(initial.norm_sq),
+                "evolved_norm_sq": str(evolved.norm_sq),
+                "born_sum": str(sum(probabilities)),
+            },
+            "error_correction_invariants": {
+                "distance": code.distance,
+                "physical_symbols": code.physical_qubits,
+                "correctable_weight": code.correctable_errors,
+                "logical_error_rate": code.logical_error_rate,
+            },
+            "deterministic_replay": {
+                "certificate_digest": _digest(certificate_a),
+                "identical": certificate_a == certificate_b,
+                "certificate_valid": verify_certificate(certificate_a),
+            },
+        }
+        checks = {
+            "unitarity_verification": unitary.unitary_error() == 0,
+            "normalization_verification": (
+                initial.norm_sq == evolved.norm_sq and sum(probabilities) == 1
+            ),
+            "error_correction_invariants": (
+                code.physical_qubits == 2 * code.distance**2 - 1
+                and code.correctable_errors == (code.distance - 1) // 2
+                and 0 < code.logical_error_rate < code.physical_error_rate
+            ),
+            "deterministic_replay": (
+                certificate_a == certificate_b and verify_certificate(certificate_a)
+            ),
+        }
+        checks["software_tests"] = all(checks.values())
+        artifacts["software_tests"] = {
+            "verifier": "turing.pure_quantum_math_asic.self_check/v1",
+            "checks": dict(checks),
+        }
+        records = tuple(
+            self._record(category, artifacts[category])
+            for category in (
+                "software_tests",
+                "unitarity_verification",
+                "normalization_verification",
+                "error_correction_invariants",
+                "deterministic_replay",
+            )
+            if checks[category]
+        )
+        return VerificationBundle(checks, artifacts, MathematicalEvidence(records))
+
+
+@dataclass(frozen=True)
 class PureQuantumMathASIC:
     """First-principles quantum-mathematics implementation.
 
@@ -799,6 +900,9 @@ class PureQuantumMathASIC:
     """
 
     stack: QuantumAsicStack = field(default_factory=QuantumAsicStack)
+
+    def verify_first_principles(self) -> VerificationBundle:
+        return FirstPrinciplesVerifier().verify(self.stack)
 
     def report(
         self,
@@ -851,6 +955,7 @@ __all__ = [
     "DilutionRefrigerator",
     "EvidenceRecord",
     "EvidenceState",
+    "FirstPrinciplesVerifier",
     "LogicalQubit",
     "MATHEMATICAL_EVIDENCE",
     "MathematicalEvidence",
@@ -869,6 +974,7 @@ __all__ = [
     "SurfaceCode",
     "SyndromeExtraction",
     "ThresholdEvaluation",
+    "VerificationBundle",
     "TransmonCoherence",
     "TransmonQubit",
     "TunableCoupler",

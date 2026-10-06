@@ -311,6 +311,10 @@ class TenThousandQubitSystem:
         """Compatibility alias for :meth:`pure_quantum_asic`."""
         return self.pure_quantum_asic()
 
+    def verify_pure_quantum_asic(self):
+        """Execute exact first-principles invariants for the abstraction."""
+        return self.pure_quantum_asic().verify_first_principles()
+
     # -- Aethel persistence (folded evidence, never raw amplitudes) -----------
 
     def aethel_store_manifest(self, address: str = "ten_thousand:manifest") -> Dict[str, Any]:
@@ -360,6 +364,7 @@ class TenThousandQubitSystem:
                 "swarming",
                 "golden_quantum_profile",
                 "pure_quantum_math_asic",
+                "first_principles_self_verification",
             ],
             "zeckendorf_protection": "non-adjacent Fibonacci index constraint",
             "cassini_anchor_ok": bool(_tc.cassini_check(7)),

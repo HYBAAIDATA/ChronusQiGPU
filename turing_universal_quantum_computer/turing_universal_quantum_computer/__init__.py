@@ -254,6 +254,7 @@ _LAZY_SYMBOLS = {
     "DilutionRefrigerator": "fault_tolerant_asic",
     "EvidenceRecord": "fault_tolerant_asic",
     "EvidenceState": "fault_tolerant_asic",
+    "FirstPrinciplesVerifier": "fault_tolerant_asic",
     "LogicalQubit": "fault_tolerant_asic",
     "MathematicalEvidence": "fault_tolerant_asic",
     "ProductionEvidence": "fault_tolerant_asic",
@@ -273,6 +274,7 @@ _LAZY_SYMBOLS = {
     "TransmonCoherence": "fault_tolerant_asic",
     "TransmonQubit": "fault_tolerant_asic",
     "TunableCoupler": "fault_tolerant_asic",
+    "VerificationBundle": "fault_tolerant_asic",
     "WiringBudget": "fault_tolerant_asic",
     # product boundary (v1.2)
     "Program": "backends",

@@ -160,6 +160,20 @@ class QuantumAsicModelTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             stack.application("unknown")
 
+    def test_first_principles_verifier_issues_exact_replayable_evidence(self):
+        machine = PureQuantumMathASIC()
+        bundle = machine.verify_first_principles()
+        self.assertTrue(bundle.verified)
+        self.assertTrue(all(bundle.checks.values()))
+        self.assertEqual(bundle.evidence.missing, ("independent_model_review",))
+        self.assertEqual(
+            bundle.artifacts["unitarity_verification"]["unitary_error_sq"],
+            "0",
+        )
+        self.assertTrue(
+            bundle.artifacts["deterministic_replay"]["certificate_valid"]
+        )
+
     def test_pure_quantum_math_abstraction_requires_math_evidence_only(self):
         empty = PureQuantumMathASIC().report(logical_scale=10_000)
         self.assertEqual(

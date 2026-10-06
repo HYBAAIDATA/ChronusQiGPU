@@ -27,6 +27,12 @@ class QuantumAsicIntegrationTests(unittest.TestCase):
             "turing.pure_quantum_math_asic/v1",
         )
         self.assertTrue(status["pure_quantum_asic"]["first_principles"])
+        verification = system.verify_pure_quantum_asic()
+        self.assertTrue(verification.verified)
+        self.assertEqual(
+            verification.evidence.missing,
+            ("independent_model_review",),
+        )
 
 
 if __name__ == "__main__":
