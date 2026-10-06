@@ -1,0 +1,59 @@
+/**
+ * HYBA institutional design tokens — McKinsey-grade palette.
+ * Source of truth: docs/HYBA_STYLE_GUIDE_FRONTEND_PRODUCT.md
+ *
+ * Colour law: blue = institution · gold = prize · orange = spark (rare).
+ */
+
+:root {
+  /* McKinsey / Oxford Blues */
+  --hyba-oxford: #002147;
+  --hyba-midnight: #001e3c;
+  --hyba-logo-navy: #001e46;
+  --hyba-deep: #00426a;
+  --hyba-primary: #0066b2;
+  --hyba-bright: #009fda;
+  --hyba-light: #7fb8dd;
+  --hyba-pale: #c7e6f5;
+
+  /* Veuve Clicquot */
+  --hyba-gold: #f2a900;
+  --hyba-gold-dark: #d99000;
+  --hyba-gold-light: #ffd45f;
+  --hyba-tagline-gold: #ffbe00;
+  --hyba-orange: #e86c1e;
+  --hyba-orange-dark: #c85a10;
+  --hyba-orange-light: #ff9147;
+
+  /* Neutrals — luxurious grey & sand */
+  --hyba-charcoal: #1a1a1a;
+  --hyba-slate: #2d3748;
+  --hyba-slate-light: #3d4a5c;
+  --hyba-grey: #718096;
+  --hyba-silver: #a0aec0;
+  --hyba-sand: #d4c5b9;
+  --hyba-sand-light: #e8ddd3;
+  --hyba-cream: #f5f1ed;
+  --hyba-white: #ffffff;
+
+  /* Semantic roles */
+  --hyba-bg-dark: var(--hyba-midnight);
+  --hyba-bg-light: var(--hyba-cream);
+  --hyba-surface-dark: var(--hyba-deep);
+  --hyba-surface-card: var(--hyba-slate);
+  --hyba-text-on-dark: var(--hyba-cream);
+  --hyba-text-on-light: var(--hyba-charcoal);
+  --hyba-text-muted: var(--hyba-grey);
+  --hyba-action: var(--hyba-primary);
+  --hyba-prize: var(--hyba-gold);
+  --hyba-alert: var(--hyba-orange);
+
+  /* Type — Victor Serif when licensed; Fraunces is interim display pair */
+  --hyba-font-display: "Victor Serif", "Fraunces", Georgia, "Times New Roman", serif;
+  --hyba-font-ui: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --hyba-font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+
+  /* Motion — deliberate, quiet */
+  --hyba-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --hyba-duration: 280ms;
+}

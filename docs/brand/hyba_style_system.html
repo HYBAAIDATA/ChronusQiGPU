@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HYBA Style System — Institutional Reference</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="hyba_tokens.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--hyba-font-ui);
+      color: var(--hyba-charcoal);
+      background: var(--hyba-cream);
+      line-height: 1.55;
+      font-size: 15px;
+    }
+    h1, h2, h3, .display {
+      font-family: var(--hyba-font-display);
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      line-height: 1.2;
+      color: var(--hyba-oxford);
+    }
+    a { color: var(--hyba-primary); text-decoration-thickness: 1px; }
+    a:hover { color: var(--hyba-deep); }
+
+    .topbar {
+      background: var(--hyba-oxford);
+      color: var(--hyba-cream);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--hyba-deep);
+    }
+    .lockup { display: flex; flex-direction: column; gap: 0.15rem; }
+    .lockup .mark {
+      font-family: var(--hyba-font-display);
+      font-weight: 700;
+      font-size: 1.35rem;
+      letter-spacing: 0.12em;
+      color: var(--hyba-cream);
+    }
+    .lockup .line {
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--hyba-light);
+    }
+    .lockup .tag {
+      font-family: var(--hyba-font-display);
+      font-style: italic;
+      font-size: 0.85rem;
+      color: var(--hyba-tagline-gold);
+      margin-top: 0.2rem;
+    }
+    .topnav { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.8rem; }
+    .topnav a { color: var(--hyba-pale); text-decoration: none; }
+    .topnav a:hover { color: var(--hyba-gold); }
+
+    main { max-width: 1100px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+    section { margin-bottom: 3.5rem; }
+    .bluf {
+      background: var(--hyba-oxford);
+      color: var(--hyba-cream);
+      padding: 1.5rem 1.75rem;
+      border-left: 4px solid var(--hyba-gold);
+      margin-bottom: 2.5rem;
+    }
+    .bluf h1 { color: var(--hyba-cream); margin: 0 0 0.5rem; font-size: 1.75rem; }
+    .bluf p { margin: 0; color: var(--hyba-light); max-width: 52rem; }
+    .bluf .prize { color: var(--hyba-gold); font-family: var(--hyba-font-display); font-weight: 700; }
+
+    .section-kicker {
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--hyba-grey);
+      margin-bottom: 0.4rem;
+    }
+    h2 { font-size: 1.45rem; margin: 0 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--hyba-sand); }
+
+    .swatch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.75rem;
+    }
+    .swatch {
+      border: 1px solid var(--hyba-sand);
+      background: var(--hyba-white);
+      overflow: hidden;
+    }
+    .swatch .chip { height: 64px; }
+    .swatch .meta { padding: 0.55rem 0.65rem; font-size: 0.72rem; }
+    .swatch .name { font-weight: 600; color: var(--hyba-slate); }
+    .swatch .hex { font-family: var(--hyba-font-mono); color: var(--hyba-grey); }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    @media (max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
+
+    .panel {
+      background: var(--hyba-white);
+      border: 1px solid var(--hyba-sand);
+      padding: 1.25rem 1.35rem;
+    }
+    .panel.dark {
+      background: var(--hyba-midnight);
+      color: var(--hyba-cream);
+      border-color: var(--hyba-slate-light);
+    }
+    .panel.dark h3 { color: var(--hyba-cream); }
+
+    .type-specimen .row { margin: 0.65rem 0; }
+    .type-specimen .label { font-size: 0.7rem; color: var(--hyba-grey); letter-spacing: 0.08em; text-transform: uppercase; }
+    .display-xl { font-family: var(--hyba-font-display); font-weight: 700; font-size: 2.4rem; color: var(--hyba-oxford); }
+    .section-head { font-family: var(--hyba-font-display); font-weight: 600; font-size: 1.35rem; }
+    .body-copy { font-size: 1rem; }
+    .caption { font-size: 0.8rem; color: var(--hyba-grey); }
+    .prize-num {
+      font-family: var(--hyba-font-display);
+      font-weight: 700;
+      font-size: 2rem;
+      color: var(--hyba-gold);
+    }
+
+    /* Tabs */
+    .tabs { display: flex; border-bottom: 1px solid var(--hyba-sand); gap: 0; margin-bottom: 1rem; }
+    .tab {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 0.65rem 1rem;
+      font-family: var(--hyba-font-ui);
+      font-size: 0.85rem;
+      color: var(--hyba-grey);
+      cursor: pointer;
+      transition: color var(--hyba-duration) var(--hyba-ease), border-color var(--hyba-duration) var(--hyba-ease);
+    }
+    .tab:hover { color: var(--hyba-deep); }
+    .tab[aria-selected="true"] {
+      color: var(--hyba-oxford);
+      border-bottom-color: var(--hyba-primary);
+      font-weight: 600;
+    }
+    .tab-panel[hidden] { display: none; }
+
+    /* Accordion */
+    details.acc {
+      border: 1px solid var(--hyba-sand);
+      background: var(--hyba-white);
+      margin-bottom: 0.5rem;
+    }
+    details.acc summary {
+      padding: 0.85rem 1rem;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--hyba-oxford);
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    details.acc summary::-webkit-details-marker { display: none; }
+    details.acc summary::after { content: "+"; color: var(--hyba-primary); font-weight: 400; }
+    details.acc[open] summary::after { content: "–"; }
+    details.acc .acc-body { padding: 0 1rem 1rem; color: var(--hyba-slate); font-size: 0.92rem; }
+
+    /* Slider */
+    .slider-wrap label { display: block; font-size: 0.8rem; color: var(--hyba-grey); margin-bottom: 0.4rem; }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--hyba-primary);
+      height: 4px;
+    }
+    .slider-value { font-family: var(--hyba-font-mono); color: var(--hyba-deep); font-size: 0.85rem; margin-top: 0.35rem; }
+
+    /* Carousel */
+    .carousel {
+      position: relative;
+      background: var(--hyba-midnight);
+      color: var(--hyba-cream);
+      min-height: 160px;
+      overflow: hidden;
+    }
+    .carousel-track { display: flex; transition: transform var(--hyba-duration) var(--hyba-ease); }
+    .slide {
+      min-width: 100%;
+      padding: 1.75rem 1.5rem;
+    }
+    .slide h3 { color: var(--hyba-cream); margin: 0 0 0.5rem; }
+    .slide p { margin: 0; color: var(--hyba-light); max-width: 36rem; }
+    .carousel-nav {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      background: var(--hyba-oxford);
+    }
+    .carousel-nav button {
+      background: transparent;
+      border: 1px solid var(--hyba-deep);
+      color: var(--hyba-cream);
+      padding: 0.4rem 0.9rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: border-color var(--hyba-duration) var(--hyba-ease), color var(--hyba-duration) var(--hyba-ease);
+    }
+    .carousel-nav button:hover { border-color: var(--hyba-gold); color: var(--hyba-gold); }
+    .dots { display: flex; gap: 0.4rem; align-items: center; }
+    .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--hyba-slate-light); border: none; padding: 0; cursor: pointer;
+    }
+    .dot[aria-current="true"] { background: var(--hyba-gold); }
+
+    /* Buttons */
+    .btn-row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+    .btn {
+      font-family: var(--hyba-font-ui);
+      font-size: 0.85rem;
+      font-weight: 500;
+      padding: 0.55rem 1.1rem;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: background var(--hyba-duration) var(--hyba-ease), border-color var(--hyba-duration) var(--hyba-ease);
+    }
+    .btn-primary { background: var(--hyba-primary); color: var(--hyba-white); }
+    .btn-primary:hover { background: var(--hyba-deep); }
+    .btn-ghost { background: transparent; border-color: var(--hyba-primary); color: var(--hyba-primary); }
+    .btn-ghost:hover { background: var(--hyba-pale); }
+    .btn-alert { background: transparent; border-color: var(--hyba-orange); color: var(--hyba-orange-dark); }
+
+    /* Table */
+    table.exhibit {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      background: var(--hyba-white);
+    }
+    table.exhibit caption {
+      text-align: left;
+      font-family: var(--hyba-font-display);
+      font-weight: 600;
+      color: var(--hyba-oxford);
+      padding: 0 0 0.75rem;
+      font-size: 1rem;
+    }
+    table.exhibit th {
+      text-align: left;
+      background: var(--hyba-oxford);
+      color: var(--hyba-cream);
+      padding: 0.55rem 0.75rem;
+      font-weight: 500;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+    }
+    table.exhibit td {
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid var(--hyba-sand-light);
+      color: var(--hyba-slate);
+    }
+    table.exhibit tbody tr:nth-child(even) { background: var(--hyba-pale); }
+    table.exhibit .prize { color: var(--hyba-gold-dark); font-weight: 600; font-family: var(--hyba-font-display); }
+
+    /* Writing samples */
+    .slide-card {
+      background: var(--hyba-midnight);
+      color: var(--hyba-cream);
+      padding: 2rem 1.75rem;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .slide-card .kicker { font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--hyba-light); }
+    .slide-card h3 { color: var(--hyba-cream); font-size: 1.35rem; margin: 0.75rem 0; max-width: 28rem; }
+    .slide-card .foot { font-size: 0.75rem; color: var(--hyba-silver); }
+
+    .announce {
+      border: 1px solid var(--hyba-sand);
+      background: var(--hyba-white);
+      padding: 1.25rem 1.35rem;
+      border-left: 3px solid var(--hyba-primary);
+    }
+    .announce.prize-edge { border-left-color: var(--hyba-gold); }
+    .announce h3 { margin: 0 0 0.4rem; font-size: 1.05rem; }
+    .announce p { margin: 0; color: var(--hyba-slate); font-size: 0.92rem; }
+
+    footer {
+      border-top: 1px solid var(--hyba-sand);
+      padding-top: 1.5rem;
+      font-size: 0.8rem;
+      color: var(--hyba-grey);
+    }
+    code { font-family: var(--hyba-font-mono); font-size: 0.84em; background: var(--hyba-sand-light); padding: 0.1em 0.35em; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="lockup">
+      <span class="mark">HYBA</span>
+      <span class="line">Data · Analytics · Intelligence · Finance</span>
+      <span class="tag">Intelligent Solutions.</span>
+    </div>
+    <nav class="topnav" aria-label="Style sections">
+      <a href="#colour">Colour</a>
+      <a href="#type">Type</a>
+      <a href="#components">Components</a>
+      <a href="#tables">Tables</a>
+      <a href="#slides">Slides</a>
+      <a href="#announce">Announcements</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="bluf">
+      <h1>HYBA Style System</h1>
+      <p>
+        Institutional reference for frontend and product surfaces.
+        <span class="prize">Blue builds the house. Gold marks the prize. Orange sparks only when needed.</span>
+        If it would not survive a McKinsey client room, it does not ship.
+      </p>
+    </div>
+
+    <section id="colour">
+      <div class="section-kicker">01 · Palette</div>
+      <h2>Colour system — McKinsey blues, Veuve accents, sand calm</h2>
+
+      <h3 style="font-size:1rem;margin:1.25rem 0 0.75rem;color:var(--hyba-deep)">Primary blues</h3>
+      <div class="swatch-grid" id="blues"></div>
+
+      <h3 style="font-size:1rem;margin:1.75rem 0 0.75rem;color:var(--hyba-deep)">Veuve accents</h3>
+      <div class="swatch-grid" id="accents"></div>
+
+      <h3 style="font-size:1rem;margin:1.75rem 0 0.75rem;color:var(--hyba-deep)">Neutrals</h3>
+      <div class="swatch-grid" id="neutrals"></div>
+    </section>
+
+    <section id="type">
+      <div class="section-kicker">02 · Typography</div>
+      <h2>Victor Serif optical class (Fraunces interim) + IBM Plex UI</h2>
+      <div class="two-col type-specimen">
+        <div class="panel">
+          <div class="row">
+            <div class="label">Display</div>
+            <div class="display-xl">Board-grade clarity</div>
+          </div>
+          <div class="row">
+            <div class="label">Section</div>
+            <div class="section-head">One idea per surface</div>
+          </div>
+          <div class="row">
+            <div class="label">Body</div>
+            <p class="body-copy">Pyramid structure: governing thought, then evidence. Claims stay separable into implemented, validated, planned, and aspirational.</p>
+          </div>
+          <div class="row">
+            <div class="label">Caption</div>
+            <p class="caption">Source: docs/HYBA_STYLE_GUIDE_FRONTEND_PRODUCT.md</p>
+          </div>
+        </div>
+        <div class="panel dark">
+          <div class="label" style="color:var(--hyba-light)">Prize number on dark</div>
+          <div class="prize-num">φ = 1.618…</div>
+          <p style="color:var(--hyba-light);margin:0.75rem 0 0;font-size:0.9rem">Gold is reserved for key metrics and the tagline — never wallpaper.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="components">
+      <div class="section-kicker">03 · Components</div>
+      <h2>Quiet controls — tabs, accordion, slider, carousel, actions</h2>
+
+      <div class="panel" style="margin-bottom:1.25rem">
+        <div class="tabs" role="tablist" aria-label="Doctrine tabs">
+          <button class="tab" role="tab" id="tab-look" aria-selected="true" aria-controls="panel-look">Look</button>
+          <button class="tab" role="tab" id="tab-feel" aria-selected="false" aria-controls="panel-feel">Feel</button>
+          <button class="tab" role="tab" id="tab-perform" aria-selected="false" aria-controls="panel-perform">Perform</button>
+        </div>
+        <div class="tab-panel" role="tabpanel" id="panel-look" aria-labelledby="tab-look">
+          Oxford structure, cream canvas, gold only on prize metrics. No startup chrome.
+        </div>
+        <div class="tab-panel" role="tabpanel" id="panel-feel" aria-labelledby="tab-feel" hidden>
+          Deliberate motion, board-readable density, empty/error states designed to the same standard as happy path.
+        </div>
+        <div class="tab-panel" role="tabpanel" id="panel-perform" aria-labelledby="tab-perform" hidden>
+          Production reliability and evidence-backed in-product claims. Ship bar: McKinsey client room.
+        </div>
+      </div>
+
+      <div class="two-col" style="margin-bottom:1.25rem">
+        <div>
+          <details class="acc" open>
+            <summary>Colour law</summary>
+            <div class="acc-body">Blue is the institution. Gold is the prize. Orange is the spark — never the wallpaper.</div>
+          </details>
+          <details class="acc">
+            <summary>Exhibit discipline</summary>
+            <div class="acc-body">Chart and table titles state the insight, not the data category.</div>
+          </details>
+          <details class="acc">
+            <summary>Evidence trail</summary>
+            <div class="acc-body">Tag every claim: implemented · validated · planned · aspirational.</div>
+          </details>
+        </div>
+        <div class="panel">
+          <div class="slider-wrap">
+            <label for="density">Information density (briefing → board pack)</label>
+            <input id="density" type="range" min="0" max="100" value="62" />
+            <div class="slider-value"><span id="density-val">62</span>% board density</div>
+          </div>
+          <div class="btn-row" style="margin-top:1.25rem">
+            <button type="button" class="btn btn-primary">Primary action</button>
+            <button type="button" class="btn btn-ghost">Secondary</button>
+            <button type="button" class="btn btn-alert">Alert (rare)</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="carousel" aria-roledescription="carousel" aria-label="Writing principles">
+        <div class="carousel-track" id="carousel-track">
+          <div class="slide"><h3>BLUF first</h3><p>Recommendation or insight in the first line — never buried under context.</p></div>
+          <div class="slide"><h3>One idea per section</h3><p>Multi-thesis pages fail the client-room test. Split or cut.</p></div>
+          <div class="slide"><h3>Action titles</h3><p>Headlines state the conclusion the reader should take away.</p></div>
+        </div>
+        <div class="carousel-nav">
+          <button type="button" id="car-prev" aria-label="Previous slide">Previous</button>
+          <div class="dots" id="car-dots" role="tablist" aria-label="Slides"></div>
+          <button type="button" id="car-next" aria-label="Next slide">Next</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="tables">
+      <div class="section-kicker">04 · Tables</div>
+      <h2>Exhibits titled with the insight</h2>
+      <table class="exhibit">
+        <caption>Gold is reserved for prize metrics — structure stays navy</caption>
+        <thead>
+          <tr>
+            <th>Surface</th>
+            <th>Token</th>
+            <th>Role</th>
+            <th>Prize?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Primary action</td>
+            <td><code>--hyba-primary</code></td>
+            <td>Buttons, links</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td>Key KPI</td>
+            <td><code>--hyba-gold</code></td>
+            <td>Milestone / outcome number</td>
+            <td class="prize">Yes</td>
+          </tr>
+          <tr>
+            <td>Alert</td>
+            <td><code>--hyba-orange</code></td>
+            <td>Exception path only</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td>Body on light</td>
+            <td><code>--hyba-charcoal</code></td>
+            <td>Readable hierarchy</td>
+            <td>No</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="slides">
+      <div class="section-kicker">05 · Presentation</div>
+      <h2>Action-title slides — one governing thought</h2>
+      <div class="two-col">
+        <div class="slide-card">
+          <div>
+            <div class="kicker">Governing thought</div>
+            <h3>Chronus is the iGPU home; scale law is Lucas/Pisot — not a hashrate ladder.</h3>
+          </div>
+          <div class="foot">HYBA · Intelligent Solutions.</div>
+        </div>
+        <div class="slide-card" style="background:var(--hyba-oxford)">
+          <div>
+            <div class="kicker">Exhibit</div>
+            <h3>Frontend tokens must map to <span style="color:var(--hyba-gold)">--hyba-*</span> before “on-brand” is claimed.</h3>
+          </div>
+          <div class="foot">Rule 7 · evidence before marketing</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="announce">
+      <div class="section-kicker">06 · Announcements</div>
+      <h2>Institutional notice pattern</h2>
+      <div class="two-col">
+        <div class="announce">
+          <h3>Style guide landed in-repo</h3>
+          <p><code>docs/HYBA_STYLE_GUIDE_FRONTEND_PRODUCT.md</code> is the authoritative frontend/product law for this workspace.</p>
+        </div>
+        <div class="announce prize-edge">
+          <h3>Migration is planned, not done</h3>
+          <p>Current <code>frontend/src/index.css</code> still uses <code>--pythia-*</code> with blurple prize. Do not claim full compliance until tokens switch.</p>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      Authoritative doctrine: <code>docs/HYBA_STYLE_GUIDE_FRONTEND_PRODUCT.md</code> ·
+      Tokens: <code>docs/brand/hyba_tokens.css</code> ·
+      Interim display face: Fraunces (Victor Serif when licensed).
+    </footer>
+  </main>
+
+  <script>
+    const groups = {
+      blues: [
+        ["Oxford", "#002147", "--hyba-oxford"],
+        ["Midnight", "#001E3C", "--hyba-midnight"],
+        ["Logo Navy", "#001E46", "--hyba-logo-navy"],
+        ["Deep", "#00426A", "--hyba-deep"],
+        ["Primary", "#0066B2", "--hyba-primary"],
+        ["Bright", "#009FDA", "--hyba-bright"],
+        ["Light", "#7FB8DD", "--hyba-light"],
+        ["Pale", "#C7E6F5", "--hyba-pale"],
+      ],
+      accents: [
+        ["Veuve Gold", "#F2A900", "--hyba-gold"],
+        ["Gold Dark", "#D99000", "--hyba-gold-dark"],
+        ["Gold Light", "#FFD45F", "--hyba-gold-light"],
+        ["Tagline Gold", "#FFBE00", "--hyba-tagline-gold"],
+        ["Orange", "#E86C1E", "--hyba-orange"],
+        ["Orange Dark", "#C85A10", "--hyba-orange-dark"],
+        ["Orange Light", "#FF9147", "--hyba-orange-light"],
+      ],
+      neutrals: [
+        ["Charcoal", "#1A1A1A", "--hyba-charcoal"],
+        ["Slate", "#2D3748", "--hyba-slate"],
+        ["Grey Mid", "#3D4A5C", "--hyba-slate-light"],
+        ["Grey", "#718096", "--hyba-grey"],
+        ["Silver", "#A0AEC0", "--hyba-silver"],
+        ["Sand", "#D4C5B9", "--hyba-sand"],
+        ["Sand Light", "#E8DDD3", "--hyba-sand-light"],
+        ["Cream", "#F5F1ED", "--hyba-cream"],
+        ["White", "#FFFFFF", "--hyba-white"],
+      ],
+    };
+
+    function paint(id, rows) {
+      const root = document.getElementById(id);
+      root.innerHTML = rows.map(([name, hex, token]) => {
+        const light = luminance(hex) > 0.72;
+        return `<div class="swatch">
+          <div class="chip" style="background:${hex};border-bottom:1px solid ${light ? "#d4c5b9" : "transparent"}"></div>
+          <div class="meta">
+            <div class="name">${name}</div>
+            <div class="hex">${hex}</div>
+            <div class="hex">${token}</div>
+          </div>
+        </div>`;
+      }).join("");
+    }
+    function luminance(hex) {
+      const h = hex.replace("#", "");
+      const r = parseInt(h.slice(0, 2), 16) / 255;
+      const g = parseInt(h.slice(2, 4), 16) / 255;
+      const b = parseInt(h.slice(4, 6), 16) / 255;
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    }
+    paint("blues", groups.blues);
+    paint("accents", groups.accents);
+    paint("neutrals", groups.neutrals);
+
+    /* Tabs */
+    document.querySelectorAll(".tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach((t) => t.setAttribute("aria-selected", "false"));
+        document.querySelectorAll(".tab-panel").forEach((p) => { p.hidden = true; });
+        tab.setAttribute("aria-selected", "true");
+        document.getElementById(tab.getAttribute("aria-controls")).hidden = false;
+      });
+    });
+
+    /* Slider */
+    const density = document.getElementById("density");
+    const densityVal = document.getElementById("density-val");
+    density.addEventListener("input", () => { densityVal.textContent = density.value; });
+
+    /* Carousel */
+    const track = document.getElementById("carousel-track");
+    const slides = track.children;
+    const dots = document.getElementById("car-dots");
+    let idx = 0;
+    for (let i = 0; i < slides.length; i++) {
+      const b = document.createElement("button");
+      b.className = "dot";
+      b.type = "button";
+      b.setAttribute("aria-label", `Go to slide ${i + 1}`);
+      if (i === 0) b.setAttribute("aria-current", "true");
+      b.addEventListener("click", () => go(i));
+      dots.appendChild(b);
+    }
+    function go(i) {
+      idx = (i + slides.length) % slides.length;
+      track.style.transform = `translateX(-${idx * 100}%)`;
+      [...dots.children].forEach((d, j) => d.setAttribute("aria-current", j === idx ? "true" : "false"));
+    }
+    document.getElementById("car-prev").addEventListener("click", () => go(idx - 1));
+    document.getElementById("car-next").addEventListener("click", () => go(idx + 1));
+  </script>
+</body>
+</html>
