@@ -42,10 +42,11 @@ from .pythia_search import (
     SEARCH_ARCHITECTURE_ID,
     PythiaSearchPrecompute,
     precompute_pythia_search,
-    pythia_hilbert_600_nonces,
+    pythia_hendrix_nonces,
 )
 from .search_plan import ExecutionRoute, PoolOutcome
 
+_PYTHIA_HENDRIX_COMPOSED = "pythia_hendrix_structured_composed"
 _NATIVE_BACKENDS = frozenset({"cuda", "metal"})
 _NATIVE_ROUTE_METHODS = {
     "k_gold": "grind_target_gold",
@@ -83,7 +84,15 @@ class ProductionExecutionRouter(ExecutionRouter):
         _bind_native_route_markers(hasher)
         self._pythia_precompute = pythia_precompute or precompute_pythia_search()
         self._pythia_order_cache: dict[str, list[int]] = {}
-        kwargs["nonce_order"] = lambda plan: plan.nonce_order
+        # The base router has a built-in pure-Hendrix branch. PYTHIA's
+        # production route executes Hendrix over the complete structured
+        # itinerary instead, so use an internal composite marker to reach
+        # _run_chunk while the immutable SearchPlan remains Hendrix.
+        kwargs["nonce_order"] = lambda plan: (
+            _PYTHIA_HENDRIX_COMPOSED
+            if self._is_pythia_lattice(plan)
+            else plan.nonce_order
+        )
         super().__init__(hasher, *args, **kwargs)
 
     @staticmethod
@@ -145,13 +154,17 @@ class ProductionExecutionRouter(ExecutionRouter):
         )
 
     def _run_chunk(self, plan, header, target, chunk, decision):
-        """Execute the exact 600-vertex itinerary on CPU or explicit-nonce hardware."""
+        """Execute PYTHIA's canonical Hendrix traversal on CPU or hardware."""
         if not self._is_pythia_lattice(plan):
             return super()._run_chunk(plan, header, target, chunk, decision)
 
+        if plan.nonce_order != NONCE_ORDER_HENDRIX:
+            raise RuntimeError(
+                "PYTHIA canonical search requires the Hendrix plan-bound order"
+            )
         order = self._pythia_order_cache.get(plan.plan_id)
         if order is None:
-            order = pythia_hilbert_600_nonces(
+            order = pythia_hendrix_nonces(
                 header,
                 plan.base_step,
                 plan.window,
@@ -162,7 +175,7 @@ class ProductionExecutionRouter(ExecutionRouter):
         position = (chunk.start - plan.base_step) & 0xFFFFFFFF
         nonces = order[position : position + chunk.count]
         if len(nonces) != chunk.count:
-            raise RuntimeError("PYTHIA itinerary chunk does not match the leased window")
+            raise RuntimeError("PYTHIA Hendrix chunk does not match the leased window")
 
         if decision.executed_route is ExecutionRoute.cpu_reference:
             return self._cpu_nonces(header, target, nonces)
@@ -172,14 +185,14 @@ class ProductionExecutionRouter(ExecutionRouter):
         return batch(header, bytes(target)[::-1], nonces)
 
     def _build_record(self, plan, decision, requested_order, **kwargs):
-        """Make the executed search identity literal in the evidence record."""
+        """Record Hendrix literally while retaining structure in plan evidence."""
         record = super()._build_record(plan, decision, requested_order, **kwargs)
         if not self._is_pythia_lattice(plan):
             return record
-        executed = None if record.executed_nonce_order is None else SEARCH_ARCHITECTURE_ID
+        executed = None if record.executed_nonce_order is None else plan.nonce_order
         return replace(
             record,
-            requested_nonce_order=SEARCH_ARCHITECTURE_ID,
+            requested_nonce_order=plan.nonce_order,
             executed_nonce_order=executed,
         )
 
@@ -350,6 +363,7 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         refs = dict(plan.evidence_refs)
         refs["search_architecture"] = SEARCH_ARCHITECTURE_ID
         refs["search_precompute_digest"] = self.pythia_search_precompute.digest
+        refs["search_algorithm"] = NONCE_ORDER_HENDRIX
         refs["configured_traversal_refinement"] = self._nonce_order
         refs["chronus_search_fabric"] = dict(self._chronus_fabric_state)
         refs["pulvini_data_boundary"] = {
@@ -358,6 +372,7 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         }
         refs["technology_intent"] = {
             "composition_root": "PYTHIA",
+            "search_algorithm": NONCE_ORDER_HENDRIX,
             "search_architecture": SEARCH_ARCHITECTURE_ID,
             "coarse_overlay": "dodecahedron_12_plus_icosahedron_20",
             "manifold": "phi_weighted_11d_poincare_ball",
@@ -380,12 +395,12 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                 "sha256d_target_freshness_and_literal_pool_response_only"
             ),
         }
-        # M32 is only a compatibility carrier to avoid the inherited router's
-        # separate Hendrix/Poincare special cases. The production router emits
-        # the literal 600-vertex architecture as requested/executed order.
+        # Hendrix is the canonical production search algorithm. PYTHIA's
+        # 32 -> 11D -> 600/Turing structure supplies the complete itinerary
+        # that Hendrix traverses; it does not replace Hendrix.
         return replace(
             plan,
-            nonce_order=NONCE_ORDER_M32,
+            nonce_order=NONCE_ORDER_HENDRIX,
             executor_route=self._pythia_batch_route(),
             evidence_refs=refs,
         )
@@ -510,9 +525,10 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                     "authority": "coverage-preserving local shard permutation",
                 },
                 "hendrix_coprime_search": {
-                    "state": "AVAILABLE_REFINEMENT",
+                    "state": "ACTIVE_CANONICAL_SEARCH",
                     "authority": (
-                        "legacy/alternative traversal refinement, not search identity"
+                        "default complete structured traversal; supporting intelligence "
+                        "may order its itinerary but may not replace it"
                     ),
                 },
                 "m32_dual_solid_lane_topology": {
