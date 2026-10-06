@@ -128,6 +128,28 @@ is replayable. Direct backend methods are low-level implementation surfaces,
 not the canonical public execution boundary. They intentionally do not mint
 product certificates; callers must use the registry.
 
+### Production evidence entry point
+
+`run_production_pipeline(VQCRequest(...))` is the canonical production
+acceptance entry point. It cannot be weakened by request flags: it forces
+THESEUS custody, replay, and the durable storage path for the four canonical
+artefacts:
+
+- program;
+- result;
+- computation certificate;
+- run witness.
+
+Production replay is cross-bound, not merely four independent byte checks. It
+reconstructs the recovered `Program` and typed `ExecutionResult`, verifies
+the recovered computation certificate against both, verifies the witness, and
+requires the witness to bind the same program, backend, execution class, truth
+class, materialisation/QPU claims, gate counts, and certificate digest.
+
+`run_pipeline(...)` remains the composable computation pipeline for callers
+that intentionally do not request durable evidence. A PASS from that helper is
+not by itself the production custody/replay acceptance gate.
+
 Floating evidence is serialized with exact IEEE-754 hexadecimal strings.
 NaN, infinity, memory-address representations, unknown fields, altered trace
 order, and digest substitution fail closed.
