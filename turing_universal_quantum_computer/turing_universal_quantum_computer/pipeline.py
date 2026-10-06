@@ -31,6 +31,7 @@ from .certificates import (
     RunWitness,
     VQCComputationCertificate,
     WitnessError,
+    canonicalize_certificate_value,
     issue_computation_certificate,
     issue_witness,
     validate_certificate_inputs,
@@ -567,37 +568,17 @@ def _program_from_qasm(qasm: str) -> Program:
     return program
 
 
-def _jsonable(value: Any) -> Any:
-    """Make a backend payload JSON-serialisable without losing claim content.
-
-    States become their canonical ``to_dict`` (exact string amplitudes);
-    other non-JSON values become ``str`` — the string form is the exact form
-    for the algebraic types used here, so no value is silently weakened.
-    """
-    if isinstance(value, (str, int, float, bool)) or value is None:
-        return value
-    if isinstance(value, dict):
-        return {str(k): _jsonable(v) for k, v in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [_jsonable(v) for v in value]
-    to_dict = getattr(value, "to_dict", None)
-    if callable(to_dict):
-        return _jsonable(to_dict())
-    return str(value)
-
-
 def _result_payload(result: ExecutionResult) -> dict[str, Any]:
-    return {
-        "backend": result.backend,
-        "execution_class": result.execution_class.value,
-        "truth_class": result.truth_class.value,
-        "n_qubits": result.n_qubits,
-        "program_digest": result.program_digest,
-        "materialised": result.materialised,
-        "measured_qpu": result.measured_qpu,
-        "payload": _jsonable(result.payload or {}),
-        "certificate": result.certificate,
-    }
+    """Persist the exact certificate-canonical view of an execution result.
+
+    This prevents custody from flattening values (for example complex display
+    values or IEEE-754 floats) into a representation that can no longer
+    reproduce the computation certificate after restart.
+    """
+    payload = canonicalize_certificate_value(result.as_dict())
+    if not isinstance(payload, dict):
+        raise WitnessError("canonical execution result must be an object")
+    return payload
 
 
 def _differential_check(
