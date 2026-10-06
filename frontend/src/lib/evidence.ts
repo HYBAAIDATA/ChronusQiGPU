@@ -37,6 +37,37 @@ export type EvidenceExecution = {
   pool_outcome?: string;
 };
 
+export type SearchPrecomputeEvidence = {
+  schema?: string;
+  architecture_id?: string;
+  state?: string;
+  prepared_before_pool_work?: boolean;
+  coarse_dual_faces?: number;
+  dual_vertices?: number;
+  dual_edges?: number;
+  manifold_dimension?: number;
+  hilbert_qubits?: number;
+  hilbert_dimension?: number;
+  hilbert_addresses?: number;
+  hilbert_walk?: string;
+  hilbert_walk_positions_reached?: number;
+  digest?: string;
+  claim_boundary?: string;
+};
+
+export type WorkforceRole = {
+  role?: string;
+  owner?: string;
+  authority?: string;
+};
+
+export type AgenticWorkforceEvidence = {
+  schema?: string;
+  composition_root?: string;
+  enterprise_orchestrator?: string;
+  roles?: WorkforceRole[];
+};
+
 export type MiningEvidence = {
   schema?: string;
   evidence_available?: boolean;
@@ -61,6 +92,14 @@ export type MiningEvidence = {
     device?: string | null;
     fallback_reason?: string | null;
     route?: string;
+  };
+  pythia_search_precompute?: SearchPrecomputeEvidence;
+  pythia_agentic_workforce?: AgenticWorkforceEvidence;
+  technology_utilization?: {
+    composition_root?: string;
+    enterprise_intelligence_orchestrator?: string;
+    truth_boundary?: string;
+    canonical_search?: SearchPrecomputeEvidence;
   };
   session?: { state?: string; share_log_tail?: Array<{ state?: string; submission_id?: string }> };
   intelligence?: EvidenceIntelligence;
@@ -249,24 +288,35 @@ function row(
   return { key, label, value: missing(value) ? null : (value as string | number), truth: missing(value) ? "unavailable" : truth };
 }
 
+const workforceOwner = (evidence: MiningEvidence, role: string): string | null =>
+  evidence.pythia_agentic_workforce?.roles?.find((item) => item.role === role)?.owner ?? null;
+
 export function evidenceRows(evidence?: MiningEvidence | null): EvidenceRow[] {
   if (!evidence || evidence.evidence_available !== true) return [];
   const exec = evidence.last_execution ?? undefined;
   const agentic = evidence.agentic;
   const backend = evidence.execution_backend;
-  const hardware = exec?.evidence_class === "HARDWARE_EXECUTED";
+  const measuredExecution = exec?.evidence_class === "HARDWARE_EXECUTED" || exec?.evidence_class === "POOL_CONFIRMED";
   const waste = agentic?.precompute_waste_ratio;
+  const search = evidence.pythia_search_precompute ?? evidence.technology_utilization?.canonical_search;
   return [
-    row("backend", "Execution backend", backend?.device ?? backend?.backend, "live"),
-    row("route", "Planned route", backend?.route, "live"),
-    row("executed_route", "Executed route", exec?.executed_route, hardware ? "measured" : "computed"),
+    row("composition_root", "Mining composition root", evidence.pythia_agentic_workforce?.composition_root, "live"),
+    row("search_architecture", "Search structure", search?.architecture_id, "live"),
+    row("search_vertices", "Logical search vertices", search?.dual_vertices, "live"),
+    row("manifold_dimension", "Search manifold", search?.manifold_dimension == null ? null : `${search.manifold_dimension}D`, "live"),
+    row("hilbert_qubits", "Turing Hilbert address", search?.hilbert_qubits == null ? null : `${search.hilbert_qubits} qubits`, "live"),
+    row("execution_authority", "Physical execution authority", workforceOwner(evidence, "physical_execution"), "live"),
+    row("healing_authority", "Healing / optimisation authority", workforceOwner(evidence, "healing_and_optimisation"), "live"),
+    row("backend", "Execution adapter / device", backend?.device ?? backend?.backend, "live"),
+    row("route", "Compatibility route", backend?.route, "live"),
+    row("executed_route", "Executed route", exec?.executed_route, measuredExecution ? "measured" : "computed"),
     row("route_fallback", "Route fallback", exec?.route_fallback_reason, "measured"),
-    row("evidence_class", "Evidence class", exec?.evidence_class, hardware ? "measured" : "computed"),
+    row("evidence_class", "Evidence class", exec?.evidence_class, measuredExecution ? "measured" : "computed"),
     row("plan_source", "Plan source", exec?.plan_source, "live"),
     row("plan_fallback", "Why no agentic plan", exec?.plan_fallback_reason, "live"),
     row("generation", "Stratum generation", exec?.generation ?? agentic?.work_identity?.generation, "live"),
     row("lease", "Nonce lease", exec?.lease_id, "live"),
-    row("pool_outcome", "Pool outcome", exec?.pool_outcome, "live"),
+    row("pool_outcome", "Pool outcome", exec?.pool_outcome, exec?.pool_outcome === "ACCEPTED" || exec?.pool_outcome === "REJECTED" ? "measured" : "live"),
     row("lookahead", "Lookahead", agentic?.lookahead != null ? `${agentic.lookahead} / ${agentic.lookahead_max ?? "?"}` : null, "computed"),
     row("waste", "Precompute waste", waste == null ? null : `${(waste * 100).toFixed(1)}%`, "measured"),
     row("recovery_mode", "Recovery mode", evidence.recovery?.mode, "live"),
