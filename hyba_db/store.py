@@ -27,6 +27,7 @@ from .models import (
     EdgeRecord, FoldRecord, IntegrityFailure, InvalidRecord, NodeRecord,
     Quota, QuotaExceeded, TensorRecord,
 )
+from .file_registry import FILE_REGISTRY_SCHEMA, FileRegistry
 
 
 class NodeKind(StrEnum):
@@ -215,7 +216,7 @@ CREATE VIEW IF NOT EXISTS mps AS SELECT * FROM tensors WHERE kind='mps';
 CREATE VIEW IF NOT EXISTS tt AS SELECT * FROM tensors WHERE kind='tt';
 CREATE VIEW IF NOT EXISTS mpo AS SELECT * FROM tensors WHERE kind='mpo';
 CREATE VIEW IF NOT EXISTS fold_children AS SELECT tenant_id,parent_id,id AS child_id FROM folds WHERE parent_id IS NOT NULL;
-"""
+""" + FILE_REGISTRY_SCHEMA
 
 
 class OntologyStore:
@@ -234,7 +235,8 @@ class OntologyStore:
         self._db.execute("PRAGMA journal_mode=WAL")
         self._db.execute("PRAGMA synchronous=FULL")
         self._db.executescript(_SCHEMA)
-        self._db.execute("INSERT OR IGNORE INTO metadata VALUES('schema_version','1')")
+        self._db.execute("INSERT OR REPLACE INTO metadata VALUES('schema_version','2')")
+        self.files = FileRegistry(self)
 
     def close(self) -> None:
         self._db.close()
@@ -638,4 +640,15 @@ class OntologyStore:
             row=self._db.execute("SELECT used_records,used_blob_bytes FROM tenants WHERE tenant_id=?",(tid,)).fetchone(); sums=self._db.execute("SELECT COALESCE(SUM(record_delta),0),COALESCE(SUM(byte_delta),0) FROM quota_events WHERE tenant_id=?",(tid,)).fetchone()
             if tuple(row)!=tuple(sums): tenant_usage_ok=False; errors.append(f"{tid} quota ledger mismatch")
             if self._components(tid)!=1: graph_connected=False; errors.append(f"{tid} graph is disconnected")
-        return DatabaseVerification(foreign_keys_ok,attestations_ok,certificates_ok,fold_dag_ok,tenant_usage_ok,graph_connected,tuple(errors))
+        file_report = self.files.verify_database(tenant_id)
+        file_plane_ok = bool(file_report.get("passed"))
+        if not file_plane_ok:
+            errors.extend(str(item) for item in file_report.get("errors", ()))
+        mining_chain_ok = self.files.verify_mining(tenant_id)
+        if not mining_chain_ok:
+            errors.append("mining lifecycle continuity failed")
+        return DatabaseVerification(
+            foreign_keys_ok, attestations_ok, certificates_ok, fold_dag_ok,
+            tenant_usage_ok, graph_connected, tuple(errors),
+            file_plane_ok=file_plane_ok, mining_chain_ok=mining_chain_ok,
+        )

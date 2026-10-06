@@ -16,6 +16,7 @@ from .models import (
     QuotaExceeded,
     TensorRecord,
 )
+from .file_registry import FileRegistry, ReconciliationReport
 from .store import EdgeKind, NodeKind, OntologyStore, ProofStatus
 
 __all__ = [
@@ -26,6 +27,7 @@ __all__ = [
     "DatabaseVerification",
     "EdgeKind",
     "EdgeRecord",
+    "FileRegistry",
     "FoldRecord",
     "IntegrityFailure",
     "InvalidRecord",
@@ -35,5 +37,6 @@ __all__ = [
     "ProofStatus",
     "Quota",
     "QuotaExceeded",
+    "ReconciliationReport",
     "TensorRecord",
 ]

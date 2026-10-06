@@ -135,6 +135,9 @@ class DatabaseVerification:
     tenant_usage_ok: bool
     graph_connected: bool
     errors: tuple[str, ...]
+    file_plane_ok: bool = True
+    mining_chain_ok: bool = True
+    reconciliation_ok: bool = True
 
     @property
     def passed(self) -> bool:
