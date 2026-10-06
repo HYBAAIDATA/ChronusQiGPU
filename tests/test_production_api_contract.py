@@ -102,6 +102,19 @@ REQUIRED_FIELDS = (
     "stability",
     "deprecation_state",
     "tests",
+    # service-constitution fields (schema /2, second-pass elevation §2)
+    "capability",
+    "authority",
+    "reliability_tier",
+    "dependencies",
+    "slo",
+    "fallback_policy",
+    "security_classification",
+    "observability_requirement",
+    "compatibility_window",
+    "support_owner",
+    "runtime_evidence",
+    "lifecycle",
 )
 
 
@@ -210,7 +223,7 @@ def _parity_diff(implemented, declared_pairs):
 
 class RegistryIntegrityTests(unittest.TestCase):
     def test_registry_schema_and_authority_register_are_frozen(self):
-        self.assertEqual(_REGISTRY["schema"], "pythia.api_registry/1")
+        self.assertEqual(_REGISTRY["schema"], "pythia.api_registry/2")
         self.assertEqual(_REGISTRY["authority_register"], FROZEN_AUTHORITY_REGISTER)
 
     def test_every_entry_is_complete_and_well_formed(self):
@@ -756,7 +769,7 @@ class HttpVoyageTests(unittest.TestCase):
             )
             with self.subTest(method=method, path=path):
                 self.assertEqual(status, 404)
-                self.assertEqual(body, {"error": "not_found"})
+                self.assertEqual(body, {"error": "not_found", "failure_class": "NOT_FOUND"})
 
     def test_spa_serves_index_only_for_app_paths(self):
         status, body, headers = self._request("GET", "/dashboard")
@@ -765,7 +778,7 @@ class HttpVoyageTests(unittest.TestCase):
         # An unrouted /api/* path never falls through to the SPA shell.
         status, body, _ = self._request("GET", "/api/nope")
         self.assertEqual(status, 404)
-        self.assertEqual(body, {"error": "not_found"})
+        self.assertEqual(body, {"error": "not_found", "failure_class": "NOT_FOUND"})
 
 
 # ---------------------------------------------------------------------------
@@ -1187,6 +1200,19 @@ class GeneratedDocsSyncTests(unittest.TestCase):
 
         result = subprocess.run(
             [sys.executable, "governance/render_api_contract.py", "--check"],
+            cwd=str(REPO_ROOT),
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_rendered_service_fabric_docs_are_in_sync(self):
+        import subprocess
+        import sys
+
+        result = subprocess.run(
+            [sys.executable, "governance/render_service_fabric.py", "--check"],
             cwd=str(REPO_ROOT),
             capture_output=True,
             text=True,

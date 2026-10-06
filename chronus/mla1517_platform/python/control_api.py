@@ -18,6 +18,7 @@ import threading
 import time
 import traceback
 import uuid
+from collections import Counter
 from collections import deque
 from dataclasses import dataclass
 from dataclasses import field
@@ -35,6 +36,7 @@ from urllib.parse import urlparse
 import runtime_config
 import system_fabric
 import autonomous_supervisor
+import failure_taxonomy
 from startup_contract import METRICS
 from startup_contract import AppendOnlyAudit
 from startup_contract import BootLock
@@ -114,6 +116,92 @@ _AUDIT: AppendOnlyAudit | None = None
 _BOOT_LOCK: BootLock | None = None
 _CONTROL: "ControlPlane" | None = None
 _CONTROL_GUARD = threading.Lock()
+
+
+class _RequestStats:
+    """Golden-signal counters for the HTTP fabric (constitution §19).
+
+    Counts every JSON response by result class and failure class so the
+    metrics surface reports what the authoritative surface actually did —
+    nothing fabricated, nothing suppressed.
+    """
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._counts: Counter[str] = Counter()
+
+    def record(self, status: int, payload: dict[str, Any]) -> None:
+        with self._lock:
+            self._counts["requests_total"] += 1
+            if status >= 400:
+                self._counts["errors_total"] += 1
+                cls = str(payload.get("failure_class") or "UNCLASSIFIED")
+                self._counts[f"failure_class.{cls}"] += 1
+            else:
+                self._counts["success_total"] += 1
+
+    def prometheus(self) -> str:
+        with self._lock:
+            counts = dict(self._counts)
+        lines = []
+        total = counts.pop("requests_total", 0)
+        ok = counts.pop("success_total", 0)
+        err = counts.pop("errors_total", 0)
+        lines.append(f"pythia_control_requests_total {total}")
+        lines.append(f"pythia_control_success_total {ok}")
+        lines.append(f"pythia_control_errors_total {err}")
+        for key in sorted(counts):
+            if key.startswith("failure_class."):
+                cls = key.split(".", 1)[1]
+                lines.append(
+                    f'pythia_control_failure_class_total{{failure_class="{cls}"}} '
+                    f"{counts[key]}"
+                )
+        return "\n".join(lines)
+
+
+_REQUEST_STATS = _RequestStats()
+
+# Idempotency for mutating HTTP operations (constitution §10): a caller
+# Idempotency-Key on a POST/PUT replays the recorded outcome inside the
+# retention window instead of re-executing the mutation. Unknown-outcome
+# retries remain impossible — a key is recorded only after the handler
+# answered, and records expire.
+_IDEMPOTENCY_RECORDS: "dict[str, tuple[float, int, dict]]" = {}
+_IDEMPOTENCY_GUARD = threading.Lock()
+_IDEMPOTENCY_TTL_S = 300.0
+_IDEMPOTENCY_MAX = 512
+
+
+def _idempotency_lookup(key: str) -> tuple[int, dict] | None:
+    now = time.monotonic()
+    with _IDEMPOTENCY_GUARD:
+        entry = _IDEMPOTENCY_RECORDS.get(key)
+        if entry is None:
+            return None
+        at, status, payload = entry
+        if now - at > _IDEMPOTENCY_TTL_S:
+            del _IDEMPOTENCY_RECORDS[key]
+            return None
+        return status, dict(payload)
+
+
+def _idempotency_store(key: str, status: int, payload: dict) -> None:
+    now = time.monotonic()
+    with _IDEMPOTENCY_GUARD:
+        stale = [k for k, (at, _s, _p) in _IDEMPOTENCY_RECORDS.items() if now - at > _IDEMPOTENCY_TTL_S]
+        for k in stale:
+            del _IDEMPOTENCY_RECORDS[k]
+        while len(_IDEMPOTENCY_RECORDS) >= _IDEMPOTENCY_MAX:
+            _IDEMPOTENCY_RECORDS.pop(next(iter(_IDEMPOTENCY_RECORDS)))
+        _IDEMPOTENCY_RECORDS[key] = (now, int(status), dict(payload))
+
+
+def _idempotency_key(headers: Any) -> str:
+    """A sane caller-supplied Idempotency-Key, else ''. Malformed keys are
+    ignored rather than trusted."""
+    key = (headers.get("Idempotency-Key") or "").strip()
+    return key if _REQUEST_ID_RE.fullmatch(key) else ""
 
 _PY_DIR = Path(__file__).resolve().parent
 _PROJECT_ROOT = _PY_DIR.parent.parent.parent
@@ -689,6 +777,11 @@ def _readiness_components() -> dict[str, Any]:
     configuration and filesystem facts, never a liveness promise for a
     subsystem it cannot observe here. ``ready`` itself is unchanged: it
     stays bound to worker identity readiness.
+
+    Second-pass elevation (service constitution §20): components now also
+    carry dependency health (stratum session, runtime config, remote
+    execution lane config, custody mount) so readiness reports
+    component-level truth instead of a collapsed boolean.
     """
     components: dict[str, Any] = {}
     ok, reason = identity_hmac_status()
@@ -723,6 +816,43 @@ def _readiness_components() -> dict[str, Any]:
         }
     else:
         components["guardian"] = {"state": "configured"}
+    # Dependency health (§20): observed/declared truth per dependency, no
+    # liveness promises. These do not feed the top-level ``ready`` flag —
+    # they are the per-component evidence a balancer/operator reads.
+    try:
+        cfg_path = runtime_config.config_path()
+        if not cfg_path.is_file():
+            components["runtime_config"] = {
+                "state": "not_configured",
+                "reason": f"{cfg_path} absent",
+            }
+        else:
+            runtime_config.load()
+            components["runtime_config"] = {"state": "ready", "path": str(cfg_path)}
+    except (OSError, StartupConfigError, ValueError) as exc:
+        components["runtime_config"] = {"state": "not_ready", "reason": str(exc)}
+    try:
+        stratum = stratum_status_payload()
+        connected = bool(stratum.get("connected"))
+        components["stratum"] = {
+            "state": "connected" if connected else "disconnected",
+            "ready": bool(stratum.get("ready")),
+            "status": stratum.get("status"),
+        }
+    except Exception as exc:  # noqa: BLE001 - observation only, never blocks readiness
+        components["stratum"] = {"state": "unavailable", "reason": type(exc).__name__}
+    remote_eps = os.getenv("HYBA_REMOTE_OPENCL_ENDPOINTS") or os.getenv(
+        "MLA1517_REMOTE_GPU_ENDPOINT"
+    )
+    components["remote_opencl"] = (
+        {"state": "configured"}
+        if remote_eps
+        else {"state": "not_configured", "reason": "no remote endpoints declared"}
+    )
+    components["custody"] = {
+        "state": "not_mounted",
+        "reason": "control plane holds no THESEUS handle; custody is a typed contract, not a socket",
+    }
     return components
 
 
@@ -1689,7 +1819,8 @@ def metrics_payload() -> str:
     stratum = _stratum_status_payload(control, records)
     extra = _reason_metrics(records, stratum)
     runtime = METRICS.prometheus().strip()
-    chunks = [chunk for chunk in (runtime, extra) if chunk]
+    api_fabric = _REQUEST_STATS.prometheus()
+    chunks = [chunk for chunk in (runtime, extra, api_fabric) if chunk]
     return "\n".join(chunks) + ("\n" if chunks else "")
 
 
@@ -1800,7 +1931,10 @@ def _apply_runtime_config(cfg: dict[str, Any]) -> dict[str, Any]:
 def _config_put(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
     unknown = sorted(set(body) - _CONFIG_SECTIONS)
     if unknown:
-        return HTTPStatus.BAD_REQUEST, {"error": f"unknown config sections: {', '.join(unknown)}"}
+        return HTTPStatus.BAD_REQUEST, {
+            "failure_class": "INVALID_REQUEST",
+            "error": f"unknown config sections: {', '.join(unknown)}",
+        }
     try:
         merged = _config_merge_sections(body)
         saved = runtime_config.save(merged)
@@ -1905,7 +2039,12 @@ def _repo_engineer_ask(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]
     if not readiness["ready"]:
         return (
             HTTPStatus.SERVICE_UNAVAILABLE,
-            {"ok": False, "error": "repo_engineer_not_configured", "readiness": readiness},
+            {
+                "ok": False,
+                "failure_class": "NOT_CONFIGURED",
+                "error": "repo_engineer_not_configured",
+                "readiness": readiness,
+            },
         )
     try:
         started = system_fabric.start_repo_engineer(prompt)
@@ -1995,6 +2134,7 @@ def _mining_switch(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
     if selected is None:
         return HTTPStatus.NOT_FOUND, {
             "ok": False,
+            "failure_class": "NOT_CONFIGURED",
             "error": f"pool {target!r} is not configured",
         }
     for p in pools:
@@ -2631,17 +2771,38 @@ class _Handler(BaseHTTPRequestHandler):
             _synthesize_preflight_observation(parsed.path, body)
             if not self._guardian_preflight(parsed.path, body):
                 return
+        idem = _idempotency_key(self.headers)
+        if idem:
+            replay = _idempotency_lookup(idem)
+            if replay is not None:
+                status, payload = replay
+                payload["idempotent_replay"] = True
+                self._json(status, payload)
+                return
         try:
             status, payload = handler(body)
         except ValueError as exc:
-            self._json(HTTPStatus.BAD_REQUEST, {"ok": False, "error": str(exc)})
+            self._json(
+                HTTPStatus.BAD_REQUEST,
+                {
+                    "ok": False,
+                    "failure_class": "INVALID_REQUEST",
+                    "error": str(exc),
+                },
+            )
             return
         except Exception as exc:
             self._json(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
-                {"ok": False, "error": f"{type(exc).__name__}: {exc}"},
+                {
+                    "ok": False,
+                    "failure_class": "INTERNAL_ERROR",
+                    "error": f"{type(exc).__name__}: {exc}",
+                },
             )
             return
+        if idem and isinstance(payload, dict):
+            _idempotency_store(idem, int(status), payload)
         self._json(status, payload)
 
     def do_PUT(self) -> None:  # noqa: N802
@@ -2660,7 +2821,17 @@ class _Handler(BaseHTTPRequestHandler):
             )
             self._json(status, {"error": err})
             return
+        idem = _idempotency_key(self.headers)
+        if idem:
+            replay = _idempotency_lookup(idem)
+            if replay is not None:
+                status, payload = replay
+                payload["idempotent_replay"] = True
+                self._json(status, payload)
+                return
         status, payload = _config_put(body)
+        if idem and isinstance(payload, dict):
+            _idempotency_store(idem, int(status), payload)
         self._json(status, payload)
 
     def log_message(self, format: str, *args: Any) -> None:
@@ -2707,8 +2878,9 @@ class _Handler(BaseHTTPRequestHandler):
         for _tick in range(120):
             try:
                 payload = ops_telemetry_payload()
-                events = payload["events"].get("events") or []
-                new_events = [e for e in events if int(e.get("seq") or 0) > last_seq]
+                new_events = _seq_gated_events(
+                    payload["events"].get("events") or [], last_seq
+                )
                 if new_events:
                     last_seq = int(payload["events"].get("last_seq") or last_seq)
                 frame = {
@@ -2748,6 +2920,26 @@ class _Handler(BaseHTTPRequestHandler):
             return candidate
         return uuid.uuid4().hex
 
+    def _correlation_envelope(self) -> dict[str, str]:
+        """Full correlation envelope (service constitution §17).
+
+        request_id is the response's canonical id; correlation_id echoes the
+        caller's X-Correlation-Id (falling back to request_id); causation_id
+        echoes a caller-supplied X-Causation-Id so a request can name the
+        event that caused it. Malformed inbound ids are replaced, never
+        trusted.
+        """
+        request_id = self._correlation_id()
+        correlation = (self.headers.get("X-Correlation-Id") or "").strip()
+        causation = (self.headers.get("X-Causation-Id") or "").strip()
+        return {
+            "request_id": request_id,
+            "correlation_id": correlation
+            if _REQUEST_ID_RE.fullmatch(correlation)
+            else request_id,
+            "causation_id": causation if _REQUEST_ID_RE.fullmatch(causation) else "",
+        }
+
     def _send(
         self,
         status: int,
@@ -2756,7 +2948,11 @@ class _Handler(BaseHTTPRequestHandler):
         cache_control: str = "no-store",
     ) -> None:
         self.send_response(int(status))
-        self.send_header("X-Request-Id", self._correlation_id())
+        envelope = self._correlation_envelope()
+        self.send_header("X-Request-Id", envelope["request_id"])
+        self.send_header("X-Correlation-Id", envelope["correlation_id"])
+        if envelope["causation_id"]:
+            self.send_header("X-Causation-Id", envelope["causation_id"])
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", cache_control)
@@ -2775,6 +2971,10 @@ class _Handler(BaseHTTPRequestHandler):
             payload.setdefault("guardian_receipt", receipt)
             self._guardian_commit_evidence(urlparse(self.path).path, int(status), receipt)
             del self._guardian_receipt
+        # Constitution §9: every error body carries a machine-readable
+        # failure_class, even forwarded guardian receipts that lack one.
+        payload = failure_taxonomy.ensure_failure_class(status, payload)
+        _REQUEST_STATS.record(int(status), payload)
         body = json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
         self._send(int(status), "application/json; charset=utf-8", body)
 
@@ -2862,24 +3062,45 @@ def _active_ports_path() -> Path:
     return Path(os.getenv("PYTHIA_ACTIVE_PORTS_FILE", "/tmp/hyba_active_ports.json"))
 
 
+def _seq_gated_events(events: list, last_seq: int) -> list:
+    """Events strictly newer than the cursor — reordered or duplicated
+    deliveries (seq <= last_seq) are never re-emitted to a client that has
+    already seen them."""
+    return [e for e in events if int(e.get("seq") or 0) > last_seq]
+
+
+_PORTS_FILE_LOCK = threading.Lock()
+
+
 def _write_active_ports(update: Any) -> None:
-    """Merge-update the shared port file; other writers' keys survive."""
+    """Merge-update the shared port file; other writers' keys survive.
+
+    The read-modify-write is serialized in-process; publication is tmp +
+    os.replace so a reader never sees a torn write. A torn or corrupt
+    file is untrusted input — the next write recovers it.
+    """
     path = _active_ports_path()
-    try:
-        current = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
-    except (OSError, ValueError):
-        current = {}
-    if not isinstance(current, dict):
-        current = {}
-    if not update(current):
-        return
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        temporary = path.with_name(f"{path.name}.{os.getpid()}.tmp")
-        temporary.write_text(json.dumps(current, indent=2, sort_keys=True), encoding="utf-8")
-        os.replace(temporary, path)
-    except OSError as exc:
-        print(f"[pythia-control] active port file {path} not updated: {exc}")
+    with _PORTS_FILE_LOCK:
+        try:
+            current = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+        except (OSError, ValueError):
+            current = {}
+        if not isinstance(current, dict):
+            current = {}
+        if not update(current):
+            return
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            # Unique temp name per write: same-process writers must not
+            # clobber each other's temp file (Windows os.replace fails on
+            # an in-use tmp).
+            temporary = path.with_name(
+                f"{path.name}.{os.getpid()}.{uuid.uuid4().hex[:8]}.tmp"
+            )
+            temporary.write_text(json.dumps(current, indent=2, sort_keys=True), encoding="utf-8")
+            os.replace(temporary, path)
+        except OSError as exc:
+            print(f"[pythia-control] active port file {path} not updated: {exc}")
 
 
 def publish_active_port(host: str, port: int) -> None:

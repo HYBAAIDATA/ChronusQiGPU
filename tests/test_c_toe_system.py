@@ -81,7 +81,9 @@ def test_record_decision_deep_copies_parameters():
     record = toe.record_decision("p0", "plastic", "mutate", params, 4, True)
     params["w"] = -1.0
     params["nested"]["k"].append(999)
-    assert record.parameters == _params()
+    expected = _params()
+    expected["_unified_theory_digest"] = toe.foundation.digest
+    assert record.parameters == expected
     assert toe.verify_provenance() is True
 
 

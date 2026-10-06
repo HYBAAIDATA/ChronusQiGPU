@@ -27,7 +27,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-      - run: pip install -e ./turing_universal_quantum_computer pytest
+      - run: pip install -e "./turing_universal_quantum_computer[dev]"
       - name: Exact specification and inventory tests
         run: >-
           python -m pytest -q

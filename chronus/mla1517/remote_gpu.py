@@ -38,6 +38,8 @@ import ipaddress
 import json
 import os
 import struct
+import threading
+import time
 import urllib.error
 import urllib.request
 from urllib.parse import urlsplit
@@ -73,6 +75,8 @@ __all__ = [
     "Sha256dResult",
     "sha256d_share_attestation",
     "RemoteGPUClient",
+    "RemoteCircuitBreaker",
+    "breaker_for",
     "remote_endpoints",
     "probe_first_reachable",
 ]
@@ -88,6 +92,92 @@ class RemoteGPUUnavailable(RemoteGPUError):
 
 class RemoteGPUVerificationError(RemoteGPUError):
     """The endpoint answered, but its result failed the exact invariant."""
+
+
+class RemoteCircuitBreaker:
+    """Per-endpoint circuit breaker for the remote execution lane (service
+    constitution §11).
+
+    States: CLOSED → OPEN after ``failure_threshold`` consecutive failures;
+    OPEN → HALF_OPEN once ``recovery_timeout_s`` has elapsed (one probe is
+    allowed through); HALF_OPEN → CLOSED on success, back to OPEN on
+    failure.
+
+    A breaker prevents repeated calls to a failing endpoint. It grants no
+    fallback authority — results still pass re-verification, and an open
+    circuit reports ``RemoteGPUUnavailable`` like any other honest
+    unavailability.
+    """
+
+    CLOSED = "CLOSED"
+    OPEN = "OPEN"
+    HALF_OPEN = "HALF_OPEN"
+
+    def __init__(self, failure_threshold: int = 3, recovery_timeout_s: float = 30.0):
+        self.failure_threshold = int(failure_threshold)
+        self.recovery_timeout_s = float(recovery_timeout_s)
+        self._state = self.CLOSED
+        self._failures = 0
+        self._opened_at = 0.0
+        self._half_open_inflight = False
+        self._lock = threading.Lock()
+
+    @property
+    def state(self) -> str:
+        with self._lock:
+            return self._effective_state()
+
+    def _effective_state(self) -> str:
+        if self._state == self.OPEN and (
+            time.monotonic() - self._opened_at >= self.recovery_timeout_s
+        ):
+            return self.HALF_OPEN
+        return self._state
+
+    def allow(self) -> bool:
+        """True when a call may proceed; False fast-fails the request."""
+        with self._lock:
+            state = self._effective_state()
+            if state == self.CLOSED:
+                return True
+            if state == self.HALF_OPEN and not self._half_open_inflight:
+                self._half_open_inflight = True
+                return True
+            return False
+
+    def on_success(self) -> None:
+        with self._lock:
+            self._state = self.CLOSED
+            self._failures = 0
+            self._half_open_inflight = False
+
+    def on_failure(self) -> None:
+        with self._lock:
+            self._half_open_inflight = False
+            if self._effective_state() == self.HALF_OPEN:
+                self._state = self.OPEN
+                self._opened_at = time.monotonic()
+                return
+            self._failures += 1
+            if self._failures >= self.failure_threshold:
+                self._state = self.OPEN
+                self._opened_at = time.monotonic()
+
+
+_BREAKERS: Dict[str, RemoteCircuitBreaker] = {}
+_BREAKERS_GUARD = threading.Lock()
+
+
+def breaker_for(endpoint: str) -> RemoteCircuitBreaker:
+    """The shared per-endpoint breaker — probes and executions of the same
+    endpoint see one failure history, so a dead endpoint stays closed off
+    instead of absorbing a retry storm."""
+    with _BREAKERS_GUARD:
+        breaker = _BREAKERS.get(endpoint)
+        if breaker is None:
+            breaker = RemoteCircuitBreaker()
+            _BREAKERS[endpoint] = breaker
+        return breaker
 
 
 @dataclass(frozen=True)
@@ -301,7 +391,12 @@ def remote_endpoints() -> List[str]:
 class RemoteGPUClient:
     """HTTP/JSON client for one remote GPU agent endpoint."""
 
-    def __init__(self, endpoint: str, timeout: float = DEFAULT_TIMEOUT_S):
+    def __init__(
+        self,
+        endpoint: str,
+        timeout: float = DEFAULT_TIMEOUT_S,
+        breaker: Optional[RemoteCircuitBreaker] = None,
+    ):
         if not endpoint.startswith(("http://", "https://")):
             endpoint = "http://" + endpoint
         self.endpoint = endpoint.rstrip("/")
@@ -309,6 +404,7 @@ class RemoteGPUClient:
         if parsed.scheme != "https" and not _is_loopback_endpoint(self.endpoint):
             raise ValueError("non-loopback remote GPU endpoints require HTTPS")
         self.timeout = timeout
+        self.breaker = breaker if breaker is not None else breaker_for(self.endpoint)
 
     def _request(
         self,
@@ -329,6 +425,11 @@ class RemoteGPUClient:
         token = _token()
         if token:
             req.add_header("Authorization", f"Bearer {token}")
+        if not self.breaker.allow():
+            raise RemoteGPUUnavailable(
+                f"{self.endpoint}{path} circuit OPEN — endpoint failing, "
+                "call suppressed"
+            )
         try:
             with urllib.request.urlopen(req, timeout=timeout or self.timeout) as resp:
                 declared = int(resp.headers.get("Content-Length", "0") or 0)
@@ -340,14 +441,20 @@ class RemoteGPUClient:
                 payload = json.loads(raw.decode("utf-8"))
                 if not isinstance(payload, dict):
                     raise RemoteGPUVerificationError("remote response must be a JSON object")
+                self.breaker.on_success()
                 return payload
         except urllib.error.HTTPError as exc:
+            self.breaker.on_failure()
             detail = exc.read().decode("utf-8", errors="replace")[:400]
             raise RemoteGPUUnavailable(
                 f"{self.endpoint}{path} -> HTTP {exc.code}: {detail}"
             ) from exc
         except (urllib.error.URLError, OSError, json.JSONDecodeError) as exc:
+            self.breaker.on_failure()
             raise RemoteGPUUnavailable(f"{self.endpoint}{path} unreachable: {exc}") from exc
+        except RemoteGPUError:
+            self.breaker.on_failure()
+            raise
 
     def health(self) -> Dict[str, Any]:
         reply = self._request("GET", "/v1/health")
