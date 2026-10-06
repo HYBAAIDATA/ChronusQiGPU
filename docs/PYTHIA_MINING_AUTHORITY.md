@@ -8,6 +8,20 @@ PYTHIA owns mining intelligence and final mining-plan composition. A pull reques
 
 This rule applies equally to observability, security, refactor, cleanup, consolidation, performance and mining-feature changes.
 
+## Search-theory invariant
+
+The search has structure and PYTHIA is required to use that structure in mining.
+**Hendrix is the default production search algorithm.** PYTHIA composes the
+search around Hendrix and may use supposition plus the Turing quantum arsenal,
+including tunnelling, annealing, swarming and entanglement, to support the
+search. The 32-face, 11D, H4/600 and Hilbert structures are supporting search
+structure; they do not silently replace Hendrix as the final plan-bound
+algorithm.
+
+Any change that demotes Hendrix from the canonical default, bypasses PYTHIA
+supposition, or makes the named support arsenal unreachable is an architecture
+change and requires express repository-owner approval.
+
 ## End-to-end production authority map
 
 ```text
@@ -31,7 +45,13 @@ PYTHIA integrated mining cycle
     +-------------------------------------------------- authoritative Stratum work identity
         |
         v
-H4/600-cell 11D search fabric
+PYTHIA structured-search composition
+  +-- supposition
+  +-- 32-face -> 11D -> H4/600 -> Turing Hilbert support
+  +-- Turing support arsenal: tunnelling / annealing / swarming / entanglement
+        |
+        v
+Hendrix default complete traversal
         |
         v
 Chronus-1 execution / physical fleet
@@ -90,9 +110,14 @@ When `PYTHIA_VQC_CHECKPOINT` points to a compatible checkpoint, PYTHIA may use t
 
 PYTHIA is not limited to a hand-selected list of quantum functions. The production authority exposes complete public module surfaces from current Turing and quantum-compute packages, including search, quantum-walk, swarm, annealing, variational, stabilizer, exact-state-vector, Hendrix, phi-machine, MIDAS/VQC, Trotter and modern algorithm modules.
 
-Named reachability includes at minimum Grover/exact Grover-style search, Hendrix, coined/hypercube/Szegedy quantum walks, swarming, entanglement, measurement/collapse, VQE, QAOA, QFT, period-finding primitives, quantum simulation, annealing, quantum ML, hybrid algorithms and VQC surfaces.
+Named reachability includes at minimum Grover/exact Grover-style search, Hendrix, coined/hypercube/Szegedy quantum walks, tunnelling, annealing, swarming, entanglement, measurement/collapse, VQE, QAOA, QFT, period-finding primitives, quantum simulation, quantum ML, hybrid algorithms and VQC surfaces.
 
-Hendrix is classified as a classical nonce-order/search capability. An algorithm being available does not mean it must execute on every block. PYTHIA owns composition; the merge invariant is reachability plus truthful execution evidence, not forced execution of irrelevant work.
+Hendrix is the default production nonce-order/search algorithm. PYTHIA owns
+composition around that default. Supporting algorithms need not all execute on
+every block, but tunnelling, annealing, swarming, entanglement and the wider
+arsenal must remain reachable to PYTHIA and must be reported truthfully when
+used or unavailable. Supporting capability is not permission to replace
+Hendrix silently.
 
 ## Kellogg = tensor
 
@@ -104,11 +129,14 @@ Chronus is its own execution architecture. CUDA is an NVIDIA programming/runtime
 
 The normative Chronus execution authority is `isa/chronus1.md` + `abi/chronus1-abi.md` + the Chronus conformance/compiler/emulator stack. Vendor/runtime APIs may exist only as explicit compatibility or reference adapters where implemented and evidenced.
 
-## Canonical 600-way search fabric
+## Supporting 600-way search fabric
 
 The repository contains the H4/600-cell implementation under `chronus/h4_600.py` and `chronus/cell600_bind.py`: 120 geometric vertices, 600 tetrahedral cells, one normal frame per cell, every frame lifted/folded into the 11-dimensional search space, and 600 logical work shards over the leased nonce window.
 
-The older 32-face dodecahedron/icosahedron construction remains lineage and an available intelligence/search input; it is not a parallel pool-writing miner and must not silently replace the 600-way production fabric.
+The 32-face dodecahedron/icosahedron construction and the H4/600-cell fabric
+are active search structure available to PYTHIA. They are not parallel
+pool-writing miners and neither is the final search-algorithm identity:
+Hendrix remains the default traversal over the complete composed itinerary.
 
 Each logical search vertex may be backed by multiple physical Chronus workers. Fleet growth happens below the fixed mathematical topology. The aggregate engineering target is **10 EH/s**, but it remains a target until measured. Mathematical topology, tensor compression, search-order intelligence or configured fleet size never substitutes for measured hashrate.
 
@@ -143,7 +171,11 @@ They answer whether work is valid and authorised. They do not answer how PYTHIA 
 
 Every precomputed production-agentic plan and every fallback lease passes through PYTHIA before execution. A queue miss is not permission to bypass intelligence.
 
-The final SearchPlan retains upstream agentic provenance, PYTHIA five-modal evidence, memory recall, supposition, Turing/Quantum-GPU/Kellogg/Chronus capability context, final PYTHIA ordering, and H4/600 fabric evidence. The full leased nonce interval remains covered without gaps or overlap.
+The final SearchPlan retains upstream agentic provenance, PYTHIA intelligence
+evidence, memory recall, supposition, Turing/Quantum-GPU/Kellogg/Chronus
+capability context, the supporting structural itinerary and H4/600 evidence.
+Its plan-bound default nonce order is Hendrix. The full leased nonce interval
+remains covered without gaps or overlap.
 
 ## Learning loop
 
