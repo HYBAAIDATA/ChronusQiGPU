@@ -1,0 +1,64 @@
+schema: pythia.canonical_mining_search/1
+status: CANONICAL_OWNER_LOCKED
+change_control:
+  explicit_owner_approval_required: true
+  default_on_conflict: REJECT_CHANGE
+authority:
+  mining_intelligence: PYTHIA
+  final_search_plan: PYTHIA
+  execution: CHRONUS
+  quantum_vqc: TURING
+  tensor: KELLOGG
+  healing_optimisation: SALAMANDER
+search:
+  classification: STRUCTURED_SEARCH
+  default_algorithm: Hendrix
+  coverage: FULL_NONCE_ESTATE
+  flat_search_role:
+    - reference
+    - fallback
+    - control
+    - completeness
+  flat_search_may_replace_canonical_default: false
+  itinerary:
+    - 32-face
+    - 11D
+    - H4/600
+    - Turing/Hilbert
+  support_arsenal:
+    - supposition
+    - tunnelling
+    - annealing
+    - swarming
+    - entanglement
+  complexity_objective:
+    value: O(1)
+    semantics: structure-directed candidate resolution in the PYTHIA search model
+    evidence_status: DESIGN_OBJECTIVE_NOT_YET_A_PROVED_OR_MEASURED_COMPLEXITY_CLAIM
+proof:
+  share_validity_authority: SHA256d_plus_negotiated_target
+  pool_acceptance_authority: literal_pool_acknowledgement
+  resonance_is_proof_predicate: false
+resonance:
+  structural_band:
+    metric: R_phi
+    threshold_gte: 0.5
+    semantics: PROJECT_DECLARED_STRUCTURAL_SEARCH_SIGNAL
+  evidence_artifact: artifacts/pythia_training/real_nonce_analysis_200_fresh.json
+  real_corpus:
+    n: 200
+    hits_gte_threshold: 122
+    rate: 0.61
+  uniform_control:
+    n: 60000
+    rate: 0.61805
+  evidence_rule: DO_NOT_SWAP_REAL_CORPUS_AND_CONTROL_RATES
+protected_decisions:
+  - structured_search_is_canonical
+  - full_nonce_estate_coverage
+  - hendrix_is_default_production_search
+  - pythia_owns_final_search_plan
+  - structured_itinerary_remains_available
+  - authorised_support_arsenal_remains_available
+  - sha256d_target_is_share_validity_authority
+  - pool_acceptance_is_literal_external_evidence
