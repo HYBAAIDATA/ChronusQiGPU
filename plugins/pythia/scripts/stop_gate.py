@@ -18,13 +18,13 @@ from typing import Any
 
 from plugin_status import JOURNAL, ROOT, build_status, write_runtime_receipt
 
-_REQUIRED_SKILLS = {
+_REQUIRED_PACK_SKILLS = {
     "pythia-plugin-status",
     "pythia-long-context",
     "pythia-engineering-quality",
     "pythia-evidence-pack",
-    "pythia-finish-the-job",
 }
+_REQUIRED_SKILLS = _REQUIRED_PACK_SKILLS | {"pythia-finish-the-job"}
 
 
 def _canonical(value: Any) -> bytes:
@@ -123,7 +123,7 @@ def _verify_pack(path: Path, *, task_id: str, plugin_source_sha: str) -> tuple[b
         return False, "evidence pack does not contain current plugin source SHA"
 
     skills = set(str(x) for x in pack.get("skills_invoked") or [])
-    missing = sorted(_REQUIRED_SKILLS - skills)
+    missing = sorted(_REQUIRED_PACK_SKILLS - skills)
     if missing:
         return False, "evidence pack is missing required skill events: " + ", ".join(missing)
 
