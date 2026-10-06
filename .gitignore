@@ -83,7 +83,10 @@ golden_quantum_package/
 # Runtime registries written by the cognition plane.
 var/
 # Local devin environment descriptor (machine-specific paths).
-.devin/
+# Narrowed to contents so the repo-level plugin declaration can be committed
+# (Devin cloud discovers requiredPlugins from the cloned repo at session start).
+.devin/*
+!.devin/config.json
 pytest_out.txt
 
 # L-HRAS aethel storage roots (config.example.toml defaults)

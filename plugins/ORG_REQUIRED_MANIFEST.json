@@ -1,0 +1,31 @@
+{
+  "note": "Org-admin manifest entries for the unified PYTHIA plugin (cloud + CLI + Desktop, one install). Paste into Customize -> Plugins -> Organization scope -> Edit manifest. Pinned block recommended; re-pin after each release merge.",
+  "repo": "QuantumPhi2/PhiMiner",
+  "path": "plugins/pythia",
+  "branch_following": {
+    "requiredPlugins": [
+      {
+        "source": "git-subdir",
+        "url": "https://github.com/QuantumPhi2/PhiMiner.git",
+        "path": "plugins/pythia",
+        "ref": "main"
+      }
+    ]
+  },
+  "pinned": {
+    "requiredPlugins": [
+      {
+        "source": "git-subdir",
+        "url": "https://github.com/QuantumPhi2/PhiMiner.git",
+        "path": "plugins/pythia",
+        "sha": "PIN_AFTER_PUSH"
+      }
+    ]
+  },
+  "skills_installed_as": [
+    "/pythia:pythia-long-context",
+    "/pythia:pythia-finish-the-job",
+    "/pythia:hyba-products",
+    "/pythia:pythia-stop-check"
+  ]
+}

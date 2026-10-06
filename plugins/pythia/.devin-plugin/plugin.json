@@ -1,0 +1,8 @@
+{
+  "name": "pythia",
+  "version": "0.1.0",
+  "description": "PYTHIA intelligence + four-tier memory for Devin cloud, CLI, and Desktop: checkpoint skills, completion discipline, lifecycle hooks (fail-open), HYBA products",
+  "author": { "name": "PYTHIA Contributors" },
+  "license": "MIT",
+  "keywords": ["devin", "plugin", "pythia", "memory", "intelligence", "hyba"]
+}

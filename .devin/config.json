@@ -1,0 +1,1 @@
+{"optionalPlugins": [], "requiredPlugins": [{"path": "plugins/pythia", "ref": "main", "source": "git-subdir", "url": "https://github.com/QuantumPhi2/PhiMiner.git"}]}
