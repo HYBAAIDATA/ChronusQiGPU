@@ -132,7 +132,11 @@ def test_bridge_rejects_lying_adapter(tmp_path, monkeypatch) -> None:
 
     daemon = _daemon(tmp_path, [_Liar()])
     monkeypatch.setattr(client_mod, "get_embedded_daemon", lambda **_: daemon)
-    with pytest.raises(RuntimeError, match="candidate rejected: candidate digest mismatch"):
+    # The daemon's independent-recompute gate (verifier.py) demotes the lie
+    # to status="verification_failed" before the bridge's own host-side
+    # digest check ("candidate rejected") ever runs — either rejection path
+    # satisfies the fail-closed contract.
+    with pytest.raises(RuntimeError, match="verification_failed|candidate rejected"):
         submit_via_virtual_igpu(
             {"windows": [{"start": 0, "count": 4}]},
             header80=HEADER,
@@ -159,7 +163,9 @@ def test_bridge_rejects_out_of_range_candidate(tmp_path, monkeypatch) -> None:
 
     daemon = _daemon(tmp_path, [OutOfRange()])
     monkeypatch.setattr(client_mod, "get_embedded_daemon", lambda **_: daemon)
-    with pytest.raises(RuntimeError, match="outside the admitted range"):
+    # Daemon-side recompute rejects as verification_failed before the
+    # bridge's own range check runs — either rejection satisfies the gate.
+    with pytest.raises(RuntimeError, match="verification_failed|outside the admitted range"):
         submit_via_virtual_igpu(
             {"windows": [{"start": 0, "count": 4}]},
             header80=HEADER,
