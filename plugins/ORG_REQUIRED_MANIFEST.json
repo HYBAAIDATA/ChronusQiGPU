@@ -1,5 +1,5 @@
 {
-  "note": "Private unified PYTHIA Devin Engineering Intelligence plugin for cloud, CLI, and Desktop.",
+  "note": "Private Devin plugin. The installed plugin identity remains pythia for compatibility; it delivers mandatory session-wide EUCLID aptitude.",
   "privacy": {
     "distribution": "private repository access only",
     "license": "UNLICENSED",
@@ -29,28 +29,24 @@
       }
     ]
   },
+  "augmentation": {
+    "identity": "EUCLID_APTITUDE",
+    "activation": "MANDATORY_SESSION_START",
+    "reinvocation": "POST_COMPACTION",
+    "scope": "SESSION",
+    "skill_roots": [
+      "plugins/pythia/skills",
+      "Intelligence/skills"
+    ],
+    "side_effect_rule": "All skills are invoked as aptitude. Task-specific side effects remain conditional on relevance, safety, and canonical authority."
+  },
   "runtime_provenance": {
-    "status_command": "python plugins/pythia/scripts/plugin_status.py --write-receipt",
+    "manual_status_command": "python plugins/pythia/scripts/plugin_status.py --write-receipt",
     "runtime_receipt": "artifacts/pythia/devin-plugin-runtime.json",
     "evidence_ledger": "artifacts/pythia/devin-engineering-evidence.jsonl",
     "publish_root": "evidence/devin",
     "evaluation_command": "python plugins/pythia/scripts/evaluate_augmentation.py evidence/devin",
-    "rule": "Every task uses one stable task_id and seals a content-addressed evidence pack before a completion claim."
+    "rule": "SessionStart must record complete EUCLID aptitude invocation. Task evidence is separate and may snapshot that session state."
   },
-  "evidence_claim_boundary": "A pack proves observed augmentation use and recorded outcomes. Causal uplift requires comparable baseline and augmented task cohorts.",
-  "skills_installed_as": [
-    "/pythia:pythia-plugin-status",
-    "/pythia:pythia-long-context",
-    "/pythia:pythia-repo-ontology",
-    "/pythia:pythia-systematic-debugging",
-    "/pythia:pythia-tdd",
-    "/pythia:pythia-agent-fabric",
-    "/pythia:pythia-engineering-quality",
-    "/pythia:pythia-promotion-gate",
-    "/pythia:pythia-deploy-rollback",
-    "/pythia:pythia-evidence-pack",
-    "/pythia:hyba-products",
-    "/pythia:pythia-finish-the-job",
-    "/pythia:pythia-stop-check"
-  ]
+  "evidence_claim_boundary": "The runtime receipt proves mandatory EUCLID aptitude invocation. A task pack proves recorded task outcomes. Causal uplift requires comparable baseline and augmented cohorts."
 }
