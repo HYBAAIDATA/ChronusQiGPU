@@ -18,11 +18,6 @@ triggers:
 This aptitude is invoked automatically at SessionStart and remains active for the entire Devin session. Do not treat it as an optional per-task capability.
 
 
-If a task id exists, also record:
-
-```text
-python plugins/pythia/scripts/engineering_evidence.py record --task-id <task> --event SKILL_INVOKED --skill pythia-repo-ontology
-```
 
 Before changing an architecture-sensitive subsystem answer:
 
