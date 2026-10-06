@@ -28,6 +28,7 @@ Report exactly as observed:
 - `plugin_version`;
 - `augmentation`;
 - `plugin_source_sha`;
+- `aptitude_digest_sha256`;
 - `workspace_head_sha`;
 - `plugin_skills`;
 - `euclid_aptitude_skills`;

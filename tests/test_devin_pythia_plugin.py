@@ -73,6 +73,7 @@ def test_plugin_status_invokes_complete_plugin_and_euclid_skill_set(
     invoked = set(status["skills_invoked"])
     assert status["plugin"] == "pythia"
     assert status["plugin_version"] == "0.4.0"
+    assert len(status["aptitude_digest_sha256"]) == 64
     assert status["mandatory_skills_complete"] is True
     assert status["mandatory_skills_missing"] == []
     assert mandatory
@@ -123,6 +124,7 @@ def _aptitude_status(plugin_sha: str = "plugin-sha") -> dict:
         "skills_invoked": skills,
         "mandatory_skills_complete": True,
         "mandatory_skills_missing": [],
+        "aptitude_digest_sha256": "a" * 64,
     }
 
 
@@ -199,6 +201,7 @@ def test_task_pack_snapshots_session_aptitude_without_owning_skills(
     assert pack["verification"]["passed"] == 1
     assert pack["session_aptitude"]["augmentation"] == "EUCLID_APTITUDE"
     assert pack["session_aptitude"]["mandatory_skills_complete"] is True
+    assert pack["session_aptitude"]["aptitude_digest_sha256"] == "a" * 64
     assert pack["session_aptitude"]["skills_invoked"]
     assert "skills_invoked" not in {
         key for key in pack if key != "session_aptitude"
@@ -224,6 +227,7 @@ def _write_valid_pack(
             "mandatory_skills_complete": True,
             "mandatory_skills": ["euclid:systematic-debugging"],
             "skills_invoked": ["euclid:systematic-debugging"],
+            "aptitude_digest_sha256": "b" * 64,
         },
         "event_count": 3,
         "event_hashes": ["1", "2", "3"],
@@ -290,6 +294,7 @@ def test_stop_gate_requires_complete_session_aptitude_and_valid_pack(
             "plugin_source_sha": plugin_sha,
             "mandatory_skills_complete": True,
             "mandatory_skills_missing": [],
+            "aptitude_digest_sha256": "b" * 64,
         },
     )
     monkeypatch.setattr(stop_gate, "write_runtime_receipt", lambda _: None)
@@ -321,6 +326,7 @@ def test_stop_gate_blocks_if_session_aptitude_is_incomplete(
             "plugin_source_sha": plugin_sha,
             "mandatory_skills_complete": False,
             "mandatory_skills_missing": ["euclid:counterfactual-analysis"],
+            "aptitude_digest_sha256": "b" * 64,
         },
     )
     monkeypatch.setattr(stop_gate, "write_runtime_receipt", lambda _: None)
@@ -329,6 +335,47 @@ def test_stop_gate_blocks_if_session_aptitude_is_incomplete(
     result = json.loads(capsys.readouterr().out)
     assert "Mandatory EUCLID aptitude" in result["reason"]
     assert "counterfactual-analysis" in result["reason"]
+
+
+def test_stop_gate_rejects_pack_without_aptitude_digest(
+    tmp_path, monkeypatch, capsys
+):
+    stop_gate = _load_with_scripts(
+        "stop_gate_missing_digest_v04_test",
+        SCRIPTS / "stop_gate.py",
+    )
+    task_id = "task-missing-digest"
+    plugin_sha = "plugin-sha"
+    pack_path = _write_valid_pack(tmp_path, stop_gate, task_id, plugin_sha)
+    pack = json.loads(pack_path.read_text(encoding="utf-8"))
+    pack["session_aptitude"].pop("aptitude_digest_sha256", None)
+
+    unsigned = dict(pack)
+    unsigned.pop("pack_sha256", None)
+    digest = hashlib.sha256(stop_gate._canonical(unsigned)).hexdigest()
+    pack["pack_sha256"] = digest
+    replacement = pack_path.with_name(f"{digest}.json")
+    replacement.write_text(json.dumps(pack), encoding="utf-8")
+    pack_path.unlink()
+
+    journal = _write_checkpoint(tmp_path, task_id, plugin_sha, replacement)
+    monkeypatch.setattr(stop_gate, "ROOT", tmp_path)
+    monkeypatch.setattr(stop_gate, "JOURNAL", journal)
+    monkeypatch.setattr(
+        stop_gate,
+        "build_status",
+        lambda **_: {
+            "plugin_source_sha": plugin_sha,
+            "mandatory_skills_complete": True,
+            "mandatory_skills_missing": [],
+            "aptitude_digest_sha256": "b" * 64,
+        },
+    )
+    monkeypatch.setattr(stop_gate, "write_runtime_receipt", lambda _: None)
+
+    assert stop_gate.main() == 2
+    result = json.loads(capsys.readouterr().out)
+    assert "aptitude digest" in result["reason"]
 
 
 def test_stop_gate_rejects_tampered_pack(tmp_path, monkeypatch, capsys):

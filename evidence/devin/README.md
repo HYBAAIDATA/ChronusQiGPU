@@ -12,6 +12,7 @@ A valid receipt records:
 
 - exact plugin/aptitude source SHA;
 - plugin version;
+- SHA-256 digest of the full active aptitude surface;
 - `augmentation = EUCLID_APTITUDE`;
 - complete plugin skill inventory;
 - complete `Intelligence/skills` aptitude inventory;

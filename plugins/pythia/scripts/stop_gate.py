@@ -120,6 +120,9 @@ def _verify_pack(path: Path, *, task_id: str, plugin_source_sha: str) -> tuple[b
         return False, "evidence pack augmentation is not EUCLID_APTITUDE"
     if not aptitude.get("mandatory_skills_complete"):
         return False, "evidence pack shows incomplete mandatory session aptitude"
+    aptitude_digest = str(aptitude.get("aptitude_digest_sha256") or "").strip()
+    if len(aptitude_digest) != 64:
+        return False, "evidence pack lacks valid EUCLID aptitude digest"
 
     verification = pack.get("verification")
     if not isinstance(verification, dict) or int(verification.get("runs", 0)) < 1:
