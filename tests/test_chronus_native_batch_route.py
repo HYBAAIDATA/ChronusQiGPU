@@ -12,7 +12,7 @@ import importlib.util
 import time
 from pathlib import Path
 
-from chronus.mla1517.mining.execution_router import NONCE_ORDER_M32
+from chronus.mla1517.mining.execution_router import NONCE_ORDER_HENDRIX
 from chronus.mla1517.mining.geodesic_support import (
     PythiaProductionMiningCoordinator,
     ProductionExecutionRouter,
@@ -20,7 +20,7 @@ from chronus.mla1517.mining.geodesic_support import (
 from chronus.mla1517.mining.pythia_search import (
     SEARCH_ARCHITECTURE_ID,
     precompute_pythia_search,
-    pythia_hilbert_600_nonces,
+    pythia_hendrix_nonces,
 )
 from chronus.mla1517.mining.search_plan import (
     CompletionState,
@@ -80,7 +80,7 @@ def _plan(route: str = "chronus_batch") -> SearchPlan:
         evidence_refs={"search_architecture": SEARCH_ARCHITECTURE_ID},
         created_at=time.monotonic(),
         plan_id="plan-chronus-600",
-        nonce_order=NONCE_ORDER_M32,
+        nonce_order=NONCE_ORDER_HENDRIX,
     )
 
 
@@ -135,7 +135,7 @@ def test_chronus_batch_executes_exact_600_vertex_itinerary_without_vendor_route_
         lease=_lease(plan),
     )
 
-    expected = pythia_hilbert_600_nonces(
+    expected = pythia_hendrix_nonces(
         HEADER,
         BASE,
         WINDOW,
@@ -146,8 +146,8 @@ def test_chronus_batch_executes_exact_600_vertex_itinerary_without_vendor_route_
     assert record.completion_state is CompletionState.COMPLETE
     assert record.requested_route == "chronus_batch"
     assert record.executed_route == "chronus_batch"
-    assert record.requested_nonce_order == SEARCH_ARCHITECTURE_ID
-    assert record.executed_nonce_order == SEARCH_ARCHITECTURE_ID
+    assert record.requested_nonce_order == NONCE_ORDER_HENDRIX
+    assert record.executed_nonce_order == NONCE_ORDER_HENDRIX
     assert record.device_backend == "cuda"
     assert record.evidence_class is EvidenceClass.HARDWARE_EXECUTED
     assert record.kernel_identity == f"chronus_ordered_batch_v1:{SEARCH_ARCHITECTURE_ID}"
@@ -186,7 +186,7 @@ def test_missing_batch_contract_falls_back_explicitly_without_relabelling():
     assert record.executed_route == "cpu_reference"
     assert record.fallback_reason == "CHRONUS_BATCH_UNAVAILABLE"
     assert record.evidence_class is EvidenceClass.SOFTWARE_VERIFIED
-    assert visited == pythia_hilbert_600_nonces(
+    assert visited == pythia_hendrix_nonces(
         HEADER,
         BASE,
         WINDOW,
@@ -199,7 +199,7 @@ def test_plan_binding_declares_chronus_authority_not_vendor_runtime():
     coordinator = PythiaProductionMiningCoordinator.__new__(
         PythiaProductionMiningCoordinator
     )
-    coordinator._nonce_order = NONCE_ORDER_M32
+    coordinator._nonce_order = NONCE_ORDER_HENDRIX
     coordinator.geodesic_enabled = True
     coordinator.last_mining_decision = None
     coordinator.execution_hasher = _ChronusBatchHasher("metal")
