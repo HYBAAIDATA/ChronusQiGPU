@@ -94,12 +94,17 @@ class M3PythiaProductionMiningCoordinator(PythiaProductionMiningCoordinator):
         # Validate against the current adapter state before asking AL HARAS or
         # THESEUS to bless anything.  The base method validates again after
         # this preflight so a clean_jobs rotation in between still fails closed.
-        proof = self.client.proof_adapter.validate_candidate(
-            job_id=job_id,
-            extranonce2=extranonce2,
-            ntime=ntime,
-            nonce=nonce,
-        )
+        self._last_pool_outcome = PoolOutcome.NOT_SUBMITTED
+        try:
+            proof = self.client.proof_adapter.validate_candidate(
+                job_id=job_id,
+                extranonce2=extranonce2,
+                ntime=ntime,
+                nonce=nonce,
+            )
+        except StaleJobError:
+            self._last_pool_outcome = PoolOutcome.STALE
+            raise
         identity = self.agentic.current_identity()
         correlation = dict(self._pending_correlation or {})
         endpoint = getattr(self.client, "endpoint", None)
