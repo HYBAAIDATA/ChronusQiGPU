@@ -1,20 +1,25 @@
 {
-  "note": "Add the unified PYTHIA plugin (cloud + CLI + Desktop, one install) through this Devin UI dialog. Values below are exactly what the form is filled with.",
+  "note": "Add the private unified PYTHIA plugin (cloud + CLI + Desktop, one install) through this Devin UI dialog. Values below are exactly what the form is filled with.",
+  "privacy": {
+    "distribution": "private repository access only",
+    "license": "UNLICENSED",
+    "public_marketplace_required": false
+  },
   "ui": {
     "dialog": "Add plugin from repository",
-    "description": "Devin reads the plugin from the repository each time it runs, so changes there take effect without re-adding it",
+    "description": "Devin reads the plugin from the private repository each time it runs, so approved main-branch changes take effect without re-adding it",
     "fields": {
       "Repository": {
         "placeholder": "owner/repo or https://github.com/owner/repo",
         "value": "https://github.com/QuantumPhi2/PhiMiner",
-        "hint": "Don't include plaintext secrets. Use plugin secret references instead"
+        "hint": "Do not include plaintext secrets. Use plugin secret references instead"
       },
       "Subdirectory": {
         "optional": true,
         "placeholder": "plugins/my-plugin",
-        "hint": "Optional. The plugin's root inside the repository",
+        "hint": "The plugin root inside the repository",
         "value": "plugins/pythia",
-        "warning": "The value must be the plugin root: the folder containing .devin-plugin/plugin.json. Never enter this file's path (plugins/ORG_REQUIRED_MANIFEST.json) here — this file is a handoff doc, not a plugin root."
+        "warning": "Use the folder containing .devin-plugin/plugin.json, not this handoff document."
       }
     }
   },
@@ -30,17 +35,13 @@
       }
     ]
   },
-  "pinned": {
-    "requiredPlugins": [
-      {
-        "source": "git-subdir",
-        "url": "https://github.com/QuantumPhi2/PhiMiner.git",
-        "path": "plugins/pythia",
-        "sha": "712a10eccd89d5d0884172345de456090a6d3d9a"
-      }
-    ]
+  "runtime_provenance": {
+    "command": "python plugins/pythia/scripts/plugin_status.py --write-receipt",
+    "receipt": "artifacts/pythia/devin-plugin-runtime.json",
+    "rule": "Every session records the exact plugin_source_sha. Following main does not permit an unversioned completion claim."
   },
   "skills_installed_as": [
+    "/pythia:pythia-plugin-status",
     "/pythia:pythia-long-context",
     "/pythia:pythia-finish-the-job",
     "/pythia:hyba-products",
