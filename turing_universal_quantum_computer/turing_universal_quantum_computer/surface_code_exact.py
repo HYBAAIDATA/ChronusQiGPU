@@ -39,7 +39,22 @@ class PauliCheck:
 
 
 @dataclass(frozen=True)
+class SurfaceCodeConvention:
+    """The exact convention under which an algebra report is exhaustive."""
+
+    lattice_kind: str = "unrotated_square_edge_code"
+    boundary_kind: str = "mixed_planar"
+    data_placement: str = "edges"
+    stabilizer_support: str = "weight_4_bulk_weight_3_edge_weight_2_corner"
+    distance_definition: str = "minimum_declared_nontrivial_logical_weight"
+
+    def as_dict(self) -> dict[str, str]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
 class SurfaceCodeAlgebraReport:
+    convention: dict[str, str]
     distance: int
     data_edges: int
     x_checks: int
@@ -67,6 +82,7 @@ class PlanarSurfaceCodeAlgebra:
         if distance < 3 or distance % 2 == 0:
             raise ValueError("distance must be an odd integer >= 3")
         self.distance = distance
+        self.convention = SurfaceCodeConvention()
 
     def horizontal_edges(self) -> tuple[Edge, ...]:
         d = self.distance
@@ -123,7 +139,7 @@ class PlanarSurfaceCodeAlgebra:
         d = self.distance
         if not 0 <= row < d:
             raise ValueError("logical X row is outside the lattice")
-        support = frozenset(("v", row, col) for col in range(d + 1))
+        support = frozenset(("v", row, col) for col in range(d))
         return PauliCheck("X", f"logical_x:{row}", support)
 
     @staticmethod
@@ -145,6 +161,7 @@ class PlanarSurfaceCodeAlgebra:
         logical_x = self.logical_x(0)
         anticommute = not logical_x.commutes_with(logical_z)
         unsigned = {
+            "convention": self.convention.as_dict(),
             "distance": self.distance,
             "data_edges": len(self.data_edges()),
             "x_checks": len(x_checks),
@@ -157,7 +174,8 @@ class PlanarSurfaceCodeAlgebra:
             "correction_bound": (self.distance - 1) // 2,
             "verified": not failures
             and anticommute
-            and len(logical_z.support) == self.distance,
+            and len(logical_z.support) == self.distance
+            and len(logical_x.support) == self.distance,
         }
         return SurfaceCodeAlgebraReport(**unsigned, proof_digest=_digest(unsigned))
 
@@ -171,5 +189,6 @@ __all__ = [
     "PauliCheck",
     "PlanarSurfaceCodeAlgebra",
     "SurfaceCodeAlgebraReport",
+    "SurfaceCodeConvention",
     "verify_surface_code_algebra",
 ]

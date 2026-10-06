@@ -319,6 +319,10 @@ class TenThousandQubitSystem:
         """Return the exact mathematical 10 EH/s capacity certificate."""
         return self.pure_quantum_asic().deterministic_hashrate_system()
 
+    def heterogeneous_10eh_certificate(self):
+        """Return the exact heterogeneous formal-capacity certificate."""
+        return self.pure_quantum_asic().heterogeneous_hashrate_certificate()
+
     # -- Aethel persistence (folded evidence, never raw amplitudes) -----------
 
     def aethel_store_manifest(self, address: str = "ten_thousand:manifest") -> Dict[str, Any]:

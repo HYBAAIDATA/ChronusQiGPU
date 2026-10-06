@@ -1,0 +1,7 @@
+name = "pure_quantum_math"
+version = "1.0.0"
+defaultTargets = ["PureQuantumMath"]
+
+[[lean_lib]]
+name = "PureQuantumMath"
+srcDir = "."

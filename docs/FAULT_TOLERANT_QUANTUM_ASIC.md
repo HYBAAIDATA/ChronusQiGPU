@@ -1,5 +1,19 @@
 # Pure Quantum Mathematics ASIC — First-Principles Implementation
 
+## Exact-field and code convention
+
+The canonical field is `Q(zeta_8) = Q(i, sqrt(2))`; the existing
+`Q(sqrt(2)) + i Q(sqrt(2))` representation is the same degree-four field. The
+T phase is verified exactly, with no floating-point tolerance.
+
+Surface-code reports declare the unrotated square edge-code convention. The
+distance-31 extension checks all 984,064 star/plaquette pairs over GF(2),
+verifies the declared logical anticommutation, and records correction bound 15.
+
+Cryo-CMOS values are evidence-labeled: current reference 10 mW/tile, five-year
+target 5 mW/tile, and ten-year target 1 mW/tile. Targets are projections and
+are excluded from the pure-mathematics production gate.
+
 ## Canonical interpretation
 
 The implementation is an **executable mathematical abstraction**. Quantum behavior originates from the mathematics: Hilbert space, exact or symbolic amplitudes, unitary evolution, Born-rule measurement, tensor structure, error-correcting codes, graph-theoretic decoding, and resource constraints.

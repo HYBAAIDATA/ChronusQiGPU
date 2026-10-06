@@ -1,5 +1,19 @@
 # Deterministic 10 EH/s Mathematical Capacity
 
+Every certificate declares the exact initiation mode, rational `I`, exact
+bubble fraction, and justification:
+
+- fully packed: `I = 1`
+- serialized three-block datapath: `I = 3`
+- pipelined with exact bubble fraction `e`: `I = 1 + e`
+
+The fixed SHA-256d object is a datapath, not an ISA.
+
+For heterogeneous fleets the exact capacity is
+`H_total = sum_i(M_i * N_i * f_i / I_i)`. Each fleet class is reconstructed
+independently and the sum retains the truth class
+`exact_mathematical_capacity_not_executed_work`.
+
 ## Exact theorem
 
 For a formal fleet with:

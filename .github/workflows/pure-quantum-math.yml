@@ -37,6 +37,9 @@ jobs:
           turing_universal_quantum_computer/turing_universal_quantum_computer/fault_tolerant_asic.py
           turing_universal_quantum_computer/turing_universal_quantum_computer/deterministic_hashrate.py
           turing_universal_quantum_computer/turing_universal_quantum_computer/surface_code_exact.py
+          turing_universal_quantum_computer/turing_universal_quantum_computer/canonical_serialization.py
+          turing_universal_quantum_computer/turing_universal_quantum_computer/exact_field_registry.py
+          turing_universal_quantum_computer/turing_universal_quantum_computer/thermodynamics_exact.py
       - name: Run focused exact proof obligations
         run: |
           tests=turing_universal_quantum_computer/tests
@@ -44,6 +47,9 @@ jobs:
           python -m unittest discover -v -s "$tests" -p test_deterministic_hashrate.py
           python -m unittest discover -v -s "$tests" -p test_surface_code_exact.py
           python -m unittest discover -v -s "$tests" -p test_quantum_asic_integration.py
+          python -m unittest discover -v -s "$tests" -p test_canonical_serialization.py
+          python -m unittest discover -v -s "$tests" -p test_exact_field_registry.py
+          python -m unittest discover -v -s "$tests" -p test_thermodynamics_exact.py
       - name: Reproduce canonical proof bundle
         run: >-
           python scripts/verify_pure_quantum_math.py
@@ -77,3 +83,11 @@ jobs:
               raise SystemExit(f"cross-version reproduction mismatch: {rows}")
           print(f"reproduction digest: {rows[0][1]}")
           PY
+
+  lean-kernels:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: turing_universal_quantum_computer/formal

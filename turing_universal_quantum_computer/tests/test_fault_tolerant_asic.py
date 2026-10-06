@@ -96,8 +96,11 @@ class QuantumAsicModelTests(unittest.TestCase):
         self.assertEqual(room.network_bits_s, 100e9)
         cryo = CryoCMOS()
         self.assertEqual(cryo.tiles(10_000), 100)
-        self.assertAlmostEqual(cryo.power_w(10_000), 0.1)
-        self.assertTrue(cryo.supports(10_000))
+        self.assertAlmostEqual(cryo.power_w(10_000), 1.0)
+        self.assertFalse(cryo.supports(10_000))
+        projected = CryoCMOS.ten_year_target()
+        self.assertAlmostEqual(projected.power_w(10_000), 0.1)
+        self.assertTrue(projected.supports(10_000))
         self.assertAlmostEqual(RSFQ().power_w(1000), 10e-6)
 
     def test_application_catalog_is_modelled_not_executed(self):

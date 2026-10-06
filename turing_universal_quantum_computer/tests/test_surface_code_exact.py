@@ -19,6 +19,10 @@ class SurfaceCodeExactTests(unittest.TestCase):
         self.assertEqual(report.logical_z_weight, 3)
         self.assertTrue(report.logicals_anticommute)
         self.assertEqual(report.correction_bound, 1)
+        self.assertEqual(
+            report.convention["lattice_kind"],
+            "unrotated_square_edge_code",
+        )
         self.assertEqual(len(report.proof_digest), 64)
 
     def test_distance_21_checks_every_star_plaquette_pair(self):
@@ -36,6 +40,17 @@ class SurfaceCodeExactTests(unittest.TestCase):
         z_check = PauliCheck("Z", "z", edge)
         self.assertTrue(x_check.commutes_with(x_check))
         self.assertFalse(x_check.commutes_with(z_check))
+
+    def test_distance_31_exhaustive_declared_convention(self):
+        report = verify_surface_code_algebra(31)
+        self.assertTrue(report.verified)
+        self.assertEqual(report.x_checks, 32**2)
+        self.assertEqual(report.z_checks, 31**2)
+        self.assertEqual(report.mixed_pairs_checked, 32**2 * 31**2)
+        self.assertEqual(report.logical_z_weight, 31)
+        self.assertEqual(report.logical_x_weight, 31)
+        self.assertEqual(report.correction_bound, 15)
+        self.assertEqual(report.noncommuting_pairs, ())
 
     def test_invalid_distance_and_logical_coordinates_fail_closed(self):
         with self.assertRaises(ValueError):

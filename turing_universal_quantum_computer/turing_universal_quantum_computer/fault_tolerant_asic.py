@@ -426,9 +426,10 @@ class RoomTemperatureControl:
 @dataclass(frozen=True)
 class CryoCMOS:
     qubits_per_tile: int = 100
-    power_per_tile_w: float = 1e-3
+    power_per_tile_w: float = 10e-3
     cooling_power_4k_w: float = 1.0
     reserve_fraction: float = 0.2
+    profile: str = "current_reference_10_mw"
 
     def __post_init__(self) -> None:
         if self.qubits_per_tile < 1:
@@ -437,6 +438,23 @@ class CryoCMOS:
         _positive("cooling_power_4k_w", self.cooling_power_4k_w)
         if not 0 <= self.reserve_fraction < 1:
             raise ValueError("reserve_fraction must be in [0,1)")
+        profiles = {
+            "current_reference_10_mw": 10e-3,
+            "five_year_target_5_mw": 5e-3,
+            "ten_year_target_1_mw": 1e-3,
+        }
+        if self.profile not in profiles:
+            raise ValueError("unknown cryo-CMOS evidence profile")
+        if self.power_per_tile_w != profiles[self.profile]:
+            raise ValueError("power_per_tile_w must match the declared profile")
+
+    @classmethod
+    def five_year_target(cls) -> "CryoCMOS":
+        return cls(power_per_tile_w=5e-3, profile="five_year_target_5_mw")
+
+    @classmethod
+    def ten_year_target(cls) -> "CryoCMOS":
+        return cls(power_per_tile_w=1e-3, profile="ten_year_target_1_mw")
 
     def tiles(self, qubits: int) -> int:
         if int(qubits) < 1:
@@ -829,6 +847,7 @@ class FirstPrinciplesVerifier:
         )
         from .backends.base import Program
         from .deterministic_hashrate import verify_hashrate_certificate
+        from .exact_field_registry import verify_q_zeta_8_registry
         from .surface_code_exact import verify_surface_code_algebra
         from .verify import verify_program_unitarity
 
@@ -842,14 +861,21 @@ class FirstPrinciplesVerifier:
         certificate_b = certify_work_window(header76, 0, 32)
         code = stack.surface_code
         surface_proof = verify_surface_code_algebra(code.distance)
+        distance_31_proof = verify_surface_code_algebra(31)
+        field_proof = verify_q_zeta_8_registry()
         deterministic_system = PureQuantumMathASIC(stack).deterministic_hashrate_system()
         hashrate_certificate = deterministic_system.certificate
+        heterogeneous_certificate = (
+            PureQuantumMathASIC(stack).heterogeneous_hashrate_certificate()
+        )
 
         artifacts = {
             "unitarity_verification": {
                 "rational_rotation_field": "Q(i)",
                 "rational_rotation_error_sq": str(unitary.unitary_error()),
-                "clifford_field": "Q(sqrt(2)) + i Q(sqrt(2))",
+                "canonical_field": field_proof.canonical_field,
+                "field_registry_digest": field_proof.proof_digest,
+                "t_phase_norm_is_one": field_proof.t_phase_norm_is_one,
                 "clifford_program_digest": clifford_unitarity.program_digest,
                 "clifford_checked_pairs": clifford_unitarity.checked_pairs,
                 "clifford_state": clifford_unitarity.state,
@@ -864,11 +890,15 @@ class FirstPrinciplesVerifier:
                 "distance": code.distance,
                 "physical_symbols": code.physical_qubits,
                 "correctable_weight": code.correctable_errors,
-                "logical_error_rate": code.logical_error_rate,
+                "logical_error_rate_model_admitted_to_exact_bundle": False,
                 "css_pairs_checked": surface_proof.mixed_pairs_checked,
                 "css_noncommuting_pairs": surface_proof.noncommuting_pairs,
                 "logical_anticommutation": surface_proof.logicals_anticommute,
                 "surface_code_proof_digest": surface_proof.proof_digest,
+                "surface_code_convention": surface_proof.convention,
+                "distance_31_pairs_checked": distance_31_proof.mixed_pairs_checked,
+                "distance_31_correction_bound": distance_31_proof.correction_bound,
+                "distance_31_proof_digest": distance_31_proof.proof_digest,
             },
             "deterministic_replay": {
                 "certificate_digest": _digest(certificate_a),
@@ -880,11 +910,17 @@ class FirstPrinciplesVerifier:
                 "steady_state_floor_met": hashrate_certificate.steady_state_floor_met,
                 "cold_start_floor_met": hashrate_certificate.cold_start_floor_met,
                 "truth_class": hashrate_certificate.truth_class,
+                "heterogeneous_certificate_digest": (
+                    heterogeneous_certificate.certificate_digest
+                ),
+                "heterogeneous_floor_met": heterogeneous_certificate.floor_met,
             },
         }
         checks = {
             "unitarity_verification": (
-                unitary.unitary_error() == 0 and clifford_unitarity.verified
+                unitary.unitary_error() == 0
+                and clifford_unitarity.verified
+                and field_proof.verified
             ),
             "normalization_verification": (
                 initial.norm_sq == evolved.norm_sq and sum(probabilities) == 1
@@ -892,9 +928,10 @@ class FirstPrinciplesVerifier:
             "error_correction_invariants": (
                 code.physical_qubits == 2 * code.distance**2 - 1
                 and code.correctable_errors == (code.distance - 1) // 2
-                and 0 < code.logical_error_rate < code.physical_error_rate
                 and surface_proof.verified
                 and surface_proof.correction_bound == code.correctable_errors
+                and distance_31_proof.verified
+                and distance_31_proof.correction_bound == 15
             ),
             "deterministic_replay": (
                 certificate_a == certificate_b and verify_certificate(certificate_a)
@@ -903,6 +940,7 @@ class FirstPrinciplesVerifier:
                 verify_hashrate_certificate(hashrate_certificate)
                 and hashrate_certificate.steady_state_floor_met
                 and hashrate_certificate.cold_start_floor_met is True
+                and heterogeneous_certificate.floor_met
             ),
         }
         checks["software_tests"] = all(checks.values())
@@ -957,6 +995,35 @@ class PureQuantumMathASIC:
 
     def verify_first_principles(self) -> VerificationBundle:
         return FirstPrinciplesVerifier().verify(self.stack)
+
+    def heterogeneous_hashrate_certificate(self):
+        """Issue the exact sum-of-classes capacity certificate."""
+        from .deterministic_hashrate import (
+            FleetClass,
+            HeterogeneousFleet,
+            PipelineSpec,
+            issue_heterogeneous_fleet_certificate,
+        )
+
+        fleet = HeterogeneousFleet(
+            (
+                FleetClass(
+                    "fully_packed",
+                    500_000,
+                    10_000,
+                    Fraction(1_000_000_000),
+                    PipelineSpec.fully_packed(),
+                ),
+                FleetClass(
+                    "serialized_three_block",
+                    1_500_000,
+                    10_000,
+                    Fraction(1_000_000_000),
+                    PipelineSpec.serialized_three_block(),
+                ),
+            )
+        )
+        return issue_heterogeneous_fleet_certificate(fleet)
 
     def report(
         self,

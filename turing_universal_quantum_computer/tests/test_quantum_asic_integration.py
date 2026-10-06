@@ -32,6 +32,12 @@ class QuantumAsicIntegrationTests(unittest.TestCase):
         capacity = system.deterministic_10eh_system()
         self.assertTrue(capacity.certificate.steady_state_floor_met)
         self.assertTrue(capacity.certificate.cold_start_floor_met)
+        heterogeneous = system.heterogeneous_10eh_certificate()
+        self.assertTrue(heterogeneous.floor_met)
+        self.assertEqual(
+            heterogeneous.truth_class,
+            "exact_mathematical_capacity_not_executed_work",
+        )
         self.assertEqual(
             verification.evidence.missing,
             ("independent_model_review",),

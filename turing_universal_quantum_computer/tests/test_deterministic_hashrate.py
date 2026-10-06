@@ -7,13 +7,17 @@ from turing_universal_quantum_computer.deterministic_hashrate import (
     DeterminismEnvelope,
     DeterministicMiningSystem,
     FleetDesign,
+    FleetClass,
+    HeterogeneousFleet,
     PipelineSpec,
     TEN_EH_HPS,
     design_lattice,
     issue_hashrate_certificate,
+    issue_heterogeneous_fleet_certificate,
     minimum_chips,
     minimum_chips_for_window,
     verify_hashrate_certificate,
+    verify_heterogeneous_fleet_certificate,
 )
 
 
@@ -94,6 +98,79 @@ class DeterministicHashrateTests(unittest.TestCase):
         pipeline = PipelineSpec()
         with self.assertRaises(ValueError):
             minimum_chips_for_window(10_000, 1_000_000_000, 191, pipeline=pipeline)
+
+    def test_declared_exact_initiation_interval_modes(self):
+        packed = PipelineSpec.fully_packed()
+        serialized = PipelineSpec.serialized_three_block()
+        bubbled = PipelineSpec.with_bubbles(Fraction(1, 4))
+        self.assertEqual(packed.initiation_interval_cycles, 1)
+        self.assertEqual(serialized.initiation_interval_cycles, 3)
+        self.assertEqual(bubbled.initiation_interval_cycles, Fraction(5, 4))
+        self.assertEqual(
+            minimum_chips(
+                10_000,
+                1_000_000_000,
+                initiation_interval_cycles=serialized.initiation_interval_cycles,
+            ),
+            3_000_000,
+        )
+        self.assertEqual(
+            PipelineSpec.from_dict(bubbled.as_dict()),
+            bubbled,
+        )
+
+    def test_invalid_pipeline_mode_combinations_fail_closed(self):
+        invalid = (
+            {"mode": "fully_packed", "initiation_interval_cycles": 2},
+            {
+                "mode": "pipelined_with_bubbles",
+                "initiation_interval_cycles": Fraction(5, 4),
+                "bubble_fraction": Fraction(1, 2),
+            },
+            {"mode": "unknown"},
+        )
+        for kwargs in invalid:
+            with self.subTest(kwargs=kwargs):
+                with self.assertRaises(ValueError):
+                    PipelineSpec(**kwargs)
+
+    def test_heterogeneous_fleet_exact_sum_and_tamper_detection(self):
+        fleet = HeterogeneousFleet(
+            (
+                FleetClass(
+                    "packed",
+                    500_000,
+                    10_000,
+                    Fraction(1_000_000_000),
+                    PipelineSpec.fully_packed(),
+                ),
+                FleetClass(
+                    "serialized",
+                    1_500_000,
+                    10_000,
+                    Fraction(1_000_000_000),
+                    PipelineSpec.serialized_three_block(),
+                ),
+            )
+        )
+        self.assertEqual(fleet.steady_state_hps, TEN_EH_HPS)
+        certificate = issue_heterogeneous_fleet_certificate(fleet)
+        self.assertTrue(certificate.floor_met)
+        self.assertTrue(verify_heterogeneous_fleet_certificate(certificate))
+        tampered = replace(certificate, floor_hps=TEN_EH_HPS + 1)
+        with self.assertRaises(CertificateError):
+            verify_heterogeneous_fleet_certificate(tampered)
+
+    def test_heterogeneous_fleet_rejects_duplicate_class_ids(self):
+        row = FleetClass(
+            "same",
+            1,
+            1,
+            Fraction(1),
+            PipelineSpec.fully_packed(),
+        )
+        with self.assertRaises(ValueError):
+            HeterogeneousFleet((row, row))
 
 
 if __name__ == "__main__":
