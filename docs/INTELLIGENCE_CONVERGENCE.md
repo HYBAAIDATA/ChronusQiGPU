@@ -33,7 +33,8 @@ by their packages.
 | Turing | SPECIALIST_ORGAN | registered typed read-only organ; retains compute authority |
 | Chronus | SPECIALIST_ORGAN | registered typed organ; retains backend capability authority |
 | Salamander | SPECIALIST_ORGAN | registered typed organ; retains repair authority |
-| Aethel / OVID custody | SPECIALIST_ORGAN | registered typed organ; retains storage authority |
+| Aethel / THESEUS custody | SPECIALIST_ORGAN | registered typed organ; retains durable custody authority |
+| Aethel / OVID transforms | SPECIALIST_ORGAN | registered typed organ; retains transformation/lineage authority |
 | AL HARAS | SPECIALIST_ORGAN | registered typed organ; retains security/evidence authority |
 | `TableWorldModel` | REFERENCE_BASELINE_ONLY | tests/ablation only |
 | `InMemoryMemorySystem` | REFERENCE_BASELINE_ONLY | tests/ablation only |

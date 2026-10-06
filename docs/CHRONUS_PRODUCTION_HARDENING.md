@@ -47,7 +47,7 @@ This improves evidence retention; it does not relax acceptance.
 
 ## Current cloud protocol evidence
 
-The existing `remote_opencl_v1` agent advertises and implements `ladder` and
+The existing `remote_opencl_v2` agent advertises and implements `ladder` and
 `sha256d` execution. Those paths remain unchanged. General tensor execution is
 not claimed as a remote protocol capability until a corresponding verified
 wire surface is implemented and tested.

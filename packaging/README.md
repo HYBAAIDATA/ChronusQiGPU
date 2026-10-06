@@ -27,7 +27,7 @@ in CI; a scaffold here never silently replaces it.
   fallback is introduced by the delivery probe.
 - **`cloud_instance`** — the customer consumes a HYBA Chronus instance in
   their own cloud via the existing verified remote protocol
-  (`remote_opencl_v1`).
+  (`remote_opencl_v2`).
 
 For published packages this means:
 

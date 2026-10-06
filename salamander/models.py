@@ -77,7 +77,7 @@ class ActionKind(StrEnum):
     QUARANTINE = "QUARANTINE"
     REQUALIFY = "REQUALIFY"
     REBUILD_PROJECTION = "REBUILD_PROJECTION"
-    RESTORE_OVID = "RESTORE_OVID"
+    RESTORE_CUSTODY = "RESTORE_CUSTODY"
     OPEN_CIRCUIT = "OPEN_CIRCUIT"
     HALF_OPEN_PROBE = "HALF_OPEN_PROBE"
     ROLLBACK = "ROLLBACK"
@@ -85,8 +85,9 @@ class ActionKind(StrEnum):
 
 
 class AuthorityClass(StrEnum):
-    OVID_AUTHORITATIVE = "OVID_AUTHORITATIVE"
-    THESEUS_REBUILDABLE = "THESEUS_REBUILDABLE"
+    OVID_TRANSFORMATION = "OVID_TRANSFORMATION"
+    THESEUS_CUSTODY = "THESEUS_CUSTODY"
+    PROJECTION_REBUILDABLE = "PROJECTION_REBUILDABLE"
     CHRONUS_EXECUTION = "CHRONUS_EXECUTION"
     EUCLID_LEARNING = "EUCLID_LEARNING"
     KAIROS_REHEARSAL = "KAIROS_REHEARSAL"
@@ -232,8 +233,14 @@ class CapabilityState:
 
 
 @dataclass(frozen=True)
-class OvidRecordIdentity:
-    """Stable identity for authoritative Aethel/Ovid custody."""
+class TheseusRecordIdentity:
+    """Stable identity for a THESEUS durable custody record.
+
+    THESEUS owns durable record/custody/integrity/recovery/provenance.  The
+    payload digest binds the custody record; it carries no transformation
+    claim — representation semantics belong to OVID's lineage, not to this
+    identity.
+    """
 
     tenant_id: str
     namespace: str
@@ -244,20 +251,59 @@ class OvidRecordIdentity:
 
     def __post_init__(self) -> None:
         if len(self.payload_sha256) != 64:
-            raise ValueError("Ovid payload digest must be SHA-256")
+            raise ValueError("THESEUS payload digest must be SHA-256")
 
     @property
     def authority(self) -> AuthorityClass:
-        return AuthorityClass.OVID_AUTHORITATIVE
+        return AuthorityClass.THESEUS_CUSTODY
 
 
 @dataclass(frozen=True)
-class TheseusProjection:
-    """Rebuildable query/index/graph projection of an OVID record."""
+class OvidTransformEvidence:
+    """OVID transformation evidence — never a custody claim.
+
+    OVID owns representation transformation and transform
+    lineage/equivalence evidence only.  The fields mirror the shared
+    provenance contract aethel.ovid.TransformLineage emits; ``exactness``
+    uses the TransformContract vocabulary (EXACT / BOUNDED_LOSS /
+    APPROXIMATE — an UNSUPPORTED contract can never produce evidence).
+    """
+
+    VALID_EXACTNESS = ("EXACT", "BOUNDED_LOSS", "APPROXIMATE")
+
+    tenant_id: str
+    transform_id: str
+    lineage_id: str
+    contract_version: str
+    input_sha256: str
+    output_digest: str
+    exactness: str
+
+    def __post_init__(self) -> None:
+        for name in ("input_sha256", "output_digest"):
+            if len(getattr(self, name)) != 64:
+                raise ValueError(f"OVID transform {name} must be SHA-256")
+        if self.exactness not in self.VALID_EXACTNESS:
+            raise ValueError("OVID transform exactness must be declared")
+
+    @property
+    def authority(self) -> AuthorityClass:
+        return AuthorityClass.OVID_TRANSFORMATION
+
+
+@dataclass(frozen=True)
+class RebuildableProjection:
+    """Rebuildable query/index/graph projection anchored to a THESEUS record.
+
+    The projection is owned by its producer under the hyba_db contract: it
+    can always be rebuilt from the durable custody record, so it is never
+    the authority.  THESEUS does not own projections and OVID does not own
+    custody — the anchor field makes that relationship explicit.
+    """
 
     projection_id: str
     tenant_id: str
-    ovid_identity: OvidRecordIdentity
+    custody_identity: TheseusRecordIdentity
     schema_version: str
     projection_sha256: str
     index_generation: int
@@ -266,7 +312,7 @@ class TheseusProjection:
 
     @property
     def authority(self) -> AuthorityClass:
-        return AuthorityClass.THESEUS_REBUILDABLE
+        return AuthorityClass.PROJECTION_REBUILDABLE
 
 
 @dataclass(frozen=True)

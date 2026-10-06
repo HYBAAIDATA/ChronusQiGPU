@@ -181,7 +181,7 @@ verified remote protocol.
 ```text
 customer application
        |
-remote_opencl_v1
+remote_opencl_v2
        |
 Chronus instance in customer cloud
        |

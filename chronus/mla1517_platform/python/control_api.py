@@ -17,6 +17,7 @@ import sys
 import threading
 import time
 import traceback
+import uuid
 from collections import deque
 from dataclasses import dataclass
 from dataclasses import field
@@ -58,6 +59,7 @@ _TOE_SCHEMA_VERSION = "chronus.mla1517.toe_collapse/1"
 _TOE_MAX_BODY_BYTES = 4 * 1024 * 1024
 _STATUS_BACKEND = "Python/C/OpenCL"
 _CANONICAL_DEVICE = "canonical-python-backend"
+_REQUEST_ID_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:@-]{0,127}")
 PRIVILEGED_MEDIATION_INSTALLED = True
 _PRIVILEGED_PREFIXES = (
     "/api/v1/mining/",
@@ -676,6 +678,50 @@ def _control_plane() -> ControlPlane:
 def _identity_payload() -> dict[str, Any]:
     ok, reason = identity_hmac_status()
     return {"ok": ok, "reason": reason}
+
+
+def _readiness_components() -> dict[str, Any]:
+    """Cheap, honest per-component readiness for the readyz payload.
+
+    Each entry reports only what the readiness path can verify directly —
+    configuration and filesystem facts, never a liveness promise for a
+    subsystem it cannot observe here. ``ready`` itself is unchanged: it
+    stays bound to worker identity readiness.
+    """
+    components: dict[str, Any] = {}
+    ok, reason = identity_hmac_status()
+    components["identity"] = {
+        "state": "ready" if ok else "not_ready",
+        "reason": reason,
+    }
+    try:
+        audit = _audit()
+        audit.path.parent.mkdir(parents=True, exist_ok=True)
+        components["boot_audit"] = {"state": "ready", "path": str(audit.path)}
+    except (OSError, StartupConfigError) as exc:
+        components["boot_audit"] = {"state": "not_ready", "reason": str(exc)}
+    try:
+        heartbeat = _heartbeat_dir()
+        heartbeat.mkdir(parents=True, exist_ok=True)
+        components["worker_heartbeat_dir"] = {"state": "ready", "path": str(heartbeat)}
+    except (OSError, StartupConfigError) as exc:
+        components["worker_heartbeat_dir"] = {
+            "state": "not_ready",
+            "reason": str(exc),
+        }
+    if pythia_guardian_api is None:
+        components["guardian"] = {
+            "state": "unavailable",
+            "reason": "al_haras dependency missing",
+        }
+    elif not os.getenv("AL_HARAS_SUBSCRIPTION_KEYS"):
+        components["guardian"] = {
+            "state": "not_configured",
+            "reason": "AL_HARAS_SUBSCRIPTION_KEYS unset",
+        }
+    else:
+        components["guardian"] = {"state": "configured"}
+    return components
 
 
 def _stratum_status_payload(
@@ -2259,6 +2305,7 @@ class _Handler(BaseHTTPRequestHandler):
                     "schema_version": _READY_SCHEMA_VERSION,
                     "ready": bool(identity["ok"]),
                     "reason": identity["reason"] if not identity["ok"] else "ok",
+                    "components": _readiness_components(),
                     "generated_at": now_iso(),
                 },
             )
@@ -2563,6 +2610,7 @@ class _Handler(BaseHTTPRequestHandler):
             return
         handler = self._POST_TABLE.get(parsed.path)
         if handler is None:
+            self._discard_request_body()
             self._json(HTTPStatus.NOT_FOUND, {"error": "not_found"})
             return
         privileged = parsed.path.startswith(_PRIVILEGED_PREFIXES)
@@ -2682,6 +2730,22 @@ class _Handler(BaseHTTPRequestHandler):
                 break
             time.sleep(1.5)
 
+    def _correlation_id(self) -> str:
+        """Correlation envelope: every response carries X-Request-Id.
+
+        A caller-supplied ``X-Request-Id``/``X-Correlation-Id`` is echoed when
+        it is a sane token; otherwise a fresh id is minted so every response is
+        correlatable in the audit log and client telemetry.
+        """
+        candidate = (
+            self.headers.get("X-Request-Id")
+            or self.headers.get("X-Correlation-Id")
+            or ""
+        ).strip()
+        if candidate and _REQUEST_ID_RE.fullmatch(candidate):
+            return candidate
+        return uuid.uuid4().hex
+
     def _send(
         self,
         status: int,
@@ -2690,6 +2754,7 @@ class _Handler(BaseHTTPRequestHandler):
         cache_control: str = "no-store",
     ) -> None:
         self.send_response(int(status))
+        self.send_header("X-Request-Id", self._correlation_id())
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", cache_control)
@@ -2711,6 +2776,20 @@ class _Handler(BaseHTTPRequestHandler):
         body = json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
         self._send(int(status), "application/json; charset=utf-8", body)
 
+    def _discard_request_body(self) -> None:
+        """Consume a refused request's body before answering.
+
+        Answering with unread bytes still on the socket can surface as a
+        connection abort to the client (WinError 10053) instead of the
+        intended status line.
+        """
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            length = 0
+        if length > 0:
+            self._drain(length)
+
     def _refuse_unauthorized(self) -> bool:
         principal, refusal = authenticate_control_principal(self.headers)
         if refusal is None:
@@ -2726,6 +2805,7 @@ class _Handler(BaseHTTPRequestHandler):
             return False
         status, reason = refusal
         _audit().append("control_refused", path=urlparse(self.path).path, reason=reason)
+        self._discard_request_body()
         self._json(status, {"ok": False, "error": reason})
         return True
 
