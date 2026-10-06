@@ -655,6 +655,55 @@ class ProductionEvidence:
         return tuple(category for category in required if self.record(category) is None)
 
 
+MATHEMATICAL_EVIDENCE = (
+    "software_tests",
+    "independent_model_review",
+    "unitarity_verification",
+    "normalization_verification",
+    "error_correction_invariants",
+    "deterministic_replay",
+)
+
+
+@dataclass(frozen=True)
+class MathematicalEvidence:
+    """Hash-addressed proof evidence for the executable abstraction."""
+
+    records: tuple[EvidenceRecord, ...] = ()
+
+    def __post_init__(self) -> None:
+        categories = [record.category for record in self.records]
+        if len(categories) != len(set(categories)):
+            raise ValueError("mathematical evidence categories must be unique")
+
+    def record(self, category: str) -> EvidenceRecord | None:
+        return next((item for item in self.records if item.category == category), None)
+
+    @property
+    def production_ready(self) -> bool:
+        for category in MATHEMATICAL_EVIDENCE:
+            record = self.record(category)
+            if record is None:
+                return False
+            if category == "independent_model_review":
+                if record.state is not EvidenceState.INDEPENDENTLY_REPRODUCED:
+                    return False
+            elif record.state not in {
+                EvidenceState.MEASURED,
+                EvidenceState.INDEPENDENTLY_REPRODUCED,
+            }:
+                return False
+        return True
+
+    @property
+    def missing(self) -> tuple[str, ...]:
+        return tuple(
+            category
+            for category in MATHEMATICAL_EVIDENCE
+            if self.record(category) is None
+        )
+
+
 @dataclass(frozen=True)
 class QuantumAsicStack:
     refrigerator: DilutionRefrigerator = field(default_factory=DilutionRefrigerator)
@@ -739,6 +788,61 @@ class QuantumAsicStack:
         return {**payload, "report_digest": _digest(payload)}
 
 
+@dataclass(frozen=True)
+class PureQuantumMathASIC:
+    """First-principles quantum-mathematics implementation.
+
+    The Hamiltonian, state, code, decoder, thermodynamic, and control terms are
+    mathematical operators and constraints. They form an executable abstract
+    machine; they are not assertions that physical transmons or cryogenics are
+    required by the implementation.
+    """
+
+    stack: QuantumAsicStack = field(default_factory=QuantumAsicStack)
+
+    def report(
+        self,
+        *,
+        logical_scale: int = 10_000,
+        evidence: MathematicalEvidence | None = None,
+    ) -> dict[str, Any]:
+        if int(logical_scale) < 1:
+            raise ValueError("logical_scale must be >= 1")
+        evidence = evidence or MathematicalEvidence()
+        code = self.stack.surface_code
+        payload = {
+            "schema": "turing.pure_quantum_math_asic/v1",
+            "truth_class": "pure_quantum_mathematical_abstraction",
+            "physical_qpu_present": False,
+            "logical_scale": int(logical_scale),
+            "formal_hilbert_dimension": f"2^{int(logical_scale)}",
+            "first_principles": {
+                "state_space": "Hilbert space over exact/symbolic amplitudes",
+                "evolution": "unitary operator or verified exact special form",
+                "measurement": "Born-rule projection on declared observables",
+                "error_correction": "surface-code algebra and syndrome constraints",
+                "decoder": "graph-theoretic correction operator",
+                "thermodynamics": "resource-bound constraint algebra",
+            },
+            "surface_code_invariants": {
+                "distance": code.distance,
+                "physical_symbols_per_logical": code.physical_qubits,
+                "correctable_error_weight": code.correctable_errors,
+                "logical_error_model": code.logical_error_rate,
+            },
+            "production": {
+                "mathematical_abstraction_ready": evidence.production_ready,
+                "missing_evidence": evidence.missing,
+                "hardware_evidence_required": False,
+            },
+            "claim_boundary": (
+                "executable pure-mathematics abstraction; no physical-QPU or "
+                "fabricated-silicon claim"
+            ),
+        }
+        return {**payload, "report_digest": _digest(payload)}
+
+
 __all__ = [
     "APPLICATIONS",
     "ApplicationResource",
@@ -748,7 +852,10 @@ __all__ = [
     "EvidenceRecord",
     "EvidenceState",
     "LogicalQubit",
+    "MATHEMATICAL_EVIDENCE",
+    "MathematicalEvidence",
     "ProductionEvidence",
+    "PureQuantumMathASIC",
     "QuantumAsicStack",
     "QuantumChipLayout",
     "RSFQ",

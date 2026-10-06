@@ -9,7 +9,9 @@ from turing_universal_quantum_computer.fault_tolerant_asic import (
     EvidenceRecord,
     EvidenceState,
     LogicalQubit,
+    MathematicalEvidence,
     ProductionEvidence,
+    PureQuantumMathASIC,
     QuantumAsicStack,
     QuantumChipLayout,
     RSFQ,
@@ -157,6 +159,39 @@ class QuantumAsicModelTests(unittest.TestCase):
         self.assertEqual(stack.application("qaoa").name, "qaoa")
         with self.assertRaises(ValueError):
             stack.application("unknown")
+
+    def test_pure_quantum_math_abstraction_requires_math_evidence_only(self):
+        empty = PureQuantumMathASIC().report(logical_scale=10_000)
+        self.assertEqual(
+            empty["truth_class"],
+            "pure_quantum_mathematical_abstraction",
+        )
+        self.assertFalse(empty["physical_qpu_present"])
+        self.assertFalse(empty["production"]["mathematical_abstraction_ready"])
+        categories = (
+            "software_tests",
+            "independent_model_review",
+            "unitarity_verification",
+            "normalization_verification",
+            "error_correction_invariants",
+            "deterministic_replay",
+        )
+        records = tuple(
+            _record(
+                category,
+                EvidenceState.INDEPENDENTLY_REPRODUCED
+                if category == "independent_model_review"
+                else EvidenceState.MEASURED,
+            )
+            for category in categories
+        )
+        report = PureQuantumMathASIC().report(
+            logical_scale=10_000,
+            evidence=MathematicalEvidence(records),
+        )
+        self.assertTrue(report["production"]["mathematical_abstraction_ready"])
+        self.assertFalse(report["production"]["hardware_evidence_required"])
+        self.assertEqual(report["formal_hilbert_dimension"], "2^10000")
 
     def test_invalid_parameters_and_evidence_fail_closed(self):
         with self.assertRaises(ValueError):
