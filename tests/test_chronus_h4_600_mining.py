@@ -195,6 +195,60 @@ def test_fragmented_ordered_batch_preserves_membership_without_false_600_fanout_
     assert state["execution_evidence"]["completed_work_items"] == len(nonces)
 
 
+class _FailingScheduler(_Scheduler):
+    def poll(self, handle):
+        raise RuntimeError("test scheduler failure")
+
+
+class _SkewedCountScheduler(_Scheduler):
+    def hashed_count(self, handle) -> int:
+        span = int(handle.window.span)
+        if handle.window.face == 0:
+            return span + 1
+        if handle.window.face == 1:
+            return max(0, span - 1)
+        return super().hashed_count(handle)
+
+
+def test_ordered_batch_failure_records_terminal_device_error_evidence():
+    worker = _FailingScheduler("chronus-a", 1.0)
+    hasher = _promoted_super_asic(worker)
+
+    try:
+        hasher.grind_target_batch(bytes(80), bytes(32), [1000])
+    except RuntimeError as exc:
+        assert "test scheduler failure" in str(exc)
+    else:
+        raise AssertionError("scheduler failure did not propagate")
+
+    evidence = hasher.last_batch_evidence
+    assert evidence is not None
+    assert evidence["completion_state"] == "DEVICE_ERROR"
+    assert evidence["physical_fanout_observed"] is False
+    assert "RuntimeError" in evidence["error"]
+
+
+def test_aggregate_count_cannot_mask_an_incomplete_h4_shard():
+    worker = _SkewedCountScheduler("chronus-a", 1.0)
+    hasher = _promoted_super_asic(worker)
+    nonces = list(range(30_000, 30_600))
+
+    nonce, digest, done = hasher.grind_target_batch(bytes(80), bytes(32), nonces)
+
+    assert nonce is None
+    assert digest is None
+    assert done == 600
+    evidence = hasher.last_batch_evidence
+    assert evidence is not None
+    assert evidence["h4_full_600_shard_jobs"] == 1
+    assert evidence["h4_completed_600_shard_jobs"] == 0
+    assert evidence["physical_fanout_observed"] is False
+    handles = hasher.last_result.handles
+    assert len(handles) == 600
+    assert handles[0]["completed_nonces"] != handles[0]["assigned_nonces"]
+    assert handles[1]["completed_nonces"] != handles[1]["assigned_nonces"]
+
+
 def test_contiguous_600_nonce_batch_records_real_full_h4_fanout():
     worker = _Scheduler("chronus-a", 1.0)
     hasher = _promoted_super_asic(worker)
