@@ -1,6 +1,6 @@
 ---
 name: pythia-long-context
-description: Preserve long-job continuity with the append-only Devin checkpoint journal and explicit PYTHIA memory calls when needed. Do not claim four-tier memory execution merely because the skill loaded.
+description: Preserve long-session continuity using the Devin append-only checkpoint plus the repository's canonical EUCLID cognition/memory substrate where relevant. Never convert a summary into source truth.
 allowed-tools:
   - read
   - grep
@@ -11,53 +11,37 @@ triggers:
   - model
 ---
 
-# PYTHIA Long Context
+# EUCLID Long Context
 
 ## Session activation
 
-This aptitude is invoked automatically at SessionStart and remains active for the entire Devin session. Do not treat it as an optional per-task capability.
+This aptitude is invoked automatically at SessionStart and re-invoked after
+PostCompaction. It remains active for the entire Devin session.
 
+## Continuity model
 
-SessionStart invokes this aptitude automatically. For manual re-check:
+Use two distinct layers:
 
-```text
-python plugins/pythia/scripts/plugin_status.py --record-skill pythia-long-context --write-receipt
-```
+1. **Session checkpoint continuity**
+   - `artifacts/pythia/devin-checkpoint.jsonl`
+   - goal / done / next / files / evidence references;
+   - append-only; resume rather than restart after compaction.
 
-## Evidence boundary
+2. **Canonical EUCLID cognition memory when durable retrieval is required**
+   - `euclid/memory_database.py`;
+   - `euclid/cognition/`;
+   - working / episodic / semantic / archival memory;
+   - replay protection, integrity verification and durable scope.
 
-This skill guarantees a checkpoint/resume discipline.
+The checkpoint is a continuity aid. It is not a replacement for repository
+evidence or canonical EUCLID memory.
 
-It does **not** automatically execute PYTHIA's complete four-tier
-working/episodic/semantic/archival memory stack. If the task needs those
-capabilities, call the real repository interfaces explicitly and retain
-evidence of the calls.
+## Rules
 
-Relevant sources include:
-
-- `Intelligence/pythia_memory.py`;
-- `Intelligence/pythia_store.py`;
-- `hyba_substrate/memory_preservation.py`.
-
-A summary or checkpoint is continuity state, not a replacement for canonical
-evidence.
-
-## The loop
-
-1. Inspect the latest `artifacts/pythia/devin-checkpoint.jsonl` entry.
-2. Query real PYTHIA episodic/semantic/archival memory only when the task needs
-   it, and record what was actually called.
-3. Append a checkpoint before every substantial step.
-4. Include:
-   - `goal`;
-   - `done`;
-   - `next`;
-   - `files`;
-   - current `plugin_source_sha`;
-   - `skills_invoked`;
-   - `verification`.
-5. After compaction, resume from the latest checkpoint rather than restarting.
-6. Never convert an unverified summary into source-of-truth evidence.
-
-Missing journal on a fresh session means create the opening checkpoint before
-task work.
+- restore the latest checkpoint after compaction;
+- preserve exact owner decisions and unresolved blockers;
+- retrieve prior verified evidence before repeating work;
+- prefer references to authoritative files over lossy pasted summaries;
+- distinguish current fact, historical record, hypothesis and external opinion;
+- never promote remembered text into verified truth without re-checking it;
+- task evidence and session aptitude evidence remain separate.
