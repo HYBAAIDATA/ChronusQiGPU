@@ -993,5 +993,6 @@ __all__ = [
     "SharedTuring",
     "SharedEuclid",
     "ProductionSystemRelations",
+    "verify_kellogg_custody_boundary",
     "verify_turing_custody_boundary",
 ]
