@@ -147,6 +147,7 @@ def test_non_composite_hasher_is_not_falsely_promoted():
     assert promote_execution_hasher(hasher) is hasher
     assert not hasattr(hasher, "topology_id")
 
+
 def _promoted_super_asic(worker: _Scheduler) -> SuperAsicHasher:
     hasher = SuperAsicHasher(HybridCoordinator(worker), [worker])
     return promote_execution_hasher(hasher)
@@ -210,6 +211,7 @@ def test_contiguous_600_nonce_batch_records_real_full_h4_fanout():
     assert evidence["h4_job_count"] == 1
     assert evidence["h4_active_shards"] == 600
     assert evidence["h4_full_600_shard_jobs"] == 1
+    assert evidence["h4_completed_600_shard_jobs"] == 1
     assert evidence["full_600_shard_dispatch_observed"] is True
     assert evidence["physical_fanout_observed"] is True
     assert evidence["completed_work_items"] == 600
