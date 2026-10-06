@@ -51,6 +51,42 @@ def _safe_task_id(value: str) -> str:
     return cleaned[:120]
 
 
+def require_session_aptitude() -> dict[str, Any]:
+    """Fail closed unless this session completed mandatory EUCLID activation.
+
+    Task evidence is downstream of SessionStart. It must never be possible to
+    record verification, completion, or a sealed pack first and merely expose
+    an incomplete aptitude snapshot afterwards.
+    """
+    status = build_status()
+    write_runtime_receipt(status)
+
+    mandatory = set(status.get("mandatory_skills") or [])
+    invoked = set(status.get("skills_invoked") or [])
+    missing = sorted(mandatory - invoked)
+
+    if status.get("augmentation") != "EUCLID_APTITUDE":
+        raise RuntimeError("EUCLID aptitude augmentation is not active")
+    if not status.get("session_start_observed"):
+        raise RuntimeError(
+            "mandatory EUCLID aptitude SessionStart hook was not observed; "
+            "task work/evidence is blocked"
+        )
+    if not mandatory:
+        raise RuntimeError("mandatory EUCLID aptitude skill inventory is empty")
+    if (
+        not status.get("mandatory_skills_complete")
+        or missing
+        or not mandatory.issubset(invoked)
+    ):
+        detail = ", ".join(missing) if missing else "runtime receipt incomplete"
+        raise RuntimeError(
+            "mandatory EUCLID aptitude invocation incomplete; task work/evidence "
+            f"is blocked: {detail}"
+        )
+    return status
+
+
 def _read_events(path: Path | None = None) -> list[dict[str, Any]]:
     path = EVENT_LOG if path is None else path
     if not path.is_file():
@@ -104,8 +140,7 @@ def record_event(
     if not ok:
         raise ValueError(f"existing evidence ledger failed verification: {reason}")
 
-    status = build_status()
-    write_runtime_receipt(status)
+    status = require_session_aptitude()
     previous = events[-1]["event_sha256"] if events else "GENESIS"
     event: dict[str, Any] = {
         "schema": SCHEMA_EVENT,
@@ -129,6 +164,8 @@ def record_event(
 def run_verification(task_id: str, command: list[str]) -> int:
     if not command:
         raise ValueError("verification command is required")
+    # Do not execute task verification before the mandatory session bootstrap.
+    require_session_aptitude()
     started = _now()
     proc = subprocess.run(
         command,
@@ -174,12 +211,15 @@ def build_pack(task_id: str, path: Path | None = None) -> dict[str, Any]:
         raise ValueError(f"no evidence for task {task_id!r}")
 
     verification = [e for e in selected if e.get("event_type") == "VERIFICATION"]
-    runtime_status = build_status()
+    runtime_status = require_session_aptitude()
     session_aptitude = {
         "augmentation": runtime_status.get("augmentation", "UNAVAILABLE"),
         "aptitude_digest_sha256": runtime_status.get(
             "aptitude_digest_sha256",
             "UNAVAILABLE",
+        ),
+        "session_start_observed": bool(
+            runtime_status.get("session_start_observed")
         ),
         "mandatory_skills_complete": bool(
             runtime_status.get("mandatory_skills_complete")

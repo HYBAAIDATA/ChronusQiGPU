@@ -94,7 +94,13 @@ def _resolve_pack(value: Any) -> Path | None:
     return resolved
 
 
-def _verify_pack(path: Path, *, task_id: str, plugin_source_sha: str) -> tuple[bool, str]:
+def _verify_pack(
+    path: Path,
+    *,
+    task_id: str,
+    plugin_source_sha: str,
+    aptitude_digest_sha256: str,
+) -> tuple[bool, str]:
     try:
         pack = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
@@ -125,11 +131,26 @@ def _verify_pack(path: Path, *, task_id: str, plugin_source_sha: str) -> tuple[b
         return False, "evidence pack lacks session EUCLID aptitude snapshot"
     if aptitude.get("augmentation") != "EUCLID_APTITUDE":
         return False, "evidence pack augmentation is not EUCLID_APTITUDE"
+    if not aptitude.get("session_start_observed"):
+        return False, "evidence pack does not prove SessionStart activation"
+    mandatory = {
+        str(item) for item in aptitude.get("mandatory_skills") or [] if str(item)
+    }
+    invoked = {
+        str(item) for item in aptitude.get("skills_invoked") or [] if str(item)
+    }
+    if not mandatory:
+        return False, "evidence pack mandatory skill inventory is empty"
+    if not mandatory.issubset(invoked):
+        missing = ", ".join(sorted(mandatory - invoked))
+        return False, "evidence pack is missing mandatory invoked skills: " + missing
     if not aptitude.get("mandatory_skills_complete"):
         return False, "evidence pack shows incomplete mandatory session aptitude"
     aptitude_digest = str(aptitude.get("aptitude_digest_sha256") or "").strip()
     if len(aptitude_digest) != 64:
         return False, "evidence pack lacks valid EUCLID aptitude digest"
+    if aptitude_digest != aptitude_digest_sha256:
+        return False, "evidence pack EUCLID aptitude digest does not match current session"
 
     verification = pack.get("verification")
     if not isinstance(verification, dict) or int(verification.get("runs", 0)) < 1:
@@ -180,11 +201,28 @@ def main() -> int:
             f"(checkpoint={checkpoint_sha or 'missing'}, current={source_sha})."
         )
 
-    if not status.get("mandatory_skills_complete"):
-        missing = ", ".join(status.get("mandatory_skills_missing") or [])
+    if not status.get("session_start_observed"):
+        return _block(
+            "Mandatory EUCLID aptitude SessionStart hook was not observed for "
+            "this session."
+        )
+
+    mandatory = {
+        str(item) for item in status.get("mandatory_skills") or [] if str(item)
+    }
+    invoked = {
+        str(item) for item in status.get("skills_invoked") or [] if str(item)
+    }
+    if not mandatory:
+        return _block("Mandatory EUCLID aptitude skill inventory is empty.")
+    if (
+        not status.get("mandatory_skills_complete")
+        or not mandatory.issubset(invoked)
+    ):
+        missing = ", ".join(sorted(mandatory - invoked))
         return _block(
             "Mandatory EUCLID aptitude was not fully invoked for this session: "
-            + missing
+            + (missing or "runtime receipt incomplete")
         )
 
     if not _terminal_next(last.get("next")):
@@ -208,6 +246,7 @@ def main() -> int:
         pack_path,
         task_id=task_id,
         plugin_source_sha=source_sha,
+        aptitude_digest_sha256=str(status.get("aptitude_digest_sha256") or ""),
     )
     if not ok:
         return _block(reason)
