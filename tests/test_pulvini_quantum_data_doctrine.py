@@ -1,20 +1,25 @@
 from __future__ import annotations
 
-import ast
 from fractions import Fraction
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from python_backend.core_modules.geodesic_tensor_engine import fold_exact
 from python_backend.core_modules.math_folding import PHI as EXACT_PHI
 from python_backend.core_modules.math_folding import Quadratic5, pulvini_fold
 from quantum_compute_substrate import pulvini as pulvini_pkg
-from quantum_compute_substrate.pulvini import PHI, PulviniDataOrchestrator, PulviniOperator
+from quantum_compute_substrate.pulvini import (
+    PHI,
+    PulviniDataOrchestrator,
+    PulviniOperator,
+    PythagorasOrchestrator,
+)
+from scripts.check_pulvini_data_boundary import check_repository
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-ACTIVE_PULVINI_ROOT = REPO_ROOT / "quantum_compute_substrate" / "pulvini"
 
 
 def test_exact_phi_satisfies_defining_quadratic_identity() -> None:
@@ -41,7 +46,6 @@ def test_phi_is_structural_in_fold_not_decorative_metadata() -> None:
     assert np.allclose(folded, expected_folded)
     assert np.allclose(kernel, expected_kernel)
 
-    # Ablation: replacing phi by an arbitrary value changes the transform.
     fake_phi = 2.0
     fake_folded = (1.0 / fake_phi) * left + (1.0 / (fake_phi**2)) * right_padded
     assert not np.allclose(folded, fake_folded)
@@ -75,42 +79,250 @@ def test_canonical_router_is_data_authority_not_mining() -> None:
     assert result["data_threshold"] == 100
 
 
-def test_pythagoras_name_is_compatibility_only() -> None:
-    assert pulvini_pkg.PythagorasOrchestrator is PulviniDataOrchestrator
+def test_pythagoras_compatibility_is_deprecated_read_only_and_non_authoritative() -> None:
     assert pulvini_pkg.PulviniDataOrchestrator is PulviniDataOrchestrator
+    assert PythagorasOrchestrator is not PulviniDataOrchestrator
+
+    with pytest.warns(DeprecationWarning, match="historical compatibility"):
+        legacy = PythagorasOrchestrator(quantum_threshold=100)
+    result = legacy.solve(np.arange(32.0))
+
+    assert result["authority"] == "pulvini.data"
+    assert result["domain"] == "data"
+    assert result["mining_path"] is False
+    assert result["compatibility_alias"] == "PythagorasOrchestrator"
+    with pytest.raises(AttributeError, match="read-only compatibility"):
+        legacy.data_threshold = 1
 
 
-def _imports(path: Path) -> set[str]:
-    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-    found: set[str] = set()
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            found.update(alias.name for alias in node.names)
-        elif isinstance(node, ast.ImportFrom) and node.module:
-            found.add(node.module)
-    return found
+def test_repository_pulvini_data_boundary_gate_passes() -> None:
+    assert check_repository(REPO_ROOT) == []
 
 
-def test_active_pulvini_package_has_no_mining_imports() -> None:
-    forbidden_fragments = (
-        "pythia_mining",
-        "mining.stratum",
-        "mining.hash_pipeline",
-        "mining.production_miner",
-        "stratum_client",
+def test_boundary_gate_rejects_mining_import_of_pulvini(tmp_path: Path) -> None:
+    source = tmp_path / "mining" / "bad_route.py"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "from quantum_compute_substrate.pulvini import PulviniDataOrchestrator\n",
+        encoding="utf-8",
     )
-    scanned = list(ACTIVE_PULVINI_ROOT.glob("*.py"))
-    scanned += [
-        REPO_ROOT / "tensor" / "pulvini_bridge.py",
-        REPO_ROOT / "python_backend" / "core_modules" / "math_folding.py",
-        REPO_ROOT / "python_backend" / "core_modules" / "geodesic_tensor_engine.py",
-    ]
-    violations: list[tuple[str, str]] = []
-    for path in scanned:
-        for module in _imports(path):
-            if any(fragment in module for fragment in forbidden_fragments):
-                violations.append((str(path.relative_to(REPO_ROOT)), module))
-    assert violations == []
+    violations = check_repository(tmp_path)
+    assert any(v.rule == "mining-imports-pulvini-data" for v in violations)
+
+
+def test_boundary_gate_rejects_dynamic_mining_import_of_pulvini(tmp_path: Path) -> None:
+    source = tmp_path / "chronus" / "v99" / "mining" / "dynamic_route.py"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "import importlib\n"
+        "P = importlib.import_module('quantum_compute_substrate.pulvini')\n",
+        encoding="utf-8",
+    )
+    violations = check_repository(tmp_path)
+    assert any(v.rule == "mining-imports-pulvini-data" for v in violations)
+
+
+def test_boundary_gate_rejects_direct_import_module_helper_alias(tmp_path: Path) -> None:
+    source = tmp_path / "mining" / "dynamic_helper_alias.py"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "from importlib import import_module as loader\n"
+        "P = loader('quantum_compute_substrate.pulvini')\n",
+        encoding="utf-8",
+    )
+    violations = check_repository(tmp_path)
+    assert any(v.rule == "mining-imports-pulvini-data" for v in violations)
+
+
+def test_boundary_gate_rejects_aliased_importlib_module(tmp_path: Path) -> None:
+    source = tmp_path / "mining" / "dynamic_module_alias.py"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "import importlib as il\n"
+        "exact_math = il.import_module('python_backend.core_modules.math_folding')\n",
+        encoding="utf-8",
+    )
+    violations = check_repository(tmp_path)
+    assert any(
+        v.rule == "mining-imports-pulvini-fold-authority" for v in violations
+    )
+
+
+def test_boundary_gate_rejects_pulvini_fold_symbol_in_mining(tmp_path: Path) -> None:
+    source = tmp_path / "mining" / "bad_fold.py"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "from python_backend.core_modules.math_folding import pulvini_fold\n",
+        encoding="utf-8",
+    )
+    violations = check_repository(tmp_path)
+    assert any(
+        v.rule == "mining-imports-pulvini-fold-authority" for v in violations
+    )
+
+
+def test_boundary_gate_rejects_shared_exact_math_namespace_in_mining(tmp_path: Path) -> None:
+    source = tmp_path / "mining" / "namespace_bypass.py"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "import python_backend.core_modules.math_folding as exact_math\n"
+        "value = exact_math.fibonacci_cassini(4)\n",
+        encoding="utf-8",
+    )
+    violations = check_repository(tmp_path)
+    assert any(
+        v.rule == "mining-imports-pulvini-fold-authority" for v in violations
+    )
+
+
+def test_boundary_gate_rejects_dynamic_shared_exact_namespace_in_mining(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "mining" / "dynamic_namespace_bypass.py"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "import importlib\n"
+        "exact_math = importlib.import_module('python_backend.core_modules.math_folding')\n"
+        "value = exact_math.fibonacci_cassini(4)\n",
+        encoding="utf-8",
+    )
+    violations = check_repository(tmp_path)
+    assert any(
+        v.rule == "mining-imports-pulvini-fold-authority" for v in violations
+    )
+
+
+def test_boundary_gate_allows_substrate_neutral_exact_math_in_mining(tmp_path: Path) -> None:
+    source = tmp_path / "mining" / "exact_sequence.py"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "from python_backend.core_modules.math_folding import fibonacci_cassini\n",
+        encoding="utf-8",
+    )
+    assert check_repository(tmp_path) == []
+
+
+def test_boundary_gate_rejects_transitive_mining_to_pulvini_route(tmp_path: Path) -> None:
+    helper = tmp_path / "helpers" / "data_helper.py"
+    helper.parent.mkdir(parents=True)
+    helper.write_text(
+        "from quantum_compute_substrate.pulvini import PulviniDataOrchestrator\n"
+        "router = PulviniDataOrchestrator()\n",
+        encoding="utf-8",
+    )
+    mining = tmp_path / "mining" / "indirect_route.py"
+    mining.parent.mkdir(parents=True)
+    mining.write_text("from helpers import data_helper\n", encoding="utf-8")
+
+    violations = check_repository(tmp_path)
+    assert any(
+        v.rule == "mining-transitively-reaches-pulvini-data" for v in violations
+    )
+
+
+def test_boundary_gate_rejects_transitive_relative_import_route(tmp_path: Path) -> None:
+    package = tmp_path / "helpers"
+    package.mkdir(parents=True)
+    (package / "__init__.py").write_text("", encoding="utf-8")
+    (package / "pulvini_inner.py").write_text(
+        "from quantum_compute_substrate.pulvini import PulviniDataOrchestrator\n",
+        encoding="utf-8",
+    )
+    (package / "facade.py").write_text(
+        "from . import pulvini_inner\n",
+        encoding="utf-8",
+    )
+    mining = tmp_path / "mining" / "relative_indirect.py"
+    mining.parent.mkdir(parents=True)
+    mining.write_text("from helpers import facade\n", encoding="utf-8")
+
+    violations = check_repository(tmp_path)
+    assert any(
+        v.rule == "mining-transitively-reaches-pulvini-data" for v in violations
+    )
+
+
+def test_boundary_gate_allows_transitive_neutral_math_helper(tmp_path: Path) -> None:
+    helper = tmp_path / "helpers" / "neutral_math.py"
+    helper.parent.mkdir(parents=True)
+    helper.write_text(
+        "from python_backend.core_modules.math_folding import fibonacci_cassini\n",
+        encoding="utf-8",
+    )
+    mining = tmp_path / "mining" / "neutral_route.py"
+    mining.parent.mkdir(parents=True)
+    mining.write_text("from helpers import neutral_math\n", encoding="utf-8")
+
+    assert check_repository(tmp_path) == []
+
+
+def test_boundary_gate_rejects_pulvini_import_of_mining(tmp_path: Path) -> None:
+    source = tmp_path / "quantum_compute_substrate" / "pulvini" / "bad_operator.py"
+    source.parent.mkdir(parents=True)
+    source.write_text("from mining.hash_pipeline import grind\n", encoding="utf-8")
+    violations = check_repository(tmp_path)
+    assert any(v.rule == "pulvini-imports-mining" for v in violations)
+
+
+def test_boundary_gate_rejects_pulvini_import_of_mining_root(tmp_path: Path) -> None:
+    source = tmp_path / "quantum_compute_substrate" / "pulvini" / "bad_root_import.py"
+    source.parent.mkdir(parents=True)
+    source.write_text("import mining\n", encoding="utf-8")
+    violations = check_repository(tmp_path)
+    assert any(v.rule == "pulvini-imports-mining" for v in violations)
+
+
+def test_boundary_gate_rejects_active_historical_path_caller(tmp_path: Path) -> None:
+    source = tmp_path / "Intelligence" / "bad_historical_import.py"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "from python_backend.hyba_data.quantum_honest import grover_cost\n",
+        encoding="utf-8",
+    )
+    violations = check_repository(tmp_path)
+    assert any(
+        v.rule == "active-caller-of-absent-historical-path" for v in violations
+    )
+
+
+def test_boundary_gate_rejects_production_pythagoras_compatibility_use(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "euclid" / "bad_authority.py"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "from quantum_compute_substrate.pulvini import PythagorasOrchestrator\n"
+        "router = PythagorasOrchestrator()\n",
+        encoding="utf-8",
+    )
+    violations = check_repository(tmp_path)
+    assert any(
+        v.rule == "production-uses-pythagoras-compatibility" for v in violations
+    )
+
+
+def test_boundary_gate_rejects_aliased_pythagoras_compatibility_import(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "euclid" / "aliased_bad_authority.py"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "from quantum_compute_substrate.pulvini import PythagorasOrchestrator as Legacy\n"
+        "router = Legacy()\n",
+        encoding="utf-8",
+    )
+    violations = check_repository(tmp_path)
+    assert any(
+        v.rule == "production-uses-pythagoras-compatibility" for v in violations
+    )
+
+
+def test_chronus_compatibility_surface_does_not_export_pulvini_fold() -> None:
+    from chronus.mla1517 import math_folding as chronus_math
+
+    assert hasattr(chronus_math, "fibonacci_cassini")
+    assert not hasattr(chronus_math, "PulviniFold")
+    assert not hasattr(chronus_math, "pulvini_fold")
 
 
 def test_pulvini_public_api_exposes_no_mining_authority() -> None:

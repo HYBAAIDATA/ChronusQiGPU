@@ -1,24 +1,29 @@
 """Bounded HYBA intelligence ordering for the canonical mining runtime.
 
-This module composes the repository's production-safe interpretations of the
-July 2026 HYBA artifacts:
+This module composes production-safe mining advisory stages:
 
-* exact PULVINI representation custody;
-* Geodesic candidate ordering;
+* Chronus v3.3 candidate-memory custody;
+* mining-local geodesic candidate ordering;
 * the classical phi-VQC candidate ranker;
 * Chronus wall-clock profiling.
 
-Every stage is non-consensus.  It may only permute a caller-supplied set of
-unique uint32 nonces.  The SHA-256d/target check and pool response remain the
+PULVINI/data transformation is deliberately absent from this production mining
+pipeline. Data custody and folding remain under their data authority; mining
+only consumes candidate-ordering logic owned by the mining package.
+
+Every stage is non-consensus. It may only permute a caller-supplied set of
+unique uint32 nonces. The SHA-256d/target check and pool response remain the
 exclusive proof authorities.
 """
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import asdict, dataclass
 import importlib
 import struct
 from typing import Any
+
+from .geodesic_nonce_planner import GeodesicNoncePlanner
 
 
 class CandidateBoundaryError(ValueError):
@@ -53,7 +58,7 @@ class CandidateOrderResult:
         }
 
 
-def _load_symbol(module_names: Sequence[str], symbol: str) -> Any:
+def _load_symbol(module_names: tuple[str, ...], symbol: str) -> Any:
     errors: list[str] = []
     for module_name in module_names:
         try:
@@ -63,20 +68,8 @@ def _load_symbol(module_names: Sequence[str], symbol: str) -> Any:
     raise ImportError("; ".join(errors))
 
 
-def _default_fold(values: Sequence[int], depth: int) -> Any:
-    fold_exact = _load_symbol(
-        ("python_backend.core_modules.geodesic_tensor_engine",),
-        "fold_exact",
-    )
-    return fold_exact(values, depth=depth, shape=(len(values),))
-
-
-def _default_geodesic(depth: int) -> Any:
-    planner = _load_symbol(
-        ("python_backend.core_modules.geodesic_tensor_engine",),
-        "GeodesicNoncePlanner",
-    )
-    return planner(fold_depth=depth)
+def _default_geodesic(depth: int) -> GeodesicNoncePlanner:
+    return GeodesicNoncePlanner(fold_depth=depth)
 
 
 def _default_vqc() -> Any:
@@ -96,7 +89,7 @@ def _default_profile(fn: Callable[[], Any]) -> tuple[Any, float]:
     return measured.result, float(measured.wall_seconds)
 
 
-def _default_memory_custody(values: Sequence[int]) -> Any:
+def _default_memory_custody(values: tuple[int, ...]) -> Any:
     table = _load_symbol(("chronus.v33.memory.table",), "Table")
     domain_bits = max(1, (len(values) - 1).bit_length())
     return table.sparse_from_dict(
@@ -144,16 +137,20 @@ def _validate_candidates(values: Iterable[int], maximum: int) -> list[int]:
     return normalized
 
 
-def _same_permutation(before: Sequence[int], after: Sequence[int]) -> bool:
+def _same_permutation(before: list[int], after: list[int]) -> bool:
     return len(before) == len(after) and set(before) == set(after)
 
 
 class HYBAIntelligencePipeline:
-    """Prepare a nonce order while preserving the exact candidate set.
+    """Prepare a mining candidate order while preserving the exact set.
 
-    ``fail_open`` applies only to unavailable or failed advisory stages.  A
+    ``fail_open`` applies only to unavailable or failed advisory stages. A
     stage that returns a different candidate set always raises
     :class:`CandidateBoundaryError`.
+
+    ``fold`` is retained solely as a fail-closed compatibility argument. Any
+    non-``None`` value is rejected because PULVINI/data folding is not a mining
+    runtime responsibility.
     """
 
     def __init__(
@@ -164,12 +161,16 @@ class HYBAIntelligencePipeline:
         enable_geodesic: bool = True,
         enable_vqc: bool = True,
         fail_open: bool = True,
-        fold: Callable[[Sequence[int], int], Any] | None = None,
-        memory_custody: Callable[[Sequence[int]], Any] | None = None,
+        fold: Callable[..., Any] | None = None,
+        memory_custody: Callable[[tuple[int, ...]], Any] | None = None,
         geodesic: Any = None,
         vqc: Any = None,
         profiler: Callable[[Callable[[], Any]], tuple[Any, float]] | None = None,
     ) -> None:
+        if fold is not None:
+            raise ValueError(
+                "PULVINI/data fold injection is forbidden in the production mining pipeline"
+            )
         if fold_depth < 0:
             raise ValueError("fold_depth must be non-negative")
         if max_candidates < 1:
@@ -179,7 +180,6 @@ class HYBAIntelligencePipeline:
         self.enable_geodesic = bool(enable_geodesic)
         self.enable_vqc = bool(enable_vqc)
         self.fail_open = bool(fail_open)
-        self._fold = fold or _default_fold
         self._memory_custody = memory_custody or _default_memory_custody
         self._geodesic = geodesic
         self._vqc = vqc
@@ -188,7 +188,7 @@ class HYBAIntelligencePipeline:
     def _stage_failure(
         self,
         name: str,
-        candidates: Sequence[int],
+        candidates: list[int],
         exc: Exception,
     ) -> IntelligenceStage:
         if not self.fail_open:
@@ -237,28 +237,6 @@ class HYBAIntelligencePipeline:
         except Exception as exc:
             stages.append(self._stage_failure("chronus_v33_memory", current, exc))
 
-        try:
-            folded, elapsed = self._profiler(
-                lambda: self._fold(tuple(current), self.fold_depth)
-            )
-            restored = tuple(int(value) for value in folded.unfold())
-            if restored != tuple(current):
-                raise CandidateBoundaryError("PULVINI custody round-trip changed order")
-            stages.append(
-                IntelligenceStage(
-                    "pulvini_custody",
-                    "ACTIVE",
-                    elapsed,
-                    len(current),
-                    True,
-                    "exact round-trip",
-                )
-            )
-        except CandidateBoundaryError:
-            raise
-        except Exception as exc:
-            stages.append(self._stage_failure("pulvini_custody", current, exc))
-
         if self.enable_geodesic:
             try:
                 planner = self._geodesic or _default_geodesic(self.fold_depth)
@@ -278,7 +256,7 @@ class HYBAIntelligencePipeline:
                         elapsed,
                         len(current),
                         True,
-                        "deterministic proximity ordering",
+                        "mining-local deterministic proximity ordering",
                     )
                 )
             except CandidateBoundaryError:

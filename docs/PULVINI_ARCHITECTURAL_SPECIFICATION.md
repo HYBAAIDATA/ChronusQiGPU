@@ -14,6 +14,13 @@ Stratum authority, and no share-acceptance authority. Historical code that
 used PULVINI terminology in mining is lineage only and must not be promoted
 into the active architecture.
 
+The canonical production geodesic nonce planner is now mining-owned at
+`chronus/mla1517/mining/geodesic_nonce_planner.py`. It is a bounded permutation
+planner with no PULVINI/data dependency and no proof or consensus authority.
+Any older `GeodesicNoncePlanner` symbol retained in a data-engine compatibility
+surface is non-canonical lineage; active mining code is forbidden from importing
+that data-engine path.
+
 ## 2. Mathematical role
 
 | Concept | Canonical PULVINI realization |
@@ -106,6 +113,11 @@ Hamiltonian/data-operator paths. Any reduced Hamiltonian or TT/MPO result must
 carry its measured reconstruction/error/topology evidence. A lossy reduction
 must never be relabelled as an invertible fold.
 
+Mining-local geodesic ordering may use mathematically similar distance concepts,
+but it is independently implemented in the mining package and may only reorder
+an existing valid uint32 nonce set. It does not invoke PULVINI folding, consume
+the PULVINI data engine, or acquire a PULVINI authority identity.
+
 ## 7. Claim boundary
 
 ### External / supportable when backed by executable evidence
@@ -146,12 +158,105 @@ Every system with memory/data may consume the shared THESEUS/OVID substrate
 through the governed inter-system relationship, without creating private
 copies that silently become competing sources of truth.
 
-## 9. Legacy mining references
+## 9. Executable enforcement
+
+The authority boundary is enforced by
+`scripts/check_pulvini_data_boundary.py`, run explicitly in the Python CI job.
+The gate is bidirectional:
+
+1. active PULVINI/data modules may not import the canonical mining package,
+   Stratum, share-submission, hash-pipeline, miner, or mining-runtime modules;
+2. active mining modules may not import PULVINI, the data bridge, Geodesic
+   Tensor Engine, fold pipeline, PULVINI fold symbols, or the complete mixed
+   exact-math namespace;
+3. mining may import specifically named substrate-neutral exact helpers such as
+   Fibonacci/Binet/Cassini/Zeckendorf functions without acquiring data authority;
+4. literal dynamic imports through `importlib.import_module()`, aliased
+   `importlib`, directly imported/aliased `import_module`, or `__import__()` are
+   inspected as dependency edges;
+5. production code may not import or reference `PythagorasOrchestrator`,
+   including through import aliases;
+6. active code may not call the owner-specified historical HYBA Data module
+   paths while they remain absent.
+
+This is intentionally a static architecture gate rather than runtime
+importer-stack inspection. Python caller-stack import checks are brittle and can
+be defeated by indirection; the repository gate rejects the forbidden
+dependency before it enters an admitted build. Runtime results additionally
+carry `authority=pulvini.data`, `domain=data`, and `mining_path=false`.
+
+`PythagorasOrchestrator` remains available only as a deprecated compatibility
+facade. It is a distinct class, becomes read-only after construction, emits a
+`DeprecationWarning`, and delegates execution to the same PULVINI data
+semantics. It cannot emit or acquire a Pythagoras authority identity. The CI
+architecture gate prevents production repository code from consuming that
+compatibility facade.
+
+## 10. Shared THESEUS/OVID durability and restart verification
+
+Cross-system data entanglement is serialized as THREE linked durable records in
+the same THESEUS custody root:
+
+1. the producer's shared operational data record;
+2. the OVID transform-lineage operational record;
+3. an OVID-authored entanglement-binding index containing the participant set,
+   source identity, parent binding IDs, shared custody record ID, OVID lineage
+   record ID, OVID lineage ID, and payload digest.
+
+THESEUS supplies envelope authenticity/integrity and durable primary/replica
+custody. The persistent entanglement layer adds structural verification before
+any consumer starts. Rehydration discovers binding-index IDs from both verified
+inventory and the physical primary/replica index filenames so an unrecoverable
+index cannot silently disappear merely because inventory omitted it.
+
+For every recovered binding, startup verifies:
+
+- binding-index schema, producer and kind;
+- binding ID ↔ durable record-ID agreement;
+- canonical subsystem identities and participant set;
+- source identity against the actual producer and both shared/OVID metadata;
+- correlation IDs and durable lineage pointers;
+- existence and readability of the shared THESEUS and OVID-lineage records;
+- exact parent-set equality across binding index, shared custody lineage, OVID
+  record lineage and OVID `parent_ids`;
+- parent-binding existence and an acyclic parent graph using iterative
+  validation that does not fail at Python recursion depth;
+- shared-record content digest;
+- OVID lineage identity and parent lineage.
+
+A mismatch raises `EntangledCustodyError` during `CompositionRoot.start()`.
+Consumers are started only after this gate passes. Therefore PYTHIA,
+Salamander, AL HARAS, TURING, TOE, Kellogg, EUCLID and Chronus cannot attach to
+a silently corrupted shared relationship graph through this composition root.
+
+## 11. Missing historical HYBA Data paths
+
+The absent owner-specified paths are **not stubbed**. A stub that imports and
+then raises `NotImplementedError` would make the path appear reachable to
+import audits and could create false integration confidence.
+
+Instead:
+
+- the paths remain explicitly absent;
+- the architectural specification records their intended lineage;
+- the CI boundary gate fails if active production code imports them;
+- an intentional future restoration must add real implementation plus its own
+  evidence before the gate is changed.
+
+This preserves the distinction between historical/design authority and current
+runtime reachability.
+
+## 12. Legacy mining references
 
 `legacy/Intelligence/pulvini_runtime.py` and related historical mining tests
 record an earlier architecture in which PULVINI terminology was used to rank
 mining candidates. They remain historical evidence. They are **not** the
 canonical PULVINI runtime and must not be used to infer the current doctrine.
+
+The production mining intelligence path no longer runs a PULVINI fold/custody
+stage. The canonical mining geodesic planner is
+`chronus/mla1517/mining/geodesic_nonce_planner.py`; it records
+`pulvini_dependency=false` and `folding_used=false` in its evidence report.
 
 Any active inventory or documentation that describes PULVINI as a mining
 planner must be corrected to this specification rather than reviving the legacy

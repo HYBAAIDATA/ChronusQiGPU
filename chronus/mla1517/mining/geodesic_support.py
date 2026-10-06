@@ -25,7 +25,6 @@ import os
 from dataclasses import replace
 from typing import Any
 
-from python_backend.core_modules.geodesic_tensor_engine import GeodesicNoncePlanner
 from .euclid_support import EuclidProductionMiningCoordinator
 from .execution_router import (
     ExecutionRouter,
@@ -35,6 +34,7 @@ from .execution_router import (
     NONCE_ORDER_POINCARE_11D,
     RouteDecision,
 )
+from .geodesic_nonce_planner import GeodesicNoncePlanner
 from .pythia_search import (
     SEARCH_ARCHITECTURE_ID,
     PythiaSearchPrecompute,
