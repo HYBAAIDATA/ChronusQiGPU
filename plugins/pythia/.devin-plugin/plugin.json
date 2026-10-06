@@ -1,8 +1,18 @@
 {
   "name": "pythia",
-  "version": "0.2.0",
-  "description": "Private repo-local PYTHIA continuity and completion discipline for Devin cloud, CLI, and Desktop: checkpoint/resume, runtime plugin provenance, evidence-before-completion, and canonical HYBA/PYTHIA boundaries",
+  "version": "0.3.0",
+  "description": "Private repo-local PYTHIA engineering-intelligence augmentation for Devin: semantic repo context, disciplined debugging/TDD, bounded agent delegation, quality and promotion gates, deploy/rollback awareness, checkpoint continuity, and tamper-evident engineering evidence.",
   "author": { "name": "PYTHIA Contributors" },
   "license": "UNLICENSED",
-  "keywords": ["devin", "plugin", "pythia", "memory", "intelligence", "hyba", "private"]
+  "keywords": [
+    "devin",
+    "plugin",
+    "pythia",
+    "engineering-intelligence",
+    "memory",
+    "ontology",
+    "quality",
+    "evidence",
+    "private"
+  ]
 }
