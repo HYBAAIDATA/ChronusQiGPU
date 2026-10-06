@@ -1,6 +1,6 @@
 ---
 name: pythia-stop-check
-description: Explicit pre-stop verification for Devin sessions. Confirm runtime plugin provenance, terminal checkpoint state, observed core skill use, and fresh verification evidence before ending.
+description: Explicit pre-stop verification for Devin sessions. Confirm task identity, runtime plugin provenance, required skill use, fresh verification, and a valid content-addressed evidence pack.
 allowed-tools:
   - read
   - grep
@@ -23,19 +23,22 @@ python plugins/pythia/scripts/plugin_status.py --record-skill pythia-stop-check 
 
 Before ending any job, verify:
 
-1. The runtime receipt reports the current `plugin_source_sha`.
-2. The final checkpoint exists and is valid JSON.
-3. The checkpoint is bound to that same plugin source SHA.
-4. `next` is exactly:
+1. Runtime receipt reports the current `plugin_source_sha`.
+2. Final checkpoint exists and is valid JSON.
+3. Final checkpoint contains the stable `task_id`.
+4. Checkpoint is bound to the same plugin source SHA.
+5. `next` is exactly:
    - `done`;
    - `none`; or
    - `blocked: <reason>`.
-5. Runtime-observed skill use includes:
-   - `pythia-plugin-status`;
-   - `pythia-long-context`;
-   - `pythia-finish-the-job`.
-6. The checkpoint's `verification` field contains fresh, non-pending evidence
-   from this session.
+6. Runtime-observed required skills are present.
+7. Fresh verification evidence from this session is present.
+8. `evidence_pack` exists inside the repository.
+9. Its filename equals its SHA-256 digest.
+10. Pack task id and plugin source SHA match the checkpoint/runtime.
+11. Pack completion decision is `pass`.
 
-A missing or malformed journal is not a successful close-out condition.
-Installation alone is not proof that this plugin or its skills were used.
+Then allow the Stop hook to perform the same checks independently.
+
+Installation alone is not evidence of use. Skill availability is not evidence
+of skill invocation. A successful task claim requires the sealed pack.
