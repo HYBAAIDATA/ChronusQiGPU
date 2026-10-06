@@ -24,6 +24,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 __all__ = [
@@ -141,9 +142,21 @@ class CustodyUnavailable(RuntimeError):
 
 
 class TuringCustody:
-    """Fail-closed adapter over ``aethel.theseus``.  No private store."""
+    """Fail-closed adapter over ``aethel.theseus``.  No private store.
 
-    def __init__(self, theseus: Any = None, *, durable: bool = False) -> None:
+    ``durable=True`` alone gives in-process healing only.  ``durable_dir``
+    binds custody to an on-disk THESEUS store so commits survive process
+    exit; :meth:`reopen` then returns a fresh adapter re-attached to that
+    store, which is what custody replay after restart exercises.
+    """
+
+    def __init__(
+        self,
+        theseus: Any = None,
+        *,
+        durable: bool = False,
+        durable_dir: str | Path | None = None,
+    ) -> None:
         if theseus is None:
             if not theseus_available():
                 raise CustodyUnavailable(
@@ -152,9 +165,29 @@ class TuringCustody:
                 )
             from aethel.theseus import open_theseus
 
-            theseus = open_theseus(durable=durable)
+            theseus = open_theseus(durable=durable, durable_dir=durable_dir)
         self._theseus = theseus
+        self._durable_dir = Path(durable_dir) if durable_dir is not None else None
         self._kinds: dict[str, str] = {}
+
+    @property
+    def durable_dir(self) -> Path | None:
+        return self._durable_dir
+
+    def reopen(self) -> "TuringCustody":
+        """Return a fresh adapter re-attached to this custody's durable dir.
+
+        The new instance holds no live records: the THESEUS index is
+        re-parsed and every payload is re-admitted from the durable block
+        store through the digest-verified heal path.  Only meaningful when
+        this custody was opened with ``durable_dir``.
+        """
+        if self._durable_dir is None:
+            raise CustodyError(
+                "reopen requires a durable_dir-bound custody; this adapter "
+                "is in-process only"
+            )
+        return TuringCustody(durable_dir=self._durable_dir)
 
     # -- commit -------------------------------------------------------------
 
@@ -164,11 +197,19 @@ class TuringCustody:
         payload: dict[str, Any],
         *,
         meta: dict[str, Any] | None = None,
-        durable: bool = False,
+        durable: bool | None = None,
     ) -> CustodyReceipt:
-        """Serialise to a canonical envelope and place it in THESEUS."""
+        """Serialise to a canonical envelope and place it in THESEUS.
+
+        ``durable`` defaults to the adapter's bound mode: a ``durable_dir``
+        custody commits durably (the receipt's ``durable_index`` is then
+        non-None and the record survives restart).
+        """
         env_bytes = canonical_envelope_bytes(kind, payload, meta)
-        record = self._theseus.put(env_bytes, durable=durable)
+        record = self._theseus.put(
+            env_bytes,
+            durable=self._durable_dir is not None if durable is None else durable,
+        )
         self._kinds[record.uuid] = kind
         return CustodyReceipt(
             uid=record.uuid,
@@ -292,6 +333,14 @@ def _validate_payload(kind: str, payload: dict[str, Any]) -> tuple[bool, dict[st
         return False, {"error": str(exc)}
 
 
-def open_custody(*, durable: bool = False) -> TuringCustody:
-    """Open the THESEUS consumption adapter; UNAVAILABLE -> fail closed."""
-    return TuringCustody(durable=durable)
+def open_custody(
+    *,
+    durable: bool = False,
+    durable_dir: str | Path | None = None,
+) -> TuringCustody:
+    """Open the THESEUS consumption adapter; UNAVAILABLE -> fail closed.
+
+    ``durable_dir`` selects the on-disk THESEUS store — the only mode in
+    which a custody receipt outlives the committing process.
+    """
+    return TuringCustody(durable=durable, durable_dir=durable_dir)

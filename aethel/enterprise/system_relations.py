@@ -1000,21 +1000,55 @@ class SharedTuring(_BoundAdapter):
 
     def replay(self) -> dict[str, Any]:
         """Re-read this run's artefacts from shared custody and prove the
-        certificate boundary semantically, not just at byte level."""
+        certificate boundary semantically, not just at byte level.
+
+        Same-process replays resolve through ``last_bindings``.  After a
+        restart the in-memory map is empty, so the newest
+        ``turing_pipeline_report`` is resolved from the durable binding
+        graph and its OVID parent lineage walked back to program, result,
+        certificate and witness — the binding identity that THESEUS itself
+        recovered.
+        """
         records: dict[str, Any] = {}
-        for name in ("program", "result", "certificate", "witness"):
-            binding = self.last_bindings.get(name)
-            if binding is None:
-                continue
-            records[name] = json.loads(
-                self.port.read(binding.binding_id).decode("utf-8")
+        replay_source = "last_bindings"
+        report_binding_id: str | None = None
+        if {"program", "result", "certificate", "witness"} <= set(self.last_bindings):
+            for name in ("program", "result", "certificate", "witness"):
+                records[name] = json.loads(
+                    self.port.read(self.last_bindings[name].binding_id).decode("utf-8")
+                )
+            report = self.last_bindings.get("report")
+            report_binding_id = report.binding_id if report is not None else None
+        else:
+            replay_source = "durable_graph"
+            latest = _latest_binding(
+                self.port, source="turing", kind="turing_pipeline_report"
             )
-        return verify_turing_custody_boundary(
+            if latest is not None:
+                report_binding_id = str(latest["binding_id"])
+                by_id = {
+                    item["binding_id"]: item
+                    for item in self.port.fabric.graph().get("bindings", ())
+                }
+                for parent_id in latest.get("parent_binding_ids", ()):
+                    parent = by_id.get(parent_id)
+                    if parent is None:
+                        continue
+                    kind = str(parent.get("kind", ""))
+                    if kind.startswith("turing_"):
+                        records[kind[len("turing_"):]] = json.loads(
+                            self.port.read(str(parent_id)).decode("utf-8")
+                        )
+        boundary = verify_turing_custody_boundary(
             program_payload=records.get("program"),
             result_payload=records.get("result"),
             certificate_payload=records.get("certificate"),
             witness_payload=records.get("witness"),
         )
+        boundary["replay_source"] = replay_source
+        boundary["report_binding_id"] = report_binding_id
+        boundary["record_kinds"] = sorted(records)
+        return boundary
 
 
 class SharedEuclid(_BoundAdapter):

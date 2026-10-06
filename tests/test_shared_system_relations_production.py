@@ -326,6 +326,56 @@ def test_turing_certificate_boundary_recovers_and_verifies_after_restart(tmp_pat
         second.stop()
 
 
+def test_turing_replay_recovers_boundary_from_durable_graph_after_restart(tmp_path):
+    """After a real CompositionRoot restart, ``turing.replay()`` has no live
+    ``last_bindings`` — it must resolve this run's artefacts from the
+    durable binding graph and still prove the certificate boundary."""
+    from turing_universal_quantum_computer import Program
+    from turing_universal_quantum_computer.pipeline import VQCRequest
+
+    state_dir = tmp_path / "turing-replay-restart"
+    first = CompositionRoot(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    first.start()
+    try:
+        turing = ProductionSystemRelations(first).turing()
+        report = turing.run(
+            VQCRequest(
+                program=Program(n_qubits=2).then("h", 0).then("cx", 0, 1),
+                marginal_of=(0, 1),
+            )
+        )
+        assert report.verdict in {"PASS", "GATED"}
+        same_process = turing.replay()
+        assert same_process["passed"] is True
+        assert same_process["replay_source"] == "last_bindings"
+        report_binding_id = same_process["report_binding_id"]
+    finally:
+        first.stop()
+
+    second = CompositionRoot(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    second.start()
+    try:
+        turing = ProductionSystemRelations(second).turing()
+        assert turing.last_bindings == {}
+        boundary = turing.replay()
+        assert boundary["passed"] is True, boundary["checks"]
+        assert boundary["replay_source"] == "durable_graph"
+        assert boundary["report_binding_id"] == report_binding_id
+        assert {"program", "result", "certificate", "witness"} <= set(
+            boundary["record_kinds"]
+        )
+    finally:
+        second.stop()
+
+
 def test_turing_boundary_replay_rejects_foreign_certificate(tmp_path):
     """Adversarial: an individually-valid certificate from a DIFFERENT
     execution must not replay as part of this run's record set."""

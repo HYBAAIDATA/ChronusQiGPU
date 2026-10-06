@@ -33,7 +33,7 @@ from .phyllotaxis import (
     verify_golden_angle_constant,
 )
 from .primes import GaloisPrimeSubstrate
-from .storage import AddressSpace, FibonacciAddress
+from .storage import AddressSpace, FibonacciAddress, JOURNAL_NAME
 
 
 OWNER_ID = "theseus"
@@ -70,11 +70,19 @@ class TheseusRecord:
 
 @dataclass
 class Theseus:
-    """Production self-healing storage owner."""
+    """Production self-healing storage owner.
+
+    ``durable`` alone is an in-memory :class:`AddressSpace` — it heals
+    corruption inside one process but survives no restart.  ``durable_dir``
+    is the cross-process contract: the durable space and the record index are
+    published under that directory on every durable commit, and
+    :meth:`attach` rebuilds the owner from it in a fresh process.
+    """
 
     ovid: Ovid = field(default_factory=open_ovid)
     primes: GaloisPrimeSubstrate = field(default_factory=GaloisPrimeSubstrate)
     durable: Optional[AddressSpace] = None
+    durable_dir: Optional[Path] = None
     handoff: Optional[GeodesicHandoff] = None
     require_phyllotaxis: bool = True
     owner_id: str = OWNER_ID
@@ -200,6 +208,11 @@ class Theseus:
             )
             self._records[uid] = record
             self._by_digest[form.digest] = uid
+            if self.durable_dir is not None and durable_index is not None:
+                # A durable commit is only durable if it survives this
+                # process: publish the block store and record index before
+                # the receipt is issued.
+                self._persist_locked()
             self._metrics["put_ok"] += 1
             return record
 
@@ -358,56 +371,177 @@ class Theseus:
             "production_surface": True,
         }
 
+    def _record_index(self) -> Dict[str, Any]:
+        return {
+            "owner": self.owner_id,
+            "records": {
+                u: {
+                    "uuid": r.uuid,
+                    "prime_key": r.prime_key,
+                    "anchor": r.anchor,
+                    "digest": r.digest,
+                    "lane": r.lane,
+                    "raw_len": r.raw_len,
+                    "folded_units": r.folded_units,
+                    "curvature": r.curvature,
+                    "durable_index": r.durable_index,
+                    "phyllotaxis": {
+                        "index": r.phyllotaxis.index,
+                        "radius": r.phyllotaxis.radius,
+                        "theta": r.phyllotaxis.theta,
+                        "x": r.phyllotaxis.x,
+                        "y": r.phyllotaxis.y,
+                        "ring": r.phyllotaxis.ring,
+                        "sector": r.phyllotaxis.sector,
+                    },
+                }
+                for u, r in self._records.items()
+            },
+        }
+
+    def _write_index(self, directory: Path) -> None:
+        path = directory / "theseus_index.json"
+        tmp = directory / "theseus_index.json.tmp"
+        tmp.write_text(
+            json.dumps(self._record_index(), indent=2, sort_keys=True),
+            encoding="utf-8",
+        )
+        os.replace(tmp, path)
+
+    def _persist_locked(self) -> None:
+        """Publish durable blocks + record index under ``durable_dir``.
+
+        Caller must hold ``self._lock`` (re-entrant); called automatically
+        after every durable commit on a directory-bound owner.
+        """
+        assert self.durable_dir is not None
+        directory = Path(self.durable_dir)
+        directory.mkdir(parents=True, exist_ok=True)
+        if self.durable is not None:
+            self.durable.snapshot(directory / "durable")
+        self._write_index(directory)
+
     def snapshot(self, directory: str | Path) -> Dict[str, Any]:
         directory = Path(directory)
         directory.mkdir(parents=True, exist_ok=True)
         with self._lock:
             if self.durable is not None:
                 self.durable.snapshot(directory / "durable")
-            index = {
-                "owner": self.owner_id,
-                "records": {
-                    u: {
-                        "uuid": r.uuid,
-                        "prime_key": r.prime_key,
-                        "anchor": r.anchor,
-                        "digest": r.digest,
-                        "lane": r.lane,
-                        "raw_len": r.raw_len,
-                        "folded_units": r.folded_units,
-                        "curvature": r.curvature,
-                        "durable_index": r.durable_index,
-                        "phyllotaxis": {
-                            "index": r.phyllotaxis.index,
-                            "radius": r.phyllotaxis.radius,
-                            "theta": r.phyllotaxis.theta,
-                            "x": r.phyllotaxis.x,
-                            "y": r.phyllotaxis.y,
-                            "ring": r.phyllotaxis.ring,
-                            "sector": r.phyllotaxis.sector,
-                        },
-                    }
-                    for u, r in self._records.items()
-                },
-            }
-            path = directory / "theseus_index.json"
-            tmp = directory / "theseus_index.json.tmp"
-            tmp.write_text(
-                json.dumps(index, indent=2, sort_keys=True), encoding="utf-8"
-            )
-            os.replace(tmp, path)
+            self._write_index(directory)
             return {"path": str(directory), "records": len(self._records)}
+
+    @classmethod
+    def attach(cls, directory: str | Path, **kwargs: Any) -> "Theseus":
+        """Rebuild a Theseus owner from a ``durable_dir``/``snapshot`` tree.
+
+        The durable :class:`AddressSpace` journal and every block are
+        re-verified by :meth:`AddressSpace.attach`; the record index is
+        re-parsed; then every record is re-admitted through the normal
+        digest-verified heal path so a torn or forged store fails closed at
+        attach rather than on first read.
+        """
+        directory = Path(directory)
+        index_path = directory / "theseus_index.json"
+        if not index_path.is_file():
+            raise TheseusError(f"no THESEUS record index at {index_path}")
+        durable = AddressSpace.attach(directory / "durable")
+        try:
+            index = json.loads(index_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise TheseusError(f"unreadable THESEUS record index: {exc}") from exc
+        if index.get("owner") != OWNER_ID:
+            raise TheseusError(
+                f"unexpected THESEUS index owner {index.get('owner')!r}"
+            )
+        raw_records = index.get("records")
+        if not isinstance(raw_records, dict):
+            raise TheseusError("THESEUS index has no record table")
+
+        theseus = cls(durable=durable, durable_dir=directory, **kwargs)
+        theseus.handoff = GeodesicHandoff(durable)
+        for uid, entry in raw_records.items():
+            try:
+                site = entry["phyllotaxis"]
+                record = TheseusRecord(
+                    uuid=str(entry["uuid"]),
+                    prime_key=int(entry["prime_key"]),
+                    anchor=int(entry["anchor"]),
+                    digest=str(entry["digest"]),
+                    phyllotaxis=PhyllotaxisSite(
+                        index=int(site["index"]),
+                        radius=float(site["radius"]),
+                        theta=float(site["theta"]),
+                        x=float(site["x"]),
+                        y=float(site["y"]),
+                        ring=int(site["ring"]),
+                        sector=int(site["sector"]),
+                    ),
+                    lane=int(entry["lane"]),
+                    raw_len=int(entry["raw_len"]),
+                    folded_units=int(entry["folded_units"]),
+                    curvature=str(entry["curvature"]),
+                    durable_index=entry["durable_index"],
+                )
+            except (KeyError, TypeError, ValueError) as exc:
+                raise TheseusError(
+                    f"corrupt THESEUS index entry {uid!r}: {exc}"
+                ) from exc
+            if record.uuid != uid or not isinstance(record.durable_index, int):
+                raise TheseusError(
+                    f"THESEUS index entry {uid!r} is inconsistent or "
+                    "not durable"
+                )
+            theseus._records[uid] = record
+            theseus._by_digest[record.digest] = uid
+
+        # Prove re-admission for every restored record now: an index row
+        # whose block is missing or digests wrong is a corrupt store, not a
+        # store that happens to look empty.
+        for uid in list(theseus._records):
+            try:
+                theseus.get(uid)
+            except TheseusError as exc:
+                raise TheseusError(
+                    f"attached THESEUS store cannot re-admit record {uid}: {exc}"
+                ) from exc
+        return theseus
 
 
 def open_theseus(
     *,
     durable: bool = False,
+    durable_dir: str | Path | None = None,
     ovid: Optional[Ovid] = None,
 ) -> Theseus:
-    """Factory — production Theseus owner."""
+    """Factory — production Theseus owner.
+
+    ``durable`` alone is in-process healing only.  ``durable_dir`` binds a
+    real on-disk store: an existing tree (``theseus_index.json`` or a
+    durable journal) is attached, a fresh one is created on first durable
+    commit, and every durable commit is published before its receipt is
+    issued — custody survives process exit.
+    """
     kwargs: Dict[str, Any] = {}
     if ovid is not None:
         kwargs["ovid"] = ovid
+    if durable_dir is not None:
+        directory = Path(durable_dir)
+        if (directory / "theseus_index.json").is_file():
+            return Theseus.attach(directory, **kwargs)
+        journal = directory / "durable" / JOURNAL_NAME
+        if journal.is_file():
+            # Orphaned block store without a record index: keep the verified
+            # sequence (writer cursors, ledger) rather than overwriting it.
+            theseus = Theseus(
+                durable=AddressSpace.attach(directory / "durable"),
+                durable_dir=directory,
+                **kwargs,
+            )
+            theseus.handoff = GeodesicHandoff(theseus.durable)
+            return theseus
+        return Theseus(
+            durable=AddressSpace(), durable_dir=directory, **kwargs
+        )
     if durable:
         kwargs["durable"] = AddressSpace()
     return Theseus(**kwargs)
