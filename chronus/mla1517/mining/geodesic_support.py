@@ -98,6 +98,12 @@ class ProductionExecutionRouter(ExecutionRouter):
     def _is_pythia_lattice(plan) -> bool:
         return plan.evidence_refs.get("search_architecture") == SEARCH_ARCHITECTURE_ID
 
+    def execute_plan(self, plan, header, target, **kwargs):
+        """Clear prior fabric evidence before any freshness or lease gate can refuse work."""
+        if self._is_pythia_lattice(plan) and hasattr(self._hasher, "last_batch_evidence"):
+            self._hasher.last_batch_evidence = None
+        return super().execute_plan(plan, header, target, **kwargs)
+
     def _opencl_bound(self) -> bool:
         if _backend_name(self._hasher) in _NATIVE_BACKENDS:
             return True
