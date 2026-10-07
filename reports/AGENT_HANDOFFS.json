@@ -1,0 +1,42 @@
+[
+  {
+    "request_id": "B-to-A-euclid-init-syntax",
+    "requesting_agent": "B",
+    "owning_agent": "A",
+    "required_interface": "importable euclid package for chronus.mla1517.mining.euclid_support and downstream consumers",
+    "reason": "euclid/__init__.py at frozen base 306001b0 contains literal '\\n' escape sequences in the source (line 48 inside the __all__ list), producing SyntaxError: unexpected character after line continuation character. Any 'import euclid' fails, which blocks chronus.mla1517.mining.euclid_support and tests/test_remote_hasher.py::test_execution_device_accepts_remote at collection. Verified present in HEAD:euclid/__init__.py on repair/B-mining.",
+    "affected_files": ["euclid/__init__.py"],
+    "blocking": true,
+    "status": "OPEN"
+  },
+  {
+    "request_id": "B-to-H-lane-tests-placement",
+    "requesting_agent": "B",
+    "owning_agent": "H",
+    "required_interface": "ownership exception: Agent B regression tests are colocated in-lane at mining/tests/ because tests/ is H-owned",
+    "reason": "Agent B's closure requires positive + negative tests added for its defect classes. tests/ belongs to Agent H, so B added mining/tests/test_agent_b_regressions.py (12 tests: m32 fleet epoch slicing + coverage union, malformed pool-input drop semantics, handshake fail-closed, pending-RPC bound, mine_job proof-failure/no-arm-switch fallback). Run: python -m pytest mining/tests/ -x -q. H may hoist or mirror these into tests/ when integrating the repo-wide suite.",
+    "affected_files": ["mining/tests/__init__.py", "mining/tests/test_agent_b_regressions.py"],
+    "blocking": false,
+    "status": "OPEN"
+  },
+  {
+    "request_id": "B-to-C-remote-hasher-m32-contract",
+    "requesting_agent": "B",
+    "owning_agent": "C",
+    "required_interface": "RemoteFleetHasher.grind_target_m32 now enforces count % 32 == 0 (same contract as local m32 hashers); fleet slices are whole-epoch aligned",
+    "reason": "RemoteFleetHasher._slice previously split m32 windows by raw step counts; members receiving a take that was not a whole 32-step epoch ran partial epochs at non-epoch boundaries — coverage gaps, duplicate probes and out-of-window nonces on the exact-winner path. Fixed in mining/remote_hasher.py: slices split whole epochs and a misaligned window raises ValueError at the public boundary. C-side callers of the fleet remote hasher must pass windows that are multiples of 32, identical to the local hasher contract.",
+    "affected_files": ["mining/remote_hasher.py", "chronus/ (callers of mining.remote_hasher.hasher_for_env returning RemoteFleetHasher)"],
+    "blocking": false,
+    "status": "OPEN"
+  },
+  {
+    "request_id": "B-to-C-stratum-bridge-malformed-drop",
+    "requesting_agent": "B",
+    "owning_agent": "C",
+    "required_interface": "StratumBridge fail-closed pool-input contract: malformed mining.notify / mining.set_difficulty are dropped and counted in bridge.malformed_messages; handshake raises RuntimeError on malformed mining.subscribe fields; last_job / difficulty retain previous valid state",
+    "reason": "The bridge previously trusted pool fields by shape: a non-hex notify field crashed mine_job via bytes.fromhex (killing the whole mining loop), a non-numeric set_difficulty killed listen_forever (zombie miner grinding stale jobs), and malformed subscribe fields propagated into every coinbase build. Fields are now wire-validated at ingestion. Consumers (chronus.mla1517.mining stratum_adapter/coordinator) should be aware observable behavior changed: malformed traffic is counted and dropped, never applied.",
+    "affected_files": ["mining/stratum_bridge.py", "chronus/mla1517/mining/ (stratum_adapter, coordinator consumers)"],
+    "blocking": false,
+    "status": "OPEN"
+  }
+]
