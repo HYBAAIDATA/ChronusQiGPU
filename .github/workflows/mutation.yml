@@ -22,6 +22,8 @@ on:
       - "scripts/critical_mutation_gate.py"
       - "tests/test_critical_mutation_gate.py"
       - "tests/test_mining_consensus_recheck.py"
+      - "tests/test_toe_runtime.py"
+      - "chronus/mla1517_platform/python/test_hendrix_nonce_order.py"
       - "toe/runtime.py"
       - "chronus/mla1517/mining/hendrix_order.py"
       - "mining/hash_pipeline.py"
@@ -109,6 +111,7 @@ jobs:
           - hendrix-order-preserved
           - turing-measurement-collapse
           - sha256d-independent-recheck
+          - sha256d-m32-independent-recheck
     steps:
       - uses: actions/checkout@v4
         with:
