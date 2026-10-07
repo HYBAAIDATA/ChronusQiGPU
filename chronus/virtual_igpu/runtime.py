@@ -3,10 +3,15 @@
 Lifecycle: attach → probe → negotiate → ready → (submit/poll/cancel) → draining
 → detached. Failures move to failed/recovering with bounded transitions.
 
-Policies:
-  * standalone_software — CPU/software adapter only
-  * preferred_accelerator — physical if available, else software with reason
-  * required_adapter / required_device — fail closed when target missing
+Product modes and compatibility policies:
+  * native_chronus_gpu -> standalone_software — Chronus operates as the
+    software-defined GPU; no host GPU is required. The selected CPU/software
+    adapter is an implementation substrate, not the product identity.
+  * host_gpu_augmentation -> preferred_accelerator — Chronus binds into a
+    certified host GPU/accelerator when available to extend or scale it; if the
+    lane is absent, native Chronus remains available and the reason is recorded.
+  * required_adapter / required_device — explicit substrate pinning; fail closed
+    when the requested target is missing.
 
 Trust:
   * runtime_signed — content-addressed / optional HMAC chain (default)
@@ -139,7 +144,9 @@ class RuntimeDaemon:
                 config, "preferred_adapter_id", None
             )
             hmac_key = hmac_key or getattr(config, "hmac_key", None)
-        self.root = Path(root_path or os.getenv("CHRONUS_VIGPU_STORE", ".chronus-virtual-igpu"))
+        self.root = Path(
+            root_path or os.getenv("CHRONUS_VIGPU_STORE", ".chronus-virtual-igpu")
+        ).resolve()  # the embedded daemon is process-global: a later chdir must not move it
         self.root.mkdir(parents=True, exist_ok=True)
         (self.root / "evidence").mkdir(parents=True, exist_ok=True)
         if adapters is not None and len(adapters) == 0:
@@ -383,9 +390,11 @@ class RuntimeDaemon:
             if matched:
                 return _pick(matched, f"policy:preferred_adapter_id:{pref}")
 
-        # preferred_accelerator (default)
-        if physical:
-            return _pick(physical, "policy:preferred_accelerator:physical")
+        # preferred_accelerator (default): a physical adapter is preferred only for work it can
+        # run; one that cannot run this kind must not block the declared software fallback.
+        capable = [a for a in physical if a.supports(w.kind)]
+        if capable:
+            return _pick(capable, "policy:preferred_accelerator:physical")
         if not w.allow_software_fallback:
             raise AdapterUnavailable(
                 "preferred accelerator unavailable and software fallback is disabled"

@@ -77,7 +77,7 @@ constitutions:
   - load-balancer
   schema:
     request: none
-    response: '{schema_version, ready, reason, components{identity,boot_audit,worker_heartbeat_dir,guardian},
+    response: '{schema_version, ready, reason, components{identity,boot_audit,worker_heartbeat_dir,guardian,runtime_config,stratum,remote_opencl,custody},
       generated_at}'
     version: chronus.mla1517.ready/1
   dependency:

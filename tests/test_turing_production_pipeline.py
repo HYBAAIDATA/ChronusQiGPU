@@ -291,7 +291,8 @@ def test_pipeline_replay_rejects_cross_run_certificate_bundle():
     from turing_universal_quantum_computer.backends import execute_certified
 
     pipeline = VQCPipeline()
-    first = pipeline.run(VQCRequest(program=_bell(), custody=True))
+    request = VQCRequest(program=_bell(), custody=True)
+    first = pipeline.run(request)
     assert first.verdict == "PASS"
     assert len(first.custody) == 4
 
@@ -307,7 +308,7 @@ def test_pipeline_replay_rejects_cross_run_certificate_bundle():
         if receipt["kind"] != "certificate"
     ] + [bad_certificate]
 
-    state, replay = pipeline._replay(mixed)  # noqa: SLF001 - adversarial test
+    state, replay = pipeline._replay(request, mixed)  # noqa: SLF001 - adversarial test
     assert state == "FAIL"
     assert replay[-1]["kind"] == "bundle"
     assert replay[-1]["state"] == "FAIL"
@@ -316,7 +317,8 @@ def test_pipeline_replay_rejects_cross_run_certificate_bundle():
 
 def test_pipeline_replay_rejects_result_payload_substitution():
     pipeline = VQCPipeline()
-    report = pipeline.run(VQCRequest(program=_bell_t(), custody=True))
+    request = VQCRequest(program=_bell_t(), custody=True)
+    report = pipeline.run(request)
     assert report.verdict == "PASS"
     assert report.result is not None
     assert len(report.custody) == 4
@@ -337,7 +339,7 @@ def test_pipeline_replay_rejects_result_payload_substitution():
         if receipt["kind"] != "result"
     ] + [bad_result]
 
-    state, replay = pipeline._replay(mixed)  # noqa: SLF001 - adversarial test
+    state, replay = pipeline._replay(request, mixed)  # noqa: SLF001 - adversarial test
     assert state == "FAIL"
     assert replay[-1]["kind"] == "bundle"
     assert replay[-1]["state"] == "FAIL"

@@ -1,6 +1,6 @@
 # Chronus iGPU Paradigm
 
-**Home of the HYBA accelerated execution plane.**  
+**Home of the HYBA software-defined quantum-from-maths GPU and accelerated execution plane.**  
 Old M3 paths were the test bed. This tree is where the Chronus runtime stack lives.
 
 License posture for claims: MIT · Python 3.10+ · Veritas Integritas · **Rule 7: Strict Honest Measurement** · 11D substrate active.
@@ -19,9 +19,11 @@ License posture for claims: MIT · Python 3.10+ · Veritas Integritas · **Rule 
 > can reduce work or movement without pretending that mathematical structure creates
 > physical hardware that does not exist.
 
-Chronus is HYBA's **hardware-facing heterogeneous execution and acceleration plane**.
-Turing is the independent HYBA Virtual Quantum Computer (VQC). Turing may use Chronus
-for authorised classical/device execution, but neither system owns or replaces the other.
+Chronus is HYBA's **software-defined GPU and heterogeneous execution plane**. It is
+substrate- and hardware-agnostic: a CPU, iGPU, GPU or future accelerator may host a
+Chronus run without becoming the Chronus product identity. Turing is the independent
+HYBA Virtual Quantum Computer (VQC). Turing may use Chronus for authorised substrate
+execution, but neither system owns or replaces the other.
 Lucas/Pisot provides mathematical structure and scale contracts where actually implemented;
 intelligence is a consumer of those contracts, not their owner.
 
@@ -36,7 +38,7 @@ intelligence is a consumer of those contracts, not their owner.
 | 3 | **Lucas/Pisot can structure scale** — memory budgets, batches, search windows, workers and other domains only where the implemented contract uses them. |
 | 4 | Folded working representations must prove exactness/reconstruction and include all metadata in claimed density gains. |
 | 5 | Speed claims come from measured reductions in work, movement, latency or convergence — never from the Lucas/Pisot name alone. |
-| 6 | Run **independent** (Chronus Virtual iGPU fabric) **or** **scale the customer GPU stack**. |
+| 6 | **Native Chronus GPU**: Chronus is the GPU itself; **host-GPU augmentation**: Chronus enters and scales/extends the customer's certified GPU/accelerator stack. |
 | 7 | Effective capacity is **maths-bounded** (`L_n` ratio envelope), not SKU fantasy. |
 | 8 | **This repository is domicile**; M3 was a historical proof bed. |
 | 9 | Evidence gates govern every product/research claim. |
@@ -91,10 +93,11 @@ representation and the downstream computation.
 
 | Mode | Meaning |
 |------|---------|
-| **Independent** | Chronus Virtual iGPU (`chronus/virtual_igpu/`): ABI, adapters, attestation and virtual/folded memory surfaces where implemented. |
-| **Scale your stack** | Chronus contracts over a customer CUDA / OpenCL / Metal / XPU census: probe → negotiate → bind → execute → verify → evidence. |
+| **Native Chronus GPU** | Chronus Virtual iGPU + mathematical engine: ABI, runtime, scheduling, memory, verification and evidence execute without requiring a host GPU. |
+| **Host-GPU augmentation** | Chronus enters a customer CUDA / OpenCL / Metal / XPU stack: probe → negotiate → bind → execute → verify → evidence, extending/scaling that host. |
 
-One execution architecture; multiple physical substrates. No silent substitution.
+One Chronus product; multiple execution substrates. No silent substitution and no
+backend may become the product identity.
 
 ---
 
@@ -147,7 +150,7 @@ EUCLID / TOE / PYTHIA / TURING / enterprise workloads
         │ governed compute request
         ▼
 ┌────────────────────── CHRONUS ────────────────────────────────┐
-│ heterogeneous execution · device census · Virtual iGPU        │
+│ software-defined GPU · heterogeneous execution · Virtual iGPU │
 │ routing · binding · topology · telemetry · provenance         │
 │ seam/scale.py → offering-level resource policy                │
 └──────────────────────────┬────────────────────────────────────┘
@@ -224,8 +227,8 @@ OVID                    → transformation
 THESEUS                 → durable custody
 PULVINI                 → fold/representation
 GEODESIC                → search/index structure
-INDEPENDENT FABRIC      → Chronus Virtual iGPU
-SCALE YOUR STACK        → same execution contracts on customer hardware
+NATIVE CHRONUS GPU      → Chronus is the GPU; no host GPU prerequisite
+HOST-GPU AUGMENTATION   → same Chronus contract scales/extends customer hardware
 EFFECTIVE CAPACITY      → L_n envelope, Rule 7 safe
 MEASURED EVIDENCE       → required before promotion
 ```

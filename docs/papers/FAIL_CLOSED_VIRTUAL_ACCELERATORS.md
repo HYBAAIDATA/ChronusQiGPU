@@ -68,7 +68,7 @@ Code: `chronus/paradigm/bakeoff.py`.
 | Claim | Status |
 |-------|--------|
 | Lucas/Pisot quantum speedup | REFUTED (`al_haras`) |
-| Exponential speedup / 10 EH/s / 20k GPU equivalence | PROHIBITED |
+| Asymptotic speedup (`p-exponential-speed`) / throughput at the governed 1e19 H/s hashrate ceiling presented as achieved (`p-throughput-eh`) / 20k GPU equivalence (`p-gpu-equivalence`) | PROHIBITED |
 | Content hash ⇒ hardware_rooted | Forbidden by trust model |
 | Ordering ⇒ SHA256d advantage | Not claimed; bakeoff may show sample wins without generalization |
 

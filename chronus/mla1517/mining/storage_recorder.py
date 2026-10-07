@@ -236,9 +236,8 @@ class MiningStorageRecorder:
             coordinate = event.coordinate.as_dict()
             detail = dict(event.detail)
             emitted = []
-            # A proof custodied synchronously before submission keeps its own
-            # proof receipt.  A later causal-event receipt may reference it but
-            # must not overwrite the proof-to-receipt binding.
+            # Kinds already custodied before this event (the strict verified proof): the event
+            # receipt may reference them but must not replace their own custody receipt.
             precustodied: set[str] = set()
             for kind, producer, _cls in _CHAIN_EVENTS.get(event.kind, ()):
                 if kind == "verified_proof" and self.strict:

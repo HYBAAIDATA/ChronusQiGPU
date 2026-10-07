@@ -483,7 +483,7 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         return replace(
             plan,
             nonce_order=NONCE_ORDER_HENDRIX,
-            executor_route=self._pythia_batch_route(),
+            executor_route=ExecutionRoute.chronus_batch.value,
             evidence_refs=refs,
         )
 

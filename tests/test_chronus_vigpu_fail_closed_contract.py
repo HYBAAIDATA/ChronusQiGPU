@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import threading
 import time
@@ -11,8 +12,12 @@ import urllib.request
 import pytest
 
 from chronus.mining_bridge import submit_via_virtual_igpu
-from chronus.virtual_igpu.abi import ExecutionPolicy, Workload, WorkloadKind
-from chronus.virtual_igpu.adapters import AdapterUnavailable, CPUEmulatorAdapter
+from chronus.virtual_igpu.abi import AdapterKind, ExecutionPolicy, Workload, WorkloadKind
+from chronus.virtual_igpu.adapters import (
+    AdapterUnavailable,
+    CPUEmulatorAdapter,
+    OpenCLUhdAdapter,
+)
 from chronus.virtual_igpu.client import ChronusClient, ChronusClientError
 from chronus.virtual_igpu.evidence import BINDABLE_RECEIPT_FIELDS, EvidenceLedger, validate_receipt
 from chronus.virtual_igpu.memory import VirtualMemoryPlane
@@ -107,6 +112,113 @@ def test_fallback_disabled_fails_closed_and_enabled_records_provenance(tmp_path)
     assert ok.route_reason == "policy:preferred_accelerator:software_fallback"
     assert ok.receipt["requested_policy"] == "preferred_accelerator"
     assert ok.receipt["actual_backend"] == "cpu-emulator"
+
+
+class _TensorOnlyAccelerator(CPUEmulatorAdapter):
+    """Available physical-shaped adapter that cannot run a SHA256d scan."""
+
+    id = "stub-accelerator"
+    kind = AdapterKind.OPENCL
+
+    def capabilities(self):
+        return dataclasses.replace(
+            super().capabilities(),
+            adapter_id=self.id,
+            kind=self.kind.value,
+            operations=(WorkloadKind.TENSOR_OP.value,),
+        )
+
+
+class _UhdPresent(OpenCLUhdAdapter):
+    """UHD adapter whose probe reports the device as present."""
+
+    def probe(self):
+        self.available = True
+        return self._attestation(True, {"probe": "stub: device present"})
+
+
+def _scan(wid, **kw):
+    return Workload(
+        id=wid,
+        kind=WorkloadKind.SHA256D_SCAN,
+        input={"header80_hex": HEADER.hex(), "target_hex": EASY, "nonces": [5, 6, 7]},
+        **kw,
+    )
+
+
+def test_physical_adapter_that_cannot_run_the_kind_does_not_block_software_fallback(
+    tmp_path,
+) -> None:
+    d = _daemon(tmp_path, adapters=[_TensorOnlyAccelerator(), CPUEmulatorAdapter()])
+    ok = d.submit(_scan("sw"))
+    assert ok.status == "ok"
+    assert ok.actual_adapter_id == "cpu-emulator"
+    assert ok.route_reason == "policy:preferred_accelerator:software_fallback"
+    assert ok.output["hits"][0]["nonce"] == 5
+    with pytest.raises(AdapterUnavailable, match="fallback is disabled"):
+        d.submit(_scan("nf", allow_software_fallback=False))
+    physical = d.submit(Workload(id="pr", kind=WorkloadKind.PROBE))
+    assert physical.actual_adapter_id == "stub-accelerator"
+    assert physical.route_reason == "policy:preferred_accelerator:physical"
+
+
+def test_uhd_adapter_never_advertises_what_it_cannot_execute(tmp_path) -> None:
+    uhd = _UhdPresent()
+    uhd.probe()
+    assert uhd.available
+    assert uhd.capabilities().operations == ()
+    for kind in (WorkloadKind.SHA256D_SCAN, WorkloadKind.TENSOR_OP, WorkloadKind.PROBE):
+        assert not uhd.supports(kind)
+    d = _daemon(tmp_path, adapters=[uhd, CPUEmulatorAdapter()])
+    ok = d.submit(_scan("uhd-present"))
+    assert ok.status == "ok"
+    assert ok.actual_adapter_id == "cpu-emulator"
+    assert ok.receipt["actual_backend"] == "cpu-emulator"
+    assert ok.output["hits"][0]["nonce"] == 5
+
+
+def test_default_store_root_is_absolute_so_a_later_chdir_cannot_break_the_ledger(
+    tmp_path, monkeypatch
+) -> None:
+    first, other = tmp_path / "first", tmp_path / "other"
+    first.mkdir()
+    other.mkdir()
+    monkeypatch.delenv("CHRONUS_VIGPU_STORE", raising=False)
+    monkeypatch.chdir(first)
+    d = RuntimeDaemon(adapters=[CPUEmulatorAdapter()])
+    assert d.root.is_absolute()
+    assert d.root == (first / ".chronus-virtual-igpu").resolve()
+    monkeypatch.chdir(other)
+    assert d.submit(_probe("after-chdir")).status == "ok"
+    assert not (other / ".chronus-virtual-igpu").exists()
+
+
+def test_daemon_denies_cross_tenant_retrieve_and_isolates_identical_bytes(tmp_path) -> None:
+    d = _daemon(tmp_path)
+    payload = {"data": "tenant-a secret"}
+    stored = d.submit(Workload(id="s-a", kind=WorkloadKind.STORE, tenant="tenant-a", input=payload))
+    assert stored.status == "ok" and stored.object_id
+    own = d.submit(
+        Workload(
+            id="r-a",
+            kind=WorkloadKind.RETRIEVE,
+            tenant="tenant-a",
+            input={"object_id": stored.object_id},
+        )
+    )
+    assert own.status == "ok" and own.output["payload"] == payload
+    with pytest.raises(PermissionError, match="not authorized"):
+        d.submit(
+            Workload(
+                id="r-b",
+                kind=WorkloadKind.RETRIEVE,
+                tenant="tenant-b",
+                input={"object_id": stored.object_id},
+            )
+        )
+    assert d.in_flight.get("tenant-b", 0) == 0
+    other = d.submit(Workload(id="s-b", kind=WorkloadKind.STORE, tenant="tenant-b", input=payload))
+    assert other.object_id != stored.object_id
 
 
 # --- lying adapter / bridge verification -----------------------------------------------------

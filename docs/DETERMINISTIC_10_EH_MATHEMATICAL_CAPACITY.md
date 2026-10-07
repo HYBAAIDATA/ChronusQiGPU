@@ -1,4 +1,4 @@
-# Deterministic 10 EH/s Mathematical Capacity
+# Deterministic Mathematical Capacity at the Governed 1e19 H/s Hashrate Ceiling
 
 Every certificate declares the exact initiation mode, rational `I`, exact
 bubble fraction, and justification:
