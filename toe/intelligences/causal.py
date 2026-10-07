@@ -5,8 +5,10 @@ Operates across Substrates:
   - Substrate 4: Geometric (Network topology and latency space)
   - Substrate 9: Tensor (Batch verification and companion state)
 
-Possesses FULL AUTHORITY over pool selection, difficulty retargeting,
-and network intervention without sub-agent framing.
+Provides ADVISORY intelligence for pool selection, difficulty context, and
+network intervention analysis. PYTHIA remains final authority for mining truth,
+SearchPlan finalization, nonce-estate coverage, SHA256d/target proof semantics,
+share validation/submission, credentials, and pool acknowledgements.
 
 LUCAS WIRING: draws from lucas/ (pool) OR implements its Lucas kernel
 inline below. MUST NOT import from any sibling algorithm.
@@ -58,7 +60,7 @@ class CausalDecision:
 
 
 class CausalIntelligence:
-    """Full-authority decision maker for network dynamics and pool orchestration."""
+    """Advisory intelligence for network dynamics and pool-orchestration analysis."""
 
     def __init__(self, initial_pool: str = "ViaBTC_Primary"):
         self.active_pool = initial_pool
