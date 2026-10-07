@@ -173,11 +173,19 @@ def _validate_notify_params(params: list) -> dict:
     would die later inside ``mine_job`` — after the listener already cached
     it. Raises ValueError naming the bad field.
     """
+    if not isinstance(params, list) or len(params) < 9:
+        raise ValueError("malformed mining.notify: expected at least 9 parameters")
+    job_id = params[0]
+    if not isinstance(job_id, str) or not job_id:
+        raise ValueError("malformed job_id: expected non-empty string")
     branch = params[4]
     if not isinstance(branch, (list, tuple)):
         raise ValueError("malformed merkle_branch: not a list")
+    clean_jobs = params[8]
+    if not isinstance(clean_jobs, bool):
+        raise ValueError("malformed clean_jobs: expected boolean")
     return {
-        "job_id": str(params[0]),
+        "job_id": job_id,
         "prev_hash": _check_hex(params[1], 64, "prev_hash"),
         "coinb1": _check_hex(params[2], None, "coinb1"),
         "coinb2": _check_hex(params[3], None, "coinb2"),
@@ -185,7 +193,7 @@ def _validate_notify_params(params: list) -> dict:
         "version": _check_hex(params[5], 8, "version"),
         "nbits": _check_hex(params[6], 8, "nbits"),
         "ntime": _check_hex(params[7], 8, "ntime"),
-        "clean_jobs": bool(params[8]),
+        "clean_jobs": clean_jobs,
     }
 
 
@@ -277,27 +285,30 @@ class StratumBridge:
 
     async def handshake(self, suggest_diff: Optional[float] = None) -> None:
         result = await self._rpc("mining.subscribe", [self.agent])
-        if isinstance(result, list) and len(result) >= 3:
-            # extranonce1/extranonce2_size feed every coinbase build; a
-            # malformed pair makes every job unmineable, so the handshake
-            # fails closed here rather than once per notify inside mine_job.
-            extranonce1 = str(result[1])
-            if not _is_hex(extranonce1):
-                raise RuntimeError(
-                    f"malformed extranonce1 in mining.subscribe: {extranonce1!r}"
-                )
-            try:
-                extranonce2_size = int(result[2])
-            except (TypeError, ValueError) as exc:
-                raise RuntimeError(
-                    f"malformed extranonce2_size in mining.subscribe: {result[2]!r}"
-                ) from exc
-            if not 0 < extranonce2_size <= 32:
-                raise RuntimeError(
-                    f"malformed extranonce2_size in mining.subscribe: {result[2]!r}"
-                )
-            self.extranonce1 = extranonce1
-            self.extranonce2_size = extranonce2_size
+        if not isinstance(result, list) or len(result) < 3:
+            raise RuntimeError(
+                f"malformed mining.subscribe result: expected list with 3+ fields, got {result!r}"
+            )
+        # extranonce1/extranonce2_size feed every coinbase build; a
+        # malformed pair makes every job unmineable, so the handshake
+        # fails closed here rather than once per notify inside mine_job.
+        extranonce1 = result[1]
+        if not _is_hex(extranonce1):
+            raise RuntimeError(
+                f"malformed extranonce1 in mining.subscribe: {extranonce1!r}"
+            )
+        try:
+            extranonce2_size = int(result[2])
+        except (TypeError, ValueError) as exc:
+            raise RuntimeError(
+                f"malformed extranonce2_size in mining.subscribe: {result[2]!r}"
+            ) from exc
+        if not 0 < extranonce2_size <= 32:
+            raise RuntimeError(
+                f"malformed extranonce2_size in mining.subscribe: {result[2]!r}"
+            )
+        self.extranonce1 = extranonce1
+        self.extranonce2_size = extranonce2_size
         if suggest_diff is not None:
             try:
                 await self._rpc("mining.suggest_difficulty", [suggest_diff], timeout=3.0)
@@ -797,15 +808,12 @@ def mine_job(
             res = pipeline.grind_m32(
                 header, target, base_nonce, _m32_lane_order(base_nonce), nonce_window
             )
-        except Exception as exc:
-            # A RuntimeError is a proof-layer or binding failure — most
-            # critically a device hit failing the host SHA-256d recheck.
-            # That must never silently re-grind on a different arm.
-            if isinstance(exc, RuntimeError):
-                raise
-            # Capability/shape failures only (e.g. a window that is not a
-            # multiple of 32): re-walk the same m32 order through the batch
-            # arm. Coverage and order are preserved; validity stays SHA256d.
+        except ValueError:
+            # Only the declared recoverable shape/contract error may switch
+            # arms (for example a window that is not a multiple of 32).
+            # RuntimeError, TypeError, transport errors and unexpected coding
+            # failures propagate fail-closed instead of being disguised as a
+            # successful fallback.
             nonces = _lane_nonces(base_nonce, nonce_window, header80=header)
             res = pipeline.grind(header, target, nonces)
     else:
