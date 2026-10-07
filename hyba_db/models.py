@@ -138,6 +138,7 @@ class DatabaseVerification:
     file_plane_ok: bool = True
     mining_chain_ok: bool = True
     reconciliation_ok: bool = True
+    knowledge_ok: bool = True
 
     @property
     def passed(self) -> bool:

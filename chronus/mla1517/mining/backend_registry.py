@@ -38,12 +38,13 @@ and — when unavailable — the measured reason.
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import os
 import time
 import uuid
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field, fields
 from pathlib import Path
 from enum import StrEnum
 from typing import Any, Callable
@@ -113,8 +114,13 @@ class BackendSelection:
     software_revision: str = "unknown"
 
     def as_dict(self) -> dict[str, Any]:
-        value = asdict(self)
-        value.pop("hasher", None)
+        # Never ``asdict(self)``: it deep-copies ``hasher`` (and every probe's hasher), which
+        # raises TypeError for hashers holding locks/sockets (remote lane, Chronus Virtual iGPU).
+        value = {
+            f.name: copy.deepcopy(getattr(self, f.name))
+            for f in fields(self)
+            if f.name not in ("hasher", "probed")
+        }
         value["probed"] = {name: probe.as_dict() for name, probe in self.probed.items()}
         return value
 

@@ -601,22 +601,27 @@ class OpenCLUhdAdapter(Adapter):
             self.available = False
             return self._attestation(False, {"reason": f"opencl_unavailable: {exc}"})
 
+    def supports(self, kind: WorkloadKind | str) -> bool:
+        return False
+
     def capabilities(self) -> CapabilityManifest:
-        ops = (
-            WorkloadKind.TENSOR_OP.value,
-            WorkloadKind.SHA256D_SCAN.value,
-            WorkloadKind.PROBE.value,
-        )
+        # probe() attests that the device is present; execute() always raises until authorized
+        # target-host evidence exists, so no operation is advertised (and none may be selected).
         return CapabilityManifest(
             adapter_id=self.id,
             kind=self.kind.value,
-            operations=ops if self.available else (),
+            operations=(),
             dtypes=("float32",),
             max_shape=(2048, 2048),
             max_bytes=128 * 1024 * 1024,
             evidence_support=("runtime_signed", "device_observed"),
             available=self.available,
-            reason="" if self.available else "Intel UHD OpenCL not available on this host",
+            reason=(
+                "Intel UHD OpenCL device present; physical dispatch is gated on target-host "
+                "evidence"
+                if self.available
+                else "Intel UHD OpenCL not available on this host"
+            ),
             software_impl=False,
             physical_run_status="host_dependent",
             build_status="optional",

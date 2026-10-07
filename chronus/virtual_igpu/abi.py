@@ -1,8 +1,10 @@
 """Canonical, JSON-safe Chronus Virtual iGPU ABI (virtual_igpu_v1).
 
-Product identity is independent of any particular physical GPU. Delivery mode,
-requested execution policy, and observed backend are separate fields. Trust
-classes distinguish runtime-signed provenance from hardware-rooted attestation.
+Product identity is independent of any particular physical GPU or CPU backend.
+Chronus has two canonical product modes: native software-defined GPU execution,
+and host-GPU/accelerator augmentation. Delivery mode, execution policy, product
+mode, and observed backend are separate facts. Trust classes distinguish
+runtime-signed provenance from hardware-rooted attestation.
 """
 from __future__ import annotations
 
@@ -98,13 +100,36 @@ class DeliveryMode(str, Enum):
     REMOTE_SERVICE = "remote_service"
 
 
+class ProductMode(str, Enum):
+    """Canonical Chronus product identity, independent of the host substrate."""
+
+    NATIVE_CHRONUS_GPU = "native_chronus_gpu"
+    HOST_GPU_AUGMENTATION = "host_gpu_augmentation"
+
+
 class ExecutionPolicy(str, Enum):
-    """Requested execution preference; independent of delivery mode."""
+    """Backend-selection policy; not the product identity.
+
+    standalone_software is the compatibility execution policy for native
+    Chronus GPU mode. preferred_accelerator is the default policy for
+    host-GPU/accelerator augmentation.
+    """
 
     STANDALONE_SOFTWARE = "standalone_software"
     PREFERRED_ACCELERATOR = "preferred_accelerator"
     REQUIRED_ADAPTER = "required_adapter"
     REQUIRED_DEVICE = "required_device"
+
+
+_PRODUCT_MODE_POLICY = {
+    ProductMode.NATIVE_CHRONUS_GPU: ExecutionPolicy.STANDALONE_SOFTWARE,
+    ProductMode.HOST_GPU_AUGMENTATION: ExecutionPolicy.PREFERRED_ACCELERATOR,
+}
+
+
+def execution_policy_for_product_mode(mode: ProductMode | str) -> str:
+    """Return the compatibility execution policy for a canonical product mode."""
+    return _PRODUCT_MODE_POLICY[ProductMode(mode)].value
 
 
 class TrustClass(str, Enum):

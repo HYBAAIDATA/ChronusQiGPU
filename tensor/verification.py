@@ -21,8 +21,10 @@ Honesty rules:
 
 * ``bit_identical`` catalogue operators must match element-for-element —
   reassociation is only tolerated where the catalogue itself declares it
-  (``bit_identical=False``), and then only to ``REASSOCIATION_RTOL``, the
-  same bound the promotion harness declares.
+  (``bit_identical=False``), and then only to the larger of
+  ``REASSOCIATION_RTOL`` (the floor the promotion harness declares) and the
+  operand-derived rounding bound of :func:`_reassociation_bound`, which
+  scales with the operand dtype's unit roundoff.
 * An operation with no alternate path is never faked: the verdict records
   ``recomputed=False`` and the receipt's correctness stays
   ``unvalidated``.
@@ -50,9 +52,11 @@ VERDICT_PASS = "pass"
 VERDICT_FAIL = "fail"
 VERDICT_UNVERIFIED = "unverified"
 
-#: Absolute residual bound for operators whose catalogue entry declares
+#: Absolute residual floor for operators whose catalogue entry declares
 #: float reassociation (``bit_identical=False``) — the same 1e-12 the
 #: promotion harness (:func:`tensor.folded.evaluate_operator`) enforces.
+#: It is calibrated for float64 only; narrower dtypes are admitted up to the
+#: operand-derived bound of :func:`_reassociation_bound`, never above it.
 REASSOCIATION_RTOL = 1e-12
 
 #: Fold depth used when the backend path's operands are re-derived through
@@ -118,26 +122,89 @@ def _array_digest(array) -> str:
     return digest.hexdigest()
 
 
-def _compare(actual, reference, *, bit_identical: bool) -> tuple[bool, float]:
+def _widen(array: np.ndarray) -> np.ndarray:
+    """Float/complex arrays to at least float64/complex128 (exact upcast)."""
+    if array.dtype.kind in "fc":
+        return array.astype(np.promote_types(array.dtype, np.float64), copy=False)
+    return array
+
+
+def _reassociation_bound(
+    operation: str, operands: Sequence[np.ndarray]
+) -> Optional[np.ndarray]:
+    """Per-element rounding bound between two summation orders, or ``None``.
+
+    Summing ``k`` terms in any order obeys
+    ``|fl(sum) - sum| <= gamma_k * sum|terms|`` with
+    ``gamma_k = k*u / (1 - k*u)`` and ``u`` the operand dtype's unit
+    roundoff, so two independent orderings differ by at most
+    ``2 * gamma_k * sum|terms|``. ``matmul`` sums ``k = a.shape[-1]`` products
+    per element (``sum|terms| = |a| @ |b|``); ``reduce_sum`` sums
+    ``k = a.size`` elements. Complex arithmetic costs at most two extra
+    rounding terms per sum; the term count is doubled for slack.
+
+    ``None`` means "no derived bound — the ``REASSOCIATION_RTOL`` floor
+    alone applies", which is the fail-closed choice: it is returned for
+    integer dtypes (exact), operations without a derived bound, and any
+    case where ``k*u >= 1`` makes the bound vacuous.
+    """
+    if operation not in ("matmul", "reduce_sum"):
+        return None
+    operands = [np.asarray(o) for o in operands]
+    dtype = np.result_type(*operands)
+    if dtype.kind not in "fc":
+        return None
+    magnitudes = [np.abs(o).astype(np.float64) for o in operands]
+    if operation == "matmul":
+        a, b = magnitudes
+        terms, scale = a.shape[-1], np.matmul(a, b)
+    else:
+        (a,) = magnitudes
+        terms, scale = a.size, np.sum(a)
+    if dtype.kind == "c":
+        terms = 2 * (terms + 2)
+    ku = terms * float(np.finfo(dtype).eps) / 2.0
+    if not ku < 1.0:
+        return None
+    return np.atleast_1d(2.0 * (ku / (1.0 - ku)) * scale)
+
+
+def _compare(
+    actual, reference, *, bit_identical: bool, bound=None
+) -> tuple[bool, float, Optional[float]]:
     """Element-space comparison under the operator's declared precision.
 
-    Returns ``(matched, max_abs_residual)``. Bit-identical operators must
-    match dtype and every element exactly; reassociation-tolerant
-    operators compare within ``REASSOCIATION_RTOL``.
+    Returns ``(matched, max_abs_residual, tolerance)``. Bit-identical
+    operators must match dtype and every element exactly (``tolerance`` is
+    ``None``). Reassociation-tolerant operators must satisfy
+    ``|actual - reference| <= max(REASSOCIATION_RTOL, bound)`` per element,
+    the residual taken in at least float64; ``tolerance`` is the largest
+    limit applied.
     """
     actual = np.asarray(actual)
     reference = np.atleast_1d(np.asarray(reference))
     if actual.shape != reference.shape or actual.size != reference.size:
-        return False, float("inf")
-    residual = (
-        float(np.max(np.abs(actual - reference))) if actual.size else 0.0
-    )
+        return False, float("inf"), None if bit_identical else REASSOCIATION_RTOL
+    diff = np.abs(_widen(actual) - _widen(reference))
+    residual = float(np.max(diff)) if actual.size else 0.0
     if bit_identical:
         return bool(
             actual.dtype == reference.dtype
             and np.array_equal(actual, reference)
-        ), residual
-    return residual <= REASSOCIATION_RTOL, residual
+        ), residual, None
+    limit = REASSOCIATION_RTOL
+    if bound is not None and actual.size:
+        bound = np.where(np.isfinite(bound), bound, 0.0)
+        if bound.shape != diff.shape:
+            bound = bound.max()
+        limit = np.maximum(REASSOCIATION_RTOL, bound)
+    return bool(np.all(diff <= limit)), residual, float(np.max(limit))
+
+
+def _residual_note(residual: float, tolerance: Optional[float]) -> str:
+    if tolerance is None:
+        return f"max abs residual {residual}"
+    return f"max abs residual {residual} exceeds tolerance {tolerance}"
 
 
 def _verdict(
@@ -145,9 +212,9 @@ def _verdict(
     method: str,
     matched: bool,
     residual: float,
+    tolerance: Optional[float],
     actual,
     reference,
-    bit_identical: bool,
     elapsed_ns: int,
     detail: str,
 ) -> VerificationVerdict:
@@ -158,7 +225,7 @@ def _verdict(
         max_residual=residual,
         output_digest=_array_digest(actual),
         reference_digest=_array_digest(reference),
-        tolerance=None if bit_identical else REASSOCIATION_RTOL,
+        tolerance=tolerance,
         elapsed_ns=elapsed_ns,
         detail=detail,
     )
@@ -197,8 +264,12 @@ def verify_folded_output(
     started = time.perf_counter_ns()
     try:
         actual = phi_unfold(out_state)
-        reference = np.atleast_1d(
-            op.np_reference(*[phi_unfold(s) for s in states])
+        operands = [phi_unfold(s) for s in states]
+        reference = np.atleast_1d(op.np_reference(*operands))
+        bound = (
+            None
+            if op.bit_identical
+            else _reassociation_bound(operation, operands)
         )
     except Exception as exc:  # checker failed — honest unverified, no fake
         return _unverified(
@@ -206,22 +277,22 @@ def verify_folded_output(
             f"re-check could not run: {type(exc).__name__}: {exc}",
             data=out_state.retained,
         )
-    matched, residual = _compare(
-        actual, reference, bit_identical=op.bit_identical
+    matched, residual, tolerance = _compare(
+        actual, reference, bit_identical=op.bit_identical, bound=bound
     )
     return _verdict(
         method="unfolded_numpy_reference",
         matched=matched,
         residual=residual,
+        tolerance=tolerance,
         actual=actual,
         reference=reference,
-        bit_identical=op.bit_identical,
         elapsed_ns=time.perf_counter_ns() - started,
         detail=(
             "folded output re-derived on the unfolded reference path"
             if matched
             else f"folded output diverges from the unfolded reference "
-            f"(max abs residual {residual})"
+            f"({_residual_note(residual, tolerance)})"
         ),
     )
 
@@ -252,28 +323,33 @@ def verify_backend_output(
         ref_state, _ = folded_execute(operation, states)
         reference = np.atleast_1d(np.asarray(phi_unfold(ref_state)))
         actual = np.asarray(data)
+        bound = (
+            None
+            if op.bit_identical
+            else _reassociation_bound(operation, arrays)
+        )
     except Exception as exc:  # checker failed — honest unverified, no fake
         return _unverified(
             "folded_resident_recompute",
             f"re-check could not run: {type(exc).__name__}: {exc}",
             data=data,
         )
-    matched, residual = _compare(
-        actual, reference, bit_identical=op.bit_identical
+    matched, residual, tolerance = _compare(
+        actual, reference, bit_identical=op.bit_identical, bound=bound
     )
     return _verdict(
         method="folded_resident_recompute",
         matched=matched,
         residual=residual,
+        tolerance=tolerance,
         actual=actual,
         reference=reference,
-        bit_identical=op.bit_identical,
         elapsed_ns=time.perf_counter_ns() - started,
         detail=(
             "backend output re-derived on the folded-resident path"
             if matched
             else f"backend output diverges from the folded-resident "
-            f"recompute (max abs residual {residual})"
+            f"recompute ({_residual_note(residual, tolerance)})"
         ),
     )
 

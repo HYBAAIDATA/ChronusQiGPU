@@ -1,5 +1,4 @@
 from pathlib import Path
-import re
 
 
 def main() -> None:
@@ -23,20 +22,11 @@ def main() -> None:
     if ".metric-prize" not in css and ".hyba-prize" not in css:
         css = (
             css.rstrip()
-            + "
-
-/* Prize metrics - gold for key KPI numbers only */
-"
-            + ".metric-prize,
-.hyba-prize {
-"
-            + "  color: var(--hyba-gold);
-"
-            + "  font-variant-numeric: tabular-nums;
-"
-            + "}
-"
+            + "\n\n/* Prize metrics - gold for key KPI numbers only */\n"
+            + ".metric-prize,\n.hyba-prize {\n"
+            + "  color: var(--hyba-gold);\n"
+            + "  font-variant-numeric: tabular-nums;\n"
+            + "}\n"
         )
-    css_path.write_text(css, encoding="utf-8", newline="
-")
+    css_path.write_text(css, encoding="utf-8", newline="\n")
     print("  index.css token self-refs fixed")
