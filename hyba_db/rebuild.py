@@ -40,9 +40,35 @@ def _bootstrap_tenant(store: Any, tenant_id: str, manifest: dict[str, Any]) -> N
             (),
             root=True,
         )
+        root_payload = {"namespace": str(tenant["namespace"])}
+        root_betti = (1,)
+        created_at = str(tenant["created_at"])
+        node_material = _json(
+            {
+                "kind": "guardian",
+                "payload": root_payload,
+                "betti": root_betti,
+                "persistence": None,
+                "created_at": created_at,
+            }
+        ).encode()
+        node_id = "node_" + _sha(node_material)[:32]
         db.execute(
-            "UPDATE tenants SET root_attestation_id=? WHERE tenant_id=?",
-            (root.id, tenant_id),
+            "INSERT INTO nodes VALUES(?,?,?,?,?,?,?,?)",
+            (
+                tenant_id,
+                node_id,
+                "guardian",
+                _json(root_payload),
+                _json(root_betti),
+                None,
+                root.id,
+                created_at,
+            ),
+        )
+        db.execute(
+            "UPDATE tenants SET root_attestation_id=?,root_node_id=? WHERE tenant_id=?",
+            (root.id, node_id, tenant_id),
         )
 
 
