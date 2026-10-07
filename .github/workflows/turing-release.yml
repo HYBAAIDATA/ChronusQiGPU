@@ -1,6 +1,15 @@
 name: TURING 1.0.0 release
 
 on:
+  pull_request:
+    paths:
+      - "turing_universal_quantum_computer/**"
+      - "packaging/turing/**"
+      - "packaging/verify_release_candidates.py"
+      - "packaging/kellogg-tensor/build_and_verify.py"
+      - "mining/formal/**"
+      - "tests/test_turing_release_packaging.py"
+      - ".github/workflows/turing-release.yml"
   workflow_dispatch:
     inputs:
       publish:
@@ -221,7 +230,7 @@ jobs:
           path: evidence/source
       - name: Require cross-version deterministic equality and seal verdict
         env:
-          PUBLISH_MODE: ${{ inputs.publish }}
+          PUBLISH_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.publish || 'none' }}
         run: |
           python - <<'PY'
           import hashlib, json, os, urllib.error, urllib.request
@@ -312,7 +321,7 @@ jobs:
   publish:
     name: Publish exact verified artefact
     needs: release-verdict
-    if: ${{ inputs.publish != 'none' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish != 'none' }}
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.publish }}
@@ -349,7 +358,7 @@ jobs:
   testpypi-smoke:
     name: Verify TestPyPI publication
     needs: [publish, kellogg-prerequisite]
-    if: ${{ inputs.publish == 'testpypi' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish == 'testpypi' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-python@v5
