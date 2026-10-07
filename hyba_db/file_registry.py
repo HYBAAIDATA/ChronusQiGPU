@@ -20,6 +20,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from aethel.storage_topology import (
+    StorageTopologyError,
+    TheseusPhysicalStore,
+    TheseusStorageAddress,
+    derive_storage_address,
+    verify_storage_address,
+)
+
 from .models import AccessDenied, IntegrityFailure, InvalidRecord
 
 FILE_CLASSES = frozenset(
@@ -167,6 +175,23 @@ CREATE TABLE IF NOT EXISTS file_provenance(
  FOREIGN KEY(tenant_id,file_version_id) REFERENCES file_versions(tenant_id,file_version_id),
  FOREIGN KEY(tenant_id,attestation_id) REFERENCES attestations(tenant_id,id)
 );
+CREATE TABLE IF NOT EXISTS theseus_storage_addresses(
+ tenant_id TEXT NOT NULL REFERENCES tenants(tenant_id),
+ file_version_id TEXT NOT NULL,
+ address_id TEXT NOT NULL,
+ address_json TEXT NOT NULL,
+ address_sha256 TEXT NOT NULL,
+ custody_record_id TEXT NOT NULL,
+ migration_state TEXT NOT NULL,
+ attestation_id TEXT NOT NULL,
+ created_at TEXT NOT NULL,
+ PRIMARY KEY(tenant_id,file_version_id),
+ UNIQUE(tenant_id,address_id,file_version_id),
+ FOREIGN KEY(tenant_id,file_version_id) REFERENCES file_versions(tenant_id,file_version_id),
+ FOREIGN KEY(tenant_id,attestation_id) REFERENCES attestations(tenant_id,id)
+);
+CREATE INDEX IF NOT EXISTS idx_theseus_address_id
+ ON theseus_storage_addresses(tenant_id,address_id);
 CREATE TABLE IF NOT EXISTS file_events(
  tenant_id TEXT NOT NULL REFERENCES tenants(tenant_id),
  event_id TEXT NOT NULL,
@@ -776,6 +801,146 @@ class FileRegistry:
                 db, tenant_id, version_id, "CUSTODIED", actor, {"custody_record_id": custody_id}
             )
         return version_id
+
+    def bind_storage_address(
+        self,
+        tenant_id: str,
+        file_version_id: str,
+        address: TheseusStorageAddress,
+        *,
+        migration_state: str = "NATIVE",
+    ) -> str:
+        """Bind one file version to its canonical THESEUS mathematical address.
+
+        The SQLite row is a query projection.  The authoritative binding is
+        independently present in the physical address journal and as a
+        THESEUS OperationalRecord.
+        """
+        self._tenant(tenant_id)
+        row = self.store._db.execute(
+            "SELECT fv.*,fo.file_class FROM file_versions fv "
+            "JOIN file_objects fo ON fo.tenant_id=fv.tenant_id "
+            "AND fo.file_object_id=fv.file_object_id "
+            "WHERE fv.tenant_id=? AND fv.file_version_id=?",
+            (tenant_id, file_version_id),
+        ).fetchone()
+        if row is None:
+            raise AccessDenied("file version not found in tenant")
+        if address.tenant_id != tenant_id:
+            raise IntegrityFailure("THESEUS storage address tenant mismatch")
+        if address.scope != str(row["file_class"]):
+            raise IntegrityFailure("THESEUS storage address scope mismatch")
+        if address.content_sha256 != str(row["content_sha256"]):
+            raise IntegrityFailure("THESEUS storage address digest mismatch")
+
+        body = _json(address.to_dict())
+        digest = _sha(body.encode("utf-8"))
+        existing = self.store._db.execute(
+            "SELECT * FROM theseus_storage_addresses "
+            "WHERE tenant_id=? AND file_version_id=?",
+            (tenant_id, file_version_id),
+        ).fetchone()
+        if existing is not None:
+            if (
+                existing["address_id"] != address.address_id
+                or existing["address_sha256"] != digest
+                or existing["address_json"] != body
+            ):
+                raise IntegrityFailure("conflicting THESEUS storage address binding")
+            if self.custody is None or not self.custody.verify(
+                tenant_id, str(existing["custody_record_id"])
+            ):
+                raise IntegrityFailure("storage-address custody binding is unavailable")
+            return str(existing["custody_record_id"])
+
+        custody_id = self._custody_id(
+            tenant_id,
+            f"storage_address.{file_version_id}.{address.address_id}",
+            body.encode("utf-8"),
+            "theseus",
+            "MEASURED",
+            None,
+            kind="theseus_storage_address",
+            producer_version="storage-topology/1",
+            lineage=(file_version_id, str(row["custody_record_id"])),
+            correlation_ids={
+                "tenant_id": tenant_id,
+                "file_version_id": file_version_id,
+                "address_id": address.address_id,
+            },
+            meta={
+                "file_version_id": file_version_id,
+                "address_id": address.address_id,
+                "storage_generation": address.storage_generation,
+                "migration_state": str(migration_state),
+            },
+        )
+        with self.store._tx() as db:
+            att = self.store._attest(
+                db,
+                tenant_id,
+                f"theseus_storage_address:{file_version_id}",
+                "theseus",
+                {
+                    "file_version_id": file_version_id,
+                    "address_id": address.address_id,
+                    "address_sha256": digest,
+                    "custody_record_id": custody_id,
+                    "migration_state": str(migration_state),
+                },
+                (),
+            )
+            db.execute(
+                "INSERT INTO theseus_storage_addresses VALUES(?,?,?,?,?,?,?,?,?)",
+                (
+                    tenant_id,
+                    file_version_id,
+                    address.address_id,
+                    body,
+                    digest,
+                    custody_id,
+                    str(migration_state),
+                    att.id,
+                    _now(),
+                ),
+            )
+        return str(custody_id)
+
+    def storage_address(
+        self, tenant_id: str, file_version_id: str
+    ) -> TheseusStorageAddress:
+        """Load and verify the rebuildable address projection."""
+        self._tenant(tenant_id)
+        row = self.store._db.execute(
+            "SELECT * FROM theseus_storage_addresses "
+            "WHERE tenant_id=? AND file_version_id=?",
+            (tenant_id, file_version_id),
+        ).fetchone()
+        if row is None:
+            raise InvalidRecord("file version has no THESEUS storage-address binding")
+        if _sha(str(row["address_json"]).encode("utf-8")) != row["address_sha256"]:
+            raise IntegrityFailure("THESEUS storage-address projection digest mismatch")
+        try:
+            address = TheseusStorageAddress.from_dict(json.loads(row["address_json"]))
+        except (json.JSONDecodeError, StorageTopologyError) as exc:
+            raise IntegrityFailure("invalid THESEUS storage-address projection") from exc
+        if address.address_id != row["address_id"] or address.tenant_id != tenant_id:
+            raise IntegrityFailure("THESEUS storage-address identity mismatch")
+        if self.custody is None or not self.custody.verify(
+            tenant_id, str(row["custody_record_id"])
+        ):
+            raise IntegrityFailure("THESEUS storage-address custody is unavailable")
+        opener = getattr(self.custody, "open_tenant", None)
+        if callable(opener):
+            op = opener(tenant_id).get_record(str(row["custody_record_id"]))
+            if (
+                op.kind != "theseus_storage_address"
+                or op.producer != "theseus"
+                or op.content_digest != row["address_sha256"]
+                or bytes(op.payload) != str(row["address_json"]).encode("utf-8")
+            ):
+                raise IntegrityFailure("THESEUS storage-address custody mismatch")
+        return address
 
     def append_event(
         self,
