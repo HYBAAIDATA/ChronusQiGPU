@@ -295,7 +295,8 @@ class AutonomousLearningLoop:
 
             return {
                 "status": "healthy" if is_operational else "degraded",
-                "health_score": health_score,
+                "health_score": health_score,  # declared policy score, not measured
+                "evidence_class": "declared_policy_score",
                 "is_operational": is_operational,
                 "issues": issues,
                 "stats": stats,

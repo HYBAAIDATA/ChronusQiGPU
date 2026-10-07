@@ -2,12 +2,14 @@
 Live Global Research Cycle - Autonomous Structural Growth
 =========================================================
 
-Executes a 1-hour simulated research cycle across core topics.
-Tunes receptivity based on phi-resonant coherence.
+Executes a research cycle across core topics driven by the real
+relaxation engine; all reported counters are measured outputs of that
+engine — nothing is simulated.
 """
 
 import asyncio
 import logging
+import time
 from typing import Any, Dict
 
 from agi.mass_gap_relaxation import MassGapRelaxationEngine
@@ -34,12 +36,12 @@ class ResearchCycleOrchestrator:
         # Step 1: Relax threshold
         relaxation_result = await self.relaxation_engine.trigger_relaxation(topic)
 
-        # Step 2: Absorb data (Simulated)
-        data_points = 1024 * 531  # 531x amplification
+        # Step 2: Report the real absorption count measured by the
+        # relaxation engine — no amplification factor is invented.
+        data_points = relaxation_result.get("data_absorbed", 0)
         coherence = relaxation_result["coherence"]
 
         print(f"📥 Absorbing {data_points} data points for {topic} | Coherence: {coherence}")
-        await asyncio.sleep(0.05)
 
         return {
             "topic": topic,
@@ -53,7 +55,8 @@ class ResearchCycleOrchestrator:
         """
         Runs the full global research cycle.
         """
-        print("🌊 Initializing Live Global Research Cycle (1-Hour Absorption Mode)")
+        print("🌊 Initializing Live Global Research Cycle")
+        start = time.perf_counter()
         results = []
         for topic in self.topics:
             result = await self.execute_topic_cycle(topic)
@@ -67,11 +70,11 @@ class ResearchCycleOrchestrator:
         )
 
         return {
-            "cycle_duration": "1 hour (simulated)",
+            "cycle_duration_seconds": round(time.perf_counter() - start, 4),
             "total_data_absorbed": total_data,
             "average_coherence": avg_coherence,
             "system_integrity": "STABLE",
-            "recovery_state": 0.618034,
+            "recovery_state": self.relaxation_engine.recovery_threshold,
         }
 
 

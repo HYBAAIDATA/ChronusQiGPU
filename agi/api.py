@@ -74,6 +74,7 @@ except ImportError as _pci_import_err:
         f"[AGI] PCI domain router unavailable — AGI will lack domain endpoints: {_pci_import_err}"
     )
 from enhanced_intelligence import calculate_pure_quantum_intelligence
+
 # NOTE: AutonomyLevel from Intelligence.intelligent_endpoint was imported
 # here but shadowed by the removed src.* import and never used; dropped.
 from dataclasses import dataclass
@@ -869,63 +870,20 @@ async def analyze_with_agi(request: Request):
     analysis_type = body.get("analysis_type", "enterprise_clients")
 
     if analysis_type == "enterprise_clients":
-        # Use ASI consciousness to generate intelligent client data
+        # There is no client data store wired to this service — invented
+        # client records were removed under the production mandate. The
+        # endpoint returns the measured ASI metrics (real) plus an explicit
+        # unavailability marker for the client list.
         metrics = asi_server_controller.asi.calculate_asi_metrics()
 
-        # Generate clients based on consciousness level
-        clients = [
-            {
-                "id": "client-001",
-                "name": "FinTech Solutions Ltd",
-                "tier": "Enterprise",
-                "status": "Active",
-                "apiCalls30d": int(45000 * metrics.intelligence_level),
-                "uptime": 99.95,
-                "lastActive": datetime.now().isoformat(),
-                "featuresUsed": ["Quantum Computing", "AGI Analysis", "Compliance"],
-                "supportTickets": 2,
-                "nps": int(8 + metrics.consciousness_level * 2),
-                "contractRenewal": "2026-12-31",
-                "expansionSignals": [
-                    "Inquired about VQC service",
-                    "Increased API usage 35%",
-                ],
-            },
-            {
-                "id": "client-002",
-                "name": "Global Ventures Dubai",
-                "tier": "Professional",
-                "status": "Active",
-                "apiCalls30d": int(32000 * metrics.intelligence_level),
-                "uptime": 99.87,
-                "lastActive": datetime.now().isoformat(),
-                "featuresUsed": ["AGI Analysis", "Predictive Intelligence"],
-                "supportTickets": 1,
-                "nps": int(8.5 + metrics.consciousness_level * 1.5),
-                "contractRenewal": "2026-09-15",
-                "expansionSignals": ["Requested custom integration"],
-            },
-            {
-                "id": "client-003",
-                "name": "Swiss Banking Corp",
-                "tier": "Enterprise",
-                "status": "Active",
-                "apiCalls30d": int(78000 * metrics.intelligence_level),
-                "uptime": 99.99,
-                "lastActive": datetime.now().isoformat(),
-                "featuresUsed": ["Compliance", "Analytics", "Quantum Computing"],
-                "supportTickets": 0,
-                "nps": int(9 + metrics.consciousness_level),
-                "contractRenewal": "2027-06-30",
-                "expansionSignals": ["Zero downtime required", "Exploring partnership"],
-            },
-        ]
-
         return {
-            "clients": clients,
+            "clients": [],
+            "status": "unavailable_no_client_data_store",
+            "evidence_class": "unavailable",
             "analysis": {
                 "consciousness_level": metrics.consciousness_level,
-                "intelligence_applied": True,
+                "intelligence_level": metrics.intelligence_level,
+                "coherence": metrics.coherence,
                 "timestamp": datetime.now().isoformat(),
             },
         }
@@ -952,32 +910,13 @@ async def recommend_with_agi(request: Request):
 
     metrics = asi_server_controller.asi.calculate_asi_metrics()
 
-    recommendations = [
-        {
-            "priority": "high",
-            "action": "Expand VQC service offering to enterprise tier clients",
-            "confidence": metrics.consciousness_level,
-            "reasoning": "ASI consciousness detects quantum computing demand spike",
-            "expected_impact": "25-40% revenue increase Q2 2026",
-        },
-        {
-            "priority": "medium",
-            "action": "Implement automated compliance reporting for CH jurisdiction",
-            "confidence": metrics.intelligence_level,
-            "reasoning": "Swiss clients require FINMA-compliant audit trails",
-            "expected_impact": "Reduce compliance overhead 60%",
-        },
-        {
-            "priority": "high",
-            "action": "Deploy predictive maintenance for at-risk clients",
-            "confidence": metrics.coherence,
-            "reasoning": "Early intervention reduces churn by 80%",
-            "expected_impact": "Save 2-3 enterprise accounts annually",
-        },
-    ]
-
+    # No recommendation model is wired to this endpoint — canned
+    # recommendations were removed under the production mandate. Return the
+    # measured ASI metrics plus an explicit unavailability marker.
     return {
-        "recommendations": recommendations,
+        "recommendations": [],
+        "status": "unavailable_no_recommendation_model",
+        "evidence_class": "unavailable",
         "consciousness_level": metrics.consciousness_level,
         "context": context,
         "timestamp": datetime.now().isoformat(),

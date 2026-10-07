@@ -3,32 +3,28 @@
 Enterprise ASI Agency Framework
 ============================
 
-McKinsey/MIT/Oxford Standard Implementation
-========================================
+Decision methodologies for the ASI agency layer.
 
-This enterprise-grade ASI Agency Framework provides:
-- Fields Medal/Nobel Prize level mathematical rigor
-- McKinsey consulting methodology integration
-- MIT Technology Review standards compliance
-- Oxford Mathematical Institute precision
-- Fortune 500 enterprise architecture patterns
+Honesty contract
+----------------
+Every computed quantity in this module is one of:
 
-Core Capabilities:
-- Multi-criteria decision analysis (MCDA)
-- Real-options valuation for strategic decisions
-- Monte Carlo simulation with convergence guarantees
-- Nash equilibrium computation with Lemke-Howson algorithm
-- Bayesian inference with Markov Chain Monte Carlo
-- Quantum decision theory with superposition states
-- Game theory with extensive form games
-- Portfolio optimization with Modern Portfolio Theory
+* **quantum substrate math** — a ``kellogg.quantum_tensor`` QuantumState
+  evolved by real unitaries and measured by ``expectation`` / ``measure_pvm``
+  / ``quantum_fisher_information`` / ``born_probabilities``
+  (``evidence_class == "quantum_substrate_measured"``);
+* **honest classical math on real inputs** — deterministic classical
+  algorithms applied to data actually supplied in the decision context
+  (``evidence_class == "classical_deterministic"``), never labelled quantum;
+* **fail-closed** — a methodology whose required inputs are absent raises
+  ``RuntimeError`` naming the missing input rather than fabricating a
+  payoff matrix, a posterior chain, or a scenario fan from ``np.random``.
 
-Author: Enterprise ASI Research Division
-Status: Production-Ready Enterprise Grade
-Version: 1.0.0-McKinseyMITOxford
+No ``np.random`` draw, sigmoid squash, or invented constant reaches a result.
 """
 
 import logging
+import math
 import time
 from dataclasses import dataclass, field
 from enum import Enum
@@ -40,10 +36,18 @@ from typing import (
 )
 
 import numpy as np
-from scipy.optimize import minimize
-from scipy.sparse import csr_matrix
-from scipy.sparse.linalg import eigs
-from scipy.stats import norm
+
+from agi.quantum_decision import (
+    PHI,
+    decision_analysis,
+    grover_amplify,
+    resize_vector,
+    substrate_state_from_amplitudes,
+)
+from kellogg.quantum_tensor import (
+    Complex,
+    QuantumState,
+)
 
 # Configure enterprise logging
 logging.basicConfig(
@@ -72,9 +76,9 @@ class DecisionMethodology(Enum):
     """Enterprise decision methodologies with academic rigor"""
 
     MCDA_ANALYTIC_HIERARCHY_PROCESS = "ahp"  # Saaty's AHP
-    MONTE_CARLO_SIMULATION = "monte_carlo"  # Monte Carlo with convergence
+    MONTE_CARLO_SIMULATION = "monte_carlo"  # Quantum amplitude estimation
     REAL_OPTIONS_VALUATION = "real_options"  # Black-Scholes extension
-    BAYESIAN_MCMC = "bayesian_mcmc"  # Markov Chain Monte Carlo
+    BAYESIAN_MCMC = "bayesian_mcmc"  # Quantum Bayesian state update
     NASH_EQUILIBRIUM = "nash_equilibrium"  # Game theory
     QUANTUM_DECISION = "quantum_decision"  # Quantum superposition
     PORTFOLIO_OPTIMIZATION = "portfolio_opt"  # Modern Portfolio Theory
@@ -198,21 +202,9 @@ class EnterpriseASIAgencyFramework:
     """
     Enterprise ASI Agency Framework
 
-    This framework implements the highest standards of:
-    - Mathematical rigor (Fields Medal level)
-    - Business consulting (McKinsey methodology)
-    - Academic excellence (MIT standards)
-    - Research precision (Oxford mathematical institute)
-
-    Core Capabilities:
-    1. Multi-criteria decision analysis with AHP
-    2. Monte Carlo simulation with antithetic variates
-    3. Real options valuation with binomial trees
-    4. Bayesian inference with MCMC
-    5. Nash equilibrium computation
-    6. Quantum decision theory
-    7. Portfolio optimization with efficient frontier
-    8. Robust optimization with minimax regret
+    Every methodology either measures on the kellogg quantum substrate
+    or runs an honest deterministic classical algorithm on caller-supplied
+    data — never a fabricated matrix or an RNG draw.
     """
 
     def __init__(
@@ -222,7 +214,7 @@ class EnterpriseASIAgencyFramework:
         self.agency_level = agency_level
 
         # Enterprise constants (Oxford Mathematical Institute standards)
-        self.phi = (1 + np.sqrt(5)) / 2  # Golden ratio
+        self.phi = PHI
         self.EULER = np.e
         self.PI = np.pi
 
@@ -270,6 +262,77 @@ class EnterpriseASIAgencyFramework:
         logger.info(f"[ENTERPRISE] ASI Agency Framework initialized at level: {agency_level.name}")
         logger.info("[ENTERPRISE] Standards: McKinsey/MIT/Oxford compliance verified")
 
+    # ------------------------------------------------------------------
+    # Shared substrate plumbing
+    # ------------------------------------------------------------------
+
+    def _decision_dimension(self, state: ASIStateVector) -> int:
+        """Dimension of the decision Hilbert space.
+
+        Sized to the largest real structure the caller supplied — belief
+        distribution, utility vector, or amplitude register — so the
+        decision space reflects the actual state, never a magic constant.
+        """
+        dims = [
+            int(np.asarray(state.quantum_amplitudes).size),
+            int(np.asarray(state.belief_distribution).size),
+            int(np.asarray(state.utility_weights).size),
+        ]
+        return max(2, max(dims))
+
+    def _decision_state(self, state: ASIStateVector, dim: int) -> QuantumState:
+        """Decision state on the substrate.
+
+        The caller's ``quantum_amplitudes`` are embedded to ``dim`` and
+        folded with the belief distribution via amplitude·sqrt(belief):
+        the Born distribution of the result is the amplitude-weighted
+        belief — the quantum analogue of a prior over alternatives.
+        """
+        base = substrate_state_from_amplitudes(state.quantum_amplitudes, dim=dim)
+        belief = resize_vector(state.belief_distribution, dim)
+        if belief.sum() > 0 and len(base.amplitudes) == dim:
+            amps = np.array([a.abs() for a in base.amplitudes]) * np.sqrt(belief)
+            if amps.sum() > 0:
+                return QuantumState(dim, [Complex(float(a), 0.0) for a in amps], normalize=True)
+        return base
+
+    def _utility_vector(self, state: ASIStateVector, dim: int) -> np.ndarray:
+        """Utility per alternative as a real vector of length ``dim``."""
+        return resize_vector(state.utility_weights, dim, fill=0.0)
+
+    def _quantum_born_interval(
+        self, utilities: np.ndarray, born_probs: List[float], scale: float, alpha: float = 0.05
+    ) -> Tuple[float, float, float, float]:
+        """Credible interval / VaR / CVaR of the Born-weighted utility law.
+
+        The action distribution is p_i = |α_i|² over utility outcomes
+        u_i·scale — the interval endpoints are the exact quantiles of that
+        distribution, and VaR/CVaR are the same quantiles on the loss side.
+        All real, no sampling.
+        """
+        order = np.argsort(utilities)
+        u_sorted = np.asarray(utilities)[order] * scale
+        p_sorted = np.asarray(born_probs)[order]
+        cdf = np.cumsum(p_sorted)
+
+        def quantile(q: float) -> float:
+            idx = int(np.searchsorted(cdf, q))
+            idx = min(max(idx, 0), len(u_sorted) - 1)
+            return float(u_sorted[idx])
+
+        lower = quantile(alpha / 2.0)
+        upper = quantile(1.0 - alpha / 2.0)
+        var_95 = -quantile(alpha) if quantile(alpha) < 0 else 0.0
+        # CVaR: mean of outcomes below the alpha quantile
+        mask = u_sorted <= quantile(alpha)
+        tail_probs = p_sorted[mask]
+        cvar = (
+            -float(np.sum(u_sorted[mask] * tail_probs) / np.sum(tail_probs))
+            if tail_probs.sum() > 0 and np.sum(u_sorted[mask] * tail_probs) < 0
+            else 0.0
+        )
+        return lower, upper, var_95, cvar
+
     async def make_enterprise_decision(
         self,
         context: EnterpriseDecisionContext,
@@ -279,12 +342,10 @@ class EnterpriseASIAgencyFramework:
         """
         Make enterprise-grade decision using specified methodology
 
-        This method implements rigorous decision analysis with:
-        - Mathematical optimization with convergence guarantees
-        - Risk assessment with Monte Carlo simulation
-        - Sensitivity analysis with partial derivatives
-        - Scenario analysis with stress testing
-        - Enterprise validation against business criteria
+        Routes to the methodology implementation. Quantum methods measure
+        the substrate state; classical methods run deterministic algorithms
+        on caller-supplied data; methods whose required inputs are absent
+        fail closed with RuntimeError.
         """
 
         logger.info(f"[ENTERPRISE] Making decision using {methodology.value}")
@@ -314,15 +375,10 @@ class EnterpriseASIAgencyFramework:
         result = await self._enterprise_validation(result, context, state)
         result.computational_complexity = f"O({self._estimate_complexity(context, state)})"
 
-        # Apply Golden Ratio scaling if available
-        if self.golden_scaler:
-            result.expected_utility = self.golden_scaler.scale_decision_utility(
-                result.expected_utility, "enterprise"
-            )
-            result.risk_adjusted_return = self.golden_scaler.scale_decision_utility(
-                result.risk_adjusted_return, "macro"
-            )
-            logger.info("[ENTERPRISE] Applied Golden Ratio scaling to decision results")
+        # NOTE: measured results are reported unmodified — the Golden Ratio
+        # scaler applies declared φ-power transforms that would overwrite
+        # measured values with declared ones, so it is no longer applied to
+        # decision results.
 
         # Update performance metrics
         self._update_performance_metrics(result)
@@ -336,69 +392,102 @@ class EnterpriseASIAgencyFramework:
         self, context: EnterpriseDecisionContext, state: ASIStateVector
     ) -> EnterpriseDecisionResult:
         """
-        Analytic Hierarchy Process (AHP) Decision Method
+        Analytic Hierarchy Process (AHP) Decision Method — deterministic.
 
-        Implements Saaty's AHP with:
-        - Consistency ratio calculation
-        - Eigenvector method for priority derivation
-        - Sensitivity analysis with weight perturbations
+        The criteria comparison matrix is built from the *actual*
+        stakeholder weights: for a consistent Saaty matrix
+        a_ij = w_i / w_j the principal eigenvector is w/‖w‖ exactly and
+        the consistency ratio is 0 — the standard "perfectly consistent"
+        baseline, computed honestly instead of drawn at random.
+        Alternatives are scored by the caller's real utility and belief
+        vectors, not a fabricated evaluation matrix.
         """
 
-        logger.info("[ENTERPRISE] Executing AHP decision analysis...")
+        logger.info("[ENTERPRISE] Executing AHP decision analysis (deterministic)...")
 
-        # Construct hierarchy matrices (simplified for demonstration)
-        criteria_count = len(context.stakeholder_weight)
-        alternatives = 5  # Number of decision alternatives
+        weights = np.asarray([float(v) for v in context.stakeholder_weight.values()], dtype=float)
+        weights = np.abs(weights)
+        if weights.size == 0 or weights.sum() <= 0:
+            raise RuntimeError(
+                "AHP unavailable: context.stakeholder_weight is empty — "
+                "cannot derive criterion priorities without real weights"
+            )
+        priorities = weights / weights.sum()
+        criteria_count = weights.size
 
-        # Criteria comparison matrix (McKinsey 9-point scale)
-        criteria_matrix = np.random.rand(criteria_count, criteria_count)
-        criteria_matrix = (criteria_matrix + criteria_matrix.T) / 2
-        np.fill_diagonal(criteria_matrix, 1.0)
+        # Consistent Saaty matrix a_ij = w_i / w_j — exact eigenvector check
+        criteria_matrix = priorities[:, None] / priorities[None, :]
+        # Principal eigenvector of a consistent matrix is the weight vector;
+        # verify numerically rather than asserting.
+        eigenvalues, eigenvectors = np.linalg.eigh(criteria_matrix)
+        principal = np.abs(eigenvectors[:, -1])
+        priorities_num = principal / principal.sum()
 
-        # Calculate priority weights using eigenvector method
-        eigenvalues, eigenvectors = eigs(csr_matrix(criteria_matrix), k=1, which="LM")
-        priorities = np.real(eigenvectors.flatten())
-        priorities = priorities / np.sum(priorities)
-
-        # Alternative evaluation matrix
-        alt_matrix = np.random.rand(alternatives, criteria_count)
-
-        # Calculate overall scores
-        scores = alt_matrix @ priorities
-
-        # Select optimal action
-        optimal_action = np.argmax(scores)
-        expected_utility = scores[optimal_action]
-
-        # Consistency ratio (AHP requirement)
-        consistency_index = (np.max(eigenvalues) - criteria_count) / (criteria_count - 1)
+        # Consistency ratio on the *constructed* matrix (exactly ~0 here —
+        # the matrix is consistent by construction; reported honestly)
+        lambda_max = float(np.max(eigenvalues))
+        consistency_index = (
+            (lambda_max - criteria_count) / (criteria_count - 1) if criteria_count > 1 else 0.0
+        )
         random_index = {1: 0, 2: 0, 3: 0.58, 4: 0.9, 5: 1.12, 6: 1.24, 7: 1.32, 8: 1.41}
-        consistency_ratio = consistency_index / random_index.get(criteria_count, 1.12)
+        ri = random_index.get(criteria_count, 1.12)
+        consistency_ratio = float(consistency_index / ri) if ri else 0.0
 
-        # Sensitivity analysis
+        # Alternative evaluation from the real state: E[i, j] scores
+        # alternative i under criterion j as its utility weight folded
+        # through the belief mass criterion j assigns via cyclic indexing —
+        # deterministic function of the caller's vectors.
+        dim = self._decision_dimension(state)
+        utilities = self._utility_vector(state, dim)
+        belief = resize_vector(state.belief_distribution, dim, fill=0.0)
+        alt_matrix = np.zeros((dim, criteria_count))
+        for i in range(dim):
+            for j in range(criteria_count):
+                alt_matrix[i, j] = utilities[i] * belief[(i + j) % dim]
+
+        if not np.any(alt_matrix):
+            # Degenerate state → every alternative ties at zero; report it
+            # rather than inventing differentiation.
+            alt_matrix[:] = 1.0
+
+        scores = alt_matrix @ priorities_num
+
+        optimal_action = int(np.argmax(scores))
+        expected_utility = float(scores[optimal_action])
+
+        # Sensitivity analysis: real recomputation under 10% priority
+        # perturbation for each stakeholder.
         sensitivity = {}
         for i, stakeholder in enumerate(context.stakeholder_weight.keys()):
-            perturbed_priorities = priorities.copy()
-            perturbed_priorities[i] *= 1.1  # 10% perturbation
-            perturbed_priorities = perturbed_priorities / np.sum(perturbed_priorities)
-            perturbed_scores = alt_matrix @ perturbed_priorities
-            sensitivity[stakeholder] = perturbed_scores[optimal_action] - scores[optimal_action]
+            perturbed = priorities_num.copy()
+            perturbed[i] *= 1.1
+            perturbed = perturbed / np.sum(perturbed)
+            perturbed_scores = alt_matrix @ perturbed
+            sensitivity[stakeholder] = float(
+                perturbed_scores[optimal_action] - scores[optimal_action]
+            )
+
+        score_spread = float(np.std(scores))
 
         return EnterpriseDecisionResult(
             optimal_action=optimal_action,
             expected_utility=expected_utility,
             risk_adjusted_return=expected_utility * (1 - context.market_volatility),
-            confidence_interval=(expected_utility * 0.9, expected_utility * 1.1),
+            confidence_interval=(
+                expected_utility - 1.96 * score_spread,
+                expected_utility + 1.96 * score_spread,
+            ),
             sensitivity_analysis=sensitivity,
             scenario_analysis={
                 "base_case": expected_utility,
-                "optimistic": expected_utility * 1.2,
-                "pessimistic": expected_utility * 0.8,
+                "optimistic": float(np.max(scores)),
+                "pessimistic": float(np.min(scores)),
             },
             computational_complexity="O(n³)",
             convergence_metrics={
-                "converged": consistency_ratio < 0.1,
+                "converged": True,
                 "consistency_ratio": consistency_ratio,
+                "evidence_class": "classical_deterministic",
             },
             enterprise_validation={
                 "ahp_consistency": consistency_ratio < 0.1,
@@ -410,82 +499,60 @@ class EnterpriseASIAgencyFramework:
         self, context: EnterpriseDecisionContext, state: ASIStateVector
     ) -> EnterpriseDecisionResult:
         """
-        Monte Carlo Simulation with Convergence Analysis
+        Quantum amplitude estimation (replaces Monte Carlo sampling).
 
-        Implements enterprise-grade Monte Carlo with:
-        - Antithetic variates for variance reduction
-        - Quasi-random sequences (Sobol sequences)
-        - Convergence diagnostics
-        - Confidence interval calculation
+        The decision state's Born distribution over alternatives IS the
+        exact outcome distribution: ⟨U⟩ is the expected utility, Var(U)
+        = F_Q/4 its exact spread, and the Sharpe-style risk-adjusted
+        return uses the real risk-free input when supplied.
+        No draws: the result is exact for the given state, i.e. the
+        infinite-sample limit Monte Carlo approximates.
         """
 
-        logger.info("[ENTERPRISE] Executing Monte Carlo simulation...")
+        logger.info("[ENTERPRISE] Executing quantum amplitude estimation...")
 
-        num_simulations = self.mit_benchmarks["monte_carlo_simulations"]
-        alternatives = 5
+        dim = self._decision_dimension(state)
+        qstate = self._decision_state(state, dim)
+        utilities = self._utility_vector(state, dim)
+        scale = max(abs(context.financial_impact), 1.0)
 
-        # Generate scenarios using antithetic variates
-        np.random.seed(int(time.time()))
-        base_scenarios = np.random.randn(num_simulations // 2, alternatives)
-        antithetic_scenarios = -base_scenarios
-        scenarios = np.vstack([base_scenarios, antithetic_scenarios])
+        analysis = decision_analysis(qstate, utilities)
+        expected = analysis["expected_utility"] * scale
+        std = analysis["utility_std"] * scale
 
-        # Apply context weights
-        weighted_scenarios = scenarios * context.financial_impact
-        weighted_scenarios += context.strategic_importance * np.random.randn(
-            num_simulations, alternatives
+        risk_free = float(context.resource_constraints.get("risk_free_rate", 0.0))
+        sharpe = (expected - risk_free * scale) / std if std > 0 else 0.0
+
+        lower, upper, var_95, cvar = self._quantum_born_interval(
+            utilities, list(analysis["born_probabilities"].values()), scale
         )
-
-        # Calculate payoffs
-
-        # Calculate statistics for each alternative
-        alternative_payoffs = weighted_scenarios
-        means = np.mean(alternative_payoffs, axis=0)
-        stds = np.std(alternative_payoffs, axis=0)
-
-        # Risk-adjusted returns (Sharpe ratio style)
-        risk_free_rate = 0.02  # Assumed risk-free rate
-        sharpe_ratios = (means - risk_free_rate) / (stds + 1e-8)
-
-        # Select optimal action (maximize risk-adjusted return)
-        optimal_action = np.argmax(sharpe_ratios)
-        expected_utility = means[optimal_action]
-        risk_adjusted_return = sharpe_ratios[optimal_action]
-
-        # Confidence intervals
-        confidence_level = self.mit_benchmarks["confidence_level"]
-        alpha = 1 - confidence_level
-        z_score = norm.ppf(1 - alpha / 2)
-        margin = z_score * stds[optimal_action] / np.sqrt(num_simulations)
-        confidence_interval = (expected_utility - margin, expected_utility + margin)
-
-        # Convergence diagnostics
-        running_means = np.cumsum(alternative_payoffs[:, optimal_action]) / np.arange(
-            1, num_simulations + 1
-        )
-        convergence_error = (
-            np.abs(running_means[-1] - running_means[-100]) if num_simulations > 100 else 0.0
-        )
-        converged = convergence_error < self.mit_benchmarks["convergence_tolerance"]
 
         return EnterpriseDecisionResult(
-            optimal_action=optimal_action,
-            expected_utility=expected_utility,
-            risk_adjusted_return=risk_adjusted_return,
-            confidence_interval=confidence_interval,
-            sensitivity_analysis={"monte_carlo_error": convergence_error},
-            scenario_analysis={
-                "variance_reduction": "antithetic_variates",
-                "convergence_achieved": converged,
+            optimal_action=analysis["optimal_action"],
+            expected_utility=float(expected),
+            risk_adjusted_return=float(sharpe),
+            confidence_interval=(lower, upper),
+            sensitivity_analysis={
+                **{
+                    f"dEU_dU_{i}": float(v) for i, v in enumerate(analysis["utility_sensitivities"])
+                },
+                "VaR_95": float(var_95),
+                "CVaR_95": float(cvar),
+                "sharpe_ratio": float(sharpe),
             },
-            computational_complexity="O(N·log(N))",
+            scenario_analysis={
+                "born_distribution": analysis["born_probabilities"],
+                "method": "quantum_amplitude_estimation",
+                "evidence_class": "quantum_substrate_measured",
+            },
+            computational_complexity="O(dim²)",
             convergence_metrics={
-                "converged": converged,
-                "standard_error": stds[optimal_action] / np.sqrt(num_simulations),
+                "converged": True,
+                "quantum_fisher_information": analysis["quantum_fisher_information"],
             },
             enterprise_validation={
-                "statistical_significance": True,
-                "sample_adequacy": num_simulations > 1000,
+                "statistical_significance": "exact_no_sampling_error",
+                "sample_adequacy": "exact_state_no_samples",
             },
         )
 
@@ -493,70 +560,85 @@ class EnterpriseASIAgencyFramework:
         self, context: EnterpriseDecisionContext, state: ASIStateVector
     ) -> EnterpriseDecisionResult:
         """
-        Real Options Valuation with Binomial Trees
+        Real Options Valuation with Binomial Trees — honest classical.
 
-        Implements enterprise real options analysis:
-        - Option to expand/contract/abandon
-        - Binomial tree construction
-        - Risk-neutral valuation
-        - Volatility estimation
+        Cox-Ross-Rubinstein binomial tree on the real contract terms. The
+        strike/risk-free/volatility come from the context; where the caller
+        did not supply a strike, the option is valued at-the-money-forward
+        terms and the assumption is declared in the result rather than
+        hidden. Greeks are computed by finite differences of the same tree
+        — real revaluations, not constants.
         """
 
         logger.info("[ENTERPRISE] Executing real options valuation...")
 
-        # Simplified real options model
-        S0 = context.financial_impact  # Initial investment
-        K = context.financial_impact * 0.8  # Strike price
-        T = context.time_horizon  # Time to expiration
-        r = 0.05  # Risk-free rate
-        sigma = context.market_volatility  # Volatility
+        S0 = float(context.financial_impact)
+        if S0 <= 0:
+            raise RuntimeError(
+                "Real options valuation unavailable: context.financial_impact "
+                "is non-positive — no underlying value to price"
+            )
+        declared_strike = "strike_price" not in context.resource_constraints
+        K = float(context.resource_constraints.get("strike_price", S0))
+        T = float(context.time_horizon) or 1.0
+        r = float(context.resource_constraints.get("risk_free_rate", 0.05))
+        sigma = float(context.market_volatility) or 1e-6
 
-        # Binomial tree parameters
-        N = 100  # Number of time steps
-        dt = T / N
-        u = np.exp(sigma * np.sqrt(dt))
-        d = 1 / u
-        p = (np.exp(r * dt) - d) / (u - d)
+        def price(s0: float, sig: float) -> float:
+            N = 100
+            dt = T / N
+            u = np.exp(sig * np.sqrt(dt))
+            d = 1 / u
+            denom = u - d
+            p = 0.5 if abs(denom) < 1e-12 else (np.exp(r * dt) - d) / denom
+            p = min(max(p, 0.0), 1.0)
 
-        # Build binomial tree
-        asset_prices = np.zeros((N + 1, N + 1))
-        asset_prices[0, 0] = S0
+            # Terminal asset prices S_j = s0·u^j·d^(N-j); vectorized
+            # backward induction over a 1-D value array.
+            jn = np.arange(N + 1)
+            terminal_prices = s0 * (u**jn) * (d ** (N - jn))
+            values = np.maximum(terminal_prices - K, 0.0)
+            for i in range(N - 1, -1, -1):
+                ji = np.arange(i + 1)
+                spot = s0 * (u**ji) * (d ** (i - ji))
+                hold = np.exp(-r * dt) * (p * values[1 : i + 2] + (1 - p) * values[: i + 1])
+                values = np.maximum(hold, spot - K)
+            return float(values[0])
 
-        for i in range(1, N + 1):
-            for j in range(i + 1):
-                asset_prices[j, i] = S0 * (u**j) * (d ** (i - j))
+        optimal_value = price(S0, sigma)
 
-        # Option values at expiration
-        option_values = np.maximum(asset_prices[:, N] - K, 0)
+        # Real Greeks by finite difference of the same tree.
+        dS = 0.01 * S0
+        delta = (price(S0 + dS, sigma) - optimal_value) / dS
+        gamma = (price(S0 + dS, sigma) - 2 * optimal_value + price(S0 - dS, sigma)) / (dS * dS)
+        d_sigma = max(0.01 * sigma, 0.005)
+        vega = (price(S0, sigma + d_sigma) - optimal_value) / d_sigma
 
-        # Backward induction
-        for i in range(N - 1, -1, -1):
-            for j in range(i + 1):
-                hold_value = np.exp(-r * dt) * (
-                    p * option_values[j + 1, i + 1] + (1 - p) * option_values[j, i + 1]
-                )
-                exercise_value = max(asset_prices[j, i] - K, 0)
-                option_values[j, i] = max(hold_value, exercise_value)
+        npv = optimal_value - S0  # Option value vs committing the capital now
+        irr = (optimal_value / S0) ** (1 / T) - 1 if S0 > 0 else 0.0
 
-        optimal_value = option_values[0, 0]
-
-        # Calculate decision metrics
-        npv = S0 - optimal_value  # Net present value
-        irr = (optimal_value / S0) ** (1 / T) - 1  # Internal rate of return
+        hi_sigma_value = price(S0, min(sigma * 1.5, 3.0))
+        lo_sigma_value = price(S0, sigma * 0.5)
 
         return EnterpriseDecisionResult(
             optimal_action=1 if npv > 0 else 0,
             expected_utility=optimal_value,
             risk_adjusted_return=irr,
-            confidence_interval=(optimal_value * 0.9, optimal_value * 1.1),
-            sensitivity_analysis={"delta": 0.5, "gamma": 0.1, "vega": 0.2},
+            confidence_interval=(lo_sigma_value, hi_sigma_value),
+            sensitivity_analysis={
+                "delta": float(delta),
+                "gamma": float(gamma),
+                "vega": float(vega),
+            },
             scenario_analysis={
                 "base_case": optimal_value,
-                "high_volatility": optimal_value * 1.3,
-                "low_volatility": optimal_value * 0.7,
+                "high_volatility": hi_sigma_value,
+                "low_volatility": lo_sigma_value,
+                "strike_declared_default_atm": declared_strike,
+                "evidence_class": "classical_binomial_tree",
             },
             computational_complexity="O(N²)",
-            convergence_metrics={"converged": True, "tree_depth": N},
+            convergence_metrics={"converged": True, "tree_depth": 100},
             enterprise_validation={
                 "option_value_positive": optimal_value > 0,
                 "investment_criteria_met": npv > 0,
@@ -567,73 +649,85 @@ class EnterpriseASIAgencyFramework:
         self, context: EnterpriseDecisionContext, state: ASIStateVector
     ) -> EnterpriseDecisionResult:
         """
-        Bayesian Decision with Markov Chain Monte Carlo
+        Quantum Bayesian decision (replaces Metropolis-Hastings sampling).
 
-        Implements sophisticated Bayesian inference:
-        - Metropolis-Hastings algorithm
-        - Gibbs sampling for conjugate priors
-        - Burn-in period and thinning
-        - Posterior distribution analysis
+        The belief distribution is the prior — embedded as amplitudes
+        sqrt(p_i) so its Born distribution is exactly the prior. Applying
+        the diagonal likelihood operator L = diag(ℓ_i)/√Σℓ² gives the
+        posterior state whose Born weights are the exact discrete
+        posterior p(θ_i | d) ∝ ℓ_i·p_i — the same posterior MCMC would
+        sample, computed exactly by the substrate.
+
+        The likelihood model is Gaussian on the real context: each
+        alternative i predicts payoff u_i·scale; the observed datum is the
+        context's financial_impact normalized to the utility scale; the
+        dispersion is market_volatility. With zero volatility the posterior
+        collapses to the utility closest to the datum — fail-closed honest
+        behaviour, not a smoothed answer.
         """
 
-        logger.info("[ENTERPRISE] Executing Bayesian MCMC inference...")
+        logger.info("[ENTERPRISE] Executing quantum Bayesian update...")
 
-        # Simplified MCMC implementation
-        num_samples = 10000
-        burn_in = 2000
-        thinning = 5
+        dim = self._decision_dimension(state)
+        prior = self._decision_state(state, dim)
+        utilities = self._utility_vector(state, dim)
 
-        # Initialize chain
-        current_theta = np.random.randn(3)  # Parameter vector
-        current_log_likelihood = self._log_likelihood(current_theta, context)
+        scale = max(abs(context.financial_impact), 1.0)
+        datum = context.financial_impact / scale  # normalized observation
+        sigma = max(float(context.market_volatility), 1e-6)
 
-        samples = []
+        # Gaussian likelihood of the observed datum under each alternative.
+        likelihood = np.exp(-0.5 * ((utilities - datum) / sigma) ** 2)
+        if not np.isfinite(likelihood).all() or likelihood.sum() <= 0:
+            likelihood = np.ones(dim)
 
-        for i in range(num_samples):
-            # Propose new state
-            proposal = current_theta + np.random.randn(3) * 0.1
+        # Posterior amplitudes ∝ sqrt(prior_i · likelihood_i): applying the
+        # diagonal likelihood operator to the amplitude embedding gives the
+        # exact discrete posterior under the Born rule.
+        prior_probs = np.array(prior.probabilities())
+        posterior_weights = prior_probs * likelihood
+        if posterior_weights.sum() <= 0:
+            posterior_weights = np.ones(dim)
+        posterior_weights = posterior_weights / posterior_weights.sum()
 
-            # Calculate acceptance probability
-            proposal_log_likelihood = self._log_likelihood(proposal, context)
-            log_acceptance_prob = min(0, proposal_log_likelihood - current_log_likelihood)
+        posterior = QuantumState(
+            dim,
+            [Complex(float(math.sqrt(w)), 0.0) for w in posterior_weights],
+        )
 
-            # Accept or reject
-            if np.log(np.random.random()) < log_acceptance_prob:
-                current_theta = proposal
-                current_log_likelihood = proposal_log_likelihood
+        analysis = decision_analysis(posterior, utilities)
+        expected = analysis["expected_utility"] * scale
+        std = analysis["utility_std"] * scale
 
-            # Store sample (after burn-in)
-            if i >= burn_in and i % thinning == 0:
-                samples.append(current_theta.copy())
+        lower, upper, var_95, cvar = self._quantum_born_interval(
+            utilities, posterior_weights.tolist(), scale
+        )
 
-        samples = np.array(samples)
-
-        # Posterior analysis
-        posterior_mean = np.mean(samples, axis=0)
-        posterior_std = np.std(samples, axis=0)
-
-        # Expected utility under posterior
-        expected_utility = posterior_mean[0]  # Simplified
-
-        # Credible interval
-        alpha = 0.05
-        lower = np.percentile(samples[:, 0], 100 * alpha / 2)
-        upper = np.percentile(samples[:, 0], 100 * (1 - alpha / 2))
+        map_index = int(np.argmax(posterior_weights))
 
         return EnterpriseDecisionResult(
-            optimal_action=int(posterior_mean[0] > 0),
-            expected_utility=expected_utility,
-            risk_adjusted_return=expected_utility / (1 + posterior_std[0]),
+            optimal_action=map_index,
+            expected_utility=float(expected),
+            risk_adjusted_return=float(expected / (1.0 + std)),
             confidence_interval=(lower, upper),
-            sensitivity_analysis={"posterior_std": posterior_std[0]},
-            scenario_analysis={
-                "map_estimate": np.mean(samples[:, 0]),
-                "posterior_mean": posterior_mean[0],
+            sensitivity_analysis={
+                "posterior_std": float(std),
+                "VaR_95": float(var_95),
+                "CVaR_95": float(cvar),
             },
-            computational_complexity="O(N·d)",
+            scenario_analysis={
+                "map_estimate": float(utilities[map_index] * scale),
+                "posterior_mean": float(expected),
+                "posterior_distribution": {
+                    str(i): float(w) for i, w in enumerate(posterior_weights)
+                },
+                "evidence_class": "quantum_substrate_measured",
+            },
+            computational_complexity="O(dim)",
             convergence_metrics={
                 "converged": True,
-                "effective_sample_size": len(samples),
+                "method": "exact_discrete_posterior_no_sampling",
+                "effective_sample_size": dim,
             },
             enterprise_validation={
                 "bayesian_update": True,
@@ -645,83 +739,91 @@ class EnterpriseASIAgencyFramework:
         self, context: EnterpriseDecisionContext, state: ASIStateVector
     ) -> EnterpriseDecisionResult:
         """
-        Nash Equilibrium Computation with Lemke-Howson Algorithm
+        Nash equilibrium on the real payoff matrix — fictitious play.
 
-        Implements game-theoretic analysis:
-        - Pure and mixed strategy equilibria
-        - Payoff matrix analysis
-        - Best response functions
-        - Stability analysis
+        Requires ``context.competitive_landscape["payoff_matrix"]`` — an
+        (m, n, 2) array of real row/column payoffs. Without it there is no
+        game to solve, so the method fails closed instead of inventing one.
+
+        Pure equilibria are found by exhaustive best-response scan; the
+        mixed-equilibrium estimate is deterministic fictitious play (real
+        classical algorithm — Brown/Robinson), labelled as such.
         """
 
         logger.info("[ENTERPRISE] Computing Nash equilibrium...")
 
-        # Create payoff matrix
-        players = 2
-        strategies = 4
-        payoff_matrix = np.random.randn(strategies, strategies, players)
+        raw = context.competitive_landscape.get("payoff_matrix")
+        if raw is None:
+            raise RuntimeError(
+                "NASH_EQUILIBRIUM unavailable: context.competitive_landscape "
+                "lacks 'payoff_matrix' — no real game was supplied"
+            )
+        payoff_matrix = np.asarray(raw, dtype=float)
+        if payoff_matrix.ndim != 3 or payoff_matrix.shape[2] != 2:
+            raise RuntimeError(
+                "NASH_EQUILIBRIUM unavailable: 'payoff_matrix' must have shape "
+                f"(row_strategies, col_strategies, 2), got {payoff_matrix.shape}"
+            )
+        m, n, _ = payoff_matrix.shape
 
-        # Find pure strategy Nash equilibria
+        # Pure-strategy equilibria by exhaustive best-response check.
         pure_equilibria = []
-        for i in range(strategies):
-            for j in range(strategies):
-                # Check if (i,j) is a Nash equilibrium
-                row_best = i == np.argmax(payoff_matrix[:, j, 0])
-                col_best = j == np.argmax(payoff_matrix[i, :, 1])
-                if row_best and col_best:
+        row_best = {j: int(np.argmax(payoff_matrix[:, j, 0])) for j in range(n)}
+        col_best = {i: int(np.argmax(payoff_matrix[i, :, 1])) for i in range(m)}
+        for i in range(m):
+            for j in range(n):
+                if row_best[j] == i and col_best[i] == j:
                     pure_equilibria.append((i, j))
 
-        # Compute mixed strategy equilibrium (simplified)
-        def mixed_equilibrium_objective(strategy):
-            row_probs = strategy[:strategies]
-            col_probs = strategy[strategies:]
-            row_probs = np.abs(row_probs) / (np.sum(np.abs(row_probs)) + 1e-8)
-            col_probs = np.abs(col_probs) / (np.sum(np.abs(col_probs)) + 1e-8)
+        # Mixed strategies via deterministic fictitious play.
+        row_counts = np.zeros(m)
+        col_counts = np.zeros(n)
+        # Start from each player's best response to uniform play.
+        row_counts[int(np.argmax(payoff_matrix[:, :, 0].mean(axis=1)))] += 1
+        col_counts[int(np.argmax(payoff_matrix[:, :, 1].mean(axis=0)))] += 1
+        iterations = 1000
+        for _ in range(iterations):
+            col_emp = col_counts / col_counts.sum()
+            row_counts[int(np.argmax(payoff_matrix[:, :, 0] @ col_emp))] += 1
+            row_emp = row_counts / row_counts.sum()
+            col_counts[int(np.argmax(row_emp @ payoff_matrix[:, :, 1]))] += 1
+        row_mixed = row_counts / row_counts.sum()
+        col_mixed = col_counts / col_counts.sum()
 
-            # Expected payoffs
-            row_payoff = row_probs @ payoff_matrix[:, :, 0] @ col_probs
-            col_payoff = row_probs @ payoff_matrix[:, :, 1] @ col_probs
-
-            return -(row_payoff + col_payoff)  # Minimize negative
-
-        # Optimize for mixed equilibrium
-        initial_strategy = np.ones(2 * strategies) / (2 * strategies)
-        result = minimize(mixed_equilibrium_objective, initial_strategy, method="L-BFGS-B")
-
-        if result.success:
-            mixed_strategy = result.x
-            row_mixed = np.abs(mixed_strategy[:strategies]) / (
-                np.sum(np.abs(mixed_strategy[:strategies])) + 1e-8
-            )
-            col_mixed = np.abs(mixed_strategy[strategies:]) / (
-                np.sum(np.abs(mixed_strategy[strategies:])) + 1e-8
-            )
-        else:
-            row_mixed = np.ones(strategies) / strategies
-            col_mixed = np.ones(strategies) / strategies
-
-        # Select equilibrium action
         if pure_equilibria:
-            optimal_action = pure_equilibria[0][0]
-            expected_utility = payoff_matrix[optimal_action, pure_equilibria[0][1], 0]
+            optimal_action, col_action = pure_equilibria[0]
+            expected_utility = float(payoff_matrix[optimal_action, col_action, 0])
+            converged = True
+            eq_type = "pure"
         else:
-            optimal_action = np.argmax(row_mixed)
-            expected_utility = row_mixed @ payoff_matrix[:, :, 0] @ col_mixed
+            optimal_action = int(np.argmax(row_mixed))
+            expected_utility = float(row_mixed @ payoff_matrix[:, :, 0] @ col_mixed)
+            # Fictitious play convergence: exploitability of the empirical mix
+            row_gain = float(np.max(payoff_matrix[:, :, 0] @ col_mixed) - expected_utility)
+            col_val = float(row_mixed @ payoff_matrix[:, :, 1] @ col_mixed)
+            col_gain = float(np.max(row_mixed @ payoff_matrix[:, :, 1]) - col_val)
+            converged = bool(max(row_gain, col_gain) < 1e-3)
+            eq_type = "mixed_fictitious_play"
 
         return EnterpriseDecisionResult(
             optimal_action=optimal_action,
             expected_utility=expected_utility,
             risk_adjusted_return=expected_utility * (1 - context.market_volatility),
-            confidence_interval=(expected_utility * 0.8, expected_utility * 1.2),
+            confidence_interval=(expected_utility, expected_utility),
             sensitivity_analysis={"pure_equilibria_count": len(pure_equilibria)},
-            scenario_analysis={"mixed_equilibrium": True if not pure_equilibria else False},
-            computational_complexity="O(2^n)",
+            scenario_analysis={
+                "mixed_equilibrium": not pure_equilibria,
+                "row_strategy": row_mixed.tolist(),
+                "col_strategy": col_mixed.tolist(),
+                "evidence_class": "classical_deterministic",
+            },
+            computational_complexity="O(m·n·iters)",
             convergence_metrics={
-                "converged": result.success,
-                "equilibrium_type": "mixed" if not pure_equilibria else "pure",
+                "converged": converged,
+                "equilibrium_type": eq_type,
             },
             enterprise_validation={
-                "game_theoretic_optimal": True,
+                "game_theoretic_optimal": converged,
                 "competitive_equilibrium": True,
             },
         )
@@ -730,67 +832,66 @@ class EnterpriseASIAgencyFramework:
         self, context: EnterpriseDecisionContext, state: ASIStateVector
     ) -> EnterpriseDecisionResult:
         """
-        Quantum Decision Theory with Superposition States
+        Quantum Decision Theory — real Grover amplitude amplification.
 
-        Implements quantum-enhanced decision making:
-        - Quantum superposition of alternatives
-        - Amplitude amplification
-        - Quantum interference patterns
-        - Measurement and collapse
+        The utility-argument maximum is marked by the phase oracle
+        O = I − 2|argmax u⟩⟨argmax u| and amplified with the Grover
+        diffusion operator D = 2|s⟩⟨s| − I for the Grover-optimal
+        π/4·√(N/M) iterations — real unitaries applied through
+        QuantumState.apply_unitary. The decision is the PVM collapse of
+        the evolved state; every reported number is a substrate
+        measurement.
         """
 
         logger.info("[ENTERPRISE] Executing quantum decision analysis...")
 
-        alternatives = 5
+        dim = self._decision_dimension(state)
+        qstate = self._decision_state(state, dim)
+        utilities = self._utility_vector(state, dim)
 
-        # Create quantum state amplitudes
-        amplitudes = state.quantum_amplitudes[:alternatives]
+        # Mark the utility-optimal basis state(s).
+        max_util = float(np.max(utilities))
+        marked = [i for i, u in enumerate(utilities) if u == max_util]
 
-        # Apply quantum gates (simplified Hadamard transform)
+        evolved, iterations = grover_amplify(qstate, marked)
+        analysis = decision_analysis(evolved, utilities)
+        scale = max(abs(context.financial_impact), 1.0)
+        expected = analysis["expected_utility"] * scale
 
-        # Quantum amplitude amplification
-        for i in range(3):  # Grover iterations
-            # Oracle function (marks optimal solution)
-            oracle_phase = np.exp(1j * np.pi * np.arange(alternatives))
-            amplitudes = amplitudes * oracle_phase
-
-            # Diffusion operator
-            mean_amplitude = np.mean(amplitudes)
-            amplitudes = 2 * mean_amplitude - amplitudes
-
-        # Normalize amplitudes
-        amplitudes = amplitudes / np.linalg.norm(amplitudes)
-
-        # Calculate probabilities
-        probabilities = np.abs(amplitudes) ** 2
-
-        # Quantum measurement
-        optimal_action = np.argmax(probabilities)
-        expected_utility = probabilities[optimal_action] * context.financial_impact
-
-        # Quantum coherence measure
-        coherence = np.abs(np.sum(amplitudes**2))
+        # Coherence: purity of the evolved pure state (Tr ρ² = 1 for any
+        # pure ray — the informative quantity is the measurement
+        # concentration, max_i p_i, reported below instead).
+        born = evolved.probabilities()
+        concentration = float(max(born))
+        amplification_gain = float(born[marked[0]] / max(qstate.probabilities()[marked[0]], 1e-12))
 
         return EnterpriseDecisionResult(
-            optimal_action=optimal_action,
-            expected_utility=expected_utility,
-            risk_adjusted_return=expected_utility * (1 + coherence * context.strategic_importance),
-            confidence_interval=(expected_utility * 0.95, expected_utility * 1.05),
+            optimal_action=analysis["optimal_action"],
+            expected_utility=float(expected),
+            risk_adjusted_return=float(expected * concentration),
+            confidence_interval=(
+                expected - 1.96 * analysis["utility_std"] * scale,
+                expected + 1.96 * analysis["utility_std"] * scale,
+            ),
             sensitivity_analysis={
-                "quantum_coherence": coherence,
-                "amplitude_amplification": 3,
+                "quantum_coherence": concentration,
+                "amplitude_amplification": float(iterations),
+                "amplification_gain": amplification_gain,
             },
             scenario_analysis={
-                "quantum_advantage": coherence > 0.5,
+                "quantum_advantage": bool(concentration > 1.0 / dim),
                 "superposition_utilized": True,
+                "marked_probability": float(born[marked[0]]),
+                "evidence_class": "quantum_substrate_measured",
             },
-            computational_complexity="O(√N)",
+            computational_complexity="O(√N · N²)",
             convergence_metrics={
                 "converged": True,
-                "quantum_speedup": np.sqrt(alternatives),
+                "quantum_speedup": math.sqrt(dim),
+                "grover_iterations": float(iterations),
             },
             enterprise_validation={
-                "quantum_advantage_achieved": coherence > 0.5,
+                "quantum_advantage_achieved": bool(concentration > 1.0 / dim),
                 "coherence_maintained": True,
             },
         )
@@ -799,36 +900,47 @@ class EnterpriseASIAgencyFramework:
         self, context: EnterpriseDecisionContext, state: ASIStateVector
     ) -> EnterpriseDecisionResult:
         """
-        Portfolio Optimization with Modern Portfolio Theory
+        Portfolio Optimization with Modern Portfolio Theory — real data only.
 
-        Implements Markowitz optimization:
-        - Efficient frontier computation
-        - Risk-return tradeoff analysis
-        - Capital allocation optimization
-        - Performance attribution
+        Requires ``context.resource_constraints['expected_returns']`` and
+        ``['covariance_matrix']``. Without real market data there is no
+        portfolio problem to solve — the method fails closed rather than
+        sampling imaginary returns.
         """
 
         logger.info("[ENTERPRISE] Executing portfolio optimization...")
 
-        assets = 5
-        returns = np.random.randn(100, assets) * 0.1  # Historical returns
-        cov_matrix = np.cov(returns.T)
+        expected_returns = context.resource_constraints.get("expected_returns")
+        cov_matrix = context.resource_constraints.get("covariance_matrix")
+        if expected_returns is None or cov_matrix is None:
+            raise RuntimeError(
+                "PORTFOLIO_OPTIMIZATION unavailable: resource_constraints must "
+                "supply 'expected_returns' and 'covariance_matrix' — real "
+                "market data, not synthesized returns"
+            )
+        expected_returns = np.asarray(expected_returns, dtype=float).ravel()
+        cov_matrix = np.asarray(cov_matrix, dtype=float)
+        assets = expected_returns.size
+        if cov_matrix.shape != (assets, assets):
+            raise RuntimeError(
+                "PORTFOLIO_OPTIMIZATION unavailable: covariance_matrix shape "
+                f"{cov_matrix.shape} does not match {assets} assets"
+            )
 
-        # Expected returns and risks
-        expected_returns = np.mean(returns, axis=0)
+        risk_free = float(context.resource_constraints.get("risk_free_rate", 0.0))
         risks = np.sqrt(np.diag(cov_matrix))
 
-        # Efficient frontier optimization
         def portfolio_objective(weights):
             portfolio_return = np.sum(weights * expected_returns)
-            portfolio_risk = np.sqrt(weights.T @ cov_matrix @ weights)
-            sharpe_ratio = (portfolio_return - 0.02) / portfolio_risk  # Risk-adjusted return
-            return -sharpe_ratio  # Minimize negative Sharpe ratio
+            portfolio_risk = np.sqrt(max(weights.T @ cov_matrix @ weights, 0.0))
+            if portfolio_risk <= 0:
+                return -portfolio_return
+            return -(portfolio_return - risk_free) / portfolio_risk
 
-        # Constraints: weights sum to 1, no short selling
+        from scipy.optimize import minimize  # local: classical optimizer, real data only
+
         constraints = {"type": "eq", "fun": lambda w: np.sum(w) - 1}
         bounds = [(0, 1) for _ in range(assets)]
-
         initial_weights = np.ones(assets) / assets
         result = minimize(
             portfolio_objective,
@@ -840,38 +952,43 @@ class EnterpriseASIAgencyFramework:
 
         if result.success:
             optimal_weights = result.x
-            portfolio_return = np.sum(optimal_weights * expected_returns)
-            portfolio_risk = np.sqrt(optimal_weights.T @ cov_matrix @ optimal_weights)
-            sharpe_ratio = (portfolio_return - 0.02) / portfolio_risk
         else:
             optimal_weights = initial_weights
-            portfolio_return = np.sum(optimal_weights * expected_returns)
-            portfolio_risk = np.sqrt(optimal_weights.T @ cov_matrix @ optimal_weights)
-            sharpe_ratio = (portfolio_return - 0.02) / portfolio_risk
+        portfolio_return = float(np.sum(optimal_weights * expected_returns))
+        portfolio_risk = float(np.sqrt(max(optimal_weights.T @ cov_matrix @ optimal_weights, 0.0)))
+        sharpe_ratio = (
+            (portfolio_return - risk_free) / portfolio_risk if portfolio_risk > 0 else 0.0
+        )
 
-        optimal_action = np.argmax(optimal_weights)
+        optimal_action = int(np.argmax(optimal_weights))
 
         return EnterpriseDecisionResult(
             optimal_action=optimal_action,
             expected_utility=portfolio_return,
-            risk_adjusted_return=sharpe_ratio,
+            risk_adjusted_return=float(sharpe_ratio),
             confidence_interval=(
                 portfolio_return - portfolio_risk,
                 portfolio_return + portfolio_risk,
             ),
             sensitivity_analysis={
                 "portfolio_risk": portfolio_risk,
-                "diversification_benefit": 1 - portfolio_risk / np.mean(risks),
+                "diversification_benefit": 1 - portfolio_risk / max(np.mean(risks), 1e-12),
+                "sharpe_ratio": float(sharpe_ratio),
             },
-            scenario_analysis={"efficient_frontier": True, "optimal_portfolio": True},
+            scenario_analysis={
+                "efficient_frontier": bool(result.success),
+                "optimal_portfolio": bool(result.success),
+                "optimal_weights": [float(w) for w in optimal_weights],
+                "evidence_class": "classical_deterministic",
+            },
             computational_complexity="O(n³)",
             convergence_metrics={
-                "converged": result.success,
-                "optimization_success": result.success,
+                "converged": bool(result.success),
+                "optimization_success": bool(result.success),
             },
             enterprise_validation={
-                "markowitz_optimal": True,
-                "risk_return_optimized": True,
+                "markowitz_optimal": bool(result.success),
+                "risk_return_optimized": bool(result.success),
             },
         )
 
@@ -879,27 +996,30 @@ class EnterpriseASIAgencyFramework:
         self, context: EnterpriseDecisionContext, state: ASIStateVector
     ) -> EnterpriseDecisionResult:
         """
-        Robust Optimization with Minimax Regret
+        Robust Optimization with Minimax Regret — real scenario data only.
 
-        Implements worst-case scenario optimization:
-        - Minimax regret analysis
-        - Robust optimal solutions
-        - Scenario planning
-        - Uncertainty set optimization
+        Requires ``context.competitive_landscape['scenario_payoffs']``
+        (alternatives × scenarios). Without a real scenario fan the minimax
+        criterion has nothing to be robust over — fail closed.
         """
 
         logger.info("[ENTERPRISE] Executing robust optimization...")
 
-        alternatives = 5
-        scenarios = 10  # Number of uncertainty scenarios
-
-        # Generate scenario payoffs
-        payoff_matrix = np.random.randn(alternatives, scenarios)
-
-        # Apply context weights
-        for s in range(scenarios):
-            scenario_weight = context.stakeholder_weight.get(f"scenario_{s}", 1.0)
-            payoff_matrix[:, s] *= scenario_weight
+        raw = context.competitive_landscape.get("scenario_payoffs")
+        if raw is None:
+            raw = context.resource_constraints.get("scenario_payoffs")
+        if raw is None:
+            raise RuntimeError(
+                "ROBUST_OPTIMIZATION unavailable: supply "
+                "competitive_landscape['scenario_payoffs'] (alternatives × "
+                "scenarios) — the minimax criterion needs real scenarios"
+            )
+        payoff_matrix = np.asarray(raw, dtype=float)
+        if payoff_matrix.ndim != 2 or payoff_matrix.shape[0] < 1:
+            raise RuntimeError(
+                "ROBUST_OPTIMIZATION unavailable: 'scenario_payoffs' must be a "
+                f"2-D (alternatives × scenarios) array, got {payoff_matrix.shape}"
+            )
 
         # Calculate regrets for each alternative
         max_payoffs_per_scenario = np.max(payoff_matrix, axis=0)
@@ -907,15 +1027,12 @@ class EnterpriseASIAgencyFramework:
 
         # Minimax regret: minimize maximum regret
         max_regrets = np.max(regret_matrix, axis=1)
-        optimal_action = np.argmin(max_regrets)
-        min_max_regret = max_regrets[optimal_action]
+        optimal_action = int(np.argmin(max_regrets))
+        min_max_regret = float(max_regrets[optimal_action])
 
-        # Expected utility
-        expected_utility = np.mean(payoff_matrix[optimal_action, :])
-
-        # Robustness metrics
-        worst_case_payoff = np.min(payoff_matrix[optimal_action, :])
-        best_case_payoff = np.max(payoff_matrix[optimal_action, :])
+        expected_utility = float(np.mean(payoff_matrix[optimal_action, :]))
+        worst_case_payoff = float(np.min(payoff_matrix[optimal_action, :]))
+        best_case_payoff = float(np.max(payoff_matrix[optimal_action, :]))
 
         return EnterpriseDecisionResult(
             optimal_action=optimal_action,
@@ -926,7 +1043,11 @@ class EnterpriseASIAgencyFramework:
                 "minimax_regret": min_max_regret,
                 "robustness_margin": expected_utility - worst_case_payoff,
             },
-            scenario_analysis={"robust_optimal": True, "worst_case_protected": True},
+            scenario_analysis={
+                "robust_optimal": True,
+                "worst_case_protected": True,
+                "evidence_class": "classical_deterministic",
+            },
             computational_complexity="O(n·m)",
             convergence_metrics={"converged": True, "robustness_achieved": True},
             enterprise_validation={
@@ -936,10 +1057,11 @@ class EnterpriseASIAgencyFramework:
         )
 
     def _log_likelihood(self, theta: np.ndarray, context: EnterpriseDecisionContext) -> float:
-        """Calculate log-likelihood for Bayesian inference"""
-        # Simplified Gaussian likelihood.  The variance is floored: a zero
-        # market volatility would otherwise divide by zero and silently
-        # degenerate the whole MCMC chain (NaN acceptance never fires).
+        """Gaussian log-likelihood of θ given the real context statistics.
+
+        Kept for callers that evaluate the likelihood directly; the
+        Bayesian path uses the exact discrete update and does not sample.
+        """
         mean = context.financial_impact
         variance = max(context.market_volatility**2, 1e-6)
         log_likelihood = -0.5 * np.sum((theta - mean) ** 2 / variance)
@@ -950,10 +1072,8 @@ class EnterpriseASIAgencyFramework:
     def _estimate_complexity(
         self, context: EnterpriseDecisionContext, state: ASIStateVector
     ) -> str:
-        """Estimate computational complexity"""
-        alternatives = 5
-        criteria = len(context.stakeholder_weight)
-        return f"{alternatives}^{criteria}"
+        """Report the actual decision-space dimension."""
+        return f"dim={self._decision_dimension(state)}"
 
     async def _enterprise_validation(
         self,
@@ -961,20 +1081,19 @@ class EnterpriseASIAgencyFramework:
         context: EnterpriseDecisionContext,
         state: ASIStateVector,
     ) -> EnterpriseDecisionResult:
-        """Apply enterprise validation criteria"""
+        """Apply enterprise validation criteria — only what is measurable."""
 
         validation = {
             "strategic_alignment": result.expected_utility
             > context.strategic_importance * context.financial_impact * 0.5,
             "risk_acceptable": result.risk_adjusted_return > 0,
-            "stakeholder_consensus": True,  # Simplified
-            "regulatory_compliant": len(context.regulatory_constraints) == 0,  # Simplified
+            # A state vector contains no stakeholder-consensus channel; the
+            # criterion is declared unassessable rather than hardcoded True.
+            "stakeholder_consensus": "not_assessable_from_state_vector",
+            "regulatory_compliant": len(context.regulatory_constraints) == 0,
             "financial_viable": result.expected_utility > context.financial_impact * 0.1,
-            # A single scalar utility cannot evidence competitive
-            # advantage; the criterion is declared unassessable rather
-            # than compared against its own mean (always False).
             "competitive_advantage": "not_assessable_from_scalar_utility",
-            "implementation_feasible": True,  # Simplified
+            "implementation_feasible": "not_assessable_from_state_vector",
         }
 
         result.enterprise_validation = validation
@@ -998,7 +1117,7 @@ class EnterpriseASIAgencyFramework:
         self.performance_metrics["risk_adjusted_performance"] = new_risk_adj
 
     def get_enterprise_metrics(self) -> Dict[str, Any]:
-        """Generate comprehensive enterprise metrics report"""
+        """Generate enterprise metrics report — measured aggregates only."""
 
         if not self.decision_history:
             return {
@@ -1007,7 +1126,6 @@ class EnterpriseASIAgencyFramework:
                 "performance_summary": "No decisions made yet",
             }
 
-        # Calculate advanced metrics
         utilities = [d.expected_utility for d in self.decision_history]
         risk_adjusted = [d.risk_adjusted_return for d in self.decision_history]
 
@@ -1024,13 +1142,26 @@ class EnterpriseASIAgencyFramework:
                 "convergence_rate": np.mean(
                     [d.convergence_metrics.get("converged", False) for d in self.decision_history]
                 ),
-                "computational_efficiency": "O(1) scaling achieved",
-                "statistical_significance": True,
+                # Mean measured confidence-interval width across decisions —
+                # the real spread of outcomes, not a claimed efficiency bound.
+                "mean_confidence_width": np.mean(
+                    [
+                        d.confidence_interval[1] - d.confidence_interval[0]
+                        for d in self.decision_history
+                    ]
+                ),
             },
-            "oxford_mathematical": {
-                "solution_optimality": "Proven optimal",
-                "convergence_guaranteed": True,
-                "mathematical_rigor": "Fields Medal level",
+            "evidence_summary": {
+                "quantum_substrate_decisions": sum(
+                    1
+                    for d in self.decision_history
+                    if d.scenario_analysis.get("evidence_class") == "quantum_substrate_measured"
+                ),
+                "classical_deterministic_decisions": sum(
+                    1
+                    for d in self.decision_history
+                    if d.scenario_analysis.get("evidence_class") == "classical_deterministic"
+                ),
             },
             "enterprise_kpis": {
                 "roi_average": np.mean(risk_adjusted),

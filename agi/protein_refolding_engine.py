@@ -38,19 +38,16 @@ class CausalCore:
         }
 
     def find_resonant_minimum(self, field_state: Dict[str, Any]) -> Dict[str, Any]:
-        """Heuristic 'resonant path' energy estimate — scaffold, not measured.
+        """Fail closed: no real fold-energy function exists on this substrate.
 
-        The returned numbers are fixed constants from the original research
-        script; they carry no experimental evidence and are labelled
-        accordingly so no downstream consumer can read them as a solved
-        mass-gap computation.
+        The previous implementation returned a fixed invented constant
+        (-42.618); under the production mandate an unmeasurable quantity
+        must raise, never fabricate.
         """
-        return {
-            "fold_parameters": "resonant_path_heuristic",
-            "energy_minimum": -42.618,
-            "mass_gap_verification": self.precision,
-            "evidence_class": "heuristic_scaffold_not_measured",
-        }
+        raise SubsystemUnavailable(
+            "find_resonant_minimum unavailable: no measured fold-energy "
+            "function is implemented on this substrate"
+        )
 
 
 class BioIntelligenceNode:
@@ -101,20 +98,10 @@ class BioIntelligenceNode:
         """
         Designs the chemical compound (key) for the misfolded protein (lock).
         """
-        try:
-            print(
-                f"🧪 Triggering Small Molecule Discovery for target: {fold_result['therapeutic_target']}"
-            )
-            await asyncio.sleep(0.05)
-            return {
-                "molecule_id": "HYBA-CURE-001",
-                "chemical_blueprint": "C20H25N3O5S_RESONANT_LIGAND",
-                "binding_affinity": 0.99998,
-                "status": "DIGITAL_BLUEPRINT_READY",
-            }
-        except Exception as e:
-            logger.error(f"Error in trigger_small_molecule_discovery: {e}")
-            return {"error": str(e)}
+        raise SubsystemUnavailable(
+            "trigger_small_molecule_discovery unavailable: no real docking "
+            "or affinity computation exists on this substrate"
+        )
 
 
 if __name__ == "__main__":

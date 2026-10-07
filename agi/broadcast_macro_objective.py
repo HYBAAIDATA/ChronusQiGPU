@@ -134,16 +134,24 @@ async def main():
     # Initialize Intelligence Bus (core version doesn't need start())
     bus = IntelligenceBus()
 
-    # Define the new macro-objective (from resonant_industry_discovery.py output)
+    # Define the new macro-objective. Resonance is measured by
+    # PhiResonanceScorer on the objective identity; market/gain claims are
+    # not computable here and are reported as unavailable rather than
+    # invented.
+    from agi.resonance import PhiResonanceScorer
+
+    industry = "Quantum Materials Discovery"
+    measured_resonance = PhiResonanceScorer().score([ord(c) for c in industry])
     objective = {
-        "industry": "Quantum Materials Discovery",
+        "industry": industry,
         "sector": "Materials Science",
-        "phi_resonance": 0.019897,
-        "integration_score": 0.010963,
-        "market_size_usd": 12e9,
-        "expected_gain_multiplier": "1000x",
-        "complexity_reduction": "NP-Complete → O(1)",
+        "phi_resonance": measured_resonance,
+        "integration_score": None,
+        "market_size_usd": None,
+        "expected_gain_multiplier": None,
+        "complexity_reduction": None,
         "rationale": "Natural synergy with VQC substrate, high causal density, self-reinforcing hardware loop",
+        "evidence_class": "unavailable_market_claims",
     }
 
     # Broadcast

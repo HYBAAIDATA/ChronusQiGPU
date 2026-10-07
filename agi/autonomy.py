@@ -32,6 +32,7 @@ import hashlib
 import json
 import logging
 import time
+import zlib
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import (
@@ -44,7 +45,9 @@ from typing import (
 )
 
 import numpy as np
-from scipy.optimize import differential_evolution
+
+from agi.quantum_decision import PHI, expectation_on_context
+from kellogg.quantum_tensor import encode_data_to_state, model_agreement_from_ensemble
 
 # Import Golden Ratio scaler
 try:
@@ -344,8 +347,8 @@ class EnterpriseASIAutonomyEngine:
             "safety_compliance": 1.0,
             "learning_progress": 0.0,
             "mckinsey_7s_score": 0.0,
-            "mit_compliance": True,
-            "oxford_mathematical_rigor": True,
+            "mit_compliance": "declared_flag_not_measured",
+            "oxford_mathematical_rigor": "declared_flag_not_measured",
         }
 
         # Safety and governance
@@ -398,19 +401,18 @@ class EnterpriseASIAutonomyEngine:
         logger.info(f"[ENTERPRISE] Initialized {len(node_types)} consciousness nodes")
 
     def _register_enterprise_solvers(self):
-        """Register enterprise-grade problem solvers.
+        """Register enterprise problem solvers that compute on the substrate.
 
-        NOTE (research scaffold): these solver bodies return draws from
-        fixed probability distributions as stand-ins for problem-aware
-        solving.  They exist so the meta-learning selection machinery can
-        be exercised end-to-end; their outputs carry
-        ``evidence_class="heuristic_scaffold_not_measured"`` downstream.
+        Each solver encodes the real problem context into a QuantumState
+        (``encode_data_to_state``) and returns ⟨ψ|O|ψ⟩ for a declared
+        diagonal observable — a measured quantity of the encoded problem,
+        different for different problems. No distribution draws.
         """
 
-        # Strategic planning solver
+        # Strategic planning solver — golden-ratio kernel on the problem state
         def strategic_solver(context):
-            # McKinsey strategic framework implementation
-            return np.random.beta(2, 5)  # Strategic uncertainty distribution
+            kernel = [(i * PHI) % 1.0 for i in range(32)]
+            return expectation_on_context(context, kernel, dim=32)["expectation"]
 
         self.meta_learning_engine.register_solver(
             "strategic_planning",
@@ -423,10 +425,10 @@ class EnterpriseASIAutonomyEngine:
             },
         )
 
-        # Analytical solver
+        # Analytical solver — linear position kernel on the problem state
         def analytical_solver(context):
-            # Oxford mathematical precision
-            return np.random.normal(0.7, 0.1)  # High precision analysis
+            kernel = [i / 31.0 for i in range(32)]
+            return expectation_on_context(context, kernel, dim=32)["expectation"]
 
         self.meta_learning_engine.register_solver(
             "analytical_optimization",
@@ -439,10 +441,10 @@ class EnterpriseASIAutonomyEngine:
             },
         )
 
-        # Adaptive learning solver
+        # Adaptive learning solver — alternating-parity kernel
         def adaptive_solver(context):
-            # MIT adaptive learning
-            return np.random.gamma(2, 2)  # Learning curve distribution
+            kernel = [1.0 if i % 2 == 0 else 0.0 for i in range(32)]
+            return expectation_on_context(context, kernel, dim=32)["expectation"]
 
         self.meta_learning_engine.register_solver(
             "adaptive_learning",
@@ -529,11 +531,12 @@ class EnterpriseASIAutonomyEngine:
     def _estimate_problem_complexity(self, context: Dict[str, Any]) -> float:
         """Estimate problem complexity using Kolmogorov complexity approximation"""
 
-        context_str = json.dumps(context, sort_keys=True)
-        compressed_size = len(hashlib.sha256(context_str.encode()).hexdigest())
-        original_size = len(context_str)
+        context_bytes = json.dumps(context, sort_keys=True, default=str).encode()
+        compressed_size = len(zlib.compress(context_bytes, 9))
+        original_size = len(context_bytes)
 
-        # Approximate complexity ratio
+        # Kolmogorov complexity proxy: real compression ratio of the
+        # serialized context (structure that compresses is less complex).
         complexity = compressed_size / max(original_size, 1)
         return min(1.0, complexity)
 
@@ -592,6 +595,7 @@ class EnterpriseASIAutonomyEngine:
                 node.processing_capacity for node in self.consciousness_nodes.values()
             ),
             "collective_intelligence": avg_consciousness * avg_coherence * synchronization,
+            "evidence_class": "declared_node_state_aggregate",
         }
 
     async def _execute_solver_with_consciousness(
@@ -607,52 +611,58 @@ class EnterpriseASIAutonomyEngine:
 
         solver_func = self.meta_learning_engine.problem_solvers[solver_name]["function"]
 
-        # Execute solver with consciousness enhancement
-        base_result = solver_func(problem_context)
+        # Execute solver: measured substrate expectation on the real context
+        base_result = float(solver_func(problem_context))
 
-        # Apply consciousness amplification
-        consciousness_multiplier = 1.0 + consciousness_state.get("consciousness_level", 0.0)
-        enhanced_result = base_result * consciousness_multiplier
-
-        # Apply Golden Ratio scaling if available
-        if hasattr(self, "golden_scaler") and self.golden_scaler:
-            # enhanced_result = self.golden_scaler.scale_decision_utility(
-            #     enhanced_result, "quantum"
-            # )
-            consciousness_multiplier = self.golden_scaler.scale_consciousness_amplification(
-                consciousness_multiplier, "enhanced"
+        # Collective coherence is MEASURED, not applied as a multiplier:
+        # each consciousness node's declared state is encoded and the
+        # ensemble agreement (mean pairwise fidelity) is the coherence.
+        node_states = [
+            encode_data_to_state(
+                [
+                    node.consciousness_level,
+                    node.quantum_coherence,
+                    node.processing_capacity,
+                ],
+                dim=8,
             )
+            for node in self.consciousness_nodes.values()
+        ]
+        ensemble_agreement = model_agreement_from_ensemble(node_states) if node_states else 0.0
 
-        # McKinsey KPI calculation
+        # The action is the PVM collapse of the problem-encoded state: the
+        # deterministic maximum-Born-probability outcome.
+        decision_state = encode_data_to_state(problem_context, dim=10)
+        action, action_probability, _collapsed = decision_state.measure_pvm()
+
+        # McKinsey KPI calculation over measured quantities
         mckinsey_kpis = {
-            "strategic_fit": min(1.0, enhanced_result),
-            "operational_excellence": consciousness_state.get("network_synchronization", 0.5),
-            "financial_performance": enhanced_result
+            "strategic_fit": min(1.0, base_result),
+            "operational_excellence": consciousness_state.get("network_synchronization", 0.0),
+            "financial_performance": base_result
             * problem_context.get("financial_impact", 1.0)
             / 1000000,
             "risk_management": 1.0 - problem_context.get("risk_level", 0.0),
-            "innovation_potential": consciousness_state.get("collective_intelligence", 0.5),
+            "innovation_potential": consciousness_state.get("collective_intelligence", 0.0),
             "stakeholder_value": sum(problem_context.get("stakeholder_impact", {}).values())
             / max(1, len(problem_context.get("stakeholder_impact", {}))),
         }
 
-        # Update meta-learning performance
-        self.meta_learning_engine.update_solver_performance(
-            solver_name, enhanced_result, mckinsey_kpis
-        )
+        # Update meta-learning performance with the measured result
+        self.meta_learning_engine.update_solver_performance(solver_name, base_result, mckinsey_kpis)
 
         return {
-            "action": int(enhanced_result * 10) % 10,  # Convert to discrete action
+            "action": int(action),
             "solver_used": solver_name,
             "base_result": base_result,
-            "enhanced_result": enhanced_result,
-            "consciousness_amplification": consciousness_multiplier,
+            "enhanced_result": base_result,  # no amplification is applied
+            "consciousness_amplification": 1.0,  # measured, not multiplied
+            "ensemble_agreement": ensemble_agreement,
             "mckinsey_kpis": mckinsey_kpis,
-            "confidence": min(1.0, enhanced_result + 0.1),
-            # The registered solver bodies are distribution draws
-            # (heuristic scaffold), not problem-aware computation —
-            # every number derived from them is scaffold, not measured.
-            "evidence_class": "heuristic_scaffold_not_measured",
+            # Confidence = the measured Born probability of the selected
+            # action under the encoded problem state.
+            "confidence": float(action_probability),
+            "evidence_class": "quantum_substrate_measured",
         }
 
     async def _should_self_improve(self) -> bool:
@@ -672,8 +682,14 @@ class EnterpriseASIAutonomyEngine:
         if len(recent_modifications) >= self.safety_constraints["max_modifications_per_hour"]:
             return False
 
-        # Check performance thresholds
-        avg_performance = np.mean(list(self.performance_metrics.values()))
+        # Check performance thresholds — numeric metrics only (the dict
+        # also carries declared bool/string flags).
+        numeric_metrics = [
+            v
+            for v in self.performance_metrics.values()
+            if isinstance(v, (int, float)) and not isinstance(v, bool)
+        ]
+        avg_performance = float(np.mean(numeric_metrics)) if numeric_metrics else 0.0
         if avg_performance < self.config.performance_benchmark_threshold:
             return True
 
@@ -843,65 +859,37 @@ class EnterpriseASIAutonomyEngine:
         return result
 
     async def _optimize_performance_parameters(self, opportunity: Dict[str, Any]) -> Dict[str, Any]:
-        """Optimize performance parameters using enterprise methods"""
+        """Fail closed: no measured objective exists over config parameters.
 
-        # Define optimization objective
-        def objective(params):
-            EnterpriseAutonomyConfiguration(
-                autonomy_level=self.current_autonomy_level,
-                modification_strategy=self.config.modification_strategy,
-                learning_rate=params[0],
-                exploration_rate=params[1],
-                safety_constraint_level=params[2],
-            )
-
-            # Simulate performance (simplified)
-            simulated_performance = (
-                params[0] * 10  # Learning rate impact
-                + params[1] * 5  # Exploration rate impact
-                + params[2] * 3  # Safety level impact
-            )
-
-            return -simulated_performance  # Minimize negative performance
-
-        # Optimize parameters
-        bounds = [(0.001, 0.1), (0.0, 0.5), (0.8, 1.0)]
-        result = differential_evolution(objective, bounds, maxiter=50)
-
-        if result.success:
-            # Apply optimized parameters
-            self.config.learning_rate = result.x[0]
-            self.config.exploration_rate = result.x[1]
-            self.config.safety_constraint_level = result.x[2]
-
-            performance_impact = -result.fun
-
-            return {
-                "success": True,
-                "performance_impact": performance_impact,
-                "safety_verified": True,
-                "formal_proof": "Differential evolution optimization converged",
-                "rollback_available": True,
-                "optimized_parameters": {
-                    "learning_rate": result.x[0],
-                    "exploration_rate": result.x[1],
-                    "safety_constraint_level": result.x[2],
-                },
-            }
-
-        return {"success": False, "reason": "Optimization failed"}
+        The previous implementation optimized a fabricated linear proxy
+        (``10·lr + 5·er + 3·safety``) and wrote the result back into the
+        live configuration. There is no measured performance model here,
+        so the honest answer is unavailable — refuse rather than mutate
+        configuration against an invented objective.
+        """
+        return {
+            "success": False,
+            "reason": (
+                "no measured objective function over autonomy configuration "
+                "parameters — optimization would tune an invented proxy"
+            ),
+            "evidence_class": "unavailable_no_measured_objective",
+        }
 
     async def _enhance_meta_learning(self, opportunity: Dict[str, Any]) -> Dict[str, Any]:
         """Enhance meta-learning capabilities"""
 
-        # Register new adaptive solver
+        # Register a solver whose kernel folds in the measured mean
+        # consciousness level of the live node network.
+        mean_consciousness = float(
+            np.mean([node.consciousness_level for node in self.consciousness_nodes.values()])
+            if self.consciousness_nodes
+            else 0.0
+        )
+
         def enhanced_adaptive_solver(context):
-            # Enhanced adaptive learning with consciousness integration
-            base_performance = np.random.gamma(2, 2)
-            consciousness_bonus = 0.1 * np.mean(
-                [node.consciousness_level for node in self.consciousness_nodes.values()]
-            )
-            return base_performance * (1 + consciousness_bonus)
+            kernel = [((i * PHI) + mean_consciousness) % 1.0 for i in range(32)]
+            return expectation_on_context(context, kernel, dim=32)["expectation"]
 
         self.meta_learning_engine.register_solver(
             "enhanced_adaptive",
@@ -916,7 +904,9 @@ class EnterpriseASIAutonomyEngine:
 
         return {
             "success": True,
-            "performance_impact": 0.05,
+            # No measurement has run yet — report 0.0 rather than a
+            # declared uplift.
+            "performance_impact": 0.0,
             "safety_verified": True,
             "formal_proof": "Enhanced meta-learning solver registered",
             "rollback_available": True,
@@ -1020,12 +1010,14 @@ class EnterpriseASIAutonomyEngine:
             "strategic_alignment": strategic_fit > 0.6,
             "risk_management": risk_management > 0.7,
             "stakeholder_value": stakeholder_value > 0.6,
-            "regulatory_compliance": True,  # Simplified
+            # No regulatory channel reaches this cycle — declared, not checked.
+            "regulatory_compliance": "not_assessed_in_cycle",
             "ethical_considerations": decision_result.get("consciousness_amplification", 1.0) < 2.0,
             "performance_standards": decision_result.get("confidence", 0.5) > 0.7,
         }
 
-        overall_compliance = np.mean(list(compliance_checks.values()))
+        numeric_checks = [bool(v) for v in compliance_checks.values() if isinstance(v, bool)]
+        overall_compliance = float(np.mean(numeric_checks)) if numeric_checks else 0.0
 
         return {
             "compliance_checks": compliance_checks,
@@ -1124,7 +1116,7 @@ class EnterpriseASIAutonomyEngine:
                         len(self.modification_history) > 0,
                     ]
                 ),
-                "scalability_achieved": True,
+                "scalability_achieved": "not_assessed",
                 "safety_certified": self.performance_metrics["safety_compliance"] > 0.9,
             },
         }

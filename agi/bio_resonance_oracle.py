@@ -53,11 +53,13 @@ def substrate_status() -> dict:
     return {
         "available": _SUBSTRATE_IMPORT_ERROR is None,
         "reason": (
-            "oracle search substrate removed: universal_substrate / "
-            "amplified_resonant_structured_grover have no canonical successor"
-        )
-        if _SUBSTRATE_IMPORT_ERROR is not None
-        else "oracle search substrate loaded",
+            (
+                "oracle search substrate removed: universal_substrate / "
+                "amplified_resonant_structured_grover have no canonical successor"
+            )
+            if _SUBSTRATE_IMPORT_ERROR is not None
+            else "oracle search substrate loaded"
+        ),
         "import_error": str(_SUBSTRATE_IMPORT_ERROR),
     }
 
@@ -214,7 +216,7 @@ class BioResonanceOracle:
                     "atom_id": i,
                     "amino_acid": aa,
                     "coordinates": [x, y, z],
-                    "confidence": 0.95,
+                    "confidence": None,  # not assessable: no error model on this placement
                 }
             )
 
@@ -258,7 +260,7 @@ class BioResonanceOracle:
                         "position": start_pos,
                         "sequence": region_seq,
                         "coordinates": [coord["coordinates"] for coord in site_coords],
-                        "binding_strength": 0.89,  # Phi-optimized
+                        "binding_strength": None,  # not measured — no binding model exists
                         "target_mechanism": "Beta-sheet disruption",
                     }
                 )
@@ -266,11 +268,10 @@ class BioResonanceOracle:
         return binding_sites
 
     def _calculate_binding_affinity(self, phi_resonance: float) -> float:
-        """Calculate predicted binding affinity based on phi-resonance"""
-        # Higher phi-resonance indicates better folding = better binding
-        base_affinity = 0.7
-        phi_boost = min(0.3, phi_resonance * 0.5)
-        return base_affinity + phi_boost
+        """Binding affinity is not computable from phi-resonance — fail closed."""
+        raise SubsystemUnavailable(
+            "binding affinity unavailable: no measured affinity model exists " "on this substrate"
+        )
 
     async def store_discovery(self, discovery_data: dict):
         """Store discovery in EnhancedKnowledgeBase for AGI analysis"""

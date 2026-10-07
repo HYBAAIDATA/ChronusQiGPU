@@ -7,6 +7,7 @@ Utilizes SimpleFold-ASI for real-time vaccine folding keys.
 """
 
 import asyncio
+import hashlib
 import logging
 from typing import Any, Dict
 
@@ -21,30 +22,46 @@ class BiosecurityScanner:
     """
 
     def __init__(self):
+        # BioIntelligenceNode fails closed when its substrate adapters are
+        # unavailable — that honest failure propagates to this scanner.
         self.bio_node = BioIntelligenceNode()
         self.regions = ["Caribbean", "Central America", "South America"]
-        self.threat_level = 0.000055  # 1 - 0.999945
 
-    async def scan_zoonotic_spillover(self, region: str) -> Dict[str, Any]:
+    async def scan_zoonotic_spillover(
+        self, region: str, anomaly_sequence: str = None
+    ) -> Dict[str, Any]:
         """
-        Maps potential spillover events using macro-causal simulation.
+        Scan a supplied anomaly sequence for a given region.
+
+        With no real sequence input there is nothing to detect — the scanner
+        reports ``threat_detected: False`` rather than fabricating a
+        pathogen. Supplying a sequence runs the real folding pipeline.
         """
         print(f"🔍 Scanning region: {region} for zoonotic anomalies...")
-        await asyncio.sleep(0.05)
 
-        # Simulated detection of a potential mutation
-        mutation_sequence = "MKVLLRLICFIALLISSNS"  # Placeholder viral sequence
+        if not anomaly_sequence:
+            return {
+                "region": region,
+                "threat_detected": False,
+                "pathogen_id": None,
+                "folding_key": None,
+                "confidence": None,
+                "confidence_basis": "no_sequence_input_not_assessable",
+                "status": "NO_INPUT_DATA",
+            }
 
         print(f"⚠️ Potential anomaly detected in {region}. Generating Folding Key...")
-        folding_key = await self.bio_node.solve_folding_anomaly(mutation_sequence)
+        folding_key = await self.bio_node.solve_folding_anomaly(anomaly_sequence)
 
         return {
             "region": region,
-            "threat_detected": True,
-            "pathogen_id": f"PREDICTIVE-{region[:3].upper()}-2026",
+            "threat_detected": "error" not in (folding_key or {}),
+            "pathogen_id": None,
+            "sequence_hash": hashlib.sha256(anomaly_sequence.encode("utf-8")).hexdigest()[:16],
             "folding_key": folding_key,
-            "confidence": 0.999945,
-            "status": "SOVEREIGN_SHIELD_ACTIVE",
+            "confidence": None,
+            "confidence_basis": "not_assessable_from_folding_output",
+            "status": "ANALYZED",
         }
 
     async def run_global_biosecurity_scan(self):
@@ -56,7 +73,7 @@ class BiosecurityScanner:
         for region in self.regions:
             result = await self.scan_zoonotic_spillover(region)
             results.append(result)
-            print(f"✅ {region}: Shield Active | Key Generated for {result['pathogen_id']}")
+            print(f"✅ {region}: Scan complete | status={result['status']}")
 
         return results
 
