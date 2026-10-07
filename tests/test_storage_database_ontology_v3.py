@@ -6,6 +6,7 @@ import tomllib
 import pytest
 
 from hyba_db import IntegrityFailure, OntologyStore, Quota, TheseusFileCustody
+from hyba_db.production_gate import evaluate
 
 INTEGRITY_KEY = b"i" * 32
 CUSTODY_KEY = b"c" * 32
@@ -309,3 +310,41 @@ def test_installed_distribution_includes_hyba_db_and_gate():
         project["project"]["scripts"]["pythia-storage-db-gate"]
         == "hyba_db.production_gate:main"
     )
+
+
+def test_production_gate_closes_database_storage_and_custody_together(tmp_path):
+    store, _custody, client = _opened(tmp_path)
+    root = tmp_path / "files"
+    tenant_id = client.tenant_id
+    store.files.put_file(
+        tenant_id,
+        root,
+        logical_name="production-evidence.json",
+        file_class="durable_evidence",
+        semantic_owner="pythia",
+        domain="mining",
+        content=b'{"evidence":"local"}',
+        producer="pythia",
+        producer_version="test-revision",
+        evidence_state="LOCAL_E2E_EXECUTED",
+        provenance={
+            "source_ids": ["local-e2e"],
+            "code_ref": "test-revision",
+            "owner_approval_ref": "owner-directive-2026-10-07",
+        },
+        links=(("external:test", "local-e2e", "supports"),),
+    )
+    store.close()
+
+    report = evaluate(
+        db_path=tmp_path / "ontology.db",
+        storage_root=root,
+        tenant_id=tenant_id,
+        integrity_key=INTEGRITY_KEY,
+        custody_root=tmp_path / "custody",
+        custody_key=CUSTODY_KEY,
+    )
+    assert report["passed"] is True
+    assert all(report["checks"].values())
+    assert report["claim_boundary"]["live_pool"] == "UNAVAILABLE"
+    assert report["claim_boundary"]["accepted_share"] == "UNAVAILABLE"
