@@ -193,7 +193,6 @@ from .expansion import (
     TOEExpansionResult,
 )
 from .operator_compilers import OperatorSpec, compile_operator
-from .system import TOEProvenanceRecord, TOESystem
 from .foundation import UNIFIED_THEORY, UnifiedTheoryFoundation
 from .golden_unified import (
     CollapseResult,
@@ -292,9 +291,23 @@ __all__ = [
 ]
 
 
-def __getattr__(name: str):
-    if name == "UnifiedAnalyticsPlatform":
-        from .unified import UnifiedAnalyticsPlatform
+# Consumer surfaces resolved on first use. ``toe.system`` is the PYTHIA
+# mining-facing coordinator (the five candidate intelligences + the aethel
+# Cassini/Zeckendorf substrate); it is a monorepo integration, not part of
+# the domain-general core, so ``import toe`` must not require it.
+_LAZY_SURFACES = {
+    "UnifiedAnalyticsPlatform": ("toe.unified", "UnifiedAnalyticsPlatform"),
+    "TOESystem": ("toe.system", "TOESystem"),
+    "TOEProvenanceRecord": ("toe.system", "TOEProvenanceRecord"),
+}
 
-        return UnifiedAnalyticsPlatform
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+def __getattr__(name: str):
+    target = _LAZY_SURFACES.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    import importlib
+
+    value = getattr(importlib.import_module(target[0]), target[1])
+    globals()[name] = value
+    return value

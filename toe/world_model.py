@@ -23,6 +23,7 @@ forgetting via re-test on the old regime.
 
 from __future__ import annotations
 
+import math
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence
 
 from .receipts import ReceiptLedger
@@ -320,13 +321,147 @@ class OnlineAdapter:
         return out
 
 
+# -- structural-model revision (linear SCM semantics) -------------------
+#
+# ``WorldModel`` above is a one-step *transition* model (x_{t+1} from x_t).
+# A structural causal model is evaluated to its post-intervention
+# equilibrium instead (a child reads its parents' *new* values). The two
+# helpers below revise and assess that structural model from observed
+# post-intervention outcomes; they keep the same four status labels.
+
+# E|N(0, s)| = s * sqrt(2/pi): the expected absolute residual of a correct
+# model whose noise term is phi*u with u ~ N(0, s).
+_HALF_NORMAL = math.sqrt(2.0 / math.pi)
+_PHI = (1.0 + math.sqrt(5.0)) / 2.0
+RELATIVE_THRESHOLDS = {"supported": 1.5, "drift": 4.0}
+
+
+def fit_structural_weights(
+    edges: Sequence[tuple],
+    observations: Sequence[Mapping[str, Any]],
+    *,
+    min_evidence: int = 3,
+) -> Dict[str, Any]:
+    """Refit linear structural weights from post-intervention observations.
+
+    ``observations``: ``{"values": {node: x}, "intervened": [nodes]}``. For
+    each child with parents, rows where the child was *not* intervened are
+    regressed (OLS, no intercept — the structural noise ``phi*u`` has mean
+    zero) on the parents' observed values. A child is refit only with at
+    least ``max(min_evidence, n_parents + 1)`` usable rows and a
+    non-singular design; otherwise it is reported skipped with its reason.
+    Standard errors come from the residual variance — they are what lets
+    a later value-of-information check shrink its plausible range.
+    """
+    import numpy as np
+
+    parents: Dict[str, List[str]] = {}
+    for p, c in ((e[0], e[1]) for e in edges):
+        parents.setdefault(str(c), []).append(str(p))
+    weights: Dict[tuple, float] = {}
+    fitted: Dict[str, Any] = {}
+    skipped: Dict[str, str] = {}
+    for child, ps in sorted(parents.items()):
+        rows = [
+            o["values"]
+            for o in observations
+            if child not in set(o.get("intervened", ()))
+            and all(isinstance(o["values"].get(n), (int, float)) for n in [child, *ps])
+        ]
+        need = max(int(min_evidence), len(ps) + 1)
+        if len(rows) < need:
+            skipped[child] = f"insufficient evidence ({len(rows)} < {need})"
+            continue
+        X = np.array([[float(r[p]) for p in ps] for r in rows], dtype=np.float64)
+        y = np.array([float(r[child]) for r in rows], dtype=np.float64)
+        gram = X.T @ X
+        if np.linalg.matrix_rank(gram) < len(ps):
+            skipped[child] = "singular design: parents never varied independently"
+            continue
+        coef = np.linalg.solve(gram, X.T @ y)
+        resid = y - X @ coef
+        dof = len(rows) - len(ps)
+        sigma2 = float(resid @ resid) / dof if dof > 0 else float("nan")
+        cov = sigma2 * np.linalg.inv(gram) if dof > 0 else None
+        for j, p in enumerate(ps):
+            weights[(p, child)] = float(coef[j])
+        fitted[child] = {
+            "parents": list(ps),
+            "n": len(rows),
+            "coefficients": {p: float(coef[j]) for j, p in enumerate(ps)},
+            "standard_errors": (
+                {p: float(math.sqrt(max(cov[j, j], 0.0))) for j, p in enumerate(ps)}
+                if cov is not None
+                else None
+            ),
+            "residual_sd": math.sqrt(sigma2) if sigma2 == sigma2 else None,
+        }
+    return {
+        "version": WORLD_MODEL_VERSION,
+        "weights": weights,
+        "fitted": fitted,
+        "skipped": skipped,
+        "estimator": "OLS without intercept on post-intervention rows",
+    }
+
+
+def assess_structural(
+    residuals: Sequence[Mapping[str, float]],
+    *,
+    noise_sd: Optional[Mapping[str, float]] = None,
+    min_observations: int = 3,
+) -> Dict[str, Any]:
+    """Four-state model health from observed-minus-predicted residuals.
+
+    With a declared noise scale the residual of each node is normalised by
+    its expected absolute size under a correct model,
+    ``phi * sd * sqrt(2/pi)``; mean normalised residual <= 1.5 is
+    MODEL_SUPPORTED, <= 4 is MODEL_DRIFT, beyond is MODEL_CONTRADICTED.
+    Without a declared scale the absolute thresholds of
+    :meth:`WorldModel.assess` apply. The thresholds are declared, not tuned.
+    """
+    rows = [r for r in residuals if r]
+    if len(rows) < min_observations:
+        return {"status": INSUFFICIENT_EVIDENCE, "observations": len(rows)}
+    sd = dict(noise_sd or {})
+    if sd:
+        scaled = [
+            abs(e) / (_PHI * float(sd.get(n, 1.0)) * _HALF_NORMAL)
+            for r in rows
+            for n, e in r.items()
+        ]
+        score = sum(scaled) / len(scaled)
+        lim = RELATIVE_THRESHOLDS
+        mode = "relative_to_declared_noise"
+    else:
+        flat = [abs(e) for r in rows for e in r.values()]
+        score = sum(flat) / len(flat)
+        lim = {"supported": 0.05, "drift": 0.5}
+        mode = "absolute"
+    status = (
+        MODEL_SUPPORTED
+        if score <= lim["supported"]
+        else MODEL_DRIFT if score <= lim["drift"] else MODEL_CONTRADICTED
+    )
+    return {
+        "status": status,
+        "score": score,
+        "observations": len(rows),
+        "thresholds": dict(lim),
+        "mode": mode,
+    }
+
+
 __all__ = [
     "WORLD_MODEL_VERSION",
     "MODEL_SUPPORTED",
     "MODEL_DRIFT",
     "MODEL_CONTRADICTED",
     "INSUFFICIENT_EVIDENCE",
+    "RELATIVE_THRESHOLDS",
     "WorldModel",
     "bind_outcome",
     "OnlineAdapter",
+    "assess_structural",
+    "fit_structural_weights",
 ]

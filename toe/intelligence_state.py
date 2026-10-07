@@ -332,31 +332,35 @@ def fibonacci_butterfly_contract(n_max: int = 40) -> Dict[str, Any]:
     return rows
 
 
+FAMILY_DETECTOR = "toe.engine.ExtendedAlgebraicFamily.detect_family_signature"
+
+
+def family_detector() -> Callable[[Sequence[float]], Dict[str, Any]]:
+    """The one algebraic-family detector TOE uses.
+
+    ``ExtendedAlgebraicFamily.detect_family_signature`` delegates to the
+    shared ``turing_core`` substrate when that monorepo module is importable
+    and otherwise runs its own exact-Decimal implementation, so the lens is
+    available in a standalone install with the same output contract.
+    """
+    from toe.engine import ExtendedAlgebraicFamily
+
+    return ExtendedAlgebraicFamily().detect_family_signature
+
+
 def build_algebraic(data: Any, sha: str) -> LensView:
     cols = _series_columns(data)
     if not cols:
         return _unavailable(
-            "algebraic", sha, "turing_core.detect_family_signature", "no univariate series present"
+            "algebraic", sha, FAMILY_DETECTOR, "no univariate series present"
         )
-    try:
-        import turing_core
-
-        detector = getattr(turing_core, "detect_family_signature", None)
-    except ImportError:
-        detector = None
-    if detector is None:
-        return _unavailable(
-            "algebraic",
-            sha,
-            "turing_core.detect_family_signature",
-            "algebraic-family substrate not importable",
-        )
+    detector = family_detector()
     name, series = max(cols, key=lambda kv: len(kv[1]))
     if len(series) < 5:
         return _unavailable(
             "algebraic",
             sha,
-            "turing_core.detect_family_signature",
+            FAMILY_DETECTOR,
             f"longest series has {len(series)} values; recurrence detection needs >= 5",
         )
     sig = detector(series)
@@ -438,7 +442,7 @@ def build_geometric(data: Any, sha: str) -> LensView:
         np.fill_diagonal(corr, 0.0)
         adj = np.abs(corr)
         try:
-            from millennium.yang_mills_data import SpectralGeometry
+            from toe.geometry import SpectralGeometry
 
             sg = SpectralGeometry(adj)
             gap = float(sg.eigenvalues[1]) if len(sg.eigenvalues) > 1 else 0.0
@@ -449,7 +453,7 @@ def build_geometric(data: Any, sha: str) -> LensView:
                 "two_cluster_sizes": [
                     int((labels == c).sum()) for c in sorted(set(labels.tolist()))
                 ],
-                "engine": "millennium.yang_mills_data.SpectralGeometry",
+                "engine": "toe.geometry.SpectralGeometry",
             }
         except Exception as exc:
             summary["spectral"] = {"available": False, "reason": str(exc)}
@@ -491,13 +495,13 @@ def build_topological(data: Any, sha: str) -> LensView:
         return _unavailable(
             "topological",
             sha,
-            "millennium.yang_mills_data.TopologicalAnalytics",
+            "toe.topology.TopologicalAnalytics",
             "insufficient points for a Vietoris-Rips complex "
             "(need >=4 multivariate rows or >=8 univariate samples)",
         )
     import numpy as np
 
-    from millennium.yang_mills_data import TopologicalAnalytics
+    from toe.topology import TopologicalAnalytics
 
     pts, how = cloud
     diff = pts[:, None, :] - pts[None, :, :]
@@ -517,7 +521,7 @@ def build_topological(data: Any, sha: str) -> LensView:
         "persistence_stable": h1["betti_numbers"] == h2["betti_numbers"],
         "n_edges": h1["n_edges"],
         "n_triangles": h1["n_triangles"],
-        "engine": "millennium.yang_mills_data.TopologicalAnalytics (VR + GF(2) rank)",
+        "engine": "toe.topology.TopologicalAnalytics (VR + GF(2) rank)",
     }
     return LensView(
         "topological",
