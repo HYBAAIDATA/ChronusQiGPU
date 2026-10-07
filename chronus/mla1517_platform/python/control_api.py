@@ -2570,6 +2570,9 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/api/v1/intelligence/status":
             self._json(HTTPStatus.OK, system_fabric.intelligence_status())
             return
+        if path == "/api/v1/intelligence/cognition/status":
+            self._json(HTTPStatus.OK, system_fabric.euclid_cognition_status())
+            return
         if path == "/api/v1/intelligence/selftest":
             self._json(HTTPStatus.OK, system_fabric.selftest_status())
             return
