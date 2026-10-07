@@ -11,7 +11,13 @@ keywords = ["turing", "quantum", "exact-math", "vqc", "pythia", "mla1517"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
     "Typing :: Typed",
 ]
 
@@ -38,6 +44,11 @@ dev = [
 
 [project.scripts]
 turing-vqc = "turing_universal_quantum_computer.console:main"
+
+[project.urls]
+Homepage = "https://github.com/QuantumPhiRedux/PhiMiner"
+Repository = "https://github.com/QuantumPhiRedux/PhiMiner"
+Issues = "https://github.com/QuantumPhiRedux/PhiMiner/issues"
 
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]

@@ -1,74 +1,85 @@
 # Publishing HYBA Software Limited packages to PyPI
 
-Status on 7 October 2026, checked from this repository:
+This repository uses PyPI **trusted publishing**. GitHub Actions proves its
+identity with a short-lived OIDC token; no permanent PyPI password or API token
+belongs in repository secrets or workflow YAML.
 
-| Item | Finding |
-|---|---|
-| `kellogg-tensor` on PyPI / TestPyPI | Not registered (HTTP 404) — the name is available |
-| `turing-universal-quantum-computer` on PyPI | Not registered — available |
-| `chronos-core` on PyPI | Not registered — available |
-| PyPI organization for HYBA | None found under `hyba`, `hyba-software`, `hyba-software-limited` |
-| Existing company PyPI user account | Cannot be determined from outside: PyPI user pages sit behind a bot challenge. The owner must check by signing in. |
-| PyPI credentials on the build machine | None (no `.pypirc`, no `TWINE_*`/`PYPI_*` variables, no keyring) |
-| Existing publishing workflow in this repo | `.github/workflows/kellogg-tensor.yml` — verified-artifact OIDC path with `none`, `testpypi`, and `pypi` dispatch modes |
-| GitHub Actions | **EXTERNAL RELEASE INFRASTRUCTURE BLOCKER**: KELLOGG run `37631272987` created jobs but executed zero steps; restore organization Actions billing/spend before the fresh release gate can run |
+The canonical release workflows are:
 
-Publishing uses **PyPI trusted publishing**: GitHub Actions proves its identity
-to PyPI with a short-lived OIDC token, so no PyPI password or API token is
-ever created, stored, or pasted anywhere. The release workflow is
-`.github/workflows/kellogg-tensor.yml`.
+- KELLOGG: `.github/workflows/kellogg-tensor.yml`
+- TURING: `.github/workflows/turing-release.yml`
 
-## Owner actions, in order
+Both are manual-dispatch publication workflows. Verification may run without
+publishing. Production registry upload remains an explicit owner action.
 
-1. **Restore GitHub Actions.** In the `QuantumPhiRedux` account, open
-   Settings → Billing & plans, resolve the failed payment or raise the
-   spending limit. Until this is done no CI job runs and nothing can publish.
+## TURING publication contract
 
-2. **Choose the company account.** Sign in at <https://pypi.org/account/login/>
-   with the company mailbox you intend to use (a role address such as
-   `pypi@<company domain>`, not a personal address). If no account exists,
-   register at <https://pypi.org/account/register/>.
+Distribution: `turing-universal-quantum-computer`  
+Version: `1.0.0`  
+Repository: `QuantumPhiRedux/PhiMiner`  
+Dependency: `kellogg-tensor>=1.0`
 
-3. **Verify the email.** PyPI sends a verification link; publishing and
-   project creation are blocked until it is clicked.
+The TURING release workflow enforces this sequence:
 
-4. **Enable two-factor authentication** (required by PyPI to publish):
-   Account settings → Two factor authentication → add a security key
-   (WebAuthn) and/or an authenticator app (TOTP). Download the recovery codes
-   and store them in the company password manager. Add a second owner later
-   so access never depends on one person.
+```text
+verify exact KELLOGG 1.0.0 release artefact
+→ build one staged TURING wheel + sdist
+→ metadata / manifest / secret scan
+→ clean installed-wheel verification on Python 3.11 / 3.12 / 3.13
+→ deterministic cross-version fixture equality
+→ complete TURING package tests
+→ production-composition / custody / replay tests
+→ checkout-bound acceptance gate
+→ full benchmark suite including the 10,000-qubit exact voyage
+→ TURING-owned Lean verification
+→ machine-readable release verdict
+→ optional reviewer-gated trusted publication of the exact verified artefact
+```
 
-5. **Create the organization** (recommended): Your organizations → Create,
-   name "HYBA Software Limited", type Company. PyPI reviews organization
-   requests; company organizations are a paid plan. Make your account an
-   Owner. Projects can be transferred into it later if review takes time.
+The publishing job does **not** rebuild the package. It downloads
+`turing-1.0.0-release`, rechecks the recorded SHA-256 digests, stages exactly
+the verified wheel and sdist, and passes those files to
+`pypa/gh-action-pypi-publish@release/v1`.
 
-6. **Register the pending trusted publisher** (the project does not exist
-   yet): Your account → Publishing → Add a new pending publisher:
-   - PyPI project name: `kellogg-tensor`
-   - Owner: `QuantumPhiRedux`
-   - Repository name: `PhiMiner`
-   - Workflow name: `kellogg-tensor.yml`
-   - Environment name: `pypi`
+## Owner actions
 
-   Repeat on TestPyPI (<https://test.pypi.org>, a separate account with its
-   own email verification and 2FA) with environment name `testpypi`.
+1. Ensure GitHub Actions can start jobs for `QuantumPhiRedux/PhiMiner`. If
+   account billing/spending limits still block Actions, resolve that first.
+2. In PyPI, configure a pending trusted publisher for:
+   - project: `kellogg-tensor`
+   - owner: `QuantumPhiRedux`
+   - repository: `PhiMiner`
+   - workflow: `kellogg-tensor.yml`
+   - environment: `pypi`
+3. Configure the corresponding TestPyPI publisher with environment
+   `testpypi`.
+4. Configure TURING in PyPI:
+   - project: `turing-universal-quantum-computer`
+   - owner: `QuantumPhiRedux`
+   - repository: `PhiMiner`
+   - workflow: `turing-release.yml`
+   - environment: `pypi`
+5. Configure the corresponding TURING TestPyPI publisher with environment
+   `testpypi`.
+6. Create GitHub environments `testpypi` and `pypi` with HYBA Software
+   Limited required reviewers.
+7. Run the KELLOGG workflow and publish `kellogg-tensor==1.0.0` to production
+   PyPI after its TestPyPI verification succeeds.
+8. Run **TURING 1.0.0 release** with `publish=none`. Preserve
+   `turing-release-verdict.json`; it must say `publishable: true`.
+9. Run the TURING workflow with `publish=testpypi`. The workflow then installs
+   the published TURING 1.0.0 distribution from TestPyPI beside the exact
+   verified KELLOGG wheel and executes a clean smoke voyage.
+10. Only after that succeeds, run the TURING workflow with `publish=pypi`.
+    The production job additionally requires `kellogg-tensor==1.0.0` to be
+    live on PyPI and TURING 1.0.0 to exist on TestPyPI.
 
-7. **Create the GitHub environments** `testpypi` and `pypi` in the repository
-   (Settings → Environments) and add a required reviewer from HYBA Software
-   Limited to each, so every publish needs a human approval.
+## Truth boundary
 
-8. **Verify then publish Kellogg.** First run Actions → kellogg-tensor on current
-   `main` with `publish = none` and require the final `release-verdict.json` to
-   report `publishable: true`. Then run the same workflow with
-   `publish = testpypi`; install
-   `pip install -i https://test.pypi.org/simple/ kellogg-tensor` in a clean
-   environment to confirm; then run again with `publish = pypi`.
+A green software release proves the standalone TURING software VQC and its
+declared exact/classical execution semantics. It does not prove physical QPU
+execution, hardware quantum speedup, mining hashrate, cryptanalytic capability,
+or pool acceptance. Those require their own evidence authorities.
 
-9. **Then TURING.** `turing-universal-quantum-computer` depends on
-   `kellogg-tensor>=1.0`, so it is published after Kellogg is live, with its
-   own pending publisher (same repository, a TURING release workflow,
-   environment `pypi`).
-
-Nothing in these steps needs a credential to be shared with anyone: steps
-2–7 are done by the owner in the PyPI and GitHub web interfaces.
+Do not mark a package `published=true` until the registry upload actually
+succeeds.
