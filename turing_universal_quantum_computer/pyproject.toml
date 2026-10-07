@@ -6,7 +6,7 @@ readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.11"
-authors = [{ name = "PYTHIA Contributors" }]
+authors = [{ name = "HYBA Software Limited" }]
 keywords = ["turing", "quantum", "exact-math", "vqc", "pythia", "mla1517"]
 classifiers = [
     "Development Status :: 4 - Beta",

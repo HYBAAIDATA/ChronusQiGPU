@@ -8,7 +8,7 @@ version = "16.0.0"
 description = "EUCLID Meta-Evolutionary Code Intelligence Engine Payload"
 readme = "README.md"
 authors = [
-    { name = "EUCLID Core Research Group" }
+    { name = "HYBA Software Limited" }
 ]
 license = { text = "MIT" }
 classifiers = [

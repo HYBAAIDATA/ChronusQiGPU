@@ -9,7 +9,7 @@ description = "Chronos GPU -- mathematical quantum graphics engine (Chronos v3.3
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12"
-authors = [{ name = "HYBA Software Ltd" }]
+authors = [{ name = "HYBA Software Limited" }]
 keywords = [
     "graphics",
     "hamiltonian",

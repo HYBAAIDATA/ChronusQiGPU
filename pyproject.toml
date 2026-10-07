@@ -5,7 +5,7 @@ description = "PYTHIA operational mining backend with the canonical MLA1517 exec
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.12"
-authors = [{ name = "PYTHIA Contributors" }]
+authors = [{ name = "HYBA Software Limited" }]
 keywords = ["mining", "stratum", "opencl", "mla1517", "verification"]
 classifiers = [
     "Development Status :: 4 - Beta",

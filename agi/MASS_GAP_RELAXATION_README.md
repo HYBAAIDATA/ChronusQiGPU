@@ -378,7 +378,7 @@ This is optimal—any fewer cycles would miss the target, any more would be redu
 
 ---
 
-**HYBA Software Ltd** — *Mathematical substrate for computational intelligence.*
+**HYBA Software Limited** — *Mathematical substrate for computational intelligence.*
 
 Last Updated: 2024
 Version: 1.0.0
