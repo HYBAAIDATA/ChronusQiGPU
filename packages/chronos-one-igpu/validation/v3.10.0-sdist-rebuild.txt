@@ -1,0 +1,12 @@
+Processing ./dist/chronos_gpu-3.10.0.tar.gz
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: chronos-gpu
+  Building wheel for chronos-gpu (pyproject.toml): started
+  Building wheel for chronos-gpu (pyproject.toml): finished with status 'done'
+  Created wheel for chronos-gpu: filename=chronos_gpu-3.10.0-cp313-cp313-linux_x86_64.whl size=324343 sha256=19026a29d4f5d83208981cf32ced0693c5436a00ab8b79798cb1104c941c957e
+  Stored in directory: /home/vercel-sandbox/.cache/pip/wheels/88/51/d5/49cc9745829d44becd39a39fc7d6dd4e35771590d9e4e561e4
+Successfully built chronos-gpu
+
+[notice] A new release of pip is available: 24.2 -> 26.2.1
+[notice] To update, run: python -m pip install --upgrade pip
