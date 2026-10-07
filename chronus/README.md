@@ -1,6 +1,6 @@
 # Chronus — HYBA Heterogeneous Compute & Virtual iGPU Runtime
 
-Chronus is HYBA's **hardware-facing heterogeneous execution and acceleration plane**.
+Chronus is HYBA's **software-defined heterogeneous execution and acceleration plane**.
 It turns governed computational work into measured execution on available silicon while
 preserving the semantic contract of the workload and recording what actually ran.
 
@@ -15,6 +15,28 @@ future accelerator substrates.
 
 > **Start here:** §19 shows what Chronus has actually been measured doing on real data;
 > §20 is the one-page map of where every Chronus-related piece lives.
+
+## 0. Owner-approved two-mode product contract
+
+CHRONUS does **not** depend on a physical GPU in order to exist or run. The
+owner-approved substrate-agnostic design is a two-mode product contract:
+
+1. **Standalone software-defined mode** (`standalone_software`) — CHRONUS executes
+   the same workload semantics on the CPU/reference substrate, with verification,
+   receipts, evidence and custody. This is a first-class production mode, **not**
+   a degraded fallback. A GPU is not a functional prerequisite.
+2. **Accelerator-enhanced mode** (`preferred_accelerator`) — when a certified
+   iGPU/GPU/accelerator is available, CHRONUS binds to it to increase throughput
+   or capacity while preserving the same semantic and verification contracts.
+   Each physical lane is certified independently.
+
+A missing or uncertified GPU therefore keeps that accelerator lane **GATED**; it
+does not make CHRONUS itself unavailable. Physical execution, performance, power,
+thermal and device-rooted claims remain device-bound evidence gates.
+
+Production readiness follows the same split: the core product can be declared
+ready on executed standalone-software evidence, while Metal/OpenCL/CUDA/other
+lanes are promoted only after their own device-bound certification artifacts.
 
 ---
 
@@ -165,8 +187,10 @@ results remain independently attributable; integration is not ownership transfer
 
 ### Embedded
 
-Chronus executes inside the customer's/container environment and binds directly to
-locally available accelerator surfaces.
+Chronus executes inside the customer's/container environment. The standalone
+software runtime is a valid embedded product mode when its software gates are
+met; locally available accelerators are additive execution lanes, not
+prerequisites.
 
 ```text
 application
