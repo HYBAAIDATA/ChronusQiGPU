@@ -22,18 +22,13 @@ The import name is `toe` regardless of the distribution chosen.
 To approve, replace this line with: `APPROVED_DISTRIBUTION_NAME: <name>`
 and update `name` in `packaging/toe/pyproject.toml` if it differs from the provisional one.
 
-## 2. Release version — OPEN (two owner instructions conflict)
+## 2. Release version — APPROVED
 
-- The TOE elevation brief: the canonical source version is **3.5.0**; do not reset
-  TOE's history to 1.0.0 arbitrarily; change it only deliberately per release policy.
-- `packaging/RELEASE_STATUS.md`: "First public releases use **1.0.0**."
+Owner decision recorded 2026-10-07: **every first public HYBA product release starts at 1.0.0**.
+TOE's internal development/history may have used 3.5.0, but unpublished development
+versioning does not become the public package version.
 
-The artefacts are built at **3.5.0**: runtime version, wheel metadata and capability
-manifest stay aligned with the canonical source, and nothing renumbers the package
-behind the owner's back. If the owner chooses 1.0.0, change `toe/__init__.py:__version__`
-(the single literal), `toe/CAPABILITY_MANIFEST.json` and the workflow's `VERSION`, then rebuild.
-
-To approve, replace this line with: `APPROVED_VERSION: <version>`
+APPROVED_VERSION: 1.0.0
 
 ## 3. Registry prerequisites — OPEN (external)
 
