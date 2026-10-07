@@ -698,8 +698,36 @@ def euclid_cognition_status() -> dict[str, Any]:
         stage == "RESTART_VERIFIED" for stage in reachability.values()
     ):
         open_gates.append("restart_not_verified")
+    generalisation_evidence = {
+        "verified": False,
+        "path": str(_euclid_state_dir() / "held_out_generalisation.json"),
+        "verdict": "UNAVAILABLE",
+    }
+    generalisation_path = _euclid_state_dir() / "held_out_generalisation.json"
+    if generalisation_path.is_file():
+        try:
+            import json as _json
+            from euclid.cognition.generalisation import validate_generalisation_report
+
+            report = _json.loads(generalisation_path.read_text(encoding="utf-8"))
+            generalisation_evidence = {
+                "verified": bool(validate_generalisation_report(report)),
+                "path": str(generalisation_path),
+                "verdict": str(report.get("verdict") or "UNAVAILABLE"),
+                "families": list(report.get("families") or ()),
+                "mean_delta": report.get("mean_delta"),
+                "seal": report.get("seal"),
+            }
+        except Exception as exc:  # noqa: BLE001 - status must degrade honestly
+            generalisation_evidence = {
+                "verified": False,
+                "path": str(generalisation_path),
+                "verdict": "INVALID",
+                "error": f"{type(exc).__name__}: {exc}",
+            }
+    if not generalisation_evidence["verified"]:
+        open_gates.append("held_out_generalisation_not_established")
     open_gates.extend([
-        "held_out_generalisation_not_established",
         "external_validation_absent",
         "production_certification_absent",
     ])
@@ -717,6 +745,7 @@ def euclid_cognition_status() -> dict[str, Any]:
         "reachability": reachability,
         "evidence_head": runtime.evidence.head,
         "capabilities": capabilities,
+        "held_out_generalisation": generalisation_evidence,
         "authority_boundary": {
             "EUCLID": "cognition/orchestration/advisory intelligence",
             "PYTHIA": "final mining authority",
