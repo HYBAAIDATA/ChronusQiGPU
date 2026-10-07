@@ -664,6 +664,27 @@ def euclid_cognition_status() -> dict[str, Any]:
         if stage is not None:
             reachability[component] = stage.name
 
+    cognition = runtime.cognition
+    world_model = getattr(cognition, "world_model", None)
+    capabilities = {
+        "primary_cognition_loop": cognition is not None,
+        "nonlinear_feature_augmentation": bool(
+            getattr(world_model, "feature_augmented", False)
+        ),
+        "counterfactual_plan_evaluation": callable(
+            getattr(world_model, "counterfactual", None)
+        ),
+        "long_horizon_credit_assignment": callable(
+            getattr(getattr(cognition, "metalearner", None), "update_credit", None)
+        ),
+        "discovery_self_optimisation": (
+            getattr(runtime, "discovery", None) is not None
+            and getattr(runtime, "discovery_optimisation", None) is not None
+        ),
+        "typed_cognition_problem": True,
+        "mining_cognition_problem": True,
+    }
+
     open_gates: list[str] = []
     if not memory_integrity.get("valid"):
         open_gates.append("memory_integrity_unverified")
@@ -695,6 +716,12 @@ def euclid_cognition_status() -> dict[str, Any]:
         "replay_journal": replay_integrity,
         "reachability": reachability,
         "evidence_head": runtime.evidence.head,
+        "capabilities": capabilities,
+        "authority_boundary": {
+            "EUCLID": "cognition/orchestration/advisory intelligence",
+            "PYTHIA": "final mining authority",
+            "mining_consensus_transfer": False,
+        },
         "resources": {"open": not getattr(runtime, "_closed", False)},
         "experiences_seen": len(learning._seen),
         "open_gates": open_gates,
