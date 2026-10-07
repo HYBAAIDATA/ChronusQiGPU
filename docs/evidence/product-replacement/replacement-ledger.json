@@ -1,0 +1,168 @@
+{
+  "schema": "chronos.product_replacement_ledger/1",
+  "scope": "Current local replacement increment, NOT whole-product closure",
+  "source_base": "6611b938bf778b0f478aaba89aafd9387f03573a",
+  "items": [
+    {
+      "EXISTING_ROLE": "Hendrix software/OpenCL execution selection",
+      "WHY_IT_EXISTS": "Execute PYTHIA order on actual available substrate",
+      "CANONICAL_REPLACEMENT": "Sealed implementation manifest and PYTHIA-authorised execution contract",
+      "CALLERS_MIGRATED": [
+        "resident_search.compile_hendrix_plan",
+        "ChronusOneIGPUHasher",
+        "OneIGPU.execute_hendrix",
+        "resident_router"
+      ],
+      "PARITY_TEST": [
+        "test_production_replacement_attacks.py",
+        "test_resident_hendrix.py"
+      ],
+      "NEW_PRODUCTION_PATH": "PYTHIA contract -> verify -> resident Hendrix -> actual SHA -> independent replay",
+      "OLD_PATH_NEW_ROLE": "Implicit backend selection retired on this route",
+      "status": "SOURCE_TESTED"
+    },
+    {
+      "EXISTING_ROLE": "Fallback availability",
+      "WHY_IT_EXISTS": "Keep identical authorised algorithm executable when a named device is absent",
+      "CANONICAL_REPLACEMENT": "Sealed resident_software_same_hendrix alternative; no unsealed algorithm substitution",
+      "CALLERS_MIGRATED": [
+        "execute_nonce_batch",
+        "execute_hendrix"
+      ],
+      "PARITY_TEST": "Substitution attacks fail before execution; hardware execution remains unqualified",
+      "NEW_PRODUCTION_PATH": "Verify explicit plan alternative -> same Hendrix order -> independently verified hashes",
+      "OLD_PATH_NEW_ROLE": "No generic scheduler/CPU nonce substitution in resident route",
+      "status": "SOURCE_TESTED"
+    },
+    {
+      "EXISTING_ROLE": "Public OneIGPU.evolve",
+      "WHY_IT_EXISTS": "Finite Hamiltonian unitary evolution",
+      "CANONICAL_REPLACEMENT": "Exact symbolic e^(-iHt), exact Hermiticity/unitarity/norm, bounded unavailable cases",
+      "CALLERS_MIGRATED": [
+        "GoldenRuntime.evolve",
+        "VirtualRuntime evolve operation"
+      ],
+      "PARITY_TEST": "test_exact_evolution_replacement.py",
+      "NEW_PRODUCTION_PATH": "Old facade -> exact_hamiltonian_evolution -> exact state/evidence -> ABI independent replay",
+      "OLD_PATH_NEW_ROLE": "Other direct numerical state/engine APIs remain OPEN, not yet retired",
+      "status": "SOURCE_TESTED"
+    },
+    {
+      "EXISTING_ROLE": "Evolution ABI transport and verification",
+      "WHY_IT_EXISTS": "Serializable exact results and independent receipt replay",
+      "CANONICAL_REPLACEMENT": "Whitelisted bounded exact expression trees; exact input decoder; backend/source/output independent replay",
+      "CALLERS_MIGRATED": [
+        "VirtualRuntime.execute",
+        "VirtualRuntime.verify_receipt"
+      ],
+      "PARITY_TEST": "test_exact_evolution_replacement.py",
+      "NEW_PRODUCTION_PATH": "Exact input tree -> exact evolution -> exact output tree -> replay",
+      "OLD_PATH_NEW_ROLE": "Numeric input accepted as exact binary rational values; output contract deliberately versioned",
+      "status": "SOURCE_TESTED"
+    },
+    {
+      "EXISTING_ROLE": "Direct MathematicalQuantumState/Operator/HamiltonianEngine APIs",
+      "WHY_IT_EXISTS": "Existing capability retained pending role/consumer closure",
+      "CANONICAL_REPLACEMENT": "Preserve exact state/operator/evolution functions and migrate QX/search/UCI consumers; retain numerical references explicitly",
+      "CALLERS_MIGRATED": [],
+      "PARITY_TEST": null,
+      "NEW_PRODUCTION_PATH": null,
+      "OLD_PATH_NEW_ROLE": "UNCHANGED; no removal claimed",
+      "status": "OPEN"
+    },
+    {
+      "EXISTING_ROLE": "Structured S6/cache and ChronosEngine",
+      "WHY_IT_EXISTS": "Existing capability retained pending role/consumer closure",
+      "CANONICAL_REPLACEMENT": "Replace numerical ground-state computation without changing requested solver identity or losing API capabilities",
+      "CALLERS_MIGRATED": [],
+      "PARITY_TEST": null,
+      "NEW_PRODUCTION_PATH": null,
+      "OLD_PATH_NEW_ROLE": "UNCHANGED; no removal claimed",
+      "status": "OPEN"
+    },
+    {
+      "EXISTING_ROLE": "S1 golden transform and S3 coherence",
+      "WHY_IT_EXISTS": "Existing capability retained pending role/consumer closure",
+      "CANONICAL_REPLACEMENT": "Exact transformation and norm/certificate implementation; migrate all callers",
+      "CALLERS_MIGRATED": [],
+      "PARITY_TEST": null,
+      "NEW_PRODUCTION_PATH": null,
+      "OLD_PATH_NEW_ROLE": "UNCHANGED; no removal claimed",
+      "status": "OPEN"
+    },
+    {
+      "EXISTING_ROLE": "Mandelbrot ranking and inherited S6 fallback",
+      "WHY_IT_EXISTS": "Existing capability retained pending role/consumer closure",
+      "CANONICAL_REPLACEMENT": "Establish precise role and exact ordering contract; forbid implicit algorithm substitution",
+      "CALLERS_MIGRATED": [],
+      "PARITY_TEST": null,
+      "NEW_PRODUCTION_PATH": null,
+      "OLD_PATH_NEW_ROLE": "UNCHANGED; no removal claimed",
+      "status": "OPEN"
+    },
+    {
+      "EXISTING_ROLE": "QX command stream",
+      "WHY_IT_EXISTS": "Existing capability retained pending role/consumer closure",
+      "CANONICAL_REPLACEMENT": "Replace numeric amplitudes/evolution/readout with exact operations and evidence; no fabricated physical measurement",
+      "CALLERS_MIGRATED": [],
+      "PARITY_TEST": null,
+      "NEW_PRODUCTION_PATH": null,
+      "OLD_PATH_NEW_ROLE": "UNCHANGED; no removal claimed",
+      "status": "OPEN"
+    },
+    {
+      "EXISTING_ROLE": "UCI time scaling",
+      "WHY_IT_EXISTS": "Existing capability retained pending role/consumer closure",
+      "CANONICAL_REPLACEMENT": "Preserve parameterisation role with exact declared-input arithmetic and migrated callers",
+      "CALLERS_MIGRATED": [],
+      "PARITY_TEST": null,
+      "NEW_PRODUCTION_PATH": null,
+      "OLD_PATH_NEW_ROLE": "UNCHANGED; no removal claimed",
+      "status": "OPEN"
+    },
+    {
+      "EXISTING_ROLE": "Tensor/render/Apple/backend public APIs",
+      "WHY_IT_EXISTS": "Existing capability retained pending role/consumer closure",
+      "CANONICAL_REPLACEMENT": "Audit required arithmetic and authority, preserve roles, implement exact equivalents where required",
+      "CALLERS_MIGRATED": [],
+      "PARITY_TEST": null,
+      "NEW_PRODUCTION_PATH": null,
+      "OLD_PATH_NEW_ROLE": "UNCHANGED; no removal claimed",
+      "status": "OPEN"
+    },
+    {
+      "EXISTING_ROLE": "EUCLID operational actuator",
+      "WHY_IT_EXISTS": "Existing capability retained pending role/consumer closure",
+      "CANONICAL_REPLACEMENT": "Make advice a PYTHIA-authorised plan decision; migrate coordinator; no silent plan override",
+      "CALLERS_MIGRATED": [],
+      "PARITY_TEST": null,
+      "NEW_PRODUCTION_PATH": null,
+      "OLD_PATH_NEW_ROLE": "UNCHANGED; no removal claimed",
+      "status": "OPEN"
+    },
+    {
+      "EXISTING_ROLE": "Whole repository callers and installed canonical custody",
+      "WHY_IT_EXISTS": "Existing capability retained pending role/consumer closure",
+      "CANONICAL_REPLACEMENT": "Full canonical source/installation unavailable locally; individual MCP reads work, full clone/download failed; no exhaustive caller/production certification",
+      "CALLERS_MIGRATED": [],
+      "PARITY_TEST": null,
+      "NEW_PRODUCTION_PATH": null,
+      "OLD_PATH_NEW_ROLE": "UNCHANGED; no removal claimed",
+      "status": "OPEN"
+    }
+  ],
+  "whole_product_readiness": "NOT_CERTIFIED",
+  "required_closure": {
+    "CAPABILITIES_REMOVED_WITHOUT_REPLACEMENT": null,
+    "PRODUCTION_NUMERICAL_FALLBACKS": null,
+    "PRODUCTION_HEURISTIC_SUBSTITUTIONS": null,
+    "PRODUCTION_SIMULATION_SUBSTITUTIONS": null,
+    "PRODUCTION_STUBS_MOCKS_DEMOS": null,
+    "ALGORITHM_IDENTITY_VIOLATIONS": null,
+    "UNMIGRATED_PRODUCTION_CALLERS": null,
+    "UNREVIEWED_PRODUCTION_PATHS": null,
+    "OPEN_MATERIAL_DEFECTS": null
+  },
+  "closure_interpretation": "null means not exhaustively measured; no requested zero counter is asserted",
+  "capabilities_removed_this_increment": 0
+}

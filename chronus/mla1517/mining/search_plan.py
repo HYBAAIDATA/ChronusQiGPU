@@ -352,6 +352,16 @@ class ExecutionRecord:
     plan_digest: str | None = None
     resident_execution_digest: str | None = None
     geometry_digest: str | None = None
+    requested_algorithm: str | None = None
+    planned_algorithm: str | None = None
+    executed_algorithm: str | None = None
+    implementation_module: str | None = None
+    implementation_digest: str | None = None
+    execution_mode: str | None = None
+    substrate: dict | None = None
+    iterations_work_performed: dict | None = None
+    fallback_used: bool = False
+    execution_receipt_digest: str | None = None
     # --- execution provenance (router) -------------------------------------
     # ``device_used`` above is retained for API compatibility. The router
     # populates BOTH: ``requested_route`` is what the plan asked for and

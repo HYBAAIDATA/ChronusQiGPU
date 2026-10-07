@@ -314,6 +314,12 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
                 "resident Hendrix issuance requires authoritative current job"
             )
         header = adapter.build_header(job.job_id, bound.extranonce2, job.ntime, 0)
+        resident=getattr(self.execution_hasher,"igpu",None)
+        overlay=getattr(getattr(resident,"fabric",None),"overlay",None)
+        if overlay is not None:
+            refs["execution_mode"]="resident_opencl"
+            refs["authorised_execution_device"]=dict(overlay.capability())
+            bound=replace(bound,evidence_refs=refs)
         artifact = compile_hendrix_plan(
             bound,
             header,

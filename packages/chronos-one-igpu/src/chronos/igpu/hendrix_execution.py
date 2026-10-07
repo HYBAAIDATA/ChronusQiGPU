@@ -10,7 +10,7 @@ from .resident_hendrix import ResidentHendrix, seal
 from ..adapters.base import DispatchError
 
 
-def execute_nonce_batch(igpu, header, target_be, nonces):
+def execute_nonce_batch(igpu, header, target_be, nonces, *, execution_contract=None):
     if (
         not isinstance(header, bytes)
         or len(header) != 80
@@ -25,24 +25,24 @@ def execute_nonce_batch(igpu, header, target_be, nonces):
         or any(type(n) is not int or not 0 <= n < 2**32 for n in values)
     ):
         raise ValueError("bounded unique uint32 batch required")
-    overlay = igpu.fabric.overlay
-    adapter = (
-        overlay
-        if overlay is not None and hasattr(overlay, "execute_sha256d")
-        else igpu.fabric.mining_adapter
-    )
-    if adapter is None:
-        igpu.configure_asic_like()
+    from .execution_identity import issue_contract, verify_contract
+
+    # The old fixed-nonce API is a compatibility request for exact SHA256d,
+    # not permission for Chronus to invent a mining strategy.
+    requested_contract = execution_contract or issue_contract()
+    selected_contract, authorised_fallback = verify_contract(requested_contract, igpu)
+    if selected_contract["execution_mode"] == "resident_opencl":
+        adapter = igpu.fabric.overlay
+    else:
+        from .asic_mining import PreparedSHA256d
+
         adapter = igpu.fabric.mining_adapter
+        if type(adapter) is not PreparedSHA256d:
+            adapter = PreparedSHA256d()
+            igpu.fabric.mining_adapter = adapter
     capability = adapter.capability()
-    fallback_reason = igpu.fabric.reason
-    if not capability.get("physical"):
-        if overlay is not None:
-            fallback_reason = (
-                "bound overlay has no SHA256d execution capability; resident CPU execution"
-            )
-        elif fallback_reason is None:
-            fallback_reason = "independent resident CPU execution; no physical GPU bound"
+    if capability["backend"] != selected_contract["substrate"]["sha256d_backend"]:
+        raise DispatchError("planned SHA256d substrate was replaced")
     started = time.perf_counter()
     nonce, digest, checked = None, None, 0
     target = int.from_bytes(target_be, "big")
@@ -88,13 +88,34 @@ def execute_nonce_batch(igpu, header, target_be, nonces):
         "device": capability["device_id"],
         "physical_device_executed": physical,
         "kernel_launch_count": int(physical),
-        "kernel_seconds": adapter_receipt.get("kernel_seconds", 0.0) if physical else 0.0,
+        "kernel_seconds": (
+            adapter_receipt.get("kernel_seconds", 0.0) if physical else 0.0
+        ),
         "order_digest": hashlib.sha256(
             b"".join(n.to_bytes(4, "little") for n in values)
         ).hexdigest(),
         "host_verified": nonce is not None,
         "pool_state": "NOT_SUBMITTED",
-        "fallback_reason": fallback_reason,
+        "fallback_reason": authorised_fallback,
+        "fallback_used": authorised_fallback is not None,
+        "requested_algorithm": "sha256d_explicit_nonces",
+        "planned_algorithm": "sha256d_explicit_nonces",
+        "executed_algorithm": "sha256d_explicit_nonces",
+        "implementation_module": __name__,
+        "implementation_digest": selected_contract["implementation_digest"],
+        "execution_mode": selected_contract["execution_mode"],
+        "substrate": selected_contract["substrate"],
+        "plan_digest": seal(
+            {"header": header[:76].hex(), "target": target_be.hex(), "nonces": values}
+        ),
+        "geometry_digest": None,
+        "iterations_work_performed": {
+            "positions_requested": len(values),
+            "sha256d": checked,
+            "verification_sha256d": verify_count,
+        },
+        "header_prefix_hex": header[:76].hex(),
+        "target_hex": target_be.hex(),
     }
     return {**result, "receipt_digest": seal(result)}
 
@@ -104,6 +125,11 @@ def execute_hendrix(
 ):
     if type(count) is not int or not 0 <= count <= 4096:
         raise ValueError("resident execution admits at most 4096 candidates per batch")
+    from .execution_identity import verify_contract, receipt_identity, verify_receipt
+
+    selected_contract, authorised_fallback = verify_contract(
+        artifact["execution_contract"], igpu
+    )
     cache = getattr(igpu, "_hendrix_resident_cache", None)
     if cache is None:
         cache = igpu._hendrix_resident_cache = OrderedDict()
@@ -126,17 +152,24 @@ def execute_hendrix(
         raise DispatchError("stale Hendrix job")
     overlay = igpu.fabric.overlay
     order_evidence = None
-    if count and overlay is not None and callable(getattr(overlay, "execute_hendrix_order", None)):
+    if count and selected_contract["execution_mode"] == "resident_opencl":
         values, bindings = overlay.execute_hendrix_order(compiled, position, count)
         order_evidence = overlay._hendrix_order_receipt
     else:
         values, bindings = compiled.batch(position, count)
-    result = execute_nonce_batch(igpu, header, target_be, [int(n) for n in values])
+    result = execute_nonce_batch(
+        igpu,
+        header,
+        target_be,
+        [int(n) for n in values],
+        execution_contract=artifact["execution_contract"],
+    )
     if current_epoch is not None and current_epoch() != artifact["generation"]:
         raise DispatchError("Hendrix job became stale during execution")
     result.pop("receipt_digest")
     result.update(
         {
+            **receipt_identity(selected_contract, fallback_reason=authorised_fallback),
             "algorithm": artifact["algorithm"],
             "plan_id": artifact["plan_id"],
             "plan_digest": artifact["plan_digest"],
@@ -144,15 +177,25 @@ def execute_hendrix(
             "geometry_digest": artifact["geometry"]["digest"],
             "position": position,
             "requested_candidates": count,
-            "binding_digest": hashlib.sha256(bindings.astype("<u4").tobytes()).hexdigest(),
+            "binding_digest": hashlib.sha256(
+                bindings.astype("<u4").tobytes()
+            ).hexdigest(),
             "geometry_operations_counted_as_hashes": False,
-            "ordering_backend": "opencl_resident" if order_evidence else "numpy_uint64_resident",
+            "ordering_backend": (
+                "opencl_resident" if order_evidence else "numpy_uint64_resident"
+            ),
             "ordering_evidence": order_evidence,
             "logical_positions": 600,
             "physical_fanout_observed": False,
+            "iterations_work_performed": {
+                "positions_requested": count,
+                "sha256d": result["sha256d_evaluations"],
+                "verification_sha256d": result["verification_sha256d_evaluations"],
+            },
         }
     )
     result["receipt_digest"] = seal(result)
+    verify_receipt(result, artifact, igpu=igpu)
     if igpu.db is not None:
         # Existing content-addressed MLA/PRIME-DB certificates, not a new
         # custody authority. Repeated jobs reuse the same stored plan object.
@@ -161,7 +204,9 @@ def execute_hendrix(
             plans = igpu._hendrix_persisted_plans = OrderedDict()
         plan_object_id = plans.get(compiled.digest)
         if plan_object_id is None:
-            plan_object_id = igpu.db.put(compiled.as_dict(), 1, family="hendrix_plan").object_id
+            plan_object_id = igpu.db.put(
+                compiled.as_dict(), 1, family="hendrix_plan"
+            ).object_id
             plans[compiled.digest] = plan_object_id
             if len(plans) > 4:
                 plans.popitem(last=False)

@@ -240,7 +240,9 @@ class OneIGPU:
 
     def execute_hendrix(self, artifact, header, target_be, **kwargs):
         from .hendrix_execution import execute_hendrix
+        from .execution_identity import verify_contract
         with self._hendrix_lock:
+            verify_contract(artifact["execution_contract"],self)
             return execute_hendrix(self, artifact, header, target_be, **kwargs)
 
     def execute_nonce_batch(self, header, target_be, nonces):

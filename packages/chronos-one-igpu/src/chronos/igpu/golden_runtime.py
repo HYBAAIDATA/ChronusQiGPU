@@ -210,6 +210,8 @@ class GoldenRuntime:
 
     def evolve(self, amplitudes, hamiltonian, time_value=1.0):
         start = time.perf_counter()
-        result = HamiltonianEngine().evolve(MathematicalQuantumState(amplitudes), hamiltonian, time_value)
-        self.attest("state_evolution", start, details={"dimension": len(result.amplitudes)})
+        from .exact_quantum import exact_hamiltonian_evolution
+        result = exact_hamiltonian_evolution(amplitudes,hamiltonian,time_value,legacy_encoding=True)
+        self.attest("state_evolution", start, details={"dimension": len(result.amplitudes),
+            "execution_receipt":result.evidence})
         return result

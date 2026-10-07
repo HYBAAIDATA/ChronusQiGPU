@@ -63,6 +63,7 @@ def compile_hendrix_plan(plan, header, target_be, state, *, use_hilbert=True):
     from Intelligence.search_crystal import cassini_permutation, partition_interval
     from .hendrix_order import hendrix_schedule
     from .exact_search import ExactSearchState, exact_vertex_itinerary, exact_face_order
+    from chronos_one_igpu.igpu.execution_identity import issue_contract
 
     if plan.nonce_order != "hendrix_coprime_stride":
         raise ValueError("only canonical Hendrix may be resident-lowered")
@@ -124,6 +125,10 @@ def compile_hendrix_plan(plan, header, target_be, state, *, use_hilbert=True):
                 },
             },
             "authority": {"plan": "PYTHIA", "execution": "Chronus", "proof": "SHA256d"},
+            "execution_contract": issue_contract(
+                execution_mode=plan.evidence_refs.get("execution_mode", "resident_software"),
+                device=plan.evidence_refs.get("authorised_execution_device"),
+            ),
         }
     )
     result.validate()

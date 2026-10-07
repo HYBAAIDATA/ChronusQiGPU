@@ -71,7 +71,12 @@ class VirtualRuntime:
                 output=self.gpu.tensor(p['operator'],p['left'],p.get('right')).tolist();backend=self.gpu.fabric.route('tensor').executor
             elif op=='evolve':
                 if len(p['amplitudes'])>workload.quota:raise ValueError('state workload quota')
-                a=self.gpu.evolve(p['amplitudes'],p['hamiltonian'],p.get('time',1)).amplitudes;output={'real':a.real.tolist(),'imag':a.imag.tolist()};backend='cpu_reference'
+                from .exact_quantum import encode_expression,decode_evolution_payload
+                amplitudes,hamiltonian,t=decode_evolution_payload(p)
+                evolved=self.gpu.evolve(amplitudes,hamiltonian,t);a=evolved.amplitudes
+                output={'real':[encode_expression(x)for x in a.real],
+                        'imag':[encode_expression(x)for x in a.imag],
+                        'encoding':'exact_expression_tree_v1','execution_receipt':evolved.evidence};backend='cpu_exact_symbolic'
             else:
                 from .qx import QXBuffer
                 if len(p['commands'])>workload.quota:raise ValueError('QX workload quota')
@@ -82,6 +87,7 @@ class VirtualRuntime:
                      'workload_digest':digest,'result_digest':result_digest,'trust_class':workload.trust_class,'elapsed_seconds':time.perf_counter()-start,
                      'hardware_root_claimed':False,'output':output}
             receipt['receipt_digest']=hashlib.sha256(canonical(receipt)).hexdigest()
+            if op=='evolve': self.verify_receipt(receipt,workload)
             self.gpu.golden.attest('virtual_abi',start,details={'workload_digest':digest,'receipt_digest':receipt['receipt_digest'],'tenant':tenant})
             return receipt
         finally:
@@ -121,4 +127,13 @@ class VirtualRuntime:
         body=dict(receipt);digest=body.pop('receipt_digest')
         if hashlib.sha256(canonical(body)).hexdigest()!=digest or body['workload_digest']!=workload.digest()or body['result_digest']!=hashlib.sha256(canonical(body['output'])).hexdigest():raise ValueError('ABI receipt custody mismatch')
         if body['tenant']!=workload.tenant or body['workload_id']!=workload.workload_id or body['hardware_root_claimed'] or body['trust_class']!=workload.trust_class or body['schema']!=workload.schema or body['logical_device']!='chronos_igpu':raise ValueError('ABI identity/trust mismatch')
+        if workload.operation=='evolve':
+            from .exact_quantum import exact_hamiltonian_evolution,encode_expression,decode_evolution_payload
+            if body['backend']!='cpu_exact_symbolic':raise ValueError('exact evolution substrate mismatch')
+            amplitudes,hamiltonian,t=decode_evolution_payload(workload.payload)
+            replayed=exact_hamiltonian_evolution(amplitudes,hamiltonian,t,legacy_encoding=True)
+            expected={'real':[encode_expression(x)for x in replayed.amplitudes.real],
+                      'imag':[encode_expression(x)for x in replayed.amplitudes.imag],
+                      'encoding':'exact_expression_tree_v1','execution_receipt':replayed.evidence}
+            if body['output']!=expected:raise ValueError('exact evolution implementation replay failed')
         return True

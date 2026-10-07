@@ -125,6 +125,25 @@ class ResidentHendrix:
                 raise ValueError("Cassini witness required")
         if v["algorithm"] != "hendrix_coprime_stride":
             raise ValueError("resident executor cannot change algorithm")
+        contract = v.get("execution_contract")
+        if (
+            not isinstance(contract, dict)
+            or contract.get("schema") != "pythia.execution_implementation/1"
+        ):
+            raise ValueError("PYTHIA must authorise the execution implementation")
+        if (
+            contract.get("requested_algorithm") != v["algorithm"]
+            or contract.get("planned_algorithm") != v["algorithm"]
+        ):
+            raise ValueError("requested and planned algorithms differ")
+        if contract.get("execution_mode") not in (
+            "resident_software",
+            "resident_opencl",
+        ):
+            raise ValueError("unregistered execution mode")
+        alternatives = contract.get("allowed_fallbacks")
+        if not isinstance(alternatives, list) or len(alternatives) > 1:
+            raise ValueError("bounded explicit fallback authority required")
         geometry = v["geometry"]
         body = {k: x for k, x in geometry.items() if k != "digest"}
         if geometry["digest"] != seal(body):
