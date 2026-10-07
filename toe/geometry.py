@@ -222,6 +222,25 @@ def bfs_tree(
     return parent
 
 
+def graph_center(edges: Sequence[Tuple[Hashable, Hashable]]) -> Hashable:
+    """A node of minimum eccentricity (ties broken by name).
+
+    Rooting the spanning tree here minimises its depth, which is what keeps
+    a hyperbolic tree embedding inside float64 resolution. Cost is one BFS
+    per node — intended for the graph sizes the embedding can represent.
+    """
+    adj = _adjacency(edges)
+    best: Optional[Tuple[int, str, Hashable]] = None
+    for n in adj:
+        ecc = max(_shortest_lengths(adj, n).values())
+        key = (ecc, str(n), n)
+        if best is None or key[:2] < best[:2]:
+            best = key
+    if best is None:
+        raise GeometryError("empty graph has no center")
+    return best[2]
+
+
 def embed_tree(
     parent: Mapping[Hashable, Optional[Hashable]], *, tau: float = 2.5
 ) -> Dict[str, Any]:
@@ -347,7 +366,7 @@ def routing_study(
     """
     adj = _adjacency(edges)
     nodes = sorted(adj, key=str)
-    root = nodes[0] if root is None else root
+    root = graph_center(edges) if root is None else root
     parent = bfs_tree(edges, root)
     if len(parent) != len(adj):
         raise GeometryError("graph is disconnected; routing study needs one component")
@@ -491,6 +510,7 @@ __all__ = [
     "bfs_tree",
     "disk_distance",
     "embed_tree",
+    "graph_center",
     "greedy_route",
     "routing_study",
 ]

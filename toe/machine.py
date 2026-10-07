@@ -456,7 +456,7 @@ class TOEMachine:
 
     def _navigate(self, problem: Problem, trace: _Trace) -> Dict[str, Any]:
         """Navigation over a transition graph under three representations."""
-        from .geometry import GeometryError, bfs_tree, disk_distance, embed_tree, greedy_route
+        from .geometry import GeometryError, bfs_tree, disk_distance, embed_tree, graph_center, greedy_route
         from .topology import StateTopology
 
         transitions = [tuple(e) for e in problem.transitions or ()]
@@ -492,7 +492,7 @@ class TOEMachine:
         if symmetric:
             trace("navigate", embed_tree)
             try:
-                emb = embed_tree(bfs_tree(transitions, states[0]))
+                emb = embed_tree(bfs_tree(transitions, graph_center(transitions)))
                 coords = emb["coords"]
                 trace("navigate", greedy_route)
                 res = greedy_route(transitions, src, dst, lambda a, b: disk_distance(coords[a], coords[b]))
