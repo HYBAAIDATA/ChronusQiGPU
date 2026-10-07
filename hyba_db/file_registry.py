@@ -984,6 +984,23 @@ class FileRegistry:
                     errors.append(f"{tid}:{row['file_version_id']}:custody adapter unavailable")
                 elif not self.custody.verify(tid, row["custody_record_id"]):
                     errors.append(f"{tid}:{row['file_version_id']}:custody verification failed")
+                else:
+                    opener = getattr(self.custody, "open_tenant", None)
+                    if callable(opener):
+                        try:
+                            op = opener(tid).get_record(row["custody_record_id"])
+                            if (
+                                op.content_digest != row["content_sha256"]
+                                or op.producer != row["producer"]
+                                or op.kind != "file_version"
+                            ):
+                                errors.append(
+                                    f"{tid}:{row['file_version_id']}:custody binding mismatch"
+                                )
+                        except Exception as exc:
+                            errors.append(
+                                f"{tid}:{row['file_version_id']}:custody read-back:{exc}"
+                            )
                 prov = self.store._db.execute(
                     "SELECT * FROM file_provenance WHERE tenant_id=? AND file_version_id=?",
                     (tid, row["file_version_id"]),
@@ -995,6 +1012,14 @@ class FileRegistry:
                         errors.append(f"{tid}:{row['file_version_id']}:provenance digest mismatch")
                     try:
                         self.store.verify_attestation(tid, prov["attestation_id"])
+                        details = self.store.get_attestation(
+                            tid, prov["attestation_id"]
+                        ).details
+                        if (
+                            details.get("file_version_id") != row["file_version_id"]
+                            or details.get("provenance_sha256") != prov["provenance_sha256"]
+                        ):
+                            raise IntegrityFailure("provenance attestation mismatch")
                     except Exception as exc:
                         errors.append(
                             f"{tid}:{row['file_version_id']}:provenance attestation:{exc}"
@@ -1027,6 +1052,23 @@ class FileRegistry:
                     errors.append(f"{tid}:{row['record_id']}:mining custody adapter unavailable")
                 elif not self.custody.verify(tid, row["custody_record_id"]):
                     errors.append(f"{tid}:{row['record_id']}:mining custody verification failed")
+                else:
+                    opener = getattr(self.custody, "open_tenant", None)
+                    if callable(opener):
+                        try:
+                            op = opener(tid).get_record(row["custody_record_id"])
+                            if (
+                                op.content_digest != row["content_sha256"]
+                                or op.producer != row["producer"]
+                                or op.kind != "mining_lifecycle"
+                            ):
+                                errors.append(
+                                    f"{tid}:{row['record_id']}:mining custody binding mismatch"
+                                )
+                        except Exception as exc:
+                            errors.append(
+                                f"{tid}:{row['record_id']}:mining custody read-back:{exc}"
+                            )
                 for parent in json.loads(row["parent_ids_json"]):
                     if not self.store._db.execute(
                         "SELECT 1 FROM mining_lifecycle WHERE tenant_id=? AND record_id=?",
