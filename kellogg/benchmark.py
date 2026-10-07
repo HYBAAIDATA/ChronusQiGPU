@@ -833,71 +833,115 @@ def _grid(quick: bool):
     return (100, 1000, 10000), (16, 64, 256, 1024)
 
 
+def _guarded_sweep(
+    chis: Sequence[int],
+    sample: Callable[[int], int],
+    repeats: int,
+    cell_budget_ns: float,
+    label: Dict[str, Any],
+) -> List[Dict[str, Any]]:
+    """Measure ascending chi; once one sample exceeds the cell budget, stop the sweep.
+
+    The first sample of every cell is timed alone. A cell whose first sample
+    already exceeds the budget keeps that single MEASURED sample, and every
+    larger chi in the row is NOT_RUN with the reason recorded. Exact
+    arithmetic on random cores grows its integers with the work done, so
+    cost is measured, never extrapolated into a MEASURED row.
+    """
+    rows: List[Dict[str, Any]] = []
+    stopped: Optional[int] = None
+    for chi in chis:
+        if stopped is not None:
+            rows.append({**label, "chi": chi, "classification": "NOT_RUN",
+                         "reason": f"chi={stopped} exceeded the {cell_budget_ns / 1e9:.0f}s cell budget"})
+            continue
+        first = sample(chi)
+        samples = [first]
+        if first <= cell_budget_ns / max(1, repeats):
+            samples += [sample(chi) for _ in range(repeats - 1)]
+        else:
+            stopped = chi
+        rows.append({**label, "chi": chi, "classification": "MEASURED", **stats(samples),
+                     "operations_per_second": 1e9 / stats(samples)["median_ns"]})
+    return rows
+
+
 def bench_mps_gate_throughput(quick: bool) -> Dict[str, Any]:
     from .custody import ResidentCustody
 
     ns, chis = _grid(quick)
-    budget = 5e9 if quick else 90e9
-    rows = []
-    fit: Dict[str, List] = {"1q": [], "2q": []}
+    budget = 3e9 if quick else 60e9
+    rows: List[Dict[str, Any]] = []
     for n in ns:
-        for chi in chis:
-            psi = None
-            for kind, exponent, repeats in (("1q", 2, 7 if quick else 21), ("2q", 3, 3 if quick else 5)):
-                prior = [r for r in fit[kind] if r[0] < chi]
-                if prior:
-                    c0, t0 = prior[-1]
-                    predicted = t0 * (chi / c0) ** exponent * repeats
-                else:
-                    predicted = 0
-                if predicted > budget:
-                    rows.append({"n": n, "chi": chi, "gate": kind, "classification": "NOT_RUN",
-                                 "modeled_median_ns": int(predicted / repeats),
-                                 "model": f"median ~ chi^{exponent} from the last measured chi"})
-                    continue
-                if psi is None:
-                    psi = _uniform_mps(n, chi, 1, ResidentCustody())
-                site = n // 2
-                if kind == "1q":
-                    samples = timed(lambda: psi.apply_1q(site, "T"), repeats)
-                else:
-                    fresh = [_uniform_mps(n, chi, 2 + k, ResidentCustody()) for k in range(repeats)]
-                    samples = []
-                    for f in fresh:
-                        t = time.perf_counter_ns()
-                        f.apply_2q(site - 1, "CNOT")
-                        samples.append(time.perf_counter_ns() - t)
-                s = stats(samples)
-                fit[kind].append((chi, s["median_ns"]))
-                rows.append({"n": n, "chi": chi, "gate": kind, "classification": "MEASURED", **s,
-                             "gates_per_second": 1e9 / s["median_ns"]})
-    return {"passed": True, "result": {"rows": rows, "field": "Q(zeta8)",
-                                       "state": "uniform random MPS, one custody block per distinct core"}}
+        site = n // 2
+        cache: Dict[int, Any] = {}
+
+        def one_q(chi: int) -> int:
+            psi = cache.get(chi)
+            if psi is None:
+                psi = cache[chi] = _uniform_mps(n, chi, 1, ResidentCustody())
+            t = time.perf_counter_ns()
+            psi.apply_1q(site, "T")
+            return time.perf_counter_ns() - t
+
+        def two_q(chi: int, _k: List[int] = [0]) -> int:
+            _k[0] += 1
+            psi = _uniform_mps(n, chi, 2 + _k[0], ResidentCustody())
+            t = time.perf_counter_ns()
+            psi.apply_2q(site - 1, "CNOT")
+            return time.perf_counter_ns() - t
+
+        rows += _guarded_sweep(chis, one_q, 7 if quick else 21, budget, {"n": n, "gate": "1q T"})
+        rows += _guarded_sweep(chis, two_q, 3 if quick else 5, budget, {"n": n, "gate": "2q CNOT"})
+    return {"passed": True, "result": {
+        "rows": rows, "field": "Q(zeta8)",
+        "state": "uniform MPS with a random bulk core (worst case for exact elimination)",
+        "note": "a gate touches one or two cores, so its cost depends on chi, not n; the 2q split "
+                "is an exact rank factorization whose integers grow with chi",
+    }}
 
 
 def bench_mps_contraction_throughput(quick: bool) -> Dict[str, Any]:
     from .custody import ResidentCustody
 
     ns, chis = _grid(quick)
-    budget = 5e9 if quick else 90e9
-    rows = []
-    last: Dict[int, tuple] = {}
+    budget = 3e9 if quick else 60e9
+    rows: List[Dict[str, Any]] = []
+    previous: Optional[tuple] = None
     for n in ns:
-        for chi in chis:
-            ref = last.get(n)
-            predicted = 0 if ref is None else ref[1] * (chi / ref[0]) ** 3
-            if predicted > budget:
-                rows.append({"n": n, "chi": chi, "classification": "NOT_RUN",
-                             "modeled_median_ns": int(predicted), "model": "n chi^3 transfer contraction"})
+        if previous is not None:
+            prev_n, prev_ns = previous
+            predicted = prev_ns * (n / prev_n) ** 2
+            if predicted > 4 * budget:
+                rows += [{"n": n, "operation": "<psi|psi>", "chi": chi, "classification": "NOT_RUN",
+                          "modeled_ns_at_smallest_chi": int(predicted) if chi == chis[0] else None,
+                          "model": "exact integers grow with n: cost ~ n^2 chi^3, scaled from "
+                                   f"n={prev_n}"} for chi in chis]
                 continue
+
+        def contract(chi: int) -> int:
             psi = _uniform_mps(n, chi, 3, ResidentCustody())
             psi.window = n + 2
-            samples = timed(lambda: psi.inner(psi), 3 if quick else 3)
-            s = stats(samples)
-            last[n] = (chi, s["median_ns"])
-            rows.append({"n": n, "chi": chi, "classification": "MEASURED", **s,
-                         "contractions_per_second": 1e9 / s["median_ns"]})
-    return {"passed": True, "result": {"rows": rows, "operation": "<psi|psi> full chain", "field": "Q(zeta8)"}}
+            t = time.perf_counter_ns()
+            psi.inner(psi)
+            return time.perf_counter_ns() - t
+
+        row = _guarded_sweep(chis, contract, 3, budget, {"n": n, "operation": "<psi|psi>"})
+        rows += row
+        if row and row[0]["classification"] == "MEASURED":
+            previous = (n, row[0]["median_ns"])
+    from .exact_network import ghz_circuit
+
+    structured = []
+    for n in ns:
+        psi = ghz_circuit(n, custody=ResidentCustody())
+        samples = timed(lambda: psi.inner(psi), 3)
+        structured.append({"n": n, "state": "ghz", "chi": 2, "classification": "MEASURED", **stats(samples)})
+    return {"passed": True, "result": {
+        "rows": rows, "structured_rows": structured, "field": "Q(zeta8)",
+        "note": "exact contraction of a random MPS yields an exact norm whose size grows with n; "
+                "structured states (GHZ) stay small",
+    }}
 
 
 def bench_tt_svd_cost(quick: bool) -> Dict[str, Any]:

@@ -140,6 +140,7 @@ REGISTRY: Tuple[SpecItem, ...] = (
     _i("IV.1", "IV", "MPS", "Field Q(zeta8); normalization, canonical form, entropy, exact contraction; "
        "entropy in Q(sqrt2).", "CORRECTED", field="Q(zeta8)",
        symbols=["kellogg.exact_network.ExactMPS", "kellogg.exact_network.ExactMPS.cut_purity",
+                "kellogg.exact_network.ExactMPS.marginal",
                 "kellogg.exact_network.ExactMPS.schmidt_rank", "kellogg.exact_network.ExactTensorTrain.compress"],
        benchmarks=["mps_gate_throughput", "mps_contraction_throughput", "ten_thousand_qubit_voyage"],
        note="Exact: gate application, amplitudes, expectations, norm, sampling, Schmidt rank, and the "
@@ -163,6 +164,7 @@ REGISTRY: Tuple[SpecItem, ...] = (
     _i("IV.4", "IV", "Hamiltonians", "Hermiticity, real spectrum, ground state, evolution (field Q(zeta8)).",
        "CORRECTED", field="Q(zeta8)",
        symbols=["kellogg.channels.PauliHamiltonian", "kellogg.exact_network.ising_mpo",
+                "kellogg.exact_tensor.ExactStateVector.evolve_hamiltonian",
                 "kellogg.exact_network.heisenberg_mpo", "kellogg.channels.pauli_rotation",
                 "kellogg.dmrg.dmrg"],
        benchmarks=["hamiltonian_exact", "dmrg_vs_dense"],
@@ -179,7 +181,8 @@ REGISTRY: Tuple[SpecItem, ...] = (
        benchmarks=["fisher_exact"]),
     _i("IV.7", "IV", "Surface code", "d x d lattice; d=31: 984,064 pairs verified, 15 error correction.",
        "CORRECTED", field="GF(2)",
-       symbols=["kellogg.surface_code.PlanarSurfaceCode", "kellogg.surface_code.edge_star_report"],
+       symbols=["kellogg.surface_code.CSSCode", "kellogg.surface_code.PlanarSurfaceCode",
+                "kellogg.surface_code.edge_star_report"],
        benchmarks=["surface_code_algebra", "surface_code_correction"],
        note="984,064 = 32^2 x 31^2 counts a star on every vertex and a plaquette on every face; those "
             "checks commute but encode k = 0 logical qubits (n=1984, rank 1023 + 961), so distance and "
@@ -354,7 +357,9 @@ REGISTRY: Tuple[SpecItem, ...] = (
     _i("D.frame", "discovery", "Dual frame", "turing_core's dual-overlay frame is not dual.", "CORRECTED",
        owner="turing", symbols=["kellogg.quantum_tensor.dual_frame_is_dual"],
        note="Its 20 dodecahedron vertices are the mirror orientation; none sit at the icosahedron's face "
-            "centres. Kellogg previously returned that frame whenever turing_core imported."),
+            "centres. Kellogg previously returned that frame whenever turing_core imported. "
+            "TURING's own copy (turing_core.core) is now the true dual as well; the Chronus "
+            "platform copy (pythia_turing_math) still carries the mirror and orders mining work."),
     _i("D.reconstruct", "discovery", "Unguarded dense reconstruction", "TensorTrain.reconstruct had no "
        "size guard; a 10,000-site MPS would densify 2^10000.", "CORRECTED",
        symbols=["kellogg.tensor_network.TensorTrain.reconstruct"],
