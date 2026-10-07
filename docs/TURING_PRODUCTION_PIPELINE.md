@@ -20,6 +20,13 @@ request
 -> post-custody semantic replay
 ```
 
+Production startup is fail-closed. `ProductionOrganism.start()` now executes a
+real two-qubit TURING voyage through this shared path and will not become ready
+unless execution, computation certificate, witness, shared custody, readback,
+and semantic replay all pass. The startup gate records its evidence in
+`ProductionOrganism.status()["turing_startup_gate"]`. It is a software VQC
+gate and makes no hardware or physical-QPU claim.
+
 `SharedTuring` suppresses the pipeline's historical private custody flags so
 production has one durable-truth authority, not two. It commits
 `program -> result -> certificate -> witness -> pipeline_report -> replay`

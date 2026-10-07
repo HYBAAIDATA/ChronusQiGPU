@@ -534,6 +534,14 @@ def test_production_organism_is_single_startup_root_for_live_shared_systems(tmp_
         assert status["shared_custody_ready"] is True
         assert status["authority_preserved"] is True
         assert all(status["bound_systems"].values())
+        startup = status["turing_startup_gate"]
+        assert startup["passed"] is True
+        assert startup["pipeline_verdict"] == "PASS"
+        assert startup["hardware_claimed"] is False
+        assert startup["physical_qpu_claimed"] is False
+        assert {
+            "program", "result", "certificate", "witness", "report", "replay",
+        } == set(startup["bindings"])
 
         fabric = organism.lifecycle.fabric
         assert organism.intelligence.store.port.fabric is fabric
@@ -624,6 +632,39 @@ def test_euclid_turing_specialist_is_guarded_and_handoff_enters_turing_custody(t
         assert organism.lifecycle.fabric.verify(handoffs[0]["binding_id"])["passed"] is True
     finally:
         organism.stop()
+
+
+def test_production_organism_fails_closed_when_turing_startup_gate_fails(
+    tmp_path,
+    monkeypatch,
+):
+    from aethel.enterprise.production_organism import ProductionOrganism
+    from aethel.enterprise.system_relations import ProductionSystemRelations
+
+    class BrokenTuring:
+        def run(self, request):
+            raise RuntimeError("forced Turing startup failure")
+
+    monkeypatch.setattr(
+        ProductionSystemRelations,
+        "turing",
+        lambda self, pipeline=None: BrokenTuring(),
+    )
+    organism = ProductionOrganism(
+        tmp_path / "organism-turing-startup-failure",
+        hmac_key=TEST_KEY,
+        guardian=_guardian(tmp_path),
+        allow_insecure_dev_key=True,
+    )
+
+    with pytest.raises(RuntimeError, match="TURING production startup gate failed"):
+        organism.start()
+
+    status = organism.status()
+    assert status["ready"] is False
+    assert organism.lifecycle.readiness()["ready"] is False
+    assert status["turing_startup_gate"]["passed"] is False
+    assert "forced Turing startup failure" in status["turing_startup_gate"]["error"]
 
 
 def test_production_organism_shutdown_closes_custody_when_final_snapshot_fails(
