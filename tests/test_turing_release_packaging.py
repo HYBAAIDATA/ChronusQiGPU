@@ -41,6 +41,7 @@ def test_turing_release_workflow_uses_verified_artifact_and_oidc() -> None:
         encoding="utf-8"
     )
     for required in (
+        "pull_request:",
         "workflow_dispatch:",
         'python: ["3.11", "3.12", "3.13"]',
         "packaging/verify_release_candidates.py",
@@ -60,6 +61,7 @@ def test_turing_release_workflow_uses_verified_artifact_and_oidc() -> None:
     assert "pip install build" not in publish_section
     assert "api-token" not in workflow.lower()
     assert "password" not in workflow.lower()
+    assert "github.event_name == 'workflow_dispatch'" in workflow
 
 
 def test_mining_capacity_proof_is_not_a_turing_release_claim() -> None:
