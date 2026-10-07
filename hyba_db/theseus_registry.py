@@ -349,3 +349,142 @@ class TheseusFileRegistry(FileRegistry):
             "errors": tuple(errors),
             "passed": not errors,
         }
+
+    def migrate_legacy_storage(
+        self, tenant_id: str, root: str | Path
+    ) -> dict[str, Any]:
+        self._tenant(tenant_id)
+        physical = TheseusPhysicalStore(root)
+        migrated: list[str] = []
+        skipped: list[str] = []
+        errors: list[str] = []
+        rows = self.store._db.execute(
+            "SELECT fv.*,fo.file_class FROM file_versions fv JOIN file_objects fo "
+            "ON fo.tenant_id=fv.tenant_id AND fo.file_object_id=fv.file_object_id "
+            "WHERE fv.tenant_id=?",
+            (tenant_id,),
+        ).fetchall()
+        for row in rows:
+            vid = str(row["file_version_id"])
+            bound = self.store._db.execute(
+                "SELECT 1 FROM theseus_storage_addresses WHERE tenant_id=? "
+                "AND file_version_id=?",
+                (tenant_id, vid),
+            ).fetchone()
+            if bound:
+                try:
+                    address = self.storage_address(tenant_id, vid)
+                    if physical.verify(address):
+                        final = physical.primary_path(address)
+                        if row["storage_uri"] != f"file://{final}":
+                            with self.store._tx() as db:
+                                db.execute(
+                                    "UPDATE file_versions SET storage_uri=?,logical_path=? "
+                                    "WHERE tenant_id=? AND file_version_id=?",
+                                    (f"file://{final}", str(final), tenant_id, vid),
+                                )
+                        skipped.append(vid)
+                        continue
+                except Exception as exc:
+                    errors.append(f"{vid}:{type(exc).__name__}:{exc}")
+                    continue
+
+            uri = str(row["storage_uri"])
+            if not uri.startswith("file://"):
+                errors.append(f"{vid}:non-file legacy URI")
+                continue
+            legacy = Path(uri[7:])
+            try:
+                data = legacy.read_bytes()
+            except OSError as exc:
+                errors.append(f"{vid}:legacy unreadable:{exc}")
+                continue
+            if len(data) != row["size_bytes"] or _sha(data) != row["content_sha256"]:
+                errors.append(f"{vid}:legacy digest/size mismatch")
+                continue
+            try:
+                address = physical.commit(
+                    data, tenant_id=tenant_id, scope=str(row["file_class"])
+                )
+                if not physical.verify(address, data):
+                    raise IntegrityFailure("new placement readback failed")
+                self.bind_storage_address(
+                    tenant_id,
+                    vid,
+                    address,
+                    migration_state="MIGRATED_LEGACY_CAS",
+                )
+                final = physical.primary_path(address)
+                with self.store._tx() as db:
+                    db.execute(
+                        "UPDATE file_versions SET storage_uri=?,logical_path=? "
+                        "WHERE tenant_id=? AND file_version_id=?",
+                        (f"file://{final}", str(final), tenant_id, vid),
+                    )
+                    self._event(
+                        db,
+                        tenant_id,
+                        vid,
+                        "MOVED",
+                        "theseus",
+                        {
+                            "legacy_uri": uri,
+                            "legacy_retained": True,
+                            "address_id": address.address_id,
+                            "migration": "MIGRATED_LEGACY_CAS",
+                        },
+                    )
+                migrated.append(vid)
+            except Exception as exc:
+                errors.append(f"{vid}:{type(exc).__name__}:{exc}")
+        return {
+            "schema": "hyba.theseus-storage-migration/v1",
+            "tenant_id": tenant_id,
+            "migrated": tuple(migrated),
+            "skipped": tuple(skipped),
+            "errors": tuple(errors),
+            "passed": not errors,
+        }
+
+    def storage_proof(
+        self, tenant_id: str, file_version_id: str, root: str | Path
+    ) -> dict[str, Any]:
+        row = self.store._db.execute(
+            "SELECT fv.custody_record_id,tsa.custody_record_id AS address_custody_id "
+            "FROM file_versions fv JOIN theseus_storage_addresses tsa "
+            "ON tsa.tenant_id=fv.tenant_id AND tsa.file_version_id=fv.file_version_id "
+            "WHERE fv.tenant_id=? AND fv.file_version_id=?",
+            (tenant_id, file_version_id),
+        ).fetchone()
+        if row is None:
+            raise AccessDenied("file/address binding not found")
+        address = self.storage_address(tenant_id, file_version_id)
+        physical = TheseusPhysicalStore(root)
+        data = physical.read(address, heal=False)
+        return {
+            "schema": "hyba.theseus-storage-proof/v1",
+            "file_version_id": file_version_id,
+            "content_sha256": address.content_sha256,
+            "readback_sha256": _sha(data),
+            "fibonacci_index": address.fibonacci_index,
+            "fibonacci_value": address.fibonacci_value,
+            "cassini_witness": list(address.cassini_quadruple),
+            "prime_key": address.prime_key,
+            "anchor": address.anchor,
+            "phyllotaxis": {
+                "index": address.phyllotaxis_index,
+                "ring": address.phyllotaxis_ring,
+                "sector": address.phyllotaxis_sector,
+                "lane": address.phyllotaxis_lane,
+                "radius": address.phyllotaxis_radius,
+                "theta": address.phyllotaxis_theta,
+            },
+            "relative_path": address.relative_path,
+            "actual_path": str(physical.primary_path(address)),
+            "custody_record_id": row["custody_record_id"],
+            "address_custody_record_id": row["address_custody_id"],
+            "placement_verified": physical.verify(address, data),
+        }
+
+
+__all__ = ["TheseusFileRegistry"]
