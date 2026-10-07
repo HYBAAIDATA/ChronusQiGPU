@@ -150,6 +150,7 @@ RESEARCH_PREFIXES = ("bench/", "benchmarks/", "eval_harness/", "experiments/")
 EXCLUDED_SCAN_PATHS = {
     "reports/DEFECT_REGISTER.json",
     "reports/REPO_FILE_OWNERSHIP.json",
+    MANUAL_CLASSIFICATIONS_PATH,
 }
 TEXT_SUFFIXES = {
     ".py", ".pyi", ".md", ".txt", ".rst", ".json", ".jsonl", ".yaml", ".yml", ".toml",
@@ -163,6 +164,16 @@ BASELINE_DISCOVERY_LEADS = {
     "SIMULATION_DEMO_SAMPLE_FIXTURE_SYNTHETIC": 2784,
     "APPROXIMATION": 2291,
 }
+
+ALLOWED_CLASSIFICATIONS = (
+    "FIXED_PRODUCTION_IMPLEMENTATION",
+    "VALID_TEST_FIXTURE",
+    "VALID_RESEARCH_ONLY",
+    "LEGACY_ISOLATED_FROM_PRODUCTION",
+    "FALSE_POSITIVE_PROVEN",
+    "BLOCKED_EXTERNAL_EVIDENCE",
+)
+MANUAL_CLASSIFICATIONS_PATH = "reports/DEFECT_CLASSIFICATIONS.json"
 
 
 @dataclass(frozen=True)
@@ -272,7 +283,52 @@ def _looks_text(path: Path) -> bool:
     return path.suffix.lower() in TEXT_SUFFIXES or path.suffix == ""
 
 
-def iter_occurrences(root: Path, paths: Sequence[str]) -> Iterable[dict]:
+def load_manual_classifications(root: Path) -> dict[str, dict]:
+    """Load evidence-backed classifications for reviewed production hits.
+
+    Manual closure is deliberately strict.  An annotation binds to the exact
+    occurrence id *and* repeats its path/line/category/match metadata so an
+    unrelated source edit cannot silently inherit an old approval.
+    """
+    path = root / MANUAL_CLASSIFICATIONS_PATH
+    if not path.is_file():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"invalid defect classification register: {exc}") from exc
+    if payload.get("schema_version") != 1:
+        raise RuntimeError("unsupported defect classification register schema")
+    entries = payload.get("classifications")
+    if not isinstance(entries, list):
+        raise RuntimeError("defect classification register must contain a classifications list")
+    out: dict[str, dict] = {}
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise RuntimeError("defect classification entries must be objects")
+        occurrence_id = str(entry.get("id") or "").strip()
+        classification = str(entry.get("classification") or "").strip()
+        evidence = str(entry.get("evidence") or "").strip()
+        reviewer = str(entry.get("reviewer") or "").strip()
+        if not occurrence_id or occurrence_id in out:
+            raise RuntimeError("defect classification ids must be non-empty and unique")
+        if classification not in ALLOWED_CLASSIFICATIONS:
+            raise RuntimeError(f"unsupported defect classification: {classification}")
+        if not evidence or not reviewer:
+            raise RuntimeError(
+                f"classification {occurrence_id} requires evidence and reviewer"
+            )
+        out[occurrence_id] = dict(entry)
+    return out
+
+
+def iter_occurrences(
+    root: Path,
+    paths: Sequence[str],
+    *,
+    manual_classifications: dict[str, dict] | None = None,
+) -> Iterable[dict]:
+    manual_classifications = manual_classifications or {}
     for rel in paths:
         if rel in EXCLUDED_SCAN_PATHS:
             continue
@@ -295,6 +351,27 @@ def iter_occurrences(root: Path, paths: Sequence[str]) -> Iterable[dict]:
                     token = match.group(0)
                     occurrence_key = f"{rel}:{lineno}:{category}:{match.start()}:{token.casefold()}"
                     occurrence_id = hashlib.sha256(occurrence_key.encode()).hexdigest()[:20]
+                    evidence = None
+                    reviewer = None
+                    classification_source = "automatic" if classification else None
+                    manual = manual_classifications.get(occurrence_id)
+                    if manual is not None:
+                        expected = {
+                            "path": rel,
+                            "line": lineno,
+                            "category": category,
+                            "match": token,
+                        }
+                        for key, value in expected.items():
+                            if manual.get(key) != value:
+                                raise RuntimeError(
+                                    f"stale defect classification {occurrence_id}: "
+                                    f"{key}={manual.get(key)!r}, expected {value!r}"
+                                )
+                        classification = str(manual["classification"])
+                        evidence = str(manual["evidence"])
+                        reviewer = str(manual["reviewer"])
+                        classification_source = "reviewed"
                     yield {
                         "id": occurrence_id,
                         "category": category,
@@ -303,14 +380,23 @@ def iter_occurrences(root: Path, paths: Sequence[str]) -> Iterable[dict]:
                         "match": token,
                         "owner": owner_name,
                         "classification": classification,
+                        "classification_source": classification_source,
+                        "evidence": evidence,
+                        "reviewer": reviewer,
                         "status": "CLASSIFIED" if classification else "OPEN",
                     }
 
 
 def defect_document(root: Path, paths: Sequence[str], *, sha: str) -> dict:
-    occurrences = list(iter_occurrences(root, paths))
+    manual_classifications = load_manual_classifications(root)
+    occurrences = list(
+        iter_occurrences(root, paths, manual_classifications=manual_classifications)
+    )
     by_category = Counter(o["category"] for o in occurrences)
     by_status = Counter(o["status"] for o in occurrences)
+    by_classification = Counter(
+        o["classification"] for o in occurrences if o["classification"] is not None
+    )
     open_by_owner = Counter((o["owner"] or "UNOWNED") for o in occurrences if o["status"] == "OPEN")
     return {
         "schema_version": 1,
@@ -321,18 +407,13 @@ def defect_document(root: Path, paths: Sequence[str], *, sha: str) -> dict:
             "receive only safe path-based classifications; every production-path hit remains OPEN "
             "until its owning implementation lane supplies evidence for an allowed classification."
         ),
-        "allowed_classifications": [
-            "FIXED_PRODUCTION_IMPLEMENTATION",
-            "VALID_TEST_FIXTURE",
-            "VALID_RESEARCH_ONLY",
-            "LEGACY_ISOLATED_FROM_PRODUCTION",
-            "FALSE_POSITIVE_PROVEN",
-            "BLOCKED_EXTERNAL_EVIDENCE",
-        ],
+        "manual_classification_register": MANUAL_CLASSIFICATIONS_PATH,
+        "allowed_classifications": list(ALLOWED_CLASSIFICATIONS),
         "counts": {
             "total_occurrences": len(occurrences),
             "by_category": dict(sorted(by_category.items())),
             "by_status": dict(sorted(by_status.items())),
+            "by_classification": dict(sorted(by_classification.items())),
             "open_by_owner": dict(sorted(open_by_owner.items())),
         },
         "occurrences": occurrences,
@@ -368,7 +449,10 @@ def cmd_defects(args: argparse.Namespace) -> int:
         write_json(root / args.output, doc)
     print(json.dumps(doc["counts"], indent=2, sort_keys=True))
     open_count = doc["counts"]["by_status"].get("OPEN", 0)
-    return 1 if args.require_closed and open_count else 0
+    blocked_count = doc["counts"]["by_classification"].get(
+        "BLOCKED_EXTERNAL_EVIDENCE", 0
+    )
+    return 1 if args.require_closed and (open_count or blocked_count) else 0
 
 
 def cmd_release(args: argparse.Namespace) -> int:
@@ -389,6 +473,11 @@ def cmd_release(args: argparse.Namespace) -> int:
     open_count = defects["counts"]["by_status"].get("OPEN", 0)
     if open_count:
         failures.append(f"OPEN_DEFECT_OCCURRENCES={open_count}")
+    blocked_count = defects["counts"]["by_classification"].get(
+        "BLOCKED_EXTERNAL_EVIDENCE", 0
+    )
+    if blocked_count:
+        failures.append(f"BLOCKED_EXTERNAL_EVIDENCE={blocked_count}")
     print(json.dumps({"source_sha": sha, "failures": failures}, indent=2))
     return 1 if failures else 0
 
