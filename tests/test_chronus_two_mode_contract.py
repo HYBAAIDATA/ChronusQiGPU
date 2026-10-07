@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from chronus.virtual_igpu import ProductMode, execution_policy_for_product_mode
 from chronus.readiness import (
     ACCELERATOR_MODE,
     CORE_MODE,
@@ -51,7 +52,7 @@ def test_owner_approved_core_surfaces_are_importable() -> None:
     assert all(gate.passed for gate in gates)
 
 
-def test_standalone_product_can_be_ready_without_any_gpu_certification() -> None:
+def test_native_chronus_gpu_can_be_ready_without_any_host_gpu_certification() -> None:
     report = production_readiness(_core_evidence())
 
     assert report["production_ready"] is True
@@ -110,7 +111,7 @@ def test_certified_accelerator_is_additive_to_ready_core() -> None:
     assert lane["device_id"] == "apple:m3"
 
 
-def test_uncertified_accelerator_never_demotes_standalone_product() -> None:
+def test_uncertified_accelerator_never_demotes_native_chronus_gpu() -> None:
     cert = AcceleratorCertification(
         backend="opencl",
         device_id="unknown",
@@ -144,15 +145,38 @@ def test_convergence_manifest_pins_original_two_mode_design() -> None:
         (root / "chronus" / "CONVERGENCE_MANIFEST.json").read_text(encoding="utf-8")
     )
 
-    standalone = manifest["product_modes"]["standalone_software"]
-    accelerated = manifest["product_modes"]["accelerator_enhanced"]
+    native = manifest["product_modes"]["native_chronus_gpu"]
+    augmented = manifest["product_modes"]["host_gpu_augmentation"]
 
-    assert standalone["physical_gpu_required"] is False
-    assert standalone["status"] == "implemented"
-    assert accelerated["physical_gpu_required"] is True
+    assert manifest["schema"] == "chronus.convergence-manifest/v2"
+    assert native["physical_gpu_required"] is False
+    assert native["status"] == "implemented"
+    assert native["policy"] == "standalone_software"
+    assert augmented["physical_gpu_required"] is True
+    assert augmented["policy"] == "preferred_accelerator"
     assert "physical GPU required for CHRONUS core availability" in manifest[
         "prohibited_regressions"
     ]
     assert manifest["capabilities"]["m32_manifold_and_qsdl"]["status"] == "implemented"
     assert manifest["capabilities"]["lucas_pisot_scale_contract"]["status"] == "implemented"
     assert manifest["capabilities"]["pythia_mining_execution"]["status"] == "implemented"
+
+
+def test_product_mode_is_not_backend_identity() -> None:
+    assert ProductMode.NATIVE_CHRONUS_GPU.value == CORE_MODE
+    assert ProductMode.HOST_GPU_AUGMENTATION.value == ACCELERATOR_MODE
+    assert (
+        execution_policy_for_product_mode(ProductMode.NATIVE_CHRONUS_GPU)
+        == "standalone_software"
+    )
+    assert (
+        execution_policy_for_product_mode(ProductMode.HOST_GPU_AUGMENTATION)
+        == "preferred_accelerator"
+    )
+
+
+def test_core_readiness_does_not_require_cpu_or_gpu_adapter_identity() -> None:
+    gates = {gate.name: gate for gate in audit_core_surfaces()}
+    assert gates["virtual_igpu"].passed is True
+    assert "ProductMode" in gates["virtual_igpu"].detail
+    assert "CPUEmulatorAdapter" not in gates["virtual_igpu"].detail
