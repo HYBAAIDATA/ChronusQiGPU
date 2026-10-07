@@ -60,10 +60,13 @@ class Structure:
     """A supplied linear causal structure: ``(parent, child, weight)`` edges.
 
     ``latent`` names nodes that exist in the model but are never observed.
-    Supplied structure is an assumption; the machine tests what it can.
+    A weight of ``None`` means the shape is declared but the strength is
+    not: the backend estimates it from ``samples`` (observational OLS,
+    labelled as such) or refuses the problem. Supplied structure is an
+    assumption; the machine tests what it can.
     """
 
-    edges: Tuple[Tuple[str, str, float], ...]
+    edges: Tuple[Tuple[str, str, Optional[float]], ...]
     nodes: Tuple[str, ...] = ()
     latent: Tuple[str, ...] = ()
 
@@ -71,8 +74,8 @@ class Structure:
     def of(cls, edges: Sequence[Sequence[Any]], *, nodes: Sequence[str] = (), latent: Sequence[str] = ()) -> "Structure":
         norm = []
         for e in edges:
-            if len(e) == 2:
-                norm.append((str(e[0]), str(e[1]), 1.0))
+            if len(e) == 2 or e[2] is None:
+                norm.append((str(e[0]), str(e[1]), None))
             else:
                 norm.append((str(e[0]), str(e[1]), float(e[2])))
         return cls(tuple(norm), tuple(str(n) for n in nodes), tuple(str(n) for n in latent))
@@ -84,14 +87,22 @@ class Structure:
     def graph(self, weights: Optional[Mapping[Tuple[str, str], float]] = None) -> CausalGraph:
         g = CausalGraph.from_edges([(p, c) for p, c, _ in self.edges], self.all_nodes())
         for p, c, w in self.edges:
-            g.edge_weights[(p, c)] = float(w)
+            if w is not None:
+                g.edge_weights[(p, c)] = float(w)
         for key, w in (weights or {}).items():
             if key in g.edge_weights:
                 g.edge_weights[key] = float(w)
         return g
 
+    def unknown_edges(self) -> List[Tuple[str, str]]:
+        return [(p, c) for p, c, w in self.edges if w is None]
+
     def scm(self, weights: Optional[Mapping[Tuple[str, str], float]] = None) -> StructuralCausalModel:
-        return StructuralCausalModel(graph=self.graph(weights))
+        g = self.graph(weights)
+        missing = [e for e in self.unknown_edges() if e not in (weights or {})]
+        if missing:
+            raise ProblemError(f"edge weights unknown and not estimated: {missing}")
+        return StructuralCausalModel(graph=g)
 
     def shape_digest(self) -> str:
         """Identity of the structure's *shape* (nodes + edges, no weights):
@@ -208,7 +219,14 @@ class Problem:
             if not g.is_dag():
                 issues.append("supplied structure is not a DAG")
             for p, c, w in self.structure.edges:
-                if not _finite(w):
+                if w is None:
+                    observed_cols = set(self.samples or {})
+                    if not ({p, c} <= observed_cols):
+                        issues.append(
+                            f"edge {p}->{c} has no declared weight and no samples of "
+                            f"{p!r} and {c!r} to estimate it"
+                        )
+                elif not _finite(w):
                     issues.append(f"edge {p}->{c} weight is not finite")
         for op in self.operators:
             if not isinstance(op, OperatorSpec):

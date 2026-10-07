@@ -188,8 +188,39 @@ class TOEMachine:
             return None
         ns = problem.namespace()
         if ns not in self.models:
-            prior = {_ek(p, c): float(w) for p, c, w in problem.structure.edges}
+            prior = {_ek(p, c): float(w) for p, c, w in problem.structure.edges if w is not None}
+            estimated: Dict[str, Any] = {}
+            estimated_noise: Dict[str, float] = {}
+            unknown = problem.structure.unknown_edges()
+            if unknown:
+                # Declared shape, unknown strength: estimate in the backend
+                # from the observational samples (never in an adapter).
+                rows = [
+                    {"values": {k: problem.samples[k][i] for k in problem.samples}, "intervened": []}
+                    for i in range(len(next(iter(problem.samples.values()))))
+                ]
+                fit = fit_structural_weights(
+                    [(p, c) for p, c, _ in problem.structure.edges], rows, min_evidence=self.min_evidence
+                )
+                for p, c in unknown:
+                    if (p, c) not in fit["weights"]:
+                        raise ValueError(
+                            f"edge {p}->{c}: weight unknown and not estimable "
+                            f"({fit['skipped'].get(c, 'no fit')})"
+                        )
+                    prior[_ek(p, c)] = fit["weights"][(p, c)]
+                    resid = fit["fitted"][c].get("residual_sd")
+                    if resid is not None and c not in problem.noise_sd:
+                        # structural noise enters as phi*u: sd(u) = sd(residual)/phi
+                        estimated_noise[c] = float(resid) / ((1 + 5 ** 0.5) / 2)
+                    estimated[_ek(p, c)] = {
+                        "estimate": fit["weights"][(p, c)],
+                        "standard_error": (fit["fitted"][c]["standard_errors"] or {}).get(p),
+                        "estimator": "observational OLS (valid only without unobserved confounding of the child)",
+                    }
             self.models[ns] = {
+                "estimated_from_samples": estimated,
+                "estimated_noise_sd": estimated_noise,
                 "namespace": ns,
                 "shape_digest": problem.structure.shape_digest(),
                 "edges": [[p, c] for p, c, _ in problem.structure.edges],
@@ -211,9 +242,23 @@ class TOEMachine:
         return {_split(k): float(v) for k, v in model["weights"].items()}
 
     def _noise(self, problem: Problem, model: Optional[Mapping[str, Any]]) -> Dict[str, float]:
+        """Noise scale per node: declared > estimated from samples > 1.0
+        (default, reported by ``noise_sources``), times any contradiction
+        inflation."""
         inflation = float(model["noise_inflation"]) if model else 1.0
+        est = (model or {}).get("estimated_noise_sd") or {}
         nodes = problem.structure.all_nodes() if problem.structure else []
-        return {n: float(problem.noise_sd.get(n, 1.0)) * inflation for n in nodes}
+        return {
+            n: float(problem.noise_sd.get(n, est.get(n, 1.0))) * inflation for n in nodes
+        }
+
+    def _noise_sources(self, problem: Problem, model: Optional[Mapping[str, Any]]) -> Dict[str, str]:
+        est = (model or {}).get("estimated_noise_sd") or {}
+        nodes = problem.structure.all_nodes() if problem.structure else []
+        return {
+            n: "declared" if n in problem.noise_sd else "estimated" if n in est else "default 1.0"
+            for n in nodes
+        }
 
     def transfer(self, source_namespace: str, target: Problem, *, reason: str) -> Dict[str, Any]:
         """Explicit transfer of learned weights to another namespace.
@@ -428,6 +473,9 @@ class TOEMachine:
             "query": [str(src), str(dst)] if src is not None else None,
             "reachable": path is not None,
             "route": [str(s) for s in path] if path else None,
+            "unreachable_from_source": (
+                sorted(str(s) for s in states if s not in topo.reachable(src)) if src is not None else None
+            ),
         }
         if src is None or path is None:
             return out
@@ -637,6 +685,12 @@ class TOEMachine:
         }
         episode: Dict[str, Any] = {"schema": EPISODE_SCHEMA, "identity": identity}
         issues = problem.validate()
+        model: Optional[Dict[str, Any]] = None
+        if not issues:
+            try:
+                model = self._model(problem)
+            except ValueError as exc:
+                issues = [str(exc)]
         if issues:
             episode.update(
                 {
@@ -651,12 +705,15 @@ class TOEMachine:
             episode["receipts"] = ledger.export()
             return episode
 
-        model = self._model(problem)
         scm = problem.structure.scm(self._weights_tuple(model)) if model else None
         noise = self._noise(problem, model)
         if model:
             identity["model_revision"] = len(model["revisions"])
             identity["model_weights"] = dict(model["weights"])
+            identity["noise_sources"] = self._noise_sources(problem, model)
+            identity["noise_sd"] = dict(noise)
+            if model.get("estimated_from_samples"):
+                identity["estimated_from_samples"] = model["estimated_from_samples"]
 
         rep = self.represent(problem, trace=trace)
         state_obj = rep.pop("_state")
@@ -730,6 +787,13 @@ class TOEMachine:
                 flips = [k for k, v in voi.items() if v["recommend_evidence"]]
                 episode["meta"] = {
                     "value_of_information": voi,
+                    "evidence_plan": [
+                        {
+                            "parameter": k,
+                            "experiment": "intervene on {} and observe {}".format(*_split(k[len("edge:"):])),
+                        }
+                        for k in flips
+                    ],
                     "meta_decide": meta,
                     "near_tie_rule": "disabled (margin_tolerance=0): expected-value decisions are not flipped by aleatoric noise; epistemic flips are VOI's question",
                     "verdict": ACQUIRE_EVIDENCE if flips else ACT,
@@ -855,6 +919,7 @@ class TOEMachine:
             "recommendation": episode.get("recommendation"),
             "model_revision": episode["identity"].get("model_revision"),
             "model_weights": episode["identity"].get("model_weights"),
+            "noise_sd": episode["identity"].get("noise_sd"),
             "problem_content": problem.content(),
             "domain": problem.domain,
         }
@@ -922,7 +987,12 @@ class TOEMachine:
             )
             self.bindings.append({**binding, "namespace": ns, "episode_sha256": episode["episode_sha256"]})
             errors_out.append(errors)
-        noise = {n: float(problem.noise_sd.get(n, 1.0)) for n in problem.structure.all_nodes()} if problem.noise_sd else None
+        est = model.get("estimated_noise_sd") or {}
+        noise = (
+            {n: float(problem.noise_sd.get(n, est.get(n, 1.0))) for n in problem.structure.all_nodes()}
+            if (problem.noise_sd or est)
+            else None
+        )
         window = model["residuals"][model["assessment_from"]:]
         assessment = assess_structural(window[-20:], noise_sd=noise, min_observations=self.min_evidence)
         model["status"] = assessment["status"]
@@ -1090,9 +1160,13 @@ class TOEMachine:
             return {"replayed": False, "reason": "episode recorded no decision"}
         model = self.models[summary["namespace"]]
         rev = summary["model_revision"] or 0
-        weights = model["prior_weights"] if rev == 0 else model["revisions"][rev - 1]["after"]
+        weights = summary.get("model_weights") or (
+            model["prior_weights"] if rev == 0 else model["revisions"][rev - 1]["after"]
+        )
         scm = problem.structure.scm({_split(k): float(v) for k, v in weights.items()})
-        noise = {n: float(problem.noise_sd.get(n, 1.0)) for n in problem.structure.all_nodes()}
+        noise = summary.get("noise_sd") or {
+            n: float(problem.noise_sd.get(n, 1.0)) for n in problem.structure.all_nodes()
+        }
         futures, _rung, _ = self._futures_fn(problem, scm, noise)
         d = decide(
             dict(problem.state),

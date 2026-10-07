@@ -489,6 +489,10 @@ def _point_cloud(data: Any) -> Optional[Tuple[Any, str]]:
     return None
 
 
+#: Vietoris-Rips input bound (points). Declared, reported when applied.
+MAX_VR_POINTS = 24
+
+
 def build_topological(data: Any, sha: str) -> LensView:
     cloud = _point_cloud(data)
     if cloud is None:
@@ -504,6 +508,14 @@ def build_topological(data: Any, sha: str) -> LensView:
     from toe.topology import TopologicalAnalytics
 
     pts, how = cloud
+    total_points = int(len(pts))
+    if total_points > MAX_VR_POINTS:
+        # The Vietoris-Rips complex grows as n^4 (tetrahedra); beyond the
+        # declared bound the cloud is subsampled at an even stride and the
+        # summary says so.
+        idx = np.linspace(0, total_points - 1, MAX_VR_POINTS).round().astype(int)
+        pts = pts[np.unique(idx)]
+        how = f"{how}; even-stride subsample {len(pts)} of {total_points} points"
     diff = pts[:, None, :] - pts[None, :, :]
     dist = np.linalg.norm(diff, axis=2)
     upper = dist[np.triu_indices(len(pts), k=1)]
@@ -513,6 +525,7 @@ def build_topological(data: Any, sha: str) -> LensView:
     h2 = ta.compute_persistent_homology(pts, 1.5 * median)
     summary = {
         "n_points": int(len(pts)),
+        "n_points_observed": total_points,
         "embedding": how,
         "epsilon_median": median,
         "betti_at_median": h1["betti_numbers"],
