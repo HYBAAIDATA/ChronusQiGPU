@@ -37,23 +37,68 @@ class TOEWorldModelAdapter:
     """Cognition WorldModel backed by TOE's revision-capable causal model."""
 
     def __init__(self, model: TOEWorldModel | None = None) -> None:
-        self.model = model or TOEWorldModel(
-            nodes=("context", "action", "outcome"),
-            edges=(("context", "outcome"), ("action", "outcome")),
-            actions={"act": "action"},
+        if model is None:
+            model = TOEWorldModel(
+                nodes=(
+                    "context",
+                    "context_sq",
+                    "action",
+                    "action_sq",
+                    "context_action",
+                    "outcome",
+                ),
+                edges=(
+                    ("context", "outcome"),
+                    ("context_sq", "outcome"),
+                    ("action", "outcome"),
+                    ("action_sq", "outcome"),
+                    ("context_action", "outcome"),
+                ),
+                actions={"act": "action"},
+            )
+            # Preserve the previous linear cold-start prediction exactly.
+            # Non-linear features earn influence only through observed updates.
+            for feature in ("context_sq", "action_sq", "context_action"):
+                model.dynamics["outcome"][feature] = 0.0
+        self.model = model
+        self.feature_augmented = all(
+            feature in self.model.nodes
+            for feature in ("context_sq", "action_sq", "context_action")
         )
         self.online = OnlineAdapter(self.model)
         self._states: dict[str, dict[str, float]] = {}
         self._sequence = 0
 
+    def _features(self, context: str, action: float) -> dict[str, float]:
+        context_value = _number(context)
+        values = {
+            "context": context_value,
+            "action": float(action),
+        }
+        if self.feature_augmented:
+            values.update(
+                {
+                    "context_sq": context_value * context_value,
+                    "action_sq": float(action) * float(action),
+                    "context_action": context_value * float(action),
+                }
+            )
+        return values
+
     def _state(self, context: str) -> dict[str, float]:
         return self._states.setdefault(
-            context, {"context": _number(context), "action": 0.0, "outcome": 0.0}
+            context, {**self._features(context, 0.0), "outcome": 0.0}
         )
+
+    def _action_features(self, context: str, action: str) -> dict[str, float]:
+        values = self._features(context, _number(action))
+        return {key: value for key, value in values.items() if key != "context"}
 
     def _prediction(self, context: str, action: str, imagined: bool) -> PredictionRecord:
         self._sequence += 1
-        future = self.model.predict_transition(self._state(context), {"action": _number(action)})
+        future = self.model.predict_transition(
+            self._state(context), self._action_features(context, action)
+        )
         return PredictionRecord(
             f"toe-pred-{self._sequence}",
             context,
@@ -76,7 +121,11 @@ class TOEWorldModelAdapter:
                 "action": action,
                 "future": self.model.predict_transition(
                     factual,
-                    {} if action == "no-intervention" else {"action": _number(action)},
+                    (
+                        {}
+                        if action == "no-intervention"
+                        else self._action_features(context, action)
+                    ),
                 ),
                 "epistemic_status": "predicted",
                 "imagined": True,
@@ -86,9 +135,11 @@ class TOEWorldModelAdapter:
 
     def update(self, context: str, action: str, observed: str) -> float:
         previous = dict(self._state(context))
+        action_features = self._action_features(context, action)
         nxt = dict(previous)
-        nxt.update(action=_number(action), outcome=_number(observed))
-        result = self.online.step(previous, {"action": nxt["action"]}, nxt)
+        nxt.update(action_features)
+        nxt["outcome"] = _number(observed)
+        result = self.online.step(previous, action_features, nxt)
         self._states[context] = nxt
         return float(result["error"])
 
