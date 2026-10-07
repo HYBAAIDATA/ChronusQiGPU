@@ -833,36 +833,89 @@ def _grid(quick: bool):
     return (100, 1000, 10000), (16, 64, 256, 1024)
 
 
+_EXPONENT = {"1q": 2, "2q": 4, "contract": 3}
+
+
+def _cost_sample(kind: str, n: int, chi: int, seed: int) -> int:
+    """One timed cost sample: only the operation is inside the timer."""
+    from .custody import ResidentCustody
+
+    psi = _uniform_mps(n, chi, seed, ResidentCustody())
+    if kind == "contract":
+        psi.window = n + 2
+    t = time.perf_counter_ns()
+    if kind == "1q":
+        psi.apply_1q(n // 2, "T")
+    elif kind == "2q":
+        psi.apply_2q(n // 2 - 1, "CNOT")
+    else:
+        psi.inner(psi)
+    return time.perf_counter_ns() - t
+
+
+def _isolated_sample(kind: str, n: int, chi: int, seed: int, timeout_s: float) -> Optional[int]:
+    """Run one sample in a subprocess with a hard wall-clock limit; None on timeout."""
+    root = str(Path(__file__).resolve().parent.parent)
+    env = dict(os.environ)
+    env["PYTHONPATH"] = root + os.pathsep + env.get("PYTHONPATH", "")
+    code = f"from kellogg.benchmark import _cost_sample; print(_cost_sample({kind!r}, {n}, {chi}, {seed}))"
+    try:
+        out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+                             timeout=timeout_s, env=env)
+    except subprocess.TimeoutExpired:
+        return None
+    if out.returncode != 0:
+        raise RuntimeError(out.stderr[-400:])
+    return int(out.stdout.strip().splitlines()[-1])
+
+
 def _guarded_sweep(
     chis: Sequence[int],
-    sample: Callable[[int], int],
+    kind: str,
+    n: int,
     repeats: int,
     cell_budget_ns: float,
     label: Dict[str, Any],
+    sample: Optional[Callable[[int], int]] = None,
 ) -> List[Dict[str, Any]]:
-    """Measure ascending chi; once one sample exceeds the cell budget, stop the sweep.
+    """Measure ascending chi under a time budget; never extrapolate into MEASURED.
 
-    The first sample of every cell is timed alone. A cell whose first sample
-    already exceeds the budget keeps that single MEASURED sample, and every
-    larger chi in the row is NOT_RUN with the reason recorded. Exact
+    A cell whose cost, predicted from the previous chi, exceeds its share of
+    the budget runs its first sample in a subprocess with a hard wall-clock
+    limit. A sample that hits the limit is recorded NOT_RUN with that limit
+    as a measured lower bound, and the rest of the row is NOT_RUN. Exact
     arithmetic on random cores grows its integers with the work done, so
-    cost is measured, never extrapolated into a MEASURED row.
+    costs climb faster than the operation count.
     """
+    sample = sample or (lambda chi: _cost_sample(kind, n, chi, 1))
+    share = cell_budget_ns / max(1, repeats)
     rows: List[Dict[str, Any]] = []
-    stopped: Optional[int] = None
+    stopped: Optional[str] = None
+    last: Optional[tuple] = None
     for chi in chis:
         if stopped is not None:
-            rows.append({**label, "chi": chi, "classification": "NOT_RUN",
-                         "reason": f"chi={stopped} exceeded the {cell_budget_ns / 1e9:.0f}s cell budget"})
+            rows.append({**label, "chi": chi, "classification": "NOT_RUN", "reason": stopped})
             continue
-        first = sample(chi)
+        predicted = last[1] * (chi / last[0]) ** _EXPONENT[kind] if last else 0.0
+        if predicted > share:
+            first = _isolated_sample(kind, n, chi, 1, cell_budget_ns / 1e9)
+            if first is None:
+                rows.append({**label, "chi": chi, "classification": "NOT_RUN",
+                             "lower_bound_ns": int(cell_budget_ns),
+                             "reason": f"one sample exceeded the {cell_budget_ns / 1e9:.0f}s wall limit"})
+                stopped = f"chi={chi} exceeded the {cell_budget_ns / 1e9:.0f}s wall limit"
+                continue
+        else:
+            first = sample(chi)
         samples = [first]
-        if first <= cell_budget_ns / max(1, repeats):
+        if first <= share:
             samples += [sample(chi) for _ in range(repeats - 1)]
         else:
-            stopped = chi
-        rows.append({**label, "chi": chi, "classification": "MEASURED", **stats(samples),
-                     "operations_per_second": 1e9 / stats(samples)["median_ns"]})
+            stopped = f"chi={chi} used the {cell_budget_ns / 1e9:.0f}s cell budget in one sample"
+        st = stats(samples)
+        rows.append({**label, "chi": chi, "classification": "MEASURED", **st,
+                     "operations_per_second": 1e9 / st["median_ns"]})
+        last = (chi, st["median_ns"])
     return rows
 
 
@@ -884,15 +937,9 @@ def bench_mps_gate_throughput(quick: bool) -> Dict[str, Any]:
             psi.apply_1q(site, "T")
             return time.perf_counter_ns() - t
 
-        def two_q(chi: int, _k: List[int] = [0]) -> int:
-            _k[0] += 1
-            psi = _uniform_mps(n, chi, 2 + _k[0], ResidentCustody())
-            t = time.perf_counter_ns()
-            psi.apply_2q(site - 1, "CNOT")
-            return time.perf_counter_ns() - t
-
-        rows += _guarded_sweep(chis, one_q, 7 if quick else 21, budget, {"n": n, "gate": "1q T"})
-        rows += _guarded_sweep(chis, two_q, 3 if quick else 5, budget, {"n": n, "gate": "2q CNOT"})
+        rows += _guarded_sweep(chis, "1q", n, 7 if quick else 21, budget, {"n": n, "gate": "1q T"},
+                               sample=one_q)
+        rows += _guarded_sweep(chis, "2q", n, 3 if quick else 5, budget, {"n": n, "gate": "2q CNOT"})
     return {"passed": True, "result": {
         "rows": rows, "field": "Q(zeta8)",
         "state": "uniform MPS with a random bulk core (worst case for exact elimination)",
@@ -918,15 +965,7 @@ def bench_mps_contraction_throughput(quick: bool) -> Dict[str, Any]:
                           "model": "exact integers grow with n: cost ~ n^2 chi^3, scaled from "
                                    f"n={prev_n}"} for chi in chis]
                 continue
-
-        def contract(chi: int) -> int:
-            psi = _uniform_mps(n, chi, 3, ResidentCustody())
-            psi.window = n + 2
-            t = time.perf_counter_ns()
-            psi.inner(psi)
-            return time.perf_counter_ns() - t
-
-        row = _guarded_sweep(chis, contract, 3, budget, {"n": n, "operation": "<psi|psi>"})
+        row = _guarded_sweep(chis, "contract", n, 3, budget, {"n": n, "operation": "<psi|psi>"})
         rows += row
         if row and row[0]["classification"] == "MEASURED":
             previous = (n, row[0]["median_ns"])
