@@ -9,7 +9,12 @@ _EXPORTS = {
     "Workload": ("chronus.virtual_igpu.abi", "Workload"),
     "WorkloadKind": ("chronus.virtual_igpu.abi", "WorkloadKind"),
     "WorkloadResult": ("chronus.virtual_igpu.abi", "WorkloadResult"),
+    "ProductMode": ("chronus.virtual_igpu.abi", "ProductMode"),
     "ExecutionPolicy": ("chronus.virtual_igpu.abi", "ExecutionPolicy"),
+    "execution_policy_for_product_mode": (
+        "chronus.virtual_igpu.abi",
+        "execution_policy_for_product_mode",
+    ),
     "DeliveryMode": ("chronus.virtual_igpu.abi", "DeliveryMode"),
     "TrustClass": ("chronus.virtual_igpu.abi", "TrustClass"),
     "RuntimeState": ("chronus.virtual_igpu.abi", "RuntimeState"),
