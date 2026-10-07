@@ -19,6 +19,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
+from euclid.cognition.mining import MiningCognitionProblem
+
 from .production_transport import ProductionMiningCoordinator
 
 
@@ -134,6 +136,7 @@ class EuclidMiningSupport:
         self._last_action: str | None = None
         self._last_reward_at = 0.0
         self._last_advice: EuclidMiningAdvice | None = None
+        self._last_cognition_problem: MiningCognitionProblem | None = None
         self._last_decision_at = float("-inf")
         self._last_outcome_key: tuple[int, int, int, int, int] | None = None
         self._load_runtime()
@@ -257,21 +260,8 @@ class EuclidMiningSupport:
 
     @staticmethod
     def reward(snapshot: Mapping[str, Any] | None) -> float | None:
-        """Return a bounded reward derived only from observed transport truth."""
-        snap = dict(snapshot or {})
-        outcomes = dict(snap.get("outcomes") or {})
-        values = {
-            key: outcomes.get(key)
-            for key in ("accepted_ratio", "rejected_ratio", "unknown_ratio", "stale_ratio")
-        }
-        # No submission evidence means no learning reward; do not invent one.
-        if all(value is None for value in values.values()):
-            return None
-        accepted = float(values["accepted_ratio"] or 0.0)
-        rejected = float(values["rejected_ratio"] or 0.0)
-        unknown = float(values["unknown_ratio"] or 0.0)
-        stale = float(values["stale_ratio"] or 0.0)
-        return max(-1.0, min(1.0, accepted - rejected - unknown - stale))
+        """Return reward only when PYTHIA transport has measured an outcome."""
+        return MiningCognitionProblem.measured_reward(snapshot)
 
     @staticmethod
     def _outcome_key(snapshot: Mapping[str, Any] | None) -> tuple[int, int, int, int, int] | None:
@@ -301,20 +291,33 @@ class EuclidMiningSupport:
         state = self.state_from_snapshot(
             snapshot, recovery_mode=recovery_mode, hashrate_hs=hashrate_hs
         )
+        cognition_problem = MiningCognitionProblem.from_snapshot(
+            snapshot,
+            state=state,
+            baseline_dispatch_breadth=self.baseline_breadth,
+            current_dispatch_breadth=self.current_breadth,
+            recovery_mode=recovery_mode,
+            hashrate_hs=hashrate_hs,
+        )
+        self._last_cognition_problem = cognition_problem
         if not self.available or self.learner is None:
             advice = EuclidMiningAdvice(
                 "UNAVAILABLE",
                 "hold",
                 self.current_breadth,
                 self.unavailable_reason or "EUCLID substrate unavailable",
-                {"state": state, "claim_boundary": "no EUCLID runtime loaded"},
+                {
+                    "state": state,
+                    "cognition_problem": cognition_problem.problem.to_mapping(),
+                    "claim_boundary": "no EUCLID learner loaded; cognition problem retained as evidence",
+                },
             )
             self._last_advice = advice
             return advice
 
         now_wall = time.time()
         outcome_key = self._outcome_key(snapshot)
-        reward = self.reward(snapshot)
+        reward = cognition_problem.problem.measured_reward
         if (
             reward is not None
             and outcome_key is not None
@@ -333,6 +336,16 @@ class EuclidMiningSupport:
                     "observed_at": now_wall,
                     "outcome_key": outcome_key,
                     "claim_boundary": "operational policy only",
+                    "cognition_problem_digest": cognition_problem.problem.digest,
+                    "objectives": [
+                        {
+                            "objective_id": objective.objective_id,
+                            "metric": objective.metric,
+                            "direction": objective.direction,
+                            "weight": objective.weight,
+                        }
+                        for objective in cognition_problem.problem.objectives
+                    ],
                 },
             )
             self._last_reward_at = now_wall
@@ -347,16 +360,11 @@ class EuclidMiningSupport:
             return self._last_advice
 
         action = str(self.learner.select_action(self.TASK_ID, state, explore=False))
-        if action == "reduce":
-            breadth = max(1, self.baseline_breadth // 2)
-        elif action == "restore":
-            breadth = self.baseline_breadth
-        else:
+        if action not in cognition_problem.ACTIONS:
             action = "hold"
-            breadth = self.current_breadth
-
-        # Safety clamp is local and unconditional, even if learner state is corrupt.
-        breadth = max(1, min(self.baseline_breadth, int(breadth)))
+        # Cognition can select only an already-authorised operating action.
+        # The typed problem owns the bounds; PYTHIA remains the sole actuator.
+        breadth = cognition_problem.breadth_for(action)
         self.current_breadth = breadth
         self._last_state = state
         self._last_action = action
@@ -373,6 +381,7 @@ class EuclidMiningSupport:
                 "last_reward_at": self._last_reward_at or None,
                 "claim_boundary": "bounded operating policy; no consensus authority",
                 "policy_identity": self.policy_identity,
+                "cognition_problem": cognition_problem.problem.to_mapping(),
             },
         )
         self._last_advice = advice
@@ -390,6 +399,11 @@ class EuclidMiningSupport:
             "last_outcome_key": self._last_outcome_key,
             "last_advice": asdict(advice) if advice is not None else None,
             "policy_identity": self.policy_identity,
+            "cognition_problem": (
+                self._last_cognition_problem.problem.to_mapping()
+                if self._last_cognition_problem is not None
+                else None
+            ),
             "authority": "operational-only",
             "single_actuator": "dispatch_breadth via this support only",
         }
