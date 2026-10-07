@@ -1,5 +1,13 @@
 # PYTHIA
 
+> **PRODUCT RELEASES — PICK UP HERE:** Kellogg (`kellogg-tensor` 1.0.0) and
+> TURING (`turing-universal-quantum-computer` 1.0.0) are release candidates on
+> branch `feat/kellogg-turing-products`. What is done, what is evidenced and
+> what remains (full test and benchmark runs, per-version wheel verification,
+> PyPI and GitHub-billing owner actions) is in
+> [`packaging/RELEASE_STATUS.md`](packaging/RELEASE_STATUS.md). CHRONUS is
+> next and is being pushed by the owner.
+
 > **CANONICAL MINING-SEARCH CONTRACT**
 >
 > PYTHIA's production mining path is **structured search with complete nonce-estate
