@@ -17,6 +17,7 @@ from .models import (
     TensorRecord,
 )
 from .file_registry import FileRegistry, ReconciliationReport
+from .knowledge import KnowledgeProjection, KnowledgeRecord
 from .module_adapter import ModuleEvidenceAdapter
 from .ovid_transform import OvidTransformPlane
 from .store import EdgeKind, NodeKind, OntologyStore, ProofStatus
@@ -33,6 +34,8 @@ __all__ = [
     "FileRegistry",
     "FoldRecord",
     "IntegrityFailure",
+    "KnowledgeProjection",
+    "KnowledgeRecord",
     "InvalidRecord",
     "ModuleEvidenceAdapter",
     "NodeKind",
