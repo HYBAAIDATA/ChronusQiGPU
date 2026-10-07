@@ -54,6 +54,8 @@ class TheseusFileRegistry(FileRegistry):
                 "retention_policy": row["retention_policy"],
                 "created_at": row["object_created_at"],
                 "created_by": row["created_by"],
+                "current_version_id": row["current_version_id"],
+                "status": row["status"],
             },
             "version": {
                 key: row[key]
