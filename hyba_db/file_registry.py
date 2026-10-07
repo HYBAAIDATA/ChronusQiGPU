@@ -1598,8 +1598,10 @@ class FileRegistry:
         self._tenant(tenant_id)
         rows = list(
             self.store._db.execute(
-                "SELECT fv.file_version_id,fv.storage_uri,fv.content_sha256,fv.size_bytes "
-                "FROM file_versions fv WHERE fv.tenant_id=? ORDER BY fv.created_at,fv.file_version_id",
+                "SELECT fv.file_version_id,fv.storage_uri,fv.content_sha256,fv.size_bytes,"
+                "fo.file_class FROM file_versions fv JOIN file_objects fo "
+                "ON fo.tenant_id=fv.tenant_id AND fo.file_object_id=fv.file_object_id "
+                "WHERE fv.tenant_id=? ORDER BY fv.created_at,fv.file_version_id",
                 (tenant_id,),
             )
         )
@@ -1612,8 +1614,16 @@ class FileRegistry:
                 if str(row["storage_uri"]).startswith("file://")
                 else None
             )
+            canonical = (
+                Path(root)
+                / tenant_id
+                / str(row["file_class"])
+                / str(row["content_sha256"])[:2]
+                / str(row["content_sha256"])
+            )
             is_healthy = bool(
                 path is not None
+                and path.resolve() == canonical.resolve()
                 and path.is_file()
                 and path.stat().st_size == int(row["size_bytes"])
                 and _sha(path.read_bytes()) == row["content_sha256"]
@@ -1654,26 +1664,40 @@ class FileRegistry:
         for row in rows:
             state = "QUARANTINED"
             version_id = row["file_version_id"]
+            recovered_by_custody = False
             final = Path(row["final_uri"]) if row["final_uri"] else None
             if final is not None and not final.is_absolute():
                 final = root_path / final
-            if final is not None and version_id and final.is_file():
+            if version_id:
                 version = self.store._db.execute(
-                    "SELECT content_sha256,size_bytes FROM file_versions WHERE tenant_id=? AND file_version_id=?",
+                    "SELECT content_sha256,size_bytes FROM file_versions "
+                    "WHERE tenant_id=? AND file_version_id=?",
                     (tenant_id, version_id),
                 ).fetchone()
-                if version:
+                if version and final is not None and final.is_file():
                     digest = _sha(final.read_bytes())
                     if digest == version["content_sha256"] and final.stat().st_size == int(
                         version["size_bytes"]
                     ):
                         state = "RECOVERED"
+                if state != "RECOVERED" and version is not None and self.custody is not None:
+                    try:
+                        result = self.recover_blob_from_custody(
+                            tenant_id, str(version_id), root_path
+                        )
+                        if result["passed"]:
+                            state = "RECOVERED"
+                            recovered_by_custody = True
+                    except Exception:
+                        # The intent remains quarantined. Recovery failures are
+                        # preserved by state rather than converted to success.
+                        pass
             with self.store._tx() as db:
                 db.execute(
                     "UPDATE file_intents SET state=?,updated_at=? WHERE tenant_id=? AND intent_id=?",
                     (state, _now(), tenant_id, row["intent_id"]),
                 )
-                if version_id:
+                if version_id and not (state == "RECOVERED" and recovered_by_custody):
                     self._event(
                         db,
                         tenant_id,
