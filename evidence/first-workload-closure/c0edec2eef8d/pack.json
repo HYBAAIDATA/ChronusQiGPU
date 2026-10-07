@@ -1,0 +1,94 @@
+{
+  "schema": "pythia.evidence-pack/v1",
+  "task": "first-workload-closure",
+  "commit": "c0edec2eef8d302adc86308dca0995ec5cd7a3ef",
+  "base_commit": "074c94409d2de36c9f68cb86c00cf53afb2ae0cd",
+  "environment": {
+    "os": "Windows Server 2022 (devinbox)",
+    "python": "3.13.12",
+    "pytest": "9.1.1",
+    "hardware": "CPU-only; no GPU, no ASIC, no stratum hardware",
+    "nonce_order": "m32"
+  },
+  "claims": {
+    "coordinator_requests_chronus_batch": {
+      "status": "IMPLEMENTED_EXECUTED",
+      "evidence": "_bind_plan_execution_intent stamps executor_route=chronus_batch; test_coordinator_bound_plan_requests_chronus_batch_and_falls_back_end_to_end drives a real coordinator.__new__ through _bind_plan_execution_intent then the production router: FALLBACK_COMPLETE, requested=chronus_batch, executed=cpu_reference, fallback_reason=CHRONUS_BATCH_UNAVAILABLE, EvidenceClass.SOFTWARE_VERIFIED."
+    },
+    "capability_bound_chronus_execution": {
+      "status": "IMPLEMENTED_EXECUTED",
+      "evidence": "test_coordinator_bound_plan_executes_chronus_batch_when_capability_bound binds ChronusVirtualIGPUHasher and asserts requested=executed=chronus_batch, device_backend=chronus_vigpu, kernel_identity=chronus_ordered_batch_v1:<SEARCH_ARCHITECTURE_ID>, completed_work_items>0, Hendrix order preserved, hit independently rechecked. Backend provenance is a VIRTUAL in-process hasher — no physical-device claim is made."
+    },
+    "chronus_hardware_route": {
+      "status": "UNAVAILABLE",
+      "evidence": "No Chronus-capable physical backend exists on this host; the unbound path reports CHRONUS_BATCH_UNAVAILABLE explicitly rather than relabelling cpu_reference."
+    },
+    "optimizer_window_model_keying": {
+      "status": "FIXED_WITH_REGRESSION",
+      "evidence": "Requesting chronus_batch diverted ClosedLoopOptimizer observations into a requested-route key that select() never reads (route_matched=False by design on fallback records), starving the cpu_reference baseline and pinning the mining window at 96 nonces forever — the canonical loopback found zero shares in 240s. coordinator._record_execution now keys by executed_route (matching world_model.observe_execution and fail_closed conventions). Windows grow again: accepted trial 96->192 at +130.75% measured gain, share found in 34.5s end-to-end."
+    },
+    "hashrate_governor_10_eh_ceiling": {
+      "status": "IMPLEMENTED_EXECUTED",
+      "evidence": "DEFAULT_CEILING_HS=1e19 reconciled with runtime_config.HASHRATE_CEILING_HS=1e19 (already on main); MAX_NETWORK_FRACTION=0.01 untouched. MAINNET_LIKE nbits 0x17034219 -> 1% cap 6.184028282986101e18 binds below the ceiling; campaign over-ceiling target (2e19) still rejected."
+    },
+    "m3_mining_guard_packaging": {
+      "status": "IMPLEMENTED_EXECUTED",
+      "evidence": "pyproject py-modules includes m3_mining_guard; pip install -e . && pythia-mine.exe --help succeeds (previously ModuleNotFoundError on the installed console script)."
+    },
+    "loopback_pool_submit_verdict_durable": {
+      "status": "REUSED_MAIN_IMPLEMENTATION",
+      "evidence": "Main merged its own runner (scripts/run_loopback_evidence.py) and test surface (test_loopback_pool_verdict.py); this branch does not re-implement them. Executed on this branch: 1 ACCEPTED share, 1 submit, 0 rejects, verdict_custody_match=true, 34.545s — matching clean main's 34.67s. Pack + custody manifest under evidence/first-workload-closure/c0edec2eef8d/loopback/."
+    },
+    "attest_keyed_hmac": {
+      "status": "SUPERSEDED_BY_MAIN",
+      "evidence": "Main merged its own keyed-HMAC seam-attestation design (PYTHIA_SEAM_ATTEST_KEY_HEX / PYTHIA_SEAM_ATTEST_KEY, fallback PYTHIA_IDENTITY_HMAC_SECRET); not re-implemented here."
+    },
+    "durable_custody_flag": {
+      "status": "SUPERSEDED_BY_MAIN",
+      "evidence": "Main merged its own durable-custody design (open_custody(durable, durable_dir), TuringCustody.attach, test_vqc_custody_durable.py); not re-implemented here."
+    }
+  },
+  "commands": {
+    "pytest tests/test_chronus_native_batch_route.py": {
+      "cmd": ".venv/Scripts/python.exe -m pytest tests/test_chronus_native_batch_route.py -x -q",
+      "exit_code": 0,
+      "seconds": 6.12,
+      "tail": "10 passed in 6.12s (incl. coordinator fallback e2e, capability-bound chronus_batch e2e, optimizer executed-route keying regression)"
+    },
+    "pytest loopback verdict suite": {
+      "cmd": ".venv/Scripts/python.exe -m pytest chronus/mla1517_platform/python/test_loopback_pool_verdict.py -x -q",
+      "exit_code": 0,
+      "seconds": 34.65,
+      "tail": "3 passed in 34.65s"
+    },
+    "batch gate suite": {
+      "cmd": ".venv/Scripts/python.exe -m pytest tests/test_chronus_native_batch_route.py chronus/mla1517_platform/python/test_hashrate_governor.py tests/test_runtime_config.py chronus/mla1517_platform/python/test_loopback_pool_verdict.py -q",
+      "exit_code": 0,
+      "seconds": 33.66,
+      "tail": "50 passed in 33.66s"
+    },
+    "loopback evidence run": {
+      "cmd": ".venv/Scripts/python.exe scripts/run_loopback_evidence.py --timeout 120 --min-accepted 1 --out evidence/loopback_pool_verdict_fixed",
+      "exit_code": 0,
+      "seconds": 34.545,
+      "tail": "durable_share_log_accepted=1 pool_submits=1 pool_accepts=1 pool_rejects=0 verdict_custody_match=true"
+    },
+    "flake8 edited files": {
+      "cmd": ".venv/Scripts/python.exe -m flake8 <edited files>",
+      "exit_code": 0,
+      "seconds": 2.0,
+      "tail": "clean"
+    }
+  },
+  "known_environment_artifacts": {
+    "windows_find_builtin": "Windows `find` (file-search builtin) is broken on this host; use rg --files.",
+    "crlf_line_endings": "render_api_contract --check and regen_july_manifest --check fail on CRLF bytes under Windows checkout; regenerated output is byte-identical on LF-normalized files (pre-existing, not addressed here).",
+    "loopback_flake_class": "test_canonical_loopback_* depends on probabilistic share-finding under measurement-driven window growth; a 96<->192 policy oscillation can exhaust the bounded-trial budget and pin coverage near 47k nonces (observed once, ~5% expectation of zero hits at difficulty 2^-14). Same sensitivity exists on main."
+  },
+  "pre_existing_failures_on_main": {
+    "scope": "pytest tests/ full suite: 20 failed / 3848 passed / 20 skipped (928s, exit 1) — all in files untouched by this diff.",
+    "turing_custody_cluster": "tests/test_turing_production_pipeline.py (3): _replay() signature changed by main's durable-custody merge; pipeline.py:540 NameError 'custody' is not defined; tests/test_shared_system_relations_production.py (5): EntangledCustodyError certificate_binds_program_and_result — reproduced on clean main (5 failed, 9 passed).",
+    "note": "This diff touches 7 files, none under turing_universal_quantum_computer/ or custody; the failures are structural on main."
+  },
+  "claim_boundary": "Executed on CPU-only Windows host against an in-process verifying stratum pool. Proves: canonical chronus_batch request contract, explicit CHRONUS_BATCH_UNAVAILABLE fallback, capability-bound virtual-chronus execution with real backend provenance fields, 10 EH/s ceiling reconciliation, packaging completeness, and pool submit->verdict->durable recording on the canonical path. Does NOT prove: physical-device hashing, 10 EH/s throughput, production/testnet pool acceptance."
+}

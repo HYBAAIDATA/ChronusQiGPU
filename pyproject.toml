@@ -91,6 +91,7 @@ py-modules = [
     "headless_miner",
     "main",
     "manifold_pool_coordinator",
+    "m3_mining_guard",
     "mining_runtime",
     "policy_bench",
     "pool_catalog",
