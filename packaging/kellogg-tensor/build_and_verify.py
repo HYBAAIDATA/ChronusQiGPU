@@ -158,6 +158,12 @@ def inspect_wheel(wheel: Path) -> dict[str, Any]:
     missing = sorted(required - set(names))
     if missing:
         raise RuntimeError(f"wheel is missing required package data: {missing}")
+    license_names = [
+        name for name in names
+        if name.startswith(dist_info) and name.upper().endswith("/LICENSE")
+    ]
+    if not license_names:
+        raise RuntimeError("wheel is missing the repository licence")
     bad = [name for name in names if any(part in "/" + name for part in _BAD_NAME_PARTS)]
     if bad:
         raise RuntimeError(f"wheel contains release-forbidden paths: {bad[:20]}")
@@ -196,6 +202,7 @@ def scan_artifact(archive: Path) -> dict[str, Any]:
 
 _INSTALLED_CHECK = r"""
 import importlib
+import importlib.metadata
 import json
 import pkgutil
 import sys
@@ -215,6 +222,19 @@ FORBIDDEN = {
 
 assert "site-packages" in str(kellogg.__file__).replace("\\", "/"), kellogg.__file__
 assert kellogg.__version__ == EXPECTED_VERSION, kellogg.__version__
+
+metadata = importlib.metadata.metadata("kellogg-tensor")
+assert metadata["Name"] == "kellogg-tensor"
+assert metadata["Version"] == EXPECTED_VERSION
+assert metadata["Requires-Python"] == ">=3.11"
+assert metadata["Author"] == "HYBA Software Limited"
+assert metadata["License"] == "MIT"
+requires = importlib.metadata.requires("kellogg-tensor") or []
+hard_requires = [r for r in requires if "extra ==" not in r]
+assert len(hard_requires) == 1 and hard_requires[0].lower().startswith("numpy"), hard_requires
+project_urls = metadata.get_all("Project-URL") or []
+assert any("https://github.com/QuantumPhiRedux/PhiMiner" in u for u in project_urls), project_urls
+assert not any("QuantumPhi2/PhiMiner" in u for u in project_urls), project_urls
 
 mods = sorted(m.name for m in pkgutil.iter_modules(kellogg.__path__))
 failed = {}
@@ -325,6 +345,14 @@ print(json.dumps({
     "module_count": len(mods),
     "registry_ok": registry["ok"],
     "registry_items": registry["items"],
+    "metadata": {
+        "name": metadata["Name"],
+        "version": metadata["Version"],
+        "requires_python": metadata["Requires-Python"],
+        "license": metadata["License"],
+        "project_urls": project_urls,
+        "hard_requires": hard_requires,
+    },
     "canonical_digest": fixture_digest,
     "certificate_digest": cert.digest,
     "attestation_digest": attestation["attestation_digest"],
