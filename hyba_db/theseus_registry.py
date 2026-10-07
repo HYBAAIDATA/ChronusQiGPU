@@ -437,13 +437,19 @@ class TheseusFileRegistry(FileRegistry):
                 migrated.append(vid)
             except Exception as exc:
                 errors.append(f"{vid}:{type(exc).__name__}:{exc}")
+        seal = (
+            self.seal_existing_rebuild_state(tenant_id)
+            if not errors
+            else {"passed": False, "reason": "migration errors"}
+        )
         return {
             "schema": "hyba.theseus-storage-migration/v1",
             "tenant_id": tenant_id,
             "migrated": tuple(migrated),
             "skipped": tuple(skipped),
             "errors": tuple(errors),
-            "passed": not errors,
+            "rebuild_manifest_seal": seal,
+            "passed": not errors and bool(seal.get("passed")),
         }
 
     def storage_proof(
