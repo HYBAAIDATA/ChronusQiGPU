@@ -1,0 +1,46 @@
+{
+  "manifest": "AGENT_HANDOFFS",
+  "note": "Agent A (repair/A-intelligence) wrote this file; reports/ is owned by Agent H — this write is itself a cross-boundary touch, documented here per programme rules.",
+  "handoffs": [
+    {
+      "request_id": "A-001",
+      "requesting_agent": "A",
+      "owning_agent": "owner-of-standard/",
+      "required_interface": "standard/certificate.py:120 — stale default repo 'QUANTUMDATA2/PYTHIAPhiMiner' (same defect fixed in-lane in orchestrate.py)",
+      "reason": "Stale donor-repo label misidentifies the repository; matches the defect class fixed in Agent A's orchestrate.py",
+      "affected_files": ["standard/certificate.py"],
+      "blocking": false,
+      "status": "OPEN"
+    },
+    {
+      "request_id": "A-002",
+      "requesting_agent": "A",
+      "owning_agent": "owner-of-pci/",
+      "required_interface": "pci/api.py imports the removed 'hyba_backend' namespace; agi.api's optional PCI-domain router degrades with a warning because of it",
+      "reason": "agi.api retargets were completed in-lane, but the PCI router it optionally composes still imports the removed namespace — PCI needs the same LEGACY_MODULE_MAP retarget treatment",
+      "affected_files": ["pci/api.py"],
+      "blocking": false,
+      "status": "OPEN"
+    },
+    {
+      "request_id": "A-003",
+      "requesting_agent": "A",
+      "owning_agent": "owner-of-.github-and-turing",
+      "required_interface": "deploy_sentry DS01/DS02 failures: .github/workflows/turing-release.yml sets KELLOGG_VERSION no code reads; turing_universal_quantum_computer/tests/test_vqc_custody_durable.py imports pytest unguarded though pyproject.toml does not declare it",
+      "reason": "Full-repo deploy_sentry fails on files outside Agent A's lane; lane-local portion is clean",
+      "affected_files": [".github/workflows/turing-release.yml", "turing_universal_quantum_computer/pyproject.toml", "turing_universal_quantum_computer/tests/test_vqc_custody_durable.py"],
+      "blocking": true,
+      "status": "OPEN"
+    },
+    {
+      "request_id": "A-004",
+      "requesting_agent": "A",
+      "owning_agent": "H",
+      "required_interface": "Negative tests needed for new fail-closed paths in Agent A's lane: SubsystemUnavailable raises (agi.bio_resonance_oracle / material_synthesis / protein_refolding_engine), feedback-core restore() schema rejection, TOE record_outcome on pre-restart decision ids, agi.api make_autonomous_decision fail-closed branch",
+      "reason": "tests/ is Agent H-owned; Agent A classified the need but cannot author test files",
+      "affected_files": ["tests/"],
+      "blocking": false,
+      "status": "OPEN"
+    }
+  ]
+}
