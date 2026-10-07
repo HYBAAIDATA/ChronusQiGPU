@@ -1,5 +1,5 @@
 """
-EUCLID Platform Integration Façade API (EuclidEngineAdapter) v16.0
+EUCLID Program Search Façade API (ProgramSearchEngine) v16.0
 =====================================================================
 Enterprise integration boundary connecting host systems (HYBA / PYTHIPhi Platform)
 to EUCLID drop-in computational payload with MCTS search & Silver updates.
@@ -15,9 +15,12 @@ from euclid.agents.manifold import SharedEntangledManifold
 from euclid.agents.orchestrator import MultiAgentEntangledOrchestrator
 from euclid.enterprise.roi_governance import EnterpriseROIGovernanceEngine
 
-class EuclidEngineAdapter:
+class ProgramSearchEngine:
     """
-    Stable, host-facing façade API for EUCLID Meta-Evolution Engine v16.0.
+    Program-search façade for the EUCLID v16 MCTS/evolution substrate.
+
+    This class is a specialist search engine, not the EUCLID cognition
+    authority. General intelligence composition lives in EuclidRuntime.
     """
     def __init__(self, target_phi: float = 0.618033988749895, persistent_repo_path: Optional[str] = None):
         self.repository = PersistentPrimitiveRepository(storage_path=persistent_repo_path)
@@ -172,3 +175,11 @@ class EuclidEngineAdapter:
             "manifold_snapshot": self.manifold.get_snapshot(),
             "repository_summary": self.repository.get_summary()
         }
+
+
+# Backward-compatible import for historical manifests and callers. New
+# production cognition code imports ProgramSearchEngine so there is one clear
+# EUCLID authority: EuclidRuntime / CognitiveService.
+EuclidEngineAdapter = ProgramSearchEngine
+
+__all__ = ["ProgramSearchEngine", "EuclidEngineAdapter"]

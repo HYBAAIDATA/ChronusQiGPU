@@ -5,8 +5,10 @@ Operates across Substrates:
   - Substrate 3: Topological (Curvature classification and Betti invariance)
   - Substrate 10: Quantum (State subspace projection and Born verification)
 
-Possesses FULL AUTHORITY over nonce range partitioning, Cassini permutations,
-and collision avoidance without sub-agent framing.
+Provides ADVISORY intelligence for nonce-space geometry, Cassini permutations,
+and collision-avoidance analysis. PYTHIA remains final authority for mining truth,
+SearchPlan finalization, nonce-estate coverage, SHA256d/target proof semantics,
+share validation/submission, credentials, and pool acknowledgements.
 
 LUCAS WIRING: draws from lucas/ (pool) OR implements its Lucas kernel
 inline below. MUST NOT import from any sibling algorithm.
@@ -58,7 +60,7 @@ class GeometricAllocation:
 
 
 class GeometricIntelligence:
-    """Full-authority decision maker for 11D geometry and nonce manifold partitioning."""
+    """Advisory intelligence for 11D geometry and nonce-manifold analysis."""
 
     LUCAS_TABLE = [2, 1, 3, 4, 7, 11, 18, 29, 47, 76, 123, 199, 322, 521, 843, 1364]
     FIB_TABLE = [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987]

@@ -5,8 +5,10 @@ Operates across Substrates:
   - Substrate 8: MDMemory (Multi-dimensional buffer caching and layout)
   - Substrate 12: Storage (Galois cell retention and cache flush)
 
-Possesses FULL AUTHORITY over punch fusion, dispatch batch sizing,
-thermal throttling, and hardware power budgets without sub-agent framing.
+Provides ADVISORY intelligence for punch fusion, dispatch sizing, thermal
+throttling, and hardware-budget analysis. PYTHIA remains final authority for
+mining truth, SearchPlan finalization, nonce-estate coverage, SHA256d/target
+proof semantics, share validation/submission, credentials, and pool acknowledgements.
 
 LUCAS WIRING: draws from lucas/ (pool) OR implements its Lucas kernel
 inline below. MUST NOT import from any sibling algorithm.
@@ -62,7 +64,7 @@ class PlasticComputeProfile:
 
 
 class PlasticIntelligence:
-    """Full-authority decision maker for compute tuning, kernel fusion, and thermal curves."""
+    """Advisory intelligence for compute tuning, kernel fusion, and thermal curves."""
 
     DEFAULT_FUSION = [
         "phi_filter_score",

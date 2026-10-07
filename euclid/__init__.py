@@ -24,7 +24,7 @@ from .checkpoint_manifest import (
     verify_manifest,
     write_manifest,
 )
-from .adapter import EuclidEngineAdapter
+from .adapter import EuclidEngineAdapter, ProgramSearchEngine
 from .subsystem_registry import (
     HealthLevel,
     HealthStatus,
@@ -45,7 +45,7 @@ __all__ = [
     "Authority",
     "Capability",
     "Experience",
-    "EuclidEngineAdapter",
+    "EuclidEngineAdapter",\n    "ProgramSearchEngine",
     "EuclidRuntime",
     "Health",
     "HealthLevel",

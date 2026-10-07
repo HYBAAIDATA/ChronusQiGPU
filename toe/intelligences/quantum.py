@@ -5,8 +5,11 @@ Operates across Substrates:
   - Substrate 9: Tensor (State vector projection and amplitude evaluation)
   - Substrate 7: Millennium (Millennium bounds and invariant satisfaction)
 
-Possesses FULL AUTHORITY over wallet balance tracking, fee-optimal payout
-dispatch, and algebraic quantum state verification without sub-agent framing.
+Provides ADVISORY intelligence for algebraic quantum-state and payout analysis.
+PYTHIA remains final authority for mining truth, SearchPlan finalization,
+nonce-estate coverage, SHA256d/target proof semantics, share validation/submission,
+credentials, and pool acknowledgements; treasury/security authority remains with
+its canonical owner rather than this intelligence module.
 
 LUCAS WIRING: draws from lucas/ (pool) OR implements its Lucas kernel
 inline below. MUST NOT import from any sibling algorithm.
@@ -61,7 +64,7 @@ class QuantumVerificationResult:
 
 
 class QuantumIntelligence:
-    """Full-authority decision maker for Born rule verification and treasury operations."""
+    """Advisory intelligence for Born-rule verification and treasury analysis."""
 
     # Millennium sector bounds from unified punch kernel
     MILLENNIUM_BOUNDS = [0.001, 15.0, 0.5, 2.0, 1.0, 1.0, 1.0]
