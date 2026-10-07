@@ -3,7 +3,9 @@ kind: Deployment
 metadata:
   name: pythia-resilience-gateway
 spec:
-  replicas: 3
+  # Process-local idempotency/rate-limit state is not cluster-safe yet.
+  # Raise only after the shared Redis adapter is wired and verified.
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
