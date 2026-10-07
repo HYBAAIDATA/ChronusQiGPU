@@ -1,19 +1,41 @@
+"""Bio-Resonance Oracle — phi-resonance protein-folding research scaffold.
+
+RESEARCH SCAFFOLD — not a production component.  The oracle search substrate
+this module was written against (``hyba_backend.platform.substrate.universal_substrate``
+and ``internal.backend.amplified_resonant_structured_grover``) was removed and
+has no canonical successor in this repository.  The module imports cleanly but
+the oracle refuses to run: constructing :class:`BioResonanceOracle` raises
+:class:`SubsystemUnavailable` naming the removed dependency rather than
+silently fabricating a folding result.
+
+Any result fields this file would emit (``binding_affinity``, per-atom
+``confidence``, ``predicted_efficacy``, ``binding_strength``) are heuristic
+scaffold numbers, not measurements — they carry no experimental evidence.
+"""
+
 import asyncio
 import logging
 from datetime import datetime
 
 import numpy as np
 
-from hyba_backend.internal.backend.amplified_resonant_structured_grover import (
-    AmplifiedResonantStructuredGrover,
-)
-from hyba_backend.platform.substrate.universal_substrate import (
-    UniversalSubstrate,
-    oracle_search,
-)
-from hyba_backend.services.agi.enhanced_ai.knowledge_base import (
-    EnhancedKnowledgeBase,
-)
+try:
+    from hyba_backend.internal.backend.amplified_resonant_structured_grover import (
+        AmplifiedResonantStructuredGrover,
+    )
+    from hyba_backend.platform.substrate.universal_substrate import (
+        UniversalSubstrate,
+        oracle_search,
+    )
+
+    _SUBSTRATE_IMPORT_ERROR = None
+except ImportError as exc:  # removed substrate — fail closed at construction
+    AmplifiedResonantStructuredGrover = None
+    UniversalSubstrate = None
+    oracle_search = None
+    _SUBSTRATE_IMPORT_ERROR = exc
+
+from agi.enhanced_ai.knowledge_base import EnhancedKnowledgeBase
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("BioResonance")
@@ -22,10 +44,37 @@ logger = logging.getLogger("BioResonance")
 AMYLOID_BETA_42 = "DAEFRHDSGYEVHHQKLVFFAEDVGSNKGAIIGLMVGGVVIA"
 
 
+class SubsystemUnavailable(RuntimeError):
+    """Raised when a removed substrate dependency is exercised."""
+
+
+def substrate_status() -> dict:
+    """Declared availability of the oracle search substrate."""
+    return {
+        "available": _SUBSTRATE_IMPORT_ERROR is None,
+        "reason": (
+            "oracle search substrate removed: universal_substrate / "
+            "amplified_resonant_structured_grover have no canonical successor"
+        )
+        if _SUBSTRATE_IMPORT_ERROR is not None
+        else "oracle search substrate loaded",
+        "import_error": str(_SUBSTRATE_IMPORT_ERROR),
+    }
+
+
 class BioResonanceOracle:
-    """Quantum protein folding engine using phi-resonance optimization"""
+    """Quantum protein folding engine using phi-resonance optimization
+
+    Requires the removed universal-substrate oracle backend; refuses to
+    instantiate when it is absent instead of fabricating results.
+    """
 
     def __init__(self):
+        if _SUBSTRATE_IMPORT_ERROR is not None:
+            raise SubsystemUnavailable(
+                "BioResonanceOracle unavailable: oracle search substrate removed "
+                f"({_SUBSTRATE_IMPORT_ERROR})"
+            )
         logger.info("🧬 Initializing Bio-Resonance Oracle for Protein Folding")
         self.grover = AmplifiedResonantStructuredGrover()
         self.substrate = UniversalSubstrate()

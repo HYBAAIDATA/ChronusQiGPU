@@ -15,7 +15,7 @@ from .truth_calibration import TruthCalibrationEngine
 class DecisionRecord:
     decision_id: str
     decision: Any
-    confidence: float
+    confidence: float | None
     module_outputs: dict[str, Any]
     context: dict[str, Any]
     source_id: str = "default"
@@ -28,7 +28,7 @@ class LearningUpdate:
     update_id: str
     decision_id: str
     attribution: dict[str, float]
-    calibration_error: float
+    calibration_error: float | None
     model_changes: dict[str, float]
     timestamp: float = field(default_factory=time.time)
 
@@ -40,7 +40,7 @@ class FeedbackReport:
     decision: Any
     outcome: Any
     attribution: dict[str, ModuleContribution]
-    calibration_score: float
+    calibration_score: float | None
     learning_signal: float
     timestamp: float = field(default_factory=time.time)
     recommendations: list[str] = field(default_factory=list)
@@ -62,11 +62,14 @@ class IntelligenceFeedbackCore:
         self.learning_rate = 0.001
         self._processed: dict[str, FeedbackReport] = {}
 
-    def record_decision(self, decision: Any, confidence: float,
+    def record_decision(self, decision: Any, confidence: float | None,
                         module_outputs: Mapping[str, Any], context: Mapping[str, Any] | None = None,
                         source_id: str = "default") -> str:
-        value = float(confidence)
-        if not math.isfinite(value) or not 0 <= value <= 1:
+        # ``None`` means the deciding engine reported no confidence — the
+        # record is kept so outcome feedback still closes, but nothing is
+        # injected into the calibration series.
+        value = None if confidence is None else float(confidence)
+        if value is not None and (not math.isfinite(value) or not 0 <= value <= 1):
             raise ValueError("confidence must be finite and in [0, 1]")
         if not module_outputs:
             raise ValueError("module_outputs must not be empty")
@@ -86,8 +89,13 @@ class IntelligenceFeedbackCore:
         record = self.decision_records[decision_id]
         source = source_id or record.source_id
         outcome_bool = self._outcome_to_bool(outcome, record.decision)
-        self.calibration_engine.record_prediction(source, record.confidence, outcome_bool)
-        calibration_error = self.calibration_engine.calibrate(record.confidence, outcome_bool)
+        if record.confidence is None:
+            # No confidence was reported at decision time — calibration is
+            # undefined, not zero.  Learning falls back to attribution only.
+            calibration_error = None
+        else:
+            self.calibration_engine.record_prediction(source, record.confidence, outcome_bool)
+            calibration_error = self.calibration_engine.calibrate(record.confidence, outcome_bool)
         attribution_report = self.causal_engine.attribute(
             record.module_outputs, record.decision, outcome, decision_fn
         )
@@ -114,17 +122,21 @@ class IntelligenceFeedbackCore:
         return outcome == decision
 
     @staticmethod
-    def _compute_learning_signal(calibration_error: float,
+    def _compute_learning_signal(calibration_error: float | None,
                                  attribution_report: AttributionReport) -> float:
+        if calibration_error is None:
+            return max(-1.0, min(1.0, attribution_report.total_attribution))
         value=.6*(1-float(calibration_error))+.4*attribution_report.total_attribution
         return max(-1.0,min(1.0,value))
 
     @staticmethod
-    def _generate_recommendations(calibration_error: float,
+    def _generate_recommendations(calibration_error: float | None,
                                   attribution_report: AttributionReport) -> list[str]:
         result=[]
-        if calibration_error>.3: result.append("High calibration error - confidence estimation needs improvement")
-        if calibration_error<.1: result.append("Well calibrated - confidence estimation is accurate")
+        if calibration_error is None:
+            result.append("No confidence reported - calibration not applicable")
+        elif calibration_error>.3: result.append("High calibration error - confidence estimation needs improvement")
+        elif calibration_error<.1: result.append("Well calibrated - confidence estimation is accurate")
         top=attribution_report.get_top_contributors(2)
         if top: result.append(f"Top contributing modules: {[item.module_id for item in top]}")
         negative=attribution_report.get_negative_contributors()
@@ -134,7 +146,7 @@ class IntelligenceFeedbackCore:
     def _trigger_learning_update(self, report: FeedbackReport) -> None:
         attribution={name:item.contribution_score for name,item in report.attribution.items()}
         # High calibration error attenuates updates rather than reinforcing an unreliable signal.
-        reliability=max(0.0,1-report.calibration_score)
+        reliability=0.5 if report.calibration_score is None else max(0.0,1-report.calibration_score)
         changes={name:self.learning_rate*score*reliability for name,score in attribution.items()}
         self.learning_updates.append(LearningUpdate(
             str(uuid.uuid4()),report.decision_id,attribution,report.calibration_score,changes

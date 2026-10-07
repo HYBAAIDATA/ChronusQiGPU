@@ -22,8 +22,8 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from hyba_backend.api.web_research import get_research_engine, research_and_learn
-from hyba_backend.platform.quantum_core.processor import (
+from agi.web_research import get_research_engine, research_and_learn
+from agi.quantum_processor import (
     ProblemDomain,
     UniversalQuantumProcessor,
 )

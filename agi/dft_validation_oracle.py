@@ -11,10 +11,10 @@ from typing import Any, Dict, List
 
 import numpy as np
 
-from hyba_backend.platform.resonance import PhiResonanceScorer
+from agi.resonance import PhiResonanceScorer
 
 # Import HYBA components
-from hyba_backend.services.agi.enhanced_ai.knowledge_base import EnhancedKnowledgeBase
+from agi.enhanced_ai.knowledge_base import EnhancedKnowledgeBase
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("DFT_Validation_Oracle")

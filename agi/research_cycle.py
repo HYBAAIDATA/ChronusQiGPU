@@ -10,7 +10,7 @@ import asyncio
 import logging
 from typing import Any, Dict
 
-from hyba_backend.services.agi.mass_gap_relaxation import MassGapRelaxationEngine
+from agi.mass_gap_relaxation import MassGapRelaxationEngine
 
 logger = logging.getLogger(__name__)
 

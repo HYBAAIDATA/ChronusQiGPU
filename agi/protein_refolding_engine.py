@@ -10,9 +10,13 @@ import asyncio
 import logging
 from typing import Any, Dict
 
-from hyba_backend.services.pci.qi import get_qi_instance
+from pci.qi import get_qi_instance
 
 logger = logging.getLogger(__name__)
+
+
+class SubsystemUnavailable(RuntimeError):
+    """Raised when a removed substrate dependency is exercised."""
 
 
 class CausalCore:
@@ -34,11 +38,18 @@ class CausalCore:
         }
 
     def find_resonant_minimum(self, field_state: Dict[str, Any]) -> Dict[str, Any]:
-        """Bypasses Monte Carlo to find the single 'Resonant Path' energy minimum."""
+        """Heuristic 'resonant path' energy estimate — scaffold, not measured.
+
+        The returned numbers are fixed constants from the original research
+        script; they carry no experimental evidence and are labelled
+        accordingly so no downstream consumer can read them as a solved
+        mass-gap computation.
+        """
         return {
-            "fold_parameters": "O(1)_resonant_solution",
+            "fold_parameters": "resonant_path_heuristic",
             "energy_minimum": -42.618,
             "mass_gap_verification": self.precision,
+            "evidence_class": "heuristic_scaffold_not_measured",
         }
 
 
@@ -48,11 +59,18 @@ class BioIntelligenceNode:
     """
 
     def __init__(self):
-        # Initialize with the Solved Mass Gap threshold
+        # Mass-gap relaxation constant from the original research scaffold;
+        # it is a heuristic threshold, not a solved-Yang–Mills result.
         self.pci = CausalCore(precision=0.999945)
-        from hyba_backend.platform.substrate.adapters import AppleSiliconAdapter
+        try:
+            from hyba_backend.platform.substrate.adapters import AppleSiliconAdapter
 
-        self.metal_accel = AppleSiliconAdapter()
+            self.metal_accel = AppleSiliconAdapter()
+        except ImportError as exc:
+            raise SubsystemUnavailable(
+                "BioIntelligenceNode unavailable: platform.substrate.adapters "
+                f"was removed and has no canonical successor ({exc})"
+            ) from exc
 
     async def solve_folding_anomaly(self, amino_sequence: str):
         """
@@ -71,8 +89,9 @@ class BioIntelligenceNode:
                 "purity_score": result.confidence,
                 "therapeutic_target": result.binding_site,
                 "energy_state": result.energy_state,
-                "computation_time": "O(1) instant",
-                "substrate": "Apple Silicon M3 Ultra (ANE Optimized)",
+                "computation_time": "heuristic_estimate",
+                "substrate": "adapter-reported",
+                "evidence_class": "heuristic_scaffold_not_measured",
             }
         except Exception as e:
             logger.error(f"Error in solve_folding_anomaly: {e}")

@@ -9,7 +9,7 @@ import logging
 import time
 from typing import Any
 
-from hyba_backend.core.intelligence.intelligent_endpoint import (
+from Intelligence.intelligent_endpoint import (
     AutonomyLevel,
     Decision,
     IntelligenceState,

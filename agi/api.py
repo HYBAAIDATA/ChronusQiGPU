@@ -54,7 +54,7 @@ from typing import (
     Tuple,
 )
 
-from hyba_backend.platform.intelligence.unified_intelligence import (
+from agi.unified_intelligence import (
     UnifiedIntelligenceFactory,
     McKinseyDecisionContext,
     McKinseyDecisionEngine,
@@ -73,15 +73,15 @@ except ImportError as _pci_import_err:
     logging.getLogger(__name__).warning(
         f"[AGI] PCI domain router unavailable — AGI will lack domain endpoints: {_pci_import_err}"
     )
-from hyba_backend.core.intelligence import calculate_pure_quantum_intelligence
-from hyba_backend.platform.intelligence.endpoint import (
+from enhanced_intelligence import calculate_pure_quantum_intelligence
+from Intelligence.intelligent_endpoint import (
     AutonomyLevel,
 )
 from dataclasses import dataclass
 
 # Import enhanced ASI frameworks
 try:
-    from src.hyba_quantum.algorithms.asi_agency_framework import (
+    from agi.agency import (
         ASIAgencyFramework,
         AgencyLevel,
         AgencyState,

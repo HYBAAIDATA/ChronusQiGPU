@@ -19,8 +19,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from hyba_backend.api.web_research import research_and_learn
-from hyba_backend.services.agi.reasoning import get_reasoning_engine
+from agi.web_research import research_and_learn
+from agi.reasoning import get_reasoning_engine
 
 logger = logging.getLogger(__name__)
 

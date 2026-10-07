@@ -12,10 +12,10 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
-from hyba_platform.platform.phi.resonance import PhiResonanceScorer
+from agi.resonance import PhiResonanceScorer
 
 # Import quantum processing capabilities
-from hyba_platform.quantum_core.processor import (
+from agi.quantum_processor import (
     ProblemDomain,
     UniversalQuantumProcessor,
 )

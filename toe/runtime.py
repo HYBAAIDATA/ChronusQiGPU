@@ -27,6 +27,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import math
 import time
 import uuid
 from dataclasses import asdict, dataclass, field
@@ -159,6 +160,7 @@ class RuntimeResponse:
     result: Optional[dict[str, Any]] = None
     error: Optional[RuntimeErrorInfo] = None
     degraded: bool = False  # true when optional wiring is absent
+    decision_id: Optional[str] = None  # correlates an outcome back to the decision
     timestamp: float = field(default_factory=time.time)
 
     def as_dict(self) -> dict[str, Any]:
@@ -175,6 +177,8 @@ class RuntimeResponse:
             d["result"] = self.result
         if self.error:
             d["error"] = self.error.as_dict()
+        if self.decision_id:
+            d["decision_id"] = self.decision_id
         return d
 
 
@@ -424,18 +428,40 @@ class TOEIntelligenceRuntime:
     def _record_decision(
         self,
         tenant: TenantContext,
-        decision_id: str,
+        operation: str,
         result: dict[str, Any],
-        confidence: float,
-    ) -> None:
-        """Record decision in the feedback core and evidence chain."""
+        confidence: Optional[float],
+    ) -> Optional[str]:
+        """Record decision in the feedback core and evidence chain.
+
+        Returns the decision id the feedback core assigned, or ``None`` when
+        the record could not be stored — the caller may then surface a
+        decision_id only when it genuinely correlates to a stored decision.
+
+        ``confidence`` is ``None`` when the engine reported none — recorded as
+        such, never replaced by an invented value.  ``module_outputs`` carries
+        the operation's own engine output so causal attribution sees the real
+        contributors (state tomography, factor ranking, trajectory, ladder),
+        not a predict-only slice that silently empties for other operations.
+        """
+        module_outputs = {
+            key: value for key, value in result.items() if isinstance(value, dict)
+        }
+        if not module_outputs:
+            module_outputs = {"result": result}
+        decision_id: Optional[str] = None
         if self.feedback_core is not None:
             try:
-                self.feedback_core.record_decision(
+                decision_id = self.feedback_core.record_decision(
                     decision=operation_tag(result),
-                    confidence=float(confidence),
-                    module_outputs=result.get("state_tomography", {}),
-                    context={"tenant": tenant.tenant_id, "mode": tenant.mode},
+                    confidence=confidence,
+                    module_outputs=module_outputs,
+                    context={
+                        "tenant": tenant.tenant_id,
+                        "mode": tenant.mode,
+                        "operation": operation,
+                        "confidence_reported": confidence is not None,
+                    },
                     source_id=tenant.tenant_id,
                 )
                 self._tenant_decisions.setdefault(tenant.tenant_id, []).append(
@@ -447,16 +473,19 @@ class TOEIntelligenceRuntime:
         if self.evidence_chain is not None:
             try:
                 self.evidence_chain.append(
-                    "toe-prediction",
+                    "toe-decision",
                     {
                         "tenant": tenant.tenant_id,
-                        "operation": "predict",
+                        "operation": operation,
+                        "decision_id": decision_id,
                         "confidence": confidence,
+                        "confidence_reported": confidence is not None,
                         "timestamp": time.time(),
                     },
                 )
             except Exception as exc:
                 logger.warning("[TOE-RUNTIME] evidence append failed: %s", exc)
+        return decision_id
 
     # -- public API -------------------------------------------------------
 
@@ -691,7 +720,11 @@ class TOEIntelligenceRuntime:
                 result = result.as_dict() if hasattr(result, "as_dict") else result
             elif operation == "causal":
                 causal_result = self.bridge.explain_causality(payload)
-                result = causal_result.as_dict() if hasattr(result, "as_dict") else causal_result
+                result = (
+                    causal_result.as_dict()
+                    if hasattr(causal_result, "as_dict")
+                    else causal_result
+                )
                 # Add the causal ladder if available
                 try:
                     ladder = self.bridge.causal_ladder(payload)
@@ -724,19 +757,22 @@ class TOEIntelligenceRuntime:
                 str(exc),
             )
 
-        # 7. Extract confidence
-        confidence = 0.5
+        # 7. Extract confidence — None when the engine did not report one.
+        # An absent confidence is recorded as absent; it is not replaced by a
+        # fabricated midpoint (which would poison calibration as if the engine
+        # had actually claimed 50% certainty).
+        confidence: Optional[float] = None
         if isinstance(result, dict):
             conf = result.get("confidence")
-            if isinstance(conf, (int, float)):
-                confidence = float(conf)
+            if isinstance(conf, (int, float)) and math.isfinite(float(conf)):
+                confidence = max(0.0, min(1.0, float(conf)))
 
         # 8. Build receipt
         receipt = self._build_receipt(tenant, operation, payload, result)
 
-        # 9. Record in feedback + evidence
-        decision_id = str(uuid.uuid4())
-        self._record_decision(tenant, decision_id, result, confidence)
+        # 9. Record in feedback + evidence — the surfaced decision_id is the
+        # one the feedback core stored, so record_outcome can find it.
+        decision_id = self._record_decision(tenant, operation, result, confidence)
 
         # 10. ASI observe-only health hint (never acts)
         asi_hint: dict[str, Any] = {}
@@ -747,7 +783,9 @@ class TOEIntelligenceRuntime:
                 asi_hint = {"error": str(exc)}
                 logger.warning("[TOE-RUNTIME] ASI probe failed: %s", exc)
 
-        # 11. Return response
+        # 11. Return response — the caller needs decision_id to correlate a
+        # later record_outcome back to this decision (the voyage's feedback
+        # step is unreachable otherwise).
         return RuntimeResponse(
             ok=True,
             tenant_id=tenant.tenant_id,
@@ -755,6 +793,7 @@ class TOEIntelligenceRuntime:
             receipt=receipt,
             result=result,
             degraded=self.degraded,
+            decision_id=decision_id,
             timestamp=time.time(),
         )
 

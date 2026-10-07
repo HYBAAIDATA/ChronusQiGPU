@@ -10,7 +10,7 @@ import asyncio
 import logging
 from typing import Any, Dict
 
-from hyba_backend.services.agi.protein_refolding_engine import BioIntelligenceNode
+from agi.protein_refolding_engine import BioIntelligenceNode
 
 logger = logging.getLogger(__name__)
 

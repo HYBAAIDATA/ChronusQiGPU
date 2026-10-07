@@ -12,12 +12,12 @@ from datetime import datetime
 from typing import Any, Dict
 
 try:
-    from hyba_backend.core.intelligence.intelligence_bus import (
+    from Intelligence.intelligence_bus import (
         IntelligenceBus,
         LearningSignal,
     )
 except ImportError:
-    from hyba_backend.platform.intelligence.bus import IntelligenceBus
+    from Intelligence.intelligence_bus import IntelligenceBus
 
     LearningSignal = None
 

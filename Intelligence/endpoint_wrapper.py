@@ -11,7 +11,7 @@ import logging
 import time
 from typing import Any, Callable, Optional
 
-from hyba_backend.core.intelligence.intelligent_endpoint import (
+from Intelligence.intelligent_endpoint import (
     AutonomyLevel,
     Decision,
     IntelligentEndpoint,
