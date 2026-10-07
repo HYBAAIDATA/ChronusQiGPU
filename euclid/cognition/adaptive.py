@@ -222,9 +222,19 @@ class PersistentStrategyLearner:
         scored = []
         for strategy in available:
             record = class_stats.get(strategy)
-            if record and record["trials"] > 0:
-                mean = record["utility"] / record["trials"]
-                uncertainty = 1.0 / math.sqrt(record["trials"])
+            if record and (
+                float(record.get("trials", 0.0)) > 0
+                or float(record.get("long_horizon_trials", 0.0)) > 0
+            ):
+                trials = float(record.get("trials", 0.0))
+                horizon_trials = float(record.get("long_horizon_trials", 0.0))
+                total_trials = trials + horizon_trials
+                total_utility = (
+                    float(record.get("utility", 0.0))
+                    + float(record.get("long_horizon_utility", 0.0))
+                )
+                mean = total_utility / total_trials
+                uncertainty = 1.0 / math.sqrt(total_trials)
                 scored.append((mean + 0.1 * uncertainty, strategy, record))
         if not scored:
             return StrategyChoice(
@@ -237,8 +247,33 @@ class PersistentStrategyLearner:
         return StrategyChoice(
             selected,
             tuple(item for item in available if item != selected),
-            f"per-class measured utility over {int(scored[0][2]['trials'])} trial(s)",
+            (
+                "per-class measured utility over "
+                f"{int(float(scored[0][2].get('trials', 0.0)) + float(scored[0][2].get('long_horizon_trials', 0.0)))} "
+                "evidence event(s)"
+            ),
         )
+
+    def update_credit(
+        self,
+        problem_class: str,
+        strategy_id: str,
+        credit: float,
+        detail: str = "",
+    ) -> None:
+        value = float(credit)
+        if not math.isfinite(value):
+            raise ValueError("long-horizon credit must be finite")
+        record = self.stats.setdefault(problem_class, {}).setdefault(
+            strategy_id, {"successes": 0.0, "trials": 0.0, "utility": 0.0}
+        )
+        record["long_horizon_trials"] = float(
+            record.get("long_horizon_trials", 0.0)
+        ) + 1.0
+        record["long_horizon_utility"] = float(
+            record.get("long_horizon_utility", 0.0)
+        ) + value
+        self._save()
 
     def update(
         self,
