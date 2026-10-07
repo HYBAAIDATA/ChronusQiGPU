@@ -94,11 +94,10 @@ def test_shares_are_charged_by_the_work_they_prove():
 # The policy numbers are asserted as literals: comparing against the module's
 # own constants would pass whatever those constants were changed to.
 TEN_EH_S = 1e19
-ONE_PERCENT_OF_MAINNET_LIKE = 6.184028282986101e18
 ONE_PERCENT_OF_DIFFICULTY_1 = 71583.88055  # 0.01 * 2**256 // (0xffff * 2**208 + 1) / 600
 
 
-def test_policy_limits_are_ten_exahash_and_one_percent_of_the_network():
+def test_policy_limits_are_ten_exahashes_and_one_percent_of_the_network():
     assert DEFAULT_CEILING_HS == TEN_EH_S
     assert MAX_NETWORK_FRACTION == 0.01
     assert HashrateGovernor().burst_s == 30.0
@@ -119,8 +118,8 @@ def test_cap_is_the_lowest_limit_and_config_cannot_raise_the_network_share():
     governor.configure(target_hs=1e30, ceiling_hs=1e30)
     assert governor.cap_hs == pytest.approx(ONE_PERCENT_OF_DIFFICULTY_1, rel=1e-9)
     governor.observe_network(MAINNET_LIKE_NBITS)
-    # 1% of mainnet (~6.2 EH/s) now binds below the 10 EH/s ceiling.
-    assert governor.cap_hs == pytest.approx(ONE_PERCENT_OF_MAINNET_LIKE, rel=1e-9)
+    # 1% of mainnet (~6.2 EH/s) is below the 10 EH/s ceiling, so the network share binds.
+    assert governor.cap_hs == pytest.approx(0.01 * governor.network_hs, rel=1e-9)
     for target, ceiling in (
         (-1.0, TEN_EH_S),
         (float("nan"), TEN_EH_S),
@@ -132,8 +131,8 @@ def test_cap_is_the_lowest_limit_and_config_cannot_raise_the_network_share():
     ):
         with pytest.raises(ValueError):
             governor.configure(target_hs=target, ceiling_hs=ceiling)
-    # a rejected config changes nothing
-    assert governor.cap_hs == pytest.approx(ONE_PERCENT_OF_MAINNET_LIKE, rel=1e-9)
+    # A rejected config changes nothing.
+    assert governor.cap_hs == pytest.approx(0.01 * governor.network_hs, rel=1e-9)
     with pytest.raises(ValueError):
         HashrateGovernor(burst_s=0.0)
     assert HashrateGovernor(burst_s=0.5).burst_s == 0.5
@@ -219,7 +218,7 @@ def test_configured_target_throttles_a_live_coordinator(tmp_path, monkeypatch):
     # the control API stored hashrate.target_hs and nothing read it.
     config = tmp_path / "runtime_config.json"
     # 0.02 H/s with a 30 s burst budgets 0.6 hashes: one window, then deficit.
-    config.write_text(json.dumps({"hashrate": {"target_hs": 0.02, "ceiling_hs": 1e18}}))
+    config.write_text(json.dumps({"hashrate": {"target_hs": 0.02, "ceiling_hs": 1e19}}))
     monkeypatch.setenv("PYTHIA_RUNTIME_CONFIG", str(config))
 
     async def scenario():

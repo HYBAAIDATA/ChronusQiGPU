@@ -35,7 +35,7 @@ from .pow import compact_target
 
 MAX_NETWORK_FRACTION = 0.01
 BLOCK_INTERVAL_S = 600.0
-DEFAULT_CEILING_HS = 1e19
+DEFAULT_CEILING_HS = 1e19  # governed target ceiling: mirrors runtime_config.HASHRATE_CEILING_HS
 
 
 def expected_hashes(target: int) -> float:
