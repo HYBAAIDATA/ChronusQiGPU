@@ -1,7 +1,9 @@
-"""Execute the CHRONUS standalone production gate and emit digest-bound evidence.
+"""Execute the native CHRONUS GPU production gate and emit digest-bound evidence.
 
-This runner is intentionally software-first. A physical GPU is not a prerequisite
-for the core gate. Accelerator certification is a separate workflow.
+This runner validates native Chronus without making a host GPU a prerequisite.
+The compatibility execution policy may use a software/reference substrate; that
+substrate is evidence about where the run executed, not the Chronus product identity.
+Host-GPU/accelerator augmentation certification is a separate workflow.
 
 Run from repository root:
     python scripts/chronus_production_gate.py --out artifacts/chronus-production
@@ -260,8 +262,9 @@ def main() -> int:
             full is not None and all(result.passed for result in results)
         ),
         "claim_boundary": (
-            "standalone CHRONUS software evidence only; no physical accelerator, "
-            "hardware-rooted, live-pool, fleet or throughput claim is inferred"
+            "native CHRONUS GPU software evidence only; observed host substrate is "
+            "reported separately; no physical accelerator, hardware-rooted, live-pool, "
+            "fleet or throughput claim is inferred"
         ),
     }
     summary_path = out_dir / "gate-summary.json"
@@ -274,11 +277,12 @@ def main() -> int:
         evidence = {
             "software_execution": _evidence_ref(
                 "chronus_software_execution",
-                "standalone CHRONUS execution on current head",
+                "native CHRONUS GPU execution on current head",
                 producer,
                 capability_path,
                 git_head=head,
-                mode="standalone_software",
+                product_mode="native_chronus_gpu",
+                execution_policy="standalone_software",
             ),
             "independent_verification": _evidence_ref(
                 "chronus_independent_verification",
