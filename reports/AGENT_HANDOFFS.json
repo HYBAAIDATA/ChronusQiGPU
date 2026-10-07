@@ -13,10 +13,10 @@
     "request_id": "handoff-C-002-agi-pci-mount",
     "requesting_agent": "C",
     "owning_agent": "A",
-    "required_interface": "agi/api.py lines 65-75 optionally mounts `from pci.api import PostQuantumCivilizationAPI`. The pci/ package was retired by Agent C (its VQC was a numpy state-vector simulator and its PCI/forensics/transparency surfaces were heuristic or fabricated — prohibited under the production bar). The mount block must be deleted or repointed at a canonical predictive-causal authority (PYTHIA). Verified evidence: `python scripts/import_audit.py` on repair/C-chronus reports FAIL 'IA01 agi/api.py:68 imports pci.api, which does not exist (failure swallowed by try/except)' — the gate will stay red until Agent A removes or repoints the mount.",
+    "required_interface": "agi/api.py lines 65-75 optionally mounts `from pci.api import PostQuantumCivilizationAPI`. The pci/ package was retired by Agent C (its VQC was a numpy state-vector simulator and its PCI/forensics/transparency surfaces were heuristic or fabricated — prohibited under the production bar). The mount block must be deleted or repointed at a canonical predictive-causal authority (PYTHIA). Evidence update (2026-10-07): once pci/__pycache__ was fully removed, `python scripts/import_audit.py` reports PASS — the gate only flags unresolved LOCAL packages and pci is no longer in the local-package set. Runtime still fails closed (_PCI_DOMAIN_AVAILABLE=False + warning). The residual is dead-wiring cleanup: an optional mount to a deleted package, plus the three pci.qi shim callers below.",
     "reason": "agi/api.py is owned by Agent A. Agent C cannot edit the mount; the pci retirement makes the import unresolvable and the import-audit gate flags the swallowed failure. The runtime except already fails closed (_PCI_DOMAIN_AVAILABLE=False), so only the gate — not the server — is blocked. Three further Agent A modules reach pci.qi through the hyba_backend.services.pci.qi legacy alias (agi/audit_pulse.py:15 inside try/except — degrades honestly; agi/mass_gap_relaxation.py:21 inside try/except — degrades honestly; agi/protein_refolding_engine.py:13 top-level import — module now raises LegacyNamespaceRemoved on import). The canonical capability is PYTHIA's; each caller should repoint or drop the integration.",
     "affected_files": ["agi/api.py", "agi/audit_pulse.py", "agi/mass_gap_relaxation.py", "agi/protein_refolding_engine.py"],
-    "blocking": true,
+    "blocking": false,
     "status": "OPEN"
   },
   {
