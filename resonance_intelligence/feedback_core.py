@@ -87,7 +87,17 @@ class IntelligenceFeedbackCore:
         if decision_id in self._processed:
             raise ValueError(f"Decision ID {decision_id} has already been processed")
         record = self.decision_records[decision_id]
-        source = source_id or record.source_id
+        # Tenant isolation: a caller must close decisions under the same
+        # source the decision was recorded for.  Without this check a caller
+        # holding another tenant's decision id could close that decision and
+        # mutate the shared learning aggregate under the wrong calibration
+        # series.
+        if source_id is not None and record.source_id != source_id:
+            raise ValueError(
+                f"Decision ID {decision_id} was recorded for source "
+                f"{record.source_id!r}, not {source_id!r}"
+            )
+        source = record.source_id
         outcome_bool = self._outcome_to_bool(outcome, record.decision)
         if record.confidence is None:
             # No confidence was reported at decision time — calibration is

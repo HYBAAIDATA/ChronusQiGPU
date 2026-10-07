@@ -275,6 +275,7 @@ class TOEIntelligenceRuntime:
             if self.config.feedback_state_path
             else None
         )
+        self._durability_failed = False
         if self.feedback_core is not None and self._feedback_state_path is not None:
             if self._feedback_state_path.is_file():
                 try:
@@ -286,6 +287,7 @@ class TOEIntelligenceRuntime:
                 except Exception as exc:
                     self._feedback_restored = None
                     self._degraded.append(f"feedback_state_restore: {exc}")
+                    self._durability_failed = True
             else:
                 self._feedback_restored = None
         else:
@@ -449,6 +451,39 @@ class TOEIntelligenceRuntime:
             production_ready=self.config.production_ready,
         )
 
+    def _apply_learned_policy(
+        self, result: dict[str, Any], operation: str
+    ) -> dict[str, Any]:
+        """Apply the middle loop's learned attribution to the decision surface.
+
+        ``model_parameters`` maps engine-module names to attribution-derived
+        weights updated by ``record_outcome``.  A module whose learned weight
+        is negative is excluded from the delivered decision payload — this is
+        the bounded, explicit link that makes later decisions differ because
+        of retained learning (the voyage's final leg).  Excluded payloads are
+        preserved verbatim under ``learned_exclusions``; the recorded decision
+        (and therefore future attribution) sees the post-policy surface, so
+        excluded modules stop accumulating attribution.
+        """
+        if self.feedback_core is None or not isinstance(result, dict):
+            return result
+        underperforming = set(self.feedback_core.identify_underperforming_modules())
+        if not underperforming:
+            return result
+        excluded = {
+            key: result.pop(key)
+            for key in list(result)
+            if key in underperforming
+        }
+        if excluded:
+            result["learned_exclusions"] = excluded
+            result["learned_policy"] = {
+                "applied": True,
+                "excluded_modules": sorted(excluded),
+                "basis": "attribution model_parameters < 0",
+            }
+        return result
+
     def _record_decision(
         self,
         tenant: TenantContext,
@@ -468,8 +503,14 @@ class TOEIntelligenceRuntime:
         contributors (state tomography, factor ranking, trajectory, ladder),
         not a predict-only slice that silently empties for other operations.
         """
+        # Policy metadata keys are not engine modules — attribution must see
+        # only the real contributors that survived (or were absent from) the
+        # learned policy.
         module_outputs = {
-            key: value for key, value in result.items() if isinstance(value, dict)
+            key: value
+            for key, value in result.items()
+            if isinstance(value, dict)
+            and key not in ("learned_exclusions", "learned_policy")
         }
         if not module_outputs:
             module_outputs = {"result": result}
@@ -604,7 +645,38 @@ class TOEIntelligenceRuntime:
                 outcome=outcome,
                 source_id=tenant.tenant_id,
             )
-            self._persist_feedback_state()
+            persist_error = self._persist_feedback_state()
+            if persist_error is not None:
+                # Configured durability failed: fail closed — the voyage's
+                # persistence handoff did not happen, so reporting ok=True
+                # with a MEASURED receipt would be a false-green.
+                self._durability_failed = True
+                reason = f"feedback_state_persist: {persist_error}"
+                if reason not in self._degraded:
+                    self._degraded.append(reason)
+                if self.evidence_chain is not None:
+                    self.evidence_chain.append(
+                        "feedback-outcome-durability-failed",
+                        {
+                            "tenant": tenant.tenant_id,
+                            "decision_id": decision_id,
+                            "error": persist_error,
+                            "timestamp": time.time(),
+                        },
+                    )
+                return RuntimeResponse(
+                    ok=False,
+                    tenant_id=tenant.tenant_id,
+                    operation="record_outcome",
+                    error=RuntimeErrorInfo(
+                        code="persistence_failed",
+                        message=(
+                            "Outcome was learned in memory but the configured "
+                            f"durable handoff failed: {persist_error}"
+                        ),
+                    ),
+                    degraded=True,
+                )
             if self.evidence_chain is not None:
                 self.evidence_chain.append(
                     "feedback-outcome",
@@ -651,10 +723,14 @@ class TOEIntelligenceRuntime:
                 ),
             )
 
-    def _persist_feedback_state(self) -> None:
-        """Atomic durable write of learned state after each closed outcome."""
+    def _persist_feedback_state(self) -> Optional[str]:
+        """Atomic durable write of learned state after each closed outcome.
+
+        Returns ``None`` on success (or when durability is unconfigured),
+        otherwise the failure reason — callers fail closed on it.
+        """
         if self._feedback_state_path is None or self.feedback_core is None:
-            return
+            return None
         try:
             self._feedback_state_path.parent.mkdir(parents=True, exist_ok=True)
             tmp = self._feedback_state_path.with_suffix(".tmp")
@@ -663,8 +739,10 @@ class TOEIntelligenceRuntime:
                 encoding="utf-8",
             )
             tmp.replace(self._feedback_state_path)
+            return None
         except Exception as exc:
             logger.warning("[TOE-RUNTIME] feedback state persist failed: %s", exc)
+            return str(exc)
 
     # -- health / readiness -----------------------------------------------
 
@@ -725,11 +803,26 @@ class TOEIntelligenceRuntime:
         }
 
     def ready(self) -> bool:
-        """True when the engine is available and no critical degradation."""
+        """True when every loop this composition root requires is up.
+
+        Required for the claimed production voyage: the TOE bridge (inner
+        loop), the feedback core when ``enable_feedback`` is configured
+        (middle loop — the outcome leg is part of the voyage), the evidence
+        chain when ``enable_evidence`` is configured (governance loop), and
+        a healthy durability leg when ``feedback_state_path`` is configured
+        (persistence → restart → replay).  Observe-only planes (ASI hooks,
+        delivery platform) degrade ``health()`` but do not gate readiness.
+        """
         try:
             if not self.bridge.available():
                 return False
         except Exception:
+            return False
+        if self.config.enable_feedback and self.feedback_core is None:
+            return False
+        if self.config.enable_evidence and self.evidence_chain is None:
+            return False
+        if self._feedback_state_path is not None and self._durability_failed:
             return False
         return True
 
@@ -820,6 +913,15 @@ class TOEIntelligenceRuntime:
                 "consensus_boundary_violation",
                 str(exc),
             )
+
+        # 6.5 Learned policy — bounded explicit influence of retained
+        # learning on the decision surface.  The middle loop's attribution
+        # weights (model_parameters) mark modules whose contribution
+        # historically tracked bad outcomes; a module with a negative learned
+        # weight is excluded from the delivered payload (and preserved under
+        # learned_exclusions for audit).  Identical input therefore changes
+        # only when retained learning identifies a net-negative contributor.
+        result = self._apply_learned_policy(result, operation)
 
         # 7. Extract confidence — None when the engine did not report one.
         # An absent confidence is recorded as absent; it is not replaced by a
