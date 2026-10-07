@@ -44,7 +44,13 @@ def main() -> int:
         # aptitude surface is PhiMiner-repo-local. Outside that workspace the
         # hook is a quiet no-op rather than a hard failure.
         return 0
-    status = build_status(event="SessionStart", invoke_all=True)
+    # SessionStart is a fresh activation boundary. Never inherit a prior
+    # session's invoked-skill receipt and mistake it for current-session proof.
+    status = build_status(
+        event="SessionStart",
+        invoke_all=True,
+        reset_session=True,
+    )
     write_runtime_receipt(status)
 
     if not status.get("mandatory_skills_complete"):

@@ -160,6 +160,7 @@ def test_bridge_rejects_out_of_range_candidate(tmp_path, monkeypatch) -> None:
 
     daemon = _daemon(tmp_path, [OutOfRange()])
     monkeypatch.setattr(client_mod, "get_embedded_daemon", lambda **_: daemon)
+
     with pytest.raises(RuntimeError, match="verification_failed|outside the admitted range"):
         submit_via_virtual_igpu(
             {"windows": [{"start": 0, "count": 4}]},

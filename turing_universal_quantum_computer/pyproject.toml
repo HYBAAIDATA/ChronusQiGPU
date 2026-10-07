@@ -5,7 +5,7 @@ description = "Turing Virtual Quantum Computer — exact-math VQC with bounded e
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [{ name = "PYTHIA Contributors" }]
 keywords = ["turing", "quantum", "exact-math", "vqc", "pythia", "mla1517"]
 classifiers = [

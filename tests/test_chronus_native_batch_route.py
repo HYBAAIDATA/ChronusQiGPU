@@ -365,6 +365,11 @@ def test_plan_binding_declares_chronus_authority_not_vendor_runtime():
         coordinator.execution_hasher
     )
     coordinator.pythia_search_precompute = precompute_pythia_search()
+    coordinator._chronus_fabric_state = {
+        "schema": "pythia.chronus_search_fabric/2",
+        "state": "NOT_BOUND",
+        "logical_vertices": 600,
+    }
 
     plan = coordinator._bind_plan_execution_intent(_plan("cpu_reference"))
 

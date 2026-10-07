@@ -22,6 +22,12 @@ A valid receipt records:
 
 Skills are session-wide capabilities. They are not owned by individual tasks.
 
+The evidence recorder fails closed before task verification or sealing unless
+the current runtime receipt proves an observed `SessionStart`, a non-empty
+mandatory skill inventory, and complete invocation of that inventory. Stop
+re-validates the same set relationship and aptitude digest; an incomplete pack
+cannot be used as a completion artifact.
+
 Evidence state:
 
 `EUCLID_APTITUDE_SESSION_OBSERVED`

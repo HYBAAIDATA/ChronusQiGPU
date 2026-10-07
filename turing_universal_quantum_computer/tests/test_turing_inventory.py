@@ -10,12 +10,12 @@ def test_content_discovery_ignores_names_and_seals_report(tmp_path) -> None:
     candidate.write_text(
         """
 from fractions import Fraction
-tape = ["0"]
+tape = ["0"]  # bit tape: binary symbols only
 head_position = 0
 state_register = {"scan", "halt"}
 transition_table = {("scan", "0"): ("halt", "1", "R")}
 halted = False
-certificate_digest = "sha256"
+certificate = "sha256"  # content-addressed run certificate
 """,
         encoding="utf-8",
     )

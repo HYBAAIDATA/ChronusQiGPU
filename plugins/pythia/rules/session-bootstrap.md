@@ -18,7 +18,11 @@ SessionStart must:
 7. restore the latest continuity checkpoint if present.
 
 If mandatory invocation is incomplete, block the session rather than silently
-continuing with reduced aptitude.
+continuing with reduced aptitude. Task evidence commands and evidence-pack
+sealing are also forbidden until the current session has an observed
+`SessionStart` activation and the complete mandatory skill set is recorded.
+A boolean completion flag without the corresponding invoked-skill inventory is
+not accepted as proof.
 
 ## Skills are not task-scoped
 

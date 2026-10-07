@@ -9,7 +9,7 @@ however the shares were found.
 The cap is the lowest of
 
 * ``hashrate.target_hs`` from the operator config (0 means no target),
-* the configured ceiling (``hashrate.ceiling_hs``, 1 EH/s by default), and
+* the configured ceiling (``hashrate.ceiling_hs``, 10 EH/s by default), and
 * ``MAX_NETWORK_FRACTION`` (1%) of the network rate implied by the job's own
   ``nbits``: ``2**256 / (network target + 1) / 600 s``. No configuration can
   raise this one; only a test harness simulating a toy network constructs a
@@ -35,7 +35,7 @@ from .pow import compact_target
 
 MAX_NETWORK_FRACTION = 0.01
 BLOCK_INTERVAL_S = 600.0
-DEFAULT_CEILING_HS = 1e18
+DEFAULT_CEILING_HS = 1e19  # governed target ceiling: mirrors runtime_config.HASHRATE_CEILING_HS
 
 
 def expected_hashes(target: int) -> float:

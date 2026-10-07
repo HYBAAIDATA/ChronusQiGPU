@@ -20,6 +20,7 @@ from datetime import datetime, timezone
 import os
 import threading
 import time
+import urllib.parse
 import uuid
 from pathlib import Path
 from typing import Any, Callable, Mapping
@@ -682,7 +683,11 @@ class RuntimeDaemon:
         """Durably commit the evidence envelope to THESEUS; fail closed otherwise."""
         from aethel.enterprise.records import OperationalRecord
 
-        record_id = f"vigpu:{w.id}:{attempt_id}"
+        # record_id becomes a filesystem path component inside custody —
+        # canonical ids carry `/` and the `:` separators are illegal on
+        # Windows, so quote the whole id (unsanitised ids survive in the
+        # correlation map inside the payload).
+        record_id = "vigpu-" + urllib.parse.quote(f"{w.id}-{attempt_id}", safe="")
         try:
             record = OperationalRecord(
                 record_id=record_id,

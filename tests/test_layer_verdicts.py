@@ -9,10 +9,14 @@ from chronus.seam.workflow import (
     classify_oi,
     digest_uint256,
     is_hex64,
+    resolve_attest_key,
     share_meets_target,
     sha256d,
 )
+
 from mining.stratum_bridge import LiveJob
+
+TEST_ATTEST_KEY = b"seam-test-custody-key"
 
 
 def test_pass_means_covers_every_layer():
@@ -114,11 +118,70 @@ def test_l7_full_width_uint256():
 
 def test_l8_hex_and_verify():
     body = {"nonce": "00000000", "job_id": "j"}
-    sig = attest_sign(body)
+    sig = attest_sign(body, TEST_ATTEST_KEY)
     assert is_hex64(sig)
-    assert attest_verify(body, sig)
-    assert not attest_verify(body, "z" * 64)
-    assert not attest_verify({"nonce": "deadbeef"}, sig)
+    assert attest_verify(body, sig, TEST_ATTEST_KEY)
+    assert not attest_verify(body, "z" * 64, TEST_ATTEST_KEY)
+    assert not attest_verify({"nonce": "deadbeef"}, sig, TEST_ATTEST_KEY)
+
+
+def test_l8_signature_is_keyed_not_a_plain_digest():
+    body = {"nonce": "00000000", "job_id": "j"}
+    sig = attest_sign(body, TEST_ATTEST_KEY)
+    # A bare sha256 of the payload — the old unkeyed scheme — must not verify.
+    import hashlib
+    import json
+
+    payload = json.dumps(body, sort_keys=True, separators=(",", ":")).encode()
+    unkeyed = hashlib.sha256(payload).hexdigest()
+    assert sig != unkeyed
+    assert not attest_verify(body, unkeyed, TEST_ATTEST_KEY)
+
+
+def test_l8_forged_body_resigned_with_correct_scheme_fails_without_key():
+    """A forger who knows the scheme but not the custody key is rejected."""
+    body = {"nonce": "00000000", "job_id": "j", "difficulty": 1.0}
+    forged = dict(body)
+    forged["nonce"] = "deadbeef"
+    forged["difficulty"] = 0.0
+    attacker_key = b"attacker-controlled-key"
+    forged_sig = attest_sign(forged, attacker_key)
+    assert not attest_verify(forged, forged_sig, TEST_ATTEST_KEY)
+    # Re-signing the *original* body under the attacker's key fails too.
+    replayed_forgery = attest_sign(body, attacker_key)
+    assert not attest_verify(body, replayed_forgery, TEST_ATTEST_KEY)
+    # And the real signature does not verify the forged body.
+    sig = attest_sign(body, TEST_ATTEST_KEY)
+    assert not attest_verify(forged, sig, TEST_ATTEST_KEY)
+
+
+def test_l8_no_custody_key_fails_closed(monkeypatch):
+    for name in (
+        "PYTHIA_SEAM_ATTEST_KEY_HEX",
+        "PYTHIA_SEAM_ATTEST_KEY",
+        "PYTHIA_IDENTITY_HMAC_SECRET",
+    ):
+        monkeypatch.delenv(name, raising=False)
+    with pytest.raises(RuntimeError, match="no attest custody key"):
+        resolve_attest_key()
+    with pytest.raises(RuntimeError, match="no attest custody key"):
+        attest_sign({"nonce": "0"})
+    # Verify refuses rather than crash-checking an unkeyed digest.
+    assert attest_verify({"nonce": "0"}, "a" * 64) is False
+
+
+def test_l8_env_key_resolution(monkeypatch):
+    for name in (
+        "PYTHIA_SEAM_ATTEST_KEY_HEX",
+        "PYTHIA_SEAM_ATTEST_KEY",
+        "PYTHIA_IDENTITY_HMAC_SECRET",
+    ):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("PYTHIA_SEAM_ATTEST_KEY_HEX", "de" * 32)
+    assert resolve_attest_key() == b"\xde" * 32
+    monkeypatch.delenv("PYTHIA_SEAM_ATTEST_KEY_HEX")
+    monkeypatch.setenv("PYTHIA_SEAM_ATTEST_KEY", "raw-secret")
+    assert resolve_attest_key() == b"raw-secret"
 
 
 def test_l9_submit_false_is_fail():
@@ -129,11 +192,11 @@ def test_l9_submit_false_is_fail():
 
 def test_l10_forgery_path_must_run():
     body = {"nonce": "00000001", "job_id": "j"}
-    sig = attest_sign(body)
+    sig = attest_sign(body, TEST_ATTEST_KEY)
     forged = dict(body)
     forged["nonce"] = "deadbeef"
     reject_ran = True
-    rejected = not attest_verify(forged, sig)
+    rejected = not attest_verify(forged, sig, TEST_ATTEST_KEY)
     assert reject_ran and rejected
     out = WorkflowResult(fail_fast=False)
     out.record("L10_aethel", False, "forgery path skipped")
