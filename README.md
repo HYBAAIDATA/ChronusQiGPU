@@ -20,6 +20,54 @@
 
 **PYTHIA is HYBA's operational mining product.** Its singular function is to run the mining system, obtain honest device and pool measurements, sustain HYBA, and support Enterprise's route to market. Enterprise PRIME-DB, storage, treasury, and customer-product implementation are separate products and are not imported into PYTHIA.
 
+## Intelligence-first composition
+
+**EUCLID is the system's canonical intelligence and cognition orchestrator.**
+Its production composition root is `EuclidRuntime.production()`; it owns the
+cognition loop, representation choice, world modelling, memory, hypothesis
+formation, planning, strategy learning, counterfactual plan evaluation,
+long-horizon credit assignment, transfer evidence and mathematical discovery.
+
+The canonical EUCLID intelligences are **Predictive, Causal, Counterfactual,
+Topological and Geometric**. Quantum capability is an extension consumed
+through the TURING / L-HRAS boundaries; it is not a sixth mining authority.
+
+Authority remains separated:
+
+```text
+EUCLID      cognition, reasoning, learning, discovery, orchestration
+PYTHIA      final mining authority and mining truth
+CHRONUS     heterogeneous execution
+TURING      virtual/quantum computational capability
+SALAMANDER  bounded self-healing and self-optimisation
+AL HARAS    security, policy, entitlement and mediation
+THESEUS     durable custody / integrity / recovery provenance
+```
+
+EUCLID may advise mining operating policy but cannot own or rewrite
+`SearchPlan` finalisation, nonce-estate coverage, Hendrix traversal,
+Bitcoin-header/nonce semantics, SHA256d, target comparison, share validation,
+credentials, submission or pool acknowledgement. The shared contract is
+`toe/intelligences/authority_boundary.py`.
+
+Mining is represented to EUCLID as a typed `CognitionProblem`: measured
+Stratum/transport state forms the observation, measured share outcomes are the
+only reward source, and the admissible operating objective is bounded dispatch
+breadth. The PYTHIA production coordinator remains the sole actuator and
+clamps the result to its declared bounds.
+
+EUCLID discovery is on the governed production composition path:
+`TheoreticalSpaceExplorer` produces evidence-bound candidates and
+`salamander.discovery_optimisation.DiscoveryOptimisationBridge` can advance
+them only through held-out measurement, independent verification and
+Salamander's complete policy lifecycle. Discovery cannot directly mutate
+production.
+
+The live truth surface is available at
+`GET /api/v1/intelligence/cognition/status` and is also embedded in
+`GET /api/v1/intelligence/status`. The frontend renders runtime capabilities
+and open evidence gates; it does not invent intelligence scores.
+
 ## Runtime boundary
 
 PYTHIA has a Python backend and a React/Vite frontend:

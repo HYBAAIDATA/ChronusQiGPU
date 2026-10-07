@@ -4,9 +4,9 @@ import { apiFetch } from "../lib/api";
 import { TruthChip } from "../components/TruthChip";
 import type {
   AgenticStatus,
+  IntelligenceStatus,
   MaintenanceStatus,
   RepoEngineerStatus,
-  RunnerStatus,
   SelftestStatus,
 } from "../lib/status";
 
@@ -16,7 +16,7 @@ type SelftestReport = Record<string, { passed?: boolean } & Record<string, unkno
 export const IntelligenceView: React.FC = () => {
   const [selftest, setSelftest] = useState<SelftestStatus | null>(null);
   const [agentic, setAgentic] = useState<AgenticStatus | null>(null);
-  const [intel, setIntel] = useState<RunnerStatus | null>(null);
+  const [intel, setIntel] = useState<IntelligenceStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const [maintenance, setMaintenance] = useState<MaintenanceStatus | null>(null);
   const [maintenanceBusy, setMaintenanceBusy] = useState(false);
@@ -30,7 +30,7 @@ export const IntelligenceView: React.FC = () => {
     const pulls: Array<[string, (v: unknown) => void]> = [
       ["/api/v1/intelligence/selftest", (v) => setSelftest(v as SelftestStatus)],
       ["/api/v1/agentic/status", (v) => setAgentic(v as AgenticStatus)],
-      ["/api/v1/intelligence/status", (v) => setIntel(v as RunnerStatus)],
+      ["/api/v1/intelligence/status", (v) => setIntel(v as IntelligenceStatus)],
       ["/api/v1/intelligence/maintenance", (v) => setMaintenance(v as MaintenanceStatus)],
       ["/api/v1/intelligence/engineer/status", (v) => setEngineer(v as RepoEngineerStatus)],
     ];
@@ -119,6 +119,9 @@ export const IntelligenceView: React.FC = () => {
   const reportEntries = report ? Object.entries(report) : [];
   const agenticResult = agentic?.result as Record<string, unknown> | undefined;
   const phases = (agenticResult?.phases ?? {}) as Record<string, unknown>;
+  const cognition = intel?.euclid_cognition;
+  const cognitionCapabilities = cognition?.capabilities ?? {};
+  const cognitionOpenGates = cognition?.open_gates ?? [];
   const maintenancePhase =
     typeof maintenance?.progress?.phase === "string"
       ? maintenance.progress.phase
@@ -383,9 +386,23 @@ export const IntelligenceView: React.FC = () => {
               <span className="text-[#6b7c93]">error</span>
               <span className="text-[#df1b41]">{intel?.error ?? "none"}</span>
             </p>
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <span className="text-[#6b7c93]">EUCLID cognition</span>
+              <TruthChip value={cognition?.available ? "live" : "unavailable"} />
+            </div>
+            <p className="mt-2 text-[11px] leading-5 text-[#6b7c93]">
+              {cognition?.available
+                ? `${Object.values(cognitionCapabilities).filter(Boolean).length}/${Object.keys(cognitionCapabilities).length} declared cognition capabilities active · ${cognitionOpenGates.length} open evidence gates`
+                : "canonical cognition runtime unavailable"}
+            </p>
+            {cognition?.authority_boundary && (
+              <p className="mt-2 text-[10px] leading-4 text-[#6b7c93]">
+                EUCLID: {cognition.authority_boundary.EUCLID ?? "cognition"} · PYTHIA: {cognition.authority_boundary.PYTHIA ?? "mining authority"}
+              </p>
+            )}
             <p className="mt-3 text-[11px] leading-5 text-[#6b7c93]">
-              The intelligence orchestrator loads lazily on the control plane;
-              substrate availability is reported, never assumed.
+              Runtime intelligence is reported from the canonical EUCLID composition root;
+              unavailable evidence remains unavailable.
             </p>
           </div>
         </section>

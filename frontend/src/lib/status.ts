@@ -225,6 +225,28 @@ export type FabricMap = {
   gates?: Record<string, unknown>;
 };
 
+export type EuclidCognitionStatus = {
+  schema?: string;
+  available?: boolean;
+  authority?: string;
+  state_dir?: string;
+  evidence_head?: string | null;
+  memory?: {
+    implementation?: string;
+    integrity?: { valid?: boolean; [key: string]: unknown };
+  };
+  replay_journal?: { verified?: boolean; entries?: number; [key: string]: unknown };
+  reachability?: Record<string, string>;
+  capabilities?: Record<string, boolean>;
+  authority_boundary?: {
+    EUCLID?: string;
+    PYTHIA?: string;
+    mining_consensus_transfer?: boolean;
+  };
+  open_gates?: string[];
+  claims_not_made?: string[];
+};
+
 /** Generic supervised-runner status (system_fabric._Runner.status()). */
 export type RunnerStatus = {
   schema?: string;
@@ -234,6 +256,10 @@ export type RunnerStatus = {
   error?: string | null;
   progress?: Record<string, unknown>;
   result?: unknown;
+};
+
+export type IntelligenceStatus = RunnerStatus & {
+  euclid_cognition?: EuclidCognitionStatus;
 };
 
 export type VerificationStatus = RunnerStatus & {

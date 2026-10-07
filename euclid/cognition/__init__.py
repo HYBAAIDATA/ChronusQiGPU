@@ -23,7 +23,15 @@ from .baselines import (
     WeightedObjective,
 )
 from .core import AblationConfig, GeneralIntelligenceCore
+from .credit import CreditAssignment, assign_discounted_credit
 from .episode import CognitiveEpisode, episode_from_state
+from .generalisation import (
+    HeldOutGeneralisationTrial,
+    evaluate_held_out_generalisation,
+    validate_generalisation_report,
+)
+from .mining import MiningCognitionProblem
+from .problem import CognitionObjective, CognitionProblem
 from .phi_schedule import EVIDENCE_CLASS as PHI_EVIDENCE_CLASS
 from .phi_schedule import neutral_order, phi_order
 from .program_domain import (
@@ -61,7 +69,10 @@ __all__ = [
     "BanditMetaLearner",
     "CallbackExecutor",
     "CandidateAction",
+    "CognitionObjective",
+    "CognitionProblem",
     "CognitiveEpisode",
+    "CreditAssignment",
     "CognitiveService",
     "CognitiveState",
     "ConsequenceDeducer",
@@ -74,11 +85,13 @@ __all__ = [
     "EvidenceOrigin",
     "GeneralIntelligenceCore",
     "Goal",
+    "HeldOutGeneralisationTrial",
     "HierarchicalPlanner",
     "Hypothesis",
     "HypothesisStatus",
     "InMemoryMemorySystem",
     "MemoryKind",
+    "MiningCognitionProblem",
     "neutral_order",
     "Outcome",
     "PHI_EVIDENCE_CLASS",
@@ -99,4 +112,7 @@ __all__ = [
     "TableWorldModel",
     "TransitionRecord",
     "WeightedObjective",
+    "assign_discounted_credit",
+    "evaluate_held_out_generalisation",
+    "validate_generalisation_report",
 ]

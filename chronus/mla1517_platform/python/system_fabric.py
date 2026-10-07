@@ -664,6 +664,27 @@ def euclid_cognition_status() -> dict[str, Any]:
         if stage is not None:
             reachability[component] = stage.name
 
+    cognition = runtime.cognition
+    world_model = getattr(cognition, "world_model", None)
+    capabilities = {
+        "primary_cognition_loop": cognition is not None,
+        "nonlinear_feature_augmentation": bool(
+            getattr(world_model, "feature_augmented", False)
+        ),
+        "counterfactual_plan_evaluation": callable(
+            getattr(world_model, "counterfactual", None)
+        ),
+        "long_horizon_credit_assignment": callable(
+            getattr(getattr(cognition, "metalearner", None), "update_credit", None)
+        ),
+        "discovery_self_optimisation": (
+            getattr(runtime, "discovery", None) is not None
+            and getattr(runtime, "discovery_optimisation", None) is not None
+        ),
+        "typed_cognition_problem": True,
+        "mining_cognition_problem": True,
+    }
+
     open_gates: list[str] = []
     if not memory_integrity.get("valid"):
         open_gates.append("memory_integrity_unverified")
@@ -677,8 +698,36 @@ def euclid_cognition_status() -> dict[str, Any]:
         stage == "RESTART_VERIFIED" for stage in reachability.values()
     ):
         open_gates.append("restart_not_verified")
+    generalisation_evidence = {
+        "verified": False,
+        "path": str(_euclid_state_dir() / "held_out_generalisation.json"),
+        "verdict": "UNAVAILABLE",
+    }
+    generalisation_path = _euclid_state_dir() / "held_out_generalisation.json"
+    if generalisation_path.is_file():
+        try:
+            import json as _json
+            from euclid.cognition.generalisation import validate_generalisation_report
+
+            report = _json.loads(generalisation_path.read_text(encoding="utf-8"))
+            generalisation_evidence = {
+                "verified": bool(validate_generalisation_report(report)),
+                "path": str(generalisation_path),
+                "verdict": str(report.get("verdict") or "UNAVAILABLE"),
+                "families": list(report.get("families") or ()),
+                "mean_delta": report.get("mean_delta"),
+                "seal": report.get("seal"),
+            }
+        except Exception as exc:
+            generalisation_evidence = {
+                "verified": False,
+                "path": str(generalisation_path),
+                "verdict": "INVALID",
+                "error": f"{type(exc).__name__}: {exc}",
+            }
+    if not generalisation_evidence["verified"]:
+        open_gates.append("held_out_generalisation_not_established")
     open_gates.extend([
-        "held_out_generalisation_not_established",
         "external_validation_absent",
         "production_certification_absent",
     ])
@@ -695,6 +744,13 @@ def euclid_cognition_status() -> dict[str, Any]:
         "replay_journal": replay_integrity,
         "reachability": reachability,
         "evidence_head": runtime.evidence.head,
+        "capabilities": capabilities,
+        "held_out_generalisation": generalisation_evidence,
+        "authority_boundary": {
+            "EUCLID": "cognition/orchestration/advisory intelligence",
+            "PYTHIA": "final mining authority",
+            "mining_consensus_transfer": False,
+        },
         "resources": {"open": not getattr(runtime, "_closed", False)},
         "experiences_seen": len(learning._seen),
         "open_gates": open_gates,
