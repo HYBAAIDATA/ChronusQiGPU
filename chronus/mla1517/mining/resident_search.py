@@ -16,7 +16,11 @@ from chronus.resident_hendrix import SCHEMA, ResidentHendrix, plan_identity, sea
 def m32_manifest():
     """Canonical 12 dual-dodecahedral + 20 icosahedral face identities."""
     import math
-    from chronus.mla1517_platform.python.pythia_turing_math import generate_dual_overlay_frame
+
+    try:
+        from pythia_turing_math import generate_dual_overlay_frame
+    except ImportError:
+        from chronus.mla1517_platform.python.pythia_turing_math import generate_dual_overlay_frame
 
     directions = generate_dual_overlay_frame()
 

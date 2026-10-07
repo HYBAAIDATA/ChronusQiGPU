@@ -30,8 +30,8 @@
     },
     {
       "path": "chronus/mla1517/mining/resident_search.py",
-      "sha256": "73cc5ad507f11326dcec21764186a1a05d01362f2b8dc88dffeec2bf08203e08",
-      "bytes": 6063
+      "sha256": "fdfaf73ae2f625be5c3087052573d3d938fcc2c575d06c6174241157f552362c",
+      "bytes": 6168
     },
     {
       "path": "chronus/mla1517/mining/search_plan.py",
