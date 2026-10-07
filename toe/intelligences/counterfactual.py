@@ -5,8 +5,10 @@ Operates across Substrates:
   - Substrate 2: Causal (Structural counterfactuals via Pearl's Ladder)
   - Substrate 6: Yang-Mills (finite 2I spectral gap, not a share accept)
 
-Possesses FULL AUTHORITY over share verification, submission timing,
-and alternative branch evaluation without sub-agent framing.
+Provides ADVISORY intelligence for alternative-branch evaluation and submission
+timing analysis. PYTHIA remains final authority for mining truth, SearchPlan
+finalization, nonce-estate coverage, SHA256d/target proof semantics, share
+validation/submission, credentials, and pool acknowledgements.
 
 LUCAS WIRING: draws from lucas/ (pool) OR implements its Lucas kernel
 inline below. MUST NOT import from any sibling algorithm.
@@ -61,7 +63,7 @@ class CounterfactualAnalysis:
 
 
 class CounterfactualIntelligence:
-    """Full-authority decision maker for counterfactual evaluations and submission timing."""
+    """Advisory intelligence for counterfactual evaluation and submission-timing analysis."""
 
     def __init__(self):
         self.submission_log: List[CounterfactualAnalysis] = []
