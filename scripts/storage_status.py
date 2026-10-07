@@ -2,10 +2,13 @@
 """M3 §16 observability surface: print measured file-plane stats as JSON.
 
     python scripts/storage_status.py --db data/hyba.db --tenant <id>
-        --integrity-key-hex <64hex> [--custody-root DIR --custody-key-hex <hex>]
+        --integrity-key-hex <64hex> [--root DIR]
+        [--custody-root DIR --custody-key-hex <hex>]
 
 Custody verification runs only when a custody root+key is supplied; without
 them custody columns report the registry's stored ids (unchecked, stated).
+With ``--root`` a live reconcile is run and root-dependent fields are real;
+without it they report ``UNAVAILABLE`` — never an optimistic default.
 """
 
 from __future__ import annotations
@@ -20,6 +23,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--db", required=True)
     parser.add_argument("--tenant", default=None)
+    parser.add_argument("--root", default=None)
     parser.add_argument("--integrity-key-hex", default=os.getenv("HYBA_INTEGRITY_KEY_HEX", ""))
     parser.add_argument("--custody-root", default=os.getenv("THESEUS_CUSTODY_ROOT", ""))
     parser.add_argument("--custody-key-hex", default=os.getenv("THESEUS_CUSTODY_KEY_HEX", ""))
@@ -38,7 +42,7 @@ def main() -> int:
         )
     store = OntologyStore(args.db, bytes.fromhex(args.integrity_key_hex), custody=custody)
     try:
-        stats = store.files.stats(args.tenant)
+        stats = store.files.stats(args.tenant, root=args.root)
         stats["custody_verified"] = custody is not None
         print(json.dumps(stats, indent=2, sort_keys=True))
     finally:
