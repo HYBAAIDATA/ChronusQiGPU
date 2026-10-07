@@ -39,7 +39,6 @@ _REQUIRED_PUBLIC = (
     "ProofBoundary",
     "certify",
     "verify_certificate",
-    "certificate_from_dict",
     "ResidentCustody",
     "default_custody",
     "REGISTRY",
@@ -206,7 +205,7 @@ import kellogg
 EXPECTED_VERSION = "1.0.0"
 REQUIRED = (
     "attest", "verify_attestation", "verify_version", "ProofBoundary",
-    "certify", "verify_certificate", "certificate_from_dict",
+    "certify", "verify_certificate",
     "ResidentCustody", "default_custody", "REGISTRY", "verify_registry",
 )
 FORBIDDEN = {
