@@ -5,7 +5,7 @@ import tomllib
 
 import pytest
 
-from hyba_db import IntegrityFailure, OntologyStore, Quota, TheseusFileCustody
+from hyba_db import IntegrityFailure, ModuleEvidenceAdapter, OntologyStore, Quota, TheseusFileCustody
 from hyba_db.production_gate import evaluate
 
 INTEGRITY_KEY = b"i" * 32
@@ -348,3 +348,25 @@ def test_production_gate_closes_database_storage_and_custody_together(tmp_path):
     assert all(report["checks"].values())
     assert report["claim_boundary"]["live_pool"] == "UNAVAILABLE"
     assert report["claim_boundary"]["accepted_share"] == "UNAVAILABLE"
+
+
+def test_module_adapter_projects_knowledge_under_producer_identity(tmp_path):
+    store, _custody, client = _opened(tmp_path)
+    try:
+        adapter = ModuleEvidenceAdapter(store.files, "pythia")
+        record = adapter.project_knowledge(
+            client.tenant_id,
+            subject="pythia:mining:search-plan",
+            predicate="authority",
+            object_value={"owner": "PYTHIA"},
+            knowledge_kind="decision",
+            evidence_state="PASS",
+            producer_version="test-revision",
+            provenance={"owner_approval_ref": "owner-directive-2026-10-07"},
+        )
+        assert record.producer == "pythia"
+        assert record.semantic_owner == "pythia"
+        assert record.evidence_state == "PASS"
+        assert store.knowledge.verify(client.tenant_id)["passed"] is True
+    finally:
+        store.close()
