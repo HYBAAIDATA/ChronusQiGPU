@@ -1,0 +1,186 @@
+{
+  "schema": "chronus.convergence-manifest/v1",
+  "product": "Chronus",
+  "authority": {
+    "canonical_manual": "CHRONUS — Canonical Operations Manual & Production Constitution",
+    "design_lineage": [
+      "Project Chronos — Quantum Graphics Engine v2.0: Architecture Capture & Subsystem Roadmap (3 Aug 2026)",
+      "Chronos QGPU — Technical Whitepaper (Mathematical Reframe, 3 Aug 2026)",
+      "Quantum-from-Maths, Substrate-Agnostic — Implications & Reordering for GPU (3 Aug 2026)",
+      "Chronos GPU — Mathematical Quantum Graphics Engine Implementation Record"
+    ],
+    "rule": "owner-approved architecture plus executable truth; speculative pseudocode is not promoted"
+  },
+  "product_modes": {
+    "standalone_software": {
+      "policy": "standalone_software",
+      "physical_gpu_required": false,
+      "status": "implemented",
+      "owners": [
+        "chronus.virtual_igpu.adapters.CPUEmulatorAdapter",
+        "chronus.virtual_igpu.runtime.RuntimeDaemon",
+        "chronus.readiness"
+      ]
+    },
+    "accelerator_enhanced": {
+      "policy": "preferred_accelerator",
+      "physical_gpu_required": true,
+      "status": "per-lane certification",
+      "owners": [
+        "chronus.virtual_igpu.runtime.RuntimeDaemon",
+        "chronus.tensor_compute",
+        "chronus.native_tensor",
+        "chronus.delivery"
+      ]
+    }
+  },
+  "capabilities": {
+    "substrate_agnostic_execution": {
+      "status": "implemented",
+      "owners": [
+        "chronus.virtual_igpu",
+        "chronus.delivery"
+      ],
+      "evidence_boundary": "CPU/software execution is first-class; physical lane claims are separate"
+    },
+    "virtual_igpu_abi": {
+      "status": "implemented",
+      "owners": [
+        "chronus.virtual_igpu.abi",
+        "chronus.virtual_igpu.runtime"
+      ],
+      "evidence_boundary": "virtual_igpu_v1"
+    },
+    "m32_manifold_and_qsdl": {
+      "status": "implemented",
+      "owners": [
+        "chronus.v33.manifold",
+        "chronus.v33.qsdl_compiler"
+      ]
+    },
+    "hamiltonian_evolution_and_reconstruction": {
+      "status": "implemented",
+      "owners": [
+        "chronus.v33.hamiltonian",
+        "chronus.v33.evolution_engine",
+        "chronus.v33.reconstruction"
+      ]
+    },
+    "mathematical_graphics_and_theory": {
+      "status": "implemented",
+      "owners": [
+        "chronus.v33",
+        "chronus.v33.theory",
+        "chronus.v33.graphics"
+      ],
+      "evidence_boundary": "software mathematics; not physical quantum hardware"
+    },
+    "tensor_and_complex_linear_algebra": {
+      "status": "implemented",
+      "owners": [
+        "tensor",
+        "chronus.virtual_igpu.adapters",
+        "chronus.tensor_compute"
+      ]
+    },
+    "fold_unfold_representation": {
+      "status": "implemented",
+      "owners": [
+        "aethel.encoding",
+        "chronus.virtual_igpu.adapters"
+      ],
+      "evidence_boundary": "representation transform; not generic compression claim"
+    },
+    "lucas_pisot_scale_contract": {
+      "status": "implemented",
+      "owners": [
+        "chronus.seam.scale"
+      ],
+      "evidence_boundary": "logical capacity/work envelope; never physical GPU count or measured throughput"
+    },
+    "device_discovery_and_backend_routing": {
+      "status": "implemented",
+      "owners": [
+        "chronus.detect",
+        "chronus.delivery",
+        "chronus.virtual_igpu.runtime"
+      ]
+    },
+    "opencl_cuda_metal_lanes": {
+      "status": "lane_gated",
+      "owners": [
+        "chronus.tensor_compute",
+        "chronus.native_tensor"
+      ],
+      "evidence_boundary": "each backend/device requires observed execution and independent correctness verification"
+    },
+    "remote_and_cloud_delivery": {
+      "status": "implemented_with_external_gates",
+      "owners": [
+        "chronus.delivery",
+        "chronus.mla1517.remote_gpu"
+      ],
+      "evidence_boundary": "remote service does not silently fall back to local execution"
+    },
+    "measurement_and_attestation": {
+      "status": "implemented",
+      "owners": [
+        "chronus.measurement",
+        "chronus.virtual_igpu.evidence"
+      ],
+      "evidence_boundary": "unknown sensors/hardware remain unavailable"
+    },
+    "theseus_custody_and_restart": {
+      "status": "implemented",
+      "owners": [
+        "hyba_db.theseus_custody",
+        "chronus.virtual_igpu.runtime"
+      ],
+      "evidence_boundary": "durable custody remains THESEUS authority"
+    },
+    "al_haras_governance": {
+      "status": "integrated",
+      "owners": [
+        "al_haras",
+        "chronus virtual/runtime admission hooks"
+      ],
+      "evidence_boundary": "security/governance authority remains AL HARAS"
+    },
+    "salamander_healing": {
+      "status": "integrated_pending_current-head closure",
+      "owners": [
+        "salamander",
+        "chronus.mla1517.mining.self_healing_agent"
+      ],
+      "evidence_boundary": "must demonstrate detect -> diagnose -> remediate -> verify without weakening requested policy"
+    },
+    "pythia_mining_execution": {
+      "status": "implemented",
+      "owners": [
+        "chronus.mla1517.mining",
+        "chronus.virtual_igpu.mining_hasher"
+      ],
+      "evidence_boundary": "PYTHIA owns mining semantics; CHRONUS executes; host SHA256d remains acceptance authority"
+    },
+    "benchmark_and_claim_discipline": {
+      "status": "implemented",
+      "owners": [
+        "chronus.measurement",
+        "chronus.readiness",
+        "claims.yaml"
+      ],
+      "evidence_boundary": "no GPU/device/performance claim without matching device-bound evidence"
+    }
+  },
+  "prohibited_regressions": [
+    "physical GPU required for CHRONUS core availability",
+    "software execution described as a degraded fallback",
+    "unavailable accelerator silently relabelled as another physical backend",
+    "logical capacity relabelled as physical GPU count or hashrate",
+    "TURING ownership absorbed by CHRONUS",
+    "THESEUS custody ownership absorbed by CHRONUS",
+    "OVID transformation ownership absorbed by CHRONUS",
+    "PYTHIA mining semantics absorbed by CHRONUS",
+    "historical speculative cryogenic pseudocode promoted as implemented hardware"
+  ]
+}
