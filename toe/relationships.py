@@ -52,9 +52,7 @@ _BOUNDARY = (
 )
 
 
-def association(
-    samples: Mapping[str, Sequence[float]], x: str, y: str
-) -> Dict[str, Any]:
+def association(samples: Mapping[str, Sequence[float]], x: str, y: str) -> Dict[str, Any]:
     """Rung 1: Pearson r and the OLS slope of ``y`` on ``x`` (E[Y|X] per unit)."""
     xs = [float(v) for v in samples.get(x, ())]
     ys = [float(v) for v in samples.get(y, ())]
@@ -123,7 +121,11 @@ def check_supplied_structure(
     """
     names, r, n = _corr_matrix({k: list(v) for k, v in samples.items()})
     idx = {nm: i for i, nm in enumerate(names)}
-    tests = [t for t in implied_independencies(graph, names) if all(x in idx for x in (t[0], t[1], *t[2]))]
+    tests = [
+        t
+        for t in implied_independencies(graph, names)
+        if all(x in idx for x in (t[0], t[1], *t[2]))
+    ]
     if not tests:
         return {
             "available": False,

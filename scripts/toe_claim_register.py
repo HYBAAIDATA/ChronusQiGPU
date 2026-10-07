@@ -245,7 +245,11 @@ def build() -> Dict[str, Any]:
     claims = []
     for c in CLAIMS:
         c = dict(c)
-        c["source_sha"] = _sha(c["evidence_report"]) if c.get("evidence_report") else "see reproduction (test-backed at release SHA)"
+        c["source_sha"] = (
+            _sha(c["evidence_report"])
+            if c.get("evidence_report")
+            else "see reproduction (test-backed at release SHA)"
+        )
         claims.append(c)
     return {"schema": "toe.claim_register/v1", "claims": claims}
 
@@ -278,7 +282,9 @@ def render(reg: Dict[str, Any]) -> str:
 
 def main() -> int:
     reg = build()
-    (ROOT / "toe" / "CLAIM_REGISTER.json").write_text(json.dumps(reg, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    (ROOT / "toe" / "CLAIM_REGISTER.json").write_text(
+        json.dumps(reg, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     (ROOT / "docs" / "toe" / "CLAIM_REGISTER.md").write_text(render(reg), encoding="utf-8")
     print(f"{len(reg['claims'])} claims written")
     return 0

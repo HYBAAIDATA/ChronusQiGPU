@@ -71,7 +71,13 @@ class Structure:
     latent: Tuple[str, ...] = ()
 
     @classmethod
-    def of(cls, edges: Sequence[Sequence[Any]], *, nodes: Sequence[str] = (), latent: Sequence[str] = ()) -> "Structure":
+    def of(
+        cls,
+        edges: Sequence[Sequence[Any]],
+        *,
+        nodes: Sequence[str] = (),
+        latent: Sequence[str] = (),
+    ) -> "Structure":
         norm = []
         for e in edges:
             if len(e) == 2 or e[2] is None:
@@ -81,7 +87,9 @@ class Structure:
         return cls(tuple(norm), tuple(str(n) for n in nodes), tuple(str(n) for n in latent))
 
     def all_nodes(self) -> List[str]:
-        seen = list(dict.fromkeys([*self.nodes, *(e[0] for e in self.edges), *(e[1] for e in self.edges)]))
+        seen = list(
+            dict.fromkeys([*self.nodes, *(e[0] for e in self.edges), *(e[1] for e in self.edges)])
+        )
         return seen
 
     def graph(self, weights: Optional[Mapping[Tuple[str, str], float]] = None) -> CausalGraph:
@@ -97,7 +105,9 @@ class Structure:
     def unknown_edges(self) -> List[Tuple[str, str]]:
         return [(p, c) for p, c, w in self.edges if w is None]
 
-    def scm(self, weights: Optional[Mapping[Tuple[str, str], float]] = None) -> StructuralCausalModel:
+    def scm(
+        self, weights: Optional[Mapping[Tuple[str, str], float]] = None
+    ) -> StructuralCausalModel:
         g = self.graph(weights)
         missing = [e for e in self.unknown_edges() if e not in (weights or {})]
         if missing:
@@ -189,7 +199,10 @@ class Problem:
                 else None
             ),
             "coordinates": (
-                {str(k): [_num(c) for c in v] for k, v in sorted(self.coordinates.items(), key=lambda kv: str(kv[0]))}
+                {
+                    str(k): [_num(c) for c in v]
+                    for k, v in sorted(self.coordinates.items(), key=lambda kv: str(kv[0]))
+                }
                 if self.coordinates is not None
                 else None
             ),

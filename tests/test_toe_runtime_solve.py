@@ -15,17 +15,14 @@ from toe.runtime import TenantContext, TOEIntelligenceRuntime, TOEIntelligenceRu
 from toe.voyage import simulated_world, voyage_problem
 
 
-class _Chain:
-    def __init__(self):
-        self.records = []
-
-    def append(self, kind, payload):
-        self.records.append((kind, payload))
+from euclid.evidence import EvidenceChain  # noqa: E402 - the real chain, not a stand-in
 
 
 def _runtime(**kw):
-    cfg = TOEIntelligenceRuntimeConfig(enable_feedback=False, enable_asi=False, enable_platform=False)
-    return TOEIntelligenceRuntime(config=cfg, evidence_chain=_Chain(), **kw)
+    cfg = TOEIntelligenceRuntimeConfig(
+        enable_feedback=False, enable_asi=False, enable_platform=False
+    )
+    return TOEIntelligenceRuntime(config=cfg, evidence_chain=EvidenceChain(), **kw)
 
 
 def test_solve_and_learn_through_the_runtime():
@@ -38,7 +35,7 @@ def test_solve_and_learn_through_the_runtime():
     assert r2.ok and r2.result["revision"] is not None
     r3 = rt.solve(voyage_problem(z_state=0.25), tenant)
     assert r3.result["decision"]["selected_action"] == "raise_z=1.0"
-    kinds = [k for k, _ in rt.evidence_chain.records]
+    kinds = [r.kind for r in rt.evidence_chain.records]
     assert kinds == ["toe-solve", "toe-learn", "toe-solve"]
 
 
@@ -50,7 +47,9 @@ def test_tenants_do_not_share_learning():
     rb = rt.solve(voyage_problem(z_state=0.25), b)
     assert rb.result["identity"]["model_revision"] == 0
     assert rb.result["decision"]["selected_action"] == "raise_x=1.0"
-    assert rt.learn(r.decision_id, [{"x": 1.0, "z": 0.0, "y": 0.5}], b).error.code == "unknown_episode"
+    assert (
+        rt.learn(r.decision_id, [{"x": 1.0, "z": 0.0, "y": 0.5}], b).error.code == "unknown_episode"
+    )
 
 
 def test_mining_mode_refuses_consensus_named_variables():
@@ -72,8 +71,12 @@ def test_problem_content_round_trips_through_the_api():
     p = voyage_problem()
     resp, status = svc.handle_request("solve", p.content(), "acme", metadata={"domain": p.domain})
     assert status == 200 and resp.result["identity"]["content_digest"] == p.content_digest()
-    resp2, status2 = svc.handle_request("learn", [{"x": 1.0, "z": 0.1, "y": 0.6}], "acme",
-                                        metadata={"episode_sha256": resp.decision_id})
+    resp2, status2 = svc.handle_request(
+        "learn",
+        [{"x": 1.0, "z": 0.1, "y": 0.6}],
+        "acme",
+        metadata={"episode_sha256": resp.decision_id},
+    )
     assert status2 == 200 and resp2.ok
     _, missing = svc.handle_request("learn", [], "acme", metadata={"episode_sha256": "nope"})
     assert missing == 404

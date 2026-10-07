@@ -23,8 +23,6 @@ exist in the repo.
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, Optional
-
 import numpy as np
 
 PHI = (1 + math.sqrt(5)) / 2

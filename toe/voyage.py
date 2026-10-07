@@ -35,13 +35,13 @@ from .adapters import (
     TabularAdapter,
     TimeSeriesAdapter,
 )
-from .machine import ACQUIRE_EVIDENCE, ACT, TOEMachine
+from .machine import TOEMachine
 from .problem import Problem, Structure
 from .planning import OperatorSpec
 from .policy import Objective
 
 VOYAGE_VERSION = "toe.voyage/v1"
-PHI = (1 + 5 ** 0.5) / 2
+PHI = (1 + 5**0.5) / 2
 
 
 # ---------------------------------------------------------------------------
@@ -135,7 +135,7 @@ def fixture_temporal() -> Dict[str, Any]:
     }
 
 
-CODE_SAMPLE = '''
+CODE_SAMPLE = """
 def main(argv):
     config = parse(argv)
     if validate(config):
@@ -162,20 +162,33 @@ def emit(k):
 def legacy_export(rows):
     for r in rows:
         emit(r)
-'''
+"""
 
 
 def fixture_code() -> Dict[str, Any]:
-    return {"domain": "code.cli_tool", "source": CODE_SAMPLE, "entry": "main", "target": "check_keys"}
+    return {
+        "domain": "code.cli_tool",
+        "source": CODE_SAMPLE,
+        "entry": "main",
+        "target": "check_keys",
+    }
 
 
 def fixture_recurrence() -> Dict[str, Any]:
-    return {"domain": "scientific.sequence", "sequence": [2, 1, 3, 4, 7, 11, 18, 29, 47, 76, 123], "steps": 1000}
+    return {
+        "domain": "scientific.sequence",
+        "sequence": [2, 1, 3, 4, 7, 11, 18, 29, 47, 76, 123],
+        "steps": 1000,
+    }
 
 
 def fixture_recurrence_negative() -> Dict[str, Any]:
     rng = random.Random(3)
-    return {"domain": "scientific.sequence", "sequence": [round(rng.uniform(0, 10), 3) for _ in range(12)], "steps": 5}
+    return {
+        "domain": "scientific.sequence",
+        "sequence": [round(rng.uniform(0, 10), 3) for _ in range(12)],
+        "steps": 5,
+    }
 
 
 def fixture_linear_system() -> Dict[str, Any]:
@@ -202,7 +215,13 @@ def _hr_rows(n: int = 300, seed: int = 21) -> List[Dict[str, float]]:
         eng = 0.6 * comp + 0.3 * promo + PHI * rng.gauss(0, 0.05)
         churn = -0.5 * eng - 0.2 * perf + PHI * rng.gauss(0, 0.05)
         rows.append(
-            {"compensation_ratio": comp, "promotion": promo, "performance_score": perf, "engagement": eng, "churn_risk": churn}
+            {
+                "compensation_ratio": comp,
+                "promotion": promo,
+                "performance_score": perf,
+                "engagement": eng,
+                "churn_risk": churn,
+            }
         )
     return rows
 
@@ -211,7 +230,13 @@ def fixture_legacy_hr() -> Dict[str, Any]:
     return {
         "domain": "legacy_hr",
         "employees": _hr_rows(),
-        "current": {"compensation_ratio": 1.0, "promotion": 0.0, "performance_score": 0.5, "engagement": 0.6, "churn_risk": -0.4},
+        "current": {
+            "compensation_ratio": 1.0,
+            "promotion": 0.0,
+            "performance_score": 0.5,
+            "engagement": 0.6,
+            "churn_risk": -0.4,
+        },
         "levers": {"compensation_ratio": [1.0, 1.1], "promotion": [0.0, 1.0]},
     }
 
@@ -220,13 +245,21 @@ class _OperatorAwareCausalAdapter(CausalSystemAdapter):
     """Accepts explicit operator lists (several operators on one node)."""
 
     def to_problem(self, raw: Mapping[str, Any]) -> Problem:
-        problem = super().to_problem({k: v for k, v in raw.items() if k not in ("operators", "deltas")})
+        problem = super().to_problem(
+            {k: v for k, v in raw.items() if k not in ("operators", "deltas")}
+        )
         if not raw.get("operators"):
             return problem
         from dataclasses import replace
 
         ops = tuple(
-            OperatorSpec(o["name"], o["node"], tuple(o.get("levels", ())), tuple(o.get("deltas", ())), float(o.get("cost", 1.0)))
+            OperatorSpec(
+                o["name"],
+                o["node"],
+                tuple(o.get("levels", ())),
+                tuple(o.get("deltas", ())),
+                float(o.get("cost", 1.0)),
+            )
             for o in raw["operators"]
         )
         return replace(problem, operators=ops)
@@ -255,7 +288,9 @@ def _key_result(name: str, ep: Mapping[str, Any]) -> Dict[str, Any]:
     if ep.get("arbitration"):
         out["arbitration"] = ep["arbitration"]["status"]
     if dec.get("precision"):
-        out["precision"] = {k: dec["precision"].get(k) for k in ("regime", "exact_ordering", "override")}
+        out["precision"] = {
+            k: dec["precision"].get(k) for k in ("regime", "exact_ordering", "override")
+        }
     lad = (ep.get("understanding") or {}).get("causal_ladder") or {}
     if lad.get("rung1_association", {}).get("available"):
         out["association_slope"] = lad["rung1_association"]["slope_E_y_given_x"]
@@ -303,8 +338,12 @@ def cross_domain_voyage(machine: Optional[TOEMachine] = None) -> Dict[str, Any]:
         "reuse": {
             "backend_callables_total": len(union),
             "shared_by_every_domain": sorted(shared),
-            "per_domain_fraction_of_union": {k: len(v) / len(union) for k, v in backend_sets.items()},
-            "adapter_code_in_any_backend_trace": sorted({b for v in backend_sets.values() for b in v if ".adapters." in b}),
+            "per_domain_fraction_of_union": {
+                k: len(v) / len(union) for k, v in backend_sets.items()
+            },
+            "adapter_code_in_any_backend_trace": sorted(
+                {b for v in backend_sets.values() for b in v if ".adapters." in b}
+            ),
         },
     }
 
@@ -333,7 +372,9 @@ def voyage_problem(*, domain: str = "voyage.allocation", z_state: float = 0.0) -
     )
 
 
-def simulated_world(interventions: Mapping[str, float], *, n: int, seed: int) -> List[Dict[str, float]]:
+def simulated_world(
+    interventions: Mapping[str, float], *, n: int, seed: int
+) -> List[Dict[str, float]]:
     """The declared test world: y = 0.5·x + 1.0·z + φ·u_y."""
     rng = random.Random(seed)
     out = []
@@ -376,7 +417,9 @@ def canonical_voyage(custody_factory: Optional[Callable[[], Any]] = None) -> Dic
         "selected": ep2["decision"]["selected_action"],
         "voi": {k: v["recommend_evidence"] for k, v in ep2["meta"]["value_of_information"].items()},
     }
-    report["decision_changed"] = ep1["decision"]["selected_action"] != ep2["decision"]["selected_action"]
+    report["decision_changed"] = (
+        ep1["decision"]["selected_action"] != ep2["decision"]["selected_action"]
+    )
     report["replay_episode_1"] = machine.replay(ep1["episode_sha256"])
     # Negative transfer: same shape, different domain → untouched prior.
     other = machine.run(voyage_problem(domain="voyage.unrelated", z_state=0.25))
@@ -396,7 +439,8 @@ def canonical_voyage(custody_factory: Optional[Callable[[], Any]] = None) -> Dic
         "selected_after_restart": ep3["decision"]["selected_action"],
         "status_after_restart": ep3["status"],
         "model_revision_after_restart": ep3["identity"]["model_revision"],
-        "matches_pre_restart_decision": ep3["decision"]["selected_action"] == ep2["decision"]["selected_action"],
+        "matches_pre_restart_decision": ep3["decision"]["selected_action"]
+        == ep2["decision"]["selected_action"],
         "replay_after_restart": restarted.replay(ep1["episode_sha256"]),
     }
     return report

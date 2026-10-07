@@ -46,7 +46,7 @@ import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Any, Callable, Mapping, Optional
+from typing import Any, Mapping, Optional
 from urllib.parse import urlparse
 
 from toe.runtime import (

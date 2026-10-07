@@ -67,7 +67,11 @@ class PoincareBall:
     def __init__(self, dim: int, weights: Optional[Sequence[float]] = None) -> None:
         if dim < 1:
             raise GeometryError("dimension must be >= 1")
-        w = np.ones(dim, dtype=np.float64) if weights is None else np.asarray(weights, dtype=np.float64)
+        w = (
+            np.ones(dim, dtype=np.float64)
+            if weights is None
+            else np.asarray(weights, dtype=np.float64)
+        )
         if w.shape != (dim,) or not np.all(w > 0) or not np.all(np.isfinite(w)):
             raise GeometryError("weights must be dim positive finite values")
         self.dim = dim
@@ -377,7 +381,9 @@ def routing_study(
         pairs = [(s, t) for s in nodes for t in nodes if s != t]
     shortest = {s: _shortest_lengths(adj, s) for s in {p[0] for p in pairs}}
 
-    def run(name: str, dist_fn: Any, route_edges: Sequence[Tuple[Hashable, Hashable]]) -> Dict[str, Any]:
+    def run(
+        name: str, dist_fn: Any, route_edges: Sequence[Tuple[Hashable, Hashable]]
+    ) -> Dict[str, Any]:
         delivered = 0
         stretch: List[float] = []
         stuck: List[Tuple[str, str]] = []

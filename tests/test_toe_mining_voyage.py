@@ -20,7 +20,9 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def _voyage():
-    spec = importlib.util.spec_from_file_location("toe_mining_voyage", ROOT / "scripts" / "toe_mining_voyage.py")
+    spec = importlib.util.spec_from_file_location(
+        "toe_mining_voyage", ROOT / "scripts" / "toe_mining_voyage.py"
+    )
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod

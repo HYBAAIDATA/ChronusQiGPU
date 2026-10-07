@@ -55,9 +55,7 @@ class ProblemAdapter:
         """Non-empty, non-comment source lines of this adapter class — the
         measured cost of supporting the domain."""
         src = inspect.getsource(type(self))
-        return sum(
-            1 for ln in src.splitlines() if ln.strip() and not ln.strip().startswith("#")
-        )
+        return sum(1 for ln in src.splitlines() if ln.strip() and not ln.strip().startswith("#"))
 
 
 __all__ = ["OptionalDependencyUnavailable", "ProblemAdapter"]

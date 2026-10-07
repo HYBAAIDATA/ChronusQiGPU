@@ -47,7 +47,9 @@ def test_metric_axioms_and_geodesics():
     u, v = pts[0], pts[1]
     for t in (0.1, 0.5, 0.9):
         g = ball.geodesic(u, v, t)
-        assert ball.distance(u, g) + ball.distance(g, v) == pytest.approx(ball.distance(u, v), abs=1e-9)
+        assert ball.distance(u, g) + ball.distance(g, v) == pytest.approx(
+            ball.distance(u, v), abs=1e-9
+        )
         assert ball.distance(u, g) == pytest.approx(t * ball.distance(u, v), abs=1e-9)
     assert np.allclose(ball.exp_map(u, ball.log_map(u, v)), v, atol=1e-12)
 
@@ -88,7 +90,9 @@ def test_hyperbolic_routing_delivers_where_euclidean_strands():
 
 def test_negative_case_plain_grid_gains_nothing():
     nodes = [(x, y) for x in range(6) for y in range(6)]
-    edges = [((x, y), (x + 1, y)) for x, y in nodes if x < 5] + [((x, y), (x, y + 1)) for x, y in nodes if y < 5]
+    edges = [((x, y), (x + 1, y)) for x, y in nodes if x < 5] + [
+        ((x, y), (x, y + 1)) for x, y in nodes if y < 5
+    ]
     study = routing_study(edges, euclidean={n: (float(n[0]), float(n[1])) for n in nodes}, tau=2.5)
     # Euclidean greedy is already perfect here; the hyperbolic tree route
     # delivers too but with longer paths — no advantage, recorded as such.

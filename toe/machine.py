@@ -50,7 +50,7 @@ from .causal_ladder import (
     intervene,
 )
 from .causal_stack import evaluate_futures, futures_env, identifiability
-from .custody import CustodyUnavailable, SnapshotStore
+from .custody import SnapshotStore
 from .decision_explanation import explain_contrastive, explain_decision, falsify_decision
 from .memory import MemoryStore
 from .meta_reasoning import choose_path, meta_decide, value_of_information
@@ -58,7 +58,7 @@ from .planning import compare_plan_vs_greedy, generate_actions
 from .policy import PolicyDecision, counterfactual_futures, decide
 from .precision import select_precision
 from .problem import Problem, Structure
-from .receipts import ReceiptLedger, digest
+from .receipts import ReceiptLedger
 from .relationships import association, relationship_ladder
 from .self_governance import self_check
 from .uncertainty import uncertainty_report
@@ -66,7 +66,6 @@ from .world_model import (
     INSUFFICIENT_EVIDENCE,
     MODEL_CONTRADICTED,
     MODEL_DRIFT,
-    MODEL_SUPPORTED,
     assess_structural,
     bind_outcome,
     fit_structural_weights,
@@ -196,11 +195,16 @@ class TOEMachine:
                 # Declared shape, unknown strength: estimate in the backend
                 # from the observational samples (never in an adapter).
                 rows = [
-                    {"values": {k: problem.samples[k][i] for k in problem.samples}, "intervened": []}
+                    {
+                        "values": {k: problem.samples[k][i] for k in problem.samples},
+                        "intervened": [],
+                    }
                     for i in range(len(next(iter(problem.samples.values()))))
                 ]
                 fit = fit_structural_weights(
-                    [(p, c) for p, c, _ in problem.structure.edges], rows, min_evidence=self.min_evidence
+                    [(p, c) for p, c, _ in problem.structure.edges],
+                    rows,
+                    min_evidence=self.min_evidence,
                 )
                 for p, c in unknown:
                     if (p, c) not in fit["weights"]:
@@ -212,7 +216,7 @@ class TOEMachine:
                     resid = fit["fitted"][c].get("residual_sd")
                     if resid is not None and c not in problem.noise_sd:
                         # structural noise enters as phi*u: sd(u) = sd(residual)/phi
-                        estimated_noise[c] = float(resid) / ((1 + 5 ** 0.5) / 2)
+                        estimated_noise[c] = float(resid) / ((1 + 5**0.5) / 2)
                     estimated[_ek(p, c)] = {
                         "estimate": fit["weights"][(p, c)],
                         "standard_error": (fit["fitted"][c]["standard_errors"] or {}).get(p),
@@ -248,11 +252,11 @@ class TOEMachine:
         inflation = float(model["noise_inflation"]) if model else 1.0
         est = (model or {}).get("estimated_noise_sd") or {}
         nodes = problem.structure.all_nodes() if problem.structure else []
-        return {
-            n: float(problem.noise_sd.get(n, est.get(n, 1.0))) * inflation for n in nodes
-        }
+        return {n: float(problem.noise_sd.get(n, est.get(n, 1.0))) * inflation for n in nodes}
 
-    def _noise_sources(self, problem: Problem, model: Optional[Mapping[str, Any]]) -> Dict[str, str]:
+    def _noise_sources(
+        self, problem: Problem, model: Optional[Mapping[str, Any]]
+    ) -> Dict[str, str]:
         est = (model or {}).get("estimated_noise_sd") or {}
         nodes = problem.structure.all_nodes() if problem.structure else []
         return {
@@ -284,7 +288,12 @@ class TOEMachine:
             "after": dict(model["weights"]),
         }
         self.transfers.append(rec)
-        self.ledger.issue("machine.transfer", inputs={"from": source_namespace}, config={"reason": reason}, output=rec)
+        self.ledger.issue(
+            "machine.transfer",
+            inputs={"from": source_namespace},
+            config={"reason": reason},
+            output=rec,
+        )
         return {"transferred": True, **rec}
 
     # ------------------------------------------------------------------
@@ -307,13 +316,21 @@ class TOEMachine:
             keep = []
             for lens in selected:
                 u = self.lens_utility.get(lens, {})
-                if u.get("selected", 0) >= 3 and u.get("decision_relevant", 0) == 0 and lens != "statistical":
-                    skipped.append((lens, f"measured: selected {u['selected']}x, never decision-relevant"))
+                if (
+                    u.get("selected", 0) >= 3
+                    and u.get("decision_relevant", 0) == 0
+                    and lens != "statistical"
+                ):
+                    skipped.append(
+                        (lens, f"measured: selected {u['selected']}x, never decision-relevant")
+                    )
                 else:
                     keep.append(lens)
             selected = keep
         trace("represent", IntelligenceState.observe)
-        state = IntelligenceState.observe(obs, graph=graph, lenses=selected or ["statistical"], bridge=self.bridge)
+        state = IntelligenceState.observe(
+            obs, graph=graph, lenses=selected or ["statistical"], bridge=self.bridge
+        )
         views = {name: v.as_dict() for name, v in state.views.items()}
         return {
             "observation_sha256": state.observation_sha256,
@@ -334,15 +351,21 @@ class TOEMachine:
         graph = problem.structure.graph() if problem.structure else None
         observed = problem.observed
         if observed is None and problem.structure is not None:
-            observed = [n for n in problem.structure.all_nodes() if n not in problem.structure.latent]
+            observed = [
+                n for n in problem.structure.all_nodes() if n not in problem.structure.latent
+            ]
         return identifiability(graph, problem.query[0], problem.query[1], observed=observed)
 
-    def _understand(self, problem: Problem, scm: Any, noise: Mapping[str, float], trace: _Trace) -> Dict[str, Any]:
+    def _understand(
+        self, problem: Problem, scm: Any, noise: Mapping[str, float], trace: _Trace
+    ) -> Dict[str, Any]:
         out: Dict[str, Any] = {}
         treatment, outcome = problem.query if problem.query else (None, None)
         observed = problem.observed
         if observed is None and problem.structure is not None:
-            observed = [n for n in problem.structure.all_nodes() if n not in problem.structure.latent]
+            observed = [
+                n for n in problem.structure.all_nodes() if n not in problem.structure.latent
+            ]
         if problem.samples or problem.structure is not None:
             trace("understand", relationship_ladder)
             out["relationships"] = relationship_ladder(
@@ -373,7 +396,12 @@ class TOEMachine:
             if all(n in problem.state for n in scm.graph.nodes):
                 trace("understand", counterfactual_state)
                 try:
-                    cf = counterfactual_state(scm, {treatment: float(problem.state[treatment]) + 1.0}, problem.state, [outcome])
+                    cf = counterfactual_state(
+                        scm,
+                        {treatment: float(problem.state[treatment]) + 1.0},
+                        problem.state,
+                        [outcome],
+                    )
                     ladder["rung3_counterfactual"] = {
                         "unit_outcome_if_treatment_plus_1": cf["outcome_values"][outcome],
                         "factual_outcome": float(problem.state[outcome]),
@@ -399,7 +427,7 @@ class TOEMachine:
         return out
 
     def _forecast(self, problem: Problem, trace: _Trace) -> Dict[str, Any]:
-        """Exact recurrence extrapolation when verified, else labelled trend."""
+        """Exact recurrence extrapolation when verified on every term, else refusal."""
         series = _primary_series(problem.observation)
         steps = int(problem.forecast or 0)
         if series is None:
@@ -438,25 +466,36 @@ class TOEMachine:
                     "verified_terms": len(ints),
                     "steps": steps,
                     "value": str(value),
-                    "operation_count": {"matrix_multiplications": mults, "naive_recurrence_steps": steps},
+                    "operation_count": {
+                        "matrix_multiplications": mults,
+                        "naive_recurrence_steps": steps,
+                    },
                     "evidence_class": "EXACT given the recurrence holds beyond the observed window (model assumption)",
                 }
-        n = len(series)
-        xs = list(range(n))
-        mx, my = sum(xs) / n, sum(float(v) for v in series) / n
-        sxx = sum((x - mx) ** 2 for x in xs)
-        slope = sum((x - mx) * (float(y) - my) for x, y in zip(xs, series)) / sxx if sxx else 0.0
+        # No exact recurrence holds on every observed term: TOE does not
+        # extrapolate approximately (no fitted trend, no curve) — it refuses.
         return {
-            "available": True,
-            "method": "least-squares linear trend (no exact recurrence verified)",
+            "available": False,
             "steps": steps,
-            "value": my + slope * (n - 1 + steps - mx),
-            "evidence_class": "MODEL-DEPENDENT extrapolation",
+            "reason": (
+                "no integer recurrence of the declared families holds exactly on every "
+                "observed term; an approximate extrapolation is not produced"
+            ),
+            "families_tested": sorted(FAMILY_COEFFS) if integral else [],
+            "integral_series": integral,
+            "evidence_class": "REFUSED",
         }
 
     def _navigate(self, problem: Problem, trace: _Trace) -> Dict[str, Any]:
         """Navigation over a transition graph under three representations."""
-        from .geometry import GeometryError, bfs_tree, disk_distance, embed_tree, graph_center, greedy_route
+        from .geometry import (
+            GeometryError,
+            bfs_tree,
+            disk_distance,
+            embed_tree,
+            graph_center,
+            greedy_route,
+        )
         from .topology import StateTopology
 
         transitions = [tuple(e) for e in problem.transitions or ()]
@@ -474,7 +513,9 @@ class TOEMachine:
             "reachable": path is not None,
             "route": [str(s) for s in path] if path else None,
             "unreachable_from_source": (
-                sorted(str(s) for s in states if s not in topo.reachable(src)) if src is not None else None
+                sorted(str(s) for s in states if s not in topo.reachable(src))
+                if src is not None
+                else None
             ),
         }
         if src is None or path is None:
@@ -495,7 +536,9 @@ class TOEMachine:
                 emb = embed_tree(bfs_tree(transitions, graph_center(transitions)))
                 coords = emb["coords"]
                 trace("navigate", greedy_route)
-                res = greedy_route(transitions, src, dst, lambda a, b: disk_distance(coords[a], coords[b]))
+                res = greedy_route(
+                    transitions, src, dst, lambda a, b: disk_distance(coords[a], coords[b])
+                )
                 reps.append(
                     {
                         "name": "hyperbolic_greedy",
@@ -507,16 +550,28 @@ class TOEMachine:
                     }
                 )
             except GeometryError as exc:
-                reps.append({"name": "hyperbolic_greedy", "cost": math.inf, "correctness": "heuristic", "delivered": False, "evidence": str(exc)})
+                reps.append(
+                    {
+                        "name": "hyperbolic_greedy",
+                        "cost": math.inf,
+                        "correctness": "heuristic",
+                        "delivered": False,
+                        "evidence": str(exc),
+                    }
+                )
         else:
-            out["hyperbolic_rejected"] = "directed transitions: greedy geometric routing assumes symmetric moves"
+            out["hyperbolic_rejected"] = (
+                "directed transitions: greedy geometric routing assumes symmetric moves"
+            )
         if problem.coordinates is not None:
             coords2 = problem.coordinates
             res = greedy_route(
                 transitions,
                 src,
                 dst,
-                lambda a, b: math.hypot(coords2[a][0] - coords2[b][0], coords2[a][1] - coords2[b][1]),
+                lambda a, b: math.hypot(
+                    coords2[a][0] - coords2[b][0], coords2[a][1] - coords2[b][1]
+                ),
             )
             reps.append(
                 {
@@ -540,14 +595,31 @@ class TOEMachine:
         acts = generate_actions(list(problem.operators), dict(problem.state))
         return {a["name"]: dict(a["interventions"]) for a in acts}
 
-    def _futures_fn(self, problem: Problem, scm: Any, noise: Mapping[str, float]) -> Tuple[Callable, int, str]:
+    def _futures_fn(
+        self, problem: Problem, scm: Any, noise: Mapping[str, float]
+    ) -> Tuple[Callable, int, str]:
         quantile_constraints = any("@" in c.variable for c in problem.constraints)
         if not quantile_constraints and all(n in problem.state for n in scm.graph.nodes):
-            return counterfactual_futures(scm), 3, "counterfactual (abduction-action-prediction on this unit)"
+            return (
+                counterfactual_futures(scm),
+                3,
+                "counterfactual (abduction-action-prediction on this unit)",
+            )
         env = futures_env(scm, noise)
-        return (lambda state, action: env(action)), 2, "interventional distribution (exact Gaussian moments)"
+        return (
+            (lambda state, action: env(action)),
+            2,
+            "interventional distribution (exact Gaussian moments)",
+        )
 
-    def _decide(self, problem: Problem, scm: Any, model: Mapping[str, Any], noise: Mapping[str, float], trace: _Trace) -> Dict[str, Any]:
+    def _decide(
+        self,
+        problem: Problem,
+        scm: Any,
+        model: Mapping[str, Any],
+        noise: Mapping[str, float],
+        trace: _Trace,
+    ) -> Dict[str, Any]:
         candidates = self._candidates(problem)
         futures, rung, rung_label = self._futures_fn(problem, scm, noise)
         model_id = f"{model['namespace']}@rev{len(model['revisions'])}"
@@ -570,7 +642,9 @@ class TOEMachine:
             "_futures": futures,
         }
         # Futures as distributions: what each candidate's world looks like.
-        targets = sorted({problem.objective.target} | {c.variable.split("@")[0] for c in problem.constraints})
+        targets = sorted(
+            {problem.objective.target} | {c.variable.split("@")[0] for c in problem.constraints}
+        )
         trace("futures", evaluate_futures)
         dist = evaluate_futures(
             scm,
@@ -587,7 +661,14 @@ class TOEMachine:
 
         admissible = sorted(
             (r for r in decision.futures if r["admissible"]),
-            key=lambda r: (-r["objective_value"] if problem.objective.sense == "maximize" else r["objective_value"], r["action"]),
+            key=lambda r: (
+                (
+                    -r["objective_value"]
+                    if problem.objective.sense == "maximize"
+                    else r["objective_value"]
+                ),
+                r["action"],
+            ),
         )
         selected = decision.selected_action
         # Adaptive precision: is the top-two ordering inside float error?
@@ -595,17 +676,36 @@ class TOEMachine:
             a, b = admissible[0], admissible[1]
             if rung == 2:
                 trace("precision", select_precision)
-                prec = select_precision(scm, candidate_a=a["intervention"], candidate_b=b["intervention"], target=problem.objective.target)
+                prec = select_precision(
+                    scm,
+                    candidate_a=a["intervention"],
+                    candidate_b=b["intervention"],
+                    target=problem.objective.target,
+                )
                 exact_order = prec.get("exact_ordering") or prec.get("float_ordering")
             else:
                 trace("precision", counterfactual_state)
-                ea = counterfactual_state(scm, a["intervention"], problem.state, [problem.objective.target], arithmetic=ARITHMETIC_EXACT)
-                eb = counterfactual_state(scm, b["intervention"], problem.state, [problem.objective.target], arithmetic=ARITHMETIC_EXACT)
+                ea = counterfactual_state(
+                    scm,
+                    a["intervention"],
+                    problem.state,
+                    [problem.objective.target],
+                    arithmetic=ARITHMETIC_EXACT,
+                )
+                eb = counterfactual_state(
+                    scm,
+                    b["intervention"],
+                    problem.state,
+                    [problem.objective.target],
+                    arithmetic=ARITHMETIC_EXACT,
+                )
                 from kellogg.substrate import QPhi
 
                 qa = ea["exact_values"][problem.objective.target]
                 qb = eb["exact_values"][problem.objective.target]
-                diff = QPhi(Fraction(qa["a"]), Fraction(qa["b"])) - QPhi(Fraction(qb["a"]), Fraction(qb["b"]))
+                diff = QPhi(Fraction(qa["a"]), Fraction(qa["b"])) - QPhi(
+                    Fraction(qb["a"]), Fraction(qb["b"])
+                )
                 sgn = diff.sign()
                 exact_order = "a>b" if sgn > 0 else "a<b" if sgn < 0 else "tie"
                 prec = {
@@ -617,7 +717,9 @@ class TOEMachine:
             maximize = problem.objective.sense == "maximize"
             if (exact_order == "a<b" and maximize) or (exact_order == "a>b" and not maximize):
                 selected = b["action"]
-                prec["override"] = f"exact arithmetic reverses the float ordering: {b['action']} over {a['action']}"
+                prec["override"] = (
+                    f"exact arithmetic reverses the float ordering: {b['action']} over {a['action']}"
+                )
             elif exact_order == "tie":
                 prec["exact_tie"] = True
             out["precision"] = prec
@@ -628,11 +730,18 @@ class TOEMachine:
         out["predicted_future_status"] = PREDICTED
         return out
 
-    def _voi(self, problem: Problem, model: Mapping[str, Any], noise: Mapping[str, float], baseline: Optional[str], trace: _Trace) -> Dict[str, Any]:
+    def _voi(
+        self,
+        problem: Problem,
+        model: Mapping[str, Any],
+        noise: Mapping[str, float],
+        baseline: Optional[str],
+        trace: _Trace,
+    ) -> Dict[str, Any]:
         """Would resolving a declared uncertain parameter change the decision?"""
         out: Dict[str, Any] = {}
         for name, declared in sorted(problem.uncertain.items()):
-            key = name[len("edge:"):]
+            key = name[len("edge:") :]
             fitted_se = model["standard_errors"].get(key)
             if fitted_se is not None:
                 w = float(model["weights"][key])
@@ -700,7 +809,9 @@ class TOEMachine:
                     "backends": trace.backends(),
                 }
             )
-            rec = ledger.issue("machine.refuse", inputs=identity, config={}, output={"reasons": issues})
+            rec = ledger.issue(
+                "machine.refuse", inputs=identity, config={}, output={"reasons": issues}
+            )
             episode["episode_sha256"] = rec.receipt_sha256
             episode["receipts"] = ledger.export()
             return episode
@@ -716,12 +827,22 @@ class TOEMachine:
                 identity["estimated_from_samples"] = model["estimated_from_samples"]
 
         rep = self.represent(problem, trace=trace)
-        state_obj = rep.pop("_state")
+        rep.pop("_state")  # live lens objects stay in-process; the episode is JSON-safe
         episode["representation"] = rep
-        ledger.issue("machine.represent", inputs=identity, config={"lens_policy": self.lens_policy}, output={"selected": rep["selected"], "observation_sha256": rep["observation_sha256"]})
+        ledger.issue(
+            "machine.represent",
+            inputs=identity,
+            config={"lens_policy": self.lens_policy},
+            output={"selected": rep["selected"], "observation_sha256": rep["observation_sha256"]},
+        )
 
         episode["understanding"] = self._understand(problem, scm, noise, trace)
-        ledger.issue("machine.understand", inputs=identity, config={}, output={"keys": sorted(episode["understanding"])})
+        ledger.issue(
+            "machine.understand",
+            inputs=identity,
+            config={},
+            output={"keys": sorted(episode["understanding"])},
+        )
 
         status = DESCRIBE
         decision: Optional[PolicyDecision] = None
@@ -755,8 +876,20 @@ class TOEMachine:
                     episode["plan"] = {
                         "plan_strictly_better": cmp["plan_strictly_better"],
                         "objective_gap": cmp["objective_gap"],
-                        "plan": {k: cmp["plan"].get(k) for k in ("available", "sequence", "objective_value", "total_cost", "merged_interventions")},
-                        "greedy": {k: cmp["greedy"].get(k) for k in ("available", "sequence", "objective_value", "total_cost")},
+                        "plan": {
+                            k: cmp["plan"].get(k)
+                            for k in (
+                                "available",
+                                "sequence",
+                                "objective_value",
+                                "total_cost",
+                                "merged_interventions",
+                            )
+                        },
+                        "greedy": {
+                            k: cmp["greedy"].get(k)
+                            for k in ("available", "sequence", "objective_value", "total_cost")
+                        },
                         "env": "futures_env (exact Gaussian moments; constraints may bind quantiles)",
                     }
                 # Arbitration between surfaces — never averaged.
@@ -767,13 +900,23 @@ class TOEMachine:
                         claims.append({"surface": "associational_predictor", "answer": assoc_pick})
                 plan_info = episode.get("plan")
                 ptype = "interventional"
-                if plan_info and plan_info["plan"]["available"] and plan_info["plan_strictly_better"]:
-                    claims.append({"surface": "planning", "answer": plan_info["plan"]["sequence"][0]["name"]})
+                if (
+                    plan_info
+                    and plan_info["plan"]["available"]
+                    and plan_info["plan_strictly_better"]
+                ):
+                    claims.append(
+                        {"surface": "planning", "answer": plan_info["plan"]["sequence"][0]["name"]}
+                    )
                     ptype = "planning"
                 trace("arbitrate", arbitrate)
                 episode["arbitration"] = arbitrate(claims, problem_type=ptype)
                 # Value of information + meta-control: act or acquire evidence.
-                voi = self._voi(problem, model, noise, dec["selected_action"], trace) if problem.uncertain else {}
+                voi = (
+                    self._voi(problem, model, noise, dec["selected_action"], trace)
+                    if problem.uncertain
+                    else {}
+                )
                 ident = episode["understanding"].get("identifiability", {}) or {}
                 trace("meta", meta_decide)
                 meta = meta_decide(
@@ -790,7 +933,9 @@ class TOEMachine:
                     "evidence_plan": [
                         {
                             "parameter": k,
-                            "experiment": "intervene on {} and observe {}".format(*_split(k[len("edge:"):])),
+                            "experiment": "intervene on {} and observe {}".format(
+                                *_split(k[len("edge:") :])
+                            ),
                         }
                         for k in flips
                     ],
@@ -798,20 +943,35 @@ class TOEMachine:
                     "near_tie_rule": "disabled (margin_tolerance=0): expected-value decisions are not flipped by aleatoric noise; epistemic flips are VOI's question",
                     "verdict": ACQUIRE_EVIDENCE if flips else ACT,
                     "reason": (
-                        f"evidence on {flips} could change the decision" if flips else "I know enough: the decision is invariant to every declared uncertainty"
+                        f"evidence on {flips} could change the decision"
+                        if flips
+                        else "I know enough: the decision is invariant to every declared uncertainty"
                     ),
                 }
                 if flips:
                     status = ACQUIRE_EVIDENCE
                 # Explanation — computational, contrastive, falsifiable.
                 trace("explain", explain_decision)
-                expl: Dict[str, Any] = {"decision": explain_decision(decision, scm=scm, uncertainty=episode["understanding"].get("uncertainty"), state=problem.state)}
-                runners = [r["action"] for r in decision.futures if r["admissible"] and r["action"] != decision.selected_action]
+                expl: Dict[str, Any] = {
+                    "decision": explain_decision(
+                        decision,
+                        scm=scm,
+                        uncertainty=episode["understanding"].get("uncertainty"),
+                        state=problem.state,
+                    )
+                }
+                runners = [
+                    r["action"]
+                    for r in decision.futures
+                    if r["admissible"] and r["action"] != decision.selected_action
+                ]
                 if runners:
                     trace("explain", explain_contrastive)
                     expl["contrastive"] = explain_contrastive(decision, runners[0], scm=scm)
                     trace("explain", falsify_decision)
-                    expl["falsification"] = falsify_decision(decision, futures_fn=futures_fn, state=problem.state)
+                    expl["falsification"] = falsify_decision(
+                        decision, futures_fn=futures_fn, state=problem.state
+                    )
                 episode["explanation"] = expl
             else:
                 status = NO_DECISION
@@ -820,17 +980,32 @@ class TOEMachine:
         # Self-governance: release only what passes its invariants.
         gov: Dict[str, Any] = {}
         if decision is not None and decision.available:
-            chosen = next((r for r in decision.futures if r["action"] == episode["decision"]["selected_action"]), None)
+            chosen = next(
+                (
+                    r
+                    for r in decision.futures
+                    if r["action"] == episode["decision"]["selected_action"]
+                ),
+                None,
+            )
             trace("govern", self_check)
-            gov["action"] = self_check("action", {"violated_constraints": (chosen or {}).get("violated", [])})
+            gov["action"] = self_check(
+                "action", {"violated_constraints": (chosen or {}).get("violated", [])}
+            )
         rel = episode["understanding"].get("relationships") or {}
         if rel:
             ident = episode["understanding"].get("identifiability") or {}
             gov["causal"] = self_check(
                 "causal",
-                {"identifiability_verdict": ident.get("verdict"), "estimate_released": rel.get("effect_released", False)},
+                {
+                    "identifiability_verdict": ident.get("verdict"),
+                    "estimate_released": rel.get("effect_released", False),
+                },
             )
-        gov["representation"] = {"divergent_views": rep["provenance"]["divergent_views"], "ok": rep["provenance"]["ok"]}
+        gov["representation"] = {
+            "divergent_views": rep["provenance"]["divergent_views"],
+            "ok": rep["provenance"]["ok"],
+        }
         episode["governance"] = gov
 
         episode["status"] = status
@@ -844,7 +1019,9 @@ class TOEMachine:
             output={
                 "status": status,
                 "selected": (episode.get("decision") or {}).get("selected_action"),
-                "decision_sha256": (episode.get("decision") or {}).get("policy", {}).get("decision_sha256"),
+                "decision_sha256": (episode.get("decision") or {})
+                .get("policy", {})
+                .get("decision_sha256"),
                 "backends": episode["backends"],
             },
         )
@@ -863,7 +1040,7 @@ class TOEMachine:
         for name, iv in sorted(self._candidates(problem).items()):
             if len(iv) != 1:
                 continue
-            (node, level), = iv.items()
+            ((node, level),) = iv.items()
             a = association(problem.samples, node, target)
             if not a.get("available"):
                 continue
@@ -953,7 +1130,10 @@ class TOEMachine:
         dec = episode.get("decision") or {}
         rec = episode.get("recommendation") or {}
         if model is None or not dec.get("selected_action"):
-            return {"learned": False, "reason": "episode carries no model-based decision to learn from"}
+            return {
+                "learned": False,
+                "reason": "episode carries no model-based decision to learn from",
+            }
         rows = [observed] if isinstance(observed, Mapping) else list(observed)
         interventions = dict(rec.get("interventions") or dec.get("selected_interventions") or {})
         intervened = sorted(interventions)
@@ -973,10 +1153,14 @@ class TOEMachine:
             errors = {
                 n: values[n] - float(predicted[n])
                 for n in predicted
-                if n in values and n not in intervened and n not in problem.structure.latent
+                if n in values
+                and n not in intervened
+                and n not in problem.structure.latent
                 and any(c == n for _p, c in model["edges"])
             }
-            model["observations"].append({"values": values, "intervened": intervened, "episode": episode["episode_sha256"]})
+            model["observations"].append(
+                {"values": values, "intervened": intervened, "episode": episode["episode_sha256"]}
+            )
             model["residuals"].append(errors)
             binding = bind_outcome(
                 dec["policy"]["decision_sha256"],
@@ -985,18 +1169,27 @@ class TOEMachine:
                 values,
                 ledger,
             )
-            self.bindings.append({**binding, "namespace": ns, "episode_sha256": episode["episode_sha256"]})
+            self.bindings.append(
+                {**binding, "namespace": ns, "episode_sha256": episode["episode_sha256"]}
+            )
             errors_out.append(errors)
         est = model.get("estimated_noise_sd") or {}
         noise = (
-            {n: float(problem.noise_sd.get(n, est.get(n, 1.0))) for n in problem.structure.all_nodes()}
+            {
+                n: float(problem.noise_sd.get(n, est.get(n, 1.0)))
+                for n in problem.structure.all_nodes()
+            }
             if (problem.noise_sd or est)
             else None
         )
-        window = model["residuals"][model["assessment_from"]:]
-        assessment = assess_structural(window[-20:], noise_sd=noise, min_observations=self.min_evidence)
+        window = model["residuals"][model["assessment_from"] :]
+        assessment = assess_structural(
+            window[-20:], noise_sd=noise, min_observations=self.min_evidence
+        )
         model["status"] = assessment["status"]
-        fit = fit_structural_weights(model["edges"], model["observations"], min_evidence=self.min_evidence)
+        fit = fit_structural_weights(
+            model["edges"], model["observations"], min_evidence=self.min_evidence
+        )
         for (p, c), _w in fit["weights"].items():
             se = fit["fitted"][c]["standard_errors"]
             if se:
@@ -1024,7 +1217,11 @@ class TOEMachine:
             self.memory.invalidate(old_regime, f"{ns}@rev{len(model['revisions'])}")
             self.memory.remember(
                 "world_model",
-                {"revision": revision["index"], "after": revision["after"], "trigger": revision["trigger"]},
+                {
+                    "revision": revision["index"],
+                    "after": revision["after"],
+                    "trigger": revision["trigger"],
+                },
                 causal_tags=[ns],
                 regime=f"{ns}@rev{len(model['revisions'])}",
             )
@@ -1042,7 +1239,9 @@ class TOEMachine:
                 "score": assessment.get("score"),
                 "revised": revision is not None,
                 "consequences": (
-                    ["model revision"] if revision else ["uncertainty increase", "new evidence request", "replanning"]
+                    ["model revision"]
+                    if revision
+                    else ["uncertainty increase", "new evidence request", "replanning"]
                 ),
             }
             self.contradictions.append(entry)
@@ -1068,7 +1267,10 @@ class TOEMachine:
         if persist and self._store is not None:
             result["persisted"] = self.persist()
         elif persist:
-            result["persisted"] = {"available": False, "reason": "no THESEUS custody bound (UNAVAILABLE)"}
+            result["persisted"] = {
+                "available": False,
+                "reason": "no THESEUS custody bound (UNAVAILABLE)",
+            }
         return result
 
     # ------------------------------------------------------------------
@@ -1099,7 +1301,10 @@ class TOEMachine:
         assert self._store is not None
         head = self._store.load_head()
         if head is None:
-            self.recovered_from = {"recovered": False, "reason": "empty snapshot chain (first start)"}
+            self.recovered_from = {
+                "recovered": False,
+                "reason": "empty snapshot chain (first start)",
+            }
             return
         snap = head["payload"]
         self.models = snap["models"]
@@ -1144,7 +1349,9 @@ class TOEMachine:
         }
 
     def _problem_from_episode(self, episode: Mapping[str, Any]) -> Problem:
-        summary = next((e for e in self.episodes if e["episode_sha256"] == episode["episode_sha256"]), None)
+        summary = next(
+            (e for e in self.episodes if e["episode_sha256"] == episode["episode_sha256"]), None
+        )
         if summary is None:
             raise KeyError("episode is not known to this machine")
         return problem_from_content(summary["domain"], summary["problem_content"])
@@ -1210,20 +1417,35 @@ class TOEMachine:
         m = self._model(problem)
         if m is None:
             return {"available": False, "reason": "no structure supplied"}
-        return {"available": True, "namespace": m["namespace"], "weights": dict(m["weights"]), "revision": len(m["revisions"]), "status": m["status"]}
+        return {
+            "available": True,
+            "namespace": m["namespace"],
+            "weights": dict(m["weights"]),
+            "revision": len(m["revisions"]),
+            "status": m["status"],
+        }
 
     def intervene(self, problem: Problem, action: Mapping[str, float]) -> Dict[str, Any]:
         m = self._model(problem)
         if m is None:
             return {"available": False, "reason": "no structure supplied"}
-        return intervene(problem.structure.scm(self._weights_tuple(m)), dict(action), arithmetic=ARITHMETIC_EXACT)
+        return intervene(
+            problem.structure.scm(self._weights_tuple(m)), dict(action), arithmetic=ARITHMETIC_EXACT
+        )
 
-    def counterfactual(self, problem: Problem, action: Mapping[str, float], outcomes: Sequence[str]) -> Dict[str, Any]:
+    def counterfactual(
+        self, problem: Problem, action: Mapping[str, float], outcomes: Sequence[str]
+    ) -> Dict[str, Any]:
         m = self._model(problem)
         if m is None:
             return {"available": False, "reason": "no structure supplied"}
         try:
-            return counterfactual_state(problem.structure.scm(self._weights_tuple(m)), dict(action), dict(problem.state), list(outcomes))
+            return counterfactual_state(
+                problem.structure.scm(self._weights_tuple(m)),
+                dict(action),
+                dict(problem.state),
+                list(outcomes),
+            )
         except CausalCapabilityUnavailable as exc:
             return {"available": False, "reason": exc.reason, "missing": exc.missing}
 
@@ -1232,7 +1454,9 @@ class TOEMachine:
         if m is None:
             return {"available": False, "reason": "no structure supplied"}
         scm = problem.structure.scm(self._weights_tuple(m))
-        acts = [{"name": n, "interventions": iv} for n, iv in sorted(self._candidates(problem).items())]
+        acts = [
+            {"name": n, "interventions": iv} for n, iv in sorted(self._candidates(problem).items())
+        ]
         out = evaluate_futures(scm, acts, noise_sd=self._noise(problem, m))
         for f in out["actions"]:
             f["epistemic_status"] = PREDICTED
@@ -1286,15 +1510,26 @@ def problem_from_content(domain: str, content: Mapping[str, Any]) -> Problem:
         state=dict(content.get("state") or {}),
         structure=Structure.of(st["edges"], nodes=st["nodes"], latent=st["latent"]) if st else None,
         samples=content.get("samples"),
-        operators=tuple(OperatorSpec(o[0], o[1], tuple(o[2]), tuple(o[3]), float(o[4])) for o in content.get("operators") or ()),
+        operators=tuple(
+            OperatorSpec(o[0], o[1], tuple(o[2]), tuple(o[3]), float(o[4]))
+            for o in content.get("operators") or ()
+        ),
         objective=Objective(**content["objective"]) if content.get("objective") else None,
         constraints=tuple(Constraint.from_dict(c) for c in content.get("constraints") or ()),
         query=tuple(content["query"]) if content.get("query") else None,
         observed=content.get("observed"),
         uncertain={k: tuple(v) for k, v in (content.get("uncertain") or {}).items()},
         noise_sd=dict(content.get("noise_sd") or {}),
-        transitions=[tuple(e) for e in content["transitions"]] if content.get("transitions") is not None else None,
-        coordinates={k: tuple(v) for k, v in content["coordinates"].items()} if content.get("coordinates") is not None else None,
+        transitions=(
+            [tuple(e) for e in content["transitions"]]
+            if content.get("transitions") is not None
+            else None
+        ),
+        coordinates=(
+            {k: tuple(v) for k, v in content["coordinates"].items()}
+            if content.get("coordinates") is not None
+            else None
+        ),
         navigation=tuple(content["navigation"]) if content.get("navigation") else None,
         forecast=content.get("forecast"),
         horizon=int(content.get("horizon") or 1),

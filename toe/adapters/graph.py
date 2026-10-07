@@ -26,7 +26,11 @@ class GraphAdapter(ProblemAdapter):
             domain=str(raw.get("domain", self.name)),
             observation={"degree": [degree[n] for n in nodes]},
             transitions=edges,
-            coordinates={str(k): (float(v[0]), float(v[1])) for k, v in positions.items()} if positions else None,
+            coordinates=(
+                {str(k): (float(v[0]), float(v[1])) for k, v in positions.items()}
+                if positions
+                else None
+            ),
             navigation=(str(raw["from"]), str(raw["to"])) if raw.get("from") is not None else None,
             metadata={"adapter": self.name, "nodes": len(nodes)},
         )

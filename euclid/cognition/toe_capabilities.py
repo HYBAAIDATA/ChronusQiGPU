@@ -55,7 +55,9 @@ class TOECapabilityAdapter:
         from toe.runtime import TenantContext, TOEIntelligenceRuntime, TOEIntelligenceRuntimeConfig
 
         self.runtime = runtime or TOEIntelligenceRuntime(
-            TOEIntelligenceRuntimeConfig(enable_feedback=False, enable_asi=False, enable_platform=False)
+            TOEIntelligenceRuntimeConfig(
+                enable_feedback=False, enable_asi=False, enable_platform=False
+            )
         )
         self.tenant = TenantContext(tenant_id)
         self.evidence = evidence
@@ -74,9 +76,13 @@ class TOECapabilityAdapter:
             raise ValueError(f"unknown TOE capability {capability!r}")
         if capability == "run":
             response = self.runtime.solve(problem, self.tenant)
-            result: Dict[str, Any] = response.result if response.ok else {"error": response.error.as_dict()}
+            result: Dict[str, Any] = (
+                response.result if response.ok else {"error": response.error.as_dict()}
+            )
         elif capability == "revise":
-            response = self.runtime.learn(problem, args[0] if args else kwargs["observed"], self.tenant)
+            response = self.runtime.learn(
+                problem, args[0] if args else kwargs["observed"], self.tenant
+            )
             result = response.result if response.ok else {"error": response.error.as_dict()}
         else:
             method = getattr(self.machine, capability)

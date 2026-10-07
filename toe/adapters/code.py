@@ -36,7 +36,11 @@ class CodeStructureAdapter(ProblemAdapter):
             for sub in ast.walk(node):
                 if isinstance(sub, ast.Call):
                     f = sub.func
-                    callee = f.id if isinstance(f, ast.Name) else f.attr if isinstance(f, ast.Attribute) else None
+                    callee = (
+                        f.id
+                        if isinstance(f, ast.Name)
+                        else f.attr if isinstance(f, ast.Attribute) else None
+                    )
                     if callee in funcs and callee != name:
                         callees.add(callee)
                 elif isinstance(sub, (ast.If, ast.For, ast.While, ast.Try, ast.With, ast.IfExp)):
@@ -44,7 +48,9 @@ class CodeStructureAdapter(ProblemAdapter):
             calls.extend((name, c) for c in sorted(callees))
             features["branches"].append(float(branches))
             features["calls"].append(float(len(callees)))
-            features["statements"].append(float(sum(isinstance(s, ast.stmt) for s in ast.walk(node))))
+            features["statements"].append(
+                float(sum(isinstance(s, ast.stmt) for s in ast.walk(node)))
+            )
         isolated = [(n, n) for n in funcs if not any(n in e for e in calls)]
         return Problem(
             domain=str(raw.get("domain", self.name)),

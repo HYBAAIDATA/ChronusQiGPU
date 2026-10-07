@@ -36,7 +36,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
-PHI = (1 + 5 ** 0.5) / 2
+PHI = (1 + 5**0.5) / 2
 N_EXACT = 2000
 
 
@@ -52,7 +52,7 @@ def lucas_link() -> Dict[str, Any]:
     # Lucas ladder vs a doubling ladder for locating an unknown scale.
     rng = random.Random(7)
     lad_l = [lucas(n) for n in range(2, 40)]
-    lad_2 = [2 ** n for n in range(2, 40)]
+    lad_2 = [2**n for n in range(2, 40)]
     probes = {"lucas": [], "doubling": []}
     overshoot = {"lucas": [], "doubling": []}
     for _ in range(2000):
@@ -71,8 +71,16 @@ def lucas_link() -> Dict[str, Any]:
         "evidence_class": "PROVED (definition) + COMPUTATIONALLY_VERIFIED",
         "experiment": {
             "question": "Lucas ladder vs doubling ladder for locating an unknown scale (2000 targets)",
-            "lucas": {"mean_probes": mean(probes["lucas"]), "mean_overshoot": mean(overshoot["lucas"]), "max_overshoot": max(overshoot["lucas"])},
-            "doubling": {"mean_probes": mean(probes["doubling"]), "mean_overshoot": mean(overshoot["doubling"]), "max_overshoot": max(overshoot["doubling"])},
+            "lucas": {
+                "mean_probes": mean(probes["lucas"]),
+                "mean_overshoot": mean(overshoot["lucas"]),
+                "max_overshoot": max(overshoot["lucas"]),
+            },
+            "doubling": {
+                "mean_probes": mean(probes["doubling"]),
+                "mean_overshoot": mean(overshoot["doubling"]),
+                "max_overshoot": max(overshoot["doubling"]),
+            },
             "evidence_class": "MEASURED",
             "finding": "a trade-off, not an advantage: the ratio-phi ladder overshoots less but needs more probes",
         },
@@ -150,26 +158,28 @@ def _star_discrepancy(xs: List[float]) -> float:
 
 
 def pisot_link() -> Dict[str, Any]:
-    from kellogg.scales import Zphi, phi_power, pisot_drift
+    from kellogg.scales import Zphi, pisot_drift
 
     ok = True
     psi = Zphi(1, -1)  # 1 - phi
     for n in range(1, 400):
-        ok &= pisot_drift(n) == Zphi(0, 0) - psi ** n
-    d15 = abs(PHI ** 15 - 1364)
+        ok &= pisot_drift(n) == Zphi(0, 0) - psi**n
+    d15 = abs(PHI**15 - 1364)
     N = 1000
     golden = [(k * PHI) % 1.0 for k in range(1, N + 1)]
     rng = random.Random(11)
     rand = [_star_discrepancy([rng.random() for _ in range(N)]) for _ in range(30)]
     # SHA256d: does a golden-stride visit order change the hit rate?
-    target = 2 ** 250  # p = 2^-6 per hash under this declared easy target
+    target = 2**250  # p = 2^-6 per hash under this declared easy target
     header = hashlib.sha256(b"universal-principle/sha256d").digest() * 2 + b"\x00" * 16
     span = 1 << 14
 
     def hits(order: List[int]) -> int:
         h = 0
         for nonce in order:
-            d = hashlib.sha256(hashlib.sha256(header[:76] + nonce.to_bytes(4, "little")).digest()).digest()
+            d = hashlib.sha256(
+                hashlib.sha256(header[:76] + nonce.to_bytes(4, "little")).digest()
+            ).digest()
             h += int.from_bytes(d, "little") < target
         return h
 
@@ -177,7 +187,7 @@ def pisot_link() -> Dict[str, Any]:
     stride = 0x9E3779B9  # floor(2^32 / phi): the golden-ratio stride
     golden_order = [(k * stride) & 0xFFFFFFFF for k in range(span)]
     h_lin, h_gold = hits(linear), hits(golden_order)
-    se = math.sqrt(span * 2 ** -6 * (1 - 2 ** -6))
+    se = math.sqrt(span * 2**-6 * (1 - 2**-6))
     return {
         "link": "Pisot contraction",
         "implementation": "kellogg.scales.pisot_drift (exact Z[phi])",
@@ -219,8 +229,15 @@ def poincare_link() -> Dict[str, Any]:
         x = rng.normal(size=11) * 0.4
         if ball.contains(x):
             pts.append(x)
-    parity = max(abs(ball.distance(a, b) - poincare_golden_distance(a, b)) for a in pts for b in pts)
-    tri = max(ball.distance(a, c) - ball.distance(a, b) - ball.distance(b, c) for a in pts[:12] for b in pts[:12] for c in pts[:12])
+    parity = max(
+        abs(ball.distance(a, b) - poincare_golden_distance(a, b)) for a in pts for b in pts
+    )
+    tri = max(
+        ball.distance(a, c) - ball.distance(a, b) - ball.distance(b, c)
+        for a in pts[:12]
+        for b in pts[:12]
+        for c in pts[:12]
+    )
     return {
         "link": "11D Poincare-golden geometry",
         "implementation": "toe.geometry.PoincareBall.golden_11d (== toe.poincare_golden_11d metric)",
@@ -238,9 +255,21 @@ def m32_link() -> Dict[str, Any]:
 
     import numpy as np
 
-    ico = [p for s in itertools.product((1, -1), repeat=2) for p in ((0, s[0], s[1] * PHI), (s[0], s[1] * PHI, 0), (s[1] * PHI, 0, s[0]))]
+    ico = [
+        p
+        for s in itertools.product((1, -1), repeat=2)
+        for p in ((0, s[0], s[1] * PHI), (s[0], s[1] * PHI, 0), (s[1] * PHI, 0, s[0]))
+    ]
     dod = [tuple(s) for s in itertools.product((1, -1), repeat=3)]
-    dod += [p for s in itertools.product((1, -1), repeat=2) for p in ((0, s[0] / PHI, s[1] * PHI), (s[0] / PHI, s[1] * PHI, 0), (s[1] * PHI, 0, s[0] / PHI))]
+    dod += [
+        p
+        for s in itertools.product((1, -1), repeat=2)
+        for p in (
+            (0, s[0] / PHI, s[1] * PHI),
+            (s[0] / PHI, s[1] * PHI, 0),
+            (s[1] * PHI, 0, s[0] / PHI),
+        )
+    ]
     m32 = np.array(ico + dod, dtype=float)
     m32 /= np.linalg.norm(m32, axis=1, keepdims=True)
     rng = np.random.default_rng(5)
@@ -256,14 +285,18 @@ def m32_link() -> Dict[str, Any]:
         rand.append(cover(r / np.linalg.norm(r, axis=1, keepdims=True)))
     k = np.arange(32) + 0.5
     z = 1 - 2 * k / 32
-    th = math.pi * (1 + 5 ** 0.5) * k
+    th = math.pi * (1 + 5**0.5) * k
     fib = np.stack([np.sqrt(1 - z * z) * np.cos(th), np.sqrt(1 - z * z) * np.sin(th), z], axis=1)
     return {
         "link": "M32 / icosahedral geometry",
         "implementation": "12 icosahedron + 20 dodecahedron directions (the M32 frame)",
         "identity": "vertices of the icosahedron/dodecahedron pair have coordinates in Q(phi)",
         "executed": "covering radius on S^2 (max angle to nearest direction, 40k probes)",
-        "result": {"m32_covering_deg": cover(m32), "random32_covering_deg_mean": sum(rand) / len(rand), "fibonacci_sphere32_covering_deg": cover(fib)},
+        "result": {
+            "m32_covering_deg": cover(m32),
+            "random32_covering_deg_mean": sum(rand) / len(rand),
+            "fibonacci_sphere32_covering_deg": cover(fib),
+        },
         "evidence_class": "MEASURED",
         "finding": "the icosahedral frame is a well-spread direction set (better than random); this is spherical-design geometry, not a search speed-up claim",
         "open_obligation": None,
@@ -274,7 +307,11 @@ def yang_mills_link() -> Dict[str, Any]:
     try:
         from millennium.hyba_poincare_yangmills import cached_report
     except Exception as exc:  # standalone TOE: the construction lives in millennium
-        return {"link": "2I / 600-cell / finite spectrum", "evidence_class": "UNAVAILABLE", "reason": str(exc)}
+        return {
+            "link": "2I / 600-cell / finite spectrum",
+            "evidence_class": "UNAVAILABLE",
+            "reason": str(exc),
+        }
     r = cached_report()
     gap = r["gap"]
     return {
@@ -290,12 +327,18 @@ def yang_mills_link() -> Dict[str, Any]:
             "sum_dim_squares": r["sum_squares"],
             "orthogonality": r["orthogonality"],
             "gap": gap,
-            "gap_matches_(3-sqrt5)/4": abs(gap - (3 - 5 ** 0.5) / 4) < 1e-12,
+            "gap_matches_(3-sqrt5)/4": abs(gap - (3 - 5**0.5) / 4) < 1e-12,
             "gap_equals_1_minus_phi_over_2": abs(gap - (1 - PHI / 2)) < 1e-12,
         },
-        "evidence_class": "COMPUTATIONALLY_VERIFIED (finite volume: " + str(r["evidence_class"]) + ")",
+        "evidence_class": "COMPUTATIONALLY_VERIFIED (finite volume: "
+        + str(r["evidence_class"])
+        + ")",
         "correction": "UNIVERSAL_PRINCIPLE_MAP previously printed the gap as ~0.381966 (= 1/phi^2); the computed gap is (3-sqrt5)/4 ~ 0.190983",
-        "continuum_yang_mills": {"evidence_class": "OPEN", "proof_claim": r["proof_claim"], "continuum_claim": r["continuum_claim"]},
+        "continuum_yang_mills": {
+            "evidence_class": "OPEN",
+            "proof_claim": r["proof_claim"],
+            "continuum_claim": r["continuum_claim"],
+        },
         "open_obligation": "continuum limit, infinite volume, OS reconstruction, continuum mass gap (Clay) — none established",
     }
 
@@ -313,7 +356,10 @@ def golden_quantum_link() -> Dict[str, Any]:
         "executed": "encode -> Born probabilities -> norm",
         "result": {"born_total": norm},
         "evidence_class": "COMPUTATIONALLY_VERIFIED (software execution of quantum mathematics)",
-        "physical_qpu": {"evidence_class": "UNSUPPORTED", "note": "no physical-QPU execution exists in this evidence"},
+        "physical_qpu": {
+            "evidence_class": "UNSUPPORTED",
+            "note": "no physical-QPU execution exists in this evidence",
+        },
         "measured_quantum_advantage": {"evidence_class": "UNSUPPORTED"},
         "open_obligation": "physical QPU execution and any advantage claim require device evidence",
     }
@@ -321,12 +367,36 @@ def golden_quantum_link() -> Dict[str, Any]:
 
 def chain_claims() -> List[Dict[str, Any]]:
     return [
-        {"claim": "the golden family links Z[phi] -> Lucas/Binet/Cassini/Zeckendorf/Pisot", "evidence_class": "PROVED + COMPUTATIONALLY_VERIFIED", "scope": "exact algebra"},
-        {"claim": "the same structures appear in TOE's geometry, ordering and exact arithmetic", "evidence_class": "MEASURED (structural reuse)", "scope": "implementation"},
-        {"claim": "a shared phi implies a shared physical phenomenon", "evidence_class": "UNSUPPORTED", "scope": "explicitly not claimed"},
-        {"claim": "Lucas rungs 15/18/20 are optimal for intelligence", "evidence_class": "UNSUPPORTED", "scope": "no TOE capability has a rung parameter; no comparative measurement"},
-        {"claim": "one backend serves 10,000 frontend problem forms", "evidence_class": "UNSUPPORTED as stated", "scope": "measured: 8 problem classes + PYTHIA mining through one machine"},
-        {"claim": "phi-structured nonce ordering improves SHA256d success", "evidence_class": "NEGATIVE", "scope": "see pisot negative_result"},
+        {
+            "claim": "the golden family links Z[phi] -> Lucas/Binet/Cassini/Zeckendorf/Pisot",
+            "evidence_class": "PROVED + COMPUTATIONALLY_VERIFIED",
+            "scope": "exact algebra",
+        },
+        {
+            "claim": "the same structures appear in TOE's geometry, ordering and exact arithmetic",
+            "evidence_class": "MEASURED (structural reuse)",
+            "scope": "implementation",
+        },
+        {
+            "claim": "a shared phi implies a shared physical phenomenon",
+            "evidence_class": "UNSUPPORTED",
+            "scope": "explicitly not claimed",
+        },
+        {
+            "claim": "Lucas rungs 15/18/20 are optimal for intelligence",
+            "evidence_class": "UNSUPPORTED",
+            "scope": "no TOE capability has a rung parameter; no comparative measurement",
+        },
+        {
+            "claim": "one backend serves 10,000 frontend problem forms",
+            "evidence_class": "UNSUPPORTED as stated",
+            "scope": "measured: 8 problem classes + PYTHIA mining through one machine",
+        },
+        {
+            "claim": "phi-structured nonce ordering improves SHA256d success",
+            "evidence_class": "NEGATIVE",
+            "scope": "see pisot negative_result",
+        },
     ]
 
 
@@ -335,9 +405,21 @@ def main(argv: List[str] | None = None) -> int:
     ap.add_argument("--report")
     args = ap.parse_args(argv)
     t0 = time.time()
-    links = [lucas_link(), binet_link(), zeckendorf_link(), cassini_link(), pisot_link(), poincare_link(), m32_link(), yang_mills_link(), golden_quantum_link()]
+    links = [
+        lucas_link(),
+        binet_link(),
+        zeckendorf_link(),
+        cassini_link(),
+        pisot_link(),
+        poincare_link(),
+        m32_link(),
+        yang_mills_link(),
+        golden_quantum_link(),
+    ]
     try:
-        sha = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip()
+        sha = subprocess.check_output(
+            ["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True
+        ).strip()
     except Exception:
         sha = "UNAVAILABLE"
     report = {

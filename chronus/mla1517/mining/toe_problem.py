@@ -78,8 +78,12 @@ def execute_window(template: WorkTemplate, start: int, window_size: int) -> Wind
     t0 = time.perf_counter()
     for nonce in range(start, start + window_size):
         header = build_header(
-            template.version, template.previous_hash, template.merkle_root,
-            template.timestamp, template.bits, nonce & 0xFFFFFFFF,
+            template.version,
+            template.previous_hash,
+            template.merkle_root,
+            template.timestamp,
+            template.bits,
+            nonce & 0xFFFFFFFF,
         )
         if check_pow(header, target):
             found.append(nonce)
@@ -87,8 +91,12 @@ def execute_window(template: WorkTemplate, start: int, window_size: int) -> Wind
     rechecked = 0
     for nonce in found:
         header = build_header(
-            template.version, template.previous_hash, template.merkle_root,
-            template.timestamp, template.bits, nonce & 0xFFFFFFFF,
+            template.version,
+            template.previous_hash,
+            template.merkle_root,
+            template.timestamp,
+            template.bits,
+            nonce & 0xFFFFFFFF,
         )
         digest = hashlib.sha256(hashlib.sha256(header).digest()).digest()
         rechecked += int.from_bytes(digest, "little") <= target
@@ -131,29 +139,54 @@ class MiningWindowAdapter(ProblemAdapter):
             domain=self.name,
             observation={c: v[-32:] for c, v in samples.items()},
             state={"window_size": samples["window_size"][-1]},
-            structure=Structure.of([("window_size", "hashes_per_s"), ("window_size", "latency_ms")]),
+            structure=Structure.of(
+                [("window_size", "hashes_per_s"), ("window_size", "latency_ms")]
+            ),
             samples=samples,
-            operators=(OperatorSpec("set_window", "window_size", tuple(float(x) for x in self.levels)),),
+            operators=(
+                OperatorSpec("set_window", "window_size", tuple(float(x) for x in self.levels)),
+            ),
             objective=Objective("hashes_per_s", "maximize"),
             constraints=(
-                Constraint("latency p95 within budget", "latency_ms@p95", "<=", self.latency_budget_ms),
+                Constraint(
+                    "latency p95 within budget", "latency_ms@p95", "<=", self.latency_budget_ms
+                ),
             ),
             metadata={"adapter": self.name, "budget_ms": self.latency_budget_ms},
         )
 
 
-def authorize(episode: Mapping[str, Any], *, allowed: Sequence[int], governor_max: int) -> Dict[str, Any]:
+def authorize(
+    episode: Mapping[str, Any], *, allowed: Sequence[int], governor_max: int
+) -> Dict[str, Any]:
     """PYTHIA's decision on TOE's advice. TOE never executes anything."""
     rec = episode.get("recommendation") or {}
     window = (rec.get("interventions") or {}).get("window_size")
     if episode.get("status") not in ("ACT", "ACQUIRE_EVIDENCE") or window is None:
-        return {"authorized": False, "window_size": None, "reason": f"no actionable advice ({episode.get('status')})"}
+        return {
+            "authorized": False,
+            "window_size": None,
+            "reason": f"no actionable advice ({episode.get('status')})",
+        }
     window = int(window)
     if window not in allowed:
-        return {"authorized": False, "window_size": None, "reason": f"window {window} not a declared level"}
+        return {
+            "authorized": False,
+            "window_size": None,
+            "reason": f"window {window} not a declared level",
+        }
     if window > governor_max:
-        return {"authorized": False, "window_size": governor_max, "reason": "exceeds PYTHIA governor; capped"}
-    return {"authorized": True, "window_size": window, "reason": "within PYTHIA bounds", "authority": "PYTHIA"}
+        return {
+            "authorized": False,
+            "window_size": governor_max,
+            "reason": "exceeds PYTHIA governor; capped",
+        }
+    return {
+        "authorized": True,
+        "window_size": window,
+        "reason": "within PYTHIA bounds",
+        "authority": "PYTHIA",
+    }
 
 
 __all__ = [

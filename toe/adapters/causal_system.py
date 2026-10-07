@@ -25,7 +25,9 @@ class CausalSystemAdapter(ProblemAdapter):
             for c, parents in sorted(raw["equations"].items())
             for p, w in sorted(parents.items())
         ]
-        nodes = sorted(set(raw["equations"]) | {p for _c, ps in raw["equations"].items() for p in ps})
+        nodes = sorted(
+            set(raw["equations"]) | {p for _c, ps in raw["equations"].items() for p in ps}
+        )
         costs = dict(raw.get("costs") or {})
         deltas = dict(raw.get("deltas") or {})
         ops = []
@@ -46,8 +48,14 @@ class CausalSystemAdapter(ProblemAdapter):
             structure=Structure.of(edges, nodes=nodes, latent=raw.get("latent") or ()),
             samples=raw.get("samples"),
             operators=tuple(ops),
-            objective=Objective(raw["target"], raw.get("sense", "maximize")) if raw.get("target") else None,
-            constraints=tuple(Constraint(f"{v} {op} {b}", v, op, float(b)) for v, op, b in raw.get("limits") or ()),
+            objective=(
+                Objective(raw["target"], raw.get("sense", "maximize"))
+                if raw.get("target")
+                else None
+            ),
+            constraints=tuple(
+                Constraint(f"{v} {op} {b}", v, op, float(b)) for v, op, b in raw.get("limits") or ()
+            ),
             query=tuple(raw["question"]) if raw.get("question") else None,
             noise_sd=dict(raw.get("noise_sd") or {}),
             uncertain={k: tuple(v) for k, v in (raw.get("uncertain") or {}).items()},

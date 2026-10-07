@@ -95,7 +95,7 @@ class SnapshotStore:
                 continue
             if not rid.startswith(self._prefix):
                 continue
-            tail = rid[len(self._prefix):]
+            tail = rid[len(self._prefix) :]
             if tail.isdigit():
                 out.append({"record_id": rid, "revision": int(tail)})
         return sorted(out, key=lambda r: r["revision"])
@@ -123,13 +123,21 @@ class SnapshotStore:
             try:
                 envelope = json.loads(payload.decode("utf-8"))
             except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-                raise SnapshotIntegrityError(f"{link['record_id']}: unreadable snapshot: {exc}") from exc
-            body = {k: envelope[k] for k in ("schema", "stream", "revision", "parent_digest", "toe_version", "payload")}
+                raise SnapshotIntegrityError(
+                    f"{link['record_id']}: unreadable snapshot: {exc}"
+                ) from exc
+            body = {
+                k: envelope[k]
+                for k in ("schema", "stream", "revision", "parent_digest", "toe_version", "payload")
+            }
             if envelope.get("digest") != hashlib.sha256(_canonical(body)).hexdigest():
                 raise SnapshotIntegrityError(f"{link['record_id']}: envelope digest mismatch")
             if envelope.get("schema") != SNAPSHOT_SCHEMA or envelope.get("stream") != self.stream:
                 raise SnapshotIntegrityError(f"{link['record_id']}: foreign snapshot schema/stream")
-            if envelope.get("revision") != expected or envelope.get("parent_digest") != parent_digest:
+            if (
+                envelope.get("revision") != expected
+                or envelope.get("parent_digest") != parent_digest
+            ):
                 raise SnapshotIntegrityError(f"{link['record_id']}: broken parent link")
             parent_digest = envelope["digest"]
         assert envelope is not None

@@ -17,7 +17,12 @@ from pathlib import Path
 
 import pytest
 
-from toe.custody import SnapshotIntegrityError, SnapshotStore, open_theseus_custody, theseus_available
+from toe.custody import (
+    SnapshotIntegrityError,
+    SnapshotStore,
+    open_theseus_custody,
+    theseus_available,
+)
 from toe.machine import ACQUIRE_EVIDENCE, ACT, TOEMachine
 from toe.voyage import TRUE_WEIGHTS, canonical_voyage, simulated_world, voyage_problem
 from toe.world_model import MODEL_CONTRADICTED
@@ -74,8 +79,7 @@ def test_fresh_process_recovers_and_reuses(store_factory):
     machine = TOEMachine(custody=store_factory(), stream="voyage")
     ep = machine.run(voyage_problem())
     machine.learn(ep, simulated_world(ep["recommendation"]["interventions"], n=6, seed=101))
-    child = textwrap.dedent(
-        f"""
+    child = textwrap.dedent(f"""
         import json, sys
         sys.path.insert(0, {str(ROOT)!r})
         from toe.custody import open_theseus_custody
@@ -87,9 +91,10 @@ def test_fresh_process_recovers_and_reuses(store_factory):
         print(json.dumps({{"recovered": m.recovered_from, "selected": ep["decision"]["selected_action"],
                           "revision": ep["identity"]["model_revision"],
                           "replay": m.replay({ep['episode_sha256']!r})["identical"]}}))
-        """
+        """)
+    out = subprocess.run(
+        [sys.executable, "-c", child], capture_output=True, text=True, check=True, cwd=str(ROOT)
     )
-    out = subprocess.run([sys.executable, "-c", child], capture_output=True, text=True, check=True, cwd=str(ROOT))
     data = json.loads(out.stdout.strip().splitlines()[-1])
     assert data["recovered"]["recovered"] is True
     assert data["revision"] == 1
@@ -111,9 +116,17 @@ def test_tampered_snapshot_chain_fails_closed(store_factory):
         producer_version="forged",
         schema_version=1,
         kind="toe.machine.snapshot",
-        payload=json.dumps({"schema": "toe.snapshot/v1", "stream": "tamper", "revision": 3,
-                            "parent_digest": "0" * 64, "toe_version": "x", "payload": {},
-                            "digest": "0" * 64}).encode(),
+        payload=json.dumps(
+            {
+                "schema": "toe.snapshot/v1",
+                "stream": "tamper",
+                "revision": 3,
+                "parent_digest": "0" * 64,
+                "toe_version": "x",
+                "payload": {},
+                "digest": "0" * 64,
+            }
+        ).encode(),
         evidence_state="MEASURED",
     )
     custody.put_record(forged)
@@ -143,8 +156,13 @@ def test_explicit_transfer_requires_matching_shape():
     moved = m.transfer(ep["identity"]["namespace"], target, reason="owner-declared same mechanism")
     assert moved["transferred"] is True
     assert m.run(target)["decision"]["selected_action"] == "raise_z=1.0"
-    other_shape = replace(target, domain="voyage.other", structure=Structure.of([("x", "y", 2.0)]),
-                          operators=target.operators[:1], uncertain={})
+    other_shape = replace(
+        target,
+        domain="voyage.other",
+        structure=Structure.of([("x", "y", 2.0)]),
+        operators=target.operators[:1],
+        uncertain={},
+    )
     refused = m.transfer(ep["identity"]["namespace"], other_shape, reason="wrong shape")
     assert refused["transferred"] is False
 
@@ -159,5 +177,9 @@ def test_contradiction_that_cannot_be_refit_widens_uncertainty():
     assert out["assessment"]["status"] == MODEL_CONTRADICTED
     assert out["revision"] is None
     assert out["evidence_requested"] is True and out["noise_inflation"] > 1.0
-    assert m.contradictions[-1]["consequences"] == ["uncertainty increase", "new evidence request", "replanning"]
+    assert m.contradictions[-1]["consequences"] == [
+        "uncertainty increase",
+        "new evidence request",
+        "replanning",
+    ]
     assert m.negative_results[-1]["kind"] == "model_contradiction"

@@ -34,7 +34,7 @@ from toe.planning import OperatorSpec  # noqa: E402
 from toe.policy import Objective  # noqa: E402
 from toe.problem import Problem, Structure  # noqa: E402
 
-PHI = (1 + 5 ** 0.5) / 2
+PHI = (1 + 5**0.5) / 2
 HELD_OUT = 1000
 
 
@@ -86,7 +86,11 @@ def family_confounding(seeds: List[int], control: bool = False) -> Dict[str, Any
             domain="ablation.confounding",
             state={"S": 0.0, "X": 0.0, "Y": 0.0},
             structure=Structure.of([("S", "X"), ("S", "Y"), ("X", "Y")]),
-            samples={"S": [r[0] for r in rows], "X": [r[1] for r in rows], "Y": [r[2] for r in rows]},
+            samples={
+                "S": [r[0] for r in rows],
+                "X": [r[1] for r in rows],
+                "Y": [r[2] for r in rows],
+            },
             operators=(OperatorSpec("set_X", "X", (-1.0, 1.0)),),
             objective=Objective("Y"),
         )
@@ -120,7 +124,10 @@ def family_counterfactual(seeds: List[int], control: bool = False) -> Dict[str, 
             domain=f"ablation.counterfactual.{seed}",
             state={"x": x0, "z": z0, "y": y0},
             structure=Structure.of([("x", "y", wx), ("z", "y", wz)]),
-            operators=(OperatorSpec("raise_x", "x", (x0 + lift,)), OperatorSpec("raise_z", "z", (z0 + lift,))),
+            operators=(
+                OperatorSpec("raise_x", "x", (x0 + lift,)),
+                OperatorSpec("raise_z", "z", (z0 + lift,)),
+            ),
             objective=Objective("y"),
         )
         full.append(full_m.run(p)["decision"]["selected_action"].startswith(best))
@@ -144,8 +151,15 @@ def family_navigation(seeds: List[int], control: bool = False) -> Dict[str, Any]
             walls = set()
         nodes = [(x, y) for x in range(w) for y in range(h) if (x, y) not in walls]
         keep = set(nodes)
-        edges = [((x, y), (x + dx, y + dy)) for x, y in nodes for dx, dy in ((1, 0), (0, 1)) if (x + dx, y + dy) in keep]
-        study = routing_study(edges, euclidean={n: (float(n[0]), float(n[1])) for n in nodes}, tau=2.0)
+        edges = [
+            ((x, y), (x + dx, y + dy))
+            for x, y in nodes
+            for dx, dy in ((1, 0), (0, 1))
+            if (x + dx, y + dy) in keep
+        ]
+        study = routing_study(
+            edges, euclidean={n: (float(n[0]), float(n[1])) for n in nodes}, tau=2.0
+        )
         full.append(study["hyperbolic"]["delivery_rate"])
         ablated.append(study["euclidean"]["delivery_rate"])
         stretch.append(study["hyperbolic"]["mean_stretch"])
@@ -189,7 +203,11 @@ def family_learning(seeds: List[int], control: bool = False) -> Dict[str, Any]:
         m.learn(ep, rows, persist=False)
         best = "raise_x" if true_x > true_z else "raise_z"
         full.append(m.run(p)["decision"]["selected_action"].startswith(best))
-        ablated.append(TOEMachine(lens_policy="measured").run(p)["decision"]["selected_action"].startswith(best))
+        ablated.append(
+            TOEMachine(lens_policy="measured")
+            .run(p)["decision"]["selected_action"]
+            .startswith(best)
+        )
     return _arms("misspecified prior", "world-model revision + memory", full, ablated)
 
 
@@ -229,8 +247,13 @@ def family_voi(seeds: List[int], control: bool = False) -> Dict[str, Any]:
             ep = m.run(p)
         full.append(ep["decision"]["selected_action"].startswith(best))
     out = _arms("uncertain lever strength", "value-of-information gate", full, ablated)
-    out.update({"evidence_requests": asked, "requests_where_prior_choice_was_wrong": asked_needed,
-                "cost_note": "the full arm pays one 6-observation experiment per request; act-now pays none"})
+    out.update(
+        {
+            "evidence_requests": asked,
+            "requests_where_prior_choice_was_wrong": asked_needed,
+            "cost_note": "the full arm pays one 6-observation experiment per request; act-now pays none",
+        }
+    )
     return out
 
 
@@ -248,7 +271,15 @@ def family_precision(seeds: List[int], control: bool = False) -> Dict[str, Any]:
         small = float(rng.choice((1, -1)))
         p = Problem(
             domain=f"ablation.precision.{seed}",
-            structure=Structure.of([("a", "b", 1.0), ("a", "c", 1.0), ("a", "y", big), ("b", "y", small), ("c", "y", -big)]),
+            structure=Structure.of(
+                [
+                    ("a", "b", 1.0),
+                    ("a", "c", 1.0),
+                    ("a", "y", big),
+                    ("b", "y", small),
+                    ("c", "y", -big),
+                ]
+            ),
             operators=(OperatorSpec("do_a", "a", (0.0, 1.0)),),
             objective=Objective("y"),
         )
@@ -256,7 +287,9 @@ def family_precision(seeds: List[int], control: bool = False) -> Dict[str, Any]:
         ep = m.run(p)
         full.append(ep["decision"]["selected_action"] == best)
         ablated.append(ep["decision"]["policy"]["selected_action"] == best)
-    return _arms("cancellation near-ties", "adaptive precision (exact Q(phi) escalation)", full, ablated)
+    return _arms(
+        "cancellation near-ties", "adaptive precision (exact Q(phi) escalation)", full, ablated
+    )
 
 
 # -- F7 planning: futures-backed plan vs greedy -------------------------------
@@ -275,9 +308,15 @@ def family_planning(seeds: List[int], control: bool = False) -> Dict[str, Any]:
             state={"x": 0.0, "y": 0.0},
             structure=Structure.of([("x", "y", w)]),
             operators=(
-                (OperatorSpec("small", "x", (d1,), (), 1.0), OperatorSpec("big", "x", (d2,), (), 2.0))
+                (
+                    OperatorSpec("small", "x", (d1,), (), 1.0),
+                    OperatorSpec("big", "x", (d2,), (), 2.0),
+                )
                 if control  # absolute levels, no budget: a linear model gives plan == greedy
-                else (OperatorSpec("small", "x", (), (d1,), 1.0), OperatorSpec("big", "x", (), (d2,), 2.0))
+                else (
+                    OperatorSpec("small", "x", (), (d1,), 1.0),
+                    OperatorSpec("big", "x", (), (d2,), 2.0),
+                )
             ),
             objective=Objective("y"),
             horizon=2,
@@ -341,7 +380,9 @@ def main(argv: List[str] | None = None) -> int:
         for name, fn in FAMILIES.items()
     }
     try:
-        sha = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip()
+        sha = subprocess.check_output(
+            ["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True
+        ).strip()
     except Exception:
         sha = "UNAVAILABLE"
     report = {

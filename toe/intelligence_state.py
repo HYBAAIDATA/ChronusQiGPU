@@ -489,7 +489,7 @@ def _point_cloud(data: Any) -> Optional[Tuple[Any, str]]:
     return None
 
 
-#: Vietoris-Rips input bound (points). Declared, reported when applied.
+#: Exact Vietoris-Rips input bound (points); larger clouds are refused.
 MAX_VR_POINTS = 24
 
 
@@ -510,12 +510,16 @@ def build_topological(data: Any, sha: str) -> LensView:
     pts, how = cloud
     total_points = int(len(pts))
     if total_points > MAX_VR_POINTS:
-        # The Vietoris-Rips complex grows as n^4 (tetrahedra); beyond the
-        # declared bound the cloud is subsampled at an even stride and the
-        # summary says so.
-        idx = np.linspace(0, total_points - 1, MAX_VR_POINTS).round().astype(int)
-        pts = pts[np.unique(idx)]
-        how = f"{how}; even-stride subsample {len(pts)} of {total_points} points"
+        # The Vietoris-Rips complex grows as n^4 (tetrahedra). Beyond the
+        # declared exact-computation bound the lens refuses; it never
+        # approximates the homology of the full cloud by subsampling.
+        return _unavailable(
+            "topological",
+            sha,
+            "toe.topology.TopologicalAnalytics",
+            f"{total_points} points exceed the exact Vietoris-Rips bound of "
+            f"{MAX_VR_POINTS}; homology is not approximated",
+        )
     diff = pts[:, None, :] - pts[None, :, :]
     dist = np.linalg.norm(diff, axis=2)
     upper = dist[np.triu_indices(len(pts), k=1)]

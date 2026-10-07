@@ -62,7 +62,10 @@ def test_adapter_code_never_executes_as_backend(voyage):
 
 def test_shared_core_path_is_measured(voyage):
     shared = set(voyage["reuse"]["shared_by_every_domain"])
-    assert {"toe.representation.choose", "toe.intelligence_state.IntelligenceState.observe"} <= shared
+    assert {
+        "toe.representation.choose",
+        "toe.intelligence_state.IntelligenceState.observe",
+    } <= shared
     assert voyage["reuse"]["backend_callables_total"] >= 15
 
 
@@ -72,7 +75,9 @@ def test_domain_results_are_the_domain_answers(voyage):
     assert d["causal_system"]["result"]["plan"] == ["small_step+2", "small_step+2"]
     assert d["graph"]["result"]["representations"]["euclidean_greedy"] is False
     assert d["code"]["result"]["unreachable_from_source"] == ["legacy_export"]
-    assert d["scientific.recurrence"]["result"]["forecast_method"].startswith("exact integer recurrence")
+    assert d["scientific.recurrence"]["result"]["forecast_method"].startswith(
+        "exact integer recurrence"
+    )
     assert d["scientific.linear_system"]["result"]["precision"]["regime"] == "exact-required"
     assert d["temporal"]["result"]["futures_rung"] == 2
     assert d["legacy_hr"]["result"]["selected"] == "set_promotion=1.0"
@@ -83,13 +88,15 @@ def test_reasoning_core_never_imports_adapters():
         tree = ast.parse((ROOT / "toe" / name).read_text(encoding="utf-8"))
         for node in ast.walk(tree):
             if isinstance(node, ast.ImportFrom):
-                mod = (node.module or "")
+                mod = node.module or ""
                 assert "adapters" not in mod, f"{name} imports {mod}"
             elif isinstance(node, ast.Import):
                 assert not any("adapters" in a.name for a in node.names), name
 
 
-@pytest.mark.parametrize("module", CORE_MODULES + ("adapters/__init__.py", "adapters/legacy_hr.py", "voyage.py"))
+@pytest.mark.parametrize(
+    "module", CORE_MODULES + ("adapters/__init__.py", "adapters/legacy_hr.py", "voyage.py")
+)
 def test_core_and_adapters_carry_no_mining_semantics(module):
     source = (ROOT / "toe" / module).read_text(encoding="utf-8")
     assert _MINING_TERMS.findall(source) == [], module

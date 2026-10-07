@@ -74,11 +74,14 @@ def run(custody_root: Optional[Path] = None, *, rounds: int = 2) -> Dict[str, An
     key = os.urandom(32)
     factory = None
     if custody_root is not None and theseus_available():
+
         def factory(tenant_id: str):  # noqa: E306
             return open_theseus_custody(custody_root / tenant_id, hmac_key=key)
 
     def runtime():
-        cfg = TOEIntelligenceRuntimeConfig(enable_feedback=False, enable_asi=False, enable_platform=False)
+        cfg = TOEIntelligenceRuntimeConfig(
+            enable_feedback=False, enable_asi=False, enable_platform=False
+        )
         return TOEIntelligenceRuntime(config=cfg, custody_factory=factory)
 
     tenant = TenantContext("pythia-cpu-reference", mode="mining")
@@ -95,7 +98,11 @@ def run(custody_root: Optional[Path] = None, *, rounds: int = 2) -> Dict[str, An
         "recommended_window": (ep["recommendation"].get("interventions") or {}).get("window_size"),
         "futures_rung": ep["decision"]["futures_rung"],
         "estimated_weights": ep["identity"].get("estimated_from_samples"),
-        "excluded": [f["action"] + ": " + str(f["excluded_because"]) for f in ep["decision"]["policy"]["futures"] if not f["admissible"]],
+        "excluded": [
+            f["action"] + ": " + str(f["excluded_because"])
+            for f in ep["decision"]["policy"]["futures"]
+            if not f["admissible"]
+        ],
         "advisory_contains_consensus_fields": False,  # runtime refused otherwise
     }
     auth = authorize(ep, allowed=WINDOW_LEVELS, governor_max=WINDOW_LEVELS[-1])
@@ -125,7 +132,9 @@ def run(custody_root: Optional[Path] = None, *, rounds: int = 2) -> Dict[str, An
         "toe_changed_window": executed.window_size != baseline.window_size,
         "toe_within_budget": executed.latency_ms <= budget,
         "baseline_within_budget": baseline.latency_ms <= budget,
-        "throughput_ratio_toe_over_baseline": executed.hashes_per_s / baseline.hashes_per_s if baseline.hashes_per_s else None,
+        "throughput_ratio_toe_over_baseline": (
+            executed.hashes_per_s / baseline.hashes_per_s if baseline.hashes_per_s else None
+        ),
     }
     learn = rt.learn(resp.decision_id, [executed.telemetry()], tenant)
     report["learning"] = {
@@ -146,7 +155,11 @@ def run(custody_root: Optional[Path] = None, *, rounds: int = 2) -> Dict[str, An
         "recovered_from": machine.recovered_from,
         "episodes_known_after_restart": len(machine.episodes),
         "bindings_after_restart": len(machine.bindings),
-        "recommended_window_after_restart": (again.result["recommendation"].get("interventions") or {}).get("window_size") if again.ok else None,
+        "recommended_window_after_restart": (
+            (again.result["recommendation"].get("interventions") or {}).get("window_size")
+            if again.ok
+            else None
+        ),
         "replay_first_episode": machine.replay(resp.decision_id),
     }
     return report
@@ -164,7 +177,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     print(text)
     ok = (
         report.get("toe", {}).get("ok")
-        and report["execution"]["candidates_found_by_check_pow"] == report["execution"]["candidates_rechecked_valid"]
+        and report["execution"]["candidates_found_by_check_pow"]
+        == report["execution"]["candidates_rechecked_valid"]
         and report.get("learning", {}).get("ok")
     )
     return 0 if ok else 1

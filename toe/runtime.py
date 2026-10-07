@@ -39,7 +39,7 @@ import logging
 import time
 import uuid
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Mapping, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -770,12 +770,12 @@ class TOEIntelligenceRuntime:
         recorded_id = self._record_decision(tenant, decision_id, result, confidence)
 
         # 10. ASI observe-only health hint (never acts)
-        asi_hint: dict[str, Any] = {}
         if self.asi is not None:
             try:
-                asi_hint = {"capability_report": self.asi.capability_report()}
+                logger.debug(
+                    "[TOE-RUNTIME] ASI observe-only report: %s", self.asi.capability_report()
+                )
             except Exception as exc:
-                asi_hint = {"error": str(exc)}
                 logger.warning("[TOE-RUNTIME] ASI probe failed: %s", exc)
 
         # 11. Return response

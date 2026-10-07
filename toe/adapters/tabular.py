@@ -32,13 +32,20 @@ class TabularAdapter(ProblemAdapter):
             domain=str(raw.get("domain", self.name)),
             observation={c: v[:64] for c, v in samples.items()},
             state=dict(raw.get("current") or rows[-1]),
-            structure=Structure.of(raw.get("relations") or [], latent=raw.get("latent") or ()) if raw.get("relations") else None,
+            structure=(
+                Structure.of(raw.get("relations") or [], latent=raw.get("latent") or ())
+                if raw.get("relations")
+                else None
+            ),
             samples=samples,
             operators=tuple(
-                OperatorSpec(f"set_{c}", c, tuple(float(x) for x in lv)) for c, lv in sorted((raw.get("levers") or {}).items())
+                OperatorSpec(f"set_{c}", c, tuple(float(x) for x in lv))
+                for c, lv in sorted((raw.get("levers") or {}).items())
             ),
             objective=Objective(target, sense) if target else None,
-            constraints=tuple(Constraint(f"{c} {op} {b}", c, op, float(b)) for c, op, b in raw.get("limits") or ()),
+            constraints=tuple(
+                Constraint(f"{c} {op} {b}", c, op, float(b)) for c, op, b in raw.get("limits") or ()
+            ),
             query=tuple(raw["question"]) if raw.get("question") else None,
             noise_sd=dict(raw.get("noise") or {}),
             uncertain={k: tuple(v) for k, v in (raw.get("uncertain") or {}).items()},

@@ -157,7 +157,11 @@ def test_domain_label_never_changes_reasoning(machine):
         # The decision SHA binds the model identity (namespace@revision) —
         # provenance, which is label-scoped by design. Everything the
         # reasoning produced must be label-invariant.
-        return {k: v for k, v in ep["decision"]["policy"].items() if k not in ("model_id", "decision_sha256")}
+        return {
+            k: v
+            for k, v in ep["decision"]["policy"].items()
+            if k not in ("model_id", "decision_sha256")
+        }
 
     assert reasoning(a) == reasoning(b)
     assert a["status"] == b["status"] and a["meta"]["verdict"] == b["meta"]["verdict"]
@@ -198,7 +202,7 @@ def test_exact_recurrence_forecast_and_negative_case(machine):
     assert int(fc["value"]) == lucas(10 + 1000)
     assert fc["operation_count"]["matrix_multiplications"] < 25
     neg = machine.run(RecurrenceAdapter().to_problem(fixture_recurrence_negative()))
-    assert neg["forecast"]["evidence_class"] == "MODEL-DEPENDENT extrapolation"
+    assert neg["forecast"]["available"] is False  # no approximate extrapolation
 
 
 def test_measured_lens_policy_skips_lenses_that_never_matter():

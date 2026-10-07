@@ -12,7 +12,7 @@ import os
 import sys
 import unittest
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 # Ensure project root on path
 _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -20,11 +20,9 @@ if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
 from toe.runtime import (
-    RuntimeResponse,
     TenantContext,
     TOEIntelligenceRuntime,
     TOEIntelligenceRuntimeConfig,
-    RuntimeReceipt,
 )
 
 
@@ -99,7 +97,6 @@ class FakeFeedbackCore:
     def process(self, decision_id: str, outcome: Any, source_id: str | None = None,
                 decision_fn: Any = None) -> Any:
         from dataclasses import dataclass, field
-        from typing import Any
 
         processed_id = decision_id
 

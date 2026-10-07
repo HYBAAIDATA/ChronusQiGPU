@@ -80,7 +80,11 @@ def sha256(path: Path) -> str:
 
 
 def toe_version() -> str:
-    m = re.search(r'^__version__ = "([^"]+)"', (REPO / "toe" / "__init__.py").read_text(encoding="utf-8"), re.M)
+    m = re.search(
+        r'^__version__ = "([^"]+)"',
+        (REPO / "toe" / "__init__.py").read_text(encoding="utf-8"),
+        re.M,
+    )
     if not m:
         raise RuntimeError("toe/__init__.py has no __version__ literal")
     return m.group(1)
@@ -105,7 +109,9 @@ def owner_decisions() -> Dict[str, Any]:
 
 def git_sha() -> str:
     try:
-        return subprocess.check_output(["git", "-C", str(REPO), "rev-parse", "HEAD"], text=True).strip()
+        return subprocess.check_output(
+            ["git", "-C", str(REPO), "rev-parse", "HEAD"], text=True
+        ).strip()
     except (OSError, subprocess.CalledProcessError):
         return "UNAVAILABLE"
 
@@ -139,7 +145,9 @@ def stage_toe(root: Path) -> Path:
 def build_kellogg_wheel(py: Path, root: Path) -> Path:
     """KELLOGG's own staging function, KELLOGG's own pyproject: the exact
     1.0.0 wheel TOE declares, built from its owner's release boundary."""
-    spec = importlib.util.spec_from_file_location("kellogg_build", REPO / "packaging" / "kellogg-tensor" / "build_and_verify.py")
+    spec = importlib.util.spec_from_file_location(
+        "kellogg_build", REPO / "packaging" / "kellogg-tensor" / "build_and_verify.py"
+    )
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     staged = mod.stage(root / "kellogg-stage")
@@ -183,13 +191,21 @@ def inspect_wheel(wheel: Path, version: str) -> Dict[str, Any]:
     outside = [n for n in names if not (n.startswith("toe/") or n.startswith(di))]
     if outside:
         raise RuntimeError(f"wheel ships files outside the TOE boundary: {outside[:20]}")
-    leaked = [n for n in names if any(n == f"toe/{x}" or n.startswith(f"toe/{x}/") for x in EXCLUDED)]
+    leaked = [
+        n for n in names if any(n == f"toe/{x}" or n.startswith(f"toe/{x}/") for x in EXCLUDED)
+    ]
     if leaked:
         raise RuntimeError(f"wheel ships monorepo-only surfaces: {leaked}")
     required = {
-        "toe/__init__.py", "toe/py.typed", "toe/machine.py", "toe/problem.py",
-        "toe/CAPABILITY_MANIFEST.json", "toe/CLAIM_REGISTER.json", "toe/default_propagators.json",
-        "toe/adapters/__init__.py", "toe/unified/__init__.py",
+        "toe/__init__.py",
+        "toe/py.typed",
+        "toe/machine.py",
+        "toe/problem.py",
+        "toe/CAPABILITY_MANIFEST.json",
+        "toe/CLAIM_REGISTER.json",
+        "toe/default_propagators.json",
+        "toe/adapters/__init__.py",
+        "toe/unified/__init__.py",
     }
     missing = sorted(required - set(names))
     if missing:
@@ -199,8 +215,16 @@ def inspect_wheel(wheel: Path, version: str) -> Dict[str, Any]:
     bad = [n for n in names if any(p in "/" + n for p in _BAD_NAME_PARTS)]
     if bad:
         raise RuntimeError(f"wheel contains forbidden paths: {bad[:20]}")
-    manifest = {"wheel": wheel.name, "version": version, "sha256": sha256(wheel), "files": sorted(names), "file_count": len(names)}
-    (DIST / "wheel-manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
+    manifest = {
+        "wheel": wheel.name,
+        "version": version,
+        "sha256": sha256(wheel),
+        "files": sorted(names),
+        "file_count": len(names),
+    }
+    (DIST / "wheel-manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8"
+    )
     return manifest
 
 
@@ -318,7 +342,9 @@ print(json.dumps({
 """
 
 
-def installed_check(python: Path, wheels: List[Path], workdir: Path, label: str, version: str) -> Dict[str, Any]:
+def installed_check(
+    python: Path, wheels: List[Path], workdir: Path, label: str, version: str
+) -> Dict[str, Any]:
     env_dir = workdir / "venv"
     sh([python, "-m", "venv", "--clear", env_dir])
     py = _py(env_dir)
@@ -332,10 +358,26 @@ def installed_check(python: Path, wheels: List[Path], workdir: Path, label: str,
     for name in RELEASE_TESTS:
         shutil.copy2(REPO / "tests" / name, tests / name)
     res = subprocess.run(
-        [str(py), "-m", "pytest", "-q", "-p", "no:cacheprovider", "--rootdir", str(tests), str(tests)],
-        cwd=workdir, text=True, capture_output=True, env=_NO_CACHE,
+        [
+            str(py),
+            "-m",
+            "pytest",
+            "-q",
+            "-p",
+            "no:cacheprovider",
+            "--rootdir",
+            str(tests),
+            str(tests),
+        ],
+        cwd=workdir,
+        text=True,
+        capture_output=True,
+        env=_NO_CACHE,
     )
-    record["release_tests"] = {"returncode": res.returncode, "summary": res.stdout.strip().splitlines()[-1] if res.stdout else res.stderr[-400:]}
+    record["release_tests"] = {
+        "returncode": res.returncode,
+        "summary": res.stdout.strip().splitlines()[-1] if res.stdout else res.stderr[-400:],
+    }
     if res.returncode != 0:
         raise RuntimeError(f"release tests failed under {label}: {res.stdout[-2000:]}")
     record["label"] = label
@@ -361,7 +403,9 @@ def rebuild_from_sdist(tool_py: Path, sdist: Path, root: Path) -> Path:
 
 def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--python", action="append", default=[], help="extra interpreter for the installed check")
+    ap.add_argument(
+        "--python", action="append", default=[], help="extra interpreter for the installed check"
+    )
     args = ap.parse_args(argv)
     version = toe_version()
     name = dist_name()
@@ -387,11 +431,17 @@ def main(argv: Optional[List[str]] = None) -> int:
         for i, interp in enumerate(interpreters):
             work = root / f"check-{i}"
             work.mkdir()
-            records.append(installed_check(interp, [kellogg_wheel, wheel], work, f"wheel@{interp.name}", version))
+            records.append(
+                installed_check(
+                    interp, [kellogg_wheel, wheel], work, f"wheel@{interp.name}", version
+                )
+            )
         rebuilt = rebuild_from_sdist(tool, sdist, root)
         work = root / "check-sdist"
         work.mkdir()
-        sdist_record = installed_check(Path(sys.executable), [kellogg_wheel, rebuilt], work, "sdist-rebuilt-wheel", version)
+        sdist_record = installed_check(
+            Path(sys.executable), [kellogg_wheel, rebuilt], work, "sdist-rebuilt-wheel", version
+        )
         digests = {r["fixture_digest"] for r in records} | {sdist_record["fixture_digest"]}
         if len(digests) != 1:
             raise RuntimeError(f"deterministic fixture differs across installs: {digests}")
@@ -405,7 +455,9 @@ def main(argv: Optional[List[str]] = None) -> int:
             "product": "TOE",
             "import_name": "toe",
             "distribution": name,
-            "distribution_name_status": "APPROVED" if decisions["distribution_name_approved"] == name else "PROVISIONAL",
+            "distribution_name_status": (
+                "APPROVED" if decisions["distribution_name_approved"] == name else "PROVISIONAL"
+            ),
             "version": version,
             "repository": REPOSITORY,
             "git_sha": git_sha(),
@@ -428,9 +480,24 @@ def main(argv: Optional[List[str]] = None) -> int:
             "publishable": not blockers,
             "published": False,
         }
-    (DIST / "artifact-verdict.json").write_text(json.dumps(evidence, indent=2, sort_keys=True), encoding="utf-8")
-    print(json.dumps({k: v for k, v in evidence.items() if k not in ("installed_checks", "sdist_installed_check")}, indent=2, sort_keys=True))
-    print("VERIFIED (artefacts)" + ("" if not blockers else " — publication blocked: " + "; ".join(blockers)))
+    (DIST / "artifact-verdict.json").write_text(
+        json.dumps(evidence, indent=2, sort_keys=True), encoding="utf-8"
+    )
+    print(
+        json.dumps(
+            {
+                k: v
+                for k, v in evidence.items()
+                if k not in ("installed_checks", "sdist_installed_check")
+            },
+            indent=2,
+            sort_keys=True,
+        )
+    )
+    print(
+        "VERIFIED (artefacts)"
+        + ("" if not blockers else " — publication blocked: " + "; ".join(blockers))
+    )
     return 0
 
 
