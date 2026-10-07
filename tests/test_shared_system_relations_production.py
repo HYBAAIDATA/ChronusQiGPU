@@ -534,6 +534,17 @@ def test_production_organism_is_single_startup_root_for_live_shared_systems(tmp_
         assert status["shared_custody_ready"] is True
         assert status["authority_preserved"] is True
         assert all(status["bound_systems"].values())
+        chronus_startup = status["chronus_startup_gate"]
+        assert chronus_startup["passed"] is True
+        assert chronus_startup["mode"] == "independent"
+        assert chronus_startup["physical_gpu_required"] is False
+        assert chronus_startup["actual_adapter_id"] == "chronus-software-fabric"
+        assert chronus_startup["verification"] == "match"
+        assert chronus_startup["math_pipeline"]["passed"] is True
+        assert chronus_startup["qx_pipeline"]["passed"] is True
+        assert chronus_startup["hardware_claimed"] is False
+        assert {"voyage", "replay"} == set(chronus_startup["bindings"])
+
         startup = status["turing_startup_gate"]
         assert startup["passed"] is True
         assert startup["pipeline_verdict"] == "PASS"
@@ -549,6 +560,7 @@ def test_production_organism_is_single_startup_root_for_live_shared_systems(tmp_
         assert organism.salamander.port.fabric is fabric
         assert organism.al_haras.port.fabric is fabric
         assert organism.kellogg.port.fabric is fabric
+        assert organism.chronus.port.fabric is fabric
         assert organism.turing.port.fabric is fabric
         assert organism.euclid.port.fabric is fabric
 
@@ -632,6 +644,44 @@ def test_euclid_turing_specialist_is_guarded_and_handoff_enters_turing_custody(t
         assert organism.lifecycle.fabric.verify(handoffs[0]["binding_id"])["passed"] is True
     finally:
         organism.stop()
+
+
+def test_production_organism_fails_closed_when_chronus_startup_gate_fails(
+    tmp_path,
+    monkeypatch,
+):
+    from aethel.enterprise.production_organism import ProductionOrganism
+    from aethel.enterprise.system_relations import ProductionSystemRelations
+
+    class BrokenChronus:
+        last_bindings = {}
+
+        def run_startup_voyage(self):
+            raise RuntimeError("forced Chronus startup failure")
+
+        def stop(self):
+            return None
+
+    monkeypatch.setattr(
+        ProductionSystemRelations,
+        "chronus",
+        lambda self, runtime=None, store_dir=None: BrokenChronus(),
+    )
+    organism = ProductionOrganism(
+        tmp_path / "organism-chronus-startup-failure",
+        hmac_key=TEST_KEY,
+        guardian=_guardian(tmp_path),
+        allow_insecure_dev_key=True,
+    )
+
+    with pytest.raises(RuntimeError, match="CHRONUS production startup gate failed"):
+        organism.start()
+
+    status = organism.status()
+    assert status["ready"] is False
+    assert organism.lifecycle.readiness()["ready"] is False
+    assert status["chronus_startup_gate"]["passed"] is False
+    assert "forced Chronus startup failure" in status["chronus_startup_gate"]["error"]
 
 
 def test_production_organism_fails_closed_when_turing_startup_gate_fails(
