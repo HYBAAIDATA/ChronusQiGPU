@@ -52,6 +52,18 @@
       "blocking": false,
       "status": "PARTIALLY_ADDRESSED",
       "note": "Lane-local adversarial regressions now exist at toe/tests/test_learned_policy_regressions.py (15 tests: learned-policy influence, tenant isolation, durability fail-closed, ready() semantics). Repo-wide mutations.json coverage for corrected gates + zero-user-module sweep remains open for agent H."
+    },
+    {
+      "request_id": "A-005",
+      "requesting_agent": "A",
+      "owning_agent": "H",
+      "required_interface": "tests/test_organism_integration.py fixture + heal_organ callsites",
+      "reason": "F->A QC: heal_organ now requires a non-empty actor kwarg and actuation requires compose_organism(guardian=..., subscription_token_provider=...) with the authorized constructor (salamander.authority lands at F merge). tests/test_organism_integration.py::test_salamander_detects_repairs_and_verifies_bounded_fault and test_salamander_does_not_mark_unverifiable_repair_verified call heal_organ without actor and without authorized composition -> now fail closed by design. Fixtures must supply actor identity + authorized composition (or assert the refusal).",
+      "affected_files": [
+        "tests/test_organism_integration.py"
+      ],
+      "blocking": false,
+      "status": "OPEN"
     }
   ]
 }
