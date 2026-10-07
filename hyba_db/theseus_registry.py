@@ -1,0 +1,1 @@
+"""Production THESEUS registry bridge."""
