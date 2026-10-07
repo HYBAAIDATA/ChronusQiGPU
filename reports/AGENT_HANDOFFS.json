@@ -4,7 +4,7 @@
     "requesting_agent": "B",
     "owning_agent": "A",
     "required_interface": "importable euclid package for chronus.mla1517.mining.euclid_support and downstream consumers",
-    "reason": "euclid/__init__.py at frozen base 306001b0 contains literal '\\n' escape sequences in the source (line 48 inside the __all__ list), producing SyntaxError: unexpected character after line continuation character. Any 'import euclid' fails, which blocks chronus.mla1517.mining.euclid_support and tests/test_remote_hasher.py::test_execution_device_accepts_remote at collection. Verified present in HEAD:euclid/__init__.py on repair/B-mining.",
+    "reason": "euclid/__init__.py at frozen base 306001b0 contains literal '\\n' escape sequences in the source (line 48 inside the __all__ list), producing SyntaxError: unexpected character after line continuation character. Any 'import euclid' fails, which blocks chronus.mla1517.mining.euclid_support (and therefore mining_runtime / M3PythiaProductionMiningCoordinator) plus tests/test_remote_hasher.py::test_execution_device_accepts_remote and ::test_execution_hasher_binds_remote. Verified present in HEAD:euclid/__init__.py on repair/B-mining.",
     "affected_files": ["euclid/__init__.py"],
     "blocking": true,
     "status": "OPEN"
