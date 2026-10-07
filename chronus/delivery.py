@@ -21,7 +21,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Iterable, Optional, Sequence, Tuple
 
-from .virtual_igpu.abi import DeliveryMode
+from .virtual_igpu.abi import DeliveryMode, ExecutionPolicy, ProductMode
 
 
 @dataclass(frozen=True)
@@ -37,6 +37,8 @@ class ChronusDelivery:
     evidence: Tuple[str, ...]
     software_mode_available: bool = False
     accelerator_mode_available: bool = False
+    product_modes: Tuple[str, ...] = ()
+    # Compatibility: backend-selection policy vocabulary retained for existing callers.
     execution_modes: Tuple[str, ...] = ()
     accelerator_reason: str = ""
 
@@ -54,6 +56,7 @@ class ChronusDelivery:
             "evidence": list(self.evidence),
             "software_mode_available": self.software_mode_available,
             "accelerator_mode_available": self.accelerator_mode_available,
+            "product_modes": list(self.product_modes),
             "execution_modes": list(self.execution_modes),
             "accelerator_reason": self.accelerator_reason,
         }
@@ -118,7 +121,7 @@ def probe_embedded(
         software_available = bool(attestation.available and manifest.available)
         evidence.append("chronus.virtual_igpu.adapters.CPUEmulatorAdapter")
         if software_available:
-            capabilities.add("mode:standalone_software")
+            capabilities.add(f"product_mode:{ProductMode.NATIVE_CHRONUS_GPU.value}")
             capabilities.update(
                 f"software:{operation}" for operation in manifest.operations
             )
@@ -154,7 +157,7 @@ def probe_embedded(
 
     accelerator_available = bool(devices)
     if accelerator_available:
-        capabilities.add("mode:accelerator_enhanced")
+        capabilities.add(f"product_mode:{ProductMode.HOST_GPU_AUGMENTATION.value}")
     available = software_available or accelerator_available
     reason = "" if available else "; ".join(unavailable_reasons)
     accelerator_reason = (
@@ -162,11 +165,14 @@ def probe_embedded(
         if accelerator_available
         else ("; ".join(unavailable_reasons) or "no physical accelerator observed")
     )
-    modes = []
+    product_modes = []
+    execution_modes = []
     if software_available:
-        modes.append("standalone_software")
+        product_modes.append(ProductMode.NATIVE_CHRONUS_GPU.value)
+        execution_modes.append(ExecutionPolicy.STANDALONE_SOFTWARE.value)
     if accelerator_available:
-        modes.append("preferred_accelerator")
+        product_modes.append(ProductMode.HOST_GPU_AUGMENTATION.value)
+        execution_modes.append(ExecutionPolicy.PREFERRED_ACCELERATOR.value)
     return ChronusDelivery(
         mode=DeliveryMode.EMBEDDED,
         available=available,
@@ -179,7 +185,8 @@ def probe_embedded(
         evidence=tuple(evidence),
         software_mode_available=software_available,
         accelerator_mode_available=accelerator_available,
-        execution_modes=tuple(modes),
+        product_modes=tuple(product_modes),
+        execution_modes=tuple(execution_modes),
         accelerator_reason=accelerator_reason,
     )
 
@@ -214,6 +221,7 @@ def probe_cloud_instance(
             evidence=("chronus.mla1517.remote_gpu.probe_first_reachable",),
             software_mode_available=False,
             accelerator_mode_available=False,
+            product_modes=(),
             execution_modes=(),
             accelerator_reason=str(reason or "no reachable Chronus cloud instance"),
         )
@@ -254,7 +262,8 @@ def probe_cloud_instance(
         ),
         software_mode_available=False,
         accelerator_mode_available=True,
-        execution_modes=("preferred_accelerator",),
+        product_modes=(ProductMode.HOST_GPU_AUGMENTATION.value,),
+        execution_modes=(ExecutionPolicy.PREFERRED_ACCELERATOR.value,),
         accelerator_reason="",
     )
 
