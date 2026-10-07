@@ -1,14 +1,14 @@
-"""Chronus — HYBA's canonical iGPU offering.
+"""Chronus — HYBA's software-defined heterogeneous execution product.
 
 Chronus is the heterogeneous execution and acceleration plane (Virtual iGPU):
 measured device discovery, resident execution, state memory, kernel dispatch,
 telemetry, routing and attestation. TURING remains the independent VQC
 authority, THESEUS owns durable custody and OVID owns representation transforms.
 
-Hardware probing stays lazy: importing :mod:`chronus` never requires OpenCL,
-CUDA, Metal or a physical accelerator. Public runtime objects are loaded only
-when requested, so control-plane and audit tooling remain usable on CPU-only
-hosts.
+CHRONUS has two owner-approved product modes: standalone software execution,
+which requires no physical GPU, and accelerator-enhanced execution, which binds
+to a certified device when present. Hardware probing stays lazy: importing
+:mod:`chronus` never requires OpenCL, CUDA, Metal or a physical accelerator.
 """
 from __future__ import annotations
 
@@ -95,6 +95,10 @@ _EXPORTS = {
     "TensorDeviceProbe": ("chronus.tensor_compute", "TensorDeviceProbe"),
     "get_tensor_runtime": ("chronus.tensor_compute", "get_tensor_runtime"),
     "probe_tensor": ("chronus.tensor_compute", "probe_tensor"),
+    "ChronusProductionEvidence": ("chronus.readiness", "CoreProductionEvidence"),
+    "ChronusEvidenceRef": ("chronus.readiness", "EvidenceRef"),
+    "ChronusAcceleratorCertification": ("chronus.readiness", "AcceleratorCertification"),
+    "chronus_production_readiness": ("chronus.readiness", "production_readiness"),
 }
 
 __all__ = sorted(_EXPORTS)
