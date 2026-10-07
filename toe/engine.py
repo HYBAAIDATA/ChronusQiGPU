@@ -2334,7 +2334,12 @@ class PredictiveEngine:
             }
         except Exception as e:
             logging.error(f"Error assessing time sensitivity: {e}")
-            return {"sensitivity_level": "moderate", "time_horizon": 1.0}
+            return {
+                "sensitivity_level": "unmeasured",
+                "time_horizon": None,
+                "energy_uncertainty": None,
+                "uncertainty_bound": hbar / 2,
+            }
 
     def _factor_observables(self, indicators: dict) -> dict:
         """One diagonal Hermitian observable per indicator factor group.
@@ -2469,13 +2474,24 @@ class PredictiveEngine:
             raise
 
     def _generate_recommendations(self, indicators: dict) -> dict:
-        """Generate personalized retention recommendations"""
+        """Recommendation surface = measured factor attribution, not canned advice.
+
+        The engine computes *which factor groups drive the measured risk*
+        via ``causal_factor_ranking`` (normalized Born-weighted ⟨A_f⟩
+        magnitudes). It does not generate prescriptive action text —
+        invented advice strings would be demo content, not computed
+        output. Consumers needing action text map the ranked measured
+        factors themselves.
+        """
         try:
             risk_factors = self._identify_key_factors(indicators)
             return {
-                "immediate_actions": self._get_immediate_actions(risk_factors),
-                "long_term_strategies": self._get_long_term_strategies(risk_factors),
-                "manager_recommendations": self._get_manager_recommendations(risk_factors),
+                "basis": "causal_factor_ranking",
+                "measured_risk_factors": [
+                    {"factor": name, "attribution_weight": float(w)}
+                    for name, w in risk_factors
+                ],
+                "prescriptive_text": "not_computed",
             }
         except Exception as e:
             logging.error(f"Error generating recommendations: {e}")
@@ -2776,72 +2792,6 @@ class PredictiveEngine:
         except Exception as e:
             logging.error(f"Error calculating factor weights: {e}")
             raise
-
-    def _get_immediate_actions(self, risk_factors: list) -> list:
-        """Generates immediate retention actions based on quantum state analysis"""
-        try:
-            actions = []
-            for factor, weight in risk_factors:
-                if "performance" in str(factor):
-                    actions.append("Schedule performance review meeting")
-                elif "behavioral" in str(factor):
-                    actions.append("Check-in with manager regarding workload")
-                elif "engagement" in str(factor):
-                    actions.append("Conduct engagement survey follow-up")
-                elif "career" in str(factor):
-                    actions.append("Discuss career development opportunities")
-                elif "external" in str(factor):
-                    actions.append("Review compensation competitiveness")
-            if not actions:
-                actions = ["Check-in with manager", "Review project workload"]
-            return actions[:3]
-        except Exception as e:
-            logging.error(f"Error generating immediate actions: {e}")
-            return ["Check-in with manager", "Review project workload"]
-
-    def _get_long_term_strategies(self, risk_factors: list) -> list:
-        """Generates long-term retention strategies based on quantum trajectory analysis"""
-        try:
-            strategies = []
-            for factor, weight in risk_factors:
-                if "performance" in str(factor):
-                    strategies.append("Implement performance improvement plan")
-                elif "behavioral" in str(factor):
-                    strategies.append("Flexible work arrangement evaluation")
-                elif "engagement" in str(factor):
-                    strategies.append("Team building and culture initiatives")
-                elif "career" in str(factor):
-                    strategies.append("Career development planning and mentorship")
-                elif "external" in str(factor):
-                    strategies.append("Compensation benchmarking review")
-            if not strategies:
-                strategies = ["Career development planning", "Skill development workshop"]
-            return strategies[:3]
-        except Exception as e:
-            logging.error(f"Error generating long-term strategies: {e}")
-            return ["Career development planning", "Skill development workshop"]
-
-    def _get_manager_recommendations(self, risk_factors: list) -> list:
-        """Generates recommendations for managers based on quantum measurement insights"""
-        try:
-            recommendations = []
-            for factor, weight in risk_factors:
-                if "performance" in str(factor):
-                    recommendations.append("Set clear performance goals and milestones")
-                elif "behavioral" in str(factor):
-                    recommendations.append("Monitor workload and work-life balance")
-                elif "engagement" in str(factor):
-                    recommendations.append("Increase frequency of 1-on-1 meetings")
-                elif "career" in str(factor):
-                    recommendations.append("Discuss career aspirations and growth path")
-                elif "external" in str(factor):
-                    recommendations.append("Review compensation and benefits package")
-            if not recommendations:
-                recommendations = ["Schedule meeting with employee", "Ask about workload"]
-            return recommendations[:3]
-        except Exception as e:
-            logging.error(f"Error generating manager recommendations: {e}")
-            return ["Schedule meeting with employee", "Ask about workload"]
 
     def _predict_with_model(self, model, indicators: dict) -> dict:
         """Score via one channel's Born-overlap discrimination."""
