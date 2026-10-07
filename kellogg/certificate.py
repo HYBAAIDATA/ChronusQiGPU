@@ -189,7 +189,40 @@ def certify(
     )
 
 
+def _is_sha256_hex(value: Any) -> bool:
+    if not isinstance(value, str) or len(value) != 64:
+        return False
+    try:
+        int(value, 16)
+    except ValueError:
+        return False
+    return True
+
+
+def _validate_certificate_shape(cert: TensorCertificate) -> None:
+    for name, value in (("op", cert.op), ("machine_type", cert.machine_type), ("version", cert.version)):
+        if not isinstance(value, str) or not value:
+            raise CertificateError(f"certificate {name} must be a non-empty string")
+    if cert.field not in FIELDS:
+        raise CertificateError(f"certificate field {cert.field!r} is not declared")
+    for name, value in (
+        ("input_boundary", cert.input_boundary),
+        ("output_boundary", cert.output_boundary),
+        ("digest", cert.digest),
+    ):
+        if not _is_sha256_hex(value):
+            raise CertificateError(f"certificate {name} must be a SHA-256 hex digest")
+    if not isinstance(cert.parameters, Mapping) or not isinstance(cert.invariants, Mapping):
+        raise CertificateError("certificate parameters and invariants must be mappings")
+    # CEX is also the semantic type gate: exact records cannot smuggle floats
+    # or untagged values into a certificate that happens to have a matching digest.
+    cex(cert.unsigned())
+
+
 def verify_certificate(cert: TensorCertificate) -> bool:
+    if not isinstance(cert, TensorCertificate):
+        raise CertificateError("certificate must be a TensorCertificate")
+    _validate_certificate_shape(cert)
     expected = hashlib.sha256(_DOMAIN + cex(cert.unsigned())).hexdigest()
     if expected != cert.digest:
         raise CertificateError(f"certificate {cert.op} digest mismatch")
@@ -197,20 +230,43 @@ def verify_certificate(cert: TensorCertificate) -> bool:
 
 
 def certificate_from_dict(row: Mapping[str, Any]) -> TensorCertificate:
-    """Rebuild from the JSON form; exact tags stay tagged."""
+    """Rebuild a strict canonical certificate from its JSON representation."""
+    if not isinstance(row, Mapping):
+        raise CertificateError("certificate representation must be a mapping")
+    allowed = {
+        "schema",
+        "op",
+        "field",
+        "machine_type",
+        "input_boundary",
+        "output_boundary",
+        "parameters",
+        "invariants",
+        "version",
+        "digest",
+    }
+    unknown = sorted(set(row) - allowed)
+    if unknown:
+        raise CertificateError(f"certificate has unknown field(s): {unknown}")
+    missing = sorted(allowed - set(row))
+    if missing:
+        raise CertificateError(f"certificate is missing field(s): {missing}")
     if row.get("schema") != CERTIFICATE_SCHEMA:
         raise CertificateError("unsupported certificate schema")
-    cert = TensorCertificate(
-        op=row["op"],
-        field=row["field"],
-        machine_type=row["machine_type"],
-        input_boundary=row["input_boundary"],
-        output_boundary=row["output_boundary"],
-        parameters=row["parameters"],
-        invariants=row["invariants"],
-        version=row["version"],
-        digest=row["digest"],
-    )
+    try:
+        cert = TensorCertificate(
+            op=row["op"],
+            field=row["field"],
+            machine_type=row["machine_type"],
+            input_boundary=row["input_boundary"],
+            output_boundary=row["output_boundary"],
+            parameters=row["parameters"],
+            invariants=row["invariants"],
+            version=row["version"],
+            digest=row["digest"],
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise CertificateError("malformed certificate representation") from exc
     verify_certificate(cert)
     return cert
 
@@ -275,8 +331,14 @@ def merkle_proof(leaves: Sequence[str], index: int) -> List[Tuple[str, str]]:
 
 
 def verify_merkle_proof(leaf: str, path: Sequence[Tuple[str, str]], root: str) -> bool:
+    if not _is_sha256_hex(leaf) or not _is_sha256_hex(root):
+        raise CertificateError("Merkle leaf and root must be SHA-256 hex digests")
     node = hashlib.sha256(_LEAF + bytes.fromhex(leaf)).digest()
     for side, sibling in path:
+        if side not in ("L", "R"):
+            raise CertificateError(f"invalid Merkle proof side {side!r}")
+        if not _is_sha256_hex(sibling):
+            raise CertificateError("Merkle proof sibling must be a SHA-256 hex digest")
         s = bytes.fromhex(sibling)
         node = hashlib.sha256(_NODE + (node + s if side == "R" else s + node)).digest()
     return node.hex() == root

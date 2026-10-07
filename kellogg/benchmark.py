@@ -22,6 +22,7 @@ import random
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
 from fractions import Fraction
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence
@@ -85,6 +86,7 @@ def provenance() -> Dict[str, Any]:
 
     return {
         "commit": commit_id(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "kellogg_version": kellogg.__version__,
         "hardware": {
             "cpu": platform.processor() or os.environ.get("PROCESSOR_IDENTIFIER") or "UNAVAILABLE",
@@ -1314,10 +1316,12 @@ def run(benchmark_id: str, *, quick: bool = False, prov: Optional[Dict[str, Any]
         "benchmark_id": benchmark_id,
         "axis": axis,
         "commit": prov["commit"],
+        "timestamp": prov["timestamp"],
         "kellogg_version": prov["kellogg_version"],
         "hardware": prov["hardware"],
         "software": prov["software"],
         "configuration": config,
+        "parameters": config,
         "measurement": measurement,
         "classification": "MEASURED",
         "passed": out["passed"],
