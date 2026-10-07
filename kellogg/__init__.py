@@ -198,7 +198,7 @@ from .attest import (
     verify_version,
 )
 
-__version__ = "4.0.0"
+__version__ = "1.0.0"
 
 # Lazy surfaces: tensor_ml requires numpy; exact_field.sqrt_f is kept out
 # of the training path by contract (tests assert it never enters

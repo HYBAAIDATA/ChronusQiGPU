@@ -131,4 +131,6 @@ and numpy, and it can be installed and used on its own.
 
 ## Licence
 
-MIT.
+MIT. Copyright (c) 2026 HYBA Software Limited.
+
+Supported Python versions: 3.11, 3.12, 3.13 and 3.14.

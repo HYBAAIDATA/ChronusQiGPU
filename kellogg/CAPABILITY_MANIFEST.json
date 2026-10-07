@@ -1,6 +1,6 @@
 {
   "schema": "kellogg.tensor-capabilities/v2",
-  "version": "4.0.0",
+  "version": "1.0.0",
   "canonical_owner": "kellogg",
   "distribution": "kellogg-tensor",
   "hard_dependencies": ["numpy"],
