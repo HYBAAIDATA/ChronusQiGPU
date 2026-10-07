@@ -52,4 +52,10 @@ def test_prepare_hyba_gpu_software_ready():
     assert report.ok, report.as_dict()
     data = assert_hyba_gpu_software_ready(report)
     assert data["ok"] is True
+    assert data["virtual_igpu"]["mode"] == "independent"
+    assert data["virtual_igpu"]["physical_gpu_required"] is False
+    assert data["virtual_igpu"]["actual_adapter_id"] == "chronus-software-fabric"
+    assert data["virtual_igpu"]["verification"] == "match"
+    assert data["fabric"]["synthetic_devices"] is False
+    assert data["fabric"]["independent"]["physical_gpu_required"] is False
     assert "live_opencl_device_measurement" in data["gaps"]
