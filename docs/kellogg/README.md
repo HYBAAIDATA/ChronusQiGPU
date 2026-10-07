@@ -44,7 +44,10 @@ custody or a receipt:
   `unverified`. Nothing fabricates a pass.
 - **Tolerances follow the declaration.** `bit_identical` ops (kron, the
   lifted elementwise family) require exact equality; reassociating ops
-  (matmul) verify within `REASSOCIATION_RTOL = 1e-12`.
+  (matmul, reduce_sum) verify within the dtype-aware reassociation bound
+  `2*gamma_k*sum|terms|` (`gamma_k = k*u/(1-k*u)`, `u` the operand dtype's
+  unit roundoff), floored at `REASSOCIATION_RTOL = 1e-12`. Integer operands
+  get the floor only. The applied limit is the verdict's `tolerance`.
 
 Each `tensor.execute/1` record and its `tensor.receipt/1` receipt carry a
 `verification` block: `recomputed`, `method`, `verdict`, `max_residual`,

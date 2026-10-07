@@ -38,10 +38,17 @@ against the master workflow's drift list:
 
 from __future__ import annotations
 
+import json
+import os
 import re
 import sys
+import tempfile
+import threading
 import unittest
+from http.server import ThreadingHTTPServer
 from pathlib import Path
+from urllib.error import HTTPError
+from urllib.request import Request, urlopen
 
 import yaml
 
@@ -58,6 +65,7 @@ GRAPH_DOC = REPO_ROOT / "docs" / "DEPENDENCY_GRAPH.yaml"
 TAXONOMY_DOC = REPO_ROOT / "docs" / "ERROR_TAXONOMY.yaml"
 CONTROL_API = REPO_ROOT / "chronus" / "mla1517_platform" / "python" / "control_api.py"
 AL_HARAS_DIR = REPO_ROOT / "al_haras"
+FABRIC_PATH = REPO_ROOT / "governance" / "service_fabric.yaml"
 
 _FIFTEEN_FIELDS = {
     "capability",
@@ -424,6 +432,199 @@ class TestSilentFallbacks(unittest.TestCase):
             if str(rec["interface"]).startswith("HTTP"):
                 with self.subTest(api_id=api_id):
                     self.assertIn("X-Request-Id", rec["observability"])
+
+
+# ---------------------------------------------------------------------------
+# Live HTTP surface — the constitution is exercised over the wire, not just
+# declared.  Same harness as tests/test_production_api_contract.py.
+# ---------------------------------------------------------------------------
+
+_SUB_KEYRING = {"test": "k" * 32}
+
+
+class ConstitutionWireTests(unittest.TestCase):
+    """The error envelope, correlation envelope, dependency health and
+    idempotency contract exercised against a live server."""
+
+    def setUp(self) -> None:
+        self.tempdir = tempfile.TemporaryDirectory()
+        root = Path(self.tempdir.name)
+        (root / "index.html").write_text("<html>pythia</html>", encoding="utf-8")
+        self.env_patch = {
+            "MLA1517_STRATUM_USER": "constitution.wire",
+            "MLA1517_STRATUM_PASSWORD": "x",
+            "MLA1517_VIABTC_ENDPOINT": "127.0.0.1:9",
+            "PYTHIA_POOL_PROFILE": "viabtc",
+            "PYTHIA_AUTOSTART_WORKERS": "0",
+            "PYTHIA_BOOT_AUDIT": str(root / "BOOT_AUDIT.log"),
+            "PYTHIA_BOOT_LOCK": str(root / "pythia-main.lock"),
+            "PYTHIA_WORKER_HEARTBEAT_DIR": str(root / "hb"),
+            "PYTHIA_ALLOW_UNAUTHENTICATED_CONTROL": "1",
+            "AL_HARAS_SUBSCRIPTION_KEYS": json.dumps(_SUB_KEYRING),
+            "AL_HARAS_DATA_DIR": str(root / "al-haras"),
+        }
+        self._saved = {k: os.environ.get(k) for k in self.env_patch}
+        os.environ.update(self.env_patch)
+        self.addCleanup(self._restore_env)
+        self.addCleanup(self.tempdir.cleanup)
+        self.addCleanup(self._reset_control_plane)
+        self._reset_control_plane()
+
+        import control_api
+
+        self.api = control_api
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), control_api._Handler)
+        self.server.web_root = root
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+        self.addCleanup(self._close_server)
+        self.port = self.server.server_address[1]
+
+    def _restore_env(self) -> None:
+        for key, value in self._saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+
+    def _reset_control_plane(self) -> None:
+        api = self.api if hasattr(self, "api") else __import__("control_api")
+        if api._CONTROL is not None:
+            api._CONTROL.shutdown()
+        if api._BOOT_LOCK is not None:
+            api._BOOT_LOCK.release()
+        api._CONTROL = None
+        api._AUDIT = None
+        api._BOOT_LOCK = None
+        api._LOCK_HELD = False
+        api._TENSOR_RUNTIME = None
+        api._TOE_BRIDGE = None
+        if api.pythia_guardian_api is not None:
+            api.pythia_guardian_api.cache_clear()
+
+    def _close_server(self) -> None:
+        self.server.shutdown()
+        self.thread.join(timeout=5)
+        self.server.server_close()
+
+    def _request(self, method, path, body=None, headers=None, timeout=10):
+        url = f"http://127.0.0.1:{self.port}{path}"
+        data = json.dumps(body).encode("utf-8") if body is not None else None
+        request = Request(
+            url,
+            data=data,
+            method=method,
+            headers={"Content-Type": "application/json", **(headers or {})},
+        )
+        try:
+            with urlopen(request, timeout=timeout) as response:
+                raw = response.read()
+                ctype = response.headers.get("Content-Type", "")
+                parsed = (
+                    json.loads(raw)
+                    if "application/json" in ctype
+                    else raw.decode("utf-8", "replace")
+                )
+                return response.status, parsed, dict(response.headers)
+        except HTTPError as exc:
+            raw = exc.read()
+            try:
+                parsed = json.loads(raw)
+            except ValueError:
+                parsed = raw.decode("utf-8", "replace")
+            return exc.code, parsed, dict(exc.headers)
+
+    def test_every_error_body_carries_a_declared_failure_class(self):
+        classes = set(_load(FABRIC_PATH)["failure_classes"])
+        voyages = [
+            ("GET", "/api/v1/no-such-route", None, None),  # 404
+            ("POST", "/api/v1/mining/stop", {}, None),  # guardian deny (no creds)
+            ("POST", "/api/v1/security/evaluate", {"x": 1}, None),  # guardian verdict w/o creds
+            ("PUT", "/api/v1/config", {"bogus": {}}, None),  # invalid request
+            ("DELETE", "/api/v1/healthz", None, None),  # 405
+        ]
+        for method, path, body, headers in voyages:
+            status, parsed, _ = self._request(method, path, body=body, headers=headers)
+            self.assertGreaterEqual(status, 400, f"{method} {path} expected error, got {status}")
+            self.assertIsInstance(parsed, dict, f"{method} {path} non-JSON error body")
+            self.assertIn(
+                parsed.get("failure_class"),
+                classes,
+                f"{method} {path} -> {status} body {parsed} lacks a declared failure_class",
+            )
+
+    def test_correlation_envelope_is_complete(self):
+        status, _body, headers = self._request(
+            "GET",
+            "/api/v1/healthz",
+            headers={
+                "X-Request-Id": "req-1",
+                "X-Correlation-Id": "corr-9",
+                "X-Causation-Id": "cause-7",
+            },
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(headers.get("X-Request-Id"), "req-1")
+        self.assertEqual(headers.get("X-Correlation-Id"), "corr-9")
+        self.assertEqual(headers.get("X-Causation-Id"), "cause-7")
+
+        # Malformed correlation ids are replaced, never trusted.
+        status, _body, headers = self._request(
+            "GET", "/api/v1/healthz", headers={"X-Correlation-Id": "bad id"}
+        )
+        self.assertEqual(status, 200)
+        corr = headers.get("X-Correlation-Id", "")
+        self.assertNotEqual(corr, "bad id")
+        self.assertTrue(corr)
+
+    def test_readiness_reports_dependency_health(self):
+        status, body, _ = self._request("GET", "/api/v1/readyz")
+        self.assertIn(status, (200, 503))
+        components = body["components"]
+        for name in (
+            "identity",
+            "boot_audit",
+            "worker_heartbeat_dir",
+            "guardian",
+            "runtime_config",
+            "stratum",
+            "remote_opencl",
+            "custody",
+        ):
+            self.assertIn(name, components, f"readiness lacks component {name}")
+            self.assertIn("state", components[name], name)
+        self.assertEqual(components["stratum"]["state"], "disconnected")
+        self.assertEqual(components["remote_opencl"]["state"], "not_configured")
+        self.assertEqual(components["custody"]["state"], "not_mounted")
+
+    def test_idempotency_key_replays_without_reexecution(self):
+        key = "idem-constitution-1"
+        stop = {"X-Idempotency-Key": "", "Idempotency-Key": key}
+        first_status, first, _ = self._request(
+            "POST", "/api/v1/agentic/stop", body={}, headers=stop
+        )
+        second_status, second, _ = self._request(
+            "POST", "/api/v1/agentic/stop", body={}, headers=stop
+        )
+        self.assertEqual(first_status, second_status)
+        self.assertIsInstance(first, dict)
+        self.assertIsInstance(second, dict)
+        # The replay returns the recorded outcome plus the replay marker.
+        self.assertTrue(second.get("idempotent_replay"), second)
+        self.assertNotIn("idempotent_replay", first)
+        self.assertEqual(
+            {k: v for k, v in first.items() if k != "idempotent_replay"},
+            {k: v for k, v in second.items() if k != "idempotent_replay"},
+        )
+
+    def test_metrics_report_fabric_counters(self):
+        self._request("GET", "/api/v1/healthz")
+        self._request("GET", "/api/v1/no-such-route")
+        status, body, _ = self._request("GET", "/api/v1/metrics")
+        self.assertEqual(status, 200)
+        text = body if isinstance(body, str) else body.decode("utf-8", "replace")
+        self.assertIn("pythia_control_requests_total", text)
+        self.assertIn('pythia_control_failure_class_total{failure_class="NOT_FOUND"}', text)
 
 
 if __name__ == "__main__":

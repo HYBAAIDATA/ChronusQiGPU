@@ -14,8 +14,16 @@ onto their canonical implementations in this repository.  It must run before
 any intelligence module is imported.
 """
 
+import os
 import sys
 from pathlib import Path
+
+try:
+    import pytest
+except (
+    ImportError
+):  # only pytest loads a conftest; keeps DS02 from reading it as a runtime dependency
+    pytest = None
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _PLATFORM = _REPO_ROOT / "chronus/mla1517_platform" / "python"
@@ -52,3 +60,20 @@ while _INTELLIGENCE_DIR in sys.path:
 import hyba_compat  # noqa: E402
 
 hyba_compat.install()
+
+
+if pytest is not None:
+
+    @pytest.fixture(autouse=True)
+    def _hermetic_runtime_config(monkeypatch, tmp_path):
+        """Keep the control plane off the repo's real ``data/runtime_config.json``.
+
+        ``runtime_config.config_path()`` falls back to that file when
+        ``PYTHIA_RUNTIME_CONFIG`` is unset, so any test that drives the control API
+        or the coordinator without overriding it persisted its config there and
+        changed what every later test (and run) observed, e.g. a leaked 3 H/s
+        hashrate target throttling an unrelated mining voyage. A test or operator
+        that sets the variable itself still wins.
+        """
+        if not os.environ.get("PYTHIA_RUNTIME_CONFIG", "").strip():
+            monkeypatch.setenv("PYTHIA_RUNTIME_CONFIG", str(tmp_path / "runtime_config.json"))
