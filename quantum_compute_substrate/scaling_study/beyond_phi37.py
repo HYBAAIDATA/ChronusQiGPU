@@ -1,7 +1,8 @@
 """Systematic scaling study: log-log fit for time and error vs. Hilbert dim.
 
 Claim lane: MATHEMATICAL_QUANTUM (SUBSTRATE-AGNOSTIC). All numbers are measured wall-clock time
-on the host CPU. No hardware-quantum claim is made.
+on the host CPU (minimum per-application time across repeated rounds, the standard estimator
+that removes scheduling/GC noise). No hardware-quantum claim is made.
 """
 
 from __future__ import annotations
@@ -71,14 +72,23 @@ class ScalingStudy:
             x = rng.standard_normal(d) + 1j * rng.standard_normal(d)
             x = x.astype(np.complex128)
             x /= np.linalg.norm(x)
-            t0 = time.perf_counter()
-            # D x = 2 <psi,x> psi - x
-            for _ in range(3):
-                inner = np.vdot(psi, x)
-                x = 2.0 * inner * psi - x
-            elapsed = time.perf_counter() - t0
-            err = abs(float(np.linalg.norm(x)) - 1.0)
-            times.append(max(elapsed, 1e-9))
+            # D x = 2 <psi,x> psi - x (a unitary reflection, norm-preserving).
+            # A single 3-iteration burst is microseconds at small dims, so the
+            # wall-clock signal drowns in timer/scheduling noise. Repeat the
+            # application enough times to exceed timer resolution and keep the
+            # fastest round's per-application time.
+            inner_reps = max(16, (1 << 14) // max(d, 1))
+            best = math.inf
+            y = x
+            for _round in range(7):
+                y = x.copy()
+                t0 = time.perf_counter()
+                for _ in range(inner_reps):
+                    inner = np.vdot(psi, y)
+                    y = 2.0 * inner * psi - y
+                best = min(best, (time.perf_counter() - t0) / inner_reps)
+            err = abs(float(np.linalg.norm(y)) - 1.0)
+            times.append(max(best, 1e-9))
             errors.append(max(err, 1e-16))
         exp_t, r2_t = _loglog_fit([float(d) for d in dims], times)
         exp_e, r2_e = _loglog_fit([float(d) for d in dims], errors)

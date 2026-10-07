@@ -87,7 +87,7 @@ class PerformanceValidation:
 
         validation["Grover_Search"] = {
             "target": f"{self.TARGETS.quantum_speedup_target}x classical",
-            "measured": f"{grover.get('speedup_ratio', 0):.1f}x",
+            "computed_iteration_ratio": f"{grover.get('speedup_ratio', 0):.1f}x",
             "passed": grover.get("speedup_ratio", 0) >= self.TARGETS.quantum_speedup_target,
             "found": grover.get("found", False),
         }

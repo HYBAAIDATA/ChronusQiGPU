@@ -1,0 +1,85 @@
+[
+  {
+    "request_id": "D-001",
+    "requesting_agent": "D",
+    "owning_agent": "A",
+    "required_interface": "the `euclid` package must import cleanly so downstream lanes (aethel.enterprise.production_organism, organism/shared-system tests) can construct EuclidRuntime",
+    "reason": "euclid/__init__.py line 48 contains a literal `\\n` embedded inside the __all__ list (`\"EuclidEngineAdapter\",\\n    \"ProgramSearchEngine\"`), producing `SyntaxError: unexpected character after line continuation character` on `import euclid`. Discovered during Agent D lane verification: aethel.enterprise.production_organism line 206 (`from euclid import EuclidRuntime`) fails, cascading to 6 test failures (tests/test_shared_system_relations_production.py x4, tests/test_production_organism_shared_triad.py, plus collection error in tests/test_organism_integration.py).",
+    "affected_files": [
+      "euclid/__init__.py",
+      "aethel/enterprise/production_organism.py",
+      "tests/test_shared_system_relations_production.py",
+      "tests/test_production_organism_shared_triad.py",
+      "tests/test_organism_integration.py"
+    ],
+    "blocking": true,
+    "status": "OPEN"
+  },
+  {
+    "request_id": "D-002",
+    "requesting_agent": "D",
+    "owning_agent": "H",
+    "required_interface": "kellogg v2 attestation envelope: `zeckendorf` field is an int (11-bit token from kellogg/scales.py::zeckendorf_11d); `cassini` is the list field",
+    "reason": "tests/test_kellogg_production_evidence_boundary.py lines ~82-85 corrupts the envelope with `corrupt_zeckendorf[\"zeckendorf\"] = list(corrupt_zeckendorf[\"zeckendorf\"]) + [1]` — TypeError: 'int' object is not iterable against the shipped schema. Suggested one-line fix: `corrupt_zeckendorf[\"zeckendorf\"] = int(corrupt_zeckendorf[\"zeckendorf\"]) + 1` (or `^= 1`); the digest-binding tamper check still fires. Test asserted list semantics the implementation never had — implementation is correct, test is stale.",
+    "affected_files": [
+      "tests/test_kellogg_production_evidence_boundary.py",
+      "kellogg/attest.py",
+      "kellogg/scales.py"
+    ],
+    "blocking": false,
+    "status": "OPEN"
+  },
+  {
+    "request_id": "D-003",
+    "requesting_agent": "D",
+    "owning_agent": "H",
+    "required_interface": "claims-gate vs docs/ disclaimer wording",
+    "reason": "tests/test_sequential_contracts.py::test_claims_registry_loads_and_evaluates_clean fails: the claims registry flags PROHIBITED `10 EH/s` in docs/FAULT_TOLERANT_QUANTUM_ASIC.md line 5. The doc uses the string inside a disclaimer ('the capacity model and the 10 EH/s certificates are hashrate claims'), but the gate matches the literal. Either the gate needs disclaimer/context handling or the doc needs rewording that avoids the prohibited literal.",
+    "affected_files": [
+      "docs/FAULT_TOLERANT_QUANTUM_ASIC.md",
+      "tests/test_sequential_contracts.py",
+      "claims.yaml"
+    ],
+    "blocking": false,
+    "status": "OPEN"
+  },
+  {
+    "request_id": "D-004",
+    "requesting_agent": "D",
+    "owning_agent": "G",
+    "required_interface": "kellogg-tensor must build/install as a wheel on setuptools >= 77",
+    "reason": "packaging/kellogg-tensor/pyproject.toml declares both `license = \"MIT\"` (PEP 639 SPDX expression) and the deprecated classifier `License :: OSI Approved :: MIT License`. setuptools >= 77 rejects the combination with InvalidConfigError ('License classifiers have been superseded by license expressions'), so `pip install` of the staged kellogg-tensor dist fails — blocking the documented TURING install chain (`pip install -e ./turing_universal_quantum_computer` requires kellogg-tensor>=1.0). Fix: drop the license classifier, keep `license = \"MIT\"`. Agent D verified the fix works on a locally staged copy.",
+    "affected_files": [
+      "packaging/kellogg-tensor/pyproject.toml",
+      "packaging/kellogg-tensor/build_and_verify.py",
+      "turing_universal_quantum_computer/pyproject.toml"
+    ],
+    "blocking": true,
+    "status": "OPEN"
+  },
+  {
+    "request_id": "D-005",
+    "requesting_agent": "D",
+    "owning_agent": "H",
+    "required_interface": "exact-vqc TypeScript tests need node >= 22.6 for `node --experimental-strip-types`; proofs/ needs a Lean/lake toolchain",
+    "reason": "turing_universal_quantum_computer/exact-vqc/README.md records `node --experimental-strip-types --test src/lib/vqc/*.test.ts` (24 passing) and `tsc --noEmit` as its gate; the session VM ships node v20.19.0, which does not support --experimental-strip-types, so the suite cannot execute there. proofs/ (Lean kernels: zeta_8 periodicity, even-overlap commutation) has no Lean toolchain on the VM. Both are tooling/environment gaps, not code defects — recorded for CI image/toolchain provisioning.",
+    "affected_files": [
+      "turing_universal_quantum_computer/exact-vqc/",
+      "proofs/"
+    ],
+    "blocking": false,
+    "status": "OPEN"
+  },
+  {
+    "request_id": "D-006",
+    "requesting_agent": "D",
+    "owning_agent": "H",
+    "required_interface": "CI must execute on repair/* branches",
+    "reason": "All 34 workflow jobs on repair/D-turing-math (PR #139) failed with no logs retrievable (GitHub returns BlobNotFound for every job log) — including jobs unrelated to the lane diff (Gitleaks, Node audit, Docker smoke, SBOM). This matches the known all-red systemic outage on repair/* branches: jobs die before logging. Lane verification therefore used local gate replay (1750 tests, reproduction artifacts, self-tests) per the repo's documented fallback.",
+    "affected_files": [
+      ".github/"
+    ],
+    "blocking": true,
+    "status": "OPEN"
+  }
+]
