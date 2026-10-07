@@ -35,7 +35,12 @@ from chronus.mla1517.mining.pythia_search import (  # noqa: E402
     precompute_pythia_search,
 )
 from chronus.mla1517.mining.search_plan import NonceLease, SearchPlan  # noqa: E402
-from chronus.virtual_igpu.abi import ExecutionPolicy, Workload, WorkloadKind  # noqa: E402
+from chronus.virtual_igpu.abi import (  # noqa: E402
+    ExecutionPolicy,
+    ProductMode,
+    Workload,
+    WorkloadKind,
+)
 from chronus.virtual_igpu.adapters import CPUEmulatorAdapter  # noqa: E402
 from chronus.virtual_igpu.client import ChronusClient  # noqa: E402
 from chronus.virtual_igpu.evidence import validate_receipt  # noqa: E402
@@ -458,10 +463,34 @@ def main() -> int:
 
     blocks = verified_blocks()
     probe = Probe(args.quick)
+    host = host_info()
     artifact = {
-        "schema": "chronus.capability_probe/1",
+        "schema": "chronus.capability_probe/2",
         "generated_at_unix": int(time.time()),
-        "host": host_info(),
+        "host": host,
+        "product_modes": {
+            ProductMode.NATIVE_CHRONUS_GPU.value: {
+                "selected": True,
+                "available": True,
+                "physical_gpu_required": False,
+                "execution_policy": ExecutionPolicy.STANDALONE_SOFTWARE.value,
+                "observed_execution_substrate": "cpu-emulator",
+                "note": (
+                    "Chronus is the GPU product in this mode; cpu-emulator is the "
+                    "observed host execution substrate, not product identity"
+                ),
+            },
+            ProductMode.HOST_GPU_AUGMENTATION.value: {
+                "selected": False,
+                "available": None,
+                "physical_gpu_required": True,
+                "execution_policy": ExecutionPolicy.PREFERRED_ACCELERATOR.value,
+                "note": (
+                    "not exercised by this CPU-reference probe; host-GPU/accelerator "
+                    "augmentation requires separate device-bound certification"
+                ),
+            },
+        },
         "real_data": {
             n: {"block_hash": b["block_hash"], "bits": hex(b["bits"]), "nonce": b["nonce"]}
             for n, b in blocks.items()
@@ -474,7 +503,7 @@ def main() -> int:
         "runtime_guarantees": probe.runtime_guarantees(),
         "builtin_measurement_harness": probe.builtin_measurement(),
         "claims_not_made": [
-            "physical GPU/accelerator execution or performance (none present on this host)",
+            "physical GPU/accelerator execution or performance unless separately certified",
             "hardware-rooted attestation",
             "multi-core or fleet throughput (single process, single adapter)",
             "pool acknowledgement / accepted share",

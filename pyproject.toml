@@ -31,6 +31,7 @@ pythia = "main:main"
 pythia-api = "control_api:main"
 pythia-mine = "mining_runtime:main"
 pythia-gpu-readiness = "gpu.readiness:main"
+chronus-readiness = "chronus.readiness:main"
 pythagoras-v12 = "pythagoras.run_pythagoras:main"
 
 [project.optional-dependencies]
@@ -112,7 +113,7 @@ py-modules = [
 "chronus.mla1517" = ["seeds/*.yaml"]
 aethel = ["py.typed", "*.md", "capabilities.json"]
 gpu = ["py.typed", "README.md", "BLUEPRINT_AUDIT.md"]
-chronus = ["py.typed", "README.md", "GPU_CAPABILITY_MANIFEST.json", "kernels/*.cl", "deploy/*.yml", "spec/*.json"]
+chronus = ["py.typed", "README.md", "GPU_CAPABILITY_MANIFEST.json", "CONVERGENCE_MANIFEST.json", "kernels/*.cl", "deploy/*.yml", "spec/*.json"]
 chronos = ["README.md"]
 "chronus.v33" = ["CAPABILITY_MANIFEST.json", "docs/*.md", "benchmarks/*.json"]
 kellogg = ["py.typed", "CAPABILITY_MANIFEST.json"]

@@ -1,14 +1,14 @@
-"""Chronus — HYBA's canonical iGPU offering.
+"""Chronus — HYBA's software-defined quantum-from-maths GPU.
 
-Chronus is the heterogeneous execution and acceleration plane (Virtual iGPU):
-measured device discovery, resident execution, state memory, kernel dispatch,
-telemetry, routing and attestation. TURING remains the independent VQC
-authority, THESEUS owns durable custody and OVID owns representation transforms.
+Chronus is one substrate- and hardware-agnostic execution product. In native
+mode Chronus is the GPU execution surface itself and requires no host GPU. In
+host-augmentation mode it binds into a certified iGPU/GPU/accelerator to extend
+or scale that host. CPU, GPU, cloud and future hardware are execution substrates,
+not Chronus's product identity.
 
-Hardware probing stays lazy: importing :mod:`chronus` never requires OpenCL,
-CUDA, Metal or a physical accelerator. Public runtime objects are loaded only
-when requested, so control-plane and audit tooling remain usable on CPU-only
-hosts.
+TURING remains the independent VQC authority, THESEUS owns durable custody and
+OVID owns representation transforms. Device-specific claims remain evidence-
+bound and are never inferred from the Chronus product name.
 """
 from __future__ import annotations
 
@@ -95,6 +95,15 @@ _EXPORTS = {
     "TensorDeviceProbe": ("chronus.tensor_compute", "TensorDeviceProbe"),
     "get_tensor_runtime": ("chronus.tensor_compute", "get_tensor_runtime"),
     "probe_tensor": ("chronus.tensor_compute", "probe_tensor"),
+    "ChronusProductMode": ("chronus.virtual_igpu.abi", "ProductMode"),
+    "chronus_execution_policy_for_product_mode": (
+        "chronus.virtual_igpu.abi",
+        "execution_policy_for_product_mode",
+    ),
+    "ChronusProductionEvidence": ("chronus.readiness", "CoreProductionEvidence"),
+    "ChronusEvidenceRef": ("chronus.readiness", "EvidenceRef"),
+    "ChronusAcceleratorCertification": ("chronus.readiness", "AcceleratorCertification"),
+    "chronus_production_readiness": ("chronus.readiness", "production_readiness"),
 }
 
 __all__ = sorted(_EXPORTS)
