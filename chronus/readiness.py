@@ -1,11 +1,12 @@
 """CHRONUS production-readiness contract.
 
 Owner-approved product model:
-1. standalone_software — CHRONUS is a complete software-defined execution product
-   and does not require a physical GPU;
-2. accelerator_enhanced — CHRONUS may bind to a certified accelerator to increase
-   throughput/capacity, but accelerator certification is lane-specific and must
-   never gate the standalone product.
+1. native_chronus_gpu — CHRONUS is the software-defined GPU itself. Its quantum-
+   from-maths execution contract is substrate-agnostic and does not require a
+   physical host GPU;
+2. host_gpu_augmentation — CHRONUS may bind into a certified host GPU/accelerator
+   to extend or scale that host. Certification is lane-specific and must never
+   gate native Chronus.
 
 This module keeps core-product readiness separate from per-accelerator readiness.
 It consumes digest-bound evidence references; booleans alone are not accepted as
@@ -22,12 +23,17 @@ from pathlib import Path
 import re
 from typing import Any, Mapping, Sequence
 
-from .virtual_igpu.abi import ExecutionPolicy
+from .virtual_igpu.abi import ExecutionPolicy, ProductMode
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
-CORE_MODE = ExecutionPolicy.STANDALONE_SOFTWARE.value
-ACCELERATOR_MODE = ExecutionPolicy.PREFERRED_ACCELERATOR.value
+NATIVE_CHRONUS_MODE = ProductMode.NATIVE_CHRONUS_GPU.value
+HOST_GPU_AUGMENTATION_MODE = ProductMode.HOST_GPU_AUGMENTATION.value
+
+# Backward-compatible constant names for callers that imported readiness
+# before product mode and backend-selection policy were separated.
+CORE_MODE = NATIVE_CHRONUS_MODE
+ACCELERATOR_MODE = HOST_GPU_AUGMENTATION_MODE
 
 
 @dataclass(frozen=True)
@@ -51,7 +57,7 @@ class EvidenceRef:
 
 @dataclass(frozen=True)
 class CoreProductionEvidence:
-    """Evidence required to declare standalone CHRONUS production-ready."""
+    """Evidence required to declare native CHRONUS production-ready."""
 
     software_execution: EvidenceRef | Mapping[str, Any] | None = None
     independent_verification: EvidenceRef | Mapping[str, Any] | None = None
@@ -83,7 +89,7 @@ class AcceleratorCertification:
 _CORE_SURFACES: dict[str, tuple[str, tuple[str, ...]]] = {
     "virtual_igpu": (
         "chronus.virtual_igpu",
-        ("RuntimeDaemon", "ChronusClient", "CPUEmulatorAdapter", "ExecutionPolicy"),
+        ("RuntimeDaemon", "ChronusClient", "ProductMode", "ExecutionPolicy"),
     ),
     "mathematical_engine": (
         "chronus.v33",
@@ -239,9 +245,9 @@ def production_readiness(
 ) -> dict[str, Any]:
     """Evaluate CHRONUS readiness without turning GPU evidence into a core gate.
 
-    A standalone CHRONUS release can be production-ready with zero physical GPU
-    certifications. Each accelerator lane becomes production-ready only after
-    its own device-bound certification artifact satisfies the lane gate.
+    Native CHRONUS can be production-ready with zero host-GPU certifications.
+    A host-GPU augmentation lane becomes production-ready only after its own
+    device-bound certification artifact satisfies the lane gate.
     """
 
     core_evidence = _coerce_core(evidence)
@@ -260,16 +266,26 @@ def production_readiness(
     modes = {
         CORE_MODE: {
             "ready": core_ready,
+            "execution_policy": ExecutionPolicy.STANDALONE_SOFTWARE.value,
             "requires_physical_gpu": False,
+            "identity": (
+                "Chronus is the software-defined GPU; the executing host substrate "
+                "does not define the product."
+            ),
             "gates": [asdict(g) for g in (*source_gates, *evidence_gates)],
         },
         ACCELERATOR_MODE: {
             "ready": core_ready and accelerator_ready,
+            "execution_policy": ExecutionPolicy.PREFERRED_ACCELERATOR.value,
             "requires_physical_gpu": True,
             "lanes": accelerator_lanes,
+            "identity": (
+                "Chronus augments/scales a certified host GPU or accelerator; "
+                "this mode is additive to native Chronus."
+            ),
             "note": (
-                "accelerator certification is additive; failure or absence of a "
-                "physical lane does not demote standalone CHRONUS"
+                "host-accelerator certification is additive; failure or absence "
+                "of a physical lane does not demote native CHRONUS"
             ),
         },
     }
@@ -282,9 +298,10 @@ def production_readiness(
         "ready_modes": ready_modes,
         "modes": modes,
         "claim_boundary": (
-            "CHRONUS product identity and standalone production readiness do not "
-            "depend on a physical GPU. GPU/iGPU/accelerator claims require their "
-            "own device-bound execution and correctness evidence."
+            "CHRONUS is a substrate-agnostic software-defined GPU. Native product "
+            "identity/readiness does not depend on a host GPU. Host-GPU augmentation "
+            "and other device-specific claims require their own device-bound "
+            "execution and correctness evidence."
         ),
     }
 
@@ -294,8 +311,8 @@ def main() -> int:
 
     parser = argparse.ArgumentParser(
         description=(
-            "Evaluate standalone CHRONUS readiness separately from optional "
-            "accelerator-lane certifications."
+            "Evaluate native CHRONUS readiness separately from optional "
+            "host-GPU/accelerator augmentation certifications."
         )
     )
     parser.add_argument(
@@ -333,6 +350,8 @@ if __name__ == "__main__":
 __all__ = [
     "ACCELERATOR_MODE",
     "CORE_MODE",
+    "HOST_GPU_AUGMENTATION_MODE",
+    "NATIVE_CHRONUS_MODE",
     "AcceleratorCertification",
     "CoreProductionEvidence",
     "EvidenceRef",
