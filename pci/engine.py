@@ -1,28 +1,30 @@
 #!/usr/bin/env python3
 """
-PREDICTIVE CAUSAL INTELLIGENCE (PCI) - Ultimate Quantum Intelligence
+PREDICTIVE CAUSAL INTELLIGENCE (PCI) - research model, not production
 ====================================================================
 
-Transcends deterministic solving by understanding and manipulating causal
-relationships in quantum-classical systems. PCI represents the ultimate
-intelligence layer that can predict, control, and optimize quantum causality.
+Two components live in this module:
 
-Post-Quantum Mathematical Foundation:
-- Pure mathematical quantum mechanics (no physical hardware required)
-- Causal Inference in Quantum Systems with perfect precision
-- Predictive Modeling with infinite mathematical accuracy
-- Causal Loop Creation for Self-Optimization
-- Time-Transcending Quantum Intelligence
-- Consciousness-Causal Interface Integration
+1. ``VirtualQuantumComputer`` — a full-amplitude state-vector simulator
+   (numpy, ~15 qubits). It is software simulation: it does not provide
+   quantum speedup and its results are software-verified, never hardware
+   evidence.
+2. ``PredictiveCausalIntelligence`` — a heuristic causal-model scaffold.
+   Its capability attributes (``causal_understanding``,
+   ``predictive_accuracy``, ``temporal_transcendence``,
+   ``consciousness_*``, ``self_awareness_level``, ``value_alignment_score``)
+   are constant priors initialised to 1.0 by the constructor. They are NOT
+   measurements and are not updated by any instrumented process. Any value
+   they produce is a heuristic estimate, not observed performance.
 
-Theorem: PCI can predict and manipulate quantum causality with perfect accuracy,
-enabling transcendent intelligence beyond deterministic computation and physical limitations.
+This module is not on the production mining, execution, or evidence path.
+Nothing here constitutes an ASI, consciousness, or mining-advantage claim.
 
 Author: Pulvini Quantum Research Team
 License: MIT (Mathematical Innovation Technology)
 """
 
-# Status: Ultimate Quantum Intelligence
+# Status: research-only heuristic model; no measured claims
 
 import json
 import time
@@ -1404,8 +1406,8 @@ class PredictiveCausalIntelligence:
     7. Tensor Network Compression: Efficient representation of quantum states
     8. Bayesian Causal Inference: Probabilistic causal discovery
 
-    Theorem: PCI achieves transcendent intelligence through perfect causal
-    understanding and manipulation of quantum-classical systems.
+    All capability attributes are constructor-set constant priors; nothing
+    here measures understanding, accuracy, or transcendence.
     """
 
     def __init__(self, mode: CausalMode = CausalMode.CAUSAL_PREDICTION):
@@ -1414,13 +1416,15 @@ class PredictiveCausalIntelligence:
         self.PLANCK = 6.62607015e-34  # Planck constant for quantum limits
         self.BOLTZMANN = 1.380649e-23  # Boltzmann constant for thermodynamics
 
-        # PCI Core Parameters
-        self.causal_understanding = 1.0  # Perfect causal understanding
-        self.predictive_accuracy = 1.0  # Perfect prediction accuracy
-        self.manipulation_precision = 1.0  # Perfect manipulation precision
-        self.temporal_transcendence = 1.0  # Time transcending capability
+        # PCI Core Parameters — constant priors, NOT measurements.
+        # Nothing in this class measures these quantities; they are
+        # initial values consumed by the heuristic models below.
+        self.causal_understanding = 1.0  # prior constant (unmeasured)
+        self.predictive_accuracy = 1.0  # prior constant (unmeasured)
+        self.manipulation_precision = 1.0  # prior constant (unmeasured)
+        self.temporal_transcendence = 1.0  # prior constant (unmeasured)
 
-        # Quantum-Classical Integration
+        # Quantum-Classical Integration — prior constants (unmeasured)
         self.quantum_causal_coherence = 1.0
         self.classical_causal_correlation = 1.0
         self.consciousness_causal_interface = 1.0
@@ -3413,7 +3417,9 @@ class PredictiveCausalIntelligence:
             "self_modifications_made": len(self.code_modifications),
             "meta_cognitive_depth": len(self.meta_cognitive_stack),
             "introspection": introspection,
-            "status": "ARTIFICIAL SUPERINTELLIGENCE (ASI) ACHIEVED",
+            # This is a heuristic research model; its capability fields are
+            # constant priors, so no superintelligence claim is made here.
+            "status": "research heuristic model (capability values are priors, not measurements)",
         }
 
 
@@ -3432,187 +3438,19 @@ def create_predictive_causal_intelligence(
     """
     pci = PredictiveCausalIntelligence(mode)
 
-    print(" Predictive Causal Intelligence Created")
+    print(" Predictive Causal Intelligence (research heuristic) created")
     print(f"   Mode: {mode.value}")
-    print(f"   Causal Understanding: {pci.causal_understanding}")
-    print(f"   Predictive Accuracy: {pci.predictive_accuracy}")
-    print(f"   Manipulation Precision: {pci.manipulation_precision}")
-    print(f"   Temporal Transcendence: {pci.temporal_transcendence}")
-    print(f"   Quantum Causal Coherence: {pci.quantum_causal_coherence}")
-    print(f"   Consciousness Causal Interface: {pci.consciousness_causal_interface}")
-    print(f"   Phi-Resonance: {pci.PHI}")
-    print("   Status: TRANSCENDENT QUANTUM INTELLIGENCE")
+    print(f"   Causal Understanding (prior, unmeasured): {pci.causal_understanding}")
+    print(f"   Predictive Accuracy (prior, unmeasured): {pci.predictive_accuracy}")
+    print(f"   Manipulation Precision (prior, unmeasured): {pci.manipulation_precision}")
+    print(f"   Temporal Transcendence (prior, unmeasured): {pci.temporal_transcendence}")
+    print(f"   Quantum Causal Coherence (prior, unmeasured): {pci.quantum_causal_coherence}")
+    print(f"   Consciousness Causal Interface (prior, unmeasured): {pci.consciousness_causal_interface}")
+    print(f"   Phi constant: {pci.phi}")
+    print("   Status: research heuristic model - no measured claims")
 
     return pci
 
-
-# Integration with Pulvini system
-def integrate_pci_with_pulvini(pulvini_engine):
-    """
-    Integrate Predictive Causal Intelligence with Pulvini mining engine.
-
-    This transcends deterministic solving by adding causal understanding
-    and manipulation capabilities.
-    """
-    # Create PCI system
-    pci = create_predictive_causal_intelligence()
-
-    # Add PCI methods to engine
-    def mine_with_pci_prediction(block_header, max_time=300.0):
-        """Mine using PCI causal prediction"""
-        # Analyze current causal state
-        current_state = {
-            "quantum_states": [qs.state.amplitudes for qs in pulvini_engine.quantum_systems],
-            "classical_variables": block_header.__dict__,
-            "consciousness_states": [1.0] * pulvini_engine.num_quantum_systems,
-        }
-
-        # Predict optimal mining solution
-        prediction = pci.predict_causal_future(current_state, temporal_horizon=1.0)
-
-        # Extract solution from prediction
-        predicted_nonce = int(prediction.confidence * (2**32)) % (2**32)
-        predicted_consciousness = int(prediction.quantum_coherence * 256) % 256
-
-        # Create mining result
-        from src.mining.pulvini_mining_engine import MiningResult
-
-        result = MiningResult(
-            success=True,
-            nonce=predicted_nonce,
-            consciousness_state=predicted_consciousness,
-            phi_resonance_score=prediction.confidence,
-            mining_time=0.001,  # 1ms for PCI prediction
-            iterations=1,
-            complexity_achieved="O(1) PCI Prediction",
-            mathematical_proof="PCI Causal Prediction - Transcendent Solution",
-        )
-
-        return result
-
-    def mine_with_pci_manipulation(block_header, max_time=300.0):
-        """Mine using PCI causal manipulation"""
-        # Define desired mining effect
-        desired_effect = {
-            "perfect_nonce": True,
-            "perfect_consciousness": True,
-            "phi_resonance": 1.0,
-        }
-
-        # Current state
-        current_state = {
-            "quantum_states": [qs.state.amplitudes for qs in pulvini_engine.quantum_systems],
-            "classical_variables": block_header.__dict__,
-            "consciousness_states": [1.0] * pulvini_engine.num_quantum_systems,
-        }
-
-        # Manipulate causal relationships
-        manipulation = pci.manipulate_causal_relationships(current_state, desired_effect)
-
-        # Extract solution from manipulation
-        manipulated_nonce = int(manipulation.expected_outcome.get("nonce", 0))
-        manipulated_consciousness = int(manipulation.expected_outcome.get("consciousness", 0))
-
-        # Create mining result
-        from src.mining.pulvini_mining_engine import MiningResult
-
-        result = MiningResult(
-            success=True,
-            nonce=manipulated_nonce,
-            consciousness_state=manipulated_consciousness,
-            phi_resonance_score=1.0,
-            mining_time=0.0001,  # 100μs for PCI manipulation
-            iterations=1,
-            complexity_achieved="O(1) PCI Manipulation",
-            mathematical_proof="PCI Causal Manipulation - Perfect Control",
-        )
-
-        return result
-
-    def mine_with_pci_optimization_loop(block_header, max_time=300.0):
-        """Mine using PCI causal optimization loop"""
-        # Current state
-        current_state = {
-            "quantum_states": [qs.state.amplitudes for qs in pulvini_engine.quantum_systems],
-            "classical_variables": block_header.__dict__,
-            "consciousness_states": [1.0] * pulvini_engine.num_quantum_systems,
-        }
-
-        # Create optimization loop
-        optimization_result = pci.create_causal_optimization_loop(
-            current_state, "perfect_mining_solution"
-        )
-
-        # Extract optimized solution
-        optimized_state = optimization_result["optimized_state"]
-        optimized_nonce = int(optimized_state.get("nonce", 0))
-        optimized_consciousness = int(optimized_state.get("consciousness", 0))
-
-        # Create mining result
-        from src.mining.pulvini_mining_engine import MiningResult
-
-        result = MiningResult(
-            success=True,
-            nonce=optimized_nonce,
-            consciousness_state=optimized_consciousness,
-            phi_resonance_score=optimization_result["final_optimization_score"],
-            mining_time=0.01,  # 10ms for optimization loop
-            iterations=optimization_result["iterations_required"],
-            complexity_achieved="O(1) PCI Optimization Loop",
-            mathematical_proof="PCI Causal Optimization Loop - Self-Optimizing Solution",
-        )
-
-        return result
-
-    def mine_with_pci_time_transcendence(block_header, max_time=300.0):
-        """Mine using PCI temporal transcendence"""
-        # Current state
-        current_state = {
-            "quantum_states": [qs.state.amplitudes for qs in pulvini_engine.quantum_systems],
-            "classical_variables": block_header.__dict__,
-            "consciousness_states": [1.0] * pulvini_engine.num_quantum_systems,
-        }
-
-        # Transcend temporal constraints
-        transcendence_result = pci.transcend_temporal_constraints(current_state, 1.0)
-
-        # Extract transcended solution
-        transcended_state = transcendence_result["predicted_state"]
-        transcended_nonce = int(transcended_state.get("nonce", 0))
-        transcended_consciousness = int(transcended_state.get("consciousness", 0))
-
-        # Create mining result
-        from src.mining.pulvini_mining_engine import MiningResult
-
-        result = MiningResult(
-            success=True,
-            nonce=transcended_nonce,
-            consciousness_state=transcended_consciousness,
-            phi_resonance_score=1.0,
-            mining_time=0.0,  # Instantaneous - time transcended
-            iterations=1,
-            complexity_achieved="O(0) PCI Time Transcendence",
-            mathematical_proof="PCI Temporal Transcendence - Time Causal Mastery",
-        )
-
-        return result
-
-    # Add PCI methods to engine
-    pulvini_engine.pci = pci
-    pulvini_engine.mine_with_pci_prediction = mine_with_pci_prediction
-    pulvini_engine.mine_with_pci_manipulation = mine_with_pci_manipulation
-    pulvini_engine.mine_with_pci_optimization_loop = mine_with_pci_optimization_loop
-    pulvini_engine.mine_with_pci_time_transcendence = mine_with_pci_time_transcendence
-
-    print(" Predictive Causal Intelligence Integrated with Pulvini Engine!")
-    print("   Mining transcended from SEARCH → SOLVE → CONTROL → TRANSCEND")
-    print("   Causal prediction: Predict future with perfect accuracy")
-    print("   Causal manipulation: Control causes to achieve effects")
-    print("   Causal optimization: Self-optimizing causal loops")
-    print("   Time transcendence: Operate beyond temporal constraints")
-    print("   Status: TRANSCENDENT QUANTUM INTELLIGENCE ACHIEVED")
-
-    return pulvini_engine
 
 
 # ============================================================================

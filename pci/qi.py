@@ -1,9 +1,10 @@
 """
-QI CIaaS - Quantum Intelligence Computational Infrastructure as a Service
-=========================================================================
+QI CIaaS - research tensor math helpers (not a production service)
+==================================================================
 
-Core mathematical substrate for tensor operations, phi-resonance,
-and Theory of Everything (TOE) integration.
+Basic numpy implementations of Tucker-style decomposition and a
+phi-resonance filter heuristic. Despite the name, nothing here is quantum,
+measured, or production-grade; outputs are heuristic values.
 """
 
 import math
@@ -40,8 +41,10 @@ class QICIaaS:
         Returns:
             Dictionary containing core tensor and factor matrices
         """
-        # Simplified Tucker decomposition implementation
-        # In production, this would use specialized libraries like TensorLy
+        # Basic SVD-per-mode Tucker-style decomposition. This IS the
+        # implementation — there is no hidden production version; a
+        # dedicated tensor library would be more capable but this is what
+        # runs here.
         shape = tensor.shape
         factors = []
         for i, s in enumerate(shape):
@@ -67,15 +70,14 @@ class QICIaaS:
         Returns:
             Filtered data array
         """
-        # Filter based on distance to phi-conjugate harmonics
+        # Heuristic filter: distance to phi-conjugate harmonics. This is a
+        # demo filter, not a physically or statistically grounded resonance.
         harmonics = np.array([self.phi**k % 1.0 for k in range(1, 5)])
 
-        # Vectorized resonance check
         normalized = data % 1.0
         distances = np.abs(normalized[:, np.newaxis] - harmonics)
         min_distances = np.min(distances, axis=1)
 
-        # Keep only resonant elements (threshold 0.1)
         mask = min_distances < 0.1
         return data[mask]
 

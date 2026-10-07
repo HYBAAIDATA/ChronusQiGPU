@@ -1,0 +1,12 @@
+[
+  {
+    "request_id": "handoff-C-001-euclid-init-syntax",
+    "requesting_agent": "C",
+    "owning_agent": "A",
+    "required_interface": "euclid/__init__.py must be valid Python. Line 48 of __all__ contains a literal backslash-n inside the module: '\"EuclidEngineAdapter\",\\n    \"ProgramSearchEngine\",'. Introduced by commit 0306a8b. Any import of the euclid package raises SyntaxError, which also breaks every chronus.mla1517.mining import chain (PythiaProductionMiningCoordinator cannot import). Replace the literal '\\\\n' sequence with a real newline.",
+    "reason": "euclid/__init__.py is owned by Agent A; Agent C cannot fix a foreign file but cannot fully verify the chronus.mla1517 lane without the import working. A local, uncommitted patch was used ONLY to verify Agent C's own changes and is reverted before commit.",
+    "affected_files": ["euclid/__init__.py"],
+    "blocking": true,
+    "status": "OPEN"
+  }
+]

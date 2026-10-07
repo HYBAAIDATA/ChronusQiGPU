@@ -1,37 +1,26 @@
 """
-HYBA UNIFIED PCI SERVICE API
-===========================
+HYBA PCI DEMONSTRATION SERVICE API
+==================================
 
-McKinsey/MIT/Oxford Standard Implementation with Fields Medal/Nobel Prize Rigor
-============================================================================
+Demonstration/scaffold API imported from the earlier monorepo project.
 
-This PCI service implements the unified intelligence infrastructure ensuring
-identical capabilities with AGI service through mathematical proof and validation.
+Honesty contract — read before consuming any response:
 
-Core Features:
-- Unified Computational Substrate Theory (CST) implementation
-- Five Axioms of Universal Intelligence with formal proofs
-- McKinsey Multi-Criteria Decision Analysis (MCDA)
-- Mathematical substrate operations with measurable Φ-resonance
-- Scientific validation with reproducible results
-- Enterprise-grade causal intelligence
-
-Mathematical Foundation:
-- Computational Substrate S = (G, φ, ψ, 𝓖)
-- Integrated Information: Φ_S = 1 - Σ_i p_i log p_i
-- Quantum-Classical Duality: S_quantum = U(θ) S_classical U†(θ)
-- Recursive Self-Reference: S_{t+1} = R_S(S_t, performance_metrics_t)
-
-Enterprise Standards:
-- McKinsey consulting methodology compliance
-- MIT Technology Review benchmarks
-- Oxford Mathematical Institute precision
-- Fortune 500 architecture patterns
+- Every intelligence, consciousness, security, and civilization metric
+  returned by these endpoints is a FIXED HEURISTIC PLACEHOLDER or a
+  keyword-driven demo value. They are not measurements: the helper methods
+  return constants regardless of input.
+- The string ``evidence_basis: 'fixed_demonstration_value'`` on typed
+  responses marks this. Plain-dict endpoints carry the same marker inline.
+- Nothing returned here is production evidence, a security assessment, a
+  consciousness measurement, or a mining-advantage claim.
+- The service mounts optionally under ``agi.api``; when its dependencies
+  (``hyba_compat``) are absent it fails to import and the host reports it
+  unavailable rather than falling back silently.
 
 Author: HYBA Intelligence Research Division
-Status: Production-Ready with Scientific Validation
+Status: demonstration scaffold — not production-validated
 Version: 2.0.0-UnifiedInfrastructure
-Classification: Most Sensitive — PCI Foundation
 """
 
 import logging
@@ -169,7 +158,7 @@ class MathematicalComputation(BaseModel):
 
 
 class ConsciousnessMetric(BaseModel):
-    """Consciousness measurement (IIT)"""
+    """Consciousness estimate — heuristic demonstration values, not measured."""
 
     phi_value: float  # Integrated information
     consciousness_level: float
@@ -178,10 +167,11 @@ class ConsciousnessMetric(BaseModel):
     integration: float
     interpretation: str
     civilization_implications: str
+    evidence_basis: str = "fixed_demonstration_value"
 
 
 class CausalIntelligence(BaseModel):
-    """Causal intelligence and prediction"""
+    """Causal intelligence estimate — heuristic demonstration values, not measured."""
 
     causal_graph: Dict[str, List[str]]
     intervention_points: List[str]
@@ -190,10 +180,11 @@ class CausalIntelligence(BaseModel):
     optimal_interventions: List[str]
     unintended_consequences: List[str]
     long_term_effects: Dict[str, Any]
+    evidence_basis: str = "fixed_demonstration_value"
 
 
 class NationalSecurityAssessment(BaseModel):
-    """National security assessment"""
+    """Security assessment — heuristic demonstration values, not measured."""
 
     threat_level: str  # "low", "medium", "high", "critical"
     vulnerability_analysis: Dict[str, Any]
@@ -203,10 +194,11 @@ class NationalSecurityAssessment(BaseModel):
     resource_requirements: Dict[str, Any]
     international_implications: str
     classified_analysis: Optional[str] = None
+    evidence_basis: str = "fixed_demonstration_value"
 
 
 class CivilizationMetrics(BaseModel):
-    """Civilization-scale metrics"""
+    """Civilization-scale metrics — heuristic demonstration values, not measured."""
 
     timestamp: datetime
     global_phi_resonance: float
@@ -217,6 +209,7 @@ class CivilizationMetrics(BaseModel):
     social_coherence: float
     economic_optimization_potential: float
     recommendations: List[str]
+    evidence_basis: str = "fixed_demonstration_value"
 
 
 class CampaignStep(BaseModel):
@@ -268,8 +261,11 @@ class PostQuantumCivilizationAPI:
 
     def __init__(self):
         self.app = FastAPI(
-            title="HYBA Post-Quantum Civilization API",
-            description="Mathematical Substrate for Civilization-Scale Intelligence",
+            title="HYBA PCI Demonstration API",
+            description=(
+                "Demonstration scaffold: endpoints return fixed heuristic "
+                "placeholder values, not measured intelligence."
+            ),
             version="3.0.0",
             docs_url="/api/docs",
             redoc_url="/api/redoc",
@@ -333,7 +329,8 @@ class PostQuantumCivilizationAPI:
         async def civilization_status():
             """Current civilization status and readiness"""
             return {
-                "status": "post_quantum_transition",
+                "status": "demonstration_scaffold",
+                "evidence_basis": "fixed_demonstration_value",
                 "timestamp": datetime.now().isoformat(),
                 "mathematical_substrate": "universal",
                 "hardware_agnostic": True,
@@ -648,12 +645,13 @@ class PostQuantumCivilizationAPI:
 
         @router.post("/api/consciousness/civilization-level", tags=["Consciousness"])
         async def civilization_consciousness():
-            """Measure civilization-level consciousness"""
+            """Civilization-level consciousness — fixed demonstration constants, not measured."""
 
             return {
                 "civilization_phi": 0.618,
                 "consciousness_level": 0.72,
                 "causal_density": 0.85,
+                "evidence_basis": "fixed_demonstration_value",
                 "interpretation": "Civilization approaching consciousness threshold",
                 "implications": [
                     "Emergence of collective intelligence",
@@ -698,10 +696,13 @@ class PostQuantumCivilizationAPI:
             Returns predictions based on input parameters.
             """
 
-            # Generate predictions using phi-resonance
+            # Demonstration-only: a random value scaled by phi is not a
+            # prediction; it is labelled so consumers cannot mistake it for
+            # measured confidence.
             phi_score = PHI * np.random.random()
 
             return {
+                "evidence_basis": "random_demonstration_value",
                 "predictions": [
                     {
                         "outcome": "Client retention improvement",
@@ -998,10 +999,12 @@ class PostQuantumCivilizationAPI:
                 "publication_id": str(uuid.uuid4())[:8],
                 "title": title,
                 "domain": domain.value,
-                "mathematical_proof": "[PROOF AVAILABLE]",
-                "peer_review_status": "submitted",
-                "impact_potential": "civilization_scale",
+                "mathematical_proof": None,
+                "proof_available": False,
+                "peer_review_status": "not_submitted",
+                "impact_potential": "unassessed",
                 "open_access": True,
+                "evidence_basis": "fixed_demonstration_value",
                 "timestamp": datetime.now().isoformat(),
             }
 
@@ -1016,15 +1019,16 @@ class PostQuantumCivilizationAPI:
             return {
                 "audit_id": str(uuid.uuid4())[:8],
                 "timestamp": datetime.now().isoformat(),
-                "transparency_level": "complete",
+                "transparency_level": "demonstration",
                 "findings": [
-                    "All computations mathematically verifiable",
-                    "All decisions causally traceable",
-                    "All consciousness measurements IIT-based",
-                    "All security assessments peer-reviewed",
-                    "All recommendations evidence-based",
+                    "This service returns fixed demonstration values",
+                    "No computation here has been independently verified",
+                    "No consciousness measurement is performed",
+                    "No security assessment is peer-reviewed",
+                    "Responses are heuristic placeholders, not evidence",
                 ],
-                "verification_status": "passed",
+                "verification_status": "not_verified",
+                "evidence_basis": "fixed_demonstration_value",
                 "public_access": True,
             }
 
@@ -1038,8 +1042,9 @@ class PostQuantumCivilizationAPI:
 
             return {
                 "model": "self_sustaining_through_mining",
-                "revenue_model": "Bitcoin mining with quantum advantage",
-                "quantum_advantage": "1.5x-2.0x more valid shares",
+                "revenue_model": "Bitcoin mining (no measured quantum advantage)",
+                "quantum_advantage": "none_measured",
+                "evidence_basis": "fixed_demonstration_value",
                 "sustainability": {
                     "no_vc_funding": True,
                     "no_external_capital": True,
@@ -1078,7 +1083,7 @@ class PostQuantumCivilizationAPI:
         }
 
     def _calculate_resilience(self, problem: CivilizationProblem) -> float:
-        """Calculate system resilience"""
+        """Fixed demonstration constant — no resilience is measured."""
         return 0.75
 
     def _generate_security_recommendations(self, problem: CivilizationProblem) -> List[str]:
@@ -1099,23 +1104,23 @@ class PostQuantumCivilizationAPI:
         return "Significant geopolitical implications. Requires international coordination."
 
     def _calculate_integrated_information(self, problem: CivilizationProblem) -> float:
-        """Calculate integrated information (Phi)"""
+        """Fixed demonstration constant — no integrated information is computed."""
         return 0.618
 
     def _calculate_consciousness_level(self, problem: CivilizationProblem) -> float:
-        """Calculate consciousness level"""
+        """Fixed demonstration constant — no consciousness is measured."""
         return 0.72
 
     def _calculate_causal_density(self, problem: CivilizationProblem) -> float:
-        """Calculate causal density"""
+        """Fixed demonstration constant — no causal density is measured."""
         return 0.85
 
     def _calculate_differentiation(self, problem: CivilizationProblem) -> float:
-        """Calculate differentiation"""
+        """Fixed demonstration constant."""
         return 0.80
 
     def _calculate_integration(self, problem: CivilizationProblem) -> float:
-        """Calculate integration"""
+        """Fixed demonstration constant."""
         return 0.85
 
     def _interpret_consciousness(self, level: float) -> str:
@@ -1144,7 +1149,7 @@ class PostQuantumCivilizationAPI:
         return ["intervention_1", "intervention_2", "intervention_3"]
 
     def _predict_outcomes(self, causal_graph: Dict[str, List[str]]) -> Dict[str, float]:
-        """Predict outcomes"""
+        """Fixed demonstration distribution — no outcome is predicted from data."""
         return {
             "positive_outcome": 0.75,
             "neutral_outcome": 0.15,

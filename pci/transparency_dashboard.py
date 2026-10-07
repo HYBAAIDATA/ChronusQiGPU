@@ -1,14 +1,17 @@
 """
-PCI Transparency Dashboard
-==========================
+PCI Transparency Dashboard — research visualization helper
+==========================================================
 
-Translates Yang-Mills Mass Gap proofs (0.999945 confidence) into
-human-readable strategic insights for decision-makers.
+Renders causal graphs and confidence labels supplied by callers into
+human-readable summaries. This module performs no proof verification and
+no measurement: confidence values are caller-supplied inputs, and the
+historic "Yang-Mills 0.999945" framing carried no supporting proof
+artifact. Treat all scores as heuristic labels, not measured confidence.
 
 Features:
 - Causal path visualization
-- Confidence scoring and explanation
-- Strategic recommendations
+- Confidence scoring and explanation (caller-supplied scores only)
+- Strategic recommendations (heuristic)
 - Export to PDF/JSON
 - Interactive exploration
 """
@@ -34,8 +37,8 @@ class CausalRelationType(str, Enum):
 class ConfidenceLevel(str, Enum):
     """Confidence levels for causal relationships"""
 
-    ABSOLUTE = "absolute"  # 0.999945+ (Yang-Mills proven)
-    VERY_HIGH = "very_high"  # 0.95-0.999945
+    ABSOLUTE = "absolute"  # label only; no underlying proof is checked
+    VERY_HIGH = "very_high"  # label only; no underlying proof is checked
     HIGH = "high"  # 0.85-0.95
     MODERATE = "moderate"  # 0.70-0.85
     LOW = "low"  # <0.70

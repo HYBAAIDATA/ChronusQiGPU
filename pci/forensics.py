@@ -1,17 +1,15 @@
 """
-HYBA Quantum Blockchain Forensics Engine
-==========================================
-Advanced Analysis of Bitcoin Blockchain with Quantum-Enhanced Pattern Recognition
+HYBA Blockchain Forensics — research analysis helpers
+=====================================================
+Bitcoin blockchain analysis helpers with heuristic pattern scoring.
 
-Research Grade Implementation:
-- Quantum circuit optimization for nonce analysis
-- Phi resonance across multiple mathematical constants
-- Deep transaction pattern analysis
-- Real-time blockchain data processing
-- Machine learning integration for predictive mining
-
-Institutions: CERN, Oxford, Cambridge
-Research Focus: Quantum Computing + Blockchain + Mathematical Physics
+Honesty notes:
+- "Quantum" in the original naming refers to naming/branding only; the
+  computation is classical numpy/math. No quantum advantage is measured.
+- The earlier "Institutions: CERN, Oxford, Cambridge" affiliation line was
+  fabricated and has been removed.
+- Live-chain fetches are optional; without them, offline analysis of
+  caller-supplied data still works.
 """
 
 import math
