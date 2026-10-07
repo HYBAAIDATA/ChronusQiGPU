@@ -18,6 +18,10 @@ classifiers = [
 dependencies = [
     "numpy>=1.26,<3",
     "sympy>=1.12,<2",
+    # Kellogg owns the tensor mathematics TURING executes on: exact fields,
+    # state vectors, the exact MPS behind the mps_exact backend, surface-code
+    # algebra. TURING consumes it instead of carrying a fork.
+    "kellogg-tensor>=4.0",
 ]
 
 [project.optional-dependencies]

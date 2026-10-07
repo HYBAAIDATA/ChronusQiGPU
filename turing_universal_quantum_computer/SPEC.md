@@ -44,16 +44,25 @@ Q(zeta_8).
 The exhaustive checker declares:
 
 - lattice: unrotated square edge code
-- boundary: mixed planar
-- data placement: edges
-- X checks: vertex stars, including reduced boundary support
-- Z checks: square plaquettes
-- distance definition: minimum declared nontrivial logical-operator weight
+- boundary: rough left/right, smooth top/bottom (planar)
+- data placement: edges, n = d^2 + (d-1)^2
+- X checks: d(d-1) vertex stars, weight 4 in the bulk and 3 on the boundary
+- Z checks: d(d-1) square plaquettes, weight 4 in the bulk and 3 on the boundary
+- distance definition: exact minimum nontrivial logical-operator weight,
+  computed as the shortest odd-parity boundary path (not declared)
 
-Every star/plaquette pair is checked over GF(2). Distance 31 checks
-`32^2 * 31^2 = 984064` mixed pairs, verifies declared logical
-anticommutation, and records correction bound 15. These counts must not be
-substituted with counts from a rotated-code convention.
+Every star/plaquette pair is checked over GF(2). The logical qubit count is
+computed exactly (k = n - rank Hx - rank Hz = 1), the declared logicals are
+checked to commute with every check and to anticommute with each other, and
+the distance is computed exactly. Distance 31: n = 1861, 930 stars, 930
+plaquettes, `930^2 = 864900` mixed pairs, k = 1, exact distance 31,
+correction bound 15. These counts must not be substituted with counts from a
+rotated-code convention.
+
+The earlier convention placed a star on every vertex and a plaquette on every
+face of a 32 x 32-vertex grid (`32^2 * 31^2 = 984064` commuting pairs). Its
+check ranks give k = 0: it encodes no logical qubit, so its distance and
+correction bound were undefined. `all_vertex_star_report` reproduces it.
 
 ## 5. Exact capacity
 

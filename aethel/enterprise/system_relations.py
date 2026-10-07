@@ -663,6 +663,7 @@ def verify_turing_custody_boundary(
         RunWitness,
         VQCComputationCertificate,
         verify_computation_certificate,
+        verify_serialized_computation_certificate,
         verify_witness,
     )
 

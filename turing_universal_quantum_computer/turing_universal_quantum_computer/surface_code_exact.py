@@ -1,8 +1,28 @@
-"""Exact CSS commutation proof for a planar square-lattice surface code.
+"""Exact CSS algebra for the planar square-lattice surface code (edge picture).
 
 Pauli commutation is decided over GF(2): an X check and a Z check commute iff
 the parity of their shared data-edge support is zero. No amplitudes, floating
 point, tolerance, or hardware model enters this proof.
+
+Lattice (distance d, unrotated, data on edges):
+
+* vertices V(r, c), r in 0..d-1, c in 0..d-2, each carrying an X star;
+* horizontal edges h(r, c), r in 0..d-1, c in 0..d-1 — the first and last of
+  each row dangle off the rough left and right boundaries;
+* vertical edges v(r, c), r in 0..d-2, c in 0..d-2;
+* faces F(r, c), r in 0..d-2, c in 0..d-1, each carrying a Z plaquette —
+  the top and bottom boundaries are smooth.
+
+That gives n = d^2 + (d-1)^2 data edges, d(d-1) stars and d(d-1)
+plaquettes, and k = 1 logical qubit. The logical qubit count and the code
+distance are computed exactly (GF(2) ranks and the shortest odd-parity
+boundary path, via ``kellogg.surface_code.CSSCode``), not declared.
+
+The earlier convention placed a star on every vertex and a plaquette on every
+face of a (d+1) x (d+1) grid. Those checks commute ((d+1)^2 d^2 pairs), but
+they encode k = 0 logical qubits, so "distance" and "correction bound" are
+undefined for it. ``all_vertex_star_report`` reproduces that count for the
+record.
 """
 
 from __future__ import annotations
@@ -43,10 +63,10 @@ class SurfaceCodeConvention:
     """The exact convention under which an algebra report is exhaustive."""
 
     lattice_kind: str = "unrotated_square_edge_code"
-    boundary_kind: str = "mixed_planar"
+    boundary_kind: str = "rough_left_right_smooth_top_bottom"
     data_placement: str = "edges"
-    stabilizer_support: str = "weight_4_bulk_weight_3_edge_weight_2_corner"
-    distance_definition: str = "minimum_declared_nontrivial_logical_weight"
+    stabilizer_support: str = "weight_4_bulk_weight_3_boundary"
+    distance_definition: str = "exact_minimum_nontrivial_logical_weight"
 
     def as_dict(self) -> dict[str, str]:
         return asdict(self)
@@ -61,9 +81,13 @@ class SurfaceCodeAlgebraReport:
     z_checks: int
     mixed_pairs_checked: int
     noncommuting_pairs: tuple[str, ...]
+    logical_qubits: int
+    logicals_commute_with_checks: bool
     logical_z_weight: int
     logical_x_weight: int
     logicals_anticommute: bool
+    exact_x_distance: int
+    exact_z_distance: int
     correction_bound: int
     verified: bool
     proof_digest: str
@@ -75,7 +99,7 @@ class SurfaceCodeAlgebraReport:
 
 
 class PlanarSurfaceCodeAlgebra:
-    """Square-lattice edge code with exact star/plaquette CSS checks."""
+    """Planar edge code with exact star/plaquette CSS checks and exact distance."""
 
     def __init__(self, distance: int):
         distance = int(distance)
@@ -86,11 +110,11 @@ class PlanarSurfaceCodeAlgebra:
 
     def horizontal_edges(self) -> tuple[Edge, ...]:
         d = self.distance
-        return tuple(("h", row, col) for row in range(d + 1) for col in range(d))
+        return tuple(("h", row, col) for row in range(d) for col in range(d))
 
     def vertical_edges(self) -> tuple[Edge, ...]:
         d = self.distance
-        return tuple(("v", row, col) for row in range(d) for col in range(d + 1))
+        return tuple(("v", row, col) for row in range(d - 1) for col in range(d - 1))
 
     def data_edges(self) -> FrozenSet[Edge]:
         return frozenset(self.horizontal_edges() + self.vertical_edges())
@@ -98,16 +122,12 @@ class PlanarSurfaceCodeAlgebra:
     def star_checks(self) -> tuple[PauliCheck, ...]:
         d = self.distance
         checks = []
-        for row in range(d + 1):
-            for col in range(d + 1):
-                support = set()
-                if col > 0:
-                    support.add(("h", row, col - 1))
-                if col < d:
-                    support.add(("h", row, col))
+        for row in range(d):
+            for col in range(d - 1):
+                support = {("h", row, col), ("h", row, col + 1)}
                 if row > 0:
                     support.add(("v", row - 1, col))
-                if row < d:
+                if row < d - 1:
                     support.add(("v", row, col))
                 checks.append(PauliCheck("X", f"star:{row}:{col}", frozenset(support)))
         return tuple(checks)
@@ -115,32 +135,31 @@ class PlanarSurfaceCodeAlgebra:
     def plaquette_checks(self) -> tuple[PauliCheck, ...]:
         d = self.distance
         checks = []
-        for row in range(d):
+        for row in range(d - 1):
             for col in range(d):
-                support = frozenset(
-                    {
-                        ("h", row, col),
-                        ("h", row + 1, col),
-                        ("v", row, col),
-                        ("v", row, col + 1),
-                    }
-                )
-                checks.append(PauliCheck("Z", f"plaquette:{row}:{col}", support))
+                support = {("h", row, col), ("h", row + 1, col)}
+                if col > 0:
+                    support.add(("v", row, col - 1))
+                if col < d - 1:
+                    support.add(("v", row, col))
+                checks.append(PauliCheck("Z", f"plaquette:{row}:{col}", frozenset(support)))
         return tuple(checks)
 
-    def logical_z(self, column: int = 0) -> PauliCheck:
-        d = self.distance
-        if not 0 <= column <= d:
-            raise ValueError("logical Z column is outside the lattice")
-        support = frozenset(("v", row, column) for row in range(d))
-        return PauliCheck("Z", f"logical_z:{column}", support)
-
-    def logical_x(self, row: int = 0) -> PauliCheck:
+    def logical_z(self, row: int = 0) -> PauliCheck:
+        """Z along one row of horizontal edges, rough boundary to rough boundary."""
         d = self.distance
         if not 0 <= row < d:
-            raise ValueError("logical X row is outside the lattice")
-        support = frozenset(("v", row, col) for col in range(d))
-        return PauliCheck("X", f"logical_x:{row}", support)
+            raise ValueError("logical Z row is outside the lattice")
+        support = frozenset(("h", row, col) for col in range(d))
+        return PauliCheck("Z", f"logical_z:{row}", support)
+
+    def logical_x(self, column: int = 0) -> PauliCheck:
+        """X down one column of horizontal edges, smooth boundary to smooth boundary."""
+        d = self.distance
+        if not 0 <= column < d:
+            raise ValueError("logical X column is outside the lattice")
+        support = frozenset(("h", row, column) for row in range(d))
+        return PauliCheck("X", f"logical_x:{column}", support)
 
     @staticmethod
     def _pair_labels(
@@ -153,6 +172,24 @@ class PlanarSurfaceCodeAlgebra:
                     failures.append(f"{x_check.label}|{z_check.label}")
         return tuple(failures)
 
+    def css_code(self):
+        """The same code as GF(2) bitsets, for exact rank and distance checks."""
+        from kellogg.surface_code import CSSCode
+
+        index = {edge: i for i, edge in enumerate(sorted(self.data_edges()))}
+
+        def bits(check: PauliCheck) -> int:
+            return sum(1 << index[e] for e in check.support)
+
+        return CSSCode(
+            n=len(index),
+            hx=[bits(c) for c in self.star_checks()],
+            hz=[bits(c) for c in self.plaquette_checks()],
+            logical_x=bits(self.logical_x(0)),
+            logical_z=bits(self.logical_z(0)),
+            distance=self.distance,
+        )
+
     def verify(self) -> SurfaceCodeAlgebraReport:
         x_checks = self.star_checks()
         z_checks = self.plaquette_checks()
@@ -160,6 +197,10 @@ class PlanarSurfaceCodeAlgebra:
         logical_z = self.logical_z(0)
         logical_x = self.logical_x(0)
         anticommute = not logical_x.commutes_with(logical_z)
+        logicals_ok = all(logical_z.commutes_with(x) for x in x_checks) and all(
+            logical_x.commutes_with(z) for z in z_checks
+        )
+        exact = self.css_code().verify()
         unsigned = {
             "convention": self.convention.as_dict(),
             "distance": self.distance,
@@ -168,20 +209,35 @@ class PlanarSurfaceCodeAlgebra:
             "z_checks": len(z_checks),
             "mixed_pairs_checked": len(x_checks) * len(z_checks),
             "noncommuting_pairs": failures,
+            "logical_qubits": exact.logical_qubits,
+            "logicals_commute_with_checks": logicals_ok,
             "logical_z_weight": len(logical_z.support),
             "logical_x_weight": len(logical_x.support),
             "logicals_anticommute": anticommute,
-            "correction_bound": (self.distance - 1) // 2,
-            "verified": not failures
-            and anticommute
-            and len(logical_z.support) == self.distance
-            and len(logical_x.support) == self.distance,
+            "exact_x_distance": exact.exact_x_distance,
+            "exact_z_distance": exact.exact_z_distance,
+            "correction_bound": (min(exact.exact_x_distance, exact.exact_z_distance) - 1) // 2,
         }
+        unsigned["verified"] = bool(
+            not failures
+            and logicals_ok
+            and anticommute
+            and exact.logical_qubits == 1
+            and exact.logicals_nontrivial
+            and exact.exact_x_distance == exact.exact_z_distance == self.distance
+        )
         return SurfaceCodeAlgebraReport(**unsigned, proof_digest=_digest(unsigned))
 
 
 def verify_surface_code_algebra(distance: int = 21) -> SurfaceCodeAlgebraReport:
     return PlanarSurfaceCodeAlgebra(distance).verify()
+
+
+def all_vertex_star_report(distance: int) -> dict[str, Any]:
+    """The earlier star-on-every-vertex convention, counted exactly: k = 0."""
+    from kellogg.surface_code import edge_star_report
+
+    return edge_star_report(int(distance))
 
 
 __all__ = [
@@ -190,5 +246,6 @@ __all__ = [
     "PlanarSurfaceCodeAlgebra",
     "SurfaceCodeAlgebraReport",
     "SurfaceCodeConvention",
+    "all_vertex_star_report",
     "verify_surface_code_algebra",
 ]
