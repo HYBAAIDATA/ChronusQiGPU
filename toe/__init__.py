@@ -132,7 +132,7 @@ consensus and never decides share validity.
 # Canonical version declaration for the toe package — the only literal in
 # the package; toe/engine.py derives from this (see
 # reports/version_consolidation.md).
-__version__ = "3.5.0"
+__version__ = "1.0.0"
 
 from .bridge import (
     CausalLadderResult,
