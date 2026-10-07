@@ -328,6 +328,8 @@ class AutonomicControlPlane:
         ledger: EvidenceLedger | None = None,
         clock_ns: Callable[[], int] = time.time_ns,
         max_recoveries_per_target: int = 2,
+        authorizer: Callable[[ActionRequest], Mapping[str, Any]] | None = None,
+        require_authorization: bool = True,
     ) -> None:
         self.registry = registry
         self.ledger = ledger or EvidenceLedger()
@@ -344,6 +346,60 @@ class AutonomicControlPlane:
         self._policies: dict[str, PolicyVersion] = {}
         self._current_policy: str | None = None
         self._baseline_metrics: dict[str, tuple[float, float, bool]] = {}
+        self.authorizer = authorizer
+        self.require_authorization = bool(require_authorization)
+
+    def _authorize(self, request: ActionRequest) -> Mapping[str, Any]:
+        """Require an evidence-bearing security verdict before actuation.
+
+        Production composition is fail-closed by default. Tests or isolated
+        research callers may opt out only by explicitly constructing the
+        control plane with require_authorization=False.
+        """
+        if not self.require_authorization:
+            return {
+                "allowed": True,
+                "authority": "AUTHORIZATION_EXPLICITLY_DISABLED",
+                "reason": "non-production composition opted out",
+                "actor": request.actor_id or "UNSPECIFIED",
+                "evidence_id": None,
+            }
+        if not request.actor_id.strip():
+            return {
+                "allowed": False,
+                "authority": "AL_HARAS",
+                "reason": "ACTOR_REQUIRED",
+                "actor": "",
+                "evidence_id": None,
+            }
+        if self.authorizer is None:
+            return {
+                "allowed": False,
+                "authority": "AL_HARAS",
+                "reason": "AUTHORIZER_UNAVAILABLE",
+                "actor": request.actor_id,
+                "evidence_id": None,
+            }
+        try:
+            decision = dict(self.authorizer(request))
+        except Exception as exc:
+            return {
+                "allowed": False,
+                "authority": "AL_HARAS",
+                "reason": f"AUTHORIZER_ERROR:{type(exc).__name__}",
+                "actor": request.actor_id,
+                "evidence_id": None,
+            }
+        decision.setdefault("authority", "AL_HARAS")
+        decision.setdefault("actor", request.actor_id)
+        evidence_id = decision.get("evidence_id") or decision.get("evidence_ref")
+        if decision.get("allowed") is True and not evidence_id:
+            return {
+                **decision,
+                "allowed": False,
+                "reason": "AUTHORIZATION_EVIDENCE_REQUIRED",
+            }
+        return decision
 
     # --------------------------------------------------------- health/events
     def observe(
@@ -454,10 +510,39 @@ class AutonomicControlPlane:
         if request.idempotency_key in self._idempotency:
             return self._idempotency[request.idempotency_key]
         now = self.clock_ns()
+        authorization = self._authorize(request)
+        authorization_ref = self.ledger.append(
+            "action-authorization",
+            authorization,
+            at_ns=now,
+        )
+        if authorization.get("allowed") is not True:
+            reason = str(authorization.get("reason") or "authorization denied")
+            self.ledger.append(
+                "action-rejected",
+                {
+                    "action_id": request.action_id,
+                    "reason": reason,
+                    "authorization_ref": authorization_ref,
+                },
+                at_ns=self.clock_ns(),
+            )
+            raise FailClosed(f"AL HARAS authorization denied: {reason}")
+
         circuit = self.circuits.setdefault(request.handler, CircuitBreaker())
         if not circuit.admit(now):
             raise FailClosed("handler circuit is open")
-        before = self.ledger.append("action-proposed", asdict(request), at_ns=now)
+        before = self.ledger.append(
+            "action-proposed",
+            {
+                **asdict(request),
+                "authorization_ref": authorization_ref,
+                "authorization_evidence_id": (
+                    authorization.get("evidence_id") or authorization.get("evidence_ref")
+                ),
+            },
+            at_ns=now,
+        )
         try:
             response = self.registry.execute(request)
             execution_ref = self.ledger.append(
