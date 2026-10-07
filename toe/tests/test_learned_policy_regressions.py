@@ -158,6 +158,75 @@ class TestTenantIsolationOnFeedback(unittest.TestCase):
         self.assertTrue(out.ok)
 
 
+class TestTransactionalDurability(unittest.TestCase):
+    """Failed durable write must roll memory back to last durable state."""
+
+    def test_failed_persist_rolls_back_and_leaves_retryable(self) -> None:
+        d = tempfile.mkdtemp()
+        blocker = os.path.join(d, "blocker")
+        with open(blocker, "w", encoding="utf-8") as fh:
+            fh.write("x")
+        rt = _runtime(feedback_state_path=os.path.join(blocker, "fb.json"))
+        t = TenantContext(tenant_id="t1")
+        r = rt.predict(_payload(), t)
+        before = dict(rt.feedback_core.model_parameters)
+        out = rt.record_outcome(r.decision_id, True, t)
+        self.assertFalse(out.ok)
+        # In-memory aggregate is back to the last durable state — no phantom
+        # learned update survives the failed handoff.
+        self.assertEqual(rt.feedback_core.model_parameters, before)
+        self.assertNotIn(r.decision_id, rt.feedback_core._processed)
+        # Decision stays recorded and unclosed -> retryable after remediation.
+        self.assertIn(r.decision_id, rt.feedback_core.decision_records)
+        good = os.path.join(d, "fb.json")
+        rt._feedback_state_path = type(rt._feedback_state_path)(good)
+        retry = rt.record_outcome(r.decision_id, True, t)
+        self.assertTrue(retry.ok)
+
+    def test_successful_persist_recovers_durability_and_ready(self) -> None:
+        d = tempfile.mkdtemp()
+        blocker = os.path.join(d, "blocker")
+        with open(blocker, "w", encoding="utf-8") as fh:
+            fh.write("x")
+        rt = _runtime(feedback_state_path=os.path.join(blocker, "fb.json"))
+        t = TenantContext(tenant_id="t1")
+        r = rt.predict(_payload(), t)
+        self.assertFalse(rt.record_outcome(r.decision_id, True, t).ok)
+        self.assertFalse(rt.ready())
+        rt._feedback_state_path = type(rt._feedback_state_path)(
+            os.path.join(d, "fb.json")
+        )
+        self.assertTrue(rt.record_outcome(r.decision_id, True, t).ok)
+        self.assertFalse(rt._durability_failed)
+        self.assertTrue(rt.ready())
+
+    def test_excluded_module_still_receives_attribution(self) -> None:
+        """Exclusion gates delivery, not learning: good outcomes can recover."""
+        rt = _runtime()
+        t = TenantContext(tenant_id="t1")
+        rt.feedback_core.model_parameters["state_tomography"] = -0.5
+        r = rt.predict(_payload(), t)
+        self.assertIn("learned_policy", r.result)
+        self.assertTrue(rt.record_outcome(r.decision_id, True, t).ok)
+        # The excluded module was still attributed — its weight moved from
+        # the seed rather than freezing at the exclusion boundary.
+        self.assertNotEqual(
+            rt.feedback_core.model_parameters.get("state_tomography"), -0.5
+        )
+
+    def test_all_modules_excluded_marks_degraded(self) -> None:
+        rt = _runtime()
+        t = TenantContext(tenant_id="t1")
+        probe = rt.predict(_payload(), t)
+        for key, value in probe.result.items():
+            if isinstance(value, dict):
+                rt.feedback_core.model_parameters[key] = -0.5
+        r = rt.predict(_payload(), t)
+        self.assertTrue(r.ok)
+        self.assertTrue(r.degraded)
+        self.assertTrue(r.result["learned_policy"]["empty_surface"])
+
+
 class TestDurabilityFailClosed(unittest.TestCase):
     """QC 3: configured persistence failing => record_outcome must not ok."""
 

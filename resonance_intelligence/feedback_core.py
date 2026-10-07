@@ -240,6 +240,37 @@ class IntelligenceFeedbackCore:
             ),
         }
 
+    def rollback_outcome(self, decision_id: str, prior: Mapping[str, Any]) -> None:
+        """Undo a ``process()`` whose durable handoff failed.
+
+        The learned update is transactional: when persistence of the new
+        aggregate fails, in-memory state must return to exactly the last
+        durable state — otherwise memory would carry an update the disk
+        never accepted, and the decision would be half-consumed (marked
+        processed but without its outcome surviving restart).  Live
+        ``decision_records`` are untouched: the decision stays recorded and
+        unprocessed, so the caller can retry ``process`` after the write
+        path is repaired.  ``prior`` is the ``snapshot()`` taken before
+        processing.
+        """
+        report = self._processed.pop(decision_id, None)
+        if report is not None:
+            if self.feedback_reports and self.feedback_reports[-1] is report:
+                self.feedback_reports.pop()
+            elif report in self.feedback_reports:
+                self.feedback_reports.remove(report)
+            if (
+                self.learning_updates
+                and self.learning_updates[-1].decision_id == decision_id
+            ):
+                self.learning_updates.pop()
+            self.causal_engine.pop_last_report()
+        self.model_parameters = {
+            str(name): float(value)
+            for name, value in dict(prior.get("model_parameters") or {}).items()
+        }
+        self.calibration_engine.import_state(prior.get("calibration") or {})
+
     def reset_learning(self) -> None:
         self.decision_records.clear(); self.learning_updates.clear(); self.feedback_reports.clear()
         self.model_parameters.clear(); self._processed.clear()

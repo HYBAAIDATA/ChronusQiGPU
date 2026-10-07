@@ -477,10 +477,19 @@ class TOEIntelligenceRuntime:
         }
         if excluded:
             result["learned_exclusions"] = excluded
+            remaining = [
+                key
+                for key, value in result.items()
+                if isinstance(value, dict)
+                and key not in ("learned_exclusions", "learned_policy")
+            ]
             result["learned_policy"] = {
                 "applied": True,
                 "excluded_modules": sorted(excluded),
                 "basis": "attribution model_parameters < 0",
+                # Every engine module was excluded — the delivered surface
+                # carries no module output; callers see this as degraded.
+                "empty_surface": not remaining,
             }
         return result
 
@@ -504,14 +513,20 @@ class TOEIntelligenceRuntime:
         not a predict-only slice that silently empties for other operations.
         """
         # Policy metadata keys are not engine modules — attribution must see
-        # only the real contributors that survived (or were absent from) the
-        # learned policy.
+        # only the real contributors the engine produced.
         module_outputs = {
             key: value
             for key, value in result.items()
             if isinstance(value, dict)
             and key not in ("learned_exclusions", "learned_policy")
         }
+        # Learned exclusion gates the DELIVERED surface, not the learning
+        # signal: excluded modules still enter attribution so a measured good
+        # outcome can lift their weight back across the exclusion boundary —
+        # exclusion is a policy decision, not a permanent exile.
+        exclusions = result.get("learned_exclusions")
+        if isinstance(exclusions, dict):
+            module_outputs.update(exclusions)
         if not module_outputs:
             module_outputs = {"result": result}
         decision_id: Optional[str] = None
@@ -639,6 +654,15 @@ class TOEIntelligenceRuntime:
                 ),
                 degraded=True,
             )
+        # Transactional durability: snapshot before processing so a failed
+        # durable write can roll the in-memory aggregate back to the last
+        # persisted state — memory never diverges from disk, and the decision
+        # is left unprocessed so the caller can retry after remediation.
+        pre_state = (
+            self.feedback_core.snapshot()
+            if self._feedback_state_path is not None
+            else None
+        )
         try:
             report = self.feedback_core.process(
                 decision_id=decision_id,
@@ -650,6 +674,16 @@ class TOEIntelligenceRuntime:
                 # Configured durability failed: fail closed — the voyage's
                 # persistence handoff did not happen, so reporting ok=True
                 # with a MEASURED receipt would be a false-green.
+                if pre_state is not None:
+                    try:
+                        self.feedback_core.rollback_outcome(
+                            decision_id, pre_state
+                        )
+                    except Exception as rollback_exc:
+                        logger.error(
+                            "[TOE-RUNTIME] outcome rollback failed: %s",
+                            rollback_exc,
+                        )
                 self._durability_failed = True
                 reason = f"feedback_state_persist: {persist_error}"
                 if reason not in self._degraded:
@@ -671,12 +705,24 @@ class TOEIntelligenceRuntime:
                     error=RuntimeErrorInfo(
                         code="persistence_failed",
                         message=(
-                            "Outcome was learned in memory but the configured "
-                            f"durable handoff failed: {persist_error}"
+                            "Outcome was not durably recorded; the learned "
+                            "update was rolled back and the decision remains "
+                            f"unclosed (retry after remediation): {persist_error}"
                         ),
                     ),
                     degraded=True,
                 )
+            if self._feedback_state_path is not None:
+                # A successful write repairs the durability leg: clear the
+                # fault flag and stale persist/restore degradation reasons.
+                self._durability_failed = False
+                self._degraded = [
+                    r
+                    for r in self._degraded
+                    if not r.startswith(
+                        ("feedback_state_persist:", "feedback_state_restore:")
+                    )
+                ]
             if self.evidence_chain is not None:
                 self.evidence_chain.append(
                     "feedback-outcome",
@@ -952,13 +998,22 @@ class TOEIntelligenceRuntime:
         # 11. Return response — the caller needs decision_id to correlate a
         # later record_outcome back to this decision (the voyage's feedback
         # step is unreachable otherwise).
+        learned_policy = (
+            result.get("learned_policy")
+            if isinstance(result, dict)
+            else None
+        )
+        surface_degraded = bool(
+            isinstance(learned_policy, dict)
+            and learned_policy.get("empty_surface")
+        )
         return RuntimeResponse(
             ok=True,
             tenant_id=tenant.tenant_id,
             operation=operation,
             receipt=receipt,
             result=result,
-            degraded=self.degraded,
+            degraded=self.degraded or surface_degraded,
             decision_id=decision_id,
             timestamp=time.time(),
         )
