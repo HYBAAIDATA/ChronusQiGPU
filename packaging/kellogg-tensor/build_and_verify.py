@@ -228,7 +228,12 @@ assert metadata["Name"] == "kellogg-tensor"
 assert metadata["Version"] == EXPECTED_VERSION
 assert metadata["Requires-Python"] == ">=3.11"
 assert metadata["Author"] == "HYBA Software Limited"
-assert metadata["License"] == "MIT"
+license_expression = metadata.get("License-Expression")
+legacy_license = metadata.get("License")
+assert (license_expression or legacy_license) == "MIT", {
+    "License-Expression": license_expression,
+    "License": legacy_license,
+}
 requires = importlib.metadata.requires("kellogg-tensor") or []
 hard_requires = [r for r in requires if "extra ==" not in r]
 assert len(hard_requires) == 1 and hard_requires[0].lower().startswith("numpy"), hard_requires
@@ -349,7 +354,7 @@ print(json.dumps({
         "name": metadata["Name"],
         "version": metadata["Version"],
         "requires_python": metadata["Requires-Python"],
-        "license": metadata["License"],
+        "license": license_expression or legacy_license,
         "project_urls": project_urls,
         "hard_requires": hard_requires,
     },
