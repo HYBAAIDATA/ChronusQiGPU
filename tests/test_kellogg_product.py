@@ -16,6 +16,7 @@ from kellogg.benchmark import BENCHMARKS, run
 from kellogg.certificate import (
     CertificateError,
     aggregate,
+    certificate_from_dict,
     certify,
     compose,
     merkle_proof,
@@ -227,6 +228,53 @@ def test_merkle_inclusion_proofs():
     root = merkle_root(leaves)
     for i in range(13):
         assert verify_merkle_proof(leaves[i], merkle_proof(leaves, i), root)
+
+
+def test_certificate_json_is_strict_and_tamper_evident():
+    cert = certify("strict", "Q", "software", "0" * 64, "1" * 64)
+    row = cert.to_dict()
+    assert certificate_from_dict(row) == cert
+
+    changed_payload = dict(row)
+    changed_payload["parameters"] = {"changed": True}
+    with pytest.raises(CertificateError, match="digest mismatch"):
+        certificate_from_dict(changed_payload)
+
+    changed_parent = dict(row)
+    changed_parent["input_boundary"] = "2" * 64
+    with pytest.raises(CertificateError, match="digest mismatch"):
+        certificate_from_dict(changed_parent)
+
+    reordered = dict(reversed(list(row.items())))
+    assert certificate_from_dict(reordered) == cert  # canonical order is semantic, not insertion order.
+
+    unknown = dict(row)
+    unknown["surprise"] = True
+    with pytest.raises(CertificateError, match="unknown field"):
+        certificate_from_dict(unknown)
+
+    malformed = dict(row)
+    malformed.pop("machine_type")
+    with pytest.raises(CertificateError, match="missing field"):
+        certificate_from_dict(malformed)
+
+
+def test_merkle_verifier_rejects_changed_root_proof_and_invalid_side():
+    leaves = [f"{i:064x}" for i in range(5)]
+    proof = merkle_proof(leaves, 2)
+    root = merkle_root(leaves)
+    assert verify_merkle_proof(leaves[2], proof, root)
+    assert not verify_merkle_proof(leaves[2], proof, "f" * 64)
+
+    changed = list(proof)
+    side, sibling = changed[0]
+    changed[0] = (side, ("0" if sibling[0] != "0" else "1") + sibling[1:])
+    assert not verify_merkle_proof(leaves[2], changed, root)
+
+    invalid_side = list(proof)
+    invalid_side[0] = ("X", invalid_side[0][1])
+    with pytest.raises(CertificateError, match="invalid Merkle proof side"):
+        verify_merkle_proof(leaves[2], invalid_side, root)
 
 
 # -- substrate -------------------------------------------------------------------------
