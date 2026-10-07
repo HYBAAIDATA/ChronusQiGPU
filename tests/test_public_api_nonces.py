@@ -5,7 +5,7 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from kellogg.public_headers import render, survey
+from mining.public_headers import render, survey
 
 
 ROOT = Path(__file__).resolve().parents[1]

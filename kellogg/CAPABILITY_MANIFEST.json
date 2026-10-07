@@ -1,42 +1,74 @@
 {
-  "schema": "kellogg.tensor-capabilities/v1",
-  "version": "3.6.0",
+  "schema": "kellogg.tensor-capabilities/v2",
+  "version": "4.0.0",
   "canonical_owner": "kellogg",
+  "distribution": "kellogg-tensor",
+  "hard_dependencies": ["numpy"],
+  "planes": {
+    "exact": ["Z", "Q", "Q(i)", "Q(sqrt2)", "Q(zeta8)", "Z[phi]", "Q(phi)", "GF(2)"],
+    "float": ["float64"]
+  },
   "integrated": {
+    "exact_network": [
+      "ExactTensorTrain", "ExactMPS", "ExactMPO", "ghz_circuit", "ising_mpo", "heisenberg_mpo"
+    ],
+    "custody": ["ResidentCustody", "FoldStoreCustody", "default_custody"],
+    "certificate": [
+      "TensorCertificate", "certify", "compose", "aggregate", "CertificateLedger",
+      "merkle_root", "merkle_proof", "cex"
+    ],
+    "channels": [
+      "KrausChannel", "channel_mpo", "PauliHamiltonian", "pauli_rotation",
+      "fisher_matrix", "quantum_fisher_information", "natural_gradient_step"
+    ],
+    "surface_code": ["PlanarSurfaceCode", "edge_star_report"],
+    "substrate": [
+      "TRANSFER", "lucas_wind", "cassini_step", "lucas_cassini", "cat_map", "QPhi",
+      "phi_beta_expansion", "korobov_point", "star_discrepancy_2d"
+    ],
+    "vector11": ["RootVector", "lift", "unit_lift", "fold", "unfold"],
     "tensor_network": [
-      "TensorTrain", "tt_decompose", "tt_reconstruct", "tt_compress_with_budget",
+      "TensorTrain", "tt_svd", "tt_decompose", "tt_reconstruct", "tt_compress_with_budget",
       "mps_decompose", "mps_reconstruct", "MatrixProductOperator",
       "IsingHamiltonianMPO", "HeisenbergHamiltonianMPO",
       "hamiltonian_with_tensor_network", "topology_signature",
       "topology_preserved", "persistent_homology_comparison",
       "quantum_fisher_metric", "natural_gradient_step"
     ],
+    "dmrg": ["dmrg", "DMRGResult"],
     "compressed_tensor": [
       "CompressedTensor", "QuantumCompressedTensorEngine", "QuantumOperator",
       "ExpertRouter", "apply_quantum_operator", "interfere_states", "measure_state"
     ],
-    "persistence": ["save_pv", "load_pv", "validate_pv"]
+    "persistence": ["save_pv", "load_pv", "validate_pv"],
+    "specification": ["REGISTRY", "verify_registry"],
+    "benchmark": ["run", "run_all", "BENCHMARKS"]
   },
   "delegated": {
     "aethel": ["phi_fold custody", "memory tiers", "integrity gate"],
+    "theseus": ["durable custody", "provenance records"],
+    "al_haras": ["certificate signatures", "revocation", "transparency log", "policy"],
     "chronus": ["geodesic scheduling", "virtual GPU control", "physical execution evidence"],
-    "tensor": ["device backend dispatch"],
-    "mining": ["SHA-256d", "target validation", "pool outcomes"]
+    "mining": ["SHA-256d", "target validation", "pool outcomes", "block headers"]
   },
   "excluded_as_non_tensor": [
     "cloud deployment", "HTTP API", "predictive engine", "mining orchestration",
-    "Grover/VQC policy", "Shor demonstrations", "benchmark report rendering"
+    "Grover/VQC policy", "Shor demonstrations", "benchmark report rendering",
+    "Bitcoin header surveys", "hashrate capacity models"
   ],
   "rejected_behaviors": [
     "silent vector padding", "complex-to-real truncation",
     "representation ratio reported as physical compression",
     "zero padding in place of inverse reconstruction", "unbounded MPO expansion",
+    "unguarded dense reconstruction",
     "non-trace-preserving Kraus maps", "phase-insensitive density-matrix interference",
-    "pickle-based artifact loading"
+    "pickle-based artifact loading", "tolerance in place of exact equality on the exact path",
+    "TFLOPs or hashrate reported for tensor work"
   ],
   "claim_boundary": {
     "consensus_authority": false,
     "physical_hardware_claim": false,
-    "compression_ratios": "representation accounting only"
+    "compression_ratios": "representation accounting only",
+    "theorem_proven": false
   }
 }

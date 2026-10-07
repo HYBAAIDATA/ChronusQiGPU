@@ -16,7 +16,7 @@ from typing import Any, Callable, Sequence
 
 import numpy as np
 
-from .tensor_network import TensorNetworkError, TensorTrain, mps_decompose
+from .tensor_network import TensorTrain, mps_decompose
 
 
 class CompressedTensorError(ValueError):

@@ -1,5 +1,8 @@
 """Read each traversal's successor. Do not rewrite it.
 
+Cross-product study: Kellogg supplies the traversal mathematics and Aethel
+prices the addresses, so this report lives outside both packages.
+
 The four Chirikov probes apply only where the successor is that map.
 A constant step on a circle is the integrable standard map, so its
 Lyapunov limit is 0, its Greene residue is 0 and its action variance
@@ -22,14 +25,14 @@ from typing import Optional, Sequence
 
 from aethel.overhead import OverheadLedger, price_addresses
 
-from .first_principles import (
+from kellogg.first_principles import (
     elliptic_island_residue,
     morton_decode,
     residue_from_trace,
     shear_monodromy,
 )
-from .scales import cassini_store, fibonacci, lucas, pisot_wind
-from .traversal import cassini_offset, cassini_verify, coverage_certificate
+from kellogg.scales import cassini_store, fibonacci, lucas, pisot_wind
+from kellogg.traversal import cassini_offset, cassini_verify, coverage_certificate
 
 HORIZON = 32
 SCAN_MODULUS = 64

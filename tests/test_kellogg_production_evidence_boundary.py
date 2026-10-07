@@ -43,7 +43,7 @@ def test_attestation_replay_binds_computation_and_boundary_metadata():
         float_boundaries=("diagnostic display",),
         notes=("test evidence",),
     )
-    assert evidence["schema"] == "kellogg.attestation/v1"
+    assert evidence["schema"] == "kellogg.attestation/v2"
     assert len(evidence["attestation_digest"]) == 64
     assert verify_attestation(payload, evidence) is True
 

@@ -1,7 +1,7 @@
-# HYBA distribution plan — Chronos / Chronus / Tensor / Turing (5 Oct 2026)
+# HYBA distribution plan — Chronos / Chronus / Tensor / Turing / Kellogg (7 Oct 2026)
 
 Owner intent: publish the planes as **separate installable packages** so each
-capability (Tensor, iGPU, Turing, Chronos maths) has its own release cadence,
+capability (Kellogg, Tensor, iGPU, Turing, Chronos maths) is a product with its own release cadence,
 dependency set, and consumption surface. This file is the packaging contract
 and the evidence-based status of each split. The monorepo distribution
 `pythia-mla1517` stays canonical until a split's wheel is built and installed
@@ -14,7 +14,8 @@ in CI; a scaffold here never silently replaces it.
 | `chronos-core` | Chronos maths (render engine, QSDL, Hamiltonian, evolution, reconstruction, theory, academic) | `chronus/__init__.py`, `chronus/v33/**` | `numpy` | **Scaffolded** (`packaging/chronos-core/pyproject.toml`); structural validation passes (schema parsed, every declared package/module exists); wheel build gated on CI (setuptools not present on the elevation sandbox) |
 | `turing-universal-quantum-computer` | Turing VQC compute substrate | `turing_universal_quantum_computer/**` | `numpy` | **Already separate** — own `pyproject.toml` in-tree; declared as a dependency of `pythia-mla1517` (`pip install ./turing_universal_quantum_computer .`) |
 | `chronus-igpu` | Chronus hardware/runtime plane (device detect, backends, virtual iGPU, delivery, telemetry) | `chronus/device.py`, `detect.py`, `gpu_capabilities.py`, `native_tensor.py`, `tensor_compute.py`, `opencl_host.py`, `virtual_igpu/**`, `delivery.py`, `telemetry.py`, `runtime.py` | `chronos-core` (soft), optional `pyopencl`/`cupy` | **Planned** — module list frozen from the repo tree; scaffold after #35 (delivery.py imports `native_hash`, fixed there) merges |
-| `chronus-tensor` | Tensor plane (folded-state runtime, contracts, receipts) | `tensor/**`, `kellogg/**`, `aethel/fold_store.py` | `chronos-core`, `aethel` | **Planned** — follows PR #41 (tensor elevation) review; capability manifest already exists (`tensor/CAPABILITY_MANIFEST.md`) |
+| `kellogg-tensor` | Kellogg: exact tensor networks (Q(zeta_8) MPS/MPO/TT in custody), certificates, exact channels/Fisher, surface code, golden substrate, TT-SVD, DMRG, specification registry, benchmark suite | `kellogg/**` | `numpy` (Aethel fold store optional, bound by protocol) | **Scaffolded and wheel-verified** (`packaging/kellogg-tensor/`): `build_and_verify.py` builds the wheel, installs it into a clean venv, imports every module with no sibling product present, and runs the correctness and meta benchmarks against the installed wheel |
+| `chronus-tensor` | Tensor plane (folded-state runtime, contracts, receipts) | `tensor/**`, `aethel/fold_store.py` | `chronos-core`, `aethel`, `kellogg-tensor` | **Planned** — Kellogg is no longer bundled here; it is its own distribution and a dependency |
 
 ## Provisioning and consumption model (Chronos/Chronus)
 

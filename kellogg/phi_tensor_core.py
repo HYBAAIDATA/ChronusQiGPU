@@ -2,8 +2,11 @@
 
 The tensor plane of the Geodesic Tensor Engine. :class:`PhiTensorCore` performs
 FMA, matrix multiplication, unary/binary elementwise work and reductions on
-:class:`aethel.phi_fold.NumericFoldState` operands. Boundary reads use Aethel's
-true selective-unfold path; results are folded back and measured.
+folded operands. Aethel owns fold custody: the folded state type, the fold,
+the unfold and the selective-unfold path come from a custody provider that is
+injected (``custody=``) or resolved lazily from ``aethel.phi_fold``. Kellogg
+never imports Aethel at module load; with no provider installed the core
+fails closed with :class:`FoldCustodyUnavailable`.
 
 The July tensor-core evidence surface is preserved without breaking the modern
 API: operations still return their result directly, while ``last_metrics`` and
@@ -18,29 +21,58 @@ compatibility capabilities.
 
 from __future__ import annotations
 
+import importlib
 import logging
 import math
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Callable, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Tuple
 
 import numpy as np
 
-from aethel.phi_fold import (
-    KernelBoundary,
-    NumericFoldState,
-    phi_fold,
-    phi_unfold,
-    reconstruction_error,
-    unfold_partial,
-)
+if TYPE_CHECKING:
+    from aethel.phi_fold import KernelBoundary, NumericFoldState
 
 logger = logging.getLogger("kellogg.phi_tensor_core")
+
+_CUSTODY_PROVIDER = "aethel.phi_fold"
+_CUSTODY_API = (
+    "NumericFoldState",
+    "phi_fold",
+    "phi_unfold",
+    "reconstruction_error",
+    "unfold_partial",
+)
 
 
 class TensorCoreError(ValueError):
     """A tensor-core operand, boundary, or shape contract was violated."""
+
+
+class FoldCustodyUnavailable(TensorCoreError):
+    """No fold-custody provider is installed. Aethel owns fold custody."""
+
+
+def resolve_fold_custody(custody: Any = None) -> Any:
+    """Return a fold-custody provider exposing the folded-state API.
+
+    An injected provider must expose ``NumericFoldState``, ``phi_fold``,
+    ``phi_unfold``, ``reconstruction_error`` and ``unfold_partial``. With
+    none injected, ``aethel.phi_fold`` is imported on demand.
+    """
+    if custody is None:
+        try:
+            custody = importlib.import_module(_CUSTODY_PROVIDER)
+        except ImportError as exc:
+            raise FoldCustodyUnavailable(
+                "PhiTensorCore operates on folded custody state; install the Aethel "
+                "fold-custody provider or pass custody="
+            ) from exc
+    missing = [name for name in _CUSTODY_API if not hasattr(custody, name)]
+    if missing:
+        raise FoldCustodyUnavailable(f"fold-custody provider lacks {missing}")
+    return custody
 
 
 class PrecisionMode(Enum):
@@ -70,12 +102,6 @@ class TensorOpRecord:
     core_id: int = 0
 
 
-def _boundary_slice(state: NumericFoldState, boundary: Optional[KernelBoundary]) -> np.ndarray:
-    if boundary is None:
-        return phi_unfold(state).ravel()
-    return unfold_partial(state, boundary)
-
-
 class PhiTensorCore:
     """Folded-domain ALU with measured operation evidence."""
 
@@ -86,11 +112,13 @@ class PhiTensorCore:
         *,
         core_id: int = 0,
         precision: PrecisionMode = PrecisionMode.FP64,
+        custody: Any = None,
     ) -> None:
         if result_depth < 0 or fold_depth < 0:
             raise TensorCoreError("fold depths must be >= 0")
         if core_id < 0:
             raise TensorCoreError("core_id must be non-negative")
+        self.custody = resolve_fold_custody(custody)
         self.result_depth = int(result_depth)
         self.fold_depth = int(fold_depth)
         self.core_id = int(core_id)
@@ -102,6 +130,13 @@ class PhiTensorCore:
     @property
     def last_metrics(self) -> Optional[TensorOpRecord]:
         return self.op_log[-1] if self.op_log else None
+
+    def _boundary_slice(
+        self, state: NumericFoldState, boundary: Optional[KernelBoundary]
+    ) -> np.ndarray:
+        if boundary is None:
+            return self.custody.phi_unfold(state).ravel()
+        return self.custody.unfold_partial(state, boundary)
 
     @staticmethod
     def _max_foldable_depth(size: int, requested: int) -> int:
@@ -126,7 +161,7 @@ class PhiTensorCore:
     def _fold_result(self, result: np.ndarray) -> NumericFoldState:
         array = np.asarray(result, dtype=np.float64)
         depth = self._max_foldable_depth(array.size, self.result_depth)
-        return phi_fold(array, depth=depth)
+        return self.custody.phi_fold(array, depth=depth)
 
     def _record(
         self,
@@ -144,7 +179,7 @@ class PhiTensorCore:
             float(np.sqrt(sum(float(np.sum(np.square(i))) for i in inputs))) if inputs else 0.0
         )
         out_norm = float(np.linalg.norm(result_flat)) if result_flat.size else 0.0
-        error = reconstruction_error(np.asarray(result), result_state)
+        error = self.custody.reconstruction_error(np.asarray(result), result_state)
         elapsed_ns = max(1, time.perf_counter_ns() - started_ns)
         record = TensorOpRecord(
             op=op,
@@ -173,7 +208,7 @@ class PhiTensorCore:
     ) -> NumericFoldState:
         """Fused multiply-add over the boundary slice: ``a * b + c``."""
         started = time.perf_counter_ns()
-        slices = [_boundary_slice(s, boundary) for s in (a, b, c)]
+        slices = [self._boundary_slice(s, boundary) for s in (a, b, c)]
         sizes = {s.size for s in slices}
         if len(sizes) != 1:
             raise TensorCoreError(f"fma operands must slice to equal lengths, got {sizes}")
@@ -190,8 +225,8 @@ class PhiTensorCore:
     ) -> NumericFoldState:
         """Matrix product; boundary selects the flat output range returned."""
         started = time.perf_counter_ns()
-        a_mat = phi_unfold(a)
-        b_mat = phi_unfold(b)
+        a_mat = self.custody.phi_unfold(a)
+        b_mat = self.custody.phi_unfold(b)
         if a_mat.ndim != 2 or b_mat.ndim != 2:
             raise TensorCoreError("matmul requires 2-D fold states")
         if a_mat.shape[1] != b_mat.shape[0]:
@@ -233,9 +268,9 @@ class PhiTensorCore:
         The binary default is addition, matching the July callable default.
         """
         started = time.perf_counter_ns()
-        left = _boundary_slice(a, boundary)
-        if isinstance(fn_or_b, NumericFoldState):
-            right = _boundary_slice(fn_or_b, boundary)
+        left = self._boundary_slice(a, boundary)
+        if isinstance(fn_or_b, self.custody.NumericFoldState):
+            right = self._boundary_slice(fn_or_b, boundary)
             if left.shape != right.shape:
                 raise TensorCoreError("binary elementwise operands must have equal slice shapes")
             binary = op or (lambda x, y: x + y)
@@ -271,7 +306,7 @@ class PhiTensorCore:
     ) -> float:
         """Reduce the boundary slice to a scalar."""
         started = time.perf_counter_ns()
-        operand = _boundary_slice(a, boundary)
+        operand = self._boundary_slice(a, boundary)
         value = float(fn(operand))
         result = np.array([value], dtype=np.float64)
         state = self._fold_result(result)

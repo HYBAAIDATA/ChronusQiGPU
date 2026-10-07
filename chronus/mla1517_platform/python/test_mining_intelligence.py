@@ -340,7 +340,7 @@ class PolicyAuditTests(unittest.TestCase):
         self.assertEqual(record["vqc"]["window"], record["classical_window"])
         self.assertEqual(record["decided_window"], record["classical_window"])
         att = record["attestation"]
-        self.assertEqual(att["schema"], "kellogg.attestation/v1")
+        self.assertEqual(att["schema"], "kellogg.attestation/v2")
         self.assertEqual(len(att["digest"]), 64)
         self.assertFalse(att["boundary"]["theorem_proven"])
         again = PolicyAuditor(every=1).maybe_audit(self._decision())
