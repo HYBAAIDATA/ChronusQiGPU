@@ -1,4 +1,4 @@
-"""HYBA's six-layer, tenant-scoped, attested ontology store."""
+"""Tenant-scoped HYBA ontology/query projection over THESEUS durable custody."""
 
 from .models import (
     AccessDenied,
