@@ -53,13 +53,13 @@ def test_forensic_map_marks_every_named_subsystem():
     # TUQC consolidations repointed their registry entries at real modules
     # (kellogg.exact_tensor, Intelligence.search_crystal, and the
     # turing_universal_quantum_computer package), so find_spec resolves
-    # them as present.
+    # them as present. pulvini_runtime followed once Intelligence.pulvini_runtime
+    # was wired (opt-in solve-first planning).
     parked = {
         "pythia_agent",
         "ontology_chain",
         "search_tree",
         "salamander_transaction",
-        "pulvini_runtime",
         "pool_aware_miner",
     }
     absent = {s["key"] for s in m["subsystems"] if not s["present"]}

@@ -343,6 +343,7 @@ class StabilizerBackend(_Adapter):
         state = self._build(program)
         payload: dict[str, Any] = {
             "representation": "tableau",
+            "field": "GF(2)",
             "state_dimension": 1 << program.n_qubits,
             "stabilizer_generators": state.stabilizer_strings(),
             "tableau_bits": 2 * program.n_qubits,

@@ -1,0 +1,330 @@
+"""Runtime provenance for the private Devin EUCLID-aptitude plugin.
+
+The plugin identity/path remains pythia for installation compatibility.
+The augmentation delivered to Devin is EUCLID-derived aptitude: the complete
+repo-local plugin skill set plus the Intelligence/skills library is invoked at
+SessionStart and remains active for the session.
+
+Skill activation is session-scoped. Task evidence is separate.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import subprocess
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+
+def _looks_like_workspace(candidate: Path) -> bool:
+    return (candidate / "plugins" / "pythia" / "skills").is_dir() and (
+        candidate / "Intelligence" / "skills"
+    ).is_dir()
+
+
+def _resolve_workspace_root() -> Path:
+    """Locate the PhiMiner workspace that owns this plugin's runtime state.
+
+    Hook commands may execute from the installed plugin cache with any
+    working directory (the process cwd is not reliable). Resolve the
+    workspace from the session project directory or the plugin's in-repo
+    location; never from the process cwd alone.
+    """
+    plugin_dir = Path(__file__).resolve().parent.parent
+    candidates: list[Path] = []
+    for var in ("DEVIN_PROJECT_DIR", "CLAUDE_PROJECT_DIR"):
+        raw = os.environ.get(var, "").strip()
+        if raw:
+            candidates.append(Path(raw))
+    if plugin_dir.parent.name == "plugins" and plugin_dir.name == "pythia":
+        candidates.append(plugin_dir.parent.parent)
+    candidates.append(Path.cwd())
+    fallback = candidates[0]
+    for candidate in candidates:
+        try:
+            resolved = candidate.resolve()
+        except OSError:
+            continue
+        if _looks_like_workspace(resolved):
+            return resolved
+    try:
+        return fallback.resolve()
+    except OSError:
+        return Path.cwd()
+
+
+ROOT = _resolve_workspace_root()
+WORKSPACE_AVAILABLE = _looks_like_workspace(ROOT)
+PLUGIN_ROOT = ROOT / "plugins" / "pythia"
+INTELLIGENCE_SKILLS_ROOT = ROOT / "Intelligence" / "skills"
+MANIFEST = PLUGIN_ROOT / ".devin-plugin" / "plugin.json"
+JOURNAL = ROOT / "artifacts" / "pythia" / "devin-checkpoint.jsonl"
+RECEIPT = ROOT / "artifacts" / "pythia" / "devin-plugin-runtime.json"
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+def _git(*args: str) -> str:
+    try:
+        proc = subprocess.run(
+            ["git", *args],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return "UNAVAILABLE"
+    return proc.stdout.strip() or "UNAVAILABLE"
+
+
+def _manifest() -> dict[str, Any]:
+    try:
+        return json.loads(MANIFEST.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def _skill_names(root: Path) -> list[str]:
+    if not root.is_dir():
+        return []
+    return sorted(
+        path.parent.name
+        for path in root.glob("*/SKILL.md")
+        if path.is_file()
+    )
+
+
+def plugin_skills() -> list[str]:
+    return _skill_names(PLUGIN_ROOT / "skills")
+
+
+def euclid_aptitude_skills() -> list[str]:
+    return _skill_names(INTELLIGENCE_SKILLS_ROOT)
+
+
+def mandatory_skills() -> list[str]:
+    return sorted(
+        {f"plugin:{name}" for name in plugin_skills()}
+        | {f"euclid:{name}" for name in euclid_aptitude_skills()}
+    )
+
+
+def _aptitude_files() -> list[Path]:
+    files: list[Path] = []
+    for root in (PLUGIN_ROOT, INTELLIGENCE_SKILLS_ROOT):
+        if not root.is_dir():
+            continue
+        for path in root.rglob("*"):
+            if not path.is_file():
+                continue
+            if "__pycache__" in path.parts or path.suffix in {".pyc", ".pyo"}:
+                continue
+            files.append(path)
+    return sorted(files, key=lambda item: item.relative_to(ROOT).as_posix())
+
+
+def aptitude_digest_sha256() -> str:
+    digest = hashlib.sha256()
+    for path in _aptitude_files():
+        relative = path.relative_to(ROOT).as_posix().encode("utf-8")
+        data = path.read_bytes()
+        digest.update(relative)
+        digest.update(b"\x00")
+        digest.update(hashlib.sha256(data).digest())
+    return digest.hexdigest()
+
+
+def _journal_state() -> tuple[int, dict[str, Any] | None]:
+    if not JOURNAL.is_file():
+        return 0, None
+    lines = [
+        line.strip()
+        for line in JOURNAL.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    if not lines:
+        return 0, None
+    try:
+        last = json.loads(lines[-1])
+    except json.JSONDecodeError:
+        last = {"_malformed_tail": lines[-1][:400]}
+    return len(lines), last
+
+
+def _existing_receipt() -> dict[str, Any]:
+    if not RECEIPT.is_file():
+        return {}
+    try:
+        value = json.loads(RECEIPT.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
+def _normalise_skill(value: str) -> str:
+    cleaned = value.strip()
+    if not cleaned:
+        raise ValueError("skill name is empty")
+    if ":" in cleaned:
+        return cleaned
+    return f"plugin:{cleaned}"
+
+
+def build_status(
+    *,
+    event: str | None = None,
+    record_skill: str | None = None,
+    invoke_all: bool = False,
+    reset_session: bool = False,
+) -> dict[str, Any]:
+    manifest = _manifest()
+    count, last = _journal_state()
+    previous = {} if reset_session else _existing_receipt()
+    mandatory = mandatory_skills()
+    invoked = set(previous.get("skills_invoked") or [])
+
+    if invoke_all and event not in {"SessionStart", "PostCompaction"}:
+        raise ValueError(
+            "invoke_all is reserved for SessionStart/PostCompaction lifecycle hooks"
+        )
+    if invoke_all:
+        invoked.update(mandatory)
+    if record_skill:
+        invoked.add(_normalise_skill(record_skill))
+
+    hook_events = list(previous.get("hook_events") or [])
+    if event and event not in hook_events:
+        hook_events.append(event)
+
+    source_sha = _git(
+        "log",
+        "-1",
+        "--format=%H",
+        "--",
+        "plugins/pythia",
+        "Intelligence/skills",
+        ".devin/config.json",
+    )
+    mandatory_set = set(mandatory)
+    session_start_observed = "SessionStart" in hook_events
+    mandatory_complete = (
+        bool(mandatory_set)
+        and session_start_observed
+        and mandatory_set.issubset(invoked)
+    )
+    return {
+        "schema": "euclid.devin-aptitude-runtime/1",
+        "plugin": manifest.get("name", "pythia"),
+        "plugin_version": manifest.get("version", "UNAVAILABLE"),
+        "augmentation": "EUCLID_APTITUDE",
+        "aptitude_digest_sha256": aptitude_digest_sha256(),
+        "plugin_source_sha": source_sha,
+        "workspace_head_sha": _git("rev-parse", "HEAD"),
+        "generated_at": _now(),
+        "private_repo_local": True,
+        "workspace_available": WORKSPACE_AVAILABLE,
+        "plugin_skills": plugin_skills(),
+        "euclid_aptitude_skills": euclid_aptitude_skills(),
+        "mandatory_skills": mandatory,
+        "skills_invoked": sorted(invoked),
+        "session_start_observed": session_start_observed,
+        "mandatory_skills_complete": mandatory_complete,
+        "mandatory_skills_missing": sorted(mandatory_set - invoked),
+        "mandatory_activation_reason": (
+            "active"
+            if mandatory_complete
+            else (
+                "mandatory skill inventory is empty"
+                if not mandatory_set
+                else (
+                    "SessionStart hook not observed"
+                    if not session_start_observed
+                    else "mandatory skill invocation incomplete"
+                )
+            )
+        ),
+        "hook_events": hook_events,
+        "journal_present": JOURNAL.is_file(),
+        "checkpoint_count": count,
+        "last_checkpoint": last,
+        "memory_mode": (
+            "EUCLID aptitude and continuity are active session-wide; task-specific "
+            "side effects remain bounded by the task and canonical authority."
+        ),
+    }
+
+
+def validate_active_session(status: dict[str, Any]) -> tuple[bool, str]:
+    """Validate the mandatory session-wide aptitude invariant."""
+    if status.get("augmentation") != "EUCLID_APTITUDE":
+        return False, "EUCLID aptitude augmentation is not active"
+    if not status.get("session_start_observed"):
+        return False, "mandatory EUCLID aptitude SessionStart hook was not observed"
+    mandatory = {
+        str(item) for item in status.get("mandatory_skills") or [] if str(item)
+    }
+    invoked = {
+        str(item) for item in status.get("skills_invoked") or [] if str(item)
+    }
+    if not mandatory:
+        return False, "mandatory EUCLID aptitude skill inventory is empty"
+    missing = sorted(mandatory - invoked)
+    if missing:
+        return False, "mandatory EUCLID aptitude skills missing: " + ", ".join(missing)
+    if not status.get("mandatory_skills_complete"):
+        return False, "mandatory EUCLID aptitude runtime receipt is incomplete"
+    return True, "active"
+
+
+def write_runtime_receipt(status: dict[str, Any]) -> None:
+    RECEIPT.parent.mkdir(parents=True, exist_ok=True)
+    tmp = RECEIPT.with_suffix(".tmp")
+    tmp.write_text(
+        json.dumps(status, sort_keys=True, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    tmp.replace(RECEIPT)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--write-receipt", action="store_true")
+    parser.add_argument("--event")
+    parser.add_argument("--record-skill")
+    parser.add_argument("--invoke-all", action="store_true")
+    parser.add_argument("--require-active", action="store_true")
+    args = parser.parse_args()
+
+    status = build_status(
+        event=args.event,
+        record_skill=args.record_skill,
+        invoke_all=args.invoke_all,
+    )
+    if args.write_receipt or args.event or args.record_skill or args.invoke_all:
+        write_runtime_receipt(status)
+
+    if args.require_active:
+        if not WORKSPACE_AVAILABLE:
+            return 0
+        ok, reason = validate_active_session(status)
+        if not ok:
+            print(
+                json.dumps({"decision": "block", "reason": reason}, sort_keys=True),
+                file=os.sys.stderr,
+            )
+            return 2
+        return 0
+
+    print(json.dumps(status, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

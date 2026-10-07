@@ -25,7 +25,7 @@ def test_defaults_when_file_absent(cfg_dir):
 
     cfg = runtime_config.load()
     assert cfg["solvers"] == {"arms": 1, "workers": 32}
-    assert cfg["hashrate"]["ceiling_hs"] == 1e18
+    assert cfg["hashrate"]["ceiling_hs"] == 1e19
     assert cfg["live_submit"]["enabled"] is False
     assert cfg["bounds"]["arms"] == [1, 600]
 
@@ -37,7 +37,7 @@ def test_save_roundtrip_and_validation(cfg_dir):
         {
             "pools": [_valid_pool()],
             "solvers": {"arms": 4, "workers": 32},
-            "hashrate": {"target_hs": 5e6, "ceiling_hs": 1e18},
+            "hashrate": {"target_hs": 5e6, "ceiling_hs": 1e19},
             "live_submit": {"enabled": False, "approval_id": ""},
             "window": 200000,
         }
@@ -52,11 +52,11 @@ def test_save_roundtrip_and_validation(cfg_dir):
 def test_hashrate_ceiling_is_enforced(cfg_dir):
     import runtime_config
 
-    with pytest.raises(ValueError, match="1e18"):
+    with pytest.raises(ValueError, match="1e19"):
         runtime_config.save(
             {
                 "pools": [_valid_pool()],
-                "hashrate": {"target_hs": 2e18},
+                "hashrate": {"target_hs": 2e19},
             }
         )
 
@@ -248,7 +248,7 @@ def test_campaign_phase_target_and_arms_bounds(cfg_dir):
             {
                 "pools": [_valid_pool()],
                 "campaign": {
-                    "phases": [{"pool": "acct.worker1", "duration_s": 600, "target_hs": 2e18}]
+                    "phases": [{"pool": "acct.worker1", "duration_s": 600, "target_hs": 2e19}]
                 },
             }
         )
@@ -294,10 +294,10 @@ def test_bridge_target_hashrate_reads_config(cfg_dir):
     import runtime_config
 
     assert sb._configured_target_hs() == 0.0
-    runtime_config.save({"hashrate": {"target_hs": 2.5e6, "ceiling_hs": 1e18}})
+    runtime_config.save({"hashrate": {"target_hs": 2.5e6, "ceiling_hs": 1e19}})
     assert sb._configured_target_hs() == 2.5e6
     # A hand-edited over-ceiling value fails closed to unthrottled only via
     # the reader — the API write path rejects it outright.
     path = runtime_config.config_path()
-    path.write_text(json.dumps({"hashrate": {"target_hs": 2e18}}), encoding="utf-8")
+    path.write_text(json.dumps({"hashrate": {"target_hs": 2e19}}), encoding="utf-8")
     assert sb._configured_target_hs() == 0.0

@@ -212,6 +212,7 @@ class SuperAsicHasher:
         self.remote_calls = 0
         self.remote_ms = 0.0
         self.last_result: Optional[JobResult] = None
+        self.last_batch_evidence: Optional[Dict[str, object]] = None
         self._registry = AttestationRegistry.get()
 
     @classmethod
@@ -420,12 +421,81 @@ class SuperAsicHasher:
         )
 
     def grind_target_batch(self, header80, target_be, nonces: Sequence[int]):
+        requested = [int(nonce) & 0xFFFFFFFF for nonce in nonces]
+        runs = _contiguous_runs(requested)
+        evidence: Dict[str, object] = {
+            "schema": "chronus.h4_600_ordered_batch/1",
+            "topology": getattr(self, "topology_id", None) or "Unavailable",
+            "ordered_nonce_count": len(requested),
+            "contiguous_run_count": len(runs),
+            "h4_job_count": 0,
+            "h4_active_shards": 0,
+            "h4_full_600_shard_jobs": 0,
+            "h4_completed_600_shard_jobs": 0,
+            "h4_topology_observed": False,
+            "full_600_shard_dispatch_observed": False,
+            "physical_fanout_observed": False,
+            "completed_work_items": 0,
+            "candidate_found": False,
+            "completion_state": "NOT_RUN" if not requested else "RUNNING",
+            "claim_boundary": (
+                "H4/600 capability is distinct from observed 600-shard fan-out; "
+                "only completed scheduler handles count as physical execution evidence"
+            ),
+        }
+        self.last_batch_evidence = evidence
+        if not requested:
+            evidence["completion_state"] = "COMPLETE"
+            return None, None, 0
+
         total = 0
-        for run_base, run_len in _contiguous_runs(nonces):
-            nonce, digest, done = self._run(header80, target_be, run_base, run_len)
+        for run_base, run_len in runs:
+            try:
+                nonce, digest, done = self._run(header80, target_be, run_base, run_len)
+            except Exception as exc:
+                evidence["completion_state"] = "DEVICE_ERROR"
+                evidence["error"] = f"{type(exc).__name__}: {exc}"
+                evidence["completed_work_items"] = total
+                evidence["physical_fanout_observed"] = False
+                self.last_batch_evidence = dict(evidence)
+                raise
             total += int(done)
+            result = self.last_result
+            certificate = getattr(result, "certificate", None)
+            topology = getattr(certificate, "topology", None)
+            handles = list(getattr(result, "handles", ()) or ())
+            if topology == "chronus_h4_600_11d":
+                evidence["h4_topology_observed"] = True
+                evidence["h4_job_count"] = int(evidence["h4_job_count"]) + 1
+                evidence["h4_active_shards"] = int(evidence["h4_active_shards"]) + len(handles)
+                if len(handles) == 600:
+                    evidence["h4_full_600_shard_jobs"] = (
+                        int(evidence["h4_full_600_shard_jobs"]) + 1
+                    )
+                    evidence["full_600_shard_dispatch_observed"] = True
+                    fully_completed = all(
+                        bool(handle.get("terminal_observed"))
+                        and bool(handle.get("fully_completed"))
+                        and int(handle.get("completed_nonces", -1))
+                        == int((handle.get("window") or {}).get("span", -2))
+                        for handle in handles
+                    )
+                    if fully_completed:
+                        evidence["h4_completed_600_shard_jobs"] = (
+                            int(evidence["h4_completed_600_shard_jobs"]) + 1
+                        )
+                        evidence["physical_fanout_observed"] = True
+            evidence["completed_work_items"] = total
             if nonce is not None:
+                evidence["candidate_found"] = True
+                evidence["completion_state"] = "CANDIDATE_FOUND"
+                self.last_batch_evidence = dict(evidence)
                 return nonce, digest, total
+
+        evidence["completion_state"] = (
+            "COMPLETE" if total == len(requested) else "PARTIAL"
+        )
+        self.last_batch_evidence = dict(evidence)
         return None, None, total
 
 

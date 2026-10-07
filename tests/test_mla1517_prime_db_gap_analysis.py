@@ -30,14 +30,14 @@ def test_refuted_claims_remain_non_promotable():
     assert '"not_promoted"' in reference
 
 
-def test_contracts_do_not_promote_prime_db_over_ovid():
+def test_contracts_do_not_promote_prime_db_over_theseus():
     contracts = (ROOT / "CONTRACTS.md").read_text(encoding="utf-8")
     delivery = (ROOT / "al_haras/delivery_plan.py").read_text(encoding="utf-8")
     assert "PRIME-DB AUTHORITATIVE OBJECT" not in contracts
-    assert "OVID AUTHORITATIVE RECORD / PRIME-DB EXECUTION VIEW" in contracts
-    assert "OVID remains the durable authority" in contracts
+    assert "THESEUS DURABLE RECORD / PRIME-DB EXECUTION VIEW" in contracts
+    assert "THESEUS remains the durable authority" in contracts
     assert "PRIME-DB authoritative transaction core" not in delivery
-    assert "OVID authoritative transaction core" in delivery
+    assert "THESEUS durable transaction custody" in delivery
 
 
 def test_physical_and_live_pool_gates_remain_open():

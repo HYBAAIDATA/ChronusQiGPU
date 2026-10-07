@@ -24,12 +24,13 @@ from salamander.models import (
     DatasetPartition,
     HealthObservation,
     HealthState,
-    OvidRecordIdentity,
     OptimizationTrial,
+    OvidTransformEvidence,
     PolicyLifecycle,
     PolicyVersion,
+    RebuildableProjection,
     RewardAuthority,
-    TheseusProjection,
+    TheseusRecordIdentity,
 )
 
 
@@ -90,11 +91,11 @@ def test_multidimensional_health_uses_explicit_dimensions_not_score():
     decision = cp.observe(
         (
             HealthObservation("ovid", "integrity", "tenant-a", 1, Availability.MEASURED, True),
-            HealthObservation("theseus", "projection", "tenant-a", 2, Availability.MEASURED, "DEGRADED"),
+            HealthObservation("theseus", "custody", "tenant-a", 2, Availability.MEASURED, "DEGRADED"),
         )
     )
     assert decision.state is HealthState.DEGRADED
-    assert any("theseus.projection" in reason for reason in decision.reasons)
+    assert any("theseus.custody" in reason for reason in decision.reasons)
 
 
 def test_capability_lifecycle_is_separate_and_expiry_quarantines():
@@ -194,31 +195,50 @@ def test_tenant_admission_and_isolation():
     assert cp.admit("tenant-a", "w2", "tenant-a:key2").decision is AdmissionDecision.ADMIT
 
 
-def test_ovid_authority_is_independent_and_theseus_is_rebuildable():
+def test_custody_is_independent_and_projection_is_rebuildable():
     cp = plane()
-    ovid = OvidRecordIdentity("tenant-a", "learning", "r1", "a" * 64, "aethel", 1)
-    projection = TheseusProjection("p1", "tenant-a", ovid, "v1", "b" * 64, 1, 1, 1)
-    ovid_verify = lambda _: {"valid": True, "payload_sha256": "a" * 64}
-    status = cp.verify_theseus(
+    custody = TheseusRecordIdentity("tenant-a", "learning", "r1", "a" * 64, "aethel", 1)
+    projection = RebuildableProjection("p1", "tenant-a", custody, "v1", "b" * 64, 1, 1, 1)
+    custody_verify = lambda _: {"valid": True, "payload_sha256": "a" * 64}
+    status = cp.verify_projection(
         projection,
         lambda: {"valid": True, "projection_sha256": "c" * 64},
-        ovid_verify,
+        custody_verify,
     )
     assert status["drift"] is True
     assert status["valid"] is False
-    assert cp.verify_ovid(ovid, ovid_verify)["valid"] is True
+    assert cp.verify_theseus_custody(custody, custody_verify)["valid"] is True
 
 
-def test_theseus_cannot_prove_ovid_payload():
+def test_projection_requires_a_proven_custody_anchor():
     cp = plane()
-    ovid = OvidRecordIdentity("tenant-a", "evidence", "r1", "a" * 64, "aethel", 1)
-    projection = TheseusProjection("p1", "tenant-a", ovid, "v1", "b" * 64, 1, 1, 1)
+    custody = TheseusRecordIdentity("tenant-a", "evidence", "r1", "a" * 64, "aethel", 1)
+    projection = RebuildableProjection("p1", "tenant-a", custody, "v1", "b" * 64, 1, 1, 1)
     with pytest.raises(FailClosed):
-        cp.verify_theseus(
+        cp.verify_projection(
             projection,
             lambda: {"valid": True, "projection_sha256": "b" * 64},
             lambda _: {"valid": False, "payload_sha256": "a" * 64},
         )
+
+
+def test_ovid_transform_verification_is_bound_to_the_lineage():
+    cp = plane()
+    evidence = OvidTransformEvidence(
+        "tenant-a", "phi-fold", "lin:1", "1", "a" * 64, "b" * 64, "EXACT"
+    )
+    verdict = {
+        "valid": True,
+        "lineage_id": "lin:1",
+        "input_sha256": "a" * 64,
+        "output_digest": "b" * 64,
+    }
+    assert cp.verify_ovid_transform(evidence, lambda _: verdict)["valid"] is True
+    foreign = dict(verdict, lineage_id="lin:other")
+    with pytest.raises(FailClosed):
+        cp.verify_ovid_transform(evidence, lambda _: foreign)
+    with pytest.raises(FailClosed):
+        cp.verify_ovid_transform(evidence, lambda _: dict(verdict, valid=False))
 
 
 def test_observation_is_not_reward_and_partitions_are_explicit():

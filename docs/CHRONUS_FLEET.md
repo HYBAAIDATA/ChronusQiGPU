@@ -66,7 +66,7 @@ Probe any overlay: `--profile probe run --rm chronus-probe` (`clinfo`).
 ## Remote GPU agents (`chronus.mla1517.remote_gpu_agent`)
 
 A GPU that lives on another host joins the fleet over HTTP
-(`remote_opencl_v1`); the client re-verifies every result against exact
+(`remote_opencl_v2`); the client re-verifies every result against exact
 arithmetic, so the network hop cannot weaken the proof.
 
 ```bash

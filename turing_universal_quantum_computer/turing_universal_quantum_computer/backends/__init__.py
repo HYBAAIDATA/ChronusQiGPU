@@ -231,6 +231,15 @@ def execute_certified(
     deliberate public-boundary contract: every emitted certificate must replay.
     Low-level backend methods remain available for backend implementation tests.
     """
+    # Imported here to avoid a registry/certificate import cycle.
+    from ..certificates import (
+        issue_computation_certificate,
+        issue_witness,
+        validate_certificate_inputs,
+        verify_computation_certificate,
+        verify_witness,
+    )
+
     backend, admission = select_backend(
         program, prefer=prefer, max_amplitudes=max_amplitudes
     )
@@ -244,15 +253,11 @@ def execute_certified(
         and execution_options.get("seed") is None
     ):
         execution_options["seed"] = 0
+    # Certificate-first: refuse inputs that can never be certified before the
+    # backend runs.  On a hardware provider this is the difference between a
+    # rejected call and an irreversible, billable submission.
+    validate_certificate_inputs(program, execution_options)
     result = backend.execute(program, **execution_options)
-
-    # Imported here to avoid a registry/certificate import cycle.
-    from ..certificates import (
-        issue_computation_certificate,
-        issue_witness,
-        verify_computation_certificate,
-        verify_witness,
-    )
 
     certificate = issue_computation_certificate(
         program,

@@ -22,6 +22,7 @@ import pytest
 import mining_runtime
 import runtime_config
 from chronus.mla1517.mining import execution_router
+from chronus.virtual_igpu import runtime as vigpu_runtime
 from chronus.mla1517.mining.backend_registry import (
     BackendLane,
     BackendRegistry,
@@ -338,6 +339,9 @@ def test_backend_failure_heals_and_reroutes(monkeypatch, tmp_path):
         def grind_target_range(self, header, target_be, start, count):
             raise RuntimeError("device fault (test fixture)")
 
+        def grind_target_batch(self, header80, target_be, nonces):
+            raise RuntimeError("device fault (test fixture)")
+
     registry = BackendRegistry()
     probes = {"call": 0}
 
@@ -485,5 +489,45 @@ def test_graceful_shutdown_records_terminal_state(monkeypatch, tmp_path):
             e["kind"] == "cycle_transition" and e["detail"].get("to") == "SHUTDOWN" for e in events
         ), "no SHUTDOWN transition recorded"
         server.close()
+
+    asyncio.run(run())
+
+
+def test_share_submits_through_the_chronus_lane_from_the_production_entry(monkeypatch, tmp_path):
+    """PYTHIA_EXECUTION_DEVICE=chronus: entry point → Chronus virtual iGPU → pool ack."""
+    monkeypatch.setenv("CHRONUS_VIGPU_STORE", str(tmp_path / "vigpu"))
+    monkeypatch.setattr(vigpu_runtime, "_DAEMON", None)  # a fresh embedded daemon for this entry
+    pool = FakePool(
+        target=EASY_TARGET,
+        job=_job("job-chronus", prevhash="ab" * 32, coinb1=bip34_coinb1(800_002)),
+    )
+
+    async def run():
+        server, port = await _serve(pool)
+        _env(monkeypatch, tmp_path, pools={"braiins": port}, device="chronus", submit=True)
+        task = await _launch(_args(submit=True))
+        try:
+            causal = tmp_path / "causal.jsonl"
+            await until(lambda: len(pool.submits) >= 1, timeout=30, what="submit")
+            await until(
+                lambda: _session_log(tmp_path / "session.json") != [],
+                timeout=10,
+                what="share logged",
+            )
+            share = _session_log(tmp_path / "session.json")[-1]
+            assert share["outcome"] is True, share
+            events = _causal(causal)
+            finished = [e["detail"] for e in events if e["kind"] == "execution_finished"]
+            assert finished, "the production loop recorded no execution"
+            assert {d["executed_route"] for d in finished} == {"chronus_batch"}
+            assert {d["requested_route"] for d in finished} == {"chronus_batch"}
+            # The software emulator executed: never labelled as a hardware result.
+            assert {d["evidence_class"] for d in finished} == {"SOFTWARE_VERIFIED"}
+            winners = [d for d in finished if d["completion"] == "EARLY_WINNER"]
+            assert winners and winners[0]["pool_outcome"] == "ACCEPTED"  # scripted local pool
+            assert any(e["kind"] == "submission_sent" for e in events)
+        finally:
+            await _stop(task)
+            server.close()
 
     asyncio.run(run())

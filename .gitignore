@@ -102,3 +102,6 @@ results/
 
 # adversarial-review evidence artifacts (eval_harness/artifacts/.gitignore keeps tmp/ out)
 !eval_harness/artifacts/
+
+# Chronus Virtual iGPU default embedded store
+.chronus-virtual-igpu/

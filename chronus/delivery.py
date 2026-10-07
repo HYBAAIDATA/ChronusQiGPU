@@ -1,14 +1,17 @@
 """Chronus delivery contract.
 
-Chronus has two first-class delivery modes:
+Delivery modes use the canonical Virtual iGPU vocabulary
+(:class:`chronus.virtual_igpu.abi.DeliveryMode`):
 
 * ``embedded`` — Chronus executes inside the customer's/container environment
-  and binds directly to a local GPU/accelerator surface.
-* ``cloud_instance`` — the customer uses a HYBA Chronus instance deployed into
+  as a first-class standalone software runtime, and may additionally bind to a
+  local GPU/accelerator surface when one is available and selected.
+* ``remote_service`` — the customer uses a HYBA Chronus instance deployed into
   their chosen cloud and reached through the existing verified remote protocol.
+* ``local_sidecar`` — loopback daemon; not probed by this descriptive module.
 
-Neither mode is a fallback for the other. Selection is explicit and this
-module never silently moves work between execution locations.
+No mode is a fallback for another. Selection is explicit and this module never
+silently moves work between execution locations.
 
 This surface is intentionally descriptive/provisioning-only. It does not
 replace, cap, throttle, or reroute any existing Chronus execution path.
@@ -16,13 +19,9 @@ replace, cap, throttle, or reroute any existing Chronus execution path.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
 from typing import Any, Callable, Dict, Iterable, Optional, Sequence, Tuple
 
-
-class DeliveryMode(str, Enum):
-    EMBEDDED = "embedded"
-    CLOUD_INSTANCE = "cloud_instance"
+from .virtual_igpu.abi import DeliveryMode, ExecutionPolicy, ProductMode
 
 
 @dataclass(frozen=True)
@@ -36,6 +35,12 @@ class ChronusDelivery:
     capabilities: Tuple[str, ...]
     reason: str
     evidence: Tuple[str, ...]
+    software_mode_available: bool = False
+    accelerator_mode_available: bool = False
+    product_modes: Tuple[str, ...] = ()
+    # Compatibility: backend-selection policy vocabulary retained for existing callers.
+    execution_modes: Tuple[str, ...] = ()
+    accelerator_reason: str = ""
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -49,6 +54,11 @@ class ChronusDelivery:
             "capabilities": list(self.capabilities),
             "reason": self.reason,
             "evidence": list(self.evidence),
+            "software_mode_available": self.software_mode_available,
+            "accelerator_mode_available": self.accelerator_mode_available,
+            "product_modes": list(self.product_modes),
+            "execution_modes": list(self.execution_modes),
+            "accelerator_reason": self.accelerator_reason,
         }
 
 
@@ -65,13 +75,15 @@ def probe_embedded(
     *,
     tensor_probe: Optional[Callable[[], Any]] = None,
     native_probes: Optional[Sequence[Tuple[str, Callable[[], Any], str]]] = None,
+    include_software: bool = True,
 ) -> ChronusDelivery:
     """Describe an embedded/container Chronus binding across local substrates.
 
-    Chronus identity is independent of OpenCL. By default the embedded probe
-    observes OpenCL, CUDA, and Metal execution paths and reports every physical
-    path that is actually available. No backend is silently substituted for
-    another and no CPU fallback is introduced here.
+    Chronus identity is independent of OpenCL and independent of the presence
+    of a physical GPU. The standalone software runtime is a product mode in its
+    own right, not a disguised fallback. Physical OpenCL, CUDA and Metal paths
+    are probed separately and add the accelerator-enhanced mode only when they
+    are actually available.
 
     ``tensor_probe`` remains a compatibility/test injection point. When it is
     supplied without ``native_probes``, only that injected OpenCL-style probe
@@ -98,6 +110,21 @@ def probe_embedded(
     capabilities = set()
     evidence = []
     unavailable_reasons = []
+    software_available = False
+
+    if include_software:
+        from .virtual_igpu.adapters import CPUEmulatorAdapter
+
+        software = CPUEmulatorAdapter()
+        attestation = software.probe()
+        manifest = software.capabilities()
+        software_available = bool(attestation.available and manifest.available)
+        evidence.append("chronus.virtual_igpu.adapters.CPUEmulatorAdapter")
+        if software_available:
+            capabilities.add(f"product_mode:{ProductMode.NATIVE_CHRONUS_GPU.value}")
+            capabilities.update(
+                f"software:{operation}" for operation in manifest.operations
+            )
     for backend_name, probe_fn, evidence_name in probes:
         evidence.append(evidence_name)
         try:
@@ -128,8 +155,24 @@ def probe_embedded(
             }
         )
 
-    available = bool(devices)
+    accelerator_available = bool(devices)
+    if accelerator_available:
+        capabilities.add(f"product_mode:{ProductMode.HOST_GPU_AUGMENTATION.value}")
+    available = software_available or accelerator_available
     reason = "" if available else "; ".join(unavailable_reasons)
+    accelerator_reason = (
+        ""
+        if accelerator_available
+        else ("; ".join(unavailable_reasons) or "no physical accelerator observed")
+    )
+    product_modes = []
+    execution_modes = []
+    if software_available:
+        product_modes.append(ProductMode.NATIVE_CHRONUS_GPU.value)
+        execution_modes.append(ExecutionPolicy.STANDALONE_SOFTWARE.value)
+    if accelerator_available:
+        product_modes.append(ProductMode.HOST_GPU_AUGMENTATION.value)
+        execution_modes.append(ExecutionPolicy.PREFERRED_ACCELERATOR.value)
     return ChronusDelivery(
         mode=DeliveryMode.EMBEDDED,
         available=available,
@@ -140,6 +183,11 @@ def probe_embedded(
         capabilities=_tuple_capabilities(capabilities),
         reason=reason,
         evidence=tuple(evidence),
+        software_mode_available=software_available,
+        accelerator_mode_available=accelerator_available,
+        product_modes=tuple(product_modes),
+        execution_modes=tuple(execution_modes),
+        accelerator_reason=accelerator_reason,
     )
 
 
@@ -153,6 +201,8 @@ def probe_cloud_instance(
     The existing remote protocol remains the authority. It verifies endpoint
     reachability and imports only measured GPU/Chronus/accelerator devices.
     """
+    from .mla1517.remote_gpu import PROTOCOL_VERSION
+
     if remote_probe is None:
         from .mla1517.remote_gpu import probe_first_reachable as remote_probe
 
@@ -160,15 +210,20 @@ def probe_cloud_instance(
     client, devices, reason = remote_probe(selected)
     if client is None or not devices:
         return ChronusDelivery(
-            mode=DeliveryMode.CLOUD_INSTANCE,
+            mode=DeliveryMode.REMOTE_SERVICE,
             available=False,
             execution_location="hyba_instance_in_customer_cloud",
-            transport="remote_opencl_v1",
+            transport=PROTOCOL_VERSION,
             endpoint="",
             devices=(),
             capabilities=(),
             reason=str(reason or "no reachable Chronus cloud instance"),
             evidence=("chronus.mla1517.remote_gpu.probe_first_reachable",),
+            software_mode_available=False,
+            accelerator_mode_available=False,
+            product_modes=(),
+            execution_modes=(),
+            accelerator_reason=str(reason or "no reachable Chronus cloud instance"),
         )
 
     endpoint = str(getattr(client, "endpoint", "") or "")
@@ -193,18 +248,23 @@ def probe_cloud_instance(
         capabilities.add(f"remote:{name}")
 
     return ChronusDelivery(
-        mode=DeliveryMode.CLOUD_INSTANCE,
+        mode=DeliveryMode.REMOTE_SERVICE,
         available=True,
         execution_location="hyba_instance_in_customer_cloud",
-        transport="remote_opencl_v1",
+        transport=PROTOCOL_VERSION,
         endpoint=endpoint,
         devices=tuple(records),
         capabilities=_tuple_capabilities(capabilities),
         reason=str(reason or ""),
         evidence=(
             "chronus.mla1517.remote_gpu.probe_first_reachable",
-            "remote_opencl_v1:/v1/devices",
+            f"{PROTOCOL_VERSION}:/v1/devices",
         ),
+        software_mode_available=False,
+        accelerator_mode_available=True,
+        product_modes=(ProductMode.HOST_GPU_AUGMENTATION.value,),
+        execution_modes=(ExecutionPolicy.PREFERRED_ACCELERATOR.value,),
+        accelerator_reason="",
     )
 
 
@@ -218,10 +278,13 @@ def probe_delivery(
 ) -> ChronusDelivery:
     """Probe exactly the requested delivery mode; never cross-fallback."""
     selected = DeliveryMode(mode)
+    if selected is DeliveryMode.LOCAL_SIDECAR:
+        raise ValueError("local_sidecar delivery is not probed by chronus.delivery")
     if selected is DeliveryMode.EMBEDDED:
         return probe_embedded(
             tensor_probe=tensor_probe,
             native_probes=native_probes,
+            include_software=True,
         )
     return probe_cloud_instance(endpoints=endpoints, remote_probe=remote_probe)
 

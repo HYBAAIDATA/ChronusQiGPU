@@ -253,11 +253,37 @@ def test_software_named_adapter_never_hardware_rooted(tmp_path):
     assert result.trust_class == TrustClass.RUNTIME_SIGNED.value
 
 
+def _external_trust_root_verifier(attestation: dict) -> bool:
+    """Stands in for an EXTERNAL hardware trust root: replays the attested record."""
+    record = _record(
+        attestation["adapter_id"],
+        attestation["kind"],
+        bool(attestation["available"]),
+        attestation["detail"],
+    )
+    return attestation["fingerprint"] == digest_json(record) and attestation[
+        "chain_digest"
+    ] == extend_chain((), record)[-1]
+
+
+def test_clean_self_derived_chain_is_not_hardware_rooted_without_an_external_verifier(tmp_path):
+    """Adapter-supplied data can be reconstructed by the adapter, so a cleanly replaying chain
+    alone is runtime provenance, never hardware-rooted attestation."""
+    result = _submit(_ProperlyAttestingAdapter(), tmp_path)
+    assert result.hardware_rooted is False
+    assert result.trust_class == TrustClass.RUNTIME_SIGNED.value
+
+
 def test_corroborated_attestation_survives(tmp_path):
-    """The legitimate path must not be weakened: a probe whose fingerprint and
-    chain digest replay through the trusted mechanism keeps hardware_rooted."""
+    """The legitimate path must not be weakened: a probe corroborated by an external
+    trust-root verifier keeps hardware_rooted."""
     adapter = _ProperlyAttestingAdapter()
-    result = _submit(adapter, tmp_path)
+    daemon = RuntimeDaemon(
+        adapters=[adapter],
+        store_dir=str(tmp_path / adapter.id.replace("/", "_")),
+        hardware_attestation_verifier=_external_trust_root_verifier,
+    )
+    result = daemon.submit(_probe_workload())
     assert result.hardware_rooted is True
     assert result.trust_class == TrustClass.HARDWARE_ROOTED.value
     receipt = result.receipt or {}

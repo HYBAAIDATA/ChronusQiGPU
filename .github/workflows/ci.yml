@@ -21,6 +21,8 @@ jobs:
           node-version-file: '.nvmrc'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+      - name: Validate private Devin plugins
+        run: node scripts/validate-plugins.mjs
       - run: npm ci --prefix frontend
       - name: Typecheck (tsc --noEmit)
         run: npm run lint
@@ -87,6 +89,11 @@ jobs:
         run: python scripts/check_pulvini_data_boundary.py
       - name: Canonical PYTHIA structured-search doctrine
         run: python scripts/check_canonical_mining_search.py
+      - name: API governance — service constitution and dependency graph
+        run: >-
+          python governance/render_service_constitution.py --check &&
+          python governance/dependency_graph.py &&
+          python -m pytest tests/test_service_constitution.py -q
       - name: PULVINI/THESEUS/mining/live-system hardening regression gate
         run: >-
           python -m pytest

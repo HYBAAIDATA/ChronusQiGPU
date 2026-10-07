@@ -42,7 +42,7 @@ backend_binding, hardened_unified_substrate, unified_punch, bitcoin_hasher,
 hash_pipeline, manifold_bridge, intelligences, toe_system, four_layer_stack,
 scaled_execution (LucasScaledAethelExecutionAdapter).
 
-Product boundary (v1.2):
+Product boundary (v1.3):
 backends              backend registry, capability envelopes, admission and
                       refusal, and the fail-closed QPU boundary
 capabilities          published capability matrix + enforced claim audit
@@ -165,7 +165,7 @@ _LAZY_MODULES = {
     "canonical_serialization",
     "exact_field_registry",
     "thermodynamics_exact",
-    # product boundary (v1.2)
+    # product boundary (v1.3)
     "backends",
     "capabilities",
     "certificates",
@@ -381,7 +381,7 @@ _LAZY_SYMBOLS = {
     "run_pipeline": "pipeline",
 }
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 
 def __getattr__(name: str):

@@ -10,8 +10,12 @@ import pytest
 
 from turing_universal_quantum_computer.backends import (
     Program,
+    QPUJob,
+    QPUProvider,
     execute,
     execute_certified,
+    register_provider,
+    reset_providers,
 )
 from turing_universal_quantum_computer.certificates import (
     RunWitness,
@@ -128,3 +132,91 @@ def test_pipeline_exposes_and_verifies_certificate() -> None:
         report.witness["computation_certificate_digest"]
         == certificate.certificate_digest
     )
+
+
+def test_non_string_option_keys_do_not_alias_string_keys() -> None:
+    # {1: "x"} and {"1": "x"} must not collapse into the same committed
+    # canonical form — they are different inputs and must certify differently.
+    program = bell_program()
+    result = execute(program)
+    int_keyed = issue_computation_certificate(
+        program, result, options={"note": {1: "x"}}
+    )
+    str_keyed = issue_computation_certificate(
+        program, result, options={"note": {"1": "x"}}
+    )
+    assert int_keyed.input != str_keyed.input
+    assert int_keyed.certificate_digest != str_keyed.certificate_digest
+
+
+def test_map_sentinel_cannot_alias_a_tagged_mapping() -> None:
+    program = bell_program()
+    result = execute(program)
+    tagged = issue_computation_certificate(
+        program, result, options={"note": {1: "x"}}
+    )
+    sentinel = issue_computation_certificate(
+        program, result, options={"note": {"$map": [[1, "x"]]}}
+    )
+    assert tagged.input != sentinel.input
+
+
+def test_oversized_integer_payloads_certify_via_hex_tag() -> None:
+    # state_dimension = 1 << n_qubits exceeds the decimal str() cap for large
+    # legal registers; the value must still certify exactly, not fail.
+    program = bell_program()
+    result = execute(program)
+    result.payload["state_dimension"] = 1 << 20000
+    certificate = issue_computation_certificate(program, result)
+    assert certificate.verify_integrity()
+    recovered = VQCComputationCertificate.from_dict(certificate.to_dict())
+    assert recovered == certificate
+
+
+def test_stabilizer_certificate_declares_gf2_field() -> None:
+    program = Program(64).then("h", 0).then("cx", 0, 1)
+    execution = execute_certified(program, max_amplitudes=1)
+    assert execution.certificate.backend == "stabilizer"
+    assert execution.certificate.field == "GF2"
+    assert execution.certificate.machine_type == "quantum_folded"
+
+
+def test_uncertifiable_options_refuse_before_provider_submit() -> None:
+    # Certificate-first means an option that can never be certified is refused
+    # before the backend runs — on a provider lane, before a billable submit.
+    submissions: list[dict[str, object]] = []
+
+    def submit(program, options):
+        submissions.append(dict(options))
+        return QPUJob(
+            provider="stub",
+            job_id="job-1",
+            completed_at="2026-10-06T00:00:00+00:00",
+            result_digest="0" * 64,
+        )
+
+    register_provider(
+        QPUProvider(name="stub", submit=submit, configured=True)
+    )
+    try:
+        with pytest.raises(WitnessError, match="unordered"):
+            execute_certified(
+                bell_program(),
+                prefer="qpu",
+                shots=8,
+                seed=0,
+                bad_option={1, 2},
+            )
+    finally:
+        reset_providers()
+    assert submissions == []
+
+
+def test_pipeline_refuses_uncanonizable_options_before_execution() -> None:
+    report = run_pipeline(
+        VQCRequest(program=bell_program(), readout={0, 1})  # type: ignore[arg-type]
+    )
+    assert report.verdict == "REFUSED"
+    stage = next(s for s in report.stages if s.stage == "execution")
+    assert stage.state == "REFUSED"
+    assert "before backend submission" in stage.detail

@@ -8,6 +8,8 @@ from chronus.delivery import (
     probe_delivery,
     probe_embedded,
 )
+from chronus.mla1517.remote_gpu import PROTOCOL_VERSION
+from chronus.virtual_igpu import ProductMode
 
 
 @dataclass
@@ -47,7 +49,7 @@ class _RemoteClient:
     def health(self):
         return {
             "status": "ok",
-            "protocol": "remote_opencl_v1",
+            "protocol": PROTOCOL_VERSION,
             "endpoints": ["ladder", "sha256d"],
         }
 
@@ -56,6 +58,12 @@ def test_embedded_delivery_is_explicit_and_in_process():
     out = probe_embedded(tensor_probe=lambda: _EmbeddedProbe())
     assert out.mode is DeliveryMode.EMBEDDED
     assert out.available is True
+    assert out.software_mode_available is True
+    assert out.accelerator_mode_available is True
+    assert ProductMode.NATIVE_CHRONUS_GPU.value in out.product_modes
+    assert ProductMode.HOST_GPU_AUGMENTATION.value in out.product_modes
+    assert "standalone_software" in out.execution_modes
+    assert "preferred_accelerator" in out.execution_modes
     assert out.execution_location == "customer_container"
     assert out.transport == "in_process"
     assert out.endpoint == ""
@@ -81,6 +89,8 @@ def test_embedded_delivery_accepts_native_cuda_without_opencl():
         )
     )
     assert out.available is True
+    assert out.software_mode_available is True
+    assert out.accelerator_mode_available is True
     assert len(out.devices) == 1
     assert out.devices[0]["backend"] == "chronus-cuda"
     assert "backend:chronus-cuda" in out.capabilities
@@ -99,11 +109,12 @@ def test_cloud_delivery_uses_measured_remote_inventory():
         remote_probe=remote_probe,
     )
     assert seen["endpoints"] == ["https://chronus.example"]
-    assert out.mode is DeliveryMode.CLOUD_INSTANCE
+    assert out.mode is DeliveryMode.REMOTE_SERVICE
     assert out.available is True
     assert out.execution_location == "hyba_instance_in_customer_cloud"
-    assert out.transport == "remote_opencl_v1"
+    assert out.transport == PROTOCOL_VERSION
     assert out.endpoint == "https://chronus.example"
+    assert out.product_modes == (ProductMode.HOST_GPU_AUGMENTATION.value,)
     assert "sha256d_kernel" in out.capabilities
     assert "lucas_ladder_kernel" in out.capabilities
     assert "remote:ladder" in out.capabilities
@@ -124,18 +135,18 @@ def test_cloud_unavailable_does_not_fall_back_to_embedded():
         return None, [], "cloud endpoint unreachable"
 
     out = probe_delivery(
-        DeliveryMode.CLOUD_INSTANCE,
+        DeliveryMode.REMOTE_SERVICE,
         endpoints=["https://missing.example"],
         tensor_probe=embedded_probe,
         remote_probe=remote_probe,
     )
     assert out.available is False
-    assert out.mode is DeliveryMode.CLOUD_INSTANCE
+    assert out.mode is DeliveryMode.REMOTE_SERVICE
     assert "unreachable" in out.reason
     assert embedded_called is False
 
 
-def test_embedded_unavailable_does_not_probe_cloud():
+def test_embedded_without_accelerator_remains_available_in_software_mode():
     remote_called = False
 
     def remote_probe(endpoints):
@@ -148,9 +159,14 @@ def test_embedded_unavailable_does_not_probe_cloud():
         tensor_probe=lambda: _EmbeddedProbe(available=False, reason="no local device"),
         remote_probe=remote_probe,
     )
-    assert out.available is False
+    assert out.available is True
     assert out.mode is DeliveryMode.EMBEDDED
-    assert out.reason == "no local device"
+    assert out.software_mode_available is True
+    assert out.accelerator_mode_available is False
+    assert out.devices == ()
+    assert out.product_modes == (ProductMode.NATIVE_CHRONUS_GPU.value,)
+    assert out.execution_modes == ("standalone_software",)
+    assert "no local device" in out.accelerator_reason
     assert remote_called is False
 
 
@@ -159,5 +175,8 @@ def test_delivery_contract_is_serializable_without_performance_invention():
     payload = out.as_dict()
     assert payload["product"] == "Chronus"
     assert payload["delivery_mode"] == "embedded"
+    assert payload["software_mode_available"] is True
+    assert ProductMode.NATIVE_CHRONUS_GPU.value in payload["product_modes"]
+    assert "standalone_software" in payload["execution_modes"]
     assert "tflops" not in payload
     assert "gflops" not in payload

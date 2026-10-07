@@ -30,9 +30,10 @@
 
 ### Authority boundary
 
-- **OVID** is the authoritative durable record owner.
-- **THESEUS** is the rebuildable query/index/graph/semantic projection.
-- The legacy **PRIME-DB** name in this mining repository denotes reference semantics and local execution persistence/projection only; it does not supersede OVID authority or become an enterprise system of record.
+- **THESEUS** is the durable record/custody/integrity/recovery/provenance owner.
+- **OVID** is the representation-transformation and transform-lineage authority; it never owns durable custody.
+- **PRIME-DB**-style query/index/graph/semantic projections are rebuildable state owned by their producer under the hyba_db contract.
+- The legacy **PRIME-DB** name in this mining repository denotes reference semantics and local execution persistence/projection only; it does not supersede THESEUS custody or become an enterprise system of record.
 - **Chronus / MLA1517** owns execution and capability evidence, never durable-record authority.
 
 ---
@@ -85,7 +86,7 @@
                            │ C4: ExecutionPlan
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              OVID AUTHORITATIVE RECORD / PRIME-DB EXECUTION VIEW                  │
+│              THESEUS DURABLE RECORD / PRIME-DB EXECUTION VIEW                  │
 │  exact_state | folded | residual | proof | lineage | policy │
 └──────────────────────────┬──────────────────────────────────┘
                            │ C5: CapabilityRequest
@@ -780,7 +781,7 @@ These co-designed pairs define the platform's character. They are not sequential
 
 **Flow:**
 ```
-OVID-authorized object / PRIME-DB execution projection
+THESEUS custody object / PRIME-DB execution projection
     ↓ validate hash, Fibonacci state, Cassini, Zeckendorf
 MLA1517 runtime
     ↓ select mode and lane count
@@ -794,7 +795,7 @@ Proof envelope
     ↓ object validity, seal, coverage, execution status
 Deterministic result merge
     ↓
-OVID durable commit + rebuildable projection refresh
+THESEUS durable commit + rebuildable projection refresh
 ```
 
 **Guarantees:**
@@ -803,7 +804,7 @@ OVID durable commit + rebuildable projection refresh
 - G3: Transformations produce lineage and proof records
 - G4: Fail-closed on missing hardware
 - G5: No performance claim until hardware measurements exist
-- G6: OVID remains the durable authority; PRIME-DB/THESEUS state is rebuildable
+- G6: THESEUS remains the durable authority; PRIME-DB projection state is rebuildable
 
 ---
 

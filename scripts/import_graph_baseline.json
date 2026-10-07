@@ -16,8 +16,11 @@
     [
       "aethel/__init__.py",
       "aethel/enterprise/__init__.py",
-      "aethel/enterprise/distributed.py",
-      "aethel/enterprise/solutions_api.py"
+      "aethel/enterprise/entangled_custody.py",
+      "aethel/enterprise/lifecycle.py",
+      "aethel/enterprise/persistent_entangled_custody.py",
+      "aethel/enterprise/production_organism.py",
+      "aethel/enterprise/system_relations.py"
     ],
     [
       "chronus/seam/__init__.py",
@@ -117,6 +120,7 @@
       "toe/engine.py",
       "toe/expansion.py",
       "toe/generalization.py",
+      "toe/golden_unified.py",
       "toe/intelligence_state.py",
       "toe/manifold_bridge.py",
       "toe/representation.py",

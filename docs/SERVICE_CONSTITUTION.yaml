@@ -1,0 +1,1734 @@
+# GENERATED — do not edit.
+# sources: governance/service_constitution.yaml + governance/api_registry.yaml
+# regenerate: python governance/render_service_constitution.py
+schema: pythia.service_constitution/1
+repository: QuantumPhi2/PhiMiner
+provenance:
+  generated_by: governance/render_service_constitution.py
+  sources:
+  - governance/service_constitution.yaml
+  - governance/api_registry.yaml
+reliability_tiers:
+  R0:
+    name: Constitutional
+    required_behaviour: Fail closed. No semantic fallback.
+    slo: verdict integrity 100% — every decision emits signed evidence; any dependency failure resolves
+      to a closed verdict, never an open one
+  R1:
+    name: Mining-critical
+    required_behaviour: Fail closed for invalid work; controlled reconnect; no fabricated state
+    slo: invalid work never accepted; disconnects surface as DISCONNECTED; reconnect is bounded and logged
+  R2:
+    name: Specialist computation
+    required_behaviour: Explicit UNAVAILABLE; alternative only when policy authorises
+    slo: unavailable dependencies surface as explicit UNAVAILABLE/503-class states; no specialist may
+      silently substitute another authority's result
+  R3:
+    name: Recovery / optimisation
+    required_behaviour: Bounded degradation; retain evidence; cannot rewrite authority
+    slo: degradation stays inside the declared bound; every intervention leaves a ledger entry; no verdict
+      of another subsystem is rewritten
+  R4:
+    name: Experience / observability
+    required_behaviour: May degrade independently; never change backend truth
+    slo: degradation is local to the projection; a stale or unavailable view is marked as such rather
+      than presenting last-known state as current
+external_authorities:
+  POOL: external share-acceptance authority (stratum endpoint)
+  OPERATOR: human operator principal (operator-console credentials)
+  FILESYSTEM: OS filesystem boundary (paths, permissions, atomicity)
+  REMOTE_DEVICE: remote GPU host at the far end of remote_opencl_v2
+constitutions:
+- api_id: pythia.health
+  capability: process-liveness verdict for the PYTHIA control plane
+  authority: PYTHIA
+  interface: HTTP_PUBLIC
+  consumer:
+  - operator-console
+  - load-balancer
+  schema:
+    request: none
+    response: '{schema_version, status, generated_at}'
+    version: chronus.mla1517.status/1
+  dependency: []
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: process down = connection refused; never a body lie
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: PYTHIA
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; boot audit records
+    plane state
+  lifecycle_owner: &id001
+    accountable: '@bollingertm'
+    authority: PYTHIA
+  version: chronus.mla1517.status/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.readiness
+  capability: declared dependency/config readiness projection
+  authority: PYTHIA
+  interface: HTTP_PUBLIC
+  consumer:
+  - operator-console
+  - load-balancer
+  schema:
+    request: none
+    response: '{schema_version, ready, reason, components{identity,boot_audit,worker_heartbeat_dir,guardian,runtime_config,stratum,remote_opencl,custody},
+      generated_at}'
+    version: chronus.mla1517.ready/1
+  dependency:
+  - pythia.boot_audit
+  - pythia.worker_heartbeat
+  - al_haras.guardian
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: 503 {ready:false, reason} when identity/config not ready
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: PYTHIA
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; boot audit records
+    plane state
+  lifecycle_owner: *id001
+  version: chronus.mla1517.ready/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.ready_to_mine
+  capability: observed mining-readiness verdict over stratum transport, live workers, and execution backend
+  authority: PYTHIA
+  interface: HTTP_PUBLIC
+  consumer:
+  - operator-console
+  schema:
+    request: none
+    response: '{ready, reason, blockers, schema_version, generated_at}'
+    version: chronus.mla1517.ready/1
+  dependency:
+  - stratum.v1
+  - pythia.worker_heartbeat
+  - chronus.execution
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: 503 when not ready; reasons enumerated never faked
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: PYTHIA
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; boot audit records
+    plane state
+  lifecycle_owner: *id001
+  version: chronus.mla1517.ready/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.metrics
+  capability: prometheus exposition of measured runtime counters
+  authority: PYTHIA
+  interface: HTTP_PUBLIC
+  consumer:
+  - prometheus
+  - operator-console
+  schema:
+    request: none
+    response: text/plain; version=0.0.4 (prometheus exposition)
+    version: prometheus.exposition/0.0.4
+  dependency:
+  - pythia.worker_heartbeat
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: counters only ever increase truthfully
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: PYTHIA
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; boot audit records
+    plane state
+  lifecycle_owner: *id001
+  version: prometheus.exposition/0.0.4
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.status
+  capability: operator status projection over backend, workers, and stratum transport
+  authority: PYTHIA
+  interface: HTTP_OPERATOR
+  consumer:
+  - frontend SystemFabricPanel
+  - operator-console
+  schema:
+    request: none
+    response: '{schema_version, backend, host, canonicalEngine, workers, stratum, ready_to_mine, generated_at}'
+    version: chronus.mla1517.status/1
+  dependency:
+  - chronus.execution
+  - stratum.v1
+  - pythia.worker_heartbeat
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: worker states degrade to their honest last-known/disabled state
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: PYTHIA
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: *id001
+  version: chronus.mla1517.status/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.config.read
+  capability: public (secret-redacted) view of declared runtime configuration
+  authority: PYTHIA
+  interface: HTTP_OPERATOR
+  consumer:
+  - frontend RuntimeControlPanel
+  - frontend SystemFabricPanel
+  schema:
+    request: none
+    response: 'runtime_config.public_view(cfg): pools redacted of passwords'
+    version: pythia.runtime_config/1
+  dependency:
+  - pythia.runtime_config_file
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: pool passwords never serialised in the public view
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: PYTHIA
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: *id001
+  version: pythia.runtime_config/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.config.update
+  capability: validated update of declared runtime configuration, audited
+  authority: PYTHIA
+  interface: HTTP_OPERATOR
+  consumer:
+  - frontend RuntimeControlPanel
+  schema:
+    request: subset of {pools, solvers, hashrate, window, campaign, live_submit}; unknown sections rejected
+    response: '{ok, applied:{spawned,retired,restarted,note?}, config}'
+    version: pythia.runtime_config/1
+  dependency:
+  - pythia.runtime_config_file
+  - pythia.boot_audit
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: 400 unknown section / invalid value; 401/403 unauthenticated; closed when no key configured
+  retry_idempotency:
+    retry: safe to retry identical body
+    idempotency: section-merge semantics; replaying the same body is a no-op
+  evidence_owner: PYTHIA
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: *id001
+  version: pythia.runtime_config/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.system.map
+  capability: forensic map of the composed subsystem fabric
+  authority: PYTHIA
+  interface: HTTP_OPERATOR
+  consumer:
+  - frontend SystemFabricPanel
+  schema:
+    request: none
+    response: forensic map of subsystems with truth-class fields
+    version: pythia.system_map/1
+  dependency:
+  - euclid.orchestration
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: unknown subsystems report unavailable, never invented
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: PYTHIA
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: *id001
+  version: pythia.system_map/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.system.verify.read
+  capability: last system-fabric verification report projection
+  authority: PYTHIA
+  interface: HTTP_OPERATOR
+  consumer:
+  - frontend SystemFabricPanel
+  schema:
+    request: none
+    response: per-component verification state machine
+    version: pythia.system_verify/1
+  dependency:
+  - chronus.execution
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: component states reported individually
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: PYTHIA
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: *id001
+  version: pythia.system_verify/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.system.verify.start
+  capability: command acceptance for a system-fabric verification run
+  authority: PYTHIA
+  interface: HTTP_OPERATOR
+  consumer:
+  - frontend SystemFabricPanel
+  schema:
+    request: '{}'
+    response: '{ok, state}'
+    version: pythia.runner/1
+  dependency:
+  - chronus.execution
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: 409 runner_busy; 400 invalid; 401/403 unauthenticated
+  retry_idempotency:
+    retry: do not retry on 409; poll GET instead
+    idempotency: 409 runner_busy while running
+  evidence_owner: PYTHIA
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: *id001
+  version: pythia.runner/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.intelligence.status
+  capability: projection of EUCLID organism status and readiness
+  authority: EUCLID
+  interface: HTTP_OPERATOR
+  consumer:
+  - frontend IntelligenceView
+  schema:
+    request: none
+    response: runner status {state, last_result, ...}
+    version: pythia.runner/1
+  dependency:
+  - euclid.orchestration
+  criticality: R2
+  slo: unavailable dependencies surface as explicit UNAVAILABLE/503-class states; no specialist may silently
+    substitute another authority's result
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: unavailable intelligence reports unavailable
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: EUCLID
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: &id002
+    accountable: '@bollingertm'
+    authority: EUCLID
+  version: pythia.runner/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.intelligence.selftest
+  capability: command acceptance for an EUCLID self-test run
+  authority: EUCLID
+  interface: HTTP_OPERATOR
+  consumer:
+  - frontend IntelligenceView
+  - frontend SystemFabricPanel
+  schema:
+    request: POST {}
+    response: runner status / {ok, state}
+    version: pythia.runner/1
+  dependency:
+  - euclid.orchestration
+  criticality: R2
+  slo: unavailable dependencies surface as explicit UNAVAILABLE/503-class states; no specialist may silently
+    substitute another authority's result
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: unavailable subsystem reports unavailable, not pass
+  retry_idempotency:
+    retry: poll GET; do not repost on 409
+    idempotency: 409 runner_busy
+  evidence_owner: EUCLID
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: *id002
+  version: pythia.runner/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.intelligence.maintenance
+  capability: command acceptance for EUCLID maintenance operations
+  authority: EUCLID
+  interface: HTTP_OPERATOR
+  consumer:
+  - frontend IntelligenceView
+  schema:
+    request: '{}'
+    response: '{ok, state, detail?}'
+    version: pythia.runner/1
+  dependency:
+  - euclid.orchestration
+  criticality: R2
+  slo: unavailable dependencies surface as explicit UNAVAILABLE/503-class states; no specialist may silently
+    substitute another authority's result
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: 409 runner_busy
+  retry_idempotency:
+    retry: stop retryable; start/run not while busy
+    idempotency: start/run 409 runner_busy; stop idempotent
+  evidence_owner: EUCLID
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: *id002
+  version: pythia.runner/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.intelligence.autonomous
+  capability: autonomous-supervisor status/control projection over EUCLID
+  authority: EUCLID
+  interface: HTTP_OPERATOR
+  consumer:
+  - operator-console
+  schema:
+    request: POST {}
+    response: supervisor status / trigger result
+    version: pythia.autonomous/1
+  dependency:
+  - euclid.orchestration
+  criticality: R2
+  slo: unavailable dependencies surface as explicit UNAVAILABLE/503-class states; no specialist may silently
+    substitute another authority's result
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: error class surfaced, never silent
+  retry_idempotency:
+    retry: do not retry a trigger while a cycle is in flight
+    idempotency: serialised by supervisor lock
+  evidence_owner: EUCLID
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: *id002
+  version: pythia.autonomous/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.intelligence.engineer
+  capability: command acceptance for the repo-engineer specialist run
+  authority: EUCLID
+  interface: HTTP_OPERATOR
+  consumer:
+  - frontend IntelligenceView
+  schema:
+    request: 'POST {prompt: 1..2000 chars}'
+    response: '{ok, state} / readiness block'
+    version: pythia.runner/1
+  dependency:
+  - euclid.orchestration
+  criticality: R2
+  slo: unavailable dependencies surface as explicit UNAVAILABLE/503-class states; no specialist may silently
+    substitute another authority's result
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: 503 repo_engineer_not_configured with readiness detail; 400 invalid prompt
+  retry_idempotency:
+    retry: do not retry on 409
+    idempotency: 409 runner_busy
+  evidence_owner: EUCLID
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: *id002
+  version: pythia.runner/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.intelligence.cognition_solve
+  capability: command acceptance for a single EUCLID cognition-loop solve
+  authority: EUCLID
+  interface: HTTP_OPERATOR
+  consumer:
+  - operator-console
+  schema:
+    request: '{problem_id, goal, problem_class?, structure?[], observations?[], strategy?, initial_code?}'
+    response: '{ok, available, ...cognition trace}'
+    version: pythia.cognition_solve/1
+  dependency:
+  - euclid.orchestration
+  criticality: R2
+  slo: unavailable dependencies surface as explicit UNAVAILABLE/503-class states; no specialist may silently
+    substitute another authority's result
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: 503 {available:false} when EUCLID runtime unavailable; 400 missing problem_id/goal
+  retry_idempotency:
+    retry: retryable; each retry is a distinct episode
+    idempotency: none — each call is a new episode
+  evidence_owner: EUCLID
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: *id002
+  version: pythia.cognition_solve/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.agentic
+  capability: command acceptance/status for the agentic-mining worker runner
+  authority: EUCLID
+  interface: HTTP_OPERATOR
+  consumer:
+  - frontend SystemFabricPanel
+  - frontend IntelligenceView
+  schema:
+    request: 'start {count?: int (default 128), cycles?: int (default 3)}'
+    response: runner status / {ok, state}
+    version: pythia.runner/1
+  dependency:
+  - euclid.orchestration
+  - chronus.execution
+  - pythia.boot_audit
+  criticality: R2
+  slo: unavailable dependencies surface as explicit UNAVAILABLE/503-class states; no specialist may silently
+    substitute another authority's result
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: 409 runner_busy
+  retry_idempotency:
+    retry: stop retryable
+    idempotency: start 409 runner_busy; stop idempotent
+  evidence_owner: EUCLID
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: *id002
+  version: pythia.runner/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.campaign
+  capability: command acceptance for a bounded EUCLID campaign run
+  authority: EUCLID
+  interface: HTTP_OPERATOR
+  consumer:
+  - frontend SystemFabricPanel
+  schema:
+    request: '{}'
+    response: runner status / {ok, state}
+    version: pythia.runner/1
+  dependency:
+  - euclid.orchestration
+  criticality: R2
+  slo: unavailable dependencies surface as explicit UNAVAILABLE/503-class states; no specialist may silently
+    substitute another authority's result
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: 409 runner_busy
+  retry_idempotency:
+    retry: stop retryable
+    idempotency: start 409 runner_busy; stop idempotent
+  evidence_owner: EUCLID
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: *id002
+  version: pythia.runner/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.mining.control
+  capability: guardian-mediated mining start/stop/pool-switch command acceptance
+  authority: PYTHIA
+  interface: HTTP_PRIVILEGED
+  consumer:
+  - frontend SystemFabricPanel (operator action)
+  - operator-console
+  schema:
+    request: start/stop {}; switch {pool}; elevate {target_hs}; escalate {arms}
+    response: '{ok, reason?|workers?|applied?|config?|retired?}'
+    version: pythia.mining_control/1
+  dependency:
+  - al_haras.guardian
+  - chronus.execution
+  - stratum.v1
+  - pythia.boot_audit
+  criticality: R1
+  slo: invalid work never accepted; disconnects surface as DISCONNECTED; reconnect is bounded and logged
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: 400 invalid body; guardian denial receipt; ok:false + reason when no mining device (honest
+    refuse, not a 500)
+  retry_idempotency:
+    retry: safe to retry identical intent; do not retry a rejected command
+    idempotency: start/stop idempotent; switch/elevate/escalate converge to declared config
+  evidence_owner: PYTHIA
+  observability: X-Request-Id correlation; guardian-mediated evidence receipt per call; denial receipts
+    audited
+  lifecycle_owner: *id001
+  version: pythia.mining_control/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.mining.evidence
+  capability: projection of worker-produced mining evidence (attestations, share outcomes)
+  authority: PYTHIA
+  interface: HTTP_PRIVILEGED
+  consumer:
+  - operator-console
+  - frontend MiningEvidencePanel
+  schema:
+    request: none
+    response: heartbeat-derived mining evidence incl. euclid_support snapshot
+    version: pythia.mining_evidence/1
+  dependency:
+  - al_haras.guardian
+  - pythia.worker_heartbeat
+  criticality: R1
+  slo: invalid work never accepted; disconnects surface as DISCONNECTED; reconnect is bounded and logged
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: absent worker evidence reports unavailable fields, never zeros
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: PYTHIA
+  observability: X-Request-Id correlation; guardian-mediated evidence receipt per call; denial receipts
+    audited
+  lifecycle_owner: *id001
+  version: pythia.mining_evidence/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.stratum.status
+  capability: observed stratum transport/session state projection
+  authority: PYTHIA
+  interface: HTTP_OPERATOR
+  consumer:
+  - operator-console
+  schema:
+    request: none
+    response: '{state, transport, subscribed, authorized, worker (redacted), job, submission, worker_live}'
+    version: pythia.stratum_status/1
+  dependency:
+  - stratum.v1
+  criticality: R1
+  slo: invalid work never accepted; disconnects surface as DISCONNECTED; reconnect is bounded and logged
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: disconnected/configured states are explicit
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: PYTHIA
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: *id001
+  version: pythia.stratum_status/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.telemetry
+  capability: ops-telemetry summary, events, history, causal ledger, and mining-session projections
+  authority: PYTHIA
+  interface: HTTP_OPERATOR
+  consumer:
+  - frontend TelemetryPanel
+  - frontend ObservabilityView
+  - frontend ops.ts
+  schema:
+    request: query params n:int, kind:str
+    response: pythia.telemetry_*/1 documents; unavailable blocks carry available:false + reason
+    version: pythia.telemetry/1
+  dependency:
+  - pythia.worker_heartbeat
+  - chronus.execution
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: absent streams are unavailable, never empty success
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: PYTHIA
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: *id001
+  version: pythia.telemetry/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.telemetry.stream
+  capability: server-sent event stream of live telemetry events
+  authority: PYTHIA
+  interface: EVENT_STREAM
+  consumer:
+  - frontend ops.ts EventSource
+  schema:
+    request: none
+    response: 'text/event-stream frames {type:ops, seq, ops, new_events} + : keepalive'
+    version: pythia.ops_telemetry/1
+  dependency:
+  - pythia.worker_heartbeat
+  - chronus.execution
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: connection close is clean; staleness surfaced client-side
+  retry_idempotency:
+    retry: EventSource auto-reconnect; seq resumes
+    idempotency: read-only; client resumes from last_seq
+  evidence_owner: PYTHIA
+  observability: X-Request-Id on stream handshake; per-event sequence; disconnect is an observable event,
+    never silent
+  lifecycle_owner: *id001
+  version: pythia.ops_telemetry/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.audit.tail
+  capability: tail projection of the append-only boot audit ledger
+  authority: PYTHIA
+  interface: HTTP_OPERATOR
+  consumer:
+  - frontend TelemetryPanel
+  schema:
+    request: query n:int (default 50)
+    response: append-only audit tail
+    version: pythia.audit_tail/1
+  dependency:
+  - pythia.boot_audit
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: missing audit reports empty tail honestly
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: PYTHIA
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: *id001
+  version: pythia.audit_tail/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.knowledge
+  capability: projection of shared intelligence knowledge replayed from the fabric journal
+  authority: EUCLID
+  interface: HTTP_OPERATOR
+  consumer:
+  - operator-console
+  schema:
+    request: none
+    response: knowledge fabric state
+    version: pythia.knowledge/1
+  dependency:
+  - euclid.orchestration
+  criticality: R2
+  slo: unavailable dependencies surface as explicit UNAVAILABLE/503-class states; no specialist may silently
+    substitute another authority's result
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: unavailable knowledge fabric reports unavailable
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: EUCLID
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: *id002
+  version: pythia.knowledge/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.gpu
+  capability: observed GPU capability/state projection
+  authority: CHRONUS
+  interface: HTTP_OPERATOR
+  consumer:
+  - operator-console
+  schema:
+    request: none
+    response: '{available, count, devices, opencl_device_count, ...}'
+    version: chronus.gpu_truth/1
+  dependency:
+  - chronus.execution
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: probe failure degrades to unavailable substrate — never raises, never invents
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only (cached)
+  evidence_owner: CHRONUS
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: &id003
+    accountable: '@bollingertm'
+    authority: CHRONUS
+  version: chronus.gpu_truth/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.hardware.status
+  capability: observed hardware capability matrix projection
+  authority: CHRONUS
+  interface: HTTP_OPERATOR
+  consumer:
+  - operator-console
+  schema:
+    request: none
+    response: '{execution.backend, mining_device.bound, opencl.device_count, physical_gpu_count, salamander
+      state}'
+    version: pythia.hardware_status/1
+  dependency:
+  - chronus.execution
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: armed_no_device is honest; no fabricated GPU counts
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: CHRONUS
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: *id003
+  version: pythia.hardware_status/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: al_haras.security.status
+  capability: guardian-mediated projection of the security plane's public status
+  authority: AL_HARAS
+  interface: HTTP_PRIVILEGED
+  consumer:
+  - operator-console
+  schema:
+    request: none
+    response: '{capability, subscription_url, ...} or signed denial'
+    version: al_haras.security_status/1
+  dependency:
+  - al_haras.guardian
+  criticality: R0
+  slo: verdict integrity 100% — every decision emits signed evidence; any dependency failure resolves
+    to a closed verdict, never an open one
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: signed denial receipt; 503 guardian_dependency_unavailable when AL HARAS absent
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: AL_HARAS
+  observability: X-Request-Id correlation; guardian-mediated evidence receipt per call; denial receipts
+    audited
+  lifecycle_owner: &id004
+    accountable: '@bollingertm'
+    authority: AL_HARAS
+  version: al_haras.security_status/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: al_haras.security.subscribe
+  capability: guardian-mediated issuance of subscription credentials
+  authority: AL_HARAS
+  interface: HTTP_PRIVILEGED
+  consumer:
+  - operator-console
+  schema:
+    request: none
+    response: '{product, capability, subscription_required, subscription_url}'
+    version: al_haras.subscribe/1
+  dependency:
+  - al_haras.guardian
+  criticality: R0
+  slo: verdict integrity 100% — every decision emits signed evidence; any dependency failure resolves
+    to a closed verdict, never an open one
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: propagates security/status failure verbatim
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: AL_HARAS
+  observability: X-Request-Id correlation; guardian-mediated evidence receipt per call; denial receipts
+    audited
+  lifecycle_owner: *id004
+  version: al_haras.subscribe/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: al_haras.security.evaluate
+  capability: guardian-mediated admission verdict for an operation
+  authority: AL_HARAS
+  interface: HTTP_PRIVILEGED
+  consumer:
+  - operator-console
+  - internal preflight
+  schema:
+    request: '{operation, resource, payload?, observation?}'
+    response: guardian decision receipt {allowed, ...} (signed denial on refuse)
+    version: al_haras.evaluate/1
+  dependency:
+  - al_haras.guardian
+  criticality: R0
+  slo: verdict integrity 100% — every decision emits signed evidence; any dependency failure resolves
+    to a closed verdict, never an open one
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: 400 malformed; 503 guardian_dependency_unavailable; signed denial ladder
+  retry_idempotency:
+    retry: retryable
+    idempotency: evaluation is pure — safe to repeat
+  evidence_owner: AL_HARAS
+  observability: X-Request-Id correlation; guardian-mediated evidence receipt per call; denial receipts
+    audited
+  lifecycle_owner: *id004
+  version: al_haras.evaluate/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: kellogg.tensor.capabilities
+  capability: guardian-mediated projection of the tensor runtime's measured capabilities
+  authority: KELLOGG
+  interface: HTTP_PRIVILEGED
+  consumer:
+  - operator-console
+  schema:
+    request: none
+    response: runtime honest capability catalogue
+    version: tensor.capabilities/1
+  dependency:
+  - al_haras.guardian
+  - kellogg.tensor.runtime
+  criticality: R2
+  slo: unavailable dependencies surface as explicit UNAVAILABLE/503-class states; no specialist may silently
+    substitute another authority's result
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: unavailable runtime surfaces unavailable catalogue entries
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: KELLOGG
+  observability: X-Request-Id correlation; guardian-mediated evidence receipt per call; denial receipts
+    audited
+  lifecycle_owner: &id005
+    accountable: '@bollingertm'
+    authority: KELLOGG
+  version: tensor.capabilities/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: kellogg.tensor.execute
+  capability: guardian-mediated tensor execution verdict (coordinate-committed)
+  authority: KELLOGG
+  interface: HTTP_PRIVILEGED
+  consumer:
+  - operator-console
+  schema:
+    request: '{operation, inputs?|operands?|tensors?, dtype?, backend?, depth?, out?, request_id?}'
+    response: '{schema_version:tensor.execute/1, ...record, values?}'
+    version: tensor.execute/1
+  dependency:
+  - al_haras.guardian
+  - kellogg.tensor.runtime
+  - theseus.custody
+  criticality: R2
+  slo: unavailable dependencies surface as explicit UNAVAILABLE/503-class states; no specialist may silently
+    substitute another authority's result
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: 400 invalid body/unknown operation; guardian denial; dtype/shape validation fails closed
+  retry_idempotency:
+    retry: retryable read-type ops; mutating store ops are replayed under caller's request_id
+    idempotency: request_id correlates; execution itself is not deduplicated
+  evidence_owner: KELLOGG
+  observability: X-Request-Id correlation; guardian-mediated evidence receipt per call; denial receipts
+    audited
+  lifecycle_owner: *id005
+  version: tensor.execute/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: toe.collapse
+  capability: guardian-mediated TOE trajectory-collapse prediction verdict
+  authority: EUCLID
+  interface: HTTP_PRIVILEGED
+  consumer:
+  - operator-console
+  schema:
+    request: '{data: {...}} (non-empty object, ≤4 MiB)'
+    response: '{schema_version, generated_at, guardian_receipt, execution_evidence, ...per-section available
+      results}'
+    version: chronus.mla1517.toe_collapse/1
+  dependency:
+  - al_haras.guardian
+  - kellogg.tensor.runtime
+  criticality: R2
+  slo: unavailable dependencies surface as explicit UNAVAILABLE/503-class states; no specialist may silently
+    substitute another authority's result
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: 400 empty/malformed; 413 oversize; signed denial; per-section available:false instead
+    of fabrication
+  retry_idempotency:
+    retry: retryable
+    idempotency: pure — safe to repeat
+  evidence_owner: EUCLID
+  observability: X-Request-Id correlation; guardian-mediated evidence receipt per call; denial receipts
+    audited
+  lifecycle_owner: *id002
+  version: chronus.mla1517.toe_collapse/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: salamander.fault
+  capability: command acceptance for supervised fault-injection / recovery drills
+  authority: SALAMANDER
+  interface: HTTP_OPERATOR
+  consumer:
+  - frontend lib/audit.ts escalation
+  schema:
+    request: '{kind?, source?, detail?, at?}'
+    response: '{ok, recorded}'
+    version: pythia.salamander_fault/1
+  dependency:
+  - salamander.control_plane
+  - pythia.boot_audit
+  criticality: R3
+  slo: degradation stays inside the declared bound; every intervention leaves a ledger entry; no verdict
+    of another subsystem is rewritten
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: fields sanitised/bounded; never silently dropped
+  retry_idempotency:
+    retry: retryable (distinct events)
+    idempotency: each report is a distinct event
+  evidence_owner: SALAMANDER
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: &id007
+    accountable: '@bollingertm'
+    authority: SALAMANDER
+  version: pythia.salamander_fault/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.static_spa
+  capability: serves the operator-console single-page application and its assets
+  authority: PYTHIA
+  interface: HTTP_PUBLIC
+  consumer:
+  - browser
+  schema:
+    request: none
+    response: static file bytes
+    version: none
+  dependency: []
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: real 404 JSON for unrouted /api/*; SPA index only for app paths; path traversal contained
+    to web_root
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: PYTHIA
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; boot audit records
+    plane state
+  lifecycle_owner: *id001
+  version: none
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: namespace.policy
+  capability: reserved privileged namespace — policy plane; deliberately unimplemented, fail-closed at
+    the AL HARAS boundary
+  authority: AL_HARAS
+  interface: RESERVED_NAMESPACE
+  consumer:
+  - future policy service
+  schema:
+    request: none
+    response: guardian denial receipt or {"error":"not_found"}
+    version: none
+  dependency:
+  - al_haras.guardian
+  criticality: R0
+  slo: verdict integrity 100% — every decision emits signed evidence; any dependency failure resolves
+    to a closed verdict, never an open one
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: real 404 past the boundary
+  retry_idempotency:
+    retry: n/a
+    idempotency: n/a
+  evidence_owner: AL_HARAS
+  observability: signed denial receipts audited at the boundary
+  lifecycle_owner: *id004
+  version: none
+  deprecation_policy: permanently reserved — promotion to an implemented API requires a new canonical
+    entry plus architecture sign-off; never silently gains a handler
+- api_id: namespace.worker
+  capability: reserved privileged namespace — worker plane; deliberately unimplemented, fail-closed at
+    the AL HARAS boundary
+  authority: AL_HARAS
+  interface: RESERVED_NAMESPACE
+  consumer:
+  - future worker control
+  schema:
+    request: none
+    response: guardian denial receipt or {"error":"not_found"}
+    version: none
+  dependency:
+  - al_haras.guardian
+  criticality: R0
+  slo: verdict integrity 100% — every decision emits signed evidence; any dependency failure resolves
+    to a closed verdict, never an open one
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: real 404 past the boundary
+  retry_idempotency:
+    retry: n/a
+    idempotency: n/a
+  evidence_owner: AL_HARAS
+  observability: signed denial receipts audited at the boundary
+  lifecycle_owner: *id004
+  version: none
+  deprecation_policy: permanently reserved — promotion to an implemented API requires a new canonical
+    entry plus architecture sign-off; never silently gains a handler
+- api_id: namespace.recovery
+  capability: reserved privileged namespace — recovery plane; deliberately unimplemented, fail-closed
+    at the AL HARAS boundary
+  authority: AL_HARAS
+  interface: RESERVED_NAMESPACE
+  consumer:
+  - future recovery control
+  schema:
+    request: none
+    response: guardian denial receipt or {"error":"not_found"}
+    version: none
+  dependency:
+  - al_haras.guardian
+  criticality: R0
+  slo: verdict integrity 100% — every decision emits signed evidence; any dependency failure resolves
+    to a closed verdict, never an open one
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: real 404 past the boundary
+  retry_idempotency:
+    retry: n/a
+    idempotency: n/a
+  evidence_owner: AL_HARAS
+  observability: signed denial receipts audited at the boundary
+  lifecycle_owner: *id004
+  version: none
+  deprecation_policy: permanently reserved — promotion to an implemented API requires a new canonical
+    entry plus architecture sign-off; never silently gains a handler
+- api_id: namespace.admin
+  capability: reserved privileged namespace — admin plane; deliberately unimplemented, fail-closed at
+    the AL HARAS boundary
+  authority: AL_HARAS
+  interface: RESERVED_NAMESPACE
+  consumer:
+  - future admin console
+  schema:
+    request: none
+    response: guardian denial receipt or {"error":"not_found"}
+    version: none
+  dependency:
+  - al_haras.guardian
+  criticality: R0
+  slo: verdict integrity 100% — every decision emits signed evidence; any dependency failure resolves
+    to a closed verdict, never an open one
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: real 404 past the boundary
+  retry_idempotency:
+    retry: n/a
+    idempotency: n/a
+  evidence_owner: AL_HARAS
+  observability: signed denial receipts audited at the boundary
+  lifecycle_owner: *id004
+  version: none
+  deprecation_policy: permanently reserved — promotion to an implemented API requires a new canonical
+    entry plus architecture sign-off; never silently gains a handler
+- api_id: namespace.quantum
+  capability: reserved privileged namespace — quantum plane (TURING authority); deliberately unimplemented,
+    fail-closed at the AL HARAS boundary
+  authority: TURING
+  interface: RESERVED_NAMESPACE
+  consumer:
+  - future operator TURING surface
+  schema:
+    request: none
+    response: guardian denial receipt or {"error":"not_found"}
+    version: none
+  dependency:
+  - al_haras.guardian
+  criticality: R0
+  slo: verdict integrity 100% — every decision emits signed evidence; any dependency failure resolves
+    to a closed verdict, never an open one
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: real 404 past the boundary — TURING's canonical interface is INTERNAL_PYTHON VQCPipeline,
+    not REST
+  retry_idempotency:
+    retry: n/a
+    idempotency: n/a
+  evidence_owner: TURING
+  observability: signed denial receipts audited at the boundary
+  lifecycle_owner: &id006
+    accountable: '@bollingertm'
+    authority: TURING
+  version: none
+  deprecation_policy: permanently reserved — promotion to an implemented API requires a new canonical
+    entry plus architecture sign-off; never silently gains a handler
+- api_id: namespace.scale
+  capability: reserved privileged namespace — scale plane; deliberately unimplemented, fail-closed at
+    the AL HARAS boundary
+  authority: AL_HARAS
+  interface: RESERVED_NAMESPACE
+  consumer:
+  - future scale control
+  schema:
+    request: none
+    response: guardian denial receipt or {"error":"not_found"}
+    version: none
+  dependency:
+  - al_haras.guardian
+  criticality: R0
+  slo: verdict integrity 100% — every decision emits signed evidence; any dependency failure resolves
+    to a closed verdict, never an open one
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: real 404 past the boundary
+  retry_idempotency:
+    retry: n/a
+    idempotency: n/a
+  evidence_owner: AL_HARAS
+  observability: signed denial receipts audited at the boundary
+  lifecycle_owner: *id004
+  version: none
+  deprecation_policy: permanently reserved — promotion to an implemented API requires a new canonical
+    entry plus architecture sign-off; never silently gains a handler
+- api_id: namespace.assembly
+  capability: reserved privileged namespace — assembly plane; deliberately unimplemented, fail-closed
+    at the AL HARAS boundary
+  authority: AL_HARAS
+  interface: RESERVED_NAMESPACE
+  consumer:
+  - future assembly control
+  schema:
+    request: none
+    response: guardian denial receipt or {"error":"not_found"}
+    version: none
+  dependency:
+  - al_haras.guardian
+  criticality: R0
+  slo: verdict integrity 100% — every decision emits signed evidence; any dependency failure resolves
+    to a closed verdict, never an open one
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: real 404 past the boundary
+  retry_idempotency:
+    retry: n/a
+    idempotency: n/a
+  evidence_owner: AL_HARAS
+  observability: signed denial receipts audited at the boundary
+  lifecycle_owner: *id004
+  version: none
+  deprecation_policy: permanently reserved — promotion to an implemented API requires a new canonical
+    entry plus architecture sign-off; never silently gains a handler
+- api_id: turing.vqc_pipeline
+  capability: typed in-process VQC execution — TURING's canonical interface
+  authority: TURING
+  interface: INTERNAL_PYTHON
+  consumer:
+  - PYTHIA
+  - EUCLID
+  schema:
+    request: VQCRequest dataclass (program | qasm, shots, seed, verify_unitary, custody, replay)
+    response: PipelineReport dataclass — verdict PASS/FAIL/REFUSED/GATED; certificate dict when issued
+    version: turing.vqc/1
+  dependency:
+  - theseus.custody
+  criticality: R2
+  slo: unavailable dependencies surface as explicit UNAVAILABLE/503-class states; no specialist may silently
+    substitute another authority's result
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: invalid program/unknown gate/representation or backend mismatch raise; tampered certificate
+    fails verification
+  retry_idempotency:
+    retry: replayable; certificates verify
+    idempotency: deterministic per request
+  evidence_owner: TURING
+  observability: typed verdict/evidence objects; producer-side evidence ledger where declared in custody_requirement
+  lifecycle_owner: *id006
+  version: turing.vqc/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: theseus.custody
+  capability: durable custody boundary — content-addressed records, integrity, provenance
+  authority: THESEUS
+  interface: INTERNAL_PYTHON
+  consumer:
+  - PYTHIA
+  - TURING
+  - CHRONUS
+  - OVID
+  - KELLOGG
+  - SALAMANDER
+  - AL_HARAS
+  - EUCLID
+  schema:
+    request: typed methods; TheseusRecord
+    response: bytes / TheseusRecord / bool / snapshot dict
+    version: aethel.theseus/1
+  dependency: []
+  criticality: R0
+  slo: verdict integrity 100% — every decision emits signed evidence; any dependency failure resolves
+    to a closed verdict, never an open one
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: TheseusError on contract violation; corrupt records heal or fail closed
+  retry_idempotency:
+    retry: io retry per store policy
+    idempotency: put is content-addressed; replay is stable
+  evidence_owner: THESEUS
+  observability: typed verdict/evidence objects; producer-side evidence ledger where declared in custody_requirement
+  lifecycle_owner:
+    accountable: '@bollingertm'
+    authority: THESEUS
+  version: aethel.theseus/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: ovid.transform
+  capability: representation/state transformation authority with exactness classification and transform
+    lineage
+  authority: OVID
+  interface: INTERNAL_PYTHON
+  consumer:
+  - PYTHIA
+  - CHRONUS
+  - EUCLID
+  - THESEUS producers
+  schema:
+    request: TransformContract declaration; input representation
+    response: FoldedWorkingForm / TransformLineage / EquivalenceVerdict
+    version: aethel.ovid/1
+  dependency:
+  - theseus.custody
+  criticality: R2
+  slo: unavailable dependencies surface as explicit UNAVAILABLE/503-class states; no specialist may silently
+    substitute another authority's result
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: unknown transform / unsupported version / inconsistent contract / tampered output fail
+    closed
+  retry_idempotency:
+    retry: replayable; equivalence re-verifies
+    idempotency: lineage_id is execution-unique by construction
+  evidence_owner: OVID
+  observability: typed verdict/evidence objects; producer-side evidence ledger where declared in custody_requirement
+  lifecycle_owner:
+    accountable: '@bollingertm'
+    authority: OVID
+  version: aethel.ovid/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: kellogg.tensor.runtime
+  capability: tensor capability runtime — matmul/kron/execute with coordinate-committed receipts
+  authority: KELLOGG
+  interface: INTERNAL_PYTHON
+  consumer:
+  - control_api tensor.execute
+  - EUCLID where authorised
+  schema:
+    request: bounded operation + shapes + dtype
+    response: 'execution record {path, output|output_digest, receipt: tensor.receipt/1, truth_class, dtype}'
+    version: tensor.execute/1
+  dependency:
+  - theseus.custody
+  criticality: R2
+  slo: unavailable dependencies surface as explicit UNAVAILABLE/503-class states; no specialist may silently
+    substitute another authority's result
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: shape/dtype/unknown-op validation fails closed
+  retry_idempotency:
+    retry: read-type ops retryable
+    idempotency: per request_id correlation
+  evidence_owner: KELLOGG
+  observability: typed verdict/evidence objects; producer-side evidence ledger where declared in custody_requirement
+  lifecycle_owner: *id005
+  version: tensor.execute/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: chronus.execution
+  capability: heterogeneous execution router across the registered device lanes
+  authority: CHRONUS
+  interface: INTERNAL_PYTHON
+  consumer:
+  - PYTHIA mining runtime
+  - TURING workloads
+  - control plane workers
+  schema:
+    request: workload + requested backend
+    response: receipt {requested_backend, actual_backend, result, provenance}
+    version: chronus.execution/1
+  dependency:
+  - theseus.custody
+  criticality: R1
+  slo: invalid work never accepted; disconnects surface as DISCONNECTED; reconnect is bounded and logged
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: requested_backend ≠ actual_backend is always explicit; unavailable backend fails closed
+  retry_idempotency:
+    retry: fail closed on unavailable requested backend unless explicitly authorised fallback policy applies
+    idempotency: per execution id
+  evidence_owner: CHRONUS
+  observability: typed verdict/evidence objects; producer-side evidence ledger where declared in custody_requirement
+  lifecycle_owner: *id003
+  version: chronus.execution/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: al_haras.guardian
+  capability: admission verdict authority — subscription-scoped evaluation with signed receipts
+  authority: AL_HARAS
+  interface: INTERNAL_PYTHON
+  consumer:
+  - control_api privileged preflight
+  - security/evaluate route
+  schema:
+    request: guardian evaluate envelope
+    response: (HTTPStatus, decision receipt) — denial receipts are signed
+    version: al_haras.evaluate/1
+  dependency: []
+  criticality: R0
+  slo: verdict integrity 100% — every decision emits signed evidence; any dependency failure resolves
+    to a closed verdict, never an open one
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: full denial ladder (missing/malformed credential, wrong tenant/actor, insufficient capability,
+    expired/revoked, guardian unavailable, dependency unavailable) — handler never executes before decision
+  retry_idempotency:
+    retry: retryable
+    idempotency: evaluation is pure
+  evidence_owner: AL_HARAS
+  observability: typed verdict/evidence objects; producer-side evidence ledger where declared in custody_requirement
+  lifecycle_owner: *id004
+  version: al_haras.evaluate/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: salamander.control_plane
+  capability: bounded self-healing orchestration with hash-chained evidence ledger
+  authority: SALAMANDER
+  interface: INTERNAL_PYTHON
+  consumer:
+  - salamander_engine worker
+  - control plane
+  schema:
+    request: typed models (HealthObservation, ActionRequest, RecoveryPlan, TheseusRecordIdentity, OvidTransformEvidence,
+      RebuildableProjection)
+    response: HealthDecision / ActionResult / ActionVerification / api_snapshot dict
+    version: salamander.autonomic-control-plane.v1
+  dependency:
+  - theseus.custody
+  criticality: R3
+  slo: degradation stays inside the declared bound; every intervention leaves a ledger entry; no verdict
+    of another subsystem is rewritten
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: FailClosed on contract violation; unverified action is never recovery proof
+  retry_idempotency:
+    retry: bounded by circuit breaker + recovery budget
+    idempotency: ActionRequest.idempotency_key required and enforced
+  evidence_owner: SALAMANDER
+  observability: typed verdict/evidence objects; producer-side evidence ledger where declared in custody_requirement
+  lifecycle_owner: *id007
+  version: salamander.autonomic-control-plane.v1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: euclid.orchestration
+  capability: governed organism orchestration — cognition loop and specialist dispatch under the AL HARAS
+    boundary
+  authority: EUCLID
+  interface: INTERNAL_PYTHON
+  consumer:
+  - control_api cognition/solve
+  - mining support
+  schema:
+    request: cognition episode request
+    response: episode trace {available, ...}
+    version: euclid.cognition/1
+  dependency:
+  - al_haras.guardian
+  - turing.vqc_pipeline
+  - chronus.execution
+  - ovid.transform
+  - theseus.custody
+  criticality: R2
+  slo: unavailable dependencies surface as explicit UNAVAILABLE/503-class states; no specialist may silently
+    substitute another authority's result
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: unavailable specialist propagates available:false
+  retry_idempotency:
+    retry: retryable as new episode
+    idempotency: per episode id
+  evidence_owner: EUCLID
+  observability: typed verdict/evidence objects; producer-side evidence ledger where declared in custody_requirement
+  lifecycle_owner: *id002
+  version: euclid.cognition/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: hyba_db.store
+  capability: tenant-scoped ontology store — registry, versions, events, reconciliation
+  authority: HYBA_DB
+  interface: INTERNAL_PYTHON
+  consumer:
+  - SALAMANDER projection verification
+  - enterprise projections
+  schema:
+    request: store/verify calls
+    response: verify verdict {valid|ok, projection_sha256, ...}
+    version: hyba_db.store/1
+  dependency:
+  - theseus.custody
+  criticality: R2
+  slo: unavailable dependencies surface as explicit UNAVAILABLE/503-class states; no specialist may silently
+    substitute another authority's result
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: drift detected against projection_sha256
+  retry_idempotency:
+    retry: retryable
+    idempotency: verify is pure
+  evidence_owner: HYBA_DB
+  observability: typed verdict/evidence objects; producer-side evidence ledger where declared in custody_requirement
+  lifecycle_owner:
+    accountable: '@bollingertm'
+    authority: HYBA_DB
+  version: hyba_db.store/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: stratum.v1
+  capability: stratum V1 pool wire protocol — job stream and share submission
+  authority: POOL
+  interface: WIRE_PROTOCOL
+  consumer:
+  - agentic-mining worker
+  schema:
+    request: JSON-RPC Stratum V1 methods
+    response: literal pool replies; submit result is a boolean verdict
+    version: stratum.v1
+  dependency:
+  - POOL
+  criticality: R1
+  slo: invalid work never accepted; disconnects surface as DISCONNECTED; reconnect is bounded and logged
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: StratumProtocolError/StratumAuthorizationError; malformed reply/duplicate or unknown request
+    id/job replacement all handled explicitly
+  retry_idempotency:
+    retry: subscribe/authorize/notify handling retry via reconnect; submit only by explicit canonical
+      resubmission policy
+    idempotency: mining.submit is NEVER auto-retried — an unknown prior outcome cannot be safely replayed
+      without protocol idempotency
+  evidence_owner: POOL
+  observability: session transcript; share-outcome evidence in worker metrics sidecars
+  lifecycle_owner:
+    accountable: '@bollingertm'
+    authority: POOL
+  version: stratum.v1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: chronus.remote_opencl_v2
+  capability: remote OpenCL execution wire protocol — client-verified remote device results
+  authority: CHRONUS
+  interface: WIRE_PROTOCOL
+  consumer:
+  - chronus.delivery cloud_instance
+  - hybrid solver
+  schema:
+    request: remote_opencl_v2 envelopes; sha256d window ≤2^24 nonces, batch ≤2^20
+    response: '{protocol: remote_opencl_v2, ...}; attestation token binds sha256d results to the job'
+    version: remote_opencl_v2
+  dependency:
+  - REMOTE_DEVICE
+  criticality: R1
+  slo: invalid work never accepted; disconnects surface as DISCONNECTED; reconnect is bounded and logged
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: wrong protocol version rejected; tampered results fail re-verification; unreachable/deviceless
+    endpoints report honest unavailability — no fabricated devices, no silent fallback
+  retry_idempotency:
+    retry: probe_first_reachable rotates endpoints; results always re-verified
+    idempotency: ladder/sha256d are pure computations — replay safe
+  evidence_owner: CHRONUS
+  observability: session transcript; share-outcome evidence in worker metrics sidecars
+  lifecycle_owner: *id003
+  version: remote_opencl_v2
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.worker_heartbeat
+  capability: worker liveness/metrics sidecars read by the control plane
+  authority: PYTHIA
+  interface: FILE/ARTIFACT_CONTRACT
+  consumer:
+  - control_api status/telemetry/mining.evidence
+  - campaign counters
+  schema:
+    request: n/a
+    response: metrics.json {state, ready, counters, job, submission, mining_evidence?}; .bin signed by
+      PYTHIA_IDENTITY_HMAC_SECRET
+    version: pythia.worker_metrics/1
+  dependency:
+  - FILESYSTEM
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: stale sidecar belongs to a killed arm — excluded from counters
+  retry_idempotency:
+    retry: readers tolerate missing/stale files as unavailable
+    idempotency: last-writer-wins per worker file
+  evidence_owner: PYTHIA
+  observability: append-only on-disk record; staleness TTL where declared
+  lifecycle_owner: *id001
+  version: pythia.worker_metrics/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.boot_audit
+  capability: append-only boot/operational audit ledger
+  authority: PYTHIA
+  interface: FILE/ARTIFACT_CONTRACT
+  consumer:
+  - control_api audit/tail
+  - operators
+  schema:
+    request: n/a
+    response: JSONL events {event, at, fields...}
+    version: pythia.boot_audit/1
+  dependency:
+  - FILESYSTEM
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: missing log reads as empty tail
+  retry_idempotency:
+    retry: n/a
+    idempotency: append-only
+  evidence_owner: PYTHIA
+  observability: append-only on-disk record; staleness TTL where declared
+  lifecycle_owner: *id001
+  version: pythia.boot_audit/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.runtime_config_file
+  capability: durable declared-configuration artifact, atomic read/write, secrets redacted on public view
+  authority: PYTHIA
+  interface: FILE/ARTIFACT_CONTRACT
+  consumer:
+  - control_api config routes
+  - workers on (re)spawn
+  schema:
+    request: n/a
+    response: declared config; public_view redacts pool passwords
+    version: pythia.runtime_config/1
+  dependency:
+  - FILESYSTEM
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: ValueError on invalid config
+  retry_idempotency:
+    retry: n/a
+    idempotency: save is idempotent per content
+  evidence_owner: PYTHIA
+  observability: append-only on-disk record; staleness TTL where declared
+  lifecycle_owner: *id001
+  version: pythia.runtime_config/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.cli.api
+  capability: boots the PYTHIA control plane and workers under env gates
+  authority: PYTHIA
+  interface: CLI
+  consumer:
+  - operators
+  - systemd/containers
+  schema:
+    request: argparse flags
+    response: process exit codes; stdout log
+    version: pythia.cli/1
+  dependency:
+  - pythia.runtime_config_file
+  - pythia.boot_audit
+  - pythia.worker_heartbeat
+  criticality: R1
+  slo: invalid work never accepted; disconnects surface as DISCONNECTED; reconnect is bounded and logged
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: StartupConfigError → nonzero exit with reason; RestartBudgetExhausted → fail loud
+  retry_idempotency:
+    retry: n/a
+    idempotency: boot lock makes a second instance fail fast
+  evidence_owner: PYTHIA
+  observability: process exit codes; stdout/stderr log; boot audit where applicable
+  lifecycle_owner: *id001
+  version: pythia.cli/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.cli.miner
+  capability: headless stratum miner entrypoint, fail-closed without device/credentials
+  authority: PYTHIA
+  interface: CLI
+  consumer:
+  - operators
+  schema:
+    request: argparse flags
+    response: process exit codes
+    version: pythia.cli/1
+  dependency:
+  - stratum.v1
+  - chronus.execution
+  - pythia.boot_audit
+  criticality: R1
+  slo: invalid work never accepted; disconnects surface as DISCONNECTED; reconnect is bounded and logged
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: fail-closed on absent device/pool identity
+  retry_idempotency:
+    retry: n/a
+    idempotency: n/a
+  evidence_owner: PYTHIA
+  observability: process exit codes; stdout/stderr log; boot audit where applicable
+  lifecycle_owner: *id001
+  version: pythia.cli/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: chronus.cli.remote_agent
+  capability: remote GPU agent entrypoint serving remote_opencl_v2
+  authority: CHRONUS
+  interface: CLI
+  consumer:
+  - operators deploying remote GPU agents
+  schema:
+    request: argparse flags
+    response: process exit codes; serves /v1/* remote_opencl_v2
+    version: remote_opencl_v2
+  dependency:
+  - chronus.remote_opencl_v2
+  - REMOTE_DEVICE
+  criticality: R1
+  slo: invalid work never accepted; disconnects surface as DISCONNECTED; reconnect is bounded and logged
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: fails closed on no device
+  retry_idempotency:
+    retry: n/a
+    idempotency: n/a
+  evidence_owner: CHRONUS
+  observability: process exit codes; stdout/stderr log; boot audit where applicable
+  lifecycle_owner: *id003
+  version: remote_opencl_v2
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: legacy.api_health
+  capability: frozen compatibility alias of the health endpoint for older monitors
+  authority: PYTHIA
+  interface: LEGACY
+  consumer:
+  - older monitors
+  schema:
+    request: none
+    response: same as pythia.health
+    version: chronus.mla1517.status/1
+  dependency:
+  - pythia.health
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: same as canonical
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: PYTHIA
+  observability: identical to the canonical successor
+  lifecycle_owner: *id001
+  version: chronus.mla1517.status/1
+  deprecation_policy: frozen alias; removed only when the canonical successor has served a full deprecation
+    window with zero recorded consumers

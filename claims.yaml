@@ -31,7 +31,7 @@ claims:
     status: VERIFIED
     test_command: "python -m pytest tests/test_runtime_config.py -x -q"
     artifact: "tests/test_runtime_config.py"
-    artifact_hash: "881fc8ae6e7522cd8554e02ae4b1c977883d3987b3da0e8b637e0071de4161b1"
+    artifact_hash: "24f830cb1c74d4b5f45e7e504265df901d5adf7a95077942c6b145d844c8a594"
     baseline: "27 config-contract assertions"
   - id: r-lucas-pisot-speedup
     text: "Lucas/Pisot quantum speedup"

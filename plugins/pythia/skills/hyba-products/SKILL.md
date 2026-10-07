@@ -1,47 +1,70 @@
 ---
 name: hyba-products
-description: See YOUR HYBA products side by side (PYTHIA mining, PRIME-DB storage, HYBA services, HYBA profiles, HYBA substrate memory) and tell what is different between them. Answers cite YOUR module paths, never marketing.
+description: Compare the user's HYBA product surfaces and the separate PYTHIA intelligence/mining system without collapsing authority boundaries. Cite repository module paths, not marketing.
 allowed-tools:
   - read
   - grep
   - glob
+  - exec
 triggers:
   - user
   - model
 ---
 
-# HYBA Products (yours — compare surfaces, cite modules)
+# HYBA Products and PYTHIA Boundaries
 
-## The five surfaces (all yours)
+## Session activation
 
-1. **PYTHIA** — operational mining product. Owns `chronus/mla1517/mining/`
-   (geometry, lane, chooser, solver, pow, coordinator), control plane
-   `chronus/mla1517_platform/python/`, operator UI `frontend/`. Fail-closed:
-   no device/credential/approval = no mining result, never a pass.
-2. **PRIME-DB** — native storage product. `chronus/mla1517_platform/host/`
-   (`primedb_storage.*`, `primedb_ingest_daemon.*`, `mla1517_aethel.h`):
-   64-byte states → /dev/shm SPSC ring → vertex_00..19.db. Consumer of mining
-   states, not a miner itself.
-3. **HYBA services** (`hyba_services/`) — object/policy/lineage/proof
-   reference services over `hyba_contracts` (PRIMEObjectV2, FoldContract,
-   BackendCertificate). Executable references with dependency injection.
-4. **HYBA profiles** (`hyba_profiles/registry.py`) — the module map:
-   core → mla1517 → primedb; al_haras-gated services; research-gated
-   (privacy_compute, quantum_access, autonomous_ops, energy). Always resolve
-   `dependency_closure()` before adding a module.
-5. **HYBA substrate memory** (`hyba_substrate/`) — durable lossless
-   preservation: canonical JSON, Merkle DAG, Φ-fold/MPS only when round-trip
-   verified, atomic writes with read-back verification.
+This aptitude is invoked automatically at SessionStart and remains active for the entire Devin session. Do not treat it as an optional per-task capability.
 
-## YOUR math substrate underneath (credit where due)
 
-Binet, Zeckendorf, Pulvini folding, Cassini ovals/ledger, Lucas pool —
-`lucas/pool.py` is the only legal shared import; algorithm files never import
-siblings. The pocket-calculator thesis (AGENTS.md §1.3): quantum is linear
-algebra over C, substrate-agnostic — your statement, preserved verbatim.
 
-## How to answer "is there something different"
+## Non-negotiable distinction
 
-Compare along: owns-what (module paths), inputs/outputs, failure mode
-(fail-closed vs fallback with provenance), durability guarantees. Every claim
-ends with the file that proves it.
+**PYTHIA is not a HYBA product.** It is the separate predictive/causal and
+mining-intelligence authority in this repository and owns the final mining
+SearchPlan.
+
+Do not use this skill to reclassify PYTHIA as a HYBA commercial product.
+
+## Surfaces to compare
+
+1. **PYTHIA intelligence/mining system** — `chronus/mla1517/mining/`,
+   `Intelligence/`, the canonical control plane, and the operator UI. It is
+   fail-closed around evidence and retains mining/SearchPlan authority.
+2. **HYBA services** — `hyba_services/`, reference object/policy/lineage/
+   proof services over `hyba_contracts`.
+3. **HYBA profiles** — `hyba_profiles/registry.py`, the module/dependency
+   map. Resolve `dependency_closure()` before adding a module.
+4. **HYBA substrate memory** — `hyba_substrate/`, durable lossless
+   canonical-JSON/Merkle-DAG preservation with verified round trips.
+5. **PRIME-DB / Chronus persistence surfaces** — existing native/local storage
+   components under Chronus. These are **not global durable authority** merely
+   because they persist data.
+
+## Current storage authority rule
+
+- **THESEUS** owns durable custody, integrity, continuity, records, recovery
+  and provenance.
+- **OVID** owns representation/state transformation and transform lineage.
+- **hyba_db** is tenant-scoped ontology/query/projection persistence.
+- PrimeDB, SQLite, snapshots, journals, reports, manifests and caches remain
+  classified producers/adapters/projections/legacy surfaces according to the
+  canonical storage registry unless the owner explicitly changes that status.
+
+Never repeat the superseded model in which OVID is durable authority and
+THESEUS is only a rebuildable projection.
+
+## How to answer comparison questions
+
+Compare:
+
+- canonical owner/authority;
+- implementation/module path;
+- inputs and outputs;
+- persistence/custody role;
+- failure behavior;
+- evidence source.
+
+Every concrete repository claim should name the file or symbol that supports
+it. If evidence is unavailable, say so rather than inferring it.

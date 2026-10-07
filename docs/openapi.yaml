@@ -1,0 +1,733 @@
+openapi: 3.1.0
+info:
+  title: PYTHIA production control API
+  version: pythia.api_registry/2
+  description: Generated from governance/api_registry.yaml. Route/auth parity is enforced
+    by tests/test_production_api_contract.py.
+components:
+  securitySchemes:
+    OperatorBearer:
+      type: http
+      scheme: bearer
+      description: PYTHIA operator principal or EUCLID_ADMIN_API_KEY
+    AlHarasSubscription:
+      type: http
+      scheme: bearer
+      description: AL HARAS subscription token + X-HYBA-Tenant/X-HYBA-Actor
+paths:
+  /api/health:
+    get:
+      summary: legacy.api_health
+      description: 'owner: PYTHIA | truth_class: LIVENESS | schema: chronus.mla1517.status/1
+        | failure: same as canonical'
+      x-pythia-api-id: legacy.api_health
+      x-pythia-truth-class: LIVENESS
+      x-pythia-deprecation-state: COMPATIBILITY_ALIAS
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: LEGACY
+      x-pythia-slo: slo.projection.read
+  /api/v1/agentic/start:
+    post:
+      summary: pythia.agentic
+      description: 'owner: EUCLID | truth_class: GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE
+        | schema: pythia.runner/1 | failure: 409 runner_busy'
+      x-pythia-api-id: pythia.agentic
+      x-pythia-truth-class: 'GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE'
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R1
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.mining.control
+      security:
+      - OperatorBearer: []
+  /api/v1/agentic/status:
+    get:
+      summary: pythia.agentic
+      description: 'owner: EUCLID | truth_class: GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE
+        | schema: pythia.runner/1 | failure: 409 runner_busy'
+      x-pythia-api-id: pythia.agentic
+      x-pythia-truth-class: 'GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE'
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R1
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.mining.control
+      security:
+      - OperatorBearer: []
+  /api/v1/agentic/stop:
+    post:
+      summary: pythia.agentic
+      description: 'owner: EUCLID | truth_class: GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE
+        | schema: pythia.runner/1 | failure: 409 runner_busy'
+      x-pythia-api-id: pythia.agentic
+      x-pythia-truth-class: 'GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE'
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R1
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.mining.control
+      security:
+      - OperatorBearer: []
+  /api/v1/audit/tail:
+    get:
+      summary: pythia.audit.tail
+      description: 'owner: PYTHIA | truth_class: EVIDENCE | schema: pythia.audit_tail/1
+        | failure: missing audit reports empty tail honestly'
+      x-pythia-api-id: pythia.audit.tail
+      x-pythia-truth-class: EVIDENCE
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+  /api/v1/campaign/start:
+    post:
+      summary: pythia.campaign
+      description: 'owner: EUCLID | truth_class: GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE
+        | schema: pythia.runner/1 | failure: 409 runner_busy'
+      x-pythia-api-id: pythia.campaign
+      x-pythia-truth-class: 'GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE'
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R1
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.mining.control
+      security:
+      - OperatorBearer: []
+  /api/v1/campaign/status:
+    get:
+      summary: pythia.campaign
+      description: 'owner: EUCLID | truth_class: GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE
+        | schema: pythia.runner/1 | failure: 409 runner_busy'
+      x-pythia-api-id: pythia.campaign
+      x-pythia-truth-class: 'GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE'
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R1
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.mining.control
+      security:
+      - OperatorBearer: []
+  /api/v1/campaign/stop:
+    post:
+      summary: pythia.campaign
+      description: 'owner: EUCLID | truth_class: GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE
+        | schema: pythia.runner/1 | failure: 409 runner_busy'
+      x-pythia-api-id: pythia.campaign
+      x-pythia-truth-class: 'GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE'
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R1
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.mining.control
+      security:
+      - OperatorBearer: []
+  /api/v1/config:
+    get:
+      summary: pythia.config.read
+      description: 'owner: PYTHIA | truth_class: CONFIGURATION | schema: pythia.runtime_config/1
+        | failure: pool passwords never serialised in the public view'
+      x-pythia-api-id: pythia.config.read
+      x-pythia-truth-class: CONFIGURATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+    put:
+      summary: pythia.config.update
+      description: 'owner: PYTHIA | truth_class: COMMAND_ACCEPTANCE | schema: pythia.runtime_config/1
+        | failure: 400 unknown section / invalid value; 401/403 unauthenticated; closed
+        when no key configured'
+      x-pythia-api-id: pythia.config.update
+      x-pythia-truth-class: COMMAND_ACCEPTANCE
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R1
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.operator.mutation
+      security:
+      - OperatorBearer: []
+  /api/v1/gpu:
+    get:
+      summary: pythia.gpu
+      description: "owner: CHRONUS | truth_class: RUNTIME_OBSERVATION | schema: chronus.gpu_truth/1\
+        \ | failure: probe failure degrades to unavailable substrate \u2014 never\
+        \ raises, never invents"
+      x-pythia-api-id: pythia.gpu
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+  /api/v1/hardware/status:
+    get:
+      summary: pythia.hardware.status
+      description: 'owner: CHRONUS | truth_class: RUNTIME_OBSERVATION | schema: pythia.hardware_status/1
+        | failure: armed_no_device is honest; no fabricated GPU counts'
+      x-pythia-api-id: pythia.hardware.status
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+  /api/v1/healthz:
+    get:
+      summary: pythia.health
+      description: 'owner: PYTHIA | truth_class: LIVENESS | schema: chronus.mla1517.status/1
+        | failure: process down = connection refused; never a body lie'
+      x-pythia-api-id: pythia.health
+      x-pythia-truth-class: LIVENESS
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+  /api/v1/intelligence/autonomous:
+    get:
+      summary: pythia.intelligence.autonomous
+      description: 'owner: EUCLID | truth_class: GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE
+        | schema: pythia.autonomous/1 | failure: error class surfaced, never silent'
+      x-pythia-api-id: pythia.intelligence.autonomous
+      x-pythia-truth-class: 'GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE'
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R2
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.specialist
+      security:
+      - OperatorBearer: []
+  /api/v1/intelligence/autonomous/trigger:
+    post:
+      summary: pythia.intelligence.autonomous
+      description: 'owner: EUCLID | truth_class: GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE
+        | schema: pythia.autonomous/1 | failure: error class surfaced, never silent'
+      x-pythia-api-id: pythia.intelligence.autonomous
+      x-pythia-truth-class: 'GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE'
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R2
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.specialist
+      security:
+      - OperatorBearer: []
+  /api/v1/intelligence/cognition/solve:
+    post:
+      summary: pythia.intelligence.cognition_solve
+      description: 'owner: EUCLID | truth_class: VERDICT | schema: pythia.cognition_solve/1
+        | failure: 503 {available:false} when EUCLID runtime unavailable; 400 missing
+        problem_id/goal'
+      x-pythia-api-id: pythia.intelligence.cognition_solve
+      x-pythia-truth-class: VERDICT
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R2
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.specialist
+      security:
+      - OperatorBearer: []
+  /api/v1/intelligence/engineer/ask:
+    post:
+      summary: pythia.intelligence.engineer
+      description: 'owner: EUCLID | truth_class: COMMAND_ACCEPTANCE | schema: pythia.runner/1
+        | failure: 503 repo_engineer_not_configured with readiness detail; 400 invalid
+        prompt'
+      x-pythia-api-id: pythia.intelligence.engineer
+      x-pythia-truth-class: COMMAND_ACCEPTANCE
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R2
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.specialist
+      security:
+      - OperatorBearer: []
+  /api/v1/intelligence/engineer/status:
+    get:
+      summary: pythia.intelligence.engineer
+      description: 'owner: EUCLID | truth_class: COMMAND_ACCEPTANCE | schema: pythia.runner/1
+        | failure: 503 repo_engineer_not_configured with readiness detail; 400 invalid
+        prompt'
+      x-pythia-api-id: pythia.intelligence.engineer
+      x-pythia-truth-class: COMMAND_ACCEPTANCE
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R2
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.specialist
+      security:
+      - OperatorBearer: []
+  /api/v1/intelligence/maintenance:
+    get:
+      summary: pythia.intelligence.maintenance
+      description: 'owner: EUCLID | truth_class: GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE
+        | schema: pythia.runner/1 | failure: 409 runner_busy'
+      x-pythia-api-id: pythia.intelligence.maintenance
+      x-pythia-truth-class: 'GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE'
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R2
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.specialist
+      security:
+      - OperatorBearer: []
+  /api/v1/intelligence/maintenance/run:
+    post:
+      summary: pythia.intelligence.maintenance
+      description: 'owner: EUCLID | truth_class: GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE
+        | schema: pythia.runner/1 | failure: 409 runner_busy'
+      x-pythia-api-id: pythia.intelligence.maintenance
+      x-pythia-truth-class: 'GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE'
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R2
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.specialist
+      security:
+      - OperatorBearer: []
+  /api/v1/intelligence/maintenance/start:
+    post:
+      summary: pythia.intelligence.maintenance
+      description: 'owner: EUCLID | truth_class: GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE
+        | schema: pythia.runner/1 | failure: 409 runner_busy'
+      x-pythia-api-id: pythia.intelligence.maintenance
+      x-pythia-truth-class: 'GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE'
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R2
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.specialist
+      security:
+      - OperatorBearer: []
+  /api/v1/intelligence/maintenance/stop:
+    post:
+      summary: pythia.intelligence.maintenance
+      description: 'owner: EUCLID | truth_class: GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE
+        | schema: pythia.runner/1 | failure: 409 runner_busy'
+      x-pythia-api-id: pythia.intelligence.maintenance
+      x-pythia-truth-class: 'GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE'
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R2
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.specialist
+      security:
+      - OperatorBearer: []
+  /api/v1/intelligence/selftest:
+    get:
+      summary: pythia.intelligence.selftest
+      description: 'owner: EUCLID | truth_class: GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE
+        | schema: pythia.runner/1 | failure: unavailable subsystem reports unavailable,
+        not pass'
+      x-pythia-api-id: pythia.intelligence.selftest
+      x-pythia-truth-class: 'GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE'
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R2
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.specialist
+      security:
+      - OperatorBearer: []
+    post:
+      summary: pythia.intelligence.selftest
+      description: 'owner: EUCLID | truth_class: GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE
+        | schema: pythia.runner/1 | failure: unavailable subsystem reports unavailable,
+        not pass'
+      x-pythia-api-id: pythia.intelligence.selftest
+      x-pythia-truth-class: 'GET: RUNTIME_OBSERVATION; POST: COMMAND_ACCEPTANCE'
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R2
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.specialist
+      security:
+      - OperatorBearer: []
+  /api/v1/intelligence/status:
+    get:
+      summary: pythia.intelligence.status
+      description: 'owner: EUCLID | truth_class: RUNTIME_OBSERVATION | schema: pythia.runner/1
+        | failure: unavailable intelligence reports unavailable'
+      x-pythia-api-id: pythia.intelligence.status
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+  /api/v1/knowledge:
+    get:
+      summary: pythia.knowledge
+      description: 'owner: EUCLID | truth_class: RUNTIME_OBSERVATION | schema: pythia.knowledge/1
+        | failure: unavailable knowledge fabric reports unavailable'
+      x-pythia-api-id: pythia.knowledge
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+  /api/v1/metrics:
+    get:
+      summary: pythia.metrics
+      description: 'owner: PYTHIA | truth_class: RUNTIME_OBSERVATION | schema: prometheus.exposition/0.0.4
+        | failure: counters only ever increase truthfully'
+      x-pythia-api-id: pythia.metrics
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+  /api/v1/mining/elevate:
+    post:
+      summary: pythia.mining.control
+      description: 'owner: PYTHIA | truth_class: COMMAND_ACCEPTANCE | schema: pythia.mining_control/1
+        | failure: 400 invalid body; guardian denial receipt; ok:false + reason when
+        no mining device (honest refuse, not a 500)'
+      x-pythia-api-id: pythia.mining.control
+      x-pythia-truth-class: COMMAND_ACCEPTANCE
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R1
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.mining.control
+      security:
+      - AlHarasSubscription: []
+  /api/v1/mining/escalate:
+    post:
+      summary: pythia.mining.control
+      description: 'owner: PYTHIA | truth_class: COMMAND_ACCEPTANCE | schema: pythia.mining_control/1
+        | failure: 400 invalid body; guardian denial receipt; ok:false + reason when
+        no mining device (honest refuse, not a 500)'
+      x-pythia-api-id: pythia.mining.control
+      x-pythia-truth-class: COMMAND_ACCEPTANCE
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R1
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.mining.control
+      security:
+      - AlHarasSubscription: []
+  /api/v1/mining/evidence:
+    get:
+      summary: pythia.mining.evidence
+      description: 'owner: PYTHIA | truth_class: RUNTIME_OBSERVATION | schema: pythia.mining_evidence/1
+        | failure: absent worker evidence reports unavailable fields, never zeros'
+      x-pythia-api-id: pythia.mining.evidence
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R1
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.mining.read
+      security:
+      - AlHarasSubscription: []
+  /api/v1/mining/start:
+    post:
+      summary: pythia.mining.control
+      description: 'owner: PYTHIA | truth_class: COMMAND_ACCEPTANCE | schema: pythia.mining_control/1
+        | failure: 400 invalid body; guardian denial receipt; ok:false + reason when
+        no mining device (honest refuse, not a 500)'
+      x-pythia-api-id: pythia.mining.control
+      x-pythia-truth-class: COMMAND_ACCEPTANCE
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R1
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.mining.control
+      security:
+      - AlHarasSubscription: []
+  /api/v1/mining/stop:
+    post:
+      summary: pythia.mining.control
+      description: 'owner: PYTHIA | truth_class: COMMAND_ACCEPTANCE | schema: pythia.mining_control/1
+        | failure: 400 invalid body; guardian denial receipt; ok:false + reason when
+        no mining device (honest refuse, not a 500)'
+      x-pythia-api-id: pythia.mining.control
+      x-pythia-truth-class: COMMAND_ACCEPTANCE
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R1
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.mining.control
+      security:
+      - AlHarasSubscription: []
+  /api/v1/mining/switch:
+    post:
+      summary: pythia.mining.control
+      description: 'owner: PYTHIA | truth_class: COMMAND_ACCEPTANCE | schema: pythia.mining_control/1
+        | failure: 400 invalid body; guardian denial receipt; ok:false + reason when
+        no mining device (honest refuse, not a 500)'
+      x-pythia-api-id: pythia.mining.control
+      x-pythia-truth-class: COMMAND_ACCEPTANCE
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R1
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.mining.control
+      security:
+      - AlHarasSubscription: []
+  /api/v1/mla1517/status:
+    get:
+      summary: pythia.status
+      description: 'owner: PYTHIA | truth_class: RUNTIME_OBSERVATION | schema: chronus.mla1517.status/1
+        | failure: worker states degrade to their honest last-known/disabled state'
+      x-pythia-api-id: pythia.status
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+  /api/v1/ready-to-mine:
+    get:
+      summary: pythia.ready_to_mine
+      description: 'owner: PYTHIA | truth_class: RUNTIME_OBSERVATION | schema: chronus.mla1517.ready/1
+        | failure: 503 when not ready; reasons enumerated never faked'
+      x-pythia-api-id: pythia.ready_to_mine
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+  /api/v1/readyz:
+    get:
+      summary: pythia.readiness
+      description: 'owner: PYTHIA | truth_class: READINESS | schema: chronus.mla1517.ready/1
+        | failure: 503 {ready:false, reason} when identity/config not ready'
+      x-pythia-api-id: pythia.readiness
+      x-pythia-truth-class: READINESS
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+  /api/v1/salamander/fault:
+    post:
+      summary: salamander.fault
+      description: 'owner: SALAMANDER | truth_class: COMMAND_ACCEPTANCE | schema:
+        pythia.salamander_fault/1 | failure: fields sanitised/bounded; never silently
+        dropped'
+      x-pythia-api-id: salamander.fault
+      x-pythia-truth-class: COMMAND_ACCEPTANCE
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R3
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.healing
+      security:
+      - OperatorBearer: []
+  /api/v1/security/evaluate:
+    post:
+      summary: al_haras.security.evaluate
+      description: 'owner: AL_HARAS | truth_class: VERDICT | schema: al_haras.evaluate/1
+        | failure: 400 malformed; 503 guardian_dependency_unavailable; signed denial
+        ladder'
+      x-pythia-api-id: al_haras.security.evaluate
+      x-pythia-truth-class: VERDICT
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R0
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.constitutional
+      security:
+      - AlHarasSubscription: []
+  /api/v1/security/status:
+    get:
+      summary: al_haras.security.status
+      description: 'owner: AL_HARAS | truth_class: RUNTIME_OBSERVATION | schema: al_haras.security_status/1
+        | failure: signed denial receipt; 503 guardian_dependency_unavailable when
+        AL HARAS absent'
+      x-pythia-api-id: al_haras.security.status
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R0
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.constitutional
+      security:
+      - AlHarasSubscription: []
+  /api/v1/security/subscribe:
+    get:
+      summary: al_haras.security.subscribe
+      description: 'owner: AL_HARAS | truth_class: CONFIGURATION | schema: al_haras.subscribe/1
+        | failure: propagates security/status failure verbatim'
+      x-pythia-api-id: al_haras.security.subscribe
+      x-pythia-truth-class: CONFIGURATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R0
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.constitutional
+      security:
+      - AlHarasSubscription: []
+  /api/v1/stratum/status:
+    get:
+      summary: pythia.stratum.status
+      description: 'owner: PYTHIA | truth_class: RUNTIME_OBSERVATION | schema: pythia.stratum_status/1
+        | failure: disconnected/configured states are explicit'
+      x-pythia-api-id: pythia.stratum.status
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+  /api/v1/system/map:
+    get:
+      summary: pythia.system.map
+      description: 'owner: PYTHIA | truth_class: RUNTIME_OBSERVATION | schema: pythia.system_map/1
+        | failure: unknown subsystems report unavailable, never invented'
+      x-pythia-api-id: pythia.system.map
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+  /api/v1/system/verify:
+    get:
+      summary: pythia.system.verify.read
+      description: 'owner: PYTHIA | truth_class: RUNTIME_OBSERVATION | schema: pythia.system_verify/1
+        | failure: component states reported individually'
+      x-pythia-api-id: pythia.system.verify.read
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+    post:
+      summary: pythia.system.verify.start
+      description: 'owner: PYTHIA | truth_class: COMMAND_ACCEPTANCE | schema: pythia.runner/1
+        | failure: 409 runner_busy; 400 invalid; 401/403 unauthenticated'
+      x-pythia-api-id: pythia.system.verify.start
+      x-pythia-truth-class: COMMAND_ACCEPTANCE
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R1
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.operator.mutation
+      security:
+      - OperatorBearer: []
+  /api/v1/telemetry/causal:
+    get:
+      summary: pythia.telemetry
+      description: 'owner: PYTHIA | truth_class: RUNTIME_OBSERVATION | schema: pythia.telemetry/1
+        | failure: absent streams are unavailable, never empty success'
+      x-pythia-api-id: pythia.telemetry
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+  /api/v1/telemetry/events:
+    get:
+      summary: pythia.telemetry
+      description: 'owner: PYTHIA | truth_class: RUNTIME_OBSERVATION | schema: pythia.telemetry/1
+        | failure: absent streams are unavailable, never empty success'
+      x-pythia-api-id: pythia.telemetry
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+  /api/v1/telemetry/history:
+    get:
+      summary: pythia.telemetry
+      description: 'owner: PYTHIA | truth_class: RUNTIME_OBSERVATION | schema: pythia.telemetry/1
+        | failure: absent streams are unavailable, never empty success'
+      x-pythia-api-id: pythia.telemetry
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+  /api/v1/telemetry/ops:
+    get:
+      summary: pythia.telemetry
+      description: 'owner: PYTHIA | truth_class: RUNTIME_OBSERVATION | schema: pythia.telemetry/1
+        | failure: absent streams are unavailable, never empty success'
+      x-pythia-api-id: pythia.telemetry
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+  /api/v1/telemetry/session:
+    get:
+      summary: pythia.telemetry
+      description: 'owner: PYTHIA | truth_class: RUNTIME_OBSERVATION | schema: pythia.telemetry/1
+        | failure: absent streams are unavailable, never empty success'
+      x-pythia-api-id: pythia.telemetry
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+  /api/v1/telemetry/stream:
+    get:
+      summary: pythia.telemetry.stream
+      description: 'owner: PYTHIA | truth_class: RUNTIME_OBSERVATION | schema: pythia.ops_telemetry/1
+        | failure: connection close is clean; staleness surfaced client-side'
+      x-pythia-api-id: pythia.telemetry.stream
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.stream
+  /api/v1/telemetry/summary:
+    get:
+      summary: pythia.telemetry
+      description: 'owner: PYTHIA | truth_class: RUNTIME_OBSERVATION | schema: pythia.telemetry/1
+        | failure: absent streams are unavailable, never empty success'
+      x-pythia-api-id: pythia.telemetry
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+  /api/v1/tensor/capabilities:
+    get:
+      summary: kellogg.tensor.capabilities
+      description: 'owner: KELLOGG | truth_class: RUNTIME_OBSERVATION | schema: tensor.capabilities/1
+        | failure: unavailable runtime surfaces unavailable catalogue entries'
+      x-pythia-api-id: kellogg.tensor.capabilities
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R2
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.specialist
+      security:
+      - AlHarasSubscription: []
+  /api/v1/tensor/execute:
+    post:
+      summary: kellogg.tensor.execute
+      description: 'owner: KELLOGG | truth_class: VERDICT | schema: tensor.execute/1
+        | failure: 400 invalid body/unknown operation; guardian denial; dtype/shape
+        validation fails closed'
+      x-pythia-api-id: kellogg.tensor.execute
+      x-pythia-truth-class: VERDICT
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R2
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.specialist
+      security:
+      - AlHarasSubscription: []
+  /api/v1/toe/collapse:
+    post:
+      summary: toe.collapse
+      description: 'owner: EUCLID | truth_class: VERDICT | schema: chronus.mla1517.toe_collapse/1
+        | failure: 400 empty/malformed; 413 oversize; signed denial; per-section available:false
+        instead of fabrication'
+      x-pythia-api-id: toe.collapse
+      x-pythia-truth-class: VERDICT
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R2
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.specialist
+      security:
+      - AlHarasSubscription: []
+  /healthz:
+    get:
+      summary: pythia.health
+      description: 'owner: PYTHIA | truth_class: LIVENESS | schema: chronus.mla1517.status/1
+        | failure: process down = connection refused; never a body lie'
+      x-pythia-api-id: pythia.health
+      x-pythia-truth-class: LIVENESS
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+  /metrics:
+    get:
+      summary: pythia.metrics
+      description: 'owner: PYTHIA | truth_class: RUNTIME_OBSERVATION | schema: prometheus.exposition/0.0.4
+        | failure: counters only ever increase truthfully'
+      x-pythia-api-id: pythia.metrics
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+  /ready-to-mine:
+    get:
+      summary: pythia.ready_to_mine
+      description: 'owner: PYTHIA | truth_class: RUNTIME_OBSERVATION | schema: chronus.mla1517.ready/1
+        | failure: 503 when not ready; reasons enumerated never faked'
+      x-pythia-api-id: pythia.ready_to_mine
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+  /readyz:
+    get:
+      summary: pythia.readiness
+      description: 'owner: PYTHIA | truth_class: READINESS | schema: chronus.mla1517.ready/1
+        | failure: 503 {ready:false, reason} when identity/config not ready'
+      x-pythia-api-id: pythia.readiness
+      x-pythia-truth-class: READINESS
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read

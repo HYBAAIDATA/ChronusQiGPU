@@ -1,0 +1,297 @@
+# PYTHIA standard error taxonomy (2B.8).
+#
+# Every machine-signaled failure code an API may emit belongs to exactly one
+# class below.  The taxonomy is enforced by tests/test_service_constitution.py,
+# which scans the emission sites and fails on:
+#   * an emitted code that is not registered here;
+#   * a registered code that is no longer emitted anywhere;
+#   * a denial reason emitted without the signed-receipt shape.
+#
+# Classes:
+#   BOUNDARY_DENIAL    — AL HARAS signed verdict/denial reason; UPPER_SNAKE,
+#                        optionally "<CODE>:<detail>"; always inside a receipt
+#                        carrying evidence_id (denials) or the verdict body.
+#   OPERATIONAL_ERROR  — stable snake_case code in the response `error` field,
+#                        or a snake_case `reason` code on availability paths;
+#                        clients may branch on these.
+#   DYNAMIC_DETAIL     — freeform text derived from values/exceptions;
+#                        registered by template prefix; never contractual —
+#                        clients must not branch on the content.
+#   AVAILABILITY_PROSE — human-readable `reason` sentences in status /
+#                        readiness payloads; stable enough to display, never
+#                        for client branching.
+#
+# retryable: SAFE (idempotent retry), CONDITIONAL (retry only after the
+# named condition clears), NEVER.
+
+schema: pythia.error_taxonomy/1
+repository: QuantumPhi2/PhiMiner
+
+classes:
+  BOUNDARY_DENIAL:
+    shape: UPPER_SNAKE or UPPER_SNAKE:<detail>
+    evidence: signed denial receipt with evidence_id, audited by AL HARAS
+    owner: AL_HARAS
+  OPERATIONAL_ERROR:
+    shape: snake_case literal (^[a-z0-9_]+$)
+    evidence: error or reason field in the JSON body
+    owner: PYTHIA
+  DYNAMIC_DETAIL:
+    shape: freeform string built from a registered template
+    evidence: error/detail field; content is diagnostic only
+    owner: the emitting subsystem
+  AVAILABILITY_PROSE:
+    shape: human-readable sentence in a `reason`/`detail` field
+    evidence: none required
+    owner: the emitting subsystem
+
+codes:
+  # -- BOUNDARY_DENIAL ------------------------------------------------------
+  - code: JSON_OBJECT_REQUIRED
+    class: BOUNDARY_DENIAL
+    http_status: 400
+    emitted_by: al_haras/runtime.py
+    meaning: privileged request body was not a JSON object
+    retryable: CONDITIONAL
+    retry_condition: resubmit with a JSON object body
+  - code: TENANT_AND_ACTOR_REQUIRED
+    class: BOUNDARY_DENIAL
+    http_status: 400
+    emitted_by: al_haras/runtime.py
+    meaning: missing X-HYBA-Tenant / X-HYBA-Actor identity headers
+    retryable: CONDITIONAL
+    retry_condition: resubmit with both identity headers
+  - code: MALFORMED_REQUEST
+    class: BOUNDARY_DENIAL
+    http_status: 400
+    emitted_by: al_haras/runtime.py
+    meaning: guardian request fields failed validation; detail follows ':'
+    retryable: CONDITIONAL
+    retry_condition: resubmit with a well-formed operation/resource/payload
+  - code: OPERATION_NOT_ALLOWED
+    class: BOUNDARY_DENIAL
+    http_status: 403
+    emitted_by: al_haras/guardian.py
+    meaning: operation is outside the subscription's allowlist
+    retryable: NEVER
+  - code: PAYLOAD_LIMIT_EXCEEDED
+    class: BOUNDARY_DENIAL
+    http_status: 400
+    emitted_by: al_haras/guardian.py
+    meaning: request payload exceeds the subscription bound
+    retryable: CONDITIONAL
+    retry_condition: resubmit within the payload bound
+  - code: SUBSCRIPTION_DENIED
+    class: BOUNDARY_DENIAL
+    http_status: 403
+    emitted_by: al_haras/guardian.py
+    meaning: subscription authority refused the credential; detail follows ':'
+    retryable: NEVER
+  - code: INTELLIGENCE_UNAVAILABLE
+    class: BOUNDARY_DENIAL
+    http_status: 503
+    emitted_by: al_haras/guardian.py
+    meaning: required intelligence evidence could not be produced; detail follows ':'
+    retryable: CONDITIONAL
+    retry_condition: retry once the intelligence plane reports available
+  - code: INTELLIGENCE_EVIDENCE_REQUIRED
+    class: BOUNDARY_DENIAL
+    http_status: 400
+    emitted_by: al_haras/guardian.py
+    meaning: policy requires intelligence evidence and none was supplied
+    retryable: CONDITIONAL
+    retry_condition: resubmit carrying the required evidence
+  - code: OBSERVATION_REQUIRED
+    class: BOUNDARY_DENIAL
+    http_status: 400
+    emitted_by: al_haras/runtime.py
+    meaning: a claim was asserted without the required observation payload
+    retryable: CONDITIONAL
+    retry_condition: resubmit with the required observation attached
+  - code: PROVIDER_ERROR
+    class: BOUNDARY_DENIAL
+    http_status: 503
+    emitted_by: al_haras/runtime.py
+    meaning: the evidence provider raised while producing intelligence evidence
+    retryable: CONDITIONAL
+    retry_condition: retry once the evidence provider is healthy
+  - code: INVALID_JSON
+    class: BOUNDARY_DENIAL
+    http_status: 400
+    emitted_by: al_haras/fastapi.py
+    meaning: request body could not be parsed as JSON at the boundary
+    retryable: CONDITIONAL
+    retry_condition: resubmit with a valid JSON body
+  - code: FORGERY_DETECTED
+    class: BOUNDARY_DENIAL
+    http_status: 403
+    emitted_by: al_haras/runtime.py
+    meaning: LHRAS payload digest mismatch — supplied attestation does not match the request
+    retryable: NEVER
+  - code: 'LHRAS:*'
+    class: BOUNDARY_DENIAL
+    http_status: 403
+    emitted_by: al_haras/runtime.py
+    meaning: 'LHRAS layer refusal reason passed through verbatim after the LHRAS: prefix'
+    retryable: NEVER
+
+  # -- OPERATIONAL_ERROR ------------------------------------------------------
+  - code: not_found
+    class: OPERATIONAL_ERROR
+    http_status: 404
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: no route or resource matches the request path
+    retryable: NEVER
+  - code: method_not_allowed
+    class: OPERATIONAL_ERROR
+    http_status: 405
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: the path exists but not for this HTTP method
+    retryable: NEVER
+  - code: internal_error
+    class: OPERATIONAL_ERROR
+    http_status: 500
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: unhandled handler failure; detail names the exception type
+    retryable: NEVER
+  - code: guardian_unavailable
+    class: OPERATIONAL_ERROR
+    http_status: 503
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: guardian evaluate failed at runtime (also emitted as reason with ':detail')
+    retryable: CONDITIONAL
+    retry_condition: retry once the guardian reports configured
+  - code: guardian_dependency_unavailable
+    class: OPERATIONAL_ERROR
+    http_status: 503
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: guardian module is absent in this deployment
+    retryable: NEVER
+  - code: empty_body
+    class: OPERATIONAL_ERROR
+    http_status: 400
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: a required request body was empty
+    retryable: CONDITIONAL
+    retry_condition: resubmit with a body
+  - code: evaluation_failed
+    class: OPERATIONAL_ERROR
+    http_status: 500
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: a security evaluation path raised unexpectedly
+    retryable: NEVER
+  - code: runner_busy
+    class: OPERATIONAL_ERROR
+    http_status: 409
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: the requested runner already has a run in flight
+    retryable: SAFE
+  - code: prompt_must_be_1_to_2000_characters
+    class: OPERATIONAL_ERROR
+    http_status: 400
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: engineer prompt failed the declared length bound
+    retryable: CONDITIONAL
+    retry_condition: resubmit within the bound
+  - code: repo_engineer_not_configured
+    class: OPERATIONAL_ERROR
+    http_status: 503
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: repo-engineer specialist is not configured in this deployment
+    retryable: NEVER
+  - code: problem_id_required
+    class: OPERATIONAL_ERROR
+    http_status: 400
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: cognition-solve request lacks problem_id
+    retryable: CONDITIONAL
+    retry_condition: resubmit with problem_id
+  - code: goal_required
+    class: OPERATIONAL_ERROR
+    http_status: 400
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: campaign/agentic request lacks goal
+    retryable: CONDITIONAL
+    retry_condition: resubmit with goal
+
+  # -- DYNAMIC_DETAIL (registered by template) --------------------------------
+  - code: pool_not_configured
+    class: DYNAMIC_DETAIL
+    emitted_as: 'pool {name} is not configured'
+    http_status: 400
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: mining pool target is outside the configured pool catalog
+    retryable: CONDITIONAL
+    retry_condition: resubmit with a configured pool target
+  - code: unknown_config_sections
+    class: DYNAMIC_DETAIL
+    emitted_as: 'unknown config sections: {list}'
+    http_status: 400
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: config update named sections outside the public schema
+    retryable: CONDITIONAL
+    retry_condition: resubmit with only declared sections
+  - code: exception_detail
+    class: DYNAMIC_DETAIL
+    emitted_as: '{ExcType}: {message}'
+    http_status: 400
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: raw exception detail echoed for diagnosis
+    retryable: NEVER
+  - code: guardian_unavailable_detail
+    class: DYNAMIC_DETAIL
+    emitted_as: 'guardian_unavailable: {ExcType}: {message}'
+    http_status: 503
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: guardian failure with the exception type appended to the reason
+    retryable: CONDITIONAL
+    retry_condition: retry once the guardian reports configured
+
+  # -- AVAILABILITY_PROSE (registered patterns, content free) ------------------
+  - code: subscription_keys_unset
+    class: AVAILABILITY_PROSE
+    emitted_as: 'AL_HARAS_SUBSCRIPTION_KEYS unset'
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: security status reports the subscription keystore unconfigured
+  - code: al_haras_dependency_missing
+    class: AVAILABILITY_PROSE
+    emitted_as: 'al_haras dependency missing'
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: security status reports the guardian module absent
+  - code: no_mining_session
+    class: AVAILABILITY_PROSE
+    emitted_as: 'no persisted mining session'
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: mining-session projection has no persisted session to read
+  - code: no_worker_evidence
+    class: AVAILABILITY_PROSE
+    emitted_as: 'the miner has not published evidence'
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: mining-evidence projection has nothing from the worker yet
+  - code: no_stratum_telemetry
+    class: AVAILABILITY_PROSE
+    emitted_as: 'the mining worker has not reported Stratum telemetry'
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: stratum status projection has no worker telemetry yet
+  - code: runtime_config_absent
+    class: AVAILABILITY_PROSE
+    emitted_as: '{cfg_path} absent'
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: readiness reports the durable runtime config file is not present at its resolved path (runtime_config component, state not_configured)
+
+# Codes that appear in the same reason field but are not failures.
+non_error_codes:
+  - ALLOWED            # guardian success verdict reason
+  - CONFIGURED         # component state, not an error
+  - CONNECTED          # transport state, not an error
+  - DISCONNECTED       # transport state, not an error
+  - DEGRADED           # honest degraded state, not an error
+
+rules:
+  - 'Every BOUNDARY_DENIAL response carries a signed receipt with evidence_id.'
+  - 'OPERATIONAL_ERROR codes are stable: removing or renaming one is a
+    breaking change requiring a new schema_version (docs/API_LIFECYCLE_POLICY.md).'
+  - 'DYNAMIC_DETAIL and AVAILABILITY_PROSE content is never contractual;
+    clients must branch only on the HTTP status, a registered
+    OPERATIONAL_ERROR code, or (for denials) the receipt reason prefix.'
+  - 'No response may fabricate a success claim on a denial path.'

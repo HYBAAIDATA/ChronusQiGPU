@@ -44,6 +44,9 @@ class ModuleEvidenceAdapter:
         domain: str | None = None,
         evidence_state: str = "MEASURED",
         custody_record_id: str | None = None,
+        producer_version: str = "",
+        schema_version: int = 1,
+        provenance: Mapping[str, Any] | None = None,
         links: Sequence[tuple[str, str, str]] = (),
         detail: Mapping[str, Any] | None = None,
     ) -> tuple[str, str]:
@@ -57,8 +60,11 @@ class ModuleEvidenceAdapter:
             domain=domain or f"{self.module}:evidence",
             content=bytes(content),
             producer=self.module,
+            producer_version=producer_version,
+            schema_version=schema_version,
             evidence_state=evidence_state,
             custody_record_id=custody_record_id,
+            provenance=provenance,
             links=links,
         )
         if detail:
@@ -70,6 +76,51 @@ class ModuleEvidenceAdapter:
                 detail=dict(detail),
             )
         return object_id, version_id
+
+    def project_knowledge(
+        self,
+        tenant_id: str,
+        *,
+        subject: str,
+        predicate: str,
+        domain: str,
+        object_value: Any,
+        knowledge_kind: str,
+        evidence_state: str,
+        semantic_owner: str | None = None,
+        knowledge_form: str = "unspecified",
+        evidence_class: str | None = None,
+        maturity_stage: str = "UNAVAILABLE",
+        producer_version: str = "",
+        schema_version: int = 1,
+        source_ids: Sequence[str] = (),
+        parent_ids: Sequence[str] = (),
+        correlation_ids: Mapping[str, str] | None = None,
+        provenance: Mapping[str, Any] | None = None,
+        supersedes_id: str | None = None,
+    ) -> Any:
+        """Project producer-owned knowledge without transferring semantic authority."""
+        return self.files.store.knowledge.project(
+            tenant_id,
+            subject=subject,
+            predicate=predicate,
+            domain=domain,
+            object_value=object_value,
+            knowledge_kind=knowledge_kind,
+            knowledge_form=knowledge_form,
+            semantic_owner=semantic_owner or self.module,
+            producer=self.module,
+            evidence_state=evidence_state,
+            evidence_class=evidence_class,
+            maturity_stage=maturity_stage,
+            producer_version=producer_version,
+            schema_version=schema_version,
+            source_ids=source_ids,
+            parent_ids=parent_ids,
+            correlation_ids=correlation_ids,
+            provenance=provenance,
+            supersedes_id=supersedes_id,
+        )
 
 
 def adapters_for(files: FileRegistry, modules: Sequence[str]) -> dict[str, ModuleEvidenceAdapter]:

@@ -98,6 +98,12 @@ class ProductionExecutionRouter(ExecutionRouter):
     def _is_pythia_lattice(plan) -> bool:
         return plan.evidence_refs.get("search_architecture") == SEARCH_ARCHITECTURE_ID
 
+    def execute_plan(self, plan, header, target, **kwargs):
+        """Clear prior fabric evidence before any freshness or lease gate can refuse work."""
+        if self._is_pythia_lattice(plan) and hasattr(self._hasher, "last_batch_evidence"):
+            self._hasher.last_batch_evidence = None
+        return super().execute_plan(plan, header, target, **kwargs)
+
     def _opencl_bound(self) -> bool:
         if _backend_name(self._hasher) in _NATIVE_BACKENDS:
             return True
@@ -228,6 +234,54 @@ class ProductionExecutionRouter(ExecutionRouter):
         )
 
 
+def chronus_fabric_state_for(execution_hasher: Any) -> dict[str, Any]:
+    """Derive capability state without promoting capability into execution evidence."""
+    backend_raw = str(getattr(execution_hasher, "backend", "") or "")
+    topology_id = getattr(execution_hasher, "topology_id", None)
+    bound = topology_id == "chronus_h4_600_11d"
+    return {
+        "schema": "pythia.chronus_search_fabric/3",
+        "canonical_topology": "chronus_h4_600_11d",
+        "logical_vertices": 600,
+        "execution_backend": backend_raw or "Unavailable",
+        "state": "ACTIVE" if bound else "NOT_BOUND",
+        "capability_bound": bound,
+        "physical_fanout_capable": bound,
+        "physical_fanout": False,
+        "physical_fanout_observed": False,
+        "execution_evidence": "Unavailable",
+        "reason": (
+            "H4/600 capability is bound; physical fan-out remains unobserved until execution"
+            if bound
+            else "physical H4/600 fan-out requires the joined super_asic Chronus lane"
+        ),
+        "hashrate_claim": "measured completed physical SHA256d work / elapsed time only",
+        "target_hashrate_hs": 10_000_000_000_000_000_000,
+        "target_measured": False,
+    }
+
+
+def chronus_fabric_execution_state_for(execution_hasher: Any) -> dict[str, Any]:
+    """Overlay only observed ordered-batch execution evidence on fabric capability."""
+    state = chronus_fabric_state_for(execution_hasher)
+    raw = getattr(execution_hasher, "last_batch_evidence", None)
+    if not isinstance(raw, Mapping):
+        return state
+    evidence = dict(raw)
+    observed = bool(evidence.get("physical_fanout_observed"))
+    state["physical_fanout"] = observed
+    state["physical_fanout_observed"] = observed
+    state["execution_evidence"] = evidence
+    if observed:
+        state["reason"] = None
+    elif state["capability_bound"]:
+        state["reason"] = (
+            "H4/600 capability is bound and executed, but no full 600-shard "
+            "dispatch was observed for the ordered batch"
+        )
+    return state
+
+
 class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
     """Canonical production composition root for PYTHIA's agentic mining workforce."""
 
@@ -249,24 +303,9 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
             self._execution_hasher_factory = (
                 lambda raw_factory=raw_factory: promote_execution_hasher(raw_factory())
             )
-        backend_raw = str(getattr(self.execution_hasher, "backend", "") or "")
-        topology_id = getattr(self.execution_hasher, "topology_id", None)
-        self._chronus_fabric_state: dict[str, Any] = {
-            "schema": "pythia.chronus_search_fabric/2",
-            "canonical_topology": "chronus_h4_600_11d",
-            "logical_vertices": 600,
-            "execution_backend": backend_raw or "Unavailable",
-            "state": "ACTIVE" if topology_id == "chronus_h4_600_11d" else "NOT_BOUND",
-            "physical_fanout": topology_id == "chronus_h4_600_11d",
-            "reason": (
-                None
-                if topology_id == "chronus_h4_600_11d"
-                else "physical H4/600 fan-out requires the joined super_asic Chronus lane"
-            ),
-            "hashrate_claim": "measured completed physical SHA256d work / elapsed time only",
-            "target_hashrate_hs": 10_000_000_000_000_000_000,
-            "target_measured": False,
-        }
+        self._chronus_fabric_state: dict[str, Any] = chronus_fabric_state_for(
+            self.execution_hasher
+        )
         self.pythia_authority = pythia_authority or PythiaAgenticMiningAuthority()
         self.pythia_authority.bind_backend_registry(self.backend_registry)
 
@@ -352,6 +391,7 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
 
     def _apply_pythia_authority(self, plan, identity):
         """Run every production/fallback plan through PYTHIA without replacing the canonical itinerary."""
+        self._chronus_fabric_state = chronus_fabric_state_for(self.execution_hasher)
         client = self.client
         adapter = getattr(client, "proof_adapter", None) if client is not None else None
         job = getattr(adapter, "current_job", None) if adapter is not None else None
@@ -443,7 +483,7 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         return replace(
             plan,
             nonce_order=NONCE_ORDER_HENDRIX,
-            executor_route=self._pythia_batch_route(),
+            executor_route=ExecutionRoute.chronus_batch.value,
             evidence_refs=refs,
         )
 
@@ -478,6 +518,14 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
     def _record_execution(self, identity, plan, lease, record, outcome, coordinate):
         """Persist canonical execution first, then feed only measured outcome back to PYTHIA."""
         super()._record_execution(identity, plan, lease, record, outcome, coordinate)
+        self._chronus_fabric_state = chronus_fabric_execution_state_for(
+            self.execution_hasher
+        )
+        if isinstance(self.last_execution, dict):
+            self.last_execution = {
+                **self.last_execution,
+                "chronus_search_fabric": dict(self._chronus_fabric_state),
+            }
         try:
             client = self.client
             adapter = getattr(client, "proof_adapter", None) if client is not None else None
@@ -701,4 +749,6 @@ __all__ = [
     "PythiaProductionMiningCoordinator",
     "GeodesicProductionMiningCoordinator",
     "ProductionExecutionRouter",
+    "chronus_fabric_state_for",
+    "chronus_fabric_execution_state_for",
 ]

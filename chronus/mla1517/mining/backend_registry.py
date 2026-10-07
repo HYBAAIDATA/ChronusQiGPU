@@ -38,12 +38,13 @@ and — when unavailable — the measured reason.
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import os
 import time
 import uuid
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field, fields
 from pathlib import Path
 from enum import StrEnum
 from typing import Any, Callable
@@ -61,6 +62,7 @@ class BackendLane(StrEnum):
     REMOTE_GPU = "remote_gpu"  # remote agent over MLA1517_REMOTE_GPU_ENDPOINT
     ASIC = "asic"
     SUPER_ASIC = "super_asic"
+    CHRONUS = "chronus"  # Virtual iGPU ChronusClient; explicit opt-in, never in auto
 
 
 _LANES = tuple(BackendLane)
@@ -112,8 +114,13 @@ class BackendSelection:
     software_revision: str = "unknown"
 
     def as_dict(self) -> dict[str, Any]:
-        value = asdict(self)
-        value.pop("hasher", None)
+        # Never ``asdict(self)``: it deep-copies ``hasher`` (and every probe's hasher), which
+        # raises TypeError for hashers holding locks/sockets (remote lane, Chronus Virtual iGPU).
+        value = {
+            f.name: copy.deepcopy(getattr(self, f.name))
+            for f in fields(self)
+            if f.name not in ("hasher", "probed")
+        }
         value["probed"] = {name: probe.as_dict() for name, probe in self.probed.items()}
         return value
 
@@ -306,6 +313,35 @@ def _probe_remote_gpu() -> LaneProbe:
         )
 
 
+def _probe_chronus() -> LaneProbe:
+    """Chronus Virtual iGPU lane: bind only after a real known-answer workload."""
+    try:
+        from chronus.virtual_igpu.mining_hasher import ChronusVirtualIGPUHasher
+
+        hasher = ChronusVirtualIGPUHasher()
+        hasher.self_check()
+        hasher.launches = 0
+        hasher.kernel_ms = 0.0
+        return LaneProbe(
+            lane=BackendLane.CHRONUS.value,
+            available=True,
+            backend=hasher.backend,
+            device=hasher.device,
+            probed_at=time.time(),
+            reason="Chronus Virtual iGPU known-answer SHA256d workload passed",
+            hasher=hasher,
+        )
+    except Exception as exc:
+        return LaneProbe(
+            lane=BackendLane.CHRONUS.value,
+            available=False,
+            backend=None,
+            device=None,
+            probed_at=time.time(),
+            reason=f"Chronus Virtual iGPU probe failed: {exc}",
+        )
+
+
 def _probe_asic() -> LaneProbe:
     """ASIC lane: run the real channel probe, not a declaration.
 
@@ -410,6 +446,7 @@ _POLICY_ORDER = {
     "remote": (BackendLane.REMOTE_GPU,),
     "asic": (BackendLane.ASIC,),
     "super_asic": (BackendLane.SUPER_ASIC,),
+    "chronus": (BackendLane.CHRONUS,),
 }
 
 
@@ -440,6 +477,7 @@ class BackendRegistry:
             BackendLane.REMOTE_GPU: _probe_remote_gpu,
             BackendLane.ASIC: _probe_asic,
             BackendLane.SUPER_ASIC: _probe_super_asic,
+            BackendLane.CHRONUS: _probe_chronus,
         }
         self._probed: dict[BackendLane, LaneProbe] = {}
 

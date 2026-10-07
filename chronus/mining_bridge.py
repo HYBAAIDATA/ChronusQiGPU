@@ -140,7 +140,7 @@ __all__ = ["ChronusSubstrateMiningBridge", "SubstrateOrderingEvidence"]
 # Virtual iGPU execution path (optional, fail-closed)
 # ---------------------------------------------------------------------------
 def submit_via_virtual_igpu(
-    plan: SearchPlan | dict[str, Any],
+    plan: Any,
     *,
     header80: bytes | None = None,
     target_hex: str | None = None,
@@ -148,6 +148,7 @@ def submit_via_virtual_igpu(
     execution_policy: str = "preferred_accelerator",
     allow_software_fallback: bool = True,
     endpoint: str | None = None,
+    delivery_mode: str = "embedded",
 ) -> dict[str, Any]:
     """Route a portable search plan through Chronus Virtual iGPU.
 
@@ -156,7 +157,7 @@ def submit_via_virtual_igpu(
     stack submits and receives acknowledgement separately.
     """
     from chronus.virtual_igpu import ChronusClient
-    from chronus.virtual_igpu.abi import Workload, WorkloadKind
+    from chronus.virtual_igpu.abi import DeliveryMode, Workload, WorkloadKind
     import uuid
 
     if hasattr(plan, "__dict__") and not isinstance(plan, dict):
@@ -176,7 +177,24 @@ def submit_via_virtual_igpu(
     else:
         plan_dict = dict(plan)
 
-    client = ChronusClient(endpoint=endpoint)
+    if header80 is not None:
+        if not isinstance(header80, (bytes, bytearray)) or len(header80) != 80:
+            raise ValueError("header80 must be exactly 80 bytes")
+        if target_hex is None:
+            raise ValueError("target_hex is required for SHA256d execution")
+        try:
+            target_int = int(target_hex, 16)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("target_hex is malformed") from exc
+        if target_int < 0 or target_int >= 1 << 256:
+            raise ValueError("target_hex is outside the uint256 range")
+    else:
+        target_int = None
+
+    # The delivery mode is explicit and never inferred from an endpoint:
+    # embedded + endpoint and remote + no endpoint are both rejected by the client.
+    delivery_mode = DeliveryMode(str(delivery_mode)).value
+    client = ChronusClient(delivery_mode=delivery_mode, endpoint=endpoint)
     payload = {
         "plan": plan_dict,
         "header80_hex": header80.hex() if isinstance(header80, (bytes, bytearray)) else header80,
@@ -185,9 +203,31 @@ def submit_via_virtual_igpu(
     # Prefer SHA256D_SCAN when header material is present; else fold plan as STORE proof
     if header80 is not None:
         kind = WorkloadKind.SHA256D_SCAN if hasattr(WorkloadKind, "SHA256D_SCAN") else WorkloadKind.SHA256D_VERIFY
+        windows = list(plan_dict.get("windows") or ())
+        if windows:
+            normalized: list[tuple[int, int]] = []
+            for window in windows:
+                start = int(window["start"])
+                count = int(window["count"])
+                if start < 0 or count <= 0 or start + count > 1 << 32:
+                    raise ValueError("plan contains an invalid nonce window")
+                normalized.append((start, count))
+            normalized.sort()
+            for previous, current in zip(normalized, normalized[1:]):
+                if previous[0] + previous[1] != current[0]:
+                    raise ValueError(
+                        "Virtual iGPU SHA256d requires contiguous nonce windows"
+                    )
+            start_nonce = normalized[0][0]
+            count = sum(item[1] for item in normalized)
+        else:
+            start_nonce = int.from_bytes(bytes(header80)[76:80], "little")
+            count = 1
         body = {
             "header80_hex": payload["header80_hex"],
             "target_hex": target_hex,
+            "start_nonce": start_nonce,
+            "count": count,
             "plan": plan_dict,
         }
     else:
@@ -201,10 +241,42 @@ def submit_via_virtual_igpu(
         input=body,
         execution_policy=execution_policy,
         allow_software_fallback=allow_software_fallback,
+        delivery_mode=delivery_mode,
     )
     result = client.submit(workload)
+    if result.status != "ok":
+        raise RuntimeError(f"Chronus execution did not succeed: {result.status}")
+
+    host_verification: dict[str, Any] | None = None
+    if header80 is not None:
+        output = dict(result.output or {})
+        hits = list(output.get("hits") or ())
+        checked = int(output.get("checked") or 0)
+        if not hits and checked != count:
+            raise RuntimeError(
+                f"Chronus checked {checked} nonces; expected {count}"
+            )
+        from chronus.virtual_igpu.host_verify import CandidateVerificationError, verify_hits
+
+        try:
+            verified_hits = verify_hits(
+                bytes(header80)[:76],
+                hits,
+                target_int,
+                nonce_range=(start_nonce, count),
+            )
+        except CandidateVerificationError as exc:
+            raise RuntimeError(f"Chronus SHA256d candidate rejected: {exc}") from exc
+        host_verification = {
+            "status": "passed",
+            "oracle": "host_hashlib_sha256d",
+            "checked_candidates": len(verified_hits),
+            "verified_hits": verified_hits,
+        }
+
     out = result.to_dict() if hasattr(result, "to_dict") else dict(result.__dict__)
+    if host_verification is not None:
+        out["host_verification"] = host_verification
     out["share_state"] = "local_result"  # not pool-accepted
     out["validity_oracle"] = "sha256d_reverify_required"
     return out
-

@@ -17,6 +17,8 @@ import sys
 import threading
 import time
 import traceback
+import uuid
+from collections import Counter
 from collections import deque
 from dataclasses import dataclass
 from dataclasses import field
@@ -34,6 +36,7 @@ from urllib.parse import urlparse
 import runtime_config
 import system_fabric
 import autonomous_supervisor
+import failure_taxonomy
 from startup_contract import METRICS
 from startup_contract import AppendOnlyAudit
 from startup_contract import BootLock
@@ -58,6 +61,9 @@ _TOE_SCHEMA_VERSION = "chronus.mla1517.toe_collapse/1"
 _TOE_MAX_BODY_BYTES = 4 * 1024 * 1024
 _STATUS_BACKEND = "Python/C/OpenCL"
 _CANONICAL_DEVICE = "canonical-python-backend"
+# sane X-Request-Id/X-Correlation-Id = 1–128 chars, ASCII-alphanumeric
+# leading character, then alphanumerics or any of . _ : @ - ; nothing else.
+_REQUEST_ID_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:@-]{0,127}")
 PRIVILEGED_MEDIATION_INSTALLED = True
 _PRIVILEGED_PREFIXES = (
     "/api/v1/mining/",
@@ -103,6 +109,7 @@ _EXECUTION_DEVICES = (
     "remote",
     "asic",
     "super_asic",
+    "chronus",
 )
 _LOCK_HELD = False
 _LOCK_GUARD = threading.Lock()
@@ -110,6 +117,92 @@ _AUDIT: AppendOnlyAudit | None = None
 _BOOT_LOCK: BootLock | None = None
 _CONTROL: "ControlPlane" | None = None
 _CONTROL_GUARD = threading.Lock()
+
+
+class _RequestStats:
+    """Golden-signal counters for the HTTP fabric (constitution §19).
+
+    Counts every JSON response by result class and failure class so the
+    metrics surface reports what the authoritative surface actually did —
+    nothing fabricated, nothing suppressed.
+    """
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._counts: Counter[str] = Counter()
+
+    def record(self, status: int, payload: dict[str, Any]) -> None:
+        with self._lock:
+            self._counts["requests_total"] += 1
+            if status >= 400:
+                self._counts["errors_total"] += 1
+                cls = str(payload.get("failure_class") or "UNCLASSIFIED")
+                self._counts[f"failure_class.{cls}"] += 1
+            else:
+                self._counts["success_total"] += 1
+
+    def prometheus(self) -> str:
+        with self._lock:
+            counts = dict(self._counts)
+        lines = []
+        total = counts.pop("requests_total", 0)
+        ok = counts.pop("success_total", 0)
+        err = counts.pop("errors_total", 0)
+        lines.append(f"pythia_control_requests_total {total}")
+        lines.append(f"pythia_control_success_total {ok}")
+        lines.append(f"pythia_control_errors_total {err}")
+        for key in sorted(counts):
+            if key.startswith("failure_class."):
+                cls = key.split(".", 1)[1]
+                lines.append(
+                    f'pythia_control_failure_class_total{{failure_class="{cls}"}} '
+                    f"{counts[key]}"
+                )
+        return "\n".join(lines)
+
+
+_REQUEST_STATS = _RequestStats()
+
+# Idempotency for mutating HTTP operations (constitution §10): a caller
+# Idempotency-Key on a POST/PUT replays the recorded outcome inside the
+# retention window instead of re-executing the mutation. Unknown-outcome
+# retries remain impossible — a key is recorded only after the handler
+# answered, and records expire.
+_IDEMPOTENCY_RECORDS: "dict[str, tuple[float, int, dict]]" = {}
+_IDEMPOTENCY_GUARD = threading.Lock()
+_IDEMPOTENCY_TTL_S = 300.0
+_IDEMPOTENCY_MAX = 512
+
+
+def _idempotency_lookup(key: str) -> tuple[int, dict] | None:
+    now = time.monotonic()
+    with _IDEMPOTENCY_GUARD:
+        entry = _IDEMPOTENCY_RECORDS.get(key)
+        if entry is None:
+            return None
+        at, status, payload = entry
+        if now - at > _IDEMPOTENCY_TTL_S:
+            del _IDEMPOTENCY_RECORDS[key]
+            return None
+        return status, dict(payload)
+
+
+def _idempotency_store(key: str, status: int, payload: dict) -> None:
+    now = time.monotonic()
+    with _IDEMPOTENCY_GUARD:
+        stale = [k for k, (at, _s, _p) in _IDEMPOTENCY_RECORDS.items() if now - at > _IDEMPOTENCY_TTL_S]
+        for k in stale:
+            del _IDEMPOTENCY_RECORDS[k]
+        while len(_IDEMPOTENCY_RECORDS) >= _IDEMPOTENCY_MAX:
+            _IDEMPOTENCY_RECORDS.pop(next(iter(_IDEMPOTENCY_RECORDS)))
+        _IDEMPOTENCY_RECORDS[key] = (now, int(status), dict(payload))
+
+
+def _idempotency_key(headers: Any) -> str:
+    """A sane caller-supplied Idempotency-Key, else ''. Malformed keys are
+    ignored rather than trusted."""
+    key = (headers.get("Idempotency-Key") or "").strip()
+    return key if _REQUEST_ID_RE.fullmatch(key) else ""
 
 _PY_DIR = Path(__file__).resolve().parent
 _PROJECT_ROOT = _PY_DIR.parent.parent.parent
@@ -678,6 +771,115 @@ def _identity_payload() -> dict[str, Any]:
     return {"ok": ok, "reason": reason}
 
 
+def _readiness_components() -> dict[str, Any]:
+    """Cheap, honest per-component readiness for the readyz payload.
+
+    Each entry reports only what the readiness path can verify directly —
+    configuration and filesystem facts, never a liveness promise for a
+    subsystem it cannot observe here. ``ready`` itself is unchanged: it
+    stays bound to worker identity readiness.
+
+    Second-pass elevation (service constitution §20): components now also
+    carry dependency health (stratum session, runtime config, remote
+    execution lane config, custody mount) so readiness reports
+    component-level truth instead of a collapsed boolean.
+    """
+    components: dict[str, Any] = {}
+    ok, reason = identity_hmac_status()
+    components["identity"] = {
+        "state": "ready" if ok else "not_ready",
+        "reason": reason,
+    }
+    try:
+        audit = _audit()
+        audit.path.parent.mkdir(parents=True, exist_ok=True)
+        components["boot_audit"] = {"state": "ready", "path": str(audit.path)}
+    except (OSError, StartupConfigError) as exc:
+        components["boot_audit"] = {"state": "not_ready", "reason": str(exc)}
+    try:
+        heartbeat = _heartbeat_dir()
+        heartbeat.mkdir(parents=True, exist_ok=True)
+        components["worker_heartbeat_dir"] = {"state": "ready", "path": str(heartbeat)}
+    except (OSError, StartupConfigError) as exc:
+        components["worker_heartbeat_dir"] = {
+            "state": "not_ready",
+            "reason": str(exc),
+        }
+    if pythia_guardian_api is None:
+        components["guardian"] = {
+            "state": "unavailable",
+            "reason": "al_haras dependency missing",
+        }
+    elif not os.getenv("AL_HARAS_SUBSCRIPTION_KEYS"):
+        components["guardian"] = {
+            "state": "not_configured",
+            "reason": "AL_HARAS_SUBSCRIPTION_KEYS unset",
+        }
+    else:
+        components["guardian"] = {"state": "configured"}
+    # Dependency health (§20): observed/declared truth per dependency, no
+    # liveness promises. These do not feed the top-level ``ready`` flag —
+    # they are the per-component evidence a balancer/operator reads.
+    try:
+        cfg_path = runtime_config.config_path()
+        if not cfg_path.is_file():
+            components["runtime_config"] = {
+                "state": "not_configured",
+                "reason": f"{cfg_path} absent",
+            }
+        else:
+            runtime_config.load()
+            components["runtime_config"] = {"state": "ready", "path": str(cfg_path)}
+    except (OSError, StartupConfigError, ValueError) as exc:
+        components["runtime_config"] = {"state": "not_ready", "reason": str(exc)}
+    try:
+        stratum = stratum_status_payload()
+        connected = bool(stratum.get("connected"))
+        components["stratum"] = {
+            "state": "connected" if connected else "disconnected",
+            "ready": bool(stratum.get("ready")),
+            "status": stratum.get("status"),
+        }
+    except Exception as exc:  # noqa: BLE001 - observation only, never blocks readiness
+        components["stratum"] = {"state": "unavailable", "reason": type(exc).__name__}
+    remote_eps = os.getenv("HYBA_REMOTE_OPENCL_ENDPOINTS") or os.getenv(
+        "MLA1517_REMOTE_GPU_ENDPOINT"
+    )
+    components["remote_opencl"] = (
+        {"state": "configured"}
+        if remote_eps
+        else {"state": "not_configured", "reason": "no remote endpoints declared"}
+    )
+    m3_storage = _metrics_json("agentic-mining", "m3_storage")
+    if isinstance(m3_storage, dict):
+        components["custody"] = {
+            "state": "ready" if m3_storage.get("healthy") is True else "not_ready",
+            "configured": bool(m3_storage.get("configured")),
+            "reconciliation_ok": bool(m3_storage.get("reconciliation_ok")),
+            "file_plane_ok": bool(m3_storage.get("file_plane_ok")),
+            "mining_chain_ok": bool(m3_storage.get("mining_chain_ok")),
+            "errors": m3_storage.get("errors"),
+            "reason": m3_storage.get("last_error")
+            or (None if m3_storage.get("healthy") is True else "M3 custody evidence unavailable"),
+        }
+    else:
+        components["custody"] = {
+            "state": "not_mounted",
+            "reason": "mining worker has not published THESEUS/M3 storage health",
+        }
+    m3_authorization = _metrics_json("agentic-mining", "m3_authorization")
+    components["m3_authorization"] = (
+        {
+            "state": "ready" if m3_authorization.get("configured") is True else "not_ready",
+            "configured": bool(m3_authorization.get("configured")),
+            "policy_version": m3_authorization.get("policy_version"),
+        }
+        if isinstance(m3_authorization, dict)
+        else {"state": "unavailable", "configured": False}
+    )
+    return components
+
+
 def _stratum_status_payload(
     control: ControlPlane,
     records: list[WorkerRecord],
@@ -804,6 +1006,44 @@ def _stratum_status_payload(
     return payload
 
 
+def _m3_dependency_reason() -> tuple[bool, str]:
+    """Strict M3 dependency gate derived only from worker-published evidence."""
+    if not _is_truthy(os.getenv("PYTHIA_M3_REQUIRED")):
+        return True, "not_required"
+    storage = _metrics_json("agentic-mining", "m3_storage")
+    authorization = _metrics_json("agentic-mining", "m3_authorization")
+    runtime = _metrics_json("agentic-mining", "m3_runtime")
+    if not isinstance(storage, dict):
+        return False, "m3_storage_evidence_unavailable"
+    if storage.get("healthy") is not True:
+        return False, "m3_storage_unhealthy"
+    if storage.get("reconciliation_ok") is not True:
+        return False, "m3_storage_unreconciled"
+    if storage.get("file_plane_ok") is not True or storage.get("mining_chain_ok") is not True:
+        return False, "m3_storage_integrity_failed"
+    if not isinstance(authorization, dict) or authorization.get("configured") is not True:
+        return False, "m3_al_haras_unavailable"
+    if not isinstance(runtime, dict):
+        return False, "m3_runtime_evidence_unavailable"
+    if runtime.get("blocked") is True:
+        return False, "m3_runtime_blocked"
+    if runtime.get("gate_configured") is not True:
+        return False, "m3_submission_gate_unavailable"
+    last_gate = runtime.get("last_submission_gate")
+    if isinstance(last_gate, dict) and last_gate.get("allowed") is False:
+        return False, str(last_gate.get("reason") or "m3_submission_denied").lower()
+    if runtime.get("search_authority") != "PYTHIA":
+        return False, "m3_pythia_authority_unavailable"
+    if runtime.get("search_algorithm") != "hendrix_coprime_stride":
+        return False, "m3_hendrix_not_bound"
+    if runtime.get("search_architecture_ready") is not True:
+        return False, "m3_search_architecture_unavailable"
+    fabric = runtime.get("chronus_fabric")
+    if not isinstance(fabric, dict) or int(fabric.get("logical_vertices") or 0) != 600:
+        return False, "m3_chronus_fabric_unavailable"
+    return True, "ok"
+
+
 def _ready_to_mine_reason(
     records: list[WorkerRecord],
     stratum: dict[str, Any],
@@ -815,6 +1055,9 @@ def _ready_to_mine_reason(
         return False, "supervisor_degraded"
     if not any(record.readiness for record in records):
         return False, "worker_unavailable"
+    m3_ready, m3_reason = _m3_dependency_reason()
+    if not m3_ready:
+        return False, m3_reason
     primary = stratum.get("primary", {})
     job = stratum.get("job", {})
     if primary.get("transport") != "CONNECTED":
@@ -1641,7 +1884,8 @@ def metrics_payload() -> str:
     stratum = _stratum_status_payload(control, records)
     extra = _reason_metrics(records, stratum)
     runtime = METRICS.prometheus().strip()
-    chunks = [chunk for chunk in (runtime, extra) if chunk]
+    api_fabric = _REQUEST_STATS.prometheus()
+    chunks = [chunk for chunk in (runtime, extra, api_fabric) if chunk]
     return "\n".join(chunks) + ("\n" if chunks else "")
 
 
@@ -1752,7 +1996,10 @@ def _apply_runtime_config(cfg: dict[str, Any]) -> dict[str, Any]:
 def _config_put(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
     unknown = sorted(set(body) - _CONFIG_SECTIONS)
     if unknown:
-        return HTTPStatus.BAD_REQUEST, {"error": f"unknown config sections: {', '.join(unknown)}"}
+        return HTTPStatus.BAD_REQUEST, {
+            "failure_class": "INVALID_REQUEST",
+            "error": f"unknown config sections: {', '.join(unknown)}",
+        }
     try:
         merged = _config_merge_sections(body)
         saved = runtime_config.save(merged)
@@ -1857,7 +2104,12 @@ def _repo_engineer_ask(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]
     if not readiness["ready"]:
         return (
             HTTPStatus.SERVICE_UNAVAILABLE,
-            {"ok": False, "error": "repo_engineer_not_configured", "readiness": readiness},
+            {
+                "ok": False,
+                "failure_class": "NOT_CONFIGURED",
+                "error": "repo_engineer_not_configured",
+                "readiness": readiness,
+            },
         )
     try:
         started = system_fabric.start_repo_engineer(prompt)
@@ -1947,6 +2199,7 @@ def _mining_switch(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
     if selected is None:
         return HTTPStatus.NOT_FOUND, {
             "ok": False,
+            "failure_class": "NOT_CONFIGURED",
             "error": f"pool {target!r} is not configured",
         }
     for p in pools:
@@ -2252,13 +2505,20 @@ class _Handler(BaseHTTPRequestHandler):
             return
         if path in {"/readyz", "/api/v1/readyz"}:
             identity = _identity_payload()
-            status = HTTPStatus.OK if identity["ok"] else HTTPStatus.SERVICE_UNAVAILABLE
+            m3_ready, m3_reason = _m3_dependency_reason()
+            ready = bool(identity["ok"]) and m3_ready
+            reason = (
+                str(identity["reason"])
+                if not identity["ok"]
+                else (m3_reason if not m3_ready else "ok")
+            )
             self._json(
-                status,
+                HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE,
                 {
                     "schema_version": _READY_SCHEMA_VERSION,
-                    "ready": bool(identity["ok"]),
-                    "reason": identity["reason"] if not identity["ok"] else "ok",
+                    "ready": ready,
+                    "reason": reason,
+                    "components": _readiness_components(),
                     "generated_at": now_iso(),
                 },
             )
@@ -2563,6 +2823,7 @@ class _Handler(BaseHTTPRequestHandler):
             return
         handler = self._POST_TABLE.get(parsed.path)
         if handler is None:
+            self._discard_request_body()
             self._json(HTTPStatus.NOT_FOUND, {"error": "not_found"})
             return
         privileged = parsed.path.startswith(_PRIVILEGED_PREFIXES)
@@ -2581,17 +2842,38 @@ class _Handler(BaseHTTPRequestHandler):
             _synthesize_preflight_observation(parsed.path, body)
             if not self._guardian_preflight(parsed.path, body):
                 return
+        idem = _idempotency_key(self.headers)
+        if idem:
+            replay = _idempotency_lookup(idem)
+            if replay is not None:
+                status, payload = replay
+                payload["idempotent_replay"] = True
+                self._json(status, payload)
+                return
         try:
             status, payload = handler(body)
         except ValueError as exc:
-            self._json(HTTPStatus.BAD_REQUEST, {"ok": False, "error": str(exc)})
+            self._json(
+                HTTPStatus.BAD_REQUEST,
+                {
+                    "ok": False,
+                    "failure_class": "INVALID_REQUEST",
+                    "error": str(exc),
+                },
+            )
             return
         except Exception as exc:
             self._json(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
-                {"ok": False, "error": f"{type(exc).__name__}: {exc}"},
+                {
+                    "ok": False,
+                    "failure_class": "INTERNAL_ERROR",
+                    "error": f"{type(exc).__name__}: {exc}",
+                },
             )
             return
+        if idem and isinstance(payload, dict):
+            _idempotency_store(idem, int(status), payload)
         self._json(status, payload)
 
     def do_PUT(self) -> None:  # noqa: N802
@@ -2610,7 +2892,17 @@ class _Handler(BaseHTTPRequestHandler):
             )
             self._json(status, {"error": err})
             return
+        idem = _idempotency_key(self.headers)
+        if idem:
+            replay = _idempotency_lookup(idem)
+            if replay is not None:
+                status, payload = replay
+                payload["idempotent_replay"] = True
+                self._json(status, payload)
+                return
         status, payload = _config_put(body)
+        if idem and isinstance(payload, dict):
+            _idempotency_store(idem, int(status), payload)
         self._json(status, payload)
 
     def log_message(self, format: str, *args: Any) -> None:
@@ -2657,8 +2949,9 @@ class _Handler(BaseHTTPRequestHandler):
         for _tick in range(120):
             try:
                 payload = ops_telemetry_payload()
-                events = payload["events"].get("events") or []
-                new_events = [e for e in events if int(e.get("seq") or 0) > last_seq]
+                new_events = _seq_gated_events(
+                    payload["events"].get("events") or [], last_seq
+                )
                 if new_events:
                     last_seq = int(payload["events"].get("last_seq") or last_seq)
                 frame = {
@@ -2682,6 +2975,42 @@ class _Handler(BaseHTTPRequestHandler):
                 break
             time.sleep(1.5)
 
+    def _correlation_id(self) -> str:
+        """Correlation envelope: every response carries X-Request-Id.
+
+        A caller-supplied ``X-Request-Id``/``X-Correlation-Id`` is echoed when
+        it is a sane token; otherwise a fresh id is minted so every response is
+        correlatable in the audit log and client telemetry.
+        """
+        candidate = (
+            self.headers.get("X-Request-Id")
+            or self.headers.get("X-Correlation-Id")
+            or ""
+        ).strip()
+        if candidate and _REQUEST_ID_RE.fullmatch(candidate):
+            return candidate
+        return uuid.uuid4().hex
+
+    def _correlation_envelope(self) -> dict[str, str]:
+        """Full correlation envelope (service constitution §17).
+
+        request_id is the response's canonical id; correlation_id echoes the
+        caller's X-Correlation-Id (falling back to request_id); causation_id
+        echoes a caller-supplied X-Causation-Id so a request can name the
+        event that caused it. Malformed inbound ids are replaced, never
+        trusted.
+        """
+        request_id = self._correlation_id()
+        correlation = (self.headers.get("X-Correlation-Id") or "").strip()
+        causation = (self.headers.get("X-Causation-Id") or "").strip()
+        return {
+            "request_id": request_id,
+            "correlation_id": correlation
+            if _REQUEST_ID_RE.fullmatch(correlation)
+            else request_id,
+            "causation_id": causation if _REQUEST_ID_RE.fullmatch(causation) else "",
+        }
+
     def _send(
         self,
         status: int,
@@ -2690,6 +3019,11 @@ class _Handler(BaseHTTPRequestHandler):
         cache_control: str = "no-store",
     ) -> None:
         self.send_response(int(status))
+        envelope = self._correlation_envelope()
+        self.send_header("X-Request-Id", envelope["request_id"])
+        self.send_header("X-Correlation-Id", envelope["correlation_id"])
+        if envelope["causation_id"]:
+            self.send_header("X-Causation-Id", envelope["causation_id"])
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", cache_control)
@@ -2708,8 +3042,26 @@ class _Handler(BaseHTTPRequestHandler):
             payload.setdefault("guardian_receipt", receipt)
             self._guardian_commit_evidence(urlparse(self.path).path, int(status), receipt)
             del self._guardian_receipt
+        # Constitution §9: every error body carries a machine-readable
+        # failure_class, even forwarded guardian receipts that lack one.
+        payload = failure_taxonomy.ensure_failure_class(status, payload)
+        _REQUEST_STATS.record(int(status), payload)
         body = json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
         self._send(int(status), "application/json; charset=utf-8", body)
+
+    def _discard_request_body(self) -> None:
+        """Consume a refused request's body before answering.
+
+        Answering with unread bytes still on the socket can surface as a
+        connection abort to the client (WinError 10053) instead of the
+        intended status line.
+        """
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            length = 0
+        if length > 0:
+            self._drain(length)
 
     def _refuse_unauthorized(self) -> bool:
         principal, refusal = authenticate_control_principal(self.headers)
@@ -2726,6 +3078,7 @@ class _Handler(BaseHTTPRequestHandler):
             return False
         status, reason = refusal
         _audit().append("control_refused", path=urlparse(self.path).path, reason=reason)
+        self._discard_request_body()
         self._json(status, {"ok": False, "error": reason})
         return True
 
@@ -2780,24 +3133,45 @@ def _active_ports_path() -> Path:
     return Path(os.getenv("PYTHIA_ACTIVE_PORTS_FILE", "/tmp/hyba_active_ports.json"))
 
 
+def _seq_gated_events(events: list, last_seq: int) -> list:
+    """Events strictly newer than the cursor — reordered or duplicated
+    deliveries (seq <= last_seq) are never re-emitted to a client that has
+    already seen them."""
+    return [e for e in events if int(e.get("seq") or 0) > last_seq]
+
+
+_PORTS_FILE_LOCK = threading.Lock()
+
+
 def _write_active_ports(update: Any) -> None:
-    """Merge-update the shared port file; other writers' keys survive."""
+    """Merge-update the shared port file; other writers' keys survive.
+
+    The read-modify-write is serialized in-process; publication is tmp +
+    os.replace so a reader never sees a torn write. A torn or corrupt
+    file is untrusted input — the next write recovers it.
+    """
     path = _active_ports_path()
-    try:
-        current = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
-    except (OSError, ValueError):
-        current = {}
-    if not isinstance(current, dict):
-        current = {}
-    if not update(current):
-        return
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        temporary = path.with_name(f"{path.name}.{os.getpid()}.tmp")
-        temporary.write_text(json.dumps(current, indent=2, sort_keys=True), encoding="utf-8")
-        os.replace(temporary, path)
-    except OSError as exc:
-        print(f"[pythia-control] active port file {path} not updated: {exc}")
+    with _PORTS_FILE_LOCK:
+        try:
+            current = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+        except (OSError, ValueError):
+            current = {}
+        if not isinstance(current, dict):
+            current = {}
+        if not update(current):
+            return
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            # Unique temp name per write: same-process writers must not
+            # clobber each other's temp file (Windows os.replace fails on
+            # an in-use tmp).
+            temporary = path.with_name(
+                f"{path.name}.{os.getpid()}.{uuid.uuid4().hex[:8]}.tmp"
+            )
+            temporary.write_text(json.dumps(current, indent=2, sort_keys=True), encoding="utf-8")
+            os.replace(temporary, path)
+        except OSError as exc:
+            print(f"[pythia-control] active port file {path} not updated: {exc}")
 
 
 def publish_active_port(host: str, port: int) -> None:

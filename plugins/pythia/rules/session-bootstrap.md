@@ -1,18 +1,50 @@
 ---
-description: Session bootstrap — run FIRST in every cloud session before any task work. Read checkpoint, confirm skills, state the job plan.
+description: Mandatory EUCLID aptitude bootstrap. SessionStart invokes the complete plugin and Intelligence skill libraries before Devin works.
 trigger: always_on
 ---
 
-# Session Bootstrap (run first, every session)
+# Mandatory Session Bootstrap
 
-Before touching any task:
+No task work begins before SessionStart has completed.
 
-1. Read the last line of `artifacts/pythia/devin-checkpoint.jsonl` (missing
-   file = fresh session, say so and continue).
-2. Confirm loaded skills: `/pythia:pythia-long-context`,
-   `/pythia:pythia-finish-the-job`, `/pythia:hyba-products`,
-   `/pythia:pythia-stop-check`.
-3. State the assigned task's goal/done/next in one line each, then append the
-   opening checkpoint line.
-4. Only then start task work. End every task via `pythia-stop-check` (or the
-   Stop hook where it ran).
+SessionStart must:
+
+1. identify the exact plugin/aptitude source SHA;
+2. enumerate every `plugins/pythia/skills/*/SKILL.md`;
+3. enumerate every `Intelligence/skills/*/SKILL.md`;
+4. mark the complete set invoked;
+5. write the runtime receipt;
+6. inject the active Euclidean aptitude instructions into context;
+7. restore the latest continuity checkpoint if present.
+
+If mandatory invocation is incomplete, block the session rather than silently
+continuing with reduced aptitude. Task evidence commands and evidence-pack
+sealing are also forbidden until the current session has an observed
+`SessionStart` activation and the complete mandatory skill set is recorded.
+A boolean completion flag without the corresponding invoked-skill inventory is
+not accepted as proof.
+
+## Skills are not task-scoped
+
+Do not ask whether a task "needs" a skill before loading it.
+
+All skills are active from SessionStart.
+
+Relevance determines which instructions/actions are applied during the work,
+not whether the aptitude exists.
+
+## Task evidence is separate
+
+When a concrete assignment begins, establish its task identity and record its
+engineering evidence. That task ledger proves the work performed and observed
+outcomes. It does not own or control the session's skills.
+
+Before completion:
+
+1. run proving commands through the engineering evidence recorder;
+2. record a truthful completion decision;
+3. seal/publish the task evidence pack where required;
+4. append the final continuity checkpoint;
+5. allow the Stop hook to verify both:
+   - complete session-wide EUCLID aptitude activation; and
+   - valid task outcome evidence.

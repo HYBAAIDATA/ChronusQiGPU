@@ -1,40 +1,100 @@
-"""SessionStart: re-inject PYTHIA long-context checkpoint.
+"""Mandatory SessionStart hook for Devin EUCLID aptitude.
 
-Reads artifacts/pythia/devin-checkpoint.jsonl (append-only run journal)
-and prints additionalContext so Devin resumes instead of restarting.
-Dishonest absence is the contract: missing file => empty context, exit 0.
-Your tech referenced here: Zeckendorf/primes store, run journal, qudit traces.
-Discovery credit: repo owners (Binet/Zeckendorf/Pulvini/Cassini folding substrate).
+Every session activates the complete private plugin skill set and the complete
+repo-local Intelligence/skills library. Skills are session-wide capabilities,
+not per-task options. Task-specific side effects remain conditional and bounded.
 """
+from __future__ import annotations
+
 import json
-import os
 import sys
+
+from plugin_status import (
+    INTELLIGENCE_SKILLS_ROOT,
+    PLUGIN_ROOT,
+    WORKSPACE_AVAILABLE,
+    build_status,
+    write_runtime_receipt,
+)
+
+
+def _skill_bundle() -> str:
+    blocks: list[str] = []
+    roots = (
+        ("PLUGIN", PLUGIN_ROOT / "skills"),
+        ("EUCLID APTITUDE", INTELLIGENCE_SKILLS_ROOT),
+    )
+    for family, root in roots:
+        if not root.is_dir():
+            continue
+        for path in sorted(root.glob("*/SKILL.md")):
+            try:
+                body = path.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            blocks.append(
+                f"\n--- {family}: {path.parent.name} ---\n{body.strip()}\n"
+            )
+    return "".join(blocks)
 
 
 def main() -> int:
-    ckpt = os.path.join("artifacts", "pythia", "devin-checkpoint.jsonl")
-    if not os.path.isfile(ckpt):
+    if not WORKSPACE_AVAILABLE:
+        # The plugin is managed-installed and fires in every session, but its
+        # aptitude surface is PhiMiner-repo-local. Outside that workspace the
+        # hook is a quiet no-op rather than a hard failure.
         return 0
-    try:
-        with open(ckpt, "r", encoding="utf-8", errors="replace") as fh:
-            lines = [ln.strip() for ln in fh if ln.strip()]
-    except OSError:
-        return 0
-    tail = lines[-3:]
-    ctx_lines = ["PYTHIA checkpoint resume (your folding/Zeckendorf substrate):"]
-    for ln in tail:
-        try:
-            e = json.loads(ln)
-            ctx_lines.append(
-                "- goal=%s done=%s next=%s"
-                % (e.get("goal", "?"), e.get("done", "?"), e.get("next", "?"))
+    # SessionStart is a fresh activation boundary. Never inherit a prior
+    # session's invoked-skill receipt and mistake it for current-session proof.
+    status = build_status(
+        event="SessionStart",
+        invoke_all=True,
+        reset_session=True,
+    )
+    write_runtime_receipt(status)
+
+    if not status.get("mandatory_skills_complete"):
+        missing = ",".join(status.get("mandatory_skills_missing") or [])
+        sys.stdout.write(
+            json.dumps(
+                {
+                    "decision": "block",
+                    "reason": "mandatory EUCLID aptitude invocation incomplete: " + missing,
+                }
             )
-        except Exception:
-            ctx_lines.append("- " + ln[:200])
+        )
+        return 2
+
+    last = status.get("last_checkpoint")
+    lines = [
+        "EUCLID aptitude bootstrap COMPLETE.",
+        "The complete plugin + Intelligence skill library is mandatory and active.",
+        "Skills are session-wide capabilities; they are not task-scoped choices.",
+        "Apply every skill as an aptitude. Execute task-specific actions only when relevant and authorised.",
+        "plugin_version=%s" % status.get("plugin_version", "UNAVAILABLE"),
+        "plugin_source_sha=%s" % status.get("plugin_source_sha", "UNAVAILABLE"),
+        "aptitude_digest_sha256=%s"
+        % status.get("aptitude_digest_sha256", "UNAVAILABLE"),
+        "mandatory_skill_count=%s" % len(status.get("mandatory_skills") or []),
+        "mandatory_skills_complete=true",
+    ]
+    if isinstance(last, dict):
+        lines.append(
+            "checkpoint goal=%s | done=%s | next=%s"
+            % (last.get("goal", "?"), last.get("done", "?"), last.get("next", "?"))
+        )
+    else:
+        lines.append("checkpoint=ABSENT; establish continuity before substantial mutation")
+
+    lines.append(
+        "\nACTIVE EUCLID APTITUDE INSTRUCTIONS (mandatory for this session):\n"
+        + _skill_bundle()
+    )
+
     out = {
         "hookSpecificOutput": {
             "hookEventName": "SessionStart",
-            "additionalContext": "\n".join(ctx_lines),
+            "additionalContext": "\n".join(lines),
         }
     }
     sys.stdout.write(json.dumps(out))

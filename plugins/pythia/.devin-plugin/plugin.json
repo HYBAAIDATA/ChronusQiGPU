@@ -1,8 +1,19 @@
 {
   "name": "pythia",
-  "version": "0.1.0",
-  "description": "PYTHIA intelligence + four-tier memory for Devin cloud, CLI, and Desktop: checkpoint skills, completion discipline, lifecycle hooks (fail-open), HYBA products",
+  "version": "0.4.2",
+  "description": "Private Devin augmentation plugin delivering mandatory session-wide EUCLID aptitude: long-context continuity, landscape assessment, counterfactual reasoning, systematic debugging, TDD, review rigor, codebase healing, bounded delegation, quality gates, evidence/proof, promotion discipline, deploy/rollback awareness, and tamper-evident outcome evidence.",
   "author": { "name": "PYTHIA Contributors" },
-  "license": "MIT",
-  "keywords": ["devin", "plugin", "pythia", "memory", "intelligence", "hyba"]
+  "license": "UNLICENSED",
+  "keywords": [
+    "devin",
+    "plugin",
+    "euclid",
+    "aptitude",
+    "engineering-intelligence",
+    "context",
+    "reasoning",
+    "quality",
+    "evidence",
+    "private"
+  ]
 }

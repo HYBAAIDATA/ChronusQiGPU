@@ -28,6 +28,7 @@ from .models import (
     Quota, QuotaExceeded, TensorRecord,
 )
 from .file_registry import FILE_REGISTRY_SCHEMA, FileRegistry
+from .knowledge import KNOWLEDGE_SCHEMA, KnowledgeProjection
 
 
 class NodeKind(StrEnum):
@@ -216,7 +217,7 @@ CREATE VIEW IF NOT EXISTS mps AS SELECT * FROM tensors WHERE kind='mps';
 CREATE VIEW IF NOT EXISTS tt AS SELECT * FROM tensors WHERE kind='tt';
 CREATE VIEW IF NOT EXISTS mpo AS SELECT * FROM tensors WHERE kind='mpo';
 CREATE VIEW IF NOT EXISTS fold_children AS SELECT tenant_id,parent_id,id AS child_id FROM folds WHERE parent_id IS NOT NULL;
-""" + FILE_REGISTRY_SCHEMA
+""" + FILE_REGISTRY_SCHEMA + KNOWLEDGE_SCHEMA
 
 
 class OntologyStore:
@@ -235,8 +236,12 @@ class OntologyStore:
         self._db.execute("PRAGMA journal_mode=WAL")
         self._db.execute("PRAGMA synchronous=FULL")
         self._db.executescript(_SCHEMA)
-        self._db.execute("INSERT OR REPLACE INTO metadata VALUES('schema_version','2')")
+        # The schema marker is promoted only after the v3 migration/projection
+        # constructors complete. A failed legacy provenance migration therefore
+        # cannot advertise a schema version the database did not finish.
         self.files = FileRegistry(self, custody=custody)
+        self.knowledge = KnowledgeProjection(self, custody=custody)
+        self._db.execute("INSERT OR REPLACE INTO metadata VALUES('schema_version','3')")
 
     def close(self) -> None:
         custody_close = getattr(self.files.custody, "close", None)
@@ -650,6 +655,10 @@ class OntologyStore:
         mining_chain_ok = self.files.verify_mining(tenant_id)
         if not mining_chain_ok:
             errors.append("mining lifecycle continuity failed")
+        knowledge_report = self.knowledge.verify(tenant_id)
+        knowledge_ok = bool(knowledge_report.get("passed"))
+        if not knowledge_ok:
+            errors.extend(str(item) for item in knowledge_report.get("errors", ()))
         # reconciliation_ok is computed, never assumed: True only when a
         # reconciliation ran against declared storage roots and reported zero
         # unresolved violations. Absent roots mean unreconciled, not healthy.
@@ -666,5 +675,5 @@ class OntologyStore:
             foreign_keys_ok, attestations_ok, certificates_ok, fold_dag_ok,
             tenant_usage_ok, graph_connected, tuple(errors),
             file_plane_ok=file_plane_ok, mining_chain_ok=mining_chain_ok,
-            reconciliation_ok=reconciliation_ok,
+            reconciliation_ok=reconciliation_ok, knowledge_ok=knowledge_ok,
         )

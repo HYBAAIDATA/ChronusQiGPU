@@ -1,0 +1,166 @@
+{
+ "claims": {
+  "constitution_for_every_api": {
+   "evidence": "docs/SERVICE_CONSTITUTION.yaml renders a 15-field record for each of the 60 registry APIs; merge resolver raises on missing/extra/wrong-tier entries",
+   "status": "IMPLEMENTED"
+  },
+  "consumer_inventory": {
+   "evidence": "registry consumer strings normalized to canonical api_ids/external authorities; unknown consumers fail the merge",
+   "status": "IMPLEMENTED"
+  },
+  "contract_drift_checks_in_ci": {
+   "evidence": ".github/workflows/ci.yml step 'API governance \u2014 service constitution and dependency graph' runs render --check, graph validation, and the constitution suite",
+   "status": "IMPLEMENTED"
+  },
+  "correlation_standard": {
+   "evidence": "X-Request-Id echoed/generated on every response including signed boundary denials (control_api.py request-id decorator); tested in constitution suite",
+   "status": "IMPLEMENTED"
+  },
+  "dependency_graph_executable": {
+   "evidence": "governance/dependency_graph.py validates referential integrity, acyclicity, R0 isolation, AL_HARAS/THESEUS wiring; 0 violations on HEAD; --reachable supports traversal queries",
+   "status": "IMPLEMENTED"
+  },
+  "owner_and_lifecycle_per_api": {
+   "evidence": "lifecycle_owner on every API via overlay lifecycle_owners subsystem mapping; deprecation policy defaults per deprecation_state",
+   "status": "IMPLEMENTED"
+  },
+  "slo_tiers_declared": {
+   "evidence": "R0-R4 tiers assign per-API SLO text; rendered document carries slo_state DECLARED_NOT_MEASURED \u2014 runtime measurement is Phase 4B scope",
+   "status": "DECLARED_NOT_MEASURED"
+  },
+  "taxonomy_enforced": {
+   "evidence": "docs/ERROR_TAXONOMY.yaml codes extracted from emitted strings in control_api.py and al_haras/*.py; tests gate emitted->registered and registered->still-emitted",
+   "status": "IMPLEMENTED"
+  }
+ },
+ "commands": {
+  "api_contract_suite": {
+   "cmd": [
+    "C:\\Users\\Administrator\\repos\\PhiMiner\\.venv\\Scripts\\python.exe",
+    "-m",
+    "pytest",
+    "tests/test_production_api_contract.py",
+    "-q",
+    "--tb=short"
+   ],
+   "exit_code": 0,
+   "seconds": 10.6,
+   "tail": [
+    "............... [ 40%]",
+    "......................                                                 [100%]",
+    "37 passed, 59 subtests passed in 10.12s"
+   ]
+  },
+  "constitution_render_check": {
+   "cmd": [
+    "C:\\Users\\Administrator\\repos\\PhiMiner\\.venv\\Scripts\\python.exe",
+    "governance/render_service_constitution.py",
+    "--check"
+   ],
+   "exit_code": 0,
+   "seconds": 0.2,
+   "tail": [
+    "constitution docs are in sync"
+   ]
+  },
+  "constitution_suite": {
+   "cmd": [
+    "C:\\Users\\Administrator\\repos\\PhiMiner\\.venv\\Scripts\\python.exe",
+    "-m",
+    "pytest",
+    "tests/test_service_constitution.py",
+    "-q",
+    "--tb=short"
+   ],
+   "exit_code": 0,
+   "seconds": 2.2,
+   "tail": [
+    "........................                                              [100%]",
+    "24 passed, 507 subtests passed in 1.83s"
+   ]
+  },
+  "dependency_graph_validate": {
+   "cmd": [
+    "C:\\Users\\Administrator\\repos\\PhiMiner\\.venv\\Scripts\\python.exe",
+    "governance/dependency_graph.py"
+   ],
+   "exit_code": 0,
+   "seconds": 0.1,
+   "tail": [
+    "0 violation(s)"
+   ]
+  },
+  "import_audit": {
+   "cmd": [
+    "C:\\Users\\Administrator\\repos\\PhiMiner\\.venv\\Scripts\\python.exe",
+    "scripts/import_audit.py"
+   ],
+   "exit_code": 0,
+   "seconds": 11.4,
+   "tail": [
+    "{\"gate\": \"import-audit\", \"status\": \"PASS\", \"reason\": \"0 finding(s), 0 swallowed\"}"
+   ]
+  },
+  "import_graph_cycles": {
+   "cmd": [
+    "C:\\Users\\Administrator\\repos\\PhiMiner\\.venv\\Scripts\\python.exe",
+    "scripts/import_graph.py",
+    "cycles"
+   ],
+   "exit_code": 0,
+   "seconds": 9.9,
+   "tail": [
+    "known l_hras/__init__.py <- l_hras/detection.py <- l_hras/fold.py <- l_hras/governance.py <- l_hras/guardian.py <- l_hras/intelligences.py <- l_hras/modes.py <- l_hras/store.py <- l_hras/topologies.py",
+    "known omega/__init__.py <- omega/catalog.py",
+    "known phi_rotation/__init__.py <- phi_rotation/cassini.py <- phi_rotation/korobov.py <- phi_rotation/lucas.py <- phi_rotation/pisot.py",
+    "known pythagoras/__init__.py <- pythagoras/adapter.py <- pythagoras/core/__init__.py <- pythagoras/core/euclid_intelligence.py <- pythagoras/core/phi_metric.py <- pythagoras/core/primitives.py <- pythagoras/core/state.py <- pythagoras/engine/__init__.py <- pythagoras/engine/evolution.py <- pythagoras/engine/primitive_discovery.py <- pythagoras/engine/primitive_repository.py",
+    "known toe/__init__.py <- toe/bridge.py <- toe/engine.py <- toe/expansion.py <- toe/generalization.py <- toe/golden_unified.py <- toe/intelligence_state.py <- toe/manifold_bridge.py <- toe/representation.py <- toe/system.py",
+    "known toe/unified/__init__.py <- toe/unified/platform.py",
+    "known turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/__init__.py <- turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/ten_thousand.py",
+    "cycles: 17 (0 new against the baseline)"
+   ]
+  },
+  "import_graph_layers": {
+   "cmd": [
+    "C:\\Users\\Administrator\\repos\\PhiMiner\\.venv\\Scripts\\python.exe",
+    "scripts/import_graph.py",
+    "layers"
+   ],
+   "exit_code": 0,
+   "seconds": 9.3,
+   "tail": [
+    "known tensor/capability.py:43: imports test module tests/test_tensor_runtime.py",
+    "known tensor/capability.py:53: imports test module tests/test_kellogg_tensor.py",
+    "known tensor/capability.py:63: imports test module tests/test_toe_tensor_ml.py",
+    "known tensor/capability.py:73: imports test module tests/test_geodesic_tensor_extensions.py",
+    "known tensor/capability.py:83: imports test module tests/test_tensor_hybrid_router.py",
+    "known tensor/capability.py:88: imports test module tests/test_folded_inference.py",
+    "known tensor/capability.py:94: imports test module tests/test_tensor_package.py",
+    "layers: 27 (0 new against the baseline)"
+   ]
+  }
+ },
+ "commit_sha": "1b3ae5448001aa01a099ee4a7c9d8afe61ade683",
+ "environment": {
+  "ci": "CI_UNAVAILABLE",
+  "platform": "win32",
+  "python": "C:\\Users\\Administrator\\repos\\PhiMiner\\.venv\\Scripts\\python.exe"
+ },
+ "evidence_class": "LOCAL_TEST_PASSED",
+ "known_environment_artifacts": {
+  "import_graph_baseline": {
+   "note": "2 package-init cycles (aethel, toe) pre-existing on main accepted into baseline via --update-baseline in stabilize commit; same shape as 15 baseline-accepted cycles"
+  },
+  "july_manifest_check": {
+   "head_vs_worktree_identical": false,
+   "note": "regen_july_manifest.py --check reports drift on Windows working copies; regenerated file verified byte-identical to HEAD (CRLF artifact only)"
+  }
+ },
+ "phase": "2B_api_governance",
+ "pre_existing_failures_on_main": {
+  "tests/test_b_lifecycle_boundary.py::test_config_put_rejects_unknown_sections_and_bad_bounds": {
+   "detail": "hashrate.target_hs=1e19 accepted (200) where 400 expected; reproduced on base 7912c39 worktree \u2014 not introduced by this change; bounds-validation defect for a follow-up stabilize PR"
+  }
+ },
+ "schema": "pythia.evidence-pack/v1"
+}

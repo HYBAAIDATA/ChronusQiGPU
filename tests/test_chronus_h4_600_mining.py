@@ -1,11 +1,16 @@
 """Executable contract for the canonical Chronus H4/600 mining fabric."""
 from __future__ import annotations
 
+from chronus.mla1517.mining.geodesic_support import (
+    chronus_fabric_execution_state_for,
+    chronus_fabric_state_for,
+)
 from chronus.mla1517.mining.h4_600_execution import (
     H4600HybridCoordinator,
     promote_execution_hasher,
 )
 from hyba.hybrid.coordinator import HybridCoordinator, StratumJob
+from hyba.hybrid.super_asic import SuperAsicHasher
 from hyba.hybrid.lucas_partition import H4_FACE_COUNT, partition
 from hyba.hybrid.nonce_scheduler import (
     DeviceCapability,
@@ -27,6 +32,7 @@ class _Scheduler:
         self._done: dict[int, int] = {}
         self._pending: dict[int, DispatchHandle] = {}
         self.prepared: list[str] = []
+        self.dispatched = []
 
     def capability(self) -> DeviceCapability:
         return self._cap
@@ -36,6 +42,7 @@ class _Scheduler:
         self.prepared.append(job_id)
 
     def dispatch(self, window):
+        self.dispatched.append(window)
         handle = DispatchHandle(
             handle_id=next_handle_id(),
             device_id=self._cap.device_id,
@@ -139,3 +146,134 @@ def test_non_composite_hasher_is_not_falsely_promoted():
     hasher = _Hasher()
     assert promote_execution_hasher(hasher) is hasher
     assert not hasattr(hasher, "topology_id")
+
+
+def _promoted_super_asic(worker: _Scheduler) -> SuperAsicHasher:
+    hasher = SuperAsicHasher(HybridCoordinator(worker), [worker])
+    return promote_execution_hasher(hasher)
+
+
+def test_bound_h4_capability_is_not_reported_as_observed_fanout_before_execution():
+    worker = _Scheduler("chronus-a", 1.0)
+    hasher = _promoted_super_asic(worker)
+
+    state = chronus_fabric_state_for(hasher)
+
+    assert state["state"] == "ACTIVE"
+    assert state["capability_bound"] is True
+    assert state["physical_fanout_capable"] is True
+    assert state["physical_fanout"] is False
+    assert state["physical_fanout_observed"] is False
+    assert state["execution_evidence"] == "Unavailable"
+
+
+def test_fragmented_ordered_batch_preserves_membership_without_false_600_fanout_claim():
+    worker = _Scheduler("chronus-a", 1.0)
+    hasher = _promoted_super_asic(worker)
+    nonces = [1000, 1002, 1004, 1006, 1008, 1010]
+
+    nonce, digest, done = hasher.grind_target_batch(bytes(80), bytes(32), nonces)
+
+    assert nonce is None
+    assert digest is None
+    assert done == len(nonces)
+    assert [window.base_nonce for window in worker.dispatched] == nonces
+    evidence = hasher.last_batch_evidence
+    assert evidence is not None
+    assert evidence["ordered_nonce_count"] == len(nonces)
+    assert evidence["contiguous_run_count"] == len(nonces)
+    assert evidence["h4_job_count"] == len(nonces)
+    assert evidence["h4_active_shards"] == len(nonces)
+    assert evidence["h4_full_600_shard_jobs"] == 0
+    assert evidence["h4_topology_observed"] is True
+    assert evidence["physical_fanout_observed"] is False
+    assert evidence["completion_state"] == "COMPLETE"
+
+    state = chronus_fabric_execution_state_for(hasher)
+    assert state["physical_fanout"] is False
+    assert state["physical_fanout_observed"] is False
+    assert state["execution_evidence"]["completed_work_items"] == len(nonces)
+
+
+class _FailingScheduler(_Scheduler):
+    def poll(self, handle):
+        raise RuntimeError("test scheduler failure")
+
+
+class _SkewedCountScheduler(_Scheduler):
+    def hashed_count(self, handle) -> int:
+        span = int(handle.window.span)
+        if handle.window.face == 0:
+            return span + 1
+        if handle.window.face == 1:
+            return max(0, span - 1)
+        return super().hashed_count(handle)
+
+
+def test_ordered_batch_failure_records_terminal_device_error_evidence():
+    worker = _FailingScheduler("chronus-a", 1.0)
+    hasher = _promoted_super_asic(worker)
+
+    try:
+        hasher.grind_target_batch(bytes(80), bytes(32), [1000])
+    except RuntimeError as exc:
+        assert "test scheduler failure" in str(exc)
+    else:
+        raise AssertionError("scheduler failure did not propagate")
+
+    evidence = hasher.last_batch_evidence
+    assert evidence is not None
+    assert evidence["completion_state"] == "DEVICE_ERROR"
+    assert evidence["physical_fanout_observed"] is False
+    assert "RuntimeError" in evidence["error"]
+
+
+def test_aggregate_count_cannot_mask_an_incomplete_h4_shard():
+    worker = _SkewedCountScheduler("chronus-a", 1.0)
+    hasher = _promoted_super_asic(worker)
+    nonces = list(range(30_000, 30_600))
+
+    nonce, digest, done = hasher.grind_target_batch(bytes(80), bytes(32), nonces)
+
+    assert nonce is None
+    assert digest is None
+    assert done == 600
+    evidence = hasher.last_batch_evidence
+    assert evidence is not None
+    assert evidence["h4_full_600_shard_jobs"] == 1
+    assert evidence["h4_completed_600_shard_jobs"] == 0
+    assert evidence["physical_fanout_observed"] is False
+    handles = hasher.last_result.handles
+    assert len(handles) == 600
+    assert handles[0]["completed_nonces"] != handles[0]["assigned_nonces"]
+    assert handles[1]["completed_nonces"] != handles[1]["assigned_nonces"]
+
+
+def test_contiguous_600_nonce_batch_records_real_full_h4_fanout():
+    worker = _Scheduler("chronus-a", 1.0)
+    hasher = _promoted_super_asic(worker)
+    nonces = list(range(20_000, 20_600))
+
+    nonce, digest, done = hasher.grind_target_batch(bytes(80), bytes(32), nonces)
+
+    assert nonce is None
+    assert digest is None
+    assert done == 600
+    evidence = hasher.last_batch_evidence
+    assert evidence is not None
+    assert evidence["contiguous_run_count"] == 1
+    assert evidence["h4_job_count"] == 1
+    assert evidence["h4_active_shards"] == 600
+    assert evidence["h4_full_600_shard_jobs"] == 1
+    assert evidence["h4_completed_600_shard_jobs"] == 1
+    assert evidence["full_600_shard_dispatch_observed"] is True
+    assert evidence["physical_fanout_observed"] is True
+    assert evidence["completed_work_items"] == 600
+    assert len(worker.dispatched) == 600
+    assert {window.face for window in worker.dispatched} == set(range(600))
+
+    state = chronus_fabric_execution_state_for(hasher)
+    assert state["physical_fanout"] is True
+    assert state["physical_fanout_observed"] is True
+    assert state["reason"] is None
+

@@ -1,5 +1,22 @@
 {
-  "note": "Org-admin manifest entries for the unified PYTHIA plugin (cloud + CLI + Desktop, one install). Paste into Customize -> Plugins -> Organization scope -> Edit manifest. Pinned block recommended; re-pin after each release merge.",
+  "note": "Private Devin plugin. The installed plugin identity remains pythia for compatibility; it delivers mandatory session-wide EUCLID aptitude.",
+  "privacy": {
+    "distribution": "private repository access only",
+    "license": "UNLICENSED",
+    "public_marketplace_required": false
+  },
+  "ui": {
+    "dialog": "Add plugin from repository",
+    "fields": {
+      "Repository": {
+        "value": "https://github.com/QuantumPhi2/PhiMiner"
+      },
+      "Subdirectory": {
+        "value": "plugins/pythia",
+        "warning": "Use the folder containing .devin-plugin/plugin.json."
+      }
+    }
+  },
   "repo": "QuantumPhi2/PhiMiner",
   "path": "plugins/pythia",
   "branch_following": {
@@ -12,20 +29,24 @@
       }
     ]
   },
-  "pinned": {
-    "requiredPlugins": [
-      {
-        "source": "git-subdir",
-        "url": "https://github.com/QuantumPhi2/PhiMiner.git",
-        "path": "plugins/pythia",
-        "sha": "712a10eccd89d5d0884172345de456090a6d3d9a"
-      }
-    ]
+  "augmentation": {
+    "identity": "EUCLID_APTITUDE",
+    "activation": "MANDATORY_SESSION_START",
+    "reinvocation": "POST_COMPACTION",
+    "scope": "SESSION",
+    "skill_roots": [
+      "plugins/pythia/skills",
+      "Intelligence/skills"
+    ],
+    "side_effect_rule": "All skills are invoked as aptitude. Task-specific side effects remain conditional on relevance, safety, and canonical authority."
   },
-  "skills_installed_as": [
-    "/pythia:pythia-long-context",
-    "/pythia:pythia-finish-the-job",
-    "/pythia:hyba-products",
-    "/pythia:pythia-stop-check"
-  ]
+  "runtime_provenance": {
+    "manual_status_command": "python plugins/pythia/scripts/plugin_status.py --write-receipt",
+    "runtime_receipt": "artifacts/pythia/devin-plugin-runtime.json",
+    "evidence_ledger": "artifacts/pythia/devin-engineering-evidence.jsonl",
+    "publish_root": "evidence/devin",
+    "evaluation_command": "python plugins/pythia/scripts/evaluate_augmentation.py evidence/devin",
+    "rule": "SessionStart must record complete EUCLID aptitude invocation. Task evidence is downstream and must fail closed unless SessionStart is observed and the complete mandatory invoked-skill set is present; sealing an incomplete pack is forbidden."
+  },
+  "evidence_claim_boundary": "The runtime receipt proves mandatory EUCLID aptitude invocation. A task pack proves recorded task outcomes. Causal uplift requires comparable baseline and augmented cohorts."
 }

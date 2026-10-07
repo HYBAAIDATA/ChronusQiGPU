@@ -1,0 +1,777 @@
+# PYTHIA service fabric — machine-readable companion to the service
+# constitution (governance/api_registry.yaml, schema pythia.api_registry/2).
+#
+# This file declares the elevation-pass governance surface: reliability
+# tiers, the canonical failure-class enum, the dependency graph, critical
+# journeys, SLO/error-budget policy, resilience mechanics (timeouts, retries,
+# idempotency, circuit breakers, bulkheads, backpressure), schema/lifecycle
+# governance, correlation, observability, health model, graceful
+# degradation, recovery objectives, resilience maturity, and evidence
+# classes.
+#
+# tests/test_service_constitution.py enforces consistency between this file
+# and api_registry.yaml (dependency lists vs edges, tier rules, failure
+# classes emitted by the code vs this enum, lifecycle values, journey
+# references). Nothing here is decorative: unexplained divergence fails the
+# gate.
+
+schema: pythia.service_fabric/1
+registry_ref: governance/api_registry.yaml
+baseline_sha: f50f2e97fb850f83dc68c2b0713d6fcfd75e53e8
+
+# ---------------------------------------------------------------------------
+# Reliability tiers (§4). tier_of(owner) is a default; the registry entry's
+# reliability_tier is authoritative per interface.
+# ---------------------------------------------------------------------------
+reliability_tiers:
+  R0:
+    name: constitutional / fail-closed
+    owners: [AL_HARAS, THESEUS, SHA256D_VERIFIER]
+    requirements:
+      - no semantic fallback
+      - no optimistic success
+      - no silent bypass
+      - explicit unavailable state
+      - durable evidence of failure
+    rule: if unavailable, the affected privileged operation stops
+    error_budget: null   # R0 integrity failures are never excused by budget
+  R1:
+    name: mining-critical
+    owners: [PYTHIA, CHRONUS, POOL, EUCLID, HYBA_DB]
+    requirements:
+      - bounded recovery
+      - connection/session continuity
+      - stale-work rejection
+      - reconnect semantics
+      - job-generation integrity
+      - no fabricated execution state
+    error_budget: release-managed
+  R2:
+    name: specialist computation
+    owners: [TURING, KELLOGG, OVID]
+    requirements:
+      - explicit availability
+      - typed failure
+      - bounded timeout
+      - fallback only if PYTHIA/EUCLID plan expressly permits
+      - provenance preserved
+    rule: unavailability never causes another subsystem to impersonate the missing authority
+    error_budget: release-managed
+  R3:
+    name: healing and optimisation
+    owners: [SALAMANDER]
+    requirements:
+      - bounded remediation
+      - independent postcondition verification
+      - rollback
+      - evidence retention
+      - authority preservation
+    error_budget: release-managed
+  R4:
+    name: experience / projections
+    requirements:
+      - graceful degradation
+      - truth preservation
+      - no synthetic backend state
+    rule: loss of R4 must not corrupt R0-R2 semantics
+    error_budget: release-managed
+
+# ---------------------------------------------------------------------------
+# Canonical failure classes (§9). The runtime enum lives in
+# chronus/mla1517_platform/python/failure_taxonomy.py; the constitution suite
+# proves the two are identical sets and that control_api emits only these
+# classes.
+# ---------------------------------------------------------------------------
+failure_classes:
+  INVALID_REQUEST:        {http_status: 400, retryable: false, meaning: request fails schema/shape validation}
+  UNAUTHORISED:           {http_status: 401, retryable: false, meaning: missing/invalid credentials}
+  FORBIDDEN:              {http_status: 403, retryable: false, meaning: authenticated but not authorised; AL HARAS deny}
+  DEPENDENCY_UNAVAILABLE: {http_status: 503, retryable: true,  meaning: declared dependency is down; bounded retry allowed}
+  TIMEOUT:                {http_status: 504, retryable: true,  meaning: bounded wait exceeded; timeout never becomes success}
+  CONTRACT_MISMATCH:      {http_status: 422, retryable: false, meaning: response/result violates the declared contract}
+  VERSION_UNSUPPORTED:    {http_status: 400, retryable: false, meaning: unknown or unsupported schema/protocol major}
+  STALE:                  {http_status: 409, retryable: true,  meaning: job/request superseded by a newer generation}
+  INTEGRITY_FAILURE:      {http_status: 500, retryable: false, meaning: digest/proof/equivalence check failed}
+  CUSTODY_FAILURE:        {http_status: 500, retryable: false, meaning: THESEUS custody could not be taken or verified}
+  EXECUTION_FAILURE:      {http_status: 500, retryable: false, meaning: backend execution failed truthfully}
+  VERIFICATION_FAILURE:   {http_status: 500, retryable: false, meaning: certificate/proof verification failed}
+  EXTERNAL_REJECT:        {http_status: 502, retryable: false, meaning: external authority (pool) rejected}
+  RATE_LIMITED:           {http_status: 429, retryable: true,  meaning: request rejected by a declared limit}
+  NOT_CONFIGURED:         {http_status: 503, retryable: false, meaning: capability exists but is not configured}
+  NOT_APPLICABLE:         {http_status: 400, retryable: false, meaning: operation not applicable to current state}
+  INTERNAL_ERROR:         {http_status: 500, retryable: false, meaning: unexpected failure; evidence retained}
+  NOT_FOUND:              {http_status: 404, retryable: false, meaning: no declared route/resource at this path}
+
+# Every emitted error body MUST carry failure_class. Absence is a defect the
+# constitution suite fails on.
+error_envelope:
+  required_keys: [failure_class]
+  optional_keys: [ok, error, detail, retryable, evidence_ref, idempotent_replay]
+  rule: HTTP status is transport truth; failure_class is machine truth. The
+    class's declared http_status is the default for programmatic emitters; a
+    route may refine the status when its own transport semantics differ
+    (e.g. a reserved-namespace 404 carries NOT_FOUND, a 409 runner conflict
+    carries NOT_APPLICABLE).
+
+# ---------------------------------------------------------------------------
+# Canonical dependency graph (§5). Edges here must equal the union of
+# per-interface `dependencies` in api_registry.yaml — enforced by the
+# constitution suite. Unregistered runtime dependencies are production
+# defects.
+# ---------------------------------------------------------------------------
+dependency_graph:
+  required_edge_fields:
+    - caller
+    - callee
+    - contract
+    - correlation_propagation
+    - timeout
+    - retry_rule
+    - required_availability   # HARD = caller cannot proceed truthfully without it; SOFT = caller degrades per degradation_matrix
+    - fallback_rule
+    - failure_propagation
+    - custody_requirement
+    - test
+  edges:
+    # --- control-plane read surfaces ---
+    - {caller: pythia.readiness, callee: pythia.worker_heartbeat, contract: sidecar metrics files, correlation_propagation: request_id, timeout: filesystem read, retry_rule: read-only, required_availability: SOFT, fallback_rule: report component unavailable, failure_propagation: readiness degraded not failed, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.readiness, callee: pythia.boot_audit, contract: append-only JSONL tail, correlation_propagation: request_id, timeout: filesystem read, retry_rule: read-only, required_availability: SOFT, fallback_rule: report component unavailable, failure_propagation: readiness degraded, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.readiness, callee: al_haras.guardian, contract: guardian mediation availability, correlation_propagation: request_id, timeout: immediate, retry_rule: none, required_availability: SOFT, fallback_rule: report component unavailable, failure_propagation: readiness reports degraded component, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.ready_to_mine, callee: stratum.v1, contract: pool connectivity observation, correlation_propagation: request_id, timeout: socket state read, retry_rule: read-only, required_availability: SOFT, fallback_rule: report blocked, failure_propagation: domain-readiness false, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.ready_to_mine, callee: pythia.worker_heartbeat, contract: worker sidecars, correlation_propagation: request_id, timeout: filesystem read, retry_rule: read-only, required_availability: SOFT, fallback_rule: report blocked, failure_propagation: domain-readiness false, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.metrics, callee: pythia.worker_heartbeat, contract: metrics sidecars, correlation_propagation: request_id, timeout: filesystem read, retry_rule: read-only, required_availability: SOFT, fallback_rule: exclude stale workers, failure_propagation: counters reflect only live workers, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.metrics, callee: stratum.v1, contract: pool session counters, correlation_propagation: request_id, timeout: socket state read, retry_rule: read-only, required_availability: SOFT, fallback_rule: report disconnected, failure_propagation: connectivity false, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.status, callee: pythia.worker_heartbeat, contract: metrics sidecars, correlation_propagation: request_id, timeout: filesystem read, retry_rule: read-only, required_availability: SOFT, fallback_rule: unavailable section, failure_propagation: degraded projection, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.status, callee: stratum.v1, contract: pool session state, correlation_propagation: request_id, timeout: socket state read, retry_rule: read-only, required_availability: SOFT, fallback_rule: unavailable section, failure_propagation: degraded projection, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.status, callee: pythia.boot_audit, contract: audit tail, correlation_propagation: request_id, timeout: filesystem read, retry_rule: read-only, required_availability: SOFT, fallback_rule: unavailable section, failure_propagation: degraded projection, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.config.read, callee: pythia.runtime_config_file, contract: redacted config read, correlation_propagation: request_id, timeout: filesystem read, retry_rule: read-only, required_availability: HARD, fallback_rule: report not_configured, failure_propagation: NOT_CONFIGURED, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.config.update, callee: pythia.runtime_config_file, contract: atomic config write, correlation_propagation: request_id, timeout: filesystem write, retry_rule: never auto-retry mutation, required_availability: HARD, fallback_rule: reject atomically, failure_propagation: CUSTODY_FAILURE or INVALID_REQUEST, custody_requirement: config artifact, test: tests/test_production_api_contract.py}
+    - {caller: pythia.config.update, callee: pythia.boot_audit, contract: audit append, correlation_propagation: request_id, timeout: filesystem append, retry_rule: none, required_availability: HARD, fallback_rule: mutation does not silently proceed, failure_propagation: INTERNAL_ERROR, custody_requirement: audit event, test: tests/test_production_api_contract.py}
+    - {caller: pythia.system.map, callee: pythia.boot_audit, contract: audit context, correlation_propagation: request_id, timeout: filesystem read, retry_rule: read-only, required_availability: SOFT, fallback_rule: map still served, failure_propagation: degraded projection, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.system.verify.read, callee: euclid.orchestration, contract: verification run state, correlation_propagation: request_id, timeout: in-process read, retry_rule: read-only, required_availability: SOFT, fallback_rule: report not_found, failure_propagation: NOT_APPLICABLE, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.system.verify.read, callee: pythia.boot_audit, contract: audit tail, correlation_propagation: request_id, timeout: filesystem read, retry_rule: read-only, required_availability: SOFT, fallback_rule: degraded projection, failure_propagation: degraded, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.system.verify.start, callee: euclid.orchestration, contract: start verification run, correlation_propagation: request_id+causation_id, timeout: bounded dispatch, retry_rule: never auto-retry start; idempotency via run id, required_availability: HARD, fallback_rule: refuse command, failure_propagation: DEPENDENCY_UNAVAILABLE, custody_requirement: audit event, test: tests/test_production_api_contract.py}
+    - {caller: pythia.system.verify.start, callee: pythia.boot_audit, contract: audit append, correlation_propagation: request_id, timeout: filesystem append, retry_rule: none, required_availability: HARD, fallback_rule: no silent mutation, failure_propagation: INTERNAL_ERROR, custody_requirement: audit event, test: tests/test_production_api_contract.py}
+    - {caller: pythia.intelligence.status, callee: euclid.orchestration, contract: intelligence state read, correlation_propagation: request_id, timeout: in-process read, retry_rule: read-only, required_availability: SOFT, fallback_rule: report unavailable, failure_propagation: DEPENDENCY_UNAVAILABLE section, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.intelligence.selftest, callee: euclid.orchestration, contract: selftest dispatch/read, correlation_propagation: request_id+causation_id, timeout: bounded, retry_rule: read-only GET; POST no auto-retry, required_availability: HARD for POST, fallback_rule: refuse command, failure_propagation: DEPENDENCY_UNAVAILABLE, custody_requirement: audit event, test: tests/test_production_api_contract.py}
+    - {caller: pythia.intelligence.selftest, callee: pythia.boot_audit, contract: audit append, correlation_propagation: request_id, timeout: filesystem append, retry_rule: none, required_availability: HARD, fallback_rule: no silent mutation, failure_propagation: INTERNAL_ERROR, custody_requirement: audit event, test: tests/test_production_api_contract.py}
+    - {caller: pythia.intelligence.maintenance, callee: euclid.orchestration, contract: maintenance dispatch/read, correlation_propagation: request_id+causation_id, timeout: bounded, retry_rule: read-only GET; POST no auto-retry, required_availability: HARD for POST, fallback_rule: refuse command, failure_propagation: DEPENDENCY_UNAVAILABLE, custody_requirement: audit event, test: tests/test_production_api_contract.py}
+    - {caller: pythia.intelligence.maintenance, callee: pythia.boot_audit, contract: audit append, correlation_propagation: request_id, timeout: filesystem append, retry_rule: none, required_availability: HARD, fallback_rule: no silent mutation, failure_propagation: INTERNAL_ERROR, custody_requirement: audit event, test: tests/test_production_api_contract.py}
+    - {caller: pythia.intelligence.autonomous, callee: euclid.orchestration, contract: autonomous loop state/control, correlation_propagation: request_id+causation_id, timeout: bounded, retry_rule: read-only GET; POST no auto-retry, required_availability: HARD for POST, fallback_rule: refuse command, failure_propagation: DEPENDENCY_UNAVAILABLE, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.intelligence.engineer, callee: euclid.orchestration, contract: engineer dispatch, correlation_propagation: request_id+causation_id, timeout: bounded dispatch, retry_rule: no auto-retry; idempotency via request id, required_availability: HARD, fallback_rule: NOT_CONFIGURED when engineer absent, failure_propagation: NOT_CONFIGURED or DEPENDENCY_UNAVAILABLE, custody_requirement: audit event, test: tests/test_production_api_contract.py}
+    - {caller: pythia.intelligence.cognition_solve, callee: euclid.orchestration, contract: deterministic solve verdict, correlation_propagation: request_id+causation_id, timeout: bounded solve, retry_rule: no auto-retry; verdict is deterministic per input, required_availability: HARD, fallback_rule: unproven verdict, failure_propagation: DEPENDENCY_UNAVAILABLE, custody_requirement: verdict evidence, test: tests/test_production_api_contract.py}
+    - {caller: pythia.agentic, callee: euclid.orchestration, contract: agentic mining orchestration, correlation_propagation: request_id+causation_id+session_id, timeout: bounded dispatch, retry_rule: no auto-retry on control POST, required_availability: HARD for POST, fallback_rule: refuse command; no fabricated state, failure_propagation: DEPENDENCY_UNAVAILABLE, custody_requirement: audit event, test: tests/test_production_api_contract.py}
+    - {caller: pythia.agentic, callee: pythia.worker_heartbeat, contract: worker sidecars, correlation_propagation: request_id, timeout: filesystem read, retry_rule: read-only, required_availability: SOFT, fallback_rule: report no live workers, failure_propagation: degraded projection, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.agentic, callee: stratum.v1, contract: pool session state, correlation_propagation: request_id+session_id, timeout: socket state read, retry_rule: read-only, required_availability: SOFT, fallback_rule: report disconnected, failure_propagation: degraded projection, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.campaign, callee: euclid.orchestration, contract: campaign state/control, correlation_propagation: request_id+causation_id, timeout: bounded, retry_rule: no auto-retry on control POST, required_availability: HARD for POST, fallback_rule: refuse command, failure_propagation: DEPENDENCY_UNAVAILABLE, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.campaign, callee: pythia.worker_heartbeat, contract: worker metrics counters, correlation_propagation: request_id, timeout: filesystem read, retry_rule: read-only, required_availability: SOFT, fallback_rule: counters from live workers only, failure_propagation: degraded projection, custody_requirement: none, test: tests/test_production_api_contract.py}
+    # --- privileged mining + security ---
+    - {caller: pythia.mining.control, callee: al_haras.guardian, contract: subscription authorisation + signed denial receipt, correlation_propagation: request_id+causation_id+tenant_id+actor_id, timeout: guardian decision bound, retry_rule: deny is never retried by the client layer, required_availability: HARD, fallback_rule: fail closed — guardian unavailable means denied, failure_propagation: FORBIDDEN or DEPENDENCY_UNAVAILABLE, custody_requirement: audit event + denial receipt, test: tests/test_production_api_contract.py}
+    - {caller: pythia.mining.control, callee: pythia.worker_heartbeat, contract: worker control via supervisor, correlation_propagation: request_id+session_id, timeout: bounded control, retry_rule: no auto-retry on stop/start, required_availability: HARD, fallback_rule: refuse command truthfully, failure_propagation: DEPENDENCY_UNAVAILABLE or EXECUTION_FAILURE, custody_requirement: audit event, test: tests/test_production_api_contract.py}
+    - {caller: pythia.mining.control, callee: stratum.v1, contract: pool session for mining ops, correlation_propagation: session_id+job_id, timeout: per-request transport, retry_rule: reconnect bounded; mining.submit never auto-retried, required_availability: SOFT for status paths, HARD for submission path, fallback_rule: preserve state and reconnect; invalidate stale work, failure_propagation: DEPENDENCY_UNAVAILABLE or EXTERNAL_REJECT, custody_requirement: submission evidence in worker metrics, test: tests/test_production_api_contract.py}
+    - {caller: pythia.mining.control, callee: theseus.custody, contract: durable mining evidence custody, correlation_propagation: request_id+job_id, timeout: io bound, retry_rule: content-addressed put is idempotent, required_availability: HARD where durable evidence is required, fallback_rule: none — R0 fail closed, failure_propagation: CUSTODY_FAILURE, custody_requirement: evidence records, test: tests/test_service_constitution.py}
+    - {caller: pythia.mining.evidence, callee: al_haras.guardian, contract: subscription authorisation, correlation_propagation: request_id+tenant_id+actor_id, timeout: guardian decision bound, retry_rule: none, required_availability: HARD, fallback_rule: fail closed, failure_propagation: FORBIDDEN or DEPENDENCY_UNAVAILABLE, custody_requirement: denial receipt, test: tests/test_production_api_contract.py}
+    - {caller: pythia.mining.evidence, callee: pythia.worker_heartbeat, contract: mining evidence sidecars, correlation_propagation: request_id, timeout: filesystem read, retry_rule: read-only, required_availability: HARD for evidence claim, fallback_rule: report unavailable, failure_propagation: DEPENDENCY_UNAVAILABLE, custody_requirement: evidence records, test: tests/test_production_api_contract.py}
+    - {caller: pythia.stratum.status, callee: stratum.v1, contract: pool connectivity read, correlation_propagation: request_id, timeout: socket state read, retry_rule: read-only, required_availability: SOFT, fallback_rule: report disconnected, failure_propagation: degraded projection, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.telemetry, callee: pythia.worker_heartbeat, contract: metrics sidecars, correlation_propagation: request_id, timeout: filesystem read, retry_rule: read-only, required_availability: SOFT, fallback_rule: unavailable sections, failure_propagation: degraded projection, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.telemetry, callee: stratum.v1, contract: pool session state, correlation_propagation: request_id, timeout: socket state read, retry_rule: read-only, required_availability: SOFT, fallback_rule: report disconnected, failure_propagation: degraded projection, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.telemetry.stream, callee: pythia.worker_heartbeat, contract: metrics sidecars polled per tick, correlation_propagation: request_id per emitted event, timeout: tick interval, retry_rule: stream reconnect is client-side, required_availability: SOFT, fallback_rule: emit unavailable event; drops counted, failure_propagation: degraded stream, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.telemetry.stream, callee: stratum.v1, contract: pool session state per tick, correlation_propagation: request_id per emitted event, timeout: tick interval, retry_rule: none, required_availability: SOFT, fallback_rule: emit disconnected state, failure_propagation: degraded stream, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.audit.tail, callee: pythia.boot_audit, contract: append-only JSONL tail, correlation_propagation: request_id, timeout: filesystem read, retry_rule: read-only, required_availability: SOFT, fallback_rule: empty tail, failure_propagation: degraded projection, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.knowledge, callee: euclid.orchestration, contract: knowledge projection, correlation_propagation: request_id, timeout: in-process read, retry_rule: read-only, required_availability: SOFT, fallback_rule: report unavailable, failure_propagation: degraded projection, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.gpu, callee: chronus.execution, contract: device inventory observation, correlation_propagation: request_id, timeout: bounded probe, retry_rule: read-only, required_availability: SOFT, fallback_rule: absent devices reported absent, failure_propagation: degraded projection, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.hardware.status, callee: chronus.execution, contract: hardware observation, correlation_propagation: request_id, timeout: bounded probe, retry_rule: read-only, required_availability: SOFT, fallback_rule: unmeasured reported unmeasured, failure_propagation: degraded projection, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: al_haras.security.status, callee: al_haras.guardian, contract: guardian posture read, correlation_propagation: request_id+tenant_id+actor_id, timeout: bounded, retry_rule: none, required_availability: HARD, fallback_rule: fail closed posture, failure_propagation: DEPENDENCY_UNAVAILABLE, custody_requirement: audit event, test: tests/test_production_api_contract.py}
+    - {caller: al_haras.security.status, callee: hyba_db.store, contract: tenant-scoped security state, correlation_propagation: tenant_id, timeout: io bound, retry_rule: io retry per store policy, required_availability: HARD, fallback_rule: fail closed posture, failure_propagation: DEPENDENCY_UNAVAILABLE, custody_requirement: tenant records, test: tests/test_production_api_contract.py}
+    - {caller: al_haras.security.subscribe, callee: al_haras.guardian, contract: subscription issuance via authority, correlation_propagation: request_id+tenant_id+actor_id, timeout: bounded, retry_rule: issuance is idempotent per subject, required_availability: HARD, fallback_rule: fail closed, failure_propagation: FORBIDDEN or NOT_CONFIGURED, custody_requirement: issuance record, test: tests/test_production_api_contract.py}
+    - {caller: al_haras.security.subscribe, callee: hyba_db.store, contract: tenant subscription records, correlation_propagation: tenant_id, timeout: io bound, retry_rule: io retry per store policy, required_availability: HARD, fallback_rule: fail closed, failure_propagation: DEPENDENCY_UNAVAILABLE, custody_requirement: tenant records, test: tests/test_production_api_contract.py}
+    - {caller: al_haras.security.evaluate, callee: al_haras.guardian, contract: authorisation verdict, correlation_propagation: request_id+tenant_id+actor_id, timeout: bounded, retry_rule: none, required_availability: HARD, fallback_rule: fail closed — unavailable means denied, failure_propagation: FORBIDDEN or DEPENDENCY_UNAVAILABLE, custody_requirement: verdict receipt, test: tests/test_production_api_contract.py}
+    - {caller: al_haras.security.evaluate, callee: hyba_db.store, contract: tenant policy state, correlation_propagation: tenant_id, timeout: io bound, retry_rule: io retry per store policy, required_availability: HARD, fallback_rule: fail closed, failure_propagation: DEPENDENCY_UNAVAILABLE, custody_requirement: verdict record, test: tests/test_production_api_contract.py}
+    - {caller: kellogg.tensor.capabilities, callee: al_haras.guardian, contract: subscription authorisation, correlation_propagation: request_id+tenant_id+actor_id, timeout: bounded, retry_rule: none, required_availability: HARD, fallback_rule: fail closed, failure_propagation: FORBIDDEN or DEPENDENCY_UNAVAILABLE, custody_requirement: denial receipt, test: tests/test_production_api_contract.py}
+    - {caller: kellogg.tensor.capabilities, callee: kellogg.tensor.runtime, contract: capability enumeration, correlation_propagation: request_id, timeout: bounded probe, retry_rule: read-only, required_availability: HARD for capabilities claim, fallback_rule: typed unavailable, failure_propagation: DEPENDENCY_UNAVAILABLE, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: kellogg.tensor.execute, callee: al_haras.guardian, contract: subscription authorisation, correlation_propagation: request_id+tenant_id+actor_id, timeout: bounded, retry_rule: none, required_availability: HARD, fallback_rule: fail closed, failure_propagation: FORBIDDEN or DEPENDENCY_UNAVAILABLE, custody_requirement: denial receipt, test: tests/test_production_api_contract.py}
+    - {caller: kellogg.tensor.execute, callee: kellogg.tensor.runtime, contract: validated tensor operation, correlation_propagation: request_id+causation_id, timeout: execution bound by request, retry_rule: replayable pure computation, required_availability: HARD, fallback_rule: typed failure; alternative only via authorised plan, failure_propagation: EXECUTION_FAILURE or DEPENDENCY_UNAVAILABLE, custody_requirement: provenance record, test: tests/test_production_api_contract.py}
+    - {caller: kellogg.tensor.execute, callee: theseus.custody, contract: durable result custody, correlation_propagation: request_id, timeout: io bound, retry_rule: content-addressed put idempotent, required_availability: HARD where durable, fallback_rule: none — R0 fail closed, failure_propagation: CUSTODY_FAILURE, custody_requirement: result record, test: tests/test_service_constitution.py}
+    - {caller: toe.collapse, callee: al_haras.guardian, contract: subscription authorisation, correlation_propagation: request_id+tenant_id+actor_id, timeout: bounded, retry_rule: none, required_availability: HARD, fallback_rule: fail closed, failure_propagation: FORBIDDEN or DEPENDENCY_UNAVAILABLE, custody_requirement: denial receipt, test: tests/test_production_api_contract.py}
+    - {caller: toe.collapse, callee: euclid.orchestration, contract: collapse verdict computation, correlation_propagation: request_id+causation_id, timeout: bounded solve, retry_rule: deterministic per input, required_availability: HARD, fallback_rule: unproven verdict, failure_propagation: DEPENDENCY_UNAVAILABLE or VERIFICATION_FAILURE, custody_requirement: verdict evidence, test: tests/test_production_api_contract.py}
+    - {caller: salamander.fault, callee: salamander.control_plane, contract: fault/remediation dispatch, correlation_propagation: request_id+causation_id, timeout: bounded remediation window, retry_rule: no auto-retry; remediation idempotent per fault id, required_availability: HARD, fallback_rule: refuse remediation, failure_propagation: DEPENDENCY_UNAVAILABLE, custody_requirement: remediation evidence, test: tests/test_production_api_contract.py}
+    - {caller: salamander.fault, callee: theseus.custody, contract: remediation evidence custody, correlation_propagation: request_id, timeout: io bound, retry_rule: content-addressed put idempotent, required_availability: HARD, fallback_rule: none — R0 fail closed, failure_propagation: CUSTODY_FAILURE, custody_requirement: evidence record, test: tests/test_service_constitution.py}
+    # --- reserved namespaces: the deny boundary is the contract ---
+    - {caller: namespace.policy, callee: al_haras.guardian, contract: boundary denial, correlation_propagation: request_id, timeout: immediate, retry_rule: none, required_availability: HARD, fallback_rule: deny — reserved never implements, failure_propagation: FORBIDDEN, custody_requirement: denial audit, test: tests/test_production_api_contract.py}
+    - {caller: namespace.worker, callee: al_haras.guardian, contract: boundary denial, correlation_propagation: request_id, timeout: immediate, retry_rule: none, required_availability: HARD, fallback_rule: deny — reserved never implements, failure_propagation: FORBIDDEN, custody_requirement: denial audit, test: tests/test_production_api_contract.py}
+    - {caller: namespace.recovery, callee: al_haras.guardian, contract: boundary denial, correlation_propagation: request_id, timeout: immediate, retry_rule: none, required_availability: HARD, fallback_rule: deny — reserved never implements, failure_propagation: FORBIDDEN, custody_requirement: denial audit, test: tests/test_production_api_contract.py}
+    - {caller: namespace.admin, callee: al_haras.guardian, contract: boundary denial, correlation_propagation: request_id, timeout: immediate, retry_rule: none, required_availability: HARD, fallback_rule: deny — reserved never implements, failure_propagation: FORBIDDEN, custody_requirement: denial audit, test: tests/test_production_api_contract.py}
+    - {caller: namespace.quantum, callee: al_haras.guardian, contract: boundary denial, correlation_propagation: request_id, timeout: immediate, retry_rule: none, required_availability: HARD, fallback_rule: deny — reserved never implements, failure_propagation: FORBIDDEN, custody_requirement: denial audit, test: tests/test_production_api_contract.py}
+    - {caller: namespace.scale, callee: al_haras.guardian, contract: boundary denial, correlation_propagation: request_id, timeout: immediate, retry_rule: none, required_availability: HARD, fallback_rule: deny — reserved never implements, failure_propagation: FORBIDDEN, custody_requirement: denial audit, test: tests/test_production_api_contract.py}
+    - {caller: namespace.assembly, callee: al_haras.guardian, contract: boundary denial, correlation_propagation: request_id, timeout: immediate, retry_rule: none, required_availability: HARD, fallback_rule: deny — reserved never implements, failure_propagation: FORBIDDEN, custody_requirement: denial audit, test: tests/test_production_api_contract.py}
+    # --- internal typed contracts ---
+    - {caller: turing.vqc_pipeline, callee: theseus.custody, contract: certificate + result custody when durable, correlation_propagation: request_id+certificate_id, timeout: io bound, retry_rule: content-addressed put idempotent, required_availability: HARD when custody requested, fallback_rule: none — custody failure is typed REFUSED/failure, failure_propagation: CUSTODY_FAILURE, custody_requirement: certificate record, test: tests/test_turing_production_pipeline.py}
+    - {caller: ovid.transform, callee: theseus.custody, contract: transform lineage custody, correlation_propagation: request_id+transform_id, timeout: io bound, retry_rule: content-addressed put idempotent, required_availability: HARD when durable, fallback_rule: none — R0 fail closed, failure_propagation: CUSTODY_FAILURE, custody_requirement: lineage record, test: tests/test_production_api_contract.py}
+    - {caller: kellogg.tensor.runtime, callee: theseus.custody, contract: tensor provenance custody, correlation_propagation: request_id+operation_id, timeout: io bound, retry_rule: content-addressed put idempotent, required_availability: HARD when durable, fallback_rule: none — R0 fail closed, failure_propagation: CUSTODY_FAILURE, custody_requirement: provenance record, test: tests/test_production_api_contract.py}
+    - {caller: chronus.execution, callee: theseus.custody, contract: execution receipt custody, correlation_propagation: request_id+execution_id, timeout: io bound, retry_rule: content-addressed put idempotent, required_availability: HARD where durable, fallback_rule: none — R0 fail closed, failure_propagation: CUSTODY_FAILURE, custody_requirement: receipt record, test: tests/test_chronus_delivery.py}
+    - {caller: chronus.execution, callee: chronus.remote_opencl_v2, contract: remote backend import/execution, correlation_propagation: request_id+job_id, timeout: probes 5s; sha256d scans 300s, retry_rule: probe_first_reachable rotates; circuit breaker bounds persistent failure, required_availability: SOFT — remote is an optional lane, fallback_rule: remote lane reports unavailable; local lanes unaffected, failure_propagation: DEPENDENCY_UNAVAILABLE for remote lane only, custody_requirement: re-derived verification receipt, test: chronus/mla1517_platform/python/test_remote_gpu.py}
+    - {caller: al_haras.guardian, callee: hyba_db.store, contract: tenant-scoped subscription/policy state, correlation_propagation: tenant_id+actor_id, timeout: io bound, retry_rule: io retry per store policy, required_availability: HARD — guardian fails closed without state, fallback_rule: none — R0, failure_propagation: DEPENDENCY_UNAVAILABLE => denied, custody_requirement: policy records, test: tests/test_production_api_contract.py}
+    - {caller: salamander.control_plane, callee: theseus.custody, contract: healing evidence custody, correlation_propagation: request_id+fault_id, timeout: io bound, retry_rule: content-addressed put idempotent, required_availability: HARD, fallback_rule: none — R0 fail closed, failure_propagation: CUSTODY_FAILURE, custody_requirement: evidence record, test: tests/test_salamander_autonomic.py}
+    - {caller: euclid.orchestration, callee: turing.vqc_pipeline, contract: VQC execution selection, correlation_propagation: request_id+search_plan_id, timeout: execution bound by request, retry_rule: plan selects authorised alternative on typed unavailability, required_availability: SOFT — plan-dependent, fallback_rule: only an authorised alternative lane, never impersonation, failure_propagation: typed DEPENDENCY_UNAVAILABLE to plan, custody_requirement: certificate via THESEUS, test: tests/test_production_api_contract.py}
+    - {caller: euclid.orchestration, callee: kellogg.tensor.runtime, contract: tensor operation selection, correlation_propagation: request_id+search_plan_id, timeout: bounded, retry_rule: plan selects authorised alternative on typed unavailability, required_availability: SOFT — plan-dependent, fallback_rule: authorised alternative only, failure_propagation: typed DEPENDENCY_UNAVAILABLE to plan, custody_requirement: provenance via THESEUS, test: tests/test_production_api_contract.py}
+    - {caller: euclid.orchestration, callee: ovid.transform, contract: representation transform, correlation_propagation: request_id+transform_id, timeout: bounded, retry_rule: deterministic per contract, required_availability: SOFT — plan-dependent, fallback_rule: authorised alternative only, failure_propagation: typed failure to plan, custody_requirement: lineage via THESEUS, test: tests/test_production_api_contract.py}
+    - {caller: euclid.orchestration, callee: chronus.execution, contract: workload dispatch, correlation_propagation: request_id+search_plan_id+execution_id, timeout: execution bound, retry_rule: stale plan rejected; no blind retry, required_availability: HARD for selected plan, fallback_rule: plan revision only via PYTHIA, failure_propagation: EXECUTION_FAILURE or DEPENDENCY_UNAVAILABLE, custody_requirement: execution receipt, test: tests/test_production_api_contract.py}
+    - {caller: euclid.orchestration, callee: theseus.custody, contract: plan/decision custody, correlation_propagation: request_id+search_plan_id, timeout: io bound, retry_rule: content-addressed put idempotent, required_availability: HARD where durable, fallback_rule: none — R0 fail closed, failure_propagation: CUSTODY_FAILURE, custody_requirement: plan record, test: tests/test_production_api_contract.py}
+    # --- entrypoints / aliases ---
+    - {caller: legacy.api_health, callee: pythia.health, contract: alias of canonical liveness, correlation_propagation: request_id, timeout: immediate, retry_rule: freely retryable, required_availability: HARD, fallback_rule: none — same truth as canonical, failure_propagation: DEPENDENCY_UNAVAILABLE, custody_requirement: none, test: tests/test_production_api_contract.py}
+    - {caller: pythia.cli.api, callee: pythia.boot_audit, contract: boot audit emission, correlation_propagation: process lifecycle, timeout: filesystem append, retry_rule: none, required_availability: SOFT — boot continues with degraded audit only if policy allows, fallback_rule: startup contract decides, failure_propagation: startup evidence gap recorded, custody_requirement: audit events, test: tests/test_startup_contract.py}
+    - {caller: pythia.cli.miner, callee: stratum.v1, contract: pool session for mining, correlation_propagation: session_id+job_id, timeout: transport bound, retry_rule: bounded reconnect; submit never auto-retried, required_availability: HARD for mining, fallback_rule: preserve state; reconnect; stale work invalidated, failure_propagation: DEPENDENCY_UNAVAILABLE or EXTERNAL_REJECT, custody_requirement: worker metrics evidence, test: chronus/mla1517_platform/python/test_pool_only_mining.py}
+    - {caller: chronus.cli.remote_agent, callee: chronus.remote_opencl_v2, contract: serves the remote protocol, correlation_propagation: per-request token, timeout: transport bound, retry_rule: n/a — it is the server, required_availability: n/a, fallback_rule: unavailable endpoint is honest, failure_propagation: connection refused, custody_requirement: attestation tokens, test: chronus/mla1517_platform/python/test_remote_gpu.py}
+
+# ---------------------------------------------------------------------------
+# Critical user journeys (§6). Steps reference api_ids in the registry;
+# journeys are the executive production indicators and the target of the
+# production resilience voyages (§33).
+# ---------------------------------------------------------------------------
+journeys:
+  journey_a_mining:
+    title: Mining — stratum job to pool verdict to learning
+    tier: R1
+    steps: [stratum.v1, euclid.orchestration, pythia.mining.control, chronus.execution, pythia.worker_heartbeat, pythia.mining.evidence]
+    voyage: voyage_1_healthy_mining
+    executive_indicator: true
+  journey_b_turing_certified:
+    title: Certified TURING execution — request to custody-verified replay
+    tier: R2
+    steps: [euclid.orchestration, turing.vqc_pipeline, theseus.custody]
+    voyage: voyage_3_specialist_unavailable
+    executive_indicator: true
+  journey_c_chronus_execution:
+    title: CHRONUS execution — workload to custody receipt
+    tier: R1
+    steps: [chronus.execution, chronus.remote_opencl_v2, theseus.custody]
+    voyage: voyage_4_execution_outage
+    executive_indicator: true
+  journey_d_kellogg_tensor:
+    title: KELLOGG tensor — validated operation to provenance custody
+    tier: R2
+    steps: [kellogg.tensor.execute, kellogg.tensor.runtime, theseus.custody]
+    executive_indicator: true
+  journey_e_ovid_transform:
+    title: OVID transformation — contract to equivalence to lineage custody
+    tier: R2
+    steps: [ovid.transform, theseus.custody]
+    executive_indicator: true
+  journey_f_salamander_recovery:
+    title: SALAMANDER recovery — fault to verified remediation evidence
+    tier: R3
+    steps: [salamander.fault, salamander.control_plane, theseus.custody]
+    executive_indicator: true
+  journey_g_security_denial:
+    title: Security denial — AL HARAS deny, zero downstream mutation, audit evidence
+    tier: R0
+    steps: [al_haras.security.evaluate, al_haras.guardian]
+    voyage: voyage_5_security_denial
+    executive_indicator: true
+
+production_voyages:
+  voyage_1_healthy_mining:
+    journey: journey_a_mining
+    description: operator → API → AL HARAS → PYTHIA → Hendrix → CHRONUS/TURING/KELLOGG as selected → SHA256d → Stratum → evidence
+    status_local: executed via test_production_api_contract.py voyages + offline stratum fixtures
+  voyage_2_authority_outage:
+    journey: journey_a_mining
+    description: THESEUS unavailable → custody-requiring operation fails → no false completion
+    status_local: executed via tests/test_fault_injection.py
+  voyage_3_specialist_unavailable:
+    journey: journey_b_turing_certified
+    description: TURING unavailable → explicit result → only authorised alternative selectable
+    status_local: executed via tests/test_fault_injection.py
+  voyage_4_execution_outage:
+    journey: journey_c_chronus_execution
+    description: CHRONUS unavailable → bounded failure → no fake execution → Salamander observes
+    status_local: executed via tests/test_fault_injection.py
+  voyage_5_security_denial:
+    journey: journey_g_security_denial
+    description: AL HARAS deny → zero downstream mutation
+    status_local: executed via tests/test_fault_injection.py + contract suite denials
+  voyage_6_recovery:
+    description: mid-operation termination → restart → recover/reconcile → same authoritative state
+    status_local: executed via tests/test_stateful_recovery.py
+
+# ---------------------------------------------------------------------------
+# SLO policy (§7-8). Dimensions are measured where a baseline exists;
+# unmeasured targets are declared UNMEASURED, never invented.
+# ---------------------------------------------------------------------------
+slos:
+  slo.constitutional:
+    tier: R0
+    measured: FAULT_INJECTION_EXECUTED
+    dimensions: [availability, verdict latency, denial evidence completeness]
+    targets: {availability: fail-closed-by-design, denial_latency_p95: measured-locally}
+    error_budget: none — integrity failures are not budget-eligible
+  slo.mining.control:
+    tier: R1
+    measured: FAULT_INJECTION_EXECUTED
+    dimensions: [command acceptance rate, job-to-plan latency, stale-job cancellation latency]
+    targets: {command_acceptance: measured-locally}
+    error_budget: release-managed
+  slo.mining.execution:
+    tier: R1
+    measured: LOCAL_HTTP_E2E_EXECUTED
+    dimensions: [plan-to-execution latency, execution completion, verification completion]
+    targets: {verification_pass: required-for-success}
+    error_budget: release-managed
+  slo.mining.read:
+    tier: R1
+    measured: LOCAL_HTTP_E2E_EXECUTED
+    dimensions: [availability, latency_p95]
+    targets: {}
+    error_budget: release-managed
+  slo.mining.plan:
+    tier: R1
+    measured: UNMEASURED
+    dimensions: [plan latency, plan validity]
+    targets: {}
+    error_budget: release-managed
+  slo.mining.telemetry:
+    tier: R1
+    measured: LOCAL_HTTP_E2E_EXECUTED
+    dimensions: [sidecar freshness within ttl, counter accuracy]
+    targets: {sidecar_ttl_s: 30}
+    error_budget: release-managed
+  slo.stratum:
+    tier: R1
+    measured: FAULT_INJECTION_EXECUTED
+    dimensions: [connectivity uptime, submission response latency, stale-job rejection]
+    targets: {submit_response: literal-pool-verdict-only}
+    error_budget: release-managed
+  slo.remote_execution:
+    tier: R1
+    measured: FAULT_INJECTION_EXECUTED
+    dimensions: [probe latency, scan completion, attestation validity]
+    targets: {probe_timeout_s: 5, sha256d_timeout_s: 300}
+    error_budget: release-managed
+  slo.specialist:
+    tier: R2
+    measured: LOCAL_TEST_PASSED
+    dimensions: [availability reporting honesty, typed failure rate, result latency]
+    targets: {}
+    error_budget: release-managed
+  slo.healing:
+    tier: R3
+    measured: LOCAL_TEST_PASSED
+    dimensions: [remediation success, postcondition verification, rollback success]
+    targets: {postcondition_verification: required}
+    error_budget: release-managed
+  slo.tenant_store:
+    tier: R1
+    measured: LOCAL_TEST_PASSED
+    dimensions: [operation success, cross-tenant isolation]
+    targets: {cross_tenant_bleed: 0}
+    error_budget: release-managed
+  slo.evidence:
+    tier: R1
+    measured: LOCAL_HTTP_E2E_EXECUTED
+    dimensions: [append success, tail accuracy]
+    targets: {}
+    error_budget: release-managed
+  slo.configuration:
+    tier: R1
+    measured: RECOVERY_EXECUTED
+    dimensions: [atomic write success, invalid-reject correctness]
+    targets: {}
+    error_budget: release-managed
+  slo.projection.read:
+    tier: R4
+    measured: LOCAL_HTTP_E2E_EXECUTED
+    dimensions: [availability, latency_p95, freshness]
+    targets: {}
+    error_budget: release-managed
+  slo.projection.stream:
+    tier: R4
+    measured: RECOVERY_EXECUTED
+    dimensions: [event delivery, drop accounting]
+    targets: {drops: always counted + reported}
+    error_budget: release-managed
+  slo.operator.mutation:
+    tier: R1
+    measured: RECOVERY_EXECUTED
+    dimensions: [mutation acceptance truth, atomicity]
+    targets: {}
+    error_budget: release-managed
+  slo.cli:
+    tier: R1
+    measured: LOCAL_TEST_PASSED
+    dimensions: [fail-fast on misconfiguration, boot success under valid config]
+    targets: {}
+    error_budget: release-managed
+
+error_budget_policy:
+  rule: error budgets manage release cadence; they never excuse an R0 integrity failure or authorise fabricated success
+  on_exhausted: freeze non-safety releases for the affected service until owner-approved recovery
+
+# ---------------------------------------------------------------------------
+# Resilience mechanics (§10-13)
+# ---------------------------------------------------------------------------
+timeout_retry_policy:
+  rules:
+    - never auto-retry an irreversible operation whose outcome is unknown
+    - never auto-retry mining.submit unless protocol semantics make the duplicate safe
+    - duplicate custody requests are deterministic/idempotent (content-addressed put)
+    - read-only queries may use controlled bounded retry
+    - retry storms are impossible: bounded attempts + backoff + jitter
+    - timeout never becomes success
+  defaults:
+    read: {max_attempts: 3, backoff: exponential, jitter: true}
+    mutation: {max_attempts: 1, idempotency: required-for-any-retry}
+    irreversible: {max_attempts: 1}
+  http_idempotency:
+    header: Idempotency-Key
+    behaviour: mutating POST/PUT routes honour a caller Idempotency-Key — a repeated key inside the retention window returns the recorded outcome without re-executing the mutation
+    retention_window_s: 300
+    implementation: chronus/mla1517_platform/python/control_api.py::_IDEMPOTENCY_RECORDS
+
+circuit_breakers:
+  - dependency: chronus.remote_opencl_v2
+    implementation: chronus/mla1517/remote_gpu.py::RemoteCircuitBreaker
+    states: [CLOSED, OPEN, HALF_OPEN]
+    failure_threshold: 3 consecutive failures per endpoint
+    recovery_timeout_s: 30
+    rule: prevents repeated failing calls; grants no fallback authority; re-verification still applies to every result
+  - dependency: stratum.v1
+    implementation: chronus/mla1517_platform/python/manifold_pool_coordinator.py::ManifoldPoolCoordinator (reconnect_delay budget, stale-work rejection)
+    states: [CLOSED, OPEN]
+    rule: submit gate stays closed through reconnect storms
+
+bulkheads:
+  - resource: HTTP worker threads
+    separation: ThreadingHTTPServer threads are request-scoped; SSE consumers hold one thread each and are capped client-side; mining never waits on HTTP threads
+    proof: tests/test_fault_injection.py telemetry storm vs mining independence
+  - resource: remote execution lane
+    separation: remote_opencl_v2 failures are isolated to the remote lane; local solver lanes unaffected
+    proof: chronus/mla1517_platform/python/test_remote_gpu.py
+  - resource: tenant quotas
+    separation: hyba_db is tenant-scoped; cross-tenant bleed is a defect class tested in the store contract
+    proof: tests/test_production_api_contract.py::test_hyba_db_store_contract
+  - resource: durable custody
+    separation: THESEUS writes are independent of specialist computation failures; a failed TURING workload cannot block custody
+    proof: tests/test_fault_injection.py
+
+backpressure:
+  - interface: pythia.telemetry.stream
+    type: stream
+    capacity: per-client thread
+    high_water: n/a — SSE events are generated per tick, not queued authoritatively
+    drop_policy: non-authoritative events may be skipped under overload; drops are counted and exposed
+    authoritative_rule: never silently drop authoritative events
+    exposed: [dropped_count, window, reason]
+  - interface: pythia.worker_heartbeat
+    type: filesystem queue (sidecar files)
+    capacity: one file per worker
+    drop_policy: stale files excluded; nothing silently dropped
+    exposed: [staleness, exclusion]
+  - interface: stratum.v1
+    type: wire queue
+    drop_policy: stale jobs rejected by generation, not dropped silently
+    exposed: [stale_count in worker metrics]
+
+# ---------------------------------------------------------------------------
+# Schema governance + lifecycle (§14-15)
+# ---------------------------------------------------------------------------
+lifecycle_states: [EXPERIMENTAL, ACTIVE, STABLE, DEPRECATED, RETIRED, RESERVED, LEGACY]
+
+schema_governance:
+  versioning: major.minor per schema_version string; unknown trailing fields are additive-minor
+  breaking_change_definition: removing/renaming a field, changing a field type, changing a verdict or failure-class meaning, changing authority
+  unknown_field_handling: readers ignore unknown fields; writers never emit undeclared semantics
+  unknown_major_handling: VERSION_UNSUPPORTED failure class — never silent downgrade
+  deprecation_period: owner-declared; recorded on the registry entry
+  removal_approval: canonical owner approval required; consumer inventory must be empty or migrated in the same change
+  rules:
+    - no silent endpoint removal
+    - no silent reuse of an old endpoint for new semantics
+    - breaking changes require owner approval and a compatibility-window declaration
+
+deprecation_required_fields: [replacement, announcement_date, removal_criteria, compatibility_period, consumer_inventory]
+
+# ---------------------------------------------------------------------------
+# Correlation, observability, health (§17-20)
+# ---------------------------------------------------------------------------
+correlation_envelope:
+  http_headers:
+    inbound: [X-Request-Id, X-Correlation-Id, X-Causation-Id, Idempotency-Key]
+    outbound: [X-Request-Id, X-Correlation-Id]
+  fields: [request_id, correlation_id, causation_id, tenant_id, actor_id, operation, schema_version]
+  mining_fields: [connection_id, session_id, job_id, job_generation, search_plan_id, lease_id, execution_id, candidate_id, verified_proof_id, submission_id, pool_outcome_id]
+  rule: one production event is traceable across the entire system; malformed inbound correlation ids are replaced with fresh ids, never trusted
+
+observability_standard:
+  required_fields: [api_id, caller, callee, tenant, correlation_id, operation, start_time, end_time, elapsed, result_class, dependency_status, retry_count, evidence_ref]
+  forbidden: [secrets, private_keys, credentials, raw_entitlement_secrets]
+  rule: observability reports what authoritative systems did; it is never the source of authority
+
+golden_signals:
+  universal: [latency, traffic, errors, saturation]
+  domain_truth: [authorisation_denies, custody_failures, stratum_reconnects, stale_jobs, chronus_execution_failures, turing_certificate_failures, ovid_equivalence_failures, salamander_rollback_count]
+
+health_model:
+  LIVENESS: process serving — pythia.health
+  READINESS: declared dependency/config readiness — pythia.readiness components
+  DEPENDENCY_HEALTH: per-component truth inside readiness (guardian, boot_audit, worker_heartbeat_dir, stratum, theseus where mounted)
+  DOMAIN_READINESS: capability readiness — pythia.ready_to_mine
+  rule: never collapse these into healthy=true
+
+# ---------------------------------------------------------------------------
+# Graceful degradation matrix (§21). No undocumented fallback exists.
+# ---------------------------------------------------------------------------
+degradation_matrix:
+  - dependency: theseus.custody
+    on_unavailable: durable authoritative operation stops
+    affected: [pythia.mining.control, turing.vqc_pipeline, ovid.transform, kellogg.tensor.runtime, kellogg.tensor.execute, chronus.execution, salamander.control_plane, salamander.fault, euclid.orchestration]
+    impersonation_allowed: false
+  - dependency: al_haras.guardian
+    on_unavailable: privileged operation stops — guardian-mediated routes deny
+    affected: [pythia.mining.control, pythia.mining.evidence, al_haras.security.status, al_haras.security.subscribe, al_haras.security.evaluate, kellogg.tensor.capabilities, kellogg.tensor.execute, toe.collapse, namespace.policy, namespace.worker, namespace.recovery, namespace.admin, namespace.quantum, namespace.scale, namespace.assembly]
+    impersonation_allowed: false
+  - dependency: turing.vqc_pipeline
+    on_unavailable: return typed unavailable to PYTHIA/EUCLID plan; plan may select another authorised lane
+    affected: [euclid.orchestration]
+    impersonation_allowed: false
+  - dependency: kellogg.tensor.runtime
+    on_unavailable: tensor-dependent operation unavailable or authorised alternative expressly selected
+    affected: [euclid.orchestration, kellogg.tensor.capabilities, kellogg.tensor.execute]
+    impersonation_allowed: false
+  - dependency: ovid.transform
+    on_unavailable: transform-dependent operation reports typed failure to the plan
+    affected: [euclid.orchestration]
+    impersonation_allowed: false
+  - dependency: chronus.execution
+    on_unavailable: execution-dependent operation fails bounded; no fake execution
+    affected: [euclid.orchestration, pythia.gpu, pythia.hardware.status]
+    impersonation_allowed: false
+  - dependency: chronus.remote_opencl_v2
+    on_unavailable: remote lane reports unavailable; local lanes continue; circuit breaker bounds retries
+    affected: [chronus.execution]
+    impersonation_allowed: false
+  - dependency: stratum.v1
+    on_unavailable: preserve state, bounded reconnect, invalidate stale work correctly
+    affected: [pythia.mining.control, pythia.stratum.status, pythia.telemetry, pythia.telemetry.stream, pythia.metrics, pythia.status, pythia.ready_to_mine, pythia.agentic, pythia.cli.miner]
+    impersonation_allowed: false
+  - dependency: euclid.orchestration
+    on_unavailable: intelligence surfaces report unavailable; control POSTs refused
+    affected: [pythia.intelligence.status, pythia.intelligence.selftest, pythia.intelligence.maintenance, pythia.intelligence.autonomous, pythia.intelligence.engineer, pythia.intelligence.cognition_solve, pythia.agentic, pythia.campaign, pythia.knowledge, pythia.system.verify.read, pythia.system.verify.start, toe.collapse]
+    impersonation_allowed: false
+  - dependency: hyba_db.store
+    on_unavailable: tenant-scoped security state unavailable → guardian posture fails closed
+    affected: [al_haras.guardian, al_haras.security.status, al_haras.security.subscribe, al_haras.security.evaluate]
+    impersonation_allowed: false
+  - dependency: pythia.worker_heartbeat
+    on_unavailable: worker-derived surfaces degrade to unavailable sections; counters never fabricated
+    affected: [pythia.readiness, pythia.ready_to_mine, pythia.metrics, pythia.status, pythia.mining.control, pythia.mining.evidence, pythia.telemetry, pythia.telemetry.stream, pythia.agentic, pythia.campaign]
+    impersonation_allowed: false
+  - dependency: pythia.boot_audit
+    on_unavailable: audit reads show empty tail; mutations that must audit fail rather than proceed silently
+    affected: [pythia.readiness, pythia.status, pythia.audit.tail, pythia.system.map, pythia.config.update, pythia.intelligence.selftest, pythia.intelligence.maintenance, pythia.system.verify.start, pythia.cli.api]
+    impersonation_allowed: false
+  - dependency: pythia.runtime_config_file
+    on_unavailable: config surfaces report not_configured; updates reject atomically
+    affected: [pythia.config.read, pythia.config.update]
+    impersonation_allowed: false
+  - dependency: salamander.control_plane
+    on_unavailable: fault remediation commands refuse; healing stops, it does not improvise
+    affected: [salamander.fault]
+    impersonation_allowed: false
+  - dependency: pythia.health
+    on_unavailable: the serving process itself is down; every surface fails by connection refusal, never a body lie
+    affected: [legacy.api_health]
+    impersonation_allowed: false
+
+# ---------------------------------------------------------------------------
+# Recovery objectives (§23) — measure first; unmeasured is declared, not set.
+# ---------------------------------------------------------------------------
+recovery_objectives:
+  R0:
+    rto: owner-approved after measurement — currently UNMEASURED
+    rpo: zero for committed records (append-only/content-addressed)
+    restart_behavior: state reconstructed from durable records; verify() before serving custody truth
+    replay: deterministic replay from records required
+    state_source: THESEUS store + boot audit
+  R1:
+    rto: UNMEASURED — measure current recovery first
+    rpo: worker metrics granularity (sidecar ttl 30s)
+    restart_behavior: boot audit + worker respawn; stratum reconnect bounded
+    replay: session rebuild from pool notify stream; no replayed share submits
+    state_source: runtime_config_file + sidecars + pool session
+  R2:
+    rto: UNMEASURED
+    rpo: per-request
+    restart_behavior: stateless recomputation; certificates re-verify
+    replay: replayable deterministic requests
+    state_source: caller request + THESEUS custody
+  R3:
+    rto: UNMEASURED
+    rpo: per-remediation record
+    restart_behavior: bounded remediation with rollback path
+    replay: remediation steps re-verifiable
+    state_source: THESEUS evidence + control plane state
+  R4:
+    rto: n/a — projections rebuild
+    rpo: n/a
+    restart_behavior: reproject from authoritative sources
+    replay: n/a
+    state_source: authoritative services
+
+# ---------------------------------------------------------------------------
+# Resilience maturity model (§29)
+# ---------------------------------------------------------------------------
+resilience_maturity:
+  levels:
+    LEVEL_0: unknown
+    LEVEL_1: implemented
+    LEVEL_2: monitored
+    LEVEL_3: tested recovery
+    LEVEL_4: fault-injected / resilient by design
+  target: R0/R1 critical journeys at LEVEL_3 minimum, LEVEL_4 where safely testable
+  rule: an interface is not resilient merely because it has a retry loop
+
+# ---------------------------------------------------------------------------
+# Evidence classes (§35). A claim is valid only at a class actually observed.
+# ---------------------------------------------------------------------------
+evidence_classes:
+  - SOURCE_PRESENT
+  - SOURCE_WIRED
+  - LOCAL_TEST_PASSED
+  - LOCAL_HTTP_E2E_EXECUTED
+  - LOCAL_CROSS_SERVICE_EXECUTED
+  - FAULT_INJECTION_EXECUTED
+  - RECOVERY_EXECUTED
+  - INSTALLED_ARTIFACT_EXECUTED
+  - M3_RUNTIME_OBSERVED
+  - CI_EXECUTED
+  - LIVE_POOL_OBSERVED
+  - PHYSICAL_DEVICE_OBSERVED
+  - PERFORMANCE_MEASURED
+  - POOL_ACCEPTANCE_OBSERVED
+unavailable_markers:
+  - CI_UNAVAILABLE      # not pass and not fail
+  - M3_UNAVAILABLE      # no M3 device in this environment
+  - LIVE_POOL_NOT_OBSERVED
+
+# ---------------------------------------------------------------------------
+# Fault-injection scenario register (§22). Docs and tests read the same
+# register: a scenario without a passing proof test renders as UNPROVEN,
+# never as success. proof_test is file::Class.method.
+# ---------------------------------------------------------------------------
+fault_injection_scenarios:
+  - id: fi.guardian.deny_mutation
+    target: al_haras.guardian
+    injection: privileged POST arrives with no subscription credentials
+    expected: signed denial receipt, failure_class FORBIDDEN or UNAUTHORISED, zero mutation committed
+    proof_test: tests/test_fault_injection.py::WireFaultInjectionTests.test_fi_guardian_deny_mutation
+    status: EXECUTED
+  - id: fi.theseus.custody_absent
+    target: theseus.custody
+    injection: custody store not mounted in the serving environment
+    expected: custody component reports not_mounted; no false custody completion
+    proof_test: tests/test_fault_injection.py::WireFaultInjectionTests.test_fi_theseus_custody_absent
+    status: EXECUTED
+  - id: fi.stratum.disconnect
+    target: stratum.v1
+    injection: configured pool endpoint is unreachable
+    expected: stratum component reports disconnected; no fabricated mining progress
+    proof_test: tests/test_fault_injection.py::WireFaultInjectionTests.test_fi_stratum_disconnect
+    status: EXECUTED
+  - id: fi.remote_gpu.breaker_opens
+    target: chronus.remote_opencl_v2
+    injection: remote endpoint unreachable for consecutive calls
+    expected: RemoteCircuitBreaker opens at threshold; calls fail fast DEPENDENCY_UNAVAILABLE; no fallback authority is granted
+    proof_test: tests/test_fault_injection.py::CircuitBreakerTests.test_fi_remote_gpu_breaker_opens
+    status: EXECUTED
+  - id: fi.remote_gpu.half_open_probe
+    target: chronus.remote_opencl_v2
+    injection: endpoint still dead when recovery timeout elapses
+    expected: exactly one half-open probe is admitted; failure re-opens the breaker
+    proof_test: tests/test_fault_injection.py::CircuitBreakerTests.test_fi_remote_gpu_half_open_probe
+    status: EXECUTED
+  - id: fi.request.duplicate
+    target: pythia.control_api
+    injection: identical Idempotency-Key submitted twice inside the retention window
+    expected: recorded outcome replayed with idempotent_replay; no re-execution
+    proof_test: tests/test_fault_injection.py::WireFaultInjectionTests.test_fi_request_duplicate
+    status: EXECUTED
+  - id: fi.request.oversized
+    target: pythia.control_api
+    injection: request body beyond _TOE_MAX_BODY_BYTES
+    expected: 413 with failure_class INVALID_REQUEST
+    proof_test: tests/test_fault_injection.py::WireFaultInjectionTests.test_fi_request_oversized
+    status: EXECUTED
+  - id: fi.request.malformed_json
+    target: pythia.control_api
+    injection: invalid JSON body on a mutating route
+    expected: 400 with failure_class INVALID_REQUEST
+    proof_test: tests/test_fault_injection.py::WireFaultInjectionTests.test_fi_request_malformed_json
+    status: EXECUTED
+  - id: fi.request.broken_correlation
+    target: pythia.control_api
+    injection: malformed correlation id in request headers
+    expected: id replaced by a minted one — never trusted as-is
+    proof_test: tests/test_service_constitution.py::ConstitutionWireTests.test_correlation_envelope_is_complete
+    status: EXECUTED
+  - id: fi.backend.unconfigured
+    target: kellogg.tensor.runtime
+    injection: specialist backend not configured in this environment
+    expected: routes report NOT_CONFIGURED/DEPENDENCY_UNAVAILABLE — no fabricated specialist answer
+    proof_test: tests/test_fault_injection.py::WireFaultInjectionTests.test_fi_backend_unconfigured
+    status: EXECUTED
+  - id: fi.telemetry.reordered
+    target: pythia.telemetry.stream
+    injection: client replays a stale last_seq cursor
+    expected: only events with seq > last_seq are emitted; reordered/duplicate frames never re-delivered
+    proof_test: tests/test_fault_injection.py::WireFaultInjectionTests.test_fi_telemetry_reordered
+    status: EXECUTED
+  - id: fi.turing.unavailable
+    target: turing.vqc_pipeline
+    injection: TURING pipeline absent from the serving environment
+    expected: consumers receive typed unavailable — no turing answer is fabricated
+    proof_test: tests/test_fault_injection.py::WireFaultInjectionTests.test_fi_turing_refusal
+    status: EXECUTED
+  - id: fi.m3.runtime
+    target: chronus.remote_opencl_v2
+    injection: M3 hardware acceleration path
+    expected: —
+    proof_test: none
+    status: M3_UNAVAILABLE
+
+recovery_scenarios:
+  - id: rc.restart.clean
+    target: pythia.control_api
+    injection: control API restarted over the same state directory
+    expected: readiness/stratum/custody components report the same honest post-restart truth; no state invented
+    proof_test: tests/test_stateful_recovery.py::StatefulRecoveryTests.test_rc_restart_clean
+    status: EXECUTED
+  - id: rc.partial_write.config
+    target: pythia.runtime_config_file
+    injection: runtime config file contains truncated/corrupt JSON
+    expected: config surface reports the corruption; readiness degrades honestly; no crash, no silent default
+    proof_test: tests/test_stateful_recovery.py::StatefulRecoveryTests.test_rc_partial_write_config
+    status: EXECUTED
+  - id: rc.duplicate_delivery
+    target: pythia.control_api
+    injection: same mutating request re-delivered inside the idempotency window
+    expected: replay returns the recorded outcome without re-execution
+    proof_test: tests/test_stateful_recovery.py::StatefulRecoveryTests.test_rc_duplicate_delivery
+    status: EXECUTED
+  - id: rc.reordered_delivery
+    target: pythia.telemetry.stream
+    injection: event cursor rewound (stale last_seq)
+    expected: seq-gated emission — duplicates are not re-sent
+    proof_test: tests/test_stateful_recovery.py::StatefulRecoveryTests.test_rc_reordered_delivery
+    status: EXECUTED
+  - id: rc.atomic_write.ports
+    target: pythia.control_api
+    injection: shared port file rewritten while readers race it
+    expected: tmp+os.replace atomic publication; readers never see a torn write
+    proof_test: tests/test_stateful_recovery.py::StatefulRecoveryTests.test_rc_atomic_write_ports
+    status: EXECUTED
+  - id: rc.m3.recovery
+    target: chronus.remote_opencl_v2
+    injection: M3 host failover
+    expected: —
+    proof_test: none
+    status: M3_UNAVAILABLE
