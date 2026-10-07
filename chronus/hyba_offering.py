@@ -5,7 +5,7 @@ Mining is not the customer product; hasher plumbing may still appear as an
 internal verification path.
 
 This module prepares and reports the GPU stack for HYBA fleet use: capability
-closure, virtual iGPU ABI, fabric composition, and Lucas scale envelopes sized
+closure, the executable two-mode production contract, and Lucas scale envelopes sized
 for the HYBA design target (1e19 H/s class work envelope — design target only,
 never reported as measured throughput).
 """
@@ -69,9 +69,7 @@ def _virtual_igpu_probe(store_dir: str | None = None) -> dict[str, Any]:
     import tempfile
     from pathlib import Path
 
-    from chronus.virtual_igpu.abi import ABI_VERSION as V, ExecutionPolicy, Workload, WorkloadKind
-    from chronus.virtual_igpu.adapters import CPUEmulatorAdapter
-    from chronus.virtual_igpu.runtime import RuntimeDaemon
+    from chronus.production import ChronusProductionRuntime
 
     root: Path
     tmp = None
@@ -82,89 +80,49 @@ def _virtual_igpu_probe(store_dir: str | None = None) -> dict[str, Any]:
         root = Path(store_dir)
         root.mkdir(parents=True, exist_ok=True)
 
+    runtime = ChronusProductionRuntime(root)
     try:
-        daemon = RuntimeDaemon(adapters=[CPUEmulatorAdapter()], store_dir=root)
-        daemon.attach()
-        health = daemon.health()
-        w = Workload(
-            id="hyba-prep-store",
-            kind=WorkloadKind.STORE,
-            tenant="hyba",
-            input={"payload_utf8": "hyba-offering"},
-            execution_policy=ExecutionPolicy.STANDALONE_SOFTWARE.value,
-        )
-        result = daemon.submit(w)
-        trust_ok = (
-            result.trust_class != "hardware_rooted"
-            and result.hardware_rooted is False
-            and result.status == "ok"
-        )
+        voyage = runtime.startup_voyage()
+        execution = voyage["execution"]
         return {
-            "ok": bool(health.get("running")) and trust_ok and V == ABI_VERSION,
-            "abi_version": V,
-            "state": health.get("state"),
-            "adapters": health.get("adapters"),
-            "sample_trust_class": result.trust_class,
-            "sample_hardware_rooted": result.hardware_rooted,
+            "ok": bool(voyage.get("passed")),
+            "abi_version": ABI_VERSION,
+            "state": "ready",
+            "mode": voyage["mode"],
+            "physical_gpu_required": voyage["physical_gpu_required"],
+            "actual_adapter_id": execution["actual_adapter_id"],
+            "sample_trust_class": execution["trust_class"],
+            "sample_hardware_rooted": execution["hardware_rooted"],
+            "verification": execution["verification"],
+            "math_pipeline": voyage["math_pipeline"],
+            "qx_pipeline": voyage["qx_pipeline"],
         }
     finally:
+        runtime.stop()
         if tmp is not None:
             tmp.cleanup()
 
 
 def _fabric_probe() -> dict[str, Any]:
-    try:
-        from hyba.inventory import ClusterInventory, DeviceInfo
-        from hyba.virtual_gpu import SuperGPU
-    except Exception as exc:  # noqa: BLE001
-        return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+    """Report the real two-mode contract; never invent a device census."""
+    from chronus.production import ChronusProductionRuntime
 
-    devices = [
-        DeviceInfo(
-            name="hyba-prep-cpu",
-            vendor="HYBA",
-            backend="cpu",
-            type="cpu",
-            compute_units=8,
-            global_mem_mb=16384,
-            capabilities=(("max_workgroup", 1),),
-        ),
-        DeviceInfo(
-            name="hyba-prep-igpu",
-            vendor="HYBA",
-            backend="opencl",
-            type="gpu",
-            compute_units=32,
-            global_mem_mb=8192,
-            capabilities=(
-                ("max_workgroup", 256),
-                ("cgemv", True),
-                ("tensor_op", True),
-            ),
-        ),
-    ]
-    inv = ClusterInventory(devices=list(devices), detected_at=0.0)
-    fabric = SuperGPU.compose(inv) if hasattr(SuperGPU, "compose") else SuperGPU(inv)
-    route = None
-    try:
-        route = fabric.route("cgemv", {"work_items": 4096})
-    except Exception:
-        try:
-            route = fabric.route("tensor_op", {"work_items": 4096})
-        except Exception as exc:  # noqa: BLE001
-            return {
-                "ok": False,
-                "error": f"route_failed: {type(exc).__name__}: {exc}",
-                "compute_units": int(getattr(fabric, "compute_units", 0) or 0),
-                "devices": len(getattr(fabric, "devices", []) or []),
-            }
     return {
         "ok": True,
-        "mode": "prep_census",
-        "compute_units": int(getattr(fabric, "compute_units", 0) or 0),
-        "devices": len(getattr(fabric, "devices", []) or []),
-        "capability_map": fabric.capability_map() if hasattr(fabric, "capability_map") else {},
-        "sample_route": route.as_dict() if route is not None and hasattr(route, "as_dict") else None,
+        "mode": "canonical_two_mode_contract",
+        "synthetic_devices": False,
+        "contract": ChronusProductionRuntime.two_mode_contract(),
+        "independent": {
+            "implemented": True,
+            "physical_gpu_required": False,
+            "startup_gate": "executable",
+        },
+        "scale_stack": {
+            "implemented": True,
+            "availability": "device_bound",
+            "physical_gpu_required_when_selected": True,
+            "silent_software_fallback": False,
+        },
     }
 
 
