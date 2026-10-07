@@ -162,6 +162,14 @@ class MalformedPoolInputTests(unittest.TestCase):
         params[4] = ["ab cd"]  # whitespace is not hex
         with self.assertRaises(ValueError):
             _validate_notify_params(params)
+        params = _valid_notify()["params"]
+        params[0] = ""
+        with self.assertRaises(ValueError):
+            _validate_notify_params(params)
+        params = _valid_notify()["params"]
+        params[8] = "false"
+        with self.assertRaises(ValueError):
+            _validate_notify_params(params)
 
     def test_malformed_set_difficulty_ignored(self):
         bridge = StratumBridge("127.0.0.1", 3333, "w", "x")
@@ -200,6 +208,20 @@ class MalformedPoolInputTests(unittest.TestCase):
             return [[["mining.notify", "sub"]], "abcd", 0]
 
         bridge._rpc = fake_rpc_range
+        with self.assertRaises(RuntimeError):
+            asyncio.run(bridge.handshake())
+
+        async def fake_rpc_shape(method, params, timeout=8.0):
+            return ["too-short"]
+
+        bridge._rpc = fake_rpc_shape
+        with self.assertRaises(RuntimeError):
+            asyncio.run(bridge.handshake())
+
+        async def fake_rpc_nonstring_extranonce(method, params, timeout=8.0):
+            return [[["mining.notify", "sub"]], 1234, 4]
+
+        bridge._rpc = fake_rpc_nonstring_extranonce
         with self.assertRaises(RuntimeError):
             asyncio.run(bridge.handshake())
 
@@ -273,6 +295,12 @@ class MineJobFallbackTests(unittest.TestCase):
         self.assertEqual(len(set(nonces)), 64)
         self.assertTrue(all(0 <= n <= 0xFFFFFFFF for n in nonces))
         self.assertEqual(out["job_id"], "job_1")
+
+    def test_unexpected_type_error_propagates_no_arm_switch(self):
+        pipeline = self._Pipeline(TypeError("backend contract bug"))
+        with self.assertRaises(TypeError):
+            mine_job(_valid_job(), "ab", 4, pipeline=pipeline, nonce_window=64)
+        self.assertEqual(pipeline.grind_calls, [])
 
 
 if __name__ == "__main__":
