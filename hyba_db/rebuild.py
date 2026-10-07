@@ -345,6 +345,12 @@ def restore_projection_from_custody(
         restored_links.append(link_id)
 
     knowledge = store.knowledge.restore_from_custody(tenant_id)
+    ovid_index = store.ovid.verify(tenant_id)
+    if not ovid_index.get("passed"):
+        raise IntegrityFailure(
+            "OVID data organisation failed after rebuild: "
+            + ",".join(str(x) for x in ovid_index.get("errors", ()))
+        )
     return {
         "schema": "hyba.database-rebuild/v1",
         "tenant_id": tenant_id,
@@ -353,6 +359,7 @@ def restore_projection_from_custody(
         "file_links": tuple(restored_links),
         "mining_records": tuple(restored_mining),
         "knowledge": knowledge,
+        "ovid_index": ovid_index,
         "passed": True,
     }
 
@@ -432,6 +439,7 @@ def projection_fingerprint(store: Any, tenant_id: str) -> dict[str, Any]:
         "mining": mining,
         "knowledge": knowledge,
         "relations": relations,
+        "ovid_organisation_digest": store.ovid.organisation_digest(tenant_id),
     }
 
 
