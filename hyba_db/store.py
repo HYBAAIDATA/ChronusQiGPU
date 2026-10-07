@@ -27,7 +27,8 @@ from .models import (
     EdgeRecord, FoldRecord, IntegrityFailure, InvalidRecord, NodeRecord,
     Quota, QuotaExceeded, TensorRecord,
 )
-from .file_registry import FILE_REGISTRY_SCHEMA, FileRegistry
+from .file_registry import FILE_REGISTRY_SCHEMA
+from .theseus_registry import TheseusFileRegistry
 from .knowledge import KNOWLEDGE_SCHEMA, KnowledgeProjection
 
 
@@ -239,7 +240,7 @@ class OntologyStore:
         # The schema marker is promoted only after the v3 migration/projection
         # constructors complete. A failed legacy provenance migration therefore
         # cannot advertise a schema version the database did not finish.
-        self.files = FileRegistry(self, custody=custody)
+        self.files = TheseusFileRegistry(self, custody=custody)
         self.knowledge = KnowledgeProjection(self, custody=custody)
         self._db.execute("INSERT OR REPLACE INTO metadata VALUES('schema_version','3')")
 
