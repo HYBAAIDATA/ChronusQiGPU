@@ -1,0 +1,135 @@
+from __future__ import annotations
+
+from chronus.readiness import (
+    ACCELERATOR_MODE,
+    CORE_MODE,
+    AcceleratorCertification,
+    CoreProductionEvidence,
+    EvidenceRef,
+    audit_core_surfaces,
+    production_readiness,
+)
+
+
+def _ref(kind: str, subject: str) -> EvidenceRef:
+    return EvidenceRef(
+        kind=kind,
+        artifact_sha256="a" * 64,
+        observed_at="2026-10-07T00:00:00+00:00",
+        subject=subject,
+        producer="local-production-readiness-run",
+        metadata={"git_head": "b" * 40},
+    )
+
+
+def _core_evidence() -> CoreProductionEvidence:
+    return CoreProductionEvidence(
+        software_execution=_ref(
+            "chronus_software_execution", "standalone software execution"
+        ),
+        independent_verification=_ref(
+            "chronus_independent_verification", "independent result verification"
+        ),
+        receipt_identity=_ref(
+            "chronus_receipt_identity", "receipt identity binding"
+        ),
+        custody_restart=_ref(
+            "chronus_custody_restart", "THESEUS fresh-process restart"
+        ),
+        clean_install=_ref(
+            "chronus_clean_install", "clean wheel install and execution"
+        ),
+        full_suite=_ref(
+            "chronus_full_suite", "current-head complete software suite"
+        ),
+    )
+
+
+def test_owner_approved_core_surfaces_are_importable() -> None:
+    gates = audit_core_surfaces()
+    assert gates
+    assert all(gate.passed for gate in gates)
+
+
+def test_standalone_product_can_be_ready_without_any_gpu_certification() -> None:
+    report = production_readiness(_core_evidence())
+
+    assert report["production_ready"] is True
+    assert report["core_production_ready"] is True
+    assert CORE_MODE in report["ready_modes"]
+    assert report["modes"][CORE_MODE]["requires_physical_gpu"] is False
+
+    assert ACCELERATOR_MODE not in report["ready_modes"]
+    assert report["modes"][ACCELERATOR_MODE]["ready"] is False
+    assert report["modes"][ACCELERATOR_MODE]["requires_physical_gpu"] is True
+
+
+def test_missing_core_evidence_never_becomes_ready_because_gpu_exists() -> None:
+    cert = AcceleratorCertification(
+        backend="metal",
+        device_id="apple:m3",
+        artifact_sha256="c" * 64,
+        observed_at="2026-10-07T00:00:00+00:00",
+        subject="M3 device-bound run",
+        producer="device-certifier",
+        execution_observed=True,
+        correctness_verified=True,
+    )
+
+    report = production_readiness(
+        CoreProductionEvidence(),
+        accelerator_certifications=[cert],
+    )
+
+    assert report["core_production_ready"] is False
+    assert report["production_ready"] is False
+    assert report["modes"][ACCELERATOR_MODE]["ready"] is False
+
+
+def test_certified_accelerator_is_additive_to_ready_core() -> None:
+    cert = AcceleratorCertification(
+        backend="metal",
+        device_id="apple:m3",
+        artifact_sha256="c" * 64,
+        observed_at="2026-10-07T00:00:00+00:00",
+        subject="M3 device-bound run",
+        producer="device-certifier",
+        execution_observed=True,
+        correctness_verified=True,
+    )
+
+    report = production_readiness(
+        _core_evidence(),
+        accelerator_certifications=[cert],
+    )
+
+    assert set(report["ready_modes"]) == {CORE_MODE, ACCELERATOR_MODE}
+    lane = report["modes"][ACCELERATOR_MODE]["lanes"][0]
+    assert lane["ready"] is True
+    assert lane["backend"] == "metal"
+    assert lane["device_id"] == "apple:m3"
+
+
+def test_uncertified_accelerator_never_demotes_standalone_product() -> None:
+    cert = AcceleratorCertification(
+        backend="opencl",
+        device_id="unknown",
+        artifact_sha256="d" * 64,
+        observed_at="2026-10-07T00:00:00+00:00",
+        subject="probe only",
+        producer="device-probe",
+        execution_observed=False,
+        correctness_verified=False,
+    )
+
+    report = production_readiness(
+        _core_evidence(),
+        accelerator_certifications=[cert],
+    )
+
+    assert report["core_production_ready"] is True
+    assert report["modes"][CORE_MODE]["ready"] is True
+    assert report["modes"][ACCELERATOR_MODE]["ready"] is False
+    assert "physical execution was not observed" in (
+        report["modes"][ACCELERATOR_MODE]["lanes"][0]["detail"]
+    )
