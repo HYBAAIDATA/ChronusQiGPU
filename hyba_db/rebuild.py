@@ -80,6 +80,7 @@ def restore_projection_from_custody(
     if registry.custody is None:
         raise InvalidRecord("THESEUS custody required for database rebuild")
     custody = registry.custody.open_tenant(tenant_id)
+    tenant_manifests: list[tuple[Any, dict[str, Any]]] = []
     manifests: list[tuple[Any, dict[str, Any]]] = []
     links: list[dict[str, Any]] = []
     mining_manifests: list[dict[str, Any]] = []
@@ -87,7 +88,19 @@ def restore_projection_from_custody(
 
     for item in custody.list_records():
         op = custody.get_record(str(item["record_id"]))
-        if op.kind == "file_projection_manifest":
+        if op.kind == "tenant_projection_manifest":
+            body = json.loads(op.payload.decode("utf-8"))
+            if body.get("schema") != "hyba.tenant-projection-manifest/v1":
+                raise IntegrityFailure("unsupported tenant projection manifest")
+            tenant = dict(body.get("tenant") or {})
+            if (
+                str(tenant.get("tenant_id", "")) != tenant_id
+                or str(op.correlation_ids.get("tenant_id", "")) != tenant_id
+                or op.producer != "theseus"
+            ):
+                raise IntegrityFailure("tenant projection manifest identity mismatch")
+            tenant_manifests.append((op, body))
+        elif op.kind == "file_projection_manifest":
             body = json.loads(op.payload.decode("utf-8"))
             if body.get("schema") != "hyba.file-projection-manifest/v1":
                 raise IntegrityFailure("unsupported file projection manifest")
@@ -110,9 +123,23 @@ def restore_projection_from_custody(
                 raise IntegrityFailure("storage address lacks file-version correlation")
             addresses[vid] = (op, address)
 
-    if not manifests:
-        raise IntegrityFailure("no file projection manifests in THESEUS custody")
-    _bootstrap_tenant(store, tenant_id, manifests[0][1])
+    if tenant_manifests:
+        canonical_tenant = tenant_manifests[0][1]
+        canonical_json = _json(canonical_tenant)
+        if any(_json(body) != canonical_json for _op, body in tenant_manifests[1:]):
+            raise IntegrityFailure("conflicting tenant projection manifests in THESEUS custody")
+    elif manifests:
+        # Backward compatibility for pre-tenant-manifest custody: old file
+        # manifests carried the same tenant bootstrap data.
+        canonical_tenant = {"tenant": dict(manifests[0][1]["tenant"])}
+    else:
+        raise IntegrityFailure("no durable tenant identity in THESEUS custody")
+
+    canonical_tenant_block = dict(canonical_tenant["tenant"])
+    for _op, body in manifests:
+        if dict(body.get("tenant") or {}) != canonical_tenant_block:
+            raise IntegrityFailure("file projection tenant metadata conflicts with tenant custody")
+    _bootstrap_tenant(store, tenant_id, canonical_tenant)
     physical = TheseusPhysicalStore(root)
     restored_versions: list[str] = []
 
@@ -321,6 +348,7 @@ def restore_projection_from_custody(
     return {
         "schema": "hyba.database-rebuild/v1",
         "tenant_id": tenant_id,
+        "tenant_manifest": "CUSTODIED" if tenant_manifests else "LEGACY_FILE_MANIFEST",
         "file_versions": tuple(restored_versions),
         "file_links": tuple(restored_links),
         "mining_records": tuple(restored_mining),
