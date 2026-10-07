@@ -486,8 +486,20 @@ def main(argv: Optional[List[str]] = None) -> int:
             "fixture_digest": next(iter(digests)),
             "wheel_manifest_file_count": manifest["file_count"],
             "owner_decisions": decisions,
-            "publication_blockers": blockers,
-            "publishable": not blockers,
+            "publication_blockers": blockers
+            + [
+                "final publication requires the commit-bound toe-release workflow verdict",
+                "final publication requires exact VOI certification",
+                "final publication requires deploy sentry clean",
+                "final publication requires the full repository suite",
+                "final publication requires registry prerequisites and trusted publishers",
+            ],
+            "artifact_verified": True,
+            "owner_identity_approved": not blockers,
+            # A local artifact build can never self-award publication readiness.
+            # The commit-bound toe-release workflow composes the final verdict
+            # only after source, installed, mining-boundary and external gates.
+            "publishable": False,
             "published": False,
         }
     (DIST / "artifact-verdict.json").write_text(
