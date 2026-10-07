@@ -5,9 +5,9 @@ Status: executable exact-mathematics contract
 
 ## 1. Claim boundary
 
-The system proves exact algebraic identities and exact formal-capacity
-statements. It does not claim that a physical QPU exists. Hashrate capacity and SHA-256d
-work are Mining's and are not specified here.
+The system proves exact algebraic identities for the TURING Virtual Quantum
+Computer. It does not claim that a physical QPU exists. Hashrate capacity and
+SHA-256d work are Mining's and are not specified here.
 
 No production gate accepts simulation, heuristic ranking, floating-point
 tolerance, a placeholder, or self-issued independent review as proof.
@@ -23,7 +23,7 @@ tolerance, a placeholder, or self-issued independent review as proof.
 6. Canonical evidence uses the serialization in section 7.
 7. Content digests are SHA-256 over canonical bytes.
 8. Certificate verification reconstructs all derived values and fails closed.
-9. Formal mathematical capacity is not executed protocol work.
+9. Mining formal-capacity claims are delegated to Mining and are not TURING release claims.
 10. Independent review cannot be self-issued.
 
 Exact computational proof evidence is labeled `exact_verified`, never
@@ -105,11 +105,14 @@ profiles describe mining hardware, not the virtual quantum computer; they live i
 
 ## 9. Formal/computational split
 
-Lean checks three dependency-free kernels without `sorry` or axioms:
+Lean checks the two TURING-owned dependency-free kernels without `sorry` or axioms:
 
 1. zeta_8 exponent periodicity
 2. even-overlap surface-code commutation predicate
-3. cross-multiplied natural-number capacity floor
+
+The historical exact capacity predicate and 10 EH/s arithmetic witness are preserved
+under `mining/formal/MiningCapacity.lean` and are not part of TURING's formal release
+claim set.
 
 Python exact arithmetic verifies full field generators, exhaustive distance-31
 pair enumeration, exact rational certificates, canonical digests, and replay.
