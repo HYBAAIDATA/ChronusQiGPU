@@ -1,4 +1,4 @@
-"""Tenant-scoped HYBA ontology/query projection over THESEUS durable custody."""
+"""Tenant-scoped OVID data organisation over THESEUS durable custody."""
 
 from .models import (
     AccessDenied,
@@ -20,6 +20,7 @@ from .file_registry import FileRegistry, ReconciliationReport
 from .knowledge import KnowledgeProjection, KnowledgeRecord
 from .module_adapter import ModuleEvidenceAdapter
 from .ovid_transform import OvidTransformPlane
+from .ovid_index import OvidDataIndex, OvidIndexEntry
 from .store import EdgeKind, NodeKind, OntologyStore, ProofStatus
 from .theseus_custody import TheseusFileCustody
 
@@ -40,6 +41,8 @@ __all__ = [
     "ModuleEvidenceAdapter",
     "NodeKind",
     "OntologyStore",
+    "OvidDataIndex",
+    "OvidIndexEntry",
     "OvidTransformPlane",
     "OntologyStoreError",
     "ProofStatus",

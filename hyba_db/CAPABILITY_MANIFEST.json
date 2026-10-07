@@ -5,7 +5,9 @@
     "durable_system_of_record": "THESEUS",
     "semantic_authority": "producer",
     "projection": "hyba_db",
-    "transform_lineage": "OVID"
+    "transform_lineage": "OVID",
+    "database_organisation": "OVID",
+    "storage_placement": "THESEUS_PHYLLOTAXIS"
   },
   "layers": {
     "0": [
@@ -59,12 +61,16 @@
     "immutable_file_versions",
     "attested_file_provenance",
     "recoverable_write_intents",
-    "reconciliation"
+    "reconciliation",
+    "phyllotaxis_address_binding",
+    "ovid_tenant_scoped_index"
   ],
   "recovery": [
+    "tenant_identity_custody_manifest",
     "theseus_replay",
     "knowledge_projection_rebuild",
-    "producer_semantic_revalidation"
+    "producer_semantic_revalidation",
+    "deterministic_full_projection_rebuild"
   ],
   "projections": [
     "mining_lifecycle",
