@@ -136,6 +136,30 @@ SPECS: dict[str, MutationSpec] = {
             "test_backend_candidate_must_survive_independent_sha256d_recheck"
         ),
     ),
+    "sha256d-m32-independent-recheck": MutationSpec(
+        name="sha256d-m32-independent-recheck",
+        path="mining/hash_pipeline.py",
+        before=(
+            "        if winner is not None:\n"
+            "            reference = double_sha256(header80[:76] + "
+            "struct.pack(\"<I\", int(winner) & 0xFFFFFFFF))\n"
+            "            if win_hash != reference or reference[::-1] > target_be:\n"
+            "                raise RuntimeError(\"backend candidate failed independent SHA-256d target recheck\")\n"
+            "        el = time.perf_counter() - t0\n"
+        ),
+        after=(
+            "        if winner is not None:\n"
+            "            reference = double_sha256(header80[:76] + "
+            "struct.pack(\"<I\", int(winner) & 0xFFFFFFFF))\n"
+            "            if False:  # MUTATION: M32 backend candidate trusted without recheck\n"
+            "                raise RuntimeError(\"backend candidate failed independent SHA-256d target recheck\")\n"
+            "        el = time.perf_counter() - t0\n"
+        ),
+        test=(
+            "tests/test_mining_consensus_recheck.py::"
+            "test_m32_backend_candidate_must_survive_independent_sha256d_recheck"
+        ),
+    ),
 }
 
 
