@@ -1,7 +1,7 @@
 """TOEMachine — the TOE reasoning core (one backend, every problem form).
 
 ``toe.runtime.TOEIntelligenceRuntime`` is the production composition root
-(tenancy, receipts, evidence chain, feedback/ASI loops, mining boundary); it
+(tenancy, receipts, evidence chain, feedback/ASI loops, consensus boundary); it
 composes this machine through ``solve`` / ``learn``, one machine per tenant.
 The machine itself is the reasoning cycle beneath every domain adapter.
 

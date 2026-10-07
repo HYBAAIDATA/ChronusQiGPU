@@ -14,8 +14,8 @@ Layers::
     DOMAIN ADAPTERS     toe.adapters.{tabular, causal_system, graph,
                         temporal, code, scientific}
     LEGACY HR ADAPTER   toe.adapters.legacy_hr (the discovery surface)
-    MINING ADAPTER      chronus.mla1517.mining.toe_problem (PYTHIA side;
-                        mining semantics never enter the TOE distribution)
+    PYTHIA ADAPTER      lives with PYTHIA, outside this package: the
+                        workload's semantics never enter the TOE distribution
     ENTERPRISE          toe.unified (analytics platform over the same backend)
 """
 
