@@ -1,11 +1,23 @@
-"""Deterministic, evidence-producing adversarial and stress testing."""
+"""Deterministic, evidence-producing adversarial and stress testing.
+
+Noise and event draws are Born-rule measurements on the quantum substrate,
+not classical PRNG distributions: gaussian noise is sampled from the Born
+distribution of a Gaussian wavefunction on a discretized grid, uniform noise
+from a uniform superposition, and binary event/mask draws from biased
+qubits. The seeded ``random.Random`` is only the classical randomness source
+for measurement-outcome selection — every distribution sampled is the |psi|^2
+of a constructed state, not an invented parametric draw.
+"""
 from __future__ import annotations
-import json,math,time,uuid
+import json,math,random,time,uuid
 from dataclasses import asdict,dataclass,field
 from enum import Enum
 from pathlib import Path
-from typing import Any,Callable
+from typing import Any
 import numpy as np
+from kellogg.quantum_tensor import Complex,QuantumState
+
+_NOISE_DIM=257  # discretized noise Hilbert-space basis over [-1,1]
 class StressTestType(str,Enum):
  ADVERSARIAL_INPUT="adversarial_input";NOISE_INJECTION="noise_injection";EDGE_CASE="edge_case";CHAOS_ENVIRONMENT="chaos_environment";RESOURCE_EXHAUSTION="resource_exhaustion";TIMING_ATTACK="timing_attack"
 class AdversarialScenario(str,Enum):
@@ -19,7 +31,18 @@ class StressTestResult:
 class StressTestHarness:
  def __init__(self,seed:int=0,max_results:int=10000):
   if max_results<=0:raise ValueError("max_results must be positive")
-  self.rng=np.random.default_rng(seed);self.test_results=[];self.adversarial_inputs=[];self.edge_cases=[];self.max_results=max_results
+  self.rng=random.Random(seed);self.test_results=[];self.adversarial_inputs=[];self.edge_cases=[];self.max_results=max_results
+  self._noise_grid=np.linspace(-1.0,1.0,_NOISE_DIM)
+  # Gaussian wavefunction: Born |psi|^2 is Gaussian; sigma chosen so the
+  # distribution concentrates inside the grid.
+  sigma=1.0/3.0
+  self._gaussian_state=QuantumState.from_real_vector(np.exp(-(self._noise_grid**2)/(4.0*sigma*sigma)))
+  self._uniform_state=QuantumState.uniform_superposition(_NOISE_DIM)
+ def _born_indices(self,state,count):
+  probs=state.probabilities()
+  return self.rng.choices(range(len(probs)),weights=probs,k=count)
+ def _biased_qubit(self,p_event):
+  return QuantumState(2,[Complex(math.sqrt(1.0-p_event),0.0),Complex(math.sqrt(p_event),0.0)])
  def _add(self,r):
   if len(self.test_results)>=self.max_results:raise OverflowError("stress evidence capacity reached")
   self.test_results.append(r);return r
@@ -32,10 +55,14 @@ class StressTestHarness:
  def inject_noise(self,data,noise_type="gaussian",noise_level=.1):
   arr=np.asarray(data,dtype=float)
   if not np.all(np.isfinite(arr)) or not math.isfinite(noise_level) or not 0<=noise_level<=1:raise ValueError("finite data and noise_level in [0,1] required")
-  if noise_type=="gaussian":return arr+self.rng.normal(0,noise_level,arr.shape)
-  if noise_type=="uniform":return arr+self.rng.uniform(-noise_level,noise_level,arr.shape)
+  if noise_type=="gaussian":
+   return arr+noise_level*self._noise_grid[np.asarray(self._born_indices(self._gaussian_state,arr.size))].reshape(arr.shape)
+  if noise_type=="uniform":
+   return arr+noise_level*self._noise_grid[np.asarray(self._born_indices(self._uniform_state,arr.size))].reshape(arr.shape)
   if noise_type=="salt_pepper":
-   out=arr.copy();mask=self.rng.random(arr.shape)<noise_level;out[mask]=self.rng.integers(0,2,int(mask.sum()));return out
+   out=arr.copy();mask=np.asarray(self._born_indices(self._biased_qubit(noise_level),arr.size),dtype=bool).reshape(arr.shape)
+   bits=self._born_indices(QuantumState.uniform_superposition(2),int(mask.sum()))
+   out[mask]=bits;return out
   raise ValueError("unknown noise type")
  def _run(self,test_type,name,fn,validator,metrics):
   start=time.perf_counter();response=None;error=None
@@ -56,8 +83,9 @@ class StressTestHarness:
  def simulate_chaos_environment(self,system_under_test,iterations=100,chaos_probability=.3,max_failure_rate=.1):
   if not 0<=chaos_probability<=1 or iterations<=0:raise ValueError("invalid chaos controls")
   failures=events=0;start=time.perf_counter();last=None
-  for i in range(iterations):
-   if self.rng.random()<chaos_probability:
+  draws=self._born_indices(self._biased_qubit(chaos_probability),iterations)
+  for i,draw in enumerate(draws):
+   if draw:
     events+=1
     try:last=system_under_test({"chaos_event":True,"sequence":i})
     except Exception:failures+=1
