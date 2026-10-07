@@ -213,3 +213,153 @@ def restore_projection_from_custody(
                 ),
             )
         restored_versions.append(version_id)
+
+    restored_mining: list[str] = []
+    pending = list(mining_manifests)
+    while pending:
+        progressed = False
+        for body in list(pending):
+            record_id = str(body["record_id"])
+            parents = tuple(str(x) for x in body.get("parent_ids") or ())
+            if any(
+                not store._db.execute(
+                    "SELECT 1 FROM mining_lifecycle WHERE tenant_id=? AND record_id=?",
+                    (tenant_id, parent),
+                ).fetchone()
+                for parent in parents
+            ):
+                continue
+            custody_id = str(body["custody_record_id"])
+            if not registry.custody.verify(tenant_id, custody_id):
+                raise IntegrityFailure(f"mining custody unavailable: {record_id}")
+            payload = dict(body["payload"])
+            payload_json = _json(payload)
+            if _sha(payload_json.encode()) != str(body["content_sha256"]):
+                raise IntegrityFailure(f"mining manifest digest mismatch: {record_id}")
+            with store._tx() as db:
+                db.execute(
+                    "INSERT OR IGNORE INTO mining_lifecycle VALUES(?,?,?,?,?,?,?,?,?,?)",
+                    (
+                        tenant_id,
+                        record_id,
+                        str(body["kind"]),
+                        payload_json,
+                        str(body["content_sha256"]),
+                        str(body["evidence_state"]),
+                        _json(parents),
+                        str(body["created_at"]),
+                        str(body["producer"]),
+                        custody_id,
+                    ),
+                )
+            restored_mining.append(record_id)
+            pending.remove(body)
+            progressed = True
+        if not progressed:
+            raise IntegrityFailure("mining custody graph cannot be topologically rebuilt")
+
+    restored_links: list[str] = []
+    for body in links:
+        link_id = FileRegistry.link(
+            registry,
+            tenant_id,
+            str(body["file_version_id"]),
+            str(body["domain_type"]),
+            str(body["domain_id"]),
+            relationship=str(body["relationship"]),
+        )
+        if link_id != str(body["link_id"]):
+            raise IntegrityFailure("rebuilt file-link identity changed")
+        restored_links.append(link_id)
+
+    knowledge = store.knowledge.restore_from_custody(tenant_id)
+    return {
+        "schema": "hyba.database-rebuild/v1",
+        "tenant_id": tenant_id,
+        "file_versions": tuple(restored_versions),
+        "file_links": tuple(restored_links),
+        "mining_records": tuple(restored_mining),
+        "knowledge": knowledge,
+        "passed": True,
+    }
+
+
+def projection_fingerprint(store: Any, tenant_id: str) -> dict[str, Any]:
+    """Canonical comparison surface for destructive rebuild acceptance tests."""
+    store._tenant(tenant_id)
+    q = store._db.execute
+    objects = tuple(
+        tuple(row)
+        for row in q(
+            "SELECT file_object_id,logical_name,file_class,semantic_owner,domain,"
+            "current_version_id,status FROM file_objects WHERE tenant_id=? "
+            "ORDER BY file_object_id",
+            (tenant_id,),
+        ).fetchall()
+    )
+    versions = tuple(
+        tuple(row)
+        for row in q(
+            "SELECT file_version_id,file_object_id,version,content_sha256,"
+            "previous_version_id,ovid_lineage_id,transform_contract,"
+            "transform_version,exactness,status FROM file_versions "
+            "WHERE tenant_id=? ORDER BY file_object_id,version",
+            (tenant_id,),
+        ).fetchall()
+    )
+    addresses = tuple(
+        tuple(row)
+        for row in q(
+            "SELECT file_version_id,address_id,address_sha256 FROM "
+            "theseus_storage_addresses WHERE tenant_id=? ORDER BY file_version_id",
+            (tenant_id,),
+        ).fetchall()
+    )
+    links = tuple(
+        tuple(row)
+        for row in q(
+            "SELECT link_id,file_version_id,domain_type,domain_id,relationship "
+            "FROM file_links WHERE tenant_id=? ORDER BY link_id",
+            (tenant_id,),
+        ).fetchall()
+    )
+    mining = tuple(
+        tuple(row)
+        for row in q(
+            "SELECT record_id,kind,content_sha256,evidence_state,parent_ids_json,"
+            "producer,custody_record_id FROM mining_lifecycle WHERE tenant_id=? "
+            "ORDER BY record_id",
+            (tenant_id,),
+        ).fetchall()
+    )
+    knowledge = tuple(
+        tuple(row)
+        for row in q(
+            "SELECT knowledge_id,subject,predicate,domain,knowledge_kind,"
+            "knowledge_form,semantic_owner,evidence_state,content_sha256,"
+            "supersedes_id,custody_record_id FROM knowledge_records "
+            "WHERE tenant_id=? ORDER BY knowledge_id",
+            (tenant_id,),
+        ).fetchall()
+    )
+    relations = tuple(
+        tuple(row)
+        for row in q(
+            "SELECT relation_id,from_knowledge_id,to_knowledge_id,relation_type,"
+            "producer,custody_record_id FROM knowledge_relations WHERE tenant_id=? "
+            "ORDER BY relation_id",
+            (tenant_id,),
+        ).fetchall()
+    )
+    return {
+        "objects": objects,
+        "versions": versions,
+        "addresses": addresses,
+        "links": links,
+        "mining": mining,
+        "knowledge": knowledge,
+        "relations": relations,
+    }
+
+
+__all__ = ["projection_fingerprint", "restore_projection_from_custody"]
