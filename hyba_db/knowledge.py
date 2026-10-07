@@ -640,7 +640,23 @@ class KnowledgeProjection:
             op = custody.get_record(str(item["record_id"]))
             body = json.loads(op.payload.decode("utf-8"))
             if body.get("schema") != "hyba.knowledge-projection/v1":
-                raise IntegrityFailure(f"unsupported knowledge payload schema: {body.get('schema')}")
+                raise IntegrityFailure(
+                    f"unsupported knowledge payload schema: {body.get('schema')}"
+                )
+            if (
+                op.kind != "knowledge_projection"
+                or str(body.get("producer", "")).strip().lower() != op.producer
+                or str(body.get("evidence_state", "")).strip().upper()
+                != op.evidence_state
+                or int(body.get("schema_version", 0)) != int(op.schema_version)
+                or str(body.get("knowledge_kind", "")).strip().lower()
+                not in KNOWLEDGE_KINDS
+                or str(body.get("evidence_state", "")).strip().upper()
+                not in CANONICAL_EVIDENCE_STATES
+            ):
+                raise IntegrityFailure(
+                    f"knowledge custody contract mismatch: {op.record_id}"
+                )
             digest = _sha(op.payload)
             kid = _id("knowledge", f"{tenant_id}:{digest}".encode())
             pending[kid] = (op, body)
@@ -753,8 +769,17 @@ class KnowledgeProjection:
                 raise IntegrityFailure(
                     f"cannot restore relation {body.get('relation_id')}: endpoint missing"
                 )
-            relation = str(body["relation"])
+            relation = str(body["relation"]).strip().lower()
             relation_producer = str(body.get("producer", "")).strip().lower()
+            if (
+                relation not in KNOWLEDGE_RELATIONS
+                or not relation_producer
+                or op.kind != "knowledge_relation"
+                or op.producer != relation_producer
+            ):
+                raise IntegrityFailure(
+                    f"knowledge relation custody contract mismatch: {op.record_id}"
+                )
             expected_id = _id(
                 "knowledge_relation",
                 f"{tenant_id}:{from_id}:{to_id}:{relation}:{relation_producer}".encode(),
