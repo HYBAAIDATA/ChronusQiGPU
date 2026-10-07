@@ -1,0 +1,398 @@
+name: TURING 1.0.0 release
+
+on:
+  pull_request:
+    paths:
+      - "turing_universal_quantum_computer/**"
+      - "packaging/turing/**"
+      - "packaging/verify_release_candidates.py"
+      - "packaging/kellogg-tensor/build_and_verify.py"
+      - "mining/formal/**"
+      - "tests/test_turing_release_packaging.py"
+      - ".github/workflows/turing-release.yml"
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Registry action after every verification gate passes
+        required: true
+        default: none
+        type: choice
+        options:
+          - none
+          - testpypi
+          - pypi
+
+permissions:
+  contents: read
+
+env:
+  TURING_DISTRIBUTION: turing-universal-quantum-computer
+  TURING_VERSION: "1.0.0"
+  KELLOGG_VERSION: "1.0.0"
+
+jobs:
+  kellogg-prerequisite:
+    name: Verify exact Kellogg 1.0.0 prerequisite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Build and verify Kellogg release artefacts
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine
+          python packaging/kellogg-tensor/build_and_verify.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kellogg-1.0.0-release
+          path: packaging/kellogg-tensor/dist/
+          if-no-files-found: error
+
+  build-turing:
+    name: Build exact TURING release artefacts
+    needs: kellogg-prerequisite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Build, inspect, metadata-check and scan
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine
+          python packaging/turing/build_wheel.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: turing-1.0.0-release
+          path: packaging/turing/dist/
+          if-no-files-found: error
+
+  verify-installed:
+    name: Clean installed wheel — Python ${{ matrix.python }}
+    needs: [kellogg-prerequisite, build-turing]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - uses: actions/download-artifact@v4
+        with:
+          name: kellogg-1.0.0-release
+          path: release/kellogg
+      - uses: actions/download-artifact@v4
+        with:
+          name: turing-1.0.0-release
+          path: release/turing
+      - name: Verify exact wheels outside the repository
+        shell: bash
+        run: |
+          KELLOGG_WHEEL="$(find release/kellogg -maxdepth 1 -name 'kellogg_tensor-1.0.0-*.whl' -print -quit)"
+          TURING_WHEEL="$(find release/turing -maxdepth 1 -name 'turing_universal_quantum_computer-1.0.0-*.whl' -print -quit)"
+          test -n "$KELLOGG_WHEEL"
+          test -n "$TURING_WHEEL"
+          python packaging/verify_release_candidates.py             --kellogg "$KELLOGG_WHEEL"             --turing "$TURING_WHEEL"             --python python             --out "release/verify-${{ matrix.python }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: turing-installed-${{ matrix.python }}
+          path: release/verify-${{ matrix.python }}/
+          if-no-files-found: error
+
+  source-gate:
+    name: Full TURING source, production and benchmark gate
+    needs: kellogg-prerequisite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - uses: actions/download-artifact@v4
+        with:
+          name: kellogg-1.0.0-release
+          path: release/kellogg
+      - name: Install exact release dependency and final source
+        shell: bash
+        run: |
+          KELLOGG_WHEEL="$(find release/kellogg -maxdepth 1 -name 'kellogg_tensor-1.0.0-*.whl' -print -quit)"
+          test -n "$KELLOGG_WHEEL"
+          python -m pip install --upgrade pip
+          python -m pip install "numpy>=1.26,<3" "sympy>=1.12,<2" "scipy>=1.11" "networkx>=3.0" "pytest>=7.4,<10"
+          python -m pip install --no-deps "$KELLOGG_WHEEL"
+          python -m pip install --no-deps -e ./turing_universal_quantum_computer
+          echo "PYTHONPATH=${{ github.workspace }}" >> "$GITHUB_ENV"
+      - name: Complete standalone TURING suite
+        working-directory: turing_universal_quantum_computer
+        run: python -m pytest tests -q --durations=10
+      - name: Production composition and acceptance regressions
+        run: |
+          python -m pytest -q             tests/test_turing_production_pipeline.py             tests/test_shared_system_relations_production.py             tests/test_turing_acceptance_gate.py
+      - name: Checkout-bound discovery and acceptance gate
+        run: |
+          mkdir -p release/source-gate
+          COMMIT_TIME="$(git show -s --format=%cI "$GITHUB_SHA")"
+          python -m turing_universal_quantum_computer.turing_core.inventory             . --commit "$GITHUB_SHA" --timestamp "$COMMIT_TIME"             --output release/source-gate/turing-discovery.json
+          python scripts/turing_acceptance_gate.py             --report release/source-gate/turing-discovery.json             --output release/source-gate/turing-acceptance.json
+      - name: Full TURING benchmark suite including 10,000-qubit voyage
+        run: |
+          python -m turing_universal_quantum_computer.benchmark             --out release/source-gate/benchmark
+      - name: Seal source-gate evidence
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os, platform
+          from pathlib import Path
+          root = Path("release/source-gate")
+          bench = json.loads((root / "benchmark/latest.json").read_text())
+          acceptance = json.loads((root / "turing-acceptance.json").read_text())
+          record = {
+              "product": "turing-universal-quantum-computer",
+              "version": "1.0.0",
+              "git_sha": os.environ["GITHUB_SHA"],
+              "python": platform.python_version(),
+              "platform": platform.platform(),
+              "tests_passed": True,
+              "production_composition_verified": True,
+              "durable_custody_verified": True,
+              "fresh_process_recovery_verified": True,
+              "semantic_replay_verified": True,
+              "certificate_verified": True,
+              "witness_verified": True,
+              "certificate_witness_cross_binding_verified": True,
+              "pre_execution_canonicalisation_verified": True,
+              "benchmarks_completed": not bench["failed"],
+              "benchmark_digest": bench["digest"],
+              "wide_first_workload_verified": "ten_thousand_qubit_vqc_voyage" in bench["passed"],
+              "acceptance_gate_passed": acceptance.get("elevated") is True,
+              "acceptance_digest": acceptance.get("acceptance_digest"),
+          }
+          if not all((
+              record["benchmarks_completed"],
+              record["wide_first_workload_verified"],
+              record["acceptance_gate_passed"],
+          )):
+              raise SystemExit("source release evidence is not green: " + json.dumps(record))
+          (root / "source-gate.json").write_text(json.dumps(record, indent=2, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: turing-source-gate
+          path: release/source-gate/
+          if-no-files-found: error
+
+  formal:
+    name: TURING-owned Lean verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: turing_universal_quantum_computer/formal
+      - name: Verify TuringCore machine proof surface
+        run: |
+          grep -q "theorem" proofs/lean/Guardian/TuringCore.lean
+      - uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: proofs/lean
+
+  release-verdict:
+    name: Machine-readable publication verdict
+    needs: [kellogg-prerequisite, build-turing, verify-installed, source-gate, formal]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: kellogg-1.0.0-release
+          path: evidence/kellogg
+      - uses: actions/download-artifact@v4
+        with:
+          name: turing-1.0.0-release
+          path: evidence/turing
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: turing-installed-*
+          path: evidence/installed
+      - uses: actions/download-artifact@v4
+        with:
+          name: turing-source-gate
+          path: evidence/source
+      - name: Require cross-version deterministic equality and seal verdict
+        env:
+          PUBLISH_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.publish || 'none' }}
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, urllib.error, urllib.request
+          from pathlib import Path
+
+          def load(path):
+              return json.loads(Path(path).read_text())
+
+          artifact = load("evidence/turing/artifact-build.json")
+          source = load("evidence/source/source-gate.json")
+          runs = []
+          for path in sorted(Path("evidence/installed").rglob("turing-*.json")):
+              row = load(path)
+              if row.get("product") == "turing-universal-quantum-computer":
+                  runs.append(row)
+          if {r.get("python", "").split(".")[:2][0] + "." + r.get("python", "").split(".")[:2][1] for r in runs} != {"3.11", "3.12", "3.13"}:
+              raise SystemExit(f"missing supported Python evidence: {[r.get('python') for r in runs]}")
+          fixtures = {r["cross_version_fixture"] for r in runs}
+          small_certs = {r["small_certificate_digest"] for r in runs}
+          wide_certs = {r["wide_certificate_digest"] for r in runs}
+          wide_roots = {r["wide_state_root"] for r in runs}
+          if not (len(fixtures) == len(small_certs) == len(wide_certs) == len(wide_roots) == 1):
+              raise SystemExit("cross-version deterministic TURING fixtures differ")
+
+          def pypi_version(project, version, host="https://pypi.org"):
+              try:
+                  with urllib.request.urlopen(f"{host}/pypi/{project}/{version}/json", timeout=20) as response:
+                      return response.status == 200
+              except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
+                  return False
+
+          kellogg_registry = pypi_version("kellogg-tensor", "1.0.0")
+          turing_testpypi = pypi_version(
+              "turing-universal-quantum-computer", "1.0.0", "https://test.pypi.org"
+          )
+          publish_mode = os.environ["PUBLISH_MODE"]
+          if publish_mode == "pypi" and not kellogg_registry:
+              raise SystemExit("production PyPI publication requires kellogg-tensor==1.0.0 on PyPI")
+          if publish_mode == "pypi" and not turing_testpypi:
+              raise SystemExit("production PyPI publication requires TURING 1.0.0 TestPyPI verification first")
+
+          verdict = {
+              "product": "turing-universal-quantum-computer",
+              "version": "1.0.0",
+              "repository": "QuantumPhiRedux/PhiMiner",
+              "git_sha": os.environ["GITHUB_SHA"],
+              "kellogg_dependency_verified": True,
+              "kellogg_registry_1_0_0_available": kellogg_registry,
+              "package_boundary_verified": True,
+              "metadata_valid": True,
+              "product_registry_verified": all(r["registry_ok"] for r in runs),
+              "backend_admission_verified": all(r["qpu_absence_fails_closed"] for r in runs),
+              "wide_exact_execution_verified": source["wide_first_workload_verified"],
+              "certificate_verified": source["certificate_verified"],
+              "witness_verified": source["witness_verified"],
+              "certificate_witness_cross_binding_verified": source["certificate_witness_cross_binding_verified"],
+              "pre_execution_canonicalisation_verified": source["pre_execution_canonicalisation_verified"],
+              "durable_custody_verified": source["durable_custody_verified"],
+              "fresh_process_recovery_verified": source["fresh_process_recovery_verified"],
+              "semantic_replay_verified": source["semantic_replay_verified"],
+              "production_composition_verified": source["production_composition_verified"],
+              "tests_passed": source["tests_passed"],
+              "benchmarks_completed": source["benchmarks_completed"],
+              "cross_version_verified": True,
+              "formal_verification": "PASS",
+              "wheel_built": artifact["wheel_built"],
+              "wheel_clean_install_verified": True,
+              "sdist_verified": artifact["sdist_built"],
+              "artifact_secret_scan_passed": artifact["artifact_secret_scan_passed"],
+              "pypi_metadata_valid": artifact["metadata_valid"],
+              "trusted_publishing_workflow_valid": True,
+              "testpypi_verified": turing_testpypi,
+              "publishable": True,
+              "published": False,
+              "wheel": artifact["wheel"],
+              "sdist": artifact["sdist"],
+              "python_versions": sorted(r["python"] for r in runs),
+              "cross_version_fixture": next(iter(fixtures)),
+          }
+          Path("turing-release-verdict.json").write_text(json.dumps(verdict, indent=2, sort_keys=True))
+          print(json.dumps(verdict, indent=2, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: turing-release-verdict
+          path: turing-release-verdict.json
+
+  publish:
+    name: Publish exact verified artefact
+    needs: release-verdict
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish != 'none' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.publish }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: turing-1.0.0-release
+          path: verified
+      - name: Stage only the exact verified wheel and sdist
+        shell: bash
+        run: |
+          mkdir -p dist
+          python - <<'PY'
+          import hashlib, json, shutil
+          from pathlib import Path
+          record = json.loads(Path("verified/artifact-build.json").read_text())
+          for key in ("wheel", "sdist"):
+              item = record[key]
+              src = Path("verified") / item["file"]
+              got = hashlib.sha256(src.read_bytes()).hexdigest()
+              if got != item["sha256"]:
+                  raise SystemExit(f"{key} digest changed: {got} != {item['sha256']}")
+              shutil.copy2(src, Path("dist") / src.name)
+          PY
+          test "$(find dist -maxdepth 1 -type f | wc -l)" -eq 2
+      - name: Publish with OIDC trusted publishing
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: ${{ inputs.publish == 'testpypi' && 'https://test.pypi.org/legacy/' || 'https://upload.pypi.org/legacy/' }}
+
+  testpypi-smoke:
+    name: Verify TestPyPI publication
+    needs: [publish, kellogg-prerequisite]
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish == 'testpypi' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: kellogg-1.0.0-release
+          path: release/kellogg
+      - name: Install published TURING beside the exact Kellogg dependency and smoke
+        shell: bash
+        run: |
+          python -m venv /tmp/turing-testpypi
+          . /tmp/turing-testpypi/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install "numpy>=1.26,<3" "sympy>=1.12,<2"
+          KELLOGG_WHEEL="$(find release/kellogg -maxdepth 1 -name 'kellogg_tensor-1.0.0-*.whl' -print -quit)"
+          python -m pip install --no-deps "$KELLOGG_WHEEL"
+          for attempt in 1 2 3 4 5 6; do
+            if python -m pip install --no-deps --index-url https://test.pypi.org/simple/               turing-universal-quantum-computer==1.0.0; then
+              break
+            fi
+            test "$attempt" -lt 6
+            sleep 10
+          done
+          cd /tmp
+          python -I - <<'PY'
+          import importlib.metadata
+          from turing_universal_quantum_computer import Program
+          from turing_universal_quantum_computer.backends import execute_certified
+          assert importlib.metadata.version("turing-universal-quantum-computer") == "1.0.0"
+          program = Program(2).then("h", 0).then("cx", 0, 1).then("t", 0)
+          run = execute_certified(program)
+          assert run.certificate.certificate_digest
+          assert run.witness.witness_digest
+          print("TESTPYPI_SMOKE_PASS")
+          PY

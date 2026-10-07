@@ -24,6 +24,13 @@ package is that substrate, as a single installable unit.
   `product_registry.CARVED_OUT`.
 - **Release gates.** `python -c "from turing_universal_quantum_computer.product_registry import verify_registry; print(verify_registry())"`
   and `python -m turing_universal_quantum_computer.benchmark [--quick]`.
+- **Public release identity.** Distribution `turing-universal-quantum-computer`
+  1.0.0 is published by HYBA Software Limited from
+  `QuantumPhiRedux/PhiMiner`. The release workflow builds a staged wheel and
+  sdist, verifies the exact artefacts on Python 3.11/3.12/3.13, runs the full
+  VQC/certificate/custody/replay/benchmark/formal gates, and only then exposes
+  reviewer-gated OIDC publication to TestPyPI or PyPI. Production publication
+  is never automatic.
 
 ## Install
 

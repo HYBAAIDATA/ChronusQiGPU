@@ -1,0 +1,7 @@
+name = "mining_capacity"
+version = "1.0.0"
+defaultTargets = ["MiningCapacity"]
+
+[[lean_lib]]
+name = "MiningCapacity"
+srcDir = "."

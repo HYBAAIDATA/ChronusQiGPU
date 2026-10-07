@@ -11,7 +11,13 @@ on:
       - "scripts/turing_acceptance_gate.py"
       - "tests/test_turing_production_pipeline.py"
       - "tests/test_turing_acceptance_gate.py"
+      - "tests/test_turing_release_packaging.py"
+      - "packaging/turing/**"
+      - "packaging/verify_release_candidates.py"
+      - "packaging/kellogg-tensor/build_and_verify.py"
+      - "mining/formal/**"
       - ".github/workflows/turing-core.yml"
+      - ".github/workflows/turing-release.yml"
   push:
     branches: [main]
   workflow_dispatch:
@@ -46,6 +52,7 @@ jobs:
           turing_universal_quantum_computer/tests/test_fold_certificate_exhaustive.py
           tests/test_turing_production_pipeline.py
           tests/test_turing_acceptance_gate.py
+          tests/test_turing_release_packaging.py
       - name: Build deterministic digest fixture
         run: |
           python scripts/turing_digest_fixture.py > turing-digest-${{ matrix.python }}.txt
