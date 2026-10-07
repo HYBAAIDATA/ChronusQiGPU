@@ -1,5 +1,5 @@
 {
-  "schema": "chronus.gpu-capabilities/v1",
+  "schema": "chronus.gpu-capabilities/v2",
   "branch_base": "feat/kellogg-july-tensor-convergence",
   "capabilities": {
     "geodesic_scheduling": {
@@ -42,7 +42,7 @@
   "truth_boundaries": {
     "unknown_hardware_fields": "null, never inferred",
     "historical_specs": "not measured by Chronus",
-    "host_execution": "not GPU execution",
+    "host_execution": "native Chronus GPU execution may be hosted on CPU/software; the observed substrate must be reported and must not be relabelled as physical-GPU execution",
     "device_execution": "must be compared with Kellogg",
     "consensus_authority": false,
     "core_product_readiness": "must not be gated on physical GPU presence",
@@ -57,17 +57,19 @@
     "treating absence of a physical GPU as absence of CHRONUS"
   ],
   "product_modes": {
-    "standalone_software": {
+    "native_chronus_gpu": {
       "status": "present",
+      "execution_policy": "standalone_software",
       "physical_gpu_required": false,
-      "authority": "chronus.virtual_igpu + chronus.readiness",
-      "claim": "first-class CHRONUS product mode; not a degraded fallback"
+      "authority": "chronus.virtual_igpu + chronus.v33 + chronus.readiness",
+      "claim": "Chronus is the software-defined GPU product; host substrate is separate execution evidence"
     },
-    "accelerator_enhanced": {
+    "host_gpu_augmentation": {
       "status": "lane_certified",
+      "execution_policy": "preferred_accelerator",
       "physical_gpu_required": true,
       "authority": "device-bound evidence per backend",
-      "claim": "additive acceleration; each backend/device requires its own certification"
+      "claim": "Chronus enters and scales/extends a certified host GPU/accelerator; certification is additive"
     }
   }
 }
