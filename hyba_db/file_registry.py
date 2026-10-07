@@ -1993,14 +1993,28 @@ class FileRegistry:
         provenance: Mapping[str, Any] | None = None,
         links: Sequence[tuple[str, str, str]] = (),
     ) -> tuple[str, str]:
+        """Write through canonical THESEUS placement, then project into SQLite.
+
+        The success boundary is deliberately strict:
+        mathematical address -> fsynced primary -> verified replica -> address
+        journal -> file-version custody -> storage-address custody -> links ->
+        committed intent.  The caller never receives success for a flat-CAS
+        bypass or for a placement that was merely computed as metadata.
+        """
         self._tenant(tenant_id)
         data = bytes(content)
         digest = _sha(data)
-        object_id = self.create_object(tenant_id, logical_name, file_class, semantic_owner, domain)
-        base = Path(root) / tenant_id / file_class / digest[:2]
-        base.mkdir(parents=True, exist_ok=True)
-        final = base / digest
-        intent_id = _id("fi", f"{tenant_id}:{object_id}:{digest}:{uuid.uuid4().hex}".encode())
+        object_id = self.create_object(
+            tenant_id, logical_name, file_class, semantic_owner, domain
+        )
+        physical = TheseusPhysicalStore(root)
+        address = derive_storage_address(
+            data, tenant_id=tenant_id, scope=file_class
+        )
+        final = physical.primary_path(address)
+        intent_id = _id(
+            "fi", f"{tenant_id}:{object_id}:{digest}:{uuid.uuid4().hex}".encode()
+        )
         with self.store._tx() as db:
             db.execute(
                 "INSERT INTO file_intents VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -2014,18 +2028,26 @@ class FileRegistry:
                     digest,
                     len(data),
                     "DECLARED",
-                    _json({"logical_name": logical_name, "producer": producer}),
+                    _json(
+                        {
+                            "logical_name": logical_name,
+                            "producer": producer,
+                            "theseus_address_id": address.address_id,
+                            "theseus_relative_path": address.relative_path,
+                        }
+                    ),
                     _now(),
                     _now(),
                 ),
             )
-        fd, temp_name = tempfile.mkstemp(prefix=f".{digest}.", suffix=".tmp", dir=base)
         try:
-            with os.fdopen(fd, "wb") as handle:
-                handle.write(data)
-                handle.flush()
-                os.fsync(handle.fileno())
-            os.replace(temp_name, final)
+            committed = physical.commit(
+                data, tenant_id=tenant_id, scope=file_class
+            )
+            if committed != address or not physical.verify(committed, data):
+                raise IntegrityFailure(
+                    "THESEUS physical placement failed post-commit verification"
+                )
             version_id = self.register_version(
                 tenant_id,
                 object_id,
@@ -2039,33 +2061,66 @@ class FileRegistry:
                 custody_record_id=custody_record_id,
                 provenance=provenance,
             )
+            self.bind_storage_address(
+                tenant_id,
+                version_id,
+                committed,
+                migration_state="NATIVE_PHYLLOTAXIS",
+            )
+            for domain_type, domain_id, relationship in links:
+                self.link(
+                    tenant_id,
+                    version_id,
+                    domain_type,
+                    domain_id,
+                    relationship=relationship,
+                )
             with self.store._tx() as db:
                 db.execute(
-                    "UPDATE file_intents SET file_version_id=?,temp_uri=?,state='COMMITTED',updated_at=? WHERE tenant_id=? AND intent_id=?",
-                    (version_id, str(final), _now(), tenant_id, intent_id),
+                    "UPDATE file_intents SET file_version_id=?,temp_uri=?,"
+                    "state='COMMITTED',updated_at=? "
+                    "WHERE tenant_id=? AND intent_id=?",
+                    (
+                        version_id,
+                        address.relative_path,
+                        _now(),
+                        tenant_id,
+                        intent_id,
+                    ),
                 )
-            for domain_type, domain_id, relationship in links:
-                self.link(tenant_id, version_id, domain_type, domain_id, relationship=relationship)
             self.append_event(
                 tenant_id,
                 version_id,
                 "RECONCILED",
                 actor=producer,
-                detail={"storage_uri": str(final)},
+                detail={
+                    "storage_uri": str(final),
+                    "theseus_address_id": address.address_id,
+                    "phyllotaxis_ring": address.phyllotaxis_ring,
+                    "phyllotaxis_sector": address.phyllotaxis_sector,
+                    "phyllotaxis_lane": address.phyllotaxis_lane,
+                    "fibonacci_index": address.fibonacci_index,
+                    "prime_key": address.prime_key,
+                },
             )
             return object_id, version_id
         except Exception as exc:
-            if os.path.exists(temp_name):
-                os.unlink(temp_name)
             with self.store._tx() as db:
                 db.execute(
-                    "UPDATE file_intents SET temp_uri=?,state='ABANDONED_WITH_EVIDENCE',detail_json=?,updated_at=? WHERE tenant_id=? AND intent_id=?",
+                    "UPDATE file_intents SET state='ABANDONED_WITH_EVIDENCE',"
+                    "detail_json=?,updated_at=? WHERE tenant_id=? AND intent_id=?",
                     (
-                        str(temp_name),
-                        _json({"error": f"{type(exc).__name__}: {exc}"}),
+                        _json(
+                            {
+                                "error": f"{type(exc).__name__}: {exc}",
+                                "theseus_address_id": address.address_id,
+                                "theseus_relative_path": address.relative_path,
+                            }
+                        ),
                         _now(),
                         tenant_id,
                         intent_id,
                     ),
                 )
             raise
+
