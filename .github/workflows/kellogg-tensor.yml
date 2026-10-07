@@ -274,12 +274,18 @@ jobs:
               actual = hashlib.sha256(path.read_bytes()).hexdigest()
               if actual != expected:
                   raise SystemExit(f"verified artefact digest mismatch: {path}")
+      - name: Stage only distribution archives for upload
+        shell: bash
+        run: |
+          mkdir upload
+          cp "release/$(python -c 'import json; print(json.load(open("release/release-verdict.json"))["wheel"]["file"])')" upload/
+          cp "release/$(python -c 'import json; print(json.load(open("release/release-verdict.json"))["sdist"]["file"])')" upload/
       - if: inputs.publish == 'testpypi'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: release/
+          packages-dir: upload/
           repository-url: https://test.pypi.org/legacy/
       - if: inputs.publish == 'pypi'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: release/
+          packages-dir: upload/
