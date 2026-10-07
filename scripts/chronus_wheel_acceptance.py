@@ -1,10 +1,19 @@
-"""Clean-wheel acceptance: run from a venv containing ONLY the built wheels (python -I, cwd outside the repo)."""
+"""Clean-wheel acceptance: run from a venv containing ONLY the built wheels (python -I, cwd outside the repo).
 
+Usage: python -I chronus_wheel_acceptance.py [SOURCE_TREE]
+
+SOURCE_TREE (default: the repository this script lives in) is the checkout the wheels were built
+from; ``chronus`` must be imported from the installed wheel, never from that tree.
+"""
+
+import sys
 import tempfile
+from pathlib import Path
 
 import chronus
 
-assert "/home/user/PhiMiner" not in chronus.__file__, chronus.__file__
+SOURCE_TREE = Path(sys.argv[1] if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent)
+assert not Path(chronus.__file__).resolve().is_relative_to(SOURCE_TREE.resolve()), chronus.__file__
 print("installed from:", chronus.__file__)
 from chronus.virtual_igpu import ChronusClient
 from chronus.virtual_igpu.abi import Workload, WorkloadKind, ExecutionPolicy

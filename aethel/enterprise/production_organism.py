@@ -158,11 +158,14 @@ class ProductionOrganism:
         self.pythia: Any | None = None
         self.toe: Any | None = None
         self.kellogg: Any | None = None
+        self.chronus: Any | None = None
         self.turing: Any | None = None
         self.salamander: Any | None = None
         self.al_haras: Any | None = None
         self.euclid: Any | None = None
         self._euclid_raw: Any | None = None
+        self._chronus_startup_evidence: dict[str, Any] | None = None
+        self._turing_startup_evidence: dict[str, Any] | None = None
         self._started = False
 
     @staticmethod
@@ -196,6 +199,7 @@ class ProductionOrganism:
 
             self.al_haras = relations.bind_al_haras(self.guardian_input)
             self.kellogg = relations.kellogg()
+            self.chronus = relations.chronus(store_dir=self.root / "chronus-runtime")
             self.turing = relations.turing()
 
             if self._euclid_input is None:
@@ -227,11 +231,178 @@ class ProductionOrganism:
             )
             self.euclid = relations.bind_euclid(euclid_runtime)
             self.relations = relations
+            self._run_chronus_startup_gate()
+            self._run_turing_startup_gate()
             self._started = True
             return self
         except Exception:
             self._fail_closed_cleanup()
             raise
+
+    def _run_chronus_startup_gate(self) -> None:
+        """Fail closed unless the canonical Chronus production voyage works."""
+        self._chronus_startup_evidence = {
+            "schema": "aethel.chronus-startup-gate/1",
+            "passed": False,
+        }
+        try:
+            if self.chronus is None:
+                raise RuntimeError("canonical SharedChronus binding is unavailable")
+
+            outcome = self.chronus.run_startup_voyage()
+            report = outcome["report"]
+            replay = self.chronus.replay()
+            if not replay.get("passed"):
+                raise RuntimeError("post-custody Chronus semantic replay did not pass")
+
+            required = {"voyage", "replay"}
+            missing = sorted(required - set(self.chronus.last_bindings))
+            if missing:
+                raise RuntimeError(
+                    f"Chronus production evidence is missing bindings: {missing}"
+                )
+
+            binding_ids: dict[str, str] = {}
+            failed: list[str] = []
+            for name in sorted(required):
+                binding = self.chronus.last_bindings[name]
+                binding_ids[name] = binding.binding_id
+                verdict = self.lifecycle.fabric.verify(binding.binding_id)
+                if not verdict.get("passed"):
+                    failed.append(name)
+            if failed:
+                raise RuntimeError(
+                    f"Chronus shared custody verification failed: {failed}"
+                )
+
+            execution = report.get("execution") or {}
+            self._chronus_startup_evidence = {
+                "schema": "aethel.chronus-startup-gate/1",
+                "passed": True,
+                "mode": report.get("mode"),
+                "physical_gpu_required": report.get("physical_gpu_required"),
+                "actual_adapter_id": execution.get("actual_adapter_id"),
+                "verification": execution.get("verification"),
+                "math_pipeline": report.get("math_pipeline"),
+                "qx_pipeline": report.get("qx_pipeline"),
+                "replay_source": replay.get("replay_source"),
+                "bindings": binding_ids,
+                "hardware_claimed": report.get("hardware_claimed", False),
+                "physical_qpu_claimed": report.get("physical_qpu_claimed", False),
+            }
+        except Exception as exc:
+            self._chronus_startup_evidence = {
+                "schema": "aethel.chronus-startup-gate/1",
+                "passed": False,
+                "error": f"{type(exc).__name__}: {exc}",
+                "physical_gpu_required": False,
+                "hardware_claimed": False,
+                "physical_qpu_claimed": False,
+            }
+            raise RuntimeError(
+                f"CHRONUS production startup gate failed: {exc}"
+            ) from exc
+
+    def _run_turing_startup_gate(self) -> None:
+        """Fail closed unless the canonical TURING production voyage works.
+
+        This is a real software execution through SharedTuring: exact VQC
+        execution, computation certificate, witness, shared THESEUS/OVID
+        custody, post-custody readback, and semantic replay. Hardware/QPU
+        execution is deliberately not required for the software production
+        gate and is not claimed by it.
+        """
+        self._turing_startup_evidence = {
+            "schema": "aethel.turing-startup-gate/1",
+            "passed": False,
+        }
+        try:
+            if self.turing is None:
+                raise RuntimeError("canonical SharedTuring binding is unavailable")
+
+            from turing_universal_quantum_computer import Program
+            from turing_universal_quantum_computer.pipeline import VQCRequest
+
+            report = self.turing.run(
+                VQCRequest(
+                    program=(
+                        Program(n_qubits=2)
+                        .then("h", 0)
+                        .then("cx", 0, 1)
+                    ),
+                    marginal_of=(0, 1),
+                    differential=True,
+                    notes="production_startup_gate",
+                )
+            )
+            if report.verdict != "PASS":
+                raise RuntimeError(
+                    f"canonical TURING voyage verdict is {report.verdict!r}, not PASS"
+                )
+
+            replay = self.turing.replay()
+            if not replay.get("passed"):
+                raise RuntimeError(
+                    "post-custody TURING semantic replay did not pass"
+                )
+
+            required = {
+                "program",
+                "result",
+                "certificate",
+                "witness",
+                "report",
+                "replay",
+            }
+            missing = sorted(required - set(self.turing.last_bindings))
+            if missing:
+                raise RuntimeError(
+                    f"TURING production evidence is missing bindings: {missing}"
+                )
+
+            fabric = self.lifecycle.fabric
+            failed = []
+            binding_ids: dict[str, str] = {}
+            for name in sorted(required):
+                binding = self.turing.last_bindings[name]
+                binding_ids[name] = binding.binding_id
+                verdict = fabric.verify(binding.binding_id)
+                if not verdict.get("passed"):
+                    failed.append(name)
+            if failed:
+                raise RuntimeError(
+                    f"TURING shared custody verification failed: {failed}"
+                )
+
+            certificate = report.certificate or {}
+            self._turing_startup_evidence = {
+                "schema": "aethel.turing-startup-gate/1",
+                "passed": True,
+                "pipeline_verdict": report.verdict,
+                "program_digest": report.program_digest,
+                "backend": (
+                    report.result.get("backend")
+                    if isinstance(report.result, dict)
+                    else None
+                ),
+                "certificate_digest": certificate.get("certificate_digest"),
+                "replay_source": replay.get("replay_source"),
+                "report_binding_id": replay.get("report_binding_id"),
+                "bindings": binding_ids,
+                "hardware_claimed": False,
+                "physical_qpu_claimed": False,
+            }
+        except Exception as exc:
+            self._turing_startup_evidence = {
+                "schema": "aethel.turing-startup-gate/1",
+                "passed": False,
+                "error": f"{type(exc).__name__}: {exc}",
+                "hardware_claimed": False,
+                "physical_qpu_claimed": False,
+            }
+            raise RuntimeError(
+                f"TURING production startup gate failed: {exc}"
+            ) from exc
 
     def _close_euclid(self) -> None:
         runtime = self.euclid
@@ -244,6 +415,11 @@ class ProductionOrganism:
         self._euclid_raw = None
 
     def _fail_closed_cleanup(self) -> None:
+        try:
+            if self.chronus is not None:
+                self.chronus.stop()
+        except Exception:
+            pass
         try:
             self._close_euclid()
         except Exception:
@@ -270,6 +446,13 @@ class ProductionOrganism:
             first_error = exc
 
         try:
+            if self.chronus is not None:
+                self.chronus.stop()
+        except Exception as exc:
+            if first_error is None:
+                first_error = exc
+
+        try:
             self._close_euclid()
         except Exception as exc:
             if first_error is None:
@@ -290,15 +473,31 @@ class ProductionOrganism:
         lifecycle = self.lifecycle.readiness()
         raw_euclid = getattr(self.euclid, "raw", self.euclid)
         organs = self._registered_organs(raw_euclid) if raw_euclid is not None else set()
+        chronus_gate_passed = bool(
+            self._chronus_startup_evidence
+            and self._chronus_startup_evidence.get("passed")
+        )
+        turing_gate_passed = bool(
+            self._turing_startup_evidence
+            and self._turing_startup_evidence.get("passed")
+        )
         bound = {
             "pythia": self.pythia is not None,
             "toe": self.toe is not None,
             "kellogg": self.kellogg is not None,
-            "turing": self.turing is not None and "turing" in organs,
+            "turing": (
+                self.turing is not None
+                and "turing" in organs
+                and turing_gate_passed
+            ),
             "salamander": self.salamander is not None,
             "al_haras": self.al_haras is not None,
             "euclid": self.euclid is not None,
-            "chronus": "chronus" in organs,
+            "chronus": (
+                self.chronus is not None
+                and "chronus" in organs
+                and chronus_gate_passed
+            ),
             "theseus_ovid": "triad" in organs,
         }
         ready = bool(self._started and lifecycle.get("ready") and all(bound.values()))
@@ -311,6 +510,8 @@ class ProductionOrganism:
             "custody_owner": "theseus",
             "transform_lineage_owner": "ovid",
             "euclid_private_triad_opened": False,
+            "chronus_startup_gate": self._chronus_startup_evidence,
+            "turing_startup_gate": self._turing_startup_evidence,
             "relations": self.relations.status() if self.relations is not None else None,
         }
 

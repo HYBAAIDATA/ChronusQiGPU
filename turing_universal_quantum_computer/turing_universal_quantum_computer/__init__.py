@@ -38,7 +38,7 @@ Carved out to their owners: the mining production plane and the capacity
 surface (mining/), copies of live TOE, Intelligence and Mining modules, and
 the tensor forks (now aliases of Kellogg).
 
-Product boundary (v1.2):
+Product boundary (v1.3):
 backends              backend registry, capability envelopes, admission and
                       refusal, and the fail-closed QPU boundary
 capabilities          published capability matrix + enforced claim audit
@@ -132,7 +132,7 @@ _LAZY_MODULES = {
     "surface_code_exact",
     "canonical_serialization",
     "exact_field_registry",
-    # product boundary (v1.2)
+    # product boundary (v1.3)
     "backends",
     "capabilities",
     "certificates",

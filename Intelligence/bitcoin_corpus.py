@@ -30,9 +30,10 @@ from kellogg.scales import (
     zeckendorf,
     zeckendorf_is_legal,
 )
+from lucas.ladder import SCALE_RUNGS
 
 SCHEMA = "pythia.bitcoin_corpus/2"
-DEFAULT_SCALE_INDICES = (10, 12, 15, 18, 20, 31, 50, 76)
+DEFAULT_SCALE_INDICES = tuple(SCALE_RUNGS)
 DEFAULT_PATH = Path("artifacts") / "pythia" / "bitcoin_corpus.sqlite3"
 
 

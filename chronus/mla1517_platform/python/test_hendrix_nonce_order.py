@@ -18,8 +18,15 @@ from chronus.mla1517.mining.execution_router import (
     sha256d_scan,
 )
 from chronus.mla1517.mining.hendrix_order import hendrix_schedule, worker_nonces
-from chronus.mla1517.mining.search_plan import CompletionState, NonceLease, SearchPlan
-from test_governance_causality import LANES, RecordingHasher, _plan
+from chronus.mla1517.mining.nonce_lease import LeaseRecord
+from chronus.mla1517.mining.search_plan import (
+    CompletionState,
+    LeaseState,
+    NonceLease,
+    SearchPlan,
+    WorkIdentity,
+)
+from test_governance_causality import RecordingHasher, _plan
 
 WINDOWS = (1, 2, 3, 7, 31, 32, 96, 100, 997, 1024)
 BASE = 0x7FFF_0000
@@ -218,6 +225,19 @@ def test_coordinator_runs_hendrix_when_configured(monkeypatch):
     assert rec.requested_nonce_order == rec.executed_nonce_order == NONCE_ORDER_HENDRIX
 
 
+def _coordinator_plan(coord, window: int = 96):
+    identity = WorkIdentity("s", 1, "j", "fp", 0, False, 1.0)
+    record = LeaseRecord("l", identity.key, 1, "00", BASE, window, LeaseState.RESERVED)
+    plan = coord._baseline_plan(identity, record, window, "test")
+    return plan, record.contract()
+
+
+def _execute(coord, plan, lease):
+    return coord._router_for(plan).execute_plan(
+        plan, HEADER, (1).to_bytes(32, "little"), lease=lease
+    )
+
+
 def test_hendrix_is_the_coordinators_default_order(monkeypatch):
     from manifold_pool_coordinator import PoolEndpoint
     from test_pool_only_mining import _pool_only_coordinator
@@ -225,10 +245,18 @@ def test_hendrix_is_the_coordinators_default_order(monkeypatch):
     monkeypatch.delenv("PYTHIA_NONCE_ORDER", raising=False)
     assert "PYTHIA_NONCE_ORDER" not in os.environ
     coord = _pool_only_coordinator([PoolEndpoint("h", 1, "braiins")])
-    plan = _plan(coord._execution_route(), lane_order=LANES)
-    rec, _ = coord._router_for(plan).execute_plan(plan, HEADER, (1).to_bytes(32, "little"))
+    plan, lease = _coordinator_plan(coord)
+    assert plan.nonce_order == NONCE_ORDER_HENDRIX
+    rec, _ = _execute(coord, plan, lease)
     assert rec.requested_nonce_order == rec.executed_nonce_order == NONCE_ORDER_HENDRIX
+
     monkeypatch.setenv("PYTHIA_NONCE_ORDER", "m32")  # the Turing lane order stays selectable
-    coord = _pool_only_coordinator([PoolEndpoint("h", 1, "braiins")])
-    rec, _ = coord._router_for(plan).execute_plan(plan, HEADER, (1).to_bytes(32, "little"))
+    m32_coord = _pool_only_coordinator([PoolEndpoint("h", 1, "braiins")])
+    m32_plan, m32_lease = _coordinator_plan(m32_coord)
+    assert m32_plan.nonce_order == NONCE_ORDER_M32
+    rec, _ = _execute(m32_coord, m32_plan, m32_lease)
     assert rec.requested_nonce_order == rec.executed_nonce_order == NONCE_ORDER_M32
+
+    monkeypatch.setattr(coord, "_nonce_order", NONCE_ORDER_M32)
+    rec, _ = _execute(coord, plan, lease)
+    assert rec.requested_nonce_order == rec.executed_nonce_order == NONCE_ORDER_HENDRIX

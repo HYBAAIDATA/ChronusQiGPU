@@ -119,6 +119,7 @@ from .system_relations import (
     SharedALHaras,
     SharedEuclid,
     SharedKellogg,
+    SharedChronus,
     SharedPythiaStore,
     SharedSalamander,
     SharedTOEBridge,
@@ -150,6 +151,7 @@ __all__ = [
     "SharedSalamander",
     "SharedALHaras",
     "SharedKellogg",
+    "SharedChronus",
     "SharedTuring",
     "SharedEuclid",
     # distributed / multi-root / DR / soak / API / cert

@@ -144,7 +144,9 @@ class RuntimeDaemon:
                 config, "preferred_adapter_id", None
             )
             hmac_key = hmac_key or getattr(config, "hmac_key", None)
-        self.root = Path(root_path or os.getenv("CHRONUS_VIGPU_STORE", ".chronus-virtual-igpu"))
+        self.root = Path(
+            root_path or os.getenv("CHRONUS_VIGPU_STORE", ".chronus-virtual-igpu")
+        ).resolve()  # the embedded daemon is process-global: a later chdir must not move it
         self.root.mkdir(parents=True, exist_ok=True)
         (self.root / "evidence").mkdir(parents=True, exist_ok=True)
         if adapters is not None and len(adapters) == 0:
@@ -388,9 +390,11 @@ class RuntimeDaemon:
             if matched:
                 return _pick(matched, f"policy:preferred_adapter_id:{pref}")
 
-        # preferred_accelerator (default)
-        if physical:
-            return _pick(physical, "policy:preferred_accelerator:physical")
+        # preferred_accelerator (default): a physical adapter is preferred only for work it can
+        # run; one that cannot run this kind must not block the declared software fallback.
+        capable = [a for a in physical if a.supports(w.kind)]
+        if capable:
+            return _pick(capable, "policy:preferred_accelerator:physical")
         if not w.allow_software_fallback:
             raise AdapterUnavailable(
                 "preferred accelerator unavailable and software fallback is disabled"

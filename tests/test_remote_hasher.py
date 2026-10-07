@@ -433,6 +433,9 @@ def test_fleet_reports_partial_coverage_never(stub_fleet):
     endpoints, servers = stub_fleet
     hasher = hasher_for_env()
     servers[1].shutdown()
+    # shutdown() only stops serving; the listening socket would still accept connections and the
+    # client would wait out its full timeout. Closing it models a dead agent (connection refused).
+    servers[1].server_close()
     with pytest.raises(RemoteGPUUnavailable):
         hasher.grind_target_range(bytes(80), b"\xff" * 32, 0, 8)
 

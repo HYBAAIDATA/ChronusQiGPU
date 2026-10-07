@@ -143,3 +143,29 @@ commands have executed on an exact commit, including corruption, orphan,
 failpoint, tenant-isolation, restart/replay, OVID-lineage and installed-artifact
 checks. GitHub Actions unavailability is recorded as `CI_UNAVAILABLE`, not as a
 pass or a fail.
+
+
+## Schema v3 — epistemic projection and production gate
+
+The database schema is now version 3. THESEUS remains the durable system of
+record; the new hyba_db.knowledge surface is a rebuildable epistemic projection
+describing what a producer currently asserts or observes, the evidence state
+supporting it, its semantic owner, lineage, provenance and any record it
+supersedes.
+
+Knowledge and typed knowledge relations are themselves custodied as THESEUS
+OperationalRecord objects before they enter the SQLite projection.
+restore_from_custody() reconstructs missing projection rows from those records
+without promoting evidence or transferring semantic authority.
+
+The file plane now stores a separate immutable hyba.file-provenance/v1 row for
+each file version. Same bytes with different semantic provenance remain
+different file versions even when the physical CAS blob is deduplicated.
+Legacy M3 rows are upgraded with explicit LEGACY_PROVENANCE_UNAVAILABLE values
+rather than fabricated lineage. Database verification now performs THESEUS
+read-back and binding checks rather than accepting a non-empty custody ID.
+
+The installed pythia-storage-db-gate command is the production closure gate for
+SQLite integrity, WAL, FULL synchronous mode, foreign keys, file/mining/
+knowledge integrity, storage reconciliation, THESEUS health and deterministic
+custody replay.

@@ -534,11 +534,10 @@ class VQCPipeline:
             ]
         custody = committed
         if request.custody_dir is not None:
-            # With durable custody bound, replay re-opens the store fresh:
-            # the re-attached adapter holds no live records, so every
-            # envelope is re-parsed from the on-disk index and re-admitted
-            # from the durable block store — restart-grade evidence, not
-            # an in-process trust of live objects.
+            # With durable custody bound, replay re-opens the store fresh: the
+            # re-attached adapter holds no live records, so every envelope is
+            # re-parsed from the on-disk index and re-admitted from the durable
+            # block store -- restart-grade evidence, not trust in live objects.
             try:
                 custody = committed.reopen()
             except Exception as exc:
