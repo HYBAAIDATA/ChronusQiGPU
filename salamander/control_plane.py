@@ -175,6 +175,7 @@ class RecoveryStep:
     step_id: str
     request: ActionRequest
     depends_on: tuple[str, ...] = ()
+    rollback: ActionRequest | None = None
 
 
 @dataclass(frozen=True)
@@ -187,11 +188,31 @@ class RecoveryPlan:
     deadline_ns: int
 
     def ordered(self) -> tuple[RecoveryStep, ...]:
-        if len(self.steps) > self.max_actions:
+        action_budget_cost = sum(1 + int(step.rollback is not None) for step in self.steps)
+        if action_budget_cost > self.max_actions:
             raise FailClosed("recovery exceeds action budget")
         by_id = {s.step_id: s for s in self.steps}
         if len(by_id) != len(self.steps):
             raise FailClosed("duplicate recovery step")
+        for step in self.steps:
+            if step.request.tenant_id != self.tenant_id:
+                raise FailClosed("recovery step tenant does not match recovery plan")
+            if step.request.target != self.target:
+                raise FailClosed("recovery step target does not match recovery plan")
+            if step.rollback is not None:
+                rollback = step.rollback
+                if rollback.kind is not ActionKind.ROLLBACK:
+                    raise FailClosed("recovery rollback must use ActionKind.ROLLBACK")
+                if rollback.tenant_id != self.tenant_id:
+                    raise FailClosed("recovery rollback tenant does not match recovery plan")
+                if rollback.target != self.target:
+                    raise FailClosed("recovery rollback target does not match recovery plan")
+                if rollback.action_id == step.request.action_id:
+                    raise FailClosed("recovery action and rollback require distinct action ids")
+                if rollback.idempotency_key == step.request.idempotency_key:
+                    raise FailClosed(
+                        "recovery action and rollback require distinct idempotency keys"
+                    )
         ordered: list[RecoveryStep] = []
         remaining = dict(by_id)
         while remaining:
@@ -592,21 +613,61 @@ class AutonomicControlPlane:
         return result
 
     def recover(self, plan: RecoveryPlan) -> tuple[ActionResult, ...]:
+        """Execute one bounded recovery DAG with verified rollback on rejection.
+
+        A handler may have changed external state before its independent
+        postcondition verifier rejects the result.  In that case the recovery
+        must not merely stop and leave an unverified mutation behind: a
+        declared ROLLBACK action is executed through the same AL HARAS
+        authorization, idempotency, circuit and independent-verification
+        boundary.  Missing or unverified rollback fails closed.
+        """
         if self.clock_ns() > plan.deadline_ns:
             raise FailClosed("recovery deadline elapsed")
         if self._recoveries[plan.target] >= self.max_recoveries_per_target:
             raise FailClosed("recovery budget exhausted")
+        ordered = plan.ordered()
         self._recoveries[plan.target] += 1
         results: list[ActionResult] = []
         by_step: dict[str, ActionResult] = {}
-        for step in plan.ordered():
+        for step in ordered:
             if any(not by_step[d].verified for d in step.depends_on):
                 break
             result = self.execute(step.request)
             results.append(result)
             by_step[step.step_id] = result
-            if not result.verified:
-                break
+            if result.verified:
+                continue
+            if step.rollback is None:
+                self.ledger.append(
+                    "recovery-rollback-required",
+                    {
+                        "recovery_id": plan.recovery_id,
+                        "step_id": step.step_id,
+                        "action_id": result.action_id,
+                        "status": result.status,
+                        "reason": result.error or "independent verification rejected action",
+                    },
+                    at_ns=self.clock_ns(),
+                )
+                raise FailClosed("unverified recovery action has no rollback")
+            rollback_result = self.execute(step.rollback)
+            results.append(rollback_result)
+            self.ledger.append(
+                "recovery-rollback-result",
+                {
+                    "recovery_id": plan.recovery_id,
+                    "step_id": step.step_id,
+                    "failed_action_id": result.action_id,
+                    "rollback_action_id": rollback_result.action_id,
+                    "rollback_verified": rollback_result.verified,
+                    "rollback_status": rollback_result.status,
+                },
+                at_ns=self.clock_ns(),
+            )
+            if not rollback_result.verified:
+                raise FailClosed("rollback failed independent verification")
+            break
         return tuple(results)
 
     # ------------------------------------------- THESEUS / OVID / projection
