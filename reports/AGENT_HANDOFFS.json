@@ -89,6 +89,24 @@
       ],
       "blocking": false,
       "status": "OPEN"
+    },
+    {
+      "request_id": "A-008",
+      "requesting_agent": "A",
+      "owning_agent": "MERGE/INTEGRATOR",
+      "required_interface": "Reconciliation contract between repair/A-intelligence (PR #137) and feat/toe-domain-general-publication (PR #141) — per owner's CROSS-LANE HOLD on #137",
+      "reason": "Overlapping files: euclid/runtime.py, toe/runtime.py, toe/ciaas_api.py, euclid/__init__.py. A's protections that MUST survive the reconciled composition: (1) tenant-bound feedback — FeedbackCore.process rejects source_id mismatched to the DecisionRecord (resonance_intelligence/feedback_core.py); (2) transactional durability — record_outcome snapshots, processes, persists via configured feedback_state_path atomically, rolls back and fails closed on write failure (toe/runtime.py); (3) learned-policy influence — _apply_learned_policy excludes net-negative attribution-weighted modules from the delivered payload while attribution still observes them (toe/runtime.py + feedback_core identify_underperforming_modules/get_module_performance); (4) readiness semantics — ready() gates on bridge, feedback core, evidence chain, and both durability legs (toe/runtime.py, mirrored in toe/ciaas_api.py handle_health); (5) SALAMANDER/AL HARAS authorized composition — euclid/runtime.py composes the autonomic plane through salamander.authority.build_authorized_control_plane when a Guardian + token provider are supplied, unavailable otherwise (pending-merge import, A-007). #141 contributes: toe/machine.py TOEMachine composed via toe/runtime.py solve/learn with per-tenant machines, toe/custody.py THESEUS persistence, adapters, packaging, evidence reports. Reconciliation rule: adopt #141's TOEMachine composition and packaging while preserving every A semantic above; verify by re-running toe/tests/test_learned_policy_regressions.py (19 tests) and euclid/tests/test_actuation_authority.py (6 tests) plus #141's own battery on the merged tree.",
+      "affected_files": [
+        "euclid/runtime.py",
+        "toe/runtime.py",
+        "toe/ciaas_api.py",
+        "euclid/__init__.py",
+        "toe/machine.py",
+        "toe/custody.py",
+        "resonance_intelligence/feedback_core.py"
+      ],
+      "blocking": true,
+      "status": "OPEN"
     }
   ]
 }
