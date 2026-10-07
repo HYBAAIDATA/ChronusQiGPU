@@ -9,6 +9,7 @@ from chronus.delivery import (
     probe_embedded,
 )
 from chronus.mla1517.remote_gpu import PROTOCOL_VERSION
+from chronus.virtual_igpu import ProductMode
 
 
 @dataclass
@@ -59,6 +60,8 @@ def test_embedded_delivery_is_explicit_and_in_process():
     assert out.available is True
     assert out.software_mode_available is True
     assert out.accelerator_mode_available is True
+    assert ProductMode.NATIVE_CHRONUS_GPU.value in out.product_modes
+    assert ProductMode.HOST_GPU_AUGMENTATION.value in out.product_modes
     assert "standalone_software" in out.execution_modes
     assert "preferred_accelerator" in out.execution_modes
     assert out.execution_location == "customer_container"
@@ -111,6 +114,7 @@ def test_cloud_delivery_uses_measured_remote_inventory():
     assert out.execution_location == "hyba_instance_in_customer_cloud"
     assert out.transport == PROTOCOL_VERSION
     assert out.endpoint == "https://chronus.example"
+    assert out.product_modes == (ProductMode.HOST_GPU_AUGMENTATION.value,)
     assert "sha256d_kernel" in out.capabilities
     assert "lucas_ladder_kernel" in out.capabilities
     assert "remote:ladder" in out.capabilities
@@ -160,6 +164,7 @@ def test_embedded_without_accelerator_remains_available_in_software_mode():
     assert out.software_mode_available is True
     assert out.accelerator_mode_available is False
     assert out.devices == ()
+    assert out.product_modes == (ProductMode.NATIVE_CHRONUS_GPU.value,)
     assert out.execution_modes == ("standalone_software",)
     assert "no local device" in out.accelerator_reason
     assert remote_called is False
@@ -171,6 +176,7 @@ def test_delivery_contract_is_serializable_without_performance_invention():
     assert payload["product"] == "Chronus"
     assert payload["delivery_mode"] == "embedded"
     assert payload["software_mode_available"] is True
+    assert ProductMode.NATIVE_CHRONUS_GPU.value in payload["product_modes"]
     assert "standalone_software" in payload["execution_modes"]
     assert "tflops" not in payload
     assert "gflops" not in payload
