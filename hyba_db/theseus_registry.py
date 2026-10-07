@@ -487,4 +487,122 @@ class TheseusFileRegistry(FileRegistry):
         }
 
 
+    def _seal_mining_manifest(self, tenant_id: str, record_id: str) -> str:
+        if self.custody is None:
+            raise InvalidRecord("THESEUS custody required for mining rebuild manifest")
+        row = self.store._db.execute(
+            "SELECT * FROM mining_lifecycle WHERE tenant_id=? AND record_id=?",
+            (tenant_id, record_id),
+        ).fetchone()
+        if row is None:
+            raise AccessDenied("mining record not found")
+        body = {
+            "schema": "hyba.mining-projection-manifest/v1",
+            "record_id": str(row["record_id"]),
+            "kind": str(row["kind"]),
+            "payload": json.loads(row["payload_json"]),
+            "content_sha256": str(row["content_sha256"]),
+            "evidence_state": str(row["evidence_state"]),
+            "parent_ids": json.loads(row["parent_ids_json"]),
+            "created_at": str(row["created_at"]),
+            "producer": str(row["producer"]),
+            "custody_record_id": str(row["custody_record_id"]),
+        }
+        op = OperationalRecord(
+            record_id=f"mining_projection.{record_id}",
+            producer="theseus",
+            producer_version="hyba-db-projection/1",
+            schema_version=1,
+            kind="mining_projection_manifest",
+            payload=_json(body).encode(),
+            evidence_state="MEASURED",
+            lineage=(record_id, *tuple(str(x) for x in body["parent_ids"])),
+            correlation_ids={"tenant_id": tenant_id, "mining_record_id": record_id},
+        )
+        cid = self.custody.put_record(tenant_id, op)
+        if not self.custody.verify(tenant_id, cid):
+            raise IntegrityFailure("mining projection manifest custody failed")
+        return str(cid)
+
+    def record_mining(self, *args: Any, **kwargs: Any) -> str:
+        record_id = super().record_mining(*args, **kwargs)
+        tenant_id = str(args[0] if args else kwargs["tenant_id"])
+        self._seal_mining_manifest(tenant_id, record_id)
+        return record_id
+
+    def seal_existing_rebuild_state(self, tenant_id: str) -> dict[str, Any]:
+        """Backfill rebuild manifests without changing historical identities."""
+        self._tenant(tenant_id)
+        if self.custody is None:
+            raise InvalidRecord("THESEUS custody required for rebuild sealing")
+        file_ids: list[str] = []
+        for row in self.store._db.execute(
+            "SELECT fv.*,fp.provenance_json FROM file_versions fv "
+            "JOIN file_provenance fp ON fp.tenant_id=fv.tenant_id "
+            "AND fp.file_version_id=fv.file_version_id "
+            "WHERE fv.tenant_id=? ORDER BY fv.created_at,fv.file_version_id",
+            (tenant_id,),
+        ).fetchall():
+            op = self.custody.open_tenant(tenant_id).get_record(
+                str(row["custody_record_id"])
+            )
+            rebuilt = self.register_version(
+                tenant_id,
+                str(row["file_object_id"]),
+                bytes(op.payload),
+                storage_uri=str(row["storage_uri"]),
+                logical_path=str(row["logical_path"]),
+                producer=str(row["producer"]),
+                producer_version=str(row["producer_version"]),
+                schema_version=int(row["schema_version"]),
+                evidence_state=str(row["evidence_state"]),
+                custody_record_id=str(row["custody_record_id"]),
+                previous_version_id=row["previous_version_id"],
+                ovid_lineage_id=row["ovid_lineage_id"],
+                transform_contract=row["transform_contract"],
+                transform_version=row["transform_version"],
+                exactness=row["exactness"],
+                encryption_key_ref=row["encryption_key_ref"],
+                compression=row["compression"],
+                content_encoding=str(row["content_encoding"]),
+                provenance=json.loads(str(row["provenance_json"])),
+                actor="theseus-manifest-seal",
+            )
+            if rebuilt != row["file_version_id"]:
+                raise IntegrityFailure("file identity changed while sealing rebuild state")
+            file_ids.append(str(rebuilt))
+
+        link_ids: list[str] = []
+        for row in self.store._db.execute(
+            "SELECT * FROM file_links WHERE tenant_id=? ORDER BY link_id", (tenant_id,)
+        ).fetchall():
+            link_id = self.link(
+                tenant_id,
+                str(row["file_version_id"]),
+                str(row["domain_type"]),
+                str(row["domain_id"]),
+                relationship=str(row["relationship"]),
+            )
+            if link_id != row["link_id"]:
+                raise IntegrityFailure("link identity changed while sealing rebuild state")
+            link_ids.append(str(link_id))
+
+        mining_ids: list[str] = []
+        for row in self.store._db.execute(
+            "SELECT record_id FROM mining_lifecycle WHERE tenant_id=? ORDER BY record_id",
+            (tenant_id,),
+        ).fetchall():
+            rid = str(row["record_id"])
+            self._seal_mining_manifest(tenant_id, rid)
+            mining_ids.append(rid)
+        return {
+            "schema": "hyba.rebuild-manifest-seal/v1",
+            "tenant_id": tenant_id,
+            "file_versions": tuple(file_ids),
+            "links": tuple(link_ids),
+            "mining_records": tuple(mining_ids),
+            "passed": True,
+        }
+
+
 __all__ = ["TheseusFileRegistry"]
