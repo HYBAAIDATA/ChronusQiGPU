@@ -74,6 +74,26 @@ def test_attestation_replay_binds_computation_and_boundary_metadata():
     with pytest.raises(AttestationError, match="cassini"):
         verify_attestation(payload, corrupt_cassini)
 
+    corrupt_digest = deepcopy(evidence)
+    corrupt_digest["digest"] = "0" * 64
+    with pytest.raises(AttestationError, match="digest"):
+        verify_attestation(payload, corrupt_digest)
+
+    corrupt_zeckendorf = deepcopy(evidence)
+    corrupt_zeckendorf["zeckendorf"] = list(corrupt_zeckendorf["zeckendorf"]) + [1]
+    with pytest.raises(AttestationError, match="zeckendorf"):
+        verify_attestation(payload, corrupt_zeckendorf)
+
+    changed_lock = deepcopy(evidence)
+    changed_lock["version_lock"] = "0.9.0"
+    with pytest.raises(AttestationError, match="envelope"):
+        verify_attestation(payload, changed_lock)
+
+    unknown = deepcopy(evidence)
+    unknown["unknown"] = True
+    with pytest.raises(AttestationError, match="unknown field"):
+        verify_attestation(payload, unknown)
+
     legacy = deepcopy(evidence)
     legacy.pop("attestation_digest")
     with pytest.raises(AttestationError, match="legacy"):
