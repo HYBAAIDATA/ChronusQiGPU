@@ -1,9 +1,7 @@
 {
   "schema_version": 1,
-  "source_sha": "04f70762718f6d81480963c32b4baf6c0badf3d7",
-  "frozen_main_sha": "306001b0e75862585a3338e9d549726e52773b52",
-  "includes_self_path": true,
-  "tracked_file_count": 3686,
+  "source_sha": "1f28cf9164df6d14b24c9fe22c8da65784e87283",
+  "tracked_file_count": 3690,
   "unowned_files": [],
   "multi_owned_files": [],
   "counts_by_agent": {
@@ -14,7 +12,7 @@
     "E": 119,
     "F": 173,
     "G": 210,
-    "H": 1546
+    "H": 1550
   },
   "files": {
     ".agents/collide_scan.py": {
@@ -19960,6 +19958,13 @@
       ],
       "rule": "H:reports/"
     },
+    "reports/DEFECT_CLASSIFICATIONS.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
     "reports/HYBA_ARCHIVE_BASELINE_20261001.txt": {
       "owner": "H",
       "owners": [
@@ -20668,6 +20673,13 @@
       "rule": "H:scripts/"
     },
     "scripts/conformance_vectors.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
+    "scripts/critical_mutation_gate.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -22515,6 +22527,13 @@
       ],
       "rule": "H:tests/"
     },
+    "tests/test_critical_mutation_gate.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
     "tests/test_dependency_cone.py": {
       "owner": "H",
       "owners": [
@@ -23237,6 +23256,13 @@
       "rule": "H:tests/"
     },
     "tests/test_mining_claim_boundary.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_mining_consensus_recheck.py": {
       "owner": "H",
       "owners": [
         "H"
