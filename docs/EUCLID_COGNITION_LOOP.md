@@ -138,34 +138,47 @@ value.
 
 ---
 
-## 5. Remaining genuine gaps
+## 5. Intelligence-first completion status
 
-Honest, not aspirational.
+The intelligence-first recovery closes the implementation gaps that were
+previously listed here. Evidence claims remain conservative.
 
-1. **Linearity limit.** `DomainModel` fits linear dynamics only. Non-linear
-   structure needs feature augmentation or a different model class.
-2. **Single-step rewards.** Reward is derived per cycle. Long-horizon credit
-   assignment across a plan is not implemented.
-3. **Executor trust.** Cognition verifies *its own* prediction against the
-   reported outcome; it cannot independently verify the outcome. A future seam
-   should accept an evidence bundle rather than a bare state mapping.
-4. **Analogy is a seed, not a proof.** A structurally similar episode seeds the
-   search; the plan is still recomputed from the fitted world model. This is
-   deliberate — transfer must not bypass the current model.
-5. **No counterfactual plan evaluation.** Hypotheses are discriminated, but the
-   revised plan is not itself scored against a counterfactual baseline.
-6. **The mining loop is not yet a cognition problem.** `EuclidMiningSupport`
-   remains a three-armed bandit. Porting it onto `CognitionProblem` (bounded
-   dispatch breadth as an `Objective`, share outcomes as reward) is the next
-   integration, deliberately not done here because it would change production
-   mining behaviour and must be validated separately.
-7. **`Intelligence/IntegratedIntelligence` remains off the production path.**
-   It duplicates part of what cognition now does (cross-subsystem coupling and
-   calibration). It should be reviewed for deprecation against this loop rather
-   than left as a competing parallel system.
-8. **`EuclidEngineAdapter` name collision.** It is program search, not
-   cognition. Renaming it (e.g. `ProgramSearchEngine`) would remove the
-   impression of two EUCLID authorities.
+1. **Non-linear extension — IMPLEMENTED.** `TOEWorldModelAdapter` now exposes
+   quadratic `context_sq`, `action_sq` and `context_action` features. Their
+   cold-start weights are zero, preserving the previous linear behaviour until
+   observed outcomes earn non-linear influence.
+2. **Long-horizon credit — IMPLEMENTED.** Terminal observed outcome/reward is
+   assigned backwards across the executed trajectory with explicit discounting
+   and is consumed by `PersistentStrategyLearner.update_credit()`.
+3. **Executor evidence-bundle seam — PRESENT, claim still bounded.**
+   `euclid/evidence_bundle.py` remains the release-level sealed evidence
+   contract. Executor reports without independent evidence remain executor
+   observations; the cognition loop does not relabel them independent proof.
+4. **Analogy remains a seed, not proof — INTENTIONAL BOUNDARY.**
+5. **Counterfactual plan evaluation — IMPLEMENTED.** Every plan and replan is
+   scored against a `no-intervention` counterfactual baseline when the world
+   model supports it. The result is predicted evidence and can cause
+   metacognitive replanning; it is never promoted to observation.
+6. **Mining cognition — IMPLEMENTED WITHOUT AUTHORITY TRANSFER.**
+   `MiningCognitionProblem` maps measured PYTHIA transport state, measured
+   share-outcome reward and bounded dispatch breadth into the canonical
+   `CognitionProblem` contract. PYTHIA remains the only mining actuator.
+7. **Parallel intelligence authority — RESOLVED.**
+   `Intelligence/intelligence_integration.py` is explicitly a compatibility
+   coupling surface; `EuclidRuntime.production()` is the sole cognition
+   composition root.
+8. **Program-search name collision — RESOLVED.** `ProgramSearchEngine` is the
+   canonical name; `EuclidEngineAdapter` remains only as a compatibility alias.
+
+### Evidence gates that remain open until earned
+
+- `held_out_generalisation_not_established` remains open until a sealed
+  `euclid.held-out-generalisation/1` report contains at least two distinct
+  held-out task families, no family regression and a measured improvement.
+- `restart_not_verified` may remain open on a long-lived deployment even
+  though test/process restarts can pass.
+- `external_validation_absent` and `production_certification_absent` are
+  intentionally not inferred from repository-local tests.
 
 ---
 
