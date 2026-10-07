@@ -43,6 +43,35 @@ KNOWLEDGE_RELATIONS = frozenset(
         "about",
     }
 )
+# Memory/intelligence form and epistemic speech-act are deliberately separate.
+# This carries forward EUCLID's multi-form memory idea without transferring
+# EUCLID authority to records produced by PYTHIA, Turing, Chronus, etc.
+KNOWLEDGE_FORMS = frozenset(
+    {
+        "episodic",
+        "semantic",
+        "procedural",
+        "causal",
+        "counterfactual",
+        "failure",
+        "predictive",
+        "topological",
+        "geometric",
+        "meta",
+        "unspecified",
+    }
+)
+MATURITY_STAGES = frozenset(
+    {
+        "UNAVAILABLE",
+        "SEEDED",
+        "HYPOTHESIZED",
+        "REPRODUCED",
+        "ADVERSARIALLY_TESTED",
+        "EXTERNALLY_COMPARED",
+        "PROVISIONALLY_TRUSTED",
+    }
+)
 CANONICAL_EVIDENCE_STATES = frozenset(
     {"PASS", "FAIL", "MEASURED", "GATED", "UNAVAILABLE", "MISSING", "REFUTED"}
 )
@@ -53,14 +82,17 @@ CREATE TABLE IF NOT EXISTS knowledge_records(
  knowledge_id TEXT NOT NULL,
  subject TEXT NOT NULL,
  predicate TEXT NOT NULL,
+ domain TEXT NOT NULL,
  object_json TEXT NOT NULL,
  knowledge_kind TEXT NOT NULL,
+ knowledge_form TEXT NOT NULL,
  semantic_owner TEXT NOT NULL,
  producer TEXT NOT NULL,
  producer_version TEXT NOT NULL,
  schema_version INTEGER NOT NULL,
  evidence_state TEXT NOT NULL,
  evidence_class TEXT NOT NULL,
+ maturity_stage TEXT NOT NULL,
  content_sha256 TEXT NOT NULL,
  source_ids_json TEXT NOT NULL,
  parent_ids_json TEXT NOT NULL,
@@ -127,14 +159,17 @@ class KnowledgeRecord:
     tenant_id: str
     subject: str
     predicate: str
+    domain: str
     object: Any
     knowledge_kind: str
+    knowledge_form: str
     semantic_owner: str
     producer: str
     producer_version: str
     schema_version: int
     evidence_state: str
     evidence_class: str
+    maturity_stage: str
     content_sha256: str
     source_ids: tuple[str, ...]
     parent_ids: tuple[str, ...]
@@ -185,14 +220,17 @@ class KnowledgeProjection:
         *,
         subject: str,
         predicate: str,
+        domain: str,
         object_value: Any,
         knowledge_kind: str,
+        knowledge_form: str,
         semantic_owner: str,
         producer: str,
         producer_version: str,
         schema_version: int,
         evidence_state: str,
         evidence_class: str,
+        maturity_stage: str,
         source_ids: Sequence[str],
         parent_ids: Sequence[str],
         correlation_ids: Mapping[str, str],
@@ -203,14 +241,17 @@ class KnowledgeProjection:
             "schema": "hyba.knowledge-projection/v1",
             "subject": subject,
             "predicate": predicate,
+            "domain": domain,
             "object": object_value,
             "knowledge_kind": knowledge_kind,
+            "knowledge_form": knowledge_form,
             "semantic_owner": semantic_owner,
             "producer": producer,
             "producer_version": producer_version,
             "schema_version": int(schema_version),
             "evidence_state": evidence_state,
             "evidence_class": evidence_class,
+            "maturity_stage": maturity_stage,
             "source_ids": [str(x) for x in source_ids],
             "parent_ids": [str(x) for x in parent_ids],
             "correlation_ids": {str(k): str(v) for k, v in correlation_ids.items()},
@@ -224,12 +265,15 @@ class KnowledgeProjection:
         *,
         subject: str,
         predicate: str,
+        domain: str,
         object_value: Any,
         knowledge_kind: str,
         semantic_owner: str,
         producer: str,
         evidence_state: str,
+        knowledge_form: str = "unspecified",
         evidence_class: str | None = None,
+        maturity_stage: str = "UNAVAILABLE",
         producer_version: str = "",
         schema_version: int = 1,
         source_ids: Sequence[str] = (),
@@ -245,15 +289,24 @@ class KnowledgeProjection:
             )
         subject = str(subject).strip()
         predicate = str(predicate).strip()
+        domain = str(domain).strip().lower()
         kind = str(knowledge_kind).strip().lower()
+        form = str(knowledge_form).strip().lower()
+        maturity = str(maturity_stage).strip().upper()
         owner = str(semantic_owner).strip()
         producer = str(producer).strip().lower()
         state = str(evidence_state).strip().upper()
         eclass = str(evidence_class or state).strip().upper()
-        if not subject or not predicate or not owner or not producer:
-            raise InvalidRecord("subject, predicate, semantic_owner and producer are required")
+        if not subject or not predicate or not domain or not owner or not producer:
+            raise InvalidRecord(
+                "subject, predicate, domain, semantic_owner and producer are required"
+            )
         if kind not in KNOWLEDGE_KINDS:
             raise InvalidRecord(f"unsupported knowledge_kind={kind!r}")
+        if form not in KNOWLEDGE_FORMS:
+            raise InvalidRecord(f"unsupported knowledge_form={form!r}")
+        if maturity not in MATURITY_STAGES:
+            raise InvalidRecord(f"unsupported maturity_stage={maturity!r}")
         if state not in CANONICAL_EVIDENCE_STATES:
             raise InvalidRecord(f"unsupported evidence_state={state!r}")
         if int(schema_version) < 1:
@@ -273,7 +326,7 @@ class KnowledgeProjection:
                     raise AccessDenied(f"knowledge parent not found in tenant: {parent}")
             if supersedes_id:
                 previous = self.store._db.execute(
-                    "SELECT subject,predicate,semantic_owner FROM knowledge_records "
+                    "SELECT subject,predicate,domain,semantic_owner FROM knowledge_records "
                     "WHERE tenant_id=? AND knowledge_id=?",
                     (tenant_id, str(supersedes_id)),
                 ).fetchone()
@@ -282,23 +335,27 @@ class KnowledgeProjection:
                 if (
                     previous["subject"] != subject
                     or previous["predicate"] != predicate
+                    or previous["domain"] != domain
                     or previous["semantic_owner"] != owner
                 ):
                     raise InvalidRecord(
-                        "supersession must preserve subject, predicate and semantic owner"
+                        "supersession must preserve subject, predicate, domain and semantic owner"
                     )
 
         body = self._payload(
             subject=subject,
             predicate=predicate,
+            domain=domain,
             object_value=object_value,
             knowledge_kind=kind,
+            knowledge_form=form,
             semantic_owner=owner,
             producer=producer,
             producer_version=str(producer_version),
             schema_version=int(schema_version),
             evidence_state=state,
             evidence_class=eclass,
+            maturity_stage=maturity,
             source_ids=sources,
             parent_ids=parents,
             correlation_ids=corr,
@@ -331,7 +388,10 @@ class KnowledgeProjection:
             meta={
                 "semantic_owner": owner,
                 "knowledge_kind": kind,
+                "knowledge_form": form,
+                "domain": domain,
                 "evidence_class": eclass,
+                "maturity_stage": maturity,
                 "policy_refs": prov["policy_refs"],
                 "owner_approval_ref": prov["owner_approval_ref"],
                 "retention_class": prov["retention_class"],
@@ -368,20 +428,23 @@ class KnowledgeProjection:
                     (),
                 )
                 db.execute(
-                    "INSERT INTO knowledge_records VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    "INSERT INTO knowledge_records VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                     (
                         tenant_id,
                         knowledge_id,
                         subject,
                         predicate,
+                        domain,
                         _json(object_value),
                         kind,
+                        form,
                         owner,
                         producer,
                         str(producer_version),
                         int(schema_version),
                         state,
                         eclass,
+                        maturity,
                         digest,
                         _json(sources),
                         _json(parents),
@@ -407,14 +470,17 @@ class KnowledgeProjection:
         return self._payload(
             subject=row["subject"],
             predicate=row["predicate"],
+            domain=row["domain"],
             object_value=json.loads(row["object_json"]),
             knowledge_kind=row["knowledge_kind"],
+            knowledge_form=row["knowledge_form"],
             semantic_owner=row["semantic_owner"],
             producer=row["producer"],
             producer_version=row["producer_version"],
             schema_version=row["schema_version"],
             evidence_state=row["evidence_state"],
             evidence_class=row["evidence_class"],
+            maturity_stage=row["maturity_stage"],
             source_ids=json.loads(row["source_ids_json"]),
             parent_ids=json.loads(row["parent_ids_json"]),
             correlation_ids=json.loads(row["correlation_ids_json"]),
@@ -465,14 +531,17 @@ class KnowledgeProjection:
             tenant_id=tenant_id,
             subject=row["subject"],
             predicate=row["predicate"],
+            domain=row["domain"],
             object=json.loads(row["object_json"]),
             knowledge_kind=row["knowledge_kind"],
+            knowledge_form=row["knowledge_form"],
             semantic_owner=row["semantic_owner"],
             producer=row["producer"],
             producer_version=row["producer_version"],
             schema_version=int(row["schema_version"]),
             evidence_state=row["evidence_state"],
             evidence_class=row["evidence_class"],
+            maturity_stage=row["maturity_stage"],
             content_sha256=row["content_sha256"],
             source_ids=tuple(json.loads(row["source_ids_json"])),
             parent_ids=tuple(json.loads(row["parent_ids_json"])),
@@ -490,9 +559,12 @@ class KnowledgeProjection:
         *,
         subject: str | None = None,
         predicate: str | None = None,
+        domain: str | None = None,
         semantic_owner: str | None = None,
         evidence_state: str | None = None,
         knowledge_kind: str | None = None,
+        knowledge_form: str | None = None,
+        maturity_stage: str | None = None,
         latest_only: bool = True,
         limit: int = 100,
     ) -> tuple[KnowledgeRecord, ...]:
@@ -504,9 +576,12 @@ class KnowledgeProjection:
         for column, value in (
             ("subject", subject),
             ("predicate", predicate),
+            ("domain", domain.lower() if domain else None),
             ("semantic_owner", semantic_owner),
             ("evidence_state", evidence_state.upper() if evidence_state else None),
             ("knowledge_kind", knowledge_kind.lower() if knowledge_kind else None),
+            ("knowledge_form", knowledge_form.lower() if knowledge_form else None),
+            ("maturity_stage", maturity_stage.upper() if maturity_stage else None),
         ):
             if value is not None:
                 clauses.append(f"kr.{column}=?")
@@ -651,6 +726,10 @@ class KnowledgeProjection:
                 or int(body.get("schema_version", 0)) != int(op.schema_version)
                 or str(body.get("knowledge_kind", "")).strip().lower()
                 not in KNOWLEDGE_KINDS
+                or str(body.get("knowledge_form", "")).strip().lower()
+                not in KNOWLEDGE_FORMS
+                or str(body.get("maturity_stage", "")).strip().upper()
+                not in MATURITY_STAGES
                 or str(body.get("evidence_state", "")).strip().upper()
                 not in CANONICAL_EVIDENCE_STATES
             ):
@@ -715,20 +794,23 @@ class KnowledgeProjection:
                         (),
                     )
                     db.execute(
-                        "INSERT INTO knowledge_records VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        "INSERT INTO knowledge_records VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                         (
                             tenant_id,
                             kid,
                             body["subject"],
                             body["predicate"],
+                            body["domain"],
                             _json(body["object"]),
                             body["knowledge_kind"],
+                            body["knowledge_form"],
                             body["semantic_owner"],
                             body["producer"],
                             body.get("producer_version", ""),
                             int(body.get("schema_version", 1)),
                             body["evidence_state"],
                             body.get("evidence_class", body["evidence_state"]),
+                            body.get("maturity_stage", "UNAVAILABLE"),
                             digest,
                             _json(tuple(body.get("source_ids") or ())),
                             _json(parents),
@@ -914,8 +996,10 @@ class KnowledgeProjection:
 
 __all__ = [
     "CANONICAL_EVIDENCE_STATES",
+    "KNOWLEDGE_FORMS",
     "KNOWLEDGE_KINDS",
     "KNOWLEDGE_RELATIONS",
+    "MATURITY_STAGES",
     "KNOWLEDGE_SCHEMA",
     "KnowledgeProjection",
     "KnowledgeRecord",
