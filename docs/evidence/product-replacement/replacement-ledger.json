@@ -19,7 +19,7 @@
       ],
       "NEW_PRODUCTION_PATH": "PYTHIA contract -> verify -> resident Hendrix -> actual SHA -> independent replay",
       "OLD_PATH_NEW_ROLE": "Implicit backend selection retired on this route",
-      "status": "SOURCE_TESTED"
+      "status": "SOURCE_AND_INSTALLED_STANDALONE_TESTED_CANONICAL_SNAPSHOT_ONLY"
     },
     {
       "EXISTING_ROLE": "Fallback availability",
@@ -32,7 +32,7 @@
       "PARITY_TEST": "Substitution attacks fail before execution; hardware execution remains unqualified",
       "NEW_PRODUCTION_PATH": "Verify explicit plan alternative -> same Hendrix order -> independently verified hashes",
       "OLD_PATH_NEW_ROLE": "No generic scheduler/CPU nonce substitution in resident route",
-      "status": "SOURCE_TESTED"
+      "status": "SOURCE_AND_INSTALLED_STANDALONE_TESTED_CANONICAL_SNAPSHOT_ONLY"
     },
     {
       "EXISTING_ROLE": "Public OneIGPU.evolve",
@@ -45,7 +45,7 @@
       "PARITY_TEST": "test_exact_evolution_replacement.py",
       "NEW_PRODUCTION_PATH": "Old facade -> exact_hamiltonian_evolution -> exact state/evidence -> ABI independent replay",
       "OLD_PATH_NEW_ROLE": "Other direct numerical state/engine APIs remain OPEN, not yet retired",
-      "status": "SOURCE_TESTED"
+      "status": "SOURCE_AND_INSTALLED_STANDALONE_TESTED_CANONICAL_SNAPSHOT_ONLY"
     },
     {
       "EXISTING_ROLE": "Evolution ABI transport and verification",
@@ -58,7 +58,7 @@
       "PARITY_TEST": "test_exact_evolution_replacement.py",
       "NEW_PRODUCTION_PATH": "Exact input tree -> exact evolution -> exact output tree -> replay",
       "OLD_PATH_NEW_ROLE": "Numeric input accepted as exact binary rational values; output contract deliberately versioned",
-      "status": "SOURCE_TESTED"
+      "status": "SOURCE_AND_INSTALLED_STANDALONE_TESTED_CANONICAL_SNAPSHOT_ONLY"
     },
     {
       "EXISTING_ROLE": "Direct MathematicalQuantumState/Operator/HamiltonianEngine APIs",
@@ -164,5 +164,7 @@
     "OPEN_MATERIAL_DEFECTS": null
   },
   "closure_interpretation": "null means not exhaustively measured; no requested zero counter is asserted",
-  "capabilities_removed_this_increment": 0
+  "capabilities_removed_this_increment": 0,
+  "source_commit": "27e2b07f1304edb7b2e00fd5052ec61a2151a021",
+  "evidence_manifest": "evidence-manifest.json"
 }
