@@ -21,6 +21,7 @@ from dataclasses import dataclass, replace
 from typing import Any, Callable, Mapping, Sequence
 
 from ..evidence import EvidenceChain
+from .credit import assign_discounted_credit
 from .interfaces import (
     Abducer,
     AnalogyEngine,
@@ -173,6 +174,11 @@ class GeneralIntelligenceCore:
         goal: str | None = None,
         problem_class: str | None = None,
     ) -> CognitiveState:
+        if not isinstance(problem, Mapping):
+            to_mapping = getattr(problem, "to_mapping", None)
+            if not callable(to_mapping):
+                raise TypeError("problem must be a mapping or expose to_mapping()")
+            problem = to_mapping()
         problem_id = str(problem.get("problem_id") or "").strip()
         if not problem_id:
             raise ValueError("problem requires a problem_id")
@@ -190,7 +196,8 @@ class GeneralIntelligenceCore:
         for key in (
             "initial_code", "operators", "plan_depth", "budget",
             "representation_kind", "state_vector", "surface", "observations",
-            "context_key", "strategy",
+            "context_key", "strategy", "declared_objectives", "measured_reward",
+            "reward_authority", "constraints", "problem_digest",
         ):
             if key in problem:
                 representation[key] = problem[key]
@@ -278,6 +285,7 @@ class GeneralIntelligenceCore:
         context = str(problem.get("context_key") or problem_id)
         solved = False
         executed_once = False
+        trajectory: list[dict[str, Any]] = []
         for cycle in range(self.max_cycles):
             self._transition(state, "cycle", f"reasoning cycle {cycle} opened", {"cycle": cycle})
 
@@ -461,6 +469,9 @@ class GeneralIntelligenceCore:
                     "objective_ids": [item.get("objective_id") for item in active_objectives],
                 },
             )
+            self._evaluate_plan_counterfactual(
+                state, context, stage=f"cycle-{cycle}:initial"
+            )
 
             # 9. COMPOSE ----------------------------------------------------------
             if not self.ablations.mathematical_structure:
@@ -605,6 +616,14 @@ class GeneralIntelligenceCore:
                 "candidate executed through governed boundary",
                 {"action": best.action_id, "result": result},
             )
+            trajectory.append(
+                {
+                    "cycle": cycle,
+                    "action": best.action_id,
+                    "strategy": state.selected_strategy,
+                    "goal_met": bool(result.get("goal_met")),
+                }
+            )
 
             # 13. COMPARE / WORLD-MODEL UPDATE ------------------------------------------
             if self.ablations.world_model and expected is not None:
@@ -686,6 +705,9 @@ class GeneralIntelligenceCore:
                         "plan revised after control decision",
                         {"nodes": [n.node_id for n in state.plan]},
                     )
+                    self._evaluate_plan_counterfactual(
+                        state, context, stage=f"cycle-{cycle}:replan"
+                    )
                 else:
                     self._ablated(state, "replanning")
             # 15. OUTCOME / LEARNING -----------------------------------------------
@@ -712,6 +734,12 @@ class GeneralIntelligenceCore:
             state.outcome_detail = (
                 "cycle budget exhausted" if executed_once else "no governed execution occurred"
             )
+        self._assign_long_horizon_credit(
+            state,
+            problem_class,
+            trajectory,
+            solved=bool(state.outcome is Outcome.SOLVED),
+        )
         self._transition(
             state,
             "terminate",
@@ -720,6 +748,126 @@ class GeneralIntelligenceCore:
         )
         state.verify_transitions()
         return state
+
+    def _evaluate_plan_counterfactual(
+        self,
+        state: CognitiveState,
+        context: str,
+        *,
+        stage: str,
+    ) -> None:
+        """Score the current plan against an explicit no-intervention baseline.
+
+        Counterfactual rows remain predicted evidence. They may trigger a
+        replan through the meta-controller, but can never be promoted to an
+        observed outcome or execution proof.
+        """
+        counterfactual = getattr(self.world_model, "counterfactual", None)
+        if not callable(counterfactual) or not state.plan:
+            return
+        actions = [str(node.description) for node in state.plan if node.description]
+        if not actions:
+            return
+        try:
+            rows = list(counterfactual(context, ("no-intervention", *actions)))
+            baseline_row = next(
+                row for row in rows if str(row.get("action")) == "no-intervention"
+            )
+            baseline = float(dict(baseline_row.get("future") or {}).get("outcome", 0.0))
+            scored = []
+            for row in rows:
+                action = str(row.get("action"))
+                if action == "no-intervention":
+                    continue
+                outcome = float(dict(row.get("future") or {}).get("outcome", 0.0))
+                scored.append(
+                    {
+                        "action": action,
+                        "predicted_outcome": outcome,
+                        "delta_vs_baseline": outcome - baseline,
+                        "epistemic_status": "predicted",
+                    }
+                )
+        except Exception as exc:  # noqa: BLE001 - counterfactual is advisory
+            self._transition(
+                state,
+                "counterfactual-plan",
+                "counterfactual plan evaluation unavailable",
+                {"stage": stage, "error": f"{type(exc).__name__}: {exc}"},
+            )
+            return
+        best_delta = max(
+            (float(row["delta_vs_baseline"]) for row in scored), default=0.0
+        )
+        report = {
+            "stage": stage,
+            "baseline_action": "no-intervention",
+            "baseline_outcome": baseline,
+            "alternatives": scored,
+            "best_delta": best_delta,
+            "epistemic_status": "predicted",
+        }
+        state.representation["counterfactual_plan_evaluation"] = report
+        self._transition(
+            state,
+            "counterfactual-plan",
+            "plan scored against no-intervention counterfactual baseline",
+            report,
+        )
+
+    def _assign_long_horizon_credit(
+        self,
+        state: CognitiveState,
+        problem_class: str,
+        trajectory: Sequence[Mapping[str, Any]],
+        *,
+        solved: bool,
+    ) -> None:
+        if not trajectory:
+            return
+        declared_reward = state.representation.get("measured_reward")
+        authority = str(state.representation.get("reward_authority") or "none")
+        if declared_reward is not None and authority != "none":
+            terminal_value = float(declared_reward)
+            source = f"authoritative-terminal-reward:{authority}"
+        else:
+            terminal_value = 1.0 if solved else 0.0
+            source = "observed-terminal-goal-outcome"
+        assignments = assign_discounted_credit(
+            [str(row.get("action") or "") for row in trajectory],
+            terminal_value,
+            gamma=0.9,
+            source=source,
+        )
+        update_credit = getattr(self.metalearner, "update_credit", None)
+        rows = []
+        for assignment, event in zip(assignments, trajectory):
+            strategy = str(event.get("strategy") or "")
+            if callable(update_credit) and strategy:
+                update_credit(
+                    problem_class,
+                    strategy,
+                    assignment.credit,
+                    detail=f"long-horizon step={assignment.step}",
+                )
+            row = {
+                "kind": "long-horizon-credit",
+                "step": assignment.step,
+                "action": assignment.action,
+                "strategy": strategy or None,
+                "credit": assignment.credit,
+                "discount": assignment.discount,
+                "source": assignment.source,
+                "counts_for_control": callable(update_credit) and bool(strategy),
+            }
+            state.learning_updates.append(row)
+            rows.append(row)
+        self._transition(
+            state,
+            "credit",
+            "terminal outcome assigned across executed trajectory",
+            {"gamma": 0.9, "assignments": rows, "source": source},
+        )
 
     def _objective_bias(
         self, state: CognitiveState, assessment: ControlAssessment
