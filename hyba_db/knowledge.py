@@ -670,7 +670,18 @@ class KnowledgeProjection:
                 digest = _sha(op.payload)
                 from .store import _now as store_now
                 with self.store._tx() as db:
-                    self.store._reserve(db, tenant_id, 1, len(op.payload), kid)
+                    # A projection row may be lost while its quota ledger
+                    # survives. Rebuilding that row must not double-charge the
+                    # tenant. A fresh projection with no prior ledger entry is
+                    # reserved normally.
+                    prior_quota = db.execute(
+                        "SELECT COALESCE(SUM(record_delta),0),"
+                        "COALESCE(SUM(byte_delta),0) FROM quota_events "
+                        "WHERE tenant_id=? AND subject=?",
+                        (tenant_id, kid),
+                    ).fetchone()
+                    if int(prior_quota[0]) == 0 and int(prior_quota[1]) == 0:
+                        self.store._reserve(db, tenant_id, 1, len(op.payload), kid)
                     att = self.store._attest(
                         db,
                         tenant_id,
