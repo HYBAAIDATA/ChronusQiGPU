@@ -1,5 +1,5 @@
 {
-  "schema": "chronus.convergence-manifest/v1",
+  "schema": "chronus.convergence-manifest/v2",
   "product": "Chronus",
   "authority": {
     "canonical_manual": "CHRONUS — Canonical Operations Manual & Production Constitution",
@@ -9,25 +9,29 @@
       "Quantum-from-Maths, Substrate-Agnostic — Implications & Reordering for GPU (3 Aug 2026)",
       "Chronos GPU — Mathematical Quantum Graphics Engine Implementation Record"
     ],
-    "rule": "owner-approved architecture plus executable truth; speculative pseudocode is not promoted"
+    "rule": "owner-approved architecture plus executable truth; speculative pseudocode is not promoted",
+    "canonical_identity": "Chronus is the HYBA software-defined quantum-from-maths GPU and heterogeneous execution computer; CPU, iGPU, GPU, cloud accelerator, FPGA/ASIC and future quantum hardware are execution substrates, not product prerequisites.",
+    "substrate_rule": "Chronus product identity is substrate- and hardware-agnostic. Backend/device evidence describes where a run executed; it never defines whether Chronus exists."
   },
   "product_modes": {
-    "standalone_software": {
+    "native_chronus_gpu": {
       "policy": "standalone_software",
       "physical_gpu_required": false,
+      "product_identity": "Chronus is the GPU execution product in this mode; the host CPU/GPU/QPU is an implementation substrate, not Chronus's identity.",
       "status": "implemented",
       "owners": [
-        "chronus.virtual_igpu.adapters.CPUEmulatorAdapter",
-        "chronus.virtual_igpu.runtime.RuntimeDaemon",
+        "chronus.virtual_igpu",
+        "chronus.v33",
         "chronus.readiness"
       ]
     },
-    "accelerator_enhanced": {
+    "host_gpu_augmentation": {
       "policy": "preferred_accelerator",
       "physical_gpu_required": true,
+      "product_identity": "Chronus attaches to an available certified host GPU/accelerator to extend or scale that host while preserving the same Chronus workload contract.",
       "status": "per-lane certification",
       "owners": [
-        "chronus.virtual_igpu.runtime.RuntimeDaemon",
+        "chronus.virtual_igpu.runtime",
         "chronus.tensor_compute",
         "chronus.native_tensor",
         "chronus.delivery"
@@ -41,7 +45,7 @@
         "chronus.virtual_igpu",
         "chronus.delivery"
       ],
-      "evidence_boundary": "CPU/software execution is first-class; physical lane claims are separate"
+      "evidence_boundary": "Native Chronus execution is first-class and does not require a host GPU; device-specific claims remain separate per-lane evidence."
     },
     "virtual_igpu_abi": {
       "status": "implemented",
@@ -181,6 +185,30 @@
     "THESEUS custody ownership absorbed by CHRONUS",
     "OVID transformation ownership absorbed by CHRONUS",
     "PYTHIA mining semantics absorbed by CHRONUS",
-    "historical speculative cryogenic pseudocode promoted as implemented hardware"
-  ]
+    "historical speculative cryogenic pseudocode promoted as implemented hardware",
+    "CPU/reference backend treated as CHRONUS product identity",
+    "host GPU presence required for native CHRONUS availability",
+    "historical Chronos, Virtual iGPU or portable-substrate lineage shipped as competing product identities"
+  ],
+  "lineage_convergence": {
+    "rule": "one canonical Chronus product; historical Chronos/Virtual-iGPU/portable-substrate names are capability lineages, not separate products",
+    "integrated_lineages": [
+      {
+        "name": "Chronos GPU v2/v3.3",
+        "role": "quantum-from-maths mathematical GPU/graphics engine"
+      },
+      {
+        "name": "Chronus Virtual iGPU",
+        "role": "software-defined GPU ABI, runtime, memory, evidence and adapters"
+      },
+      {
+        "name": "Chronus portable substrate",
+        "role": "device-neutral control plane, routing, delivery and evidence"
+      },
+      {
+        "name": "Chronus canonical product",
+        "role": "the converged product containing all supported capability lineages"
+      }
+    ]
+  }
 }
