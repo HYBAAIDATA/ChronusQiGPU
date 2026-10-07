@@ -1086,6 +1086,113 @@ class SharedEuclid(_BoundAdapter):
         return _call
 
 
+
+def verify_chronus_custody_boundary(payload: Mapping[str, Any] | None) -> dict[str, Any]:
+    """Semantically verify a recovered Chronus startup-voyage record."""
+    try:
+        from chronus.production import verify_startup_report
+
+        if not isinstance(payload, Mapping):
+            raise TypeError("Chronus startup payload must be a mapping")
+        return verify_startup_report(dict(payload))
+    except Exception as exc:
+        return {
+            "schema": "aethel.chronus-custody-boundary.verify/1",
+            "passed": False,
+            "checks": {"payload_verifies": False},
+            "error": f"{type(exc).__name__}: {exc}",
+        }
+
+
+class SharedChronus(_BoundAdapter):
+    """Canonical Chronus runtime bound to shared THESEUS/OVID custody."""
+
+    VOYAGE_KIND = "chronus_startup_voyage"
+    REPLAY_KIND = "chronus_startup_replay"
+
+    def __init__(self, runtime: Any, port: SystemDataPort) -> None:
+        super().__init__(runtime, port, system="chronus")
+        self.last_bindings: dict[str, EntanglementBinding] = {}
+
+    def run_startup_voyage(self) -> dict[str, Any]:
+        report = self.raw.startup_voyage()
+        boundary = verify_chronus_custody_boundary(report)
+        if not boundary.get("passed"):
+            raise RuntimeError(
+                f"Chronus startup report failed semantic verification: {boundary}"
+            )
+
+        voyage = self._put(
+            self.VOYAGE_KIND,
+            report,
+            evidence_state="MEASURED",
+            meta={
+                "execution_owner": "chronus",
+                "custody_owner": "theseus",
+                "transform_lineage_owner": "ovid",
+                "physical_gpu_required": bool(report.get("physical_gpu_required")),
+            },
+        )
+        custody = self.port.fabric.verify(voyage.binding_id)
+        if not custody.get("passed"):
+            raise RuntimeError("Chronus startup voyage failed shared custody verification")
+
+        recovered = json.loads(self.port.read(voyage.binding_id).decode("utf-8"))
+        replay = verify_chronus_custody_boundary(recovered)
+        replay["custody_verified"] = bool(custody.get("passed"))
+        replay["voyage_binding_id"] = voyage.binding_id
+        replay["replay_source"] = "post_custody_readback"
+        replay["passed"] = bool(replay.get("passed") and replay["custody_verified"])
+        if not replay["passed"]:
+            raise RuntimeError(f"Chronus post-custody semantic replay failed: {replay}")
+
+        replay_binding = self._put(
+            self.REPLAY_KIND,
+            replay,
+            parents=(voyage.binding_id,),
+            evidence_state="MEASURED",
+        )
+        if not self.port.fabric.verify(replay_binding.binding_id).get("passed"):
+            raise RuntimeError("Chronus replay record failed shared custody verification")
+        self.last_bindings = {"voyage": voyage, "replay": replay_binding}
+        return {"report": report, "replay": replay}
+
+    def replay(self) -> dict[str, Any]:
+        source = "last_bindings"
+        binding_id: str | None = None
+        if "voyage" in self.last_bindings:
+            binding_id = self.last_bindings["voyage"].binding_id
+        else:
+            latest = _latest_binding(
+                self.port,
+                source="chronus",
+                kind=self.VOYAGE_KIND,
+            )
+            if latest is not None:
+                binding_id = str(latest["binding_id"])
+                source = "durable_graph"
+        if binding_id is None:
+            return {
+                "schema": "aethel.chronus-custody-replay/1",
+                "passed": False,
+                "replay_source": "none",
+                "error": "no Chronus startup voyage found",
+            }
+        payload = json.loads(self.port.read(binding_id).decode("utf-8"))
+        boundary = verify_chronus_custody_boundary(payload)
+        custody = self.port.fabric.verify(binding_id)
+        return {
+            **boundary,
+            "passed": bool(boundary.get("passed") and custody.get("passed")),
+            "custody_verified": bool(custody.get("passed")),
+            "voyage_binding_id": binding_id,
+            "replay_source": source,
+        }
+
+    def stop(self) -> None:
+        self.raw.stop()
+
+
 class ProductionSystemRelations:
     """Bind live subsystem objects to one started enterprise CompositionRoot."""
 
@@ -1116,6 +1223,20 @@ class ProductionSystemRelations:
             chronus_port=self.ports["chronus"],
         )
 
+    def chronus(
+        self,
+        runtime: Any | None = None,
+        *,
+        store_dir: str | Path | None = None,
+    ) -> SharedChronus:
+        if runtime is None:
+            from chronus.production import ChronusProductionRuntime
+
+            if store_dir is None:
+                raise ValueError("canonical Chronus binding requires store_dir")
+            runtime = ChronusProductionRuntime(store_dir)
+        return SharedChronus(runtime, self.ports["chronus"])
+
     def turing(self, pipeline: Any | None = None) -> SharedTuring:
         return SharedTuring(self.ports["turing"], pipeline=pipeline)
 
@@ -1139,9 +1260,11 @@ __all__ = [
     "SharedSalamander",
     "SharedALHaras",
     "SharedKellogg",
+    "SharedChronus",
     "SharedTuring",
     "SharedEuclid",
     "ProductionSystemRelations",
     "verify_kellogg_custody_boundary",
+    "verify_chronus_custody_boundary",
     "verify_turing_custody_boundary",
 ]

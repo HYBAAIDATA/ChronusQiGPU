@@ -37,6 +37,10 @@ if TYPE_CHECKING:
     from .tensor_compute import ChronusTensorRuntime, ChronusTensorUnavailable, TensorDeviceProbe
 
 _EXPORTS = {
+    "ChronusMode": ("chronus.production", "ChronusMode"),
+    "ChronusProductionReport": ("chronus.production", "ChronusProductionReport"),
+    "ChronusProductionRuntime": ("chronus.production", "ChronusProductionRuntime"),
+    "verify_startup_report": ("chronus.production", "verify_startup_report"),
     "ChronusSubstrateMiningBridge": (
         "chronus.mining_bridge",
         "ChronusSubstrateMiningBridge",

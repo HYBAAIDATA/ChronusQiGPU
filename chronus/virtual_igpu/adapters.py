@@ -138,7 +138,7 @@ class Adapter(ABC):
 
 
 class CPUEmulatorAdapter(Adapter):
-    """Standalone software runtime — classical silicon, real computation."""
+    """Reference software adapter — classical silicon, real computation."""
 
     id = "cpu-emulator"
     kind = AdapterKind.SOFTWARE
@@ -638,6 +638,36 @@ class OpenCLUhdAdapter(Adapter):
         raise AdapterUnavailable(
             "opencl-intel-uhd: physical dispatch requires authorized target-host evidence; "
             "use software policy or run bench.chronus_igpu_evidence on the device host"
+        )
+
+
+
+class ChronusSoftwareFabricAdapter(CPUEmulatorAdapter):
+    """Chronus operating as the GPU in software.
+
+    This is the canonical independent mode. It executes the verified Chronus
+    workload ABI on ordinary host silicon without requiring a discrete GPU,
+    iGPU, CUDA, ROCm, Metal, OpenCL, or accelerator passthrough. The actual
+    substrate is reported honestly; this adapter never claims hardware-rooted
+    provenance or physical acceleration.
+    """
+
+    id = "chronus-software-fabric"
+    kind = AdapterKind.SOFTWARE
+    available = True
+    priority = 100
+
+    def probe(self) -> AdapterAttestation:
+        self.available = True
+        return self._attestation(
+            True,
+            {
+                "substrate": "classical_host_silicon",
+                "mode": "independent",
+                "role": "chronus_is_the_gpu",
+                "physical_gpu_required": False,
+                "hardware_acceleration_claimed": False,
+            },
         )
 
 
