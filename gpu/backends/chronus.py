@@ -9,7 +9,7 @@ surface:
 - ``DeviceInfo`` -> :class:`chronus.detect.DetectedDevice`
 - ``ChronusEngine`` -> :class:`chronus.engine.ChronusOpenCLEngine`
 - ``Metrics`` -> :class:`chronus.telemetry.ChronusTelemetry`
-- ``backend_available`` -> physical-substrate census via ``detect_all``
+- ``backend_available`` -> executed canonical software-adapter probe
 
 There is no ``ChronusConfig`` in the canonical package, so the old name is
 dropped rather than re-pointed at an unrelated class.
@@ -44,14 +44,32 @@ def _census() -> Any:
 
 
 def backend_available() -> bool:
-    """True when the Chronus backend can execute work at all.
+    """True only after the canonical independent software backend executes.
 
-    The canonical census always carries Chronus's own virtual iGPU as a
-    device when it is bound, so this answers "can the backend run", not
-    "is physical hardware present" — CHRONUS needs none.
+    Contract/spec presence is not execution evidence.  This probe runs the
+    no-side-effect PROBE workload directly on ChronusSoftwareFabricAdapter;
+    import, construction, validation, or execution failure returns False.
+    Physical accelerator availability is reported separately.
     """
-    report = _census()
-    return bool(report and report.devices)
+    try:
+        adapters = import_module("chronus.virtual_igpu.adapters")
+        abi = import_module("chronus.virtual_igpu.abi")
+        adapter = adapters.ChronusSoftwareFabricAdapter()
+        workload = abi.Workload(
+            id="gpu-backends-chronus-availability",
+            kind=abi.WorkloadKind.PROBE,
+            tenant="compatibility-probe",
+            execution_policy=abi.ExecutionPolicy.STANDALONE_SOFTWARE.value,
+            allow_software_fallback=True,
+        )
+        result = adapter.execute(workload)
+        return bool(
+            result.status == "ok"
+            and result.actual_adapter_id == adapter.id
+            and result.output.get("probe", {}).get("available") is True
+        )
+    except Exception:
+        return False
 
 
 def physical_substrate_available() -> bool:
