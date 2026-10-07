@@ -244,15 +244,19 @@ class TheseusFileRegistry(FileRegistry):
                     retained_legacy.add(str(Path(uri[7:]).resolve()))
 
         actual: set[str] = set()
-        tenant_root = root / tenant_id
-        if tenant_root.exists():
-            for path in tenant_root.rglob("*"):
-                if not path.is_file() or ".tmp." in path.name or path.suffix == ".tmp":
-                    continue
-                rel = path.relative_to(tenant_root)
-                if rel.parts and rel.parts[0] in {"theseus-replica", ".theseus"}:
-                    continue
-                actual.add(str(path.resolve()))
+        for path in root.rglob("*"):
+            if not path.is_file() or ".tmp." in path.name or path.suffix == ".tmp":
+                continue
+            rel_root = path.relative_to(root)
+            # A file directly under the shared root is an unowned orphan.
+            # Files below another tenant's top-level directory are outside this
+            # tenant's reconciliation surface and must not leak across tenants.
+            if len(rel_root.parts) > 1 and rel_root.parts[0] != tenant_id:
+                continue
+            rel_tenant = rel_root.parts[1:] if rel_root.parts and rel_root.parts[0] == tenant_id else ()
+            if rel_tenant and rel_tenant[0] in {"theseus-replica", ".theseus"}:
+                continue
+            actual.add(str(path.resolve()))
         # Preserve deliberately retained legacy migration sources without
         # reclassifying them as authoritative storage or as accidental orphans.
         orphan_files = sorted(actual - set(expected) - retained_legacy)
