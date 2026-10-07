@@ -1709,8 +1709,9 @@ as stated.
 Each family holds the capability's precondition; each negative control removes it and shows parity.
 Causal structure, counterfactual abduction, value-of-information, multi-representation navigation,
 world-model revision and futures-backed planning each change outcomes when relevant. Adaptive
-precision showed **no measured benefit on CPython 3.12** (its compensated float summation already
-resolves the tested near-ties); the exact path remains the authority when a margin is inside the
-declared float error bound.
+precision is interpreter-dependent (`reports/toe_precision_cross_interpreter.json`): on CPython 3.11
+exact escalation decides 60/60 near-ties correctly vs 28/60 for float-only; on CPython 3.12 both
+reach 60/60 because float `sum()` became compensated. Exact escalation is what makes the decision
+interpreter-invariant.
 
 Claim register: `docs/toe/CLAIM_REGISTER.md` (machine-readable `toe/CLAIM_REGISTER.json`).

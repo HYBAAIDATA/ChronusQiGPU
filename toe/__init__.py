@@ -1,7 +1,36 @@
-"""TOE — the PYTHIA Theory-of-Everything engine package.
+"""TOE — a domain-general mathematical intelligence engine.
+
+TOE was discovered inside PYTHIA, expressed through an HR-shaped
+application (``toe.engine.PredictiveEngine``: employees, churn, promotion).
+That vocabulary is lineage, not the domain: one backend reasons over any
+problem reduced to the domain-neutral :class:`toe.problem.Problem`, and
+domain adapters (``toe.adapters``) are the only per-domain code. PYTHIA's
+mining path, EUCLID and the enterprise analytics surface are consumers.
+
+Public surface (observe → understand → explore futures → decide → explain
+→ learn)::
+
+    machine = toe.TOEMachine(custody=theseus_custody)   # optional THESEUS
+    episode = machine.run(problem)                       # one full cycle
+    machine.learn(episode, observed_outcomes)            # revise + persist
+
+``toe.runtime.TOEIntelligenceRuntime`` is the production composition root
+(tenancy, receipts, evidence chain, consensus boundary) and serves the
+machine through ``solve`` / ``learn``.
 
 Canonical package layout (consolidated from Intelligence/toe_*.py, the
 original toe.py monolith, and the substrate modules it runs on):
+
+    toe.machine                     TOEMachine — the reasoning core
+    toe.problem                     the domain-neutral problem contract
+    toe.relationships               association ≠ structure ≠ causal
+                                    structure ≠ identified effect
+    toe.geometry                    Poincaré-ball geometry, tree embedding,
+                                    greedy routing, spectral geometry
+    toe.custody                     durable learning state via THESEUS
+    toe.voyage                      power-on self-test (canonical and
+                                    cross-domain voyages)
+    toe.adapters/                   domain / semantic adapters
 
     toe.engine                      the original PredictiveEngine + extended
                                     algebraic-family substrate (Pisot spectrum)
@@ -193,6 +222,8 @@ from .expansion import (
     TOEExpansionResult,
 )
 from .operator_compilers import OperatorSpec, compile_operator
+from .problem import Problem, ProblemError, Structure
+from .machine import TOEMachine
 from .foundation import UNIFIED_THEORY, UnifiedTheoryFoundation
 from .golden_unified import (
     CollapseResult,
@@ -210,6 +241,10 @@ from .engine import (
 
 __all__ = [
     "__version__",
+    "TOEMachine",
+    "Problem",
+    "ProblemError",
+    "Structure",
     "TOEBridge",
     "TOEStateTomography",
     "TOETrajectoryPrediction",
@@ -300,6 +335,16 @@ _LAZY_SURFACES = {
     "TOESystem": ("toe.system", "TOESystem"),
     "TOEProvenanceRecord": ("toe.system", "TOEProvenanceRecord"),
 }
+
+# The standalone TOE distribution does not carry the monorepo's mining-facing
+# coordinator; its names are then not part of the public surface at all.
+import importlib.util as _ilu  # noqa: E402
+
+if _ilu.find_spec(__name__ + ".system") is None:  # pragma: no cover - standalone wheel
+    for _name in ("TOESystem", "TOEProvenanceRecord"):
+        _LAZY_SURFACES.pop(_name)
+        __all__.remove(_name)
+del _ilu
 
 
 def __getattr__(name: str):

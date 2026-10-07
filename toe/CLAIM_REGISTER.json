@@ -73,16 +73,16 @@
       "status": "MEASURED"
     },
     {
-      "claim": "Exact Q(phi) escalation changes decisions versus float64.",
-      "counterevidence": "on CPython 3.12 the futures engine's compensated float summation already decides these near-ties correctly: no measured benefit",
-      "evidence": "escalation fires (exact-required) and decides correctly",
-      "evidence_report": "toe_ablation_heldout.json",
+      "claim": "Exact Q(phi) escalation changes decisions versus float64 and makes them interpreter-invariant.",
+      "counterevidence": "on CPython 3.12+ compensated float summation already decides these near-ties: no benefit there",
+      "evidence": "3.11: exact 60/60 vs float-only 28/60; 3.12: 60/60 vs 60/60",
+      "evidence_report": "toe_precision_cross_interpreter.json",
       "id": "toe-adaptive-precision-benefit",
-      "limitations": "the exact path remains the authority inside the declared float error bound; re-measure per interpreter",
-      "reproduction": "python scripts/toe_ablation_study.py --n 60",
-      "scope": "cancellation near-ties",
-      "source_sha": "c1b0e3003ca8d095c37523c537b54441e88402c7",
-      "status": "NEGATIVE (CPython 3.12)"
+      "limitations": "the error bound covers the linear structural evaluation path; re-measure per interpreter",
+      "reproduction": "python scripts/toe_ablation_study.py --n 60 (run under each interpreter)",
+      "scope": "cancellation near-ties, held-out seeds",
+      "source_sha": "955fce1c9ade221e79cd2893c45ba7cd60198c0a",
+      "status": "MEASURED (CPython 3.11) / NEGATIVE (CPython 3.12)"
     },
     {
       "claim": "Observed consequences revise the world model and change a later related decision; learning in one namespace does not revise another.",
