@@ -1369,8 +1369,10 @@ class FileRegistry:
                     retention_violations.append(version_id)
                     continue
             custody_id = row["custody_record_id"]
-            if not custody_id or (
-                self.custody is not None and not self.custody.verify(tenant_id, str(custody_id))
+            if (
+                not custody_id
+                or self.custody is None
+                or not self.custody.verify(tenant_id, str(custody_id))
             ):
                 custody_missing.append(version_id)
                 continue
