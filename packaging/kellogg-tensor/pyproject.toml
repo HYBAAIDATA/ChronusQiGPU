@@ -22,7 +22,7 @@ keywords = [
     "quantum-from-maths",
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
@@ -33,6 +33,7 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Mathematics",
     "Topic :: Scientific/Engineering :: Physics",
+    "License :: OSI Approved :: MIT License",
     "Typing :: Typed",
 ]
 dependencies = [
@@ -49,7 +50,9 @@ dev = [
 kellogg-benchmark = "kellogg.benchmark:main"
 
 [project.urls]
-Homepage = "https://github.com/QuantumPhi2/PhiMiner"
+Homepage = "https://github.com/QuantumPhiRedux/PhiMiner"
+Repository = "https://github.com/QuantumPhiRedux/PhiMiner"
+Issues = "https://github.com/QuantumPhiRedux/PhiMiner/issues"
 
 [tool.setuptools]
 include-package-data = false
