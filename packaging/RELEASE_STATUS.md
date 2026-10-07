@@ -1,6 +1,6 @@
 # Product release status — pick up here
 
-Last updated 7 October 2026 (branch `feat/kellogg-turing-products`).
+Last updated 7 October 2026 (KELLOGG release closure on current `main`; final metadata compatibility fix on `release/kellogg-tensor-1.0.0-finalize`).
 
 HYBA Software Limited ships each subsystem as its own product. Every first
 public release is **1.0.0**. Order: **Kellogg first, then TURING**, then the
@@ -12,23 +12,59 @@ Exact tensor networks over Q(zeta_8): custody-backed MPS/MPO/TT, certificates,
 exact channels and Fisher information, surface code, golden substrate, TT-SVD,
 DMRG. Source `kellogg/`; packaging `packaging/kellogg-tensor/`.
 
-Done and evidenced:
-- Standalone: imports only stdlib + numpy; Aethel custody bound by protocol.
-- `kellogg.spec.REGISTRY` (88 items) verifies; every canonical-spec item has a
-  status (EXACT / FLOAT / CORRECTED / REFUTED / DELEGATED / RESEARCH / NOT_STARTED).
-- `tests/test_kellogg_product.py` and the Kellogg-touching repo tests pass.
-- All 15 correctness benchmarks pass on the full run; cross-version digest
-  identical on CPython 3.11.17, 3.12.10, 3.13.16 and 3.14.2.
-- Wheel built and verified in a clean venv (no sibling product loaded) on 3.12.
+Release closure now in the repository:
+- public distribution metadata uses `QuantumPhiRedux/PhiMiner`, version
+  `1.0.0`, Production/Stable, MIT, Python >=3.11 and the declared numpy-only
+  hard dependency;
+- the standalone builder stages only KELLOGG, builds wheel + sdist, runs
+  `twine check`, verifies installed distribution metadata and public imports
+  outside the checkout, inspects the wheel manifest, scans both archives for
+  secret/local-path leakage, and rebuilds/re-verifies the wheel from the sdist;
+- certificate deserialization, certificate verification and Merkle proof
+  verification fail closed on malformed or tampered representations;
+- attestation mutation coverage includes computation digest, envelope,
+  version lock, proof boundary, Zeckendorf, Cassini and unknown fields;
+- benchmark artefacts now carry the git SHA, UTC timestamp, Python/platform,
+  explicit parameters, result, classification and pass state;
+- the release workflow executes installed-wheel gates on Python 3.11, 3.12,
+  3.13 and 3.14, the full source test/full benchmark gate, cross-version
+  deterministic fixture comparison, live PyPI name/version verification, and
+  composes one machine-readable release verdict;
+- publication consumes the exact verified wheel + sdist bundle and uses OIDC
+  trusted publishing. It never rebuilds in the publication job.
 
-Remaining:
-1. Full benchmark run to completion with results committed to
-   `benchmarks/tensor/results/` — the cost grids now have hard wall-clock
-   limits (`python -m benchmarks.tensor.run_all`; set `KELLOGG_BENCH_PYTHONS`
-   to the 3.11/3.13/3.14 interpreters for the cross-version check).
-2. Rebuild the 1.0.0 wheel (`python packaging/kellogg-tensor/build_and_verify.py`)
-   and run `packaging/verify_release_candidates.py` on 3.11, 3.12, 3.13, 3.14.
-3. Owner actions for PyPI and GitHub billing: `packaging/PUBLISHING.md`.
+Historical evidence retained from the previous release-candidate work records
+KELLOGG product tests, 15 full correctness benchmarks, cross-version digest
+agreement on CPython 3.11.17/3.12.10/3.13.16/3.14.2, and a clean 3.12 wheel
+install. That evidence is useful provenance but is **not** substituted for the
+fresh current-candidate release gate.
+
+Current release-gate truth:
+- live checks on 7 October 2026 returned HTTP 404 for `kellogg-tensor` on
+  both PyPI and TestPyPI; version `1.0.0` is not occupied;
+- PR #128's KELLOGG workflow run `37631272987` failed before any job step
+  executed: all four installed-wheel jobs and the source/full-benchmark job
+  have empty step lists, while downstream cross-version/verdict jobs were
+  skipped;
+- therefore there is no fresh wheel SHA-256, sdist SHA-256, test count,
+  benchmark verdict or four-version fixture verdict for the current release
+  candidate yet;
+- this is classified as **EXTERNAL RELEASE INFRASTRUCTURE BLOCKER**, not as a
+  KELLOGG test failure;
+- Codex review of PR #128 identified a release-gate compatibility defect:
+  modern setuptools may emit `License-Expression: MIT` instead of legacy
+  `License: MIT`. The finalization branch accepts the SPDX field while
+  remaining compatible with the legacy field.
+
+Exact next executable gate after Actions is restored:
+
+```text
+Actions -> kellogg-tensor -> Run workflow on current main with publish=none
+```
+
+Do not set `publishable=true` until that run produces the exact verified
+artefacts and all software-controlled gates pass. Production PyPI remains an
+explicit owner action.
 
 ## TURING — `turing-universal-quantum-computer` 1.0.0 (release candidate)
 
