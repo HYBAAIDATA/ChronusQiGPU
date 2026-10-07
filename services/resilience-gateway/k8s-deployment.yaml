@@ -18,9 +18,26 @@ spec:
         app: pythia-resilience-gateway
     spec:
       terminationGracePeriodSeconds: 35
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: gateway
           image: pythia-resilience-gateway:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: WS_TICKET_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: pythia-resilience-gateway-secrets
+                  key: ticket-secret
+            - name: GATEWAY_HTTP_REQUESTS_PER_MINUTE
+              value: "120"
           ports:
             - containerPort: 3000
           livenessProbe:
