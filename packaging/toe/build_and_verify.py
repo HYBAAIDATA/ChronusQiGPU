@@ -447,10 +447,20 @@ def main(argv: Optional[List[str]] = None) -> int:
             raise RuntimeError(f"deterministic fixture differs across installs: {digests}")
         decisions = owner_decisions()
         blockers = []
-        if not decisions["distribution_name_approved"]:
+        approved_name = decisions["distribution_name_approved"]
+        approved_version = decisions["version_approved"]
+        if not approved_name:
             blockers.append("distribution name not owner-approved (OWNER_DECISIONS.md §1)")
-        if not decisions["version_approved"]:
+        elif approved_name != name:
+            blockers.append(
+                f"approved distribution name {approved_name!r} does not match artifact {name!r}"
+            )
+        if not approved_version:
             blockers.append("release version not owner-approved (OWNER_DECISIONS.md §2)")
+        elif approved_version != version:
+            blockers.append(
+                f"approved release version {approved_version!r} does not match artifact {version!r}"
+            )
         evidence = {
             "product": "TOE",
             "import_name": "toe",
