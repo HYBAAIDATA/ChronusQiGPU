@@ -30,6 +30,10 @@ LOG = logging.getLogger(__name__)
 class M3PythiaProductionMiningCoordinator(PythiaProductionMiningCoordinator):
     """PYTHIA production coordinator with optional strict M3 closure gates."""
 
+    # Partially constructed coordinators used by introspection and recovery
+    # remain fail-safe instead of raising before __init__ has completed.
+    _m3_required: bool = False
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self._m3_required = bool(kwargs.pop("m3_required", False))
         self._m3_gate = kwargs.pop("m3_gate", None)
