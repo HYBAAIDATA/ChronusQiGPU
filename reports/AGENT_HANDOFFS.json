@@ -76,6 +76,19 @@
       ],
       "blocking": false,
       "status": "OPEN"
+    },
+    {
+      "request_id": "A-007",
+      "requesting_agent": "A",
+      "owning_agent": "F",
+      "required_interface": "import_audit IA01 finding at euclid/runtime.py: imports salamander.authority (build_authorized_control_plane) inside try/except",
+      "reason": "Intentional cross-lane deferred composition: on this branch salamander.authority does not exist, so the import_audit gate reports 'swallowed' IA01. The swallow IS the designed behaviour — actuation stays unavailable with 'salamander-actuation-unavailable' evidence until F's canonical constructor lands. Finding clears when salamander/authority.py merges. Verified: euclid/tests/test_actuation_authority.py proves both the unavailable path and the authorized path (injected constructor). Alternative would be evading the gate via dynamic indirection — deliberately not done.",
+      "affected_files": [
+        "euclid/runtime.py",
+        "salamander/authority.py"
+      ],
+      "blocking": false,
+      "status": "OPEN"
     }
   ]
 }
