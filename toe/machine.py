@@ -1,4 +1,9 @@
-"""TOEMachine — the canonical composition root of the TOE backend.
+"""TOEMachine — the TOE reasoning core (one backend, every problem form).
+
+``toe.runtime.TOEIntelligenceRuntime`` is the production composition root
+(tenancy, receipts, evidence chain, feedback/ASI loops, mining boundary); it
+composes this machine through ``solve`` / ``learn``, one machine per tenant.
+The machine itself is the reasoning cycle beneath every domain adapter.
 
 One problem, any domain, one reasoning cycle::
 
@@ -839,13 +844,17 @@ class TOEMachine:
                 u["decision_relevant"] += 1
 
     def _remember_episode(self, problem: Problem, episode: Dict[str, Any]) -> None:
+        dec = episode.get("decision") or {}
         summary = {
             "episode_sha256": episode["episode_sha256"],
             "namespace": episode["identity"]["namespace"],
             "status": episode["status"],
-            "selected": (episode.get("decision") or {}).get("selected_action"),
-            "decision_sha256": (episode.get("decision") or {}).get("policy", {}).get("decision_sha256"),
+            "selected": dec.get("selected_action"),
+            "selected_interventions": dec.get("selected_interventions"),
+            "decision_sha256": dec.get("policy", {}).get("decision_sha256"),
+            "recommendation": episode.get("recommendation"),
             "model_revision": episode["identity"].get("model_revision"),
+            "model_weights": episode["identity"].get("model_weights"),
             "problem_content": problem.content(),
             "domain": problem.domain,
         }
@@ -1037,6 +1046,31 @@ class TOEMachine:
             "revision": head["revision"],
             "snapshot_digest": head["digest"],
             "custody": "theseus",
+        }
+
+    def episode_record(self, episode_sha256: str) -> Optional[Dict[str, Any]]:
+        """The part of a recorded episode that ``learn`` binds an outcome to.
+
+        Works for episodes solved before a restart: the record is rebuilt
+        from the persisted episode summary, not from live objects.
+        """
+        s = next((e for e in self.episodes if e["episode_sha256"] == episode_sha256), None)
+        if s is None:
+            return None
+        return {
+            "episode_sha256": s["episode_sha256"],
+            "identity": {
+                "namespace": s["namespace"],
+                "model_revision": s["model_revision"],
+                "model_weights": s.get("model_weights"),
+            },
+            "status": s["status"],
+            "decision": {
+                "selected_action": s["selected"],
+                "selected_interventions": s.get("selected_interventions"),
+                "policy": {"decision_sha256": s["decision_sha256"]},
+            },
+            "recommendation": s.get("recommendation"),
         }
 
     def _problem_from_episode(self, episode: Mapping[str, Any]) -> Problem:

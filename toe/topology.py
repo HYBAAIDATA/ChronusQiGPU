@@ -237,9 +237,11 @@ class TopologicalAnalytics:
     def compute_persistent_homology(self, points: np.ndarray, epsilon: float) -> Dict[str, Any]:
         """Compute Betti numbers b0, b1, b2 for the VR complex at epsilon.
 
-        Uses integer boundary-matrix rank reduction (Smith normal form is
-        overkill for the small complexes we build; we use Gaussian elimination
-        over GF(2) on the boundary matrices).
+        Boundary-matrix ranks over GF(2), computed exactly. Each boundary
+        column is an integer bitset over the faces it touches and the rank
+        is the size of an XOR basis (Gaussian elimination on bitsets) — the
+        same rank as dense row reduction, without materialising the dense
+        matrices (which grow as triangles x tetrahedra).
         """
         cx = self.construct_simplicial_complex(points, epsilon)
         vertices = cx["vertices"]
@@ -247,49 +249,38 @@ class TopologicalAnalytics:
         triangles = cx["triangles"]
         tetrahedra = cx["tetrahedra"]
 
-        def _rank_gf2(M: np.ndarray) -> int:
-            if M.size == 0:
-                return 0
-            A = np.array(M, dtype=np.int8) % 2
-            rows, cols = A.shape
-            rank = 0
-            for col in range(cols):
-                pivot = None
-                for row in range(rank, rows):
-                    if A[row, col]:
-                        pivot = row
+        def _rank_gf2(columns: List[int]) -> int:
+            basis: Dict[int, int] = {}
+            for v in columns:
+                while v:
+                    top = v.bit_length() - 1
+                    pivot = basis.get(top)
+                    if pivot is None:
+                        basis[top] = v
                         break
-                if pivot is None:
-                    continue
-                A[[rank, pivot]] = A[[pivot, rank]]
-                for row in range(rows):
-                    if row != rank and A[row, col]:
-                        A[row] = (A[row] + A[rank]) % 2
-                rank += 1
-                if rank == rows:
-                    break
-            return rank
+                    v ^= pivot
+            return len(basis)
 
-        # Boundary matrices over GF(2).
         # d1: edges -> vertices
-        d1 = np.zeros((len(vertices), len(edges)), dtype=np.int8)
-        for j, (i, k) in enumerate(edges):
-            d1[i, j] = 1
-            d1[k, j] = 1
+        d1 = [(1 << i) | (1 << k) for i, k in edges]
         # d2: triangles -> edges
         edge_index = {e: idx for idx, e in enumerate(edges)}
-        d2 = np.zeros((len(edges), len(triangles)), dtype=np.int8)
-        for j, (a, b, c) in enumerate(triangles):
-            for u, v in ((a, b), (a, c), (b, c)):
-                if (u, v) in edge_index:
-                    d2[edge_index[(u, v)], j] = 1
+        d2 = []
+        for a, b, c in triangles:
+            col = 0
+            for face in ((a, b), (a, c), (b, c)):
+                if face in edge_index:
+                    col ^= 1 << edge_index[face]
+            d2.append(col)
         # d3: tetrahedra -> triangles
         tri_index = {t: idx for idx, t in enumerate(triangles)}
-        d3 = np.zeros((len(triangles), len(tetrahedra)), dtype=np.int8)
-        for j, (a, b, c, d) in enumerate(tetrahedra):
-            for u, v, w in ((a, b, c), (a, b, d), (a, c, d), (b, c, d)):
-                if (u, v, w) in tri_index:
-                    d3[tri_index[(u, v, w)], j] = 1
+        d3 = []
+        for a, b, c, d in tetrahedra:
+            col = 0
+            for face in ((a, b, c), (a, b, d), (a, c, d), (b, c, d)):
+                if face in tri_index:
+                    col ^= 1 << tri_index[face]
+            d3.append(col)
 
         rank_d1 = _rank_gf2(d1)
         rank_d2 = _rank_gf2(d2)

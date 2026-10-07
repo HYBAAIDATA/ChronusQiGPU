@@ -101,10 +101,14 @@ class FakeFeedbackCore:
         from dataclasses import dataclass, field
         from typing import Any
 
+        processed_id = decision_id
+
         @dataclass
         class FakeReport:
             report_id: str = "test-report"
-            decision_id: str = decision_id
+            # A class body cannot read a name it also assigns from the
+            # enclosing function; bind through a differently named local.
+            decision_id: str = processed_id
             calibration_score: float = 0.05
             learning_signal: float = 0.8
             recommendations: list[str] = field(default_factory=list)
@@ -213,7 +217,6 @@ class TestTOEIntelligenceRuntime(unittest.TestCase):
 
     def test_fail_closed_on_empty_tenant(self) -> None:
         """Runtime should fail-closed on empty tenant_id."""
-        bad_tenant = TenantContext(tenant_id="", mode="standard")
         # TenantContext raises on empty tenant_id in __post_init__
         with self.assertRaises(ValueError):
             TenantContext(tenant_id="", mode="standard")

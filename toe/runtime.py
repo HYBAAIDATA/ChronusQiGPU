@@ -13,6 +13,15 @@ Every ``predict()`` / ``explain()`` / ``forecast()`` / ``causal()`` call flows
 through the same path: validate → encode → measure → evolve → compare →
 intervene → record → receipt → return.  Fail-closed on every boundary.
 
+``solve()`` / ``learn()`` route a domain-neutral :class:`toe.problem.Problem`
+through the reasoning core, :class:`toe.machine.TOEMachine` (represent →
+understand → futures → decide/plan → explain → govern, then outcome →
+revision → THESEUS persistence). The runtime remains the single composition
+root: it owns tenancy, receipts, the evidence chain and the mining boundary;
+the machine owns the reasoning cycle. Each tenant gets its own machine (and,
+when a ``custody_factory`` is supplied, its own THESEUS snapshot stream), so
+learning never crosses tenants.
+
 This module is deliberately framework-neutral: it has no HTTP, no async
 event loops, and no external ML dependencies.  It composes only components
 that already exist in this repository.  The CIaaS API layer
@@ -40,6 +49,7 @@ __all__ = [
     "RuntimeReceipt",
     "RuntimeResponse",
     "TOEIntelligenceRuntime",
+    "operation_tag",
     "DEFAULT_CONFIG",
 ]
 
@@ -160,6 +170,10 @@ class RuntimeResponse:
     error: Optional[RuntimeErrorInfo] = None
     degraded: bool = False  # true when optional wiring is absent
     timestamp: float = field(default_factory=time.time)
+    # Id under which this decision was recorded (feedback core for
+    # predict-style calls, episode digest for ``solve``); pass it back to
+    # ``record_outcome`` / ``learn`` to close the loop.
+    decision_id: Optional[str] = None
 
     def as_dict(self) -> dict[str, Any]:
         d = {
@@ -169,6 +183,8 @@ class RuntimeResponse:
             "timestamp": self.timestamp,
             "degraded": self.degraded,
         }
+        if self.decision_id:
+            d["decision_id"] = self.decision_id
         if self.receipt:
             d["receipt"] = self.receipt.as_dict()
         if self.result:
@@ -228,9 +244,13 @@ class TOEIntelligenceRuntime:
         evidence_chain: Any = None,
         asi: Any = None,
         platform: Any = None,
+        custody_factory: Any = None,
     ) -> None:
         self.config = config or TOEIntelligenceRuntimeConfig()
         self._degraded: list[str] = []
+        # tenant_id -> THESEUS custody for that tenant's reasoning state.
+        self._custody_factory = custody_factory
+        self._machines: dict[str, Any] = {}
 
         # --- inner loop ----------------------------------------------------
         if bridge is not None:
@@ -262,6 +282,7 @@ class TOEIntelligenceRuntime:
                 self._degraded.append(f"feedback_core: {exc}")
         else:
             self.feedback_core = None
+            self._degraded.append("feedback_core: disabled by configuration")
 
         # --- governance loop ----------------------------------------------
         if evidence_chain is not None:
@@ -276,6 +297,7 @@ class TOEIntelligenceRuntime:
                 self._degraded.append(f"evidence_chain: {exc}")
         else:
             self.evidence_chain = None
+            self._degraded.append("evidence_chain: disabled by configuration")
 
         # --- outer loop (observe-only) ------------------------------------
         if asi is not None:
@@ -290,6 +312,7 @@ class TOEIntelligenceRuntime:
                 self._degraded.append(f"asi_core: {exc}")
         else:
             self.asi = None
+            self._degraded.append("asi_core: disabled by configuration")
 
         # --- delivery loop (optional) --------------------------------------
         if platform is not None:
@@ -304,6 +327,7 @@ class TOEIntelligenceRuntime:
                 self._degraded.append(f"platform: {exc}")
         else:
             self.platform = None
+            self._degraded.append("platform: disabled by configuration")
 
         self._tenant_decisions: dict[str, list[str]] = {}
 
@@ -427,20 +451,24 @@ class TOEIntelligenceRuntime:
         decision_id: str,
         result: dict[str, Any],
         confidence: float,
-    ) -> None:
-        """Record decision in the feedback core and evidence chain."""
+    ) -> Optional[str]:
+        """Record decision in the feedback core and evidence chain.
+
+        Returns the id the feedback core assigned — the id an outcome must be
+        recorded against — or ``None`` when the middle loop is absent.
+        """
+        recorded: Optional[str] = None
         if self.feedback_core is not None:
             try:
-                self.feedback_core.record_decision(
+                recorded = self.feedback_core.record_decision(
                     decision=operation_tag(result),
                     confidence=float(confidence),
                     module_outputs=result.get("state_tomography", {}),
                     context={"tenant": tenant.tenant_id, "mode": tenant.mode},
                     source_id=tenant.tenant_id,
                 )
-                self._tenant_decisions.setdefault(tenant.tenant_id, []).append(
-                    decision_id
-                )
+                recorded = str(recorded) if recorded is not None else decision_id
+                self._tenant_decisions.setdefault(tenant.tenant_id, []).append(recorded)
             except Exception as exc:
                 logger.warning("[TOE-RUNTIME] feedback record failed: %s", exc)
 
@@ -457,6 +485,7 @@ class TOEIntelligenceRuntime:
                 )
             except Exception as exc:
                 logger.warning("[TOE-RUNTIME] evidence append failed: %s", exc)
+        return recorded
 
     # -- public API -------------------------------------------------------
 
@@ -691,7 +720,9 @@ class TOEIntelligenceRuntime:
                 result = result.as_dict() if hasattr(result, "as_dict") else result
             elif operation == "causal":
                 causal_result = self.bridge.explain_causality(payload)
-                result = causal_result.as_dict() if hasattr(result, "as_dict") else causal_result
+                result = (
+                    causal_result.as_dict() if hasattr(causal_result, "as_dict") else causal_result
+                )
                 # Add the causal ladder if available
                 try:
                     ladder = self.bridge.causal_ladder(payload)
@@ -736,7 +767,7 @@ class TOEIntelligenceRuntime:
 
         # 9. Record in feedback + evidence
         decision_id = str(uuid.uuid4())
-        self._record_decision(tenant, decision_id, result, confidence)
+        recorded_id = self._record_decision(tenant, decision_id, result, confidence)
 
         # 10. ASI observe-only health hint (never acts)
         asi_hint: dict[str, Any] = {}
@@ -756,6 +787,160 @@ class TOEIntelligenceRuntime:
             result=result,
             degraded=self.degraded,
             timestamp=time.time(),
+            decision_id=recorded_id,
+        )
+
+    # -- reasoning core (TOEMachine) ---------------------------------------
+
+    def machine_for(self, tenant: TenantContext) -> Any:
+        """The tenant's reasoning core; created (and recovered) on first use."""
+        machine = self._machines.get(tenant.tenant_id)
+        if machine is None:
+            from toe.machine import TOEMachine
+
+            custody = self._custody_factory(tenant.tenant_id) if self._custody_factory else None
+            machine = TOEMachine(
+                custody=custody,
+                stream=f"tenant-{tenant.tenant_id}",
+                bridge=self.bridge,
+            )
+            self._machines[tenant.tenant_id] = machine
+        return machine
+
+    def _mining_problem_violation(self, problem: Any, tenant: TenantContext) -> Optional[str]:
+        """In mining mode no decision variable may be a consensus field."""
+        if tenant.mode != "mining":
+            return None
+        names = set(problem.state)
+        if problem.structure is not None:
+            names |= set(problem.structure.all_nodes())
+        names |= {op.node for op in problem.operators}
+        bad = sorted(n for n in names if str(n).lower() in _MINING_CONSENSUS_VOCABULARY)
+        if bad:
+            return f"consensus field(s) {bad} used as TOE decision variables in mining mode"
+        return None
+
+    def solve(
+        self,
+        problem: Any,
+        tenant: TenantContext,
+        *,
+        domain: Optional[str] = None,
+    ) -> RuntimeResponse:
+        """Run one domain-neutral problem through the reasoning core.
+
+        ``problem`` is a :class:`toe.problem.Problem`, or its JSON content
+        (``Problem.content()``) together with ``domain``. The response
+        carries the evidence-bearing episode; ``learn`` closes its loop.
+        """
+        operation = "solve"
+        try:
+            self._validate_tenant(tenant)
+        except (TypeError, ValueError) as exc:
+            return self._error(tenant, operation, "invalid_tenant", str(exc))
+        from toe.machine import problem_from_content
+        from toe.problem import Problem
+
+        try:
+            if not isinstance(problem, Problem):
+                if not isinstance(problem, Mapping) or not domain:
+                    raise ValueError("solve needs a Problem, or problem content plus a domain")
+                self._validate_payload_size(problem)
+                problem = problem_from_content(str(domain), problem)
+        except (KeyError, TypeError, ValueError) as exc:
+            return self._error(tenant, operation, "payload_invalid", str(exc))
+        violation = self._mining_problem_violation(problem, tenant)
+        if violation:
+            return self._error(tenant, operation, "consensus_boundary_violation", violation)
+        try:
+            episode = self.machine_for(tenant).run(problem)
+        except Exception as exc:
+            logger.error("[TOE-RUNTIME] solve failed: %s", exc)
+            return self._error(tenant, operation, "execution_error", str(exc))
+        try:
+            self._check_mining_boundary({"recommendation": episode.get("recommendation")}, tenant)
+        except _MiningConsensusBoundaryError as exc:
+            return self._error(tenant, operation, "consensus_boundary_violation", str(exc))
+        if self.evidence_chain is not None:
+            try:
+                self.evidence_chain.append(
+                    "toe-solve",
+                    {
+                        "tenant": tenant.tenant_id,
+                        "episode_sha256": episode.get("episode_sha256"),
+                        "status": episode.get("status"),
+                        "namespace": episode["identity"]["namespace"],
+                        "timestamp": time.time(),
+                    },
+                )
+            except Exception as exc:
+                logger.warning("[TOE-RUNTIME] evidence append failed: %s", exc)
+        receipt = RuntimeReceipt(
+            receipt_id=str(uuid.uuid4()),
+            tenant_id=tenant.tenant_id,
+            operation=operation,
+            payload_digest=problem.digest(),
+            result_digest=str(episode.get("episode_sha256")),
+            timestamp=time.time(),
+            evidence_source="toe.machine.TOEMachine",
+            evidence_status="MEASURED",
+            observe_only=True,
+            production_ready=self.config.production_ready,
+        )
+        return RuntimeResponse(
+            ok=True,
+            tenant_id=tenant.tenant_id,
+            operation=operation,
+            receipt=receipt,
+            result=episode,
+            degraded=self.degraded,
+            decision_id=episode.get("episode_sha256"),
+        )
+
+    def learn(
+        self,
+        episode_sha256: str,
+        observed: Any,
+        tenant: TenantContext,
+    ) -> RuntimeResponse:
+        """Bind an observed outcome to one of this tenant's episodes and learn."""
+        operation = "learn"
+        try:
+            self._validate_tenant(tenant)
+        except (TypeError, ValueError) as exc:
+            return self._error(tenant, operation, "invalid_tenant", str(exc))
+        machine = self.machine_for(tenant)
+        episode = machine.episode_record(episode_sha256)
+        if episode is None:
+            return self._error(
+                tenant, operation, "unknown_episode", "episode was not solved for this tenant"
+            )
+        try:
+            report = machine.learn(episode, observed)
+        except Exception as exc:
+            logger.error("[TOE-RUNTIME] learn failed: %s", exc)
+            return self._error(tenant, operation, "learning_error", str(exc))
+        if self.evidence_chain is not None:
+            try:
+                self.evidence_chain.append(
+                    "toe-learn",
+                    {
+                        "tenant": tenant.tenant_id,
+                        "episode_sha256": episode_sha256,
+                        "status": (report.get("assessment") or {}).get("status"),
+                        "revised": report.get("revision") is not None,
+                        "timestamp": time.time(),
+                    },
+                )
+            except Exception as exc:
+                logger.warning("[TOE-RUNTIME] evidence append failed: %s", exc)
+        return RuntimeResponse(
+            ok=bool(report.get("learned")),
+            tenant_id=tenant.tenant_id,
+            operation=operation,
+            result=report,
+            degraded=self.degraded,
+            decision_id=episode_sha256,
         )
 
     def _error(
