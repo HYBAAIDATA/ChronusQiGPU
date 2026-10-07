@@ -31,7 +31,12 @@ class OptimizationDomain(Enum):
 
 @dataclass
 class OptimizationResult:
-    """Result from Millennium Problem optimization"""
+    """Result from Millennium Problem optimization.
+
+    ``improvement`` is the *declared design multiplier* applied by the
+    transform, not a measured performance gain.  ``evidence_class``
+    marks every result as ``declared_design_multiplier_not_measured``.
+    """
 
     domain: str
     score: float
@@ -39,6 +44,7 @@ class OptimizationResult:
     metrics: Dict[str, Any]
     algorithm: str
     iterations: int
+    evidence_class: str = "declared_design_multiplier_not_measured"
 
 
 class RiemannOptimization:
@@ -46,7 +52,8 @@ class RiemannOptimization:
     Riemann Hypothesis-based Optimization
 
     Uses properties of zeta function zeros for prime signal processing
-    and number-theoretic optimization. Provides +9.6% improvement.
+    and number-theoretic optimization.  Applies a declared design
+    factor of 9.6% — a transform constant, not a measured improvement.
     """
 
     def __init__(self, dimension: int = 256):
@@ -74,7 +81,7 @@ class RiemannOptimization:
         """
         Optimize signal using Riemann zeta properties
 
-        Enhancement: +9.6%
+        Declared design factor: +9.6% (transform constant, not measured)
         """
         # FFT of signal
         fft_signal = np.fft.fft(signal)
@@ -121,7 +128,8 @@ class NavierStokesOptimization:
     Navier-Stokes Equations-based Optimization
 
     Uses fluid dynamics principles for computational flow optimization
-    and reasoning pathway enhancement. Provides +7.0% improvement.
+    and reasoning pathway enhancement.  Applies a declared design
+    factor of 7.0% — a transform constant, not a measured improvement.
     """
 
     def __init__(self, dimensions: int = 3):
@@ -155,7 +163,7 @@ class NavierStokesOptimization:
         """
         Optimize computational flow using Navier-Stokes principles
 
-        Enhancement: +7.0%
+        Declared design factor: +7.0% (transform constant, not measured)
         """
         optimized = flow_data.copy()
 
@@ -212,7 +220,8 @@ class BirchSwinnertonDyerOptimization:
     Birch Swinnerton-Dyer Conjecture-based Optimization
 
     Uses elliptic curve properties for solution pathway ranking
-    and curve-fitting optimization. Provides +5.5% improvement.
+    and curve-fitting optimization.  Applies a declared design
+    factor of 5.5% — a transform constant, not a measured improvement.
     """
 
     def __init__(self, prime_field: int = 1000000007):
@@ -270,7 +279,7 @@ class BirchSwinnertonDyerOptimization:
         else:
             weights = np.ones(len(solutions)) / len(solutions)
 
-        # Apply weights (+5.5% improvement)
+        # Apply weights (+5.5% declared design factor)
         weighted_solutions = np.array(solutions) * (1.0 + 0.055 * weights)
         ranked = weighted_solutions.tolist()
 
@@ -321,7 +330,8 @@ class PvsNPOptimization:
     P vs NP Complexity-based Optimization
 
     Uses complexity theory bounds for problem-solving strategy selection
-    and verification acceleration. Provides +8.5% improvement.
+    and verification acceleration.  Applies a declared design
+    factor of 8.5% — a transform constant, not a measured improvement.
     """
 
     def __init__(self):
@@ -360,7 +370,7 @@ class PvsNPOptimization:
         - Polynomial-time algorithms for P problems
         - Heuristics/approximation for NP problems
 
-        Enhancement: +8.5%
+        Declared design factor: +8.5% (transform constant, not measured)
         """
         problem_array = np.array(problem)
         problem_size = len(problem)
@@ -424,12 +434,21 @@ class MillenniumProblemsIntegration:
         Full optimization pipeline applying all Millennium optimizers
 
         Input: Query data with parameters
-        Output: Optimized parameters with combined 30% improvement
+        Output: Optimized parameters with the declared composite design
+        factor composed from each optimizer's declared constant.
+
+        The reported percentages are design constants multiplied into
+        the transform, NOT measured performance improvements.
         """
         results = {
             "original_query": query_data,
             "optimizations": [],
             "combined_improvement": 1.0,
+            "evidence_class": "declared_design_multiplier_not_measured",
+            "improvement_basis": (
+                "declared design constants composed multiplicatively; "
+                "no objective function is measured"
+            ),
         }
 
         # Convert query data to usable format
@@ -505,14 +524,18 @@ class MillenniumProblemsIntegration:
             )
             results["combined_improvement"] *= 1.0 + pvsnp_result.improvement
 
-        # Calculate final combined improvement
+        # Compose the declared design factors (constants, not measurements)
         final_improvement = (results["combined_improvement"] - 1.0) * 100
         results["final_improvement_percent"] = final_improvement
-        results["optimization_status"] = "complete"
+        results["optimization_status"] = "heuristic_scaffold_not_measured"
 
         self.last_results = results
 
-        logger.info(f"Millennium optimization complete: +{final_improvement:.1f}% improvement")
+        logger.info(
+            "Millennium optimization complete: +%.1f%% declared design factor "
+            "(not a measured improvement)",
+            final_improvement,
+        )
 
         return results
 
@@ -526,7 +549,10 @@ class MillenniumProblemsIntegration:
         - Birch-Swinnerton-Dyer: 1.055x
         - P vs NP: 1.085x
 
-        Combined: 1.096 × 1.07 × 1.055 × 1.085 ≈ 1.337x (≈33.7% gain)
+        Combined: 1.096 × 1.07 × 1.055 × 1.085 ≈ 1.337x
+
+        This is a declared composite design factor — a constant composed
+        from the optimizers' declared constants, not a measured gain.
         """
         multiplier = 1.096 * 1.07 * 1.055 * 1.085
         return multiplier

@@ -31,6 +31,7 @@ import math
 import time
 import uuid
 from dataclasses import asdict, dataclass, field
+from pathlib import Path
 from typing import Any, Dict, Mapping, Optional
 
 logger = logging.getLogger(__name__)
@@ -110,6 +111,7 @@ class TOEIntelligenceRuntimeConfig:
     enable_asi: bool = True
     enable_platform: bool = False  # requires connector credentials
     production_ready: bool = False  # always false until gates A–H pass
+    feedback_state_path: Optional[str] = None  # durable learned-state handoff
 
     def __post_init__(self) -> None:
         if self.hilbert_dim < 2:
@@ -266,6 +268,28 @@ class TOEIntelligenceRuntime:
                 self._degraded.append(f"feedback_core: {exc}")
         else:
             self.feedback_core = None
+
+        # --- learned-state handoff (persistence → restart → replay) -------
+        self._feedback_state_path = (
+            Path(self.config.feedback_state_path)
+            if self.config.feedback_state_path
+            else None
+        )
+        if self.feedback_core is not None and self._feedback_state_path is not None:
+            if self._feedback_state_path.is_file():
+                try:
+                    state = json.loads(
+                        self._feedback_state_path.read_text(encoding="utf-8")
+                    )
+                    report = self.feedback_core.restore(state)
+                    self._feedback_restored = report
+                except Exception as exc:
+                    self._feedback_restored = None
+                    self._degraded.append(f"feedback_state_restore: {exc}")
+            else:
+                self._feedback_restored = None
+        else:
+            self._feedback_restored = None
 
         # --- governance loop ----------------------------------------------
         if evidence_chain is not None:
@@ -580,6 +604,7 @@ class TOEIntelligenceRuntime:
                 outcome=outcome,
                 source_id=tenant.tenant_id,
             )
+            self._persist_feedback_state()
             if self.evidence_chain is not None:
                 self.evidence_chain.append(
                     "feedback-outcome",
@@ -626,6 +651,21 @@ class TOEIntelligenceRuntime:
                 ),
             )
 
+    def _persist_feedback_state(self) -> None:
+        """Atomic durable write of learned state after each closed outcome."""
+        if self._feedback_state_path is None or self.feedback_core is None:
+            return
+        try:
+            self._feedback_state_path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self._feedback_state_path.with_suffix(".tmp")
+            tmp.write_text(
+                json.dumps(self.feedback_core.snapshot(), sort_keys=True),
+                encoding="utf-8",
+            )
+            tmp.replace(self._feedback_state_path)
+        except Exception as exc:
+            logger.warning("[TOE-RUNTIME] feedback state persist failed: %s", exc)
+
     # -- health / readiness -----------------------------------------------
 
     def health(self) -> dict[str, Any]:
@@ -647,6 +687,22 @@ class TOEIntelligenceRuntime:
         else:
             asi_report = {"available": False, "reason": "ASI disabled"}
 
+        # Learned state is a decision input, not decoration: modules the
+        # outcome loop learned were negative contributors surface as
+        # underperforming on the health report, and mark the runtime degraded
+        # so downstream consumers can see learned evidence changed posture.
+        learned_performance: dict[str, float] = {}
+        underperforming: list[str] = []
+        if self.feedback_core is not None:
+            learned_performance = self.feedback_core.get_module_performance()
+            underperforming = self.feedback_core.identify_underperforming_modules()
+        learned_degraded = bool(underperforming)
+        if learned_degraded:
+            for name in underperforming:
+                reason = f"learned: module {name} underperforming"
+                if reason not in self._degraded:
+                    self._degraded.append(reason)
+
         return {
             "engine_available": engine_ok,
             "engine_status": engine_status,
@@ -654,8 +710,16 @@ class TOEIntelligenceRuntime:
             "evidence_available": self.evidence_chain is not None,
             "asi_report": asi_report,
             "platform_available": self.platform is not None,
-            "degraded": self.degraded,
+            "degraded": self.degraded or learned_degraded,
             "degradation_reasons": self.degradation_reasons,
+            "learned_module_performance": learned_performance,
+            "underperforming_modules": underperforming,
+            "feedback_state": {
+                "path": str(self._feedback_state_path)
+                if self._feedback_state_path
+                else None,
+                "restored": self._feedback_restored,
+            },
             "production_ready": self.config.production_ready,
             "timestamp": time.time(),
         }

@@ -180,6 +180,56 @@ class IntelligenceFeedbackCore:
     def identify_underperforming_modules(self,threshold: float=0.0) -> list[str]:
         return [name for name,score in self.model_parameters.items() if score<threshold]
 
+    def snapshot(self) -> dict[str, Any]:
+        """Durable form of the learned aggregate state.
+
+        Live decision records carry arbitrary decision/outcome objects and are
+        not serialised; what persists is what future decisions actually read:
+        learned model parameters, the calibration series, and cumulative
+        counts.  Restoring a snapshot replays that learned state; recorded
+        decision ids do not resurrect, so outcomes against pre-restart
+        decisions still fail closed.
+        """
+        return {
+            "schema": "intelligence-feedback-core/1",
+            "learning_rate": self.learning_rate,
+            "enable_auto_learning": self.enable_auto_learning,
+            "model_parameters": dict(self.model_parameters),
+            "calibration": self.calibration_engine.export_state(),
+            "counts": {
+                "decisions": len(self.decision_records),
+                "feedback_reports": len(self.feedback_reports),
+                "learning_updates": len(self.learning_updates),
+            },
+            "processed_decision_ids": sorted(self._processed.keys()),
+        }
+
+    def restore(self, state: Mapping[str, Any]) -> dict[str, Any]:
+        """Restore learned state from a snapshot; returns a restore report.
+
+        Replaces the live (unpersisted) learning state.  Calibration series
+        and model parameters are replayed exactly; historical decision ids
+        stay unresolvable — a restored core rejects outcomes against them.
+        """
+        if dict(state or {}).get("schema") != "intelligence-feedback-core/1":
+            raise ValueError("unsupported feedback-core snapshot schema")
+        self.reset_learning()
+        self.learning_rate = float(state.get("learning_rate", self.learning_rate))
+        self.enable_auto_learning = bool(state.get("enable_auto_learning", True))
+        self.model_parameters = {
+            str(name): float(value)
+            for name, value in dict(state.get("model_parameters") or {}).items()
+        }
+        self.calibration_engine.import_state(state.get("calibration") or {})
+        return {
+            "restored": True,
+            "model_parameters": len(self.model_parameters),
+            "calibration_sources": len(self.calibration_engine.export_state()),
+            "historical_decisions_carried": dict(state.get("counts") or {}).get(
+                "decisions", 0
+            ),
+        }
+
     def reset_learning(self) -> None:
         self.decision_records.clear(); self.learning_updates.clear(); self.feedback_reports.clear()
         self.model_parameters.clear(); self._processed.clear()

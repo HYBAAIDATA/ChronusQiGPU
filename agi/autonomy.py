@@ -259,11 +259,18 @@ class EnterpriseMetaLearningEngine:
             solver["avg_performance"] = solver["total_performance"] / solver["usage_count"]
             solver["last_used"] = time.time()
 
-            # Calculate McKinsey 7-S alignment
-            mckinsey_alignment = sum(
-                self.mckinsey_kpi_weights[kpi] * value for kpi, value in mckinsey_kpis.items()
-            )
+            # Calculate McKinsey 7-S alignment over the KPIs that carry a
+            # declared weight; unmapped KPI names are reported, not silently
+            # zeroed.
+            weighted = [
+                self.mckinsey_kpi_weights[kpi] * value
+                for kpi, value in mckinsey_kpis.items()
+                if kpi in self.mckinsey_kpi_weights
+            ]
+            unmapped = sorted(set(mckinsey_kpis) - set(self.mckinsey_kpi_weights))
+            mckinsey_alignment = sum(weighted)
             solver["mckinsey_alignment"] = mckinsey_alignment
+            solver["unmapped_kpis"] = unmapped
 
             # Store in performance history
             self.performance_history.append(
@@ -391,7 +398,14 @@ class EnterpriseASIAutonomyEngine:
         logger.info(f"[ENTERPRISE] Initialized {len(node_types)} consciousness nodes")
 
     def _register_enterprise_solvers(self):
-        """Register enterprise-grade problem solvers"""
+        """Register enterprise-grade problem solvers.
+
+        NOTE (research scaffold): these solver bodies return draws from
+        fixed probability distributions as stand-ins for problem-aware
+        solving.  They exist so the meta-learning selection machinery can
+        be exercised end-to-end; their outputs carry
+        ``evidence_class="heuristic_scaffold_not_measured"`` downstream.
+        """
 
         # Strategic planning solver
         def strategic_solver(context):
@@ -635,6 +649,10 @@ class EnterpriseASIAutonomyEngine:
             "consciousness_amplification": consciousness_multiplier,
             "mckinsey_kpis": mckinsey_kpis,
             "confidence": min(1.0, enhanced_result + 0.1),
+            # The registered solver bodies are distribution draws
+            # (heuristic scaffold), not problem-aware computation —
+            # every number derived from them is scaffold, not measured.
+            "evidence_class": "heuristic_scaffold_not_measured",
         }
 
     async def _should_self_improve(self) -> bool:

@@ -937,10 +937,14 @@ class EnterpriseASIAgencyFramework:
 
     def _log_likelihood(self, theta: np.ndarray, context: EnterpriseDecisionContext) -> float:
         """Calculate log-likelihood for Bayesian inference"""
-        # Simplified Gaussian likelihood
+        # Simplified Gaussian likelihood.  The variance is floored: a zero
+        # market volatility would otherwise divide by zero and silently
+        # degenerate the whole MCMC chain (NaN acceptance never fires).
         mean = context.financial_impact
-        variance = context.market_volatility**2
+        variance = max(context.market_volatility**2, 1e-6)
         log_likelihood = -0.5 * np.sum((theta - mean) ** 2 / variance)
+        if not np.isfinite(log_likelihood):
+            return float("-inf")
         return log_likelihood
 
     def _estimate_complexity(
@@ -966,7 +970,10 @@ class EnterpriseASIAgencyFramework:
             "stakeholder_consensus": True,  # Simplified
             "regulatory_compliant": len(context.regulatory_constraints) == 0,  # Simplified
             "financial_viable": result.expected_utility > context.financial_impact * 0.1,
-            "competitive_advantage": result.expected_utility > np.mean([result.expected_utility]),
+            # A single scalar utility cannot evidence competitive
+            # advantage; the criterion is declared unassessable rather
+            # than compared against its own mean (always False).
+            "competitive_advantage": "not_assessable_from_scalar_utility",
             "implementation_feasible": True,  # Simplified
         }
 
