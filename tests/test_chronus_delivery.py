@@ -57,6 +57,10 @@ def test_embedded_delivery_is_explicit_and_in_process():
     out = probe_embedded(tensor_probe=lambda: _EmbeddedProbe())
     assert out.mode is DeliveryMode.EMBEDDED
     assert out.available is True
+    assert out.software_mode_available is True
+    assert out.accelerator_mode_available is True
+    assert "standalone_software" in out.execution_modes
+    assert "preferred_accelerator" in out.execution_modes
     assert out.execution_location == "customer_container"
     assert out.transport == "in_process"
     assert out.endpoint == ""
@@ -82,6 +86,8 @@ def test_embedded_delivery_accepts_native_cuda_without_opencl():
         )
     )
     assert out.available is True
+    assert out.software_mode_available is True
+    assert out.accelerator_mode_available is True
     assert len(out.devices) == 1
     assert out.devices[0]["backend"] == "chronus-cuda"
     assert "backend:chronus-cuda" in out.capabilities
@@ -136,7 +142,7 @@ def test_cloud_unavailable_does_not_fall_back_to_embedded():
     assert embedded_called is False
 
 
-def test_embedded_unavailable_does_not_probe_cloud():
+def test_embedded_without_accelerator_remains_available_in_software_mode():
     remote_called = False
 
     def remote_probe(endpoints):
@@ -149,9 +155,13 @@ def test_embedded_unavailable_does_not_probe_cloud():
         tensor_probe=lambda: _EmbeddedProbe(available=False, reason="no local device"),
         remote_probe=remote_probe,
     )
-    assert out.available is False
+    assert out.available is True
     assert out.mode is DeliveryMode.EMBEDDED
-    assert out.reason == "no local device"
+    assert out.software_mode_available is True
+    assert out.accelerator_mode_available is False
+    assert out.devices == ()
+    assert out.execution_modes == ("standalone_software",)
+    assert "no local device" in out.accelerator_reason
     assert remote_called is False
 
 
@@ -160,5 +170,7 @@ def test_delivery_contract_is_serializable_without_performance_invention():
     payload = out.as_dict()
     assert payload["product"] == "Chronus"
     assert payload["delivery_mode"] == "embedded"
+    assert payload["software_mode_available"] is True
+    assert "standalone_software" in payload["execution_modes"]
     assert "tflops" not in payload
     assert "gflops" not in payload
