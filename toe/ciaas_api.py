@@ -273,13 +273,27 @@ class CIaaSService:
         return response, status
 
     def handle_health(self) -> dict[str, Any]:
-        """Health check response."""
+        """Health check response — mirrors ``TOEIntelligenceRuntime.health()``.
+
+        ``health()`` is invoked (not just ``runtime.degraded`` read) so
+        learned-state degradation — underperforming modules discovered by
+        the outcome loop — reaches the HTTP surface without waiting for
+        ``/metrics`` to compute it first.
+        """
+        health = self.runtime.health()
+        healthy = health["engine_available"] and not health["degraded"]
         return {
-            "status": "ok" if self.runtime.ready() else "degraded",
-            "engine_available": self.runtime.ready(),
-            "degraded": self.runtime.degraded,
-            "degradation_reasons": self.runtime.degradation_reasons,
-            "timestamp": time.time(),
+            "status": "ok" if healthy else "degraded",
+            "engine_available": health["engine_available"],
+            "engine_status": health["engine_status"],
+            "degraded": health["degraded"],
+            "degradation_reasons": health["degradation_reasons"],
+            "feedback_available": health["feedback_available"],
+            "learned_module_performance": health["learned_module_performance"],
+            "underperforming_modules": health["underperforming_modules"],
+            "feedback_state": health["feedback_state"],
+            "production_ready": health["production_ready"],
+            "timestamp": health["timestamp"],
         }
 
     def handle_ready(self) -> dict[str, Any]:
