@@ -5,7 +5,7 @@ recorded here by the owner (HYBA Software Limited). Everything else in the relea
 pipeline runs without them; `packaging/toe/build_and_verify.py` reports
 `publishable: false` while any item is open.
 
-## 1. Public distribution name — OPEN
+## 1. Public distribution name — APPROVED
 
 No canonical record in the repository names a public distribution for TOE.
 
@@ -19,8 +19,9 @@ No canonical record in the repository names a public distribution for TOE.
 
 The import name is `toe` regardless of the distribution chosen.
 
-To approve, replace this line with: `APPROVED_DISTRIBUTION_NAME: <name>`
-and update `name` in `packaging/toe/pyproject.toml` if it differs from the provisional one.
+Owner decision recorded 2026-10-07: use the HYBA-qualified distribution name.
+
+APPROVED_DISTRIBUTION_NAME: hyba-toe
 
 ## 2. Release version — APPROVED
 
