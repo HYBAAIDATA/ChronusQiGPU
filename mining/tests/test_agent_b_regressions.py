@@ -258,6 +258,41 @@ class ListenerOwnershipTests(unittest.TestCase):
             asyncio.run(bridge.wait_for_job(timeout=0.3))
 
 
+class OversizedLineTests(unittest.TestCase):
+    """StreamReader.readline() wraps LimitOverrunError into ValueError —
+    a pool line over the stream limit must exit the listener cleanly,
+    not die as an unhandled task exception (verified against a real
+    >64KiB pool line in the live-session harness)."""
+
+    def test_oversized_line_exits_listener_without_exception(self):
+        class _OversizedReader:
+            def __init__(self):
+                self._emitted = False
+
+            async def readline(self):
+                if not self._emitted:
+                    self._emitted = True
+                    # Exactly what readline() raises after consuming an
+                    # over-limit line: LimitOverrunError re-wrapped.
+                    raise ValueError("Separator is found, but chunk is longer than limit")
+                return b""
+
+        bridge = StratumBridge("127.0.0.1", 3333, "w", "x")
+        bridge._reader = _OversizedReader()
+
+        async def run():
+            fut = asyncio.get_running_loop().create_future()
+            bridge._pending[7] = ("mining.submit", fut)
+            await bridge.listen_forever()
+            return fut
+
+        # Returns without raising: clean listener death, pending cleared.
+        fut = asyncio.run(run())
+        self.assertFalse(bridge._listening)
+        self.assertEqual(bridge._pending, {})
+        self.assertIsInstance(fut.exception(), ConnectionError)
+
+
 class PendingRpcBoundTests(unittest.TestCase):
     """Bounded queues: timed-out RPCs must not leak _pending entries."""
 

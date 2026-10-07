@@ -386,13 +386,18 @@ class StratumBridge:
                     ConnectionResetError,
                     OSError,
                     asyncio.TimeoutError,
-                    asyncio.LimitOverrunError,
+                    ValueError,
                 ):
-                    # LimitOverrunError joins the transport-failure family:
-                    # an oversized line means the stream cannot be framed
-                    # again, so the listener exits cleanly — pending RPCs
-                    # get ConnectionError in the finally, not an orphaned
-                    # task exception that leaves the miner grinding blind.
+                    # ValueError joins the transport-failure family here:
+                    # StreamReader.readline() wraps LimitOverrunError into
+                    # ValueError (streams.py), so a pool line over the
+                    # stream limit surfaces as ValueError — and an
+                    # oversized line leaves the buffer impossible to
+                    # re-frame, so the listener must exit rather than
+                    # keep grinding on a stream it can no longer parse.
+                    # Pending RPCs get ConnectionError in the finally,
+                    # not an orphaned task exception that leaves the
+                    # miner grinding blind.
                     break
                 if not line:
                     break
