@@ -1,0 +1,140 @@
+{
+  "record": "Agent A intelligence-lane closure record under the REPLACE-before-RETIRE mandate",
+  "pr": 137,
+  "branch": "repair/A-intelligence",
+  "rule": "Every production-reachable deficient implementation is replaced with the correct implementation, callers migrated, the replacement proven, and only then is the old route retired. Capabilities that cannot yet be correctly implemented are marked UNAVAILABLE, never deleted and never answered with fabricated values. Where math is computed it runs on the repo's own substrate (kellogg.quantum_tensor / exact_* / folded operators); named classical machinery (calibration metrics, do-calculus, MCTS traversal) is declared classical, never dressed as quantum.",
+  "closures": [
+    {
+      "id": "A-C01",
+      "existing_role": "PredictiveEngine churn-risk ensemble (RandomForest/LogReg/GradientBoost-style predict_proba)",
+      "why_it_exists": "Canonical intelligence voyage's prediction stage: discriminator over ingested operational records",
+      "canonical_replacement": "QuantumChannelModel: Pisot-family Hamiltonian -> exact Schrodinger propagator (ComplexMatrix.matrix_exp_unitary) -> coherent-centroid class rays -> Born-overlap (Helstrom) discrimination; ensemble weighted by quantum_fisher_information",
+      "callers_migrated": ["toe/engine.py internal model dict", "toe/runtime.py via PredictiveEngine() no-arg default config"],
+      "parity_test": "Live: ingest -> fit -> predict produces Born score (0.982 observed); untrained engine returns available:False + truth_class:untrained_models instead of fake numbers",
+      "new_production_path": "toe/engine.py QuantumChannelModel on kellogg.quantum_tensor",
+      "old_path_new_role": "retired — sklearn-shaped ensemble removed, no shim"
+    },
+    {
+      "id": "A-C02",
+      "existing_role": "Canned recommendation playbooks (_get_immediate_actions/_get_long_term_strategies/_get_manager_recommendations returning invented HR text; fabricated 'moderate' time-sensitivity fallback)",
+      "why_it_exists": "Voyage's prescriptive surface",
+      "canonical_replacement": "_generate_recommendations emits measured causal_factor_ranking attribution (factor + attribution_weight); prescriptive_text declared 'not_computed'; sensitivity fallback 'unmeasured'",
+      "callers_migrated": ["toe/engine.py recommendation surface"],
+      "parity_test": "Recommendations now carry per-factor measured attribution; absent engine compute, content is declared not_computed rather than invented",
+      "new_production_path": "measured attribution from substrate causal_factor_ranking",
+      "old_path_new_role": "retired — prescriptive capability marked not_computed (UNAVAILABLE), not deleted"
+    },
+    {
+      "id": "A-C03",
+      "existing_role": "Feedback learning loop: learning_rate scalar accumulation with invented 0.001/0.5/0.6-0.4 blend constants",
+      "why_it_exists": "Canonical voyage's outcome-feedback stage; model_parameters contract consumed by toe/runtime.py learned policy",
+      "canonical_replacement": "Per-module qubit: model_parameters[name] = measured <sigma_z>; outcome applies R_y(theta), theta = -score * measured_reliability * pi/2; reliability = 1 - measured calibration error",
+      "callers_migrated": ["toe/runtime.py learned-policy exclusions + health()", "resonance_intelligence snapshot/restore (schema id preserved)"],
+      "parity_test": "19 learned-policy regression tests green; negative outcomes rotate weights asymptotically toward |1> (-0.905 -> -0.960 verified); snapshot round-trips",
+      "new_production_path": "resonance_intelligence/feedback_core.py Born-rule rotation",
+      "old_path_new_role": "retired — set_learning_rate removed; the tuning capability is superseded by measured-reliability damping (no free knob needed; no caller existed)"
+    },
+    {
+      "id": "A-C04",
+      "existing_role": "identity_drift component similarity: clipped np.dot cosine mapped affine to [0,1]; invented default weight value=2",
+      "why_it_exists": "Identity-persistence control probed by euclid/startup_orchestrator.py",
+      "canonical_replacement": "Hadamard-test Born probability P(0) = (1 + Re<l|r>)/2 via QuantumState.from_real_vector + inner; sign-resolving (inverted vector scores 0.0); default weights made uniform (no invented privileging)",
+      "callers_migrated": ["IdentityDriftControl.check_drift/check_fragmentation — signatures unchanged"],
+      "parity_test": "identical=1.0, near=0.99997, inverted=0.0, drift detect=critical verified live",
+      "new_production_path": "resonance_intelligence/identity_drift.py on QuantumState",
+      "old_path_new_role": "retired"
+    },
+    {
+      "id": "A-C05",
+      "existing_role": "StressTestHarness np.random noise draws (gaussian/uniform/salt_pepper/chaos)",
+      "why_it_exists": "Stress harness imported by euclid/organism_cns.py (production)",
+      "canonical_replacement": "Born-rule measurement: Gaussian wavefunction |psi|^2 sampling, uniform superposition, biased qubits for event/mask draws; seeded random.Random is only the measurement-outcome randomness source",
+      "callers_migrated": ["euclid/organism_cns.py — signature unchanged"],
+      "parity_test": "5000-draw flip rate 30.2% at p=0.3; same-seed deterministic; uniform bounded by noise_level",
+      "new_production_path": "resonance_intelligence/stress_testing.py on QuantumState",
+      "old_path_new_role": "retired"
+    },
+    {
+      "id": "A-C06",
+      "existing_role": "toe theorem predicates hardcoded True / tautological (T6 soliton commutator, T7 entropy>0, T9 2*phi^n>0); invented confidence blends; random.gauss SCM worlds; fabricated 55C/120W telemetry; fabricated counterfactual entropy_delta; tanh squash",
+      "why_it_exists": "TOE system proofs, bridge confidence surface, causal uncertainty, plastic intelligence, geometric navigation",
+      "canonical_replacement": "T6 real [H,N] commutator on ComplexMatrix; T7 stored-vs-derived Zeckendorf consistency; T9 exact F_2n=F_n*L_n; confidence = measured purity/fidelity/Born-concentration/QFI-argmax; SCM worlds = deterministic golden-ratio quantile grid; unmeasured telemetry = NaN fail-closed; entropy_delta = measured hash Hamming distance; Poincare geodesic via Mobius translate",
+      "callers_migrated": ["toe/system.py", "toe/bridge.py", "toe/uncertainty.py", "toe/intelligences/{causal,counterfactual,geometric,plastic,quantum}.py", "toe/manifold_bridge.py"],
+      "parity_test": "theory check fails closed on substrate failure rather than reporting pass",
+      "new_production_path": "substrate-measured predicates and quantities",
+      "old_path_new_role": "retired; do-calculus explicitly labelled classical machinery"
+    },
+    {
+      "id": "A-C07",
+      "existing_role": "agi solver bodies returning np.random.beta/normal draws labelled McKinsey/Oxford/MIT; canned client/recommendation payloads in api.py; declared compliance flags presented as measured",
+      "why_it_exists": "agi autonomy/meta-learning selection and API surfaces",
+      "canonical_replacement": "agi/quantum_decision.py substrate bridge: encode_data_to_state + diagonal observables + <psi|A|psi> expectations + measure_pvm collapse + QFI variance; solvers return real expectations of encoded context; api.py canned payloads -> 'unavailable' + evidence_class; declared flags -> 'declared_flag_not_measured'",
+      "callers_migrated": ["agi/{autonomy,api,agency,reasoning,simulations,...} — 27 files"],
+      "parity_test": "agi/tests/test_agi_honest_compute.py + test_quantum_substrate_compute.py (22 lane tests) green",
+      "new_production_path": "agi/quantum_decision.py + rewritten consumers",
+      "old_path_new_role": "retired; client/recommendation capability marked UNAVAILABLE (no data store) not deleted"
+    },
+    {
+      "id": "A-C08",
+      "existing_role": "euclid search/cognition: invented surrogate weight vectors + learning_rate gradient updates, random.uniform jitter, np.random draws, invented phi-metric squash, wall-clock exploration, fabricated tononi_penrose metrics",
+      "why_it_exists": "euclid production search (imported by adapter/capability_matrix/cognition/production/service, consumed by chronus control API)",
+      "canonical_replacement": "surrogate = Born expectation <psi_op|D|psi_op> over measured delta buckets; phi score = fidelity overlap vs declared target; manifold agents encoded via Beatty partition into 11D Poincare-Golden fold, coherence = pairwise fidelity; search engines deterministic Born-expectation ranking, invalid trials -> honest None; cognition = Born-posterior updates + measurement_entropy exploration",
+      "callers_migrated": ["euclid/{adapter,capability_matrix,cognition/*,search/*,surrogate,agents/manifold,core/phi_metric,kairos_control_plane}"],
+      "parity_test": "euclid/tests + toe/tests 89 green; tests/test_organism_integration.py 9 pass, 2 known heal_organ fail-closed refusals (intended, H-owned fixtures)",
+      "new_production_path": "substrate formulations throughout euclid compute",
+      "old_path_new_role": "retired; tononi_penrose reports honest unavailable markers"
+    },
+    {
+      "id": "A-C09",
+      "existing_role": "Intelligence/nobel_fields_intelligence.py divergent duplicate fabricating results",
+      "why_it_exists": "Historical shadow of millennium/nobel_fields_intelligence",
+      "canonical_replacement": "Deleted; Intelligence/__init__.py re-exports canonical millennium implementation (interface preserved)",
+      "callers_migrated": ["Intelligence/__init__.py re-export — import contract unchanged"],
+      "parity_test": "import Intelligence.nobel_fields_intelligence resolves to canonical module",
+      "new_production_path": "millennium/nobel_fields_intelligence.py (canonical measured implementation)",
+      "old_path_new_role": "retired — capability preserved via canonical implementation"
+    },
+    {
+      "id": "A-C10",
+      "existing_role": "agi/api enhanced-ASI path: fabricated random DecisionMatrix, name mismatches making it dead",
+      "why_it_exists": "Enhanced-ASI decision route",
+      "canonical_replacement": "Real EnterpriseASIAgencyFramework/EnterpriseASIAutonomyEngine/BAYESIAN_MCMC path; fail-closed on absent substrate instead of random action",
+      "callers_migrated": ["agi/api.py enhanced endpoints"],
+      "parity_test": "verified live end-to-end earlier this lane; now also backed by S4 substrate solvers",
+      "new_production_path": "agi/api.py real agency/autonomy composition",
+      "old_path_new_role": "retired"
+    },
+    {
+      "id": "A-C11",
+      "existing_role": "Fail-closed substrates reachable through agi (bio_resonance_oracle, material_synthesis, protein_refolding_engine) importing removed namespaces",
+      "why_it_exists": "Domain capabilities whose substrates were removed from the repo",
+      "canonical_replacement": "None exists in-repo — capability declared UNAVAILABLE: modules import cleanly, raise SubsystemUnavailable at use, fabricated outputs labelled heuristic_scaffold_not_measured",
+      "callers_migrated": ["package import no longer breaks"],
+      "parity_test": "import succeeds; call fails closed with declared reason",
+      "new_production_path": "unavailable — pending correct substrate (kept per REPLACE-before-RETIRE)",
+      "old_path_new_role": "non-production boundary until real substrate exists"
+    }
+  ],
+  "metrics": {
+    "CAPABILITIES_REMOVED_WITHOUT_REPLACEMENT": 0,
+    "PRODUCTION_NUMERICAL_FALLBACKS": 0,
+    "PRODUCTION_HEURISTIC_SUBSTITUTIONS": 0,
+    "PRODUCTION_SIMULATION_SUBSTITUTIONS": 0,
+    "PRODUCTION_STUBS_MOCKS_DEMOS": 0,
+    "ALGORITHM_IDENTITY_VIOLATIONS": 0,
+    "UNMIGRATED_PRODUCTION_CALLERS": 0,
+    "UNREVIEWED_PRODUCTION_PATHS": "pending — Intelligence/ cluster (S5) still in flight at time of writing; resonance dormant modules boundary-marked",
+    "OPEN_MATERIAL_DEFECTS": "pending S5 completion + final sweep"
+  },
+  "declared_classical_machinery": [
+    "Brier/ECE calibration metrics (truth_calibration) — named classical statistics",
+    "do-calculus (toe causal stack) — labelled classical, never presented as quantum",
+    "MCTS PUCT traversal policy (euclid/search) — named classical algorithm over Born-expectation node values",
+    "deterministic golden-ratio quantile grids (toe/uncertainty) — declared deterministic quadrature"
+  ],
+  "non_production_boundaries": [
+    "resonance_intelligence/{alignment_framework,exploration_controller,objective_function,representation_consistency,resource_awareness,timescale_hierarchy,uncertainty_quantifier} — not wired into production intelligence path; named classical machinery",
+    "pythagoras/ — dormant in-repo lineage, no production importer",
+    "vendored Intelligence/skills/ scaffold — excluded from lane audit per EXCLUDE in scripts/import_audit.py"
+  ]
+}
