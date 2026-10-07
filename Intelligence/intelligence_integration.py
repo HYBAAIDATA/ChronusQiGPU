@@ -1,4 +1,8 @@
-"""Integrated intelligence — the cross-scale coupling layer.
+"""Integrated intelligence — legacy-compatible cross-scale coupling layer.
+
+This module remains a useful compatibility/coupling surface, but it is not a
+second cognition authority. New production composition belongs to
+euclid.runtime.EuclidRuntime.production() and its GeneralIntelligenceCore.
 
 The audit found PYTHIA's four main subsystems completely siloed: TOE,
 meta-evolution, Pythia learning, and memory never passed data to each
@@ -76,6 +80,9 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger("Intelligence.integration")
+
+CANONICAL_COGNITION_AUTHORITY = "euclid.runtime.EuclidRuntime.production"
+LEGACY_COMPATIBILITY_SURFACE = True
 
 PHI = (1 + math.sqrt(5)) / 2
 INV_PHI = 1.0 / PHI
