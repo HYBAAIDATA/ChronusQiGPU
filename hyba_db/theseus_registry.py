@@ -24,7 +24,8 @@ class TheseusFileRegistry(FileRegistry):
         row = self.store._db.execute(
             "SELECT fv.*,fo.logical_name,fo.file_class,fo.semantic_owner,fo.domain,"
             "fo.mime_type,fo.retention_policy,fo.created_at AS object_created_at,"
-            "fo.created_by,fp.provenance_json FROM file_versions fv "
+            "fo.created_by,fo.current_version_id,fo.status AS object_status,"
+            "fp.provenance_json FROM file_versions fv "
             "JOIN file_objects fo ON fo.tenant_id=fv.tenant_id "
             "AND fo.file_object_id=fv.file_object_id "
             "JOIN file_provenance fp ON fp.tenant_id=fv.tenant_id "
@@ -55,7 +56,7 @@ class TheseusFileRegistry(FileRegistry):
                 "created_at": row["object_created_at"],
                 "created_by": row["created_by"],
                 "current_version_id": row["current_version_id"],
-                "status": row["status"],
+                "status": row["object_status"],
             },
             "version": {
                 key: row[key]
