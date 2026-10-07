@@ -122,3 +122,230 @@ class TheseusFileRegistry(FileRegistry):
         if not self.custody.verify(tenant_id, cid):
             raise IntegrityFailure("file-link custody failed")
         return lid
+
+    def reconcile_files(self, tenant_id: str, root: str | Path) -> ReconciliationReport:
+        self._tenant(tenant_id)
+        root = Path(root)
+        root.mkdir(parents=True, exist_ok=True)
+        resolved_root = root.resolve()
+        physical = TheseusPhysicalStore(root)
+        pending = self.store._db.execute(
+            "SELECT intent_id FROM file_intents WHERE tenant_id=? AND state!='COMMITTED'",
+            (tenant_id,),
+        ).fetchall()
+        expected: dict[str, str] = {}
+        healthy: list[str] = []
+        missing: list[str] = []
+        hashes: list[str] = []
+        orphans: list[str] = []
+        conflicts: list[str] = []
+        tenant_mismatches: list[str] = []
+        custody_missing: list[str] = []
+        link_missing: list[str] = []
+        transform_mismatches: list[str] = []
+        retention_violations: list[str] = []
+        attestation_invalid: list[str] = []
+
+        for row in self._file_rows(tenant_id):
+            vid = str(row["file_version_id"])
+            uri = str(row["storage_uri"])
+            if not uri.startswith("file://"):
+                orphans.append(vid)
+                continue
+            path = Path(uri[7:])
+            try:
+                resolved = path.resolve()
+                rel = resolved.relative_to(resolved_root)
+            except (OSError, ValueError):
+                orphans.append(vid)
+                continue
+            if not rel.parts or rel.parts[0] != tenant_id:
+                tenant_mismatches.append(vid)
+                continue
+            try:
+                address = self.storage_address(tenant_id, vid)
+                canonical = physical.primary_path(address).resolve()
+            except Exception:
+                conflicts.append(vid)
+                continue
+            expected[str(canonical)] = vid
+            if resolved != canonical or address.content_sha256 != row["content_sha256"]:
+                conflicts.append(vid)
+                continue
+            if not path.is_file():
+                missing.append(vid)
+                continue
+            try:
+                data = path.read_bytes()
+            except OSError:
+                missing.append(vid)
+                continue
+            if len(data) != row["size_bytes"] or _sha(data) != row["content_sha256"]:
+                hashes.append(vid)
+                continue
+            if not verify_storage_address(address, data) or not physical.verify(address, data):
+                conflicts.append(vid)
+                continue
+            if row["status"] in {"MISSING", "QUARANTINED"}:
+                conflicts.append(vid)
+                continue
+            cid = str(row["custody_record_id"] or "")
+            if not cid or self.custody is None or not self.custody.verify(tenant_id, cid):
+                custody_missing.append(vid)
+                continue
+            try:
+                if not self.store.verify_attestation(tenant_id, str(row["attestation_id"])):
+                    raise IntegrityFailure("invalid attestation")
+            except Exception:
+                attestation_invalid.append(vid)
+                continue
+            if not self.store._db.execute(
+                "SELECT 1 FROM file_links WHERE tenant_id=? AND file_version_id=?",
+                (tenant_id, vid),
+            ).fetchone():
+                link_missing.append(vid)
+                continue
+            if (row["ovid_lineage_id"] is None) != (row["transform_contract"] is None):
+                transform_mismatches.append(vid)
+                continue
+            if row["status"] == "RETIRED" and not self.store._db.execute(
+                "SELECT 1 FROM file_events WHERE tenant_id=? AND file_version_id=? "
+                "AND event_type IN ('RETENTION_APPLIED','DELETED_BY_POLICY')",
+                (tenant_id, vid),
+            ).fetchone():
+                retention_violations.append(vid)
+                continue
+            healthy.append(vid)
+
+        for obj in self.store._db.execute(
+            "SELECT * FROM file_objects WHERE tenant_id=?", (tenant_id,)
+        ):
+            versions = self.store._db.execute(
+                "SELECT file_version_id FROM file_versions WHERE tenant_id=? "
+                "AND file_object_id=? ORDER BY version",
+                (tenant_id, obj["file_object_id"]),
+            ).fetchall()
+            if versions and obj["current_version_id"] != versions[-1][0]:
+                conflicts.append(str(obj["file_object_id"]))
+
+        primary_root = root / tenant_id / "theseus"
+        actual = (
+            {str(p.resolve()) for p in primary_root.rglob("*.blk") if p.is_file()}
+            if primary_root.exists()
+            else set()
+        )
+        orphan_files = sorted(actual - set(expected))
+        unresolved = (
+            missing + hashes + orphans + conflicts + tenant_mismatches
+            + custody_missing + link_missing + transform_mismatches
+            + retention_violations + attestation_invalid + orphan_files
+            + [f"intent:{r['intent_id']}" for r in pending]
+        )
+        return ReconciliationReport(
+            tenant_id=tenant_id,
+            root=str(root),
+            healthy=tuple(sorted(healthy)),
+            orphan_files=tuple(orphan_files),
+            orphan_records=tuple(sorted(orphans)),
+            missing_blobs=tuple(sorted(missing)),
+            hash_mismatches=tuple(sorted(hashes)),
+            version_conflicts=tuple(sorted(set(conflicts))),
+            tenant_mismatches=tuple(sorted(tenant_mismatches)),
+            custody_missing=tuple(sorted(custody_missing)),
+            domain_link_missing=tuple(sorted(link_missing)),
+            transform_mismatches=tuple(sorted(transform_mismatches)),
+            retention_violations=tuple(sorted(retention_violations)),
+            attestation_invalid=tuple(sorted(attestation_invalid)),
+            unresolved=tuple(sorted(set(unresolved))),
+            generated_at=_now(),
+        )
+
+    def recover_blob_from_custody(
+        self, tenant_id: str, file_version_id: str, root: str | Path
+    ) -> dict[str, Any]:
+        self._tenant(tenant_id)
+        if self.custody is None:
+            raise InvalidRecord("THESEUS custody required")
+        row = self.store._db.execute(
+            "SELECT fv.*,fo.file_class FROM file_versions fv JOIN file_objects fo "
+            "ON fo.tenant_id=fv.tenant_id AND fo.file_object_id=fv.file_object_id "
+            "WHERE fv.tenant_id=? AND fv.file_version_id=?",
+            (tenant_id, file_version_id),
+        ).fetchone()
+        if row is None:
+            raise AccessDenied("file version not found")
+        op = self.custody.open_tenant(tenant_id).get_record(str(row["custody_record_id"]))
+        data = bytes(op.payload)
+        if (
+            _sha(data) != row["content_sha256"]
+            or len(data) != row["size_bytes"]
+            or op.content_digest != row["content_sha256"]
+            or op.producer != row["producer"]
+            or op.kind != "file_version"
+        ):
+            raise IntegrityFailure("THESEUS recovery content binding mismatch")
+        address = self.storage_address(tenant_id, file_version_id)
+        expected = derive_storage_address(
+            data, tenant_id=tenant_id, scope=str(row["file_class"])
+        )
+        if expected != address:
+            raise IntegrityFailure("mathematical address mismatch")
+        physical = TheseusPhysicalStore(root)
+        already = physical.verify(address, data)
+        committed = physical.commit(
+            data, tenant_id=tenant_id, scope=str(row["file_class"])
+        )
+        if committed != address or not physical.verify(address, data):
+            raise IntegrityFailure("THESEUS recovery verification failed")
+        final = physical.primary_path(address)
+        with self.store._tx() as db:
+            db.execute(
+                "UPDATE file_versions SET storage_uri=?,logical_path=?,status='ACTIVE' "
+                "WHERE tenant_id=? AND file_version_id=?",
+                (f"file://{final}", str(final), tenant_id, file_version_id),
+            )
+            self._event(
+                db, tenant_id, file_version_id, "RECOVERED", "theseus",
+                {"address_id": address.address_id, "already_healthy": already},
+            )
+        return {
+            "schema": "hyba.file-blob-recovery/v2",
+            "tenant_id": tenant_id,
+            "file_version_id": file_version_id,
+            "content_sha256": address.content_sha256,
+            "address_id": address.address_id,
+            "storage_uri": f"file://{final}",
+            "recovered": not already,
+            "passed": True,
+        }
+
+    def recover_blobs_from_custody(
+        self, tenant_id: str, root: str | Path, *, only_unhealthy: bool = True
+    ) -> dict[str, Any]:
+        self._tenant(tenant_id)
+        physical = TheseusPhysicalStore(root)
+        recovered: list[str] = []
+        healthy: list[str] = []
+        errors: list[str] = []
+        rows = self.store._db.execute(
+            "SELECT file_version_id FROM file_versions WHERE tenant_id=?", (tenant_id,)
+        ).fetchall()
+        for row in rows:
+            vid = str(row[0])
+            try:
+                address = self.storage_address(tenant_id, vid)
+                if only_unhealthy and physical.verify(address):
+                    healthy.append(vid)
+                    continue
+                result = self.recover_blob_from_custody(tenant_id, vid, root)
+                (recovered if result["recovered"] else healthy).append(vid)
+            except Exception as exc:
+                errors.append(f"{vid}:{type(exc).__name__}:{exc}")
+        return {
+            "schema": "hyba.file-blob-recovery-batch/v2",
+            "tenant_id": tenant_id,
+            "recovered": tuple(recovered),
+            "healthy": tuple(healthy),
+            "errors": tuple(errors),
+            "passed": not errors,
+        }
