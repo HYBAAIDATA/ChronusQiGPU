@@ -473,9 +473,23 @@ class FileRegistry:
                 "THESEUS custody adapter required; a custody_record_id may not be self-asserted"
             )
         if supplied:
-            if not self.custody.verify(tenant_id, str(supplied)):
+            supplied = str(supplied)
+            if not self.custody.verify(tenant_id, supplied):
                 raise IntegrityFailure(f"custody record does not exist in THESEUS: {supplied!r}")
-            return str(supplied)
+            opener = getattr(self.custody, "open_tenant", None)
+            if callable(opener):
+                bound = opener(tenant_id).get_record(supplied)
+                expected_digest = _sha(bytes(payload))
+                if (
+                    bound.content_digest != expected_digest
+                    or bound.producer != str(producer).strip().lower()
+                    or bound.kind != kind
+                ):
+                    raise IntegrityFailure(
+                        "supplied THESEUS record is authentic but not bound to this "
+                        "payload/producer/kind"
+                    )
+            return supplied
         from aethel.enterprise.records import EVIDENCE_STATES, OperationalRecord
 
         custody_state = (
