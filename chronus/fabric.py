@@ -83,11 +83,7 @@ class ChronusFabric:
         return out
 
     def _best_gpu(self, *, required: Optional[str] = None) -> Optional[DeviceInfo]:
-        pool = [
-            d
-            for d in self.devices
-            if d.type in ("gpu", "chronus") and d.backend != "rtl"
-        ]
+        pool = [d for d in self.devices if d.type in ("gpu", "chronus") and d.backend != "rtl"]
         if required is not None:
             pool = [d for d in pool if d.capability(required) not in (None, False, 0)]
         if not pool:
@@ -104,9 +100,7 @@ class ChronusFabric:
         for device in self.devices:
             if device.backend == "cpu":
                 return device
-        raise RuntimeError(
-            "ClusterInventory contains no CPU device; Chronus fabric cannot route"
-        )
+        raise RuntimeError("ClusterInventory contains no CPU device; Chronus fabric cannot route")
 
     def _lucas_dispatch(
         self,
@@ -151,9 +145,7 @@ class ChronusFabric:
             if discipline == "serial":
                 lucas = {}
             else:
-                lucas = self._lucas_dispatch(
-                    device, work_items=items, chunk_cap=cap_chunk
-                )
+                lucas = self._lucas_dispatch(device, work_items=items, chunk_cap=cap_chunk)
                 if discipline == "epoch32":
                     epochs = nearest_ladder_index(
                         max(1, items // _M32_LANES),
@@ -163,11 +155,7 @@ class ChronusFabric:
                     lucas["chunk_size"] = _M32_LANES * epochs
                     lucas["on_ladder"] = is_ladder_index(epochs)
                     lucas["lucas_rung"] = next(
-                        (
-                            r
-                            for r in sorted(CHRONUS_SCALE_RUNGS, reverse=True)
-                            if epochs % r == 0
-                        ),
+                        (r for r in sorted(CHRONUS_SCALE_RUNGS, reverse=True) if epochs % r == 0),
                         None,
                     )
             return RouteDecision(
@@ -199,9 +187,7 @@ class ChronusFabric:
             device = self._best_gpu(required="m32_lane_kernel")
             if device is not None:
                 return decide(device, "m32_lane_kernel", "m32 lane kernel present")
-            return decide(
-                self._cpu(), "hashlib_sha256d", "cpu fallback — serial m32 order"
-            )
+            return decide(self._cpu(), "hashlib_sha256d", "cpu fallback — serial m32 order")
 
         punch_family = False
         try:
@@ -221,17 +207,13 @@ class ChronusFabric:
                 if candidates:
                     device = max(candidates, key=lambda d: d.compute_units or 0)
                     return decide(device, key, f"resident state needs {key}")
-            return decide(
-                self._cpu(), "host_memory", "cpu fallback — host buffer resident"
-            )
+            return decide(self._cpu(), "host_memory", "cpu fallback — host buffer resident")
 
         if op == "lucas_pisot_scale":
             device = self._best_gpu(required="lucas_ladder_kernel")
             if device is not None:
                 return decide(device, "lucas_ladder_kernel", "ladder executor device")
-            return decide(
-                self._cpu(), "exact_math", "exact CPU ladder (Q[sqrt5] substrate)"
-            )
+            return decide(self._cpu(), "exact_math", "exact CPU ladder (Q[sqrt5] substrate)")
 
         if op in ("grover_search", "search", "grover_iterate"):
             marked = int(work.get("marked") or 1)
@@ -281,9 +263,7 @@ class ChronusFabric:
         dispatch["lucas_dispatch"] = dict(decision.lucas_dispatch)
         dispatch["capability_used"] = decision.capability
         result = executor.run(dict(inputs or {}), dispatch)
-        if decision.reason.startswith("unrouted") or not decision.lucas_dispatch.get(
-            "on_ladder"
-        ):
+        if decision.reason.startswith("unrouted") or not decision.lucas_dispatch.get("on_ladder"):
             result.truth_class = "unconfigured"
 
         from hyba.attestation import attest_dispatch

@@ -3445,12 +3445,13 @@ def create_predictive_causal_intelligence(
     print(f"   Manipulation Precision (prior, unmeasured): {pci.manipulation_precision}")
     print(f"   Temporal Transcendence (prior, unmeasured): {pci.temporal_transcendence}")
     print(f"   Quantum Causal Coherence (prior, unmeasured): {pci.quantum_causal_coherence}")
-    print(f"   Consciousness Causal Interface (prior, unmeasured): {pci.consciousness_causal_interface}")
+    print(
+        f"   Consciousness Causal Interface (prior, unmeasured): {pci.consciousness_causal_interface}"
+    )
     print(f"   Phi constant: {pci.phi}")
     print("   Status: research heuristic model - no measured claims")
 
     return pci
-
 
 
 # ============================================================================
