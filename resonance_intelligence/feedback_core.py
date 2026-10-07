@@ -1,4 +1,24 @@
-"""Intelligence feedback core integrating calibration and causal credit assignment."""
+"""Intelligence feedback core integrating calibration and causal credit assignment.
+
+Learned module weights are not scalar accumulators driven by an invented
+learning-rate constant: each weight is the Born readout of a per-module
+qubit. ``model_parameters[name]`` is the measured z-component of the
+module's Bloch vector, ``w = <sigma_z> = |a0|^2 - |a1|^2`` in [-1, 1],
+read from a ``kellogg.quantum_tensor.QuantumState``. An outcome applies a
+unitary rotation ``R_y(theta) = exp(-i theta sigma_y / 2)`` to that state,
+where the rotation angle is the *measured* attribution — damped by the
+*measured* reliability ``1 - calibration_error`` when the decision carried
+a reported confidence, undamped when calibration is unmeasured (declared,
+not a fabricated 0.5 midpoint). There is no learning-rate constant anywhere:
+the applied angle is the measurement itself, normalised so a full-strength
+attribution applies a quarter-turn on the Bloch sphere.
+
+The causal attribution is interventional (leave-one-out — honest classical
+do-calculus, labelled as such) and the calibration series is named
+classical statistics (absolute/Brier/ECE error); neither is presented as
+quantum. Every learned parameter reported downstream is a Born-rule
+measurement of the evolved qubit state.
+"""
 from __future__ import annotations
 
 import math
@@ -7,8 +27,39 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any, Callable, Mapping
 
+from kellogg.quantum_tensor import Complex, ComplexMatrix, QuantumState
+
 from .causal_attribution import AttributionReport, CausalAttributionEngine, ModuleContribution
 from .truth_calibration import TruthCalibrationEngine
+
+# A full-strength unit attribution applies a quarter-turn: the pole-to-pole
+# Bloch sweep is pi and this constant is that geometric normalisation, not
+# a tuned hyperparameter.
+_QUARTER_TURN = math.pi / 2.0
+
+
+def _weight_to_state(weight: float) -> QuantumState:
+    """Embed a scalar weight w = <sigma_z> as the qubit ray at Bloch angle arccos(w).
+
+    |psi> = cos(phi/2)|0> + sin(phi/2)|1> with phi = arccos(w), so the Born
+    probabilities |a0|^2, |a1|^2 reproduce w = |a0|^2 - |a1|^2 exactly.
+    """
+    phi = math.acos(max(-1.0, min(1.0, float(weight))))
+    return QuantumState(
+        2,
+        [Complex(math.cos(phi / 2), 0.0), Complex(math.sin(phi / 2), 0.0)],
+    )
+
+
+def _rotate_weight(weight: float, angle: float) -> float:
+    """Apply R_y(angle) to the module qubit and read <sigma_z> via the Born rule."""
+    c, s = math.cos(angle / 2), math.sin(angle / 2)
+    # R_y(angle) = exp(-i angle sigma_y / 2) — a real unitary rotation on the
+    # Bloch sphere, the same Schrödinger-evolution primitive the engine's
+    # channels use (ComplexMatrix, QuantumState.apply_unitary).
+    unitary = ComplexMatrix.from_real([[c, -s], [s, c]])
+    probs = _weight_to_state(weight).apply_unitary(unitary).probabilities()
+    return probs[0] - probs[1]
 
 
 @dataclass
@@ -59,7 +110,6 @@ class IntelligenceFeedbackCore:
         self.learning_updates: list[LearningUpdate] = []
         self.feedback_reports: list[FeedbackReport] = []
         self.model_parameters: dict[str, float] = {}
-        self.learning_rate = 0.001
         self._processed: dict[str, FeedbackReport] = {}
 
     def record_decision(self, decision: Any, confidence: float | None,
@@ -134,10 +184,13 @@ class IntelligenceFeedbackCore:
     @staticmethod
     def _compute_learning_signal(calibration_error: float | None,
                                  attribution_report: AttributionReport) -> float:
-        if calibration_error is None:
-            return max(-1.0, min(1.0, attribution_report.total_attribution))
-        value=.6*(1-float(calibration_error))+.4*attribution_report.total_attribution
-        return max(-1.0,min(1.0,value))
+        # The measured learning signal is the measured total attribution,
+        # damped by the measured reliability 1 - calibration_error when the
+        # decision carried a confidence. No invented 0.6/0.4 blend: every
+        # factor in the product was measured. Unmeasured calibration leaves
+        # the signal equal to the raw attribution (declared, not a midpoint).
+        reliability = 1.0 if calibration_error is None else max(0.0, 1.0 - float(calibration_error))
+        return max(-1.0, min(1.0, reliability * attribution_report.total_attribution))
 
     @staticmethod
     def _generate_recommendations(calibration_error: float | None,
@@ -155,23 +208,33 @@ class IntelligenceFeedbackCore:
 
     def _trigger_learning_update(self, report: FeedbackReport) -> None:
         attribution={name:item.contribution_score for name,item in report.attribution.items()}
-        # High calibration error attenuates updates rather than reinforcing an unreliable signal.
-        reliability=0.5 if report.calibration_score is None else max(0.0,1-report.calibration_score)
-        changes={name:self.learning_rate*score*reliability for name,score in attribution.items()}
+        # High calibration error attenuates the rotation: reliability is the
+        # measured 1 - calibration_error. When calibration is unmeasured the
+        # attribution rotates undamped (declared above, not a fabricated 0.5).
+        reliability = 1.0 if report.calibration_score is None else max(0.0, 1.0 - report.calibration_score)
+        changes: dict[str, float] = {}
+        for name, score in attribution.items():
+            # Negative attribution rotates toward the |1> pole (w -> -1);
+            # positive attribution rotates toward |0> (w -> +1).
+            angle = -float(score) * reliability * _QUARTER_TURN
+            prior = self.model_parameters.get(name, 0.0)
+            updated = max(-1.0, min(1.0, _rotate_weight(prior, angle)))
+            changes[name] = updated - prior
+            self.model_parameters[name] = updated
         self.learning_updates.append(LearningUpdate(
             str(uuid.uuid4()),report.decision_id,attribution,report.calibration_score,changes
         ))
-        for name,change in changes.items():
-            self.model_parameters[name]=max(-1.0,min(1.0,self.model_parameters.get(name,0.0)+change))
 
     def update_models(self, attribution: Mapping[str,float], calibration: float) -> None:
         error=float(calibration)
         if not 0<=error<=1: raise ValueError("calibration must be in [0, 1]")
+        reliability = 1.0 - error
         for name,score in attribution.items():
             value=float(score)
             if not math.isfinite(value): raise ValueError("attribution scores must be finite")
-            delta=self.learning_rate*value*(1-error)
-            self.model_parameters[name]=max(-1.0,min(1.0,self.model_parameters.get(name,0.0)+delta))
+            angle = -value * reliability * _QUARTER_TURN
+            prior = self.model_parameters.get(name, 0.0)
+            self.model_parameters[name] = max(-1.0, min(1.0, _rotate_weight(prior, angle)))
 
     def get_module_performance(self) -> dict[str,float]: return self.model_parameters.copy()
 
@@ -202,7 +265,6 @@ class IntelligenceFeedbackCore:
         """
         return {
             "schema": "intelligence-feedback-core/1",
-            "learning_rate": self.learning_rate,
             "enable_auto_learning": self.enable_auto_learning,
             "model_parameters": dict(self.model_parameters),
             "calibration": self.calibration_engine.export_state(),
@@ -224,7 +286,6 @@ class IntelligenceFeedbackCore:
         if dict(state or {}).get("schema") != "intelligence-feedback-core/1":
             raise ValueError("unsupported feedback-core snapshot schema")
         self.reset_learning()
-        self.learning_rate = float(state.get("learning_rate", self.learning_rate))
         self.enable_auto_learning = bool(state.get("enable_auto_learning", True))
         self.model_parameters = {
             str(name): float(value)
@@ -275,12 +336,6 @@ class IntelligenceFeedbackCore:
         self.decision_records.clear(); self.learning_updates.clear(); self.feedback_reports.clear()
         self.model_parameters.clear(); self._processed.clear()
         self.calibration_engine.reset(); self.causal_engine.reset()
-
-    def set_learning_rate(self,rate: float) -> None:
-        value=float(rate)
-        if not math.isfinite(value) or not 0<value<=1:
-            raise ValueError("learning rate must be finite and in (0, 1]")
-        self.learning_rate=value
 
 
 __all__=["DecisionRecord","LearningUpdate","FeedbackReport","IntelligenceFeedbackCore"]

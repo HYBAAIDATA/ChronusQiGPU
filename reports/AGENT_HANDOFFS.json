@@ -64,6 +64,18 @@
       ],
       "blocking": false,
       "status": "OPEN"
+    },
+    {
+      "request_id": "A-006",
+      "requesting_agent": "A",
+      "owning_agent": "H",
+      "required_interface": "tests/test_toe_runtime.py FakeFeedbackCore must implement the IntelligenceFeedbackCore surface the production runtime now calls",
+      "reason": "Since aef08d6/ea73744 the runtime calls identify_underperforming_modules() inside _execute (learned-policy exclusions) and get_module_performance() inside health(); the file-local FakeFeedbackCore implements only record_decision/process, so 16 tests in tests/test_toe_runtime.py now fail with AttributeError. The fake needs at minimum identify_underperforming_modules(threshold=0.0)->list, get_module_performance()->dict, plus snapshot()/restore()/rollback_outcome() for the durability paths it exercises. tests/ is Agent H-owned; the required methods mirror resonance_intelligence.feedback_core.IntelligenceFeedbackCore.",
+      "affected_files": [
+        "tests/test_toe_runtime.py"
+      ],
+      "blocking": false,
+      "status": "OPEN"
     }
   ]
 }
