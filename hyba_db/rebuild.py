@@ -158,8 +158,8 @@ def restore_projection_from_custody(
                         str(obj["retention_policy"]),
                         str(obj["created_at"]),
                         str(obj["created_by"]),
-                        None,
-                        "ACTIVE",
+                        obj.get("current_version_id"),
+                        str(obj.get("status", "ACTIVE")),
                         att.id,
                     ),
                 )
@@ -239,6 +239,25 @@ def restore_projection_from_custody(
                 ),
             )
         restored_versions.append(version_id)
+
+    # register_version advances current_version_id and marks objects ACTIVE.
+    # Re-apply the explicitly preserved object projection state after all
+    # versions have been reconstructed so retired/superseded states survive.
+    final_object_state: dict[str, dict[str, Any]] = {}
+    for _op, body in manifests:
+        final_object_state[str(body["object"]["file_object_id"])] = dict(body["object"])
+    with store._tx() as db:
+        for object_id, obj in final_object_state.items():
+            db.execute(
+                "UPDATE file_objects SET current_version_id=?,status=? "
+                "WHERE tenant_id=? AND file_object_id=?",
+                (
+                    obj.get("current_version_id"),
+                    str(obj.get("status", "ACTIVE")),
+                    tenant_id,
+                    object_id,
+                ),
+            )
 
     restored_mining: list[str] = []
     pending = list(mining_manifests)
