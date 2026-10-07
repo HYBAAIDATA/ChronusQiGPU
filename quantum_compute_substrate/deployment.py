@@ -136,9 +136,11 @@ class PerformanceValidation:
         for name, result in validation["validation"].items():
             if isinstance(result, dict) and "passed" in result:
                 status = "✓ PASSED" if result["passed"] else "✗ BELOW TARGET"
+                observed = result.get(
+                    "measured", result.get("computed_iteration_ratio", "N/A"))
                 print(f"\n{name}:")
                 print(f"  Target:   {result.get('target', 'N/A')}")
-                print(f"  Measured: {result.get('measured', 'N/A')}")
+                print(f"  Result:   {observed}")
                 print(f"  Status:   {status}")
                 if "gap" in result:
                     print(f"  Gap:      {result['gap']}")

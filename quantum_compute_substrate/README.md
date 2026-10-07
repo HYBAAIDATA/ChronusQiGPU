@@ -16,7 +16,7 @@ research institutions:
 7. **Education & outreach** — `tutorials/` with Grover, H₂ VQE, φ-scaling walkthroughs.
 8. **Community** — `community/` with consortium charter, hackathon format, standards tracking (IEEE P7130, ISO/IEC JTC 1/WG 14).
 
-**Test count**: 230 passing (0 failed, 0 errors). Wall-clock benchmark numbers are measured on host CPU; ratios labelled "computed" or "theoretical" are mathematical properties of the algorithm, not measurements. Claim lane MATHEMATICAL_QUANTUM (SUBSTRATE-AGNOSTIC).
+**Test count**: 1,488 collected, all passing (0 failed, 0 errors) on the verified host at this revision. Wall-clock benchmark numbers are measured on host CPU; ratios labelled "computed" or "theoretical" are mathematical properties of the algorithm, not measurements. Claim lane MATHEMATICAL_QUANTUM (SUBSTRATE-AGNOSTIC).
 
 See `docs/complexity-analysis.md` for formal complexity bounds and
 `docs/error-bounds.md` for convergence-rate statements.
@@ -60,16 +60,16 @@ maintained throughout:
 
 ## Executive Summary
 
-| Component | Status | Measured Performance | Information-Density Bound (φ^15) |
+| Component | Status | Result on Classical Host | Information-Density Bound (φ^15) |
 |-----------|--------|----------------------|-----------------------------------|
 | **Tensor Core** | ✅ | ~0.1-0.4 GFLOPS (classical CPU) | ~3.41 TFLOPS (theoretical ceiling) |
-| **Grover Search** | ✅ | 10.7× iteration-count ratio (computed), 99.99% target amplitude | 20.5× theoretical |
+| **Grover Search** | ✅ | 10.7× iteration-count ratio (computed), 99.99% target probability | 20.5× theoretical |
 | **Error Correction** | ✅ | 100% correction (L=4,8,16) | Surface code verified |
 | **Neural Network** | ✅ | ~84% loss reduction, ~20K samples/s | 10^12 parameter target |
 | **φ-Scaling** | ✅ | φ^0 baseline (measured) | φ^37 composite ceiling |
 | **Cross-Vendor** | ✅ | NVIDIA, Apple, HP/HPE specs compared | Public data only |
 
-**225/225 tests passed. 0 failures. 0 errors.**
+**1,488/1,488 tests passed. 0 failures. 0 errors.**
 
 ---
 
@@ -213,7 +213,7 @@ performance on actual classical hardware.
 
 ---
 
-## Test Results: 225 Tests Passed, 0 Failed
+## Test Results: 1,488 Tests Passed, 0 Failed
 
 | Test Suite | Tests | Passed | Failed |
 |------------|-------|--------|--------|
@@ -230,6 +230,9 @@ performance on actual classical hardware.
 | Parts 1-10 (All Modules) | 55 | 55 | 0 |
 | Parts 14-16 (Cross-Vendor) | 28 | 28 | 0 |
 | **TOTAL** | **225** | **225** | **0** |
+
+(Per-suite breakdown above is from an earlier revision totalling 225 tests;
+the suite has since grown to 1,488 tests under `tests/`.)
 
 ---
 

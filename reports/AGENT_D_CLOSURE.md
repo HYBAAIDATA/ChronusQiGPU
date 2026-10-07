@@ -44,7 +44,9 @@ DEFECTS FIXED: 7 in-lane
      target ratio 500 EFLOPS(FP4)/2.5 EFLOPS(FP64). Docstring now says so.
   4. deployment.py — validation["Grover_Search"]["measured"] reported the
      computed iteration ratio as measured. Key renamed to
-     computed_iteration_ratio. (Honest "TARGETS NOT MET" verdict unchanged.)
+     computed_iteration_ratio, and print_results now prints the observed
+     value under a generic "Result:" label (measured or computed) so the
+     Grover row still renders. (Honest "TARGETS NOT MET" verdict unchanged.)
   5. benchmark.py — printed "Throughput multiplier: 200x FP64" as a result;
      now "Target throughput ratio (spec)".
   6. implications.py — external-facing manifest (grant apps/investor decks)
@@ -132,14 +134,15 @@ TEST COMMANDS:
   python scripts/verify_pure_quantum_math.py --output
     artifacts/pure-quantum-math/reproduction.json
 RESULTS:
-  - turing_universal_quantum_computer tests: 258 passed, 0 failed
-  - quantum_compute_substrate tests: 1487 passed, 0 failed (post-fix; the
-    pre-fix run had 1 flaky failure = defect #1)
-  - combined lane suite re-run post-fix: 1750 passed, 0 failed
-  - root tests touching lane (aethel/lucas/kellogg/tensor/etc.): 837 passed;
-    1 failure = foreign test bug (handoff D-002); 6 failures = euclid
-    SyntaxError cascade (handoff D-001); 1 failure = docs claims-gate trip
-    (handoff D-003)
+  - turing_universal_quantum_computer tests: 262 collected, all passed
+    (258 pre-existing + 4 new parity tests)
+  - quantum_compute_substrate tests: 1,488 collected, all passed (post-fix;
+    the pre-fix run had 1 flaky failure = defect #1)
+  - combined lane suite re-run post-fix: 1,750 passed, 0 failed
+  - root tests touching lane (aethel/lucas/kellogg/tensor/cross_verification
+    etc.): 1,177 passed; 8 failures, all foreign-lane: 1 stale kellogg test
+    (D-002), 6 euclid SyntaxError cascade (D-001), 1 docs claims-gate trip
+    (D-003)
   - turing_core self-verification: PASS
   - aethel selftest: PASS (8/8)
   - standard.check_invariants: PASS (56 verdicts)
@@ -168,7 +171,7 @@ UNRESOLVED DEFECTS: none inside lane. Foreign-lane blockers D-001 (euclid
   and fresh-clone install respectively; both have precise fixes recorded.
 
 PRODUCTION-READY: YES — for the lane's own contract surface, with evidence:
-  every owned file classified, all in-lane defects fixed, 1750 lane tests
+  every owned file classified, all in-lane defects fixed, 1,750 lane tests
   green, exact-math reproduction artifacts byte-stable, custody/attestation
   fail-closed paths verified, claims relabelled to measured-vs-computed
   discipline. Caveats are external: euclid (A) and kellogg-tensor packaging
