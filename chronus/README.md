@@ -1,42 +1,49 @@
-# Chronus — HYBA Heterogeneous Compute & Virtual iGPU Runtime
+# Chronus — HYBA Software-Defined GPU & Heterogeneous Execution Runtime
 
-Chronus is HYBA's **software-defined heterogeneous execution and acceleration plane**.
-It turns governed computational work into measured execution on available silicon while
-preserving the semantic contract of the workload and recording what actually ran.
+Chronus is HYBA's **software-defined quantum-from-maths GPU** and heterogeneous
+execution computer. Its product identity is substrate- and hardware-agnostic:
+CPU, iGPU, discrete GPU, cloud accelerator, FPGA/ASIC and future quantum hardware
+are places the Chronus computation may execute; none is a prerequisite for
+Chronus to exist.
 
-Chronus is not a claim that a new physical GPU already exists, and it is not a physical
-QPU. It is the runtime, device, virtual-iGPU, scheduling, provenance and acceleration
-architecture through which HYBA workloads can use CPU, integrated GPU, discrete GPU and
-future accelerator substrates.
+Chronus is not a claim that software has fabricated physical silicon, and it is
+not a physical QPU. "GPU" here names the Chronus compute product and execution
+contract. Physical-device claims remain separate evidence about a particular run.
 
-> **Product thesis:** use the hardware that exists, change how work is represented and
-> scheduled, prove what executed, and promote only those mathematical or hardware
-> advantages that survive reproducible measurement.
+> **Product thesis:** Chronus can either operate as the GPU itself or enter an
+> existing GPU/accelerator stack and scale/extend it. The same governed workload
+> semantics, verification, provenance and custody survive both modes.
 
 > **Start here:** §19 shows what Chronus has actually been measured doing on real data;
 > §20 is the one-page map of where every Chronus-related piece lives.
 
 ## 0. Owner-approved two-mode product contract
 
-CHRONUS does **not** depend on a physical GPU in order to exist or run. The
-owner-approved substrate-agnostic design is a two-mode product contract:
+Chronus has **two product modes**, separate from the backend that happens to
+execute a run:
 
-1. **Standalone software-defined mode** (`standalone_software`) — CHRONUS executes
-   the same workload semantics on the CPU/reference substrate, with verification,
-   receipts, evidence and custody. This is a first-class production mode, **not**
-   a degraded fallback. A GPU is not a functional prerequisite.
-2. **Accelerator-enhanced mode** (`preferred_accelerator`) — when a certified
-   iGPU/GPU/accelerator is available, CHRONUS binds to it to increase throughput
-   or capacity while preserving the same semantic and verification contracts.
-   Each physical lane is certified independently.
+1. **Native Chronus GPU** (`native_chronus_gpu`; compatibility execution policy
+   `standalone_software`) — **Chronus is the GPU.** The Virtual iGPU/runtime,
+   mathematical engine, memory, scheduling, verification and evidence surfaces
+   execute without requiring a host GPU. A CPU/reference adapter may host this
+   mode today, but it is an implementation substrate, not the product identity
+   and not a degraded fallback.
+2. **Host-GPU augmentation** (`host_gpu_augmentation`; compatibility execution
+   policy `preferred_accelerator`) — Chronus binds into an available,
+   independently certified iGPU/GPU/accelerator and extends or scales that host
+   while preserving the same Chronus workload contract.
 
-A missing or uncertified GPU therefore keeps that accelerator lane **GATED**; it
-does not make CHRONUS itself unavailable. Physical execution, performance, power,
-thermal and device-rooted claims remain device-bound evidence gates.
+This is the original **independent fabric OR scale your stack** architecture.
+A missing GPU can gate the second mode; it can never make the first mode
+unavailable. Likewise, device performance, power, thermal, hardware-rooted
+attestation and physical execution claims remain per-device evidence gates.
 
-Production readiness follows the same split: the core product can be declared
-ready on executed standalone-software evidence, while Metal/OpenCL/CUDA/other
-lanes are promoted only after their own device-bound certification artifacts.
+The historical names are now one product lineage, not competing architectures:
+
+- **Chronos GPU v2/v3.3** supplies the quantum-from-maths mathematical/graphics engine;
+- **Chronus Virtual iGPU** supplies the software-defined GPU ABI/runtime/memory/evidence;
+- **Chronus portable substrate** supplies device-neutral routing, delivery and control;
+- **Chronus** is the canonical converged product containing those capabilities.
 
 ---
 
@@ -50,7 +57,7 @@ The names matter because Chronus sits inside a larger computational organism.
 | **TOE** | World, causal, counterfactual and futures modelling | Produces/consumes computational work; does not own device execution |
 | **PYTHIA** | Predictive, causal and mining-domain specialist | May submit mining or analytical workloads to Chronus |
 | **Turing** | HYBA Virtual Quantum Computer (VQC) | **Independent computer.** Turing may use Chronus for authorised classical kernels/substrate execution; Chronus does not own or absorb Turing |
-| **Chronus** | Heterogeneous execution, acceleration, device policy, Virtual iGPU, dispatch evidence | Owns this package/runtime boundary |
+| **Chronus** | Software-defined GPU, heterogeneous execution, native Virtual iGPU, host-accelerator augmentation, dispatch evidence | Owns this package/runtime boundary |
 | **OVID** | Representation transformation / metamorphosis | May transform work/state before or after execution; **not durable custody** |
 | **THESEUS** | Durable custody, integrity, replication, continuity and recovery of important state | Preserves state/results; **not the transformation owner** |
 | **PULVINI** | Fold/representation mechanisms as established by the implementation | Can reduce/reshape the working representation used around execution; not silently owned by Chronus |
@@ -88,15 +95,15 @@ Chronus without involving Turing at all.
 
 The repository intentionally preserves two related names:
 
-- `chronus/` — the canonical HYBA hardware-facing product/runtime plane.
-- `chronus/v33/` — the **Chronos GPU mathematical engine v3.3** retained inside the
-  Chronus product tree.
+- `chronus/` — the canonical converged Chronus product/runtime.
+- `chronus/v33/` — the historical **Chronos GPU mathematical engine v3.3**,
+  now an integrated mathematical capability of Chronus rather than a separate product.
 - top-level `chronos` — deprecated compatibility facade for historical imports.
 
-The v3.3 mathematical engine currently exposes a substantial audited software surface
-(see `chronus/v33/CAPABILITY_MANIFEST.json` and `docs/CHRONUS_V33_FULL_CONVERGENCE.md`).
-It is one computational capability inside the wider Chronus execution product; it does
-not redefine the ownership of Turing, EUCLID, OVID, THESEUS, PULVINI or Geodesic.
+There is **one Chronus product**. The v3.3 mathematical engine, Virtual iGPU runtime,
+portable substrate/control plane and physical accelerator adapters are capability
+lineages inside it. They do not create separate Chronus identities and do not redefine
+the ownership of Turing, EUCLID, OVID, THESEUS, PULVINI or Geodesic.
 
 ---
 
@@ -523,7 +530,7 @@ selection.
 
 ## 15. The commercial position
 
-Chronus should not initially be described as merely "another GPU".
+Chronus should not be reduced to a physical-GPU backend. It is the software-defined GPU product; physical GPUs are optional host substrates or augmentation targets.
 
 The stronger position is:
 
