@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS knowledge_relations(
  to_knowledge_id TEXT NOT NULL,
  relation_type TEXT NOT NULL,
  producer TEXT NOT NULL,
+ custody_record_id TEXT NOT NULL,
  attestation_id TEXT NOT NULL,
  created_at TEXT NOT NULL,
  PRIMARY KEY(tenant_id,relation_id),
@@ -530,25 +531,58 @@ class KnowledgeProjection:
             "knowledge_relation",
             f"{tenant_id}:{from_id}:{to_id}:{relation}".encode(),
         )
+        existing = self.store._db.execute(
+            "SELECT relation_id FROM knowledge_relations "
+            "WHERE tenant_id=? AND relation_id=?",
+            (tenant_id, relation_id),
+        ).fetchone()
+        if existing:
+            return str(existing[0])
+        if self.custody is None:
+            raise InvalidRecord("THESEUS custody adapter required for knowledge relations")
+        from aethel.enterprise.records import OperationalRecord
+        payload = _json(
+            {
+                "schema": "hyba.knowledge-relation/v1",
+                "relation_id": relation_id,
+                "from": str(from_id),
+                "to": str(to_id),
+                "relation": relation,
+                "producer": str(producer).strip().lower(),
+            }
+        ).encode("utf-8")
+        op = OperationalRecord(
+            record_id=f"knowledge_relation.{relation_id}",
+            producer=str(producer).strip().lower(),
+            producer_version="knowledge-projection/1",
+            schema_version=1,
+            kind="knowledge_relation",
+            payload=payload,
+            evidence_state="MEASURED",
+            lineage=(str(from_id), str(to_id)),
+            correlation_ids={"tenant_id": tenant_id, "relation_id": relation_id},
+            meta={"relation_type": relation},
+        )
+        custody_id = self.custody.put_record(tenant_id, op)
+        if not self.custody.verify(tenant_id, custody_id):
+            raise IntegrityFailure("THESEUS did not verify knowledge relation custody")
         with self.store._tx() as db:
-            existing = db.execute(
-                "SELECT relation_id FROM knowledge_relations "
-                "WHERE tenant_id=? AND relation_id=?",
-                (tenant_id, relation_id),
-            ).fetchone()
-            if existing:
-                return str(existing[0])
             att = self.store._attest(
                 db,
                 tenant_id,
                 f"knowledge_relation:{relation_id}",
                 str(producer),
-                {"from": str(from_id), "to": str(to_id), "relation": relation},
+                {
+                    "from": str(from_id),
+                    "to": str(to_id),
+                    "relation": relation,
+                    "custody_record_id": custody_id,
+                },
                 (),
             )
             from .store import _now as store_now
             db.execute(
-                "INSERT INTO knowledge_relations VALUES(?,?,?,?,?,?,?,?)",
+                "INSERT INTO knowledge_relations VALUES(?,?,?,?,?,?,?,?,?)",
                 (
                     tenant_id,
                     relation_id,
@@ -556,6 +590,7 @@ class KnowledgeProjection:
                     str(to_id),
                     relation,
                     str(producer),
+                    custody_id,
                     att.id,
                     store_now(),
                 ),
@@ -658,9 +693,73 @@ class KnowledgeProjection:
                     "knowledge projection restore has unresolved lineage dependencies: "
                     + ",".join(sorted(pending))
                 )
+        restored_relations: list[str] = []
+        for item in custody.list_records():
+            if item.get("kind") != "knowledge_relation":
+                continue
+            op = custody.get_record(str(item["record_id"]))
+            body = json.loads(op.payload.decode("utf-8"))
+            if body.get("schema") != "hyba.knowledge-relation/v1":
+                raise IntegrityFailure(
+                    f"unsupported knowledge relation schema: {body.get('schema')}"
+                )
+            from_id, to_id = str(body["from"]), str(body["to"])
+            if not all(
+                self.store._db.execute(
+                    "SELECT 1 FROM knowledge_records WHERE tenant_id=? AND knowledge_id=?",
+                    (tenant_id, endpoint),
+                ).fetchone()
+                for endpoint in (from_id, to_id)
+            ):
+                raise IntegrityFailure(
+                    f"cannot restore relation {body.get('relation_id')}: endpoint missing"
+                )
+            relation = str(body["relation"])
+            expected_id = _id(
+                "knowledge_relation",
+                f"{tenant_id}:{from_id}:{to_id}:{relation}".encode(),
+            )
+            if expected_id != body.get("relation_id"):
+                raise IntegrityFailure("knowledge relation content address mismatch")
+            if self.store._db.execute(
+                "SELECT 1 FROM knowledge_relations WHERE tenant_id=? AND relation_id=?",
+                (tenant_id, expected_id),
+            ).fetchone():
+                continue
+            with self.store._tx() as db:
+                att = self.store._attest(
+                    db,
+                    tenant_id,
+                    f"knowledge_relation:{expected_id}",
+                    op.producer,
+                    {
+                        "from": from_id,
+                        "to": to_id,
+                        "relation": relation,
+                        "custody_record_id": op.record_id,
+                    },
+                    (),
+                )
+                from .store import _now as store_now
+                db.execute(
+                    "INSERT INTO knowledge_relations VALUES(?,?,?,?,?,?,?,?,?)",
+                    (
+                        tenant_id,
+                        expected_id,
+                        from_id,
+                        to_id,
+                        relation,
+                        op.producer,
+                        op.record_id,
+                        att.id,
+                        store_now(),
+                    ),
+                )
+            restored_relations.append(expected_id)
         return {
             "schema": "hyba.knowledge-restore/v1",
             "restored": tuple(restored),
+            "restored_relations": tuple(restored_relations),
             "skipped": tuple(skipped),
             "passed": True,
         }
@@ -704,9 +803,22 @@ class KnowledgeProjection:
                     errors.append(f"{tid}:{rel['relation_id']}:dangling relation")
                 try:
                     self.store.verify_attestation(tid, rel["attestation_id"])
+                    details = self.store.get_attestation(tid, rel["attestation_id"]).details
+                    expected = {
+                        "from": rel["from_knowledge_id"],
+                        "to": rel["to_knowledge_id"],
+                        "relation": rel["relation_type"],
+                        "custody_record_id": rel["custody_record_id"],
+                    }
+                    if details != expected:
+                        raise IntegrityFailure("relation attestation mismatch")
+                    if self.custody is None or not self.custody.verify(
+                        tid, rel["custody_record_id"]
+                    ):
+                        raise IntegrityFailure("relation custody unavailable")
                 except Exception as exc:
                     errors.append(
-                        f"{tid}:{rel['relation_id']}:attestation:{type(exc).__name__}:{exc}"
+                        f"{tid}:{rel['relation_id']}:{type(exc).__name__}:{exc}"
                     )
         return {
             "schema": "hyba.knowledge-verification/v1",
