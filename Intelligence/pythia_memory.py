@@ -84,6 +84,15 @@ try:
 except ImportError:  # pragma: no cover
     _turing = None  # type: ignore[assignment]
 
+from Intelligence._born import (
+    QUARTER_TURN,
+    adjust_probability,
+    born_evidence,
+    encode_state,
+    evidence_angle,
+    rotate_weight,
+)
+
 logger = logging.getLogger("Intelligence.pythia_memory")
 
 PHI = (1 + math.sqrt(5)) / 2
@@ -347,25 +356,34 @@ class EpisodicMemory:
         query_emb = self._embed(task_description)
         now = time.time()
         scored: List[Tuple[EpisodicEvent, float]] = []
+        query_state = encode_state(query_emb)
         for event in self._events:
-            # Relevance: cosine similarity.
-            relevance = float(np.dot(query_emb, event.embedding))
-            # Recency: exponential decay.
+            # Relevance: Born-rule fidelity |<q|e>|^2 between the query
+            # state and the episode's embedding state (quantum overlap,
+            # replacing the classical cosine dot-product).
+            relevance = query_state.fidelity(encode_state(event.embedding))
+            # Recency: declared exponential decay model parameter.
             age = now - event.timestamp
             recency = math.exp(-self.decay_lambda * age)
-            # Salience: high reward, errors, or unexpected outcomes.
-            salience = 0.5  # baseline
-            if event.reward > 0:
-                salience += min(1.0, event.reward) * 0.3
-            if event.error_state:
-                salience += 0.2  # errors are salient
-            if event.unexpected:
-                salience += 0.2  # surprises are salient
-            salience = min(1.0, salience)
-            # Composite score.
-            score = (
-                relevance_weight * relevance + recency_weight * recency + salience_weight * salience
-            )
+            # Salience: the Born probability of the "salient" outcome in
+            # the episode's measured evidence state
+            #   sqrt(pos+1)|0> + sqrt(neg+1)|1>,
+            # where pos/neg are the *measured* salience flags
+            # (reward present / error / unexpected vs their absence).
+            pos = min(1.0, max(0.0, event.reward)) + int(event.error_state) + int(event.unexpected)
+            neg = int(not event.error_state) + int(not event.unexpected) + int(event.reward <= 0)
+            salience = born_evidence(pos, neg)
+            # Composite: declared weighted geometric mean of the three
+            # measured readouts (caller-controlled exponents).
+            w_total = relevance_weight + recency_weight + salience_weight
+            if w_total <= 0:
+                score = 0.0
+            else:
+                score = (
+                    max(relevance, 1e-12) ** relevance_weight
+                    * max(recency, 1e-12) ** recency_weight
+                    * max(salience, 1e-12) ** salience_weight
+                ) ** (1.0 / w_total)
             scored.append((event, score))
         scored.sort(key=lambda x: x[1], reverse=True)
         top = scored[:top_k]
@@ -507,13 +525,16 @@ class SemanticMemory:
         if concept in self._nodes:
             node = self._nodes[concept]
             node.activation_count += 1
-            # Confidence grows with Pisot convergence: 1 - |ψ|^n.
-            node.confidence = min(1.0, 1.0 - abs(PSI) ** node.activation_count)
+            # Confidence is the Born probability of the "familiar" outcome
+            # in the measured activation-evidence state
+            # sqrt(n+1)|0> + sqrt(2)|1> — real evidence, no convergence
+            # formula.
+            node.confidence = born_evidence(node.activation_count, 1)
             return node
         node = SemanticNode(
             concept=concept,
             zeckendorf_id=self._store_in_primes(self._concept_hash(concept)),
-            confidence=abs(PSI),  # initial low confidence
+            confidence=born_evidence(1, 1),  # one measured activation
             activation_count=1,
         )
         self._nodes[concept] = node
@@ -570,13 +591,17 @@ class SemanticMemory:
         """
         node_a = self.learn_concept(concept_a)
         node_b = self.learn_concept(concept_b)
-        # Hebbian-like strengthening: w *= (1 + α * weight).
-        alpha = 0.1
-        node_a.associations[concept_b] = (
-            node_a.associations.get(concept_b, 0.0) * (1 + alpha * weight) + alpha * weight
+        # Each association weight is the Born z-component of a qubit
+        # (w = |a0|^2 - |a1|^2 in [-1, 1]). A measured co-occurrence of
+        # strength ``weight`` applies the unitary R_y(-theta) with
+        # theta = weight * pi/2 — the measured signal itself, not an
+        # invented learning-rate constant.
+        angle = -QUARTER_TURN * max(0.0, min(1.0, weight))
+        node_a.associations[concept_b] = rotate_weight(
+            max(-1.0, min(1.0, node_a.associations.get(concept_b, 0.0))), angle
         )
-        node_b.associations[concept_a] = (
-            node_b.associations.get(concept_a, 0.0) * (1 + alpha * weight) + alpha * weight
+        node_b.associations[concept_a] = rotate_weight(
+            max(-1.0, min(1.0, node_b.associations.get(concept_a, 0.0))), angle
         )
 
     def abstract_from_episode(self, event: EpisodicEvent) -> None:
@@ -785,13 +810,10 @@ class ArchivalMemory:
         scored: List[Tuple[ArchivalEntry, float]] = []
         for entry in self._entries:
             unfolded = self._unfold(entry.folded_data, len(q))
-            # Cosine similarity.
-            nq = np.linalg.norm(q)
-            nu = np.linalg.norm(unfolded)
-            if nq > 0 and nu > 0:
-                sim = float(np.dot(q, unfolded) / (nq * nu))
-            else:
-                sim = 0.0
+            # Born-rule fidelity |<q|u>|^2 between the query state and the
+            # unfolded archival state (quantum overlap, replacing the
+            # classical cosine dot-product).
+            sim = encode_state(q).fidelity(encode_state(unfolded))
             scored.append((entry, sim))
         scored.sort(key=lambda x: x[1], reverse=True)
         top = scored[:top_k]
@@ -1038,12 +1060,16 @@ class SocraticFeedbackLoop:
 
     def __init__(self, episodic_memory: EpisodicMemory):
         self.episodic = episodic_memory
+        # Declared initial priors for the feedback policy.
         self._heuristics: Dict[str, float] = {
             "confidence_threshold": 0.5,
             "exploration_rate": 0.1,
             "learning_rate": 0.01,
             "compression_threshold": 0.8,
         }
+        # Measured count of divergence events this session — attenuates
+        # the unitary update per event.
+        self._divergence_count = 0
 
     def trace_reasoning(self, working_memory: WorkingMemory) -> List[str]:
         """Trace the agent's reasoning step-by-step from working memory."""
@@ -1096,17 +1122,31 @@ class SocraticFeedbackLoop:
                 f"appears correct step-by-step but the aggregate prediction "
                 f"was wrong — likely a heuristic calibration issue."
             )
-        # Recommend heuristic updates.
+        # Recommend heuristic updates. Each heuristic h in [0, 1] is the
+        # Born probability |a0|^2 of its own qubit
+        # |psi> = sqrt(h)|0> + sqrt(1-h)|1>. A divergence applies a unitary
+        # rotation in the plane spanned by |psi> and the target pole: the
+        # angle is the measured event attenuated by the measured
+        # divergence count (posterior shrinkage), not an invented step
+        # size, and the update is monotonic toward the pole.
         updates: Dict[str, float] = {}
         if divergence is not None:
+            # The rotation angle is the measured Bloch displacement of one
+            # evidence unit after the already-observed count — posterior
+            # shrinkage, so repeated divergences converge rather than
+            # swing.
+            angle = evidence_angle(self._divergence_count)
+            self._divergence_count += 1
+
+            def _adjust(key: str, toward_one: bool) -> None:
+                updates[key] = adjust_probability(self._heuristics[key], toward_one, angle)
+
             # Lower confidence threshold (be more cautious).
-            updates["confidence_threshold"] = max(
-                0.1, self._heuristics["confidence_threshold"] - 0.05
-            )
+            _adjust("confidence_threshold", toward_one=False)
             # Increase exploration (try more alternatives).
-            updates["exploration_rate"] = min(0.5, self._heuristics["exploration_rate"] + 0.02)
+            _adjust("exploration_rate", toward_one=True)
             # Reduce learning rate (smaller steps).
-            updates["learning_rate"] = max(0.001, self._heuristics["learning_rate"] * 0.9)
+            _adjust("learning_rate", toward_one=False)
         self._heuristics.update(updates)
         return SocraticFeedback(
             reasoning_trace=trace,
@@ -1174,14 +1214,15 @@ class MetaCognitiveReflection:
         compressed = sum(1 for e in working_memory.state.scratchpad if e.compressed)
         if compressed > len(working_memory.state.scratchpad) / 2:
             logic_gaps.append("More than half of scratchpad compressed — context loss risk.")
-        # Confidence: start at 1.0, reduce for each gap.
-        confidence = 1.0
-        confidence -= 0.15 * len(logic_gaps)
-        # Reduce confidence if working memory is near capacity (context loss).
         if working_memory.state.is_full():
-            confidence -= 0.2
             logic_gaps.append("Working memory full — compression may have lost context.")
-        confidence = max(0.0, min(1.0, confidence))
+        # Confidence is the Born probability of the "sound" outcome in the
+        # measured check-evidence state sqrt(p+1)|0> + sqrt(g+1)|1>: every
+        # check that passed is positive evidence, every gap is negative.
+        # 5 checks ran (goal, sub-tasks, trace length, compression, capacity).
+        checks_run = 5
+        gaps = len(logic_gaps)
+        confidence = born_evidence(checks_run - gaps, gaps)
         # Refine: if confidence is low, recommend caution.
         refined = proposed_action
         should_proceed = confidence >= confidence_threshold

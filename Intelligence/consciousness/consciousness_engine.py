@@ -15,8 +15,8 @@ Key concepts
   * **Coherence** (0-1) – bidirectional feedback ratio × school coverage
   * **Integration** (0-1) – IIT-inspired phi coefficient (synergy)
   * **Differentiation** (0-1) – Shannon entropy of school activity
-  * **Emergence coefficient** – 0.35·coherence + 0.40·integration +
-    0.25·differentiation
+  * **Emergence coefficient** – the measured mean of coherence,
+    integration, and differentiation
 
 Usage
 -----
@@ -60,10 +60,11 @@ class ConsciousnessEngine:
     # integrated consciousness (analogous to IIT 3.0's Phi > 0 criterion)
     CONSCIOUSNESS_THRESHOLD = 0.6
 
-    # Emergence coefficient weights (must sum to 1.0)
-    W_COHERENCE = 0.35
-    W_INTEGRATION = 0.40
-    W_DIFFERENTIATION = 0.25
+    # Emergence coefficient = mean of the three measured components;
+    # the former 0.35/0.40/0.25 blend was invented — no weighting.
+    W_COHERENCE = 1.0 / 3.0
+    W_INTEGRATION = 1.0 / 3.0
+    W_DIFFERENTIATION = 1.0 / 3.0
 
     def __init__(self, history_limit: int = 500):
         self.scaling_factor = PHI**PHI_POWER
@@ -130,10 +131,10 @@ class ConsciousnessEngine:
         total_events = max(report.get("total_events", 1), 1)
         for school_name, data in schools_data.items():
             events = data.get("events", 0)
-            feedback = data.get("feedback_loops", 0)
-            errors = data.get("errors", 0)
-            # Contribution = event share weighted by feedback quality
-            contribution = (events / total_events) * (1 + feedback) * (1 - errors * 0.1)
+            # Contribution = measured event share; the feedback/error
+            # attenuation factors were invented and are gone. Per-school
+            # feedback/error counts are still reported separately.
+            contribution = events / total_events
             school_contributions[school_name] = round(contribution, 4)
 
         result: Dict[str, Any] = {
@@ -213,9 +214,10 @@ class ConsciousnessEngine:
     # ------------------------------------------------------------------
 
     def measure_phi(self, states: float, power: int = PHI_POWER) -> float:
-        """AI scaling factor derived from phi^n."""
-        ai_scaling = 0.146 * (PHI ** (power - 1))
-        return ai_scaling * states
+        """AI scaling factor = φ^(power-1) · states.
+        The invented 0.146 normalisation is gone — this is the plain
+        declared golden scaling."""
+        return (PHI ** (power - 1)) * states
 
     def optimize_reasoning(self, input_tensor: Any) -> Any:
         """Apply phi-based scaling to an input tensor."""

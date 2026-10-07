@@ -2,6 +2,10 @@
 
 from dataclasses import dataclass, field
 
+from Intelligence._born import QUARTER_TURN, adjust_probability
+
+INV_PHI = 0.5 * (5.0**0.5 - 1.0)
+
 
 @dataclass
 class SafetyAssessment:
@@ -110,7 +114,10 @@ class SafetyAlignmentLayer:
         self.human_preferences = {k: v / total for k, v in self.human_preferences.items()}
 
         # Reduce uncertainty as we learn more
-        self.preference_uncertainty = max(0.05, self.preference_uncertainty * 0.95)
+        self.preference_uncertainty = max(
+            0.05,
+            adjust_probability(self.preference_uncertainty, False, QUARTER_TURN * INV_PHI),
+        )
 
     def safe_explore(self, candidate: dict, risk_tolerance: float = 0.1) -> bool:
         """Safe exploration: only explore if the risk is below tolerance."""

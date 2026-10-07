@@ -387,15 +387,35 @@ class QuantumPrimeMemory:
         self.prime_store.store(str(key), amplitudes.tobytes())
 
     def measure(self, key: int, shots: int = 1024) -> Dict[str, int]:
+        """Sample Born-rule outcomes of the stored state.
+
+        The draws go through the substrate's sanctioned path
+        (``QuantumState.measure_born``) driven by a caller-seeded PRNG —
+        the seed is derived deterministically from the key so a measured
+        result is reproducible and never an uncontrolled ``np.random``
+        draw reaching results.
+        """
         amplitudes = self.superpositions.get(key)
         if amplitudes is None:
             return {}
-        probs = np.abs(amplitudes) ** 2
-        probs = probs / probs.sum()
-        outcomes = np.random.choice(self.hilbert_dim, size=shots, p=probs)
+        import random as _random
+
+        from kellogg.quantum_tensor import Complex, QuantumState
+
+        state = QuantumState(
+            self.hilbert_dim,
+            [Complex(a.real, a.imag) for a in np.asarray(amplitudes, dtype=np.complex128)],
+            normalize=True,
+        )
+        seed = int.from_bytes(
+            hashlib.sha256(f"prime-measure:{key}:{shots}".encode()).digest()[:8],
+            "big",
+        )
+        rng = _random.Random(seed)
         counts: Dict[str, int] = {}
-        for o in outcomes:
-            bitstring = format(o, f"0{self.n_qubits}b")
+        for _ in range(shots):
+            outcome, _, _ = state.measure_born(rng)
+            bitstring = format(outcome, f"0{self.n_qubits}b")
             counts[bitstring] = counts.get(bitstring, 0) + 1
         return counts
 

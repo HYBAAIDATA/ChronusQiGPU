@@ -79,6 +79,8 @@ import math
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
+from Intelligence._born import QUARTER_TURN, adjust_probability
+
 logger = logging.getLogger("Intelligence.integration")
 
 CANONICAL_COGNITION_AUTHORITY = "euclid.runtime.EuclidRuntime.production"
@@ -321,11 +323,20 @@ class IntegratedIntelligence:
         """
         if not hasattr(self.orch, "meta_evolution"):
             return
-        # Adjust the mutation rate toward exploit when TOE is confident.
-        target_rate = 0.5 + (0.5 - toe_conf) * 0.6  # high conf -> low rate
+        # The mutation-rate target is the measured complement of the TOE
+        # confidence: full confidence -> target 0 (pure exploit), zero
+        # confidence -> target 1 (pure explore). No invented coefficient.
+        # The approach is a real unitary rotation of the rate qubit in
+        # the target's direction, angled by the measured gap — the
+        # φ⁻¹ attenuation is the declared idiom for a fractional step.
+        target_rate = 1.0 - toe_conf
         current = self.orch.meta_evolution.mutation_rate
-        # Pisot-bounded approach toward the target.
-        self.orch.meta_evolution.mutation_rate = current + INV_PHI * (target_rate - current)
+        gap = target_rate - current
+        self.orch.meta_evolution.mutation_rate = adjust_probability(
+            current,
+            gap > 0,
+            abs(gap) * QUARTER_TURN * INV_PHI,
+        )
         # Store the TOE signal so step_evolve can use it as a feature.
         self.orch.meta_evolution._toe_signal = [
             toe_conf,
@@ -348,7 +359,7 @@ class IntegratedIntelligence:
                 category="meta_evolution_primitive",
                 definition=f"Auto-discovered mining operator with avg_gain={avg_gain:.4f}",
                 properties={"avg_gain": avg_gain, "source": "meta_evolution"},
-                confidence=min(1.0, avg_gain * PHI),
+                confidence=min(1.0, max(0.0, avg_gain)),  # measured gain, not *PHI
                 provenance="IntegratedIntelligence._couple_meta_to_memory",
             )
         except Exception as e:  # pragma: no cover - defensive
@@ -383,7 +394,11 @@ class IntegratedIntelligence:
         # substrate has found something real -> bias toward exploitation.
         if emergence_signal > 0.1 and germ_line_count > 0:
             for prim in self.orch.meta_evolution.primitives.values():
-                prim.weight = min(1.0, prim.weight + INV_PHI * emergence_signal * 0.1)
+                prim.weight = adjust_probability(
+                    prim.weight,
+                    True,
+                    emergence_signal * QUARTER_TURN * INV_PHI,
+                )
 
     def _couple_pythia_to_toe(self, emergence_signal: float) -> float:
         """Wire #5: emergence_signal -> TOE confidence prior.
@@ -393,12 +408,12 @@ class IntegratedIntelligence:
         Pythia has learned strong patterns, TOE's predictions are
         trusted more. When she hasn't, they're discounted.
         """
-        # Bayesian prior: emergence signal as evidence that the
-        # substrate's predictions are grounded in learned structure.
-        prior = 0.5 + 0.3 * emergence_signal  # [0.5, 0.8]
+        # Measured evidence composition: the raw TOE confidence and the
+        # emergence signal are two measured streams; the calibrated
+        # confidence is their probabilistic OR (P at least one supports
+        # the prediction) — no invented prior weights.
         raw = self._last_toe_confidence
-        # Posterior: weighted average of raw confidence and prior.
-        calibrated = prior * 0.4 + raw * 0.6
+        calibrated = 1.0 - (1.0 - raw) * (1.0 - emergence_signal)
         return calibrated
 
     def _couple_meta_to_pythia(self, phase_transition: bool, delta_phi: float) -> None:
@@ -517,10 +532,9 @@ class IntegratedIntelligence:
                 # single nonce's score.
                 prefix = base_schedule[:64]
                 assessments = [stack.assess_nonce(n) for n in prefix]
-                quantum_emergence = (
-                    sum(float(a["emergence_probability"]) for a in assessments)
-                    / len(assessments)
-                )
+                quantum_emergence = sum(
+                    float(a["emergence_probability"]) for a in assessments
+                ) / len(assessments)
                 quantum_qnp = any(bool(a["qnp"]["generated"]) for a in assessments)
             except Exception as e:  # pragma: no cover - defensive
                 logger.warning("Quantum stack assessment failed: %s", e)
@@ -547,10 +561,7 @@ class IntegratedIntelligence:
             confidences["quantum_stack"] = quantum_emergence
         # Aggregate into a global calibrated confidence.
         global_conf, weights = self.self_model.calibrated_confidence(confidences)
-        briers = {
-            name: self.self_model.brier_score(name)
-            for name in confidences
-        }
+        briers = {name: self.self_model.brier_score(name) for name in confidences}
 
         result = IntegratedCycleResult(
             cycle=self._cycle,

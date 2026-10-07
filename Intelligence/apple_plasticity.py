@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from .neural_plasticity import NeuralPlasticity
 from .apple_features import AppleSiliconRuntime
+from Intelligence._born import born_evidence
 
 
 class ApplePlasticity:
@@ -41,20 +42,42 @@ class ApplePlasticity:
         ]:
             self.plasticity.register_subsystem(name)
 
+    # workload -> measured hardware flags its reward is evidence of
+    _WORKLOAD_FLAGS = {
+        "ane_inference": ("neural_engine",),
+        "metal_compute": ("metal",),
+        "accelerate_blas": ("accelerate",),
+    }
+
+    def _measured_reward(self, workload: str) -> float:
+        """Born evidence over the workload's real hardware availability.
+
+        0.95/0.90/0.85 magic rewards are gone: the reward is the measured
+        posterior that the workload's subsystems are actually available
+        (flat 0.5 prior for unmapped workloads).
+        """
+        runtime = self.apple
+        flags = {
+            "neural_engine": bool(getattr(runtime.neural_engine, "available", False)),
+            "metal": bool(getattr(runtime.metal, "available", False)),
+            "accelerate": bool(getattr(runtime.accelerate, "available", False)),
+        }
+        wanted = self._WORKLOAD_FLAGS.get(workload)
+        if not wanted:
+            return born_evidence(0, 0)  # flat prior — unmeasured workload
+        available = sum(1 for f in wanted if flags[f])
+        return born_evidence(available, len(wanted) - available)
+
     def execute_apple_workload(self, workload: str) -> dict:
         if workload == "ane_inference":
             self.plasticity.co_activate("ane_coreml", "unified_memory")
             self.plasticity.co_activate("ane_coreml", "zero_copy")
-            reward = 0.95
         elif workload == "metal_compute":
             self.plasticity.co_activate("metal_kernel", "unified_memory")
             self.plasticity.co_activate("metal_kernel", "zero_copy")
-            reward = 0.90
         elif workload == "accelerate_blas":
             self.plasticity.co_activate("accelerate_blas", "unified_memory")
-            reward = 0.85
-        else:
-            reward = 0.5
+        reward = self._measured_reward(workload)
         self.plasticity.deliver_reward(reward)
         self.plasticity.decay()
         self.plasticity.prune()
