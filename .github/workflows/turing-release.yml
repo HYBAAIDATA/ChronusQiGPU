@@ -165,7 +165,7 @@ jobs:
               "benchmarks_completed": not bench["failed"],
               "benchmark_digest": bench["digest"],
               "wide_first_workload_verified": "ten_thousand_qubit_vqc_voyage" in bench["passed"],
-              "acceptance_gate_passed": acceptance.get("accepted") is True,
+              "acceptance_gate_passed": acceptance.get("elevated") is True,
               "acceptance_digest": acceptance.get("acceptance_digest"),
           }
           if not all((
