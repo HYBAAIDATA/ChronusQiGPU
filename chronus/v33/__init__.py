@@ -6,6 +6,17 @@ from .reconstruction import ReconstructionEngine, Frame8K
 from .qsdl_compiler import QSDLCompiler, QScene, ManifoldConfig
 from .weak_measurement import WeakMeasurementSession, apply_weak_measurement, uhlmann_fidelity
 from .emp import ErrorMitigationProcessor, EMPReport
+from .qx import (
+    QXCommand,
+    QXCommandBuffer,
+    QXCommandType,
+    QXExecutionReport,
+    QXMemoryDomain,
+    QXPipelineStage,
+    QXReferenceExecutor,
+    QXValidationError,
+)
+from .qx_bridge import QXSceneCompilation, compile_qsdl_to_qx, execute_qsdl_qx_reference
 from .test_harness import ChronosTestHarness
 from .capability_audit import CapabilityAuditReport, audit_capability_surface, load_capability_manifest
 from . import academic
@@ -51,6 +62,17 @@ __all__ = [
     "uhlmann_fidelity",
     "ErrorMitigationProcessor",
     "EMPReport",
+    "QXCommand",
+    "QXCommandBuffer",
+    "QXCommandType",
+    "QXExecutionReport",
+    "QXMemoryDomain",
+    "QXPipelineStage",
+    "QXReferenceExecutor",
+    "QXValidationError",
+    "QXSceneCompilation",
+    "compile_qsdl_to_qx",
+    "execute_qsdl_qx_reference",
     "ChronosTestHarness",
     "CapabilityAuditReport",
     "audit_capability_surface",
