@@ -54,6 +54,16 @@ from .state import (
 ALL_MEMORY_KINDS = tuple(MemoryKind)
 EVIDENCE_PREFIX = "cognition-"
 
+# Declared ignorant-prior feature vector for planner-fallback candidates.
+# These are policy priors — explicitly NOT measured quantities.
+UNMEASURED_PRIOR_FEATURES = {
+    "correctness_estimate": 0.5,
+    "cost": 0.5,
+    "uncertainty": 0.5,
+    "novelty": 0.0,
+    "transfer_value": 0.0,
+}
+
 
 @dataclass(frozen=True)
 class AblationConfig:
@@ -97,6 +107,12 @@ class GeneralIntelligenceCore:
         max_cycles: int = 8,
         ablations: AblationConfig | None = None,
         analogy_adopt_threshold: float = 0.5,
+        hypothesis_evidence_strength: float = 4.0,  # declared Born-mass prior strength
+        memory_bias_base: float = 0.1,
+        memory_bias_overlap: float = 0.3,
+        memory_bias_transfer: float = 0.2,
+        memory_bias_cap: float = 0.4,
+        payload_cost_coefficient: float = 0.05,
     ) -> None:
         if max_cycles < 1:
             raise ValueError("max_cycles must be >= 1")
@@ -122,6 +138,14 @@ class GeneralIntelligenceCore:
         self.max_cycles = max_cycles
         self.ablations = ablations or AblationConfig()
         self.analogy_adopt_threshold = analogy_adopt_threshold
+        # declared evidence/policy constants (constructor-visible, never
+        # presented as measured quantities)
+        self.hypothesis_evidence_strength = float(hypothesis_evidence_strength)
+        self.memory_bias_base = float(memory_bias_base)
+        self.memory_bias_overlap = float(memory_bias_overlap)
+        self.memory_bias_transfer = float(memory_bias_transfer)
+        self.memory_bias_cap = float(memory_bias_cap)
+        self.payload_cost_coefficient = float(payload_cost_coefficient)
 
     # -- instrumentation ----------------------------------------------------
     def _transition(
@@ -505,19 +529,15 @@ class GeneralIntelligenceCore:
                         f"plan-{n.node_id}",
                         n.description,
                         origin="planner",
-                        features={
-                            "correctness_estimate": 0.5,
-                            "cost": 0.5,
-                            "uncertainty": 0.5,
-                            "novelty": 0.0,
-                            "transfer_value": 0.0,
-                        },
+                        features=dict(UNMEASURED_PRIOR_FEATURES),
                     )
                     for n in state.plan
                 ]
 
             # 9b. MEMORY INFLUENCE ------------------------------------------------
             # Structurally relevant episodic memory biases candidate scoring.
+            # Fallback candidates carry the declared ignorant-prior feature
+            # vector: every entry is a policy prior, not a measured quantity.
             # This is the only downstream channel the retrieve phase feeds: a
             # removed record must change the ranking under identical inputs,
             # and an irrelevant record (zero structural overlap) never does.
@@ -1089,7 +1109,7 @@ class GeneralIntelligenceCore:
                 else self._retrieval_tokens(structure, payload)
             )
             utility = float(len(self.memory.retrieve(tokens, ALL_MEMORY_KINDS)))
-            return utility, 0.05 * float(len(payload))
+            return utility, self.payload_cost_coefficient * float(len(payload))
 
         try:
             trial = self.representation_controller.select(problem, evaluator)
@@ -1151,16 +1171,26 @@ class GeneralIntelligenceCore:
             )
             if expected is None:
                 continue
+            # Born-rule confidence update: the stored confidence is the Born
+            # probability of the confirmation channel of the hypothesis's
+            # evidence state  |psi> ~ (sqrt(c*K), sqrt((1-c)*K))  with K the
+            # declared evidence strength; each measured intervention outcome
+            # adds one unit of Born mass to the matching channel.
+            k = self.hypothesis_evidence_strength
+            confirm_mass = hypothesis.confidence * k
+            refute_mass = (1.0 - hypothesis.confidence) * k
             if expected.expected == observed_token:
+                confirm_mass += 1.0
                 updated = hypothesis.with_update(
-                    confidence=min(1.0, hypothesis.confidence + 0.25),
+                    confidence=confirm_mass / (confirm_mass + refute_mass),
                     status=HypothesisStatus.CONFIRMED,
                     support=f"intervention:{action}",
                 )
                 confirmed.append(hypothesis.hypothesis_id)
             else:
+                refute_mass += 1.0
                 updated = hypothesis.with_update(
-                    confidence=max(0.0, hypothesis.confidence - 0.5),
+                    confidence=confirm_mass / (confirm_mass + refute_mass),
                     status=HypothesisStatus.REFUTED,
                     refute=f"intervention:{action}",
                 )
@@ -1205,7 +1235,12 @@ class GeneralIntelligenceCore:
             action_ids = {executed}
             if ":" not in executed:
                 action_ids.add(f"strategy:{executed}")
-            boost = min(0.4, 0.1 + 0.3 * overlap + 0.2 * float(item.transfer_value or 0.0))
+            boost = min(
+                self.memory_bias_cap,
+                self.memory_bias_base
+                + self.memory_bias_overlap * overlap
+                + self.memory_bias_transfer * float(item.transfer_value or 0.0),
+            )
             for action_id in action_ids:
                 biases[action_id] = max(biases.get(action_id, 0.0), boost)
         return biases
