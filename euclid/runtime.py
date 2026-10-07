@@ -177,7 +177,30 @@ class EuclidRuntime:
             ),
         )
         self._advance("salamander.control_plane", ReachabilityStage.REACHABLE, "organism-startup")
+        # Discovery is an EUCLID reasoning capability; Salamander owns the
+        # optimisation decision. The bridge is constructed here so the
+        # production composition root has one governed path between them.
+        from salamander.discovery_optimisation import DiscoveryOptimisationBridge
+        from .explorer import TheoreticalSpaceExplorer
+
+        self.discovery = TheoreticalSpaceExplorer()
+        self.discovery_optimisation = DiscoveryOptimisationBridge(self.autonomic)
+        self._advance("euclid.discovery", ReachabilityStage.REACHABLE, "organism-startup")
         self.reachability.save(self.state_dir / "cognition_reachability.json")
+
+    def evaluate_discovery_optimisation(self, candidate: Any, verifier: Any) -> Mapping[str, Any]:
+        """Evaluate one passed discovery through Salamander's held-out gate.
+
+        Discovery never applies a policy directly.  The candidate must satisfy
+        the bridge guards and the supplied verifier must return independent
+        evidence before promotion is possible.
+        """
+        bridge = getattr(self, "discovery_optimisation", None)
+        if bridge is None:
+            raise RuntimeError("discovery optimisation is unavailable outside the organism")
+        result = dict(bridge.evaluate(candidate, verifier))
+        self.evidence.append("discovery-optimisation", result)
+        return result
 
     def _advance(
         self, component: str, stage: Any, episode_id: str,
