@@ -1,14 +1,75 @@
 {
   "component": "hyba_db",
-  "schema_version": 1,
-  "layers": {
-    "0": ["physical_blocks", "fibonacci_addresses"],
-    "1": ["folds", "zeckendorf_certificates", "lucas_witnesses"],
-    "2": ["mps", "tt", "mpo", "safe_binary_payloads"],
-    "3": ["typed_nodes", "typed_edges", "betti", "persistence", "traversal"],
-    "4": ["hmac_attestation_dag", "content_addresses", "certificate_replay"],
-    "5": ["invariants", "contracts", "ontology", "materialized_computations"]
+  "schema_version": 2,
+  "authority_model": {
+    "durable_system_of_record": "THESEUS",
+    "semantic_authority": "producer",
+    "projection": "hyba_db",
+    "transform_lineage": "OVID"
   },
-  "security": ["tenant_scoped_queries", "composite_foreign_keys", "parameterized_sql", "transactional_quotas", "no_deserialization_execution"],
-  "initial_projection": ["mining_pools", "jobs", "shares", "targets"]
+  "layers": {
+    "0": [
+      "physical_blocks",
+      "fibonacci_addresses"
+    ],
+    "1": [
+      "folds",
+      "zeckendorf_certificates",
+      "lucas_witnesses"
+    ],
+    "2": [
+      "mps",
+      "tt",
+      "mpo",
+      "safe_binary_payloads"
+    ],
+    "3": [
+      "typed_nodes",
+      "typed_edges",
+      "betti",
+      "persistence",
+      "traversal"
+    ],
+    "4": [
+      "hmac_attestation_dag",
+      "content_addresses",
+      "certificate_replay",
+      "theseus_custody_binding"
+    ],
+    "5": [
+      "invariants",
+      "contracts",
+      "ontology_terms",
+      "materialized_computations",
+      "evidence_bound_knowledge",
+      "supersession",
+      "typed_knowledge_relations"
+    ]
+  },
+  "security": [
+    "tenant_scoped_queries",
+    "composite_foreign_keys",
+    "parameterized_sql",
+    "transactional_quotas",
+    "no_deserialization_execution",
+    "fail_closed_custody_verification"
+  ],
+  "storage": [
+    "content_addressed_files",
+    "immutable_file_versions",
+    "attested_file_provenance",
+    "recoverable_write_intents",
+    "reconciliation"
+  ],
+  "recovery": [
+    "theseus_replay",
+    "knowledge_projection_rebuild",
+    "producer_semantic_revalidation"
+  ],
+  "projections": [
+    "mining_lifecycle",
+    "file_plane",
+    "knowledge_ontology"
+  ],
+  "production_gate": "pythia-storage-db-gate"
 }

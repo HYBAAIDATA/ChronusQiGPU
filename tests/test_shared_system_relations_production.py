@@ -232,9 +232,9 @@ def test_turing_real_pipeline_uses_shared_custody_not_private_theseus(tmp_path):
         )
         report = turing.run(request)
         assert report.verdict in {"PASS", "GATED"}
-        assert {"program", "result", "certificate", "witness", "report"} <= set(
-            turing.last_bindings
-        )
+        assert {
+            "program", "result", "certificate", "witness", "report", "replay",
+        } <= set(turing.last_bindings)
 
         for name, binding in turing.last_bindings.items():
             verdict = lifecycle.fabric.verify(binding.binding_id)
@@ -254,6 +254,15 @@ def test_turing_real_pipeline_uses_shared_custody_not_private_theseus(tmp_path):
         )
         assert turing.last_bindings["report"].source_system == "turing"
         assert "chronus" in turing.last_bindings["report"].participants
+        assert turing.last_bindings["replay"].parent_binding_ids == (
+            turing.last_bindings["report"].binding_id,
+        )
+        replay_payload = json.loads(
+            turing.port.read(turing.last_bindings["replay"].binding_id).decode(
+                "utf-8"
+            )
+        )
+        assert replay_payload["passed"] is True
 
         # Semantic replay of the shared-custody boundary: the certificate is
         # parsed and re-verified, the witness re-verified, and program/result/
@@ -317,6 +326,56 @@ def test_turing_certificate_boundary_recovers_and_verifies_after_restart(tmp_pat
         second.stop()
 
 
+def test_turing_replay_recovers_boundary_from_durable_graph_after_restart(tmp_path):
+    """After a real CompositionRoot restart, ``turing.replay()`` has no live
+    ``last_bindings`` — it must resolve this run's artefacts from the
+    durable binding graph and still prove the certificate boundary."""
+    from turing_universal_quantum_computer import Program
+    from turing_universal_quantum_computer.pipeline import VQCRequest
+
+    state_dir = tmp_path / "turing-replay-restart"
+    first = CompositionRoot(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    first.start()
+    try:
+        turing = ProductionSystemRelations(first).turing()
+        report = turing.run(
+            VQCRequest(
+                program=Program(n_qubits=2).then("h", 0).then("cx", 0, 1),
+                marginal_of=(0, 1),
+            )
+        )
+        assert report.verdict in {"PASS", "GATED"}
+        same_process = turing.replay()
+        assert same_process["passed"] is True
+        assert same_process["replay_source"] == "last_bindings"
+        report_binding_id = same_process["report_binding_id"]
+    finally:
+        first.stop()
+
+    second = CompositionRoot(
+        state_dir,
+        hmac_key=TEST_KEY,
+        allow_insecure_dev_key=True,
+    )
+    second.start()
+    try:
+        turing = ProductionSystemRelations(second).turing()
+        assert turing.last_bindings == {}
+        boundary = turing.replay()
+        assert boundary["passed"] is True, boundary["checks"]
+        assert boundary["replay_source"] == "durable_graph"
+        assert boundary["report_binding_id"] == report_binding_id
+        assert {"program", "result", "certificate", "witness"} <= set(
+            boundary["record_kinds"]
+        )
+    finally:
+        second.stop()
+
+
 def test_turing_boundary_replay_rejects_foreign_certificate(tmp_path):
     """Adversarial: an individually-valid certificate from a DIFFERENT
     execution must not replay as part of this run's record set."""
@@ -363,6 +422,52 @@ def test_turing_boundary_replay_rejects_foreign_certificate(tmp_path):
         assert swapped["checks"]["certificate_integrity"] is True
         assert swapped["checks"]["certificate_binds_witness"] is False
         assert swapped["checks"]["program_matches_certificate_trace"] is False
+    finally:
+        lifecycle.stop()
+
+
+def test_turing_boundary_replay_rejects_result_payload_substitution(tmp_path):
+    """An intact certificate embedded beside a changed result is insufficient.
+
+    The shared-custody replay must recompute the computation certificate
+    against the recovered result payload, not merely compare identity fields.
+    """
+    from turing_universal_quantum_computer import Program
+    from turing_universal_quantum_computer.pipeline import VQCRequest
+
+    lifecycle = _root(tmp_path)
+    try:
+        relations = ProductionSystemRelations(lifecycle)
+        turing = relations.turing()
+        report = turing.run(
+            VQCRequest(
+                program=Program(n_qubits=2).then("h", 0).then("cx", 0, 1)
+            )
+        )
+        assert report.verdict in {"PASS", "GATED"}
+
+        recovered = {
+            name: json.loads(
+                turing.port.read(binding.binding_id).decode("utf-8")
+            )
+            for name, binding in turing.last_bindings.items()
+            if name in ("program", "result", "certificate", "witness")
+        }
+        tampered_result = dict(recovered["result"])
+        tampered_payload = dict(tampered_result["payload"])
+        tampered_payload["substituted_after_execution"] = True
+        tampered_result["payload"] = tampered_payload
+
+        checked = verify_turing_custody_boundary(
+            program_payload=recovered["program"],
+            result_payload=tampered_result,
+            certificate_payload=recovered["certificate"],
+            witness_payload=recovered["witness"],
+        )
+        assert checked["passed"] is False
+        assert checked["checks"]["certificate_integrity"] is True
+        assert checked["checks"]["result_embeds_certificate"] is True
+        assert checked["checks"]["certificate_binds_program_and_result"] is False
     finally:
         lifecycle.stop()
 
@@ -429,6 +534,25 @@ def test_production_organism_is_single_startup_root_for_live_shared_systems(tmp_
         assert status["shared_custody_ready"] is True
         assert status["authority_preserved"] is True
         assert all(status["bound_systems"].values())
+        chronus_startup = status["chronus_startup_gate"]
+        assert chronus_startup["passed"] is True
+        assert chronus_startup["mode"] == "independent"
+        assert chronus_startup["physical_gpu_required"] is False
+        assert chronus_startup["actual_adapter_id"] == "chronus-software-fabric"
+        assert chronus_startup["verification"] == "match"
+        assert chronus_startup["math_pipeline"]["passed"] is True
+        assert chronus_startup["qx_pipeline"]["passed"] is True
+        assert chronus_startup["hardware_claimed"] is False
+        assert {"voyage", "replay"} == set(chronus_startup["bindings"])
+
+        startup = status["turing_startup_gate"]
+        assert startup["passed"] is True
+        assert startup["pipeline_verdict"] == "PASS"
+        assert startup["hardware_claimed"] is False
+        assert startup["physical_qpu_claimed"] is False
+        assert {
+            "program", "result", "certificate", "witness", "report", "replay",
+        } == set(startup["bindings"])
 
         fabric = organism.lifecycle.fabric
         assert organism.intelligence.store.port.fabric is fabric
@@ -436,6 +560,7 @@ def test_production_organism_is_single_startup_root_for_live_shared_systems(tmp_
         assert organism.salamander.port.fabric is fabric
         assert organism.al_haras.port.fabric is fabric
         assert organism.kellogg.port.fabric is fabric
+        assert organism.chronus.port.fabric is fabric
         assert organism.turing.port.fabric is fabric
         assert organism.euclid.port.fabric is fabric
 
@@ -444,6 +569,19 @@ def test_production_organism_is_single_startup_root_for_live_shared_systems(tmp_
             {"verified": True},
         )
         organism.kellogg.encode([1.0, 1.0, 2.0, 3.0], dim=32)
+        diagnostic_replay = organism.kellogg.replay_latest()
+        assert diagnostic_replay["passed"] is True
+        assert diagnostic_replay["plane"] == "diagnostic"
+
+        exact_state = organism.kellogg.encode_exact(
+            {"production_root_probe": "exact"},
+            num_qubits=3,
+        )
+        assert exact_state.num_qubits == 3
+        exact_replay = organism.kellogg.replay_latest()
+        assert exact_replay["passed"] is True
+        assert exact_replay["plane"] == "exact"
+
         proposal = organism.salamander.heal(
             "timeout",
             {"component": "production-root-probe"},
@@ -506,6 +644,77 @@ def test_euclid_turing_specialist_is_guarded_and_handoff_enters_turing_custody(t
         assert organism.lifecycle.fabric.verify(handoffs[0]["binding_id"])["passed"] is True
     finally:
         organism.stop()
+
+
+def test_production_organism_fails_closed_when_chronus_startup_gate_fails(
+    tmp_path,
+    monkeypatch,
+):
+    from aethel.enterprise.production_organism import ProductionOrganism
+    from aethel.enterprise.system_relations import ProductionSystemRelations
+
+    class BrokenChronus:
+        last_bindings = {}
+
+        def run_startup_voyage(self):
+            raise RuntimeError("forced Chronus startup failure")
+
+        def stop(self):
+            return None
+
+    monkeypatch.setattr(
+        ProductionSystemRelations,
+        "chronus",
+        lambda self, runtime=None, store_dir=None: BrokenChronus(),
+    )
+    organism = ProductionOrganism(
+        tmp_path / "organism-chronus-startup-failure",
+        hmac_key=TEST_KEY,
+        guardian=_guardian(tmp_path),
+        allow_insecure_dev_key=True,
+    )
+
+    with pytest.raises(RuntimeError, match="CHRONUS production startup gate failed"):
+        organism.start()
+
+    status = organism.status()
+    assert status["ready"] is False
+    assert organism.lifecycle.readiness()["ready"] is False
+    assert status["chronus_startup_gate"]["passed"] is False
+    assert "forced Chronus startup failure" in status["chronus_startup_gate"]["error"]
+
+
+def test_production_organism_fails_closed_when_turing_startup_gate_fails(
+    tmp_path,
+    monkeypatch,
+):
+    from aethel.enterprise.production_organism import ProductionOrganism
+    from aethel.enterprise.system_relations import ProductionSystemRelations
+
+    class BrokenTuring:
+        def run(self, request):
+            raise RuntimeError("forced Turing startup failure")
+
+    monkeypatch.setattr(
+        ProductionSystemRelations,
+        "turing",
+        lambda self, pipeline=None: BrokenTuring(),
+    )
+    organism = ProductionOrganism(
+        tmp_path / "organism-turing-startup-failure",
+        hmac_key=TEST_KEY,
+        guardian=_guardian(tmp_path),
+        allow_insecure_dev_key=True,
+    )
+
+    with pytest.raises(RuntimeError, match="TURING production startup gate failed"):
+        organism.start()
+
+    status = organism.status()
+    assert status["ready"] is False
+    assert organism.lifecycle.readiness()["ready"] is False
+    assert status["turing_startup_gate"]["passed"] is False
+    assert "forced Turing startup failure" in status["turing_startup_gate"]["error"]
 
 
 def test_production_organism_shutdown_closes_custody_when_final_snapshot_fails(

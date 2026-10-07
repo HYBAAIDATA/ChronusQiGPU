@@ -11,8 +11,6 @@ import os
 import uuid
 from typing import Any, Mapping
 
-from al_haras import GuardianRequest
-
 from al_haras_pythia import pythia_guardian_api
 from chronus.mla1517.mining.storage_recorder import M3StorageError
 
@@ -78,6 +76,42 @@ class M3MiningSubmissionGate:
             "policy_version": self.guardian_api.guardian.policy.version,
         }
 
+    def _evaluate_guardian(
+        self,
+        *,
+        operation: str,
+        resource: str,
+        payload: Mapping[str, Any],
+        request_id: str,
+    ) -> dict[str, Any]:
+        """Use the canonical GuardianAPI so TOE/L-HRAS policy is not bypassed."""
+        try:
+            status, response = self.guardian_api.evaluate(
+                headers={
+                    "x-hyba-tenant": self.tenant,
+                    "x-hyba-actor": self.actor,
+                    "authorization": f"Bearer {self.subscription_token}",
+                },
+                body={
+                    "operation": operation,
+                    "resource": resource,
+                    "payload": dict(payload),
+                    "request_id": request_id,
+                    # GuardianAPI owns the configured intelligence provider.
+                    # The exact work identity is the observation supplied to it.
+                    "observation": dict(payload),
+                },
+            )
+        except Exception as exc:
+            return {
+                "allowed": False,
+                "reason": f"AL_HARAS_UNAVAILABLE:{type(exc).__name__}",
+                "http_status": 503,
+            }
+        verdict = dict(response)
+        verdict["http_status"] = int(status)
+        return verdict
+
     def authorize_lease(self, *, context: Mapping[str, Any]) -> Mapping[str, Any]:
         """Authorize one Stratum work identity before PYTHIA reserves leases."""
         storage_health = self.recorder.health(reconcile=True)
@@ -99,25 +133,16 @@ class M3MiningSubmissionGate:
             "search_authority": "PYTHIA",
             "search_algorithm": "hendrix_coprime_stride",
         }
-        request = GuardianRequest(
-            tenant_id=self.tenant,
+        request_id = (
+            f"lease:{context.get('pool_session_id')}:"
+            f"{context.get('generation')}:{context.get('job_fingerprint')}"
+        )
+        verdict_dict = self._evaluate_guardian(
             operation="mining.lease",
             resource=f"stratum://{context.get('endpoint') or 'unavailable'}",
             payload=payload,
-            actor=self.actor,
-            request_id=f"lease:{context.get('pool_session_id')}:{context.get('generation')}:{context.get('job_fingerprint')}",
+            request_id=request_id,
         )
-        try:
-            verdict = self.guardian_api.guardian.evaluate(
-                request,
-                subscription_token=self.subscription_token,
-            )
-        except Exception as exc:
-            return {
-                "allowed": False,
-                "reason": f"AL_HARAS_UNAVAILABLE:{type(exc).__name__}",
-            }
-        verdict_dict = verdict.to_dict()
         try:
             version_id = self.recorder.persist_authorization(
                 verdict_dict,
@@ -128,14 +153,18 @@ class M3MiningSubmissionGate:
                 f"could not custody AL HARAS lease authorization: {type(exc).__name__}: {exc}"
             ) from exc
         return {
-            "allowed": bool(verdict.allowed),
-            "reason": verdict.reason,
-            "authorization_evidence_id": verdict.evidence_id,
+            "allowed": verdict_dict.get("allowed") is True,
+            "reason": verdict_dict.get("reason"),
+            "authorization_evidence_id": verdict_dict.get("evidence_id"),
             "authorization_version_id": version_id,
-            "policy_version": verdict.policy_version,
+            "policy_version": verdict_dict.get("policy_version"),
+            "intelligence_evidence_hash": verdict_dict.get("intelligence_evidence_hash"),
+            "http_status": verdict_dict.get("http_status"),
         }
 
-    def authorize_and_custody(self, *, context: Mapping[str, Any], proof: Any) -> Mapping[str, Any]:
+    def authorize_and_custody(
+        self, *, context: Mapping[str, Any], proof: Any
+    ) -> Mapping[str, Any]:
         # Reconcile immediately before an external side effect. Startup
         # readiness alone is insufficient because custody may degrade later.
         storage_health = self.recorder.health(reconcile=True)
@@ -161,25 +190,12 @@ class M3MiningSubmissionGate:
             "block_hash": context.get("block_hash"),
             "target": context.get("target"),
         }
-        request = GuardianRequest(
-            tenant_id=self.tenant,
+        verdict_dict = self._evaluate_guardian(
             operation="mining.submit",
             resource=f"stratum://{context.get('endpoint') or 'unavailable'}",
             payload=payload,
-            actor=self.actor,
             request_id=str(context.get("candidate_id") or uuid.uuid4().hex),
         )
-        try:
-            verdict = self.guardian_api.guardian.evaluate(
-                request,
-                subscription_token=self.subscription_token,
-            )
-        except Exception as exc:
-            return {
-                "allowed": False,
-                "reason": f"AL_HARAS_UNAVAILABLE:{type(exc).__name__}",
-            }
-        verdict_dict = verdict.to_dict()
 
         try:
             authorization_version_id = self.recorder.persist_authorization(
@@ -190,22 +206,26 @@ class M3MiningSubmissionGate:
             raise M3StorageError(
                 f"could not custody AL HARAS authorization: {type(exc).__name__}: {exc}"
             ) from exc
-        if not verdict.allowed:
+        if verdict_dict.get("allowed") is not True:
             return {
                 "allowed": False,
-                "reason": verdict.reason,
-                "authorization_evidence_id": verdict.evidence_id,
+                "reason": verdict_dict.get("reason"),
+                "authorization_evidence_id": verdict_dict.get("evidence_id"),
                 "authorization_version_id": authorization_version_id,
-                "policy_version": verdict.policy_version,
+                "policy_version": verdict_dict.get("policy_version"),
+                "intelligence_evidence_hash": verdict_dict.get(
+                    "intelligence_evidence_hash"
+                ),
+                "http_status": verdict_dict.get("http_status"),
             }
 
         try:
             proof_record_id, proof_version_id = self.recorder.persist_verified_proof(
                 context=payload,
                 proof=proof,
-                authorization_evidence_id=verdict.evidence_id,
+                authorization_evidence_id=str(verdict_dict.get("evidence_id") or ""),
                 authorization_version_id=authorization_version_id,
-                policy_version=verdict.policy_version,
+                policy_version=str(verdict_dict.get("policy_version") or ""),
             )
         except Exception as exc:
             if isinstance(exc, M3StorageError):
@@ -215,12 +235,14 @@ class M3MiningSubmissionGate:
             ) from exc
         return {
             "allowed": True,
-            "reason": verdict.reason,
-            "authorization_evidence_id": verdict.evidence_id,
+            "reason": verdict_dict.get("reason"),
+            "authorization_evidence_id": verdict_dict.get("evidence_id"),
             "authorization_version_id": authorization_version_id,
             "verified_proof_id": proof_record_id,
             "verified_proof_version_id": proof_version_id,
-            "policy_version": verdict.policy_version,
+            "policy_version": verdict_dict.get("policy_version"),
+            "intelligence_evidence_hash": verdict_dict.get("intelligence_evidence_hash"),
+            "http_status": verdict_dict.get("http_status"),
         }
 
 

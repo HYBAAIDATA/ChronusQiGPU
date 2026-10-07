@@ -287,25 +287,352 @@ class SharedALHaras(_BoundAdapter):
 
 
 class SharedKellogg(_BoundAdapter):
-    """Kellogg exact/intelligence tensor entry point on the shared fabric."""
+    """Canonical KELLOGG tensor boundary over the shared THESEUS/OVID fabric.
+
+    KELLOGG remains the owner of tensor mathematics. This adapter adds only
+    production evidence: an input commitment, a state artefact, a verified
+    KELLOGG attestation, lineage-linked custody, and semantic replay.
+    """
 
     def __init__(self, port: SystemDataPort) -> None:
         super().__init__(component=None, port=port, system="kellogg")
+        self.last_bindings: dict[str, EntanglementBinding] = {}
+        self.last_attestation: dict[str, Any] | None = None
+        self.last_replay: dict[str, Any] | None = None
+
+    def _commit_state(
+        self,
+        *,
+        input_digest: str,
+        state_payload: Mapping[str, Any],
+        attestation: Mapping[str, Any],
+    ) -> None:
+        replay = verify_kellogg_custody_boundary(
+            input_payload={
+                "schema": "kellogg.input_commitment/v1",
+                "input_digest": input_digest,
+            },
+            state_payload=state_payload,
+            attestation_payload=attestation,
+        )
+        if not replay["passed"]:
+            failed = sorted(name for name, passed in replay["checks"].items() if not passed)
+            raise RuntimeError(
+                "KELLOGG semantic pre-custody verification failed: " + ", ".join(failed)
+            )
+
+        input_binding = self._put(
+            "kellogg_input_commitment",
+            {
+                "schema": "kellogg.input_commitment/v1",
+                "input_digest": input_digest,
+            },
+            meta={"authority": "kellogg"},
+        )
+        state_binding = self._put(
+            "kellogg_tensor_state",
+            dict(state_payload),
+            parents=(input_binding.binding_id,),
+            meta={
+                "authority": "kellogg",
+                "representation": str(state_payload.get("representation", "unknown")),
+                "plane": str(state_payload.get("plane", "unknown")),
+            },
+        )
+        attestation_binding = self._put(
+            "kellogg_attestation",
+            dict(attestation),
+            parents=(state_binding.binding_id,),
+            meta={
+                "authority": "kellogg",
+                "attestation_schema": str(attestation.get("schema", "")),
+                "attestation_digest": str(attestation.get("attestation_digest", "")),
+            },
+        )
+
+        for name, binding in (
+            ("input", input_binding),
+            ("state", state_binding),
+            ("attestation", attestation_binding),
+        ):
+            verdict = self.port.fabric.verify(binding.binding_id)
+            if not verdict.get("passed"):
+                raise RuntimeError(
+                    f"KELLOGG shared custody verification failed for {name}: {verdict}"
+                )
+
+        self.last_bindings = {
+            "input": input_binding,
+            "state": state_binding,
+            "attestation": attestation_binding,
+        }
+        self.last_attestation = dict(attestation)
+        self.last_replay = replay
 
     def encode(self, data: Any, *, dim: int = 32) -> Any:
+        """Encode through the declared finite-precision diagnostic plane."""
+        from kellogg.attest import attest
+        from kellogg.exact_tensor import canonical_digest
         from kellogg.quantum_tensor import encode_data_to_state
 
         state = encode_data_to_state(data, dim=dim)
+        input_digest = canonical_digest(data)
         payload = {
+            "schema": "kellogg.tensor_state/v1",
+            "plane": "diagnostic",
+            "exact": False,
+            "representation": "quantum_tensor",
+            "field": "IEEE-754 complex",
             "dim": int(state.dim),
+            "input_digest": input_digest,
             "amplitudes": [[float(a.re), float(a.im)] for a in state.amplitudes],
         }
-        self._put(
-            "kellogg_tensor_state",
+        attestation = attest(
             payload,
-            meta={"authority": "kellogg", "representation": "quantum_tensor"},
+            float_boundaries=("kellogg.quantum_tensor.encode_data_to_state",),
+            notes=("canonical production diagnostic-plane custody",),
+        )
+        self._commit_state(
+            input_digest=input_digest,
+            state_payload=payload,
+            attestation=attestation,
         )
         return state
+
+    def encode_exact(
+        self,
+        data: Any,
+        *,
+        num_qubits: int = 5,
+        max_amplitudes: int | None = None,
+    ) -> Any:
+        """Encode to the exact F4 plane and custody the exact amplitudes."""
+        from kellogg.attest import attest
+        from kellogg.exact_tensor import ExactTOETensor
+
+        tensor = ExactTOETensor(
+            num_qubits=num_qubits,
+            max_amplitudes=max_amplitudes,
+        )
+        state, input_digest = tensor.encode(data)
+        payload = {
+            "schema": "kellogg.exact_tensor_state/v1",
+            "plane": "exact",
+            "exact": True,
+            "representation": "exact_tensor",
+            "field": "Q(sqrt(2)) + iQ(sqrt(2))",
+            "num_qubits": int(state.num_qubits),
+            "amplitude_count": len(state.amplitudes),
+            "input_digest": input_digest,
+            "state_commitment": tensor.commitment(state),
+            "normalized_exact": bool(state.normalized_exact()),
+            "amplitudes": [amplitude.to_json() for amplitude in state.amplitudes],
+        }
+        attestation = attest(
+            payload,
+            notes=("canonical production exact-plane custody",),
+        )
+        self._commit_state(
+            input_digest=input_digest,
+            state_payload=payload,
+            attestation=attestation,
+        )
+        return state
+
+    def replay_latest(self) -> dict[str, Any]:
+        """Recover and semantically replay the newest KELLOGG custody set."""
+        attestation_binding = _latest_binding(
+            self.port,
+            source="kellogg",
+            kind="kellogg_attestation",
+        )
+        if attestation_binding is None:
+            raise RuntimeError("no KELLOGG attestation is available for replay")
+
+        state_parents = tuple(attestation_binding.get("parent_binding_ids", ()))
+        if len(state_parents) != 1:
+            raise RuntimeError("KELLOGG attestation does not have exactly one state parent")
+        state_binding_id = str(state_parents[0])
+        graph = self.port.fabric.graph().get("bindings", ())
+        state_binding = next(
+            (
+                item
+                for item in graph
+                if str(item.get("binding_id")) == state_binding_id
+                and item.get("source_system") == "kellogg"
+                and item.get("kind") == "kellogg_tensor_state"
+            ),
+            None,
+        )
+        if state_binding is None:
+            raise RuntimeError("KELLOGG state parent is missing from shared custody")
+
+        input_parents = tuple(state_binding.get("parent_binding_ids", ()))
+        if len(input_parents) != 1:
+            raise RuntimeError("KELLOGG state does not have exactly one input parent")
+        input_binding_id = str(input_parents[0])
+
+        input_payload = json.loads(self.port.read(input_binding_id).decode("utf-8"))
+        state_payload = json.loads(self.port.read(state_binding_id).decode("utf-8"))
+        attestation_payload = json.loads(
+            self.port.read(str(attestation_binding["binding_id"])).decode("utf-8")
+        )
+        report = verify_kellogg_custody_boundary(
+            input_payload=input_payload,
+            state_payload=state_payload,
+            attestation_payload=attestation_payload,
+        )
+        report["custody"] = {
+            "input": bool(self.port.fabric.verify(input_binding_id).get("passed")),
+            "state": bool(self.port.fabric.verify(state_binding_id).get("passed")),
+            "attestation": bool(
+                self.port.fabric.verify(str(attestation_binding["binding_id"])).get("passed")
+            ),
+        }
+        report["passed"] = bool(report["passed"] and all(report["custody"].values()))
+        self.last_replay = report
+        return report
+
+
+def verify_kellogg_custody_boundary(
+    *,
+    input_payload: Mapping[str, Any] | None,
+    state_payload: Mapping[str, Any] | None,
+    attestation_payload: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    """Semantically verify one recovered KELLOGG state/attestation custody set."""
+    import math
+
+    from kellogg.attest import verify_attestation
+    from kellogg.exact_tensor import ExactStateVector, ExactTOETensor, F4
+
+    checks: dict[str, bool] = {}
+    input_record = input_payload if isinstance(input_payload, Mapping) else {}
+    state_record = state_payload if isinstance(state_payload, Mapping) else {}
+    attestation_record = (
+        attestation_payload if isinstance(attestation_payload, Mapping) else {}
+    )
+
+    checks["input_schema"] = (
+        input_record.get("schema") == "kellogg.input_commitment/v1"
+    )
+    input_digest = input_record.get("input_digest")
+    checks["input_digest_present"] = bool(
+        isinstance(input_digest, str) and len(input_digest) == 64
+    )
+    checks["state_binds_input"] = bool(
+        checks["input_digest_present"]
+        and state_record.get("input_digest") == input_digest
+    )
+
+    try:
+        checks["attestation_verifies"] = bool(
+            verify_attestation(state_record, attestation_record)
+        )
+    except Exception:
+        checks["attestation_verifies"] = False
+
+    plane = state_record.get("plane")
+    checks["plane_declared"] = plane in {"exact", "diagnostic"}
+    checks["exact_flag_matches_plane"] = (
+        state_record.get("exact") is (plane == "exact")
+    )
+
+    if plane == "exact":
+        checks["state_schema"] = (
+            state_record.get("schema") == "kellogg.exact_tensor_state/v1"
+        )
+        checks["representation"] = state_record.get("representation") == "exact_tensor"
+        checks["field"] = (
+            state_record.get("field") == "Q(sqrt(2)) + iQ(sqrt(2))"
+        )
+        amplitudes = state_record.get("amplitudes")
+        try:
+            parsed = tuple(F4.from_json(value) for value in amplitudes)
+            num_qubits = int(state_record.get("num_qubits"))
+            exact_state = ExactStateVector(
+                num_qubits,
+                parsed,
+                max_amplitudes=len(parsed),
+            )
+            checks["exact_amplitudes_reconstruct"] = True
+            checks["amplitude_count"] = (
+                int(state_record.get("amplitude_count")) == len(parsed)
+            )
+            checks["normalization"] = bool(
+                state_record.get("normalized_exact") is True
+                and exact_state.normalized_exact()
+            )
+            checks["state_commitment"] = (
+                state_record.get("state_commitment")
+                == ExactTOETensor.commitment(exact_state)
+            )
+        except Exception:
+            checks["exact_amplitudes_reconstruct"] = False
+            checks["amplitude_count"] = False
+            checks["normalization"] = False
+            checks["state_commitment"] = False
+        boundary = attestation_record.get("boundary")
+        checks["no_float_boundary_on_exact_plane"] = bool(
+            isinstance(boundary, Mapping)
+            and boundary.get("float_boundaries") == []
+        )
+    elif plane == "diagnostic":
+        checks["state_schema"] = (
+            state_record.get("schema") == "kellogg.tensor_state/v1"
+        )
+        checks["representation"] = (
+            state_record.get("representation") == "quantum_tensor"
+        )
+        checks["field"] = state_record.get("field") == "IEEE-754 complex"
+        amplitudes = state_record.get("amplitudes")
+        try:
+            dim = int(state_record.get("dim"))
+            pairs = list(amplitudes)
+            finite = all(
+                isinstance(pair, list)
+                and len(pair) == 2
+                and all(math.isfinite(float(value)) for value in pair)
+                for pair in pairs
+            )
+            checks["diagnostic_amplitudes_reconstruct"] = bool(
+                finite and dim == len(pairs)
+            )
+            norm_sq = sum(
+                float(pair[0]) * float(pair[0])
+                + float(pair[1]) * float(pair[1])
+                for pair in pairs
+            )
+            checks["normalization"] = bool(
+                checks["diagnostic_amplitudes_reconstruct"]
+                and abs(norm_sq - 1.0) <= 1e-12
+            )
+        except Exception:
+            checks["diagnostic_amplitudes_reconstruct"] = False
+            checks["normalization"] = False
+        boundary = attestation_record.get("boundary")
+        checks["float_boundary_declared"] = bool(
+            isinstance(boundary, Mapping)
+            and boundary.get("float_boundaries")
+            and all(
+                isinstance(item, str)
+                for item in boundary.get("float_boundaries", ())
+            )
+        )
+    else:
+        checks["state_schema"] = False
+        checks["representation"] = False
+        checks["field"] = False
+        checks["normalization"] = False
+
+    return {
+        "schema": "aethel.kellogg-custody-replay/1",
+        "passed": all(checks.values()),
+        "checks": checks,
+        "plane": plane,
+        "input_digest": input_digest,
+        "attestation_digest": attestation_record.get("attestation_digest"),
+    }
 
 
 def verify_turing_custody_boundary(
@@ -326,10 +653,16 @@ def verify_turing_custody_boundary(
 
     Returns ``{"schema": ..., "passed": bool, "checks": {name: bool}}``.
     """
-    from turing_universal_quantum_computer.backends.base import Program
+    from turing_universal_quantum_computer.backends.base import (
+        ExecutionClass,
+        ExecutionResult,
+        Program,
+        TruthClass,
+    )
     from turing_universal_quantum_computer.certificates import (
         RunWitness,
         VQCComputationCertificate,
+        verify_serialized_computation_certificate,
         verify_witness,
     )
 
@@ -400,6 +733,45 @@ def verify_turing_custody_boundary(
     )
 
     result = result_payload if isinstance(result_payload, Mapping) else None
+    if result is not None:
+        try:
+            embedded_certificate = result.get("certificate")
+            if embedded_certificate is not None and not isinstance(
+                embedded_certificate, Mapping
+            ):
+                raise TypeError("embedded certificate must be a mapping")
+            backend_payload = result.get("payload", {})
+            if not isinstance(backend_payload, Mapping):
+                raise TypeError("backend payload must be a mapping")
+            ExecutionResult(
+                backend=str(result["backend"]),
+                execution_class=ExecutionClass(str(result["execution_class"])),
+                truth_class=TruthClass(str(result["truth_class"])),
+                n_qubits=int(result["n_qubits"]),
+                program_digest=str(result["program_digest"]),
+                materialised=bool(result["materialised"]),
+                payload=dict(backend_payload),
+                refusals=tuple(str(item) for item in result.get("refusals", ())),
+                measured_qpu=bool(result.get("measured_qpu", False)),
+                certificate=(
+                    dict(embedded_certificate)
+                    if isinstance(embedded_certificate, Mapping)
+                    else None
+                ),
+            )
+            checks["result_reconstructs"] = True
+        except Exception:
+            checks["result_reconstructs"] = False
+    else:
+        checks["result_reconstructs"] = False
+
+    checks["certificate_options_recovered"] = bool(
+        certificate is not None
+        and certificate.trace
+        and isinstance(certificate.trace[0], Mapping)
+        and isinstance(certificate.trace[0].get("options", {}), Mapping)
+    )
+
     checks["certificate_binds_witness"] = bool(
         certificate is not None
         and witness is not None
@@ -418,12 +790,51 @@ def verify_turing_custody_boundary(
         and result is not None
         and result.get("certificate") == certificate.to_dict()
     )
+
+    certified_options: dict[str, Any] = {}
+    if certificate is not None and certificate.trace:
+        first = certificate.trace[0]
+        if isinstance(first, Mapping):
+            raw_options = first.get("options", {})
+            if isinstance(raw_options, Mapping):
+                certified_options = dict(raw_options)
+    try:
+        checks["certificate_binds_program_and_result"] = bool(
+            program is not None
+            and result is not None
+            and certificate is not None
+            and verify_serialized_computation_certificate(
+                program,
+                result,
+                certificate,
+                options=certified_options,
+            )
+        )
+    except Exception:
+        checks["certificate_binds_program_and_result"] = False
+
     checks["witness_binds_result"] = bool(
         witness is not None
         and result is not None
+        and program is not None
         and witness.backend == result.get("backend")
+        and witness.execution_class == result.get("execution_class")
+        and witness.truth_class == result.get("truth_class")
         and witness.n_qubits == result.get("n_qubits")
         and witness.program_digest == result.get("program_digest")
+        and witness.materialised == bool(result.get("materialised"))
+        and witness.measured_qpu == bool(result.get("measured_qpu", False))
+        and program is not None
+        and witness.gate_counts == program.gate_counts()
+    )
+    checks["witness_provider_job_matches_result"] = bool(
+        witness is not None
+        and result is not None
+        and (
+            not witness.measured_qpu
+            or witness.provider_job_id
+            == str((result.get("payload") or {}).get("job_id", ""))
+        )
     )
 
     return {
@@ -441,10 +852,11 @@ class SharedTuring(_BoundAdapter):
     result, computation certificate, witness and final pipeline report are
     instead committed to the single shared data port with parent lineage
 
-        program -> result -> certificate -> witness -> pipeline_report
+        program -> result -> certificate -> witness -> pipeline_report -> replay
 
-    and the certificate/witness boundary is semantically validated before any
-    of it enters custody.
+    The certificate/witness boundary is semantically validated before custody,
+    then the committed artefacts are read back and revalidated before a
+    successful execution is returned as production-accepted.
     """
 
     def __init__(self, port: SystemDataPort, pipeline: Any | None = None) -> None:
@@ -527,29 +939,93 @@ class SharedTuring(_BoundAdapter):
             "turing_pipeline_report",
             report,
             parents=parents,
-            evidence_state="PASS" if getattr(report, "verdict", "") == "PASS" else "MEASURED",
+            evidence_state=(
+                "PASS" if getattr(report, "verdict", "") == "PASS" else "MEASURED"
+            ),
             meta={"custody_mode": "shared_theseus_ovid_entanglement"},
         )
         self.last_bindings["report"] = report_binding
+
+        # A successful computation is not a production-accepted voyage until
+        # the artefacts that actually entered the shared durable fabric are
+        # read back and semantically cross-bound.  Refused/failed computations
+        # remain valid evidence records but have no completed result bundle to
+        # replay.
+        if (
+            getattr(report, "result", None) is not None
+            and certificate_payload is not None
+            and witness_payload is not None
+        ):
+            replay = self.replay()
+            replay_binding = self._put(
+                "turing_replay",
+                replay,
+                parents=(report_binding.binding_id,),
+                evidence_state="PASS" if replay["passed"] else "FAIL",
+                meta={"production_gate": "post_custody_semantic_replay"},
+            )
+            self.last_bindings["replay"] = replay_binding
+            if not replay["passed"]:
+                failed = sorted(
+                    name for name, ok in replay["checks"].items() if not ok
+                )
+                raise EntangledCustodyError(
+                    "TURING shared-custody replay failed after commit "
+                    f"({', '.join(failed)}); refusing production acceptance"
+                )
         return report
 
     def replay(self) -> dict[str, Any]:
         """Re-read this run's artefacts from shared custody and prove the
-        certificate boundary semantically, not just at byte level."""
+        certificate boundary semantically, not just at byte level.
+
+        Same-process replays resolve through ``last_bindings``.  After a
+        restart the in-memory map is empty, so the newest
+        ``turing_pipeline_report`` is resolved from the durable binding
+        graph and its OVID parent lineage walked back to program, result,
+        certificate and witness — the binding identity that THESEUS itself
+        recovered.
+        """
         records: dict[str, Any] = {}
-        for name in ("program", "result", "certificate", "witness"):
-            binding = self.last_bindings.get(name)
-            if binding is None:
-                continue
-            records[name] = json.loads(
-                self.port.read(binding.binding_id).decode("utf-8")
+        replay_source = "last_bindings"
+        report_binding_id: str | None = None
+        if {"program", "result", "certificate", "witness"} <= set(self.last_bindings):
+            for name in ("program", "result", "certificate", "witness"):
+                records[name] = json.loads(
+                    self.port.read(self.last_bindings[name].binding_id).decode("utf-8")
+                )
+            report = self.last_bindings.get("report")
+            report_binding_id = report.binding_id if report is not None else None
+        else:
+            replay_source = "durable_graph"
+            latest = _latest_binding(
+                self.port, source="turing", kind="turing_pipeline_report"
             )
-        return verify_turing_custody_boundary(
+            if latest is not None:
+                report_binding_id = str(latest["binding_id"])
+                by_id = {
+                    item["binding_id"]: item
+                    for item in self.port.fabric.graph().get("bindings", ())
+                }
+                for parent_id in latest.get("parent_binding_ids", ()):
+                    parent = by_id.get(parent_id)
+                    if parent is None:
+                        continue
+                    kind = str(parent.get("kind", ""))
+                    if kind.startswith("turing_"):
+                        records[kind[len("turing_"):]] = json.loads(
+                            self.port.read(str(parent_id)).decode("utf-8")
+                        )
+        boundary = verify_turing_custody_boundary(
             program_payload=records.get("program"),
             result_payload=records.get("result"),
             certificate_payload=records.get("certificate"),
             witness_payload=records.get("witness"),
         )
+        boundary["replay_source"] = replay_source
+        boundary["report_binding_id"] = report_binding_id
+        boundary["record_kinds"] = sorted(records)
+        return boundary
 
 
 class SharedEuclid(_BoundAdapter):
@@ -610,6 +1086,113 @@ class SharedEuclid(_BoundAdapter):
         return _call
 
 
+
+def verify_chronus_custody_boundary(payload: Mapping[str, Any] | None) -> dict[str, Any]:
+    """Semantically verify a recovered Chronus startup-voyage record."""
+    try:
+        from chronus.production import verify_startup_report
+
+        if not isinstance(payload, Mapping):
+            raise TypeError("Chronus startup payload must be a mapping")
+        return verify_startup_report(dict(payload))
+    except Exception as exc:
+        return {
+            "schema": "aethel.chronus-custody-boundary.verify/1",
+            "passed": False,
+            "checks": {"payload_verifies": False},
+            "error": f"{type(exc).__name__}: {exc}",
+        }
+
+
+class SharedChronus(_BoundAdapter):
+    """Canonical Chronus runtime bound to shared THESEUS/OVID custody."""
+
+    VOYAGE_KIND = "chronus_startup_voyage"
+    REPLAY_KIND = "chronus_startup_replay"
+
+    def __init__(self, runtime: Any, port: SystemDataPort) -> None:
+        super().__init__(runtime, port, system="chronus")
+        self.last_bindings: dict[str, EntanglementBinding] = {}
+
+    def run_startup_voyage(self) -> dict[str, Any]:
+        report = self.raw.startup_voyage()
+        boundary = verify_chronus_custody_boundary(report)
+        if not boundary.get("passed"):
+            raise RuntimeError(
+                f"Chronus startup report failed semantic verification: {boundary}"
+            )
+
+        voyage = self._put(
+            self.VOYAGE_KIND,
+            report,
+            evidence_state="MEASURED",
+            meta={
+                "execution_owner": "chronus",
+                "custody_owner": "theseus",
+                "transform_lineage_owner": "ovid",
+                "physical_gpu_required": bool(report.get("physical_gpu_required")),
+            },
+        )
+        custody = self.port.fabric.verify(voyage.binding_id)
+        if not custody.get("passed"):
+            raise RuntimeError("Chronus startup voyage failed shared custody verification")
+
+        recovered = json.loads(self.port.read(voyage.binding_id).decode("utf-8"))
+        replay = verify_chronus_custody_boundary(recovered)
+        replay["custody_verified"] = bool(custody.get("passed"))
+        replay["voyage_binding_id"] = voyage.binding_id
+        replay["replay_source"] = "post_custody_readback"
+        replay["passed"] = bool(replay.get("passed") and replay["custody_verified"])
+        if not replay["passed"]:
+            raise RuntimeError(f"Chronus post-custody semantic replay failed: {replay}")
+
+        replay_binding = self._put(
+            self.REPLAY_KIND,
+            replay,
+            parents=(voyage.binding_id,),
+            evidence_state="MEASURED",
+        )
+        if not self.port.fabric.verify(replay_binding.binding_id).get("passed"):
+            raise RuntimeError("Chronus replay record failed shared custody verification")
+        self.last_bindings = {"voyage": voyage, "replay": replay_binding}
+        return {"report": report, "replay": replay}
+
+    def replay(self) -> dict[str, Any]:
+        source = "last_bindings"
+        binding_id: str | None = None
+        if "voyage" in self.last_bindings:
+            binding_id = self.last_bindings["voyage"].binding_id
+        else:
+            latest = _latest_binding(
+                self.port,
+                source="chronus",
+                kind=self.VOYAGE_KIND,
+            )
+            if latest is not None:
+                binding_id = str(latest["binding_id"])
+                source = "durable_graph"
+        if binding_id is None:
+            return {
+                "schema": "aethel.chronus-custody-replay/1",
+                "passed": False,
+                "replay_source": "none",
+                "error": "no Chronus startup voyage found",
+            }
+        payload = json.loads(self.port.read(binding_id).decode("utf-8"))
+        boundary = verify_chronus_custody_boundary(payload)
+        custody = self.port.fabric.verify(binding_id)
+        return {
+            **boundary,
+            "passed": bool(boundary.get("passed") and custody.get("passed")),
+            "custody_verified": bool(custody.get("passed")),
+            "voyage_binding_id": binding_id,
+            "replay_source": source,
+        }
+
+    def stop(self) -> None:
+        self.raw.stop()
+
+
 class ProductionSystemRelations:
     """Bind live subsystem objects to one started enterprise CompositionRoot."""
 
@@ -640,6 +1223,20 @@ class ProductionSystemRelations:
             chronus_port=self.ports["chronus"],
         )
 
+    def chronus(
+        self,
+        runtime: Any | None = None,
+        *,
+        store_dir: str | Path | None = None,
+    ) -> SharedChronus:
+        if runtime is None:
+            from chronus.production import ChronusProductionRuntime
+
+            if store_dir is None:
+                raise ValueError("canonical Chronus binding requires store_dir")
+            runtime = ChronusProductionRuntime(store_dir)
+        return SharedChronus(runtime, self.ports["chronus"])
+
     def turing(self, pipeline: Any | None = None) -> SharedTuring:
         return SharedTuring(self.ports["turing"], pipeline=pipeline)
 
@@ -663,8 +1260,11 @@ __all__ = [
     "SharedSalamander",
     "SharedALHaras",
     "SharedKellogg",
+    "SharedChronus",
     "SharedTuring",
     "SharedEuclid",
     "ProductionSystemRelations",
+    "verify_kellogg_custody_boundary",
+    "verify_chronus_custody_boundary",
     "verify_turing_custody_boundary",
 ]

@@ -33,7 +33,7 @@ def test_plugin_metadata_is_private_v04_euclid_aptitude():
         (PLUGIN / ".devin-plugin" / "plugin.json").read_text(encoding="utf-8")
     )
     assert manifest["name"] == "pythia"
-    assert manifest["version"] == "0.4.1"
+    assert manifest["version"] == "0.4.2"
     assert manifest["license"] == "UNLICENSED"
     assert "EUCLID aptitude" in manifest["description"]
 
@@ -72,8 +72,9 @@ def test_plugin_status_invokes_complete_plugin_and_euclid_skill_set(
     mandatory = set(status["mandatory_skills"])
     invoked = set(status["skills_invoked"])
     assert status["plugin"] == "pythia"
-    assert status["plugin_version"] == "0.4.1"
+    assert status["plugin_version"] == "0.4.2"
     assert len(status["aptitude_digest_sha256"]) == 64
+    assert status["session_start_observed"] is True
     assert status["mandatory_skills_complete"] is True
     assert status["mandatory_skills_missing"] == []
     assert mandatory
@@ -91,7 +92,9 @@ def test_lifecycle_hooks_force_invocation_on_start_and_after_compaction():
     start = (SCRIPTS / "session_start.py").read_text(encoding="utf-8")
     compact = (SCRIPTS / "post_compaction.py").read_text(encoding="utf-8")
 
-    assert 'build_status(event="SessionStart", invoke_all=True)' in start
+    assert 'event="SessionStart"' in start
+    assert "invoke_all=True" in start
+    assert "reset_session=True" in start
     assert 'build_status(event="PostCompaction", invoke_all=True)' in compact
     assert "mandatory_skills_complete" in start
     assert "mandatory_skills_complete" in compact
@@ -113,10 +116,33 @@ def test_lifecycle_hooks_resolve_via_plugin_root_not_cwd():
         for entry in entries
         for hook in entry["hooks"]
     ]
-    assert len(commands) == 3
+    assert len(commands) == 4
+    assert any("--require-active" in command for command in commands)
     for command in commands:
         assert "DEVIN_PLUGIN_ROOT" in command
         assert command.startswith("python ")
+
+
+def test_pretooluse_guard_requires_observed_complete_session():
+    plugin_status = _load(
+        "plugin_status_pretool_guard_test",
+        SCRIPTS / "plugin_status.py",
+    )
+    status = _aptitude_status()
+    assert plugin_status.validate_active_session(status) == (True, "active")
+
+    no_start = dict(status)
+    no_start["session_start_observed"] = False
+    ok, reason = plugin_status.validate_active_session(no_start)
+    assert ok is False
+    assert "SessionStart" in reason
+
+    empty = dict(status)
+    empty["skills_invoked"] = []
+    empty["mandatory_skills_complete"] = True
+    ok, reason = plugin_status.validate_active_session(empty)
+    assert ok is False
+    assert "skills missing" in reason
 
 
 def test_workspace_resolution_prefers_session_project_dir(
@@ -182,16 +208,108 @@ def _aptitude_status(plugin_sha: str = "plugin-sha") -> dict:
         "euclid:verification-before-completion",
     ]
     return {
-        "plugin_version": "0.4.1",
+        "plugin_version": "0.4.2",
         "augmentation": "EUCLID_APTITUDE",
         "plugin_source_sha": plugin_sha,
         "workspace_head_sha": "work-sha",
         "mandatory_skills": skills,
         "skills_invoked": skills,
+        "session_start_observed": True,
         "mandatory_skills_complete": True,
         "mandatory_skills_missing": [],
         "aptitude_digest_sha256": "a" * 64,
     }
+
+
+def test_manual_invoke_all_cannot_impersonate_session_start(
+    tmp_path, monkeypatch
+):
+    plugin_status = _load(
+        "plugin_status_manual_invoke_test",
+        SCRIPTS / "plugin_status.py",
+    )
+    monkeypatch.setattr(plugin_status, "RECEIPT", tmp_path / "runtime.json")
+    monkeypatch.setattr(plugin_status, "JOURNAL", tmp_path / "checkpoint.jsonl")
+
+    with __import__("pytest").raises(ValueError, match="reserved for SessionStart"):
+        plugin_status.build_status(invoke_all=True)
+
+
+def test_session_start_reset_does_not_inherit_prior_invocation(
+    tmp_path, monkeypatch
+):
+    plugin_status = _load(
+        "plugin_status_session_reset_test",
+        SCRIPTS / "plugin_status.py",
+    )
+    receipt = tmp_path / "runtime.json"
+    monkeypatch.setattr(plugin_status, "RECEIPT", receipt)
+    monkeypatch.setattr(plugin_status, "JOURNAL", tmp_path / "checkpoint.jsonl")
+    receipt.write_text(
+        json.dumps(
+            {
+                "skills_invoked": ["stale:prior-session"],
+                "hook_events": ["SessionStart", "PostCompaction"],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    status = plugin_status.build_status(
+        event="SessionStart",
+        invoke_all=True,
+        reset_session=True,
+    )
+
+    assert "stale:prior-session" not in status["skills_invoked"]
+    assert status["session_start_observed"] is True
+    assert status["mandatory_skills_complete"] is True
+
+
+def test_engineering_evidence_blocks_before_session_bootstrap(
+    tmp_path, monkeypatch
+):
+    evidence = _load_with_scripts(
+        "engineering_evidence_mandatory_gate_test",
+        SCRIPTS / "engineering_evidence.py",
+    )
+    ledger = tmp_path / "evidence.jsonl"
+    incomplete = _aptitude_status()
+    incomplete["session_start_observed"] = False
+    incomplete["mandatory_skills_complete"] = False
+    incomplete["skills_invoked"] = []
+
+    monkeypatch.setattr(evidence, "build_status", lambda **_: incomplete)
+    monkeypatch.setattr(evidence, "write_runtime_receipt", lambda _: None)
+    monkeypatch.setattr(evidence, "EVENT_LOG", ledger)
+
+    with __import__("pytest").raises(RuntimeError, match="SessionStart hook"):
+        evidence.record_event("TASK_STARTED", task_id="blocked-task")
+
+    assert not ledger.exists()
+
+
+def test_engineering_evidence_refuses_to_seal_incomplete_aptitude(
+    tmp_path, monkeypatch
+):
+    evidence = _load_with_scripts(
+        "engineering_evidence_seal_gate_test",
+        SCRIPTS / "engineering_evidence.py",
+    )
+    ledger = tmp_path / "evidence.jsonl"
+    complete = _aptitude_status()
+    monkeypatch.setattr(evidence, "build_status", lambda **_: complete)
+    monkeypatch.setattr(evidence, "write_runtime_receipt", lambda _: None)
+    monkeypatch.setattr(evidence, "EVENT_LOG", ledger)
+    evidence.record_event("TASK_STARTED", task_id="task-seal")
+
+    incomplete = dict(complete)
+    incomplete["mandatory_skills_complete"] = False
+    incomplete["skills_invoked"] = []
+    monkeypatch.setattr(evidence, "build_status", lambda **_: incomplete)
+
+    with __import__("pytest").raises(RuntimeError, match="invocation incomplete"):
+        evidence.seal_pack("task-seal", tmp_path / "published")
 
 
 def test_engineering_evidence_is_hash_chained_and_detects_tamper(
@@ -290,6 +408,7 @@ def _write_valid_pack(
         "workspace_end_sha": "b",
         "session_aptitude": {
             "augmentation": "EUCLID_APTITUDE",
+            "session_start_observed": True,
             "mandatory_skills_complete": True,
             "mandatory_skills": ["euclid:systematic-debugging"],
             "skills_invoked": ["euclid:systematic-debugging"],
@@ -358,7 +477,10 @@ def test_stop_gate_requires_complete_session_aptitude_and_valid_pack(
         "build_status",
         lambda **_: {
             "plugin_source_sha": plugin_sha,
+            "session_start_observed": True,
             "mandatory_skills_complete": True,
+            "mandatory_skills": ["euclid:systematic-debugging"],
+            "skills_invoked": ["euclid:systematic-debugging"],
             "mandatory_skills_missing": [],
             "aptitude_digest_sha256": "b" * 64,
         },
@@ -390,7 +512,13 @@ def test_stop_gate_blocks_if_session_aptitude_is_incomplete(
         "build_status",
         lambda **_: {
             "plugin_source_sha": plugin_sha,
+            "session_start_observed": True,
             "mandatory_skills_complete": False,
+            "mandatory_skills": [
+                "euclid:systematic-debugging",
+                "euclid:counterfactual-analysis",
+            ],
+            "skills_invoked": ["euclid:systematic-debugging"],
             "mandatory_skills_missing": ["euclid:counterfactual-analysis"],
             "aptitude_digest_sha256": "b" * 64,
         },
@@ -432,7 +560,10 @@ def test_stop_gate_rejects_pack_without_aptitude_digest(
         "build_status",
         lambda **_: {
             "plugin_source_sha": plugin_sha,
+            "session_start_observed": True,
             "mandatory_skills_complete": True,
+            "mandatory_skills": ["euclid:systematic-debugging"],
+            "skills_invoked": ["euclid:systematic-debugging"],
             "mandatory_skills_missing": [],
             "aptitude_digest_sha256": "b" * 64,
         },
@@ -442,6 +573,51 @@ def test_stop_gate_rejects_pack_without_aptitude_digest(
     assert stop_gate.main() == 2
     result = json.loads(capsys.readouterr().out)
     assert "aptitude digest" in result["reason"]
+
+
+def test_stop_gate_rejects_boolean_complete_with_empty_invocation(
+    tmp_path, monkeypatch, capsys
+):
+    stop_gate = _load_with_scripts(
+        "stop_gate_empty_invocation_v042_test",
+        SCRIPTS / "stop_gate.py",
+    )
+    task_id = "task-empty-invocation"
+    plugin_sha = "plugin-sha"
+    pack_path = _write_valid_pack(tmp_path, stop_gate, task_id, plugin_sha)
+    pack = json.loads(pack_path.read_text(encoding="utf-8"))
+    pack["session_aptitude"]["mandatory_skills_complete"] = True
+    pack["session_aptitude"]["skills_invoked"] = []
+
+    unsigned = dict(pack)
+    unsigned.pop("pack_sha256", None)
+    digest = hashlib.sha256(stop_gate._canonical(unsigned)).hexdigest()
+    pack["pack_sha256"] = digest
+    replacement = pack_path.with_name(f"{digest}.json")
+    replacement.write_text(json.dumps(pack), encoding="utf-8")
+    pack_path.unlink()
+
+    journal = _write_checkpoint(tmp_path, task_id, plugin_sha, replacement)
+    monkeypatch.setattr(stop_gate, "ROOT", tmp_path)
+    monkeypatch.setattr(stop_gate, "JOURNAL", journal)
+    monkeypatch.setattr(
+        stop_gate,
+        "build_status",
+        lambda **_: {
+            "plugin_source_sha": plugin_sha,
+            "session_start_observed": True,
+            "mandatory_skills_complete": True,
+            "mandatory_skills": ["euclid:systematic-debugging"],
+            "skills_invoked": ["euclid:systematic-debugging"],
+            "mandatory_skills_missing": [],
+            "aptitude_digest_sha256": "b" * 64,
+        },
+    )
+    monkeypatch.setattr(stop_gate, "write_runtime_receipt", lambda _: None)
+
+    assert stop_gate.main() == 2
+    result = json.loads(capsys.readouterr().out)
+    assert "missing mandatory invoked skills" in result["reason"]
 
 
 def test_stop_gate_rejects_tampered_pack(tmp_path, monkeypatch, capsys):
@@ -464,8 +640,12 @@ def test_stop_gate_rejects_tampered_pack(tmp_path, monkeypatch, capsys):
         "build_status",
         lambda **_: {
             "plugin_source_sha": plugin_sha,
+            "session_start_observed": True,
             "mandatory_skills_complete": True,
+            "mandatory_skills": ["euclid:systematic-debugging"],
+            "skills_invoked": ["euclid:systematic-debugging"],
             "mandatory_skills_missing": [],
+            "aptitude_digest_sha256": "b" * 64,
         },
     )
     monkeypatch.setattr(stop_gate, "write_runtime_receipt", lambda _: None)

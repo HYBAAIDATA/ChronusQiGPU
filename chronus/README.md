@@ -1,17 +1,49 @@
-# Chronus — HYBA Heterogeneous Compute & Virtual iGPU Runtime
+# Chronus — HYBA Software-Defined GPU & Heterogeneous Execution Runtime
 
-Chronus is HYBA's **hardware-facing heterogeneous execution and acceleration plane**.
-It turns governed computational work into measured execution on available silicon while
-preserving the semantic contract of the workload and recording what actually ran.
+Chronus is HYBA's **software-defined quantum-from-maths GPU** and heterogeneous
+execution computer. Its product identity is substrate- and hardware-agnostic:
+CPU, iGPU, discrete GPU, cloud accelerator, FPGA/ASIC and future quantum hardware
+are places the Chronus computation may execute; none is a prerequisite for
+Chronus to exist.
 
-Chronus is not a claim that a new physical GPU already exists, and it is not a physical
-QPU. It is the runtime, device, virtual-iGPU, scheduling, provenance and acceleration
-architecture through which HYBA workloads can use CPU, integrated GPU, discrete GPU and
-future accelerator substrates.
+Chronus is not a claim that software has fabricated physical silicon, and it is
+not a physical QPU. "GPU" here names the Chronus compute product and execution
+contract. Physical-device claims remain separate evidence about a particular run.
 
-> **Product thesis:** use the hardware that exists, change how work is represented and
-> scheduled, prove what executed, and promote only those mathematical or hardware
-> advantages that survive reproducible measurement.
+> **Product thesis:** Chronus can either operate as the GPU itself or enter an
+> existing GPU/accelerator stack and scale/extend it. The same governed workload
+> semantics, verification, provenance and custody survive both modes.
+
+> **Start here:** §19 shows what Chronus has actually been measured doing on real data;
+> §20 is the one-page map of where every Chronus-related piece lives.
+
+## 0. Owner-approved two-mode product contract
+
+Chronus has **two product modes**, separate from the backend that happens to
+execute a run:
+
+1. **Native Chronus GPU** (`native_chronus_gpu`; compatibility execution policy
+   `standalone_software`) — **Chronus is the GPU.** The Virtual iGPU/runtime,
+   mathematical engine, memory, scheduling, verification and evidence surfaces
+   execute without requiring a host GPU. A CPU/reference adapter may host this
+   mode today, but it is an implementation substrate, not the product identity
+   and not a degraded fallback.
+2. **Host-GPU augmentation** (`host_gpu_augmentation`; compatibility execution
+   policy `preferred_accelerator`) — Chronus binds into an available,
+   independently certified iGPU/GPU/accelerator and extends or scales that host
+   while preserving the same Chronus workload contract.
+
+This is the original **independent fabric OR scale your stack** architecture.
+A missing GPU can gate the second mode; it can never make the first mode
+unavailable. Likewise, device performance, power, thermal, hardware-rooted
+attestation and physical execution claims remain per-device evidence gates.
+
+The historical names are now one product lineage, not competing architectures:
+
+- **Chronos GPU v2/v3.3** supplies the quantum-from-maths mathematical/graphics engine;
+- **Chronus Virtual iGPU** supplies the software-defined GPU ABI/runtime/memory/evidence;
+- **Chronus portable substrate** supplies device-neutral routing, delivery and control;
+- **Chronus** is the canonical converged product containing those capabilities.
 
 ---
 
@@ -25,7 +57,7 @@ The names matter because Chronus sits inside a larger computational organism.
 | **TOE** | World, causal, counterfactual and futures modelling | Produces/consumes computational work; does not own device execution |
 | **PYTHIA** | Predictive, causal and mining-domain specialist | May submit mining or analytical workloads to Chronus |
 | **Turing** | HYBA Virtual Quantum Computer (VQC) | **Independent computer.** Turing may use Chronus for authorised classical kernels/substrate execution; Chronus does not own or absorb Turing |
-| **Chronus** | Heterogeneous execution, acceleration, device policy, Virtual iGPU, dispatch evidence | Owns this package/runtime boundary |
+| **Chronus** | Software-defined GPU, heterogeneous execution, native Virtual iGPU, host-accelerator augmentation, dispatch evidence | Owns this package/runtime boundary |
 | **OVID** | Representation transformation / metamorphosis | May transform work/state before or after execution; **not durable custody** |
 | **THESEUS** | Durable custody, integrity, replication, continuity and recovery of important state | Preserves state/results; **not the transformation owner** |
 | **PULVINI** | Fold/representation mechanisms as established by the implementation | Can reduce/reshape the working representation used around execution; not silently owned by Chronus |
@@ -63,15 +95,15 @@ Chronus without involving Turing at all.
 
 The repository intentionally preserves two related names:
 
-- `chronus/` — the canonical HYBA hardware-facing product/runtime plane.
-- `chronus/v33/` — the **Chronos GPU mathematical engine v3.3** retained inside the
-  Chronus product tree.
+- `chronus/` — the canonical converged Chronus product/runtime.
+- `chronus/v33/` — the historical **Chronos GPU mathematical engine v3.3**,
+  now an integrated mathematical capability of Chronus rather than a separate product.
 - top-level `chronos` — deprecated compatibility facade for historical imports.
 
-The v3.3 mathematical engine currently exposes a substantial audited software surface
-(see `chronus/v33/CAPABILITY_MANIFEST.json` and `docs/CHRONUS_V33_FULL_CONVERGENCE.md`).
-It is one computational capability inside the wider Chronus execution product; it does
-not redefine the ownership of Turing, EUCLID, OVID, THESEUS, PULVINI or Geodesic.
+There is **one Chronus product**. The v3.3 mathematical engine, Virtual iGPU runtime,
+portable substrate/control plane and physical accelerator adapters are capability
+lineages inside it. They do not create separate Chronus identities and do not redefine
+the ownership of Turing, EUCLID, OVID, THESEUS, PULVINI or Geodesic.
 
 ---
 
@@ -162,8 +194,10 @@ results remain independently attributable; integration is not ownership transfer
 
 ### Embedded
 
-Chronus executes inside the customer's/container environment and binds directly to
-locally available accelerator surfaces.
+Chronus executes inside the customer's/container environment. The standalone
+software runtime is a valid embedded product mode when its software gates are
+met; locally available accelerators are additive execution lanes, not
+prerequisites.
 
 ```text
 application
@@ -496,7 +530,7 @@ selection.
 
 ## 15. The commercial position
 
-Chronus should not initially be described as merely "another GPU".
+Chronus should not be reduced to a physical-GPU backend. It is the software-defined GPU product; physical GPUs are optional host substrates or augmentation targets.
 
 The stronger position is:
 
@@ -578,3 +612,66 @@ Chronus reports what ran.
 - A missing instrument produces `UNAVAILABLE`, not a guessed number.
 
 The ambition of Chronus is intentionally high. The evidence standard is equally high.
+
+---
+
+## 19. Measured capabilities (software execution, real data)
+
+Produced by `python scripts/chronus_capability_probe.py` at commit `3b456aa`; the raw artifact
+is `evidence/chronus/capability_probe_3b456aa.json`. Everything below ran on one host:
+Intel Xeon @ 2.10 GHz, 4 logical CPUs, 15.7 GB RAM, Python 3.13, **no GPU runtime present**
+(`pyopencl`, `cupy`, `mlx`, `torch` all absent). Only the software (CPU) adapter exists here, so
+nothing in this section is a hardware claim. Rates are single-process wall-clock over the **full
+submit path** (admission, execution, independent control-plane recompute, receipt, evidence
+ledger), not kernel peaks.
+
+**Real data.** Three Bitcoin block headers (heights 0, 1 and 125,552), accepted only because
+SHA-256d of each reproduces its published block hash, plus this repository's own files.
+Dense numeric kernels use seeded *synthetic* matrices (no real dataset is shipped); they are
+labelled as such.
+
+| Capability | Result on this host |
+|---|---|
+| Reproduce real blocks through the Virtual iGPU | All 3 real nonces recovered from a 3,000-nonce window; digests equal the published block hashes; control-plane recompute `match` (~4 ms each) |
+| PYTHIA production route (`chronus_batch`) on the same blocks | Real nonce found in a 1,200-nonce Hendrix-ordered window for all 3 (1,192 / 1,132 / 67 hashes before the hit, 15–43 ms); every candidate host-verified; recorded `SOFTWARE_VERIFIED`, never hardware |
+| SHA-256d throughput, verified | ~0.43–0.45 M hashes/s end-to-end (100k–1M nonces/workload) vs ~1.15 M/s for a bare single-core `hashlib` loop; the gap is the independent recompute and receipts |
+| Exact integer transforms | Lucas L(10000) 3.3 ms, Pisot n=10,000 4.7 ms, φⁿ n=1,474 0.7 ms; all verified `match` |
+| Fold / unfold on real bytes | 24,594 B (this README + 3 headers) -> 110,474 B folded (**4.49x larger**); round-trip exact. The aethel fold is a representation transform here, **not compression** |
+| Tensor `matmul`, float64, synthetic | 64² 39 ms, 256² 261 ms, 512² 1.04 s end-to-end, all verified against the `tensor` layer; max error vs NumPy 0.0. End-to-end 0.01–0.26 GFLOP/s: JSON serialisation and verification dominate, so this is **not** a compute peak |
+| Complex GEMV, 128, synthetic | 24 ms, verified |
+| Control plane | Cheapest workload median 0.59 ms, p95 0.90 ms; receipt identity binding ok; evidence ledger reloads (216 records) with hash-chain intact |
+| THESEUS custody (required) | Commit + verify median 11.4 ms (HMAC file custody); fresh-process recovery covered by `tests/test_chronus_theseus_restart_contract.py` |
+| Built-in `chronus.measurement` harness | Memory/compute/cache/interconnect topology, roofline, hashrate, tensor, MPS/TT/MPO, stress, throttle, regression and replay stages run; **power, thermal, energy and perf-per-watt are `UNAVAILABLE`** (no sensors) |
+
+**Scale math (independently verified, 119 tests in `tests/test_chronus_scale_math_independent.py`).**
+Lucas numbers match an independent recurrence to n=10,000 and the Fibonacci/Cassini identities;
+the ladder literals (L10=123 ... L76=7,639,424,778,862,807) are exact; delta15 = phi^-15 = 7.3314e-4;
+`effective = physical * L_n // L_10` matches a from-scratch implementation and is monotone. Three
+behaviours are pinned because they are easy to misread:
+
+1. Below rung 10 a non-zero fleet can round to **0** effective capacity (1 unit at rung 9 -> 0).
+2. `memory_budget_bytes` never goes below the base allocation, even for rungs under L10.
+3. The Pisot drift step is exact (<2e-12 vs a 120-digit reference) but decays to ~0 for m >~ 60, so
+   `pisot_wind` is a one-step observational rotation for small m, not an ergodic orbit.
+
+**Not measured, not claimed:** any GPU/accelerator execution or performance; multi-core or fleet
+scaling; hardware-rooted attestation; pool acknowledgement or accepted shares; the governed
+1e19 H/s hashrate ceiling (an engineering ceiling in `runtime_config`; this host sustains ~4.5e5 H/s
+through the verified path).
+
+---
+
+## 20. One Chronus: where everything lives
+
+| Piece | Home | Role |
+|---|---|---|
+| Product, device, fabric, scale law | `chronus/` | Canonical Chronus |
+| **Execution plane** | `chronus/virtual_igpu/` | The single execution seam (`virtual_igpu_v1`): workloads, adapters, admission policy hook, receipts, evidence ledger, THESEUS custody hook, control-plane verifier |
+| Mining execution | `chronus/mla1517/`, `chronus/mla1517_platform/` | PYTHIA's route into Chronus (`chronus` backend lane, `chronus_batch` route); control API |
+| Measurement | `chronus/measurement/`, `scripts/chronus_capability_probe.py` | Attested measurements; the probe behind §19 |
+| Chronos v3.3 maths engine | `chronus/v33/` | Retained inside Chronus |
+| `chronos` (top-level) | `chronos/` | **Deprecated import facade -> `chronus.v33`**, zero logic; kept for the documented compatibility policy, its tests and `packaging/chronos-core` |
+| Tensor semantics | `tensor/` | **Independent logical layer** (contracts, router, verification, receipts). Chronus is an execution backend under it; `tensor` never imports `chronus`; the Virtual iGPU delegates tensor-result verification to `tensor.verification` |
+| Exact maths / VQC | `kellogg/`, `turing_universal_quantum_computer/` | Bridged lazily by `tensor`; Turing stays the independent VQC |
+| Hybrid hasher / scheduler / vendors | `hyba/` | Still outside `chronus/` (used by the H4/600 route); moving it is a staged follow-up, not done |
+| Execution backends | `gpu/` | `gpu.tensor` is a deprecated shim over `tensor` |

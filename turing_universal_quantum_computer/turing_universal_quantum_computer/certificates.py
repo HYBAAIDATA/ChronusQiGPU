@@ -22,7 +22,7 @@ import sys
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any
+from typing import Any, Mapping
 
 from .backends import ExecutionClass, ExecutionResult, Program, TruthClass
 from .backends.qpu import QPUJob, assert_measured_qpu
@@ -34,6 +34,8 @@ __all__ = [
     "WitnessError",
     "RunWitness",
     "VQCComputationCertificate",
+    "canonicalize_certificate_value",
+    "verify_serialized_computation_certificate",
     "issue_witness",
     "issue_computation_certificate",
     "replay_computation_certificate",
@@ -125,6 +127,15 @@ def _canonical(value: Any) -> bytes:
         ensure_ascii=True,
         allow_nan=False,
     ).encode("ascii")
+
+
+def canonicalize_certificate_value(value: Any) -> Any:
+    """Return the exact JSON-safe value form used by certificate hashing.
+
+    Persisted execution evidence must use this representation if it is expected
+    to reproduce a computation certificate after custody/restart.
+    """
+    return _jsonable(value)
 
 
 def _digest(domain: str, value: Any) -> str:
@@ -508,6 +519,49 @@ def verify_computation_certificate(
     if expected != certificate:
         raise WitnessError("computation certificate does not match program and result")
     return True
+
+
+def verify_serialized_computation_certificate(
+    program: Program,
+    result_payload: Mapping[str, Any],
+    certificate: VQCComputationCertificate,
+    *,
+    options: Mapping[str, Any] | None = None,
+) -> bool:
+    """Verify a custody-safe serialized result against its certificate."""
+    if not isinstance(result_payload, Mapping):
+        raise WitnessError("serialized execution result must be a mapping")
+    backend_payload = result_payload.get("payload", {})
+    if not isinstance(backend_payload, Mapping):
+        raise WitnessError("serialized backend payload must be a mapping")
+    embedded = result_payload.get("certificate")
+    if embedded is not None and not isinstance(embedded, Mapping):
+        raise WitnessError("serialized certificate must be a mapping")
+    try:
+        result = ExecutionResult(
+            backend=str(result_payload["backend"]),
+            execution_class=ExecutionClass(str(result_payload["execution_class"])),
+            truth_class=TruthClass(str(result_payload["truth_class"])),
+            n_qubits=int(result_payload["n_qubits"]),
+            program_digest=str(result_payload["program_digest"]),
+            materialised=bool(result_payload["materialised"]),
+            payload=dict(backend_payload),
+            refusals=tuple(
+                str(item) for item in result_payload.get("refusals", ())
+            ),
+            measured_qpu=bool(result_payload.get("measured_qpu", False)),
+            certificate=dict(embedded) if isinstance(embedded, Mapping) else None,
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise WitnessError(
+            f"serialized execution result is malformed: {exc}"
+        ) from exc
+    return verify_computation_certificate(
+        program,
+        result,
+        certificate,
+        options=dict(options or {}),
+    )
 
 
 def replay_computation_certificate(

@@ -1,15 +1,15 @@
 [project]
 name = "turing-universal-quantum-computer"
-version = "1.2.0"
+version = "1.3.0"
 description = "Turing Virtual Quantum Computer — exact-math VQC with bounded exact Clifford+T state vectors, arbitrary-width exact Clifford tableaux, admitted sparse/closed-form quantum mathematics, fail-closed representation and QPU boundaries, verifiable run witnesses, and an operator console."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [{ name = "PYTHIA Contributors" }]
 keywords = ["turing", "quantum", "exact-math", "vqc", "pythia", "mla1517"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
     "Typing :: Typed",

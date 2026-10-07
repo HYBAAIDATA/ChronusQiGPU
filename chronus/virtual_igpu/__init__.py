@@ -9,7 +9,12 @@ _EXPORTS = {
     "Workload": ("chronus.virtual_igpu.abi", "Workload"),
     "WorkloadKind": ("chronus.virtual_igpu.abi", "WorkloadKind"),
     "WorkloadResult": ("chronus.virtual_igpu.abi", "WorkloadResult"),
+    "ProductMode": ("chronus.virtual_igpu.abi", "ProductMode"),
     "ExecutionPolicy": ("chronus.virtual_igpu.abi", "ExecutionPolicy"),
+    "execution_policy_for_product_mode": (
+        "chronus.virtual_igpu.abi",
+        "execution_policy_for_product_mode",
+    ),
     "DeliveryMode": ("chronus.virtual_igpu.abi", "DeliveryMode"),
     "TrustClass": ("chronus.virtual_igpu.abi", "TrustClass"),
     "RuntimeState": ("chronus.virtual_igpu.abi", "RuntimeState"),
@@ -21,6 +26,10 @@ _EXPORTS = {
     "EvidenceLedger": ("chronus.virtual_igpu.evidence", "EvidenceLedger"),
     "validate_receipt": ("chronus.virtual_igpu.evidence", "validate_receipt"),
     "default_adapters": ("chronus.virtual_igpu.adapters", "default_adapters"),
+    "verify_workload_result": (
+        "chronus.virtual_igpu.verifier",
+        "verify_workload_result",
+    ),
     "CPUEmulatorAdapter": ("chronus.virtual_igpu.adapters", "CPUEmulatorAdapter"),
     "AdapterUnavailable": ("chronus.virtual_igpu.adapters", "AdapterUnavailable"),
 }

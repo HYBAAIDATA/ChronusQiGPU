@@ -54,10 +54,12 @@ from .errors import (
     TensorMemoryError,
     TensorTimeoutError,
     TensorValidationError,
+    TensorVerificationError,
 )
 from .receipts import ExecutionReceipt
 from .router import RouteDecision, default_registry, route
 from .runtime import CancellationToken, Deadline, preflight_memory, telemetry_record, timed_execute
+from .verification import VerificationVerdict
 
 __all__ = [
     "BackendIdentity",
@@ -92,7 +94,9 @@ __all__ = [
     "TensorShape",
     "TensorTimeoutError",
     "TensorValidationError",
+    "TensorVerificationError",
     "TruthClass",
+    "VerificationVerdict",
     "default_registry",
     "default_runtime",
     "dependency_cone",

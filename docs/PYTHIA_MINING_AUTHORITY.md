@@ -138,7 +138,7 @@ are active search structure available to PYTHIA. They are not parallel
 pool-writing miners and neither is the final search-algorithm identity:
 Hendrix remains the default traversal over the complete composed itinerary.
 
-Each logical search vertex may be backed by multiple physical Chronus workers. Fleet growth happens below the fixed mathematical topology. The aggregate engineering target is **10 EH/s**, but it remains a target until measured. Mathematical topology, tensor compression, search-order intelligence or configured fleet size never substitutes for measured hashrate.
+Each logical search vertex may be backed by multiple physical Chronus workers. Fleet growth happens below the fixed mathematical topology. The aggregate engineering target is the **governed 1e19 H/s hashrate ceiling**, but it remains a target until measured. Mathematical topology, tensor compression, search-order intelligence or configured fleet size never substitutes for measured hashrate.
 
 ## Salamander production closed loop
 
@@ -192,4 +192,4 @@ Completed execution records are recorded by the canonical mining coordinator fir
 5. Salamander closed-loop and production-supervisor tests;
 6. existing Stratum/SHA256d proof-boundary regression.
 
-A PR that removes or bypasses these boundaries is not merge-ready. A passing software gate is not evidence of live-pool acceptance, physical GPU/fleet execution or the 10 EH/s target; those require fresh runtime evidence.
+A PR that removes or bypasses these boundaries is not merge-ready. A passing software gate is not evidence of live-pool acceptance, physical GPU/fleet execution or the governed 1e19 H/s hashrate ceiling target; those require fresh runtime evidence.

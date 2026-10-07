@@ -182,13 +182,18 @@ def build_status(
     event: str | None = None,
     record_skill: str | None = None,
     invoke_all: bool = False,
+    reset_session: bool = False,
 ) -> dict[str, Any]:
     manifest = _manifest()
     count, last = _journal_state()
-    previous = _existing_receipt()
+    previous = {} if reset_session else _existing_receipt()
     mandatory = mandatory_skills()
     invoked = set(previous.get("skills_invoked") or [])
 
+    if invoke_all and event not in {"SessionStart", "PostCompaction"}:
+        raise ValueError(
+            "invoke_all is reserved for SessionStart/PostCompaction lifecycle hooks"
+        )
     if invoke_all:
         invoked.update(mandatory)
     if record_skill:
@@ -208,6 +213,12 @@ def build_status(
         ".devin/config.json",
     )
     mandatory_set = set(mandatory)
+    session_start_observed = "SessionStart" in hook_events
+    mandatory_complete = (
+        bool(mandatory_set)
+        and session_start_observed
+        and mandatory_set.issubset(invoked)
+    )
     return {
         "schema": "euclid.devin-aptitude-runtime/1",
         "plugin": manifest.get("name", "pythia"),
@@ -223,8 +234,22 @@ def build_status(
         "euclid_aptitude_skills": euclid_aptitude_skills(),
         "mandatory_skills": mandatory,
         "skills_invoked": sorted(invoked),
-        "mandatory_skills_complete": mandatory_set.issubset(invoked),
+        "session_start_observed": session_start_observed,
+        "mandatory_skills_complete": mandatory_complete,
         "mandatory_skills_missing": sorted(mandatory_set - invoked),
+        "mandatory_activation_reason": (
+            "active"
+            if mandatory_complete
+            else (
+                "mandatory skill inventory is empty"
+                if not mandatory_set
+                else (
+                    "SessionStart hook not observed"
+                    if not session_start_observed
+                    else "mandatory skill invocation incomplete"
+                )
+            )
+        ),
         "hook_events": hook_events,
         "journal_present": JOURNAL.is_file(),
         "checkpoint_count": count,
@@ -234,6 +259,28 @@ def build_status(
             "side effects remain bounded by the task and canonical authority."
         ),
     }
+
+
+def validate_active_session(status: dict[str, Any]) -> tuple[bool, str]:
+    """Validate the mandatory session-wide aptitude invariant."""
+    if status.get("augmentation") != "EUCLID_APTITUDE":
+        return False, "EUCLID aptitude augmentation is not active"
+    if not status.get("session_start_observed"):
+        return False, "mandatory EUCLID aptitude SessionStart hook was not observed"
+    mandatory = {
+        str(item) for item in status.get("mandatory_skills") or [] if str(item)
+    }
+    invoked = {
+        str(item) for item in status.get("skills_invoked") or [] if str(item)
+    }
+    if not mandatory:
+        return False, "mandatory EUCLID aptitude skill inventory is empty"
+    missing = sorted(mandatory - invoked)
+    if missing:
+        return False, "mandatory EUCLID aptitude skills missing: " + ", ".join(missing)
+    if not status.get("mandatory_skills_complete"):
+        return False, "mandatory EUCLID aptitude runtime receipt is incomplete"
+    return True, "active"
 
 
 def write_runtime_receipt(status: dict[str, Any]) -> None:
@@ -252,6 +299,7 @@ def main() -> int:
     parser.add_argument("--event")
     parser.add_argument("--record-skill")
     parser.add_argument("--invoke-all", action="store_true")
+    parser.add_argument("--require-active", action="store_true")
     args = parser.parse_args()
 
     status = build_status(
@@ -261,6 +309,19 @@ def main() -> int:
     )
     if args.write_receipt or args.event or args.record_skill or args.invoke_all:
         write_runtime_receipt(status)
+
+    if args.require_active:
+        if not WORKSPACE_AVAILABLE:
+            return 0
+        ok, reason = validate_active_session(status)
+        if not ok:
+            print(
+                json.dumps({"decision": "block", "reason": reason}, sort_keys=True),
+                file=os.sys.stderr,
+            )
+            return 2
+        return 0
+
     print(json.dumps(status, sort_keys=True))
     return 0
 

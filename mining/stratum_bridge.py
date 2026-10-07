@@ -126,15 +126,15 @@ def _configured_target_hs() -> float:
     """Operator target hashrate from the runtime config (H/s).
 
     0 means 'run at the device's physical rate'. Any positive value paces
-    window grinding to that rate; writes above the 1 EH/s ceiling are
-    rejected at the API, so this reader only defends against a manually
-    edited file."""
+    window grinding to that rate; writes above the governed ceiling
+    (10 EH/s) are rejected at the API, so this reader only defends against
+    a manually edited file."""
     cfg = _load_runtime_config()
     try:
         target = float((cfg.get("hashrate") or {}).get("target_hs", 0.0))
     except (TypeError, ValueError):
         return 0.0
-    if not 0.0 <= target <= 1e18:
+    if not 0.0 <= target <= 1e19:  # mirrors runtime_config.HASHRATE_CEILING_HS
         return 0.0
     return target
 

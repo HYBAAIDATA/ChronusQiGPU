@@ -394,6 +394,26 @@ def _extract_views(artifact: Mapping[str, Any]) -> tuple[dict[str, Any], dict[st
     return art, result, provenance
 
 
+BINDABLE_RECEIPT_FIELDS = frozenset(
+    {
+        "protocol_version",
+        "package_version",
+        "runtime_identity",
+        "build_identity",
+        "kernel_identity",
+        "workload_id",
+        "attempt_id",
+        "requested_policy",
+        "actual_backend",
+        "actual_device",
+        "input_digest",
+        "output_digest",
+        "verified_work_count",
+        "delivery_mode",
+    }
+)
+
+
 def validate_receipt(
     receipt: Mapping[str, Any] | None = None,
     *,
@@ -405,8 +425,15 @@ def validate_receipt(
     expect_hardware_rooted: bool | None = None,
     hmac_key: bytes | None = None,
     record: Mapping[str, Any] | None = None,
+    expect: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Independent receipt validator.
+
+    ``expect`` binds any of ``BINDABLE_RECEIPT_FIELDS`` (protocol/package/runtime/
+    build/kernel identity, workload/attempt id, requested policy, actual backend and
+    device, input/output digests, verified work count, delivery mode). A bound field
+    that is absent or different fails validation; a generic content hash alone is
+    never enough to accept a changed execution identity.
 
     Acceptance-suite contract:
       * validate_receipt(artifact_dict) → {"ok": bool, ...}
@@ -502,6 +529,17 @@ def validate_receipt(
     if expected_package and actual_package != expected_package:
         report["errors"].append("package_version mismatch")
 
+    binding_errors: list[str] = []
+    for field_name, wanted in (expect or {}).items():
+        if field_name not in BINDABLE_RECEIPT_FIELDS:
+            raise ValueError(f"unsupported receipt binding: {field_name!r}")
+        actual = art[field_name] if field_name in art else prov.get(field_name)
+        if actual is None:
+            binding_errors.append(f"{field_name} missing")
+        elif actual != wanted:
+            binding_errors.append(f"{field_name} mismatch")
+    report["errors"].extend(binding_errors)
+
     if hmac_key and art.get("hmac_hex"):
         expected = hmac.new(
             hmac_key, str(digest or "").encode("utf-8"), hashlib.sha256
@@ -550,6 +588,8 @@ def validate_receipt(
         if not report["errors"]:
             report["ok"] = True
 
+    if binding_errors:
+        report["ok"] = False
     return report
 
 

@@ -105,11 +105,12 @@ class ChronusClient:
 
     def submit(self, workload: Workload | dict[str, Any]) -> WorkloadResult:
         w = workload if isinstance(workload, Workload) else Workload.from_dict(workload)
-        # Stamp delivery mode on workload for receipts
-        if not getattr(w, "delivery_mode", None):
-            w.delivery_mode = self.delivery_mode
-        else:
-            w.delivery_mode = self.delivery_mode
+        if w.delivery_mode != self.delivery_mode:
+            # The delivery mode is part of the canonical request identity: rebuild the
+            # workload (recomputing content_hash) instead of mutating a sealed one.
+            w = Workload.from_dict(
+                {**w.as_dict(), "delivery_mode": self.delivery_mode, "content_hash": None}
+            )
         if self.delivery_mode == DeliveryMode.EMBEDDED.value:
             assert self._daemon is not None
             return self._daemon.submit(w)

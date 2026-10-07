@@ -10,13 +10,20 @@ from chronus.mla1517.mining import poincare_11d_order
 from chronus.mla1517.mining.coordinator import resolve_nonce_order
 from chronus.mla1517.mining.execution_router import (
     DEVICE_RESULT_MISMATCH,
+    NONCE_ORDER_M32,
     NONCE_ORDER_POINCARE_11D,
     ExecutionRouter,
     NonceOrderUnavailable,
     sha256d_scan,
 )
 from chronus.mla1517.mining.poincare_11d_order import poincare_11d_nonces
-from chronus.mla1517.mining.search_plan import CompletionState, NonceLease
+from chronus.mla1517.mining.nonce_lease import LeaseRecord
+from chronus.mla1517.mining.search_plan import (
+    CompletionState,
+    LeaseState,
+    NonceLease,
+    WorkIdentity,
+)
 from chronus.mla1517.mining.solver import M32SearchSolver
 from test_governance_causality import RecordingHasher, _plan
 
@@ -118,8 +125,39 @@ def test_production_coordinator_routes_11d_through_cpu_reference(monkeypatch):
 
     monkeypatch.setenv("PYTHIA_NONCE_ORDER", "11d")
     coordinator = _pool_only_coordinator([PoolEndpoint("h", 1, "braiins")])
+
+    class _DeviceStandIn:
+        backend = "opencl:stand-in"
+        k_m32 = object()
+
+    # The default CPU hasher is already cpu_reference, so only a device-shaped hasher shows
+    # that the 11D rule (and not the hasher) is what keeps 11D off the M32 device kernel.
+    real_hasher = coordinator.execution_hasher
+    coordinator.execution_hasher = _DeviceStandIn()
+    try:
+        assert coordinator._execution_route() == "cpu_reference"
+        monkeypatch.setattr(coordinator, "_nonce_order", NONCE_ORDER_M32)
+        assert coordinator._execution_route() == "opencl_m32"
+    finally:
+        coordinator.execution_hasher = real_hasher
+        monkeypatch.setattr(coordinator, "_nonce_order", NONCE_ORDER_POINCARE_11D)
     assert coordinator._execution_route() == "cpu_reference"
-    plan, lease = _leased(coordinator._execution_route(), 96)
+    window = 96
+    identity = WorkIdentity("s", 1, "j", "fp", 0, False, 1.0)
+    leased = LeaseRecord("l", identity.key, 1, "00", BASE, window, LeaseState.RESERVED)
+    plan = coordinator._baseline_plan(identity, leased, window, "test")
+    lease = leased.contract()
+    assert plan.nonce_order == NONCE_ORDER_POINCARE_11D
+    assert plan.executor_route == "cpu_reference"
+    record, candidate = coordinator._router_for(plan).execute_plan(
+        plan, HEADER, bytes(32), lease=lease
+    )
+    assert candidate is None
+    assert record.requested_nonce_order == NONCE_ORDER_POINCARE_11D
+    assert record.executed_nonce_order == NONCE_ORDER_POINCARE_11D
+
+    monkeypatch.setenv("PYTHIA_NONCE_ORDER", "m32")
+    monkeypatch.setattr(coordinator, "_nonce_order", NONCE_ORDER_M32)
     record, candidate = coordinator._router_for(plan).execute_plan(
         plan, HEADER, bytes(32), lease=lease
     )

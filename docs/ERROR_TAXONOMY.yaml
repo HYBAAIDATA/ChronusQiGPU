@@ -273,6 +273,11 @@ codes:
     emitted_as: 'the mining worker has not reported Stratum telemetry'
     emitted_by: chronus/mla1517_platform/python/control_api.py
     meaning: stratum status projection has no worker telemetry yet
+  - code: runtime_config_absent
+    class: AVAILABILITY_PROSE
+    emitted_as: '{cfg_path} absent'
+    emitted_by: chronus/mla1517_platform/python/control_api.py
+    meaning: readiness reports the durable runtime config file is not present at its resolved path (runtime_config component, state not_configured)
 
 # Codes that appear in the same reason field but are not failures.
 non_error_codes:

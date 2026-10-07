@@ -2612,7 +2612,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self.world.observe_execution(final)
         optimization_events = len(self.optimization.history)
         self.optimization.observe(
-            route=final.requested_route or final.executed_route or final.device_used or "unknown",
+            route=final.executed_route or final.requested_route or final.device_used or "unknown",
             executed_route=final.executed_route,
             planned_window=final.planned_window,
             completed_work=final.hash_count,

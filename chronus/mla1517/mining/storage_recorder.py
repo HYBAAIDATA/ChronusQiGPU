@@ -236,6 +236,9 @@ class MiningStorageRecorder:
             coordinate = event.coordinate.as_dict()
             detail = dict(event.detail)
             emitted = []
+            # Kinds already custodied before this event (the strict verified proof): the event
+            # receipt may reference them but must not replace their own custody receipt.
+            precustodied: set[str] = set()
             for kind, producer, _cls in _CHAIN_EVENTS.get(event.kind, ()):
                 if kind == "verified_proof" and self.strict:
                     if "verified_proof" not in self._heads:
@@ -243,6 +246,7 @@ class MiningStorageRecorder:
                             "submission boundary reached without a synchronously custodied verified proof"
                         )
                     emitted.append(kind)
+                    precustodied.add(kind)
                     continue
                 if kind == "pool_outcome" and "submission" not in self._heads:
                     continue  # no real submission to hang the outcome on
@@ -262,7 +266,7 @@ class MiningStorageRecorder:
             # content-addressed receipt. Boundary receipts link to their mining
             # record; everything else links to the current chain head.
             receipt_class = _RECEIPT_CLASS[emitted[-1]] if emitted else "durable_evidence"
-            self._receipt(event, receipt_class, emitted)
+            self._receipt(event, receipt_class, emitted, preserve=precustodied)
             # Mark the event seen only after every durable operation succeeds.
             # A failed write therefore remains retryable/replayable.
             self._seen.add(key)
@@ -384,7 +388,13 @@ class MiningStorageRecorder:
         self.records[record_id] = kind
         return record_id
 
-    def _receipt(self, event: Any, file_class: str, emitted: list[str]) -> str | None:
+    def _receipt(
+        self,
+        event: Any,
+        file_class: str,
+        emitted: list[str],
+        preserve: frozenset[str] | set[str] = frozenset(),
+    ) -> str | None:
         body = _stable_json(
             {
                 "kind": event.kind,
@@ -418,7 +428,7 @@ class MiningStorageRecorder:
             links=links,
         )
         for kind in emitted:
-            if kind in self._heads:
+            if kind in self._heads and kind not in preserve:
                 self.receipts[self._heads[kind]] = version_id
         if self.transform_plane is not None:
             self.transform_plane.fold_into(self.tenant_id, self.root, version_id)

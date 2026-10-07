@@ -394,6 +394,30 @@
     ]
   },
   {
+    "file": "qx.py",
+    "classes": [
+      "QXValidationError",
+      "QXCommandType",
+      "QXPipelineStage",
+      "QXMemoryDomain",
+      "QXCommand",
+      "QXCommandBuffer",
+      "QXExecutionReport",
+      "QXReferenceExecutor"
+    ],
+    "functions": []
+  },
+  {
+    "file": "qx_bridge.py",
+    "classes": [
+      "QXSceneCompilation"
+    ],
+    "functions": [
+      "compile_qsdl_to_qx",
+      "execute_qsdl_qx_reference"
+    ]
+  },
+  {
     "file": "qsdl_compiler.py",
     "classes": [
       "QSDLCompileError",

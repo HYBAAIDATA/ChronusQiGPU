@@ -15,7 +15,7 @@ generation is a refused transition, not a process-fatal exception.
 from __future__ import annotations
 
 import logging
-from typing import Any, Mapping
+from typing import Any
 
 from .causal import CausalCoordinate
 from .cycle_fsm import MiningCycleState
@@ -29,6 +29,9 @@ LOG = logging.getLogger(__name__)
 
 class M3PythiaProductionMiningCoordinator(PythiaProductionMiningCoordinator):
     """PYTHIA production coordinator with optional strict M3 closure gates."""
+
+    #: Same default as ``__init__``; keeps partially-constructed instances well-defined.
+    _m3_required: bool = False
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self._m3_required = bool(kwargs.pop("m3_required", False))
@@ -49,7 +52,9 @@ class M3PythiaProductionMiningCoordinator(PythiaProductionMiningCoordinator):
             "gate_configured": self._m3_gate is not None,
             "search_authority": "PYTHIA",
             "search_algorithm": getattr(self, "_nonce_order", None),
-            "search_architecture_ready": getattr(self, "pythia_search_precompute", None) is not None,
+            "search_architecture_ready": (
+                getattr(self, "pythia_search_precompute", None) is not None
+            ),
             "chronus_fabric": fabric,
             "last_lease_gate": self._last_m3_lease_gate,
             "last_submission_gate": self._last_m3_gate,
@@ -89,9 +94,7 @@ class M3PythiaProductionMiningCoordinator(PythiaProductionMiningCoordinator):
             return True
         try:
             gate = dict(
-                self._m3_gate.authorize_lease(
-                    context=self._m3_identity_context(identity)
-                )
+                self._m3_gate.authorize_lease(context=self._m3_identity_context(identity))
             )
         except M3StorageError as exc:
             self._block_m3(f"THESEUS_CUSTODY_FAILURE:{exc}")
@@ -186,7 +189,9 @@ class M3PythiaProductionMiningCoordinator(PythiaProductionMiningCoordinator):
                 "job_fingerprint",
                 getattr(identity, "job_fingerprint", None),
             ),
-            "generation": correlation.get("generation", getattr(identity, "generation", None)),
+            "generation": correlation.get(
+                "generation", getattr(identity, "generation", None)
+            ),
             "pool_session_id": correlation.get(
                 "pool_session_id",
                 getattr(identity, "pool_session_id", None),

@@ -6,7 +6,7 @@ One process-wide context, queue, and program cache
 mathematical kernels in this module and the SHA-256d scanner both bind to this
 engine, so device selection, program build, and residency are decided once.
 
-Chronus is the iGPU offering; Turing remains the compute substrate. Device
+Chronus is the iGPU offering; TURING remains an independent VQC authority. Device
 selection prefers a HYBA alias device, then evidence-based integrated GPUs,
 then the best measured GPU/device. The selected backend and reason are retained
 and surfaced rather than inferred later.
@@ -313,7 +313,7 @@ class ChronusOpenCLEngine:
         device = self._device
         return {
             "product": "Chronus",
-            "compute_substrate": "Turing",
+            "compute_substrate": "chronus_execution_plane",
             "available": self._context is not None,
             "reason": self._unavailable,
             "device_name": self._device_name,

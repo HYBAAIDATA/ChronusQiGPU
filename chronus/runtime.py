@@ -1,7 +1,7 @@
 """Chronus native runtime helpers.
 
 This module owns the memory-allocation and measurement boundary for Chronus.
-Turing remains the compute substrate; Chronus reports where state lives and
+Chronus reports where state lives and
 what execution actually measured.
 
 ``allocate_host_mapped`` returns ordinary host RAM and never labels it as

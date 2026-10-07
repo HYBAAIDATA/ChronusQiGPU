@@ -1,8 +1,10 @@
 """Canonical, JSON-safe Chronus Virtual iGPU ABI (virtual_igpu_v1).
 
-Product identity is independent of any particular physical GPU. Delivery mode,
-requested execution policy, and observed backend are separate fields. Trust
-classes distinguish runtime-signed provenance from hardware-rooted attestation.
+Product identity is independent of any particular physical GPU or CPU backend.
+Chronus has two canonical product modes: native software-defined GPU execution,
+and host-GPU/accelerator augmentation. Delivery mode, execution policy, product
+mode, and observed backend are separate facts. Trust classes distinguish
+runtime-signed provenance from hardware-rooted attestation.
 """
 from __future__ import annotations
 
@@ -77,20 +79,57 @@ class RuntimeState(str, Enum):
 
 
 class DeliveryMode(str, Enum):
-    """Where the client talks to the runtime (not the GPU backend)."""
+    """Where the client talks to the runtime (not the GPU backend).
+
+    Canonical delivery contract (single vocabulary for every caller):
+
+    * ``embedded`` -- in-process daemon; no endpoint, no network, no
+      authentication; software fallback only per the workload's policy.
+    * ``local_sidecar`` -- loopback HTTP daemon; endpoint required and must be
+      loopback; no silent switch to embedded on failure.
+    * ``remote_service`` -- network service; endpoint required, HTTPS required
+      off-loopback, bearer token required off-loopback; a failed request never
+      falls back to local execution.
+
+    Receipts record the mode actually used. The mode is never inferred from a
+    stray endpoint: supplying an endpoint with ``embedded`` is rejected.
+    """
 
     EMBEDDED = "embedded"
     LOCAL_SIDECAR = "local_sidecar"
     REMOTE_SERVICE = "remote_service"
 
 
+class ProductMode(str, Enum):
+    """Canonical Chronus product identity, independent of the host substrate."""
+
+    NATIVE_CHRONUS_GPU = "native_chronus_gpu"
+    HOST_GPU_AUGMENTATION = "host_gpu_augmentation"
+
+
 class ExecutionPolicy(str, Enum):
-    """Requested execution preference; independent of delivery mode."""
+    """Backend-selection policy; not the product identity.
+
+    standalone_software is the compatibility execution policy for native
+    Chronus GPU mode. preferred_accelerator is the default policy for
+    host-GPU/accelerator augmentation.
+    """
 
     STANDALONE_SOFTWARE = "standalone_software"
     PREFERRED_ACCELERATOR = "preferred_accelerator"
     REQUIRED_ADAPTER = "required_adapter"
     REQUIRED_DEVICE = "required_device"
+
+
+_PRODUCT_MODE_POLICY = {
+    ProductMode.NATIVE_CHRONUS_GPU: ExecutionPolicy.STANDALONE_SOFTWARE,
+    ProductMode.HOST_GPU_AUGMENTATION: ExecutionPolicy.PREFERRED_ACCELERATOR,
+}
+
+
+def execution_policy_for_product_mode(mode: ProductMode | str) -> str:
+    """Return the compatibility execution policy for a canonical product mode."""
+    return _PRODUCT_MODE_POLICY[ProductMode(mode)].value
 
 
 class TrustClass(str, Enum):
@@ -286,14 +325,19 @@ class Workload:
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "Workload":
+        if not isinstance(value, Mapping):
+            raise ValueError("serialized workload must be a mapping")
         version = str(value.get("abi_version", ABI_VERSION))
         if version != ABI_VERSION:
             raise ValueError(
                 f"unsupported ABI version {version!r}; expected {ABI_VERSION!r}"
             )
+        for required in ("id", "kind"):
+            if required not in value:
+                raise ValueError(f"serialized workload is missing {required!r}")
         return cls(
             id=str(value["id"]),
-            kind=value.get("kind", WorkloadKind.CUSTOM),
+            kind=value["kind"],  # explicit: a missing kind is never defaulted to CUSTOM
             tenant=str(value.get("tenant", "default")),
             input=dict(value.get("input", {})),
             constraints=dict(value.get("constraints", {})),
