@@ -160,15 +160,49 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def run_check(\n    python: str,\n    wheels: list[Path],\n    check: str,\n    workdir: Path,\n    extra_packages: list[str] | None = None,\n) -> dict:
+def run_check(
+    python: str,
+    wheels: list[Path],
+    check: str,
+    workdir: Path,
+    extra_packages: list[str] | None = None,
+) -> dict:
     venv = workdir / "venv"
     subprocess.run([python, "-m", "venv", str(venv)], check=True)
     py = venv / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
-    subprocess.run([str(py), "-m", "pip", "install", "-q", "--disable-pip-version-check",
-                    *[str(w) for w in wheels]], check=True)
-    out = subprocess.run([str(py), "-c", check], cwd=str(workdir), capture_output=True, text=True)
+    subprocess.run(
+        [
+            str(py),
+            "-m",
+            "pip",
+            "install",
+            "-q",
+            "--disable-pip-version-check",
+            *[str(w) for w in wheels],
+        ],
+        check=True,
+    )
+    if extra_packages:
+        subprocess.run(
+            [
+                str(py),
+                "-m",
+                "pip",
+                "install",
+                "-q",
+                "--disable-pip-version-check",
+                *extra_packages,
+            ],
+            check=True,
+        )
+    out = subprocess.run(
+        [str(py), "-I", "-c", check],
+        cwd=str(workdir),
+        capture_output=True,
+        text=True,
+    )
     if out.returncode != 0:
-        return {"error": out.stderr[-2000:]}
+        return {"error": (out.stdout + "\n" + out.stderr)[-4000:]}
     return json.loads(out.stdout.strip().splitlines()[-1])
 
 
@@ -183,32 +217,72 @@ def main() -> int:
     turing_wheel = Path(args.turing).resolve() if args.turing else None
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
-    summary = {"kellogg_wheel": {"file": kellogg_wheel.name, "sha256": sha256(kellogg_wheel)}, "runs": []}
+    summary = {
+        "kellogg_wheel": {
+            "file": kellogg_wheel.name,
+            "sha256": sha256(kellogg_wheel),
+        },
+        "runs": [],
+    }
     if turing_wheel:
-        summary["turing_wheel"] = {"file": turing_wheel.name, "sha256": sha256(turing_wheel)}
+        summary["turing_wheel"] = {
+            "file": turing_wheel.name,
+            "sha256": sha256(turing_wheel),
+        }
     ok = True
     for python in args.python:
-        jobs = [("kellogg", [kellogg_wheel], KELLOGG_CHECK)]
+        jobs = [("kellogg", [kellogg_wheel], KELLOGG_CHECK, [])]
         if turing_wheel:
-            jobs.append(("turing", [kellogg_wheel, turing_wheel], TURING_CHECK))
-        for label, wheels, check in jobs:
+            jobs.append(
+                (
+                    "turing",
+                    [kellogg_wheel, turing_wheel],
+                    TURING_CHECK,
+                    ["scipy>=1.11", "networkx>=3.0"],
+                )
+            )
+        for label, wheels, check, extra_packages in jobs:
             with tempfile.TemporaryDirectory(prefix=f"rc-{label}-") as tmp:
-                record = run_check(\n                    python, wheels, check, Path(tmp), extra_packages=extra_packages\n                )
+                record = run_check(
+                    python,
+                    wheels,
+                    check,
+                    Path(tmp),
+                    extra_packages=extra_packages,
+                )
             record["interpreter"] = python
             name = f"{label}-{record.get('python', 'unknown')}.json"
-            (out_dir / name).write_text(json.dumps(record, indent=1, sort_keys=True), encoding="utf-8")
+            (out_dir / name).write_text(
+                json.dumps(record, indent=1, sort_keys=True), encoding="utf-8"
+            )
             passed = (
                 "error" not in record
                 and record.get("registry_ok")
                 and not record.get("siblings_loaded")
                 and not record.get("failed_imports")
-                and all(v is not False for v in record.get("benchmarks", {}).values())
+                and not record.get("skipped_for_extras")
+                and all(
+                    value is not False
+                    for value in record.get("benchmarks", {}).values()
+                )
             )
             ok = ok and bool(passed)
-            summary["runs"].append({"product": label, "python": record.get("python"), "passed": bool(passed),
-                                    "error": record.get("error", "")[:300]})
-            print(f"{label:8s} python {record.get('python', '?'):8s} {'PASS' if passed else 'FAIL'}", flush=True)
-    (out_dir / "summary.json").write_text(json.dumps(summary, indent=1, sort_keys=True), encoding="utf-8")
+            summary["runs"].append(
+                {
+                    "product": label,
+                    "python": record.get("python"),
+                    "passed": bool(passed),
+                    "error": record.get("error", "")[:300],
+                }
+            )
+            print(
+                f"{label:8s} python {record.get('python', '?'):8s} "
+                f"{'PASS' if passed else 'FAIL'}",
+                flush=True,
+            )
+    (out_dir / "summary.json").write_text(
+        json.dumps(summary, indent=1, sort_keys=True), encoding="utf-8"
+    )
     return 0 if ok else 1
 
 
