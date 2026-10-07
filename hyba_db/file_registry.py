@@ -156,6 +156,17 @@ CREATE TABLE IF NOT EXISTS file_versions(
  FOREIGN KEY(tenant_id,previous_version_id) REFERENCES file_versions(tenant_id,file_version_id),
  FOREIGN KEY(tenant_id,attestation_id) REFERENCES attestations(tenant_id,id)
 );
+CREATE TABLE IF NOT EXISTS file_provenance(
+ tenant_id TEXT NOT NULL REFERENCES tenants(tenant_id),
+ file_version_id TEXT NOT NULL,
+ provenance_json TEXT NOT NULL,
+ provenance_sha256 TEXT NOT NULL,
+ attestation_id TEXT NOT NULL,
+ created_at TEXT NOT NULL,
+ PRIMARY KEY(tenant_id,file_version_id),
+ FOREIGN KEY(tenant_id,file_version_id) REFERENCES file_versions(tenant_id,file_version_id),
+ FOREIGN KEY(tenant_id,attestation_id) REFERENCES attestations(tenant_id,id)
+);
 CREATE TABLE IF NOT EXISTS file_events(
  tenant_id TEXT NOT NULL REFERENCES tenants(tenant_id),
  event_id TEXT NOT NULL,
@@ -283,6 +294,110 @@ class FileRegistry:
     def __init__(self, store: Any, custody: Any | None = None) -> None:
         self.store = store
         self.custody = custody
+        self._migrate_provenance()
+
+    def _normalise_provenance(
+        self,
+        obj: Mapping[str, Any],
+        *,
+        producer: str,
+        producer_version: str,
+        schema_version: int,
+        evidence_state: str,
+        exactness: str | None,
+        provenance: Mapping[str, Any] | None,
+    ) -> dict[str, Any]:
+        out: dict[str, Any] = {
+            "schema": "hyba.file-provenance/v1",
+            "semantic_owner": str(obj["semantic_owner"]),
+            "domain": str(obj["domain"]),
+            "retention_class": str(obj["retention_policy"]),
+            "recovery_class": "UNAVAILABLE",
+            "producer": str(producer).strip().lower(),
+            "producer_version": str(producer_version),
+            "schema_version": int(schema_version),
+            "evidence_state": str(evidence_state).upper(),
+            "source_ids": [],
+            "correlation_ids": {},
+            "code_ref": "UNAVAILABLE",
+            "package_ref": "UNAVAILABLE",
+            "config_digest": "UNAVAILABLE",
+            "backend": "UNAVAILABLE",
+            "device_identity": "UNAVAILABLE",
+            "precision_contract": "UNAVAILABLE",
+            "exactness_contract": str(exactness or "UNAVAILABLE"),
+            "policy_refs": [],
+            "owner_approval_ref": "UNAVAILABLE",
+        }
+        out.update(dict(provenance or {}))
+        out["source_ids"] = [str(x) for x in out.get("source_ids") or ()]
+        out["correlation_ids"] = {
+            str(k): str(v) for k, v in dict(out.get("correlation_ids") or {}).items()
+        }
+        out["policy_refs"] = [str(x) for x in out.get("policy_refs") or ()]
+        return out
+
+    def _migrate_provenance(self) -> None:
+        """Upgrade v2 file rows without inventing historical provenance.
+
+        Unknown historical fields are recorded explicitly as UNAVAILABLE.
+        This makes an existing M3 database upgradeable to schema v3 while
+        preserving the old file version and custody identities.
+        """
+        rows = list(
+            self.store._db.execute(
+                "SELECT fv.*,fo.semantic_owner,fo.domain,fo.retention_policy "
+                "FROM file_versions fv JOIN file_objects fo "
+                "ON fo.tenant_id=fv.tenant_id AND fo.file_object_id=fv.file_object_id "
+                "LEFT JOIN file_provenance fp "
+                "ON fp.tenant_id=fv.tenant_id AND fp.file_version_id=fv.file_version_id "
+                "WHERE fp.file_version_id IS NULL"
+            )
+        )
+        for row in rows:
+            obj = {
+                "semantic_owner": row["semantic_owner"],
+                "domain": row["domain"],
+                "retention_policy": row["retention_policy"],
+            }
+            prov = self._normalise_provenance(
+                obj,
+                producer=row["producer"],
+                producer_version=row["producer_version"],
+                schema_version=row["schema_version"],
+                evidence_state=row["evidence_state"],
+                exactness=row["exactness"],
+                provenance={
+                    "migration_state": "LEGACY_PROVENANCE_UNAVAILABLE",
+                    "legacy_file_created_at": row["created_at"],
+                },
+            )
+            body = _json(prov)
+            digest = _sha(body.encode())
+            with self.store._tx() as db:
+                att = self.store._attest(
+                    db,
+                    row["tenant_id"],
+                    f"file_provenance:{row['file_version_id']}",
+                    "hyba_db",
+                    {
+                        "file_version_id": row["file_version_id"],
+                        "provenance_sha256": digest,
+                        "migration_state": "LEGACY_PROVENANCE_UNAVAILABLE",
+                    },
+                    (),
+                )
+                db.execute(
+                    "INSERT OR IGNORE INTO file_provenance VALUES(?,?,?,?,?,?)",
+                    (
+                        row["tenant_id"],
+                        row["file_version_id"],
+                        body,
+                        digest,
+                        att.id,
+                        _now(),
+                    ),
+                )
 
     def _tenant(self, tenant_id: str) -> None:
         self.store._tenant(tenant_id)
@@ -345,17 +460,17 @@ class FileRegistry:
         supplied: str | None,
         *,
         kind: str = "file_version",
+        producer_version: str = "",
+        schema_version: int = 1,
+        lineage: Sequence[str] = (),
+        correlation_ids: Mapping[str, str] | None = None,
+        dependencies: Mapping[str, int] | None = None,
+        meta: Mapping[str, Any] | None = None,
     ) -> str:
-        """Bind a THESEUS custody record — verified, never self-asserted.
-
-        Requires a custody adapter exposing ``put_record(tenant_id, record)``
-        and ``verify(tenant_id, record_id) -> bool`` (see
-        ``hyba_db.theseus_custody.TheseusFileCustody``). A supplied id must
-        resolve to a real custody record; a fabricated id fails closed.
-        """
+        """Bind a verified THESEUS record while preserving producer provenance."""
         if self.custody is None:
             raise InvalidRecord(
-                "THESEUS custody adapter required; a custody_record_id may not " "be self-asserted"
+                "THESEUS custody adapter required; a custody_record_id may not be self-asserted"
             )
         if supplied:
             if not self.custody.verify(tenant_id, str(supplied)):
@@ -368,22 +483,29 @@ class FileRegistry:
             if evidence_state in EVIDENCE_STATES
             else self._CUSTODY_EVIDENCE_MAP[evidence_state]
         )
+        correlations = {
+            "tenant_id": tenant_id,
+            "file_plane_id": subject_id,
+            "declared_evidence_state": evidence_state,
+            **{str(k): str(v) for k, v in dict(correlation_ids or {}).items()},
+        }
         record = OperationalRecord(
             record_id=f"file.{subject_id}",
             producer=producer,
-            producer_version="file-registry/1",
-            schema_version=1,
+            producer_version=str(producer_version),
+            schema_version=int(schema_version),
             kind=kind,
             payload=payload,
             evidence_state=custody_state,
-            correlation_ids={
-                "tenant_id": tenant_id,
-                "file_plane_id": subject_id,
-                "declared_evidence_state": evidence_state,
-            },
+            lineage=tuple(str(x) for x in lineage),
+            correlation_ids=correlations,
+            dependencies={str(k): int(v) for k, v in dict(dependencies or {}).items()},
+            meta=dict(meta or {}),
         )
-        self.custody.put_record(tenant_id, record)
-        return record.record_id
+        custody_id = self.custody.put_record(tenant_id, record)
+        if not self.custody.verify(tenant_id, custody_id):
+            raise IntegrityFailure(f"THESEUS failed read-back verification for {record.record_id}")
+        return str(custody_id)
 
     def create_object(
         self,
@@ -474,6 +596,7 @@ class FileRegistry:
         encryption_key_ref: str | None = None,
         compression: str | None = None,
         content_encoding: str = "identity",
+        provenance: Mapping[str, Any] | None = None,
         actor: str | None = None,
     ) -> str:
         self._tenant(tenant_id)
@@ -490,15 +613,30 @@ class FileRegistry:
             ).fetchone()
             if not obj:
                 raise AccessDenied("file object not found in tenant")
-            # Content-addressed dedupe: identical bytes already registered on
-            # this object are the same artifact — return the existing version
-            # rather than forking the chain.
+            prov = self._normalise_provenance(
+                obj,
+                producer=producer,
+                producer_version=producer_version,
+                schema_version=int(schema_version),
+                evidence_state=evidence_state,
+                exactness=exactness,
+                provenance=provenance,
+            )
+            prov_json = _json(prov)
+            prov_digest = _sha(prov_json.encode())
+            # Content bytes may be deduplicated without collapsing semantic
+            # identity. Only the same bytes AND the same provenance are the
+            # same immutable file version.
             same = db.execute(
-                "SELECT file_version_id FROM file_versions WHERE tenant_id=? AND file_object_id=? AND content_sha256=?",
+                "SELECT fv.file_version_id,fp.provenance_sha256 "
+                "FROM file_versions fv LEFT JOIN file_provenance fp "
+                "ON fp.tenant_id=fv.tenant_id AND fp.file_version_id=fv.file_version_id "
+                "WHERE fv.tenant_id=? AND fv.file_object_id=? AND fv.content_sha256=? "
+                "ORDER BY fv.version DESC LIMIT 1",
                 (tenant_id, file_object_id, digest),
             ).fetchone()
-            if same:
-                return str(same[0])
+            if same and same["provenance_sha256"] == prov_digest:
+                return str(same["file_version_id"])
             previous = previous_version_id or obj["current_version_id"]
             if previous:
                 prev = db.execute(
@@ -519,8 +657,23 @@ class FileRegistry:
                 if existing[0] != version_id:
                     raise InvalidRecord("conflicting content under an existing file version")
                 return version_id
+            lineage = list(prov.get("source_ids") or ())
+            if previous:
+                lineage.append(str(previous))
+            if ovid_lineage_id:
+                lineage.append(str(ovid_lineage_id))
             custody_id = self._custody_id(
-                tenant_id, version_id, data, producer, evidence_state, custody_record_id
+                tenant_id,
+                version_id,
+                data,
+                producer,
+                evidence_state,
+                custody_record_id,
+                producer_version=producer_version,
+                schema_version=int(schema_version),
+                lineage=lineage,
+                correlation_ids=prov.get("correlation_ids") or {},
+                meta=prov,
             )
             self.store._reserve(db, tenant_id, 1, len(data), version_id)
             att = self.store._attest(
@@ -565,6 +718,22 @@ class FileRegistry:
                     "ACTIVE",
                     att.id,
                 ),
+            )
+            prov_att = self.store._attest(
+                db,
+                tenant_id,
+                f"file_provenance:{version_id}",
+                actor,
+                {
+                    "file_version_id": version_id,
+                    "provenance_sha256": prov_digest,
+                    "migration_state": "NATIVE_V3",
+                },
+                (),
+            )
+            db.execute(
+                "INSERT INTO file_provenance VALUES(?,?,?,?,?,?)",
+                (tenant_id, version_id, prov_json, prov_digest, prov_att.id, _now()),
             )
             db.execute(
                 "UPDATE file_objects SET current_version_id=?,status='ACTIVE' WHERE tenant_id=? AND file_object_id=?",
@@ -745,6 +914,14 @@ class FileRegistry:
                 evidence_state,
                 custody_record_id,
                 kind="mining_lifecycle",
+                producer_version=str(body.get("software_revision", "")),
+                lineage=parent_ids,
+                correlation_ids={
+                    "tenant_id": tenant_id,
+                    "mining_record_id": record_id,
+                    "kind": kind,
+                },
+                meta={"semantic_owner": producer, "mining_kind": kind},
             )
             db.execute(
                 "INSERT INTO mining_lifecycle VALUES(?,?,?,?,?,?,?,?,?,?)",
@@ -789,6 +966,25 @@ class FileRegistry:
                     errors.append(f"{tid}:{row['file_version_id']}:invalid digest/size")
                 if not row["custody_record_id"]:
                     errors.append(f"{tid}:{row['file_version_id']}:missing custody")
+                elif self.custody is None:
+                    errors.append(f"{tid}:{row['file_version_id']}:custody adapter unavailable")
+                elif not self.custody.verify(tid, row["custody_record_id"]):
+                    errors.append(f"{tid}:{row['file_version_id']}:custody verification failed")
+                prov = self.store._db.execute(
+                    "SELECT * FROM file_provenance WHERE tenant_id=? AND file_version_id=?",
+                    (tid, row["file_version_id"]),
+                ).fetchone()
+                if prov is None:
+                    errors.append(f"{tid}:{row['file_version_id']}:missing provenance")
+                else:
+                    if _sha(prov["provenance_json"].encode()) != prov["provenance_sha256"]:
+                        errors.append(f"{tid}:{row['file_version_id']}:provenance digest mismatch")
+                    try:
+                        self.store.verify_attestation(tid, prov["attestation_id"])
+                    except Exception as exc:
+                        errors.append(
+                            f"{tid}:{row['file_version_id']}:provenance attestation:{exc}"
+                        )
                 if (
                     row["previous_version_id"]
                     and not self.store._db.execute(
@@ -811,6 +1007,12 @@ class FileRegistry:
             for row in self.store._db.execute(
                 "SELECT * FROM mining_lifecycle WHERE tenant_id=?", (tid,)
             ):
+                if not row["custody_record_id"]:
+                    errors.append(f"{tid}:{row['record_id']}:missing mining custody")
+                elif self.custody is None:
+                    errors.append(f"{tid}:{row['record_id']}:mining custody adapter unavailable")
+                elif not self.custody.verify(tid, row["custody_record_id"]):
+                    errors.append(f"{tid}:{row['record_id']}:mining custody verification failed")
                 for parent in json.loads(row["parent_ids_json"]):
                     if not self.store._db.execute(
                         "SELECT 1 FROM mining_lifecycle WHERE tenant_id=? AND record_id=?",
@@ -1005,6 +1207,9 @@ class FileRegistry:
                 ).fetchone()[0],
                 "events": db.execute(
                     "SELECT COUNT(*) FROM file_events WHERE tenant_id=?", (tid,)
+                ).fetchone()[0],
+                "provenance_rows": db.execute(
+                    "SELECT COUNT(*) FROM file_provenance WHERE tenant_id=?", (tid,)
                 ).fetchone()[0],
             }
         return out
@@ -1292,6 +1497,9 @@ class FileRegistry:
         producer: str,
         custody_record_id: str | None = None,
         evidence_state: str = "MEASURED",
+        producer_version: str = "",
+        schema_version: int = 1,
+        provenance: Mapping[str, Any] | None = None,
         links: Sequence[tuple[str, str, str]] = (),
     ) -> tuple[str, str]:
         self._tenant(tenant_id)
@@ -1334,8 +1542,11 @@ class FileRegistry:
                 storage_uri=f"file://{final}",
                 logical_path=str(final),
                 producer=producer,
+                producer_version=producer_version,
+                schema_version=schema_version,
                 evidence_state=evidence_state,
                 custody_record_id=custody_record_id,
+                provenance=provenance,
             )
             with self.store._tx() as db:
                 db.execute(
