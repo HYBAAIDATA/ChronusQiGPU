@@ -188,6 +188,17 @@ class EuclidRuntime:
         self._advance("euclid.discovery", ReachabilityStage.REACHABLE, "organism-startup")
         self.reachability.save(self.state_dir / "cognition_reachability.json")
 
+    def record_held_out_generalisation(self, trials: Any) -> Mapping[str, Any]:
+        """Seal multi-family held-out transfer evidence for status/readiness."""
+        from .cognition.generalisation import evaluate_held_out_generalisation
+
+        report = evaluate_held_out_generalisation(
+            trials,
+            output=self.state_dir / "held_out_generalisation.json",
+        )
+        self.evidence.append("held-out-generalisation", report)
+        return report
+
     def evaluate_discovery_optimisation(self, candidate: Any, verifier: Any) -> Mapping[str, Any]:
         """Evaluate one passed discovery through Salamander's held-out gate.
 
