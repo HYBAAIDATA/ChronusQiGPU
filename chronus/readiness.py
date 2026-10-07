@@ -13,9 +13,12 @@ production evidence.
 """
 from __future__ import annotations
 
+import argparse
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 import importlib
+import json
+from pathlib import Path
 import re
 from typing import Any, Mapping, Sequence
 
@@ -286,6 +289,47 @@ def production_readiness(
     }
 
 
+def main() -> int:
+    """CLI for evidence-bound CHRONUS production-readiness evaluation."""
+
+    parser = argparse.ArgumentParser(
+        description=(
+            "Evaluate standalone CHRONUS readiness separately from optional "
+            "accelerator-lane certifications."
+        )
+    )
+    parser.add_argument(
+        "--evidence",
+        help="JSON file containing CoreProductionEvidence fields",
+    )
+    parser.add_argument(
+        "--accelerators",
+        help="JSON file containing a list of AcceleratorCertification records",
+    )
+    args = parser.parse_args()
+
+    evidence = None
+    if args.evidence:
+        evidence = json.loads(Path(args.evidence).read_text(encoding="utf-8"))
+    accelerator_certifications = ()
+    if args.accelerators:
+        raw = json.loads(Path(args.accelerators).read_text(encoding="utf-8"))
+        if not isinstance(raw, list):
+            raise SystemExit("--accelerators must contain a JSON list")
+        accelerator_certifications = raw
+
+    report = production_readiness(
+        evidence,
+        accelerator_certifications=accelerator_certifications,
+    )
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0 if report["production_ready"] else 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+
 __all__ = [
     "ACCELERATOR_MODE",
     "CORE_MODE",
@@ -295,4 +339,5 @@ __all__ = [
     "Gate",
     "audit_core_surfaces",
     "production_readiness",
+    "main",
 ]
