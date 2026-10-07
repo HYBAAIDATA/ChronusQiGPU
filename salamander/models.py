@@ -182,6 +182,7 @@ class ActionRequest:
     bounds: Mapping[str, Any]
     requires: tuple[str, ...] = ()
     idempotency_key: str = ""
+    actor_id: str = ""
 
 
 @dataclass(frozen=True)
