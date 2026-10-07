@@ -101,3 +101,40 @@ class ALHarasActionAuthorizer:
         result["authority"] = "AL_HARAS"
         result["actor"] = request.actor_id
         return result
+
+
+def build_authorized_control_plane(
+    *,
+    registry: Any,
+    guardian: ALHaras,
+    token_provider: TokenProvider,
+    ledger: Any = None,
+    clock_ns: Callable[[], int] | None = None,
+    max_recoveries_per_target: int = 2,
+    evidence_provider: EvidenceProvider | None = None,
+    operation_prefix: str = "salamander",
+):
+    """Compose the canonical production Salamander actuation boundary.
+
+    This helper exists so production composition roots cannot accidentally
+    instantiate an actuator-capable control plane with authorization omitted.
+    AL HARAS remains the security/governance authority; SALAMANDER remains the
+    healing/optimisation authority.
+    """
+    from .control_plane import AutonomicControlPlane, EvidenceLedger
+
+    kwargs: dict[str, Any] = {
+        "registry": registry,
+        "ledger": ledger or EvidenceLedger(),
+        "max_recoveries_per_target": max_recoveries_per_target,
+        "authorizer": ALHarasActionAuthorizer(
+            guardian,
+            token_provider,
+            evidence_provider=evidence_provider,
+            operation_prefix=operation_prefix,
+        ),
+        "require_authorization": True,
+    }
+    if clock_ns is not None:
+        kwargs["clock_ns"] = clock_ns
+    return AutonomicControlPlane(**kwargs)
