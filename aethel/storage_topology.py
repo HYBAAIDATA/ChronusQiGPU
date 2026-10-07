@@ -296,9 +296,13 @@ class TheseusPhysicalStore:
         return self._path(f"{tenant}/.theseus/address-journal.jsonl", tenant)
 
     @staticmethod
-    def _path_digest_ok(path: Path, digest: str, size: int) -> bool:
+    def _path_digest_ok(path: Path, digest: str, size: int | None = None) -> bool:
         try:
-            return path.is_file() and path.stat().st_size == size and _sha(path.read_bytes()) == digest
+            return (
+                path.is_file()
+                and (size is None or path.stat().st_size == size)
+                and _sha(path.read_bytes()) == digest
+            )
         except OSError:
             return False
 
@@ -384,12 +388,12 @@ class TheseusPhysicalStore:
         primary = self.primary_path(address)
         replica = self.replica_path(address)
         with self._lock:
-            if self._path_digest_ok(primary, address.content_sha256, -1):
+            if self._path_digest_ok(primary, address.content_sha256):
                 data = primary.read_bytes()
                 if verify_storage_address(address, data):
                     return data
 
-            if self._path_digest_ok(replica, address.content_sha256, -1):
+            if self._path_digest_ok(replica, address.content_sha256):
                 data = replica.read_bytes()
                 if not verify_storage_address(address, data):
                     raise StorageTopologyError("replica bytes do not match mathematical address")
