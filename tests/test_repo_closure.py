@@ -80,3 +80,75 @@ def test_generated_reports_are_excluded_from_self_scanning(tmp_path: Path):
     path.parent.mkdir(parents=True)
     path.write_text('{"note":"TODO fake synthetic approximation"}', encoding="utf-8")
     assert list(rc.iter_occurrences(tmp_path, [rel])) == []
+
+
+def test_reviewed_production_hit_can_be_closed_with_evidence(tmp_path: Path):
+    rel = "mining/live.py"
+    path = tmp_path / rel
+    path.parent.mkdir(parents=True)
+    path.write_text("# approximate implementation detail\n", encoding="utf-8")
+
+    first = rc.defect_document(tmp_path, [rel], sha="abc")
+    occurrence = first["occurrences"][0]
+    assert occurrence["status"] == "OPEN"
+
+    register = tmp_path / rc.MANUAL_CLASSIFICATIONS_PATH
+    register.parent.mkdir(parents=True, exist_ok=True)
+    register.write_text(
+        __import__("json").dumps(
+            {
+                "schema_version": 1,
+                "classifications": [
+                    {
+                        "id": occurrence["id"],
+                        "path": occurrence["path"],
+                        "line": occurrence["line"],
+                        "category": occurrence["category"],
+                        "match": occurrence["match"],
+                        "classification": "FALSE_POSITIVE_PROVEN",
+                        "evidence": "review://unit-test",
+                        "reviewer": "qc",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    second = rc.defect_document(tmp_path, [rel], sha="def")
+    reviewed = second["occurrences"][0]
+    assert reviewed["status"] == "CLASSIFIED"
+    assert reviewed["classification"] == "FALSE_POSITIVE_PROVEN"
+    assert reviewed["classification_source"] == "reviewed"
+    assert reviewed["evidence"] == "review://unit-test"
+
+
+def test_stale_manual_classification_fails_closed(tmp_path: Path):
+    rel = "mining/live.py"
+    path = tmp_path / rel
+    path.parent.mkdir(parents=True)
+    path.write_text("# approximate implementation detail\n", encoding="utf-8")
+    first = rc.defect_document(tmp_path, [rel], sha="abc")
+    occurrence = first["occurrences"][0]
+
+    register = tmp_path / rc.MANUAL_CLASSIFICATIONS_PATH
+    register.parent.mkdir(parents=True, exist_ok=True)
+    entry = {
+        "id": occurrence["id"],
+        "path": occurrence["path"],
+        "line": occurrence["line"] + 1,
+        "category": occurrence["category"],
+        "match": occurrence["match"],
+        "classification": "FALSE_POSITIVE_PROVEN",
+        "evidence": "review://unit-test",
+        "reviewer": "qc",
+    }
+    register.write_text(
+        __import__("json").dumps({"schema_version": 1, "classifications": [entry]}),
+        encoding="utf-8",
+    )
+
+    import pytest
+
+    with pytest.raises(RuntimeError, match="stale defect classification"):
+        rc.defect_document(tmp_path, [rel], sha="def")
