@@ -260,8 +260,10 @@ class SearchPlan:
             raise ValueError("generation must be a positive Stratum generation")
         if self.base_step < 0 or self.base_step > 0xFFFFFFFF:
             raise ValueError("base_step must be a valid uint32")
-        if self.window <= 0:
-            raise ValueError("window must be positive")
+        if type(self.window) is not int or self.window <= 0:
+            raise ValueError("window must be a positive integer")
+        if type(self.base_step) is not int or self.base_step + self.window > 1 << 32:
+            raise ValueError("plan lease must remain inside uint32")
         if len(self.lane_order) != _LANES or sorted(self.lane_order) != list(range(_LANES)):
             raise ValueError("lane_order must contain every M32 lane exactly once")
         if not (0 <= self.preferred_face < _LANES):
@@ -284,6 +286,9 @@ class SearchPlan:
         if self.source is PlanSource.AGENTIC_PRECOMPUTED and self.plan_fallback_reason:
             raise ValueError("an agentic plan cannot carry a plan_fallback_reason")
         refs = dict(self.evidence_refs)
+        if "resident_hendrix" in refs:
+            from chronus.resident_hendrix import ImmutableJSONMapping, canonical
+            refs["resident_hendrix"] = ImmutableJSONMapping(canonical(refs["resident_hendrix"]))
         if self.toe_frame_id is not None:
             if not self.toe_frame_id:
                 raise ValueError("toe_frame_id cannot be empty")
@@ -344,6 +349,9 @@ class ExecutionRecord:
     extranonce2: str | None = None
     nonce_start: int | None = None
     recorded_at: float = field(default_factory=time.monotonic)
+    plan_digest: str | None = None
+    resident_execution_digest: str | None = None
+    geometry_digest: str | None = None
     # --- execution provenance (router) -------------------------------------
     # ``device_used`` above is retained for API compatibility. The router
     # populates BOTH: ``requested_route`` is what the plan asked for and

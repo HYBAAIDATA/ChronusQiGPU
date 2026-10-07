@@ -62,6 +62,7 @@ class BackendLane(StrEnum):
     REMOTE_GPU = "remote_gpu"  # remote agent over MLA1517_REMOTE_GPU_ENDPOINT
     ASIC = "asic"
     SUPER_ASIC = "super_asic"
+    ONE_IGPU = "one_igpu"
     CHRONUS = "chronus"  # Virtual iGPU ChronusClient; explicit opt-in, never in auto
 
 
@@ -342,6 +343,32 @@ def _probe_chronus() -> LaneProbe:
         )
 
 
+def _probe_one_igpu() -> LaneProbe:
+    """Standalone product lane; no silent replacement of existing Chronus ABI."""
+    igpu = None
+    try:
+        from chronos_one_igpu import OneIGPU
+        from chronus.one_igpu_mining import ChronusOneIGPUHasher
+        igpu = OneIGPU()
+        hasher = ChronusOneIGPUHasher(igpu)
+        hasher.self_check()
+        hasher.launches = 0
+        return LaneProbe(
+            lane=BackendLane.ONE_IGPU.value, available=True,
+            backend=hasher.backend, device=hasher.device,
+            probed_at=time.time(), reason="ONE iGPU actual ordered SHA256d self-check passed",
+            hasher=hasher,
+        )
+    except Exception as exc:
+        if igpu is not None:
+            igpu.close()
+        return LaneProbe(
+            lane=BackendLane.ONE_IGPU.value, available=False,
+            backend=None, device=None, probed_at=time.time(),
+            reason=f"ONE iGPU probe failed: {type(exc).__name__}: {exc}",
+        )
+
+
 def _probe_asic() -> LaneProbe:
     """ASIC lane: run the real channel probe, not a declaration.
 
@@ -447,6 +474,7 @@ _POLICY_ORDER = {
     "asic": (BackendLane.ASIC,),
     "super_asic": (BackendLane.SUPER_ASIC,),
     "chronus": (BackendLane.CHRONUS,),
+    "one_igpu": (BackendLane.ONE_IGPU,),
 }
 
 
@@ -478,6 +506,7 @@ class BackendRegistry:
             BackendLane.ASIC: _probe_asic,
             BackendLane.SUPER_ASIC: _probe_super_asic,
             BackendLane.CHRONUS: _probe_chronus,
+            BackendLane.ONE_IGPU: _probe_one_igpu,
         }
         self._probed: dict[BackendLane, LaneProbe] = {}
 
