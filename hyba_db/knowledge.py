@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS knowledge_relations(
  attestation_id TEXT NOT NULL,
  created_at TEXT NOT NULL,
  PRIMARY KEY(tenant_id,relation_id),
- UNIQUE(tenant_id,from_knowledge_id,to_knowledge_id,relation_type),
+ UNIQUE(tenant_id,from_knowledge_id,to_knowledge_id,relation_type,producer),
  FOREIGN KEY(tenant_id,from_knowledge_id)
    REFERENCES knowledge_records(tenant_id,knowledge_id),
  FOREIGN KEY(tenant_id,to_knowledge_id)
@@ -547,9 +547,12 @@ class KnowledgeProjection:
                 (tenant_id, kid),
             ).fetchone():
                 raise AccessDenied(f"knowledge relation endpoint not found in tenant: {kid}")
+        relation_producer = str(producer).strip().lower()
+        if not relation_producer:
+            raise InvalidRecord("relation producer is required")
         relation_id = _id(
             "knowledge_relation",
-            f"{tenant_id}:{from_id}:{to_id}:{relation}".encode(),
+            f"{tenant_id}:{from_id}:{to_id}:{relation}:{relation_producer}".encode(),
         )
         existing = self.store._db.execute(
             "SELECT relation_id FROM knowledge_relations "
@@ -568,12 +571,12 @@ class KnowledgeProjection:
                 "from": str(from_id),
                 "to": str(to_id),
                 "relation": relation,
-                "producer": str(producer).strip().lower(),
+                "producer": relation_producer,
             }
         ).encode("utf-8")
         op = OperationalRecord(
             record_id=f"knowledge_relation.{relation_id}",
-            producer=str(producer).strip().lower(),
+            producer=relation_producer,
             producer_version="knowledge-projection/1",
             schema_version=1,
             kind="knowledge_relation",
@@ -596,7 +599,7 @@ class KnowledgeProjection:
                     db,
                     tenant_id,
                     f"knowledge_relation:{relation_id}",
-                    str(producer).strip().lower(),
+                    relation_producer,
                     {
                         "from": str(from_id),
                         "to": str(to_id),
@@ -614,7 +617,7 @@ class KnowledgeProjection:
                         str(from_id),
                         str(to_id),
                         relation,
-                        str(producer).strip().lower(),
+                        relation_producer,
                         custody_id,
                         att.id,
                         store_now(),
@@ -751,9 +754,10 @@ class KnowledgeProjection:
                     f"cannot restore relation {body.get('relation_id')}: endpoint missing"
                 )
             relation = str(body["relation"])
+            relation_producer = str(body.get("producer", "")).strip().lower()
             expected_id = _id(
                 "knowledge_relation",
-                f"{tenant_id}:{from_id}:{to_id}:{relation}".encode(),
+                f"{tenant_id}:{from_id}:{to_id}:{relation}:{relation_producer}".encode(),
             )
             if expected_id != body.get("relation_id"):
                 raise IntegrityFailure("knowledge relation content address mismatch")
