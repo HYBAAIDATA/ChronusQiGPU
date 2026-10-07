@@ -7,11 +7,11 @@ BASE SHA: 306001b0e75862585a3338e9d549726e52773b52
 FINAL SHA: HEAD of repair/D-turing-math (the commit containing this record;
 self-referential by construction — verify with `git rev-parse HEAD`)
 
-OWNED FILE COUNT: 428 tracked files
+OWNED FILE COUNT: 429 tracked files
   (turing_universal_quantum_computer/, quantum_compute_substrate/, kellogg/,
    aethel/, lucas/, tensor/, proofs/, cross_verification/, format/, standard/,
    turing_core.py, STRICT_QUANTUM_BOUNDARY.md)
-FILES INSPECTED: 428 — every owned file swept for stub/mock/synthetic/claim
+FILES INSPECTED: 429 — every owned file swept for stub/mock/synthetic/claim
   patterns; all boundary-critical modules read in full (kellogg attest/scales/
   quantum_tensor, turing custody/pipeline/backends/SPEC, QCS grover/deployment/
   gpu_advances/implications/scaling_study, format/, cross_verification/,
@@ -114,14 +114,18 @@ APPROXIMATIONS CLASSIFIED: matrix_exp_unitary (scaling-and-squaring Taylor,
   target-family scope), Trotter (declared approximate). All correctly
   labelled; none presented as exact.
 
-TESTS ADDED: 1 file / 4 tests (test_lucas_vendor_parity.py)
-NEGATIVE TESTS ADDED: 1 — vendored-parity guard fails on any byte drift of
-  shared exact-algebra modules (mutation-sensitive by construction).
+TESTS ADDED: 2 files / 13 tests (test_lucas_vendor_parity.py x4,
+  test_hendrix_execution_receipts.py x9)
+NEGATIVE TESTS ADDED: 2 — vendored-parity guard fails on any byte drift of
+  shared exact-algebra modules (mutation-sensitive by construction);
+  Hendrix fail-closed suite: oracle failure propagates with no substitution,
+  off-ladder scales refuse before any work, digest is tamper-sensitive.
   Existing negative coverage verified working: attestation tamper checks,
   quantum_device_absent fail-closed, backend boundary refusal.
 MUTATION TESTS SUPPORTED: byte-parity guard detects any mutation of vendored
   lucas vs canonical lucas; kellogg attestation tamper suite detects envelope
-  mutation. Lane participates in repo mutation floors per CI culture.
+  mutation; schedule manifest digest detects parameter mutation. Lane
+  participates in repo mutation floors per CI culture.
 
 TEST COMMANDS:
   python -m pytest turing_universal_quantum_computer/tests -q
@@ -134,11 +138,11 @@ TEST COMMANDS:
   python scripts/verify_pure_quantum_math.py --output
     artifacts/pure-quantum-math/reproduction.json
 RESULTS:
-  - turing_universal_quantum_computer tests: 262 collected, all passed
-    (258 pre-existing + 4 new parity tests)
+  - turing_universal_quantum_computer tests: 271 collected, all passed
+    (258 pre-existing + 4 parity + 9 receipt/fail-closed)
   - quantum_compute_substrate tests: 1,488 collected, all passed (post-fix;
     the pre-fix run had 1 flaky failure = defect #1)
-  - combined lane suite re-run post-fix: 1,750 passed, 0 failed
+  - combined lane suite re-run post-fix: 1,759 passed, 0 failed
   - root tests touching lane (aethel/lucas/kellogg/tensor/cross_verification
     etc.): 1,177 passed; 8 failures, all foreign-lane: 1 stale kellogg test
     (D-002), 6 euclid SyntaxError cascade (D-001), 1 docs claims-gate trip
@@ -151,7 +155,24 @@ RESULTS:
     Q(zeta_8), replay identical digests; evidence at
     artifacts/pure-quantum-math/reproduction.json
 
-CROSS-LANE HANDOFFS: 5 (reports/AGENT_HANDOFFS.json)
+QC ROUND (PR #139 block — algorithm identity on production routes):
+  - requested->planned->executed trace + path-by-path disposition:
+    reports/AGENT_D_ALGORITHM_DISPOSITION.md
+  - Hendrix call-graph proof: zero quantum ops on the mining route; the
+    coprime-stride schedule is a complete disjoint permutation that reduces
+    no work vs enumeration (proven, not claimed — quantum_claim: False
+    already emitted).
+  - execution receipts added: HendrixSchedule.manifest() now emits
+    implementation_module + execution_mode + schedule_digest (canonical
+    sha256); HendrixStructuredSearch.search() emits execution_mode +
+    execution_receipt{receipt_version, implementation_module,
+    execution_mode, fallback_used, evaluated, schedule_digest}.
+  - adversarial fail-closed suite: test_hendrix_execution_receipts.py
+    (9 tests) — oracle failure propagates, off-ladder scale refuses,
+    tamper-sensitive digest, complete disjoint cover, no quantum mode.
+  - residual label defect is in B's adapter metadata -> handoff D-007.
+
+CROSS-LANE HANDOFFS: 7 (reports/AGENT_HANDOFFS.json)
   D-001 -> A (blocking): euclid/__init__.py:48 SyntaxError breaks `import
     euclid`; cascades into aethel/enterprise/production_organism and 6+
     tests.
@@ -165,6 +186,11 @@ CROSS-LANE HANDOFFS: 5 (reports/AGENT_HANDOFFS.json)
     setuptools>=77.
   D-005 -> H (toolchain): exact-vqc needs node>=22.6; proofs/ needs
     Lean/lake.
+  D-006 -> H (blocking): all-red CI outage on repair/* branches (BlobNotFound
+    on every job log); local gate replay is the verification path.
+  D-007 -> B: mining/scaled_execution.py adapter metadata + TOE "quantum"
+    domain records overclaim quantum execution on a classical route; receipt
+    fields for honest propagation now provided by TURING.
 
 UNRESOLVED DEFECTS: none inside lane. Foreign-lane blockers D-001 (euclid
   syntax) and D-004 (kellogg-tensor packaging) gate the integrated voyage
