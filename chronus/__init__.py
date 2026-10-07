@@ -1,9 +1,13 @@
 """Chronus — HYBA's canonical iGPU offering.
 
-Chronus is the heterogeneous execution and acceleration plane (Virtual iGPU):
+Chronus is the software-defined heterogeneous execution and acceleration plane (Virtual iGPU):
 measured device discovery, resident execution, state memory, kernel dispatch,
 telemetry, routing and attestation. TURING remains the independent VQC
 authority, THESEUS owns durable custody and OVID owns representation transforms.
+
+Chronus is one system with two production modes: independent software fabric
+(Chronus is the GPU) or scale-stack execution over an available accelerator.
+A physical GPU is never a prerequisite for independent operation.
 
 Hardware probing stays lazy: importing :mod:`chronus` never requires OpenCL,
 CUDA, Metal or a physical accelerator. Public runtime objects are loaded only
@@ -37,6 +41,10 @@ if TYPE_CHECKING:
     from .tensor_compute import ChronusTensorRuntime, ChronusTensorUnavailable, TensorDeviceProbe
 
 _EXPORTS = {
+    "ChronusMode": ("chronus.production", "ChronusMode"),
+    "ChronusProductionReport": ("chronus.production", "ChronusProductionReport"),
+    "ChronusProductionRuntime": ("chronus.production", "ChronusProductionRuntime"),
+    "verify_startup_report": ("chronus.production", "verify_startup_report"),
     "ChronusSubstrateMiningBridge": (
         "chronus.mining_bridge",
         "ChronusSubstrateMiningBridge",
