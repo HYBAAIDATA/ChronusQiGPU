@@ -617,8 +617,11 @@ class FileRegistry:
         data = bytes(content)
         digest = _sha(data)
         evidence_state = evidence_state.upper()
+        producer = str(producer).strip().lower()
         if evidence_state not in MINING_STATES:
             raise InvalidRecord(f"unknown evidence_state={evidence_state!r}")
+        if not producer:
+            raise InvalidRecord("producer is required")
         actor = actor or producer
         with self.store._tx() as db:
             obj = db.execute(
@@ -676,6 +679,10 @@ class FileRegistry:
                 lineage.append(str(previous))
             if ovid_lineage_id:
                 lineage.append(str(ovid_lineage_id))
+            # Reserve tenant quota before crossing the external THESEUS boundary.
+            # The reservation is transactional and rolls back if custody or any
+            # subsequent database write fails.
+            self.store._reserve(db, tenant_id, 1, len(data), version_id)
             custody_id = self._custody_id(
                 tenant_id,
                 version_id,
@@ -689,7 +696,6 @@ class FileRegistry:
                 correlation_ids=prov.get("correlation_ids") or {},
                 meta=prov,
             )
-            self.store._reserve(db, tenant_id, 1, len(data), version_id)
             att = self.store._attest(
                 db,
                 tenant_id,
@@ -881,6 +887,7 @@ class FileRegistry:
     ) -> str:
         self._tenant(tenant_id)
         kind = str(kind)
+        producer = str(producer).strip().lower()
         evidence_state = str(evidence_state).upper()
         if kind not in MINING_KINDS:
             raise InvalidRecord(f"unknown mining lifecycle kind={kind!r}")
@@ -1476,6 +1483,164 @@ class FileRegistry:
             unresolved=tuple(sorted(set(unresolved_list))),
             generated_at=_now(),
         )
+
+    def recover_blob_from_custody(
+        self,
+        tenant_id: str,
+        file_version_id: str,
+        root: str | Path,
+    ) -> dict[str, Any]:
+        """Recover one missing/corrupt CAS blob from canonical THESEUS custody.
+
+        The database row is a projection and supplies identity/placement only.
+        Recovery trusts the authenticated THESEUS OperationalRecord bytes,
+        verifies their digest/producer/kind against the projection, then writes
+        them atomically to the canonical CAS path under the requested root.
+        """
+        self._tenant(tenant_id)
+        if self.custody is None:
+            raise InvalidRecord("THESEUS custody adapter required for blob recovery")
+        opener = getattr(self.custody, "open_tenant", None)
+        if not callable(opener):
+            raise InvalidRecord("custody adapter does not expose recoverable record bytes")
+
+        row = self.store._db.execute(
+            "SELECT fv.*,fo.file_class FROM file_versions fv "
+            "JOIN file_objects fo "
+            "ON fo.tenant_id=fv.tenant_id AND fo.file_object_id=fv.file_object_id "
+            "WHERE fv.tenant_id=? AND fv.file_version_id=?",
+            (tenant_id, str(file_version_id)),
+        ).fetchone()
+        if row is None:
+            raise AccessDenied("file version not found in tenant")
+        custody_id = str(row["custody_record_id"] or "")
+        if not custody_id:
+            raise IntegrityFailure("file version has no THESEUS custody record")
+
+        op = opener(tenant_id).get_record(custody_id)
+        payload = bytes(op.payload)
+        digest = _sha(payload)
+        if (
+            digest != row["content_sha256"]
+            or len(payload) != int(row["size_bytes"])
+            or op.content_digest != row["content_sha256"]
+            or op.producer != row["producer"]
+            or op.kind != "file_version"
+        ):
+            raise IntegrityFailure(
+                f"THESEUS recovery binding mismatch for {file_version_id}"
+            )
+
+        base = Path(root) / tenant_id / str(row["file_class"]) / digest[:2]
+        base.mkdir(parents=True, exist_ok=True)
+        final = base / digest
+        current_ok = (
+            final.is_file()
+            and final.stat().st_size == len(payload)
+            and _sha(final.read_bytes()) == digest
+        )
+        if not current_ok:
+            fd, temp_name = tempfile.mkstemp(prefix=f".{digest}.", suffix=".tmp", dir=base)
+            try:
+                with os.fdopen(fd, "wb") as handle:
+                    handle.write(payload)
+                    handle.flush()
+                    os.fsync(handle.fileno())
+                os.replace(temp_name, final)
+            except Exception:
+                if os.path.exists(temp_name):
+                    os.unlink(temp_name)
+                raise
+
+        with self.store._tx() as db:
+            db.execute(
+                "UPDATE file_versions SET storage_uri=?,logical_path=?,status='ACTIVE' "
+                "WHERE tenant_id=? AND file_version_id=?",
+                (f"file://{final}", str(final), tenant_id, str(file_version_id)),
+            )
+            self._event(
+                db,
+                tenant_id,
+                str(file_version_id),
+                "RECOVERED",
+                "theseus",
+                {
+                    "custody_record_id": custody_id,
+                    "content_sha256": digest,
+                    "storage_uri": str(final),
+                    "already_healthy": current_ok,
+                },
+            )
+        return {
+            "schema": "hyba.file-blob-recovery/v1",
+            "tenant_id": tenant_id,
+            "file_version_id": str(file_version_id),
+            "custody_record_id": custody_id,
+            "content_sha256": digest,
+            "storage_uri": f"file://{final}",
+            "recovered": not current_ok,
+            "passed": True,
+        }
+
+    def recover_blobs_from_custody(
+        self,
+        tenant_id: str,
+        root: str | Path,
+        *,
+        only_unhealthy: bool = True,
+    ) -> dict[str, Any]:
+        """Recover the tenant's projected file bytes from THESEUS.
+
+        This restores the content plane for existing projection rows. It does
+        not fabricate database rows or semantic links that are absent from the
+        projection.
+        """
+        self._tenant(tenant_id)
+        rows = list(
+            self.store._db.execute(
+                "SELECT fv.file_version_id,fv.storage_uri,fv.content_sha256,fv.size_bytes "
+                "FROM file_versions fv WHERE fv.tenant_id=? ORDER BY fv.created_at,fv.file_version_id",
+                (tenant_id,),
+            )
+        )
+        recovered: list[str] = []
+        healthy: list[str] = []
+        errors: list[str] = []
+        for row in rows:
+            path = (
+                Path(str(row["storage_uri"])[7:])
+                if str(row["storage_uri"]).startswith("file://")
+                else None
+            )
+            is_healthy = bool(
+                path is not None
+                and path.is_file()
+                and path.stat().st_size == int(row["size_bytes"])
+                and _sha(path.read_bytes()) == row["content_sha256"]
+            )
+            if only_unhealthy and is_healthy:
+                healthy.append(str(row["file_version_id"]))
+                continue
+            try:
+                result = self.recover_blob_from_custody(
+                    tenant_id, str(row["file_version_id"]), root
+                )
+                if result["recovered"]:
+                    recovered.append(str(row["file_version_id"]))
+                else:
+                    healthy.append(str(row["file_version_id"]))
+            except Exception as exc:
+                errors.append(
+                    f"{row['file_version_id']}:{type(exc).__name__}:{exc}"
+                )
+        return {
+            "schema": "hyba.file-blob-recovery-batch/v1",
+            "tenant_id": tenant_id,
+            "recovered": tuple(recovered),
+            "healthy": tuple(healthy),
+            "errors": tuple(errors),
+            "passed": not errors,
+        }
 
     def recover_intents(self, tenant_id: str, root: str | Path) -> list[dict[str, str]]:
         """Resolve interrupted writes without fabricating provenance."""
