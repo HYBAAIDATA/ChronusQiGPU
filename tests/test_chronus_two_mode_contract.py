@@ -133,3 +133,26 @@ def test_uncertified_accelerator_never_demotes_standalone_product() -> None:
     assert "physical execution was not observed" in (
         report["modes"][ACCELERATOR_MODE]["lanes"][0]["detail"]
     )
+
+
+def test_convergence_manifest_pins_original_two_mode_design() -> None:
+    import json
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    manifest = json.loads(
+        (root / "chronus" / "CONVERGENCE_MANIFEST.json").read_text(encoding="utf-8")
+    )
+
+    standalone = manifest["product_modes"]["standalone_software"]
+    accelerated = manifest["product_modes"]["accelerator_enhanced"]
+
+    assert standalone["physical_gpu_required"] is False
+    assert standalone["status"] == "implemented"
+    assert accelerated["physical_gpu_required"] is True
+    assert "physical GPU required for CHRONUS core availability" in manifest[
+        "prohibited_regressions"
+    ]
+    assert manifest["capabilities"]["m32_manifold_and_qsdl"]["status"] == "implemented"
+    assert manifest["capabilities"]["lucas_pisot_scale_contract"]["status"] == "implemented"
+    assert manifest["capabilities"]["pythia_mining_execution"]["status"] == "implemented"
