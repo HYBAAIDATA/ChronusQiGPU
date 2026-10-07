@@ -1,0 +1,303 @@
+=== TOTAL: 294 ===
+
+--- IN chronus/v33/ (0) ---
+
+--- IN chronus/virtual_igpu/ (0) ---
+
+--- IN chronus/ ROOT MODULES (0) ---
+
+--- CROSS-REPO (294) ---
+  aethel/enterprise_bridge.py:244 | "chronus.virtual_igpu",
+  chronos/__init__.py:1 | """Deprecated compatibility facade: ``chronos`` → ``chronus.v33``.
+  chronos/__init__.py:5 | ``chronus.v33`` (v3.3 — memory, EMP, theory, control, graphics, …).
+  chronos/__init__.py:14 | virtual_igpu, scale law, MLA1517. Chronos maths live under ``chronus.v33``.
+  chronos/__init__.py:27 | "Import from 'chronus.v33' (Chronos GPU v3.3) or use the Chronus iGPU "
+  chronos/__init__.py:33 | # --- submodule aliases: chronos.<name> → chronus.v33.<name> -----------------
+  chronos/__init__.py:63 | mod = importlib.import_module(f"chronus.v33.{name}")
+  chronos/__init__.py:72 | from chronus.v33 import *  # noqa: E402,F401,F403
+  chronos/__init__.py:73 | from chronus.v33 import __all__ as _V33_ALL  # noqa: E402
+  chronus/client.py:10 | from .virtual_igpu.abi import DeliveryMode
+  chronus/client.py:11 | from .virtual_igpu.client import ChronusClient
+  chronus/delivery.py:4 | (:class:`chronus.virtual_igpu.abi.DeliveryMode`):
+  chronus/delivery.py:24 | from .virtual_igpu.abi import DeliveryMode, ExecutionPolicy, ProductMode
+  chronus/delivery.py:116 | from .virtual_igpu.adapters import CPUEmulatorAdapter
+  chronus/delivery.py:122 | evidence.append("chronus.virtual_igpu.adapters.CPUEmulatorAdapter")
+  chronus/gpu_capabilities.py:543 | "owner": "chronus.v33.memory + chronus.gpu_capabilities",
+  chronus/gpu_capabilities.py:560 | "owner": "kellogg + chronus.v33.compression",
+  chronus/hyba_offering.py:72 | from chronus.virtual_igpu.abi import ABI_VERSION as V, ExecutionPolicy, Workload, WorkloadKind
+  chronus/hyba_offering.py:73 | from chronus.virtual_igpu.adapters import CPUEmulatorAdapter
+  chronus/hyba_offering.py:74 | from chronus.virtual_igpu.runtime import RuntimeDaemon
+  chronus/mining_bridge.py:159 | from chronus.virtual_igpu import ChronusClient
+  chronus/mining_bridge.py:160 | from chronus.virtual_igpu.abi import DeliveryMode, Workload, WorkloadKind
+  chronus/mining_bridge.py:259 | from chronus.virtual_igpu.host_verify import CandidateVerificationError, verify_hits
+  chronus/readiness.py:26 | from .virtual_igpu.abi import ExecutionPolicy, ProductMode
+  chronus/readiness.py:91 | "chronus.virtual_igpu",
+  chronus/readiness.py:95 | "chronus.v33",
+  chronus/tensor_compute.py:19 | from .virtual_igpu.capabilities import DeviceLimits, KernelLimits, legal_local_size
+  chronus/__init__.py:98 | "ChronusProductMode": ("chronus.virtual_igpu.abi", "ProductMode"),
+  chronus/__init__.py:100 | "chronus.virtual_igpu.abi",
+  experiments/run_quantum_research_registry.py:16 | from chronus.v33.research_registry import CASES, validate_registry
+  scripts/chronus_capability_probe.py:38 | from chronus.virtual_igpu.abi import (  # noqa: E402
+  scripts/chronus_capability_probe.py:44 | from chronus.virtual_igpu.adapters import CPUEmulatorAdapter  # noqa: E402
+  scripts/chronus_capability_probe.py:45 | from chronus.virtual_igpu.client import ChronusClient  # noqa: E402
+  scripts/chronus_capability_probe.py:46 | from chronus.virtual_igpu.evidence import validate_receipt  # noqa: E402
+  scripts/chronus_capability_probe.py:47 | from chronus.virtual_igpu.mining_hasher import ChronusVirtualIGPUHasher  # noqa: E402
+  scripts/chronus_capability_probe.py:48 | from chronus.virtual_igpu.runtime import RuntimeDaemon  # noqa: E402
+  scripts/chronus_first_workload.py:43 | from chronus.virtual_igpu.abi import (  # noqa: E402
+  scripts/chronus_first_workload.py:48 | from chronus.virtual_igpu.evidence import validate_receipt  # noqa: E402
+  scripts/chronus_first_workload.py:49 | from chronus.virtual_igpu.runtime import RuntimeDaemon  # noqa: E402
+  scripts/chronus_production_gate.py:165 | "from chronus.virtual_igpu import RuntimeDaemon, CPUEmulatorAdapter; "
+  scripts/chronus_wheel_acceptance.py:9 | from chronus.virtual_igpu import ChronusClient
+  scripts/chronus_wheel_acceptance.py:10 | from chronus.virtual_igpu.abi import Workload, WorkloadKind, ExecutionPolicy
+  scripts/chronus_wheel_acceptance.py:11 | from chronus.virtual_igpu.evidence import validate_receipt
+  scripts/chronus_wheel_acceptance.py:12 | from chronus.virtual_igpu.mining_hasher import ChronusVirtualIGPUHasher
+  scripts/import_audit.py:128 | time — facade/alias packages (e.g. ``chronos`` → ``chronus.v33``) whose
+  scripts/regen_july_manifest.py:142 | "chronus.v33.academic",
+  scripts/regen_july_manifest.py:144 | "chronus.v33.academic:AcademicChronosEngine",
+  scripts/regen_july_manifest.py:168 | "chronus.v33.memory",
+  scripts/regen_july_manifest.py:170 | "chronus.v33.memory:MemoryHierarchy",
+  scripts/regen_july_manifest.py:191 | "chronus.v33.compression",
+  scripts/regen_july_manifest.py:193 | "chronus.v33.compression:run_tebd",
+  scripts/regen_july_manifest.py:215 | "chronus.v33.control",
+  scripts/regen_july_manifest.py:217 | "chronus.v33.control:ClosedLoopController",
+  scripts/regen_july_manifest.py:238 | "chronus.v33.environment",
+  scripts/regen_july_manifest.py:240 | "chronus.v33.environment:CryogenicEnvironment",
+  scripts/regen_july_manifest.py:261 | "chronus.v33.fields",
+  scripts/regen_july_manifest.py:263 | "chronus.v33.fields:CoherentLaser",
+  scripts/regen_july_manifest.py:288 | "chronus.v33",
+  scripts/regen_july_manifest.py:290 | "chronus.v33:ChronosEngine",
+  scripts/regen_july_manifest.py:312 | "chronus.v33",
+  scripts/regen_july_manifest.py:314 | "chronus.v33:QSDLCompiler",
+  scripts/regen_july_manifest.py:337 | "chronus.v33",
+  scripts/regen_july_manifest.py:339 | "chronus.v33:WeakMeasurementSession",
+  scripts/regen_july_manifest.py:365 | "chronus.v33.theory",
+  scripts/regen_july_manifest.py:367 | "chronus.v33.theory:run_unbuilt_maths",
+  scripts/regen_july_manifest.py:557 | "chronus.v33",
+  scripts/regen_july_manifest.py:559 | "chronus.v33.test_harness.ChronosTestHarness",
+  scripts/regen_july_manifest.py:582 | "chronus.v33.memory",
+  scripts/regen_july_manifest.py:584 | "chronus.v33.memory.run_memory_self_tests",
+  tests/test_chronos_capability_surface.py:8 | from chronus.v33 import audit_capability_surface, load_capability_manifest
+  tests/test_chronos_capability_surface.py:33 | "chronus.v33",
+  tests/test_chronos_capability_surface.py:34 | "chronus.v33.academic",
+  tests/test_chronos_capability_surface.py:35 | "chronus.v33.compression",
+  tests/test_chronos_capability_surface.py:36 | "chronus.v33.control",
+  tests/test_chronos_capability_surface.py:37 | "chronus.v33.environment",
+  tests/test_chronos_capability_surface.py:38 | "chronus.v33.fields",
+  tests/test_chronos_capability_surface.py:39 | "chronus.v33.graphics",
+  tests/test_chronos_capability_surface.py:40 | "chronus.v33.memory",
+  tests/test_chronos_capability_surface.py:41 | "chronus.v33.theory",
+  tests/test_chronos_capability_surface.py:42 | "chronus.v33.benchmarks",
+  tests/test_chronos_capability_surface.py:43 | "chronus.v33.examples",
+  tests/test_chronos_capability_surface.py:46 | assert "CAPABILITY_MANIFEST.json" in package_data["chronus.v33"]
+  tests/test_chronos_capability_surface.py:47 | assert "docs/*.md" in package_data["chronus.v33"]
+  tests/test_chronos_capability_surface.py:48 | assert "benchmarks/*.json" in package_data["chronus.v33"]
+  tests/test_chronos_facade.py:1 | """Smoke tests for the deprecated chronos → chronus.v33 compatibility facade."""
+  tests/test_chronos_facade.py:23 | from chronus.v33 import ChronosEngine as V33Engine
+  tests/test_chronos_facade.py:24 | from chronus.v33 import M32Manifold as V33Manifold
+  tests/test_chronos_facade.py:35 | from chronus.v33.academic import (
+  tests/test_chronos_facade.py:48 | from chronus.v33.engine import ChronosEngine as V33Engine
+  tests/test_chronos_facade.py:79 | from chronus.v33 import ChronosEngine
+  tests/test_chronos_v33_real_workloads.py:14 | from chronus.v33.engine import ChronosEngine
+  tests/test_chronos_v33_real_workloads.py:15 | from chronus.v33.qsdl_compiler import QSDLCompiler, ManifoldConfig
+  tests/test_chronos_v33_real_workloads.py:16 | from chronus.v33.reconstruction import (
+  tests/test_chronos_v33_real_workloads.py:24 | from chronus.v33.benchmarks import claims as claim_mod
+  tests/test_chronos_v33_real_workloads.py:25 | from chronus.v33.benchmarks import protocol
+  tests/test_chronos_v33_real_workloads.py:26 | from chronus.v33.benchmarks import real_workloads as rw
+  tests/test_chronos_v33_render_elevation.py:32 | from chronus.v33.evolution_engine import EvolutionEngine
+  tests/test_chronos_v33_render_elevation.py:33 | from chronus.v33.gpu_render import (
+  tests/test_chronos_v33_render_elevation.py:40 | from chronus.v33.hamiltonian import HamiltonianLibrary
+  tests/test_chronos_v33_render_elevation.py:41 | from chronus.v33.reconstruction import ReconstructionEngine, sample_offsets
+  tests/test_chronos_v33_render_elevation.py:279 | from chronus.v33.engine import ChronosEngine
+  tests/test_chronus_delivery.py:12 | from chronus.virtual_igpu import ProductMode
+  tests/test_chronus_first_workload.py:69 | from chronus.virtual_igpu.memory import VirtualMemoryPlane
+  tests/test_chronus_first_workload.py:78 | from chronus.virtual_igpu.memory import VirtualMemoryPlane
+  tests/test_chronus_first_workload.py:89 | from chronus.virtual_igpu.abi import ExecutionPolicy, Workload, WorkloadKind
+  tests/test_chronus_first_workload.py:90 | from chronus.virtual_igpu.runtime import RuntimeDaemon
+  tests/test_chronus_hardware_rooted_adversarial.py:22 | from chronus.virtual_igpu.abi import (
+  tests/test_chronus_hardware_rooted_adversarial.py:33 | from chronus.virtual_igpu.adapters import Adapter
+  tests/test_chronus_hardware_rooted_adversarial.py:34 | from chronus.virtual_igpu.attestation import extend_chain
+  tests/test_chronus_hardware_rooted_adversarial.py:35 | from chronus.virtual_igpu.runtime import RuntimeDaemon
+  tests/test_chronus_namespace.py:37 | # forbidden, while the live ``chronus.virtual_igpu`` module (a different,
+  tests/test_chronus_portable_substrate.py:7 | from chronus.virtual_igpu.abi import Workload, WorkloadKind
+  tests/test_chronus_portable_substrate.py:8 | from chronus.virtual_igpu.capabilities import (
+  tests/test_chronus_portable_substrate.py:13 | from chronus.virtual_igpu.evidence import EvidenceLedger
+  tests/test_chronus_portable_substrate.py:14 | from chronus.virtual_igpu.optimizer import ActionClass, ClosedLoopOptimizer
+  tests/test_chronus_portable_substrate.py:15 | from chronus.virtual_igpu.planner import (
+  tests/test_chronus_production_readiness_fixes.py:9 | from chronus.virtual_igpu.abi import (
+  tests/test_chronus_production_readiness_fixes.py:14 | from chronus.virtual_igpu.adapters import (
+  tests/test_chronus_production_readiness_fixes.py:18 | from chronus.virtual_igpu.client import ChronusClientError, ChronusClient
+  tests/test_chronus_production_readiness_fixes.py:19 | from chronus.virtual_igpu.evidence import EvidenceLedger, validate_receipt
+  tests/test_chronus_production_readiness_fixes.py:20 | from chronus.virtual_igpu.memory import VirtualMemoryPlane
+  tests/test_chronus_production_readiness_fixes.py:21 | from chronus.virtual_igpu.runtime import RuntimeDaemon
+  tests/test_chronus_production_route.py:28 | from chronus.virtual_igpu.adapters import CPUEmulatorAdapter
+  tests/test_chronus_production_route.py:29 | from chronus.virtual_igpu.client import ChronusClient
+  tests/test_chronus_production_route.py:30 | from chronus.virtual_igpu.mining_hasher import ChronusVirtualIGPUHasher
+  tests/test_chronus_production_route.py:31 | from chronus.virtual_igpu.runtime import RuntimeDaemon
+  tests/test_chronus_runtime_lifecycle.py:15 | from chronus.virtual_igpu.abi import (
+  tests/test_chronus_runtime_lifecycle.py:25 | from chronus.virtual_igpu.adapters import Adapter, AdapterUnavailable, CPUEmulatorAdapter
+  tests/test_chronus_runtime_lifecycle.py:26 | from chronus.virtual_igpu.attestation import extend_chain
+  tests/test_chronus_runtime_lifecycle.py:27 | from chronus.virtual_igpu.runtime import Quota, RuntimeDaemon, RuntimeInvariantError
+  tests/test_chronus_theseus_restart_contract.py:14 | from chronus.virtual_igpu.abi import ExecutionPolicy, Workload, WorkloadKind
+  tests/test_chronus_theseus_restart_contract.py:15 | from chronus.virtual_igpu.adapters import CPUEmulatorAdapter
+  tests/test_chronus_theseus_restart_contract.py:16 | from chronus.virtual_igpu.runtime import CustodyError, RuntimeDaemon
+  tests/test_chronus_two_mode_contract.py:3 | from chronus.virtual_igpu import ProductMode, execution_policy_for_product_mode
+  tests/test_chronus_vigpu_acceptance.py:18 | from chronus.virtual_igpu.abi import (
+  tests/test_chronus_vigpu_acceptance.py:25 | from chronus.virtual_igpu.adapters import CPUEmulatorAdapter, AdapterUnavailable
+  tests/test_chronus_vigpu_acceptance.py:26 | from chronus.virtual_igpu.client import ChronusClient, ChronusClientError
+  tests/test_chronus_vigpu_acceptance.py:27 | from chronus.virtual_igpu.evidence import validate_receipt
+  tests/test_chronus_vigpu_acceptance.py:28 | from chronus.virtual_igpu.runtime import RuntimeDaemon, RuntimeInvariantError
+  tests/test_chronus_vigpu_acceptance.py:196 | from chronus.virtual_igpu.abi import digest_json
+  tests/test_chronus_vigpu_fail_closed_contract.py:14 | from chronus.virtual_igpu.abi import ExecutionPolicy, Workload, WorkloadKind
+  tests/test_chronus_vigpu_fail_closed_contract.py:15 | from chronus.virtual_igpu.adapters import AdapterUnavailable, CPUEmulatorAdapter
+  tests/test_chronus_vigpu_fail_closed_contract.py:16 | from chronus.virtual_igpu.client import ChronusClient, ChronusClientError
+  tests/test_chronus_vigpu_fail_closed_contract.py:17 | from chronus.virtual_igpu.evidence import BINDABLE_RECEIPT_FIELDS, EvidenceLedger, validate_receipt
+  tests/test_chronus_vigpu_fail_closed_contract.py:18 | from chronus.virtual_igpu.memory import VirtualMemoryPlane
+  tests/test_chronus_vigpu_fail_closed_contract.py:19 | from chronus.virtual_igpu.runtime import AdmissionDenied, RuntimeDaemon, RuntimeInvariantError
+  tests/test_chronus_vigpu_fail_closed_contract.py:20 | from chronus.virtual_igpu.wire import serve
+  tests/test_chronus_vigpu_fail_closed_contract.py:131 | import chronus.virtual_igpu.client as client_mod
+  tests/test_chronus_vigpu_fail_closed_contract.py:147 | import chronus.virtual_igpu.client as client_mod
+  tests/test_chronus_vigpu_sha256d_contract.py:9 | from chronus.virtual_igpu.abi import ExecutionPolicy, Workload, WorkloadKind
+  tests/test_chronus_vigpu_sha256d_contract.py:10 | from chronus.virtual_igpu.adapters import AdapterUnavailable, CPUEmulatorAdapter
+  tests/test_chronus_vigpu_sha256d_contract.py:11 | from chronus.virtual_igpu.runtime import RuntimeDaemon
+  tests/test_chronus_vigpu_sha256d_contract.py:119 | from chronus.virtual_igpu.host_verify import CandidateVerificationError, verify_candidate
+  tests/test_chronus_vigpu_tensor_verification.py:15 | from chronus.virtual_igpu import verifier
+  tests/test_chronus_vigpu_tensor_verification.py:16 | from chronus.virtual_igpu.abi import ExecutionPolicy, Workload, WorkloadKind
+  tests/test_chronus_vigpu_tensor_verification.py:17 | from chronus.virtual_igpu.adapters import CPUEmulatorAdapter
+  tests/test_chronus_vigpu_tensor_verification.py:18 | from chronus.virtual_igpu.runtime import RuntimeDaemon
+  tests/test_chronus_vigpu_verification.py:18 | from chronus.virtual_igpu.abi import (
+  tests/test_chronus_vigpu_verification.py:23 | from chronus.virtual_igpu.adapters import CPUEmulatorAdapter
+  tests/test_chronus_vigpu_verification.py:24 | from chronus.virtual_igpu.runtime import RuntimeDaemon
+  tests/test_chronus_vigpu_verification.py:25 | from chronus.virtual_igpu.verifier import (
+  tests/test_chronus_vigpu_verification.py:301 | from chronus.virtual_igpu.adapters import AdapterUnavailable
+  tests/test_hyba_gpu_offering.py:11 | from chronus.virtual_igpu.abi import ExecutionPolicy, TrustClass, Workload, WorkloadKind
+  tests/test_hyba_gpu_offering.py:12 | from chronus.virtual_igpu.adapters import CPUEmulatorAdapter
+  tests/test_hyba_gpu_offering.py:13 | from chronus.virtual_igpu.runtime import RuntimeDaemon
+  tests/test_hyba_prodrc_integration.py:26 | from chronus.virtual_igpu.abi import ExecutionPolicy, Workload, WorkloadKind
+  tests/test_hyba_prodrc_integration.py:27 | from chronus.virtual_igpu.adapters import CPUEmulatorAdapter
+  tests/test_hyba_prodrc_integration.py:28 | from chronus.virtual_igpu.runtime import RuntimeDaemon
+  tests/test_july_chronos_mapping.py:2 | the canonical ``chronus.v33`` consolidation.
+  tests/test_july_chronos_mapping.py:13 | import chronus.v33 as v33
+  tests/test_july_chronos_mapping.py:14 | from chronus.v33.academic import AcademicChronosEngine
+  tests/test_july_chronos_mapping.py:15 | from chronus.v33.compression import LargeHilbertSpace, run_tebd
+  tests/test_july_chronos_mapping.py:16 | from chronus.v33.compression.tebd import tebd_step
+  tests/test_july_chronos_mapping.py:17 | from chronus.v33.control import ClosedLoopController, Pulse, QuantumController
+  tests/test_july_chronos_mapping.py:18 | from chronus.v33.environment import (
+  tests/test_july_chronos_mapping.py:24 | from chronus.v33.fields import (
+  tests/test_july_chronos_mapping.py:31 | from chronus.v33.memory import MemoryHierarchy, run_memory_self_tests
+  tests/test_july_chronos_mapping.py:32 | from chronus.v33.theory import run_unbuilt_maths, self_test_all
+  tests/test_july_chronos_mapping.py:49 | import chronus.v33.academic as academic
+  tests/test_mining_workflow.py:157 | from chronus.virtual_igpu.evidence import EvidenceLedger
+  tests/test_virtual_igpu.py:7 | from chronus.virtual_igpu.abi import ABI_VERSION, Workload, WorkloadKind
+  tests/test_virtual_igpu.py:8 | from chronus.virtual_igpu.adapters import CPUEmulatorAdapter
+  tests/test_virtual_igpu.py:9 | from chronus.virtual_igpu.attestation import replay, verify
+  tests/test_virtual_igpu.py:10 | from chronus.virtual_igpu.runtime import (
+  chronos/academic/__init__.py:1 | """Deprecated facade: ``chronos.academic`` → ``chronus.v33.academic``.
+  chronos/academic/__init__.py:12 | from chronus.v33.academic import *  # noqa: F401,F403
+  chronos/academic/__init__.py:13 | from chronus.v33.academic import __all__ as _ACADEMIC_ALL
+  chronos/academic/__init__.py:31 | _mod = importlib.import_module(f"chronus.v33.academic.{_name}")
+  chronus/paradigm/conformance.py:23 | from chronus.virtual_igpu.abi import (
+  chronus/paradigm/conformance.py:30 | from chronus.virtual_igpu.adapters import AdapterUnavailable, CPUEmulatorAdapter
+  chronus/paradigm/conformance.py:31 | from chronus.virtual_igpu.attestation import replay, verify
+  chronus/paradigm/conformance.py:32 | from chronus.virtual_igpu.evidence import EvidenceLedger, validate_receipt
+  chronus/paradigm/conformance.py:33 | from chronus.virtual_igpu.runtime import RuntimeDaemon, RuntimeInvariantError
+  chronus/paradigm/honesty.py:13 | from chronus.virtual_igpu.abi import (
+  chronus/paradigm/honesty.py:21 | from chronus.virtual_igpu.adapters import Adapter, AdapterUnavailable, CPUEmulatorAdapter
+  chronus/paradigm/honesty.py:22 | from chronus.virtual_igpu.attestation import replay, verify
+  chronus/paradigm/honesty.py:23 | from chronus.virtual_igpu.evidence import EvidenceLedger
+  chronus/paradigm/honesty.py:24 | from chronus.virtual_igpu.runtime import RuntimeDaemon, RuntimeInvariantError, Quota
+  chronus/paradigm/honesty.py:57 | kind = __import__("chronus.virtual_igpu.abi", fromlist=["AdapterKind"]).AdapterKind.OPENCL
+  chronus/paradigm/honesty.py:62 | from chronus.virtual_igpu.abi import AdapterAttestation
+  chronus/paradigm/honesty.py:76 | from chronus.virtual_igpu.abi import CapabilityManifest
+  chronus/seam/workflow.py:31 | from chronus.virtual_igpu.evidence import EvidenceLedger
+  chronus/v33/capability_audit.py:28 | text = resources.files("chronus.v33").joinpath("CAPABILITY_MANIFEST.json").read_text(
+  chronus/v33/capability_audit.py:40 | return "chronus.v33"
+  chronus/v33/capability_audit.py:43 | return f"chronus.v33.{path}"
+  chronus/v33/research_registry.py:11 | ``chronus.v33`` implementations.
+  chronus/v33/research_registry.py:51 | implementation="chronus.v33.academic.nist.NIST_Benchmark",
+  chronus/v33/research_registry.py:60 | implementation="chronus.v33.academic.caltech.Caltech_Surface_Code",
+  chronus/v33/research_registry.py:69 | implementation="chronus.v33.academic.tensor_compression.MatrixProductState",
+  chronus/v33/research_registry.py:78 | implementation="chronus.v33.memory.qsvt_from_block_enc",
+  chronus/virtual_igpu/attestation.py:10 | DOMAIN = b"chronus.virtual_igpu.attestation.v1"
+  chronus/virtual_igpu/runtime.py:159 | self.runtime_identity = runtime_identity or f"chronus.virtual_igpu:{ABI_VERSION}"
+  chronus/virtual_igpu/__init__.py:8 | "ABI_VERSION": ("chronus.virtual_igpu.abi", "ABI_VERSION"),
+  chronus/virtual_igpu/__init__.py:9 | "Workload": ("chronus.virtual_igpu.abi", "Workload"),
+  chronus/virtual_igpu/__init__.py:10 | "WorkloadKind": ("chronus.virtual_igpu.abi", "WorkloadKind"),
+  chronus/virtual_igpu/__init__.py:11 | "WorkloadResult": ("chronus.virtual_igpu.abi", "WorkloadResult"),
+  chronus/virtual_igpu/__init__.py:12 | "ProductMode": ("chronus.virtual_igpu.abi", "ProductMode"),
+  chronus/virtual_igpu/__init__.py:13 | "ExecutionPolicy": ("chronus.virtual_igpu.abi", "ExecutionPolicy"),
+  chronus/virtual_igpu/__init__.py:15 | "chronus.virtual_igpu.abi",
+  chronus/virtual_igpu/__init__.py:18 | "DeliveryMode": ("chronus.virtual_igpu.abi", "DeliveryMode"),
+  chronus/virtual_igpu/__init__.py:19 | "TrustClass": ("chronus.virtual_igpu.abi", "TrustClass"),
+  chronus/virtual_igpu/__init__.py:20 | "RuntimeState": ("chronus.virtual_igpu.abi", "RuntimeState"),
+  chronus/virtual_igpu/__init__.py:21 | "ExecutionReceipt": ("chronus.virtual_igpu.abi", "ExecutionReceipt"),
+  chronus/virtual_igpu/__init__.py:22 | "PortablePackage": ("chronus.virtual_igpu.abi", "PortablePackage"),
+  chronus/virtual_igpu/__init__.py:23 | "CapabilityManifest": ("chronus.virtual_igpu.abi", "CapabilityManifest"),
+  chronus/virtual_igpu/__init__.py:24 | "ChronusClient": ("chronus.virtual_igpu.client", "ChronusClient"),
+  chronus/virtual_igpu/__init__.py:25 | "RuntimeDaemon": ("chronus.virtual_igpu.runtime", "RuntimeDaemon"),
+  chronus/virtual_igpu/__init__.py:26 | "EvidenceLedger": ("chronus.virtual_igpu.evidence", "EvidenceLedger"),
+  chronus/virtual_igpu/__init__.py:27 | "validate_receipt": ("chronus.virtual_igpu.evidence", "validate_receipt"),
+  chronus/virtual_igpu/__init__.py:28 | "default_adapters": ("chronus.virtual_igpu.adapters", "default_adapters"),
+  chronus/virtual_igpu/__init__.py:30 | "chronus.virtual_igpu.verifier",
+  chronus/virtual_igpu/__init__.py:33 | "CPUEmulatorAdapter": ("chronus.virtual_igpu.adapters", "CPUEmulatorAdapter"),
+  chronus/virtual_igpu/__init__.py:34 | "AdapterUnavailable": ("chronus.virtual_igpu.adapters", "AdapterUnavailable"),
+  chronus/mla1517/mining/backend_registry.py:313 | from chronus.virtual_igpu.mining_hasher import ChronusVirtualIGPUHasher
+  chronus/mla1517/mining/hyba_intelligence.py:93 | table = _load_symbol(("chronus.v33.memory.table",), "Table")
+  chronus/mla1517_platform/python/test_chronus_vigpu_production_route.py:15 | from chronus.virtual_igpu.adapters import CPUEmulatorAdapter
+  chronus/mla1517_platform/python/test_chronus_vigpu_production_route.py:16 | from chronus.virtual_igpu.client import ChronusClient
+  chronus/mla1517_platform/python/test_chronus_vigpu_production_route.py:17 | from chronus.virtual_igpu.mining_hasher import ChronusVirtualIGPUHasher
+  chronus/mla1517_platform/python/test_chronus_vigpu_production_route.py:18 | from chronus.virtual_igpu.runtime import RuntimeDaemon
+  chronus/v33/benchmarks/claims.py:26 | #   python -m chronus.v33.benchmarks.claims
+  chronus/v33/benchmarks/claims.py:35 | from chronus.v33.benchmarks.protocol import PROTOCOL_VERSION
+  chronus/v33/benchmarks/real_workloads.py:15 | #   python -m chronus.v33.benchmarks.real_workloads
+  chronus/v33/benchmarks/real_workloads.py:22 | from chronus.v33.engine import ChronosEngine
+  chronus/v33/benchmarks/real_workloads.py:23 | from chronus.v33.benchmarks.protocol import (
+  chronus/v33/benchmarks/render_elevation.py:13 | #       python -m chronus.v33.benchmarks.render_elevation
+  chronus/v33/benchmarks/render_elevation.py:25 | from chronus.v33.evolution_engine import EvolutionEngine
+  chronus/v33/benchmarks/render_elevation.py:26 | from chronus.v33.gpu_render import probe_cupy
+  chronus/v33/benchmarks/render_elevation.py:27 | from chronus.v33.hamiltonian import HamiltonianLibrary
+  chronus/v33/benchmarks/render_elevation.py:28 | from chronus.v33.reconstruction import ReconstructionEngine
+  chronus/v33/benchmarks/run_benchmarks.py:2 | # Promoted beside chronus.v33 (active home). Historical results.json is sandbox Linux host evidence - re-run for local wall times.
+  chronus/v33/benchmarks/run_benchmarks.py:6 | #   python -m chronus.v33.benchmarks.run_benchmarks
+  chronus/v33/benchmarks/run_benchmarks.py:19 | from chronus.v33.engine import ChronosEngine
+  chronus/v33/benchmarks/run_benchmarks.py:20 | from chronus.v33.manifold import M32Manifold
+  chronus/v33/benchmarks/run_benchmarks.py:21 | from chronus.v33.qsdl_compiler import QSDLCompiler, ManifoldConfig
+  chronus/v33/benchmarks/run_benchmarks.py:22 | from chronus.v33.qsdl_parser import parse_qsdl
+  chronus/v33/benchmarks/run_benchmarks.py:23 | from chronus.v33.theory.report import self_test_all, run_unbuilt_maths
+  chronus/v33/benchmarks/run_benchmarks.py:24 | from chronus.v33.theory.superconductivity import bcs_gap_self_consistent, K_B
+  chronus/v33/benchmarks/run_benchmarks.py:25 | from chronus.v33.academic.report import run_academic_enhancements
+  chronus/v33/benchmarks/run_benchmarks.py:26 | from chronus.v33.phi_scaling import run_phi_power_scaling_benchmark, phi_power_exact
+  chronus/v33/benchmarks/run_benchmarks.py:27 | from chronus.v33.benchmarks.render_elevation import main as run_render_elevation
+  chronus/v33/benchmarks/run_benchmarks.py:28 | from chronus.v33.benchmarks.protocol import PROTOCOL_VERSION, SCHEMA_NAME, capture_environment
+  chronus/v33/benchmarks/run_benchmarks.py:29 | from chronus.v33.benchmarks import claims as claim_ledger
+  chronus/v33/benchmarks/__init__.py:1 | """Chronos GPU v3.3 benchmarks package (promoted beside chronus.v33)."""
+  chronus/v33/examples/demo.py:1 | from chronus.v33 import ChronosEngine
+  chronus/v33/examples/memory_integration.py:30 | from chronus.v33 import ChronosEngine, __version__
+  chronus/v33/examples/memory_integration.py:31 | from chronus.v33.memory import (
+  chronus/v33/examples/memory_integration.py:156 | from chronus.v33.memory.block_encode import BlockEnc
+  chronus/v33/examples/__init__.py:1 | """Chronos GPU v3.3 examples (promoted beside chronus.v33)."""
+  tests/test_chronus_v33/test_academic.py:7 | from chronus.v33.academic.caltech import Caltech_Ising_Anyons, Caltech_Surface_Code, Caltech_Topological_Quantum
+  tests/test_chronus_v33/test_academic.py:8 | from chronus.v33.academic.cern import CERN_CavityQED, CERN_QFT_Enhancement, schwinger_critical_field
+  tests/test_chronus_v33/test_academic.py:9 | from chronus.v33.academic.mit import MIT_FaultTolerant_Control
+  tests/test_chronus_v33/test_academic.py:10 | from chronus.v33.academic.nist import NIST_Standards, NIST_Benchmark
+  tests/test_chronus_v33/test_academic.py:11 | from chronus.v33.academic.tensor_compression import MatrixProductState
+  tests/test_chronus_v33/test_academic.py:12 | from chronus.v33.academic.tokyotech import TokyoTech_Metrology
+  tests/test_chronus_v33/test_academic.py:13 | from chronus.v33.engine import ChronosEngine
+  tests/test_chronus_v33/test_academic_integration.py:7 | from chronus.v33.academic.integration import (
+  tests/test_chronus_v33/test_academic_integration.py:14 | from chronus.v33.academic.report import run_academic_enhancements
+  tests/test_chronus_v33/test_gap_close.py:7 | from chronus.v33.emp import ErrorMitigationProcessor
+  tests/test_chronus_v33/test_gap_close.py:8 | from chronus.v33.evolution_engine import build_time_dependent_schedule
+  tests/test_chronus_v33/test_gap_close.py:9 | from chronus.v33.engine import ChronosEngine
+  tests/test_chronus_v33/test_gap_close.py:10 | from chronus.v33.hamiltonian import HamiltonianLibrary
+  tests/test_chronus_v33/test_gap_close.py:11 | from chronus.v33.weak_measurement import (
+  tests/test_chronus_v33/test_gap_close.py:19 | from chronus.v33.emp import _self_test as emp_self_test
+  tests/test_chronus_v33/test_gap_close.py:20 | from chronus.v33.evolution_engine import _self_test as evo_self_test
+  tests/test_chronus_v33/test_gap_close.py:21 | from chronus.v33.hamiltonian import _self_test as ham_self_test
+  tests/test_chronus_v33/test_memory.py:7 | from chronus.v33.memory import (
+  tests/test_chronus_v33/test_memory.py:15 | from chronus.v33.engine import ChronosEngine
+  tests/test_chronus_v33/test_memory.py:47 | from chronus.v33.memory.block_encode import prepare_select
+  tests/test_chronus_v33/test_memory.py:51 | from chronus.v33.memory.block_encode import BlockEnc
+  tests/test_chronus_v33/test_research_reconciliation.py:9 | from chronus.v33.research_reconciliation import (
+  tests/test_chronus_v33/test_research_registry.py:5 | from chronus.v33.research_registry import (
+  tests/test_chronus_v33/test_research_registry.py:45 | assert case.implementation.startswith("chronus.v33.")
+  turing_universal_quantum_computer/turing_universal_quantum_computer/july_compat.py:48 | "close_gaps_test": "chronus.v33.test_harness.ChronosTestHarness",
+  turing_universal_quantum_computer/turing_universal_quantum_computer/july_compat.py:50 | "memory_integration": "chronus.v33.memory.run_memory_self_tests",
