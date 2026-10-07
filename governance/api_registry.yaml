@@ -477,9 +477,9 @@ apis:
     transport: HTTP
     method: GET
     path: /api/v1/intelligence/status
-    routes: ["GET /api/v1/intelligence/status"]
+    routes: ["GET /api/v1/intelligence/status", "GET /api/v1/intelligence/cognition/status"]
     request_schema: none
-    response_schema: 'runner status {state, last_result, ...}'
+    response_schema: 'intelligence status with first-class euclid_cognition projection; cognition/status returns pythia.euclid.cognition/1 directly'
     schema_version: pythia.runner/1
     authentication_class: NONE
     authorisation_authority: none
