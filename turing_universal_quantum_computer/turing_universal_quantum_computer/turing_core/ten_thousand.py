@@ -84,7 +84,7 @@ class TenThousandQubitSystem:
         self.hilbert_dim_symbolic = f"2^{self.n_qubits}"
         self._entanglement_ledger: List[EntanglementRegistration] = []
         self._listeners: List[Callable[[EntanglementRegistration], None]] = []
-        self._aethel = None
+        self._custody = None
 
     # -- substrate: sparse exact register -----------------------------------
 
@@ -299,43 +299,19 @@ class TenThousandQubitSystem:
 
         return GoldenQuantumCore(self)
 
-    # -- Fault-tolerant quantum-ASIC engineering model ------------------------
+    # -- custody (folded evidence, never raw amplitudes) ----------------------
 
-    def pure_quantum_asic(self):
-        """Return the canonical first-principles mathematical quantum ASIC."""
-        from ..fault_tolerant_asic import PureQuantumMathASIC
+    def custody_manifest(self, address: str = "ten_thousand:manifest") -> Dict[str, Any]:
+        """Commit the state manifest (never the 2^n amplitudes) to THESEUS custody."""
+        from ..custody import open_custody
 
-        return PureQuantumMathASIC()
+        if self._custody is None:
+            self._custody = open_custody()
+        receipt = self._custody.commit("state", self.status(), meta={"address": address})
+        return {"address": address, **receipt.as_dict()}
 
-    def fault_tolerant_asic(self):
-        """Compatibility alias for :meth:`pure_quantum_asic`."""
-        return self.pure_quantum_asic()
-
-    def verify_pure_quantum_asic(self):
-        """Execute exact first-principles invariants for the abstraction."""
-        return self.pure_quantum_asic().verify_first_principles()
-
-    def deterministic_10eh_system(self):
-        """Return the exact mathematical 10 EH/s capacity certificate."""
-        return self.pure_quantum_asic().deterministic_hashrate_system()
-
-    def heterogeneous_10eh_certificate(self):
-        """Return the exact heterogeneous formal-capacity certificate."""
-        return self.pure_quantum_asic().heterogeneous_hashrate_certificate()
-
-    # -- Aethel persistence (folded evidence, never raw amplitudes) -----------
-
-    def aethel_store_manifest(self, address: str = "ten_thousand:manifest") -> Dict[str, Any]:
-        """Persist the folded manifest into Aethel — the data memory
-        substrate stores the state MANIFEST (folded), not the 2^n
-        amplitudes (which are never materialised)."""
-        from ..four_layer_stack import AethelStore
-
-        if self._aethel is None:
-            self._aethel = AethelStore()
-        manifest = self.status()
-        payload = repr(manifest).encode("utf-8")
-        return self._aethel.store(address, payload)
+    #: Earlier name of :meth:`custody_manifest`.
+    aethel_store_manifest = custody_manifest
 
     # -- status ---------------------------------------------------------------
 
@@ -347,12 +323,7 @@ class TenThousandQubitSystem:
         return {
             "system": "TenThousandQubitSystem",
             "unified_theory": UNIFIED_THEORY.report(),
-            "pure_quantum_asic": {
-                "schema": "turing.pure_quantum_math_asic/v1",
-                "truth_class": "pure_quantum_mathematical_abstraction",
-                "physical_qpu_present": False,
-                "first_principles": True,
-            },
+            "physical_qpu_present": False,
             "n_qubits": self.n_qubits,
             "hilbert_dim": self.hilbert_dim_symbolic,
             "dense_state_bytes_if_materialised": str(coverage.state_bytes),
@@ -361,6 +332,7 @@ class TenThousandQubitSystem:
                 "stabilizer": "Clifford states, O(n^2) bits — exact",
                 "sparse": "bounded-support states — exact",
                 "closed_form": "hypercube walk / TFIM — exact symbolic",
+                "mps_exact": "Clifford+T under a static Schmidt bound — exact (Kellogg MPS)",
                 "symbolic": "dimension/scale manifests — never densified",
             },
             "capabilities": [
@@ -371,9 +343,7 @@ class TenThousandQubitSystem:
                 "tunnelling",
                 "swarming",
                 "golden_quantum_profile",
-                "pure_quantum_math_asic",
-                "first_principles_self_verification",
-                "deterministic_10eh_capacity_certificate",
+                "clifford_t_bounded_entanglement",
             ],
             "zeckendorf_protection": "non-adjacent Fibonacci index constraint",
             "cassini_anchor_ok": bool(_tc.cassini_check(7)),

@@ -204,16 +204,5 @@ class TenThousandQubitSystemTests(unittest.TestCase):
         self.assertIn("address", rec)
 
 
-class AdapterWidthTests(unittest.TestCase):
-    def test_adapter_accepts_any_width(self):
-        # The artificial n==11 gate is gone: arbitrary width constructs.
-        a = tqc.LucasScaledAethelExecutionAdapter(n_qubits=23, scale_index=76)
-        self.assertEqual(a.n_qubits, 23)
-        a2 = tqc.LucasScaledAethelExecutionAdapter(n_qubits=10_000, scale_index=76)
-        self.assertEqual(a2.n_qubits, 10_000)
-        with self.assertRaises(ValueError):
-            tqc.LucasScaledAethelExecutionAdapter(n_qubits=0)
-
-
 if __name__ == "__main__":
     unittest.main()

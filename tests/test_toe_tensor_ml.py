@@ -134,14 +134,13 @@ class TensorMLContractTests(unittest.TestCase):
             self.assertFalse(restored.theorem_proven)
             self.assertEqual(verify(restored).value["status"], "checked")
             stale = json.loads(path.read_text())
-            stale["schema"]["toe_version"] = "3.4.0"
+            stale["schema"]["kellogg_schema"] = "kellogg.tensor-ml/v1"
             path.write_text(json.dumps(stale))
             with self.assertRaises(ValueError):
                 load(path)
-            # The version lock covers the whole schema: substrate version
-            # and declared field order must reject on load, not just the
-            # tensor-family version.
-            for field, bad in (("mla_version", "OTHER"), ("order", "lexicographic")):
+            # The version lock covers the whole schema: substrate and declared
+            # field order must reject on load, not just the format version.
+            for field, bad in (("substrate", "OTHER"), ("order", "lexicographic")):
                 dump(model, path)
                 drifted = json.loads(path.read_text())
                 drifted["schema"][field] = bad

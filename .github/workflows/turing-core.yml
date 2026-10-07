@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "turing_universal_quantum_computer/**"
+      - "kellogg/**"
       - "proofs/lean/**"
       - "scripts/turing_digest_fixture.py"
       - "scripts/turing_vqc_digest_fixture.py"
@@ -29,7 +30,13 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-      - run: pip install -e "./turing_universal_quantum_computer[dev]"
+      - name: Install TURING with Kellogg from the checkout
+        # kellogg-tensor is not on PyPI yet: install TURING without dependency
+        # resolution and resolve Kellogg (and the repo packages) from the checkout.
+        run: |
+          pip install "numpy>=1.26,<3" "sympy>=1.12,<2" "pytest>=7.4,<10"
+          pip install --no-deps -e ./turing_universal_quantum_computer
+          echo "PYTHONPATH=${{ github.workspace }}" >> "$GITHUB_ENV"
       - name: Exact specification and inventory tests
         run: >-
           python -m pytest -q

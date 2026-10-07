@@ -6,6 +6,25 @@ repository. Per the repo thesis (AGENTS.md §1): quantum computation is exact
 linear algebra over complex Hilbert spaces; the substrate is incidental. This
 package is that substrate, as a single installable unit.
 
+## Release 1.0.0
+
+- **Kellogg is the substrate.** Exact fields, state vectors and the exact MPS
+  come from `kellogg-tensor` (a declared dependency); `exact_tensor`,
+  `quantum_tensor` and `exact_field` are aliases of Kellogg's modules, not forks.
+- **`mps_exact` backend and representation.** Clifford+T at any width when a
+  static Schmidt bound stays within χ_max; the full pipeline (plan, execute,
+  certify, THESEUS custody, replay) runs GHZ on 10,000 qubits followed by T and S
+  exactly.
+- **Surface code corrected.** The planar edge code now encodes one logical qubit
+  with exact distance d (the earlier star-on-every-vertex convention encoded
+  none).
+- **Product boundary.** The hashrate capacity model, the SHA-256d thermodynamic
+  boundary and the mining execution plane moved to Mining; copies of TOE,
+  Intelligence and Mining modules were removed in favour of their owners. See
+  `product_registry.CARVED_OUT`.
+- **Release gates.** `python -c "from turing_universal_quantum_computer.product_registry import verify_registry; print(verify_registry())"`
+  and `python -m turing_universal_quantum_computer.benchmark [--quick]`.
+
 ## Install
 
 ```bash
@@ -33,6 +52,7 @@ admits:
 | `stabilizer` | Clifford states (`\|+⟩^n`, GHZ, cluster, codes) | O(n²) bits | exact tableau |
 | `sparse` (`hilbert.QuantumRegister`) | bounded-support states | O(#nonzero amplitudes) | exact symbolic |
 | `closed_form` | hypercube walk, TFIM free-fermion | O(1) formulas | exact symbolic |
+| `mps_exact` | Clifford+T with bounded Schmidt rank (GHZ + T, shallow circuits) | O(n·χ²) exact cores in custody | exact over Q(ζ₈) (Kellogg) |
 | `symbolic` | dimension/coverage manifests | never densified | exact |
 
 A *dense* 2^10000-amplitude vector cannot exist on any substrate —
@@ -71,12 +91,16 @@ The production mining plane keeps `VIRTUAL_QUANTUM_QUBITS = 11` as its
 The package exposes two public surfaces; they answer different questions
 and neither stands in for the other.
 
-**`TenThousandQubitSystem` / `PureQuantumMathASIC` — the capacity
-surface.**  Exact algebra over Q(ζ₈): 10,000-qubit stabilizer states,
-closed-form walks, the deterministic-10 EH/s capacity certificate,
-surface-code correctability.  Its verdicts are *mathematical capacity* —
-`truth_class: "exact_mathematical_capacity_not_executed_work"` — not an
-executed workload.
+**`TenThousandQubitSystem` — the algebra surface.**  Exact algebra over
+Q(ζ₈): 10,000-qubit stabilizer states, closed-form walks, annealing,
+tunnelling, swarms and entanglement registration. Its verdicts are exact
+statements about the algebra, not an executed workload.
+
+The hashrate capacity model (`PureQuantumMathASIC`, the deterministic 10 EH/s
+certificate, H = M·N·f/I) and the SHA-256d thermodynamic boundary belong to
+Mining (`mining.fault_tolerant_asic`, `mining.deterministic_hashrate`,
+`mining.thermodynamics_exact`). They consume this package; they are not part of
+it.
 
 **`VQCRequest` / `execute_certified` / `run_pipeline` — the run
 surface.**  One program through the canonical execution pipeline:
@@ -87,7 +111,7 @@ replayable record a first workload is judged against.
 
 | Question | Surface |
 | --- | --- |
-| What can the algebra verify? | `TenThousandQubitSystem`, `PureQuantumMathASIC` |
+| What can the algebra verify? | `TenThousandQubitSystem` |
 | What did this run do, byte for byte? | `VQCRequest` → `PipelineReport` |
 
 Custody contract: `custody=True` alone is in-process scope.  Binding
@@ -150,6 +174,14 @@ Two state representations, both exact, both first class:
 | --- | --- | --- | --- |
 | `dense_algebraic` | universal Clifford+T over `Q(√2) + iQ(√2)` | bounded by `max_amplitudes` | yes |
 | `tableau` | Clifford | any `n`, including 10,000 | no — and neither does hardware |
+| `mps_exact` | Clifford+T | any `n` while a static Schmidt bound stays ≤ χ_max (default 64) at every cut | no; exact marginals, samples, purity and Schmidt rank |
+
+`mps_exact` admits a program only when a static bound — each two-qubit gate
+multiplies the Schmidt rank across its cut by at most its operator Schmidt
+rank, with a factor 2 for SWAP routing — stays within χ_max. The decision is
+made before execution, so a program that could entangle beyond the bound is
+refused, never truncated. GHZ on 10,000 qubits followed by T and S runs exactly:
+bond dimension 2, ‖ψ‖² = 1, marginal {00: 1/2, 11: 1/2}.
 
 `materialised = False` is **not** a degraded mode. The tableau is the correct
 representation for that state class, and it is what makes the wide register
@@ -179,35 +211,17 @@ contract.
 | `chronus/mla1517_platform/python/turing_core.py` | `turing_core.schedule` |
 | `legacy/Intelligence/mathematical_discovery.py` | `turing_core.discovery` (optional deps) |
 | `mtheory/hilbert.py` | `hilbert` — `QuantumRegister`, `GroverExact`, exact gates/QFT |
-| `mtheory/duality.py` | `duality` |
-| `mtheory/kk_spectrum.py` | `kk_spectrum` |
-| `kellogg/exact_tensor.py` | `exact_tensor` — canonical Q(√2)+iQ(√2) witness |
-| `kellogg/exact_field.py` | `exact_field` |
-| `kellogg/quantum_tensor.py` | `quantum_tensor` — first-principles C^N layer |
+| `kellogg/exact_tensor.py` | `exact_tensor` — alias of Kellogg's module (dependency, not a fork) |
+| `kellogg/exact_field.py` | `exact_field` — alias of Kellogg's module |
+| `kellogg/quantum_tensor.py` | `quantum_tensor` — alias of Kellogg's module |
 | `legacy/src/euclid/pythagoras/quantum/quantum_tensor.py` | `register_tensor` — audited `QuantumTensor` |
 | `legacy/lucas/pisot.py` | `pisot` — scale contracts, Hendrix schedule, Hilbert coverage |
 | `legacy/src/euclid/pythagoras/quantum/hendrix.py` | `hendrix` — `HendrixChronusSearch` |
-| `toe/strict_quantum.py` | `strict_quantum` — Q(i) work-window certificates |
 | `chronus/mla1517/.../mla1517/quantum.py` | `exact_state_vector` |
-| `mining/search.py` | `search` — Grover-exact / Merkle / preimage |
-| `chronus/mla1517/.../mining/turing_adapter.py` | `turing_adapter` — `TuringMiningSubstrate` |
 | `legacy/core_engine/quantum_cuda.py` | `quantum_cuda` — iGPU/Turing simulator facade |
-| `Intelligence/backend_binding.py` | `backend_binding` |
-| `toe/hardened_unified_substrate.py` | `hardened_unified_substrate` |
-| `Intelligence/unified_punch.py` | `unified_punch` |
-| `mining/bitcoin_hasher.py` | `bitcoin_hasher` |
-| `mining/hash_pipeline.py` | `hash_pipeline` |
-| `toe/manifold_bridge.py` | `manifold_bridge` |
-| `toe/intelligences/*` | `intelligences/` |
-| `toe/system.py` | `toe_system` — `TOESystem` provenance arbiter |
-| `legacy/Intelligence/four_layer_stack.py` | `four_layer_stack` — Aethel→Tensor→TURING→iGPU |
-| `legacy/mining/scaled_execution.py` | `scaled_execution` — `LucasScaledAethelExecutionAdapter` (the VQC executor) |
-| `chronus/mla1517/.../mla1517/rings.py` | `rings` |
-| `chronus/mla1517_platform/python/extended_algebra.py` | `extended_algebra` |
 | `Intelligence/grover_exact_scale.py` | `grover_exact_scale` — folded run helper |
 | `Intelligence/quantum_algorithms.py` | `quantum_algorithms` |
 | `lucas/` (root package) | `lucas/` — exact Lucas limbs + pool kernels |
-| `*.cl` kernel sources | `kernels/` (package data) |
 | repo test suite (mla1517 quantum + turing schedule) | `tests/` |
 | — (new, per ontology §4) | `stabilizer` — exact Clifford tableau backend |
 | — (new) | `quantum_walk` — coined + closed-form hypercube walks |
@@ -219,6 +233,16 @@ contract.
 | — (new, v1.2) | `capabilities` — published capability matrix + claim-boundary audit |
 | — (new, v1.2) | `certificates` — verifiable run witnesses |
 | — (new, v1.2) | `console` — the operator console (`turing-vqc`) |
+| — (new, v1.3) | `backends.mps` — `mps_exact`: Clifford+T at any width under a static Schmidt bound (Kellogg exact MPS) |
+
+Modules that belong to other products were carved out: the mining production
+plane (`four_layer_stack`, `scaled_execution`), the capacity surface
+(`fault_tolerant_asic`, `deterministic_hashrate`, `thermodynamics_exact`) moved
+to `mining/`; copies of live modules (`bitcoin_hasher`, `hash_pipeline`,
+`search`, `turing_adapter`, `strict_quantum`, `toe_system`,
+`hardened_unified_substrate`, `manifold_bridge`, `unified_punch`,
+`backend_binding`, `intelligences`, `duality`, `kk_spectrum`, `rings`,
+`extended_algebra`) were removed in favour of their owners.
 
 `toe/exact_tensor.py`, `toe/quantum_tensor.py`, `toe/exact_field.py`,
 `Intelligence/quantum_tensor.py`, `Intelligence/exact_tensor.py`, and
@@ -243,16 +267,13 @@ qt = tqc.QuantumTensor()               # n_qubits = 11 (platform width)
 qt.h(0).cnot(0, 1)
 plan = tqc.plan_hilbert_coverage(11, data_bytes=112)
 
-# Strict-quantum work-window certificate (Q(i), exact Fractions).
-# The 76-byte header prefix must encode a non-null state — all-zero input
-# fails closed because a null vector has no Born distribution.
-cert = tqc.certify_work_window(bytes(range(76)), nonce_start=0, nonce_count=1024)
-assert tqc.verify_certificate(cert)
-
-# Hendrix / Turing nonce schedules
-sched = tqc.HendrixStructuredSearch(workers=4).plan(10_000)
-assert sched.verify()
-order = tqc.TuringMiningSubstrate().exhaustive_order(1024, seed=7)
+# Clifford+T at 10,000 qubits, exact, when entanglement stays bounded
+from turing_universal_quantum_computer.backends import Program as P, execute as run
+ghz_t = P(10_000).then("h", 0)
+for i in range(9_999):
+    ghz_t = ghz_t.then("cx", i, i + 1)
+res = run(ghz_t.then("t", 0), marginal_of=[0, 9_999])   # selects mps_exact
+assert res.payload["marginal"]["probabilities"] == {"00": "1/2", "11": "1/2"}
 
 # The universal engine — 10,000 qubits, exact
 sys = tqc.TenThousandQubitSystem()
@@ -285,8 +306,7 @@ from turing_universal_quantum_computer.turing_core.discovery import (
 
 ## Production execution plane
 
-`scaled_execution.LucasScaledAethelExecutionAdapter` is the fabric's VQC
-executor (any `n_qubits`; 11 is the production default, not a bound). It wires strict-quantum certification, the Hendrix
-Lucas/Pisot schedule, the tensor fold, and the sha256d grind. SHA-256d
-consensus remains the sole accept authority — the quantum layer orders and
-certifies the search; it never replaces the target check.
+The mining execution plane that used to live here
+(`LucasScaledAethelExecutionAdapter`, the four-layer mining stack and the
+sha256d grind) is Mining's: `mining.scaled_execution`. It consumes this
+package's exact algebra; SHA-256d consensus remains the sole accept authority.

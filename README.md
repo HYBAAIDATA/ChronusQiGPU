@@ -1,5 +1,13 @@
 # PYTHIA
 
+> **PRODUCT RELEASES — PICK UP HERE:** Kellogg (`kellogg-tensor` 1.0.0) and
+> TURING (`turing-universal-quantum-computer` 1.0.0) are release candidates on
+> branch `feat/kellogg-turing-products`. What is done, what is evidenced and
+> what remains (full test and benchmark runs, per-version wheel verification,
+> PyPI and GitHub-billing owner actions) is in
+> [`packaging/RELEASE_STATUS.md`](packaging/RELEASE_STATUS.md). CHRONUS is
+> next and is being pushed by the owner.
+
 > **CANONICAL MINING-SEARCH CONTRACT**
 >
 > PYTHIA's production mining path is **structured search with complete nonce-estate
@@ -24,7 +32,7 @@ The canonical EUCLID intelligences are **Predictive, Causal, Counterfactual,
 Topological and Geometric**. Quantum capability is an extension consumed
 through the TURING / L-HRAS boundaries; it is not a sixth mining authority.
 
-Authority is deliberately separated:
+Authority remains separated:
 
 ```text
 EUCLID      cognition, reasoning, learning, discovery, orchestration
@@ -42,13 +50,13 @@ Bitcoin-header/nonce semantics, SHA256d, target comparison, share validation,
 credentials, submission or pool acknowledgement. The shared contract is
 `toe/intelligences/authority_boundary.py`.
 
-Mining is now represented to EUCLID as a typed `CognitionProblem`: measured
+Mining is represented to EUCLID as a typed `CognitionProblem`: measured
 Stratum/transport state forms the observation, measured share outcomes are the
 only reward source, and the admissible operating objective is bounded dispatch
 breadth. The PYTHIA production coordinator remains the sole actuator and
 clamps the result to its declared bounds.
 
-EUCLID discovery is also on the governed production composition path:
+EUCLID discovery is on the governed production composition path:
 `TheoreticalSpaceExplorer` produces evidence-bound candidates and
 `salamander.discovery_optimisation.DiscoveryOptimisationBridge` can advance
 them only through held-out measurement, independent verification and
@@ -57,8 +65,8 @@ production.
 
 The live truth surface is available at
 `GET /api/v1/intelligence/cognition/status` and is also embedded in
-`GET /api/v1/intelligence/status`. The frontend renders these runtime
-capabilities and open evidence gates; it does not invent intelligence scores.
+`GET /api/v1/intelligence/status`. The frontend renders runtime capabilities
+and open evidence gates; it does not invent intelligence scores.
 
 ## Runtime boundary
 

@@ -210,9 +210,9 @@ def test_fail_closed_parity():
         K.ExactStateVector.basis(4, 0).qft()
     with pytest.raises(NotImplementedError):
         T.ExactStateVector.basis(4, 0).qft()
-    # Arbitrary-angle rotation is unrepresentable on the kellogg side;
-    # TUQC has no rz() at all.
-    assert hasattr(K, "rz")
-    assert not hasattr(T, "rz")
+    # TURING's exact_tensor is now an alias of Kellogg's module (one
+    # implementation, no fork), so rz() and NotInF4 are the same objects.
+    assert T is K
+    assert hasattr(T, "rz")
     with pytest.raises(K.NotInF4):
         K.rz(Fraction(1, 7))

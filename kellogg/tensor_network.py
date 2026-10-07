@@ -154,7 +154,11 @@ class TensorTrain:
         obj.ranks = [validated[0].shape[0], *(c.shape[-1] for c in validated)]
         return obj
 
-    def reconstruct(self) -> np.ndarray:
+    def reconstruct(self, *, max_elements: int = 1 << 27) -> np.ndarray:
+        if self.original_size > max_elements:
+            raise TensorNetworkError(
+                f"dense reconstruction of {self.original_size} values exceeds {max_elements}"
+            )
         result = self.cores[0]
         for core in self.cores[1:]:
             result = np.tensordot(result, core, axes=([-1], [0]))
@@ -247,6 +251,62 @@ def tt_compress_with_budget(
             f"TT codec exceeds error budget: {error:.6g} > {max_rel_error:.6g}"
         )
     return payload, error
+
+
+def tt_svd(
+    tensor: np.ndarray, eps: float, max_rank: int | None = None
+) -> tuple[TensorTrain, dict[str, Any]]:
+    """TT-SVD with the Oseledets error budget.
+
+    Each of the d - 1 unfoldings keeps the smallest rank whose discarded
+    singular-value energy is at most delta^2, delta = eps ||T||_F / sqrt(d - 1),
+    so ||T - TT||_F <= eps ||T||_F holds by construction. A ``max_rank`` cap
+    can override the budget; the returned record then reports whether the
+    bound still holds, measured. ``TensorTrain(tolerance=...)`` thresholds
+    against the leading singular value and makes no Frobenius promise.
+    """
+    if eps < 0 or not math.isfinite(float(eps)):
+        raise TensorNetworkError("eps must be finite and non-negative")
+    arr = _array(tensor)
+    shape = tuple(int(v) for v in arr.shape)
+    total_norm = float(np.linalg.norm(arr.ravel()))
+    unfoldings = max(1, len(shape) - 1)
+    delta = float(eps) * total_norm / math.sqrt(unfoldings)
+    budget = delta * delta
+    cores: list[np.ndarray] = []
+    discarded = 0.0
+    capped = False
+    carry = arr
+    r_left = 1
+    for n_mode in shape[:-1]:
+        carry = carry.reshape(r_left * n_mode, -1)
+        u, s, vh = np.linalg.svd(carry, full_matrices=False)
+        tail = np.cumsum((s[::-1] ** 2))[::-1]
+        rank = len(s)
+        for k in range(1, len(s) + 1):
+            if k == len(s) or tail[k] <= budget:
+                rank = k
+                break
+        if max_rank is not None and rank > max_rank:
+            rank = int(max_rank)
+            capped = True
+        discarded += float(np.sum(s[rank:] ** 2))
+        cores.append(u[:, :rank].reshape(r_left, n_mode, rank))
+        carry = s[:rank, None] * vh[:rank, :]
+        r_left = rank
+    cores.append(carry.reshape(r_left, shape[-1], 1))
+    train = TensorTrain.from_cores(cores, original_shape=shape)
+    error = train.relative_error(arr) if arr.size <= (1 << 27) else None
+    record = {
+        "eps": float(eps),
+        "ranks": list(train.ranks),
+        "relative_error": error,
+        "discarded_energy_bound": math.sqrt(discarded) / total_norm if total_norm else 0.0,
+        "bound_holds": None if error is None else error <= float(eps) * (1 + 1e-12) + 1e-15,
+        "rank_capped": capped,
+        "plane": "float64",
+    }
+    return train, record
 
 
 def mps_decompose(state: np.ndarray, n_sites: int, chi: int) -> list[np.ndarray]:
@@ -397,10 +457,10 @@ class HeisenbergHamiltonianMPO(MatrixProductOperator):
                 core[4, :, :, 4] = identity
                 middle.append(core)
             last = np.zeros((5, 2, 2, 1), dtype=complex)
-            last[0, :, :, 0] = identity
             last[1, :, :, 0] = sx
             last[2, :, :, 0] = sy
             last[3, :, :, 0] = sz
+            last[4, :, :, 0] = identity
             cores = [first, *middle, last]
         self.coupling = float(coupling)
         super().__init__(cores)
@@ -546,4 +606,5 @@ __all__ = [
     "tt_compress_with_budget",
     "tt_decompose",
     "tt_reconstruct",
+    "tt_svd",
 ]

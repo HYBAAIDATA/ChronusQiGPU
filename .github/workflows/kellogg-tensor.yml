@@ -1,0 +1,68 @@
+name: kellogg-tensor
+
+on:
+  pull_request:
+    paths:
+      - "kellogg/**"
+      - "packaging/kellogg-tensor/**"
+      - "LICENSE"
+      - ".github/workflows/kellogg-tensor.yml"
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish the verified wheel"
+        type: choice
+        options: [none, testpypi, pypi]
+        default: none
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Build and verify on Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install build
+      # Builds the wheel, installs it into a clean venv with no sibling
+      # product, imports every module, checks the manifest version and runs
+      # the correctness and meta benchmarks against the installed wheel.
+      - run: python packaging/kellogg-tensor/build_and_verify.py
+      - if: matrix.python == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: kellogg-tensor-dist
+          path: packaging/kellogg-tensor/dist/*.whl
+          if-no-files-found: error
+
+  publish:
+    name: Publish to ${{ inputs.publish }}
+    needs: verify
+    if: github.event_name == 'workflow_dispatch' && inputs.publish != 'none'
+    runs-on: ubuntu-latest
+    # Trusted publishing (OIDC): no API token is stored anywhere. The PyPI
+    # project must list this repository, this workflow file and this
+    # environment as a trusted publisher; the environment should require a
+    # reviewer from HYBA Software Limited.
+    environment: ${{ inputs.publish }}
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: kellogg-tensor-dist
+          path: dist
+      - if: inputs.publish == 'testpypi'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+      - if: inputs.publish == 'pypi'
+        uses: pypa/gh-action-pypi-publish@release/v1

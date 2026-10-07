@@ -203,6 +203,17 @@ def _bloch_sphere(x: float, y: float, z: float, *, width: int = 21, height: int 
     return header + "\n" + "\n".join("  " + "".join(row) for row in grid)
 
 
+def _q2_float(text: str) -> float:
+    """Display-only float of an exact 'p/q + r/s*sqrt(2)' value (never re-promoted)."""
+    import re
+    from fractions import Fraction
+
+    total = 0.0
+    for number, root in re.findall(r"([+-]?\d+(?:/\d+)?)(\*sqrt\(2\))?", text.replace(" ", "")):
+        total += float(Fraction(number)) * (2 ** 0.5 if root else 1.0)
+    return total
+
+
 @dataclass
 class ConsoleState:
     """The console's working set.
@@ -210,13 +221,16 @@ class ConsoleState:
     ``state`` is populated when the selected backend materialises a dense
     algebraic state vector.  For wide Clifford registers the exact state lives
     in the engine's tableau and ``tableau`` holds its payload — a complete,
-    exact description of the register, just not an amplitude list.
+    exact description of the register, just not an amplitude list.  Wide
+    Clifford+T registers with bounded entanglement live in the exact MPS and
+    ``mps`` holds its payload.
     """
 
     n_qubits: int = 0
     program: Program | None = None
     state: ExactStatevector | None = None
     tableau: dict[str, Any] | None = None
+    mps: dict[str, Any] | None = None
     last_result: Any = None
     history: list[str] = field(default_factory=list)
 
@@ -224,6 +238,8 @@ class ConsoleState:
     def representation(self) -> str:
         if self.state is not None:
             return "dense_algebraic"
+        if self.mps is not None:
+            return "mps_exact"
         return "tableau" if self.tableau else "none"
 
     @property
@@ -303,11 +319,18 @@ class QuantumConsole:
         self.session.program = new_program
         dense = result.payload.get("state")
         self.session.state = dense
-        self.session.tableau = None if dense is not None else result.payload
+        is_mps = result.backend == "mps_exact"
+        self.session.mps = result.payload if is_mps else None
+        self.session.tableau = None if (dense is not None or is_mps) else result.payload
         self.session.last_result = result
         self.session.history.append(f"{gate} {' '.join(str(q) for q in qubits)}")
         if dense is not None:
             detail = f"‖ψ‖² = {result.payload.get('norm_sq_exact', 'n/a')}"
+        elif is_mps:
+            detail = (
+                f"mps · max bond {result.payload.get('max_bond')} · "
+                f"‖ψ‖² = {result.payload.get('norm_squared')}"
+            )
         else:
             detail = f"tableau {result.payload.get('tableau_bits')} bits"
         return (
@@ -340,8 +363,9 @@ class QuantumConsole:
             )
         else:
             representation = (
-                f"tableau — exact Clifford state in {2 * n} bits; "
-                "non-Clifford gates will be refused, not approximated"
+                f"tableau — exact Clifford state in {2 * n} bits; T gates move the register "
+                "to the exact MPS while entanglement stays bounded and are refused, not "
+                "approximated, when it cannot be bounded"
             )
         return f"allocated |q{n}⟩\n  representation  {representation}"
 
@@ -369,6 +393,8 @@ class QuantumConsole:
     def _cmd_psi(self, args: list[str]) -> str:
         if self.session.program is None:
             return self._need_register()
+        if self.session.mps is not None:
+            return self._mps_psi()
         if self.session.state is None:
             return self._tableau_psi(args)
         state = self.session.state
@@ -382,6 +408,22 @@ class QuantumConsole:
             f"  ‖ψ‖²            {state.norm_sq()}   (exact)\n"
             f"  normalised      {state.is_normalised()}"
         )
+
+    def _mps_psi(self) -> str:
+        program = self.session.program
+        assert program is not None
+        payload = self.session.mps or {}
+        custody = payload.get("custody", {})
+        return "\n".join([
+            f"|ψ⟩ on |q{program.n_qubits}⟩ — {_states_label(program.n_qubits)}",
+            f"  representation  mps_exact (Kellogg exact MPS, max bond {payload.get('max_bond')})",
+            "  field           Q(ζ₈) = Q(i, √2)",
+            f"  ‖ψ‖²            {payload.get('norm_squared')}   (exact)",
+            f"  state root      {payload.get('state_root')}",
+            f"  certificates    {payload.get('kellogg_certificates')} in custody "
+            f"({custody.get('provider')}, {custody.get('blocks')} blocks)",
+            "  The cores are the complete state; use `measure`, `prob` or `entropy` to query it.",
+        ])
 
     def _tableau_psi(self, args: list[str]) -> str:
         program = self.session.program
@@ -460,6 +502,12 @@ class QuantumConsole:
         except (StatevectorTooLargeError, DomainError, ValueError) as exc:
             return f"REFUSED: {exc}"
         marginal = result.payload.get("marginal", {})
+        if result.backend == "mps_exact":
+            lines = [f"exact marginal on {_readout_label(subset)}  (mps_exact)"]
+            for bitstring, probability in sorted(marginal.get("probabilities", {}).items()):
+                lines.append(f"  |{bitstring}⟩  {probability}  {_bar(_q2_float(probability), 28)}")
+            lines.append("  marginal probabilities are exact Q(√2) values.")
+            return "\n".join(lines)
         lines = [
             f"exact marginal on {_readout_label(subset)}",
             f"  uniform over {marginal.get('outcomes')} outcome(s), "
@@ -570,6 +618,25 @@ class QuantumConsole:
         if not args:
             return "usage: entropy <q> [q ...]"
         subset = [int(a) for a in args]
+        if self.session.mps is not None:
+            try:
+                result = execute_program(
+                    self.session.program, max_amplitudes=self.max_amplitudes, entropy_of=subset
+                )
+            except (StatevectorTooLargeError, DomainError, ValueError) as exc:
+                return f"REFUSED: {exc}"
+            payload = result.payload
+            value = payload.get("entanglement_entropy_bits")
+            head = (
+                f"cut {subset} | rest   S = {value} e-bits (exact)"
+                if value is not None
+                else f"cut {subset} | rest   S not exact for this spectrum"
+            )
+            return (
+                f"{head}\n"
+                f"  Schmidt rank {payload.get('schmidt_rank')}, purity {payload.get('purity')} (exact)\n"
+                f"  {payload.get('entropy_note')}"
+            )
         if self.session.tableau is not None:
             result = execute_program(
                 self.session.program, max_amplitudes=self.max_amplitudes, entropy_of=subset

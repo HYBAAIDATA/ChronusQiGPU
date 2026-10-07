@@ -173,7 +173,7 @@ SUBSYSTEMS: list[dict[str, Any]] = [
     {
         "key": "vqc",
         "name": "Virtual quantum computer (11-qubit exact)",
-        "module": "turing_universal_quantum_computer.scaled_execution",
+        "module": "mining.scaled_execution",
         "wired": "production",
         "gate": "pool_credentials",
         "detail": "LucasScaledAethelExecutionAdapter — strict-quantum certificate + structured plan + tensor roundtrip + iGPU gate per window",
@@ -718,7 +718,7 @@ def euclid_cognition_status() -> dict[str, Any]:
                 "mean_delta": report.get("mean_delta"),
                 "seal": report.get("seal"),
             }
-        except Exception as exc:  # noqa: BLE001 - status must degrade honestly
+        except Exception as exc:
             generalisation_evidence = {
                 "verified": False,
                 "path": str(generalisation_path),

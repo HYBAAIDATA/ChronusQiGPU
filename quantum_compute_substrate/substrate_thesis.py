@@ -16,7 +16,7 @@ THESIS_VERSION = "1.0"
 
 @dataclass(frozen=True)
 class Thesis:
-    author: str = "Andre Taylor-Morris (HYBA Software Ltd)"
+    author: str = "Andre Taylor-Morris (HYBA Software Limited)"
     claim_lane: str = CLAIM_LANE
     version: str = THESIS_VERSION
     statements: tuple = (

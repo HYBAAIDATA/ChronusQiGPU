@@ -2,9 +2,9 @@
 
 This package consolidates every PYTHIA/MLA1517 module that constitutes the
 Turing virtual quantum computer: the canonical exact register, Q[sqrt(5)] /
-Pisot algebra, exact tensor witnesses, strict work certificates, Lucas/Pisot
+Pisot algebra, exact tensor witnesses, Lucas/Pisot
 Hendrix schedule, large-scale stabilizer execution, the production phi-machine
-facade, bounded phi-VQC ranking and the four-layer production execution plane.
+facade, bounded phi-VQC ranking and the exact backends behind the product boundary.
 
 Layers
 ------
@@ -31,16 +31,12 @@ register_tensor       QuantumTensor — audited facade over QuantumRegister
 exact_tensor          canonical Q(sqrt(2)) + i Q(sqrt(2)) exact state vector
 exact_state_vector    MLA1517 exact state-vector algebra
 quantum_tensor        first-principles tensor layer over C^N
-strict_quantum        strict Q(i) work-window certificates
 pisot / hendrix       Lucas/Pisot scale contracts + Hendrix schedule
-search                Grover-exact / Merkle / preimage search primitives
-turing_adapter        deterministic lane/nonce ordering
 quantum_cuda          iGPU / Turing exact-math accelerator facade
 
-Production plane:
-backend_binding, hardened_unified_substrate, unified_punch, bitcoin_hasher,
-hash_pipeline, manifold_bridge, intelligences, toe_system, four_layer_stack,
-scaled_execution (LucasScaledAethelExecutionAdapter).
+Carved out to their owners: the mining production plane and the capacity
+surface (mining/), copies of live TOE, Intelligence and Mining modules, and
+the tensor forks (now aliases of Kellogg).
 
 Product boundary (v1.3):
 backends              backend registry, capability envelopes, admission and
@@ -54,15 +50,12 @@ from __future__ import annotations
 
 from . import turing_core  # noqa: F401
 from . import (  # noqa: F401
-    duality,
     exact_field,
     exact_state_vector,
     exact_tensor,
     hendrix,
-    kk_spectrum,
     pisot,
     quantum_tensor,
-    strict_quantum,
 )
 from .turing_core import (  # noqa: F401
     FAMILY_COEFFS,
@@ -113,35 +106,12 @@ from .pisot import (  # noqa: F401
     require_lucas_execution_scale,
 )
 from .hendrix import HendrixChronusSearch  # noqa: F401
-from .strict_quantum import (  # noqa: F401
-    QComplex,
-    QMatrix,
-    QState,
-    certify_work_window,
-    rational_rotation,
-    state_from_bytes,
-    verify_certificate,
-)
 
 # Heavy and optional-dependency modules are lazy so a base import stays cheap.
 _LAZY_MODULES = {
     "hilbert",
     "register_tensor",
-    "search",
-    "turing_adapter",
     "quantum_cuda",
-    "backend_binding",
-    "hardened_unified_substrate",
-    "unified_punch",
-    "bitcoin_hasher",
-    "hash_pipeline",
-    "manifold_bridge",
-    "toe_system",
-    "four_layer_stack",
-    "scaled_execution",
-    "rings",
-    "extended_algebra",
-    "intelligences",
     "lucas",
     "quantum_algorithms",
     "grover_exact_scale",
@@ -159,12 +129,9 @@ _LAZY_MODULES = {
     "trotter_simulation",
     "golden_quantum",
     "unified_theory",
-    "fault_tolerant_asic",
-    "deterministic_hashrate",
     "surface_code_exact",
     "canonical_serialization",
     "exact_field_registry",
-    "thermodynamics_exact",
     # product boundary (v1.3)
     "backends",
     "capabilities",
@@ -189,23 +156,7 @@ _LAZY_SYMBOLS = {
     "qft": "hilbert",
     "QuantumTensor": "register_tensor",
     "QuantumTensorAudit": "register_tensor",
-    "FourLayerMiningStack": "four_layer_stack",
-    "TuringLayer": "four_layer_stack",
-    "NearStateIGpu": "four_layer_stack",
-    "AethelStore": "four_layer_stack",
-    "TensorFoldEngine": "four_layer_stack",
-    "LucasScaledAethelExecutionAdapter": "scaled_execution",
-    "ScaledExecutionResult": "scaled_execution",
-    "TOESystem": "toe_system",
-    "TOEProvenanceRecord": "toe_system",
-    "TuringMiningSubstrate": "turing_adapter",
-    "TuringCoreUnavailable": "turing_adapter",
-    "HashPipeline": "hash_pipeline",
-    "UnifiedPunchHost": "unified_punch",
-    "BitcoinHasher": "bitcoin_hasher",
-    "ManifoldBridge": "manifold_bridge",
     "QuantumSimulator": "quantum_cuda",
-    "ExtendedAlgebra": "extended_algebra",
     "GroverSearch": "quantum_algorithms",
     "run_folded": "grover_exact_scale",
     "TenThousandQubitSystem": "turing_core.ten_thousand",
@@ -252,52 +203,6 @@ _LAZY_SYMBOLS = {
     "SearchAttestation": "golden_quantum",
     "UnifiedTheoryFoundation": "unified_theory",
     "UNIFIED_THEORY": "unified_theory",
-    "APPLICATIONS": "fault_tolerant_asic",
-    "ApplicationResource": "fault_tolerant_asic",
-    "CryoCMOS": "fault_tolerant_asic",
-    "Decoder": "fault_tolerant_asic",
-    "DilutionRefrigerator": "fault_tolerant_asic",
-    "EvidenceRecord": "fault_tolerant_asic",
-    "EvidenceState": "fault_tolerant_asic",
-    "FirstPrinciplesVerifier": "fault_tolerant_asic",
-    "LogicalQubit": "fault_tolerant_asic",
-    "MathematicalEvidence": "fault_tolerant_asic",
-    "ProductionEvidence": "fault_tolerant_asic",
-    "PureQuantumMathASIC": "fault_tolerant_asic",
-    "QuantumAsicStack": "fault_tolerant_asic",
-    "QuantumChipLayout": "fault_tolerant_asic",
-    "RSFQ": "fault_tolerant_asic",
-    "ReadoutResonator": "fault_tolerant_asic",
-    "RefrigerationStage": "fault_tolerant_asic",
-    "RoomTemperatureControl": "fault_tolerant_asic",
-    "ScalingModel": "fault_tolerant_asic",
-    "ScalingResult": "fault_tolerant_asic",
-    "SignalChain": "fault_tolerant_asic",
-    "SurfaceCode": "fault_tolerant_asic",
-    "SyndromeExtraction": "fault_tolerant_asic",
-    "ThresholdEvaluation": "fault_tolerant_asic",
-    "TransmonCoherence": "fault_tolerant_asic",
-    "TransmonQubit": "fault_tolerant_asic",
-    "TunableCoupler": "fault_tolerant_asic",
-    "VerificationBundle": "fault_tolerant_asic",
-    "WiringBudget": "fault_tolerant_asic",
-    "CertificateError": "deterministic_hashrate",
-    "DeterminismEnvelope": "deterministic_hashrate",
-    "DeterministicMiningSystem": "deterministic_hashrate",
-    "FleetDesign": "deterministic_hashrate",
-    "FleetClass": "deterministic_hashrate",
-    "HeterogeneousFleet": "deterministic_hashrate",
-    "HeterogeneousFleetCertificate": "deterministic_hashrate",
-    "HashrateCertificate": "deterministic_hashrate",
-    "PipelineSpec": "deterministic_hashrate",
-    "TEN_EH_HPS": "deterministic_hashrate",
-    "design_lattice": "deterministic_hashrate",
-    "issue_hashrate_certificate": "deterministic_hashrate",
-    "issue_heterogeneous_fleet_certificate": "deterministic_hashrate",
-    "minimum_chips": "deterministic_hashrate",
-    "minimum_chips_for_window": "deterministic_hashrate",
-    "verify_hashrate_certificate": "deterministic_hashrate",
-    "verify_heterogeneous_fleet_certificate": "deterministic_hashrate",
     "PauliCheck": "surface_code_exact",
     "PlanarSurfaceCodeAlgebra": "surface_code_exact",
     "SurfaceCodeAlgebraReport": "surface_code_exact",
@@ -310,9 +215,6 @@ _LAZY_SYMBOLS = {
     "QZeta8": "exact_field_registry",
     "ZETA_8": "exact_field_registry",
     "verify_q_zeta_8_registry": "exact_field_registry",
-    "LandauerExpression": "thermodynamics_exact",
-    "ThermodynamicBoundaryReport": "thermodynamics_exact",
-    "thermodynamic_boundary_report": "thermodynamics_exact",
     # product boundary (v1.2)
     "Program": "backends",
     "Operation": "backends",
@@ -381,7 +283,7 @@ _LAZY_SYMBOLS = {
     "run_pipeline": "pipeline",
 }
 
-__version__ = "1.3.0"
+__version__ = "1.0.0"
 
 
 def __getattr__(name: str):

@@ -27,6 +27,7 @@ from .base import (
     TruthClass,
 )
 from .exact_algebra import Exact, Q2
+from .mps import MPSExactBackend, schmidt_bound
 from .native import ClosedFormBackend, SparseExactBackend, StabilizerBackend
 from .qpu import (
     QPUBackend,
@@ -72,6 +73,8 @@ __all__ = [
     "StabilizerBackend",
     "SparseExactBackend",
     "ClosedFormBackend",
+    "MPSExactBackend",
+    "schmidt_bound",
     "QPUBackend",
     "QPUUnavailableError",
     "QPUClaimError",
@@ -110,6 +113,7 @@ def default_backends(
         StabilizerBackend(),
         SparseExactBackend(),
         ClosedFormBackend(),
+        MPSExactBackend(),
         QPUBackend(),
     )
 
@@ -155,11 +159,12 @@ def _selection_order(
         # support is enforced by the register at run time (fail-closed), so a
         # state that densifies raises instead of fabricating an answer.
         yield registry["sparse"]
-    # Non-Clifford programs beyond the dense budget get no candidate: the
-    # sparse backend cannot prove bounded support statically, so admitting it
-    # here would be an unverifiable selection.  It remains reachable only by
-    # an explicit prefer="sparse" from a caller that knows its state is
-    # bounded; automatic selection refuses rather than approximates.
+    # Clifford+T programs beyond the dense budget go to the exact MPS
+    # backend, which admits them only when a static Schmidt bound stays
+    # within chi_max at every cut — decided before execution, never
+    # truncated. The sparse backend cannot prove bounded support statically,
+    # so it remains reachable only by an explicit prefer="sparse".
+    yield registry["mps_exact"]
 
 
 def select_backend(
