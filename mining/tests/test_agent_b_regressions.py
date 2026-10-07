@@ -239,6 +239,25 @@ class MalformedPoolInputTests(unittest.TestCase):
         self.assertEqual(bridge.extranonce2_size, 4)
 
 
+class ListenerOwnershipTests(unittest.TestCase):
+    """Single-reader invariant: once listening is claimed, wait_for_job
+    must never suspend on the shared StreamReader — a concurrent
+    readline() raises RuntimeError and kills the listener."""
+
+    def test_wait_for_job_never_reads_while_listening_claimed(self):
+        class _ExplodingReader:
+            async def readline(self):
+                raise AssertionError("inline read while listener owns the stream")
+
+        bridge = StratumBridge("127.0.0.1", 3333, "w", "x")
+        bridge._reader = _ExplodingReader()
+        # _amain claims the flag synchronously before the listener task
+        # exists, so this state is exactly what wait_for_job sees then.
+        bridge._listening = True
+        with self.assertRaises(TimeoutError):
+            asyncio.run(bridge.wait_for_job(timeout=0.3))
+
+
 class PendingRpcBoundTests(unittest.TestCase):
     """Bounded queues: timed-out RPCs must not leak _pending entries."""
 

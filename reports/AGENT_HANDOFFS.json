@@ -30,6 +30,16 @@
     "status": "OPEN"
   },
   {
+    "request_id": "B-to-H-legacy-listener-claim-race",
+    "requesting_agent": "B",
+    "owning_agent": "H",
+    "required_interface": "listener-claim discipline at create_task(listen_forever()) call sites outside mining/stratum_bridge.py",
+    "reason": "Fixed in-lane at _amain (bridge._listening claimed synchronously before create_task): between create_task() and the listener coroutine's first scheduling, _listening is False and wait_for_job takes its inline readline() path, suspending concurrently with the listener on the shared StreamReader -> RuntimeError kills one coroutine (zombie miner). The same create_task-then-wait_for_job pattern exists at legacy/scripts/live_braiins_soak.py:160 and tests/test_stratum_live_session.py:178,248 — outside B's lane; apply the same claim before create_task if those harnesses exercise delayed-notify timing.",
+    "affected_files": ["legacy/scripts/live_braiins_soak.py", "tests/test_stratum_live_session.py"],
+    "blocking": false,
+    "status": "OPEN"
+  },
+  {
     "request_id": "B-to-C-stratum-bridge-malformed-drop",
     "requesting_agent": "B",
     "owning_agent": "C",

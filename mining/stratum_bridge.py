@@ -967,6 +967,15 @@ async def _amain(argv=None) -> int:
         f"extranonce2_size={bridge.extranonce2_size}"
     )
 
+    # Claim the reader synchronously: between create_task() and the
+    # listener coroutine's first scheduling, _listening is still False and
+    # wait_for_job would take its inline readline() path — suspending on
+    # the shared StreamReader concurrently with the listener and raising
+    # RuntimeError in whichever coroutine runs second (killing the
+    # listener and leaving the miner grinding blind). Marking the bridge
+    # as listening first keeps wait_for_job on its sleep path; the task
+    # itself re-asserts the flag at entry.
+    bridge._listening = True
     listener = asyncio.create_task(bridge.listen_forever())
 
     print(f"Initializing hash pipeline (backend={args.backend}) ...")
