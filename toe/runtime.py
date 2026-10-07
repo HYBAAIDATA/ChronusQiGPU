@@ -32,7 +32,7 @@ import time
 import uuid
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Mapping, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -532,8 +532,12 @@ class TOEIntelligenceRuntime:
         decision_id: Optional[str] = None
         if self.feedback_core is not None:
             try:
+                # Value-bearing decision when the engine reported a numeric
+                # confidence — a string tag gives attribution a zero baseline
+                # utility and perversely credits low-scoring modules on failed
+                # outcomes. Fall back to the tag only when no score exists.
                 decision_id = self.feedback_core.record_decision(
-                    decision=operation_tag(result),
+                    decision=confidence if isinstance(confidence, (int, float)) else operation_tag(result),
                     confidence=confidence,
                     module_outputs=module_outputs,
                     context={
@@ -553,7 +557,7 @@ class TOEIntelligenceRuntime:
         if self.evidence_chain is not None:
             try:
                 self.evidence_chain.append(
-                    "toe-decision",
+                    "toe-prediction",
                     {
                         "tenant": tenant.tenant_id,
                         "operation": operation,
@@ -986,13 +990,15 @@ class TOEIntelligenceRuntime:
         # one the feedback core stored, so record_outcome can find it.
         decision_id = self._record_decision(tenant, operation, result, confidence)
 
-        # 10. ASI observe-only health hint (never acts)
-        asi_hint: dict[str, Any] = {}
-        if self.asi is not None:
+        # 10. ASI observe-only health hint (never acts) — surfaced on the
+        # result payload rather than probed-and-dropped.
+        if self.asi is not None and isinstance(result, dict):
             try:
-                asi_hint = {"capability_report": self.asi.capability_report()}
+                result["asi_health_hint"] = {
+                    "capability_report": self.asi.capability_report()
+                }
             except Exception as exc:
-                asi_hint = {"error": str(exc)}
+                result["asi_health_hint"] = {"error": str(exc)}
                 logger.warning("[TOE-RUNTIME] ASI probe failed: %s", exc)
 
         # 11. Return response — the caller needs decision_id to correlate a

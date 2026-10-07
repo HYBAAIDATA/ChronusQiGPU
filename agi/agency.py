@@ -1083,17 +1083,23 @@ class EnterpriseASIAgencyFramework:
     ) -> EnterpriseDecisionResult:
         """Apply enterprise validation criteria — only what is measurable."""
 
+        # enterprise_validation is Dict[str, bool] and consumers read it with
+        # ordinary truthiness — a non-empty "not_assessable" string would
+        # evaluate True and lie about a positive validation. Unassessable
+        # criteria report False conservatively, with *_assessable flags
+        # declaring that nothing was measured.
         validation = {
             "strategic_alignment": result.expected_utility
             > context.strategic_importance * context.financial_impact * 0.5,
             "risk_acceptable": result.risk_adjusted_return > 0,
-            # A state vector contains no stakeholder-consensus channel; the
-            # criterion is declared unassessable rather than hardcoded True.
-            "stakeholder_consensus": "not_assessable_from_state_vector",
+            "stakeholder_consensus": False,
+            "stakeholder_consensus_assessable": False,
             "regulatory_compliant": len(context.regulatory_constraints) == 0,
             "financial_viable": result.expected_utility > context.financial_impact * 0.1,
-            "competitive_advantage": "not_assessable_from_scalar_utility",
-            "implementation_feasible": "not_assessable_from_state_vector",
+            "competitive_advantage": False,
+            "competitive_advantage_assessable": False,
+            "implementation_feasible": False,
+            "implementation_feasible_assessable": False,
         }
 
         result.enterprise_validation = validation

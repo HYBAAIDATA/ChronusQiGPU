@@ -276,11 +276,16 @@ class ASIServerController:
             utility = decision_result.expected_utility
             metadata = {"enterprise_decision": decision_result.to_enterprise_report()}
 
-            # Apply autonomy engine
+            # Autonomy stage: run the cycle as governance evidence. Its own
+            # candidate is recorded alongside the Bayesian action, NOT
+            # substituted for it — the returned action must be the one the
+            # reported decision analysis actually evaluated.
             (
-                action,
+                cycle_action,
                 autonomy_metadata,
             ) = await self.autonomy_engine.autonomous_decision_cycle(context)
+            metadata["autonomy_cycle_candidate"] = cycle_action
+            metadata["autonomy_cycle_agrees"] = cycle_action == action
 
             # Track decision
             self.autonomous_decisions_made += 1

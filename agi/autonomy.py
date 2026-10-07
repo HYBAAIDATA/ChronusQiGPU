@@ -564,8 +564,12 @@ class EnterpriseASIAutonomyEngine:
             "staff": context.get("staff_engagement", 0.7),
         }
 
-    async def _compute_collective_consciousness(self) -> Dict[str, Any]:
-        """Compute collective consciousness state"""
+    def _collective_consciousness_snapshot(self) -> Dict[str, Any]:
+        """Collective consciousness state — pure synchronous aggregate.
+
+        Used directly by synchronous callers; the async public method wraps
+        this for the decision-cycle path.
+        """
 
         if not self.consciousness_nodes:
             return {"consciousness_level": 0.0, "coherence": 0.0}
@@ -597,6 +601,10 @@ class EnterpriseASIAutonomyEngine:
             "collective_intelligence": avg_consciousness * avg_coherence * synchronization,
             "evidence_class": "declared_node_state_aggregate",
         }
+
+    async def _compute_collective_consciousness(self) -> Dict[str, Any]:
+        """Compute collective consciousness state (async entry for cycles)."""
+        return self._collective_consciousness_snapshot()
 
     async def _execute_solver_with_consciousness(
         self,
@@ -1061,7 +1069,7 @@ class EnterpriseASIAutonomyEngine:
                 "network_coherence": np.mean(
                     [node.quantum_coherence for node in self.consciousness_nodes.values()]
                 ),
-                "collective_intelligence": self._compute_collective_consciousness(),
+                "collective_intelligence": self._collective_consciousness_snapshot(),
             }
 
         # Meta-learning metrics
