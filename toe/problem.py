@@ -117,10 +117,20 @@ class Structure:
 
     def as_dict(self) -> Dict[str, Any]:
         return {
-            "edges": [list(e) for e in self.edges],
+            "edges": [[p, c, None if w is None else _num(w)] for p, c, w in self.edges],
             "nodes": list(self.nodes),
             "latent": list(self.latent),
         }
+
+
+def _num(x: Any) -> Any:
+    """A JSON-safe number: finite floats as-is, anything else as its repr
+    (so a malformed problem still has an identity to refuse under)."""
+    try:
+        f = float(x)
+    except (TypeError, ValueError):
+        return repr(x)
+    return f if math.isfinite(f) else repr(f)
 
 
 def _finite(x: Any) -> bool:
@@ -159,10 +169,10 @@ class Problem:
         return {
             "schema": PROBLEM_SCHEMA,
             "observation": _jsonable(self.observation),
-            "state": {str(k): float(v) for k, v in sorted(self.state.items())},
+            "state": {str(k): _num(v) for k, v in sorted(self.state.items())},
             "structure": self.structure.as_dict() if self.structure else None,
             "samples": (
-                {str(k): [float(x) for x in v] for k, v in sorted(self.samples.items())}
+                {str(k): [_num(x) for x in v] for k, v in sorted(self.samples.items())}
                 if self.samples
                 else None
             ),
@@ -171,22 +181,22 @@ class Problem:
             "constraints": [c.as_dict() for c in self.constraints],
             "query": list(self.query) if self.query else None,
             "observed": sorted(self.observed) if self.observed is not None else None,
-            "uncertain": {k: [float(x) for x in v] for k, v in sorted(self.uncertain.items())},
-            "noise_sd": {str(k): float(v) for k, v in sorted(self.noise_sd.items())},
+            "uncertain": {k: [_num(x) for x in v] for k, v in sorted(self.uncertain.items())},
+            "noise_sd": {str(k): _num(v) for k, v in sorted(self.noise_sd.items())},
             "transitions": (
                 sorted([str(a), str(b)] for a, b in self.transitions)
                 if self.transitions is not None
                 else None
             ),
             "coordinates": (
-                {str(k): [float(c) for c in v] for k, v in sorted(self.coordinates.items(), key=lambda kv: str(kv[0]))}
+                {str(k): [_num(c) for c in v] for k, v in sorted(self.coordinates.items(), key=lambda kv: str(kv[0]))}
                 if self.coordinates is not None
                 else None
             ),
             "navigation": [str(x) for x in self.navigation] if self.navigation else None,
             "forecast": self.forecast,
             "horizon": int(self.horizon),
-            "budget": self.budget,
+            "budget": _num(self.budget) if self.budget is not None else None,
         }
 
     def content_digest(self) -> str:
