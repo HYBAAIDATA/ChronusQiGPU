@@ -9,7 +9,7 @@ from pathlib import Path
 from aethel.overhead import price_addresses
 from kellogg.scales import fibonacci
 from kellogg.traversal import TRAVERSAL_STRIDE, coverage_certificate
-from kellogg.traversal_map import (
+from benchmarks.traversal_map import (
     HORIZON,
     LARGE_JUMP,
     PROBE_ORDER,

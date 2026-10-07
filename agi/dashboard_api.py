@@ -212,7 +212,7 @@ async def get_dashboard_summary():
         </div>
         <pre>{summary}</pre>
         <div class="footer">
-            <p>HYBA Software Ltd — Mathematical substrate for computational intelligence</p>
+            <p>HYBA Software Limited — Mathematical substrate for computational intelligence</p>
             <p>Version 3.0.0 | Status: Production Ready ✅</p>
         </div>
     </body>

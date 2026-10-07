@@ -27,15 +27,13 @@ not import numpy, sklearn, tensorflow, or any external ML library. It uses
 Python's built-in ``complex`` type for exact complex arithmetic and the
 ``math`` / ``cmath`` modules for transcendental functions.
 
-The module also bridges to ``turing_core`` when available, using the
-project's exact Fibonacci/Lucas/Pisot/Zeckendorf substrate and the 32-node
-dual-overlay frame (icosahedron + dodecahedron) for the Hilbert space
-projector. When ``turing_core`` is unavailable, the module falls back to
-its own pure-Python implementations of the same formulas.
+The 32-node dual-overlay frame (icosahedron plus its dual dodecahedron at
+the icosahedron's face centres) and the Pisot-family Hamiltonians come from
+Kellogg's own substrate. No sibling product is imported.
 """
 
-# LUCAS WIRING: draws from lucas/ (pool) OR implements its Lucas kernel
-# inline below. MUST NOT import from any sibling algorithm.
+# LUCAS WIRING: implements its Lucas kernel inline (kellogg.substrate,
+# L_n = trace(R^n)). MUST NOT import from any sibling algorithm.
 # Substrate route: trace
 
 from __future__ import annotations
@@ -841,13 +839,11 @@ class Observables:
         matrix into the leading d×d block of a dim-dimensional Hilbert
         space (zeros elsewhere), so Schrödinger evolution can run on any
         member of the extended algebraic family — golden, silver, plastic,
-        supergolden, or tribonacci. Requires ``turing_core``.
+        supergolden, or tribonacci.
         """
-        try:
-            import turing_core
-        except ImportError as exc:  # pragma: no cover
-            raise RuntimeError("family_hamiltonian requires turing_core") from exc
-        M = turing_core.family_companion(family)
+        from .substrate import family_companion
+
+        M = family_companion(family)
         d = len(M)
         if dim < d:
             raise ValueError(f"dim must be >= {d} for family '{family}'")
@@ -904,16 +900,36 @@ def quantum_fisher_information(state: QuantumState, observable: ComplexMatrix) -
 def dual_overlay_frame() -> List[Tuple[float, float, float]]:
     """The 32-node dual-overlay frame (icosahedron + dodecahedron) on S².
 
-    Uses turing_core when available; otherwise computes the same vertices
-    in pure Python.
+    The 20 dodecahedron vertices are the icosahedron's face centres, so the
+    two solids are duals; ``dual_frame_is_dual`` checks it.
     """
-    try:
-        import turing_core
+    return _pure_python_dual_overlay()
 
-        frame = turing_core.generate_dual_overlay_frame()
-        return [(float(v[0]), float(v[1]), float(v[2])) for v in frame]
-    except Exception:
-        return _pure_python_dual_overlay()
+
+def dual_frame_is_dual(tolerance: float = 1e-12) -> bool:
+    """Check that every dodecahedron vertex is an icosahedron face centre."""
+    frame = _pure_python_dual_overlay()
+    ico, dod = frame[:12], frame[12:]
+    edge = min(
+        math.dist(ico[i], ico[j]) for i in range(12) for j in range(i + 1, 12)
+    )
+
+    def adjacent(i: int, j: int) -> bool:
+        return abs(math.dist(ico[i], ico[j]) - edge) < 1e-9
+
+    centres = []
+    for i in range(12):
+        for j in range(i + 1, 12):
+            for k in range(j + 1, 12):
+                if adjacent(i, j) and adjacent(j, k) and adjacent(i, k):
+                    c = [ico[i][a] + ico[j][a] + ico[k][a] for a in range(3)]
+                    norm = math.sqrt(sum(v * v for v in c))
+                    centres.append(tuple(v / norm for v in c))
+    if len(centres) != 20:
+        return False
+    return all(
+        min(math.dist(vertex, centre) for centre in centres) < tolerance for vertex in dod
+    )
 
 
 def _pure_python_dual_overlay() -> List[Tuple[float, float, float]]:
@@ -1268,16 +1284,23 @@ __all__ = [
 
 
 def lucas_bound(n: int = 10) -> dict:
-    """Verify this module's Lucas route against the shared pool.
+    """Verify this module's Lucas route: trace(R^n) against L_n, exactly.
 
-    Calls the declared kernel (trace_kernel) on the canonical substrate for
-    this route and reports the pool's exact bound. This proves the route
-    is live; it is not a per-algorithm cost claim.
+    R is the golden transfer matrix. This proves the route is live; it is
+    not a per-algorithm cost claim.
     """
-    import numpy as np  # noqa: F401
+    from .scales import lucas
+    from .substrate import TRANSFER, int_mat_pow, trace
 
-    from lucas.pool import get as _lucas_get
-
-    result = _lucas_get("trace_kernel")(np.array([[1, 1], [1, 0]], dtype=object), n)
-    result["module"] = __name__
-    return result
+    tr = trace(int_mat_pow(TRANSFER, n))
+    bound = lucas(n)
+    return {
+        "kernel": "trace_kernel",
+        "n": n,
+        "trace_Mn": tr,
+        "lucas_bound": bound,
+        "bound": bound,
+        "is_lucas_bounded": abs(tr) <= bound,
+        "theorem_proven": False,
+        "module": __name__,
+    }

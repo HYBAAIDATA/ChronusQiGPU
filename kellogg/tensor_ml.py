@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import warnings
 from dataclasses import dataclass
@@ -29,7 +30,13 @@ import numpy as np
 from .exact_tensor import ExactTOETensor, F4, ONE, Qsqrt2, ZERO
 
 FIELD_ID = "Q(sqrt2)+iQ(sqrt2)"
-MLA1517_VERSION = "chronus.mla1517.1"
+# Frozen domain-separation string hashed into every commitment; renaming it
+# would change every stored commitment digest, so the bytes stay as they are.
+SUBSTRATE_TAG = "chronus.mla1517.1"
+ARTIFACT_SCHEMA = "kellogg.tensor-ml/v2"
+# Legacy artifact lock values: read-only acceptance of v1 artifacts written
+# before Kellogg stopped locking its file format to a consumer's version.
+MLA1517_VERSION = SUBSTRATE_TAG
 TOE_VERSION = "3.5.0"
 
 
@@ -1160,8 +1167,9 @@ class TensorClassifier:
             }
         return {
             "schema": {
-                "toe_version": TOE_VERSION,
-                "mla_version": MLA1517_VERSION,
+                "kellogg_schema": ARTIFACT_SCHEMA,
+                "kellogg_version": _kellogg_version(),
+                "substrate": SUBSTRATE_TAG,
                 "field": FIELD_ID,
                 "order": "sigma:real-then-imag",
             },
@@ -1184,20 +1192,32 @@ class TensorClassifier:
     def from_artifact(cls, artifact):
         expected = FIELD_ID
         schema = artifact.get("schema", {})
-        if schema.get("toe_version") != TOE_VERSION:
-            raise ValueError(
-                f"artifact toe_version {schema.get('toe_version')!r} is version-locked "
-                f"against TOE {TOE_VERSION}; retrain or run an explicit migration"
-            )
-        # The lock is on the whole schema: substrate version and declared
-        # field order are part of the artifact contract, not just the
-        # tensor-family version. An artifact written under a different
-        # substrate or ordering must not silently load.
-        if schema.get("mla_version") != MLA1517_VERSION:
-            raise ValueError(
-                f"artifact substrate version {schema.get('mla_version')!r} "
-                f"does not match the locked substrate {MLA1517_VERSION!r}"
-            )
+        # The lock is on the whole schema: format version, substrate and
+        # declared field order are part of the artifact contract. An artifact
+        # written under a different format, substrate or ordering must not
+        # silently load.
+        if "kellogg_schema" in schema:
+            if schema.get("kellogg_schema") != ARTIFACT_SCHEMA:
+                raise ValueError(
+                    f"artifact format {schema.get('kellogg_schema')!r} is not "
+                    f"{ARTIFACT_SCHEMA}; retrain or run an explicit migration"
+                )
+            if schema.get("substrate") != SUBSTRATE_TAG:
+                raise ValueError(
+                    f"artifact substrate {schema.get('substrate')!r} does not match "
+                    f"the locked substrate {SUBSTRATE_TAG!r}"
+                )
+        else:
+            if schema.get("toe_version") != TOE_VERSION:
+                raise ValueError(
+                    f"legacy artifact toe_version {schema.get('toe_version')!r} is not the "
+                    f"readable legacy lock {TOE_VERSION}; retrain or run an explicit migration"
+                )
+            if schema.get("mla_version") != MLA1517_VERSION:
+                raise ValueError(
+                    f"legacy artifact substrate {schema.get('mla_version')!r} does not match "
+                    f"the locked substrate {MLA1517_VERSION!r}"
+                )
         if schema.get("order") != "sigma:real-then-imag":
             raise ValueError("artifact field order does not match the declared sigma order")
         if schema.get("field") != expected:
@@ -1372,8 +1392,16 @@ def tensor_cross_val_score(model, X, y, cv=3, scoring="f1"):
     return np.asarray(scores, dtype=float)
 
 
-PROOF_DIR = Path(__file__).resolve().parent.parent / "proofs"
+PROOF_DIR = Path(
+    os.environ.get("KELLOGG_PROOF_DIR") or Path(__file__).resolve().parent.parent / "proofs"
+)
 PROOF_INDEX = PROOF_DIR / "index.json"
+
+
+def _kellogg_version() -> str:
+    import kellogg
+
+    return getattr(kellogg, "__version__", "")
 
 
 @dataclass(frozen=True)
@@ -1550,7 +1578,9 @@ if "sqrt_f" in globals():
 
 __all__ = [
     "FIELD_ID",
+    "ARTIFACT_SCHEMA",
     "MLA1517_VERSION",
+    "SUBSTRATE_TAG",
     "TOE_VERSION",
     "F4",
     "Qsqrt2",

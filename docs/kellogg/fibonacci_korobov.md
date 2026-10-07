@@ -62,7 +62,7 @@ object, the additive recurrence of the root of `x^4 = x + 1`.
 
 ## The traversal named Korobov
 
-`kellogg/traversal_map.py` walks modulus `64` with generator `55`.
+`benchmarks/traversal_map.py` walks modulus `64` with generator `55`.
 `64` is not a Fibonacci number. `55^2 mod 64 = 17`, not `±1`, so that
 walk does not collapse, and it is not `fibonacci_lattice`. Dimension 1
 of any Korobov rule is `({k / N})`, because `a^0 = 1`. That is why the

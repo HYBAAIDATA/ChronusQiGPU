@@ -18,9 +18,20 @@ from typing import Any, Mapping, Sequence, Tuple
 from .exact_tensor import canonical_digest
 from .scales import cassini_store, zeckendorf_11d
 
-CONSENSUS_AUTHORITY = "double_sha256"
-ATTESTATION_SCHEMA = "kellogg.attestation/v1"
-_ATTESTATION_DOMAIN = b"kellogg.attestation.envelope/v1\0"
+# Kellogg is a tensor library, never a consensus authority. v1 records named
+# an external authority instead; they remain verifiable read-only.
+CONSENSUS_AUTHORITY = False
+ATTESTATION_SCHEMA = "kellogg.attestation/v2"
+LEGACY_ATTESTATION_SCHEMA = "kellogg.attestation/v1"
+LEGACY_CONSENSUS_AUTHORITY = "double_sha256"
+_DOMAINS = {
+    ATTESTATION_SCHEMA: b"kellogg.attestation.envelope/v2\0",
+    LEGACY_ATTESTATION_SCHEMA: b"kellogg.attestation.envelope/v1\0",
+}
+_AUTHORITY = {
+    ATTESTATION_SCHEMA: CONSENSUS_AUTHORITY,
+    LEGACY_ATTESTATION_SCHEMA: LEGACY_CONSENSUS_AUTHORITY,
+}
 _EXACT_FIELDS = ("Qsqrt2", "F4", "Zphi")
 
 
@@ -71,7 +82,7 @@ class ProofBoundary:
     float_boundaries: Tuple[str, ...] = ()
     unrepresentable: Tuple[str, ...] = ()
     theorem_proven: bool = False
-    consensus_authority: str = CONSENSUS_AUTHORITY
+    consensus_authority: bool | str = CONSENSUS_AUTHORITY
     notes: Tuple[str, ...] = ()
 
     def to_dict(self) -> dict:
@@ -96,7 +107,8 @@ def _canonical_bytes(value: Any) -> bytes:
 
 
 def _envelope_digest(unsigned: Mapping[str, Any]) -> str:
-    return hashlib.sha256(_ATTESTATION_DOMAIN + _canonical_bytes(unsigned)).hexdigest()
+    domain = _DOMAINS[unsigned["schema"]]
+    return hashlib.sha256(domain + _canonical_bytes(unsigned)).hexdigest()
 
 
 def _step_count(payload: Mapping[str, Any]) -> int:
@@ -109,11 +121,12 @@ def _unsigned_attestation(
     boundary: Mapping[str, Any],
     *,
     version_lock: str,
+    schema: str = ATTESTATION_SCHEMA,
 ) -> dict[str, Any]:
     digest = canonical_digest(payload)
     digest_int = int(digest, 16)
     return {
-        "schema": ATTESTATION_SCHEMA,
+        "schema": schema,
         "boundary": dict(boundary),
         "digest": digest,
         "version_lock": version_lock,
@@ -132,9 +145,9 @@ def attest(
     """Bind a computation payload to a ProofBoundary attestation.
 
     computation is any canonical-digest-compatible record of what was
-    computed. The returned v1 surface retains its existing schema and fields,
-    with attestation_digest added to bind the boundary metadata and all replay
-    material to one deterministic envelope.
+    computed. The v2 envelope binds the boundary metadata and all replay
+    material to one deterministic digest and declares that Kellogg holds no
+    consensus authority.
     """
     payload = computation if isinstance(computation, Mapping) else {"value": computation}
     boundary = ProofBoundary(
@@ -169,10 +182,9 @@ def verify_attestation(
     """
     if not isinstance(attestation, Mapping):
         raise AttestationError("attestation must be a mapping")
-    if attestation.get("schema") != ATTESTATION_SCHEMA:
-        raise AttestationError(
-            f"unsupported Kellogg attestation schema {attestation.get('schema')!r}"
-        )
+    schema = attestation.get("schema")
+    if schema not in _DOMAINS:
+        raise AttestationError(f"unsupported Kellogg attestation schema {schema!r}")
 
     allowed = {
         "schema",
@@ -207,7 +219,9 @@ def verify_attestation(
         raise AttestationError("Kellogg exact-field declaration was altered")
     if boundary.get("theorem_proven") is not False:
         raise AttestationError("Kellogg tensor attestation cannot assert theorem_proven")
-    if boundary.get("consensus_authority") != CONSENSUS_AUTHORITY:
+    declared = boundary.get("consensus_authority")
+    required = _AUTHORITY[schema]
+    if declared != required or isinstance(declared, bool) != isinstance(required, bool):
         raise AttestationError("Kellogg attestation cannot alter consensus authority")
     for name in ("float_boundaries", "unrepresentable", "notes"):
         values = boundary.get(name)
@@ -227,6 +241,7 @@ def verify_attestation(
         payload,
         boundary,
         version_lock=version_lock,
+        schema=schema,
     )
     for field in ("digest", "zeckendorf", "cassini"):
         if _canonical_bytes(attestation.get(field)) != _canonical_bytes(expected[field]):

@@ -106,7 +106,7 @@ def model_arm() -> dict:
 
 def real_hash_arm(sizes=(1 << 10, 1 << 15), trials=(100, 24)) -> dict:
     """Winners from physical hashing; Grover arm via production code path."""
-    from turing_universal_quantum_computer.search import GroverStyleSearch
+    from mining.search import GroverStyleSearch
 
     grover = GroverStyleSearch()
     out = {}

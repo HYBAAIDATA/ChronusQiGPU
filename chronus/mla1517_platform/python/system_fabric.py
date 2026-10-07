@@ -173,7 +173,7 @@ SUBSYSTEMS: list[dict[str, Any]] = [
     {
         "key": "vqc",
         "name": "Virtual quantum computer (11-qubit exact)",
-        "module": "turing_universal_quantum_computer.scaled_execution",
+        "module": "mining.scaled_execution",
         "wired": "production",
         "gate": "pool_credentials",
         "detail": "LucasScaledAethelExecutionAdapter — strict-quantum certificate + structured plan + tensor roundtrip + iGPU gate per window",

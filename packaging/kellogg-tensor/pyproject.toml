@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kellogg-tensor"
+dynamic = ["version"]
+description = "Kellogg — exact tensor networks over Q(zeta_8): MPS/MPO/TT in custody, certified operations, exact channels, Fisher information, surface codes and the golden substrate."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [{ name = "HYBA Software Limited" }]
+keywords = [
+    "tensor-networks",
+    "mps",
+    "mpo",
+    "exact-arithmetic",
+    "cyclotomic",
+    "clifford-t",
+    "surface-code",
+    "certificates",
+    "quantum-from-maths",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Typing :: Typed",
+]
+dependencies = [
+    # numpy is the only hard dependency; the exact path is pure Python.
+    "numpy>=1.26,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4,<10",
+]
+
+[project.scripts]
+kellogg-benchmark = "kellogg.benchmark:main"
+
+[project.urls]
+Homepage = "https://github.com/QuantumPhi2/PhiMiner"
+
+[tool.setuptools]
+include-package-data = false
+packages = ["kellogg"]
+
+[tool.setuptools.dynamic]
+version = { attr = "kellogg.__version__" }
+
+[tool.setuptools.package-data]
+kellogg = ["py.typed", "CAPABILITY_MANIFEST.json"]

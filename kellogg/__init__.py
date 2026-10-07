@@ -67,6 +67,28 @@ Golden substrate (the DphiT stack; numpy, lazy-loaded):
                              critical-Ising chain utilities, and the
                              Chrysalis decode benchmark.
 
+Exact tensor networks (custody-backed; Q(zeta_8) on integer coordinates):
+
+    kellogg.cyclotomic       Q8: Q(zeta_8) on integers, bit-equal to F4.
+    kellogg.exact_linalg     Exact elimination: RREF, rank factorization,
+                             inverse, solve, PSD, over any exact field.
+    kellogg.custody          Where every core and certificate lives: the
+                             custody protocol, resident custody, and the
+                             fold-store binding (Aethel, by protocol).
+    kellogg.certificate      TensorCertificate, CEX canonical JSON,
+                             composition, Merkle aggregation and proofs.
+    kellogg.exact_network    Exact TT / MPS / MPO with structural lossless
+                             compression and a certificate per operation.
+    kellogg.channels         Exact Kraus maps, Pauli Hamiltonians, Fisher.
+    kellogg.surface_code     Planar surface code over GF(2), exact distance,
+                             exact-MWPM and union-find decoders.
+    kellogg.substrate        (Z[phi], R): transfer matrix identities, cat
+                             map, Q(phi), beta-expansion, exact discrepancy.
+    kellogg.vector11         The 11D golden-weighted vector, exact fold.
+    kellogg.dmrg             Two-site DMRG (float plane).
+    kellogg.spec             The canonical tensor specification registry.
+    kellogg.benchmark        Correctness, cost and meta benchmarks.
+
 Two scalar planes share the package by design:
 
 * ``exact``      — F4/Qsqrt2 Fraction arithmetic; certificates and
@@ -176,12 +198,62 @@ from .attest import (
     verify_version,
 )
 
-__version__ = "3.6.0"
+__version__ = "1.0.0"
 
 # Lazy surfaces: tensor_ml requires numpy; exact_field.sqrt_f is kept out
 # of the training path by contract (tests assert it never enters
 # sys.modules through the ML import chain).
 _LAZY_SUBMODULE_ATTRS = {
+    "cyclotomic": ("Q8", "NotReal"),
+    "exact_linalg": ("SingularMatrix", "cr_factor", "rref"),
+    "custody": ("CustodyError", "FoldStoreCustody", "ResidentCustody", "default_custody"),
+    "certificate": (
+        "AggregateCertificate",
+        "CertificateError",
+        "CertificateLedger",
+        "TensorCertificate",
+        "aggregate",
+        "certify",
+        "cex",
+        "compose",
+        "merkle_proof",
+        "verify_certificate",
+        "verify_merkle_proof",
+    ),
+    "exact_network": (
+        "Core",
+        "ExactMPO",
+        "ExactMPS",
+        "ExactNetworkError",
+        "ExactTensorTrain",
+        "ghz_circuit",
+        "heisenberg_mpo",
+        "ising_mpo",
+    ),
+    "channels": (
+        "KrausChannel",
+        "PauliHamiltonian",
+        "channel_mpo",
+        "cramer_rao_holds",
+        "fisher_matrix",
+        "heisenberg_bound_holds",
+        "pauli_rotation",
+    ),
+    "surface_code": ("PlanarSurfaceCode", "SurfaceCodeError", "edge_star_report"),
+    "substrate": (
+        "QPhi",
+        "TRANSFER",
+        "cassini_step",
+        "cat_map",
+        "korobov_point",
+        "lucas_cassini",
+        "lucas_wind",
+        "phi_beta_expansion",
+        "star_discrepancy_2d",
+    ),
+    "vector11": ("RootVector", "fold", "lift", "unfold", "unit_lift"),
+    "dmrg": ("DMRGResult", "dmrg"),
+    "spec": ("REGISTRY", "SpecItem", "verify_registry"),
     "dphi_transform": (
         "DphiTError",
         "INV_PHI",
@@ -283,6 +355,7 @@ _LAZY_SUBMODULE_ATTRS = {
         "tt_compress_with_budget",
         "tt_decompose",
         "tt_reconstruct",
+        "tt_svd",
     ),
     "compressed_tensor": (
         "CompressedQuantumState",
@@ -306,7 +379,9 @@ _LAZY_SUBMODULE_ATTRS = {
     "tensor_ml": (
         "CANONICAL",
         "FIELD_ID",
+        "ARTIFACT_SCHEMA",
         "MLA1517_VERSION",
+        "SUBSTRATE_TAG",
         "TOE_VERSION",
         "DiagnosticValue",
         "ExactValue",
@@ -467,6 +542,18 @@ __all__ = [
     "attest",
     "verify_attestation",
     "verify_version",
+    # exact tensor networks, custody, certificates, specification (lazy)
+    *_LAZY_SUBMODULE_ATTRS["cyclotomic"],
+    *_LAZY_SUBMODULE_ATTRS["exact_linalg"],
+    *_LAZY_SUBMODULE_ATTRS["custody"],
+    *_LAZY_SUBMODULE_ATTRS["certificate"],
+    *_LAZY_SUBMODULE_ATTRS["exact_network"],
+    *_LAZY_SUBMODULE_ATTRS["channels"],
+    *_LAZY_SUBMODULE_ATTRS["surface_code"],
+    *_LAZY_SUBMODULE_ATTRS["substrate"],
+    *_LAZY_SUBMODULE_ATTRS["vector11"],
+    *_LAZY_SUBMODULE_ATTRS["dmrg"],
+    *_LAZY_SUBMODULE_ATTRS["spec"],
     # golden substrate + tensor data plane + ML (lazy)
     *_LAZY_SUBMODULE_ATTRS["dphi_transform"],
     *_LAZY_SUBMODULE_ATTRS["golden_convolution"],

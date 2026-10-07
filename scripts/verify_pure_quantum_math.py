@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Reproduce the PureQuantumMathASIC proof bundle in a clean environment."""
+"""Reproduce the PureQuantumMathASIC proof bundle in a clean environment.
+
+The bundle spans products: the capacity model and the SHA-256d thermodynamic
+boundary are Mining's; the Q(zeta_8) field registry and the surface-code
+algebra are TURING's (exact algebra underneath from Kellogg).
+"""
 
 from __future__ import annotations
 
@@ -7,7 +12,8 @@ import argparse
 import json
 from pathlib import Path
 
-from turing_universal_quantum_computer import TenThousandQubitSystem
+from mining.fault_tolerant_asic import PureQuantumMathASIC
+from mining.thermodynamics_exact import thermodynamic_boundary_report
 from turing_universal_quantum_computer.canonical_serialization import (
     canonical_sha256,
 )
@@ -17,15 +23,12 @@ from turing_universal_quantum_computer.exact_field_registry import (
 from turing_universal_quantum_computer.surface_code_exact import (
     verify_surface_code_algebra,
 )
-from turing_universal_quantum_computer.thermodynamics_exact import (
-    thermodynamic_boundary_report,
-)
 
 
 def reproduce(logical_scale: int = 10_000) -> dict:
-    system = TenThousandQubitSystem(n_qubits=logical_scale)
-    verification = system.verify_pure_quantum_asic()
-    capacity = system.deterministic_10eh_system()
+    asic = PureQuantumMathASIC()
+    verification = asic.verify_first_principles()
+    capacity = asic.deterministic_hashrate_system()
     field = verify_q_zeta_8_registry()
     distance_31 = verify_surface_code_algebra(31)
     thermodynamics = thermodynamic_boundary_report()

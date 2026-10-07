@@ -111,9 +111,21 @@ class ConsoleSessionTests(unittest.TestCase):
         # T is inside the dense Clifford+T set, so it is accepted here.
         self.assertIn("applied t 0", output)
 
-    def test_wide_non_clifford_is_refused_not_approximated(self):
+    def test_wide_bounded_non_clifford_runs_on_the_exact_mps(self):
         self.console.do("init 64")
+        self.console.do("h 0")
         output = self.console.do("t 0")
+        self.assertIn("mps_exact", output)
+        self.assertIn("‖ψ‖² = 1", output)
+        self.assertIn("mps_exact", self.console.do("psi"))
+
+    def test_wide_unbounded_non_clifford_is_refused_not_approximated(self):
+        self.console.do("init 64")
+        self.console.do("h 0")
+        self.console.do("t 0")
+        for _ in range(6):
+            self.console.do("cx 0 63")
+        output = self.console.do("cx 0 63")
         self.assertIn("REFUSED", output)
         self.assertIn("approximate", output.lower())
 
