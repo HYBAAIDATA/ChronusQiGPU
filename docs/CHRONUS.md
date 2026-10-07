@@ -73,7 +73,7 @@ A logical vertex may be backed by one or many Chronus workers. Fleet scaling mus
 
 ## Performance and fleet truth
 
-The engineering target may be **10 EH/s aggregate**, but it is a target until measured. At 600 logical vertices that target corresponds to approximately 16.67 PH/s of aggregate provisioned capacity per logical vertex if allocated uniformly; it does not require one physical device per vertex.
+The engineering target may be the **governed 1e19 H/s hashrate ceiling (aggregate)**, but it is a target until measured. At 600 logical vertices that target corresponds to approximately 16.67 PH/s of aggregate provisioned capacity per logical vertex if allocated uniformly; it does not require one physical device per vertex.
 
 Reported hashrate is always the sum of measured completed SHA256d work over measured time. A mathematical topology multiplier, tensor ratio, search-order advantage or configured fleet size is never substituted for measured hashrate. If one observed execution path measures 500 kH/s, `600 x 500 kH/s = 300 MH/s` is only the aggregate rate when 600 independent workers/lanes actually execute at that measured rate.
 

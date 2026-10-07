@@ -338,6 +338,9 @@ def test_backend_failure_heals_and_reroutes(monkeypatch, tmp_path):
         def grind_target_range(self, header, target_be, start, count):
             raise RuntimeError("device fault (test fixture)")
 
+        def grind_target_batch(self, header80, target_be, nonces):
+            raise RuntimeError("device fault (test fixture)")
+
     registry = BackendRegistry()
     probes = {"call": 0}
 
