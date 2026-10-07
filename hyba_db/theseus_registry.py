@@ -228,13 +228,34 @@ class TheseusFileRegistry(FileRegistry):
             if versions and obj["current_version_id"] != versions[-1][0]:
                 conflicts.append(str(obj["file_object_id"]))
 
-        primary_root = root / tenant_id / "theseus"
-        actual = (
-            {str(p.resolve()) for p in primary_root.rglob("*.blk") if p.is_file()}
-            if primary_root.exists()
-            else set()
-        )
-        orphan_files = sorted(actual - set(expected))
+        retained_legacy: set[str] = set()
+        for event in self.store._db.execute(
+            "SELECT detail_json FROM file_events WHERE tenant_id=? "
+            "AND event_type='MOVED'",
+            (tenant_id,),
+        ).fetchall():
+            try:
+                detail = json.loads(str(event["detail_json"]))
+            except (TypeError, json.JSONDecodeError):
+                continue
+            if detail.get("legacy_retained") and detail.get("legacy_uri"):
+                uri = str(detail["legacy_uri"])
+                if uri.startswith("file://"):
+                    retained_legacy.add(str(Path(uri[7:]).resolve()))
+
+        actual: set[str] = set()
+        tenant_root = root / tenant_id
+        if tenant_root.exists():
+            for path in tenant_root.rglob("*"):
+                if not path.is_file() or ".tmp." in path.name or path.suffix == ".tmp":
+                    continue
+                rel = path.relative_to(tenant_root)
+                if rel.parts and rel.parts[0] in {"theseus-replica", ".theseus"}:
+                    continue
+                actual.add(str(path.resolve()))
+        # Preserve deliberately retained legacy migration sources without
+        # reclassifying them as authoritative storage or as accidental orphans.
+        orphan_files = sorted(actual - set(expected) - retained_legacy)
         unresolved = (
             missing + hashes + orphans + conflicts + tenant_mismatches
             + custody_missing + link_missing + transform_mismatches
