@@ -236,9 +236,12 @@ class OntologyStore:
         self._db.execute("PRAGMA journal_mode=WAL")
         self._db.execute("PRAGMA synchronous=FULL")
         self._db.executescript(_SCHEMA)
-        self._db.execute("INSERT OR REPLACE INTO metadata VALUES('schema_version','3')")
+        # The schema marker is promoted only after the v3 migration/projection
+        # constructors complete. A failed legacy provenance migration therefore
+        # cannot advertise a schema version the database did not finish.
         self.files = FileRegistry(self, custody=custody)
         self.knowledge = KnowledgeProjection(self, custody=custody)
+        self._db.execute("INSERT OR REPLACE INTO metadata VALUES('schema_version','3')")
 
     def close(self) -> None:
         custody_close = getattr(self.files.custody, "close", None)
