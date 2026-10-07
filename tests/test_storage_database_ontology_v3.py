@@ -5,7 +5,7 @@ import tomllib
 
 import pytest
 
-from hyba_db import IntegrityFailure, ModuleEvidenceAdapter, OntologyStore, Quota, TheseusFileCustody
+from hyba_db import AccessDenied, IntegrityFailure, ModuleEvidenceAdapter, OntologyStore, Quota, TheseusFileCustody
 from hyba_db.production_gate import evaluate
 
 INTEGRITY_KEY = b"i" * 32
@@ -145,6 +145,18 @@ def test_knowledge_projection_rebuilds_from_theseus_custody(tmp_path):
         assert set(restored["restored"]) == {first.knowledge_id, second.knowledge_id}
         assert restored["restored_relations"]
         assert store.knowledge.verify(client.tenant_id)["passed"] is True
+        # Rebuilding a missing projection must not double-charge quota when
+        # its original quota ledger survived.
+        usage = store._db.execute(
+            "SELECT used_records,used_blob_bytes FROM tenants WHERE tenant_id=?",
+            (client.tenant_id,),
+        ).fetchone()
+        ledger = store._db.execute(
+            "SELECT COALESCE(SUM(record_delta),0),COALESCE(SUM(byte_delta),0) "
+            "FROM quota_events WHERE tenant_id=?",
+            (client.tenant_id,),
+        ).fetchone()
+        assert tuple(usage) == tuple(ledger)
         latest = store.knowledge.query(client.tenant_id)
         assert second.knowledge_id in {item.knowledge_id for item in latest}
     finally:
@@ -167,7 +179,7 @@ def test_knowledge_tamper_and_cross_tenant_links_fail_closed(tmp_path):
             value={"value": 2},
             state="MEASURED",
         )
-        with pytest.raises(Exception):
+        with pytest.raises(AccessDenied):
             store.knowledge.relate(
                 first_client.tenant_id,
                 first.knowledge_id,
@@ -272,6 +284,56 @@ def test_identical_bytes_do_not_merge_distinct_semantic_provenance(tmp_path):
     finally:
         store.close()
 
+
+
+def test_missing_or_corrupt_cas_blob_recovers_from_theseus(tmp_path):
+    store, _custody, client = _opened(tmp_path)
+    root = tmp_path / "files"
+    try:
+        _object_id, version_id = store.files.put_file(
+            client.tenant_id,
+            root,
+            logical_name="recoverable.json",
+            file_class="durable_evidence",
+            semantic_owner="pythia",
+            domain="mining",
+            content=b'{"recoverable":true}',
+            producer="pythia",
+            producer_version="recovery-test",
+            provenance={
+                "source_ids": ["source-recovery"],
+                "code_ref": "recovery-test",
+                "recovery_class": "theseus-canonical",
+            },
+            links=(("external:test", "recovery", "supports"),),
+        )
+        row = store._db.execute(
+            "SELECT storage_uri,content_sha256 FROM file_versions "
+            "WHERE tenant_id=? AND file_version_id=?",
+            (client.tenant_id, version_id),
+        ).fetchone()
+        path = Path(str(row["storage_uri"])[7:])
+        path.write_bytes(b"corrupt")
+        before = store.files.reconcile_files(client.tenant_id, root)
+        assert version_id in before.hash_mismatches
+
+        recovered = store.files.recover_blob_from_custody(
+            client.tenant_id, version_id, root
+        )
+        assert recovered["passed"] is True
+        assert recovered["recovered"] is True
+        assert path.read_bytes() == b'{"recoverable":true}'
+        after = store.files.reconcile_files(client.tenant_id, root)
+        assert after.passed is True
+        assert store.files.verify_database(client.tenant_id)["passed"] is True
+
+        path.unlink()
+        batch = store.files.recover_blobs_from_custody(client.tenant_id, root)
+        assert batch["passed"] is True
+        assert version_id in batch["recovered"]
+        assert store.files.reconcile_files(client.tenant_id, root).passed is True
+    finally:
+        store.close()
 
 def test_database_verification_refuses_unavailable_custody_adapter(tmp_path):
     store, _custody, client = _opened(tmp_path)
