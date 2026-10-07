@@ -337,6 +337,21 @@ class TOEIntelligenceRuntime:
 
         self._tenant_decisions: dict[str, list[str]] = {}
 
+        # Any absent component of the claimed loop marks the runtime
+        # degraded — disabled optional wiring is still reduced capability,
+        # not a full-voyage posture. Reasons already recorded with exception
+        # detail are not duplicated.
+        for _name, _component in (
+            ("feedback_core", self.feedback_core),
+            ("evidence_chain", self.evidence_chain),
+            ("asi_core", self.asi),
+            ("platform", self.platform),
+        ):
+            if _component is None and not any(
+                r.startswith(f"{_name}:") for r in self._degraded
+            ):
+                self._degraded.append(f"{_name}: unavailable")
+
         mode = "full" if not self._degraded else "degraded"
         logger.info(
             "[TOE-RUNTIME] initialised: bridge=%s feedback=%s evidence=%s "
@@ -466,6 +481,15 @@ class TOEIntelligenceRuntime:
         excluded modules stop accumulating attribution.
         """
         if self.feedback_core is None or not isinstance(result, dict):
+            return result
+        if not hasattr(self.feedback_core, "identify_underperforming_modules"):
+            # Injected cores implementing the minimal (record_decision,
+            # process) contract have no learning surface — the policy is
+            # declared unsupported, not silently skipped.
+            result.setdefault(
+                "learned_policy",
+                {"applied": False, "reason": "feedback core lacks learning surface"},
+            )
             return result
         underperforming = set(self.feedback_core.identify_underperforming_modules())
         if not underperforming:
@@ -658,6 +682,26 @@ class TOEIntelligenceRuntime:
                 ),
                 degraded=True,
             )
+        # A configured durable handoff requires a snapshot-capable core;
+        # an injected minimal-contract core cannot honour it — fail closed
+        # rather than crash on AttributeError mid-transaction.
+        if self._feedback_state_path is not None and not hasattr(
+            self.feedback_core, "snapshot"
+        ):
+            return RuntimeResponse(
+                ok=False,
+                tenant_id=tenant.tenant_id,
+                operation="record_outcome",
+                error=RuntimeErrorInfo(
+                    code="persistence_unsupported",
+                    message=(
+                        "feedback_state_path is configured but the injected "
+                        "feedback core has no snapshot(); the durable handoff "
+                        "cannot be honoured"
+                    ),
+                ),
+                degraded=True,
+            )
         # Transactional durability: snapshot before processing so a failed
         # durable write can roll the in-memory aggregate back to the last
         # persisted state — memory never diverges from disk, and the decision
@@ -819,27 +863,37 @@ class TOEIntelligenceRuntime:
         # outcome loop learned were negative contributors surface as
         # underperforming on the health report, and mark the runtime degraded
         # so downstream consumers can see learned evidence changed posture.
+        # Learning surface is optional on injected feedback cores: the
+        # documented contract is (record_decision, process); cores with no
+        # attribution methods report an unsupported surface, not an error.
+        learned_surface_supported = self.feedback_core is not None and hasattr(
+            self.feedback_core, "identify_underperforming_modules"
+        )
         learned_performance: dict[str, float] = {}
         underperforming: list[str] = []
-        if self.feedback_core is not None:
-            learned_performance = self.feedback_core.get_module_performance()
+        if learned_surface_supported:
+            get_perf = getattr(self.feedback_core, "get_module_performance", None)
+            if callable(get_perf):
+                learned_performance = get_perf()
             underperforming = self.feedback_core.identify_underperforming_modules()
         learned_degraded = bool(underperforming)
-        if learned_degraded:
-            for name in underperforming:
-                reason = f"learned: module {name} underperforming"
-                if reason not in self._degraded:
-                    self._degraded.append(reason)
+        # Learned underperformance is transient — reasons are computed fresh
+        # per health call and never enter the permanent _degraded list, so a
+        # recovered module clears both the flag and its reason.
+        learned_reasons = [
+            f"learned: module {name} underperforming" for name in underperforming
+        ]
 
         return {
             "engine_available": engine_ok,
             "engine_status": engine_status,
             "feedback_available": self.feedback_core is not None,
+            "learned_surface_supported": learned_surface_supported,
             "evidence_available": self.evidence_chain is not None,
             "asi_report": asi_report,
             "platform_available": self.platform is not None,
             "degraded": self.degraded or learned_degraded,
-            "degradation_reasons": self.degradation_reasons,
+            "degradation_reasons": self.degradation_reasons + learned_reasons,
             "learned_module_performance": learned_performance,
             "underperforming_modules": underperforming,
             "feedback_state": {
@@ -981,7 +1035,18 @@ class TOEIntelligenceRuntime:
         if isinstance(result, dict):
             conf = result.get("confidence")
             if isinstance(conf, (int, float)) and math.isfinite(float(conf)):
-                confidence = max(0.0, min(1.0, float(conf)))
+                conf_f = float(conf)
+                if 0.0 <= conf_f <= 1.0:
+                    confidence = conf_f
+                else:
+                    # An out-of-range claim is not a usable confidence: record
+                    # it as absent rather than clamping a fabricated 0/1
+                    # certainty into the calibration series.
+                    logger.warning(
+                        "[TOE-RUNTIME] engine reported out-of-range confidence %r; "
+                        "recording confidence as absent",
+                        conf_f,
+                    )
 
         # 8. Build receipt
         receipt = self._build_receipt(tenant, operation, payload, result)
@@ -994,9 +1059,11 @@ class TOEIntelligenceRuntime:
         # result payload rather than probed-and-dropped.
         if self.asi is not None and isinstance(result, dict):
             try:
-                result["asi_health_hint"] = {
-                    "capability_report": self.asi.capability_report()
-                }
+                report = self.asi.capability_report()
+                # The hint rides the response envelope — it must stay
+                # JSON-serialisable or the whole result fails to encode.
+                json.dumps(report)
+                result["asi_health_hint"] = {"capability_report": report}
             except Exception as exc:
                 result["asi_health_hint"] = {"error": str(exc)}
                 logger.warning("[TOE-RUNTIME] ASI probe failed: %s", exc)
