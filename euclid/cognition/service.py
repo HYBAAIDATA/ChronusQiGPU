@@ -25,7 +25,7 @@ from ..contracts import Experience, RewardAuthority
 from ..evidence import atomic_write, load_json
 from ..governance import Authority, Organ
 from ..search.deep_mcts import DeepMCTSEngine, SearchBudget
-from ..adapter import EuclidEngineAdapter
+from ..adapter import ProgramSearchEngine
 from .baselines import (
     BanditMetaLearner,
     InMemoryMemorySystem,
@@ -173,7 +173,7 @@ class CognitiveService:
         self.episodes_dir = self.state_root / "episodes"
         self.episodes_dir.mkdir(parents=True, exist_ok=True)
 
-        self.adapter = EuclidEngineAdapter(
+        self.adapter = ProgramSearchEngine(
             persistent_repo_path=str(
                 Path(runtime.state_dir)
                 / "var"
