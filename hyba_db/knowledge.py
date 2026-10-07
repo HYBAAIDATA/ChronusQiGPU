@@ -345,46 +345,54 @@ class KnowledgeProjection:
         from .store import _now as store_now
         created = store_now()
         with self.store._tx() as db:
-            self.store._reserve(db, tenant_id, 1, len(payload), knowledge_id)
-            att = self.store._attest(
-                db,
-                tenant_id,
-                f"knowledge:{knowledge_id}",
-                producer,
-                {
-                    "content_sha256": digest,
-                    "semantic_owner": owner,
-                    "evidence_state": state,
-                    "custody_record_id": custody_id,
-                },
-                (),
-            )
-            db.execute(
-                "INSERT INTO knowledge_records VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                (
+            # Recheck under the write transaction. The preceding custody put is
+            # content/idempotency bound, so concurrent identical projections
+            # converge without double-counting quota or minting extra rows.
+            already = db.execute(
+                "SELECT 1 FROM knowledge_records WHERE tenant_id=? AND knowledge_id=?",
+                (tenant_id, knowledge_id),
+            ).fetchone()
+            if already is None:
+                self.store._reserve(db, tenant_id, 1, len(payload), knowledge_id)
+                att = self.store._attest(
+                    db,
                     tenant_id,
-                    knowledge_id,
-                    subject,
-                    predicate,
-                    _json(object_value),
-                    kind,
-                    owner,
+                    f"knowledge:{knowledge_id}",
                     producer,
-                    str(producer_version),
-                    int(schema_version),
-                    state,
-                    eclass,
-                    digest,
-                    _json(sources),
-                    _json(parents),
-                    _json(corr),
-                    _json(prov),
-                    custody_id,
-                    str(supersedes_id) if supersedes_id else None,
-                    att.id,
-                    created,
-                ),
-            )
+                    {
+                        "content_sha256": digest,
+                        "semantic_owner": owner,
+                        "evidence_state": state,
+                        "custody_record_id": custody_id,
+                    },
+                    (),
+                )
+                db.execute(
+                    "INSERT INTO knowledge_records VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (
+                        tenant_id,
+                        knowledge_id,
+                        subject,
+                        predicate,
+                        _json(object_value),
+                        kind,
+                        owner,
+                        producer,
+                        str(producer_version),
+                        int(schema_version),
+                        state,
+                        eclass,
+                        digest,
+                        _json(sources),
+                        _json(parents),
+                        _json(corr),
+                        _json(prov),
+                        custody_id,
+                        str(supersedes_id) if supersedes_id else None,
+                        att.id,
+                        created,
+                    ),
+                )
         if supersedes_id:
             self.relate(
                 tenant_id,
@@ -440,6 +448,18 @@ class KnowledgeProjection:
             raise IntegrityFailure(f"knowledge attestation mismatch: {knowledge_id}")
         if self.custody is None or not self.custody.verify(tenant_id, row["custody_record_id"]):
             raise IntegrityFailure(f"knowledge custody unavailable: {knowledge_id}")
+        opener = getattr(self.custody, "open_tenant", None)
+        if callable(opener):
+            op = opener(tenant_id).get_record(row["custody_record_id"])
+            if (
+                op.content_digest != digest
+                or bytes(op.payload) != _json(body).encode("utf-8")
+                or op.producer != row["producer"]
+                or op.kind != "knowledge_projection"
+            ):
+                raise IntegrityFailure(
+                    f"knowledge custody binding mismatch: {knowledge_id}"
+                )
         return KnowledgeRecord(
             knowledge_id=row["knowledge_id"],
             tenant_id=tenant_id,
@@ -567,34 +587,39 @@ class KnowledgeProjection:
         if not self.custody.verify(tenant_id, custody_id):
             raise IntegrityFailure("THESEUS did not verify knowledge relation custody")
         with self.store._tx() as db:
-            att = self.store._attest(
-                db,
-                tenant_id,
-                f"knowledge_relation:{relation_id}",
-                str(producer),
-                {
-                    "from": str(from_id),
-                    "to": str(to_id),
-                    "relation": relation,
-                    "custody_record_id": custody_id,
-                },
-                (),
-            )
-            from .store import _now as store_now
-            db.execute(
-                "INSERT INTO knowledge_relations VALUES(?,?,?,?,?,?,?,?,?)",
-                (
+            already = db.execute(
+                "SELECT 1 FROM knowledge_relations WHERE tenant_id=? AND relation_id=?",
+                (tenant_id, relation_id),
+            ).fetchone()
+            if already is None:
+                att = self.store._attest(
+                    db,
                     tenant_id,
-                    relation_id,
-                    str(from_id),
-                    str(to_id),
-                    relation,
-                    str(producer),
-                    custody_id,
-                    att.id,
-                    store_now(),
-                ),
-            )
+                    f"knowledge_relation:{relation_id}",
+                    str(producer).strip().lower(),
+                    {
+                        "from": str(from_id),
+                        "to": str(to_id),
+                        "relation": relation,
+                        "custody_record_id": custody_id,
+                    },
+                    (),
+                )
+                from .store import _now as store_now
+                db.execute(
+                    "INSERT INTO knowledge_relations VALUES(?,?,?,?,?,?,?,?,?)",
+                    (
+                        tenant_id,
+                        relation_id,
+                        str(from_id),
+                        str(to_id),
+                        relation,
+                        str(producer).strip().lower(),
+                        custody_id,
+                        att.id,
+                        store_now(),
+                    ),
+                )
         return relation_id
 
     def restore_from_custody(self, tenant_id: str) -> dict[str, Any]:
@@ -816,6 +841,26 @@ class KnowledgeProjection:
                         tid, rel["custody_record_id"]
                     ):
                         raise IntegrityFailure("relation custody unavailable")
+                    opener = getattr(self.custody, "open_tenant", None)
+                    if callable(opener):
+                        op = opener(tid).get_record(rel["custody_record_id"])
+                        relation_payload = _json(
+                            {
+                                "schema": "hyba.knowledge-relation/v1",
+                                "relation_id": rel["relation_id"],
+                                "from": rel["from_knowledge_id"],
+                                "to": rel["to_knowledge_id"],
+                                "relation": rel["relation_type"],
+                                "producer": rel["producer"],
+                            }
+                        ).encode("utf-8")
+                        if (
+                            bytes(op.payload) != relation_payload
+                            or op.content_digest != _sha(relation_payload)
+                            or op.producer != rel["producer"]
+                            or op.kind != "knowledge_relation"
+                        ):
+                            raise IntegrityFailure("relation custody binding mismatch")
                 except Exception as exc:
                     errors.append(
                         f"{tid}:{rel['relation_id']}:{type(exc).__name__}:{exc}"
