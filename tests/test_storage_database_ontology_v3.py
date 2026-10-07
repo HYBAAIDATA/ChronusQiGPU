@@ -25,14 +25,17 @@ def _project(store, tenant_id, *, value, state, supersedes=None, source="src-1")
         tenant_id,
         subject="pythia:mining:structured-search",
         predicate="evidence",
+        domain="mining",
         object_value=value,
         knowledge_kind="observation",
+        knowledge_form="semantic",
         semantic_owner="pythia",
         producer="pythia",
         producer_version="test-revision",
         schema_version=1,
         evidence_state=state,
         evidence_class="CI_UNAVAILABLE" if state == "UNAVAILABLE" else "LOCAL_TEST_PASSED",
+        maturity_stage="HYPOTHESIZED" if state == "UNAVAILABLE" else "REPRODUCED",
         source_ids=(source,),
         correlation_ids={"run": "run-1"},
         provenance={
@@ -60,6 +63,9 @@ def test_knowledge_is_custodied_owned_and_evidence_bound(tmp_path):
             state="UNAVAILABLE",
         )
         assert record.semantic_owner == "pythia"
+        assert record.domain == "mining"
+        assert record.knowledge_form == "semantic"
+        assert record.maturity_stage == "HYPOTHESIZED"
         assert record.evidence_state == "UNAVAILABLE"
         assert record.evidence_class == "CI_UNAVAILABLE"
         assert record.provenance["owner_approval_ref"] == "owner-directive-2026-10-07"
@@ -421,9 +427,12 @@ def test_module_adapter_projects_knowledge_under_producer_identity(tmp_path):
             client.tenant_id,
             subject="pythia:mining:search-plan",
             predicate="authority",
+            domain="mining",
             object_value={"owner": "PYTHIA"},
             knowledge_kind="decision",
+            knowledge_form="meta",
             evidence_state="PASS",
+            maturity_stage="PROVISIONALLY_TRUSTED",
             producer_version="test-revision",
             provenance={"owner_approval_ref": "owner-directive-2026-10-07"},
         )
