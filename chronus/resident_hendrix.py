@@ -28,7 +28,9 @@ def plain(value):
 
 
 def canonical(value):
-    return json.dumps(plain(value), sort_keys=True, separators=(",", ":"), allow_nan=False)
+    return json.dumps(
+        plain(value), sort_keys=True, separators=(",", ":"), allow_nan=False
+    )
 
 
 def seal(value):
@@ -39,10 +41,14 @@ def plan_identity(plan):
     from dataclasses import fields
 
     return {
-        f.name: plain(getattr(plan, f.name)) for f in fields(plan) if f.name != "evidence_refs"
+        f.name: plain(getattr(plan, f.name))
+        for f in fields(plan)
+        if f.name != "evidence_refs"
     } | {
         "evidence_refs": {
-            k: plain(v) for k, v in plan.evidence_refs.items() if k != "resident_hendrix"
+            k: plain(v)
+            for k, v in plan.evidence_refs.items()
+            if k != "resident_hendrix"
         }
     }
 
@@ -111,7 +117,9 @@ class ResidentHendrix:
             expected_start = base + vertex * q + min(vertex, rem)
             if not 0 <= face < 32 or start != expected_start or width != expected_width:
                 raise ValueError("shard table changed leased coverage")
-            if width and (math.gcd(local_stride, width) != 1 or not 0 <= origin < width):
+            if width and (
+                math.gcd(local_stride, width) != 1 or not 0 <= origin < width
+            ):
                 raise ValueError("Cassini local order is not a permutation")
             if cassini not in (-1, 1):
                 raise ValueError("Cassini witness required")
@@ -127,7 +135,9 @@ class ResidentHendrix:
             if len(set(neighbours)) != 4 or i in neighbours:
                 raise ValueError("dual H4 degree-four adjacency required")
             if any(
-                type(j) is not int or not 0 <= j < 600 or i not in geometry["adjacency"][j]
+                type(j) is not int
+                or not 0 <= j < 600
+                or i not in geometry["adjacency"][j]
                 for j in neighbours
             ):
                 raise ValueError("dual H4 adjacency must be symmetric")
@@ -140,38 +150,74 @@ class ResidentHendrix:
         if len(visited) != 600 or set(geometry["coarse_anchor"]) != set(range(32)):
             raise ValueError("incomplete fabric or coarse-region coverage")
         for vertex, face, _start, _width, _stride, _origin, cassini in rows:
-            if face != geometry["coarse_anchor"][vertex] or cassini != (-1) ** (vertex + 2):
+            if face != geometry["coarse_anchor"][vertex] or cassini != (-1) ** (
+                vertex + 2
+            ):
                 raise ValueError("region binding or Cassini parity changed")
         cert = geometry["transport"]
         folded = bytes.fromhex(cert["folded_hex"])
-        if len(folded) != cert["original_bytes"]:
+        if cert.get("encoding") != "lucas.M15.exact_q_phi_positive_radicals_v2":
+            raise ValueError(
+                "binary64 geometry is not the production exact-math contract"
+            )
+        length = cert["original_bytes"]
+        if (
+            type(length) is not int
+            or not 0 < length <= 2_000_000
+            or len(folded) != (length + 1) // 2 * 2
+        ):
             raise ValueError("exact transport length mismatch")
-        # Existing lucas.fold M15 inverse, evaluated over Z/256Z. No numerical
-        # unfold is used to restore promised exact IEEE-754 geometry bytes.
         raw = bytearray(len(folded))
         for i in range(0, len(folded), 2):
             u, w = folded[i : i + 2]
             raw[i] = (135 * u + 98 * w) % 256
             raw[i + 1] = (98 * u + 37 * w) % 256
+        if len(raw) > length and raw[-1] != 0:
+            raise ValueError("noncanonical padding")
+        raw = bytes(raw[:length])
         if hashlib.sha256(raw).hexdigest() != cert["raw_sha256"]:
-            raise ValueError("exact geometry transport failed restoration")
-        if len(raw) != (32 * 11 + 600 * 11 + 600 * 4) * 8:
-            raise ValueError("geometry transport dimension mismatch")
-        import struct
+            raise ValueError("exact mathematical transport failed restoration")
+        from chronus.exact_geometry import validate_payload
 
-        coordinates = struct.unpack("<" + "d" * (len(raw) // 8), raw)
-        if not all(math.isfinite(x) for x in coordinates):
-            raise ValueError("nonfinite restored geometry")
-        normals = [coordinates[i : i + 4] for i in range((32 * 11 + 600 * 11), len(coordinates), 4)]
-        if len(set(normals)) != 600 or any(
-            abs(sum(x * x for x in row) - 1) > 1e-10 for row in normals
+        validate_payload(raw.decode())
+        payload = json.loads(raw)
+        if geometry["precompute_digest"] != hashlib.sha256(raw).hexdigest():
+            raise ValueError(
+                "exact payload differs from mathematical substrate identity"
+            )
+        if (
+            geometry["adjacency"] != payload["adjacency"]
+            or geometry["coarse_anchor"] != payload["coarse_anchor"]
         ):
-            raise ValueError("600 unique unit cell-normal directions required")
+            raise ValueError("outer fabric metadata differs from exact certificate")
+        topology = geometry["m32"]
+        if (
+            topology["directions_3d"] != payload["m32"]
+            or topology["adjacency"] != payload["m32_adjacency"]
+            or topology["dual_incidence"] != payload["m32_dual_incidence"]
+            or topology["face_ids"] != list(range(32))
+        ):
+            raise ValueError("outer topology differs from exact certificate")
+        support = v["support"]
+        if type(support["turing_hilbert"]) is not bool:
+            raise ValueError("explicit Turing selection required")
+        expected_walk = (
+            payload["quantum"]["digest"] if support["turing_hilbert"] else None
+        )
+        if support["hilbert_digest"] != expected_walk:
+            raise ValueError("Turing support identity changed")
+        if support["structure_advice"] != {
+            "state": "EXCLUDED_BY_EXACT_CONTRACT",
+            "heuristics_used": False,
+        }:
+            raise ValueError("advisory heuristic cannot enter exact execution profile")
         return True
 
     def require_context(self, plan, header, target_be):
         v = self.as_dict()
-        if v["geometry"]["precompute_digest"] != plan.evidence_refs.get("search_precompute_digest"):
+        if v["geometry"]["precompute_digest"] != plan.evidence_refs.get(
+            "search_precompute_digest"
+        ):
             raise ValueError("resident geometry differs from authorised substrate")
         if v["plan_digest"] != seal(plan_identity(plan)):
             raise ValueError("SearchPlan semantics changed after issuance")
@@ -199,7 +245,8 @@ class ResidentHendrix:
         shortest = int(rows[:, 3].min())
         head = shortest * len(rows)
         j = (
-            np.arange(position, position + count, dtype=np.uint64) * np.uint64(v["hendrix_stride"])
+            np.arange(position, position + count, dtype=np.uint64)
+            * np.uint64(v["hendrix_stride"])
         ) % np.uint64(window)
         index = j % np.uint64(len(rows))
         local_position = j // np.uint64(len(rows))
@@ -209,7 +256,10 @@ class ResidentHendrix:
             index[tail] = wide[(j[tail] - head).astype(np.intp)]
             local_position[tail] = shortest
         selected = rows[index.astype(np.intp)]
-        nonce = selected[:, 2] + (selected[:, 5] + local_position * selected[:, 4]) % selected[:, 3]
+        nonce = (
+            selected[:, 2]
+            + (selected[:, 5] + local_position * selected[:, 4]) % selected[:, 3]
+        )
         return nonce.astype(np.uint32), selected[:, :2].astype(np.uint32)
 
     def nonce_at(self, position):

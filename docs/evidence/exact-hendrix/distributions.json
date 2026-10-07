@@ -1,0 +1,17 @@
+[
+  {
+    "name": "chronos_gpu-3.11.1-cp313-cp313-linux_x86_64.whl",
+    "sha256": "070e424c051f28abe96676a7fe5fd934e949092d94a60f4710ba25f609b61710",
+    "bytes": 339431
+  },
+  {
+    "name": "chronos_gpu-3.11.1-py3-none-any.whl",
+    "sha256": "e13f134a50809eca92c796bef76f7bb7541da5455cf12020c48bc68a343968fd",
+    "bytes": 292904
+  },
+  {
+    "name": "chronos_gpu-3.11.1.tar.gz",
+    "sha256": "ed4b6d82f6e8292ceee330c4df5b6ef285ebea4a93745bef60908b7a4fbcf2ba",
+    "bytes": 1070572
+  }
+]

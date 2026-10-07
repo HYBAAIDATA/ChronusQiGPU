@@ -14,9 +14,9 @@ existing pool/proof adapter
   -> PythiaProductionMiningCoordinator._apply_pythia_authority
   -> _bind_plan_execution_intent
   -> resident_search.compile_hendrix_plan
-     -> retained dual32 face construction / phi-weighted 11D frames
+     -> exact Q(phi) dual32 / positive symbolic-radical phi-weighted 11D frames
      -> retained H4 120 vertices / 600 tetrahedra / 600 dual cell-normal positions
-     -> retained vertex_itinerary / explicitly selected Turing Hilbert ranking
+     -> exact header-bound vertex itinerary / explicitly selected Turing Hilbert ranking
      -> retained Cassini shard permutations / retained Hendrix coprime stride
      -> versioned, digest-bound ResidentHendrix transport
   -> ProductionExecutionRouter.execute_plan
@@ -58,7 +58,8 @@ physical devices executed. Logical scale is never converted into measured H/s.
   its historical face order is not silently asserted byte-identical.
 - `lucas/fold.py`: existing M15 byte transport and inverse, used without
   approximate floating-point restoration. The sealed manifest binds all
-  restored 32x11, 600x11 and 600x4 binary64 coordinates.
+  exact field coordinates and positive symbolic radicals. Binary64 geometry
+  is rejected even when outer content seals have been recomputed.
 - Original standalone Lucas engine, Golden Quantum module and structured
   solver are byte-preserved. Existing source notes and prior delivery docs
   remain in the standalone package; this increment does not erase their
@@ -69,8 +70,11 @@ physical devices executed. Logical scale is never converted into measured H/s.
 ## Exact new/changed canonical files
 
 ```
+chronus/exact_geometry.py
 chronus/resident_hendrix.py
 chronus/one_igpu_mining.py
+chronus/mla1517/mining/exact_search.py
+chronus/mla1517/mining/pythia_authority.py
 chronus/mla1517/mining/resident_search.py
 chronus/mla1517/mining/resident_router.py
 chronus/mla1517/mining/search_plan.py
@@ -79,6 +83,7 @@ chronus/mla1517/mining/coordinator.py
 chronus/mla1517/mining/backend_registry.py
 chronus/mla1517_platform/python/pythia_turing_math.py
 turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py
+tests/test_exact_geometry.py
 tests/test_resident_hendrix.py
 .github/workflows/resident-hendrix.yml
 docs/RESIDENT_HENDRIX_ONE_IGPU.md
@@ -110,9 +115,32 @@ execution. The CPU-only lane is the independent resident software accelerator,
 not a report that a physical GPU ran. Apple/OpenCL bindings are operation-specific;
 unavailable operations must not be described as executed hardware.
 
+## Exact-math correction after v3.11
+
+The v3.11 byte-exact binary64 transport did not make its geometry exact.
+The strict profile now uses the preserved PhiElement rational Q(phi) core,
+symbolic positive radicals, exact distance/incidence equalities, and exact
+normalised comparisons. All 632 M32/H4 fold certificates are independently
+restored. H4 uses squared edge length 2-phi rather than a tolerance.
+
+PYTHIA.plan_exact supplies the header-bound coarse order. Learned predictions,
+advisory face bias and VQC checkpoint output cannot enter the strict resident
+compiler. Chronus does not select or improve that order. The actual Turing
+Hadamard-coin C600 quantum evolution is independently replayed using exact
+complex integer numerators, with unit Born mass checked after every step.
+The independent replay must match the actual Turing rank and digest; no sampled
+distribution or classical random walk is relabelled quantum.
+
+This correction is a strict **geometry/search execution profile**, not a
+certificate for all old APIs. The wider coordinator still inherits operational
+policy/admission machinery, and preserved standalone numerical S6/FP64 APIs
+remain outside this profile. Their presence prevents a whole-product claim
+of no approximation/no heuristics. They are not silently removed or certified.
+Hardware execution remains reported per operation; no physical-QPU claim is made.
+
 ## Tests and evidence scope
 
-Local canonical focused integration: 32 passed. Actual Bitcoin genesis-header
+Historical v3.11 canonical focused integration: 32 passed. Actual Bitcoin genesis-header
 positive control, target-zero negative controls, exact reference ordering for
 windows spanning the 600-partition boundary, bounded full uint32-domain batches,
 lease checks, stale-job refusal, immutable plan checks, exact geometry restoration,
@@ -141,6 +169,14 @@ in the evidence pack. Local PRIME-DB persistence is not relabelled THESEUS custo
 The unchanged canonical storage recorder already writes every event detail into
 content-addressed, THESEUS-custodied receipts when configured. This wiring does
 not assert that a full THESEUS/OVID deployment was exercised locally.
+
+Latest exact-profile validation: 45 tests passed against the installed native
+v3.11.1 wheel and 45 passed against the installed portable wheel (same tests,
+not 90 unique tests); 371 preserved standalone source regressions passed. An actual
+Bitcoin genesis SHA256d execution was independently verified, and its new exact
+plan/receipt was restored and verified in a separate standalone process.
+See `docs/evidence/exact-hendrix/` for current source identities and test evidence.
+Historical v3.11 evidence is retained separately and is not rebound to this release.
 
 ## Readiness verdict
 

@@ -1,0 +1,106 @@
+{
+  "schema": "chronus.exact_changed_sources/1",
+  "previous_published_commit": "2ed765d93744feb7f0d39f51039cbaef9c42d910",
+  "files": [
+    {
+      "path": "chronus/exact_geometry.py",
+      "sha256": "81781134570774ed0cc1033385b38531a97063ca29f60691083a253e87f0c217",
+      "bytes": 14349
+    },
+    {
+      "path": "chronus/resident_hendrix.py",
+      "sha256": "09ca8df2523d6630f523f7d322dc0a3045abd48f285cac6b5e727eff6a24d0d8",
+      "bytes": 10468
+    },
+    {
+      "path": "chronus/mla1517/mining/exact_search.py",
+      "sha256": "425a13268350ae7488dfeba6483bf9cf82794712b497e0621d997077494241ce",
+      "bytes": 8443
+    },
+    {
+      "path": "chronus/mla1517/mining/pythia_authority.py",
+      "sha256": "54381e04bfad2649370a1de376f4119e3f5275218856555c93d9f9d09034ba44",
+      "bytes": 23054
+    },
+    {
+      "path": "chronus/mla1517/mining/geodesic_support.py",
+      "sha256": "250370423418f70eebaeac60d4f369adcd476d7f09a145b7ab70fd26d50e87e5",
+      "bytes": 27129
+    },
+    {
+      "path": "chronus/mla1517/mining/resident_search.py",
+      "sha256": "ea1493a8b3821bf44dfc27f661c2febc02eb9ec9364546beb741d59ddffbb8bb",
+      "bytes": 5055
+    },
+    {
+      "path": "chronus/mla1517/mining/resident_router.py",
+      "sha256": "dd66ddd7e202f7fe9653d3590c57418e44351f95ae56249a8f31127985b1ad27",
+      "bytes": 10897
+    },
+    {
+      "path": "chronus/mla1517/mining/pythia_search.py",
+      "sha256": "9abac7c5af1c87a0514f7600943aeb816c5393de7f2ece10ddb617b46be7d9d0",
+      "bytes": 24088
+    },
+    {
+      "path": "tests/test_exact_geometry.py",
+      "sha256": "a5e752831887936974ded3621a8c0705352e44fec8898b89269de6841f6b760c",
+      "bytes": 5669
+    },
+    {
+      "path": "tests/test_resident_hendrix.py",
+      "sha256": "02e74e77f7344e8ef0b35a2c9cf4097370e1be4f59f9f2cfa2af9a209d673fe2",
+      "bytes": 14358
+    },
+    {
+      "path": ".github/workflows/resident-hendrix.yml",
+      "sha256": "40c83ede0e3eeecc3ecc1c71ba8f30a899607cf361228520dfb08373a5123835",
+      "bytes": 1479
+    },
+    {
+      "path": "docs/RESIDENT_HENDRIX_ONE_IGPU.md",
+      "sha256": "e44d3d4b6242e206655520beeaf7fb3f735f5cd516235e7cea8bc1eb92886952",
+      "bytes": 10398
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/exact_geometry.py",
+      "sha256": "ab9a6a7eed3ec2c166560e0d797b10ecad933e41d9c3759390ae0577c8e22ccd",
+      "bytes": 14334
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/resident_hendrix.py",
+      "sha256": "08094c90ce205a17596d4952973b00ca2004c09a7e9dac2f477d13e8129b38a8",
+      "bytes": 10461
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/__init__.py",
+      "sha256": "3ebee47745aa3b5717f1a803b75bf7807e107961c95f63efbce2428a3efc2a5c",
+      "bytes": 3703
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/exact_geometry.py",
+      "sha256": "ab9a6a7eed3ec2c166560e0d797b10ecad933e41d9c3759390ae0577c8e22ccd",
+      "bytes": 14334
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/resident_hendrix.py",
+      "sha256": "08094c90ce205a17596d4952973b00ca2004c09a7e9dac2f477d13e8129b38a8",
+      "bytes": 10461
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/__init__.py",
+      "sha256": "3ebee47745aa3b5717f1a803b75bf7807e107961c95f63efbce2428a3efc2a5c",
+      "bytes": 3703
+    },
+    {
+      "path": "packages/chronos-one-igpu/pyproject.toml",
+      "sha256": "e22796dbb7edba12a056f20c38b7ce331d51f3fb71a26c3e2d1f1be1ad211ffe",
+      "bytes": 1287
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/EXACT_HENDRIX_PROFILE.md",
+      "sha256": "8099b7d4111eda54b00b60c5d2778d15f6ca973a561bd4b5ad78e33144dab702",
+      "bytes": 972
+    }
+  ]
+}

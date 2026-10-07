@@ -10,7 +10,8 @@ from collections import OrderedDict
 from typing import Any
 from chronus.resident_hendrix import ResidentHendrix, seal
 from .execution_router import ExecutionRouter, FallbackReason, NONCE_ORDER_HENDRIX, RouteDecision
-from .pythia_search import SEARCH_ARCHITECTURE_ID, PythiaSearchPrecompute, precompute_pythia_search
+from .pythia_search import SEARCH_ARCHITECTURE_ID, PythiaSearchPrecompute
+from .exact_search import precompute_exact_search as precompute_pythia_search
 from .search_plan import ExecutionRoute
 
 _PYTHIA_HENDRIX_COMPOSED = "pythia_hendrix_structured_composed"

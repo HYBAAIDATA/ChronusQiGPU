@@ -19,7 +19,7 @@ jobs:
           python -m pip install -e ./turing_universal_quantum_computer -e '.[ml,dev]'
           python -m pip install ./packages/chronos-one-igpu
       - name: Canonical resident geometry and real hash tests
-        run: python -m pytest tests/test_resident_hendrix.py -q --junitxml=resident-results.xml
+        run: python -m pytest tests/test_exact_geometry.py tests/test_resident_hendrix.py -q --junitxml=resident-results.xml
       - name: Preserved standalone source regression suite
         working-directory: packages/chronos-one-igpu
         env:

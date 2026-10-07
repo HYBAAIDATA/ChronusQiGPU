@@ -11,7 +11,11 @@ import numpy as np
 import pytest
 
 from chronus.resident_hendrix import ResidentHendrix, seal
-from chronus.mla1517.mining.pythia_search import precompute_pythia_search, pythia_hendrix_nonces
+from chronus.mla1517.mining.exact_search import (
+    precompute_exact_search as precompute_pythia_search,
+    exact_reference_nonces as pythia_hendrix_nonces,
+    exact_face_order,
+)
 from chronus.mla1517.mining.resident_search import compile_hendrix_plan
 from chronus.mla1517.mining.search_plan import SearchPlan
 from chronus.one_igpu_mining import ChronusOneIGPUHasher
@@ -26,7 +30,9 @@ GENESIS = bytes.fromhex(
 )
 
 
-def issue(window=1200, base=1000, header=GENESIS, target=b"\x00" * 32, use_hilbert=True):
+def issue(
+    window=1200, base=1000, header=GENESIS, target=b"\x00" * 32, use_hilbert=True
+):
     state = precompute_pythia_search()
     plan = SearchPlan(
         job_fingerprint="real-header-test",
@@ -35,8 +41,8 @@ def issue(window=1200, base=1000, header=GENESIS, target=b"\x00" * 32, use_hilbe
         base_step=base,
         window=window,
         extranonce2="00000000",
-        lane_order=tuple(range(32)),
-        preferred_face=7,
+        lane_order=exact_face_order(header, state),
+        preferred_face=exact_face_order(header, state)[0],
         dispatch_breadth=32,
         executor_route="chronus_batch",
         policy_id="hendrix",
@@ -47,9 +53,12 @@ def issue(window=1200, base=1000, header=GENESIS, target=b"\x00" * 32, use_hilbe
         created_at=time.monotonic(),
         plan_id="test-bound-plan",
     )
-    artifact = compile_hendrix_plan(plan, header, target, state, use_hilbert=use_hilbert)
+    artifact = compile_hendrix_plan(
+        plan, header, target, state, use_hilbert=use_hilbert
+    )
     bound = replace(
-        plan, evidence_refs={**plan.evidence_refs, "resident_hendrix": artifact.as_dict()}
+        plan,
+        evidence_refs={**plan.evidence_refs, "resident_hendrix": artifact.as_dict()},
     )
     artifact.require_context(bound, header, target)
     return bound, artifact
@@ -58,10 +67,14 @@ def issue(window=1200, base=1000, header=GENESIS, target=b"\x00" * 32, use_hilbe
 @pytest.mark.parametrize("window", [1, 2, 31, 599, 600, 601, 1199, 1200, 5000, 65536])
 def test_resident_operator_matches_canonical_reference_and_complete_coverage(window):
     plan, artifact = issue(window)
-    expected = pythia_hendrix_nonces(GENESIS, plan.base_step, window, preferred_face=7)
+    expected = pythia_hendrix_nonces(
+        GENESIS, plan.base_step, window, preferred_face=plan.preferred_face
+    )
     actual, bindings = artifact.batch(0, window)
     assert actual.tolist() == expected
-    assert sorted(actual.tolist()) == list(range(plan.base_step, plan.base_step + window))
+    assert sorted(actual.tolist()) == list(
+        range(plan.base_step, plan.base_step + window)
+    )
     assert bindings.shape == (window, 2)
     assert all(0 <= int(f) < 32 for f in bindings[:, 1])
 
@@ -74,6 +87,41 @@ def test_whole_uint32_domain_stays_bounded():
     assert len(artifact.as_dict()["shards"]) == 600
 
 
+def test_advisory_lane_order_cannot_enter_exact_compiler():
+    plan, _ = issue()
+    state = precompute_pythia_search()
+    altered = replace(plan, lane_order=plan.lane_order[1:] + plan.lane_order[:1])
+    with pytest.raises(ValueError, match="advisory lane"):
+        compile_hendrix_plan(altered, GENESIS, bytes(32), state)
+    with pytest.raises(ValueError, match="advisory nonce"):
+        compile_hendrix_plan(
+            replace(plan, schedule=(plan.base_step,)), GENESIS, bytes(32), state
+        )
+
+
+def test_legacy_binary64_transport_refused_even_with_new_seals():
+    _, artifact = issue()
+    value = artifact.as_dict()
+    value["geometry"]["transport"]["encoding"] = "lucas.M15.binary64"
+    value["geometry"]["digest"] = seal(
+        {k: v for k, v in value["geometry"].items() if k != "digest"}
+    )
+    with pytest.raises(ValueError, match="binary64"):
+        ResidentHendrix.issue(
+            {k: v for k, v in value.items() if k != "digest"}
+        ).validate()
+
+
+def test_resealed_quantum_metadata_cannot_claim_different_execution():
+    _, artifact = issue()
+    value = artifact.as_dict()
+    value["support"]["hilbert_digest"] = "0" * 64
+    with pytest.raises(ValueError, match="Turing support"):
+        ResidentHendrix.issue(
+            {k: v for k, v in value.items() if k != "digest"}
+        ).validate()
+
+
 @pytest.mark.parametrize("position,count", [(-1, 1), (0, 65537), (1199, 2), (True, 1)])
 def test_boundaries_fail_closed(position, count):
     _, a = issue()
@@ -83,7 +131,12 @@ def test_boundaries_fail_closed(position, count):
 
 @pytest.mark.parametrize(
     "field,value",
-    [("plan_id", "changed"), ("generation", 2), ("preferred_face", 8), ("window", 1199)],
+    [
+        ("plan_id", "changed"),
+        ("generation", 2),
+        ("preferred_face", 8),
+        ("window", 1199),
+    ],
 )
 def test_plan_semantics_cannot_be_reinterpreted(field, value):
     p, a = issue()
@@ -144,13 +197,17 @@ def test_actual_one_igpu_hashing_negative_control_and_receipt():
         )
         assert nonce is None and digest is None and done == 1200
         r = h.last_batch_evidence
-        assert r["plan_id"] == p.plan_id and r["plan_digest"] == a.as_dict()["plan_digest"]
+        assert (
+            r["plan_id"] == p.plan_id and r["plan_digest"] == a.as_dict()["plan_digest"]
+        )
         assert r["geometry_digest"] == a.as_dict()["geometry"]["digest"]
         assert r["physical_device_executed"] is False
         assert r["kernel_launch_count"] == 0 and r["pool_state"] == "NOT_SUBMITTED"
         assert r["sha256d_evaluations"] == 1200
         assert r["geometry_operations_counted_as_hashes"] is False
-        assert r["receipt_digest"] == seal({k: v for k, v in r.items() if k != "receipt_digest"})
+        assert r["receipt_digest"] == seal(
+            {k: v for k, v in r.items() if k != "receipt_digest"}
+        )
 
 
 def test_actual_genesis_pow_and_independent_host_verification():
@@ -167,7 +224,9 @@ def test_actual_genesis_pow_and_independent_host_verification():
             bytes.fromhex(result["digest"])[::-1].hex()
             == "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"
         )
-        assert result["host_verified"] and result["verification_sha256d_evaluations"] == 1
+        assert (
+            result["host_verified"] and result["verification_sha256d_evaluations"] == 1
+        )
 
 
 def test_stale_job_runs_no_work():
@@ -177,7 +236,9 @@ def test_stale_job_runs_no_work():
     _, a = issue()
     with OneIGPU() as g:
         with pytest.raises(DispatchError):
-            g.execute_hendrix(a.as_dict(), GENESIS, b"\x00" * 32, count=12, current_epoch=lambda: 2)
+            g.execute_hendrix(
+                a.as_dict(), GENESIS, b"\x00" * 32, count=12, current_epoch=lambda: 2
+            )
         assert g.fabric.mining_adapter is None
 
 
@@ -204,11 +265,14 @@ def test_canonical_dual_is_actual_face_centroid_construction_and_m32_equivalent(
     faces = [
         t
         for t in itertools.combinations(range(12), 3)
-        if all(abs(distances[i, j] - edge) < 1e-9 for i, j in itertools.combinations(t, 2))
+        if all(
+            abs(distances[i, j] - edge) < 1e-9 for i, j in itertools.combinations(t, 2)
+        )
     ]
     centroids = np.asarray(
         [
-            vertices[list(t)].sum(axis=0) / np.linalg.norm(vertices[list(t)].sum(axis=0))
+            vertices[list(t)].sum(axis=0)
+            / np.linalg.norm(vertices[list(t)].sum(axis=0))
             for t in faces
         ]
     )
@@ -230,7 +294,9 @@ def test_production_router_executes_resident_plan_and_preserves_receipt_identity
     g = OneIGPU()
     hasher = ChronusOneIGPUHasher(g)
     router = ProductionExecutionRouter(hasher, cpu_executor=reference_scan)
-    lease = NonceLease("actual-test-lease", 1, plan.plan_id, plan.base_step, plan.window)
+    lease = NonceLease(
+        "actual-test-lease", 1, plan.plan_id, plan.base_step, plan.window
+    )
     record, candidate = router.execute_plan(plan, GENESIS, bytes(32), lease=lease)
     assert candidate is None
     assert record.hash_count == 1200
@@ -242,7 +308,9 @@ def test_production_router_executes_resident_plan_and_preserves_receipt_identity
     assert record.executed_nonce_order == "hendrix_coprime_stride"
     assert (
         hasher.last_batch_evidence["order_digest"]
-        == hashlib.sha256(artifact.batch(0, 1200)[0].astype("<u4").tobytes()).hexdigest()
+        == hashlib.sha256(
+            artifact.batch(0, 1200)[0].astype("<u4").tobytes()
+        ).hexdigest()
     )
 
 
@@ -254,7 +322,9 @@ def test_production_router_stale_and_foreign_bounds_are_refused():
     p, _ = issue()
     h = ChronusOneIGPUHasher(OneIGPU())
     router = ProductionExecutionRouter(h, cpu_executor=reference_scan)
-    record, candidate = router.execute_plan(p, GENESIS, bytes(32), is_still_fresh=lambda: False)
+    record, candidate = router.execute_plan(
+        p, GENESIS, bytes(32), is_still_fresh=lambda: False
+    )
     assert record.hash_count == 0 and candidate is None
     assert h.last_batch_evidence is None
     with pytest.raises(ValueError):
@@ -292,7 +362,10 @@ def test_executor_cannot_compile_its_own_plan_or_accept_outside_candidate():
     h = ChronusOneIGPUHasher(OneIGPU())
     router = ProductionExecutionRouter(h, cpu_executor=reference_scan)
     without_seal = replace(
-        p, evidence_refs={k: v for k, v in p.evidence_refs.items() if k != "resident_hendrix"}
+        p,
+        evidence_refs={
+            k: v for k, v in p.evidence_refs.items() if k != "resident_hendrix"
+        },
     )
     record, candidate = router.execute_plan(without_seal, GENESIS, bytes(32))
     assert candidate is None and record.hash_count == 0

@@ -22,6 +22,7 @@ selection. When the canonical PYTHIA lattice is active the kernel provenance
 explicitly states that ``grind_target_batch`` executed the 600-vertex itinerary;
 it is never relabelled as an M32 traversal.
 """
+
 from __future__ import annotations
 
 from dataclasses import replace
@@ -37,14 +38,17 @@ from .h4_600_execution import promote_execution_hasher
 from .pythia_agentic_cycle import PythiaAgenticMiningAuthority
 from .pythia_search import (
     SEARCH_ARCHITECTURE_ID,
-    precompute_pythia_search,
 )
+from .exact_search import precompute_exact_search as precompute_pythia_search
 from .search_plan import ExecutionRoute, PoolOutcome
 
 from .resident_router import (
-    ProductionExecutionRouter, _backend_name, _bind_native_route_markers,
+    ProductionExecutionRouter,
+    _backend_name,
+    _bind_native_route_markers,
     _NATIVE_BACKENDS,
 )
+
 
 def chronus_fabric_state_for(execution_hasher: Any) -> dict[str, Any]:
     """Derive capability state without promoting capability into execution evidence."""
@@ -66,9 +70,12 @@ def chronus_fabric_state_for(execution_hasher: Any) -> dict[str, Any]:
         "execution_evidence": "Unavailable",
         "reason": (
             "Resident H4/600 logical execution is bound; no physical 600-device fan-out is claimed"
-            if resident else "H4/600 capability is bound; physical fan-out remains unobserved until execution"
-            if bound
-            else "physical H4/600 fan-out requires the joined super_asic Chronus lane"
+            if resident
+            else (
+                "H4/600 capability is bound; physical fan-out remains unobserved until execution"
+                if bound
+                else "physical H4/600 fan-out requires the joined super_asic Chronus lane"
+            )
         ),
         "hashrate_claim": "measured completed physical SHA256d work / elapsed time only",
         "target_hashrate_hs": 10_000_000_000_000_000_000,
@@ -211,29 +218,24 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         adapter = getattr(client, "proof_adapter", None) if client is not None else None
         job = getattr(adapter, "current_job", None) if adapter is not None else None
         if job is None or job.job_id != identity.job_id:
-            raise RuntimeError("PYTHIA planning requires the current authoritative Stratum job")
+            raise RuntimeError(
+                "PYTHIA planning requires the current authoritative Stratum job"
+            )
         header = adapter.build_header(job.job_id, plan.extranonce2, job.ntime, 0)
         upstream_agentic = self._upstream_agentic_plan(plan)
-        directive = self.pythia_authority.plan(
+        directive = self.pythia_authority.plan_exact(
             header=header,
             target_be=int(job.target).to_bytes(32, "big"),
             base_step=plan.base_step,
             window=plan.window,
-            block_context={
-                "job_id": identity.job_id,
-                "pool_session_id": identity.pool_session_id,
-                "generation": identity.generation,
-                "target_generation": identity.target_generation,
-                "clean_jobs": identity.clean_jobs,
-                "upstream_agentic_plan": upstream_agentic,
-                "chronus_search_fabric": dict(self._chronus_fabric_state),
-                "geometric_topological_planning": dict(self._geodesic_state),
-            },
+            state=self.pythia_search_precompute,
         )
         refs = dict(plan.evidence_refs)
         refs["upstream_agentic_plan"] = upstream_agentic
         refs["pythia_authority"] = directive.as_evidence()
         refs["pythia_planning_authority"] = True
+        refs["mathematical_profile"] = "exact_q_phi_positive_radicals"
+        refs["advisory_ordering_executed"] = False
         refs["chronus_search_fabric"] = dict(self._chronus_fabric_state)
         refs["pulvini_data_boundary"] = {
             "mining_imports_pulvini": False,
@@ -242,13 +244,17 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         agentic_cycle = self.pythia_authority.snapshot().get("agentic_mining")
         if agentic_cycle is not None:
             refs["pythia_agentic_cycle"] = agentic_cycle
-        # PYTHIA's coarse lane intelligence biases the existing exact-Hilbert
-        # 600-vertex itinerary; it does not replace, prune or expand the lease.
-        preferred_face = directive.lane_order[0] if directive.lane_order else plan.preferred_face
+        # Only exact header-bound geometry decides ordering in this profile.
+        # Upstream policy is retained as operational provenance, not used as
+        # a learned/advisory bias in the mathematical search contract.
+        preferred_face = (
+            directive.lane_order[0] if directive.lane_order else plan.preferred_face
+        )
         return replace(
             plan,
             lane_order=directive.lane_order,
             preferred_face=preferred_face,
+            schedule=(),
             evidence_refs=refs,
         )
 
@@ -304,14 +310,20 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         adapter = getattr(self.client, "proof_adapter", None)
         job = getattr(adapter, "current_job", None)
         if job is None:
-            raise RuntimeError("resident Hendrix issuance requires authoritative current job")
+            raise RuntimeError(
+                "resident Hendrix issuance requires authoritative current job"
+            )
         header = adapter.build_header(job.job_id, bound.extranonce2, job.ntime, 0)
         artifact = compile_hendrix_plan(
-            bound, header, int(job.target).to_bytes(32, "big"),
+            bound,
+            header,
+            int(job.target).to_bytes(32, "big"),
             self.pythia_search_precompute,
             use_hilbert=bool(refs.get("turing_hilbert_selected", True)),
         )
-        return replace(bound, evidence_refs={**refs, "resident_hendrix": artifact.as_dict()})
+        return replace(
+            bound, evidence_refs={**refs, "resident_hendrix": artifact.as_dict()}
+        )
 
     def _baseline_plan(self, identity, lease, window, reason):
         plan = super()._baseline_plan(identity, lease, window, reason)
@@ -354,7 +366,9 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
             }
         try:
             client = self.client
-            adapter = getattr(client, "proof_adapter", None) if client is not None else None
+            adapter = (
+                getattr(client, "proof_adapter", None) if client is not None else None
+            )
             job = getattr(adapter, "current_job", None) if adapter is not None else None
             if job is None or job.job_id != identity.job_id:
                 return
@@ -388,8 +402,14 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         if not isinstance(cycle, dict):
             return
         stages = dict(cycle.get("stages") or {})
-        classification = autonomy.get("classification") if isinstance(autonomy, Mapping) else None
-        wired = bool(classification.get("WIRED")) if isinstance(classification, Mapping) else False
+        classification = (
+            autonomy.get("classification") if isinstance(autonomy, Mapping) else None
+        )
+        wired = (
+            bool(classification.get("WIRED"))
+            if isinstance(classification, Mapping)
+            else False
+        )
         stages["HEAL_OPTIMISE"] = {
             "state": "COMPLETE" if wired else "UNAVAILABLE",
             "authority": "Salamander",
