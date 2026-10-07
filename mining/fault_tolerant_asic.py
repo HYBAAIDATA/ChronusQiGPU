@@ -840,17 +840,17 @@ class FirstPrinciplesVerifier:
         *,
         header76: bytes = bytes(range(76)),
     ) -> VerificationBundle:
-        from .strict_quantum import (
+        from toe.strict_quantum import (
             certify_work_window,
             rational_rotation,
             state_from_bytes,
             verify_certificate,
         )
-        from .backends.base import Program
+        from turing_universal_quantum_computer.backends.base import Program
         from .deterministic_hashrate import verify_hashrate_certificate
-        from .exact_field_registry import verify_q_zeta_8_registry
-        from .surface_code_exact import verify_surface_code_algebra
-        from .verify import verify_program_unitarity
+        from turing_universal_quantum_computer.exact_field_registry import verify_q_zeta_8_registry
+        from turing_universal_quantum_computer.surface_code_exact import verify_surface_code_algebra
+        from turing_universal_quantum_computer.verify import verify_program_unitarity
 
         unitary = rational_rotation()
         clifford_program = Program(2).then("h", 0).then("s", 1).then("cnot", 0, 1)

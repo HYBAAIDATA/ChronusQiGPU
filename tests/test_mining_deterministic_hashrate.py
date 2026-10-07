@@ -2,7 +2,7 @@ import unittest
 from dataclasses import replace
 from fractions import Fraction
 
-from turing_universal_quantum_computer.deterministic_hashrate import (
+from mining.deterministic_hashrate import (
     CertificateError,
     DeterminismEnvelope,
     DeterministicMiningSystem,

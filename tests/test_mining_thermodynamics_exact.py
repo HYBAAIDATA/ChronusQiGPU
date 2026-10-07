@@ -1,7 +1,7 @@
 import unittest
 from fractions import Fraction
 
-from turing_universal_quantum_computer.thermodynamics_exact import (
+from mining.thermodynamics_exact import (
     LandauerExpression,
     thermodynamic_boundary_report,
 )

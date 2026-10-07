@@ -22,7 +22,6 @@ from typing import Any, Iterable
 from .backends import DEFAULT_MAX_AMPLITUDES, backend_matrix
 
 __all__ = [
-    "CAPACITY_STATEMENT",
     "LOGICAL_REGISTER_STATEMENT",
     "EXACTNESS_STATEMENT",
     "HARDWARE_STATEMENT",
@@ -47,9 +46,11 @@ LOGICAL_REGISTER_STATEMENT = (
 EXACTNESS_STATEMENT = (
     "Every backend is an exact classical evaluation of a restricted, "
     "efficiently-simulable quantum state class: stabilizer/Clifford, "
-    "free-fermion closed form, closed-form walk, and a universal Clifford+T "
+    "free-fermion closed form, closed-form walk, a universal Clifford+T "
     "algebra over Q(sqrt(2)) + i*Q(sqrt(2)) within an explicit "
-    "materialisation budget. Amplitudes, norms and Born probabilities are "
+    "materialisation budget, and Clifford+T programs of any width whose "
+    "Schmidt rank is bounded by a static proof (an exact matrix-product state "
+    "over Q(zeta_8)). Amplitudes, norms and Born probabilities are "
     "mathematically exact for those classes, with no tolerance anywhere."
 )
 
@@ -68,8 +69,9 @@ UNAVAILABLE: tuple[dict[str, str], ...] = (
         "item": "arbitrary universal circuit evaluation at large width",
         "why": (
             "Exact classical evaluation of a general n-qubit circuit needs a "
-            "dense 2^n state. Beyond the materialisation budget it is refused, "
-            "not approximated."
+            "dense 2^n state. Beyond the materialisation budget a circuit runs "
+            "only when a static Schmidt bound admits it to the exact MPS; "
+            "otherwise it is refused, never approximated."
         ),
     },
     {

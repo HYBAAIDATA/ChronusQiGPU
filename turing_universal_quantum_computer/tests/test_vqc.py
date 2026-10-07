@@ -35,38 +35,11 @@ class VQCPackageTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             tqc.QuantumTensor.from_numpy([1.0, 0.0])
 
-    def test_strict_quantum_certificate(self):
-        cert = tqc.certify_work_window(bytes(range(76)), nonce_start=0, nonce_count=256)
-        self.assertTrue(tqc.verify_certificate(cert))
-        self.assertFalse(cert["consensus_authority"])
-        self.assertFalse(cert["theorem_proven"])
-
     def test_hendrix_schedule_is_complete_permutation(self):
         schedule = tqc.HendrixStructuredSearch(workers=1, scale_index=76).plan(4096)
         self.assertTrue(schedule.verify())
         nonces = [schedule.nonce_at(p) for p in range(schedule.nonce_count)]
         self.assertEqual(sorted(nonces), list(range(4096)))
-
-    def test_vqc_execution_certifies_window(self):
-        adapter = tqc.LucasScaledAethelExecutionAdapter(scale_index=76)
-        header = bytes(range(76)) + (0).to_bytes(4, "little")
-        # No nonce can meet a zero target: the whole window is hashed and a
-        # window without a winner completes (the ordinary case in mining).
-        result = adapter.execute(header, target=0, base_nonce=0, count=256)
-        self.assertEqual(result.hashes, 256)
-        self.assertIsNone(result.winner)
-        self.assertTrue(result.metadata["fold_roundtrip_lossless"])
-        self.assertTrue(result.metadata["cassini_holds"])
-        self.assertTrue(result.metadata["toe"]["provenance_verified"])
-
-    def test_vqc_execution_stops_at_the_schedules_first_winner(self):
-        adapter = tqc.LucasScaledAethelExecutionAdapter(scale_index=76)
-        header = bytes(range(76)) + (0).to_bytes(4, "little")
-        # Every nonce meets the maximal target: the first scheduled one wins.
-        result = adapter.execute(header, target=(1 << 256) - 1, base_nonce=0, count=256)
-        self.assertEqual(result.hashes, 1)
-        self.assertIsNotNone(result.winner)
-        self.assertTrue(result.metadata["chronus"]["recheck_bit_exact"])
 
 
 if __name__ == "__main__":

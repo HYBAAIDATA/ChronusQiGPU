@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from fractions import Fraction
 
-from .canonical_serialization import canonical_sha256
+from turing_universal_quantum_computer.canonical_serialization import canonical_sha256
 
 
 @dataclass(frozen=True)

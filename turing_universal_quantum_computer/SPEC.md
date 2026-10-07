@@ -6,8 +6,8 @@ Status: executable exact-mathematics contract
 ## 1. Claim boundary
 
 The system proves exact algebraic identities and exact formal-capacity
-statements. It does not relabel formal capacity as executed SHA-256d work and
-does not claim that a physical QPU, ASIC, refrigerator, or fleet exists.
+statements. It does not claim that a physical QPU exists. Hashrate capacity and SHA-256d
+work are Mining's and are not specified here.
 
 No production gate accepts simulation, heuristic ranking, floating-point
 tolerance, a placeholder, or self-issued independent review as proof.
@@ -66,38 +66,19 @@ correction bound were undefined. `all_vertex_star_report` reproduces it.
 
 ## 5. Exact capacity
 
-For a homogeneous fleet:
-
-`H = M * N * f / I`
-
-For heterogeneous classes:
-
-`H_total = sum_i(M_i * N_i * f_i / I_i)`
-
-All operands are positive integers or exact rationals.
-
-`I` is the initiation interval in cycles per admitted SHA-256d result:
-
-- fully packed: `I = 1`
-- serialized three-compression-block path: `I = 3`
-- exact bubble fraction `e`: `I = 1 + e`
-- custom: exact rational value plus a non-empty justification
-
-Pipeline latency is independently declared as
-`compression_blocks * rounds_per_block`. A finite-window certificate subtracts
-pipeline fill exactly. The certificate truth class is
-`exact_mathematical_capacity_not_executed_work`.
-
-The fixed SHA-256d object is a datapath, not a general-purpose ISA. It has no
-instruction-selection or register-allocation claim.
+Moved to Mining. The exact formal-capacity model (H = M * N * f / I, the
+homogeneous and heterogeneous fleet certificates, initiation intervals and
+pipeline fill) is a hashrate model, not a property of the virtual quantum
+computer. It lives in `mining.deterministic_hashrate` and
+`mining.fault_tolerant_asic`, specified in
+`docs/DETERMINISTIC_10_EH_MATHEMATICAL_CAPACITY.md`.
 
 ## 6. Certificates
 
-Verification reconstructs the design, exact rates, finite-window result,
-floor flags, Merkle root, and certificate digest. Any mismatch raises an error.
-Heterogeneous fleet class identifiers are unique and each class declares its
-own exact clock, core count, chip count, initiation interval, mode, and
-justification.
+Every certificate this package issues (run witnesses, computation
+certificates, the surface-code proof digest) is verified by reconstructing all
+derived values from the canonical inputs; any mismatch raises an error.
+Capacity certificates are Mining's (section 5).
 
 ## 7. Canonical serialization
 
@@ -118,21 +99,9 @@ is hashed.
 
 ## 8. Thermodynamic boundary
 
-The many-to-one SHA-256d interface is logically irreversible. Its circuit can
-be reversibly embedded with retained ancillary state, but end-to-end reset and
-I/O obligations remain. Landauer applies per erased bit:
-
-`E >= b * k_B * T * ln(2)`
-
-No numerical energy is asserted without measured physical inputs.
-
-Cryo-CMOS reference profiles are explicitly labeled:
-
-- current reference: 10 mW/tile
-- five-year target: 5 mW/tile
-- ten-year target: 1 mW/tile
-
-Targets are not current measurements.
+Moved to Mining. The SHA-256d Landauer boundary and the cryo-CMOS reference
+profiles describe mining hardware, not the virtual quantum computer; they live in
+`mining.thermodynamics_exact` and `docs/THERMODYNAMIC_FLOOR_OF_BITCOIN_MINING.md`.
 
 ## 9. Formal/computational split
 

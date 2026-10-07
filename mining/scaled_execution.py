@@ -13,9 +13,9 @@ from dataclasses import dataclass
 from typing import Any
 
 from .four_layer_stack import FourLayerMiningStack
-from .strict_quantum import certify_work_window, verify_certificate
-from .toe_system import TOESystem
-from .pisot import (
+from toe.strict_quantum import certify_work_window, verify_certificate
+from toe.system import TOESystem
+from turing_universal_quantum_computer.pisot import (
     HendrixStructuredSearch,
     QuantumTensorManifest,
     plan_hilbert_coverage,

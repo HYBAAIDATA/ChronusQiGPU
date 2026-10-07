@@ -16,7 +16,7 @@ from benchmarks.hendrix_vs_grover import (
 
 def _simulated_grover_walk(n: int):
     """Ground-truth walk order identical to GroverStyleSearch.search."""
-    from turing_universal_quantum_computer.search import GroverStyleSearch
+    from mining.search import GroverStyleSearch
 
     k = GroverStyleSearch.optimal_iterations(n)
     visited = [False] * n

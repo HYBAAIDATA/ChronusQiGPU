@@ -105,8 +105,11 @@ The physical-realization proposition cannot be proven from design arithmetic and
 
 ## Public interfaces
 
+Mining owns these interfaces; they consume the TURING virtual quantum
+computer for exact algebra and are not part of it.
+
 ```python
-from turing_universal_quantum_computer import (
+from mining.deterministic_hashrate import (
     DeterministicMiningSystem,
     FleetDesign,
     PipelineSpec,
@@ -115,8 +118,9 @@ from turing_universal_quantum_computer import (
     minimum_chips_for_window,
     verify_hashrate_certificate,
 )
+from mining.fault_tolerant_asic import PureQuantumMathASIC
 
-system = TenThousandQubitSystem().deterministic_10eh_system()
+system = PureQuantumMathASIC().deterministic_hashrate_system()
 assert system.certificate.steady_state_floor_met
 assert system.certificate.cold_start_floor_met
 ```

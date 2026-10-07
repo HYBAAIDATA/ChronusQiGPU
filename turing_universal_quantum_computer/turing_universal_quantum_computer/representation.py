@@ -13,6 +13,9 @@ Representations (canonical inventory):
   reference representation.
 * ``tableau``           — exact stabilizer tableau; Clifford programs at any
   width; not applicable once a non-Clifford gate appears.
+* ``mps_exact``         — exact matrix-product state over Q(zeta_8) (Kellogg);
+  Clifford+T programs at any width whose static Schmidt bound stays within
+  chi_max at every cut — the bound is proved before execution.
 * ``sparse_exact``      — exact sparse support; bounded-support states,
   Clifford+T gates with QuantumRegister bindings; support boundedness is
   enforced at run time, not provable statically.
@@ -82,6 +85,17 @@ REPRESENTATIONS: dict[str, RepresentationSpec] = {
             notes="Clifford-only; entropic scaling instead of state size.",
         ),
         RepresentationSpec(
+            name="mps_exact",
+            backend="mps_exact",
+            gate_set="clifford+t",
+            state_class="bounded_schmidt_rank",
+            resource="exact cores; static Schmidt bound <= chi_max at every cut",
+            exact=True,
+            materialises=False,
+            notes="Kellogg exact MPS over Q(zeta_8); admitted only when a static "
+            "Schmidt bound covers the program, so it is never truncated.",
+        ),
+        RepresentationSpec(
             name="sparse_exact",
             backend="sparse",
             gate_set="clifford+t",
@@ -128,6 +142,10 @@ DOMINANCE: dict[str, frozenset[str]] = {
     # Tableau dominates nothing: dropping to another representation loses
     # the unbounded-width Clifford domain.
     "tableau": frozenset(),
+    # The exact MPS dominates nothing and nothing dominates it: it is the only
+    # representation covering wide non-Clifford programs, and it never offers
+    # an amplitude list.
+    "mps_exact": frozenset(),
     "sparse_exact": frozenset(),
     "closed_form": frozenset(),
     "symbolic_density": frozenset(),
@@ -175,6 +193,7 @@ class RepresentationPlanner:
     AUTO_ORDER: tuple[str, ...] = (
         "tableau",
         "dense_algebraic",
+        "mps_exact",
         "sparse_exact",
         "closed_form",
         "symbolic_density",
@@ -206,6 +225,17 @@ class RepresentationPlanner:
                     f"{self.max_amplitudes}",
                 )
             return True, "universal exact domain within amplitude budget"
+        if name == "mps_exact":
+            from .backends.mps import SUPPORTED, MPSExactBackend, schmidt_bound
+
+            unknown = sorted(g for g in gates if g not in SUPPORTED)
+            if unknown:
+                return False, f"gate(s) {unknown} lie outside Clifford+T over Q(zeta_8)"
+            chi_max = MPSExactBackend().chi_max
+            worst = max(schmidt_bound(program), default=0)
+            if (1 << worst) > chi_max:
+                return False, f"static Schmidt bound 2^{worst} exceeds chi_max={chi_max}"
+            return True, f"static Schmidt bound 2^{worst} <= chi_max={chi_max} at every cut"
         if name == "sparse_exact":
             unknown = sorted(g for g in gates if g not in _DENSE_GATES)
             if unknown:

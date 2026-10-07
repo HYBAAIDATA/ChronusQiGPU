@@ -243,11 +243,21 @@ class SerializationTests(unittest.TestCase):
 class RefusalBoundaryTests(unittest.TestCase):
     """Out-of-domain programs must be refused with a reason, never downgraded."""
 
-    def test_non_clifford_at_wide_width_is_refused(self):
+    def test_bounded_non_clifford_at_wide_width_runs_on_the_exact_mps(self):
         program = Program(64).then("h", 0).then("t", 0)
+        backend, admission = select_backend(program)
+        self.assertIsNotNone(backend)
+        self.assertEqual(backend.name, "mps_exact")
+        self.assertTrue(admission.admitted)
+
+    def test_unbounded_non_clifford_at_wide_width_is_refused(self):
+        program = Program(64).then("h", 0).then("t", 0)
+        for _ in range(7):
+            program = program.then("cx", 0, 63)
         backend, admission = select_backend(program)
         self.assertIsNone(backend)
         self.assertFalse(admission.admitted)
+        self.assertIn("exceeds chi_max", admission.reason)
 
     def test_non_clifford_is_refused_by_the_stabilizer_backend(self):
         from turing_universal_quantum_computer.backends import StabilizerBackend

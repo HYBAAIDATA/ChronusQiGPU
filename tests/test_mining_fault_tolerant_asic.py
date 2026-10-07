@@ -1,7 +1,7 @@
 import hashlib
 import unittest
 
-from turing_universal_quantum_computer.fault_tolerant_asic import (
+from mining.fault_tolerant_asic import (
     APPLICATIONS,
     CryoCMOS,
     Decoder,

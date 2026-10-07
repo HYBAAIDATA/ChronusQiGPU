@@ -2,7 +2,7 @@
 
 ## Delivered scope
 
-The quantum-ASIC specification is implemented as a deterministic, fail-closed engineering model in `turing_universal_quantum_computer.fault_tolerant_asic`. It is also exposed separately from `TenThousandQubitSystem` through `fault_tolerant_asic()`.
+The quantum-ASIC specification is implemented as a deterministic, fail-closed engineering model in `mining.fault_tolerant_asic`. Mining owns it: the capacity model and the 10 EH/s certificates are hashrate claims, so they are not part of the TURING virtual quantum computer, which they consume for exact algebra.
 
 The implementation covers every computable subsystem in the supplied specification:
 
@@ -88,6 +88,6 @@ Missing evidence is returned explicitly by `ProductionEvidence.missing`.
 
 ## Verification
 
-The focused standard-library test suite covers thermodynamics, wiring, coherence, transmon and coupler contracts, readout, chip geometry, surface-code calculations, syndrome extraction, decoder limits, logical qubits, room/cryo control, RSFQ, signal chain, all application profiles, scaling, threshold gates, evidence promotion, digest reports, invalid configurations, lazy package exports, and the separate `TenThousandQubitSystem` integration.
+The focused standard-library test suite covers thermodynamics, wiring, coherence, transmon and coupler contracts, readout, chip geometry, surface-code calculations, syndrome extraction, decoder limits, logical qubits, room/cryo control, RSFQ, signal chain, all application profiles, scaling, threshold gates, evidence promotion, digest reports, invalid configurations, the capacity-surface exports, and the Mining integration test (`tests/test_mining_quantum_asic_integration.py`).
 
 Passing these tests establishes correctness of the software model against its declared contracts. It does not establish physical feasibility, fabricated-silicon performance, or fault-tolerant quantum computation.

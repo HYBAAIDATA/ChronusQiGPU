@@ -76,7 +76,7 @@ the identifiers are per-run.
 | Candidate | Exercises | Cost |
 | --- | --- | --- |
 | QASM-parsed request (`qasm=` instead of `program=`) | the parse/refusal boundary | same machinery, adds parse stage |
-| `TenThousandQubitSystem` capacity verification | the capacity surface | **not a run workload** — mathematical capacity only; recommended as the *second* workload |
+| `mining.fault_tolerant_asic` capacity verification | the capacity surface (Mining) | **not a run workload** — mathematical capacity only; recommended as the *second* workload |
 | `verify_pure_quantum_math.py` reproduction | capacity certificate + self-checks | already executable: exit 0, 6/6 checks, `exact_mathematical_capacity_not_executed_work` |
 
 The Bell request is proposed as first because it is the smallest request

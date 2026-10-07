@@ -34,10 +34,7 @@ _ARSENAL_MODULES: dict[str, tuple[str, ...]] = {
         "turing_universal_quantum_computer.hilbert",
         "turing_universal_quantum_computer.turing_universal_quantum_computer.hilbert",
     ),
-    "turing.search": (
-        "turing_universal_quantum_computer.search",
-        "turing_universal_quantum_computer.turing_universal_quantum_computer.search",
-    ),
+    "mining.search": ("mining.search",),
     "turing.quantum_algorithms": (
         "turing_universal_quantum_computer.quantum_algorithms",
         "turing_universal_quantum_computer.turing_universal_quantum_computer.quantum_algorithms",
@@ -98,7 +95,7 @@ _ARSENAL_MODULES: dict[str, tuple[str, ...]] = {
 _NAMED_ALIASES: dict[str, tuple[str, str]] = {
     "grover": ("quantum2026", "EnhancedGrover"),
     "grover_exact": ("turing.hilbert", "GroverExact"),
-    "grover_style_search": ("turing.search", "GroverStyleSearch"),
+    "grover_style_search": ("mining.search", "GroverStyleSearch"),
     "hendrix": ("turing.hendrix", "HendrixChronusSearch"),
     "quantum_walk": ("turing.quantum_walk", "CoinedCycleWalk"),
     "hypercube_walk": ("turing.quantum_walk", "HypercubeWalk"),

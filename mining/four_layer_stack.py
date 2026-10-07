@@ -47,8 +47,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
-from .backend_binding import get_compute_backend
-from .hardened_unified_substrate import (
+from Intelligence.backend_binding import get_compute_backend
+from aethel.hardened_unified_substrate import (
     CassiniVerifier,
     apply_zeckendorf_compression,
     reverse_zeckendorf_expansion,
@@ -146,7 +146,7 @@ class TensorFoldEngine:
     """
 
     def __init__(self) -> None:
-        from . import turing_core
+        from turing_universal_quantum_computer import turing_core
 
         self._tc = turing_core
         self._orig_len: Dict[bytes, int] = {}
@@ -205,7 +205,7 @@ class TuringLayer:
     """
 
     def __init__(self, n_qubits: int = 10000) -> None:
-        from . import turing_core
+        from turing_universal_quantum_computer import turing_core
 
         self._tc = turing_core
         self.n_qubits = int(n_qubits)
@@ -283,7 +283,7 @@ class NearStateIGpu:
         t0 = time.perf_counter()
         host = None
         try:
-            from .unified_punch import UnifiedPunchHost
+            from Intelligence.unified_punch import UnifiedPunchHost
 
             host = UnifiedPunchHost()
         except Exception as exc:  # pragma: no cover
@@ -411,7 +411,7 @@ class FourLayerMiningStack:
         assert len(header80) == 80, "header must be 80 bytes"
         assert len(target_be) == 32, "target must be 32 bytes"
 
-        from .strict_quantum import certify_work_window, verify_certificate
+        from toe.strict_quantum import certify_work_window, verify_certificate
 
         strict_quantum = certify_work_window(
             header80[:76], int(nonce_start) & 0xFFFFFFFF, int(n_candidates)

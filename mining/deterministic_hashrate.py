@@ -14,7 +14,7 @@ from dataclasses import asdict, dataclass
 from fractions import Fraction
 from typing import Any, Iterable
 
-from .canonical_serialization import canonical_serialize, canonical_sha256
+from turing_universal_quantum_computer.canonical_serialization import canonical_serialize, canonical_sha256
 
 TEN_EH_HPS = 10**19
 SCHEMA = "turing.deterministic_hashrate/v1"
