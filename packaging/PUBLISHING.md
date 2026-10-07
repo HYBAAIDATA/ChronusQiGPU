@@ -10,8 +10,8 @@ Status on 7 October 2026, checked from this repository:
 | PyPI organization for HYBA | None found under `hyba`, `hyba-software`, `hyba-software-limited` |
 | Existing company PyPI user account | Cannot be determined from outside: PyPI user pages sit behind a bot challenge. The owner must check by signing in. |
 | PyPI credentials on the build machine | None (no `.pypirc`, no `TWINE_*`/`PYPI_*` variables, no keyring) |
-| Existing publishing workflow in this repo | None |
-| GitHub Actions | **Blocked**: jobs are not started — "recent account payments have failed or your spending limit needs to be increased" |
+| Existing publishing workflow in this repo | `.github/workflows/kellogg-tensor.yml` — verified-artifact OIDC path with `none`, `testpypi`, and `pypi` dispatch modes |
+| GitHub Actions | **EXTERNAL RELEASE INFRASTRUCTURE BLOCKER**: KELLOGG run `37631272987` created jobs but executed zero steps; restore organization Actions billing/spend before the fresh release gate can run |
 
 Publishing uses **PyPI trusted publishing**: GitHub Actions proves its identity
 to PyPI with a short-lived OIDC token, so no PyPI password or API token is
@@ -58,8 +58,10 @@ ever created, stored, or pasted anywhere. The release workflow is
    (Settings → Environments) and add a required reviewer from HYBA Software
    Limited to each, so every publish needs a human approval.
 
-8. **Publish Kellogg.** Actions → kellogg-tensor → Run workflow on the
-   release branch with `publish = testpypi`; install
+8. **Verify then publish Kellogg.** First run Actions → kellogg-tensor on current
+   `main` with `publish = none` and require the final `release-verdict.json` to
+   report `publishable: true`. Then run the same workflow with
+   `publish = testpypi`; install
    `pip install -i https://test.pypi.org/simple/ kellogg-tensor` in a clean
    environment to confirm; then run again with `publish = pypi`.
 
