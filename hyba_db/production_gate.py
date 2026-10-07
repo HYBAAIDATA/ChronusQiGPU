@@ -56,7 +56,7 @@ def evaluate(
             "storage_reconciled": verification.reconciliation_ok,
             "custody_ready": bool(custody_health.get("ready")),
             "custody_not_degraded": not bool(custody_health.get("degraded")),
-            "custody_replay_verified": bool(custody_replay.get("passed")),
+            "custody_replay_verified": bool(custody_replay.get("match")),
         }
         return {
             "schema": "hyba.storage-database-production-gate/v1",
