@@ -30,7 +30,7 @@ import struct
 import time
 import uuid
 from collections import deque
-from dataclasses import asdict, replace
+from dataclasses import asdict, dataclass, replace
 from queue import Empty
 from typing import Any, Mapping
 
@@ -79,7 +79,7 @@ from .search_plan import (
     WorkIdentity,
 )
 from .solver import M32SearchSolver
-from .stratum_adapter import StratumAdapterError
+from .stratum_adapter import StaleJobError, StratumAdapterError
 from .tuning_gate import TuningGate
 from .intelligence_memory import IntelligenceMemory
 from ..knowledge import KnowledgeFabric, default_journal_path
@@ -136,6 +136,42 @@ _NONCE_ORDERS = {
     "poincare": NONCE_ORDER_POINCARE_11D,
     "manifold": NONCE_ORDER_POINCARE_11D,
 }
+
+
+@dataclass(frozen=True)
+class _PendingSubmission:
+    """One locally verified candidate waiting for the single network writer.
+
+    The immutable work identity is carried with the candidate so the submitter
+    can re-check session/generation/fingerprint immediately before any socket
+    write. A queued candidate is not a pool outcome and is never learned from
+    until the pool returns a literal response (or the write becomes unknown).
+    """
+
+    identity: WorkIdentity
+    plan: SearchPlan
+    lease: LeaseRecord
+    record: ExecutionRecord
+    coordinate: CausalCoordinate
+    job_id: str
+    extranonce2: str
+    ntime: str
+    nonce: int | str
+    digest_hex: str
+    block_candidate: bool
+
+
+def _positive_int_env(name: str, default: int) -> int:
+    raw = os.getenv(name, "").strip()
+    if not raw:
+        return default
+    try:
+        value = int(raw)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be an integer") from exc
+    if value <= 0:
+        raise ValueError(f"{name} must be positive")
+    return value
 
 
 def _positive_env(name: str, default: float) -> float:
@@ -317,6 +353,17 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         recovery_target = kwargs.pop(
             "recovery_target", "pythia.mining.runtime"
         )
+        asynchronous_submission = bool(
+            kwargs.pop("asynchronous_submission", False)
+        )
+        submission_queue_size = kwargs.pop("submission_queue_size", None)
+        if submission_queue_size is None:
+            submission_queue_size = _positive_int_env(
+                "PYTHIA_SUBMISSION_QUEUE", 64
+            )
+        submission_queue_size = int(submission_queue_size)
+        if submission_queue_size <= 0:
+            raise ValueError("submission_queue_size must be positive")
         super().__init__(*args, **kwargs)
         # A started worker hashes; whether it may submit is a separate,
         # live question (submission_permitted). Unapproved, it mines in
@@ -328,6 +375,17 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self.chain_observer = observer
         self._submission_lock = asyncio.Lock()
         self._search_lock = asyncio.Lock()
+        self._asynchronous_submission = asynchronous_submission
+        self._submission_queue: asyncio.Queue[_PendingSubmission] = asyncio.Queue(
+            maxsize=submission_queue_size
+        )
+        self._submission_task: asyncio.Task[None] | None = None
+        self._queued_candidate_digests: set[str] = set()
+        self._queued_block_candidates = 0
+        self._submission_in_flight = False
+        self._submission_queue_stale = 0
+        self._submission_queue_unknown = 0
+        self._submission_queue_resolved = 0
         self._chain_tip = None
         self._last_chain_poll = 0.0
         self.mining_intelligence = MiningIntelligenceChooser()
