@@ -73,6 +73,13 @@ _tiny/
 _win/
 _rp/
 _inv_out/
+# Agent working directory: git/diff/status dumps, *.done markers, pid files and
+# one-off scan scripts. Only the hook config and skills are source; inventory
+# files committed earlier stay tracked (ignore rules never untrack).
+/.agents/*
+!/.agents/hooks.json
+!/.agents/skills/
+/.agents_*.txt
 # Local backup trees (superseded working copies) — not canonical source.
 chronus_local_backup_*/
 # Nested vendored clones / older-generation snapshots that must not be
