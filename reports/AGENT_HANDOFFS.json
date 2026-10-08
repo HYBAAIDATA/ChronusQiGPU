@@ -48,5 +48,15 @@
     "affected_files": ["mining/stratum_bridge.py", "chronus/mla1517/mining/ (stratum_adapter, coordinator consumers)"],
     "blocking": false,
     "status": "OPEN"
+  },
+  {
+    "request_id": "B-to-D-d007-absorbed",
+    "requesting_agent": "B",
+    "owning_agent": "D",
+    "required_interface": "closure of D-007 (execution-identity truthfulness) inside the B lane; D's receipt-field APIs (HendrixSchedule.execution_receipt et al.) exist only on repair/D-turing-math so B emitted the equivalent receipt in-lane — no cherry-pick needed",
+    "reason": "D-007 flagged mining/scaled_execution.py labelling classical structured scheduling + SHA256d enumeration as quantum execution: metadata['execution_path']='aethel_exact_tensor_hendrix_lucas_pisot_chronus' and toe.record_decision calls filed under intelligence 'quantum'. Fixed: execution_path='structured_classical'; a full execution_receipt is emitted on the result metadata AND embedded in every execution provenance event (job_received/execution_failed/execution_complete) carrying requested_algorithm='lucas_scaled_aethel_execution', planned_algorithm='hendrix_coprime_stride_permutation', executed_algorithm='sha256d_window_enumeration', implementation_module='mining.four_layer_stack:FourLayerMiningStack.mine', implementation_digest + schedule_digest (sha256 of canonical manifests), execution_mode='structured_classical', substrate=result['hasher_backend'], fallback_used/fallback_reason, and independent_sha256d_verification {performed, method, winner_bit_exact}. TOE provenance now files execution events under 'geometric', never 'quantum'. search.py GroverStyleSearch: documented scale_index as stride-shaping only (it does not enlarge the space or reduce work) and added scale_effect='stride_shaping_only' + work_reduction=False to its return dict. Verified: 20 tests pass (mining/tests/ + tests/test_mining_scaled_execution.py), flake8 clean.",
+    "affected_files": ["mining/scaled_execution.py", "mining/search.py", "mining/tests/test_agent_b_regressions.py"],
+    "blocking": false,
+    "status": "CLOSED"
   }
 ]

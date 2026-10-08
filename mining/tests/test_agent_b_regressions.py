@@ -317,6 +317,53 @@ class PendingRpcBoundTests(unittest.TestCase):
         self.assertEqual(bridge._pending, {})
 
 
+class ExecutionIdentityTests(unittest.TestCase):
+    """D-007: execution events/receipts must carry truthful
+    requested/planned/executed identity — structured-classical
+    scheduling + SHA256d enumeration, never quantum execution."""
+
+    def test_execute_receipt_labels_classical_end_to_end(self):
+        from mining.scaled_execution import LucasScaledAethelExecutionAdapter
+
+        adapter = LucasScaledAethelExecutionAdapter(scale_index=76)
+        header = bytes(range(76)) + (0).to_bytes(4, "little")
+        result = adapter.execute(header, target=(1 << 256) - 1, base_nonce=0, count=64)
+
+        self.assertEqual(result.metadata["execution_path"], "structured_classical")
+        receipt = result.metadata["execution_receipt"]
+        for field in (
+            "requested_algorithm",
+            "planned_algorithm",
+            "executed_algorithm",
+            "implementation_module",
+            "implementation_digest",
+            "execution_mode",
+            "substrate",
+            "fallback_used",
+            "independent_sha256d_verification",
+        ):
+            self.assertIn(field, receipt, f"receipt missing {field}")
+        self.assertEqual(receipt["execution_mode"], "structured_classical")
+        self.assertEqual(receipt["executed_algorithm"], "sha256d_window_enumeration")
+        self.assertEqual(receipt["substrate"], result.metadata["chronus"]["hasher_backend"])
+        self.assertTrue(
+            receipt["independent_sha256d_verification"]["winner_bit_exact"]
+        )
+        # No label on the receipt may claim quantum execution.
+        self.assertNotIn("quantum", receipt["execution_mode"])
+        self.assertNotIn("quantum", receipt["executed_algorithm"])
+        # The provenance events carry the same receipt and are filed by a
+        # non-quantum intelligence.
+        for record in adapter.toe.provenance_ledger:
+            self.assertNotEqual(record.initiating_intelligence, "quantum")
+        complete = adapter.toe.provenance_ledger[-1]
+        self.assertIn("execution_receipt", complete.parameters)
+        self.assertEqual(
+            complete.parameters["execution_receipt"]["execution_mode"],
+            "structured_classical",
+        )
+
+
 class MineJobFallbackTests(unittest.TestCase):
     """Incorrect fallback behaviour: proof failures never switch arms."""
 

@@ -82,10 +82,14 @@ class GroverStyleSearch:
     against the consensus target — amplitude math orders the search, it
     never replaces the consensus check.
 
-    ``scale_index`` selects a Lucas ladder rung (10/12/15/18/20): the
-    search's effective space becomes ``N_eff = len(schedule) * L_n`` and
-    k* is taken over the scaled space — the same N -> N * L_n hardware
-    scaling the GPU engine applies.
+    ``scale_index`` selects a Lucas ladder rung (10/12/15/18/20). Its only
+    effect is on the visitation stride: k* is computed over
+    ``len(schedule) * L_n`` and used purely as the step between probed
+    candidates. It does NOT enlarge the candidate space, reduce the work,
+    or change which nonces are probed — at most ``len(schedule)`` real
+    double-SHA256 evaluations ever run, over exactly the given schedule.
+    It is retained for schedule-shape compatibility with the GPU engine's
+    N -> N * L_n hardware scaling; here it is stride shaping only.
     """
 
     def __init__(self) -> None:
@@ -165,6 +169,11 @@ class GroverStyleSearch:
             "scale_index": scale_index,
             "lucas_value": lucas_value,
             "scaled_space": scaled_size,
+            # Truthful identity: the scaled space only sizes the stride k*.
+            # The probe set is exactly `schedule` — scaled_size is not a
+            # space the search actually walks, and it reduces no work.
+            "scale_effect": "stride_shaping_only",
+            "work_reduction": False,
         }
 
     def status(self) -> Dict[str, Any]:
