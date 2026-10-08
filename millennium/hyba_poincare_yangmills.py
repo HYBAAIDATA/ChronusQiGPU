@@ -323,9 +323,11 @@ def character_table(elist, classes, sizes):
     M = [
         np.array([[c[i][j][l] for j in range(k)] for l in range(k)], dtype=float) for i in range(k)
     ]
-    # generic combination to split degenerate eigenspaces (same common eigenbasis)
-    rng = np.random.default_rng(0)
-    alpha = rng.random(k) + 0.5
+    # generic combination to split degenerate eigenspaces (same common eigenbasis);
+    # any algebraically-generic weights work — a golden-ratio Weyl sequence is
+    # deterministic, generic, and needs no RNG.
+    _phi = (1.0 + math.sqrt(5.0)) / 2.0
+    alpha = np.array([((i + 1) * _phi) % 1.0 + 0.5 for i in range(k)])
     Mgen = sum(alpha[i] * M[i] for i in range(k))
     evals, evecs = np.linalg.eig(Mgen)
     order = np.argsort(evals.real)

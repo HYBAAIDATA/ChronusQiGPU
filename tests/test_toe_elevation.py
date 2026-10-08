@@ -21,6 +21,7 @@ sys.path.insert(0, str(ROOT))
 
 from lucas.algebra import PHI as EXACT_PHI  # noqa: E402
 from lucas.algebra import ZPhi  # noqa: E402
+from kellogg.substrate import QPhi  # noqa: E402
 from toe.agreement import evaluator_agreement  # noqa: E402
 from toe.bridge import CAPABILITY_EVIDENCE, TOEBridge  # noqa: E402
 from toe.causal_ladder import (  # noqa: E402
@@ -287,7 +288,8 @@ def test_missing_structural_evidence_fails_closed():
 def test_exact_path_is_exact_in_q_phi():
     scm = StructuralCausalModel(_graph(("X", "Y", 2)))
     values = scm.evaluate_exact(interventions={"X": 1}, exogenous={"Y": 1})
-    assert values["Y"] == ZPhi(2, 1)  # 2*1 + phi, structurally
+    # Exact Q(phi) is KELLOGG's field: 2*1 + phi, structurally.
+    assert values["Y"] == QPhi(2, 1)
     assert EXACT_PHI * EXACT_PHI == EXACT_PHI + ZPhi(1, 0)
 
 

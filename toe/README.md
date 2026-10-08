@@ -1,120 +1,43 @@
-# toe — PYTHIA Theory-of-Everything Engine
+# toe — a domain-general mathematical intelligence engine
 
-The `toe/` package is the canonical, sector-agnostic quantum-algebraic
-inference and certification engine of the PYTHIA repository. It was
-consolidated from the original `toe.py` monolith, the `Intelligence/toe_*.py`
-modules, and the substrate they run on. It is a first-class package:
-`import toe` works from the repository root with only `numpy` required
-(`pandas`, `tensorflow`, `xgboost`, `lightgbm`, and friends are optional
-lazy dependencies — the exact-tensor family covers their roles when they
-are absent).
+`toe/` is TOE's source. The public, standalone description (what TOE is, evidence
+classes, ownership boundaries) is [`packaging/toe/README.md`](../packaging/toe/README.md);
+the recovered architecture is [`docs/toe/ARCHITECTURE.md`](../docs/toe/ARCHITECTURE.md);
+the claim register is [`docs/toe/CLAIM_REGISTER.md`](../docs/toe/CLAIM_REGISTER.md).
 
-## What it is
+TOE was discovered inside PYTHIA through an HR-shaped application
+(`toe.engine.PredictiveEngine`). That vocabulary is lineage: one backend reasons over any
+problem reduced to `toe.problem.Problem`, and `toe.adapters` are the only per-domain code.
 
-Any payload — telemetry, JSON, AST tokens, graph adjacency, byte streams —
-is compiled into a deterministic operator, encoded as a state vector in a
-32-dimensional Hilbert space, evolved under `U(t) = exp(-iHt/ħ)`, measured
-by spectral observables, and reasoned about through Pearl's causal ladder.
-An exact branch does the same over the cyclotomic field `Q(ζ8)` with
-`Fraction` amplitudes and zero floating-point drift.
+## Layers
 
-## Package layout
-
-| Module | Role |
+| Layer | Where |
 |---|---|
-| `toe.engine` | The original `PredictiveEngine` monolith — extended algebraic-family detection (Pisot spectrum), telemetry analytics, `strict_quantum_work_certificate` |
-| `toe.bridge` | `TOEBridge` — state tomography (purity, von Neumann entropy, QFI), unitary trajectory forecast, causal factor ranking |
-| `toe.expansion` | `TOEExpansionEngine` — proof-carrying collapse envelope: operator compile + 11D Zeckendorf certificate + Pisot/Lucas scale program + budget |
-| `toe.system` | `TOESystem` — 12-theorem arbiter and provenance records for the agentic workflow |
-| `toe.operator_compilers` | Deterministic typed-operator compilation (bytes, ASTs, graphs, text) |
-| `toe.causal_ladder` | Pearl ladder: `infer_causal_graph`, `association_query`, `do_operator`, `counterfactual_query` |
+| Composition root (tenancy, receipts, evidence chain, consensus boundary) | `toe/runtime.py` — `TOEIntelligenceRuntime.solve` / `learn`; HTTP surface `toe/ciaas_api.py` |
+| Reasoning core | `toe/machine.py` — `TOEMachine.run` / `learn` / `replay` |
+| Problem contract | `toe/problem.py` |
+| Reasoning modules | `representation`, `intelligence_state`, `relationships`, `causal_ladder`, `causal_stack`, `uncertainty`, `policy`, `planning`, `meta_reasoning`, `precision`, `arbitration`, `decision_explanation`, `world_model`, `memory`, `topology`, `geometry`, `self_governance`, `receipts`, `custody` |
+| Domain adapters | `toe/adapters/` (tabular, causal system, graph, temporal, code, scientific, legacy HR) |
+| Enterprise analytics | `toe/unified/` |
+| Monorepo-only consumer surfaces (not in the standalone wheel) | `toe/system.py`, `toe/intelligences/`, `toe/manifold_bridge.py`, `toe/hardened_unified_substrate.py` — PYTHIA's mining-facing coordinator |
 
-The tensor substrate is the separate top-level package **`kellogg/`** —
-the Kellogg Tensor is its own system; TOE consumes it but does not own it:
-
-| Module | Role |
-|---|---|
-| `kellogg.quantum_tensor` | 32-dim substrate: `Complex`, `ComplexMatrix`, `QuantumState`, `Observables`, Born rule, QFI, path-integral propagation |
-| `kellogg.exact_tensor` | `ExactTOETensor` — Clifford+T over `Q(√2)+iQ(√2)` fractions; fail-closed gates, deterministic Born weights |
-| `kellogg.exact_field` | Exact `sqrt_f` over `F4 = Q(ζ8)`; plane-checked value algebra |
-| `kellogg.tensor_ml` | Exact-tensor ML family (`exact_linear`; `rf`/`xgb`/`lgbm`/`gb` are deprecated aliases), scalers, imputers, vectorizers, deterministic `dump`/`load` |
-
-| `toe.manifold_bridge` | `ManifoldBridge` — Galois-persistent candidate store, O(1) lookup, random-sample verification |
-| `toe.poincare_golden_11d` | 11D Poincaré-golden fold/unfold, Zeckendorf certificates, metallic means |
-| `toe.hardened_unified_substrate` | `CassiniVerifier`, Zeckendorf compression, MODULUS_Q / PHI / PSI / SQRT5 |
-| `toe.strict_quantum` | Strict quantum work-window certification |
-| `toe.intelligences/` | The five intelligences: causal, geometric, plastic, counterfactual, quantum |
-
-`mtheory/` (top-level sibling package) is a runtime dependency of
-`toe.engine`'s optional KK-spectrum integration.
-
-## Unified analytics platform
-
-`toe.unified.UnifiedAnalyticsPlatform` is the single runtime for the
-enterprise surface: the connector catalog (1,000+ systems), the data
-layer, exact-tensor models, natural-language questions, operations,
-the cost model, and the scholarship ledger.
-
-```python
-from toe.unified import UnifiedAnalyticsPlatform
-
-platform = UnifiedAnalyticsPlatform(allocation_rate=0.05)
-platform.start()
-platform.connect("postgresql.postgresql", {"dsn": "sqlite:/tmp/warehouse.db", "entities": {"Table": "accounts"}})
-platform.integrate("postgresql.postgresql", "Table")
-platform.ask("show revenue by region from table")
-platform.train("risk", rows, ["amount", "tenure"], "defaulted")
-platform.heal()
-platform.economics(baseline, platform_cost)
-platform.recognize_value(amount, source)
-```
-
-A connector does nothing until credentials are bound. An unbound protocol
-raises `ConnectorUnavailable`. Share validity is still SHA256d; this
-package does not issue it.
-
-Claim status for the analytics narrative is `reports/toe_unified_disposition.md`.
-The package contract is `toe/unified/CONTRACT.md`.
-
-## Usage
-
-```python
-import toe
-
-# State tomography + trajectory + causal ranking over any payload
-bridge = toe.TOEBridge()
-tomo = bridge.state_tomography({"job": "header-fields", "nonce": 42})
-traj = bridge.predict_trajectory({"job": "header-fields", "nonce": 42})
-causal = bridge.explain_causality({"factors": [1.0, 2.0, 3.0]})
-
-# Proof-carrying collapse envelope
-engine = toe.TOEExpansionEngine()
-result = engine.collapse({"job": "header-fields"})
-assert result.state_certificate   # 11D Zeckendorf certificate
-
-# Deterministic operator compilation
-spec = toe.compile_operator(payload)
-```
-
-The mining path consumes this through
-`chronus/mla1517_platform/python/mla1517/mining/toe_adapter.py`
-(`TOEMiningAdapter`), which feeds real job + vault observations into the
-bridge and fails closed (`TOEUnavailable`) if the engine is absent.
+KELLOGG (`kellogg/`) owns the tensor and exact-field mathematics TOE consumes; PYTHIA's
+mining adapter is `chronus/mla1517/mining/toe_problem.py`; EUCLID's handle is
+`euclid/cognition/toe_capabilities.py`.
 
 ## Consensus boundary
 
-TOE provides **observed context and search-order heuristics** — face bias,
-causal throttle, tomography, certificates. It never decides share validity
-and never substitutes SHA256d proof-of-work. The proof boundary is
-explicitly attested in every `TOEExpansionResult` (`proof_boundary`).
+TOE never decides share or block validity. In mining it advises an operational setting;
+PYTHIA authorises; `chronus.mla1517.mining.pow.check_pow` (double SHA256 + target) alone
+decides validity. In mining mode the runtime refuses any consensus field as a TOE
+decision variable.
 
 ## Verification
 
 ```bash
-pytest tests/test_toe_tensor_ml.py tests/test_toe_expansion_contract.py \
-       tests/test_agentic_mining.py tests/test_elevation_correctness.py
-python -m unittest discover -s chronus/mla1517_platform/python   # incl. test_toe_mining_integration
-python -m toe.bridge                                        # self-test
-PYTHONPATH=.:chronus/mla1517_platform/python \
-    python tests/explore_toe_implementation.py              # standalone diagnostic
+python -m pytest tests/test_toe*.py tests/test_euclid_toe_capabilities.py -q
+python scripts/toe_mining_voyage.py                 # PYTHIA ↔ TOE end to end
+python scripts/toe_ablation_study.py --n 60          # held-out ablations + controls
+python scripts/toe_universal_principle_evidence.py   # the golden-family evidence pack
+python packaging/toe/build_and_verify.py             # standalone wheel/sdist verification
 ```

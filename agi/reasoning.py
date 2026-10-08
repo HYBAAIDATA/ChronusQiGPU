@@ -22,8 +22,8 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from hyba_backend.api.web_research import get_research_engine, research_and_learn
-from hyba_backend.platform.quantum_core.processor import (
+from agi.web_research import get_research_engine, research_and_learn
+from agi.quantum_processor import (
     ProblemDomain,
     UniversalQuantumProcessor,
 )
@@ -119,50 +119,50 @@ class MetaCognition:
         self.uncertainty_map: Dict[str, float] = {}
 
     def assess_knowledge(self, topic: str) -> Dict[str, Any]:
-        """Assess what ASI knows about a topic"""
-        # Check knowledge base
+        """Assess what ASI knows about a topic via the real corpus index."""
         engine = get_research_engine()
-        summary = engine.get_research_summary()
+        result = engine.research(topic, top_k=5).to_dict()
+        sources = result.get("sources", [])
+        has_knowledge = bool(result.get("success")) and bool(sources)
 
-        # Simple assessment based on knowledge base
-        has_knowledge = topic.lower() in str(summary.get("active_topics", [])).lower()
+        # Measured quantities only: corpus coverage (hit fraction of the
+        # top-k window) and the best TF-IDF score. Confidence is the
+        # measured coverage — labelled as coverage, not calibration.
+        coverage = len(sources) / 5.0 if sources else 0.0
+        best_score = max((s.get("score", 0.0) for s in sources), default=0.0)
 
         return {
             "topic": topic,
             "has_knowledge": has_knowledge,
-            "confidence": 0.7 if has_knowledge else 0.1,
+            "confidence": coverage,
+            "confidence_basis": "measured_corpus_coverage_not_calibrated",
+            "best_match_score": best_score,
             "needs_research": not has_knowledge,
-            "knowledge_items": summary.get("total_research", 0),
+            "knowledge_items": len(sources),
         }
 
-    def assess_capability(self, task: str) -> float:
-        """Assess ASI's capability for a task"""
-        # Check against known capabilities
-        capabilities = {
-            "quantum_computation": 0.95,
-            "web_research": 0.90,
-            "mathematical_reasoning": 0.85,
-            "pattern_recognition": 0.88,
-            "hypothesis_generation": 0.75,
-            "strategic_planning": 0.70,
-            "self_modification": 0.65,  # Being developed
-        }
+    def assess_capability(self, task: str) -> Optional[float]:
+        """Assess ASI's capability for a task.
 
-        # Match task to capabilities
-        for capability, score in capabilities.items():
+        Returns the measured success fraction recorded for a matching
+        capability in ``capability_assessments``, or ``None`` when no
+        measured track record exists. Invented capability scores are not
+        reported — unmeasured capability is honestly unknown.
+        """
+        for capability, record in self.capability_assessments.items():
             if capability.replace("_", " ") in task.lower():
-                return score
-
-        return 0.5  # Unknown task
+                return record
+        return None
 
     def identify_uncertainty(self, reasoning_chain: List[ReasoningStep]) -> List[str]:
         """Identify sources of uncertainty in reasoning"""
         uncertain_steps = []
 
         for step in reasoning_chain:
-            if step.confidence < 0.7:
+            if step.confidence is None or step.confidence < 0.7:
+                label = "unassessed" if step.confidence is None else f"{step.confidence:.2f}"
                 uncertain_steps.append(
-                    f"Step {step.step_number}: {step.conclusion} (confidence: {step.confidence:.2f})"
+                    f"Step {step.step_number}: {step.conclusion} (confidence: {label})"
                 )
 
         return uncertain_steps
@@ -269,7 +269,9 @@ class AutonomousReasoningEngine:
 
         chain = []
 
-        # Step 1: Problem understanding (Abductive reasoning)
+        # Step 1: Problem understanding (Abductive reasoning).
+        # Structural reasoning steps carry no measured confidence —
+        # confidence=None marks "not assessed", never an invented value.
         chain.append(
             ReasoningStep(
                 step_number=1,
@@ -277,23 +279,24 @@ class AutonomousReasoningEngine:
                 premise=f"Problem: {problem}",
                 inference="What is the best explanation for how to approach this?",
                 conclusion="Need to understand problem structure and identify solution strategies",
-                confidence=0.85,
+                confidence=None,
                 supporting_evidence=["Meta-cognitive problem analysis"],
             )
         )
 
         # Step 2: Strategy selection (Strategic reasoning)
         capability = self.meta_cognition.assess_capability(problem)
+        capability_text = f"{capability:.2f}" if capability is not None else "not_assessed"
 
         chain.append(
             ReasoningStep(
                 step_number=2,
                 reasoning_type=ReasoningType.STRATEGIC,
-                premise=f"Capability assessment: {capability:.2f}",
+                premise=f"Capability assessment: {capability_text}",
                 inference="Select optimal strategy based on capabilities",
                 conclusion="Use quantum-enhanced approach if computational, research if knowledge-based",
                 confidence=capability,
-                supporting_evidence=[f"Capability score: {capability:.2f}"],
+                supporting_evidence=[f"Capability score: {capability_text}"],
             )
         )
 
@@ -305,7 +308,7 @@ class AutonomousReasoningEngine:
                 premise="Based on problem structure and available knowledge",
                 inference="Generate testable hypotheses about solution approaches",
                 conclusion="Multiple solution paths exist, each with different trade-offs",
-                confidence=0.75,
+                confidence=None,
                 supporting_evidence=["Pattern matching against known problems"],
             )
         )
@@ -318,7 +321,7 @@ class AutonomousReasoningEngine:
                 premise="Problem has causes and effects",
                 inference="Identify causal relationships",
                 conclusion="Solution requires addressing root causes, not symptoms",
-                confidence=0.80,
+                confidence=None,
                 supporting_evidence=["Causal reasoning framework"],
             )
         )
@@ -346,7 +349,7 @@ class AutonomousReasoningEngine:
         synthesis_hypothesis = Hypothesis(
             hypothesis_id=f"hyp_{len(self.hypotheses) + len(hypotheses) + 1}",
             statement="Optimal solution combines multiple approaches",
-            confidence=0.85,
+            confidence=None,
             generated_at=datetime.now(timezone.utc),
             supporting_evidence=["Multi-step reasoning synthesis"],
         )
@@ -362,31 +365,38 @@ class AutonomousReasoningEngine:
             problem_id, state = self.quantum_processor.create_problem(
                 name=f"hypothesis_test_{hypothesis.hypothesis_id}",
                 domain=ProblemDomain.OPTIMIZATION,
-                data=list(range(64)),  # Test data
+                data={
+                    "statement": hypothesis.statement,
+                    "supporting_evidence": hypothesis.supporting_evidence,
+                    "reasoning_step": hypothesis.hypothesis_id,
+                },
             )
 
             result = self.quantum_processor.solve(
                 problem_id, algorithm="phi_resonance", iterations=5
             )
 
-            # Interpret results
+            # Interpret the measured outcome: the Born-mass concentrated on
+            # the top basis states is the processor's real signal.
+            solution = result.get("solution", {})
+            top_mass = solution.get("top_probability_mass")
             hypothesis.tested = True
             hypothesis.test_results = {
-                "quantum_speedup": result["quantum_speedup"],
-                "success_probability": result["success_probability"],
-                "phi_resonance": result["phi_resonance_score"],
+                "quantum_status": result.get("status", "unknown"),
+                "quantum_speedup": result.get("quantum_speedup", 1.0),
+                "top_probability_mass": top_mass,
+                "final_entropy_nats": solution.get("final_entropy_nats"),
                 "conclusion": (
                     "Hypothesis supported"
-                    if result["success_probability"] > 0.5
+                    if isinstance(top_mass, float) and top_mass > 0.5
                     else "Hypothesis uncertain"
                 ),
             }
 
-            # Update confidence based on test
-            if result["success_probability"] > 0.7:
-                hypothesis.confidence = min(0.95, hypothesis.confidence * 1.2)
-            elif result["success_probability"] < 0.3:
-                hypothesis.confidence = max(0.1, hypothesis.confidence * 0.8)
+            # Update confidence from the measured concentration — the prior
+            # is replaced by the measured mass, not multiplied by a fudge.
+            if isinstance(top_mass, float):
+                hypothesis.confidence = top_mass
 
         except Exception as e:
             logger.error(f"Error testing hypothesis: {e}")
@@ -400,18 +410,20 @@ class AutonomousReasoningEngine:
     ) -> str:
         """Synthesize final conclusion from reasoning and hypotheses"""
 
-        # Weight conclusions by confidence
+        # Weight conclusions by *measured* confidence only — unassessed
+        # steps (confidence=None) cannot win a conclusion by fiat.
         weighted_conclusions = []
 
         for step in reasoning_chain:
-            weighted_conclusions.append((step.conclusion, step.confidence))
+            if step.confidence is not None:
+                weighted_conclusions.append((step.conclusion, step.confidence))
 
         for hyp in hypotheses:
-            if hyp.tested and hyp.test_results:
+            if hyp.tested and hyp.test_results and hyp.confidence is not None:
                 conclusion = hyp.test_results.get("conclusion", "No conclusion")
                 weighted_conclusions.append((conclusion, hyp.confidence))
 
-        # Find highest confidence conclusion
+        # Find highest measured-confidence conclusion
         if weighted_conclusions:
             best_conclusion = max(weighted_conclusions, key=lambda x: x[1])
             return f"{best_conclusion[0]} (confidence: {best_conclusion[1]:.2f})"
@@ -427,7 +439,7 @@ class AutonomousReasoningEngine:
                 topic=topic,
                 content=json.dumps(research_results.get("key_findings", [])),
                 source="web_research",
-                confidence=0.8,
+                confidence=None,  # unassessed — no calibrated score exists
                 learned_at=datetime.now(timezone.utc),
                 related_topics=research_results.get("topics", []),
             )
@@ -521,11 +533,11 @@ class AutonomousReasoningEngine:
                     :1
                 ]  # Store first step
 
-                # Mark as having made progress
-                sub_goal.progress = min(1.0, sub_goal.progress + 0.3)
-
-                if sub_goal.progress >= 1.0:
-                    sub_goal.completed = True
+                # The work item IS producing the reasoning chain — once it
+                # exists, that unit of work is complete (progress is a
+                # measured completion flag, not an invented increment).
+                sub_goal.progress = 1.0
+                sub_goal.completed = True
 
                 progress_made.append(
                     {

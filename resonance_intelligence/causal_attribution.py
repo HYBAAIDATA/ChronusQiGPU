@@ -102,6 +102,11 @@ class CausalAttributionEngine:
         self._reports.append(report)
         return report
 
+    def pop_last_report(self) -> None:
+        """Drop the most recent report — transactional rollback support."""
+        if self._reports:
+            self._reports.pop()
+
     def get_attribution_statistics(self) -> dict[str, Any]:
         totals: dict[str, list[float]] = {}
         for report in self._reports:

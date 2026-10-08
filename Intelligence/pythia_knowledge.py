@@ -274,6 +274,9 @@ KNOWLEDGE_FACTS: List[Dict[str, Any]] = [
 # Semantic associations — relationships between concepts
 # ---------------------------------------------------------------------------
 
+# Declared seed priors on the knowledge graph — curated association
+# strengths, NOT measured quantities. The weights below order edges for
+# retrieval only; they make no empirical claim.
 KNOWLEDGE_ASSOCIATIONS: List[Dict[str, Any]] = [
     {
         "from": "winning_nonce",

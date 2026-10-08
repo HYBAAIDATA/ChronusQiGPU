@@ -363,7 +363,9 @@ class PythiaCurator:
         for e in self.memory.episodic.events():
             u, reasons = self._utility(
                 activation=1,
-                confidence=0.5 + min(0.5, e.reward * 0.5),
+                # The measured reward IS the confidence evidence —
+                # the invented 0.5 + 0.5·reward lift is gone.
+                confidence=max(0.0, min(1.0, e.reward)),
                 accesses=e.access_count,
                 last_accessed=e.last_accessed,
                 written_ts=e.timestamp,
@@ -390,7 +392,7 @@ class PythiaCurator:
         for e in self.memory.archival.entries():
             u, reasons = self._utility(
                 activation=1,
-                confidence=0.5 + min(0.5, float(e.metadata.get("reward", 0.0)) * 0.5),
+                confidence=max(0.0, min(1.0, float(e.metadata.get("reward", 0.0)))),
                 accesses=e.access_count,
                 last_accessed=e.last_accessed,
                 written_ts=0.0,

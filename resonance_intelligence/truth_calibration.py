@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Mapping
 
 
 @dataclass
@@ -79,6 +79,26 @@ class TruthCalibrationEngine:
         result = self._statistics(merged)
         result["sources"] = len(self._sources)
         return result
+
+    def export_state(self) -> dict[str, Any]:
+        """Durable form of every recorded (confidence, outcome) pair."""
+        return {
+            source_id: {
+                "confidences": list(source.confidences),
+                "outcomes": list(source.outcomes),
+            }
+            for source_id, source in self._sources.items()
+        }
+
+    def import_state(self, state: Mapping[str, Any]) -> None:
+        """Restore a previously exported calibration series; replaces state."""
+        self._sources = {
+            source_id: _SourceCalibration(
+                [float(c) for c in rows.get("confidences", [])],
+                [bool(o) for o in rows.get("outcomes", [])],
+            )
+            for source_id, rows in dict(state or {}).items()
+        }
 
     def reset(self) -> None:
         self._sources.clear()

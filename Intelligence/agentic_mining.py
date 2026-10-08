@@ -62,6 +62,7 @@ try:
         CoolDownController,
         ValidityLearner,
     )
+    from Intelligence._born import born_evidence
 except ImportError:
     from unified_punch import UnifiedPunchHost
     from toe.intelligences.causal import CausalIntelligence
@@ -76,6 +77,7 @@ except ImportError:
         CoolDownController,
         ValidityLearner,
     )
+    from _born import born_evidence
 
 logger = logging.getLogger("Intelligence.agentic_mining")
 
@@ -192,6 +194,10 @@ class AgenticMiningWorkflow:
         self.autonomy_ledger = CassiniCycleLedger()
         self.submission_rate_scale = 1.0
         self.probe_log: List[Dict[str, Any]] = []
+        # Measured per-sector SHA256d outcomes: sector_id -> [hits, misses].
+        # This is the evidence the phase-2 Born probability is computed
+        # from — no fabricated amplitudes.
+        self._sector_outcomes: Dict[int, List[int]] = {}
 
     # =========================================================================
     # PHASE 1: COLD START
@@ -353,14 +359,30 @@ class AgenticMiningWorkflow:
 
         valid_candidates: List[PrecomputedCandidate] = []
         for nonce in geo_alloc.nonces:
-            # 5. Quantum Intelligence: verify via Born rule (Substrate 10)
-            p_born = 0.95
+            # 5. Quantum Intelligence: verify via Born rule (Substrate 10).
+            #    p_born is the MEASURED Born probability of the candidate's
+            #    sector evidence state |psi> = sqrt(p)|hit> + sqrt(1-p)|miss>,
+            #    where p is the Born rule applied to the recorded SHA256d
+            #    hit/miss counts for that sector (Laplace-encoded prior:
+            #    an unmeasured sector reports the flat 0.5 prior, so it
+            #    meets threshold on no evidence and is rejected only when
+            #    measured misses dominate).
+            sector = int(nonce) % 7
+            hits, misses = self._sector_outcomes.get(sector, (0, 0))
+            p_born = born_evidence(hits, misses)
             born_ok, _, _ = self.quantum.verify_born_rule(
                 np.array([np.sqrt(p_born), np.sqrt(1.0 - p_born)], dtype=np.complex128),
                 threshold=0.5,
             )
             if not born_ok:
-                logger.warning(f"Rejecting candidate nonce {nonce}: Born rule threshold not met.")
+                logger.warning(
+                    "Rejecting candidate nonce %d: measured sector Born "
+                    "probability %.6f below threshold (hits=%d, misses=%d).",
+                    nonce,
+                    p_born,
+                    hits,
+                    misses,
+                )
                 continue
 
             # Store and register in bridge
@@ -499,6 +521,11 @@ class AgenticMiningWorkflow:
 
             probes_taken += 1
             self.validity_learner.learn_candidate(cand, meets_target)
+            # Record the measured outcome as sector evidence for the
+            # phase-2 Born probability of future candidates.
+            self._sector_outcomes.setdefault(int(cand.sector_id), [0, 0])[
+                0 if meets_target else 1
+            ] += 1
             self.probe_log.append(
                 {
                     "nonce": cand.nonce,
@@ -761,9 +788,7 @@ class AgenticMiningWorkflow:
                 kernel_ms = snapshot.get("kernel_ms_total") or 0.0
             except Exception:  # pragma: no cover - probe is best-effort
                 logger.debug("punch-host throughput probe failed", exc_info=True)
-        physical_hps = (
-            nonces / (kernel_ms / 1e3) if nonces and kernel_ms > 0 else None
-        )
+        physical_hps = nonces / (kernel_ms / 1e3) if nonces and kernel_ms > 0 else None
 
         # Lucas-scaled effective hashrate (doctrine: Lucas multiplies the
         # hardware dimension; effective = physical * L_n exactly). The ladder

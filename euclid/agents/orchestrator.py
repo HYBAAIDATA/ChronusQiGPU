@@ -62,18 +62,23 @@ class MultiAgentEntangledOrchestrator:
             self.manifold.record_security_audit(al_haras_res)
             self.manifold.register_agent_projection("AL_HARAS", phi_score, step=2)
 
-            # 3. PYTHIA: Oracle Search Strategy Recommendation
+            # 3. PYTHIA: Declared-policy operator recommendation (telemetry only;
+            # per capability_audit.yaml this must not be presented as learned
+            # strategy selection). The declared rule keys on measured
+            # annotation_density. "predicted" coherence is replaced by the
+            # manifold coherence measured after registering the projection.
             features = self.calculator.extract_features(code_str)
             recommended_strategy = "ADD:AnnAssign" if features["annotation_density"] < 0.2 else "NON_LOCAL:function_split_refactor"
-            
+
+            self.manifold.register_agent_projection("PYTHIA", phi_score, step=3)
             pythia_res = {
                 "owner": "PYTHIA_ORACLE",
                 "file_path": fname,
                 "recommended_primary_operator": recommended_strategy,
-                "predicted_coherence_potential": round(min(0.99, phi_score + 0.05), 6)
+                "recommendation_basis": "declared-policy: annotation_density < 0.2 (declared threshold; not learned)",
+                "measured_manifold_coherence": self.manifold.compute_dual_symmetry_coherence()
             }
             self.manifold.record_search_strategy(pythia_res)
-            self.manifold.register_agent_projection("PYTHIA", phi_score, step=3)
 
             # 4. SALAMANDER: Self-Healing State
             salamander_res = {

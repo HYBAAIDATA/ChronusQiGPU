@@ -21,8 +21,6 @@ import hashlib
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
-import numpy as np
-
 # Use absolute/local imports compatible with the repository layout
 try:
     from .hardened_unified_substrate import (
@@ -100,6 +98,10 @@ class ManifoldBridge:
         self.chronus_hot_vram_cache: Dict[int, bytes] = {}
         self.total_candidates_stored = 0
         self.total_healed_entries = 0
+        # Deterministic sample cursor: successive verification cycles walk
+        # the ledger in insertion order so the sample window rotates
+        # through every stored candidate instead of drawing random keys.
+        self._sample_cursor = 0
 
     def store_candidate(
         self,
@@ -108,7 +110,12 @@ class ManifoldBridge:
         born_prob: float = 0.95,
         n_anchor: int = 7,
     ) -> PrecomputedCandidate:
-        """Store a precomputed candidate across MDMemory, Millennium sectors, and Prime Storage."""
+        """Store a precomputed candidate across MDMemory, Millennium sectors, and Prime Storage.
+
+        ``born_prob`` is a caller-asserted Born-probability bound: the
+        caller declares the value and T11 of the verification matrix
+        checks it against the declared threshold. It is not measured here.
+        """
         # 1. Zeckendorf decomposition and non-adjacency check
         mask = HardenedZeckendorfCodec.encode(nonce)
         zeck_valid = (mask & (mask << 1)) == 0
@@ -158,7 +165,12 @@ class ManifoldBridge:
         return cand, elapsed_ms
 
     def verify_random_sample_hold(self, sample_fraction: float = 0.1) -> Tuple[int, int]:
-        """Contract 3: Continuous Cassini verification on random 10% sample per cycle.
+        """Contract 3: Continuous Cassini verification on a rotating sample per cycle.
+
+        The sample window is deterministic: each call starts where the
+        previous one ended and strides through the ledger, so over
+        consecutive cycles every stored candidate is re-verified exactly
+        once per pass — uniform coverage without a random draw.
 
         Returns (passed_count, failed_count). Triggers self-healing if corrupted.
         """
@@ -167,12 +179,14 @@ class ManifoldBridge:
 
         nonces = list(self.md_memory.keys())
         sample_size = max(1, int(len(nonces) * sample_fraction))
-        sample_nonces = np.random.choice(nonces, size=sample_size, replace=False)
+        start = self._sample_cursor % len(nonces)
+        sample_nonces = [nonces[(start + i) % len(nonces)] for i in range(sample_size)]
+        self._sample_cursor = (start + sample_size) % len(nonces)
 
         passed = 0
         failed = 0
         for n in sample_nonces:
-            cand = self.md_memory[int(n)]
+            cand = self.md_memory[n]
             # Re-verify Cassini identity and Zeckendorf non-adjacency
             c_ok = CassiniVerifier.verify(7)
             z_ok = (cand.zeckendorf_mask & (cand.zeckendorf_mask << 1)) == 0

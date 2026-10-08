@@ -1,0 +1,218 @@
+{
+  "canonical_map": "UNIVERSAL_PRINCIPLE_MAP.md (this pack measures it; it does not fork it)",
+  "chain_claims": [
+    {
+      "claim": "the golden family links Z[phi] -> Lucas/Binet/Cassini/Zeckendorf/Pisot",
+      "evidence_class": "PROVED + COMPUTATIONALLY_VERIFIED",
+      "scope": "exact algebra"
+    },
+    {
+      "claim": "the same structures appear in TOE's geometry, ordering and exact arithmetic",
+      "evidence_class": "MEASURED (structural reuse)",
+      "scope": "implementation"
+    },
+    {
+      "claim": "a shared phi implies a shared physical phenomenon",
+      "evidence_class": "UNSUPPORTED",
+      "scope": "explicitly not claimed"
+    },
+    {
+      "claim": "Lucas rungs 15/18/20 are optimal for intelligence",
+      "evidence_class": "UNSUPPORTED",
+      "scope": "no TOE capability has a rung parameter; no comparative measurement"
+    },
+    {
+      "claim": "one backend serves 10,000 frontend problem forms",
+      "evidence_class": "UNSUPPORTED as stated",
+      "scope": "measured: 8 problem classes + PYTHIA mining through one machine"
+    },
+    {
+      "claim": "phi-structured nonce ordering improves SHA256d success",
+      "evidence_class": "NEGATIVE",
+      "scope": "see pisot negative_result"
+    }
+  ],
+  "elapsed_s": 3.645211696624756,
+  "links": [
+    {
+      "evidence_class": "PROVED (definition) + COMPUTATIONALLY_VERIFIED",
+      "executed": "fast doubling == naive recurrence for n <= 2000",
+      "experiment": {
+        "doubling": {
+          "max_overshoot": 1.9992292794179711,
+          "mean_overshoot": 1.4393590525011617,
+          "mean_probes": 11.8245
+        },
+        "evidence_class": "MEASURED",
+        "finding": "a trade-off, not an advantage: the ratio-phi ladder overshoots less but needs more probes",
+        "lucas": {
+          "max_overshoot": 1.6177984541283446,
+          "mean_overshoot": 1.2854206722735633,
+          "mean_probes": 17.258
+        },
+        "question": "Lucas ladder vs doubling ladder for locating an unknown scale (2000 targets)"
+      },
+      "identity": "L_n = L_{n-1} + L_{n-2}, L_0=2, L_1=1",
+      "implementation": "kellogg.scales.lucas (fast doubling)",
+      "link": "Lucas scaling",
+      "open_obligation": null,
+      "result": {
+        "agree": true
+      }
+    },
+    {
+      "evidence_class": "PROVED (classical) + COMPUTATIONALLY_VERIFIED",
+      "executed": "verified exactly in Z[phi] for n <= 2000",
+      "identity": "phi^n - psi^n = sqrt(5) * F_n",
+      "implementation": "kellogg.scales.binet_fold (exact in Z[phi])",
+      "link": "Binet closed form",
+      "open_obligation": null,
+      "result": {
+        "verified_through": 2000
+      }
+    },
+    {
+      "evidence_class": "PROVED (Zeckendorf 1972) + COMPUTATIONALLY_VERIFIED",
+      "executed": "legality + exact reconstruction for 1..20000",
+      "experiment": {
+        "binary": {
+          "mean_digits": 13.3624,
+          "ones_density": 0.5209430940549602
+        },
+        "evidence_class": "NEGATIVE (for compression) / MEASURED (for sparsity)",
+        "finding": "Zeckendorf needs ~1.4x more digits but is sparser and never has adjacent ones; no compression advantage",
+        "question": "Zeckendorf vs binary encoding over 1..20000",
+        "zeckendorf": {
+          "mean_digits": 18.68275,
+          "ones_density": 0.3025170277394923
+        }
+      },
+      "identity": "every n >= 1 has a unique sum of non-consecutive Fibonacci numbers",
+      "implementation": "kellogg.scales.zeckendorf / zeckendorf_is_legal",
+      "link": "Zeckendorf representation",
+      "open_obligation": null,
+      "result": {
+        "all_legal_and_exact": true
+      }
+    },
+    {
+      "evidence_class": "PROVED (classical) + COMPUTATIONALLY_VERIFIED",
+      "executed": "both identities for n <= 2000",
+      "identity": "F_{n-1}F_{n+1} - F_n^2 = (-1)^n ; L_n^2 - 5F_n^2 = 4(-1)^n ; det(Q^n) = (-1)^n",
+      "implementation": "kellogg.scales.cassini_verify; Lucas-Cassini checked directly",
+      "link": "Cassini / unimodular invariance",
+      "open_obligation": null,
+      "result": {
+        "fibonacci_cassini": true,
+        "lucas_cassini": true
+      }
+    },
+    {
+      "evidence_class": "PROVED + COMPUTATIONALLY_VERIFIED",
+      "executed": "exact equality in Z[phi] for n < 400; |delta_15| measured",
+      "experiment": {
+        "evidence_class": "MEASURED",
+        "finding": "golden-ratio ordering covers an interval far more evenly than random sampling (known low-discrepancy property)",
+        "golden_star_discrepancy_N1000": 0.0013362337334979213,
+        "question": "golden (Weyl/Kronecker) ordering vs random ordering \u2014 coverage of [0,1)",
+        "random_star_discrepancy_N1000_mean_of_30": 0.02673219044146888
+      },
+      "identity": "phi^n - L_n = -psi^n, |psi| = 1/phi < 1 (phi is a Pisot number)",
+      "implementation": "kellogg.scales.pisot_drift (exact Z[phi])",
+      "link": "Pisot contraction",
+      "negative_result": {
+        "declared_hit_probability": "2^-6 (easy declared target)",
+        "difference_in_standard_errors": 0.5345224838248487,
+        "evidence_class": "NEGATIVE",
+        "finding": "no difference beyond sampling noise: ordering changes WHICH nonces are visited first, never the probability that a visited nonce is valid",
+        "golden_order_hits": 256,
+        "hashes_each": 16384,
+        "linear_order_hits": 244,
+        "question": "does a golden-ratio nonce visit order change the double-SHA256 hit rate?"
+      },
+      "open_obligation": null,
+      "result": {
+        "abs_delta_15": 0.0007331374365548982,
+        "exact_identity": true
+      }
+    },
+    {
+      "evidence_class": "PROVED (isometry by construction) + COMPUTATIONALLY_VERIFIED (float64)",
+      "executed": "metric parity with the 11D module; triangle inequality on samples",
+      "experiment": "see reports/toe_ablation_heldout.json multi_representation (hyperbolic routing delivers 1.00 vs 0.61 on walled grids; parity on open grids)",
+      "identity": "y_i = sqrt(phi^-(i+1)) x_i maps the phi-weighted ball isometrically onto the standard Poincare ball",
+      "implementation": "toe.geometry.PoincareBall.golden_11d (== toe.poincare_golden_11d metric)",
+      "link": "11D Poincare-golden geometry",
+      "open_obligation": null,
+      "result": {
+        "max_parity_error": 2.220446049250313e-15,
+        "worst_triangle_excess": 0.0
+      }
+    },
+    {
+      "evidence_class": "MEASURED",
+      "executed": "covering radius on S^2 (max angle to nearest direction, 40k probes)",
+      "finding": "the icosahedral frame is a well-spread direction set (better than random); this is spherical-design geometry, not a search speed-up claim",
+      "identity": "vertices of the icosahedron/dodecahedron pair have coordinates in Q(phi)",
+      "implementation": "12 icosahedron + 20 dodecahedron directions (the M32 frame)",
+      "link": "M32 / icosahedral geometry",
+      "open_obligation": null,
+      "result": {
+        "fibonacci_sphere32_covering_deg": 27.48473407217904,
+        "m32_covering_deg": 32.573842282423314,
+        "random32_covering_deg_mean": 47.391651454061225
+      }
+    },
+    {
+      "continuum_yang_mills": {
+        "continuum_claim": false,
+        "evidence_class": "OPEN",
+        "proof_claim": false
+      },
+      "correction": "UNIVERSAL_PRINCIPLE_MAP previously printed the gap as ~0.381966 (= 1/phi^2); the computed gap is (3-sqrt5)/4 ~ 0.190983",
+      "evidence_class": "COMPUTATIONALLY_VERIFIED (finite volume: FINITE_VOLUME_VERIFIED)",
+      "executed": "group closure, conjugacy classes, character table, topology, Laplacian spectrum",
+      "identity": "|2I| = 120; 600-cell V,E,F,C = 120,720,1200,600; sum of squared irrep dims = 120",
+      "implementation": "millennium.hyba_poincare_yangmills (TOE reads it through toe.poincare_yangmills)",
+      "link": "golden icosians -> 2I -> 600-cell -> finite Laplacian gap",
+      "open_obligation": "continuum limit, infinite volume, OS reconstruction, continuum mass gap (Clay) \u2014 none established",
+      "result": {
+        "classes": 9,
+        "closed": true,
+        "gap": 0.19098300562505205,
+        "gap_equals_1_minus_phi_over_2": true,
+        "gap_matches_(3-sqrt5)/4": true,
+        "group_order": 120,
+        "orthogonality": true,
+        "sum_dim_squares": 120,
+        "topology": {
+          "C": 600,
+          "E": 720,
+          "F": 1200,
+          "V": 120,
+          "euler": 0
+        }
+      }
+    },
+    {
+      "evidence_class": "COMPUTATIONALLY_VERIFIED (software execution of quantum mathematics)",
+      "executed": "encode -> Born probabilities -> norm",
+      "identity": "unit-norm states, Born probabilities summing to 1",
+      "implementation": "kellogg.quantum_tensor (classical execution of the Hilbert-space formalism)",
+      "link": "Golden Quantum (quantum mathematics in TOE)",
+      "measured_quantum_advantage": {
+        "evidence_class": "UNSUPPORTED"
+      },
+      "open_obligation": "physical QPU execution and any advantage claim require device evidence",
+      "physical_qpu": {
+        "evidence_class": "UNSUPPORTED",
+        "note": "no physical-QPU execution exists in this evidence"
+      },
+      "result": {
+        "born_total": 1.0
+      }
+    }
+  ],
+  "schema": "toe.universal_principle_evidence/v1",
+  "source_sha": "c1b0e3003ca8d095c37523c537b54441e88402c7"
+}

@@ -77,38 +77,65 @@ class CausalIntelligence:
         self.plasticity = 0.05
 
     def select_pool(self, available_pools: List[Dict[str, Any]]) -> CausalDecision:
-        """Select the optimal pool using causal graph surgery (do-operator).
+        """Select the pool with the highest expected retained-yield ratio.
 
-        Evaluates P(Yield | do(Pool = P_k)) taking latency, stale rate,
-        and fee structures into account.
+        This is a classical policy decision, NOT a do-calculus
+        computation: ``expected_yield_ratio`` is the measured expectation
+        ``(1 - fee) * (1 - stale_rate) * learned_weight`` under
+        independence of the fee and stale channels. Ranking additionally
+        applies a declared latency policy penalty
+        ``1 / (1 + latency_ms / 100)`` — an orchestration knob, not a
+        measured quantity. Pools missing telemetry are skipped rather
+        than scored on invented defaults; if none qualify, the decision
+        fails closed on the current pool with yield 0.0.
         """
-        best_pool = self.active_pool
+        best_pool = None
         best_score = -1.0
-        best_stale = 0.01
+        best_stale = 0.0
+        best_yield = 0.0
+        skipped = 0
 
         for pool in available_pools:
-            name = pool.get("name", "Unknown")
-            latency_ms = float(pool.get("latency_ms", 50.0))
-            stale_rate = float(pool.get("stale_rate", 0.005))
-            fee = float(pool.get("fee_rate", 0.01))
+            name = pool.get("name")
+            latency_ms = pool.get("latency_ms")
+            stale_rate = pool.get("stale_rate")
+            fee = pool.get("fee_rate")
+            if name is None or latency_ms is None or stale_rate is None or fee is None:
+                skipped += 1
+                continue
             weight = self.plasticity_weights.get(name, 0.5)
 
-            # Rung 2: Causal do-calculus intervention score
-            # score = (1 - fee) * (1 - stale_rate) * weight / (1 + latency_ms / 100.0)
-            score = (1.0 - fee) * (1.0 - stale_rate) * weight / (1.0 + (latency_ms / 100.0))
+            expected_yield = (1.0 - float(fee)) * (1.0 - float(stale_rate)) * weight
+            # Declared policy penalty on measured latency (not a yield term).
+            score = expected_yield / (1.0 + (float(latency_ms) / 100.0))
             if score > best_score:
                 best_score = score
                 best_pool = name
-                best_stale = stale_rate
+                best_stale = float(stale_rate)
+                best_yield = expected_yield
+
+        if best_pool is None:
+            intervention = "UNAVAILABLE: no pool supplied measured telemetry"
+            decision = CausalDecision(
+                selected_pool=self.active_pool,
+                target_difficulty=self.current_difficulty,
+                stale_rate_estimate=0.0,
+                causal_intervention=intervention,
+                expected_yield_ratio=0.0,
+            )
+            self.decision_history.append(decision)
+            return decision
 
         self.active_pool = best_pool
         intervention = f"do(Pool={best_pool})"
+        if skipped:
+            intervention += f"; skipped {skipped} pool(s) missing telemetry"
         decision = CausalDecision(
             selected_pool=best_pool,
             target_difficulty=self.current_difficulty,
             stale_rate_estimate=best_stale,
             causal_intervention=intervention,
-            expected_yield_ratio=max(0.01, best_score),
+            expected_yield_ratio=best_yield,
         )
         self.decision_history.append(decision)
         return decision
@@ -137,7 +164,9 @@ class CausalIntelligence:
             "peer_count": peer_count,
             "mempool_txs": mempool_txs,
             "action": action,
-            "rung": 2,
+            # Advisory threshold rule on observed telemetry; no causal
+            # rung is computed here.
+            "analysis_class": "advisory_threshold_rule",
         }
 
     def learn(self, pool_name: str, share_accepted: bool, latency_ms: float) -> None:

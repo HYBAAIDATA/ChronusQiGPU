@@ -144,9 +144,7 @@ class CodebaseAuditReport:
     scan_timestamp: float = field(default_factory=time.time)
 
     def summary(self) -> Dict[str, Any]:
-        broken = sum(
-            d.issue_type == CodebaseIssueType.BROKEN_IMPORT for d in self.diagnostics
-        )
+        broken = sum(d.issue_type == CodebaseIssueType.BROKEN_IMPORT for d in self.diagnostics)
         return {
             "scanned_files": self.scanned_files,
             "total_diagnostics": self.total_diagnostics,
@@ -409,8 +407,10 @@ class SalamanderCodebaseScanner:
         # and penalized by drift/discarded count
         dist_phi = abs(mean_res - PHI)
         phi_health = max(0.0, 1.0 - (dist_phi / PHI))
-        drift_penalty = min(1.0, drift_count * 0.08)
-        discarded_penalty = min(1.0, discarded_count * 0.12)
+        # Penalties = measured violation fractions of the scanned files
+        # (the invented 0.08/0.12 per-violation weights are gone).
+        drift_penalty = min(1.0, drift_count / max(1, scanned_count))
+        discarded_penalty = min(1.0, discarded_count / max(1, scanned_count))
         penalty_factor = (1.0 - drift_penalty) * (1.0 - discarded_penalty)
 
         shi = max(0.0, min(1.0, phi_health * penalty_factor))

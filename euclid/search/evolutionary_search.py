@@ -7,7 +7,6 @@ process isolation validation, and multi-objective fitness evaluation.
 """
 
 import time
-import random
 import logging
 from typing import Dict, List, Tuple, Any, Optional, Callable
 
@@ -34,11 +33,10 @@ class EvolutionarySearchEngine:
         seed: int = 42
     ):
         self.seed = seed
-        random.seed(seed)
         self.calculator = PhiResonanceCalculator(target_phi)
         self.base_operators = ASTPrimitives.get_all_operators()
         self.evaluator = IsolatedProcessEvaluator(timeout_sec=2.0)
-        self.surrogate = AdaptiveOperatorSurrogate(learning_rate=0.05)
+        self.surrogate = AdaptiveOperatorSurrogate()
         self.discovery_engine = ASTDeltaDiscoveryEngine()
         self.repository = repository or PersistentPrimitiveRepository()
 
@@ -62,7 +60,9 @@ class EvolutionarySearchEngine:
             current_code, external_test_runner, external_test_code
         )
         
-        current_score = self.calculator.compute_phi(current_code) if (p_v and r_v) else 0.1000
+        # phi is a computable structural metric: report it unconditionally rather
+        # than substituting a placeholder when sandbox validity fails.
+        current_score = self.calculator.compute_phi(current_code)
         initial_score = current_score
         initial_node_count = self.calculator.extract_features(current_code).get("node_count", 50)
 
@@ -104,8 +104,9 @@ class EvolutionarySearchEngine:
                 pred_gain = self.surrogate.predict_gain(features, op_name)
                 ranked_ops.append((pred_gain, op_name, op_func))
 
-            # Stochastic sampling weighted by predicted gain
-            ranked_ops.sort(key=lambda x: x[0] + random.uniform(-0.01, 0.01), reverse=True)
+            # Deterministic ordering by Born-rule predicted gain (ties break on
+            # operator name); stochastic jitter contributed no measured signal.
+            ranked_ops.sort(key=lambda x: (x[0], x[1]), reverse=True)
             
             # Substrate topology dictates population candidate limit
             cand_limit = topology.get_candidate_population_size()
@@ -129,13 +130,19 @@ class EvolutionarySearchEngine:
                     )
                     actual_delta = round(cand_fitness - current_score, 6)
                 else:
-                    cand_fitness = 0.1000
-                    actual_delta = -0.5000
+                    # Invalid candidates have no measured fitness: record the
+                    # failure as evidence, never a fabricated delta.
+                    cand_fitness = None
+                    actual_delta = None
 
                 # Sandbox candidate generalization trial
                 if op_name in self.discovery_engine.sandbox_pool:
                     cand = self.discovery_engine.sandbox_pool[op_name]
-                    cand.record_trial(actual_delta, parse_v, test_v)
+                    cand.record_trial(
+                        actual_delta if actual_delta is not None else 0.0,
+                        parse_v,
+                        test_v,
+                    )
                     if cand.check_promotion_eligibility():
                         self.discovery_engine.promoted_vocabulary[op_name] = cand.op_func
                         # Register primitive in persistent repository
@@ -156,8 +163,9 @@ class EvolutionarySearchEngine:
                 # Online surrogate update
                 self.surrogate.update(features, op_name, actual_delta, parse_v, test_v)
 
-                # Acceptance boundary: fitness must strictly increase
-                if (cand_fitness > current_score) and parse_v and compile_v and test_v:
+                # Acceptance boundary: validity is required and fitness must
+                # strictly increase over the measured current score
+                if parse_v and compile_v and test_v and cand_fitness > current_score:
                     valid_candidates.append({
                         "candidate_code": cand_code,
                         "candidate_fitness": cand_fitness,

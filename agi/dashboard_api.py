@@ -25,13 +25,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
-from hyba_backend.platform.intelligence.bus import IntelligenceBus
-from hyba_backend.services.agi.intelligence_bus_integration import (
+from Intelligence.intelligence_bus import IntelligenceBus
+from agi.intelligence_bus_integration import (
     AutonomousMassGapOrchestrator,
     MassGapIntelligenceBusAdapter,
 )
-from hyba_backend.services.agi.mass_gap_relaxation import MassGapRelaxationEngine
-from hyba_backend.services.agi.monitoring_dashboard import MassGapDashboard
+from agi.mass_gap_relaxation import MassGapRelaxationEngine
+from agi.monitoring_dashboard import MassGapDashboard
 
 logger = logging.getLogger(__name__)
 
