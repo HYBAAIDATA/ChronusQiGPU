@@ -185,7 +185,7 @@ def main() -> int:
     tests = run_tests()
     benchmarks = run_benchmarks()
     summary = {
-        "product": "kellogg-tensor",
+        "product": "hyba-kellogg-tensor",
         "version": "1.0.0",
         "repository": "QuantumPhiRedux/PhiMiner",
         "git_sha": git_sha(),

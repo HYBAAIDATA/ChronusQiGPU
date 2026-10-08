@@ -1,4 +1,4 @@
-"""Build and verify the standalone chronos-core release artefacts.
+"""Build and verify the standalone hyba-chronos-mathematics release artefacts.
 
 Artefact-first, like TOE/KELLOGG's scripts:
 
@@ -42,9 +42,9 @@ REPO = HERE.parent.parent
 DIST = HERE / "dist"
 REPOSITORY = "QuantumPhiRedux/PhiMiner"
 
-# Monorepo surfaces chronos-core must NOT ship (the product/runtime plane —
+# Monorepo surfaces hyba-chronos-mathematics must NOT ship (the product/runtime plane —
 # device detect, OpenCL host, seam, mla1517, virtual iGPU — stays in the
-# monorepo distribution pythia-mla1517 / future chronus-igpu package).
+# monorepo distribution hyba-pythia-mining / future hyba-chronus-igpu package).
 BOUNDARY_PREFIX = "chronus/v33/"
 BOUNDARY_FILE = "chronus/__init__.py"
 ABSENT_MODULES = (
@@ -214,7 +214,7 @@ def inspect_wheel(wheel: Path, version: str) -> Dict[str, Any]:
         if not (n.startswith(di) or (n.startswith("chronus/") and _in_boundary(n)))
     ]
     if outside:
-        raise RuntimeError(f"wheel ships files outside the chronos-core boundary: {outside[:20]}")
+        raise RuntimeError(f"wheel ships files outside the hyba-chronos-mathematics boundary: {outside[:20]}")
     leaked = [
         n for n in names
         if n.startswith("chronus/") and not _in_boundary(n)
@@ -450,7 +450,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         if len(digests) != 1:
             raise RuntimeError(f"deterministic fixture differs across installs: {digests}")
         evidence = {
-            "product": "chronos-core",
+            "product": "hyba-chronos-mathematics",
             "import_name": "chronus.v33",
             "distribution": name,
             "version": version,

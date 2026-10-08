@@ -6,7 +6,7 @@
   "owner": "TOE",
   "hard_dependencies": [
     "numpy",
-    "kellogg-tensor"
+    "hyba-kellogg-tensor"
   ],
   "optional_integrations": {
     "THESEUS custody (aethel.enterprise.custody)": "durable learning state; absent -> persistence UNAVAILABLE",

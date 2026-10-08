@@ -38,7 +38,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
       - name: Install exact virtual quantum computer
-        # kellogg-tensor is not on PyPI yet: TURING installs without dependency
+        # hyba-kellogg-tensor is not on PyPI yet: TURING installs without dependency
         # resolution and Kellogg, Mining and TOE resolve from the checkout.
         run: |
           python -m pip install "numpy>=1.26,<3" "sympy>=1.12,<2"

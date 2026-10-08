@@ -1,5 +1,7 @@
+# Public naming is approved; first-public version target is 1.0.0.
+# Existing development/research version retained pending publication reconciliation.
 [project]
-name = "pythia-mla1517"
+name = "hyba-pythia-mining"
 version = "0.1.0"
 description = "PYTHIA operational mining backend with the canonical MLA1517 execution path."
 readme = "README.md"
@@ -23,7 +25,7 @@ dependencies = [
     # The virtual quantum computer (in-tree: turing_universal_quantum_computer/)
     # is part of the miner: the Hendrix nonce order and the VQC policy audit.
     # Install it beside this package: pip install ./turing_universal_quantum_computer .
-    "turing-universal-quantum-computer>=1.0",
+    "hyba-turing-vqc>=1.0",
 ]
 
 [project.scripts]

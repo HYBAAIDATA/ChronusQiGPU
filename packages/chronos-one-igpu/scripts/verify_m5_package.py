@@ -113,7 +113,7 @@ def main():
                 venv.EnvBuilder(with_pip=True).create(environment)
                 py = python_in(environment)
                 run([py, "-m", "pip", "install", artifact, "pytest>=8,<10"], work)
-                run([py, "-I", "-c", "import importlib.metadata as m, chronos_one_igpu as c; assert 'site-packages' in c.__file__.replace('\\\\','/'); assert m.version('chronos-one-igpu') == c.__version__; print(c.__file__)"], work)
+                run([py, "-I", "-c", "import importlib.metadata as m, chronos_one_igpu as c; assert 'site-packages' in c.__file__.replace('\\\\','/'); assert m.version('hyba-chronos-one-igpu') == c.__version__; print(c.__file__)"], work)
                 for name in TESTS:
                     shutil.copy2(PACKAGE / "tests" / name, work / name)
                 junit = out / (label + "-tests.xml")

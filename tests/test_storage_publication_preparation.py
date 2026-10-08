@@ -84,12 +84,13 @@ class StoragePreparationTests(unittest.TestCase):
             self.assertEqual(include,[expected,expected+".*"])
             self.assertNotIn(expected,owners)
             owners.add(expected)
-        self.assertIn("hyba-theseus==1.0.0",meta["project"]["dependencies"])
+        self.assertIn("hyba-theseus-storage==1.0.0",meta["project"]["dependencies"])
 
-    def test_no_silent_identity_or_publication_approval(self):
+    def test_owner_naming_approval_is_not_publication_approval(self):
         for product in ("theseus","ovid"):
             row=json.loads((ROOT / f"packaging/{product}/OWNER_DECISIONS.json").read_text())
-            self.assertIsNone(row["approved_distribution_name"])
+            self.assertEqual(row["approved_distribution_name"],row["proposed_distribution_name"])
+            self.assertEqual(row["identity_status"],"APPROVED_BY_OWNER_NAMING_INSTRUCTION")
             self.assertIs(row["upload_authorised"],False)
             self.assertIs(row["trusted_publisher_verified"],False)
 

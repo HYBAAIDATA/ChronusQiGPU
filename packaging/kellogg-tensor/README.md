@@ -1,4 +1,4 @@
-# kellogg-tensor
+# hyba-kellogg-tensor
 
 Kellogg is an exact tensor-network library. States, operators and
 channels are held in exact number fields, so a norm that should be 1 is 1,
@@ -6,7 +6,7 @@ a probability that should be ½ is ½, and a gate that should be unitary is
 checked by equality, not by a tolerance.
 
 ```
-pip install kellogg-tensor        # import name: kellogg; only hard dependency: numpy
+pip install hyba-kellogg-tensor        # import name: kellogg; only hard dependency: numpy
 ```
 
 ## What you get

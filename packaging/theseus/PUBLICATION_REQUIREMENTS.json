@@ -1,7 +1,7 @@
 {
   "record_type": "PRODUCT_PUBLICATION_REQUIREMENTS_NOT_EXECUTION_RESULTS",
   "product": "THESEUS",
-  "candidate_distribution": "hyba-theseus",
+  "candidate_distribution": "hyba-theseus-storage",
   "version": "1.0.0",
   "status": "PREPARED_NOT_QUALIFIED",
   "mandatory_gates": [

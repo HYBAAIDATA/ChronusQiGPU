@@ -26,11 +26,11 @@ class RegistryProtocolTests(unittest.TestCase):
         self.env.start()
         self.addCleanup(self.env.stop)
         self.verdict = {
-            "product": "kellogg-tensor", "version": "1.0.0", "git_sha": SHA,
+            "product": "hyba-kellogg-tensor", "version": "1.0.0", "git_sha": SHA,
             "publishable": True, "published": False, "testpypi_verified": False,
             "tests": {"git_sha": SHA, "passed": 211, "failed": 0, "errors": 0, "skipped": 0, "returncode": 0},
-            "wheel": {"file": "kellogg_tensor-1.0.0-py3-none-any.whl", "sha256": "b" * 64},
-            "sdist": {"file": "kellogg_tensor-1.0.0.tar.gz", "sha256": "c" * 64},
+            "wheel": {"file": "hyba_kellogg_tensor-1.0.0-py3-none-any.whl", "sha256": "b" * 64},
+            "sdist": {"file": "hyba_kellogg_tensor-1.0.0.tar.gz", "sha256": "c" * 64},
         }
         for key in ("cross_version_verified", "tests_passed", "benchmarks_completed", "wheel_built",
                     "standalone_boundary_verified", "registry_verified", "sdist_verified", "attestation_verified",
@@ -41,7 +41,7 @@ class RegistryProtocolTests(unittest.TestCase):
             parent = self.root / version
             parent.mkdir()
             receipt = {
-                "source_commit": SHA, "product": "kellogg-tensor", "version": "1.0.0", "registry": "testpypi",
+                "source_commit": SHA, "product": "hyba-kellogg-tensor", "version": "1.0.0", "registry": "testpypi",
                 "status": "PASS", "python": version + ".0", "ci_run_url": RUN,
                 "checks": {key: True for key in protocol.MANDATORY},
                 "artifacts": {key: self.verdict[key] for key in ("wheel", "sdist")},
@@ -132,27 +132,27 @@ class RegistryProtocolTests(unittest.TestCase):
     def test_candidate_identity_and_qualification(self):
         p = self.root / "verdict.json"
         p.write_text(json.dumps(self.verdict))
-        self.assertEqual(protocol.qualification(p, SHA, "kellogg-tensor")["git_sha"], SHA)
+        self.assertEqual(protocol.qualification(p, SHA, "hyba-kellogg-tensor")["git_sha"], SHA)
         for key in ("tests_passed", "cross_version_verified", "registry_verified"):
             row = copy.deepcopy(self.verdict)
             row.pop(key)
             p.write_text(json.dumps(row))
             with self.assertRaises(ValueError):
-                protocol.qualification(p, SHA, "kellogg-tensor")
+                protocol.qualification(p, SHA, "hyba-kellogg-tensor")
 
     def test_zero_skips_enforced(self):
         p = self.root / "verdict.json"
         self.verdict["tests"]["skipped"] = 1
         p.write_text(json.dumps(self.verdict))
         with self.assertRaises(ValueError):
-            protocol.qualification(p, SHA, "kellogg-tensor")
+            protocol.qualification(p, SHA, "hyba-kellogg-tensor")
 
     def test_no_tests_is_not_pass(self):
         p = self.root / "verdict.json"
         self.verdict["tests"]["passed"] = 0
         p.write_text(json.dumps(self.verdict))
         with self.assertRaises(ValueError):
-            protocol.qualification(p, SHA, "kellogg-tensor")
+            protocol.qualification(p, SHA, "hyba-kellogg-tensor")
 
     def test_junit_counts_retain_skips(self):
         path = ROOT / "packaging/kellogg-tensor/run_release_gate.py"

@@ -19,7 +19,7 @@ def doctor():
     native_receipt=compute_receipt(b'chronos-doctor');checks['native_protocol']=verify_receipt(native_receipt,b'chronos-doctor')
     operator=StructuredHamiltonian([.5]*4,1.618);checks['structured_operator_exact']=operator.matvec_exact([1]*4)==[(sum(row),0)for row in operator.dense_exact()]
     for name in('lucas256.cl','sha256d.cl','structured_matvec.cl','hendrix600.cl'):checks[name]=bool(files('chronos_one_igpu').joinpath('igpu/kernels/'+name).read_bytes())
-    return {'schema':'chronos_release_doctor_v1','python':platform.python_version(),'version':metadata.version('chronos-one-igpu'),'checks':checks,'inventory':inventory,'mining_backend':mining.capability(),'passed':all(checks.values()),'scope':'installed-package diagnostics, not production certification'}
+    return {'schema':'chronos_release_doctor_v1','python':platform.python_version(),'version':metadata.version('hyba-chronos-one-igpu'),'checks':checks,'inventory':inventory,'mining_backend':mining.capability(),'passed':all(checks.values()),'scope':'installed-package diagnostics, not production certification'}
 
 def main():
     parser=argparse.ArgumentParser(prog='chronos-igpu',description='Chronos standalone core and mathematical extensions')
@@ -43,7 +43,7 @@ def main():
         from . import OneIGPU
         from .igpu.resident import ResidentConfig
         with OneIGPU()as gpu:result=gpu.m5_resident(ResidentConfig(host_binding=args.bind,virtual_units=args.virtual_units)).manifest()
-    elif args.command=='version':result={'version':metadata.version('chronos-one-igpu')}
+    elif args.command=='version':result={'version':metadata.version('hyba-chronos-one-igpu')}
     elif args.command=='qualify-target':
         from .qualification import qualify_target
         result=qualify_target(args.device_selector,args.runs,args.nonce_budget);Path(args.output).write_text(json.dumps(result,indent=2)+'\n')

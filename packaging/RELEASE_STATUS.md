@@ -1,3 +1,5 @@
+> Current publication names are defined in [HYBA_PUBLICATION_CATALOG.md](HYBA_PUBLICATION_CATALOG.md). Historical candidate names/SHA evidence below are not qualification for the renamed packages.
+
 ## Qualification status after integrated baseline review
 
 Baseline audited: `c63ff4d7e9d25135b8e2ca17f84da6714d23d5b7`. KELLOGG's recorded

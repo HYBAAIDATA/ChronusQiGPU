@@ -1,4 +1,4 @@
-"""Build and verify the euclid-engine 17.0.0 wheel (artefact-first, nothing published).
+"""Build and verify the hyba-euclid-intelligence 1.0.0 wheel (research generation 17.0.0) (artefact-first, nothing published).
 
 Stages only the product (``euclid`` without its in-package tests or runtime
 state, plus the two bundled runtime dependencies), builds the wheel in an
@@ -59,7 +59,7 @@ for name in mods:
     __import__(name)
 assert all("site-packages" in (sys.modules[m].__file__ or "") for m in mods), "not the installed copy"
 assert euclid.__version__ == "%s", euclid.__version__
-assert importlib.metadata.version("euclid-engine") == "%s"
+assert importlib.metadata.version("hyba-euclid-intelligence") == "%s"
 suite = generate_suite(9100, train_per_family=1, development_per_family=0,
                        evaluation_per_family=1, held_out_per_family=1,
                        adversarial_per_tag=0, analogy_pairs=1)
@@ -126,9 +126,9 @@ def _sibling_wheel(pattern: str, dist: Path) -> Path:
 
 def main() -> int:
     DIST.mkdir(exist_ok=True)
-    for stale in DIST.glob("euclid_engine-*.whl"):
+    for stale in DIST.glob("hyba_euclid_intelligence-*.whl"):
         stale.unlink()
-    record: dict = {"product": "euclid-engine", "version": VERSION, "research_version": RESEARCH_VERSION, "classification": "RESEARCH_RELEASE"}
+    record: dict = {"product": "hyba-euclid-intelligence", "version": VERSION, "research_version": RESEARCH_VERSION, "classification": "RESEARCH_RELEASE"}
     with tempfile.TemporaryDirectory(prefix="euclid-engine-") as tmp:
         tmp_path = Path(tmp)
         src = stage(tmp_path)
@@ -136,7 +136,7 @@ def main() -> int:
         # environment; the interpreter running this script is not modified.
         sh([sys.executable, "-m", "pip", "wheel", "--no-deps", "--wheel-dir", DIST, src],
            cwd=tmp_path)
-        wheel = next(DIST.glob("euclid_engine-*.whl"))
+        wheel = next(DIST.glob("hyba_euclid_intelligence-*.whl"))
         record["wheel"] = wheel.name
         record["wheel_sha256"] = sha256(wheel)
         record["inspection"] = inspect(wheel)
@@ -144,13 +144,13 @@ def main() -> int:
         venv.EnvBuilder(with_pip=True).create(env_dir)
         python = env_dir / ("Scripts" if sys.platform == "win32" else "bin") / "python"
         kellogg_wheel = _sibling_wheel(
-            "kellogg_tensor-*.whl", REPO / "packaging" / "kellogg-tensor" / "dist"
+            "hyba_kellogg_tensor-*.whl", REPO / "packaging" / "kellogg-tensor" / "dist"
         )
         toe_wheel = _sibling_wheel(
-            "hyba_toe-*.whl", REPO / "packaging" / "toe" / "dist"
+            "hyba_toe_intelligence-*.whl", REPO / "packaging" / "toe" / "dist"
         )
         # Full dependency resolution is exercised: the sibling product wheels
-        # satisfy the declared kellogg-toe/hyba-toe requirements and numpy is
+        # satisfy the declared kellogg-toe/hyba-toe-intelligence requirements and numpy is
         # fetched from the index, exactly as a real install would resolve.
         sh([python, "-m", "pip", "install", "-q", str(kellogg_wheel), str(toe_wheel), str(wheel)], cwd=tmp_path)
         smoke = SMOKE % (repr(V17_MODULES), RESEARCH_VERSION, VERSION)

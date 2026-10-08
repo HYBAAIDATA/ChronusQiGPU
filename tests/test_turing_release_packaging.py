@@ -9,10 +9,10 @@ def test_turing_public_identity_and_repository_are_canonical() -> None:
     pyproject = (ROOT / "turing_universal_quantum_computer" / "pyproject.toml").read_text(
         encoding="utf-8"
     )
-    assert 'name = "turing-universal-quantum-computer"' in pyproject
+    assert 'name = "hyba-turing-vqc"' in pyproject
     assert 'version = "1.0.0"' in pyproject
     assert 'authors = [{ name = "HYBA Software Limited" }]' in pyproject
-    assert "kellogg-tensor>=1.0" in pyproject
+    assert "hyba-kellogg-tensor>=1.0" in pyproject
     assert "https://github.com/QuantumPhiRedux/PhiMiner" in pyproject
     assert "QuantumPhi2/PhiMiner" not in pyproject
     for version in ("3.11", "3.12", "3.13"):
@@ -30,7 +30,7 @@ def test_turing_build_is_wheel_sdist_metadata_and_secret_scan_bound() -> None:
         "wheel-manifest.json",
         "sdist-manifest.json",
         "artifact-build.json",
-        "kellogg-tensor",
+        "hyba-kellogg-tensor",
         "QuantumPhiRedux/PhiMiner",
     ):
         assert required in build
@@ -50,13 +50,17 @@ def test_turing_release_workflow_uses_verified_artifact_and_oidc() -> None:
         "lake-package-directory: turing_universal_quantum_computer/formal",
         "id-token: write",
         "pypa/gh-action-pypi-publish@release/v1",
-        "name: ${{ inputs.publish }}",
+        "publish-testpypi:",
+        "testpypi-verified:",
+        "publish-pypi:",
+        "pypi-verified:",
+        "packaging/verify_registry_release.py",
         "turing-1.0.0-release",
         "artifact-build.json",
         "testpypi-smoke:",
     ):
         assert required in workflow
-    publish_section = workflow.split("\n  publish:", 1)[1].split("\n  testpypi-smoke:", 1)[0]
+    publish_section = workflow.split("\n  publish-pypi:", 1)[1].split("\n  pypi-smoke:", 1)[0]
     assert "python -m build" not in publish_section
     assert "pip install build" not in publish_section
     assert "api-token" not in workflow.lower()

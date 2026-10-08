@@ -1,4 +1,4 @@
-"""Build and verify the standalone kellogg-tensor 1.0.0 release artefacts.
+"""Build and verify the standalone hyba-kellogg-tensor 1.0.0 release artefacts.
 
 This script is deliberately artefact-first. It stages only the public Kellogg
 package, builds wheel + sdist, validates metadata, inspects and secret-scans the
@@ -28,7 +28,7 @@ from typing import Any
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
 DIST = HERE / "dist"
-PRODUCT = "kellogg-tensor"
+PRODUCT = "hyba-kellogg-tensor"
 VERSION = "1.0.0"
 REPOSITORY = "QuantumPhiRedux/PhiMiner"
 
@@ -223,14 +223,14 @@ FORBIDDEN = {
 assert "site-packages" in str(kellogg.__file__).replace("\\", "/"), kellogg.__file__
 assert kellogg.__version__ == EXPECTED_VERSION, kellogg.__version__
 
-metadata = importlib.metadata.metadata("kellogg-tensor")
-assert metadata["Name"] == "kellogg-tensor"
+metadata = importlib.metadata.metadata("hyba-kellogg-tensor")
+assert metadata["Name"] == "hyba-kellogg-tensor"
 assert metadata["Version"] == EXPECTED_VERSION
 assert metadata["Requires-Python"] == ">=3.11"
 assert metadata["Author"] == "HYBA Software Limited"
 license_value = metadata.get("License-Expression") or metadata.get("License")
 assert license_value == "MIT", license_value
-requires = importlib.metadata.requires("kellogg-tensor") or []
+requires = importlib.metadata.requires("hyba-kellogg-tensor") or []
 hard_requires = [r for r in requires if "extra ==" not in r]
 assert len(hard_requires) == 1 and hard_requires[0].lower().startswith("numpy"), hard_requires
 project_urls = metadata.get_all("Project-URL") or []
@@ -253,7 +253,7 @@ if missing:
 
 from importlib.resources import files
 manifest = json.loads(files("kellogg").joinpath("CAPABILITY_MANIFEST.json").read_text())
-assert manifest["distribution"] == "kellogg-tensor"
+assert manifest["distribution"] == "hyba-kellogg-tensor"
 assert manifest["version"] == EXPECTED_VERSION
 assert manifest["hard_dependencies"] == ["numpy"]
 
@@ -339,7 +339,7 @@ if siblings_loaded:
     raise AssertionError(f"standalone import loaded sibling products: {siblings_loaded}")
 
 print(json.dumps({
-    "product": "kellogg-tensor",
+    "product": "hyba-kellogg-tensor",
     "version": kellogg.__version__,
     "python": sys.version.split()[0],
     "modules": mods,
@@ -398,7 +398,7 @@ def rebuild_from_sdist(sdist: Path, root: Path) -> tuple[Path, dict[str, Any]]:
     rebuilt_dir = root / "rebuilt"
     rebuilt_dir.mkdir()
     sh([py, "-m", "build", "--wheel", "--outdir", rebuilt_dir, roots[0]])
-    wheels = sorted(rebuilt_dir.glob("kellogg_tensor-*.whl"))
+    wheels = sorted(rebuilt_dir.glob("hyba_kellogg_tensor-*.whl"))
     if len(wheels) != 1:
         raise RuntimeError(f"sdist rebuild produced {len(wheels)} wheels")
     with tempfile.TemporaryDirectory(prefix="kellogg-sdist-install-") as tmp:
@@ -425,8 +425,8 @@ def main() -> int:
             staged,
         ])
 
-    wheels = sorted(DIST.glob(f"kellogg_tensor-{VERSION}-*.whl"))
-    sdists = sorted(DIST.glob(f"kellogg_tensor-{VERSION}.tar.gz"))
+    wheels = sorted(DIST.glob(f"hyba_kellogg_tensor-{VERSION}-*.whl"))
+    sdists = sorted(DIST.glob(f"hyba_kellogg_tensor-{VERSION}.tar.gz"))
     if len(wheels) != 1 or len(sdists) != 1:
         raise RuntimeError(
             f"expected one wheel and one sdist for {VERSION}; got wheels={wheels}, sdists={sdists}"

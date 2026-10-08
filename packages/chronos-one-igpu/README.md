@@ -1,6 +1,6 @@
 # Chronos ONE iGPU — M5-integrated release candidate
 
-**Distribution:** `chronos-one-igpu` · **Import:** `chronos_one_igpu` ·
+**Distribution:** `hyba-chronos-one-igpu` · **Import:** `chronos_one_igpu` ·
 **Candidate:** `3.11.2rc3` · **Owner:** HYBA Software Limited · **License:** MIT.
 
 **Status: release candidate; not yet authorised for production publication.**
