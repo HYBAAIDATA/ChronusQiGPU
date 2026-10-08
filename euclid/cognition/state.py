@@ -9,6 +9,7 @@ rehearsal-class research evidence.
 
 from __future__ import annotations
 
+import copy
 import math
 import time
 from dataclasses import asdict, dataclass, field
@@ -251,7 +252,7 @@ class CognitiveState:
         if not problem_id:
             raise ValueError("problem_id is required")
         self.problem_id = problem_id
-        self.representation = dict(representation)
+        self.representation = copy.deepcopy(dict(representation))
         self._clock = clock
         self.goals: list[Goal] = []
         self.hypotheses: list[Hypothesis] = []
@@ -287,7 +288,7 @@ class CognitiveState:
     # -- transition ledger -------------------------------------------------
     @property
     def transitions(self) -> tuple[TransitionRecord, ...]:
-        return tuple(self._transitions)
+        return tuple(copy.deepcopy(self._transitions))
 
     def record_transition(
         self, phase: str, summary: str, details: Mapping[str, Any] | None = None
@@ -298,7 +299,7 @@ class CognitiveState:
             "sequence": len(self._transitions),
             "phase": str(phase),
             "summary": str(summary),
-            "details": dict(details or {}),
+            "details": copy.deepcopy(dict(details or {})),
             "timestamp": float(self._clock()),
             "previous_digest": self._transitions[-1].digest if self._transitions else None,
         }
@@ -306,7 +307,7 @@ class CognitiveState:
             **body, digest=domain_hash(_TRANSITION_DOMAIN, _digest_body(body))
         )
         self._transitions.append(record)
-        return record
+        return copy.deepcopy(record)
 
     def verify_transitions(self) -> None:
         previous = None
@@ -377,7 +378,7 @@ class CognitiveState:
         }
 
     def to_payload(self) -> dict[str, Any]:
-        body = self._body()
+        body = copy.deepcopy(self._body())
         return {**body, "seal": domain_hash(_SEAL_DOMAIN, _seal_body(body))}
 
     @classmethod

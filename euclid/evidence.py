@@ -1,7 +1,9 @@
 """Append-only hash-linked evidence with atomic sealed checkpoints."""
 from __future__ import annotations
 
+import copy
 import json
+import threading
 import os
 import tempfile
 import time
@@ -24,48 +26,54 @@ class EvidenceRecord:
 
 class EvidenceChain:
     def __init__(self, records: Iterable[EvidenceRecord] = ()) -> None:
-        self._records = list(records)
+        self._lock = threading.RLock()
+        self._records = copy.deepcopy(list(records))
         self.verify()
 
     @property
     def records(self) -> tuple[EvidenceRecord, ...]:
-        return tuple(self._records)
+        with self._lock:
+            return tuple(copy.deepcopy(self._records))
 
     @property
     def head(self) -> str | None:
-        return self._records[-1].record_hash if self._records else None
+        with self._lock:
+            return self._records[-1].record_hash if self._records else None
 
     def append(self, kind: str, payload: Mapping[str, Any]) -> EvidenceRecord:
-        base = {
-            "sequence": len(self._records),
-            "timestamp": time.time(),
-            "kind": str(kind),
-            "payload": dict(payload),
-            "previous_hash": self.head,
-        }
-        record = EvidenceRecord(**base, record_hash=domain_hash("euclid.evidence.v1", base))
-        self._records.append(record)
-        return record
+        with self._lock:
+            base = {
+                "sequence": len(self._records),
+                "timestamp": time.time(),
+                "kind": str(kind),
+                "payload": copy.deepcopy(dict(payload)),
+                "previous_hash": self.head,
+            }
+            record = EvidenceRecord(**base, record_hash=domain_hash("euclid.evidence.v1", base))
+            self._records.append(record)
+            return copy.deepcopy(record)
 
     def verify(self) -> None:
-        previous = None
-        for sequence, record in enumerate(self._records):
-            if record.sequence != sequence or record.previous_hash != previous:
-                raise ValueError("evidence chain is discontinuous")
-            base = {
-                "sequence": record.sequence,
-                "timestamp": record.timestamp,
-                "kind": record.kind,
-                "payload": dict(record.payload),
-                "previous_hash": record.previous_hash,
-            }
-            if domain_hash("euclid.evidence.v1", base) != record.record_hash:
-                raise ValueError("evidence record hash mismatch")
-            previous = record.record_hash
+        with self._lock:
+            previous = None
+            for sequence, record in enumerate(self._records):
+                if record.sequence != sequence or record.previous_hash != previous:
+                    raise ValueError("evidence chain is discontinuous")
+                base = {
+                    "sequence": record.sequence,
+                    "timestamp": record.timestamp,
+                    "kind": record.kind,
+                    "payload": dict(record.payload),
+                    "previous_hash": record.previous_hash,
+                }
+                if domain_hash("euclid.evidence.v1", base) != record.record_hash:
+                    raise ValueError("evidence record hash mismatch")
+                previous = record.record_hash
 
     def to_payload(self) -> dict[str, Any]:
-        body = {"schema": "euclid.evidence/1", "records": [asdict(r) for r in self._records]}
-        return {**body, "seal": domain_hash("euclid.evidence.seal.v1", body)}
+        with self._lock:
+            body = {"schema": "euclid.evidence/1", "records": [asdict(r) for r in self._records]}
+            return {**body, "seal": domain_hash("euclid.evidence.seal.v1", body)}
 
     @classmethod
     def from_payload(cls, payload: Mapping[str, Any]) -> "EvidenceChain":
