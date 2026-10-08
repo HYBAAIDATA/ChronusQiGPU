@@ -117,6 +117,41 @@ def _v1_prevhash_hex(header_prev_hash: bytes) -> str:
     ).hex()
 
 
+def normalize_extended_job(
+    raw: NewExtendedMiningJob,
+    *,
+    prev_hash: bytes,
+    nbits: int,
+    ntime: int,
+    target: int,
+) -> StratumJob:
+    """Project an SV2 extended job into the canonical proof-adapter schema.
+
+    The projection is lossless for every field used to construct the Bitcoin
+    header.  It exists solely to reuse the consensus-tested header/proof
+    implementation; it does not reinterpret or synthesize pool work.
+    """
+
+    if not 0 < int(target) <= MAX_UINT256:
+        raise Sv2ProtocolError("SV2 target must be a positive uint256")
+    if not 0 <= int(nbits) <= 0xFFFFFFFF:
+        raise Sv2ProtocolError("SV2 nbits must be uint32")
+    if not 0 <= int(ntime) <= 0xFFFFFFFF:
+        raise Sv2ProtocolError("SV2 ntime must be uint32")
+    return StratumJob(
+        job_id=str(raw.job_id),
+        prevhash=_v1_prevhash_hex(prev_hash),
+        coinb1=raw.coinbase_tx_prefix.hex(),
+        coinb2=raw.coinbase_tx_suffix.hex(),
+        merkle_branch=tuple(item.hex() for item in raw.merkle_path),
+        version=f"{raw.version:08x}",
+        nbits=f"{int(nbits):08x}",
+        ntime=f"{int(ntime):08x}",
+        clean_jobs=False,
+        target=int(target),
+    )
+
+
 class ProductionStratumV2Client:
     """Authenticated SV2 extended-channel client with canonical PYTHIA state."""
 
@@ -257,7 +292,10 @@ class ProductionStratumV2Client:
             self.runtime_state.subscription_confirmed(subscription)
             if core.target is None:
                 raise Sv2ProtocolError("extended mining channel did not supply a target")
-            self.proof_adapter.target = core.target
+            self.proof_adapter.set_exact_target(
+                core.target,
+                retarget_existing=False,
+            )
             self.runtime_state.target_updated(
                 target=core.target,
                 source="sv2.open_extended_channel",
@@ -292,8 +330,7 @@ class ProductionStratumV2Client:
                     if isinstance(job, NewExtendedMiningJob):
                         self._activate_job(job, clean_jobs=True)
                 elif isinstance(event, SetTarget):
-                    self.proof_adapter.target = event.maximum_target
-                    self.proof_adapter._retarget_jobs()
+                    self.proof_adapter.set_exact_target(event.maximum_target)
                     self.runtime_state.target_updated(
                         target=event.maximum_target,
                         source="sv2.SetTarget",
@@ -323,11 +360,10 @@ class ProductionStratumV2Client:
         core = self._core
         if core is None or core.extranonce_size is None:
             raise Sv2ProtocolError("SV2 extranonce update without an open channel")
-        subscription = SubscriptionState(prefix.hex(), core.extranonce_size)
-        self.proof_adapter.subscription = subscription
-        self.proof_adapter.current_job = None
-        self.proof_adapter.jobs.clear()
-        self.proof_adapter._extranonce2_counter = 0
+        subscription = self.proof_adapter.replace_subscription(
+            SubscriptionState(prefix.hex(), core.extranonce_size),
+            invalidate_jobs=True,
+        )
         self.runtime_state.extranonce_updated(subscription)
         active = core.jobs.get(core.active_job_id) if core.active_job_id is not None else None
         if isinstance(active, NewExtendedMiningJob):
@@ -350,19 +386,28 @@ class ProductionStratumV2Client:
         )
         if ntime is None:
             return
-        job = StratumJob(
-            job_id=str(raw.job_id),
-            prevhash=_v1_prevhash_hex(core.current_prev_hash),
-            coinb1=raw.coinbase_tx_prefix.hex(),
-            coinb2=raw.coinbase_tx_suffix.hex(),
-            merkle_branch=tuple(item.hex() for item in raw.merkle_path),
-            version=f"{raw.version:08x}",
-            nbits=f"{core.current_nbits:08x}",
-            ntime=f"{ntime:08x}",
-            clean_jobs=bool(clean_jobs),
+        job = normalize_extended_job(
+            raw,
+            prev_hash=core.current_prev_hash,
+            nbits=core.current_nbits,
+            ntime=ntime,
             target=core.target,
         )
-        self.proof_adapter.target = core.target
+        if clean_jobs:
+            job = StratumJob(
+                job_id=job.job_id,
+                prevhash=job.prevhash,
+                coinb1=job.coinb1,
+                coinb2=job.coinb2,
+                merkle_branch=job.merkle_branch,
+                version=job.version,
+                nbits=job.nbits,
+                ntime=job.ntime,
+                clean_jobs=True,
+                target=job.target,
+                cassini_seal=job.cassini_seal,
+            )
+        self.proof_adapter.set_exact_target(core.target, retarget_existing=False)
         normalized = self.proof_adapter.on_job_received(job)
         self.runtime_state.job_received(
             normalized,
@@ -523,4 +568,5 @@ __all__ = [
     "ProductionStratumV2Client",
     "SecureChannelFactory",
     "load_secure_channel_factory",
+    "normalize_extended_job",
 ]
