@@ -1,112 +1,31 @@
-{
-  "manifest": "AGENT_HANDOFFS",
-  "note": "Agent A (repair/A-intelligence) wrote this file; reports/ is owned by Agent H \u2014 this write is itself a cross-boundary touch, documented here per programme rules.",
-  "handoffs": [
-    {
-      "request_id": "A-001",
-      "requesting_agent": "A",
-      "owning_agent": "owner-of-standard/",
-      "required_interface": "standard/certificate.py:120 \u2014 stale default repo 'QUANTUMDATA2/PYTHIAPhiMiner' (same defect fixed in-lane in orchestrate.py)",
-      "reason": "Stale donor-repo label misidentifies the repository; matches the defect class fixed in Agent A's orchestrate.py",
-      "affected_files": [
-        "standard/certificate.py"
-      ],
-      "blocking": false,
-      "status": "OPEN"
-    },
-    {
-      "request_id": "A-002",
-      "requesting_agent": "A",
-      "owning_agent": "owner-of-pci/",
-      "required_interface": "pci/api.py imports the removed 'hyba_backend' namespace; agi.api's optional PCI-domain router degrades with a warning because of it",
-      "reason": "agi.api retargets were completed in-lane, but the PCI router it optionally composes still imports the removed namespace \u2014 PCI needs the same LEGACY_MODULE_MAP retarget treatment",
-      "affected_files": [
-        "pci/api.py"
-      ],
-      "blocking": false,
-      "status": "OPEN"
-    },
-    {
-      "request_id": "A-003",
-      "requesting_agent": "A",
-      "owning_agent": "owner-of-.github-and-turing",
-      "required_interface": "deploy_sentry DS01/DS02 failures: .github/workflows/turing-release.yml sets KELLOGG_VERSION no code reads; turing_universal_quantum_computer/tests/test_vqc_custody_durable.py imports pytest unguarded though pyproject.toml does not declare it",
-      "reason": "Full-repo deploy_sentry fails on files outside Agent A's lane; lane-local portion is clean",
-      "affected_files": [
-        ".github/workflows/turing-release.yml",
-        "turing_universal_quantum_computer/pyproject.toml",
-        "turing_universal_quantum_computer/tests/test_vqc_custody_durable.py"
-      ],
-      "blocking": true,
-      "status": "OPEN"
-    },
-    {
-      "request_id": "A-004",
-      "requesting_agent": "A",
-      "owning_agent": "H",
-      "required_interface": "Negative tests needed for new fail-closed paths in Agent A's lane: SubsystemUnavailable raises (agi.bio_resonance_oracle / material_synthesis / protein_refolding_engine), feedback-core restore() schema rejection, TOE record_outcome on pre-restart decision ids, agi.api make_autonomous_decision fail-closed branch",
-      "reason": "tests/ is Agent H-owned; Agent A classified the need but cannot author test files",
-      "affected_files": [
-        "tests/"
-      ],
-      "blocking": false,
-      "status": "PARTIALLY_ADDRESSED",
-      "note": "Lane-local adversarial regressions now exist at toe/tests/test_learned_policy_regressions.py (15 tests: learned-policy influence, tenant isolation, durability fail-closed, ready() semantics). Repo-wide mutations.json coverage for corrected gates + zero-user-module sweep remains open for agent H."
-    },
-    {
-      "request_id": "A-005",
-      "requesting_agent": "A",
-      "owning_agent": "H",
-      "required_interface": "tests/test_organism_integration.py fixture + heal_organ callsites",
-      "reason": "F->A QC: heal_organ now requires a non-empty actor kwarg and actuation requires compose_organism(guardian=..., subscription_token_provider=...) with the authorized constructor (salamander.authority lands at F merge). tests/test_organism_integration.py::test_salamander_detects_repairs_and_verifies_bounded_fault and test_salamander_does_not_mark_unverifiable_repair_verified call heal_organ without actor and without authorized composition -> now fail closed by design. Fixtures must supply actor identity + authorized composition (or assert the refusal).",
-      "affected_files": [
-        "tests/test_organism_integration.py"
-      ],
-      "blocking": false,
-      "status": "OPEN"
-    },
-    {
-      "request_id": "A-006",
-      "requesting_agent": "A",
-      "owning_agent": "H",
-      "required_interface": "tests/test_toe_runtime.py fixture defects (2) \u2014 production runtime now tolerates minimal-contract feedback cores",
-      "reason": "UPDATE 2026-10-07: the runtime now capability-guards the learning surface (health()/_apply_learned_policy declare 'lacks learning surface' instead of AttributeError; snapshot-capability checked before durable handoff), so the 16 AttributeError failures resolved. Two genuinely broken fixtures remain: (a) FakeFeedbackCore.process defines a nested @dataclass with 'decision_id: str = decision_id' \u2014 class bodies cannot read enclosing function locals, so process() raises NameError; assign it post-construction. (b) test_fail_closed_on_empty_tenant line ~216 calls TenantContext(tenant_id=\"\") OUTSIDE assertRaises \u2014 the constructor correctly raises; move the construction inside the block or remove the line. tests/ is Agent H-owned. RESOLVED 2026-10-07 by the A-008 reconciliation merge: #141s updated tests/test_toe_runtime.py fixes both fixture defects (processed_id binding, assertRaises placement). tests/test_toe_runtime.py is 47/47 green on the reconciled head.",
-      "affected_files": [
-        "tests/test_toe_runtime.py"
-      ],
-      "blocking": false,
-      "status": "RESOLVED"
-    },
-    {
-      "request_id": "A-007",
-      "requesting_agent": "A",
-      "owning_agent": "F",
-      "required_interface": "import_audit IA01 finding at euclid/runtime.py: imports salamander.authority (build_authorized_control_plane) inside try/except",
-      "reason": "Intentional cross-lane deferred composition: on this branch salamander.authority does not exist, so the import_audit gate reports 'swallowed' IA01. The swallow IS the designed behaviour \u2014 actuation stays unavailable with 'salamander-actuation-unavailable' evidence until F's canonical constructor lands. Finding clears when salamander/authority.py merges. Verified: euclid/tests/test_actuation_authority.py proves both the unavailable path and the authorized path (injected constructor). Alternative would be evading the gate via dynamic indirection \u2014 deliberately not done.",
-      "affected_files": [
-        "euclid/runtime.py",
-        "salamander/authority.py"
-      ],
-      "blocking": false,
-      "status": "OPEN"
-    },
-    {
-      "request_id": "A-008",
-      "requesting_agent": "A",
-      "owning_agent": "MERGE/INTEGRATOR",
-      "required_interface": "Reconciliation contract between repair/A-intelligence (PR #137) and feat/toe-domain-general-publication (PR #141) \u2014 per owner's CROSS-LANE HOLD on #137",
-      "reason": "Overlapping files: euclid/runtime.py, toe/runtime.py, toe/ciaas_api.py, euclid/__init__.py. A's protections that MUST survive the reconciled composition: (1) tenant-bound feedback \u2014 FeedbackCore.process rejects source_id mismatched to the DecisionRecord (resonance_intelligence/feedback_core.py); (2) transactional durability \u2014 record_outcome snapshots, processes, persists via configured feedback_state_path atomically, rolls back and fails closed on write failure (toe/runtime.py); (3) learned-policy influence \u2014 _apply_learned_policy excludes net-negative attribution-weighted modules from the delivered payload while attribution still observes them (toe/runtime.py + feedback_core identify_underperforming_modules/get_module_performance); (4) readiness semantics \u2014 ready() gates on bridge, feedback core, evidence chain, and both durability legs (toe/runtime.py, mirrored in toe/ciaas_api.py handle_health); (5) SALAMANDER/AL HARAS authorized composition \u2014 euclid/runtime.py composes the autonomic plane through salamander.authority.build_authorized_control_plane when a Guardian + token provider are supplied, unavailable otherwise (pending-merge import, A-007). #141 contributes: toe/machine.py TOEMachine composed via toe/runtime.py solve/learn with per-tenant machines, toe/custody.py THESEUS persistence, adapters, packaging, evidence reports. Reconciliation rule: adopt #141's TOEMachine composition and packaging while preserving every A semantic above; verify by re-running toe/tests/test_learned_policy_regressions.py (19 tests) and euclid/tests/test_actuation_authority.py (6 tests) plus #141's own battery on the merged tree. RECONCILED 2026-10-07 at head a39b6fc: feat/toe-domain-general-publication merged into repair/A-intelligence. Only toe/runtime.py conflicted; all 5 hunks resolved preserving A protections (value-bearing attribution decision, Optional/out-of-range confidence, module_outputs incl. learned_exclusions, tenant-bound context+source_id, wired ASI hint, decision_id flow). One composition root: toe.runtime.TOEIntelligenceRuntime \u2014 predict/explain/forecast/causal voyage + solve/learn machine surface; EUCLID reaches TOE via euclid.cognition.toe_capabilities.TOECapabilityAdapter under the euclid tenant. Verified: 47/47 runtime, 80+28 #141 battery, 152 lane, import_audit only designed A-007, self_test PASS.",
-      "affected_files": [
-        "euclid/runtime.py",
-        "toe/runtime.py",
-        "toe/ciaas_api.py",
-        "euclid/__init__.py",
-        "toe/machine.py",
-        "toe/custody.py",
-        "resonance_intelligence/feedback_core.py"
-      ],
-      "blocking": true,
-      "status": "RESOLVED"
-    }
-  ]
-}
+[
+  {
+    "request_id": "D-007",
+    "requesting_agent": "D",
+    "owning_agent": "B",
+    "required_interface": "the mining production adapter's recorded labels must reflect that the route executes a deterministic classical schedule + exhaustive SHA256d enumeration — never quantum execution; TURING now emits the receipt fields needed to propagate this honestly",
+    "reason": "QC block on PR #139: algorithm identity trace shows execute() plans a Hendrix coprime-stride permutation and executes ordinary SHA256d enumeration via stack.chronus.mine — which is correct and intended (four_layer_stack.py documents 'ordering cannot beat consensus'). The defect is in the adapter's metadata surface: metadata[\"execution_path\"] = \"aethel_exact_tensor_hendrix_lucas_pisot_chronus\" and toe.record_decision calls filed under domain \"quantum\" read as quantum execution. Required changes (B's files): (1) relabel execution_path/TOE domain to structured-classical, OR gate the quantum label on an admitted backend (which fails closed absent hardware — the 'production claim remains unavailable' option QC accepts); (2) propagate the new receipt fields — HendrixSchedule.manifest() now returns implementation_module, execution_mode, schedule_digest; HendrixStructuredSearch.search() returns execution_mode + execution_receipt{receipt_version, implementation_module, execution_mode, fallback_used, evaluated, schedule_digest} — into ScaledExecutionResult.metadata; (3) mining/search.py GroverStyleSearch is honestly labelled, but its scale_index multiplies the search space by L_n purely to inflate the k* stride — cosmetic; consider documenting that it reduces no work. See reports/AGENT_D_ALGORITHM_DISPOSITION.md.",
+    "affected_files": [
+      "mining/scaled_execution.py",
+      "mining/search.py",
+      "turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py",
+      "turing_universal_quantum_computer/turing_universal_quantum_computer/hendrix.py"
+    ],
+    "blocking": false,
+    "status": "OPEN"
+  },
+  {
+    "request_id": "B-to-D-d007-absorbed",
+    "requesting_agent": "B",
+    "owning_agent": "D",
+    "required_interface": "closure of D-007 (execution-identity truthfulness) inside the B lane; D's receipt-field APIs (HendrixSchedule.execution_receipt et al.) exist only on repair/D-turing-math so B emitted the equivalent receipt in-lane — no cherry-pick needed",
+    "reason": "D-007 flagged mining/scaled_execution.py labelling classical structured scheduling + SHA256d enumeration as quantum execution: metadata['execution_path']='aethel_exact_tensor_hendrix_lucas_pisot_chronus' and toe.record_decision calls filed under intelligence 'quantum'. Fixed: execution_path='structured_classical'; a full execution_receipt is emitted on the result metadata AND embedded in every execution provenance event (job_received/execution_failed/execution_complete) carrying requested_algorithm='lucas_scaled_aethel_execution', planned_algorithm='hendrix_coprime_stride_permutation', executed_algorithm='sha256d_window_enumeration', implementation_module='mining.four_layer_stack:FourLayerMiningStack.mine', implementation_digest + schedule_digest (sha256 of canonical manifests), execution_mode='structured_classical', substrate=result['hasher_backend'], fallback_used/fallback_reason, and independent_sha256d_verification {performed, method, winner_bit_exact}. TOE provenance now files execution events under 'geometric', never 'quantum'. search.py GroverStyleSearch: documented scale_index as stride-shaping only (it does not enlarge the space or reduce work) and added scale_effect='stride_shaping_only' + work_reduction=False to its return dict. Verified: 20 tests pass (mining/tests/ + tests/test_mining_scaled_execution.py), flake8 clean.",
+    "affected_files": [
+      "mining/scaled_execution.py",
+      "mining/search.py",
+      "mining/tests/test_agent_b_regressions.py"
+    ],
+    "blocking": false,
+    "status": "CLOSED"
+  }
+]

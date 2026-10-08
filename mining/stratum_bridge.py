@@ -139,6 +139,64 @@ def _configured_target_hs() -> float:
     return target
 
 
+_HEX_DIGITS = frozenset("0123456789abcdefABCDEF")
+
+
+def _is_hex(value, length: Optional[int] = None) -> bool:
+    """Strict hex-field check: exact length when given, even length, hex only.
+
+    ``bytes.fromhex`` alone is not enough: it silently skips whitespace, so a
+    short/whitespace-padded pool field would decode to fewer bytes than the
+    fixed-width header slot it lands in. A pool is an untrusted peer — every
+    field is checked at ingestion, never trusted by shape.
+    """
+    if not isinstance(value, str):
+        return False
+    if length is not None and len(value) != length:
+        return False
+    if len(value) % 2:
+        return False
+    return all(ch in _HEX_DIGITS for ch in value)
+
+
+def _check_hex(value, length: Optional[int], name: str) -> str:
+    if not _is_hex(value, length):
+        raise ValueError(f"malformed {name}: {value!r}")
+    return value
+
+
+def _validate_notify_params(params: list) -> dict:
+    """Wire-validate one mining.notify parameter vector.
+
+    Any malformed field rejects the whole notify: a pool that cannot even
+    frame a job correctly cannot be mined against, and a half-parsed job
+    would die later inside ``mine_job`` — after the listener already cached
+    it. Raises ValueError naming the bad field.
+    """
+    if not isinstance(params, list) or len(params) < 9:
+        raise ValueError("malformed mining.notify: expected at least 9 parameters")
+    job_id = params[0]
+    if not isinstance(job_id, str) or not job_id:
+        raise ValueError("malformed job_id: expected non-empty string")
+    branch = params[4]
+    if not isinstance(branch, (list, tuple)):
+        raise ValueError("malformed merkle_branch: not a list")
+    clean_jobs = params[8]
+    if not isinstance(clean_jobs, bool):
+        raise ValueError("malformed clean_jobs: expected boolean")
+    return {
+        "job_id": job_id,
+        "prev_hash": _check_hex(params[1], 64, "prev_hash"),
+        "coinb1": _check_hex(params[2], None, "coinb1"),
+        "coinb2": _check_hex(params[3], None, "coinb2"),
+        "merkle_branch": [_check_hex(x, 64, "merkle_branch") for x in branch],
+        "version": _check_hex(params[5], 8, "version"),
+        "nbits": _check_hex(params[6], 8, "nbits"),
+        "ntime": _check_hex(params[7], 8, "ntime"),
+        "clean_jobs": clean_jobs,
+    }
+
+
 def difficulty_to_target(difficulty: float) -> int:
     """floor(DIFF1_TARGET / difficulty) as an exact rational.
 
@@ -209,6 +267,8 @@ class StratumBridge:
         self.shares_accepted = 0
         self.shares_rejected = 0
         self.submit_calls = 0
+        # Count of pool messages dropped for malformed wire fields.
+        self.malformed_messages = 0
         self._accounting_lock = threading.Lock()
         # Measured socket flush time of the most recent RPC (ms). This is
         # the dispatch invariant (<1.5ms) - verdict round-trip latency is
@@ -225,9 +285,30 @@ class StratumBridge:
 
     async def handshake(self, suggest_diff: Optional[float] = None) -> None:
         result = await self._rpc("mining.subscribe", [self.agent])
-        if isinstance(result, list) and len(result) >= 3:
-            self.extranonce1 = str(result[1])
-            self.extranonce2_size = int(result[2])
+        if not isinstance(result, list) or len(result) < 3:
+            raise RuntimeError(
+                f"malformed mining.subscribe result: expected list with 3+ fields, got {result!r}"
+            )
+        # extranonce1/extranonce2_size feed every coinbase build; a
+        # malformed pair makes every job unmineable, so the handshake
+        # fails closed here rather than once per notify inside mine_job.
+        extranonce1 = result[1]
+        if not _is_hex(extranonce1):
+            raise RuntimeError(
+                f"malformed extranonce1 in mining.subscribe: {extranonce1!r}"
+            )
+        try:
+            extranonce2_size = int(result[2])
+        except (TypeError, ValueError) as exc:
+            raise RuntimeError(
+                f"malformed extranonce2_size in mining.subscribe: {result[2]!r}"
+            ) from exc
+        if not 0 < extranonce2_size <= 32:
+            raise RuntimeError(
+                f"malformed extranonce2_size in mining.subscribe: {result[2]!r}"
+            )
+        self.extranonce1 = extranonce1
+        self.extranonce2_size = extranonce2_size
         if suggest_diff is not None:
             try:
                 await self._rpc("mining.suggest_difficulty", [suggest_diff], timeout=3.0)
@@ -252,7 +333,13 @@ class StratumBridge:
         await self._writer.drain()
         self.last_dispatch_ms = (time.perf_counter() - t0) * 1000.0
         if self._listening:
-            return await asyncio.wait_for(fut, timeout)
+            try:
+                return await asyncio.wait_for(fut, timeout)
+            finally:
+                # Bounded pending table: a timed-out RPC must not leak its
+                # entry. A late response then falls through the server-
+                # message path harmlessly (no method name).
+                self._pending.pop(pid, None)
         # No listen loop yet (handshake): read inline until our response.
         deadline = loop.time() + timeout
         while True:
@@ -294,7 +381,23 @@ class StratumBridge:
             while True:
                 try:
                     line = await self._reader.readline()
-                except (ConnectionError, ConnectionResetError, OSError, asyncio.TimeoutError):
+                except (
+                    ConnectionError,
+                    ConnectionResetError,
+                    OSError,
+                    asyncio.TimeoutError,
+                    ValueError,
+                ):
+                    # ValueError joins the transport-failure family here:
+                    # StreamReader.readline() wraps LimitOverrunError into
+                    # ValueError (streams.py), so a pool line over the
+                    # stream limit surfaces as ValueError — and an
+                    # oversized line leaves the buffer impossible to
+                    # re-frame, so the listener must exit rather than
+                    # keep grinding on a stream it can no longer parse.
+                    # Pending RPCs get ConnectionError in the finally,
+                    # not an orphaned task exception that leaves the
+                    # miner grinding blind.
                     break
                 if not line:
                     break
@@ -313,27 +416,34 @@ class StratumBridge:
     def _handle_server_message(self, parsed: dict) -> None:
         method = parsed.get("method")
         params = parsed.get("params", [])
-        if method == "mining.set_difficulty" and params:
-            self.difficulty = float(params[0]) or 1.0
-            if self.last_job is not None:
-                self.last_job.difficulty = self.difficulty
+        if method == "mining.set_difficulty":
+            # A non-numeric or non-finite difficulty must not poison the
+            # cached job or kill the listener — it is dropped and counted.
+            first = params[0] if isinstance(params, (list, tuple)) and params else None
+            try:
+                difficulty = float(first)
+            except (TypeError, ValueError):
+                difficulty = None
+            if difficulty is None or not math.isfinite(difficulty) or difficulty <= 0:
+                self.malformed_messages += 1
+            else:
+                self.difficulty = difficulty
+                if self.last_job is not None:
+                    self.last_job.difficulty = self.difficulty
         elif method == "mining.notify" and isinstance(params, list):
             if len(params) >= 9:
-                clean_jobs = bool(params[8])
-                if clean_jobs:
-                    self.clean_job_generation += 1
-                self.last_job = LiveJob(
-                    job_id=str(params[0]),
-                    prev_hash=str(params[1]),
-                    coinb1=str(params[2]),
-                    coinb2=str(params[3]),
-                    merkle_branch=[str(x) for x in (params[4] or [])],
-                    version=str(params[5]),
-                    nbits=str(params[6]),
-                    ntime=str(params[7]),
-                    clean_jobs=clean_jobs,
-                    difficulty=self.difficulty,
-                )
+                try:
+                    fields = _validate_notify_params(params)
+                except (ValueError, IndexError):
+                    self.malformed_messages += 1
+                    print("[BAD NOTIFY] dropped malformed mining.notify from pool")
+                else:
+                    if fields["clean_jobs"]:
+                        self.clean_job_generation += 1
+                    self.last_job = LiveJob(
+                        difficulty=self.difficulty,
+                        **fields,
+                    )
 
     def is_job_valid(self, clean_job_generation: int) -> bool:
         return clean_job_generation == self.clean_job_generation
@@ -703,7 +813,12 @@ def mine_job(
             res = pipeline.grind_m32(
                 header, target, base_nonce, _m32_lane_order(base_nonce), nonce_window
             )
-        except Exception:
+        except ValueError:
+            # Only the declared recoverable shape/contract error may switch
+            # arms (for example a window that is not a multiple of 32).
+            # RuntimeError, TypeError, transport errors and unexpected coding
+            # failures propagate fail-closed instead of being disguised as a
+            # successful fallback.
             nonces = _lane_nonces(base_nonce, nonce_window, header80=header)
             res = pipeline.grind(header, target, nonces)
     else:
@@ -857,6 +972,15 @@ async def _amain(argv=None) -> int:
         f"extranonce2_size={bridge.extranonce2_size}"
     )
 
+    # Claim the reader synchronously: between create_task() and the
+    # listener coroutine's first scheduling, _listening is still False and
+    # wait_for_job would take its inline readline() path — suspending on
+    # the shared StreamReader concurrently with the listener and raising
+    # RuntimeError in whichever coroutine runs second (killing the
+    # listener and leaving the miner grinding blind). Marking the bridge
+    # as listening first keeps wait_for_job on its sleep path; the task
+    # itself re-asserts the flag at entry.
+    bridge._listening = True
     listener = asyncio.create_task(bridge.listen_forever())
 
     print(f"Initializing hash pipeline (backend={args.backend}) ...")
@@ -866,7 +990,7 @@ async def _amain(argv=None) -> int:
     t_start = time.perf_counter()
     extranonce2_counter = 0
     base_nonce = 0
-    current_job_id = None
+    current_job_marker = None
     total_hashes = 0
     total_batches = 0
 
@@ -905,10 +1029,12 @@ async def _amain(argv=None) -> int:
                     await asyncio.sleep(0.5)
                     continue
 
-            if job.job_id != current_job_id or job.clean_jobs:
-                current_job_id = job.job_id
+            # Restart detection keyed on the wire facts — job_id plus the
+            # clean-job generation — never by mutating the cached LiveJob.
+            job_marker = (job.job_id, bridge.clean_job_generation)
+            if job_marker != current_job_marker:
+                current_job_marker = job_marker
                 base_nonce = 0
-                job.clean_jobs = False
                 print(
                     f"\n[NEW JOB] ID={job.job_id} difficulty={job.difficulty} "
                     f"nbits={job.nbits} prev={job.prev_hash[:16]}..."

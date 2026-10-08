@@ -1,0 +1,53 @@
+name: Repo-wide Production Closure
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  production-closure:
+    name: Agent H — fail-closed release evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install project test dependencies
+        run: python -m pip install -e ./turing_universal_quantum_computer -e ".[dev]"
+      - name: Execute all assurance gates
+        id: gates
+        continue-on-error: true
+        run: make -k gates
+        env:
+          MEDIATION_MANIFEST_KEY: ${{ secrets.MEDIATION_MANIFEST_KEY }}
+      - name: Generate complete defect register
+        if: always()
+        run: python scripts/repo_closure.py defects --output reports/DEFECT_REGISTER.json
+      - name: Retain closure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-closure-evidence
+          path: |
+            results/
+            reports/REPO_FILE_OWNERSHIP.json
+            reports/DEFECT_REGISTER.json
+            reports/AGENT_HANDOFFS.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Require every assurance gate and no skipped evidence
+        if: always()
+        run: python scripts/assert_gate_rollup.py --require-no-skip
+      - name: Require zero open defect occurrences
+        if: always()
+        run: python scripts/repo_closure.py defects --output reports/DEFECT_REGISTER.json --require-closed
+      - name: Preserve gate-command failure
+        if: always()
+        run: test "${{ steps.gates.outcome }}" = "success"

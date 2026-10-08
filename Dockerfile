@@ -1,10 +1,10 @@
 # PYTHIA image: Vite builds the frontend; Python owns the runtime.
 FROM node:22-slim AS frontend
-WORKDIR /build
-COPY package.json package-lock.json* ./
-RUN npm install
-COPY . .
-RUN npm run build
+WORKDIR /build/frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run lint && npm run test:ts && npm run build
 
 FROM python:3.12-slim-bookworm AS runtime
 WORKDIR /app

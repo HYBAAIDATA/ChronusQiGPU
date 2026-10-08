@@ -61,8 +61,7 @@ def _principal_map(role="ceo", digest=None):
         {
             "andre": {
                 "role": role,
-                "token_sha256": digest
-                or hashlib.sha256(CEO_TOKEN.encode()).hexdigest(),
+                "token_sha256": digest or hashlib.sha256(CEO_TOKEN.encode()).hexdigest(),
             }
         }
     )
@@ -71,9 +70,10 @@ def _principal_map(role="ceo", digest=None):
 def test_server_principal_map_precedes_shared_key(monkeypatch):
     monkeypatch.setenv(control_api.ADMIN_KEY_ENV, KEY)
     monkeypatch.setenv(control_api.OPERATOR_PRINCIPALS_ENV, _principal_map())
-    assert control_api.control_authorization(
-        {"Authorization": f"Bearer {KEY}"}
-    ) == (HTTPStatus.UNAUTHORIZED, "operator principal required")
+    assert control_api.control_authorization({"Authorization": f"Bearer {KEY}"}) == (
+        HTTPStatus.UNAUTHORIZED,
+        "operator principal required",
+    )
     assert control_api.control_authorization(
         {
             "Authorization": f"Bearer {KEY}",
@@ -180,3 +180,127 @@ def test_a_refused_request_never_reaches_its_handler(monkeypatch, tmp_path):
         server.shutdown()
         server.server_close()
         control_api.pythia_guardian_api.cache_clear()
+
+
+class _ControlServer:
+    """Boot the real handler once; the principal map is re-read per request."""
+
+    def __enter__(self):
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), control_api._Handler)
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+        return self
+
+    def __exit__(self, *exc):
+        self.server.shutdown()
+        self.server.server_close()
+
+    def session(self, headers):
+        url = f"http://127.0.0.1:{self.server.server_address[1]}/api/v1/control/session"
+        request = Request(url, headers=headers)
+        try:
+            with urlopen(request, timeout=5) as response:
+                raw = response.read()
+                return response.status, json.loads(raw), raw
+        except HTTPError as exc:
+            raw = exc.read()
+            return exc.code, json.loads(raw), raw
+
+
+def _clear_control_auth_env(monkeypatch):
+    for name in (
+        control_api.ADMIN_KEY_ENV,
+        control_api.UNAUTHENTICATED_ENV,
+        control_api.OPERATOR_PRINCIPALS_ENV,
+    ):
+        monkeypatch.delenv(name, raising=False)
+
+
+def test_control_session_refusals(monkeypatch):
+    """The session endpoint returns the auth contract's own 401/403/503."""
+    _clear_control_auth_env(monkeypatch)
+    with _ControlServer() as server:
+        # Nothing configured anywhere: control is closed.
+        status, body, _ = server.session({})
+        assert status == HTTPStatus.FORBIDDEN and body["ok"] is False
+
+        monkeypatch.setenv(control_api.OPERATOR_PRINCIPALS_ENV, _principal_map())
+        # Missing credential material entirely.
+        status, body, _ = server.session({})
+        assert status == HTTPStatus.UNAUTHORIZED
+        assert body["error"] == "operator principal required"
+        # Unknown principal id.
+        status, body, _ = server.session(
+            {
+                "Authorization": f"Bearer {CEO_TOKEN}",
+                control_api.OPERATOR_PRINCIPAL_HEADER: "mallory",
+            }
+        )
+        assert status == HTTPStatus.FORBIDDEN
+        assert body["error"] == "operator principal is not authorized"
+        # Known principal, wrong bearer token.
+        status, body, _ = server.session(
+            {
+                "Authorization": "Bearer wrong-token",
+                control_api.OPERATOR_PRINCIPAL_HEADER: "andre",
+            }
+        )
+        assert status == HTTPStatus.UNAUTHORIZED
+        assert body["error"] == "operator credential required"
+
+        # An invalid server-side mapping refuses closed, not open.
+        monkeypatch.setenv(control_api.OPERATOR_PRINCIPALS_ENV, "{")
+        status, body, _ = server.session(
+            {
+                "Authorization": f"Bearer {CEO_TOKEN}",
+                control_api.OPERATOR_PRINCIPAL_HEADER: "andre",
+            }
+        )
+        assert status == HTTPStatus.SERVICE_UNAVAILABLE
+        assert body["error"] == "operator principal mapping is invalid"
+
+
+def test_control_session_returns_only_server_mapped_identity(monkeypatch):
+    _clear_control_auth_env(monkeypatch)
+    monkeypatch.setenv(control_api.ADMIN_KEY_ENV, KEY)
+    with _ControlServer() as server:
+        # The legacy shared key stays its mapped role — never elevated.
+        status, body, raw = server.session({"Authorization": f"Bearer {KEY}"})
+        assert status == HTTPStatus.OK
+        assert body["principal_id"] == "legacy-admin"
+        assert body["role"] == "operator"
+        assert body["source"] == "legacy_admin_key"
+        assert KEY.encode() not in raw
+
+        # A server-mapped non-CEO principal reports operator, not ceo.
+        monkeypatch.setenv(control_api.OPERATOR_PRINCIPALS_ENV, _principal_map(role="operator"))
+        status, body, raw = server.session(
+            {
+                "Authorization": f"Bearer {CEO_TOKEN}",
+                control_api.OPERATOR_PRINCIPAL_HEADER: "andre",
+            }
+        )
+        assert status == HTTPStatus.OK
+        assert body["principal_id"] == "andre"
+        assert body["role"] == "operator"
+        assert body["source"] == "server_principal_map"
+        assert CEO_TOKEN.encode() not in raw
+
+        # A server-mapped CEO is the only way role == "ceo" is reported.
+        monkeypatch.setenv(control_api.OPERATOR_PRINCIPALS_ENV, _principal_map())
+        status, body, raw = server.session(
+            {
+                "Authorization": f"Bearer {CEO_TOKEN}",
+                control_api.OPERATOR_PRINCIPAL_HEADER: "andre",
+            }
+        )
+        assert status == HTTPStatus.OK
+        assert body == {
+            "schema_version": body["schema_version"],
+            "ok": True,
+            "principal_id": "andre",
+            "role": "ceo",
+            "source": "server_principal_map",
+            "generated_at": body["generated_at"],
+        }
+        assert CEO_TOKEN.encode() not in raw

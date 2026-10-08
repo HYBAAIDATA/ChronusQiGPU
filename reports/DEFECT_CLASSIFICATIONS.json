@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "classifications": [],
+  "note": "Evidence-backed manual classifications for production-path lexical findings. Entries must bind to the exact occurrence id/path/line/category/match and include reviewer + evidence."
+}

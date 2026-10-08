@@ -20,6 +20,7 @@ from fractions import Fraction
 from math import gcd
 from typing import Dict, Iterator, Optional, Tuple
 
+from .canonical_serialization import canonical_sha256
 from .turing_core import lucas
 
 THEOREM_PROVEN = False
@@ -116,6 +117,15 @@ def require_lucas_execution_scale(index: int) -> int:
 # ---------------------------------------------------------------------------
 # Hendrix structured-search schedule: coprime-stride permutation, verified
 # bijective over the nonce window.
+#
+# Execution-receipt contract: a schedule/search result names its
+# implementation module, binds the schedule by canonical digest, and declares
+# its execution mode and whether any fallback ran.  A schedule is a
+# *permutation contract* — completeness and disjointness are the guarantees;
+# it reduces zero work relative to enumeration and is never a quantum claim.
+
+HENDRIX_IMPLEMENTATION_MODULE = "turing_universal_quantum_computer.pisot"
+HENDRIX_EXECUTION_MODE = "deterministic_classical_schedule"
 
 
 def _coprime_stride(count: int, preferred: int) -> int:
@@ -133,6 +143,7 @@ class HendrixSchedule:
     workers: int
     stride: int
     scale: LucasPisotScale
+    execution_mode: str = HENDRIX_EXECUTION_MODE
 
     @property
     def coverage(self) -> int:
@@ -160,18 +171,31 @@ class HendrixSchedule:
         )
 
     def manifest(self) -> dict:
-        return {
+        manifest = {
             "nonce_count": self.nonce_count,
             "workers": self.workers,
             "stride": self.stride,
             "coverage": self.coverage,
             "disjointness_proof": f"gcd({self.stride},{self.nonce_count})=1; worker position classes partition [0,{self.nonce_count})",
             "scale": self.scale.as_dict(),
+            "implementation_module": HENDRIX_IMPLEMENTATION_MODULE,
+            "execution_mode": self.execution_mode,
         }
+        # Digest binds every schedule parameter above; recompute by removing
+        # the "schedule_digest" key and hashing the remainder.
+        manifest["schedule_digest"] = canonical_sha256(manifest)
+        return manifest
 
 
 class HendrixStructuredSearch:
     """Lucas/Pisot-scaled deterministic scheduler for the iGPU search path."""
+
+    # Execution-receipt surface.  There is no fallback path in this
+    # implementation — the schedule is the entire computation — so
+    # ``fallback_used`` is a pinned ``False`` receipts report explicitly.
+    implementation_module = HENDRIX_IMPLEMENTATION_MODULE
+    execution_mode = HENDRIX_EXECUTION_MODE
+    fallback_used = False
 
     def __init__(self, workers: int = 1, scale_index: Optional[int] = None):
         if workers < 1:
@@ -184,7 +208,9 @@ class HendrixStructuredSearch:
             raise ValueError("nonce_count must be positive")
         workers = min(self.workers, nonce_count)
         stride = _coprime_stride(nonce_count, self.scale.lucas_value)
-        schedule = HendrixSchedule(nonce_count, workers, stride, self.scale)
+        schedule = HendrixSchedule(
+            nonce_count, workers, stride, self.scale, execution_mode=self.execution_mode
+        )
         if not schedule.verify():
             raise RuntimeError("Hendrix schedule invariant failure")
         return schedule
@@ -201,12 +227,22 @@ class HendrixStructuredSearch:
                     break
             if winner is not None:
                 break
+        manifest = schedule.manifest()
         return {
             "winner": winner,
             "evaluated": evaluated,
-            "schedule": schedule.manifest(),
+            "schedule": manifest,
             "consensus_authority": "callback",
             "quantum_claim": False,
+            "execution_mode": self.execution_mode,
+            "execution_receipt": {
+                "receipt_version": 1,
+                "implementation_module": self.implementation_module,
+                "execution_mode": self.execution_mode,
+                "fallback_used": self.fallback_used,
+                "evaluated": evaluated,
+                "schedule_digest": manifest["schedule_digest"],
+            },
         }
 
 
