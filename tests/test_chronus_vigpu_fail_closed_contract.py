@@ -4,10 +4,14 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import os
+import subprocess
+import sys
 import threading
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 import pytest
 
@@ -338,6 +342,50 @@ def test_ledger_rejects_every_corruption_class(tmp_path) -> None:
         assert name
 
 
+def test_ledger_holders_sharing_a_store_extend_the_on_disk_head(tmp_path) -> None:
+    """A holder that loaded the ledger before another holder appended must
+    chain from the on-disk head; chaining from its stale head forks the ledger."""
+    first, second = EvidenceLedger(tmp_path), EvidenceLedger(tmp_path)
+    for holder, wid in ((first, "a"), (second, "b"), (first, "c")):
+        holder.append(workload_id=wid, adapter_id="cpu-emulator", kind="probe", result_dict={})
+    records = EvidenceLedger(tmp_path).list_records()
+    assert [r.workload_id for r in records] == ["a", "b", "c"]
+    assert [r.chain_prev for r in records[1:]] == [r.chain_digest for r in records[:-1]]
+
+
+_LEDGER_WRITER = """
+import sys
+from chronus.virtual_igpu.evidence import EvidenceLedger
+root, tag, count = sys.argv[1], sys.argv[2], int(sys.argv[3])
+ledger = EvidenceLedger(root)
+for i in range(count):
+    ledger.append(workload_id=f"{tag}-{i}", adapter_id="cpu-emulator", kind="probe",
+                  result_dict={"i": i})
+"""
+
+
+def test_concurrent_writer_processes_never_fork_the_ledger(tmp_path) -> None:
+    repo = Path(__file__).resolve().parent.parent
+    env = {**os.environ, "PYTHONPATH": os.pathsep.join(filter(None, [str(repo), os.environ.get("PYTHONPATH")]))}
+    writers = [
+        subprocess.Popen(
+            [sys.executable, "-c", _LEDGER_WRITER, str(tmp_path / "store"), f"p{n}", "25"],
+            cwd=str(tmp_path),
+            env=env,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        for n in range(4)
+    ]
+    errors = [w.communicate(timeout=180)[1] for w in writers]
+    assert [w.returncode for w in writers] == [0, 0, 0, 0], errors
+    records = EvidenceLedger(tmp_path / "store").list_records()
+    assert len(records) == 100
+    assert sorted(r.workload_id for r in records) == sorted(
+        f"p{n}-{i}" for n in range(4) for i in range(25)
+    )
+
+
 # --- receipt identity binding ---------------------------------------------------------------
 
 
@@ -391,6 +439,12 @@ def test_delivery_contract_is_explicit() -> None:
         submit_via_virtual_igpu({}, delivery_mode="cloud_instance")
     with pytest.raises(ChronusClientError, match="endpoint cannot be supplied"):
         submit_via_virtual_igpu({}, endpoint="http://127.0.0.1:9")
+
+
+def test_remote_delivery_takes_its_endpoint_from_the_environment(monkeypatch) -> None:
+    monkeypatch.setenv("CHRONUS_VIGPU_ENDPOINT", "http://127.0.0.1:8765")
+    assert ChronusClient(delivery_mode="remote_service").endpoint == "http://127.0.0.1:8765"
+    assert ChronusClient(delivery_mode="local_sidecar").endpoint == "http://127.0.0.1:8765"
 
 
 def _serve(tmp_path, **kw):
