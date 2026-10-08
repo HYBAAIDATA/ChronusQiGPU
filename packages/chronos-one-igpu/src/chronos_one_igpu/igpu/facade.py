@@ -119,6 +119,8 @@ class OneIGPU:
         if self.db is None:raise RuntimeError('certified retrieval requires PrimeDB')
         return CertifiedMLAObject.from_dict(self.db.get(stored_id).payload).retrieve(mode)
     def close(self):
+        for runtime in getattr(self,'_feature_runtimes',[]):runtime.close()
+        self._feature_runtimes=[]
         if self.db is not None: self.db.close()
     def __enter__(self): return self
     def __exit__(self, *args): self.close()
@@ -280,3 +282,17 @@ class OneIGPU:
             self.fabric.overlay = verified
             self.fabric.reason = None
         return verified.capability()
+
+    def feature_runtime(self, profile=None, config=None):
+        """Generic exact features; optional M5 origin, no vendor dependency."""
+        from .feature_profile import FeatureProfile
+        from .feature_runtime import GenericFeatureRuntime
+        from ..m5_ultra import m5_ultra_fabric
+        profile=FeatureProfile.from_model(m5_ultra_fabric())if profile is None else profile
+        with self._hendrix_lock:
+            runtimes=getattr(self,'_feature_runtimes',[])
+            runtimes=[r for r in runtimes if not r._resources_closed]
+            if len(runtimes)>=8:raise RuntimeError('owner feature-runtime quota')
+            runtime=GenericFeatureRuntime(self,profile,config)
+            self._feature_runtimes=runtimes+[runtime]
+            return runtime

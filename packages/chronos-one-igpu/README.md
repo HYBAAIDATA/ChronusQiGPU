@@ -1,7 +1,7 @@
 # Chronos ONE iGPU — M5-integrated release candidate
 
 **Distribution:** `chronos-one-igpu` · **Import:** `chronos_one_igpu` ·
-**Candidate:** `3.11.2rc2` · **Owner:** HYBA Software Limited · **License:** MIT.
+**Candidate:** `3.11.2rc3` · **Owner:** HYBA Software Limited · **License:** MIT.
 
 **Status: release candidate; not yet authorised for production publication.**
 PR #140 has merged, but merging does not close its QC hold. No current-head
@@ -123,6 +123,71 @@ bindings remain separate. Resident physical-operation requests now check the
 actual bound physical capability as well as the operation route. A claim of
 80→800→8000 physical GPU cores or corresponding performance still needs actual
 hardware evidence; the logical scheduling contract remains executable without it.
+
+## Generic M5-derived feature runtime (RC3)
+
+This runtime is no longer tied to an Apple model. `FeatureProfile` supplies
+immutable logical register sizes and graph edges; M5 is an optional origin.
+`OneIGPU.feature_runtime(profile)` and `gpu.m5_resident().features()` expose the
+same executable implementation. The `exact_features` ABI and installed
+`feature-info`/`feature-run` CLI carry that contract without vendor dependencies.
+
+Implemented and integrated:
+
+- **Full declared Clifford registers:** the base M5 profile has 512 logical
+  qubits. Exact bit-packed H/S/CX/CZ/SWAP algebra prepares GHZ/cluster states,
+  verifies commuting independent stabilizers and answers exact joint Born
+  queries without allocating 2^512 amplitudes. This is an exact encoding for
+  Clifford states, not an approximation or an arbitrary-state compression claim.
+- **Prepared neural and tensor kernels:** dense, bias, identity/ReLU, matmul,
+  add and Hadamard operations over the preserved Q(phi) field. Exact zero
+  coefficients are eliminated; rational-subfield operations use exact rational
+  arithmetic. Independent dense verification remains. No trained model or ANE
+  dispatch is fabricated, and these operations are not labelled quantum gates.
+- **Neural Hamiltonians and operator contracts:** supplied Hamiltonian sums
+  execute as one exact exponential, not a Trotter approximation. Projector
+  commutation, projector annihilation and general operator commutation are
+  distinct checked contracts. Invalid conditions fail; they are not repaired
+  by changing the request.
+- **Unified memory:** actual bounded OS shared-memory blocks, content identity,
+  read-only leases, pinned-block protection and deterministic eviction.
+- **Logical inter-pad transport:** real worker queues carry shared-memory
+  descriptors, verify payloads at each authorised hop, bound in-flight work,
+  coalesce exact retries and reject conflicting workload identities. Zero-copy
+  here refers to CPU shared segments, not qualified GPU or physical die links.
+- **Dynamic preparation cache and custody:** bounded content-addressed immutable
+  programs/weights; fresh inputs/results; exact receipts, PRIME-DB checkpoint
+  and fresh-process replay. Existing custody is retained and made thread-safe.
+
+```python
+from chronos_one_igpu import OneIGPU
+from chronos_one_igpu.igpu.feature_profile import FeatureProfile
+
+profile = FeatureProfile((64, 64), ((0, 1),))  # no vendor identity needed
+with OneIGPU(db_path="features.db") as gpu:
+    with gpu.feature_runtime(profile) as runtime:
+        receipt = runtime.execute({
+            "kind": "stabilizer", "algorithm": "exact_stabilizer_ghz",
+            "layout": "full_register", "assignments": [[0, 0], [127, 0]]
+        })
+        assert runtime.verify(receipt)
+        object_id = runtime.checkpoint(receipt)
+```
+
+Feature coverage is recorded in `docs/M5-GENERIC-FEATURE-COVERAGE.json`.
+Original M5 rates, core counts and physical strategies remain separate model/
+hardware requirements. A software counterpart is not proof of Apple-equivalent
+silicon, physical entanglement, optical/RDMA performance or competitor supremacy.
+No mathematical work is counted as SHA-256d. Sealed Hendrix mining semantics are
+unchanged. Existing statevector APIs are retained alongside the new exact
+Clifford representation; non-Clifford requests are not silently substituted.
+
+`benchmark_generic_features.py` measures prepared vs independent dense kernels
+on equal exact transforms of public Bitcoin genesis bytes and Fibonacci diagonal
+weights. It reports the full-runtime observations separately. Any ratio is a
+CPU kernel-control measurement—not M5 hardware, trained AI, mining, whole-product
+or competitor performance. Native/portable package validation preserves the raw
+samples and artifact/source digests. No historical ratios are compounded.
 
 ## Mining ownership and reference boundaries
 

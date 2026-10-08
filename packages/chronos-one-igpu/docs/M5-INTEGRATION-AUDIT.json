@@ -1,7 +1,7 @@
 {
   "schema": "chronos_m5_integration_audit/1",
   "reviewed_base_revision": "c63ff4d7e9d25135b8e2ca17f84da6714d23d5b7",
-  "candidate": "3.11.2rc2",
+  "candidate": "3.11.2rc3",
   "distribution": "chronos-one-igpu",
   "namespace": "chronos_one_igpu",
   "canonical_model_source": "chronus/m5_ultra.py",
@@ -44,8 +44,8 @@
     "external accepted pool shares"
   ],
   "source_boundary": "Changes based on MCP-read main files; local package checks use retained source material plus these pinned live files, not a verified complete main checkout. Commit-bound CI must rebuild from the complete checkout.",
-  "previous_candidate": "3.11.2rc1",
-  "increment_base_revision": "ba2e893748ef4d706e52005acd0e030b68937ac7",
+  "previous_candidate": "3.11.2rc2",
+  "increment_base_revision": "e00c29decd4f0fe9a6cc89e2052b4f5fabb0ef23",
   "additive_rc2": {
     "exact_pad_operators": [
       "H",
@@ -62,5 +62,15 @@
     "mining_authority": "Unchanged PYTHIA sealed Hendrix plan; no autonomous strategy or rank substitution.",
     "physical_gate_fix": "Resident required-physical operation now checks actual bound physical capability, not only a non-CPU backend name.",
     "notion_source": "https://app.notion.com/p/77b43c289fc64ce58fc65ac53a43f6f7"
+  },
+  "generic_feature_coverage": "M5-GENERIC-FEATURE-COVERAGE.json",
+  "additive_rc3": {
+    "generic_vendor_free_profile": true,
+    "full_declared_clifford_registers": true,
+    "exact_neural_tensor_and_operator_contracts": true,
+    "real_shared_memory_and_pad_transport": true,
+    "prepared_program_cache": true,
+    "abi_cli_custody_integrated": true,
+    "physical_equivalence_claimed": false
   }
 }

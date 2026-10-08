@@ -72,7 +72,7 @@ class VerifiedBatchExecutor:
         if type(width) is not int or not 8 <= width <= 256 or any(type(n) is not int or not 0 <= n <= 10000 for n in rungs):
             raise ValueError("bounded exact Lucas domain required")
         started = time.perf_counter()
-        output = tuple(self.adapter.execute_lucas(rungs, width))
+        output = tuple(islice(iter(self.adapter.execute_lucas(rungs, width)),len(rungs)+1))
         reference = tuple(lucas(n) % (1 << width) for n in rungs)
         if any(type(v) is not int for v in output) or output != reference:
             raise DispatchError("backend Lucas output failed independent exact verification")
@@ -89,7 +89,7 @@ class VerifiedBatchExecutor:
         if len(set(nonces)) != len(nonces):
             raise ValueError("duplicate SHA-256d candidates")
         started = time.perf_counter()
-        output = tuple(self.adapter.execute_sha256d(prefix, nonces))
+        output = tuple(islice(iter(self.adapter.execute_sha256d(prefix, nonces)),len(nonces)+1))
         reference = tuple(hashlib.sha256(hashlib.sha256(prefix + n.to_bytes(4, 'little')).digest()).digest() for n in nonces)
         if any(type(v) is not bytes or len(v) != 32 for v in output) or output != reference:
             raise DispatchError("backend SHA-256d output failed independent verification")

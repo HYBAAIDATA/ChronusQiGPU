@@ -22,7 +22,7 @@ import zipfile
 
 PACKAGE = Path(__file__).resolve().parents[1]
 REPO = PACKAGE.parents[1]
-TESTS = ("test_m5_model.py", "test_m5_resident.py", "test_m5_quantum.py", "test_execution_binding.py")
+TESTS = ("test_m5_model.py", "test_m5_resident.py", "test_m5_quantum.py", "test_execution_binding.py", "test_generic_m5_features.py")
 
 
 def digest(path):
@@ -122,6 +122,9 @@ def main():
                 report[label + "_tests"] = {"junit_sha256": digest(junit),
                     "results": [{k: suite.get(k) for k in ("tests", "failures", "errors", "skipped")}
                                 for suite in ET.parse(junit).getroot().iter("testsuite")]}
+                benchmark_file=out/(label+"-feature-benchmark.json")
+                run([py,"-I",PACKAGE/"scripts/benchmark_generic_features.py","--output",benchmark_file],work)
+                report[label+"_feature_benchmark"]={"sha256":digest(benchmark_file),"scope":"equal-work exact kernel control; not physical M5 or mining"}
             report["package_checks_passed"] = True
             report["publication_blockers"] = [
                 "current-head whole-product certification and unresolved QC/import/platform closure",

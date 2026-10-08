@@ -89,3 +89,7 @@ class M5ResidentRuntime:
     def verify_quantum(self, receipt, algorithm):
         from .m5_quantum import verify_quantum
         return verify_quantum(receipt, self._quantum_model, algorithm)
+
+    def features(self, config=None):
+        from .feature_profile import FeatureProfile
+        return self.resident.gpu.feature_runtime(FeatureProfile.from_model(self._quantum_model),config)

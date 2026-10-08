@@ -29,6 +29,8 @@ def main():
     target=sub.add_parser('qualify-target');target.add_argument('--device-selector');target.add_argument('--runs',type=int,default=3);target.add_argument('--nonce-budget',type=int,default=4096);target.add_argument('--output',default='target-qualification.json')
     native=sub.add_parser('native-compute');native.add_argument('header_hex');native.add_argument('--chain-id',default='local-pythi-v1');native.add_argument('--epoch',type=int,default=1)
     q=sub.add_parser('m5-quantum');q.add_argument('--state',choices=['ghz','cluster'],required=True);q.add_argument('--pads',choices=[4,10],type=int,default=4);q.add_argument('--topology',choices=['chain','ring','full_mesh','mesh'],default='chain')
+    sub.add_parser('feature-info')
+    feature=sub.add_parser('feature-run');feature.add_argument('task_file');feature.add_argument('--profile-file');feature.add_argument('--db-path');feature.add_argument('--checkpoint',action='store_true')
     sub.add_parser('native-security-gate')
     projection=sub.add_parser('projection-analysis');projection.add_argument('--rung-bits',type=int,default=8)
     resident=sub.add_parser('resident-info');resident.add_argument('--virtual-units',type=int,default=8000);resident.add_argument('--bind',choices=['opencl','metal'])
@@ -63,6 +65,22 @@ def main():
         from .m5_ultra import m5_ultra_fabric,elevate_pads
         model=m5_ultra_fabric(args.topology)if args.pads==4 else elevate_pads(10,topology=args.topology)
         with OneIGPU()as gpu:result=gpu.m5_resident(model=model).execute_quantum('exact_m5_'+args.state)
+    elif args.command in('feature-info','feature-run'):
+        from . import OneIGPU
+        from .igpu.feature_profile import FeatureProfile
+        profile=None
+        if args.command=='feature-run'and args.profile_file:
+            p=Path(args.profile_file)
+            if p.stat().st_size>65536:parser.error('bounded feature profile required')
+            profile=FeatureProfile.from_dict(json.loads(p.read_text()))
+        with OneIGPU(db_path=None if args.command=='feature-info'else args.db_path)as gpu:
+            with gpu.feature_runtime(profile)as runtime:
+                if args.command=='feature-info':result=runtime.manifest()
+                else:
+                    p=Path(args.task_file)
+                    if p.stat().st_size>4*1024*1024:parser.error('bounded feature task required')
+                    result=runtime.execute(json.loads(p.read_text()))
+                    if args.checkpoint:result={'receipt':result,'object_id':runtime.checkpoint(result)}
     elif args.command=='native-security-gate':
         from .pythi_native import security_gate
         result=security_gate()
