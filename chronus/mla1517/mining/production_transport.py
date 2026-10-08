@@ -528,6 +528,7 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
                     self._pool_coordinate(),
                     pool=endpoint.name,
                     endpoint=f"{endpoint.host}:{endpoint.port}",
+                    protocol=getattr(endpoint, "protocol", "v1"),
                     attempt=offset + 1,
                     previous_failures=list(errors),
                 )
@@ -578,6 +579,7 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
                 self._pool_coordinate(),
                 pool=endpoint.name,
                 endpoint=f"{endpoint.host}:{endpoint.port}",
+                protocol=getattr(endpoint, "protocol", "v1"),
                 stage=stage,
                 error=error[:300],
             )
