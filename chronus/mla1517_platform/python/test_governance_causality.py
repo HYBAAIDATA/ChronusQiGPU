@@ -179,6 +179,61 @@ class TestRecoveryGovernor:
         assert gov.mode == "NORMAL"
         assert ("recovery_verified", RecoveryState.VERIFIED) in events
 
+    def test_required_authorization_denial_prevents_actuator_call(self):
+        writes = []
+
+        def authorizer(record, command, target):
+            return {
+                "allowed": False,
+                "reason": "POLICY_DENIED",
+                "authorization_evidence_id": "auth-denied",
+                "authorization_version_id": "fv-denied",
+                "policy_version": "policy-v1",
+            }
+
+        gov = RecoveryGovernor(
+            recovery_authorizer=authorizer,
+            require_authorization=True,
+        )
+        record = gov.propose(["RESTART_LANE"], "device error")
+        with pytest.raises(PermissionError, match="POLICY_DENIED"):
+            gov.dispatch(
+                record,
+                [("RESTART_LANE", lambda: writes.append("ran") or "RESTART_LANE")],
+            )
+        assert writes == []
+        assert record.state is RecoveryState.FAILED
+        assert record.authorizations[-1]["allowed"] is False
+        assert record.authorizations[-1]["evidence_id"] == "auth-denied"
+
+    def test_required_authorization_is_bound_before_actuation(self):
+        order = []
+
+        def authorizer(record, command, target):
+            order.append(("authorize", record.recovery_id, command, target))
+            return {
+                "allowed": True,
+                "reason": "ALLOWED",
+                "authorization_evidence_id": "auth-1",
+                "authorization_version_id": "fv-1",
+                "policy_version": "policy-v1",
+            }
+
+        gov = RecoveryGovernor(
+            recovery_authorizer=authorizer,
+            require_authorization=True,
+            recovery_target="chronus.execution",
+        )
+        record = gov.propose(["RESTART_LANE"], "device error")
+        gov.dispatch(
+            record,
+            [("RESTART_LANE", lambda: order.append(("actuate",)) or "RESTART_LANE")],
+        )
+        assert order[0][0] == "authorize"
+        assert order[1][0] == "actuate"
+        assert record.target == "chronus.execution"
+        assert record.authorizations[-1]["evidence_id"] == "auth-1"
+
     def test_unknown_mode_refused(self):
         with pytest.raises(ValueError):
             RecoveryGovernor().external_mode("PANIC")
