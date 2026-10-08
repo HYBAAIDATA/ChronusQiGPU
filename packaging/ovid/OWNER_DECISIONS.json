@@ -1,0 +1,9 @@
+{
+  "product": "OVID",
+  "proposed_distribution_name": "hyba-ovid",
+  "approved_distribution_name": null,
+  "first_public_version": "1.0.0",
+  "identity_status": "PENDING_OWNER_APPROVAL",
+  "upload_authorised": false,
+  "trusted_publisher_verified": false
+}
