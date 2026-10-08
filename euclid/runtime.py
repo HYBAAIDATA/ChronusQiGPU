@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
+import json
+import os
 from pathlib import Path
 from typing import Any, ClassVar, Mapping
 
-from .contracts import Authority, domain_hash
+from .contracts import Authority, RewardAuthority, domain_hash
 from .evidence import EvidenceChain, atomic_write, load_json
 from .governance import Delegator, Organ, OrganRegistry
 from .kairos_runtime import KairosRuntime, World
 from .learning_service import LearningService
-from .memory_database import MemoryDatabase
+from .memory_database import MemoryDatabase, MemoryScope
 from .rights import RightsLedger
 
 
@@ -29,16 +31,24 @@ class EuclidRuntime:
     ) -> None:
         self.creator_id = creator_id
         self.state_dir = Path(state_dir)
+        self.state_dir.mkdir(parents=True, exist_ok=True)
         self.evidence = EvidenceChain()
         self.registry = OrganRegistry()
         self.rights = RightsLedger(creator_id, self.evidence)
         self.delegator = Delegator(self.registry, self.evidence, self.rights)
+        database = memory_database or MemoryDatabase(
+            self.state_dir / "euclid_memory.sqlite3"
+        )
+        self._adaptive_data_port: Any | None = None
+        self._adaptive_tenant_id = str(creator_id)
+        self._adaptive_last_binding_id: str | None = None
+        self._adaptive_last_seal: str | None = None
         self.learning = LearningService(
             pythia=pythia,
             memory=memory,
             store=store,
             experience_learner=experience_learner,
-            memory_database=memory_database,
+            memory_database=database,
             evidence=self.evidence,
             replay_journal_path=self.state_dir / "replay_journal.json",
         )

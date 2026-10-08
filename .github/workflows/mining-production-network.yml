@@ -37,6 +37,7 @@ jobs:
           python -m py_compile
           chronus/mla1517_platform/python/mining_runtime.py
           chronus/mla1517/mining/production_transport.py
+          chronus/mla1517/mining/stratum_v2_transport.py
           chronus/mla1517/mining/retarget_telemetry.py
           chronus/mla1517/mining/euclid_support.py
       - name: Production transport hardening

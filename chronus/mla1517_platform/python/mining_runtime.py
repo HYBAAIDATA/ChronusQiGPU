@@ -79,6 +79,7 @@ def _endpoint(name: str, address: str, user: str, password: str, tls: bool) -> P
         username=user,
         password=password,
         extranonce_subscribe=bool(POOL_CATALOG.get(pool or "", {}).get("extranonce_subscribe")),
+        protocol=parsed.protocol,
     )
 
 
@@ -544,6 +545,11 @@ async def _main_async(args) -> None:
                 causal_log_path=os.getenv("PYTHIA_CAUSAL_LOG_PATH", "data/causal_ledger.jsonl"),
                 m3_required=strict_m3,
                 m3_gate=m3_gate,
+                # Production compute and network submission are independent:
+                # locally verified candidates enter the coordinator's bounded,
+                # freshness-checked single-writer queue instead of parking the
+                # hashing loop on pool acknowledgement latency.
+                asynchronous_submission=True,
             )
             if coordinator.chain_observer is None:
                 coordinator.chain_observer = PoolChainObserver(lambda: coordinator.client)

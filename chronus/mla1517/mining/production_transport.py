@@ -1,10 +1,9 @@
 """Production transport hardening for the canonical mining coordinator.
 
-This module deliberately wraps the existing, consensus-tested Stratum V1
-implementation instead of creating a second mining stack. It adds production
-transport bounds, failover policy, truthful network telemetry, and MMIO-loop
-outage behaviour while leaving proof construction and SHA256d authority in the
-existing coordinator/proof adapter.
+V1 JSON-RPC and authenticated V2 extended-channel transports both terminate
+into the same coordinator, runtime state, proof adapter, SHA256d authority and
+submission pipeline. Protocol selection changes framing only; it never creates
+a second miner or a second acceptance path.
 """
 
 from __future__ import annotations
@@ -27,6 +26,10 @@ from .coordinator import IntelligentPoolCoordinator, MMIOControlSink
 from .cycle_fsm import MiningCycleLedger, MiningCycleState
 from .pool_chain import bip34_height
 from .software_revision import software_revision
+from .stratum_v2_transport import (
+    ProductionStratumV2Client,
+    load_secure_channel_factory,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -81,6 +84,12 @@ class ProductionStratumClient(StratumClient):
         # call our overridden _publish_status/status_snapshot immediately.
         self._submit_rtt_ms: deque[float] = deque(maxlen=2048)
         self._stale_dropped = 0
+        # Transport truth: incremented when writer.write() has accepted the
+        # request bytes. A response timeout after this point is UNKNOWN and
+        # must never be retried automatically. A failure before this point is
+        # provably unwritten and may be reconsidered only after freshness.
+        self._wire_writes = 0
+        self._wire_writes_by_method: dict[str, int] = {}
         super().__init__(
             *args,
             connect_timeout=(
@@ -114,9 +123,9 @@ class ProductionStratumClient(StratumClient):
             raise ValueError("Stratum transport timeouts must be positive")
         if queue_size <= 0:
             raise ValueError("outbound_queue_size must be positive")
-        self._outbound: asyncio.Queue[tuple[bytes, asyncio.Future[None]]] = asyncio.Queue(
-            maxsize=queue_size
-        )
+        self._outbound: asyncio.Queue[
+            tuple[bytes, str, asyncio.Future[None]]
+        ] = asyncio.Queue(maxsize=queue_size)
         self._writer_task: asyncio.Task[None] | None = None
         self._writer_error: BaseException | None = None
 
@@ -154,6 +163,8 @@ class ProductionStratumClient(StratumClient):
         mean = (sum(samples) / len(samples)) if samples else None
 
         submission = snapshot.setdefault("submission", {})
+        submission["wire_writes"] = self._wire_writes
+        submission["wire_writes_by_method"] = dict(self._wire_writes_by_method)
         submission["rtt_ms"] = {
             "last": round(last, 3) if last is not None else None,
             "mean": round(mean, 3) if mean is not None else None,
@@ -194,11 +205,18 @@ class ProductionStratumClient(StratumClient):
     async def _writer_loop(self) -> None:
         try:
             while not self._closed:
-                payload, ack = await self._outbound.get()
+                payload, method, ack = await self._outbound.get()
                 try:
                     if self.writer is None:
                         raise ConnectionError("Stratum writer disappeared")
                     self.writer.write(payload)
+                    # writer.write accepted the bytes into asyncio's transport.
+                    # From here onward delivery is ambiguous on failure and the
+                    # request must not be automatically replayed.
+                    self._wire_writes += 1
+                    self._wire_writes_by_method[method] = (
+                        self._wire_writes_by_method.get(method, 0) + 1
+                    )
                     await asyncio.wait_for(self.writer.drain(), timeout=self.write_timeout)
                     if not ack.done():
                         ack.set_result(None)
@@ -218,12 +236,15 @@ class ProductionStratumClient(StratumClient):
         except asyncio.CancelledError:
             raise
 
-    async def _send_payload(self, payload: bytes) -> None:
+    async def _send_payload(self, payload: bytes, *, method: str) -> None:
         self._ensure_writer_task()
         loop = asyncio.get_running_loop()
         ack: asyncio.Future[None] = loop.create_future()
         try:
-            await asyncio.wait_for(self._outbound.put((payload, ack)), timeout=self.enqueue_timeout)
+            await asyncio.wait_for(
+                self._outbound.put((payload, method, ack)),
+                timeout=self.enqueue_timeout,
+            )
         except asyncio.TimeoutError as exc:
             raise TimeoutError(
                 f"Stratum outbound queue remained full for {self.enqueue_timeout:.3f}s"
@@ -257,7 +278,7 @@ class ProductionStratumClient(StratumClient):
             + b"\n"
         )
         try:
-            await self._send_payload(payload)
+            await self._send_payload(payload, method=method)
         except BaseException:
             self._pending.pop(request_id, None)
             if not future.done():
@@ -271,15 +292,34 @@ class ProductionStratumClient(StratumClient):
             self._pending.pop(request_id, None)
             raise TimeoutError(f"Stratum request {method!r} timed out after {limit:.1f}s") from exc
 
+    def wire_writes_for(self, method: str) -> int:
+        """Completed writer.write attempts for one exact Stratum method."""
+        return int(self._wire_writes_by_method.get(str(method), 0))
+
     async def submit(self, params: list[Any]) -> Any:
-        result = await super().submit(params)
+        if len(params) < 2:
+            raise ValueError("mining.submit parameters have no job id")
+        wire_before = self.wire_writes_for("mining.submit")
+        self.runtime_state.submission_started(str(params[1]))
+        self._publish_status()
+        try:
+            result = await self.request("mining.submit", params)
+        except Exception as exc:
+            wrote = self.wire_writes_for("mining.submit") > wire_before
+            if wrote:
+                self.runtime_state.submission_unknown(str(exc))
+            else:
+                self.runtime_state.submission_not_written(str(exc))
+            self._publish_status()
+            raise
+        self.runtime_state.submission_finished(result)
         started = self.runtime_state.last_submit_at
         finished = self.runtime_state.last_response_at
         if started is not None and finished is not None and finished >= started:
             self._submit_rtt_ms.append((finished - started) * 1000.0)
-            # Publish once more so this same accepted/rejected share carries its
-            # measured RTT rather than waiting for the next protocol event.
-            self._publish_status()
+        # Publish once more so the same verdict carries measured RTT and exact
+        # post-write counters.
+        self._publish_status()
         return result
 
     async def close(self) -> None:
@@ -290,7 +330,7 @@ class ProductionStratumClient(StratumClient):
             self._writer_task = None
         while not self._outbound.empty():
             try:
-                _payload, ack = self._outbound.get_nowait()
+                _payload, _method, ack = self._outbound.get_nowait()
             except asyncio.QueueEmpty:
                 break
             if not ack.done():
@@ -310,6 +350,7 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
         request_timeout: float | None = None,
         write_timeout: float | None = None,
         outbound_queue_size: int | None = None,
+        sv2_channel_factory: Any | None = None,
         **kwargs: Any,
     ) -> None:
         kwargs.setdefault("reconnect_delay", _positive_env("PYTHIA_RECONNECT_INITIAL_S", 0.25))
@@ -334,6 +375,7 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
             if outbound_queue_size is None
             else outbound_queue_size
         )
+        self.sv2_channel_factory = sv2_channel_factory
         self._stale_candidates_dropped = 0
         self._stale_execution_ids: set[str] = set()
 
@@ -387,8 +429,10 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
         client = self.client
         session_id = execution.get("pool_session_id")
         if (
-            isinstance(client, ProductionStratumClient)
-            and client.runtime_state.session_id == session_id
+            client is not None
+            and hasattr(client, "record_stale_candidate")
+            and getattr(getattr(client, "runtime_state", None), "session_id", None)
+            == session_id
         ):
             client.record_stale_candidate()
         self._causal_ledger().record(
@@ -424,22 +468,39 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
 
         super().set_metrics_sink(wrapped)
 
-    async def connect_with_failover(self) -> ProductionStratumClient:
+    async def connect_with_failover(self) -> Any:
         errors: list[str] = []
         authorization_failures = 0
         for offset in range(len(self.endpoints)):
             index = (self.endpoint_index + offset) % len(self.endpoints)
             endpoint = self.endpoints[index]
-            client = ProductionStratumClient(
-                endpoint,
-                username=endpoint.username or self.username,
-                password=endpoint.password or self.password,
-                connect_timeout=self.production_connect_timeout,
-                request_timeout=self.production_request_timeout,
-                write_timeout=self.production_write_timeout,
-                outbound_queue_size=self.production_outbound_queue_size,
-                status_sink=self.stratum_status_sink,
-            )
+            if getattr(endpoint, "protocol", "v1") == "v2":
+                try:
+                    factory = getattr(self, "sv2_channel_factory", None) or load_secure_channel_factory()
+                    client: Any = ProductionStratumV2Client(
+                        endpoint,
+                        username=endpoint.username or self.username,
+                        password=endpoint.password or self.password,
+                        channel_factory=factory,
+                        request_timeout=self.production_request_timeout,
+                        status_sink=self.stratum_status_sink,
+                    )
+                except Exception as exc:
+                    errors.append(f"{endpoint.name}: {exc}")
+                    self._pool_attempt_record()
+                    self._pool_endpoint_refused(endpoint, str(exc), "sv2_configuration")
+                    continue
+            else:
+                client = ProductionStratumClient(
+                    endpoint,
+                    username=endpoint.username or self.username,
+                    password=endpoint.password or self.password,
+                    connect_timeout=self.production_connect_timeout,
+                    request_timeout=self.production_request_timeout,
+                    write_timeout=self.production_write_timeout,
+                    outbound_queue_size=self.production_outbound_queue_size,
+                    status_sink=self.stratum_status_sink,
+                )
             self._pool_attempt_record()
             try:
                 await client.connect()
@@ -467,6 +528,7 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
                     self._pool_coordinate(),
                     pool=endpoint.name,
                     endpoint=f"{endpoint.host}:{endpoint.port}",
+                    protocol=getattr(endpoint, "protocol", "v1"),
                     attempt=offset + 1,
                     previous_failures=list(errors),
                 )
@@ -517,6 +579,7 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
                 self._pool_coordinate(),
                 pool=endpoint.name,
                 endpoint=f"{endpoint.host}:{endpoint.port}",
+                protocol=getattr(endpoint, "protocol", "v1"),
                 stage=stage,
                 error=error[:300],
             )
@@ -627,6 +690,8 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
                 with contextlib.suppress(asyncio.CancelledError):
                     await self._precompute_task
                 self._precompute_task = None
+            if self._asynchronous_submission:
+                await self._stop_submission_task()
             if self._agentic_state_path:
                 self.agentic.save_state(self._agentic_state_path)
             if self.client is not None:

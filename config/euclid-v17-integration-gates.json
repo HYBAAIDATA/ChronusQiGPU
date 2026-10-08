@@ -1,0 +1,65 @@
+{
+  "schema": "euclid.v17.integration-gates/1",
+  "version": "17.0.0",
+  "required_paths": [
+    "euclid/cognition/worlds",
+    "euclid/cognition/integrated",
+    "euclid/cognition/research",
+    "packaging/euclid-engine",
+    "scripts/run_euclid_v17_research.py",
+    "scripts/render_euclid_v17_release_results.py",
+    "scripts/build_euclid_intelligence_release.py",
+    "tests/test_euclid_v17_integrated_loop.py",
+    "tests/test_euclid_v17_phi_and_skills.py",
+    "tests/test_euclid_v17_runtime.py",
+    "tests/test_euclid_v17_world_model.py",
+    "tests/test_euclid_v17_worlds.py",
+    "docs/EUCLID_V17_RESEARCH_RELEASE.md"
+  ],
+  "required_runtime_methods": [
+    "compose_adaptive_intelligence",
+    "solve_task"
+  ],
+  "closure_requirements": [
+    {
+      "id": "F1",
+      "name": "episode-right-revocation",
+      "requirement": "Every per-episode dispatch right is revoked on normal return, exception and cancellation."
+    },
+    {
+      "id": "F2",
+      "name": "component-evidence-binding",
+      "requirement": "Specialist reachability/feedback/persistence stages advance only from component-specific verified evidence."
+    },
+    {
+      "id": "F3",
+      "name": "fresh-process-replay",
+      "requirement": "RESTART_VERIFIED requires artifact-bound fresh-process restart/replay evidence, not same-process reload."
+    },
+    {
+      "id": "F4",
+      "name": "organ-lifetime-identity",
+      "requirement": "Recomposition preserves or retires organ identities so subsequent tasks cannot collide on duplicate organ ids."
+    },
+    {
+      "id": "F5",
+      "name": "canonical-custody",
+      "requirement": "Adaptive knowledge is tenant/creator bound and persisted through canonical OVID/THESEUS custody/state rather than a private JSON authority."
+    },
+    {
+      "id": "F6",
+      "name": "negative-transfer-detection",
+      "requirement": "A mismatched curriculum that degrades identification is detected and produces an auditable abandon/replan/remediation decision."
+    }
+  ],
+  "reported_release_evidence": {
+    "archive_sha256": "38c2a1f179d4580ce440c0a4e2725becae45455f91417daabdbd55dc198bb150",
+    "wheel_sha256": "e0dc493b549b42c1521d906b3e432648e2351679c7f690ff0d2ed8e7abea7936",
+    "focused_tests": 114,
+    "euclid_suite_tests": 155,
+    "full_repo_passed": 4383,
+    "full_repo_failed": 45,
+    "archive_members_verified": 177
+  },
+  "claim_boundary": "Reported local research evidence is preserved. Whole-product production readiness is unavailable until every closure requirement is directly evidenced on the integrated source head."
+}

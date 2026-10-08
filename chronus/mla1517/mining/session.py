@@ -292,6 +292,21 @@ class MiningSession:
         self._go("SUBMITTING")
         self._save()  # durable before the network write
 
+    def submission_not_written(self) -> None:
+        """Roll back a durable pre-write intent when transport proves zero write.
+
+        This is deliberately narrower than an UNKNOWN outcome. It is legal
+        only while SUBMITTING and removes no accepted/rejected evidence because
+        no mining.submit bytes crossed the transport write boundary. The same
+        candidate may be reconsidered after a fresh identity check.
+        """
+        if self.state != "SUBMITTING" or self.pending is None:
+            raise RuntimeError("no submission in progress")
+        self.history.pop()
+        self.state = "SEARCHING"
+        self.pending = None
+        self._save()
+
     def submission_finished(self, accepted: bool | None) -> None:
         if self.state != "SUBMITTING" or self.pending is None:
             raise RuntimeError("no submission in progress")

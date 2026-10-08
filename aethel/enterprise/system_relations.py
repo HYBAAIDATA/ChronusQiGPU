@@ -1038,6 +1038,9 @@ class SharedEuclid(_BoundAdapter):
         self._salamander_port = salamander_port
         self._turing_port = turing_port
         self._chronus_port = chronus_port
+        bind_adaptive = getattr(runtime, "bind_adaptive_data_port", None)
+        if callable(bind_adaptive):
+            bind_adaptive(port)
 
     def flush_evidence(self) -> tuple[EntanglementBinding, ...]:
         records = list(getattr(self.raw.evidence, "records", ()))

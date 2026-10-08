@@ -1,16 +1,18 @@
-"""Evidence-first runtime state for the canonical Stratum V1 session."""
+"""Evidence-first runtime state for the canonical normalized Stratum session.\n\nV1 and authenticated V2 transports project into this same state machine;\nprotocol-specific framing never changes mining truth semantics.\n"""
 
 from __future__ import annotations
 
 import hashlib
 import json
+import math
 import time
 import uuid
+from fractions import Fraction
 from dataclasses import dataclass, replace
 from enum import Enum
 from typing import Any
 
-from .stratum_adapter import StratumJob, SubscriptionState
+from .stratum_adapter import DIFF1_TARGET, StratumJob, SubscriptionState
 
 
 class StratumPhase(str, Enum):
@@ -118,8 +120,11 @@ class StratumRuntimeState:
         self.pending_generation: int | None = None
         self.pending_fingerprint: str | None = None
         self.pending_job_id: str | None = None
+        self.pending_difficulty: float | None = None
         self.submitted = 0
         self.accepted = 0
+        self.accepted_difficulty_work = 0.0
+        self.accepted_without_difficulty = 0
         self.rejected = 0
         self.unknown = 0
         self.jobs_received = 0
@@ -199,7 +204,18 @@ class StratumRuntimeState:
         self.target = target
         self.target_generation += 1
         self.difficulty_source = source
-        self.difficulty = value if source == "mining.set_difficulty" else None
+        # Difficulty is telemetry, never a proof predicate. Preserve the
+        # pool-declared V1 value when it is an exact positive rational;
+        # target-based protocols (V1 set_target / SV2 SetTarget) derive the
+        # equivalent difficulty from the authoritative uint256 target.
+        try:
+            if source == "mining.set_difficulty":
+                declared = Fraction(str(value))
+                self.difficulty = float(declared) if declared > 0 else None
+            else:
+                self.difficulty = float(Fraction(DIFF1_TARGET, target))
+        except (TypeError, ValueError, ZeroDivisionError, OverflowError):
+            self.difficulty = None
         self.difficulty_received_at = time.time()
         if self.current_job is not None:
             updated = replace(
@@ -266,7 +282,39 @@ class StratumRuntimeState:
         self.pending_generation = self.current_job.generation_id
         self.pending_fingerprint = self.current_job.fingerprint
         self.pending_job_id = job_id
+        try:
+            difficulty = float(self.current_job.difficulty)
+            self.pending_difficulty = (
+                difficulty if math.isfinite(difficulty) and difficulty > 0 else None
+            )
+        except (TypeError, ValueError, OverflowError):
+            self.pending_difficulty = None
         self.submitted += 1
+
+    def submission_not_written(self, reason: str) -> None:
+        """Resolve a pre-write failure without fabricating a submitted share.
+
+        This is legal only when transport evidence proves the request never
+        crossed the socket write boundary. submission_started reserves the
+        pending identity before I/O; this method rolls that reservation back.
+        """
+        if self.submission_phase not in {
+            SubmissionPhase.SUBMITTING,
+            SubmissionPhase.OUTCOME_UNKNOWN,
+        }:
+            raise RuntimeError("no Stratum submission is pending")
+        if self.submission_phase is SubmissionPhase.OUTCOME_UNKNOWN and self.unknown > 0:
+            self.unknown -= 1
+        if self.submitted > 0:
+            self.submitted -= 1
+        self.submission_phase = SubmissionPhase.IDLE
+        self.last_result = "NOT_SUBMITTED"
+        self.last_response_at = time.time()
+        self.last_error = str(reason)
+        self.pending_generation = None
+        self.pending_fingerprint = None
+        self.pending_job_id = None
+        self.pending_difficulty = None
 
     def submission_finished(self, result: Any) -> None:
         if self.submission_phase != SubmissionPhase.SUBMITTING:
@@ -276,6 +324,10 @@ class StratumRuntimeState:
             self.submission_phase = SubmissionPhase.ACCEPTED
             self.last_result = "ACCEPTED"
             self.accepted += 1
+            if self.pending_difficulty is None:
+                self.accepted_without_difficulty += 1
+            else:
+                self.accepted_difficulty_work += self.pending_difficulty
         elif result is False:
             self.submission_phase = SubmissionPhase.REJECTED
             self.last_result = "REJECTED"
@@ -354,8 +406,8 @@ class StratumRuntimeState:
                 "received_at": job.received_at if job else None,
                 "age_ms": age_ms,
                 "clean_jobs": job.clean_jobs if job else None,
-                "difficulty": self.difficulty,
-                "difficulty_source": self.difficulty_source,
+                "difficulty": job.difficulty if job else None,
+                "difficulty_source": job.difficulty_source if job else None,
                 "difficulty_received_at": self.difficulty_received_at,
                 "share_target": f"{target:064x}" if target is not None else None,
                 "target_generation": self.target_generation,
@@ -381,6 +433,11 @@ class StratumRuntimeState:
                 "generation": self.pending_generation,
                 "job_id": self.pending_job_id,
                 "job_fingerprint": self.pending_fingerprint,
+                "difficulty": self.pending_difficulty,
+            },
+            "share_work": {
+                "accepted_difficulty_work": self.accepted_difficulty_work,
+                "accepted_without_difficulty": self.accepted_without_difficulty,
             },
             "counters": {
                 "jobs_received": self.jobs_received,
