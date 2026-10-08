@@ -14,6 +14,7 @@ Nothing here produces certificates, evidence, or mining decisions.
 
 from __future__ import annotations
 
+from chronos_one_igpu.reference_contract import require_reference, reference_only, require_production_context
 import itertools
 import math
 from typing import List, Sequence, Tuple
@@ -39,6 +40,7 @@ def _parity(perm: Sequence[int]) -> int:
 
 
 def generate_600cell_vertices() -> Tuple[Tuple[float, float, float, float], ...]:
+    require_reference('chronus.h4_600')
     pts: List[Tuple[float, float, float, float]] = []
     for i in range(4):
         for s in (1.0, -1.0):
@@ -75,6 +77,7 @@ def _neighbor_distance(verts: Sequence[Sequence[float]]) -> float:
 def generate_600cell_cells(
     verts: Sequence[Sequence[float]] | None = None,
 ) -> Tuple[Tuple[int, int, int, int], ...]:
+    require_reference('chronus.h4_600')
     verts = list(verts or generate_600cell_vertices())
     n = len(verts)
     edge = _neighbor_distance(verts)
@@ -101,6 +104,7 @@ def cell_normals(
     verts: Sequence[Sequence[float]] | None = None,
     cells: Sequence[Sequence[int]] | None = None,
 ) -> Tuple[Tuple[float, float, float, float], ...]:
+    require_reference('chronus.h4_600')
     verts = list(verts or generate_600cell_vertices())
     cells = list(cells or generate_600cell_cells(verts))
     out = []
@@ -118,6 +122,7 @@ def _weighted_norm_sq(vector: Sequence[float]) -> float:
 
 
 def lift_fold_11d(normal4: Sequence[float]) -> Tuple[Tuple[float, ...], float]:
+    require_reference('chronus.h4_600')
     lifted = tuple(float(normal4[index % 4]) * (PHI ** (-(index // 4))) for index in range(DIM))
     scale = 1.0 / math.sqrt(1.0 + _weighted_norm_sq(lifted))
     folded = tuple(value * scale for value in lifted)
@@ -125,6 +130,7 @@ def lift_fold_11d(normal4: Sequence[float]) -> Tuple[Tuple[float, ...], float]:
 
 
 def build_600_frame():
+    require_reference('chronus.h4_600')
     verts = generate_600cell_vertices()
     cells = generate_600cell_cells(verts)
     normals = cell_normals(verts, cells)

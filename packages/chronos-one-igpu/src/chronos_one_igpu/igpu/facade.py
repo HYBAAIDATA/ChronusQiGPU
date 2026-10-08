@@ -83,6 +83,8 @@ class OneIGPU:
     def scaled_plan(self,base_items,scale_index=15,start=0,address_limit=2**32):
         return self.fabric.scaled_plan(base_items,scale_index,start,self.lanes,address_limit)
     def scaled_search(self,base_items,predicate,scale_index=15,start=0,max_evaluations=4096):
+        from ..reference_contract import require_reference
+        require_reference("golden_runtime.legacy_search")
         plan=self.scaled_plan(base_items,scale_index,start)
         result=self.golden.search(range(plan.start,plan.start+plan.effective_items),predicate,max_evaluations,scale_index)
         return {'plan':plan.manifest(),'result':result}
@@ -190,6 +192,8 @@ class OneIGPU:
         return {"plan":plan.manifest(),"result":asdict(result)}
 
     def structured_matvec(self,amplitudes,vector,phi=None,backend="cpu"):
+        from ..reference_contract import require_reference
+        require_reference("structured_matvec.float_projection")
         from .structured_solver import StructuredHamiltonian
         from ..adapters.base import BackendAbsent
         import numpy as np
@@ -246,6 +250,8 @@ class OneIGPU:
         return receipt
 
     def execute_hendrix(self, artifact, header, target_be, **kwargs):
+        from ..reference_contract import require_production_context
+        require_production_context()
         from .hendrix_execution import execute_hendrix
         from .execution_identity import verify_contract
         with self._hendrix_lock:

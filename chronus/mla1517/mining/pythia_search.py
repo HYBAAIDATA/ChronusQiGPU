@@ -39,6 +39,7 @@ ROLES ON THE CANONICAL ROUTE (post exact-geometry migration):
 
 from __future__ import annotations
 
+from chronos_one_igpu.reference_contract import require_reference, reference_only, require_production_context
 import hashlib
 import heapq
 import importlib
@@ -309,9 +310,11 @@ class PythiaSearchPrecompute:
         }
 
 
+@reference_only('pythia_search.fp64')
 @lru_cache(maxsize=1)
 def precompute_pythia_search() -> PythiaSearchPrecompute:
     """Build and validate the job-independent search substrate once per process."""
+    require_reference('pythia_search.fp64')
     coarse_faces = build_search_crystal()
     if len(coarse_faces) != COARSE_FACE_COUNT:
         raise ArithmeticError(
@@ -407,6 +410,7 @@ def vertex_itinerary(
     complete manifold traversal. Position zero remains first, preserving
     PYTHIA's selected search basin; all 600 vertices remain present exactly once.
     """
+    require_reference('pythia_search.fp64')
     if len(header) != 80:
         raise ValueError("header must be exactly 80 bytes")
     if preferred_face is not None and not 0 <= int(preferred_face) < COARSE_FACE_COUNT:
@@ -490,6 +494,7 @@ def pythia_hilbert_600_nonces(
     preferred_face: int | None = None,
 ) -> list[int]:
     """Coverage-complete nonce permutation driven by the 600-vertex itinerary."""
+    require_reference('pythia_search.fp64')
     if len(header) != 80:
         raise ValueError("header must be exactly 80 bytes")
     if type(base) is not int or not 0 <= base <= 0xFFFFFFFF:
@@ -591,6 +596,7 @@ def pythia_hendrix_nonces(
     itinerary positions. The composition changes order only: every nonce in
     the authorised lease remains present exactly once.
     """
+    require_reference('pythia_search.fp64')
     if type(window) is not int or window < 0:
         raise ValueError("window must be a non-negative integer")
     if type(position) is not int or not 0 <= position <= window:

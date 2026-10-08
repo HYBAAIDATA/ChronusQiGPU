@@ -240,6 +240,8 @@ def certified_ground_state(operator, count_precision=192, gap_iterations=40):
     numerical backends plus the certificate fields. Raises ArithmeticError
     (fail-closed) when a certificate cannot be produced.
     """
+    from ..reference_contract import require_reference
+    require_reference("structured_ground.interval_or_fp64")
     d, off, x, y = _exact_params(operator)
     n = operator.n
 

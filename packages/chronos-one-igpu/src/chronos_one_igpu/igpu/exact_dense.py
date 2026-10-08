@@ -306,6 +306,8 @@ def certified_dense_ground_state(matrix, gap_iterations=None):
     retained for API compatibility; the gap is certified directly via the
     second eigenpair's exact residual interval.
     """
+    from ..reference_contract import require_reference
+    require_reference("structured_ground.interval_or_fp64")
     h = _exact_symmetric(matrix)
     n = len(h)
 

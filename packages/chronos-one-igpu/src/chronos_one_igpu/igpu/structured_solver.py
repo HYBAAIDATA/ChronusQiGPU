@@ -141,6 +141,8 @@ class StructuredHamiltonian:
    if abs(out[i]-float(exact_y[i][0]))>float(tol):return False
   return True
  def ground(self,backend='auto'):
+  from ..reference_contract import require_reference
+  require_reference("structured_ground.interval_or_fp64")
   if backend not in ('auto','certified','native','python','dense'):raise ValueError('unknown structured backend')
   if backend=='dense':
    from ..engine import ChronosEngine

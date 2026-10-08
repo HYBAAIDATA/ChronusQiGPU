@@ -90,6 +90,8 @@ class GoldenRuntime:
         return values
 
     def plan(self, lease, solver=None, checkpoint_id=None,scale_index=15):
+        from ..reference_contract import require_reference
+        require_reference("golden_runtime.legacy_search")
         from .scaled_plan import LADDER
         if scale_index not in LADDER:raise ValueError("undeclared Lucas rung")
         started = time.perf_counter(); path = []; reason = None; solver_evidence=None
@@ -143,6 +145,8 @@ class GoldenRuntime:
 
     def mine(self, header_prefix, target, lease, max_evaluations=65536, solver=None,
              checkpoint_id=None, current_epoch=None, deadline=None,scale_index=15):
+        from ..reference_contract import require_reference
+        require_reference("golden_runtime.legacy_search")
         from .scaled_plan import LADDER
         if scale_index not in LADDER:raise ValueError("undeclared Lucas rung")
         # Admit before candidate planning or checkpoint IO.
@@ -203,6 +207,8 @@ class GoldenRuntime:
         return result
 
     def search(self, candidates, predicate, max_evaluations=4096, scale_index=15):
+        from ..reference_contract import require_reference
+        require_reference("golden_runtime.legacy_search")
         start = time.perf_counter()
         result = self.computer.search(candidates, predicate, max_evaluations)
         self.attest("search", start, details={"success": result.success, "evaluations": result.evaluations},scale_index=scale_index)
