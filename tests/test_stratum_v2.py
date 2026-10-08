@@ -3,6 +3,9 @@
 import asyncio
 import unittest
 
+from chronus.mla1517.mining.stratum_adapter import StratumProofAdapter, SubscriptionState
+from chronus.mla1517.mining.stratum_v2_transport import normalize_extended_job
+
 from mining.stratum_v2 import (
     CHANNEL_MSG_BIT,
     MessageType,
@@ -161,6 +164,46 @@ class TestStratumV2(unittest.TestCase):
                 await client.submit_standard(999, 0, 0, 0)
 
         asyncio.run(run())
+
+    def test_extended_job_normalization_preserves_exact_header_bytes(self):
+        job = NewExtendedMiningJob(
+            channel_id=7,
+            job_id=12,
+            min_ntime=100,
+            version=0x20000000,
+            version_rolling_allowed=False,
+            merkle_path=(bytes.fromhex("11" * 32), bytes.fromhex("33" * 32)),
+            coinbase_tx_prefix=b"\x01\x02",
+            coinbase_tx_suffix=b"\x03\x04",
+        )
+        prev_hash = bytes.fromhex("22" * 32)
+        target = (1 << 255) - 1
+        normalized = normalize_extended_job(
+            job,
+            prev_hash=prev_hash,
+            nbits=0x1D00FFFF,
+            ntime=100,
+            target=target,
+        )
+        adapter = StratumProofAdapter()
+        adapter.replace_subscription(
+            SubscriptionState("aa", 2),
+            invalidate_jobs=False,
+        )
+        adapter.set_exact_target(target, retarget_existing=False)
+        adapter.on_job_received(normalized)
+        header = adapter.build_header("12", "bbcc", "00000064", 9)
+        native = build_extended_header(
+            job,
+            prev_hash=prev_hash,
+            extranonce_prefix=b"\xaa",
+            extranonce=b"\xbb\xcc",
+            ntime=100,
+            nbits=0x1D00FFFF,
+            nonce=9,
+        )
+        self.assertEqual(header, native)
+        self.assertEqual(len(header), 80)
 
     def test_extended_job_header_is_exactly_80_bytes(self):
         job = NewExtendedMiningJob(
