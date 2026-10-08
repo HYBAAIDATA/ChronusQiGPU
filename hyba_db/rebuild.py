@@ -185,7 +185,11 @@ def restore_projection_from_custody(
                         str(obj["retention_policy"]),
                         str(obj["created_at"]),
                         str(obj["created_by"]),
-                        obj.get("current_version_id"),
+                        # Fresh rebuild starts with no live head: versions are
+                        # replayed in order below.  Seeding the preserved final
+                        # head here points register_version() at a row that does
+                        # not exist yet and makes clean-database recovery fail.
+                        None,
                         str(obj.get("status", "ACTIVE")),
                         att.id,
                     ),
