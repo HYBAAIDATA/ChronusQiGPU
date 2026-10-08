@@ -1249,6 +1249,25 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
     def _throttle_holds(self) -> bool:
         return self.work_throttled and time.monotonic() - self._throttled_at < self.throttle_probe_s
 
+    def _search_lifecycle_open(self) -> bool:
+        """Whether hashing may continue independently of the network submitter.
+
+        Synchronous/direct coordinators retain the historical SEARCHING-only
+        contract. Production asynchronous mode may continue hashing while one
+        ordinary share waits for a pool acknowledgement. Block candidates
+        always stop new work until their chain consequence is resolved.
+        """
+        if not self._asynchronous_submission:
+            return self.session.state == "SEARCHING"
+        if self._queued_block_candidates:
+            return False
+        if self.session.state == "SEARCHING":
+            return True
+        if self.session.state == "SUBMITTING":
+            pending = self.session.pending
+            return bool(pending and pending.get("block_candidate") is False)
+        return False
+
     async def before_hardware_poll(self) -> bool:
         if not self.submission_permitted():
             return not self._throttle_holds()
@@ -1291,7 +1310,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 self._chain_tip = None
                 return False
         self.session.finish_cooldown()
-        return self.session.state == "SEARCHING" and not self._throttle_holds()
+        return self._search_lifecycle_open() and not self._throttle_holds()
 
     def _toe_or_declared_absent(self, operation: str) -> TOEMiningAdapter | None:
         """Return the live TOE adapter, or None for a declared operation.
@@ -1469,7 +1488,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
 
     def _fill_precompute_queue(self) -> int:
         """Top the queue up to the adaptive lookahead; bounded, never speculative in recovery."""
-        if not self.mining_enabled or self.session.state != "SEARCHING" or self.work_throttled:
+        if not self.mining_enabled or not self._search_lifecycle_open() or self.work_throttled:
             return 0
         identity = self._refresh_work_identity()
         if identity is None:
@@ -2301,7 +2320,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             self.cycle.ensure(MiningCycleState.SCAN, reason="search_current_job")
             if (
                 not self.mining_enabled
-                or self.session.state != "SEARCHING"
+                or not self._search_lifecycle_open()
                 or self.work_throttled
                 or not self.client
             ):
