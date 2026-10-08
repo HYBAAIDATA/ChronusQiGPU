@@ -23,6 +23,8 @@ def _snapshot(
     stale: int = 0,
     fingerprint: str = "job-a",
     rtt: float | None = None,
+    accepted_difficulty_work: float | None = None,
+    accepted_without_difficulty: int | None = None,
 ) -> dict:
     return {
         "session_id": session,
@@ -42,6 +44,17 @@ def _snapshot(
         "submission": {
             "rtt_ms": {"last": rtt},
         },
+        **(
+            {
+                "share_work": {
+                    "accepted_difficulty_work": accepted_difficulty_work,
+                    "accepted_without_difficulty": accepted_without_difficulty or 0,
+                }
+            }
+            if accepted_difficulty_work is not None
+            or accepted_without_difficulty is not None
+            else {}
+        ),
     }
 
 
@@ -72,6 +85,35 @@ class RetargetTelemetryTests(unittest.TestCase):
         self.assertTrue(status["effective_hashrate_complete"])
         self.assertEqual(status["accepted_ratio"], 1.0)
         self.assertEqual(status["submit_rtt_last_ms"], 2.5)
+
+    def test_effective_hashrate_uses_submission_bound_work_not_current_difficulty(self) -> None:
+        tracker = RetargetWindowTracker(None)
+        with patch("chronus.mla1517.mining.retarget_telemetry.time.time", return_value=100.0):
+            tracker.observe(
+                _snapshot(
+                    height=900_001,
+                    difficulty=4.0,
+                    submitted=0,
+                    accepted=0,
+                    accepted_difficulty_work=0.0,
+                )
+            )
+        with patch("chronus.mla1517.mining.retarget_telemetry.time.time", return_value=110.0):
+            status = tracker.observe(
+                _snapshot(
+                    height=900_001,
+                    difficulty=8.0,
+                    submitted=1,
+                    accepted=1,
+                    accepted_difficulty_work=4.0,
+                )
+            )
+        self.assertAlmostEqual(
+            status["effective_stratum_hashrate_hs"],
+            4.0 * DIFF1_WORK / 10.0,
+        )
+        self.assertEqual(status["difficulty_last"], 8.0)
+        self.assertTrue(status["effective_hashrate_complete"])
 
     def test_stale_candidates_are_persisted_in_candidate_ratios(self) -> None:
         tracker = RetargetWindowTracker(None)
