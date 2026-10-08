@@ -1283,6 +1283,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             return self.session.state == "SEARCHING"
         if self._queued_block_candidates:
             return False
+        if self._submission_queue.full():
+            return False
         if self.session.state == "SEARCHING":
             return True
         if self.session.state == "SUBMITTING":
@@ -2216,6 +2218,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             "mode": "asynchronous" if self._asynchronous_submission else "synchronous",
             "queue_depth": self._submission_queue.qsize(),
             "queue_capacity": self._submission_queue.maxsize,
+            "backpressure_active": self._submission_queue.full(),
             "in_flight": self._submission_in_flight,
             "queued_block_candidates": self._queued_block_candidates,
             "stale_dropped": self._submission_queue_stale,
@@ -2302,7 +2305,16 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             self._queued_block_candidates += 1
         self._ensure_submission_task()
         try:
-            await self._submission_queue.put(pending)
+            self._submission_queue.put_nowait(pending)
+        except asyncio.QueueFull as exc:
+            self._queued_candidate_digests.discard(digest_hex)
+            if block_candidate:
+                self._queued_block_candidates = max(
+                    0, self._queued_block_candidates - 1
+                )
+            raise RuntimeError(
+                "submission queue capacity changed after search admission"
+            ) from exc
         except BaseException:
             self._queued_candidate_digests.discard(digest_hex)
             if block_candidate:
