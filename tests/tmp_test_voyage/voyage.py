@@ -13,9 +13,9 @@ import urllib.request
 import urllib.error
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parent.parent
-BOOT = REPO / "tmp_test_voyage" / "server_boot.py"
-STATE = REPO / "tmp_test_voyage" / "fb_state.json"
+REPO = Path(__file__).resolve().parents[2]
+BOOT = REPO / "tests" / "tmp_test_voyage" / "server_boot.py"
+STATE = REPO / "tests" / "tmp_test_voyage" / "fb_state.json"
 PORT = 8471
 BASE = f"http://127.0.0.1:{PORT}"
 TENANT = "voyage-tnt"

@@ -147,6 +147,7 @@ AUTO_CLASSIFICATIONS = {
 }
 
 RESEARCH_PREFIXES = ("bench/", "benchmarks/", "eval_harness/", "experiments/")
+MANUAL_CLASSIFICATIONS_PATH = "reports/DEFECT_CLASSIFICATIONS.json"
 EXCLUDED_SCAN_PATHS = {
     "reports/DEFECT_REGISTER.json",
     "reports/REPO_FILE_OWNERSHIP.json",
@@ -173,7 +174,6 @@ ALLOWED_CLASSIFICATIONS = (
     "FALSE_POSITIVE_PROVEN",
     "BLOCKED_EXTERNAL_EVIDENCE",
 )
-MANUAL_CLASSIFICATIONS_PATH = "reports/DEFECT_CLASSIFICATIONS.json"
 
 
 @dataclass(frozen=True)

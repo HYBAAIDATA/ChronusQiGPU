@@ -1070,7 +1070,7 @@ The threshold φ − 1 = 1/φ ≈ 0.618 (61.8%) appears as:
 | `tests/test_benchmark_lucas_pisot.py` | Lucas-Pisot benchmark |
 | `tests/explore_toe_implementation.py` | Standalone diagnostic |
 | `toe/bridge.py` (self-test) | `python -m toe.bridge` |
-| `run_tests.py` | Full test runner |
+| `quantum_compute_substrate/run_tests.py` | Full test runner |
 | `tests/test_toe_independent_verification.py` | Independent verification |
 | `tests/test_toe_consensus_boundary.py` | Consensus boundary |
 | `tests/test_toe_loop.py` | TOE loop |

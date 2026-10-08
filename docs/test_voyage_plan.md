@@ -13,7 +13,7 @@ handoff across a server restart → fail-closed replay protection.
   restart assertions. All HTTP assertions have expected values below.
 - Auth: no `CIAAS_API_KEY` configured → key check skipped (dev mode);
   `X-CIAAS-Tenant` header is still required (401 `missing_tenant` without it).
-- State file: `tmp_test_voyage/fb_state.json` (deleted before the run).
+- State file: `tests/tmp_test_voyage/fb_state.json` (deleted before the run).
 
 ## Assertions
 
@@ -59,5 +59,5 @@ handoff across a server restart → fail-closed replay protection.
     the loop still functions post-restore.
 
 ## Evidence
-- Full stdout/stderr of the orchestrator saved to `tmp_test_voyage/voyage_output.log`.
+- Full stdout/stderr of the orchestrator saved to `tests/tmp_test_voyage/voyage_output.log`.
 - No screen recording (shell-only API testing per guidance — recording would show an idle desktop).
