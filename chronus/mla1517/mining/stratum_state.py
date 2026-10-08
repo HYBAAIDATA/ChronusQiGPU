@@ -268,6 +268,30 @@ class StratumRuntimeState:
         self.pending_job_id = job_id
         self.submitted += 1
 
+    def submission_not_written(self, reason: str) -> None:
+        """Resolve a pre-write failure without fabricating a submitted share.
+
+        This is legal only when transport evidence proves the request never
+        crossed the socket write boundary. submission_started reserves the
+        pending identity before I/O; this method rolls that reservation back.
+        """
+        if self.submission_phase not in {
+            SubmissionPhase.SUBMITTING,
+            SubmissionPhase.OUTCOME_UNKNOWN,
+        }:
+            raise RuntimeError("no Stratum submission is pending")
+        if self.submission_phase is SubmissionPhase.OUTCOME_UNKNOWN and self.unknown > 0:
+            self.unknown -= 1
+        if self.submitted > 0:
+            self.submitted -= 1
+        self.submission_phase = SubmissionPhase.IDLE
+        self.last_result = "NOT_SUBMITTED"
+        self.last_response_at = time.time()
+        self.last_error = str(reason)
+        self.pending_generation = None
+        self.pending_fingerprint = None
+        self.pending_job_id = None
+
     def submission_finished(self, result: Any) -> None:
         if self.submission_phase != SubmissionPhase.SUBMITTING:
             raise RuntimeError("no Stratum submission is pending")
