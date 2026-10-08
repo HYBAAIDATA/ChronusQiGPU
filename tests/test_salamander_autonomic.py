@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import time
+
+from al_haras import ALHaras, GuardianPolicy, HashChainAudit, SubscriptionAuthority, SubscriptionClaims
+from salamander.authority import ALHarasActionAuthorizer
 
 import pytest
 
@@ -46,7 +50,7 @@ class Clock:
 def request(action_id="a", handler="bounded", kind=ActionKind.REPLAN, dep=()):
     return ActionRequest(
         action_id, kind, handler, "tenant-a", "target", "test",
-        {"max_attempts": 1}, dep, "idem:" + action_id,
+        {"max_attempts": 1}, dep, "idem:" + action_id, "test-actor",
     )
 
 
@@ -66,7 +70,22 @@ def plane(handler=None, verifier=None):
             "observations": {"health": response.get("post_observation")},
         }),
     )
-    return AutonomicControlPlane(registry=registry, clock_ns=Clock())
+    # Unit actuators remain unit evidence. Signed AL HARAS admission is real;
+    # these tests do not certify a custodied production voyage.
+    authority = SubscriptionAuthority({"unit": b"salamander-unit-only-key-material"}, issuer="unit")
+    now = int(time.time())
+    token = authority.issue(SubscriptionClaims(
+        subscription_id="unit-sub", tenant_id="tenant-a", issuer="unit", key_id="unit",
+        capabilities=("hyba.security",), actors=("test-actor",),
+        not_before=now-1, expires_at=now+3600,
+    ))
+    guardian = ALHaras(authority, GuardianPolicy(
+        version="unit", allowed_operations=frozenset(f"salamander.{k.value.lower()}" for k in ActionKind),
+    ), HashChainAudit())
+    return AutonomicControlPlane(
+        registry=registry, clock_ns=Clock(),
+        authorizer=ALHarasActionAuthorizer(guardian, lambda _: token),
+    )
 
 
 def test_unknown_and_unavailable_are_not_fabricated_healthy():
@@ -139,7 +158,7 @@ def test_circuit_breaker_open_half_open_close():
 def test_recovery_dag_is_bounded_ordered_and_verified():
     cp = plane()
     plan = RecoveryPlan(
-        "r1", "tenant-a", "device:gpu0",
+        "r1", "tenant-a", "target",
         (
             RecoveryStep("b", request("b"), ("a",)),
             RecoveryStep("a", request("a")),

@@ -11,7 +11,11 @@ This increment replaces defective **success-certification** behavior on the exis
 `pythia-mine -> MiningAutonomyBridge` telemetry path. It does not pretend to replace
 all healing implementations, authorize existing actuators, or execute the required
 production voyages. No actuator, optimiser, domain algorithm or capability is retired.
-PR #134 (`repair/F-healing-security`) remains separate; none of it is implicitly merged.
+PR #143 is the single canonical convergence lane. The complete 14-file change set
+from #134 (`e8da78053c35098884965a7a4c76183042237e4e`) was absorbed on that lane,
+with #143's custodied verifier and sink-before-memory ledger ordering preserved.
+See `reports/salamander_pr134_absorption.json`. This is file-set consolidation,
+not a GitHub merge or a production-readiness claim.
 
 ## Executable architecture
 
@@ -179,3 +183,46 @@ counts remain null/UNKNOWN rather than invented zeros. It includes known materia
 source findings and twelve unavailable qualification gates. The conjunction of
 verified qualification gates computes false. Capabilities removed in **this diff**: 0.
 That scoped fact is not asserted as a repository-wide historical count.
+
+## Consolidation safety work (not production closure)
+
+The existing AL HARAS adapter now re-reads the genuine guardian audit chain and
+binds an action receipt to tenant, actor, resource, operation, exact payload,
+policy version and signed entitlement expiry. Each receipt can dispatch once.
+The registry requires a bound canonical authorizer; arbitrary ALLOW dictionaries
+and `require_authorization=False` cannot authorise actuation. Outstanding grants
+have an explicitly configurable finite admission budget.
+
+The existing control plane serializes execute/recover operations, scopes
+idempotency to tenant/actor/key and circuits to tenant/target/handler, rejects
+changed requests using the same idempotency key, and conservatively rejects
+re-dispatch when an earlier proposed action has no committed result. Recovery
+budget reservations and circuit state are recorded before/after the relevant
+work and reconstructed from a supplied, verified EvidenceLedger. Exhaustion
+records escalation. Deadlines are checked between plan steps.
+
+**Ledger reconstruction is not proof of canonical durable custody.** The normal
+factory still defaults to process-local evidence. THESEUS/OVID integration, real
+shutdown/fresh-process replay and storage-failure voyages remain unresolved.
+
+Unit tests use genuine repository AL HARAS signing/admission/audit but unit
+actuators and probes. Neither those fixtures nor the synthetic custodied-fabric
+contract fixtures qualify a production voyage. Mutant runners test the unit
+boundaries; they do not qualify owner-composition, hardware, mining or custody.
+
+### Material repository work still open
+
+- Normal EUCLID/mining/ProductionOrganism factory migration and verifier injection.
+- Owning subsystem publication of all independent proof schemas.
+- Full first-class diagnosis/planning/control state machine and complete inventory.
+- Pre-actuation required-rollback validation and all affected-owner restoration.
+- Canonical durable reservations, history/query, idempotency/circuit replay and
+  learned context-dependent decisions through THESEUS/OVID.
+- Real-component mining, CHRONUS, TURING, custody, rejection/rollback, denial,
+  budget-exhaustion and optimisation-regression voyages.
+- Production-composition planted defects and machine-computed final readiness.
+
+These are not external dependencies. Neither completion condition A nor B has
+been achieved. Historical reports are not evidence for a later source head.
+Current-head local evidence is published separately after the source commit to
+avoid self-referential source-head claims.
