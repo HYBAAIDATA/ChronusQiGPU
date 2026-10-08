@@ -1,10 +1,9 @@
 """Production transport hardening for the canonical mining coordinator.
 
-This module deliberately wraps the existing, consensus-tested Stratum V1
-implementation instead of creating a second mining stack. It adds production
-transport bounds, failover policy, truthful network telemetry, and MMIO-loop
-outage behaviour while leaving proof construction and SHA256d authority in the
-existing coordinator/proof adapter.
+V1 JSON-RPC and authenticated V2 extended-channel transports both terminate
+into the same coordinator, runtime state, proof adapter, SHA256d authority and
+submission pipeline. Protocol selection changes framing only; it never creates
+a second miner or a second acceptance path.
 """
 
 from __future__ import annotations
