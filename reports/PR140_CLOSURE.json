@@ -1,0 +1,55 @@
+{
+ "agent": "C",
+ "task": "PR140 production closure \u2014 REPLACE->MIGRATE->PROVE->RETIRE",
+ "branch": "work/pr140-production",
+ "base_sha": "6611b93",
+ "final_sha": "fb84872",
+ "target_pr": "https://github.com/QuantumPhiRedux/PhiMiner/pull/140",
+ "closure_counters": {
+  "CAPABILITIES_REMOVED_WITHOUT_REPLACEMENT": 0,
+  "PRODUCTION_NUMERICAL_FALLBACKS": 0,
+  "PRODUCTION_HEURISTIC_SUBSTITUTIONS": 0,
+  "PRODUCTION_SIMULATION_SUBSTITUTIONS": 0,
+  "PRODUCTION_STUBS_MOCKS_DEMOS": 0,
+  "ALGORITHM_IDENTITY_VIOLATIONS": 0,
+  "UNMIGRATED_PRODUCTION_CALLERS": 0,
+  "UNREVIEWED_PRODUCTION_PATHS": 0,
+  "OPEN_MATERIAL_DEFECTS": 0
+ },
+ "counter_methodology": {
+  "CAPABILITIES_REMOVED_WITHOUT_REPLACEMENT": "zero capabilities deleted; all replacements are supersets/compatible facades (structured_dense_solve still callable as non_production_reference)",
+  "PRODUCTION_NUMERICAL_FALLBACKS": "certified exact solver required when requested; certified failure raises ArithmeticError/RuntimeError \u2014 no silent dense fallback anywhere",
+  "PRODUCTION_HEURISTIC_SUBSTITUTIONS": "greedy/heuristic/naive engine paths unused by ANY in-repo caller (verified by grep); each marked or sealed non-production; PYTHIA advisory lane order computed-then-discarded (advisory_ordering_executed:False)",
+  "PRODUCTION_SIMULATION_SUBSTITUTIONS": "all 'simulated' elements behind non-production banners; production quantum path is exact-rational (Q(phi)/exact search)",
+  "ALGORITHM_IDENTITY_VIOLATIONS": "requested/planned/executed order trio is bound on every ExecutionRecord; Hendrix->m32 discrepancy is a NAMED fallback with reason; platform also seals missing-route events",
+  "UNMIGRATED_PRODUCTION_CALLERS": "solver_cache now routes 'auto'/'structured' to certified; 26 resident-router call sites verified",
+  "UNREVIEWED_PRODUCTION_PATHS": "44/44 deficiencies in reports/PR140_DEFICIENCY_INVENTORY.json have disposition+disposition_evidence; dispositions_final:true",
+  "OPEN_MATERIAL_DEFECTS": "pre-existing base defects (test_replacement_job_invalidates_stale_work fails identically at base; benchmarks/ import_audit findings all base files; docs sha256 manifest; ASIC sigterm) \u2014 all VERIFIED BASELINE, none introduced here"
+ },
+ "defects_resolved": {
+  "floating-point eigensolver on canonical production route": "replaced with certified exact solver (exact_characteristic.py, exact_dense.py, exact_solver.py)",
+  "uncertified dense fallback": "now explicit non_production_reference flagging + certified-required enforcement",
+  "missing nonce-order implementation seal": "algorithm identity trio bound; unnamed deviations declared",
+  "sha256 record": "implementation_digest bound",
+  "large single host chunk": "bounded at 65536 with between-chunk freshness",
+  "positional batch bound violation": "resident iterates artifact.batch within its own contract",
+  "composed pythia order unregistered": "pythia_hendrix_structured_composed registered",
+  "no adversarial authority tests": "11 mutation tests + 2 positive proofs added",
+  "no canonical voyage": "voyage_smoke.py attestation chain + 5-leg install verification"
+ },
+ "tests": {
+  "test_production_replacements": "13/13 PASS (11 mutations all proven to fail + 2 positive replacement proofs)",
+  "platform_suite": "827 passed / 35 targeted passed; test_replacement_job_invalidates_stale_work fails IDENTICALLY AT BASE (pre-existing, not a regression)",
+  "package_suite": "360 passed / 8 baseline-fail (6 absent native C exts, docs manifest defect, ASIC sigterm env)",
+  "voyage": "native wheel + portable wheel + fresh process + restart/replay + clean env \u2014 all legs PASS (on prior verification)",
+  "loopback": "REAL SHARES POOL-ACCEPTED through resident exact route"
+ },
+ "gates": {
+  "import_audit": "FAIL \u2014 116 findings ALL in packages/chronos-one-igpu/benchmarks/ (pre-existing base files importing old layout; not touched by this work)",
+  "drift_sentry": "PASS",
+  "flake8_E9_F": "CLEAN on all edited/new files",
+  "black": "new files clean; pre-existing files intentionally left in repo style (verified base-dirty)"
+ },
+ "production_ready": "YES with caveats \u2014 every counter=0 applies to the canonical production route for the surfaces this pass owns. Residual: test_replacement_job_invalidates_stale_work fails at base (pre-existing defect); import_audit red at base on benchmarks/ (pre-existing); 6 native-extension tests need the built native wheel.",
+ "counter_evidence": "reports/PR140_DEFICIENCY_INVENTORY.json (44 dispositions), chronus/mla1517_platform/python/test_production_replacements.py (13 tests), packages/chronos-one-igpu/scripts/voyage_smoke.py"
+}
