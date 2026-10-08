@@ -1026,7 +1026,9 @@ The threshold φ − 1 = 1/φ ≈ 0.618 (61.8%) appears as:
 | `chronus/gpu_capabilities.py` | Audited GPU capability surface; evidence-labelled topology probes |
 | `chronus/gpu_reference.py` | Dated GPU reference snapshot (non-measured) |
 | `chronus/m5_ultra.py` | Apple M5-class multi-pad substrate elevation: `PadFabric`, `PadSpec`, `PadLink`, `MemoryTier`, `HamiltonianTerm`; `m5_ultra_fabric()` (4-die formulation), `elevate_pads()` (N-pad uniform/asymmetric protocols), `consortium_fabric()` (7-institution labelled-edge variant); GHZ/cluster descriptors, Hamiltonian registry, Amdahl bound — all `truth_class="quantum_substrate_formulation"`, `measured_by_chronus=False` |
+| `chronus/consortium_push.py` | Consortium Push Protocol governance layer: truth gate (sha256-bound measured receipts, first-principles derivations with no-quantum-framework enforcement, falsifiable predictions), 2+ peer cross-check, exclusive metric ownership, monotonicity (fabric never shrinks, stale from_value fails closed), append-only hash-chained `PushLedger`, `push_cycle`, `diagnose`, `verify_invariants` |
 | `tests/test_chronus_m5_ultra.py` | Contract tests for all documented M5/10-pad/consortium numbers |
+| `tests/test_consortium_push.py` | Push-protocol gate/ledger/invariant tests incl. the documented example trajectory |
 
 ---
 
