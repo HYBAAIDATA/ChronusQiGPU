@@ -2640,37 +2640,66 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             wire_counter("mining.submit") if callable(wire_counter) else None
         )
         result = None
-        wrote = False
+        wire_write_observed = False
+        delivery_may_have_occurred = False
         try:
             result = await super().submit_candidate(
                 job_id=job_id, extranonce2=extranonce2, ntime=ntime, nonce=nonce
             )
-            wrote = True
+            wire_write_observed = (
+                wire_counter("mining.submit") > wire_before
+                if callable(wire_counter) and wire_before is not None
+                else True
+            )
+            delivery_may_have_occurred = True
             self.causal.record(
                 "submission_sent",
                 submission_coordinate,
                 job_id=job_id,
                 block_hash=proof.digest[::-1].hex(),
-                wire_write_observed=True,
+                wire_write_observed=wire_write_observed,
             )
         except BaseException:
             if callable(wire_counter) and wire_before is not None:
-                wrote = wire_counter("mining.submit") > wire_before
-            else:
-                # Compatibility fallback for non-production clients. It is
-                # intentionally conservative because their transport does not
-                # expose a post-write receipt.
-                wrote = runtime is None or runtime.submitted != submitted_before
-            self._last_pool_outcome = (
-                PoolOutcome.OUTCOME_UNKNOWN if wrote else PoolOutcome.NOT_SUBMITTED
+                wire_write_observed = wire_counter("mining.submit") > wire_before
+            runtime_unknown = bool(
+                runtime is not None
+                and getattr(runtime, "last_result", None) == "OUTCOME_UNKNOWN"
             )
-            if wrote:
+            if callable(wire_counter) and wire_before is not None:
+                delivery_may_have_occurred = wire_write_observed or runtime_unknown
+            else:
+                # Compatibility clients do not expose a post-write receipt.
+                # A changed submit counter or explicit runtime UNKNOWN makes
+                # delivery ambiguous and therefore non-retryable.
+                delivery_may_have_occurred = (
+                    runtime_unknown
+                    or runtime is None
+                    or runtime.submitted != submitted_before
+                )
+            self._last_pool_outcome = (
+                PoolOutcome.OUTCOME_UNKNOWN
+                if delivery_may_have_occurred
+                else PoolOutcome.NOT_SUBMITTED
+            )
+            if wire_write_observed:
                 self.causal.record(
                     "submission_sent",
                     submission_coordinate,
                     job_id=job_id,
                     block_hash=proof.digest[::-1].hex(),
                     wire_write_observed=True,
+                    pool_outcome="OUTCOME_UNKNOWN",
+                )
+                self.session.submission_finished(None)
+            elif delivery_may_have_occurred:
+                self.causal.record(
+                    "submission_delivery_unknown",
+                    submission_coordinate,
+                    job_id=job_id,
+                    block_hash=proof.digest[::-1].hex(),
+                    wire_write_observed=False,
+                    delivery_may_have_occurred=True,
                     pool_outcome="OUTCOME_UNKNOWN",
                 )
                 self.session.submission_finished(None)
@@ -2681,6 +2710,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     job_id=job_id,
                     block_hash=proof.digest[::-1].hex(),
                     wire_write_observed=False,
+                    delivery_may_have_occurred=False,
                 )
                 self.session.submission_not_written()
             if cycle_reporting:
@@ -2690,7 +2720,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     reason="submission transport failed",
                     evidence={
                         "outcome": self._last_pool_outcome.value,
-                        "wire_write_observed": wrote,
+                        "wire_write_observed": wire_write_observed,
+                        "delivery_may_have_occurred": delivery_may_have_occurred,
                     },
                 )
             raise
