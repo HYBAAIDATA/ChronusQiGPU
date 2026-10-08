@@ -21,6 +21,20 @@ pool acknowledgement remain the sole mining truth authorities.
 No search-advantage claim is made here. This module proves composition,
 coverage, deterministic exact-Hilbert traversal and provenance so measured
 production outcomes can test whether the architecture is useful.
+
+ROLES ON THE CANONICAL ROUTE (post exact-geometry migration):
+
+* Production: SEARCH_ARCHITECTURE_ID, PythiaSearchPrecompute (the dataclass
+  contract exact_search reuses), and _exact_hilbert_walk_rank (exact integer
+  rank arithmetic). The canonical precompute is
+  .exact_search.precompute_exact_search() (exact Q(phi) via
+  chronus.exact_geometry) -- it is aliased as ``precompute_pythia_search``
+  by resident_router.py and geodesic_support.py.
+* NON-PRODUCTION FP64 LEGACY: precompute_pythia_search(), vertex_itinerary(),
+  pythia_hilbert_600_nonces(), pythia_hendrix_nonces() and the FP64 helpers
+  below are retained for tests and FP64 research consumers only. They are
+  not called by the canonical route; nothing they return can produce
+  certificates, receipts, or mining decisions.
 """
 
 from __future__ import annotations

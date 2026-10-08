@@ -2,6 +2,14 @@
 
 Re(a a*) = real(a) real(a)^T + imag(a) imag(a)^T. A complex
 amplitude vector therefore needs two real update columns, not generally one.
+
+Backends: 'auto' and 'certified' run the certified exact-arithmetic solver
+(igpu.exact_solver: rational entries + dyadic-interval Sturm/inertia counts +
+Weinstein residual certificate). 'native' runs the optional compiled FP64
+kernel, 'python' runs the FP64 reference implementation retained explicitly
+as a non-production reference, and 'dense' runs the original dense eigh
+reference. A certified request never falls back to an uncertified backend:
+certification failure raises ArithmeticError.
 """
 from dataclasses import dataclass
 import numpy as np
@@ -31,6 +39,34 @@ class StructuredHamiltonian:
   if v.shape!=(self.n,) or not np.isfinite(v).all():raise ValueError('finite dimension-matched vector required')
   out=self.diagonal*v-self.real*np.dot(self.real,v)-self.imag*np.dot(self.imag,v)
   out[1:]+=self.off*v[:-1];out[:-1]+=self.off*v[1:];return out
+ def matvec_exact(self,vector):
+  """Exact H v over rationals; returns list of (re, im) Fraction pairs."""
+  from fractions import Fraction
+  from .exact_solver import _exact_params,_matvec_exact
+  d,off,x,y=_exact_params(self)
+  a=np.asarray(vector)
+  if a.shape!=(self.n,):raise ValueError('finite dimension-matched vector required')
+  vr=[Fraction(float(t)) for t in a.real]
+  re=_matvec_exact(d,off,x,y,vr)
+  if np.iscomplexobj(a) and np.any(a.imag!=0):
+   vi=[Fraction(float(t)) for t in a.imag]
+   im=_matvec_exact(d,off,x,y,vi)
+  else:
+   im=[Fraction(0)]*self.n
+  return list(zip(re,im))
+ def dense_exact(self):
+  """Exact rational dense matrix for certification and tests (same quota as dense())."""
+  from fractions import Fraction
+  if self.n>512:raise ValueError('dense materialization quota exceeded')
+  d,off,x,y=_exact_params(self)
+  rows=[]
+  for i in range(self.n):
+   row=[-x[i]*x[j]-y[i]*y[j] for j in range(self.n)]
+   row[i]+=d[i]
+   if i>0:row[i-1]+=off
+   if i+1<self.n:row[i+1]+=off
+   rows.append(row)
+  return rows
  def dense(self):
   if self.n>512:raise ValueError('dense materialization quota exceeded')
   a=self.real+1j*self.imag;h=np.diag(self.diagonal)-np.real(np.outer(a,a.conj()))
@@ -79,16 +115,45 @@ class StructuredHamiltonian:
   _,_,v=self._block(value);v/=np.linalg.norm(v)
   if v[int(np.argmax(np.abs(v)))]<0:v=-v
   return {'vector_bytes':v.tobytes(),'ground_lower':lo,'ground_upper':hi,'gap_lower':gap,'iterations':steps,'working_bytes':self.n*7*8}
+ def matvec_deviation_ok(self,out,vector,unit=None):
+  """Certified per-entry envelope for a floating-point structured matvec.
+
+  Recomputes y = H x in exact rational arithmetic and requires every entry
+  of `out` to lie inside a sound forward-error envelope at machine `unit`
+  (Fraction(1, 2**52) for FP64 executors -- the default -- Fraction(1, 2**23)
+  for FP32 devices). Returns True/False; the check is certified, not a
+  heuristic tolerance.
+  """
+  from fractions import Fraction
+  from .exact_solver import _exact_params
+  if unit is None:unit=Fraction(1,2**52)
+  raw=np.asarray(vector)
+  out=np.asarray(out)
+  if out.shape!=(self.n,)or not np.isfinite(out).all():return False
+  exact_y=self.matvec_exact(raw)
+  xe=[Fraction(float(t))for t in np.asarray(raw).real]
+  u=unit;xabs=[abs(t)for t in xe]
+  xmax=max(xabs)if xabs else Fraction(0);xsum=sum(xabs)
+  dd,oo,rr,ii=_exact_params(self)
+  for i in range(self.n):
+   row_terms=abs(dd[i]*xe[i])+abs(rr[i])*xsum+abs(ii[i])*xsum+2*abs(oo)*xmax
+   tol=(4*self.n+16)*u*row_terms+u*abs(exact_y[i][0])
+   if abs(out[i]-float(exact_y[i][0]))>float(tol):return False
+  return True
  def ground(self,backend='auto'):
-  if backend not in ('auto','native','python','dense'):raise ValueError('unknown structured backend')
+  if backend not in ('auto','certified','native','python','dense'):raise ValueError('unknown structured backend')
   if backend=='dense':
    from ..engine import ChronosEngine
-   v=ChronosEngine().evolve(self.dense());meta={'backend':'original_dense_reference','matrix_materialized':True,'working_bytes':self.n*self.n*8,'gap_lower':None}
+   v=ChronosEngine().evolve(self.dense());meta={'backend':'original_dense_reference','matrix_materialized':True,'working_bytes':self.n*self.n*8,'gap_lower':None,'non_production_reference':True,'certified':False}
+  elif backend in ('auto','certified'):
+   from .exact_solver import certified_ground_state
+   vector,meta=certified_ground_state(self)
+   meta.update(dimension=self.n,eigenvalue=meta['eigenvalue'],residual=meta['residual'],vector_norm=meta['vector_norm'],operator_storage_bytes=self.storage_bytes,rank_update_columns=2)
+   return GroundState(vector,meta)
   else:
    if backend=='native'and _structured_native is None:raise RuntimeError('native structured solver unavailable')
-   native=backend!='python'and _structured_native is not None
-   meta=_structured_native.ground(self.real.tobytes(),self.imag.tobytes(),self.phi)if native else self._python_ground()
-   v=np.frombuffer(meta.pop('vector_bytes'),dtype=np.float64).copy();meta.update(backend='native_structured_cpu'if native else'python_structured_cpu',matrix_materialized=False)
+   meta=_structured_native.ground(self.real.tobytes(),self.imag.tobytes(),self.phi)if backend=='native' else self._python_ground()
+   v=np.frombuffer(meta.pop('vector_bytes'),dtype=np.float64).copy();meta.update(backend='native_structured_cpu'if backend=='native' else'python_structured_cpu_reference',matrix_materialized=False,arithmetic='fp64_reference'if backend=='python' else 'fp64_native',non_production_reference=(backend=='python'))
   hv=self.matvec(v);value=float(np.vdot(v,hv).real);residual=float(np.linalg.norm(hv-value*v));norm=float(np.linalg.norm(v))
   if abs(norm-1)>1e-10 or not np.isfinite(v).all() or residual>1e-10:raise ValueError('structured eigenpair failed host validation')
   meta.update(dimension=self.n,eigenvalue=value,residual=residual,vector_norm=norm,operator_storage_bytes=self.storage_bytes,rank_update_columns=2,ground_check='numerical_lowest_root_bracket'if backend!='dense'else'original_dense_lowest_eigenvalue')

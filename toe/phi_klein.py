@@ -1,4 +1,11 @@
-"""Phi-weighted Klein fold. Calls through poincare_golden_11d. No second metric."""
+"""Phi-weighted Klein fold. Calls through poincare_golden_11d. No second metric.
+NON-PRODUCTION FP64 REFERENCE.
+
+Retained for tests, research lineage, and FP64 consumers only. It is NOT on
+the canonical production route: production geometry, planning and execution
+run through chronus/mla1517/mining/lucas.py exact transport (fold/unfold over Fractions), which computes in exact Q(phi) rational arithmetic.
+Nothing here produces certificates, evidence, or mining decisions.
+"""
 
 from __future__ import annotations
 

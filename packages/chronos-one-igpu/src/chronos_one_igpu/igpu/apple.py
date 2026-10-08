@@ -4,10 +4,13 @@ MLX tensor execution uses explicit GPU streams and materialisation before timing
 Core ML inference permits OS compute-unit selection; no per-layer ANE claim is made.
 """
 import hashlib,json,platform,time
+from fractions import Fraction
 from pathlib import Path
 import numpy as np
 from ..adapters.base import BackendAbsent,DispatchError
-from .tensor_runtime import tensor_operation
+from .tensor_runtime import tensor_operation, tensor_deviation_ok
+
+FP32_UNIT = Fraction(1, 2 ** 23)
 
 def _features(value):
     a=np.asarray(value,dtype=np.float32)
@@ -40,8 +43,15 @@ class MLXOverlay:
             else:raise ValueError('unsupported MLX tensor operation')
             mx.eval(out)
         result=np.asarray(out)
-        if result.shape!=reference.shape or not np.isfinite(result).all()or not np.allclose(result,reference,atol=1e-5,rtol=1e-4):raise DispatchError('MLX tensor failed host numeric validation')
-        self.last_receipt={**self.capability(),'operation':operation,'items_executed':int(result.size),'wall_seconds':time.perf_counter()-started,'host_numeric_verified':True,'atol':1e-5,'rtol':1e-4,'materialised_before_receipt':True}
+        # Certified host validation: the device FP32 result must lie inside
+        # the exact-arithmetic error envelope at unit 2**-23 -- no flat
+        # heuristic atol/rtol.
+        try:
+            verified=tensor_deviation_ok(operation,result,left,right,unit=FP32_UNIT)
+        except ValueError as exc:
+            raise DispatchError(f'MLX tensor failed host numeric validation: {exc}')from exc
+        if not verified:raise DispatchError('MLX tensor failed certified host numeric validation')
+        self.last_receipt={**self.capability(),'operation':operation,'items_executed':int(result.size),'wall_seconds':time.perf_counter()-started,'host_numeric_verified':True,'host_validation':'certified_exact_envelope_fp32_unit','materialised_before_receipt':True}
         return result
 
 class LinearNeuralRanker:

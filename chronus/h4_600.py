@@ -3,6 +3,13 @@
 120 vertices of the hexacosichoron; 600 tetrahedral cells from the
 first-neighbor graph (degree 12). Each cell centroid is lifted into R^11
 and folded with the same phi-norm Klein map as search_crystal.
+
+NON-PRODUCTION FP64 REFERENCE.
+
+Retained for tests, research lineage, and FP64 consumers only. It is NOT on
+the canonical production route: production geometry, planning and execution
+run through chronus/exact_geometry.py (exact Q(phi) H4/600-cell via chronos_one_igpu.family_algebra), which computes in exact Q(phi) rational arithmetic.
+Nothing here produces certificates, evidence, or mining decisions.
 """
 
 from __future__ import annotations

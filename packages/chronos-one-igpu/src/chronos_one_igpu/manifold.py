@@ -26,6 +26,81 @@ import numpy as np
 PHI = (1.0 + np.sqrt(5.0)) / 2.0
 
 
+def _exact_m32_rays():
+    """The canonical exact M32 face rays (Q(phi) coordinates, certified
+    symbolic-radical denominators) from igpu.exact_geometry — the same 32
+    directions build_m32() produces, ordered [ico(12), dodeca(20)]."""
+    from .igpu.exact_geometry import m32
+    return m32()
+
+
+def _q_to_float(x):
+    """Certified float64 projection of an exact Q(phi) element a + b*phi."""
+    return float(x.a) + float(x.b) * PHI
+
+
+def _ray_to_float(ray):
+    """Certified float64 projection of an ExactRay coordinate vector.
+
+    ray value = numerator / sqrt(denominator_squared); each exact Q(phi)
+    element a + b*phi is projected with ~2^-52 relative error, then divided
+    by the certified float sqrt of the denominator. Total error is O(ulp) —
+    the exact ray itself remains the certificate-bearing object."""
+    import math
+    s = _q_to_float(ray.denominator_squared)
+    root = math.sqrt(s)
+    return [_q_to_float(x) / root for x in ray.numerator]
+
+
+def _classical_m32_positions() -> np.ndarray:
+    """The historical FP64 construction (kept as the ordering oracle for the
+    exact projection: every classical row is matched to its exact ray)."""
+    verts = icosahedron_vertices()
+    ico_face_centroids = icosahedron_face_centroids(verts)
+    dodeca_face_centroids = dodecahedron_face_centroids_from_dual(verts, ico_face_centroids)
+    return np.vstack([ico_face_centroids, dodeca_face_centroids])
+
+
+def exact_m32_rays_ordered():
+    """Exact M32 rays in the historical build_m32() row order.
+
+    Each classical FP64 row is matched to its exact ray by direction
+    (max cosine similarity); the match must be exact to construction
+    precision or the function fails closed — the classical table and the
+    canonical exact set must describe the same 32 directions.
+    """
+    classical = _classical_m32_positions()
+    rays = _exact_m32_rays()
+    projections = np.array([_ray_to_float(r) for r in rays], dtype=np.float64)
+    sims = classical @ projections.T
+    ordered = []
+    used = set()
+    for i in range(32):
+        j = int(np.argmax(sims[i]))
+        if j in used or sims[i][j] < 1.0 - 1e-12:
+            raise ArithmeticError(
+                "exact M32 rays do not cover the classical row order "
+                f"(row {i} best match {j} similarity {sims[i][j]:.12f})")
+        used.add(j)
+        ordered.append(rays[j])
+    if len(used) != 32:
+        raise ArithmeticError("exact M32 ray matching is not a bijection")
+    return tuple(ordered)
+
+
+def exact_m32_positions() -> np.ndarray:
+    """Unit-sphere float64 face positions projected from the exact M32 rays,
+    in the historical build_m32() row order (contract preserved)."""
+    return np.array([_ray_to_float(r) for r in exact_m32_rays_ordered()],
+                    dtype=np.float64)
+
+
+def exact_m32_transport():
+    """Exact certificate-bearing transport of the 32 face rays (receipts),
+    in historical build_m32() row order."""
+    return [r.transport() for r in exact_m32_rays_ordered()]
+
+
 def fibonacci_sphere(n: int) -> np.ndarray:
     """Deterministic, reproducible distribution of n unit vectors on a sphere.
 
@@ -126,12 +201,14 @@ def verify_cube_inscribed_in_dodecahedron(tol: float = 1e-9) -> bool:
 def build_m32() -> np.ndarray:
     """Real 32-direction manifold: 20 icosahedron face-centroids union 12
     icosahedron vertices (== the dual dodecahedron's 12 face-centroids),
-    every coordinate derived from the golden ratio. See module docstring for
-    scope and honesty notes vs. any original private implementation."""
-    verts = icosahedron_vertices()
-    ico_face_centroids = icosahedron_face_centroids(verts)
-    dodeca_face_centroids = dodecahedron_face_centroids_from_dual(verts, ico_face_centroids)
-    return np.vstack([ico_face_centroids, dodeca_face_centroids])
+    every coordinate derived from the golden ratio.
+
+    Positions are the certified float64 projection of the canonical exact
+    rays from igpu.exact_geometry.m32() (exact Q(phi) coordinates with
+    symbolic-radical denominators). The exact objects are retrievable via
+    exact_m32_rays()/exact_m32_transport() for certificate-bound receipts.
+    """
+    return exact_m32_positions()
 
 
 class M32Manifold:
@@ -196,6 +273,18 @@ def _self_test() -> str:
     m32 = build_m32()
     assert m32.shape == (32, 3), "M32 must have exactly 32 faces"
     assert np.allclose(np.linalg.norm(m32, axis=1), 1.0), "all M32 face directions must be unit vectors"
+
+    # Exact-ray parity: every projected position must coincide (to float
+    # precision) with the classical FP64 construction in the same row order,
+    # and the underlying rays must be exactly unit.
+    classic = _classical_m32_positions()
+    assert np.allclose(m32, classic, atol=1e-12), "exact-projection M32 must match classical FP64 positions"
+    for ray, pos in zip(exact_m32_rays_ordered(), m32):
+        assert ray.is_unit(), "M32 rays must be exactly unit"
+        import math
+        s = _q_to_float(ray.denominator_squared)
+        for qi, pi in zip(ray.numerator, pos):
+            assert abs(_q_to_float(qi) / math.sqrt(s) - pi) < 1e-12
     # No duplicate directions among the 32 (icosahedron and dodecahedron
     # duals are geometrically distinct point sets).
     gram = m32 @ m32.T

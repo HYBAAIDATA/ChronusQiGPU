@@ -192,8 +192,15 @@ class OneIGPU:
     def structured_matvec(self,amplitudes,vector,phi=None,backend="cpu"):
         from .structured_solver import StructuredHamiltonian
         from ..adapters.base import BackendAbsent
+        import numpy as np
         operator=StructuredHamiltonian(amplitudes,self.golden.constants.phi if phi is None else phi);started=time.perf_counter()
-        if backend=="cpu":result=operator.matvec(vector);execution={"backend":"cpu_structured","device":"host_cpu","capability":"structured_matvec"}
+        if backend=="cpu":
+            pairs=operator.matvec_exact(vector)
+            if np.iscomplexobj(np.asarray(vector)):
+                result=np.array([complex(float(re),float(im)) for re,im in pairs],dtype=np.complex128)
+            else:
+                result=np.array([float(re) for re,im in pairs],dtype=np.float64)
+            execution={"backend":"cpu_exact","device":"host_cpu","capability":"structured_matvec","arithmetic":"exact_rational"}
         elif backend=="host_gpu":
             adapter=self.fabric.overlay
             if adapter is None or not adapter.capability().get("physical")or not hasattr(adapter,"execute_structured_matvec"):raise BackendAbsent("physical structured GPU executor required")

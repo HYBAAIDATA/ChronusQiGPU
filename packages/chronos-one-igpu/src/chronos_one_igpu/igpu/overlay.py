@@ -92,7 +92,12 @@ def _execute_structured_matvec(self,operator,vector):
     flags=cl.mem_flags;bd,br,bi,bx=[cl.Buffer(self.context,flags.READ_ONLY|flags.COPY_HOST_PTR,hostbuf=a)for a in arrays[:4]];bp=cl.Buffer(self.context,flags.WRITE_ONLY,partials.nbytes);bo=cl.Buffer(self.context,flags.WRITE_ONLY,out.nbytes)
     self.structured_partial.set_args(br,bi,bx,bp,np.uint32(n),cl.LocalMemory(width*8),cl.LocalMemory(width*8));first=cl.enqueue_nd_range_kernel(self.queue,self.structured_partial,(groups*width,),(width,));cl.enqueue_copy(self.queue,partials,bp,wait_for=[first]).wait();dots=partials.sum(axis=0)
     self.structured_apply.set_args(bd,br,bi,bx,bo,np.uint32(n),np.float64(operator.off),np.float64(dots[0]),np.float64(dots[1]));second=cl.enqueue_nd_range_kernel(self.queue,self.structured_apply,(groups*width,),(width,));cl.enqueue_copy(self.queue,out,bo,wait_for=[second]).wait()
-    if not np.isfinite(out).all()or not np.allclose(out,operator.matvec(x),rtol=1e-10,atol=1e-12):raise DispatchError('structured OpenCL host validation failed')
+    if not np.isfinite(out).all():raise DispatchError('structured OpenCL nonfinite output')
+    # Exact host verification: recompute y = H x in exact rational
+    # arithmetic and bound the device result by a sound FP64 forward-error
+    # envelope (each kernel flop contributes at most ulp(=2^-52) of its
+    # row's absolute term sum); the check is certified, not a tolerance.
+    if not operator.matvec_deviation_ok(out,x):raise DispatchError('structured OpenCL output outside certified error envelope')
     self.last_receipt={**self.capability(),'operation':'structured_matvec','items_executed':n,'dtype':'float64','host_verified':True,'matrix_materialized':False,'kernel_sha256':hashlib.sha256(source.encode()).hexdigest(),'kernel_seconds':sum((e.profile.end-e.profile.start)*1e-9 for e in(first,second)),'wall_seconds':time.perf_counter()-started,'host_partial_reduction':True,'local_size':width,'groups':groups,'executor':'opencl','physical_throughput_multiplier':None}
     return out
 OpenCLOverlay.execute_structured_matvec=_execute_structured_matvec

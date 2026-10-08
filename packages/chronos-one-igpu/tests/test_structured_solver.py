@@ -1,4 +1,5 @@
 import unittest
+from fractions import Fraction
 import numpy as np
 from chronos import OneIGPU
 from chronos.golden_quantum import MathematicalQuantumState,NonceLease
@@ -31,9 +32,23 @@ class StructuredTests(unittest.TestCase):
   with OneIGPU()as g:
    for n in(32,64,128):
     lease=NonceLease(0,n,'same',1);g.configure_solver('dense',False);a=g.golden.plan(lease);g.configure_solver('structured',False);b=g.golden.plan(lease);self.assertEqual(a['order'],b['order']);self.assertIsNone(b['reason'])
- def test_auto_native_path_really_executed(self):
+ def test_certified_ground_certifies(self):
+  for n in(1,2,7,32,64,128):
+   for k in range(3):
+    o=StructuredHamiltonian(self.state(n,k),1.618033988749895);r=o.ground('certified');e=r.evidence
+    self.assertEqual(e['backend'],'certified_exact_structured_cpu');self.assertTrue(e['certified']);self.assertFalse(e['matrix_materialized'])
+    lo,hi=(Fraction(e['eigenvalue_interval'][0]),Fraction(e['eigenvalue_interval'][1]));self.assertLessEqual(lo,Fraction(e['eigenvalue_exact']));self.assertLessEqual(Fraction(e['eigenvalue_exact']),hi)
+    self.assertLess(Fraction(e['eigenvalue_interval_width']),Fraction(1,10**10));self.assertLess(Fraction(e['residual_bound']),Fraction(1,10**8));self.assertLess(Fraction(e['sin_theta_bound']),Fraction(1,10**5))
+ def test_certified_ground_against_dense(self):
+  for n in(1,2,7,32,64,128):
+   for k in range(3):
+    o=StructuredHamiltonian(self.state(n,k),1.618033988749895);r=o.ground('certified');d=o.ground('dense')
+    self.assertAlmostEqual(r.evidence['eigenvalue'],d.evidence['eigenvalue'],places=10);self.assertGreater(abs(np.vdot(r.vector,d.vector)),1-1e-10)
+ def test_auto_never_silently_falls_back(self):
+  o=StructuredHamiltonian(self.state(16,1),1.618);r=o.ground();self.assertIn(r.evidence['backend'],('certified_exact_structured_cpu','native_structured_cpu'))
+ def test_auto_certified_path_really_executed(self):
   with OneIGPU()as g:
-   g.golden.plan(NonceLease(0,64));self.assertEqual(g.golden.events[-1]['details']['solver']['backend'],'native_structured_cpu')
+   g.golden.plan(NonceLease(0,64));e=g.golden.events[-1]['details']['solver'];self.assertEqual(e['backend'],'certified_exact_structured_cpu');self.assertTrue(e['certified']);self.assertFalse(e['matrix_materialized'])
  def test_mutation_rejected(self):
   o=StructuredHamiltonian(self.state(7,0),1.618)
   with self.assertRaises(ValueError):o.real[0]=1
@@ -51,7 +66,7 @@ class StructuredTests(unittest.TestCase):
   with OneIGPU()as g:
    # Dimension 128 often contains positional near-ties; whichever path is used,
    # the exact caller permutation and dense reference remain identical.
-   g.configure_solver('structured',False);a=g.golden.plan(NonceLease(0,128));e=g.golden.events[-1]['details']['solver'];g.configure_solver('dense',False);b=g.golden.plan(NonceLease(0,128));self.assertEqual(a['order'],b['order']);self.assertIn('dense_fallback_reason',e)
+   g.configure_solver('structured',False);a=g.golden.plan(NonceLease(0,128));e=g.golden.events[-1]['details']['solver'];g.configure_solver('dense',False);b=g.golden.plan(NonceLease(0,128));e2=g.golden.events[-1]['details']['solver'];self.assertEqual(a['order'],b['order']);self.assertIn('fallback_reason',e);self.assertEqual(e['backend'],'certified_exact_structured_cpu');self.assertFalse(e['fallback_used']);self.assertEqual(e2['backend'],'original_dense_reference');self.assertTrue(e2['fallback_used']);self.assertTrue(e2.get('non_production_reference'))
  def test_service_abi_structured(self):
   with OneIGPU()as g:
    w=Workload('structured','local','structured_ground',{'real':[.5]*4},quota=4);r=g.execute_workload(w);self.assertTrue(VirtualRuntime.verify_receipt(r,w));self.assertFalse(r['output']['evidence']['matrix_materialized'])
@@ -67,7 +82,8 @@ class ScaledWiringTests(unittest.TestCase):
 class StructuredOverlayTests(unittest.TestCase):
  def test_cpu_matvec_owner(self):
   with OneIGPU()as g:
-   result=g.structured_matvec([.5]*4,[1,2,3,4]);reference=StructuredHamiltonian([.5]*4,g.golden.constants.phi).matvec([1,2,3,4]);np.testing.assert_array_equal(result,reference)
+   result=g.structured_matvec([.5]*4,[1,2,3,4]);reference=StructuredHamiltonian([.5]*4,g.golden.constants.phi).matvec([1,2,3,4]);np.testing.assert_allclose(result,reference,atol=1e-14,rtol=1e-14)
+   exact=np.array([complex(re_,im_)for re_,im_ in StructuredHamiltonian([.5]*4,g.golden.constants.phi).matvec_exact([1,2,3,4])]);np.testing.assert_array_equal(result,exact)
  def test_absent_gpu_fail_closed(self):
   from chronos.adapters.base import BackendAbsent
   with OneIGPU()as g:

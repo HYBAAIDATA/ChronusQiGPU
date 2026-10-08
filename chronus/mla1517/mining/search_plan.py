@@ -17,6 +17,7 @@ Separation of authority:
 
 from __future__ import annotations
 
+import re
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -36,6 +37,9 @@ _VALID_NONCE_ORDERS = frozenset(
         "golden_stride",
         "poincare_cassini_11d",
         "hendrix_coprime_stride",
+        # ResidentExecutionRouter's internal composite marker: Hendrix over the
+        # complete structured itinerary on the PYTHIA lattice route.
+        "pythia_hendrix_structured_composed",
     )
 )
 _DEFAULT_NONCE_ORDER = "hendrix_coprime_stride"
@@ -381,6 +385,15 @@ class ExecutionRecord:
     completed_work_items: int = 0
     requested_nonce_order: str | None = None
     executed_nonce_order: str | None = None
+    # --- algorithm identity (the nonce traversal order IS the algorithm) --
+    # ``planned_nonce_order`` is what the sealed plan asked for;
+    # ``requested_nonce_order`` is the resolved effective order the executor
+    # was handed; ``executed_nonce_order`` is what physically ran. Any
+    # deviation between requested and executed requires
+    # ``nonce_order_fallback_reason`` -- a nonce-order substitution can never
+    # be silent.
+    planned_nonce_order: str | None = None
+    nonce_order_fallback_reason: str | None = None
     planned_lane_order: tuple[int, ...] = ()
     planned_window_start: int | None = None
     chunk_count: int = 0
@@ -401,6 +414,15 @@ class ExecutionRecord:
     candidate_host_verified: bool | None = None
     recovery_id: str | None = None
     toe_advice_reason: str | None = None
+    # --- implementation identity binding -----------------------------------
+    # Which code physically executed the window: the module that ran it and a
+    # SHA-256 digest of that module's source, plus the arithmetic mode and the
+    # substrate class it ran on. ``implementation_digest`` without a module is
+    # meaningless (nothing to hash), so it is rejected at construction.
+    implementation_module: str | None = None
+    implementation_digest: str | None = None
+    execution_mode: str | None = None
+    substrate: str | None = None
 
     def __post_init__(self) -> None:
         source = PlanSource(self.plan_source)
@@ -438,6 +460,32 @@ class ExecutionRecord:
             raise ValueError(
                 "fallback_reason is set but the executed route matches the " "requested route"
             )
+        # Requested algorithm == executed algorithm unless an authorised
+        # named fallback is on the record. The nonce traversal order IS the
+        # search algorithm; a silent substitution is the failure mode this
+        # invariant exists to make impossible.
+        order_fell_back = (
+            self.requested_nonce_order is not None
+            and self.executed_nonce_order is not None
+            and self.executed_nonce_order != self.requested_nonce_order
+        )
+        if order_fell_back and not self.nonce_order_fallback_reason:
+            raise ValueError(
+                "executed_nonce_order differs from requested_nonce_order, so a "
+                "nonce_order_fallback_reason is required: no silent algorithm fallback"
+            )
+        if not order_fell_back and self.nonce_order_fallback_reason:
+            raise ValueError(
+                "nonce_order_fallback_reason is set but the executed order matches the requested order"
+            )
+        for order_name in (
+            "requested_nonce_order",
+            "executed_nonce_order",
+            "planned_nonce_order",
+        ):
+            order = getattr(self, order_name)
+            if order is not None and order not in _VALID_NONCE_ORDERS:
+                raise ValueError(f"unsupported {order_name}: {order!r}")
         # A completed window must have consumed the work it was asked for.
         if self.completion_state is CompletionState.COMPLETE:
             if self.requested_work_items and self.completed_work_items != self.requested_work_items:
@@ -470,6 +518,15 @@ class ExecutionRecord:
                 raise ValueError("HARDWARE_EXECUTED requires at least one measured kernel launch")
             if self.completed_work_items <= 0:
                 raise ValueError("HARDWARE_EXECUTED requires completed work")
+        if self.implementation_digest is not None and not self.implementation_module:
+            raise ValueError(
+                "implementation_digest requires implementation_module: "
+                "a digest must name the code it certifies"
+            )
+        for field_name in ("execution_mode", "substrate"):
+            token = getattr(self, field_name)
+            if token is not None and not re.fullmatch(r"[a-z0-9_]+", token):
+                raise ValueError(f"{field_name} must be a lowercase token, got {token!r}")
         if source is PlanSource.AGENTIC_PRECOMPUTED:
             if not self.plan_id or self.plan_fallback_reason is not None:
                 raise ValueError("agentic execution requires plan_id and no plan_fallback_reason")
@@ -511,3 +568,31 @@ class ExecutionRecord:
             EvidenceClass.HARDWARE_EXECUTED: "HARDWARE_EXECUTION_VERIFIED",
             EvidenceClass.POOL_CONFIRMED: "POOL_VERIFIED",
         }[self.evidence_class]
+
+    # --- spec-named aliases -------------------------------------------------
+    # The receipt contract names the nonce traversal order the "algorithm":
+    # requested is what the executor was handed, planned is what the sealed
+    # plan declared, executed is what physically ran.
+    @property
+    def requested_algorithm(self) -> str | None:
+        return self.requested_nonce_order
+
+    @property
+    def planned_algorithm(self) -> str | None:
+        return self.planned_nonce_order
+
+    @property
+    def executed_algorithm(self) -> str | None:
+        return self.executed_nonce_order
+
+    @property
+    def fallback_used(self) -> bool:
+        """True when the physical execution deviated from the request on any
+        axis: route or algorithm."""
+        return bool(
+            (self.requested_route is not None and self.requested_route != self.executed_route)
+            or (
+                self.executed_nonce_order is not None
+                and self.executed_nonce_order != self.requested_nonce_order
+            )
+        )

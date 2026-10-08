@@ -17,7 +17,7 @@ def doctor():
     from .igpu.structured_solver import StructuredHamiltonian
     import numpy as np
     native_receipt=compute_receipt(b'chronos-doctor');checks['native_protocol']=verify_receipt(native_receipt,b'chronos-doctor')
-    operator=StructuredHamiltonian([.5]*4,1.618);checks['structured_operator']=bool(np.allclose(operator.matvec(np.ones(4)),operator.dense()@np.ones(4)))
+    operator=StructuredHamiltonian([.5]*4,1.618);checks['structured_operator']=bool(operator.matvec_deviation_ok(operator.matvec(np.ones(4)),np.ones(4)))
     for name in('lucas256.cl','sha256d.cl','structured_matvec.cl','hendrix600.cl'):checks[name]=bool(files('chronos_one_igpu').joinpath('igpu/kernels/'+name).read_bytes())
     return {'schema':'chronos_release_doctor_v1','python':platform.python_version(),'version':metadata.version('chronos-gpu'),'checks':checks,'inventory':inventory,'mining_backend':mining.capability(),'passed':all(checks.values())}
 

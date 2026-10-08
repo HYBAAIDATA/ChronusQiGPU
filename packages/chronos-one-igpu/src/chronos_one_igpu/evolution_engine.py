@@ -16,6 +16,14 @@
 #   - Does NOT vendor the real quantum/variational.py QAOAOptimizer or
 #     quantum/deep_variational.py classes from HYBA_Pythia_Prod (their
 #     internal APIs were not reproduced here). See AUDIT_NOTES.md.
+#   - v2.1 (PR #140): the ground state is now CERTIFIED exact via
+#     igpu.exact_dense.certified_dense_ground_state -- the FP64 eigendecompo-
+#     sition only proposes an eigenpair; exact rational arithmetic issues a
+#     Weinstein residual interval plus a Sylvester-inertia isolation count
+#     proving it contains exactly the ground eigenvalue. Degenerate or
+#     unverifiable inputs fail closed (ArithmeticError); there is no silent
+#     numerical fallback. `parameters` is now empty: this pipeline has no
+#     variational parameters (previously it returned meaningless rng noise).
 
 from __future__ import annotations
 
@@ -53,18 +61,29 @@ class EvolutionEngine:
             objective = objective - np.diag(resonance_weights)
         objective = (objective + objective.T) / 2.0  # enforce Hermitian/symmetric
 
-        eigvals, eigvecs = np.linalg.eigh(objective)
-        ground_energy = float(eigvals[0])
-        ground_state = eigvecs[:, 0].astype(complex)
+        # Certified exact ground state. FP64 eigh only proposes the
+        # eigenpair; the certificate (Weinstein residual interval +
+        # Sylvester-inertia isolation count) proves it is the ground state.
+        # Raises ArithmeticError on degenerate/unverifiable inputs -- the
+        # render pipeline fails closed rather than emit an uncertified state.
+        # Local import: `igpu/__init__` transitively re-enters `engine`,
+        # so a top-level import would create a circular-import failure.
+        from .igpu.exact_dense import certified_dense_ground_state
+        ground_state_vec, cert = certified_dense_ground_state(objective)
+        ground_energy = float(cert["eigenvalue"])
+        ground_state = ground_state_vec.astype(complex)
         peak = int(np.argmax(np.abs(ground_state)))
         if ground_state[peak].real < 0:
             ground_state = -ground_state  # deterministic global phase
 
-        rng = np.random.default_rng(seed)
-        theta = 0.1 * rng.standard_normal((self.layers, self.n, 3))
+        # No variational parameters exist in this pipeline; the field is
+        # kept only for the RenderResult contract.
+        theta = np.zeros((0,), dtype=float)
 
+        eigvals = np.linalg.eigvalsh(objective)
         shift = float(np.max(np.abs(eigvals))) + 1.0
         shifted = shift * np.eye(self.n) - objective
+        rng = np.random.default_rng(seed)
         v = rng.standard_normal(self.n)
         v = v / np.linalg.norm(v)
         loss_curve: List[float] = []
@@ -86,6 +105,8 @@ class EvolutionEngine:
         # non-negative) per-face `distribution` in reconstruction.py.
         expectations = {
             "energy": ground_energy,
+            "energy_residual_bound": float(cert["residual_bound"]),
+            "energy_gap_bound": float(cert["gap_bound"]),
             "intensity": 1.0,
             "depth": float(np.mean(distribution)),
             "normal": float(np.std(distribution)),

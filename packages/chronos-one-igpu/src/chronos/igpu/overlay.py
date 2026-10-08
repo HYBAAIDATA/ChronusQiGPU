@@ -13,11 +13,11 @@ class OpenCLOverlay:
             # Prefer integrated Intel devices only with unified memory evidence.
             devices.sort(key=lambda d:(not('intel'in d.vendor.lower()and d.host_unified_memory and any(t in d.name.lower()for t in('uhd','iris'))),d.vendor,d.name))
             self.device=devices[0];self.cl=cl;self.context=cl.Context([self.device]);self.queue=cl.CommandQueue(self.context,properties=cl.command_queue_properties.PROFILING_ENABLE)
-            self.source=files('chronos').joinpath('igpu/kernels/lucas256.cl').read_text()
+            self.source=files('chronos_one_igpu').joinpath('igpu/kernels/lucas256.cl').read_text()
             self.program=cl.Program(self.context,self.source).build();self.kernel=cl.Kernel(self.program,'chronos_lucas256')
             kernel_max=self.kernel.get_work_group_info(cl.kernel_work_group_info.WORK_GROUP_SIZE,self.device)
             self.workgroup=max(1,min(64,self.device.max_work_group_size,kernel_max,self.device.max_work_item_sizes[0]))
-            self.sha_source=files('chronos').joinpath('igpu/kernels/sha256d.cl').read_text()
+            self.sha_source=files('chronos_one_igpu').joinpath('igpu/kernels/sha256d.cl').read_text()
             self.sha_program=cl.Program(self.context,self.sha_source).build();self.sha_kernel=cl.Kernel(self.sha_program,'chronos_sha256d')
             self.last_receipt=None
         except BackendAbsent:raise
@@ -55,7 +55,7 @@ class OpenCLOverlay:
         if not values:return ()
         cl=self.cl
         if not hasattr(self,'sha_program'):
-            self.sha_source=files('chronos').joinpath('igpu/kernels/sha256d.cl').read_text()
+            self.sha_source=files('chronos_one_igpu').joinpath('igpu/kernels/sha256d.cl').read_text()
             self.sha_program=cl.Program(self.context,self.sha_source).build();self.sha_kernel=cl.Kernel(self.sha_program,'chronos_sha256d')
         limit=self.sha_kernel.get_work_group_info(cl.kernel_work_group_info.WORK_GROUP_SIZE,self.device)
         local=max(1,min(64,limit,self.device.max_work_group_size,self.device.max_work_item_sizes[0]))
@@ -79,7 +79,7 @@ def _execute_structured_matvec(self,operator,vector):
     if raw.shape!=(operator.n,)or np.iscomplexobj(raw)and np.any(raw.imag!=0)or not np.isfinite(raw).all():raise ValueError('finite real structured vector required')
     if 'cl_khr_fp64'not in self.device.extensions.split():raise BackendAbsent('fp64 structured OpenCL capability absent')
     cl=self.cl;started=time.perf_counter()
-    source=files('chronos').joinpath('igpu/kernels/structured_matvec.cl').read_text()
+    source=files('chronos_one_igpu').joinpath('igpu/kernels/structured_matvec.cl').read_text()
     if not hasattr(self,'structured_program'):
         self.structured_program=cl.Program(self.context,source).build();self.structured_partial=cl.Kernel(self.structured_program,'chronos_rank2_partials');self.structured_apply=cl.Kernel(self.structured_program,'chronos_structured_apply')
     bounds=[self.device.max_work_group_size,self.device.max_work_item_sizes[0],64,self.device.local_mem_size//16]
@@ -92,7 +92,12 @@ def _execute_structured_matvec(self,operator,vector):
     flags=cl.mem_flags;bd,br,bi,bx=[cl.Buffer(self.context,flags.READ_ONLY|flags.COPY_HOST_PTR,hostbuf=a)for a in arrays[:4]];bp=cl.Buffer(self.context,flags.WRITE_ONLY,partials.nbytes);bo=cl.Buffer(self.context,flags.WRITE_ONLY,out.nbytes)
     self.structured_partial.set_args(br,bi,bx,bp,np.uint32(n),cl.LocalMemory(width*8),cl.LocalMemory(width*8));first=cl.enqueue_nd_range_kernel(self.queue,self.structured_partial,(groups*width,),(width,));cl.enqueue_copy(self.queue,partials,bp,wait_for=[first]).wait();dots=partials.sum(axis=0)
     self.structured_apply.set_args(bd,br,bi,bx,bo,np.uint32(n),np.float64(operator.off),np.float64(dots[0]),np.float64(dots[1]));second=cl.enqueue_nd_range_kernel(self.queue,self.structured_apply,(groups*width,),(width,));cl.enqueue_copy(self.queue,out,bo,wait_for=[second]).wait()
-    if not np.isfinite(out).all()or not np.allclose(out,operator.matvec(x),rtol=1e-10,atol=1e-12):raise DispatchError('structured OpenCL host validation failed')
+    if not np.isfinite(out).all():raise DispatchError('structured OpenCL nonfinite output')
+    # Exact host verification: recompute y = H x in exact rational
+    # arithmetic and bound the device result by a sound FP64 forward-error
+    # envelope (each kernel flop contributes at most ulp(=2^-52) of its
+    # row's absolute term sum); the check is certified, not a tolerance.
+    if not operator.matvec_deviation_ok(out,x):raise DispatchError('structured OpenCL output outside certified error envelope')
     self.last_receipt={**self.capability(),'operation':'structured_matvec','items_executed':n,'dtype':'float64','host_verified':True,'matrix_materialized':False,'kernel_sha256':hashlib.sha256(source.encode()).hexdigest(),'kernel_seconds':sum((e.profile.end-e.profile.start)*1e-9 for e in(first,second)),'wall_seconds':time.perf_counter()-started,'host_partial_reduction':True,'local_size':width,'groups':groups,'executor':'opencl','physical_throughput_multiplier':None}
     return out
 OpenCLOverlay.execute_structured_matvec=_execute_structured_matvec
@@ -105,7 +110,7 @@ def _execute_hendrix_order(self, compiled, position, count):
     if count == 0:
         return expected, expected_binding
     if not hasattr(self, '_hendrix_program'):
-        self._hendrix_source = files('chronos').joinpath('igpu/kernels/hendrix600.cl').read_text()
+        self._hendrix_source = files('chronos_one_igpu').joinpath('igpu/kernels/hendrix600.cl').read_text()
         self._hendrix_program = self.cl.Program(self.context, self._hendrix_source).build()
         self._hendrix_kernel = self.cl.Kernel(self._hendrix_program, 'chronos_hendrix600')
         self._hendrix_buffers = OrderedDict()

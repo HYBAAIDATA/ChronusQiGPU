@@ -6,24 +6,69 @@ or power-grid anti-resonance.
 """
 from __future__ import annotations
 import math
+from fractions import Fraction
 from typing import Any
 import numpy as np
 
 
-def bisect_root(poly, lo: float, hi: float, iterations: int = 120) -> float:
-    flo, fhi = poly(lo), poly(hi)
-    if flo == 0: return lo
-    if fhi == 0: return hi
+def _poly_eval_exact(coeffs, x):
+    """Exact Horner evaluation of an integer/rational polynomial at a
+    rational point (descending coefficients)."""
+    acc = Fraction(0)
+    for c in coeffs:
+        acc = acc * x + Fraction(c)
+    return acc
+
+
+def bisect_root_interval(coeffs, lo, hi, iterations: int = 160):
+    """Certified dyadic interval for the bracketed root of an
+    integer-coefficient polynomial, evaluated entirely in exact rational
+    arithmetic. Returns (lo, hi) Fractions with the root inside."""
+    flo = _poly_eval_exact(coeffs, lo := Fraction(lo))
+    fhi = _poly_eval_exact(coeffs, hi := Fraction(hi))
+    if flo == 0: return lo, lo
+    if fhi == 0: return hi, hi
     if flo * fhi > 0: raise ValueError("interval does not bracket a root")
     for _ in range(iterations):
-        mid = (lo + hi) / 2.0
-        fm = poly(mid)
-        if fm == 0: return mid
+        mid = (lo + hi) / 2
+        fm = _poly_eval_exact(coeffs, mid)
+        if fm == 0: return mid, mid
         if flo * fm <= 0:
             hi, fhi = mid, fm
         else:
             lo, flo = mid, fm
-    return (lo + hi) / 2.0
+    return lo, hi
+
+
+def bisect_root(poly, lo: float, hi: float, iterations: int = 160) -> float:
+    """Certified bisection: evaluates ``poly`` at exact Fractions.
+
+    ``poly`` must be Fraction-compatible (return an exact rational for exact
+    input); callables that drop to float are rejected — use
+    ``bisect_root_interval`` with integer coefficients for the certified
+    form. Returns the correctly-rounded float midpoint of the final
+    certified dyadic interval.
+    """
+    def exact_poly(x: Fraction):
+        r = poly(x)
+        if not isinstance(r, (Fraction, int)):
+            raise TypeError("bisect_root requires a Fraction-exact callable; "
+                            "use bisect_root_interval(coeffs, ...) instead")
+        return Fraction(r)
+    flo, fhi = exact_poly(Fraction(lo)), exact_poly(Fraction(hi))
+    if flo == 0: return float(Fraction(lo))
+    if fhi == 0: return float(Fraction(hi))
+    if flo * fhi > 0: raise ValueError("interval does not bracket a root")
+    lo_f, hi_f = Fraction(lo), Fraction(hi)
+    for _ in range(iterations):
+        mid = (lo_f + hi_f) / 2
+        fm = exact_poly(mid)
+        if fm == 0: return float(mid)
+        if flo * fm <= 0:
+            hi_f, fhi = mid, fm
+        else:
+            lo_f, flo = mid, fm
+    return float((lo_f + hi_f) / 2)
 
 
 class ExtendedAlgebra:
@@ -31,9 +76,14 @@ class ExtendedAlgebra:
     def __init__(self) -> None:
         self.phi = (1.0 + math.sqrt(5.0)) / 2.0
         self.silver = 1.0 + math.sqrt(2.0)
-        self.plastic = bisect_root(lambda x: x**3 - x - 1.0, 1.0, 1.5)
-        self.supergolden = bisect_root(lambda x: x**3 - x**2 - 1.0, 1.0, 2.0)
-        self.tribonacci = bisect_root(lambda x: x**3 - x**2 - x - 1.0, 1.0, 2.0)
+        # Certified dyadic intervals for the algebraic constants; the float
+        # attribute is the correctly rounded midpoint.
+        self.plastic_interval = bisect_root_interval([1, 0, -1, -1], 1, Fraction(3, 2))
+        self.supergolden_interval = bisect_root_interval([1, -1, 0, -1], 1, 2)
+        self.tribonacci_interval = bisect_root_interval([1, -1, -1, -1], 1, 2)
+        self.plastic = float(sum(self.plastic_interval) / 2)
+        self.supergolden = float(sum(self.supergolden_interval) / 2)
+        self.tribonacci = float(sum(self.tribonacci_interval) / 2)
 
     def roots(self) -> dict[str, float]:
         return {

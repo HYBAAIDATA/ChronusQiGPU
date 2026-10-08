@@ -131,10 +131,18 @@ class ResidentRuntime:
                 expected=[lucas(n)%(1<<width)for n in payload['rungs'][record['start']:record['stop']]]
                 if canonical(record['output'])!=canonical(expected):raise ValueError('resident Lucas host verification failed')
         else:
-            from .tensor_runtime import tensor_operation
+            from .tensor_runtime import tensor_deviation_ok
+            from fractions import Fraction
             a=np.asarray(payload['left']);b=np.asarray(payload['right']);op=payload['operator']
             for record in result['completed_tiles']:
                 right=b[record['start']:record['stop']]if op in ('add','hadamard')else b
-                expected=tensor_operation(op,a[record['start']:record['stop']],right);actual=np.asarray(record['output'])
-                if actual.shape!=expected.shape or not np.isfinite(actual).all()or not np.allclose(actual,expected,atol=1e-5,rtol=1e-4):raise ValueError('resident tensor host verification failed')
+                actual=np.asarray(record['output'])
+                # Certified envelope: FP64 executors at unit 2**-52, device
+                # executors at unit 2**-23 -- no flat heuristic tolerance.
+                unit=Fraction(1,2**23)if record['backend']not in ('cpu_reference','cpu_exact')else Fraction(1,2**52)
+                try:
+                    ok=tensor_deviation_ok(op,actual,a[record['start']:record['stop']],right,unit=unit)
+                except ValueError as exc:
+                    raise ValueError(f'resident tensor host verification failed: {exc}')from exc
+                if not ok:raise ValueError('resident tensor failed certified host verification')
         return True

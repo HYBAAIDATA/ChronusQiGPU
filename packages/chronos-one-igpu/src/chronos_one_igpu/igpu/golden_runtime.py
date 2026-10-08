@@ -117,7 +117,7 @@ class GoldenRuntime:
                 folded_state = self.transform.forward(np.ones(len(candidates)))
             self.memory.address(0); path.append("S2_prime_checkpoint")
             state = MathematicalQuantumState(folded_state)
-            gate = self.coherence.analyze(state.amplitudes); path.append("S3_coherence")
+            gate = self.coherence.analyze(state); path.append("S3_coherence")
             if not gate["high_quality"]: raise ValueError("low-quality numerical regime")
             candidates = self.fractal.rank(candidates); path.append("S4_mandelbrot")
             candidates = self.infinity_fold.rank(candidates); path.append("S5_infinity_fold")
