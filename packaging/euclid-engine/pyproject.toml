@@ -23,7 +23,11 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 # The v17 cognition stack is pure Python with no third-party dependency.
-dependencies = []
+dependencies = [
+    "numpy>=1.26,<3",
+    "kellogg-tensor>=1.0,<2",
+    "hyba-toe>=1.0,<2",
+]
 
 [project.scripts]
 euclid-v17-research = "euclid.cognition.research.cli:main"

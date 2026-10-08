@@ -387,6 +387,7 @@ class DynamicObjectiveController(ObjectiveController):
     """Intermediate objectives from the goal, the model and the proxy audit."""
 
     def __init__(self, context: Any) -> None:
+        super().__init__()
         self.context = context
         self.history: list[dict[str, Any]] = []
 

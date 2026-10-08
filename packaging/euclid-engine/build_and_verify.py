@@ -113,6 +113,15 @@ def inspect(wheel: Path) -> dict:
             "passed": not (forbidden or secrets or bad or missing)}
 
 
+def _sibling_wheel(pattern: str, dist: Path) -> Path:
+    wheels = sorted(dist.glob(pattern))
+    if not wheels:
+        raise RuntimeError(
+            f"sibling wheel {pattern} not found in {dist}; build that product first"
+        )
+    return wheels[0]
+
+
 def main() -> int:
     DIST.mkdir(exist_ok=True)
     for stale in DIST.glob("euclid_engine-*.whl"):
@@ -132,7 +141,16 @@ def main() -> int:
         env_dir = tmp_path / "venv"
         venv.EnvBuilder(with_pip=True).create(env_dir)
         python = env_dir / ("Scripts" if sys.platform == "win32" else "bin") / "python"
-        sh([python, "-m", "pip", "install", "--no-deps", "--no-index", wheel], cwd=tmp_path)
+        kellogg_wheel = _sibling_wheel(
+            "kellogg_tensor-*.whl", REPO / "packaging" / "kellogg-tensor" / "dist"
+        )
+        toe_wheel = _sibling_wheel(
+            "hyba_toe-*.whl", REPO / "packaging" / "toe" / "dist"
+        )
+        # Full dependency resolution is exercised: the sibling product wheels
+        # satisfy the declared kellogg-toe/hyba-toe requirements and numpy is
+        # fetched from the index, exactly as a real install would resolve.
+        sh([python, "-m", "pip", "install", "-q", str(kellogg_wheel), str(toe_wheel), str(wheel)], cwd=tmp_path)
         smoke = SMOKE % (repr(V17_MODULES), VERSION)
         completed = sh([python, "-I", "-c", smoke], cwd=tmp_path, capture_output=True)
         record["installed_smoke"] = json.loads(completed.stdout.strip().splitlines()[-1])
