@@ -2188,6 +2188,307 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             LOG.warning("precomputed plan rejected by contract: %s", exc)
             return None
 
+    def submission_pipeline_snapshot(self) -> dict[str, Any]:
+        """Measured state of the compute→network decoupling boundary."""
+        return {
+            "mode": "asynchronous" if self._asynchronous_submission else "synchronous",
+            "queue_depth": self._submission_queue.qsize(),
+            "queue_capacity": self._submission_queue.maxsize,
+            "in_flight": self._submission_in_flight,
+            "queued_block_candidates": self._queued_block_candidates,
+            "stale_dropped": self._submission_queue_stale,
+            "unknown_outcomes": self._submission_queue_unknown,
+            "resolved": self._submission_queue_resolved,
+        }
+
+    def _ensure_submission_task(self) -> None:
+        if not self._asynchronous_submission:
+            return
+        if self._submission_task is None or self._submission_task.done():
+            self._submission_task = asyncio.create_task(
+                self._submission_loop(),
+                name="pythia-submission-pipeline",
+            )
+
+    async def _stop_submission_task(self) -> None:
+        task = self._submission_task
+        if task is None:
+            return
+        drain_s = _positive_env("PYTHIA_SUBMISSION_DRAIN_S", 5.0)
+        try:
+            await asyncio.wait_for(self._submission_queue.join(), timeout=drain_s)
+        except TimeoutError:
+            self.causal.record(
+                "submission_drain_incomplete",
+                CausalCoordinate(),
+                queue_depth=self._submission_queue.qsize(),
+                in_flight=self._submission_in_flight,
+                drain_timeout_s=drain_s,
+            )
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+        self._submission_task = None
+
+    async def _queue_verified_candidate(
+        self,
+        *,
+        identity: WorkIdentity,
+        plan: SearchPlan,
+        lease: LeaseRecord,
+        record: ExecutionRecord,
+        coordinate: CausalCoordinate,
+        job_id: str,
+        extranonce2: str,
+        ntime: str,
+        nonce: int | str,
+    ) -> bool:
+        """Queue one independently checked candidate without claiming an outcome."""
+        if not self.client:
+            return False
+        proof = self.client.proof_adapter.validate_candidate(
+            job_id=job_id,
+            extranonce2=extranonce2,
+            ntime=ntime,
+            nonce=nonce,
+        )
+        digest_hex = proof.digest[::-1].hex()
+        if (
+            self.session.already_submitted(digest_hex)
+            or digest_hex in self._queued_candidate_digests
+        ):
+            self._record_submission_gate("DUPLICATE_SUBMISSION", job_id)
+            return False
+        block_candidate = int.from_bytes(proof.digest, "little") <= compact_target(
+            int.from_bytes(proof.header[72:76], "little")
+        )
+        pending = _PendingSubmission(
+            identity=identity,
+            plan=plan,
+            lease=lease,
+            record=record,
+            coordinate=coordinate,
+            job_id=job_id,
+            extranonce2=extranonce2,
+            ntime=ntime,
+            nonce=nonce,
+            digest_hex=digest_hex,
+            block_candidate=block_candidate,
+        )
+        self._queued_candidate_digests.add(digest_hex)
+        if block_candidate:
+            self._queued_block_candidates += 1
+        self._ensure_submission_task()
+        try:
+            await self._submission_queue.put(pending)
+        except BaseException:
+            self._queued_candidate_digests.discard(digest_hex)
+            if block_candidate:
+                self._queued_block_candidates = max(
+                    0, self._queued_block_candidates - 1
+                )
+            raise
+        self.causal.record(
+            "candidate_queued",
+            coordinate,
+            job_id=job_id,
+            nonce=int(nonce, 16) if isinstance(nonce, str) else int(nonce),
+            digest=digest_hex,
+            block_candidate=block_candidate,
+            queue_depth=self._submission_queue.qsize(),
+            queue_capacity=self._submission_queue.maxsize,
+        )
+        return True
+
+    def _finalize_deferred_pool_outcome(
+        self,
+        pending: _PendingSubmission,
+        outcome: PoolOutcome,
+        *,
+        submission_id: str | None,
+    ) -> ExecutionRecord:
+        """Attach literal pool truth to one previously recorded execution."""
+        coordinate = pending.coordinate
+        if submission_id is not None:
+            coordinate = coordinate.extend(submission_id=submission_id)
+        learning_record_id = (
+            f"learning:{uuid.uuid4()}"
+            if outcome in (PoolOutcome.ACCEPTED, PoolOutcome.REJECTED)
+            else None
+        )
+        if learning_record_id is not None:
+            coordinate = coordinate.extend(learning_record_id=learning_record_id)
+        final = replace(
+            pending.record,
+            pool_outcome=outcome,
+            pool_accepted=int(outcome is PoolOutcome.ACCEPTED),
+            pool_rejected=int(outcome is PoolOutcome.REJECTED),
+            pool_stale=int(outcome is PoolOutcome.STALE),
+            recovery_event=self.agentic.is_recovery_active(),
+            lease_id=pending.lease.lease_id,
+            generation=pending.identity.generation,
+            extranonce2=pending.lease.extranonce2,
+            nonce_start=pending.lease.start,
+            execution_id=coordinate.execution_id,
+            candidate_id=coordinate.candidate_id,
+            submission_id=coordinate.submission_id,
+            learning_record_id=coordinate.learning_record_id,
+            job_id=pending.identity.job_id,
+            recovery_id=coordinate.recovery_id,
+        )
+        self.agentic.record_outcome(final)
+        if outcome in (PoolOutcome.ACCEPTED, PoolOutcome.REJECTED):
+            self.mining_intelligence.learn(
+                accepted=outcome is PoolOutcome.ACCEPTED,
+                lead=pending.plan.policy_id,
+                job_id=pending.identity.job_id,
+            )
+        self.causal.record(
+            "learning_observed",
+            coordinate,
+            applied=self.agentic.telemetry.learning_update_applied,
+            pool_outcome=outcome.value,
+            plan_id=pending.plan.plan_id,
+            toe_frame_id=pending.plan.toe_frame_id,
+        )
+        self.causal.record(
+            "pool_outcome_resolved",
+            coordinate,
+            pool_outcome=outcome.value,
+            digest=pending.digest_hex,
+        )
+        evidence = self.production_integration.execution_evidence(final)
+        self.causal.record(
+            "chronus107_execution_evidence",
+            coordinate,
+            evidence_sha256=evidence["evidence_sha256"],
+            state=evidence["state"],
+        )
+        if (
+            isinstance(self.last_execution, dict)
+            and self.last_execution.get("execution_id") == coordinate.execution_id
+        ):
+            self.last_execution.update(
+                {
+                    "submission_id": coordinate.submission_id,
+                    "learning_record_id": coordinate.learning_record_id,
+                    "pool_outcome": outcome.value,
+                    "evidence_class": final.evidence_class.value,
+                    "truth_class": final.truth_class,
+                    "chronus107": evidence,
+                }
+            )
+        self._shares_accepted += int(outcome is PoolOutcome.ACCEPTED)
+        self._submission_queue_resolved += 1
+        if outcome is PoolOutcome.STALE:
+            self._submission_queue_stale += 1
+        if outcome is PoolOutcome.OUTCOME_UNKNOWN:
+            self._submission_queue_unknown += 1
+        self._publish_evidence(force=True)
+        self._publish_metrics(force=True)
+        return final
+
+    async def _submission_loop(self) -> None:
+        """Single network writer for candidates produced by the compute plane."""
+        while True:
+            pending = await self._submission_queue.get()
+            retain_identity = True
+            try:
+                self._submission_in_flight = True
+                retry_delay = 0.01
+                while True:
+                    current = self._refresh_work_identity()
+                    if current is None or current.key != pending.identity.key:
+                        client = self.client
+                        if (
+                            hasattr(client, "record_stale_candidate")
+                            and client is not None
+                            and getattr(
+                                getattr(client, "runtime_state", None),
+                                "session_id",
+                                None,
+                            )
+                            == pending.identity.pool_session_id
+                        ):
+                            client.record_stale_candidate()
+                        self.causal.record(
+                            "candidate_stale_dropped",
+                            pending.coordinate,
+                            digest=pending.digest_hex,
+                            reason="work identity changed before network write",
+                        )
+                        self._finalize_deferred_pool_outcome(
+                            pending,
+                            PoolOutcome.STALE,
+                            submission_id=None,
+                        )
+                        break
+
+                    self._last_submission_id = None
+                    self._pending_correlation = {
+                        k: v
+                        for k, v in pending.coordinate.as_dict().items()
+                        if k != "recovery_id"
+                    }
+                    try:
+                        await self.submit_candidate(
+                            job_id=pending.job_id,
+                            extranonce2=pending.extranonce2,
+                            ntime=pending.ntime,
+                            nonce=pending.nonce,
+                            cycle_reporting=False,
+                        )
+                    except StaleJobError:
+                        self._last_pool_outcome = PoolOutcome.STALE
+                    except (ConnectionError, TimeoutError, asyncio.IncompleteReadError) as exc:
+                        outcome = self._last_pool_outcome
+                        if outcome is PoolOutcome.NOT_SUBMITTED:
+                            # Zero transport write is the only retryable case.
+                            # Keep the candidate in this worker slot until the
+                            # exact identity changes or the transport recovers.
+                            self.causal.record(
+                                "submission_retry_wait",
+                                pending.coordinate,
+                                reason=type(exc).__name__,
+                                retry_delay_s=retry_delay,
+                                wire_write_observed=False,
+                            )
+                            await asyncio.sleep(retry_delay)
+                            retry_delay = min(retry_delay * 2.0, 0.5)
+                            continue
+                        # A write happened and the answer was lost. Exactly-once
+                        # semantics forbid replay.
+                    except asyncio.CancelledError:
+                        raise
+                    except Exception as exc:
+                        LOG.exception("submission pipeline refused candidate")
+                        self.causal.record(
+                            "submission_pipeline_failure",
+                            pending.coordinate,
+                            reason=f"{type(exc).__name__}: {exc}",
+                        )
+                        self._last_pool_outcome = PoolOutcome.NOT_SUBMITTED
+                    finally:
+                        self._pending_correlation = None
+
+                    outcome = self._last_pool_outcome
+                    submission_id = self._last_submission_id
+                    self._finalize_deferred_pool_outcome(
+                        pending,
+                        outcome,
+                        submission_id=submission_id,
+                    )
+                    break
+            finally:
+                self._submission_in_flight = False
+                self._queued_candidate_digests.discard(pending.digest_hex)
+                if pending.block_candidate:
+                    self._queued_block_candidates = max(
+                        0, self._queued_block_candidates - 1
+                    )
+                self._submission_queue.task_done()
+                self._work_wake.set()
+
     def _record_submission_gate(self, reason: str, job_id: str) -> None:
         coordinate = CausalCoordinate(**(self._pending_correlation or {}))
         self.causal.record(
