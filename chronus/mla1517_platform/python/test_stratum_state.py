@@ -85,6 +85,29 @@ class StratumRuntimeStateTests(unittest.TestCase):
         self.assertNotEqual(updated.fingerprint, first.fingerprint)
         self.assertEqual(state.snapshot()["job"]["difficulty_source"], "mining.set_difficulty")
 
+    def test_exact_target_exposes_protocol_neutral_share_difficulty(self) -> None:
+        from chronus.mla1517.mining.stratum_adapter import DIFF1_TARGET
+
+        state = _authorized_state()
+        target = DIFF1_TARGET // 8
+        state.target_updated(
+            target=target,
+            source="sv2.SetTarget",
+            value=f"{target:064x}",
+        )
+        snapshot = state.snapshot()
+        self.assertEqual(snapshot["job"]["difficulty_source"], "sv2.SetTarget")
+        self.assertAlmostEqual(snapshot["job"]["difficulty"], 8.0)
+
+    def test_declared_v1_difficulty_remains_the_telemetry_value(self) -> None:
+        state = _authorized_state()
+        state.target_updated(
+            target=(1 << 255),
+            source="mining.set_difficulty",
+            value="4.25",
+        )
+        self.assertEqual(state.snapshot()["job"]["difficulty"], 4.25)
+
     def test_submission_results_remain_literal(self) -> None:
         state = _authorized_state()
         state.target_updated(target=(1 << 255), source="mining.set_target", value="80" + "00" * 31)
