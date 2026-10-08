@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any, ClassVar, Mapping
 
@@ -776,6 +777,93 @@ class EuclidRuntime:
                 "binding_id": self._adaptive_last_binding_id,
             },
         )
+
+    def adaptive_restart_receipt(self) -> dict[str, Any]:
+        """Artifact-bound receipt for later fresh-process restart verification."""
+        if self.adaptive is None:
+            raise RuntimeError("adaptive intelligence is not composed")
+        if self._adaptive_data_port is None:
+            raise RuntimeError("shared OVID/THESEUS adaptive custody is not bound")
+        binding = self._adaptive_data_port.latest(self.ADAPTIVE_KNOWLEDGE_KIND)
+        if binding is None:
+            raise RuntimeError("no shared adaptive knowledge binding exists")
+        verdict = self._adaptive_data_port.fabric.verify(binding.binding_id)
+        if not verdict.get("passed"):
+            raise RuntimeError("adaptive knowledge binding failed custody verification")
+        payload = self.adaptive.knowledge.to_payload()
+        summary = self.adaptive.knowledge.summary()
+        return {
+            "schema": "euclid.adaptive-restart-receipt/1",
+            "creator_id": self.creator_id,
+            "tenant_id": self._adaptive_tenant_id,
+            "process_id": os.getpid(),
+            "binding_id": binding.binding_id,
+            "knowledge_seal": str(payload.get("seal") or ""),
+            "episodes": int(getattr(self.adaptive.knowledge, "episodes", 0)),
+            "summary_digest": domain_hash(
+                "euclid.adaptive-restart.summary.v1", summary
+            ),
+            "custody_verified": True,
+        }
+
+    def verify_adaptive_restart_receipt(
+        self, prior: Mapping[str, Any]
+    ) -> dict[str, Any]:
+        """Verify shared adaptive restoration from a genuinely different process."""
+        if self.adaptive is None:
+            raise RuntimeError("adaptive intelligence is not composed")
+        if self._adaptive_data_port is None:
+            raise RuntimeError("shared OVID/THESEUS adaptive custody is not bound")
+        if prior.get("schema") != "euclid.adaptive-restart-receipt/1":
+            raise ValueError("unsupported adaptive restart receipt")
+        if str(prior.get("creator_id")) != self.creator_id:
+            raise ValueError("adaptive restart creator mismatch")
+        if str(prior.get("tenant_id")) != self._adaptive_tenant_id:
+            raise ValueError("adaptive restart tenant mismatch")
+        prior_pid = int(prior.get("process_id", 0))
+        if prior_pid <= 0 or prior_pid == os.getpid():
+            raise ValueError("restart verification requires a different process")
+        binding = self._adaptive_data_port.latest(self.ADAPTIVE_KNOWLEDGE_KIND)
+        if binding is None or binding.binding_id != str(prior.get("binding_id")):
+            raise ValueError("adaptive restart binding identity changed before replay")
+        verdict = self._adaptive_data_port.fabric.verify(binding.binding_id)
+        if not verdict.get("passed"):
+            raise RuntimeError("adaptive restart binding failed custody verification")
+        stored = json.loads(
+            self._adaptive_data_port.read(binding.binding_id).decode("utf-8")
+        )
+        stored_knowledge = self._validate_adaptive_record(stored)
+        current_payload = self.adaptive.knowledge.to_payload()
+        current_summary = self.adaptive.knowledge.summary()
+        checks = {
+            "different_process": prior_pid != os.getpid(),
+            "binding_identity": binding.binding_id == str(prior.get("binding_id")),
+            "stored_seal": str(stored_knowledge.get("seal") or "")
+            == str(prior.get("knowledge_seal") or ""),
+            "restored_seal": str(current_payload.get("seal") or "")
+            == str(prior.get("knowledge_seal") or ""),
+            "episodes": int(getattr(self.adaptive.knowledge, "episodes", 0))
+            == int(prior.get("episodes", -1)),
+            "summary_digest": domain_hash(
+                "euclid.adaptive-restart.summary.v1", current_summary
+            )
+            == str(prior.get("summary_digest") or ""),
+            "custody_verified": bool(verdict.get("passed")),
+        }
+        passed = all(checks.values())
+        record = {
+            "schema": "euclid.adaptive-restart-verification/1",
+            "passed": passed,
+            "checks": checks,
+            "prior_process_id": prior_pid,
+            "current_process_id": os.getpid(),
+            "binding_id": binding.binding_id,
+            "knowledge_seal": str(current_payload.get("seal") or ""),
+        }
+        self.evidence.append("adaptive-restart-replay-verified", record)
+        if not passed:
+            raise RuntimeError(f"adaptive restart verification failed: {checks}")
+        return record
 
     def compose_adaptive_intelligence(
         self,
