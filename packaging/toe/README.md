@@ -92,7 +92,7 @@ parity when it does not.
 | System | Owns | Relation to TOE |
 |---|---|---|
 | **TOE** | domain-general world modelling, causal inference, futures, planning, VOI, precision, explanation, revision | this package |
-| **KELLOGG** (`kellogg-tensor`) | tensor mathematics, exact fields (Q(φ), Q(ζ8)) | required dependency; consumed, never copied |
+| **KELLOGG** (`hyba-kellogg-tensor`) | tensor mathematics, exact fields (Q(φ), Q(ζ8)) | required dependency; consumed, never copied |
 | **EUCLID** | orchestration — decides when TOE is asked | consumer |
 | **PYTHIA** | mining authority | consumer |
 | **TURING** | virtual quantum computer execution | TOE may request computation |
@@ -104,17 +104,17 @@ store.
 
 ## Install
 
-Approved first-public distribution: **`hyba-toe==1.0.0`**, per `OWNER_DECISIONS.md`.
+Approved first-public distribution: **`hyba-toe-intelligence==1.0.0`**, per `OWNER_DECISIONS.md`.
 The commands below are the approved publication target, not evidence that the
 registry release exists or has passed clean-install execution. Registry
 prerequisites and publication verification remain open until evidenced.
 
 ```bash
-pip install hyba-toe==1.0.0
-pip install "hyba-toe[legacy-hr]==1.0.0"   # + pandas for the original HR engine
+pip install hyba-toe-intelligence==1.0.0
+pip install "hyba-toe-intelligence[legacy-hr]==1.0.0"   # + pandas for the original HR engine
 ```
 
-Requires Python ≥ 3.11, numpy and `kellogg-tensor` ≥ 1.0.
+Requires Python ≥ 3.11, numpy and `hyba-kellogg-tensor` ≥ 1.0.
 
 ## Self-test
 

@@ -101,7 +101,7 @@ jobs:
         run: |
           python -m venv /tmp/toe-mining
           . /tmp/toe-mining/bin/activate
-          python -m pip install --disable-pip-version-check verified-dist/kellogg_tensor-1.0.0-py3-none-any.whl verified-dist/*toe*-py3-none-any.whl
+          python -m pip install --disable-pip-version-check verified-dist/hyba_kellogg_tensor-1.0.0-py3-none-any.whl verified-dist/*toe*-py3-none-any.whl
           python scripts/toe_mining_voyage.py --report mining-voyage.json
           python - <<'PY'
           import json
@@ -230,8 +230,8 @@ jobs:
                   return False
 
           if os.environ["PUBLISH"] == "pypi":
-              if not on("https://pypi.org", "kellogg-tensor", "1.0.0"):
-                  raise SystemExit("kellogg-tensor 1.0.0 must be live on PyPI before TOE")
+              if not on("https://pypi.org", "hyba-kellogg-tensor", "1.0.0"):
+                  raise SystemExit("hyba-kellogg-tensor 1.0.0 must be live on PyPI before TOE")
               if not on("https://test.pypi.org", v["distribution"], v["version"]):
                   raise SystemExit("TOE must pass TestPyPI first")
       - name: Stage only the verified distribution archives
@@ -268,7 +268,7 @@ jobs:
           . /tmp/toe-registry/bin/activate
           NAME=$(python -c "import json; print(json.load(open('release/release-verdict.json'))['distribution'])")
           VER=$(python -c "import json; print(json.load(open('release/release-verdict.json'))['version'])")
-          python -m pip install --disable-pip-version-check release/kellogg_tensor-1.0.0-py3-none-any.whl numpy
+          python -m pip install --disable-pip-version-check release/hyba_kellogg_tensor-1.0.0-py3-none-any.whl numpy
           for i in 1 2 3 4 5; do
             python -m pip install --no-deps --index-url https://test.pypi.org/simple/ "$NAME==$VER" && break
             sleep 30

@@ -1,4 +1,6 @@
-# THESEUS publication candidate — hyba-theseus 1.0.0
+> Publication naming is owner-approved under `hyba-<system>-<capability>`. Qualification and registry/upload approval remain separate and unverified.
+
+# THESEUS publication candidate — hyba-theseus-storage 1.0.0
 
 **Prepared, not qualified or published.** The public distribution name remains
 proposed until the owner decision is recorded. First-public version: **1.0.0**.
@@ -16,12 +18,12 @@ canonical package initializer exports them; their authority is NOT transferred
 to THESEUS. Hardware and external intelligence integrations are not certified
 by installing this package. Optional absent integrations must remain explicit.
 
-The proposed distribution is named `hyba-theseus`, not `aethel`. Aethel's existing
+The proposed distribution is named `hyba-theseus-storage`, not `aethel`. Aethel's existing
 `__version_source__` may consequently remain `source_fallback`; the build checks
 actual distribution metadata separately and does not relabel that flag. Any
 future alias/distribution migration needs its own parity proof.
 
-CLI: `hyba-theseus --help` invokes the existing `aethel.__main__:main`.
+CLI (preserved): `hyba-theseus --help` invokes the existing `aethel.__main__:main`.
 The existing `python -m aethel` interface remains available.
 
 ## Build and installed verification

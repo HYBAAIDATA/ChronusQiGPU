@@ -1,0 +1,295 @@
+{
+  "schema": "hyba.publication-identities/1",
+  "naming_rule": "hyba-<system>-<capability>",
+  "audited_base_sha": "8dd57e49998967899a88aaf53cf89e53386946ff",
+  "approval_scope": "owner-approved publication naming; not upload or qualification",
+  "packages": [
+    {
+      "system": "KELLOGG",
+      "capability": "tensor",
+      "distribution": "hyba-kellogg-tensor",
+      "legacy_distribution": "kellogg-tensor",
+      "manifest_paths": [
+        "packaging/kellogg-tensor/pyproject.toml"
+      ],
+      "canonical_manifest": "packaging/kellogg-tensor/pyproject.toml",
+      "state": "EXISTING_SCAFFOLD",
+      "imports_unchanged": [
+        "kellogg"
+      ],
+      "first_public_version": "1.0.0",
+      "source_metadata_version": "DYNAMIC",
+      "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
+      "preserved_interface_fingerprints": {
+        "packaging/kellogg-tensor/pyproject.toml": "24ab0df5c42fd19ad9b1dcc8d4e34a4506763faf25aff61edd0b2442c6000bd0"
+      }
+    },
+    {
+      "system": "TURING",
+      "capability": "vqc",
+      "distribution": "hyba-turing-vqc",
+      "legacy_distribution": "turing-universal-quantum-computer",
+      "manifest_paths": [
+        "turing_universal_quantum_computer/pyproject.toml"
+      ],
+      "canonical_manifest": "turing_universal_quantum_computer/pyproject.toml",
+      "state": "EXISTING_SCAFFOLD",
+      "imports_unchanged": [
+        "turing_universal_quantum_computer"
+      ],
+      "first_public_version": "1.0.0",
+      "source_metadata_version": "1.0.0",
+      "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
+      "preserved_interface_fingerprints": {
+        "turing_universal_quantum_computer/pyproject.toml": "49403cd05fb9c641cc38e1430e53ce76d401b6b6a4fe4f7594c1bec171bde778"
+      }
+    },
+    {
+      "system": "THESEUS",
+      "capability": "storage",
+      "distribution": "hyba-theseus-storage",
+      "legacy_distribution": "hyba-theseus",
+      "manifest_paths": [
+        "packaging/theseus/pyproject.toml"
+      ],
+      "canonical_manifest": "packaging/theseus/pyproject.toml",
+      "state": "EXISTING_SCAFFOLD",
+      "imports_unchanged": [
+        "aethel"
+      ],
+      "first_public_version": "1.0.0",
+      "source_metadata_version": "1.0.0",
+      "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
+      "preserved_interface_fingerprints": {
+        "packaging/theseus/pyproject.toml": "87a1b47b63d0646f9d7a9fea81d6e01685a1d2c1a6555fa34a9e49195563df31"
+      }
+    },
+    {
+      "system": "OVID",
+      "capability": "data-organisation",
+      "distribution": "hyba-ovid-data-organisation",
+      "legacy_distribution": "hyba-ovid",
+      "manifest_paths": [
+        "packaging/ovid/pyproject.toml"
+      ],
+      "canonical_manifest": "packaging/ovid/pyproject.toml",
+      "state": "EXISTING_SCAFFOLD",
+      "imports_unchanged": [
+        "hyba_db"
+      ],
+      "first_public_version": "1.0.0",
+      "source_metadata_version": "1.0.0",
+      "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
+      "preserved_interface_fingerprints": {
+        "packaging/ovid/pyproject.toml": "b346071ecf1c0ab90500df4cd594d3b9aef02abb74d1443e3b674831d57aa816"
+      }
+    },
+    {
+      "system": "TOE",
+      "capability": "intelligence",
+      "distribution": "hyba-toe-intelligence",
+      "legacy_distribution": "hyba-toe",
+      "manifest_paths": [
+        "packaging/toe/pyproject.toml"
+      ],
+      "canonical_manifest": "packaging/toe/pyproject.toml",
+      "state": "EXISTING_SCAFFOLD",
+      "imports_unchanged": [
+        "toe"
+      ],
+      "first_public_version": "1.0.0",
+      "source_metadata_version": "DYNAMIC",
+      "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
+      "preserved_interface_fingerprints": {
+        "packaging/toe/pyproject.toml": "a9428f793978d57de235494949ad087ed08b443343916c40ab2d18c7ca851caa"
+      }
+    },
+    {
+      "system": "EUCLID",
+      "capability": "intelligence",
+      "distribution": "hyba-euclid-intelligence",
+      "legacy_distribution": "euclid-engine",
+      "manifest_paths": [
+        "packaging/euclid-engine/pyproject.toml",
+        "euclid/pyproject.toml"
+      ],
+      "canonical_manifest": "packaging/euclid-engine/pyproject.toml",
+      "state": "EXISTING_SCAFFOLD",
+      "imports_unchanged": [
+        "euclid",
+        "hyba_substrate",
+        "resonance_intelligence"
+      ],
+      "first_public_version": "1.0.0",
+      "source_metadata_version": "1.0.0",
+      "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
+      "note": "one identity; legacy research metadata is not a second public package; runtime generation 17 is retained",
+      "preserved_interface_fingerprints": {
+        "packaging/euclid-engine/pyproject.toml": "8b4cd0fe90ba72b75473b892c00208eacc00cefaa9408e483bde4c9a53cf64b1",
+        "euclid/pyproject.toml": "24f28f90de48433abaf6f3583d57fd864dbe5f28cb9a8b7a96cd5df7b568446e"
+      }
+    },
+    {
+      "system": "SALAMANDER",
+      "capability": "self-healing",
+      "distribution": "hyba-salamander-self-healing",
+      "legacy_distribution": "hyba-salamander",
+      "manifest_paths": [
+        "packaging/salamander/pyproject.toml"
+      ],
+      "canonical_manifest": "packaging/salamander/pyproject.toml",
+      "state": "EXISTING_SCAFFOLD",
+      "imports_unchanged": [
+        "salamander",
+        "al_haras"
+      ],
+      "first_public_version": "1.0.0",
+      "source_metadata_version": "1.0.0",
+      "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
+      "preserved_interface_fingerprints": {
+        "packaging/salamander/pyproject.toml": "e599f448b407abcb6538fdae1ee124e40ec63abf457eb1a8fadb15a2f9ec3207"
+      }
+    },
+    {
+      "system": "CHRONOS",
+      "capability": "mathematics",
+      "distribution": "hyba-chronos-mathematics",
+      "legacy_distribution": "chronos-core",
+      "manifest_paths": [
+        "packaging/chronos-core/pyproject.toml"
+      ],
+      "canonical_manifest": "packaging/chronos-core/pyproject.toml",
+      "state": "EXISTING_SCAFFOLD",
+      "imports_unchanged": [
+        "chronus"
+      ],
+      "first_public_version": "1.0.0",
+      "source_metadata_version": "3.3.0",
+      "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
+      "version_reconciliation": "REQUIRED_BEFORE_PUBLICATION",
+      "preserved_interface_fingerprints": {
+        "packaging/chronos-core/pyproject.toml": "6f3127892bc0c70a8bf0a05dac125327be48083866f4520ac442671ae66c8da5"
+      }
+    },
+    {
+      "system": "CHRONOS ONE",
+      "capability": "igpu",
+      "distribution": "hyba-chronos-one-igpu",
+      "legacy_distribution": "chronos-one-igpu",
+      "manifest_paths": [
+        "packages/chronos-one-igpu/pyproject.toml"
+      ],
+      "canonical_manifest": "packages/chronos-one-igpu/pyproject.toml",
+      "state": "EXISTING_SCAFFOLD",
+      "imports_unchanged": [
+        "chronos_one_igpu"
+      ],
+      "first_public_version": "1.0.0",
+      "source_metadata_version": "3.11.2rc3",
+      "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
+      "version_reconciliation": "REQUIRED_BEFORE_PUBLICATION",
+      "preserved_interface_fingerprints": {
+        "packages/chronos-one-igpu/pyproject.toml": "e69b88388d7f1e64d2f60745a7d3f078ecdfdf64b3c453ce1d0ce4d3472f6b24"
+      }
+    },
+    {
+      "system": "PYTHIA",
+      "capability": "mining",
+      "distribution": "hyba-pythia-mining",
+      "legacy_distribution": "pythia-mla1517",
+      "manifest_paths": [
+        "pyproject.toml"
+      ],
+      "canonical_manifest": "pyproject.toml",
+      "state": "EXISTING_SCAFFOLD",
+      "imports_unchanged": [
+        "existing monorepo mapping retained"
+      ],
+      "first_public_version": "1.0.0",
+      "source_metadata_version": "0.1.0",
+      "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
+      "version_reconciliation": "REQUIRED_BEFORE_PUBLICATION",
+      "preserved_interface_fingerprints": {
+        "pyproject.toml": "5d85f4b3da1e4e799da6438e124f0a91881a4edb8004c171b547e756caef242f"
+      }
+    },
+    {
+      "system": "PYTHIA",
+      "capability": "mining-runtime",
+      "distribution": "hyba-pythia-mining-runtime",
+      "legacy_distribution": "pythia-production-mining",
+      "manifest_paths": [
+        "chronus/mla1517_platform/pyproject.toml"
+      ],
+      "canonical_manifest": "chronus/mla1517_platform/pyproject.toml",
+      "state": "EXISTING_SCAFFOLD",
+      "imports_unchanged": [
+        "mla1517"
+      ],
+      "first_public_version": "1.0.0",
+      "source_metadata_version": "0.3.0",
+      "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
+      "version_reconciliation": "REQUIRED_BEFORE_PUBLICATION",
+      "preserved_interface_fingerprints": {
+        "chronus/mla1517_platform/pyproject.toml": "a5dbd19394b64ec2a09d85c68e807863a845b73ba9e59ff799f37e9b0fdfbd08"
+      }
+    },
+    {
+      "system": "CHRONUS",
+      "capability": "igpu",
+      "distribution": "hyba-chronus-igpu",
+      "legacy_distribution": "chronus-igpu",
+      "manifest_paths": [],
+      "state": "PLANNED_NOT_SCAFFOLDED",
+      "first_public_version": "1.0.0",
+      "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
+      "preserved_interface_fingerprints": {}
+    },
+    {
+      "system": "CHRONUS",
+      "capability": "tensor",
+      "distribution": "hyba-chronus-tensor",
+      "legacy_distribution": "chronus-tensor",
+      "manifest_paths": [],
+      "state": "PLANNED_NOT_SCAFFOLDED",
+      "first_public_version": "1.0.0",
+      "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
+      "preserved_interface_fingerprints": {}
+    }
+  ],
+  "private_applications": [
+    {
+      "path": "services/resilience-gateway/package.json",
+      "name": "@pythia/resilience-gateway",
+      "private": true,
+      "counted_for_publication": false
+    },
+    {
+      "path": "frontend/package.json",
+      "name": "pythia-operator-frontend",
+      "private": true,
+      "counted_for_publication": false
+    },
+    {
+      "path": "legacy/PYTHIA_Frontend/package.json",
+      "name": "app-builder-workspace",
+      "private": true,
+      "counted_for_publication": false
+    },
+    {
+      "path": "package.json",
+      "name": "pythia-operator",
+      "private": true,
+      "counted_for_publication": false
+    }
+  ],
+  "bundled_authorities": [
+    {
+      "system": "AL HARAS",
+      "brand_descriptor": "hyba-al-haras-security",
+      "distributed_by": "hyba-salamander-self-healing",
+      "separate_distribution": false
+    }
+  ],
+  "decision_record": "Standalone package publication and whole-platform production qualification are separate evidence tracks; neither inherits readiness from the other."
+}

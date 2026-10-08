@@ -3,10 +3,9 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-# PROVISIONAL distribution name — no public name has been owner-approved.
-# Publication is blocked until packaging/toe/OWNER_DECISIONS.md records the
-# approved name (the import name stays ``toe`` whatever is chosen).
-name = "hyba-toe"
+# Owner-approved publication convention: hyba-<system>-<capability>.
+# The Python import remains toe; naming approval is not upload approval.
+name = "hyba-toe-intelligence"
 dynamic = ["version"]
 description = "TOE — a domain-general mathematical intelligence engine: one backend for representation, causal inference, futures, planning, value of information, exact precision and learning across problem domains."
 readme = "README.md"
@@ -39,7 +38,7 @@ classifiers = [
 dependencies = [
     "numpy>=1.26,<3",
     # Exact tensor / golden-field mathematics is KELLOGG's; TOE consumes it.
-    "kellogg-tensor>=1.0,<2",
+    "hyba-kellogg-tensor>=1.0,<2",
 ]
 
 [project.optional-dependencies]

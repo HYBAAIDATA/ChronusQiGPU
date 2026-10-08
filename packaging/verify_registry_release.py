@@ -22,8 +22,8 @@ from urllib.request import urlopen
 from verify_release_candidates import KELLOGG_CHECK, TURING_CHECK
 
 PRODUCTS = {
-    "kellogg-tensor": (KELLOGG_CHECK, {"3.11", "3.12", "3.13", "3.14"}),
-    "turing-universal-quantum-computer": (TURING_CHECK, {"3.11", "3.12", "3.13"}),
+    "hyba-kellogg-tensor": (KELLOGG_CHECK, {"3.11", "3.12", "3.13", "3.14"}),
+    "hyba-turing-vqc": (TURING_CHECK, {"3.11", "3.12", "3.13"}),
 }
 REGISTRIES = {
     "testpypi": ("https://test.pypi.org", "test-files.pythonhosted.org"),
@@ -64,12 +64,12 @@ def qualification(path, sha, product):
     mandatory = {"cross_version_verified", "tests_passed", "benchmarks_completed", "wheel_built"}
     mandatory |= ({"standalone_boundary_verified", "registry_verified", "sdist_verified",
                    "attestation_verified", "certificate_verification_passed", "wheel_clean_install_verified"}
-                  if product == "kellogg-tensor" else
+                  if product == "hyba-kellogg-tensor" else
                   {"package_boundary_verified", "backend_admission_verified", "certificate_verified",
                    "witness_verified", "fresh_process_recovery_verified", "semantic_replay_verified",
                    "durable_custody_verified", "production_composition_verified", "sdist_verified"})
     require(all(row.get(key) is True for key in mandatory), "missing/failed mandatory qualification")
-    if product == "kellogg-tensor":
+    if product == "hyba-kellogg-tensor":
         tests = row["tests"]
         require(tests["git_sha"] == sha and tests["passed"] > 0 and tests["returncode"] == 0
                 and all(tests[k] == 0 for k in ("failed", "errors", "skipped")), "invalid source test evidence")
@@ -195,10 +195,10 @@ def verify(args):
         py = str(work / "env" / "bin" / "python")
         run([py, "-m", "pip", "install", "--index-url", "https://pypi.org/simple/",
              "numpy>=1.26,<3", "sympy>=1.12,<2", "scipy>=1.11", "networkx>=3.0"], work)
-        if args.product != "kellogg-tensor":
+        if args.product != "hyba-kellogg-tensor":
             dependency = load(args.dependency_manifest)
             require(dependency["git_sha"] == args.sha, "stale Kellogg build dependency")
-            with urlopen("https://pypi.org/pypi/kellogg-tensor/1.0.0/json", timeout=30) as response:
+            with urlopen("https://pypi.org/pypi/hyba-kellogg-tensor/1.0.0/json", timeout=30) as response:
                 published_dependency = json.load(response)
             matching = [f for f in published_dependency["urls"] if f["filename"] == dependency["wheel"]["file"]]
             require(len(matching) == 1 and matching[0]["digests"]["sha256"] == dependency["wheel"]["sha256"],
@@ -206,7 +206,7 @@ def verify(args):
             dependency_report = work / "dependency-install.json"
             run([py, "-m", "pip", "install", "--no-deps", "--only-binary=:all:",
                  "--no-cache-dir", "--index-url", "https://pypi.org/simple/",
-                 "--report", str(dependency_report), "kellogg-tensor==1.0.0"], work)
+                 "--report", str(dependency_report), "hyba-kellogg-tensor==1.0.0"], work)
             installed_dependency = load(dependency_report)["install"]
             require(len(installed_dependency) == 1 and
                     installed_dependency[0]["download_info"]["archive_info"]["hashes"]["sha256"] == dependency["wheel"]["sha256"],
@@ -236,7 +236,7 @@ def verify(args):
             require(executed and all(v is True for v in executed.values()), "installed benchmark incomplete/failed")
             require(results.get("cross_version_digest") is not False, "cross-version smoke contradicted matrix")
         require(load(work / "check-0.json") == load(work / "check-1.json"), "restart fixture differs")
-        if args.product != "kellogg-tensor":
+        if args.product != "hyba-kellogg-tensor":
             cli = str(work / "env" / "bin" / "turing-vqc")
             run([cli, "--help"], work)
             (work / "smoke.vqc").write_text("init 2\nh 0\ncx 0 1\nprob\ncertify\n")
@@ -245,7 +245,7 @@ def verify(args):
             output = logs.read_text()[before:]
             require("REFUSED" not in output and "certificate verified: True" in output,
                     "CLI did not certify the minimal operation")
-        replay = TURING_REPLAY if args.product != "kellogg-tensor" else KELLOGG_CUSTODY
+        replay = TURING_REPLAY if args.product != "hyba-kellogg-tensor" else KELLOGG_CUSTODY
         for _ in range(2):
             run([py, "-I", "-c", replay], work)
         (root / "custody.json").write_bytes((work / "custody.json").read_bytes())
@@ -254,7 +254,7 @@ def verify(args):
         "source_commit": args.sha, "registry": args.registry, "registry_url": host + "/project/" + args.product + "/1.0.0/",
         "python": platform.python_version(), "ci_run_url": os.environ["CI_RUN_URL"],
         "status": "PASS", "checks": {k: True for k in MANDATORY},
-        "entry_point_scope": "turing-vqc" if args.product != "kellogg-tensor" else "library-only; isolated Python execution",
+        "entry_point_scope": "turing-vqc" if args.product != "hyba-kellogg-tensor" else "library-only; isolated Python execution",
         "artifacts": {k: verdict[k] for k in ("wheel", "sdist")},
         "install_report_sha256": file_digest(root / "install-report.json"),
         "custody_sha256": file_digest(root / "custody.json"), "commands_sha256": file_digest(logs),

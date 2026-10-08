@@ -1,4 +1,6 @@
-# OVID publication candidate — hyba-ovid 1.0.0
+> Publication naming is owner-approved under `hyba-<system>-<capability>`. Qualification and registry/upload approval remain separate and unverified.
+
+# OVID publication candidate — hyba-ovid-data-organisation 1.0.0
 
 **Prepared, not qualified or published.** The public distribution name remains
 proposed until the owner decision is recorded. First-public version: **1.0.0**.
@@ -11,7 +13,7 @@ renamed, simplified or rewritten. Existing imports remain canonical.
 
 OVID retains organisation, versioned transform lineage, tenant-scoped queries
 and indexes. `hyba_db` is a rebuildable projection; THESEUS remains the durable
-system of record. This package consumes `hyba-theseus==1.0.0` rather than
+system of record. This package consumes `hyba-theseus-storage==1.0.0` rather than
 shipping another copy of `aethel`. TheseusFileCustody is an existing protocol
 adapter, not a competing custody implementation.
 

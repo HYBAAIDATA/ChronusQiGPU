@@ -2,7 +2,7 @@
   "schema": "kellogg.tensor-capabilities/v2",
   "version": "1.0.0",
   "canonical_owner": "kellogg",
-  "distribution": "kellogg-tensor",
+  "distribution": "hyba-kellogg-tensor",
   "hard_dependencies": ["numpy"],
   "planes": {
     "exact": ["Z", "Q", "Q(i)", "Q(sqrt2)", "Q(zeta8)", "Z[phi]", "Q(phi)", "GF(2)"],
