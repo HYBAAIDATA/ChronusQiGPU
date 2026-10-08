@@ -7,6 +7,7 @@ from pathlib import Path
 
 from euclid.cognition.baselines import DelegatorExecutor
 from euclid.cognition.core import AblationConfig
+from euclid.cognition.integrated.control import ContextualStrategyLearner
 from euclid.cognition.reachability import ReachabilityStage
 from euclid.cognition.worlds import MechanismWorld, WorldExecutor, generate_task
 from euclid.runtime import EuclidRuntime
@@ -100,6 +101,35 @@ class EuclidV17ProductionIntegration(unittest.TestCase):
                 runtime.reachability.stage(component),
                 ReachabilityStage.RESTART_VERIFIED,
             )
+
+    def test_f6_harmful_imported_strategy_is_detected_and_abandoned(self) -> None:
+        learner = ContextualStrategyLearner(seed=7)
+        # Strong source/global evidence says imported-strategy is excellent.
+        learner.global_stats["imported-strategy"] = [9.0, 10.0]
+
+        reports = [
+            learner.record_episode("target-class", "imported-strategy", 0.0)
+            for _ in range(3)
+        ]
+        detected = reports[-1].get("negative_transfer")
+        self.assertIsNotNone(detected)
+        self.assertEqual(
+            detected["remediation"],
+            "suppress_imported_strategy_and_global_prior",
+        )
+
+        choice = learner.select_strategy(
+            "target-class",
+            ("imported-strategy", "class-local-fallback"),
+        )
+        self.assertEqual(choice.strategy_id, "class-local-fallback")
+        self.assertIn("negative-transfer guard suppressed", choice.basis)
+        self.assertTrue(
+            any(
+                event.get("event") == "abandon_negative_transfer"
+                for event in learner.events
+            )
+        )
 
     def test_f4_recomposition_preserves_unique_task_organ_identity(self) -> None:
         runtime = self._runtime()
