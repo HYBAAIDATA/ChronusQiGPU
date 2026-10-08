@@ -6,6 +6,7 @@ import unittest
 from chronus.mla1517.mining.stratum_adapter import StratumProofAdapter, SubscriptionState
 from chronus.mla1517.mining.stratum_v2_transport import (
     ProductionStratumV2Client,
+    Sv2NotWritten,
     normalize_extended_job,
 )
 from manifold_pool_coordinator import PoolEndpoint
@@ -58,6 +59,89 @@ class BlockingSecureChannel(FakeSecureChannel):
         while not self.incoming:
             await asyncio.sleep(0.001)
         return self.incoming.pop(0)
+
+
+class FailingSubmitSecureChannel(BlockingSecureChannel):
+    def __init__(self, submit_error):
+        super().__init__()
+        self.submit_error = submit_error
+
+    async def send(self, payload):
+        # SetupConnection and OpenExtendedMiningChannel are the first two
+        # writes. The third write is the share submission under test.
+        if len(self.sent) >= 2:
+            raise self.submit_error
+        self.sent.append(payload)
+
+
+def queue_ready_extended_session(channel):
+    channel.incoming.append(SetupConnectionSuccess(2, 0).encode().encode())
+    target = (1 << 256) - 1
+    open_payload = (
+        (1).to_bytes(4, "little")
+        + (77).to_bytes(4, "little")
+        + target.to_bytes(32, "little")
+        + (4).to_bytes(2, "little")
+        + b"\x01\xaa"
+        + (0).to_bytes(4, "little")
+    )
+    channel.incoming.append(
+        Sv2Frame(
+            0,
+            MessageType.OPEN_EXTENDED_MINING_CHANNEL_SUCCESS,
+            open_payload,
+        ).encode()
+    )
+    job_payload = (
+        (12).to_bytes(4, "little")
+        + b"\x00"
+        + (0x20000000).to_bytes(4, "little")
+        + b"\x00"
+        + b"\x00"
+        + (2).to_bytes(2, "little")
+        + b"\x01\x02"
+        + (2).to_bytes(2, "little")
+        + b"\x03\x04"
+    )
+    channel.incoming.append(
+        Sv2Frame(
+            CHANNEL_MSG_BIT,
+            MessageType.NEW_EXTENDED_MINING_JOB,
+            (77).to_bytes(4, "little") + job_payload,
+        ).encode()
+    )
+    prev_payload = (
+        (77).to_bytes(4, "little")
+        + (12).to_bytes(4, "little")
+        + bytes.fromhex("22" * 32)
+        + (100).to_bytes(4, "little")
+        + (0x207FFFFF).to_bytes(4, "little")
+    )
+    channel.incoming.append(
+        Sv2Frame(
+            CHANNEL_MSG_BIT,
+            MessageType.SET_NEW_PREV_HASH,
+            prev_payload,
+        ).encode()
+    )
+
+
+async def ready_production_v2_client(channel):
+    queue_ready_extended_session(channel)
+    client = ProductionStratumV2Client(
+        PoolEndpoint("pool.example", 34254, "sv2-test", protocol="v2"),
+        username="worker-1",
+        password="x",
+        channel_factory=lambda **_kwargs: channel,
+        request_timeout=1.0,
+    )
+    await client.connect()
+    deadline = asyncio.get_running_loop().time() + 1.0
+    while not client.runtime_state.ready:
+        if asyncio.get_running_loop().time() >= deadline:
+            raise AssertionError("SV2 normalized job did not become ready")
+        await asyncio.sleep(0.001)
+    return client
 
 
 class TestStratumV2(unittest.TestCase):
@@ -295,6 +379,55 @@ class TestStratumV2(unittest.TestCase):
             self.assertEqual(snapshot["submission"]["wire_writes"], 1)
             self.assertTrue(snapshot["sv2"]["authenticated_transport"])
             await client.close()
+
+        asyncio.run(run())
+
+    def test_ambiguous_sv2_send_failure_is_non_retryable_unknown(self):
+        async def run():
+            channel = FailingSubmitSecureChannel(
+                ConnectionResetError("reset during encrypted send")
+            )
+            client = await ready_production_v2_client(channel)
+            try:
+                with self.assertRaises(ConnectionResetError):
+                    await client.submit(
+                        ["worker-1", "12", "00000000", "00000064", "00000009"]
+                    )
+                snapshot = client.status_snapshot()
+                self.assertEqual(
+                    snapshot["submission"]["last_result"],
+                    "OUTCOME_UNKNOWN",
+                )
+                self.assertEqual(snapshot["counters"]["submitted"], 1)
+                self.assertEqual(snapshot["counters"]["unknown"], 1)
+                self.assertEqual(client.wire_writes_for("mining.submit"), 0)
+            finally:
+                await client.close()
+
+        asyncio.run(run())
+
+    def test_explicit_sv2_zero_write_proof_is_retryable_not_submitted(self):
+        async def run():
+            channel = FailingSubmitSecureChannel(
+                Sv2NotWritten("secure channel proved zero write")
+            )
+            client = await ready_production_v2_client(channel)
+            try:
+                with self.assertRaises(Sv2NotWritten):
+                    await client.submit(
+                        ["worker-1", "12", "00000000", "00000064", "00000009"]
+                    )
+                snapshot = client.status_snapshot()
+                self.assertEqual(
+                    snapshot["submission"]["last_result"],
+                    "NOT_SUBMITTED",
+                )
+                self.assertEqual(snapshot["counters"]["submitted"], 0)
+                self.assertEqual(snapshot["counters"]["unknown"], 0)
+                self.assertEqual(client.wire_writes_for("mining.submit"), 0)
+                self.assertTrue(snapshot["ready"])
+            finally:
+                await client.close()
 
         asyncio.run(run())
 
