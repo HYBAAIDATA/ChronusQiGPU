@@ -1016,6 +1016,18 @@ The threshold φ − 1 = 1/φ ≈ 0.618 (61.8%) appears as:
 | `euclid/cognition/integrated/phi_mechanisms.py` | Discrete Fibonacci search (Kiefer 1953), golden Weyl coverage, Fibonacci deepening schedule — each with a neutral twin |
 | `euclid/cognition/research/` | v17 pre-registered research programme, statistics and report |
 
+### 14.8 Chronus (Heterogeneous Execution Substrate)
+
+| File | Role |
+|------|------|
+| `chronus/device.py` | Canonical `Chronus` product handle; device, runtime and truth surfaces |
+| `chronus/spec.py` | MLA1517 iGPU machine-readable hardware contract loader |
+| `chronus/detect.py` | Unified device census across Chronus contract, CUDA, Metal, OpenCL |
+| `chronus/gpu_capabilities.py` | Audited GPU capability surface; evidence-labelled topology probes |
+| `chronus/gpu_reference.py` | Dated GPU reference snapshot (non-measured) |
+| `chronus/m5_ultra.py` | Apple M5-class multi-pad substrate elevation: `PadFabric`, `PadSpec`, `PadLink`, `MemoryTier`, `HamiltonianTerm`; `m5_ultra_fabric()` (4-die formulation), `elevate_pads()` (N-pad uniform/asymmetric protocols), `consortium_fabric()` (7-institution labelled-edge variant); GHZ/cluster descriptors, Hamiltonian registry, Amdahl bound — all `truth_class="quantum_substrate_formulation"`, `measured_by_chronus=False` |
+| `tests/test_chronus_m5_ultra.py` | Contract tests for all documented M5/10-pad/consortium numbers |
+
 ---
 
 ## 15. Evidence and Reports
