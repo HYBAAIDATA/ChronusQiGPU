@@ -11,7 +11,7 @@ import json
 import os
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Mapping
 
 from .rebuild import projection_fingerprint, restore_projection_from_custody
 from .store import OntologyStore
@@ -26,6 +26,7 @@ def evaluate(
     integrity_key: bytes,
     custody_root: str | Path,
     custody_key: bytes,
+    producer_revalidators: Mapping[str, Callable[[Any], str | bool]] | None = None,
 ) -> dict[str, Any]:
     custody = TheseusFileCustody(custody_root, hmac_key=custody_key)
     with OntologyStore(db_path, integrity_key, custody=custody) as store:
@@ -48,6 +49,33 @@ def evaluate(
         custody_health = tenant_custody.health()
         custody_replay = tenant_custody.verify_replay()
         pending_revalidation = tenant_custody.pending_revalidation()
+        revalidation_errors: list[str] = []
+        if pending_revalidation and producer_revalidators:
+            for producer, record_ids in sorted(pending_revalidation.items()):
+                validator = producer_revalidators.get(producer)
+                if validator is None:
+                    continue
+                for record_id in list(record_ids):
+                    try:
+                        verdict = validator(tenant_custody.get_record(record_id))
+                        normalized = (
+                            "PASS" if verdict is True else str(verdict).strip().upper()
+                        )
+                        if normalized not in {"PASS", "OK", "VERIFIED"}:
+                            revalidation_errors.append(
+                                f"{producer}:{record_id}: verdict={normalized or 'EMPTY'}"
+                            )
+                            continue
+                        tenant_custody.semantic_revalidated(
+                            record_id,
+                            verdict=normalized,
+                            producer=producer,
+                        )
+                    except Exception as exc:
+                        revalidation_errors.append(
+                            f"{producer}:{record_id}: {type(exc).__name__}: {exc}"
+                        )
+            pending_revalidation = tenant_custody.pending_revalidation()
         tenant_manifest_id = f"tenant_projection.{tenant_id}"
         tenant_manifest_verified = custody.verify(tenant_id, tenant_manifest_id)
         baseline_fingerprint = projection_fingerprint(store, tenant_id)
@@ -67,7 +95,9 @@ def evaluate(
             "custody_ready": bool(custody_health.get("ready")),
             "custody_not_degraded": not bool(custody_health.get("degraded")),
             "custody_replay_verified": bool(custody_replay.get("match")),
-            "producer_revalidation_complete": not bool(pending_revalidation),
+            "producer_revalidation_complete": (
+                not bool(pending_revalidation) and not revalidation_errors
+            ),
         }
         base_report = {
             "database_errors": list(verification.errors),
@@ -77,6 +107,7 @@ def evaluate(
             "custody_health": custody_health,
             "custody_replay": custody_replay,
             "pending_producer_revalidation": pending_revalidation,
+            "producer_revalidation_errors": revalidation_errors,
             "stats": stats["tenants"].get(tenant_id, {}),
         }
 
