@@ -323,19 +323,38 @@ class RemoteFleetHasher(RemoteOpenCLHasher):
                 i += take
             return out
         out = []
-        # Serial m32 scans block-major: block 0's 32 lanes, then block 1.
-        # A contiguous split into block regions therefore preserves exact
-        # serial order inside every chunk — each member lane-sweeps its
-        # own [base, base+take) region with the given lane order.
+        if order == "m32":
+            # Serial m32 walks whole 32-step lane epochs: step s probes
+            # base + lane[s % 32] + 32*(s // 32). A member's local sweep
+            # only covers its region correctly when the region starts on an
+            # epoch boundary and spans a whole number of epochs — anything
+            # else produces coverage gaps, duplicate probes, and
+            # out-of-window nonces. Slices therefore split whole epochs.
+            if count % 32:
+                raise ValueError("m32 grind window must be a multiple of 32")
+            epochs, rem = divmod(count // 32, n)
+            start = base
+            for m in range(n):
+                take = 32 * (epochs + (1 if m < rem else 0))
+                if take:
+                    out.append(
+                        {
+                            "order": "m32",
+                            "base_nonce": start,
+                            "count": take,
+                            "lane_order": lane_order,
+                        }
+                    )
+                    start += take
+            return out
+        # Contiguous slices are exact by construction: serial order visits
+        # base+i, so any split into contiguous regions preserves coverage.
         k, rem = divmod(count, n)
         start = base
         for m in range(n):
             take = k + (1 if m < rem else 0)
             if take:
-                body = {"order": order, "base_nonce": start, "count": take}
-                if order == "m32":
-                    body["lane_order"] = lane_order
-                out.append(body)
+                out.append({"order": order, "base_nonce": start, "count": take})
                 start += take
         return out
 
@@ -409,6 +428,11 @@ class RemoteFleetHasher(RemoteOpenCLHasher):
         return self.grind_target_range(header80, target_be, base_nonce, count)
 
     def grind_target_m32(self, header80, target_be, base_nonce, lane_order, count):
+        # Same window contract as the local hashers: a whole number of
+        # 32-step lane epochs. Checked here because the epoch-aligned
+        # slicing in _slice cannot carry a partial epoch.
+        if int(count) % 32:
+            raise ValueError("m32 grind window must be a multiple of 32")
         return self._dispatch(
             header=header80,
             target_be=target_be,
