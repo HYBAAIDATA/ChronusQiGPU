@@ -1,0 +1,16 @@
+# Root dependencies for PhiMiner
+#
+# The root project declares these dependencies in pyproject.toml, but having a
+# requirements.txt at the repository root makes the setup path explicit for
+# local development environments like the one in the traceback.
+#
+# Local packages in this monorepo should be installed first when developing
+# from a fresh clone:
+#   pip install ./packaging/kellogg-tensor
+#   pip install ./turing_universal_quantum_computer
+#
+# Then install the root runtime dependencies below.
+numpy>=1.26,<3
+pyyaml>=6.0,<7
+sympy>=1.12,<2
+turing-universal-quantum-computer>=1.0
