@@ -100,6 +100,26 @@ class StratumRuntimeStateTests(unittest.TestCase):
         self.assertEqual(state.snapshot()["counters"]["accepted"], 1)
         self.assertEqual(state.snapshot()["counters"]["rejected"], 1)
 
+    def test_zero_write_submit_rolls_back_all_submission_accounting(self) -> None:
+        state = _authorized_state()
+        state.target_updated(
+            target=(1 << 255),
+            source="mining.set_target",
+            value="80" + "00" * 31,
+        )
+        state.job_received(replace(JOB, target=state.target), SUBSCRIPTION)
+
+        state.submission_started("job-1")
+        state.submission_not_written("outbound queue full")
+        snapshot = state.snapshot()
+
+        self.assertEqual(snapshot["submission"]["state"], "IDLE")
+        self.assertEqual(snapshot["submission"]["last_result"], "NOT_SUBMITTED")
+        self.assertIsNone(snapshot["submission"]["job_id"])
+        self.assertEqual(snapshot["counters"]["submitted"], 0)
+        self.assertEqual(snapshot["counters"]["unknown"], 0)
+        self.assertTrue(snapshot["ready"])
+
     def test_disconnect_during_submit_is_unknown(self) -> None:
         state = _authorized_state()
         state.target_updated(target=(1 << 255), source="mining.set_target", value="80" + "00" * 31)
