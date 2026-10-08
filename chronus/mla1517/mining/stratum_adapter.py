@@ -142,7 +142,7 @@ CassiniValidator = Callable[[StratumJob, str, str], bool]
 
 
 class StratumProofAdapter:
-    """Stateful, proof-checking adapter for a negotiated Stratum V1 session."""
+    """Stateful proof adapter shared by normalized V1 and V2 mining sessions."""
 
     def __init__(
         self,
