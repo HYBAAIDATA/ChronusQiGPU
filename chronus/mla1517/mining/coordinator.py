@@ -1116,10 +1116,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 "share_log_tail": self.session.share_log[-8:],
             },
             "causal_tail": self.causal.snapshot(24),
-            "submission": {
-                "mode": "live" if self.submission_permitted() else "shadow",
-                "pipeline": self.submission_pipeline_snapshot(),
-            },
+            "submission": "live" if self.submission_permitted() else "shadow",
+            "submission_pipeline": self.submission_pipeline_snapshot(),
             "intelligence": self.intelligence_snapshot(),
             "dispatch_algebra": (
                 {**self.last_dispatch_algebra, "counts": dict(self._dispatch_counts)}
