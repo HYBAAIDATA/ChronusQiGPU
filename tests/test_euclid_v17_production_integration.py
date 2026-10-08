@@ -1,6 +1,10 @@
 """Production-integration regressions for EUCLID 17 runtime closure."""
 from __future__ import annotations
 
+import json
+import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -21,6 +25,71 @@ class _FailingExecutor:
     def execute(self, _action, _payload):
         raise self.exc
 
+
+_FRESH_PROCESS_WRITER = r"""
+import json
+import sys
+from pathlib import Path
+from aethel.enterprise.lifecycle import CompositionRoot
+from euclid.cognition.worlds import MechanismWorld, WorldExecutor, generate_task
+from euclid.runtime import EuclidRuntime
+
+custody_root = Path(sys.argv[1])
+local_root = Path(sys.argv[2])
+receipt_path = Path(sys.argv[3])
+lifecycle = CompositionRoot(
+    custody_root, tenant="tenant-euclid-v17", hmac_key=b"k" * 32
+)
+lifecycle.start()
+try:
+    port = lifecycle.data_port("euclid")
+    runtime = EuclidRuntime(creator_id="creator-1", state_dir=local_root)
+    runtime.bind_adaptive_data_port(port)
+    runtime.compose_adaptive_intelligence()
+    spec, truth = generate_task("program-transformation", seed=31, partition="evaluation")
+    runtime.solve_task(spec, WorldExecutor(MechanismWorld(spec, truth)), seed=31)
+    receipt = runtime.adaptive_restart_receipt()
+    receipt_path.write_text(json.dumps(receipt, sort_keys=True), encoding="utf-8")
+    print(json.dumps(receipt, sort_keys=True))
+finally:
+    lifecycle.stop()
+"""
+
+_FRESH_PROCESS_READER = r"""
+import json
+import sys
+from pathlib import Path
+from aethel.enterprise.lifecycle import CompositionRoot
+from euclid.cognition.worlds import MechanismWorld, WorldExecutor, generate_task
+from euclid.runtime import EuclidRuntime
+
+custody_root = Path(sys.argv[1])
+local_root = Path(sys.argv[2])
+prior = json.loads(Path(sys.argv[3]).read_text(encoding="utf-8"))
+lifecycle = CompositionRoot(
+    custody_root, tenant="tenant-euclid-v17", hmac_key=b"k" * 32
+)
+lifecycle.start()
+try:
+    port = lifecycle.data_port("euclid")
+    runtime = EuclidRuntime(creator_id="creator-1", state_dir=local_root)
+    runtime.bind_adaptive_data_port(port)
+    runtime.compose_adaptive_intelligence()
+    verification = runtime.verify_adaptive_restart_receipt(prior)
+    before = runtime.adaptive_restart_receipt()
+    spec, truth = generate_task("program-transformation", seed=32, partition="evaluation")
+    runtime.solve_task(spec, WorldExecutor(MechanismWorld(spec, truth)), seed=32)
+    after = runtime.adaptive_restart_receipt()
+    latest = port.latest(runtime.ADAPTIVE_KNOWLEDGE_KIND)
+    print(json.dumps({
+        "verification": verification,
+        "before": before,
+        "after": after,
+        "parents": list(latest.parent_binding_ids),
+    }, sort_keys=True))
+finally:
+    lifecycle.stop()
+"""
 
 class EuclidV17ProductionIntegration(unittest.TestCase):
     def setUp(self) -> None:
@@ -102,6 +171,68 @@ class EuclidV17ProductionIntegration(unittest.TestCase):
                 runtime.reachability.stage(component),
                 ReachabilityStage.RESTART_VERIFIED,
             )
+
+    def test_f3_f5_fresh_process_restart_replays_shared_adaptive_state(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        env = dict(os.environ)
+        env["PYTHONPATH"] = os.pathsep.join(
+            part for part in (str(repo_root), env.get("PYTHONPATH", "")) if part
+        )
+        custody_root = self.root / "fresh-process-custody"
+        receipt_path = self.root / "restart-receipt.json"
+
+        first = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                _FRESH_PROCESS_WRITER,
+                str(custody_root),
+                str(self.root / "fresh-local-a"),
+                str(receipt_path),
+            ],
+            cwd=repo_root,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=180,
+            check=False,
+        )
+        self.assertEqual(first.returncode, 0, first.stderr)
+        prior = json.loads(receipt_path.read_text(encoding="utf-8"))
+
+        second = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                _FRESH_PROCESS_READER,
+                str(custody_root),
+                str(self.root / "fresh-local-b"),
+                str(receipt_path),
+            ],
+            cwd=repo_root,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=180,
+            check=False,
+        )
+        self.assertEqual(second.returncode, 0, second.stderr)
+        observed = json.loads(second.stdout.strip().splitlines()[-1])
+
+        self.assertTrue(observed["verification"]["passed"])
+        self.assertNotEqual(
+            observed["verification"]["current_process_id"],
+            observed["verification"]["prior_process_id"],
+        )
+        self.assertEqual(observed["before"]["binding_id"], prior["binding_id"])
+        self.assertEqual(
+            observed["before"]["knowledge_seal"], prior["knowledge_seal"]
+        )
+        self.assertEqual(observed["before"]["episodes"], prior["episodes"])
+        self.assertGreater(observed["after"]["episodes"], prior["episodes"])
+        self.assertNotEqual(observed["after"]["binding_id"], prior["binding_id"])
+        self.assertIn(prior["binding_id"], observed["parents"])
+        self.assertFalse((self.root / "fresh-local-b" / "adaptive_knowledge.json").exists())
 
     def test_f5_adaptive_state_recovers_from_shared_ovid_theseus_custody(self) -> None:
         custody_root = self.root / "shared-custody"
