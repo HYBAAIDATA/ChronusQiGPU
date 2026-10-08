@@ -1,4 +1,4 @@
-"""Evidence-first runtime state for the canonical Stratum V1 session."""
+"""Evidence-first runtime state for the canonical normalized Stratum session.\n\nV1 and authenticated V2 transports project into this same state machine;\nprotocol-specific framing never changes mining truth semantics.\n"""
 
 from __future__ import annotations
 
