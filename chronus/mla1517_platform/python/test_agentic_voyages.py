@@ -21,6 +21,7 @@ import pytest
 from manifold_pool_coordinator import PoolEndpoint
 from chronus.mla1517.hardware import VaultRecord
 from chronus.mla1517.mining.coordinator import IntelligentPoolCoordinator
+from chronus.mla1517.mining.production_transport import ProductionMiningCoordinator
 from chronus.mla1517.mining.session import MiningSession
 from chronus.mla1517.mining.search_plan import LeaseState, PlanSource, PoolOutcome
 from chronus.mla1517.mining.tuning_gate import TuningGate
@@ -227,6 +228,23 @@ def coordinator(port: int, chain: FakeChain, session: MiningSession | None = Non
     )
 
 
+def production_coordinator(
+    port: int,
+    chain: FakeChain,
+    session: MiningSession | None = None,
+):
+    return ProductionMiningCoordinator(
+        [PoolEndpoint("127.0.0.1", port, "fake-pool")],
+        username="PYTHIA.001",
+        password="x",
+        submit_enabled=True,
+        mining_session=session or MiningSession(cooldown_seconds=0),
+        chain_observer=chain,
+        asynchronous_submission=True,
+        reconnect_delay=0.01,
+    )
+
+
 async def _served(pool: FakePool):
     server = await asyncio.start_server(pool.handle, "127.0.0.1", 0)
     return server, server.sockets[0].getsockname()[1]
@@ -328,6 +346,52 @@ async def _voyage_a():
 
 def test_voyage_a_normal_mining_continuity():
     asyncio.run(_voyage_a())
+
+
+async def _voyage_async_submission_does_not_stall_hashing():
+    pool = FakePool(target=EASY_TARGET, job=_job("job-async"))
+    pool.submit_delay_s = 0.25
+    server, port = await _served(pool)
+    chain = FakeChain()
+    coord = production_coordinator(port, chain)
+    try:
+        await _connected(coord, "job-async")
+        chain.block_hash = parent_of_current_job(coord)
+
+        # First candidate enters the independent submitter.
+        assert await coord.search_current_job() is True
+        await until(
+            lambda: coord._submission_in_flight
+            and coord.session.state == "SUBMITTING",
+            what="ordinary share in flight",
+        )
+        before = coord._executions_total
+
+        # The pool deliberately withholds its acknowledgement. Hashing must
+        # still progress against the unchanged canonical work identity.
+        assert await coord.search_current_job() is True
+        assert coord._executions_total > before
+        snap = coord.submission_pipeline_snapshot()
+        assert snap["in_flight"] is True
+        assert snap["queue_depth"] >= 1
+
+        await until(
+            lambda: coord.client.status_snapshot()["counters"]["accepted"] >= 2,
+            timeout=5.0,
+            what="both delayed shares resolved",
+        )
+        assert coord.submission_pipeline_snapshot()["unknown_outcomes"] == 0
+        assert len(pool.submits) >= 2
+    finally:
+        if coord._submission_task is not None:
+            await coord._stop_submission_task()
+        await coord.client.close() if coord.client else None
+        server.close()
+        await server.wait_closed()
+
+
+def test_async_submission_does_not_stall_hashing():
+    asyncio.run(_voyage_async_submission_does_not_stall_hashing())
 
 
 def test_canonical_mining_manifest_resolves_all_production_owners():
