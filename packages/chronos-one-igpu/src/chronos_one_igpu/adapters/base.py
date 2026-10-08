@@ -53,7 +53,7 @@ class ExecutionReceipt:
     kernel_digest: str
     pipeline_spec: str
     latency_cycles: int | None
-    throughput_rps: float
+    throughput_rps: float | None
     power_watts: float | None
     measured: bool
     timestamp: str

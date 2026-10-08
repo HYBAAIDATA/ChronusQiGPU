@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 # on PyPI by an unrelated project; `chronos-one-igpu` matches the import
 # package chronos_one_igpu and the packaging directory.
 name = "chronos-one-igpu"
-version = "3.11.2rc3"
+version = "3.11.3rc2"
 description = "Standalone Chronos ONE iGPU — Golden Quantum and Lucas-scaled compute fabric"
 readme = "README.md"
 license = "MIT"

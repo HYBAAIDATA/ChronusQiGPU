@@ -29,6 +29,7 @@ def main():
     target=sub.add_parser('qualify-target');target.add_argument('--device-selector');target.add_argument('--runs',type=int,default=3);target.add_argument('--nonce-budget',type=int,default=4096);target.add_argument('--output',default='target-qualification.json')
     native=sub.add_parser('native-compute');native.add_argument('header_hex');native.add_argument('--chain-id',default='local-pythi-v1');native.add_argument('--epoch',type=int,default=1)
     q=sub.add_parser('m5-quantum');q.add_argument('--state',choices=['ghz','cluster'],required=True);q.add_argument('--pads',choices=[4,10],type=int,default=4);q.add_argument('--topology',choices=['chain','ring','full_mesh','mesh'],default='chain')
+    ultra=sub.add_parser('m5-ultra-run');ultra.add_argument('chain_file');ultra.add_argument('--rc-sha',required=True);ultra.add_argument('--gpu-selector');ultra.add_argument('--backend',choices=['CPU_REFERENCE','IGPU','GPU'],default='IGPU');ultra.add_argument('--authorised-fallback',choices=['CPU_REFERENCE']);ultra.add_argument('--topology',choices=['chain','ring','full_mesh','mesh'],default='chain')
     sub.add_parser('feature-info')
     feature=sub.add_parser('feature-run');feature.add_argument('task_file');feature.add_argument('--profile-file');feature.add_argument('--db-path');feature.add_argument('--checkpoint',action='store_true')
     sub.add_parser('native-security-gate')
@@ -65,6 +66,18 @@ def main():
         from .m5_ultra import m5_ultra_fabric,elevate_pads
         model=m5_ultra_fabric(args.topology)if args.pads==4 else elevate_pads(10,topology=args.topology)
         with OneIGPU()as gpu:result=gpu.m5_resident(model=model).execute_quantum('exact_m5_'+args.state)
+    elif args.command=='m5-ultra-run':
+        from . import OneIGPU
+        from .m5_ultra import elevate_pads
+        from .igpu.m5_ultra_contract import OperatorChain
+        p=Path(args.chain_file)
+        if p.stat().st_size>4*1024*1024:parser.error('bounded operator chain required')
+        task=json.loads(p.read_text())
+        if not isinstance(task,dict)or set(task)not in({'chain'},{'chain','initial'}):parser.error('sealed chain fields')
+        chain=OperatorChain.from_dict(task['chain'])
+        with OneIGPU()as gpu:
+            runtime=gpu.m5_resident(model=elevate_pads(chain.pads,topology=args.topology)).ultra_contract(args.rc_sha,gpu_selector=args.gpu_selector)
+            result=runtime.execute(chain,task.get('initial'),args.backend,args.authorised_fallback)
     elif args.command in('feature-info','feature-run'):
         from . import OneIGPU
         from .igpu.feature_profile import FeatureProfile

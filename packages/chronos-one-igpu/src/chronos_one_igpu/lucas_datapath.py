@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import json
+from math import isqrt
 from typing import Iterable
 
 from .lucas_engine import InvariantViolation, fibonacci_pair, lucas
@@ -111,7 +112,7 @@ class PrimeROM:
         estimate = max(32, int(max_index * (20 if max_index > 6 else 10)))
         sieve = bytearray(b"\x01") * (estimate + 1)
         sieve[:2] = b"\x00\x00"
-        for p in range(2, int(estimate ** 0.5) + 1):
+        for p in range(2, isqrt(estimate) + 1):
             if sieve[p]:
                 sieve[p * p : estimate + 1 : p] = b"\x00" * (((estimate - p * p) // p) + 1)
         primes = [i for i, flag in enumerate(sieve) if flag]
@@ -119,7 +120,7 @@ class PrimeROM:
             estimate *= 2
             sieve = bytearray(b"\x01") * (estimate + 1)
             sieve[:2] = b"\x00\x00"
-            for p in range(2, int(estimate ** 0.5) + 1):
+            for p in range(2, isqrt(estimate) + 1):
                 if sieve[p]:
                     sieve[p * p : estimate + 1 : p] = b"\x00" * (((estimate - p * p) // p) + 1)
             primes = [i for i, flag in enumerate(sieve) if flag]

@@ -22,6 +22,7 @@
 from __future__ import annotations
 
 import numpy as np
+from functools import lru_cache
 
 PHI = (1.0 + np.sqrt(5.0)) / 2.0
 
@@ -62,30 +63,51 @@ def _classical_m32_positions() -> np.ndarray:
 
 
 def exact_m32_rays_ordered():
-    """Exact M32 rays in the historical build_m32() row order.
+    return _exact_historical_order(tuple(_exact_m32_rays()),tuple(ICOSAHEDRON_FACES))
 
-    Each classical FP64 row is matched to its exact ray by direction
-    (max cosine similarity); the match must be exact to construction
-    precision or the function fails closed — the classical table and the
-    canonical exact set must describe the same 32 directions.
+
+@lru_cache(maxsize=4)
+def _exact_historical_order(rays,face_table):
+    """Canonical rays in historical 20-face + 12-dual row order, exactly.
+
+    Raw Q(phi) vertex sums give each face direction. Collinearity and positive
+    orientation match that direction to the existing certified exact ray set.
+    No float table, maximum-cosine selection or tolerance decides identity.
     """
-    classical = _classical_m32_positions()
-    rays = _exact_m32_rays()
-    projections = np.array([_ray_to_float(r) for r in rays], dtype=np.float64)
-    sims = classical @ projections.T
-    ordered = []
-    used = set()
-    for i in range(32):
-        j = int(np.argmax(sims[i]))
-        if j in used or sims[i][j] < 1.0 - 1e-12:
-            raise ArithmeticError(
-                "exact M32 rays do not cover the classical row order "
-                f"(row {i} best match {j} similarity {sims[i][j]:.12f})")
-        used.add(j)
-        ordered.append(rays[j])
-    if len(used) != 32:
-        raise ArithmeticError("exact M32 ray matching is not a bijection")
+    from .family_algebra import PhiElement as Q, PHI as phi
+    from .igpu.exact_geometry import dot,sign
+    one,zero=Q(1),Q()
+    verts=((-one,phi,zero),(one,phi,zero),(-one,-phi,zero),(one,-phi,zero),
+           (zero,-one,phi),(zero,one,phi),(zero,-one,-phi),(zero,one,-phi),
+           (phi,zero,-one),(phi,zero,one),(-phi,zero,-one),(-phi,zero,one))
+    faces=tuple(tuple(sum((verts[index][axis]for index in face),Q())for axis in range(3))for face in face_table)
+    directions=faces+verts
+    if len(rays)!=32 or any(len(r.numerator)!=3 or not r.is_unit()for r in rays):raise ArithmeticError('canonical M32 ray set malformed')
+    ordered=[];used=set()
+    for direction in directions:
+        matches=[]
+        for index,ray in enumerate(rays):
+            v=ray.numerator
+            cross=(direction[1]*v[2]-direction[2]*v[1],direction[2]*v[0]-direction[0]*v[2],direction[0]*v[1]-direction[1]*v[0])
+            if all(x==Q()for x in cross)and sign(dot(direction,v))>0:matches.append(index)
+        if len(matches)!=1 or matches[0]in used:raise ArithmeticError('M32 exact historical-order bijection failed')
+        used.add(matches[0]);ordered.append(rays[matches[0]])
+    if len(used)!=32:raise ArithmeticError('M32 exact coverage incomplete')
     return tuple(ordered)
+
+
+def exact_m32_adjacency_ordered():
+    return _exact_adjacency(exact_m32_rays_ordered())
+
+
+@lru_cache(maxsize=4)
+def _exact_adjacency(rays):
+    """Historical cosine threshold 7/10 evaluated as exact radical scores."""
+    from fractions import Fraction
+    from .family_algebra import PhiElement as Q
+    from .igpu.exact_geometry import RadicalScore,dot
+    threshold=RadicalScore(Q(Fraction(7,10)),Q(1))
+    return tuple(tuple(0 if i==j else int(RadicalScore(dot(a.numerator,b.numerator),a.denominator_squared*b.denominator_squared)>=threshold)for j,b in enumerate(rays))for i,a in enumerate(rays))
 
 
 def exact_m32_positions() -> np.ndarray:
@@ -223,15 +245,23 @@ class M32Manifold:
         # Spectral-style adjacency: faces whose cosine similarity clears a
         # fixed threshold are neighbors. Mirrors the shape of the real
         # repo's build_spectral_adjacency (cos-similarity threshold 0.70).
-        cos_thresh = 0.70
-        sims = self.face_positions @ self.face_positions.T
-        self.adjacency = (sims >= cos_thresh).astype(np.float64)
+        if n==32 and use_real_m32:
+            self.adjacency=np.asarray(exact_m32_adjacency_ordered(),dtype=np.float64)
+        else:
+            sims=self.face_positions@self.face_positions.T
+            self.adjacency=(sims>=0.70).astype(np.float64)
         np.fill_diagonal(self.adjacency, 0.0)
+
+    def get_state_exact(self):
+        """Exact uniform state; legacy get_state is only its float projection."""
+        import sympy as sp
+        if type(self.n)is not int or self.n<1:raise ValueError("positive exact state dimension")
+        return tuple(sp.Integer(1)/sp.sqrt(self.n)for _ in range(self.n))
 
     def get_state(self) -> np.ndarray:
         """Deterministic uniform-superposition state over the manifold faces.
         Use EvolutionEngine.evolve() for the actual Hamiltonian-derived state."""
-        return np.ones(self.n, dtype=complex) / np.sqrt(self.n)
+        return np.asarray([complex(x)for x in self.get_state_exact()],dtype=complex)
 
 
 def _self_test() -> str:

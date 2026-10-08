@@ -19,14 +19,14 @@ class ExtendedCertificate:
     pipeline_spec: str
     execution_mode: str
     latency_cycles: int | None
-    throughput_rps: float
+    throughput_rps: float | None
     power_watts: float | None
     classification: str
     digest: str
     signature: str | None = None
 
 def bind_record(record, receipt: ExecutionReceipt, execution_mode: str) -> ExtendedCertificate:
-    classification = "MEASURED" if receipt.measured else "MODELED"
+    classification = "MEASURED" if receipt.measured else "EXECUTED_UNQUALIFIED" if receipt.throughput_rps is None else "MODELED"
     payload = {
         "rung": record.rung, "value": record.value, "mask": record.zeckendorf_mask,
         "prime": record.prime_address, "cassini": record.cassini_pass,
