@@ -4,7 +4,11 @@ import asyncio
 import unittest
 
 from chronus.mla1517.mining.stratum_adapter import StratumProofAdapter, SubscriptionState
-from chronus.mla1517.mining.stratum_v2_transport import normalize_extended_job
+from chronus.mla1517.mining.stratum_v2_transport import (
+    ProductionStratumV2Client,
+    normalize_extended_job,
+)
+from manifold_pool_coordinator import PoolEndpoint
 
 from mining.stratum_v2 import (
     CHANNEL_MSG_BIT,
@@ -18,6 +22,7 @@ from mining.stratum_v2 import (
     Sv2ProtocolError,
     Sv2TransportError,
     SessionState,
+    SubmitSharesSuccess,
     build_extended_header,
     submit_shares_extended,
     submit_shares_standard,
@@ -46,6 +51,13 @@ class FakeSecureChannel:
 
     async def close(self):
         self.closed = True
+
+
+class BlockingSecureChannel(FakeSecureChannel):
+    async def receive(self):
+        while not self.incoming:
+            await asyncio.sleep(0.001)
+        return self.incoming.pop(0)
 
 
 class TestStratumV2(unittest.TestCase):
@@ -147,6 +159,141 @@ class TestStratumV2(unittest.TestCase):
             self.assertEqual(client.active_job_id, 123)
             await client.submit_standard(123, 4, 1700000000, 0x20000000)
             self.assertEqual(len(channel.sent), 3)
+            await client.close()
+
+        asyncio.run(run())
+
+    def test_submit_success_payload_decodes_at_spec_length(self):
+        payload = (
+            (77).to_bytes(4, "little")
+            + (3).to_bytes(4, "little")
+            + (1).to_bytes(4, "little")
+            + (4096).to_bytes(8, "little")
+        )
+        frame = Sv2Frame(
+            CHANNEL_MSG_BIT,
+            MessageType.SUBMIT_SHARES_SUCCESS,
+            payload,
+        )
+        success = SubmitSharesSuccess.decode(frame)
+        self.assertEqual(success.channel_id, 77)
+        self.assertEqual(success.last_sequence_number, 3)
+        self.assertEqual(success.new_submits_accepted_count, 1)
+        self.assertEqual(success.new_shares_sum, 4096)
+
+    def test_production_v2_adapter_runs_canonical_extended_share_voyage(self):
+        async def run():
+            channel = BlockingSecureChannel()
+            channel.incoming.append(
+                SetupConnectionSuccess(2, 0).encode().encode()
+            )
+            target = (1 << 256) - 1
+            open_payload = (
+                (1).to_bytes(4, "little")
+                + (77).to_bytes(4, "little")
+                + target.to_bytes(32, "little")
+                + (4).to_bytes(2, "little")
+                + b"\x01\xaa"
+                + (0).to_bytes(4, "little")
+            )
+            channel.incoming.append(
+                Sv2Frame(
+                    0,
+                    MessageType.OPEN_EXTENDED_MINING_CHANNEL_SUCCESS,
+                    open_payload,
+                ).encode()
+            )
+
+            # One extended job, then the SetNewPrevHash that activates it.
+            job_payload = (
+                (12).to_bytes(4, "little")
+                + b"\x00"
+                + (0x20000000).to_bytes(4, "little")
+                + b"\x00"
+                + b"\x00"
+                + (2).to_bytes(2, "little")
+                + b"\x01\x02"
+                + (2).to_bytes(2, "little")
+                + b"\x03\x04"
+            )
+            channel.incoming.append(
+                Sv2Frame(
+                    CHANNEL_MSG_BIT,
+                    MessageType.NEW_EXTENDED_MINING_JOB,
+                    (77).to_bytes(4, "little") + job_payload,
+                ).encode()
+            )
+            prev_hash = bytes.fromhex("22" * 32)
+            prev_payload = (
+                (77).to_bytes(4, "little")
+                + (12).to_bytes(4, "little")
+                + prev_hash
+                + (100).to_bytes(4, "little")
+                + (0x207FFFFF).to_bytes(4, "little")
+            )
+            channel.incoming.append(
+                Sv2Frame(
+                    CHANNEL_MSG_BIT,
+                    MessageType.SET_NEW_PREV_HASH,
+                    prev_payload,
+                ).encode()
+            )
+
+            client = ProductionStratumV2Client(
+                PoolEndpoint(
+                    "pool.example",
+                    34254,
+                    "sv2-test",
+                    protocol="v2",
+                ),
+                username="worker-1",
+                password="x",
+                channel_factory=lambda **_kwargs: channel,
+                request_timeout=1.0,
+            )
+            await client.connect()
+            deadline = asyncio.get_running_loop().time() + 1.0
+            while not client.runtime_state.ready:
+                if asyncio.get_running_loop().time() >= deadline:
+                    self.fail("SV2 normalized job did not become ready")
+                await asyncio.sleep(0.001)
+
+            proof = client.proof_adapter.validate_candidate(
+                job_id="12",
+                extranonce2="00000000",
+                ntime="00000064",
+                nonce=9,
+            )
+            self.assertEqual(len(proof.header), 80)
+
+            submit_task = asyncio.create_task(
+                client.submit(
+                    ["worker-1", "12", "00000000", "00000064", "00000009"]
+                )
+            )
+            while client.wire_writes_for("mining.submit") == 0:
+                await asyncio.sleep(0.001)
+            success_payload = (
+                (77).to_bytes(4, "little")
+                + (0).to_bytes(4, "little")
+                + (1).to_bytes(4, "little")
+                + (1).to_bytes(8, "little")
+            )
+            channel.incoming.append(
+                Sv2Frame(
+                    CHANNEL_MSG_BIT,
+                    MessageType.SUBMIT_SHARES_SUCCESS,
+                    success_payload,
+                ).encode()
+            )
+            self.assertTrue(await submit_task)
+            snapshot = client.status_snapshot()
+            self.assertEqual(snapshot["protocol"], "stratum_v2")
+            self.assertEqual(snapshot["counters"]["submitted"], 1)
+            self.assertEqual(snapshot["counters"]["accepted"], 1)
+            self.assertEqual(snapshot["counters"]["rejected"], 0)
+            self.assertEqual(snapshot["submission"]["wire_writes"], 1)
+            self.assertTrue(snapshot["sv2"]["authenticated_transport"])
             await client.close()
 
         asyncio.run(run())
