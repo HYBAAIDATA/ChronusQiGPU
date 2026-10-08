@@ -1,0 +1,6 @@
+include LICENSE README.md RELEASE.md
+recursive-include salamander *.py py.typed _build_provenance.json
+recursive-include al_haras *.py py.typed
+prune salamander/tests
+prune al_haras/tests
+global-exclude *.pyc *.pyo __pycache__
