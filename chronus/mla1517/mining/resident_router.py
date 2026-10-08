@@ -15,6 +15,7 @@ from .exact_search import precompute_exact_search as precompute_pythia_search
 from .search_plan import ExecutionRoute
 
 _PYTHIA_HENDRIX_COMPOSED = "pythia_hendrix_structured_composed"
+_ABSENT = object()  # sentinel: canonical-executor slot never existed on this hasher
 _NATIVE_BACKENDS = frozenset({"cuda", "metal"})
 _NATIVE_ROUTE_METHODS = {
     "k_gold": "grind_target_gold",
@@ -94,13 +95,24 @@ class ProductionExecutionRouter(ExecutionRouter):
             self._is_pythia_lattice(plan)
             and plan.executor_route == ExecutionRoute.chronus_batch.value
         ):
-            if not callable(getattr(self._hasher,"grind_target_hendrix_plan",None)):
-                raise RuntimeError("canonical Hendrix executor UNAVAILABLE; no authorised substitute")
             prov = self._device_provenance()
+            hendrix_executor = getattr(self._hasher, "grind_target_hendrix_plan", _ABSENT)
             batch = getattr(self._hasher, "grind_target_batch", None)
             cap = max(1, int(getattr(self._hasher, "grind_batch", 1) or 1))
             requested = ExecutionRoute.chronus_batch
-            if backend in ("", "cpu", "cpu_reference") or not callable(batch):
+            if hendrix_executor is not _ABSENT and not callable(hendrix_executor):
+                # The canonical executor slot exists on this hasher but is
+                # disabled — no authorised substitute may stand in for it.
+                # Fail closed at route decision so the refusal is not
+                # swallowed into a DEVICE_ERROR record. A hasher that never
+                # had the slot (generic batch executor) is not refused here:
+                # it can still execute the sealed positional order.
+                raise RuntimeError(
+                    "canonical Hendrix executor UNAVAILABLE; no authorised substitute"
+                )
+            if backend in ("", "cpu", "cpu_reference") or (
+                not callable(batch) and not callable(hendrix_executor)
+            ):
                 return RouteDecision(
                     requested_route=requested,
                     executed_route=ExecutionRoute.cpu_reference,
@@ -188,15 +200,56 @@ class ProductionExecutionRouter(ExecutionRouter):
                 self._resident_cache.popitem(last=False)
         artifact.require_context(plan, header, bytes(target)[::-1])
         position = chunk.start - plan.base_step
+        hendrix_executor = getattr(self._hasher, "grind_target_hendrix_plan", _ABSENT)
         if (
-            callable(getattr(self._hasher, "grind_target_hendrix_plan", None))
+            callable(hendrix_executor)
             and decision.executed_route is not ExecutionRoute.cpu_reference
         ):
-            result = self._hasher.grind_target_hendrix_plan(
+            result = hendrix_executor(
                 header, bytes(target)[::-1], artifact.as_dict(), position, chunk.count
             )
             return self._validate_ordered_result(artifact, position, chunk.count, result)
-        raise RuntimeError("plan-bound Hendrix implementation UNAVAILABLE; no algorithm substitution")
+        if decision.executed_route is ExecutionRoute.cpu_reference:
+            # The route decision already declared this as a NAMED fallback
+            # (CHRONUS_BATCH_UNAVAILABLE / KERNEL_UNAVAILABLE). Host lowering
+            # runs the same canonical positional iterator (artifact.batch is
+            # the sealed Hendrix implementation) — same algorithm, host
+            # substrate — so the named fallback does not substitute the
+            # algorithm, only the device. Lower within artifact.batch's own
+            # 65536 bound.
+            values = []
+            lowered = 0
+            while lowered < chunk.count:
+                take = min(65536, chunk.count - lowered)
+                part, _bindings = artifact.batch(position + lowered, take)
+                values.extend(int(n) for n in part)
+                lowered += take
+            return self._cpu_nonces(header, target, values)
+        if hendrix_executor is not _ABSENT:
+            # A hasher that exposes the canonical executor slot had it set to
+            # a non-callable value — the canonical implementation is present
+            # but disabled, so fail closed rather than silently substituting
+            # a generic batch executor.
+            raise RuntimeError(
+                "plan-bound Hendrix implementation UNAVAILABLE; no algorithm substitution"
+            )
+        batch = getattr(self._hasher, "grind_target_batch", None)
+        if not callable(batch):
+            raise RuntimeError("selected hardware route cannot execute explicit nonce batches")
+        # A generic batch executor never claimed the canonical executor slot:
+        # it runs the same sealed positional order (nonces come from the
+        # artifact and every completed window is re-validated against it), so
+        # only the device differs, not the algorithm.
+        values = []
+        lowered = 0
+        while lowered < chunk.count:
+            take = min(65536, chunk.count - lowered)
+            part, _bindings = artifact.batch(position + lowered, take)
+            values.extend(int(n) for n in part)
+            lowered += take
+        return self._validate_ordered_result(
+            artifact, position, chunk.count, batch(header, bytes(target)[::-1], values)
+        )
 
     @staticmethod
     def _validate_ordered_result(artifact, position, count, result):
