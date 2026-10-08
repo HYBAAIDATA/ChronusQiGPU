@@ -1,7 +1,7 @@
 # Chronos ONE iGPU — M5-integrated release candidate
 
 **Distribution:** `chronos-one-igpu` · **Import:** `chronos_one_igpu` ·
-**Candidate:** `3.11.2rc1` · **Owner:** HYBA Software Limited · **License:** MIT.
+**Candidate:** `3.11.2rc2` · **Owner:** HYBA Software Limited · **License:** MIT.
 
 **Status: release candidate; not yet authorised for production publication.**
 PR #140 has merged, but merging does not close its QC hold. No current-head
@@ -89,6 +89,40 @@ physical quantum execution, SHA-256d support, or ANE use. The current MLX overla
 exposes tensor operations, not an exact Hendrix or SHA-256d Metal kernel. An
 operation requiring a physical executor fails closed if that operation is not
 supported; an M5 descriptor cannot satisfy that requirement.
+
+## Exact M5 quantum operators and backend-neutral execution
+
+`M5ResidentRuntime.execute_quantum("exact_m5_ghz"|"exact_m5_cluster")`
+now executes the existing pad-state definitions using exact H/CX/CZ gate algebra,
+not numeric eigensolvers or canned state outputs. A separate closed-form verifier
+checks each amplitude, Born probability and exact normalisation. Receipts bind
+algorithm, model, topology, implementation source digest, actual gate applications
+and substrate. Fresh-process replay rejects identity or amplitude substitutions.
+
+The explicit domain is **one logical qubit per pad, at most 10 pads**. It is not
+the entire modelled register (64 bits per subunit), physical inter-pad entanglement,
+a QPU dispatch, or proof of mining success. These are exact mathematical quantum
+operators executed on the host. Physical execution requests fail closed while no
+qualified exact gate executor exists. Nothing is counted as SHA-256d work.
+
+```bash
+chronos-igpu m5-quantum --state ghz --pads 4
+chronos-igpu m5-quantum --state cluster --pads 10 --topology mesh
+```
+
+`OneIGPU.bind_execution_adapter(adapter)` admits actual backend-neutral Lucas
+and SHA-256d batch methods. Every output is independently checked; undeclared
+operations, changed adapter identity, duplicate nonces, invalid domains and
+corrupt outputs are rejected. This permits integrations without making CUDA,
+Metal, OpenCL, Apple M3/M5 or a specific vendor the product's identity.
+
+A third-party adapter declaration is **not hardware certification**. Its declared
+physical status is retained separately, but it cannot self-certify physical
+execution or fabricate a silicon core count. Existing discovered Metal/OpenCL
+bindings remain separate. Resident physical-operation requests now check the
+actual bound physical capability as well as the operation route. A claim of
+80→800→8000 physical GPU cores or corresponding performance still needs actual
+hardware evidence; the logical scheduling contract remains executable without it.
 
 ## Mining ownership and reference boundaries
 

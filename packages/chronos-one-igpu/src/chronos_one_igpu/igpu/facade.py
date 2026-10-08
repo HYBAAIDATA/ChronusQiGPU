@@ -267,3 +267,16 @@ class OneIGPU:
         """Combine canonical M5 algebra with the actual resident executor."""
         from .m5 import M5ResidentRuntime
         return M5ResidentRuntime(self, config, model)
+
+    def bind_execution_adapter(self, adapter, max_batch=65536):
+        """Bind actual backend-neutral exact methods; no strategy delegation.
+
+        Adapter mutation during execution requires a new explicit binding.
+        This is result-verified execution, not physical hardware certification.
+        """
+        from .execution_binding import VerifiedBatchExecutor
+        verified = VerifiedBatchExecutor(adapter, max_batch)
+        with self._hendrix_lock:
+            self.fabric.overlay = verified
+            self.fabric.reason = None
+        return verified.capability()

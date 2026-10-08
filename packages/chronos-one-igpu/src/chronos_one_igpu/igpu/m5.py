@@ -28,6 +28,7 @@ class M5ResidentRuntime:
         # A descriptor must not certify itself as measured execution.
         if model.measured_by_chronus:
             raise ValueError("M5 descriptor is not execution evidence")
+        self._quantum_model = model
         self._model_bytes = canonical(model.as_dict())
         self._model_digest = model_digest(model)
         self.resident = gpu.resident(
@@ -75,3 +76,16 @@ class M5ResidentRuntime:
                 or receipt["model_is_execution_evidence"] is not False):
             raise ValueError("M5 model/execution identity mismatch")
         return ResidentRuntime.verify(receipt["execution"], payload)
+
+    def execute_quantum(self, algorithm, *, require_host_gpu=False):
+        from ..adapters.base import BackendAbsent
+        from .m5_quantum import execute_quantum
+        if type(require_host_gpu) is not bool:
+            raise ValueError("explicit physical execution policy required")
+        if require_host_gpu:
+            raise BackendAbsent("exact M5 gate algebra has no qualified physical GPU executor")
+        return execute_quantum(self._quantum_model, algorithm)
+
+    def verify_quantum(self, receipt, algorithm):
+        from .m5_quantum import verify_quantum
+        return verify_quantum(receipt, self._quantum_model, algorithm)

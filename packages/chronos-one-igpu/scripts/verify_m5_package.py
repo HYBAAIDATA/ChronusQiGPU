@@ -22,7 +22,7 @@ import zipfile
 
 PACKAGE = Path(__file__).resolve().parents[1]
 REPO = PACKAGE.parents[1]
-TESTS = ("test_m5_model.py", "test_m5_resident.py")
+TESTS = ("test_m5_model.py", "test_m5_resident.py", "test_m5_quantum.py", "test_execution_binding.py")
 
 
 def digest(path):

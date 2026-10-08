@@ -1,7 +1,7 @@
 {
   "schema": "chronos_m5_integration_audit/1",
   "reviewed_base_revision": "c63ff4d7e9d25135b8e2ca17f84da6714d23d5b7",
-  "candidate": "3.11.2rc1",
+  "candidate": "3.11.2rc2",
   "distribution": "chronos-one-igpu",
   "namespace": "chronos_one_igpu",
   "canonical_model_source": "chronus/m5_ultra.py",
@@ -43,5 +43,24 @@
     "registry publication",
     "external accepted pool shares"
   ],
-  "source_boundary": "Changes based on MCP-read main files; local package checks use retained source material plus these pinned live files, not a verified complete main checkout. Commit-bound CI must rebuild from the complete checkout."
+  "source_boundary": "Changes based on MCP-read main files; local package checks use retained source material plus these pinned live files, not a verified complete main checkout. Commit-bound CI must rebuild from the complete checkout.",
+  "previous_candidate": "3.11.2rc1",
+  "increment_base_revision": "ba2e893748ef4d706e52005acd0e030b68937ac7",
+  "additive_rc2": {
+    "exact_pad_operators": [
+      "H",
+      "CX",
+      "CZ",
+      "exact GHZ state",
+      "exact topology cluster state",
+      "exact Born probabilities",
+      "independent closed-form verification"
+    ],
+    "domain": "One logical qubit per pad, at most ten pads. Not full model Hilbert-register execution.",
+    "execution_identity": "requested=planned=executed algorithm; exact symbolic CPU arithmetic; module/source digest; gate count; topology digest; no SHA-256d counts",
+    "backend_neutral_binding": "Declared real Lucas/SHA-256d methods, bounded admission and independent verification; no required vendor import; unqualified declarations cannot self-certify physical hardware.",
+    "mining_authority": "Unchanged PYTHIA sealed Hendrix plan; no autonomous strategy or rank substitution.",
+    "physical_gate_fix": "Resident required-physical operation now checks actual bound physical capability, not only a non-CPU backend name.",
+    "notion_source": "https://app.notion.com/p/77b43c289fc64ce58fc65ac53a43f6f7"
+  }
 }
