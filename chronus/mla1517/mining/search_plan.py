@@ -414,15 +414,10 @@ class ExecutionRecord:
     candidate_host_verified: bool | None = None
     recovery_id: str | None = None
     toe_advice_reason: str | None = None
-    # --- implementation identity binding -----------------------------------
-    # Which code physically executed the window: the module that ran it and a
-    # SHA-256 digest of that module's source, plus the arithmetic mode and the
-    # substrate class it ran on. ``implementation_digest`` without a module is
-    # meaningless (nothing to hash), so it is rejected at construction.
-    implementation_module: str | None = None
-    implementation_digest: str | None = None
-    execution_mode: str | None = None
-    substrate: str | None = None
+    # Implementation identity is bound once, above (implementation_module,
+    # implementation_digest, execution_mode, substrate,
+    # iterations_work_performed, execution_receipt_digest): the module that
+    # physically executed the window plus a SHA-256 digest of its source.
 
     def __post_init__(self) -> None:
         source = PlanSource(self.plan_source)
@@ -523,10 +518,15 @@ class ExecutionRecord:
                 "implementation_digest requires implementation_module: "
                 "a digest must name the code it certifies"
             )
-        for field_name in ("execution_mode", "substrate"):
-            token = getattr(self, field_name)
-            if token is not None and not re.fullmatch(r"[a-z0-9_]+", token):
-                raise ValueError(f"{field_name} must be a lowercase token, got {token!r}")
+        # ``execution_mode`` is a lowercase token; ``substrate`` carries a
+        # richer dict shape (device class, vendor, runtime) so it is not
+        # token-checked here.
+        if self.execution_mode is not None and not re.fullmatch(
+            r"[a-z0-9_]+", self.execution_mode
+        ):
+            raise ValueError(
+                f"execution_mode must be a lowercase token, got {self.execution_mode!r}"
+            )
         if source is PlanSource.AGENTIC_PRECOMPUTED:
             if not self.plan_id or self.plan_fallback_reason is not None:
                 raise ValueError("agentic execution requires plan_id and no plan_fallback_reason")
@@ -569,30 +569,4 @@ class ExecutionRecord:
             EvidenceClass.POOL_CONFIRMED: "POOL_VERIFIED",
         }[self.evidence_class]
 
-    # --- spec-named aliases -------------------------------------------------
-    # The receipt contract names the nonce traversal order the "algorithm":
-    # requested is what the executor was handed, planned is what the sealed
-    # plan declared, executed is what physically ran.
-    @property
-    def requested_algorithm(self) -> str | None:
-        return self.requested_nonce_order
 
-    @property
-    def planned_algorithm(self) -> str | None:
-        return self.planned_nonce_order
-
-    @property
-    def executed_algorithm(self) -> str | None:
-        return self.executed_nonce_order
-
-    @property
-    def fallback_used(self) -> bool:
-        """True when the physical execution deviated from the request on any
-        axis: route or algorithm."""
-        return bool(
-            (self.requested_route is not None and self.requested_route != self.executed_route)
-            or (
-                self.executed_nonce_order is not None
-                and self.executed_nonce_order != self.requested_nonce_order
-            )
-        )

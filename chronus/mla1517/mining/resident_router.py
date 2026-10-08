@@ -94,6 +94,8 @@ class ProductionExecutionRouter(ExecutionRouter):
             self._is_pythia_lattice(plan)
             and plan.executor_route == ExecutionRoute.chronus_batch.value
         ):
+            if not callable(getattr(self._hasher,"grind_target_hendrix_plan",None)):
+                raise RuntimeError("canonical Hendrix executor UNAVAILABLE; no authorised substitute")
             prov = self._device_provenance()
             batch = getattr(self._hasher, "grind_target_batch", None)
             cap = max(1, int(getattr(self._hasher, "grind_batch", 1) or 1))
@@ -194,26 +196,7 @@ class ProductionExecutionRouter(ExecutionRouter):
                 header, bytes(target)[::-1], artifact.as_dict(), position, chunk.count
             )
             return self._validate_ordered_result(artifact, position, chunk.count, result)
-        # artifact.batch enforces a bounded positional lowering (count <=
-        # min(65536, window - position)); the device-side launch cap can be
-        # larger, so lower the chunk in exact bounded sub-batches.
-        values = []
-        lowered = 0
-        while lowered < chunk.count:
-            take = min(65536, chunk.count - lowered)
-            part, _bindings = artifact.batch(position + lowered, take)
-            values.extend(int(n) for n in part)
-            lowered += take
-        nonces = values
-
-        if decision.executed_route is ExecutionRoute.cpu_reference:
-            return self._cpu_nonces(header, target, nonces)
-        batch = getattr(self._hasher, "grind_target_batch", None)
-        if not callable(batch):
-            raise RuntimeError("selected hardware route cannot execute explicit nonce batches")
-        return self._validate_ordered_result(
-            artifact, position, chunk.count, batch(header, bytes(target)[::-1], nonces)
-        )
+        raise RuntimeError("plan-bound Hendrix implementation UNAVAILABLE; no algorithm substitution")
 
     @staticmethod
     def _validate_ordered_result(artifact, position, count, result):
@@ -233,6 +216,8 @@ class ProductionExecutionRouter(ExecutionRouter):
         if not self._is_pythia_lattice(plan):
             return record
         executed = None if record.executed_nonce_order is None else plan.nonce_order
+        observed=getattr(self._hasher,"last_batch_evidence",None)or {}
+        contract=(plan.evidence_refs.get("resident_hendrix")or {}).get("execution_contract",{})
         return replace(
             record,
             candidate_nonce=kwargs.get("winner_nonce"),
@@ -246,4 +231,14 @@ class ProductionExecutionRouter(ExecutionRouter):
             geometry_digest=(
                 (plan.evidence_refs.get("resident_hendrix") or {}).get("geometry") or {}
             ).get("digest"),
+            requested_algorithm=contract.get("requested_algorithm"),
+            planned_algorithm=contract.get("planned_algorithm"),
+            executed_algorithm=observed.get("executed_algorithm"),
+            implementation_module=observed.get("implementation_module"),
+            implementation_digest=observed.get("implementation_digest"),
+            execution_mode=observed.get("execution_mode"),
+            substrate=observed.get("substrate"),
+            iterations_work_performed=observed.get("iterations_work_performed"),
+            fallback_used=bool(observed.get("fallback_used")),
+            execution_receipt_digest=observed.get("receipt_digest"),
         )

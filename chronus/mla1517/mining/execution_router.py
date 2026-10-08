@@ -942,6 +942,17 @@ class ExecutionRouter:
             implementation_digest=impl_digest,
             execution_mode=exec_mode,
             substrate=substrate,
+            requested_algorithm=requested_order,
+            planned_algorithm=plan.nonce_order,
+            executed_algorithm=(
+                None
+                if state in (CompletionState.INVALIDATED, CompletionState.REFUSED)
+                else executed_order
+            ),
+            fallback_used=(
+                decision.requested_route is not decision.executed_route
+                or order_fallback_reason is not None
+            ),
         )
         # hit_sample is telemetry on the returned record, kept out of the
         # evidence fields: it is NOT window-completion evidence.
