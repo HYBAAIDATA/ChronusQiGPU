@@ -619,7 +619,7 @@ class OntologyStore:
         if not all(math.isfinite(x) for x in values): raise InvalidRecord("fold vector must be finite")
         return values, struct.pack(">11d",*values)
 
-    def write_fold(self, tenant_id: str, vector: Sequence[float], *, parent_id: str|None=None, issuer: str="hyba", evidence: Sequence[str]=()) -> FoldRecord:
+    def write_fold(self, tenant_id: str, vector: Sequence[float], *, parent_id: str|None=None, issuer: str="hyba", evidence: Sequence[str]=(), seal_manifest: bool=True) -> FoldRecord:
         self._tenant(tenant_id); values, blob = self._pack_vector(vector)
         masks = tuple(_zeckendorf(round(x*self.SCALE)) for x in values)
         depth = max((abs(m).bit_length()-1 for m in masks if m), default=0)
@@ -636,7 +636,8 @@ class OntologyStore:
             db.execute("INSERT INTO certificates VALUES(?,?,?,?,?,?,?,?,?)",(tenant_id,cert_id,_json(masks),cert_digest,vector_digest,_json(lucas),depth,self.SCALE,ca.id))
             fa=self._attest(db,tenant_id,f"fold:{fold_id}",issuer,{"certificate":cert_id,"parent":parent_id},(ca.id,*evidence))
             db.execute("INSERT INTO folds VALUES(?,?,?,?,?,?,?)",(tenant_id,fold_id,blob,cert_id,parent_id,created,fa.id))
-        self._seal_fold_manifest(tenant_id, fold_id)
+        if seal_manifest:
+            self._seal_fold_manifest(tenant_id, fold_id)
         return self.read_fold(tenant_id,fold_id)
 
     def _certificate(self, tenant_id: str, cert_id: str) -> Certificate:
@@ -822,13 +823,14 @@ class OntologyStore:
             db.execute("INSERT INTO contracts VALUES(?,?,?,?,?,?,?)",(tenant_id,cid,name,payload,_json(tuple(invariant_ids)),a.id,created))
         return cid
 
-    def register_term(self, tenant_id: str, term: str, definition: str, relations: dict[str,Any]|None=None, *, issuer: str="hyba") -> str:
+    def register_term(self, tenant_id: str, term: str, definition: str, relations: dict[str,Any]|None=None, *, issuer: str="hyba", seal_manifest: bool=True) -> str:
         oid=_ident("term",f"{tenant_id}:{term}".encode()); rel=_json(relations or {}); created=_now()
         with self._tx() as db:
             self._reserve(db,tenant_id,1,len(definition.encode())+len(rel.encode()),oid)
             a=self._attest(db,tenant_id,f"ontology:{term}",issuer,{"term":term,"definition_digest":_sha(definition.encode()),"relations_digest":_sha(rel.encode())},())
             db.execute("INSERT INTO ontology VALUES(?,?,?,?,?,?,?)",(tenant_id,oid,term,definition,rel,a.id,created))
-        self._seal_ontology_manifest(tenant_id, oid)
+        if seal_manifest:
+            self._seal_ontology_manifest(tenant_id, oid)
         return oid
 
     def materialize(self, tenant_id: str, operation: str, input_ids: Sequence[str], result: Any, *, issuer: str="hyba") -> str:
