@@ -274,7 +274,7 @@ class BenchmarkSuite:
             fp4 = results["fp4_precision"]
             print("\nFP4 Precision:")
             print(f"  Quantization levels: {fp4['num_levels']}")
-            print(f"  Throughput multiplier: {fp4['throughput_multiplier']:.0f}x FP64")
+            print(f"  Target throughput ratio (spec): {fp4['throughput_multiplier']:.0f}x FP64")
             print(f"  Verified: {'✓' if fp4['verified'] else '✗'}")
 
         if "sparse_tensors" in results:

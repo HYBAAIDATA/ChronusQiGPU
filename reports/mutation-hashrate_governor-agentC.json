@@ -1,0 +1,139 @@
+{
+  "module": "chronus\\mla1517\\mining\\hashrate_governor.py",
+  "tests": [
+    "chronus/mla1517_platform/python/test_hashrate_governor.py"
+  ],
+  "mutants": 148,
+  "killed": 132,
+  "score": 0.8918918918918919,
+  "survivors": [
+    {
+      "index": 4,
+      "walk_position": 80,
+      "slot": 0,
+      "line": 49,
+      "description": "<= -> <",
+      "source": "if lam <= 0.0:"
+    },
+    {
+      "index": 11,
+      "walk_position": 107,
+      "slot": 0,
+      "line": 73,
+      "description": "> -> >=",
+      "source": "if n > 1000:"
+    },
+    {
+      "index": 21,
+      "walk_position": 210,
+      "slot": 0,
+      "line": 50,
+      "description": "0.0 -> 1.0",
+      "source": "return 0.0"
+    },
+    {
+      "index": 23,
+      "walk_position": 228,
+      "slot": 0,
+      "line": 58,
+      "description": "200 -> 201",
+      "source": "for _ in range(200):"
+    },
+    {
+      "index": 29,
+      "walk_position": 249,
+      "slot": 0,
+      "line": 73,
+      "description": "1000 -> 1001",
+      "source": "if n > 1000:"
+    },
+    {
+      "index": 34,
+      "walk_position": 264,
+      "slot": 0,
+      "line": 81,
+      "description": "10.0 -> 20.0",
+      "source": "hi = max(10.0, 3.0 * n + 10.0)"
+    },
+    {
+      "index": 35,
+      "walk_position": 265,
+      "slot": 0,
+      "line": 81,
+      "description": "+ -> -",
+      "source": "hi = max(10.0, 3.0 * n + 10.0)"
+    },
+    {
+      "index": 36,
+      "walk_position": 269,
+      "slot": 0,
+      "line": 83,
+      "description": "0.0 -> 1.0",
+      "source": "upper = _solve(lambda lam: _log_poisson_cdf(n, lam) <= log_tail, 0.0, hi)"
+    },
+    {
+      "index": 40,
+      "walk_position": 287,
+      "slot": 0,
+      "line": 67,
+      "description": "4096 -> 4097",
+      "source": "@lru_cache(maxsize=4096)"
+    },
+    {
+      "index": 44,
+      "walk_position": 319,
+      "slot": 0,
+      "line": 110,
+      "description": "0.0 -> 1.0",
+      "source": "self._refilled_at = 0.0"
+    },
+    {
+      "index": 77,
+      "walk_position": 497,
+      "slot": 0,
+      "line": 81,
+      "description": "10.0 -> 20.0",
+      "source": "hi = max(10.0, 3.0 * n + 10.0)"
+    },
+    {
+      "index": 78,
+      "walk_position": 500,
+      "slot": 0,
+      "line": 83,
+      "description": "<= -> <",
+      "source": "upper = _solve(lambda lam: _log_poisson_cdf(n, lam) <= log_tail, 0.0, hi)"
+    },
+    {
+      "index": 80,
+      "walk_position": 512,
+      "slot": 0,
+      "line": 88,
+      "description": "<= -> <",
+      "source": "lower = _solve(lambda lam: _log_poisson_cdf(n - 1, lam) <= log_head, 0.0, hi)"
+    },
+    {
+      "index": 112,
+      "walk_position": 776,
+      "slot": 0,
+      "line": 81,
+      "description": "3.0 -> 6.0",
+      "source": "hi = max(10.0, 3.0 * n + 10.0)"
+    },
+    {
+      "index": 146,
+      "walk_position": 1239,
+      "slot": 0,
+      "line": 76,
+      "description": "9 -> 10",
+      "source": "lower = n * (1 - 1 / (9 * n) - z / (3 * math.sqrt(n))) ** 3"
+    },
+    {
+      "index": 147,
+      "walk_position": 1244,
+      "slot": 0,
+      "line": 78,
+      "description": "9 -> 10",
+      "source": "upper = m * (1 - 1 / (9 * m) + z / (3 * math.sqrt(m))) ** 3"
+    }
+  ]
+}

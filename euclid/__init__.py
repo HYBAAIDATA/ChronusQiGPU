@@ -39,13 +39,14 @@ from .startup_orchestrator import (
     StartupVerdict,
 )
 
-__version__ = "16.0.0"
+__version__ = "17.0.0"
 
 __all__ = [
     "Authority",
     "Capability",
     "Experience",
-    "EuclidEngineAdapter",\n    "ProgramSearchEngine",
+    "EuclidEngineAdapter",
+    "ProgramSearchEngine",
     "EuclidRuntime",
     "Health",
     "HealthLevel",

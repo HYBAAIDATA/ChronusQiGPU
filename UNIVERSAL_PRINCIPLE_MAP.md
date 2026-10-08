@@ -1007,6 +1007,10 @@ The threshold φ − 1 = 1/φ ≈ 0.618 (61.8%) appears as:
 | `euclid/cognition/credit.py` | Credit assignment |
 | `euclid/kairos_runtime.py` | Kairos runtime |
 | `euclid/memory_database.py` | Memory database |
+| `euclid/cognition/worlds/` | v17 interactive task worlds: hidden mechanisms, governed budgeted executor, seeded families and partitions |
+| `euclid/cognition/integrated/` | v17 integrated adaptive intelligence: Bayesian mechanism world model, EIG discrimination, VOI metacognition, strategy meta-learning, structural analogy, planning, skills, consolidation |
+| `euclid/cognition/integrated/phi_mechanisms.py` | Discrete Fibonacci search (Kiefer 1953), golden Weyl coverage, Fibonacci deepening schedule — each with a neutral twin |
+| `euclid/cognition/research/` | v17 pre-registered research programme, statistics and report |
 
 ---
 
@@ -1229,6 +1233,44 @@ The `AblationConfig` in `euclid/cognition/core.py` defines 8 surgical removal fl
 | `mathematical_structure` | True | No mathematical structure detection |
 
 Every ablation is recorded on the state and in the evidence chain so an ablated run can never masquerade as a full-system run.
+
+### 17.4a EUCLID v17 — the integrated adaptive loop (2026-10-08)
+
+`euclid/cognition/core.py:GeneralIntelligenceCore` remains the orchestrator; v17
+adds optional, typed extension hooks (`euclid/cognition/interfaces.py`:
+`EvidencePolicy`, `PosteriorDiscriminator`, `ObservingWorldModel`,
+`Restructurer`, `AnalogyRefresher`, `EpisodeConsolidator`). Specialists without
+them keep the original single-step behaviour.
+
+```
+represent → retrieve → analogy → strategy → [abduce → deduce →
+evidence-decision (VOI) → discriminate (EIG probe) → posterior update →
+analogy refresh]* → plan (causal subgoals) → counterfactual → restructure
+(measured) → compose (plans, repairs, transfers, skills) → imagine → rank
+(validity-weighted) → execute (governed) → compare (prediction error) →
+metacontrol (replan | repair_model | abandon_transfer | change_strategy |
+change_representation | adjust_plan_depth | halt) → objectives (proxy audit)
+→ learn → credit → consolidate (abstract, discover skills, ledger transfer)
+```
+
+| Mechanism | File | φ / Lucas role | Evidence class |
+|---|---|---|---|
+| Mechanism posterior with competing noise models, breakdown and selective rebuild | `euclid/cognition/integrated/world_model.py` | — | MEASURED: ablation −0.526 utility\* |
+| Sequential expected-information-gain probe design | `euclid/cognition/integrated/context.py` | — | MEASURED: causal-intervention ablation −0.438 utility\* |
+| Value-of-information evidence policy, strategy meta-learning, metacognitive control | `euclid/cognition/integrated/control.py` | — | MEASURED: meta-learning ablation −0.296 utility\* (+0.071 success); replanning −0.219\* |
+| Structural analogy by variable bijection, Bayes-factor adoption | `euclid/cognition/integrated/analogy.py` | — | MEASURED: no significant net effect; slightly harmful on the analogy slice |
+| Evidence-gated primitive discovery and skill hierarchy | `euclid/cognition/integrated/skills.py` | — | MEASURED: lifecycle functions; no outcome benefit |
+| Response optimisation by discrete Fibonacci search | `euclid/cognition/integrated/phi_mechanisms.py` | Fibonacci numbers, φ-interval reduction | known theorem operationalised; post-hoc in-loop gain on response families (incl. held-out dose-response), to be pre-registered |
+| Golden Weyl coverage; Fibonacci iterative-deepening schedule | `euclid/cognition/integrated/phi_mechanisms.py` | φ Kronecker sequence; Fibonacci bounds | exploratory: smallest largest-gap measured; deepening a trade-off, no dominance |
+| Self-improvement proposals by Fibonacci line search | `euclid/cognition/integrated/self_improvement.py` | Fibonacci search | exploratory: no proposal accepted on development data |
+
+The ablation flag `AblationConfig.mathematical_structure=False` replaces every
+φ mechanism with its neutral twin at the source (ternary search, grid
+coverage, unit deepening). `learned_primitives` was added beside the existing
+flags. Integration matched a conventional identify→plan pipeline's success at under
+half its interaction cost (+0.307 utility\*) and exceeded v16.4 (+0.898 success\*);
+it was not superadditive. Measured results, intervals and negative findings are in
+`docs/EUCLID_V17_RESEARCH_RELEASE.md` and `reports/euclid_v17/`.
 
 ### 17.5 Lucas Scaling for Intelligence
 

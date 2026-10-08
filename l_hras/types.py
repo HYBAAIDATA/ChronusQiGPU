@@ -153,6 +153,8 @@ class PolicyRule:
     scope: Optional[str] = None
     action: Optional[str] = None
     adversary_class: Optional[str] = None
+    actor: Optional[str] = None
+    resource: Optional[str] = None
 
     def matches(self, request: "Request") -> bool:
         if self.kind is not None and request.kind.value != self.kind:
@@ -160,6 +162,10 @@ class PolicyRule:
         if self.scope is not None and request.scope != self.scope:
             return False
         if self.action is not None and request.action != self.action:
+            return False
+        if self.actor is not None and getattr(request, "actor", None) != self.actor:
+            return False
+        if self.resource is not None and getattr(request, "resource", None) != self.resource:
             return False
         if (
             self.adversary_class is not None
@@ -181,7 +187,7 @@ class PolicyBundle:
     compliance_mappings: dict[str, list[str]] = field(default_factory=dict)
     signature: Optional[str] = None
     signatures_verified: bool = False
-    default_allow: bool = True
+    default_allow: bool = False
 
     def sign_with(self, trust_root: TrustRoot) -> None:
         self.signature = trust_root.sign(self.signing_payload())

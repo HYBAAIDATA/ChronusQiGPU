@@ -39,12 +39,15 @@ def evaluate(
             tenant_id, storage_roots={tenant_id: str(storage_root)}
         )
         knowledge = store.knowledge.verify(tenant_id)
+        ovid_index = store.ovid.verify(tenant_id)
         file_plane = store.files.verify_database(tenant_id)
         stats = store.files.stats(tenant_id)
         custody_health = custody.open_tenant(tenant_id).health()
         custody_replay = custody.open_tenant(tenant_id).verify_replay()
+        tenant_manifest_id = f"tenant_projection.{tenant_id}"
+        tenant_manifest_verified = custody.verify(tenant_id, tenant_manifest_id)
         checks = {
-            "schema_v3": metadata.get("schema_version") == "3",
+            "schema_v3": metadata.get("schema_version") == str(store.SCHEMA_VERSION),
             "sqlite_integrity": sqlite_integrity == "ok",
             "wal_enabled": journal_mode == "wal",
             "synchronous_full": synchronous == 2,
@@ -53,6 +56,8 @@ def evaluate(
             "file_plane_verified": bool(file_plane.get("passed")),
             "mining_chain_verified": verification.mining_chain_ok,
             "knowledge_projection_verified": bool(knowledge.get("passed")),
+            "ovid_data_index_verified": bool(ovid_index.get("passed")),
+            "tenant_identity_custodied": tenant_manifest_verified,
             "storage_reconciled": verification.reconciliation_ok,
             "custody_ready": bool(custody_health.get("ready")),
             "custody_not_degraded": not bool(custody_health.get("degraded")),
@@ -65,6 +70,7 @@ def evaluate(
             "checks": checks,
             "database_errors": list(verification.errors),
             "knowledge_errors": list(knowledge.get("errors", ())),
+            "ovid_index": ovid_index,
             "file_errors": list(file_plane.get("errors", ())),
             "custody_health": custody_health,
             "custody_replay": custody_replay,

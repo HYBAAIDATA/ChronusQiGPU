@@ -121,42 +121,29 @@ class OvidTransformPlane:
             "input_bytes": len(source),
             "equivalence": verdict,
         }
-        object_id = self.files.create_object(
+        object_id, version_id = self.files.put_file(
             tenant_id,
+            root,
             logical_name=f"{row['logical_name']}.ovid-v{transform_version}",
             file_class="transform",
             semantic_owner="ovid",
             domain=f"transform:{contract.transform_id}",
-        )
-        digest = hashlib.sha256(folded).hexdigest()
-        base = Path(root) / tenant_id / "transform" / digest[:2]
-        base.mkdir(parents=True, exist_ok=True)
-        final = base / digest
-        temp = base / f".{digest}.tmp"
-        temp.write_bytes(folded)
-        temp.replace(final)
-        version_id = self.files.register_version(
-            tenant_id,
-            object_id,
-            folded,
-            storage_uri=f"file://{final}",
-            logical_path=str(final),
+            content=folded,
             producer=producer,
             producer_version="ovid-registry/1",
             schema_version=int(transform_version),
             evidence_state="PASS",
             custody_record_id=custody_record_id,
+            provenance={
+                "source_ids": [source_version_id],
+                "exactness_contract": str(exactness or "UNAVAILABLE"),
+                "recovery_class": "theseus-canonical",
+            },
+            links=(("file_version", source_version_id, "transformed_from"),),
             ovid_lineage_id=lineage_id,
             transform_contract=_json(contract_doc),
             transform_version=int(transform_version),
             exactness=exactness,
-        )
-        self.files.link(
-            tenant_id,
-            version_id,
-            "file_version",
-            source_version_id,
-            relationship="transformed_from",
         )
         self.files.append_event(
             tenant_id,

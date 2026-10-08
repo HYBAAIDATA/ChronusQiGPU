@@ -16,7 +16,7 @@ research institutions:
 7. **Education & outreach** — `tutorials/` with Grover, H₂ VQE, φ-scaling walkthroughs.
 8. **Community** — `community/` with consortium charter, hackathon format, standards tracking (IEEE P7130, ISO/IEC JTC 1/WG 14).
 
-**Test count**: 230 passing (0 failed, 0 errors). All numbers measured on host CPU, claim lane MATHEMATICAL_QUANTUM (SUBSTRATE-AGNOSTIC).
+**Test count**: 1,488 collected, all passing (0 failed, 0 errors) on the verified host at this revision. Wall-clock benchmark numbers are measured on host CPU; ratios labelled "computed" or "theoretical" are mathematical properties of the algorithm, not measurements. Claim lane MATHEMATICAL_QUANTUM (SUBSTRATE-AGNOSTIC).
 
 See `docs/complexity-analysis.md` for formal complexity bounds and
 `docs/error-bounds.md` for convergence-rate statements.
@@ -60,16 +60,16 @@ maintained throughout:
 
 ## Executive Summary
 
-| Component | Status | Measured Performance | Information-Density Bound (φ^15) |
+| Component | Status | Result on Classical Host | Information-Density Bound (φ^15) |
 |-----------|--------|----------------------|-----------------------------------|
 | **Tensor Core** | ✅ | ~0.1-0.4 GFLOPS (classical CPU) | ~3.41 TFLOPS (theoretical ceiling) |
-| **Grover Search** | ✅ | 10.7× speedup, 99.99% probability | 20.5× theoretical |
+| **Grover Search** | ✅ | 10.7× iteration-count ratio (computed), 99.99% target probability | 20.5× theoretical |
 | **Error Correction** | ✅ | 100% correction (L=4,8,16) | Surface code verified |
 | **Neural Network** | ✅ | ~84% loss reduction, ~20K samples/s | 10^12 parameter target |
 | **φ-Scaling** | ✅ | φ^0 baseline (measured) | φ^37 composite ceiling |
 | **Cross-Vendor** | ✅ | NVIDIA, Apple, HP/HPE specs compared | Public data only |
 
-**225/225 tests passed. 0 failures. 0 errors.**
+**1,488/1,488 tests passed. 0 failures. 0 errors.**
 
 ---
 
@@ -120,7 +120,7 @@ instant desk-reject at any serious physics or CS venue.
 ### Part 6: Amplitude Amplification (`amplitude_amplification.py`)
 - `AmplitudeAmplificationProcessor` — Grover search with amplitude amplification
 - Optimal iteration count: π/(4θ) where θ = arcsin(√(M/N))
-- 99.99% target probability, 10.7× measured speedup
+- 99.99% target probability, 10.7× iteration-count ratio vs classical expected trials (computed from run counts, not a wall-clock speedup)
 
 ### Part 7: Quantum Fourier Transform (`quantum_fourier.py`)
 - `QuantumFourierProcessor` — QFT and inverse QFT via FFT
@@ -213,7 +213,7 @@ performance on actual classical hardware.
 
 ---
 
-## Test Results: 225 Tests Passed, 0 Failed
+## Test Results: 1,488 Tests Passed, 0 Failed
 
 | Test Suite | Tests | Passed | Failed |
 |------------|-------|--------|--------|
@@ -231,6 +231,9 @@ performance on actual classical hardware.
 | Parts 14-16 (Cross-Vendor) | 28 | 28 | 0 |
 | **TOTAL** | **225** | **225** | **0** |
 
+(Per-suite breakdown above is from an earlier revision totalling 225 tests;
+the suite has since grown to 1,488 tests under `tests/`.)
+
 ---
 
 ## Real Measured Benchmarks (Classical CPU)
@@ -241,10 +244,10 @@ performance on actual classical hardware.
 | LINPACK (512×512) | 11-17 GFLOPS | ✅ |
 | Matrix Multiply (512×512) | 55-94 GFLOPS | ✅ |
 | Memory Bandwidth (STREAM) | 35-46 GB/s copy, 19-24 GB/s triad | ✅ |
-| Grover Search | 99.99% target probability, 10.7× speedup | ✅ |
+| Grover Search | 99.99% target probability, 10.7× iteration-count ratio (computed, not wall-clock) | ✅ |
 | Error Correction | 100% correction rate (L=4, L=8, L=16) | ✅ |
 | Neural Network | 84.1% loss reduction, ~20K samples/sec | ✅ |
-| FP4 Precision | 200× throughput multiplier, verified | ✅ |
+| FP4 Precision | 200× target throughput ratio vs FP64 (specification, not measured) | ✅ |
 | Sparse Tensor Cores (2:4) | 2:4 sparsity verified | ✅ |
 | Quantum Speedup | 20.5× theoretical (Grover) | ✅ |
 | φ^10 Scaling | 122.99× factor (mathematically exact) | ✅ |

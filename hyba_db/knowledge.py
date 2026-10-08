@@ -131,6 +131,8 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_subject
  ON knowledge_records(tenant_id,subject,predicate);
 CREATE INDEX IF NOT EXISTS idx_knowledge_owner
  ON knowledge_records(tenant_id,semantic_owner,evidence_state);
+CREATE INDEX IF NOT EXISTS idx_knowledge_domain_form
+ ON knowledge_records(tenant_id,domain,knowledge_form);
 CREATE INDEX IF NOT EXISTS idx_knowledge_supersedes
  ON knowledge_records(tenant_id,supersedes_id);
 CREATE INDEX IF NOT EXISTS idx_knowledge_rel_from

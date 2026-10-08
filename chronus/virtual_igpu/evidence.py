@@ -12,6 +12,7 @@ they alone do not establish hardware-rooted trust.
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import hashlib
@@ -20,6 +21,7 @@ import json
 import os
 import sqlite3
 import threading
+import time
 from pathlib import Path
 from typing import Any, Mapping
 from uuid import uuid4
@@ -30,6 +32,61 @@ from .attestation import extend_chain
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+LEDGER_LOCK_TIMEOUT_S = 30.0
+
+
+@contextmanager
+def _ledger_file_lock(path: Path, timeout_s: float = LEDGER_LOCK_TIMEOUT_S):
+    """Exclusive inter-process lock held while the ledger is read or extended.
+
+    Processes sharing a store must extend the chain from the on-disk head, not
+    from the head they loaded earlier: two appenders working from a stale head
+    fork the chain, and a forked ledger no longer loads. A lock that cannot be
+    acquired within ``timeout_s`` fails the operation closed.
+    """
+    with path.open("a+b") as fh:
+        deadline = time.monotonic() + timeout_s
+        while True:
+            try:
+                _lock_first_byte(fh)
+                break
+            except OSError:
+                if time.monotonic() >= deadline:
+                    raise TimeoutError(f"evidence ledger lock is held: {path}") from None
+                time.sleep(0.005)
+        try:
+            yield
+        finally:
+            _unlock_first_byte(fh)
+
+
+def _lock_first_byte(fh) -> None:
+    try:
+        import fcntl
+    except ModuleNotFoundError:
+        import msvcrt
+
+        fh.seek(0)
+        msvcrt.locking(fh.fileno(), msvcrt.LK_NBLCK, 1)
+    else:
+        fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+
+def _unlock_first_byte(fh) -> None:
+    try:
+        import fcntl
+    except ModuleNotFoundError:
+        import msvcrt
+
+        fh.seek(0)
+        try:
+            msvcrt.locking(fh.fileno(), msvcrt.LK_UNLCK, 1)
+        except OSError:
+            pass
+    else:
+        fcntl.flock(fh, fcntl.LOCK_UN)
 
 
 @dataclass
@@ -103,6 +160,7 @@ class EvidenceLedger:
         self.root = Path(root or os.getenv("CHRONUS_VIGPU_STORE", ".chronus-virtual-igpu"))
         self.root.mkdir(parents=True, exist_ok=True)
         self.path = self.root / "evidence_ledger.jsonl"
+        self._lock_path = self.root / "evidence_ledger.lock"
         key = hmac_key if hmac_key is not None else signing_key
         if key is None:
             key = os.getenv("CHRONUS_VIGPU_HMAC_KEY")
@@ -112,6 +170,11 @@ class EvidenceLedger:
         self._lock = threading.RLock()
         self._last_chain = "genesis"
         self._records: list[EvidenceRecord] = []
+        # Bytes of the ledger file already verified and adopted, and the line
+        # count they hold, so records appended by other processes are verified
+        # incrementally before this process extends the chain.
+        self._offset = 0
+        self._line_number = 0
         # Content-addressed artifacts live under the canonical `evidence/`
         # directory; the digest is the filename, so bytes hash to their address.
         self.artifacts = self.root / "evidence"
@@ -119,87 +182,108 @@ class EvidenceLedger:
         self._load()
 
     def _load(self) -> None:
+        with _ledger_file_lock(self._lock_path):
+            self._ingest()
+
+    def _ingest(self) -> None:
+        """Verify and adopt every record appended since this ledger last read.
+
+        Callers hold the file lock, so no lock-respecting writer is mid-append.
+        """
         if not self.path.exists():
             return
-        expected_prev = "genesis"
-        for line_number, line in enumerate(
-            self.path.read_text(encoding="utf-8").splitlines(), start=1
-        ):
+        with self.path.open("rb") as fh:
+            fh.seek(self._offset)
+            chunk = fh.read()
+        if not chunk:
+            return
+        adopted: list[EvidenceRecord] = []
+        expected_prev = self._last_chain
+        line_number = self._line_number
+        for line in chunk.decode("utf-8").splitlines():
+            line_number += 1
             line = line.strip()
             if not line:
                 continue
-            try:
-                data = json.loads(line)
-                rec = EvidenceRecord(
-                    record_id=str(data["record_id"]),
-                    workload_id=str(data.get("workload_id", "")),
-                    adapter_id=str(data.get("adapter_id", "")),
-                    kind=str(data.get("kind", "")),
-                    trust_class=str(data.get("trust_class", TrustClass.RUNTIME_SIGNED.value)),
-                    hardware_rooted=bool(data.get("hardware_rooted", False)),
-                    hardware_executed=bool(data.get("hardware_executed", False)),
-                    wall_time_ns=int(data.get("wall_time_ns", 0)),
-                    device_time_ns=data.get("device_time_ns"),
-                    content_hash=str(data.get("content_hash", "")),
-                    receipt=dict(data.get("receipt", {})),
-                    result=dict(data.get("result", {})),
-                    chain_prev=str(data.get("chain_prev", "")),
-                    chain_digest=str(data.get("chain_digest", "")),
-                    recorded_at=str(data.get("recorded_at", _utc_now())),
-                    hmac_hex=data.get("hmac_hex"),
-                    metadata=dict(data.get("metadata", {})),
-                )
-            except Exception as exc:
-                raise ValueError(
-                    f"invalid evidence ledger record at line {line_number}"
-                ) from exc
-            body = {
-                "workload_id": rec.workload_id,
-                "adapter_id": rec.adapter_id,
-                "kind": rec.kind,
-                "trust_class": rec.trust_class,
-                "hardware_rooted": rec.hardware_rooted,
-                "hardware_executed": rec.hardware_executed,
-                "wall_time_ns": rec.wall_time_ns,
-                "device_time_ns": rec.device_time_ns,
-                "receipt": rec.receipt,
-                "result": rec.result,
-                "metadata": rec.metadata,
-                "chain_prev": rec.chain_prev,
-            }
-            expected_hash = digest_json(body)
-            expected_chain = hashlib.sha256(
-                f"{expected_prev}:{expected_hash}".encode("utf-8")
-            ).hexdigest()
-            if rec.chain_prev != expected_prev:
-                raise ValueError(
-                    f"evidence chain predecessor mismatch at line {line_number}"
-                )
-            if rec.content_hash != expected_hash:
-                raise ValueError(
-                    f"evidence content hash mismatch at line {line_number}"
-                )
-            if rec.chain_digest != expected_chain:
-                raise ValueError(
-                    f"evidence chain digest mismatch at line {line_number}"
-                )
-            if rec.hmac_hex is not None:
-                if self.hmac_key is None:
-                    raise ValueError(
-                        "evidence ledger requires its configured HMAC key"
-                    )
-                expected_hmac = hmac.new(
-                    self.hmac_key,
-                    rec.content_hash.encode("utf-8"),
-                    hashlib.sha256,
-                ).hexdigest()
-                if not hmac.compare_digest(expected_hmac, rec.hmac_hex):
-                    raise ValueError(
-                        f"evidence HMAC mismatch at line {line_number}"
-                    )
-            self._records.append(rec)
+            rec = self._verify_line(line, line_number, expected_prev)
+            adopted.append(rec)
             expected_prev = rec.chain_digest
-            self._last_chain = rec.chain_digest
+        self._records.extend(adopted)
+        self._last_chain = expected_prev
+        self._line_number = line_number
+        self._offset += len(chunk)
+
+    def _verify_line(self, line: str, line_number: int, expected_prev: str) -> EvidenceRecord:
+        try:
+            data = json.loads(line)
+            rec = EvidenceRecord(
+                record_id=str(data["record_id"]),
+                workload_id=str(data.get("workload_id", "")),
+                adapter_id=str(data.get("adapter_id", "")),
+                kind=str(data.get("kind", "")),
+                trust_class=str(data.get("trust_class", TrustClass.RUNTIME_SIGNED.value)),
+                hardware_rooted=bool(data.get("hardware_rooted", False)),
+                hardware_executed=bool(data.get("hardware_executed", False)),
+                wall_time_ns=int(data.get("wall_time_ns", 0)),
+                device_time_ns=data.get("device_time_ns"),
+                content_hash=str(data.get("content_hash", "")),
+                receipt=dict(data.get("receipt", {})),
+                result=dict(data.get("result", {})),
+                chain_prev=str(data.get("chain_prev", "")),
+                chain_digest=str(data.get("chain_digest", "")),
+                recorded_at=str(data.get("recorded_at", _utc_now())),
+                hmac_hex=data.get("hmac_hex"),
+                metadata=dict(data.get("metadata", {})),
+            )
+        except Exception as exc:
+            raise ValueError(
+                f"invalid evidence ledger record at line {line_number}"
+            ) from exc
+        body = {
+            "workload_id": rec.workload_id,
+            "adapter_id": rec.adapter_id,
+            "kind": rec.kind,
+            "trust_class": rec.trust_class,
+            "hardware_rooted": rec.hardware_rooted,
+            "hardware_executed": rec.hardware_executed,
+            "wall_time_ns": rec.wall_time_ns,
+            "device_time_ns": rec.device_time_ns,
+            "receipt": rec.receipt,
+            "result": rec.result,
+            "metadata": rec.metadata,
+            "chain_prev": rec.chain_prev,
+        }
+        expected_hash = digest_json(body)
+        expected_chain = hashlib.sha256(
+            f"{expected_prev}:{expected_hash}".encode("utf-8")
+        ).hexdigest()
+        if rec.chain_prev != expected_prev:
+            raise ValueError(
+                f"evidence chain predecessor mismatch at line {line_number}"
+            )
+        if rec.content_hash != expected_hash:
+            raise ValueError(
+                f"evidence content hash mismatch at line {line_number}"
+            )
+        if rec.chain_digest != expected_chain:
+            raise ValueError(
+                f"evidence chain digest mismatch at line {line_number}"
+            )
+        if rec.hmac_hex is not None:
+            if self.hmac_key is None:
+                raise ValueError(
+                    "evidence ledger requires its configured HMAC key"
+                )
+            expected_hmac = hmac.new(
+                self.hmac_key,
+                rec.content_hash.encode("utf-8"),
+                hashlib.sha256,
+            ).hexdigest()
+            if not hmac.compare_digest(expected_hmac, rec.hmac_hex):
+                raise ValueError(
+                    f"evidence HMAC mismatch at line {line_number}"
+                )
+        return rec
 
     def append(
         self,
@@ -224,7 +308,8 @@ class EvidenceLedger:
         carrying every ``ARTIFACT_SECTIONS`` key, a content-addressed artifact."""
         if artifact is not None:
             return self._append_artifact(artifact)
-        with self._lock:
+        with self._lock, _ledger_file_lock(self._lock_path):
+            self._ingest()
             res = dict(result_dict or result or {})
             rcpt = dict(receipt_dict or receipt or {})
             wid = str(workload_id or res.get("workload_id") or rcpt.get("workload_id") or "")
@@ -288,6 +373,8 @@ class EvidenceLedger:
             line = json.dumps(rec.as_dict(), sort_keys=True, default=str)
             with self.path.open("a", encoding="utf-8") as fh:
                 fh.write(line + "\n")
+            self._offset = self.path.stat().st_size
+            self._line_number += 1
             self._records.append(rec)
             self._last_chain = chain_digest
             return rec
@@ -369,6 +456,8 @@ class EvidenceLedger:
         with self._lock:
             self._records.clear()
             self._last_chain = "genesis"
+            self._offset = 0
+            self._line_number = 0
             self._load()
 
 

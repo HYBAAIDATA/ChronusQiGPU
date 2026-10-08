@@ -87,7 +87,7 @@ class PerformanceValidation:
 
         validation["Grover_Search"] = {
             "target": f"{self.TARGETS.quantum_speedup_target}x classical",
-            "measured": f"{grover.get('speedup_ratio', 0):.1f}x",
+            "computed_iteration_ratio": f"{grover.get('speedup_ratio', 0):.1f}x",
             "passed": grover.get("speedup_ratio", 0) >= self.TARGETS.quantum_speedup_target,
             "found": grover.get("found", False),
         }
@@ -136,9 +136,11 @@ class PerformanceValidation:
         for name, result in validation["validation"].items():
             if isinstance(result, dict) and "passed" in result:
                 status = "✓ PASSED" if result["passed"] else "✗ BELOW TARGET"
+                observed = result.get(
+                    "measured", result.get("computed_iteration_ratio", "N/A"))
                 print(f"\n{name}:")
                 print(f"  Target:   {result.get('target', 'N/A')}")
-                print(f"  Measured: {result.get('measured', 'N/A')}")
+                print(f"  Result:   {observed}")
                 print(f"  Status:   {status}")
                 if "gap" in result:
                     print(f"  Gap:      {result['gap']}")
