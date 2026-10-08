@@ -1,15 +1,19 @@
 """Falsification and contract tests for the Stratum V2 Mining Protocol."""
 
 import asyncio
+import os
 import unittest
+from unittest.mock import patch
 
 from chronus.mla1517.mining.stratum_adapter import StratumProofAdapter, SubscriptionState
+from chronus.mla1517.mining.production_transport import ProductionMiningCoordinator
 from chronus.mla1517.mining.stratum_v2_transport import (
     ProductionStratumV2Client,
     Sv2NotWritten,
+    load_secure_channel_factory,
     normalize_extended_job,
 )
-from manifold_pool_coordinator import PoolEndpoint
+from manifold_pool_coordinator import PoolEndpoint, parse_endpoint
 
 from mining.stratum_v2 import (
     CHANNEL_MSG_BIT,
@@ -186,6 +190,72 @@ class TestStratumV2(unittest.TestCase):
         extended = submit_shares_extended(7, 3, 11, 1, 2, 3, b"\xaa\xbb")
         self.assertEqual(extended.message_type, MessageType.SUBMIT_SHARES_EXTENDED)
         self.assertEqual(extended.payload[-3:], b"\x02\xaa\xbb")
+
+    def test_production_endpoint_parser_marks_sv2_without_tls_downgrade(self):
+        endpoint = parse_endpoint("stratum+v2://pool.example:34254", "sv2")
+        self.assertEqual(endpoint.protocol, "v2")
+        self.assertFalse(endpoint.tls)
+        self.assertEqual(endpoint.host, "pool.example")
+        self.assertEqual(endpoint.port, 34254)
+
+    def test_secure_channel_factory_is_mandatory_for_configured_sv2(self):
+        with patch.dict(os.environ, {"PYTHIA_SV2_CHANNEL_FACTORY": ""}):
+            with self.assertRaisesRegex(
+                Sv2TransportError,
+                "PYTHIA_SV2_CHANNEL_FACTORY is absent",
+            ):
+                load_secure_channel_factory()
+
+    def test_production_coordinator_refuses_insecure_sv2_without_fallback(self):
+        async def run():
+            channel = FakeSecureChannel()
+            channel.secure = False
+            coordinator = ProductionMiningCoordinator(
+                [PoolEndpoint("pool.example", 34254, "sv2-only", protocol="v2")],
+                username="worker-1",
+                password="x",
+                submit_enabled=False,
+                sv2_channel_factory=lambda **_kwargs: channel,
+            )
+            with self.assertRaises(ConnectionError):
+                await coordinator.connect_with_failover()
+            self.assertIsNone(coordinator.client)
+            self.assertEqual(channel.sent, [])
+            self.assertTrue(channel.closed)
+
+        asyncio.run(run())
+
+    def test_production_coordinator_selects_authenticated_sv2_client(self):
+        async def run():
+            channel = BlockingSecureChannel()
+            queue_ready_extended_session(channel)
+            coordinator = ProductionMiningCoordinator(
+                [PoolEndpoint("pool.example", 34254, "sv2-only", protocol="v2")],
+                username="worker-1",
+                password="x",
+                submit_enabled=False,
+                sv2_channel_factory=lambda **_kwargs: channel,
+            )
+            client = await coordinator.connect_with_failover()
+            try:
+                self.assertIsInstance(client, ProductionStratumV2Client)
+                deadline = asyncio.get_running_loop().time() + 1.0
+                while not client.runtime_state.ready:
+                    if asyncio.get_running_loop().time() >= deadline:
+                        self.fail("production coordinator did not receive canonical SV2 work")
+                    await asyncio.sleep(0.001)
+                identity, reason = coordinator._resolve_work_identity()
+                self.assertIsNone(reason)
+                self.assertIsNotNone(identity)
+                self.assertEqual(identity.job_id, "12")
+                self.assertEqual(client.status_snapshot()["protocol"], "stratum_v2")
+                self.assertTrue(
+                    client.status_snapshot()["sv2"]["authenticated_transport"]
+                )
+            finally:
+                await client.close()
+
+        asyncio.run(run())
 
     def test_remote_client_rejects_plaintext_transport_before_setup(self):
         channel = FakeSecureChannel()
