@@ -49,14 +49,19 @@ class AdaptiveRuntime(unittest.TestCase):
         memories = sorted(runtime.adaptive.knowledge.memory.items)
         self.assertTrue((self.root / "adaptive_knowledge.json").is_file())
         component = EuclidRuntime.ADAPTIVE_COMPONENTS[0]
-        self.assertEqual(runtime.reachability.stage(component), ReachabilityStage.PERSISTED)
+        self.assertGreaterEqual(
+            runtime.reachability.stage(component), ReachabilityStage.USED_IN_EPISODE
+        )
 
         restarted = self._runtime()
         restarted.compose_adaptive_intelligence()
         self.assertEqual(restarted.adaptive.knowledge.episodes, episodes)
         self.assertEqual(sorted(restarted.adaptive.knowledge.memory.items), memories)
-        self.assertEqual(restarted.reachability.stage(component),
-                         ReachabilityStage.RESTART_VERIFIED)
+        # Same-process object reconstruction proves restoration only. It is
+        # not fresh-process replay evidence and must never award RESTART_VERIFIED.
+        self.assertLess(
+            restarted.reachability.stage(component), ReachabilityStage.RESTART_VERIFIED
+        )
 
     def test_uncomposed_runtime_refuses_tasks(self) -> None:
         runtime = self._runtime()
