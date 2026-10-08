@@ -54,7 +54,9 @@ class ResidentRuntime:
         if deadline is not None and(type(deadline)not in(int,float)or not math.isfinite(deadline)or time.perf_counter()>=deadline):raise ValueError('resident deadline expired')
         if cancel is not None and not isinstance(cancel,threading.Event):raise ValueError('cancellation event required')
         route=self.gpu.fabric.route('tensor'if kind=='tensor'else'intrinsic'if kind=='intrinsics'else'lucas')
-        if require_host_gpu and(kind=='intrinsics'or route.executor=='cpu_reference'):raise BackendAbsent('requested operation has no physical GPU executor')
+        if type(require_host_gpu)is not bool:raise ValueError('explicit physical execution policy required')
+        bound=self.gpu.fabric.overlay
+        if require_host_gpu and(kind=='intrinsics'or route.executor=='cpu_reference'or bound is None or bound.capability().get('physical')is not True):raise BackendAbsent('requested operation has no physical GPU executor')
         if kind=='tensor':
             if set(p)!={'operator','left','right'}or p['operator'] not in ('matmul','add','hadamard','scale'):raise ValueError('resident tensor row-wise operation required')
             a=np.asarray(p['left']);b=np.asarray(p['right']);op=p['operator']

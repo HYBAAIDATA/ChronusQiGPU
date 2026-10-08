@@ -19,7 +19,7 @@ class Workload:
         if not all(isinstance(v,str)and re.fullmatch(r'[A-Za-z0-9_.-]{1,128}',v)for v in(self.workload_id,self.tenant)):raise ValueError('invalid ABI identity')
         if type(self.quota)is not int or not 0<=self.quota<=1000000:raise ValueError('ABI quota violation')
         if self.trust_class not in('host_verified','unsigned_local'):raise ValueError('requested trust class is not provided by the standalone execution root')
-        if self.operation not in('lucas','fold','sha256d','asic_sha256d','tensor','evolve','qx','structured_ground','pythi_native','intrinsic','resident'):raise ValueError('unsupported ABI operation')
+        if self.operation not in('lucas','fold','sha256d','asic_sha256d','tensor','evolve','qx','structured_ground','pythi_native','intrinsic','resident','exact_features'):raise ValueError('unsupported ABI operation')
         if not isinstance(self.payload,dict)or len(canonical(self.payload))>4*1024*1024:raise ValueError('invalid payload/quota')
         if self.deadline is not None and(not isinstance(self.deadline,(int,float))or not __import__('math').isfinite(self.deadline)or time.perf_counter()>=self.deadline):raise ValueError('ABI deadline expired')
         return True
@@ -65,6 +65,14 @@ class VirtualRuntime:
                 config=ResidentConfig(**p.get('config',{}));config.validate()
                 if config.max_items>workload.quota:raise ValueError('resident quota exceeds admitted ABI quota')
                 output=self.gpu.resident(config).execute(p['kind'],p['data'],deadline=workload.deadline,require_host_gpu=p.get('require_host_gpu',False));backend='resident_composed'
+            elif op=='exact_features':
+                from .feature_profile import FeatureProfile
+                from .feature_runtime import FeatureConfig
+                if workload.quota<1 or set(p)!={'profile','task'}:raise ValueError('sealed exact feature ABI payload/quota')
+                profile=FeatureProfile.from_dict(p['profile'])
+                with self.gpu.feature_runtime(profile,FeatureConfig(max_scalar_ops=workload.quota))as runtime:
+                    output=runtime.execute(p['task'])
+                backend='cpu_exact_features'
             elif op=='tensor':
                 import numpy as np
                 if np.size(p['left'])+np.size(p.get('right',[]))>workload.quota:raise ValueError('tensor workload quota')
@@ -87,7 +95,7 @@ class VirtualRuntime:
                      'workload_digest':digest,'result_digest':result_digest,'trust_class':workload.trust_class,'elapsed_seconds':time.perf_counter()-start,
                      'hardware_root_claimed':False,'output':output}
             receipt['receipt_digest']=hashlib.sha256(canonical(receipt)).hexdigest()
-            if op=='evolve': self.verify_receipt(receipt,workload)
+            if op in('evolve','exact_features'): self.verify_receipt(receipt,workload)
             self.gpu.golden.attest('virtual_abi',start,details={'workload_digest':digest,'receipt_digest':receipt['receipt_digest'],'tenant':tenant})
             return receipt
         finally:
@@ -127,6 +135,16 @@ class VirtualRuntime:
         body=dict(receipt);digest=body.pop('receipt_digest')
         if hashlib.sha256(canonical(body)).hexdigest()!=digest or body['workload_digest']!=workload.digest()or body['result_digest']!=hashlib.sha256(canonical(body['output'])).hexdigest():raise ValueError('ABI receipt custody mismatch')
         if body['tenant']!=workload.tenant or body['workload_id']!=workload.workload_id or body['hardware_root_claimed'] or body['trust_class']!=workload.trust_class or body['schema']!=workload.schema or body['logical_device']!='chronos_igpu':raise ValueError('ABI identity/trust mismatch')
+        if workload.operation=='exact_features':
+            from .feature_profile import FeatureProfile
+            from .feature_runtime import FeatureConfig
+            from .facade import OneIGPU
+            if body['backend']!='cpu_exact_features':raise ValueError('exact feature ABI substrate mismatch')
+            profile=FeatureProfile.from_dict(workload.payload['profile'])
+            with OneIGPU()as verifier:
+                with verifier.feature_runtime(profile,FeatureConfig(max_scalar_ops=workload.quota))as runtime:
+                    runtime.verify(body['output'])
+            if body['output']['task']!=workload.payload['task']:raise ValueError('exact feature ABI request substitution')
         if workload.operation=='evolve':
             from .exact_quantum import exact_hamiltonian_evolution,encode_expression,decode_evolution_payload
             if body['backend']!='cpu_exact_symbolic':raise ValueError('exact evolution substrate mismatch')

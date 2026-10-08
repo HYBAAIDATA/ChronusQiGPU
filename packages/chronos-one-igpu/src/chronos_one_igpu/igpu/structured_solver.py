@@ -57,6 +57,7 @@ class StructuredHamiltonian:
  def dense_exact(self):
   """Exact rational dense matrix for certification and tests (same quota as dense())."""
   from fractions import Fraction
+  from .exact_solver import _exact_params
   if self.n>512:raise ValueError('dense materialization quota exceeded')
   d,off,x,y=_exact_params(self)
   rows=[]
