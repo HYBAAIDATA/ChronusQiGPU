@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from aethel.enterprise.lifecycle import CompositionRoot
 from euclid.cognition.baselines import DelegatorExecutor
 from euclid.cognition.core import AblationConfig
 from euclid.cognition.integrated.control import ContextualStrategyLearner
@@ -101,6 +102,63 @@ class EuclidV17ProductionIntegration(unittest.TestCase):
                 runtime.reachability.stage(component),
                 ReachabilityStage.RESTART_VERIFIED,
             )
+
+    def test_f5_adaptive_state_recovers_from_shared_ovid_theseus_custody(self) -> None:
+        custody_root = self.root / "shared-custody"
+        key = b"k" * 32
+
+        first_lifecycle = CompositionRoot(
+            custody_root,
+            tenant="tenant-euclid-v17",
+            hmac_key=key,
+        )
+        first_lifecycle.start()
+        try:
+            first_port = first_lifecycle.data_port("euclid")
+            first_runtime = EuclidRuntime(
+                creator_id="creator-1",
+                state_dir=self.root / "local-a",
+            )
+            first_runtime.bind_adaptive_data_port(first_port)
+            first_runtime.compose_adaptive_intelligence()
+            spec, truth = self._spec(27)
+            first_runtime.solve_task(
+                spec,
+                WorldExecutor(MechanismWorld(spec, truth)),
+                seed=6,
+            )
+            episodes = first_runtime.adaptive.knowledge.episodes
+            binding = first_port.latest(first_runtime.ADAPTIVE_KNOWLEDGE_KIND)
+            self.assertIsNotNone(binding)
+            self.assertTrue(
+                first_port.fabric.verify(binding.binding_id)["passed"]
+            )
+        finally:
+            first_lifecycle.stop()
+
+        second_lifecycle = CompositionRoot(
+            custody_root,
+            tenant="tenant-euclid-v17",
+            hmac_key=key,
+        )
+        second_lifecycle.start()
+        try:
+            second_port = second_lifecycle.data_port("euclid")
+            second_runtime = EuclidRuntime(
+                creator_id="creator-1",
+                state_dir=self.root / "local-b",
+            )
+            second_runtime.bind_adaptive_data_port(second_port)
+            second_runtime.compose_adaptive_intelligence()
+            self.assertEqual(second_runtime.adaptive.knowledge.episodes, episodes)
+            self.assertIsNotNone(
+                second_port.latest(second_runtime.ADAPTIVE_KNOWLEDGE_KIND)
+            )
+            self.assertFalse(
+                (self.root / "local-b" / "adaptive_knowledge.json").exists()
+            )
+        finally:
+            second_lifecycle.stop()
 
     def test_f6_harmful_imported_strategy_is_detected_and_abandoned(self) -> None:
         learner = ContextualStrategyLearner(seed=7)
