@@ -97,10 +97,26 @@ class ProductionTransportTests(unittest.TestCase):
         client._reader_task = asyncio.create_task(asyncio.sleep(10))
         try:
             with self.assertRaises((TimeoutError, ConnectionError)):
-                await client.request("mining.authorize", ["worker", "x"])
+                await client.request("mining.submit", ["worker", "job", "00", "00", "00"])
+            # writer.write accepted the request bytes even though drain wedged;
+            # the transport must classify this boundary as non-retryable.
+            self.assertEqual(client.wire_writes_for("mining.submit"), 1)
             self.assertFalse(client.connected)
         finally:
             await client.close()
+
+    def test_disconnected_request_has_zero_wire_write_receipt(self) -> None:
+        async def voyage() -> None:
+            client = ProductionStratumClient(
+                PoolEndpoint("127.0.0.1", 1, "test"),
+                username="worker",
+                password="x",
+            )
+            with self.assertRaises(ConnectionError):
+                await client.request("mining.submit", ["worker", "job", "00", "00", "00"])
+            self.assertEqual(client.wire_writes_for("mining.submit"), 0)
+
+        asyncio.run(voyage())
 
     def test_telemetry_does_not_invent_stale_or_effective_hashrate(self) -> None:
         client = ProductionStratumClient(
