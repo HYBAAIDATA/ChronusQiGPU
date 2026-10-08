@@ -2781,6 +2781,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             record: ExecutionRecord | None = None
             candidate = None
             outcome = PoolOutcome.NO_CANDIDATE
+            defer_pool_outcome = False
             try:
                 header = adapter.build_header(job.job_id, lease.extranonce2, job.ntime, 0)
                 target_le = job.target.to_bytes(32, "little")
@@ -2894,36 +2895,66 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                             evidence={"stale": True},
                         )
                     else:
-                        self._last_submission_id = None
-                        self._pending_correlation = {
-                            k: v for k, v in coordinate.as_dict().items() if k != "recovery_id"
-                        }
                         self.cycle.transition(
                             MiningCycleState.SUBMIT,
                             event="success",
                             reason="locally verified candidate passes epoch/target checks",
                             evidence={"nonce": candidate["nonce"]},
                         )
-                        try:
-                            await self.submit_candidate(
+                        if self._asynchronous_submission and self.submission_permitted():
+                            queued = await self._queue_verified_candidate(
+                                identity=identity,
+                                plan=plan,
+                                lease=lease,
+                                record=record,
+                                coordinate=coordinate,
                                 job_id=job.job_id,
                                 extranonce2=lease.extranonce2,
                                 ntime=job.ntime,
                                 nonce=candidate["nonce"],
                             )
-                        finally:
-                            outcome = self._last_pool_outcome
-                            self._pending_correlation = None
-                            if self._last_submission_id is not None:
-                                coordinate = coordinate.extend(
-                                    submission_id=self._last_submission_id
+                            outcome = PoolOutcome.NOT_SUBMITTED
+                            defer_pool_outcome = queued
+                            self.cycle.try_transition(
+                                MiningCycleState.EVALUATE,
+                                event="queued" if queued else "refused",
+                                reason=(
+                                    "verified candidate queued for independent submitter"
+                                    if queued
+                                    else "candidate refused before submission queue"
+                                ),
+                                evidence={
+                                    "outcome": outcome.value,
+                                    "queue_depth": self._submission_queue.qsize(),
+                                },
+                            )
+                        else:
+                            self._last_submission_id = None
+                            self._pending_correlation = {
+                                k: v
+                                for k, v in coordinate.as_dict().items()
+                                if k != "recovery_id"
+                            }
+                            try:
+                                await self.submit_candidate(
+                                    job_id=job.job_id,
+                                    extranonce2=lease.extranonce2,
+                                    ntime=job.ntime,
+                                    nonce=candidate["nonce"],
                                 )
-                        self.cycle.try_transition(
-                            MiningCycleState.EVALUATE,
-                            event=outcome.value,
-                            reason="pool outcome recorded",
-                            evidence={"outcome": outcome.value},
-                        )
+                            finally:
+                                outcome = self._last_pool_outcome
+                                self._pending_correlation = None
+                                if self._last_submission_id is not None:
+                                    coordinate = coordinate.extend(
+                                        submission_id=self._last_submission_id
+                                    )
+                            self.cycle.try_transition(
+                                MiningCycleState.EVALUATE,
+                                event=outcome.value,
+                                reason="pool outcome recorded",
+                                evidence={"outcome": outcome.value},
+                            )
                 elif record.completion_state is CompletionState.INVALIDATED:
                     self.cycle.transition(
                         MiningCycleState.EVALUATE,
@@ -2947,7 +2978,15 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                         share_target=job.target,
                         shares=int(candidate is not None),
                     )
-                    self._record_execution(identity, plan, lease, record, outcome, coordinate)
+                    self._record_execution(
+                        identity,
+                        plan,
+                        lease,
+                        record,
+                        outcome,
+                        coordinate,
+                        defer_pool_outcome=defer_pool_outcome,
+                    )
                     self.decisions.resolve(
                         plan.plan_id,
                         result={
@@ -2991,10 +3030,15 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         record: ExecutionRecord,
         outcome: PoolOutcome,
         coordinate: CausalCoordinate,
+        *,
+        defer_pool_outcome: bool = False,
     ) -> None:
         learning_record_id = (
             f"learning:{uuid.uuid4()}"
-            if outcome in (PoolOutcome.ACCEPTED, PoolOutcome.REJECTED)
+            if (
+                not defer_pool_outcome
+                and outcome in (PoolOutcome.ACCEPTED, PoolOutcome.REJECTED)
+            )
             else None
         )
         if learning_record_id is not None:
@@ -3017,21 +3061,31 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             job_id=identity.job_id,
             recovery_id=coordinate.recovery_id,
         )
-        self.agentic.record_outcome(final)
-        if outcome in (PoolOutcome.ACCEPTED, PoolOutcome.REJECTED):
-            self.mining_intelligence.learn(
-                accepted=outcome is PoolOutcome.ACCEPTED,
-                lead=plan.policy_id,
-                job_id=identity.job_id,
+        if defer_pool_outcome:
+            self.causal.record(
+                "learning_deferred",
+                coordinate,
+                applied=False,
+                pool_outcome="PENDING",
+                plan_id=plan.plan_id,
+                toe_frame_id=plan.toe_frame_id,
             )
-        self.causal.record(
-            "learning_observed",
-            coordinate,
-            applied=self.agentic.telemetry.learning_update_applied,
-            pool_outcome=outcome.value,
-            plan_id=plan.plan_id,
-            toe_frame_id=plan.toe_frame_id,
-        )
+        else:
+            self.agentic.record_outcome(final)
+            if outcome in (PoolOutcome.ACCEPTED, PoolOutcome.REJECTED):
+                self.mining_intelligence.learn(
+                    accepted=outcome is PoolOutcome.ACCEPTED,
+                    lead=plan.policy_id,
+                    job_id=identity.job_id,
+                )
+            self.causal.record(
+                "learning_observed",
+                coordinate,
+                applied=self.agentic.telemetry.learning_update_applied,
+                pool_outcome=outcome.value,
+                plan_id=plan.plan_id,
+                toe_frame_id=plan.toe_frame_id,
+            )
         # The measured counters for this window are known now; publish them
         # at completion instead of leaving the sink one interval behind.
         self._publish_metrics(force=True)
@@ -3151,6 +3205,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             "kernel_launch_count": final.kernel_launch_count,
             "kernel_ms": final.kernel_ms,
             "pool_outcome": outcome.value,
+            "pool_outcome_pending": defer_pool_outcome,
+            "submission_pipeline": self.submission_pipeline_snapshot(),
             "tuning_action": decision.action,
             "device_error": final.device_error,
         }
