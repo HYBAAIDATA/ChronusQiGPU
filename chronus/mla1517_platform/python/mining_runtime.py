@@ -79,6 +79,7 @@ def _endpoint(name: str, address: str, user: str, password: str, tls: bool) -> P
         username=user,
         password=password,
         extranonce_subscribe=bool(POOL_CATALOG.get(pool or "", {}).get("extranonce_subscribe")),
+        protocol=parsed.protocol,
     )
 
 
