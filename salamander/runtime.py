@@ -15,11 +15,14 @@ from __future__ import annotations
 
 import copy
 import json
+import math
 import os
 import time
 from enum import StrEnum
 from pathlib import Path
 from typing import Any, Mapping
+
+from .outcome_evidence import CustodiedMiningOutcomeVerifier, OutcomeVerification, unqualified_readiness
 
 from .control_plane import (
     ActionRegistry,
@@ -122,7 +125,11 @@ class DurableEvidenceLedger(EvidenceLedger):
 class MiningAutonomyBridge:
     """Live Salamander observer for the canonical production mining runtime."""
 
-    def __init__(self, evidence_path: str | Path) -> None:
+    def __init__(
+        self, evidence_path: str | Path, *,
+        outcome_verifier: CustodiedMiningOutcomeVerifier | None = None,
+    ) -> None:
+        self.outcome_verifier = outcome_verifier
         self.ledger = DurableEvidenceLedger(evidence_path)
         self.control = AutonomicControlPlane(
             registry=ActionRegistry(),
@@ -166,23 +173,21 @@ class MiningAutonomyBridge:
                 if isinstance(key, str):
                     self._seen_recoveries.add(key)
                 self._last_result = payload
-                if payload.get("state") == "VERIFIED":
-                    self._last_successful_healing = payload
-                    self._self_healing_evidenced = True
+                # Historical records remain evidence, not current certification.
+                # Fresh independent revalidation is required in this process.
             elif kind == "runtime-optimisation-outcome":
                 key = payload.get("event_key")
                 if isinstance(key, str):
                     self._seen_optimisation.add(key)
                 self._last_optimisation = payload
-                if payload.get("event") in {"ACCEPTED", "ROLLED_BACK"}:
-                    self._self_optimising_evidenced = True
-                if payload.get("event") == "ACCEPTED":
-                    self._last_successful_optimisation = payload
+                # Prior optimiser claims are not verified trial/rollback evidence.
             elif kind == "runtime-diagnosis":
                 self._last_issue = payload
 
     @staticmethod
     def _availability(value: Any) -> Availability:
+        if isinstance(value, float) and not math.isfinite(value):
+            return Availability.UNAVAILABLE
         if isinstance(value, (bool, str, int, float)):
             return Availability.MEASURED
         return Availability.UNAVAILABLE
@@ -240,7 +245,7 @@ class MiningAutonomyBridge:
         open_recovery = recovery.get("open")
         if isinstance(open_recovery, list) and open_recovery:
             commands = open_recovery[-1].get("commands") or []
-            automatic = all(
+            automatic = bool(commands) and all(
                 command in _SAFE_MINING_COMMANDS for command in commands
             )
             return {
@@ -310,20 +315,27 @@ class MiningAutonomyBridge:
             key = self._event_key("recovery", item)
             if key in self._seen_recoveries:
                 continue
-            self._seen_recoveries.add(key)
             commands = list(item.get("commands") or [])
             automatic = bool(commands) and all(
                 command in _SAFE_MINING_COMMANDS for command in commands
             )
-            action_taken = list(
-                item.get("dispatched")
-                or item.get("deferred")
-                or commands
+            action_taken = list(item.get("dispatched") or [])
+            verification = (
+                self.outcome_verifier.verify(item, now_ns=now_ns)
+                if self.outcome_verifier is not None
+                else OutcomeVerification(False, "UNAVAILABLE", "independent verifier unavailable")
             )
             payload = {
                 "event_key": key,
                 "recovery_id": item.get("recovery_id"),
-                "state": item.get("state", "Unavailable"),
+                "state": ("VERIFIED" if verification.verified else
+                          "FAILED" if item.get("state") == "FAILED" else "UNVERIFIED"),
+                "reported_state": item.get("state", "Unavailable"),
+                "claim_class": verification.claim_class,
+                "proof_binding_id": verification.proof_binding_id,
+                "causal_attribution": verification.causal_claim,
+                "proposed_actions": commands,
+                "deferred_actions": list(item.get("deferred") or []),
                 "diagnosis": item.get("reason", "Unavailable"),
                 "action_taken": action_taken,
                 "action_class": (
@@ -331,11 +343,7 @@ class MiningAutonomyBridge:
                     if automatic
                     else ActionClass.REQUIRES_APPROVAL.value
                 ),
-                "verification": (
-                    "fresh healthy post-action observation"
-                    if item.get("state") == "VERIFIED"
-                    else item.get("failure", "Unavailable")
-                ),
+                "verification": verification.reason,
                 "failure": item.get("failure") or "Unavailable",
                 "closed_at": item.get("closed_at", "Unavailable"),
                 "evidence_source": "RecoveryGovernor.snapshot.recent",
@@ -345,9 +353,10 @@ class MiningAutonomyBridge:
                 payload,
                 at_ns=now_ns,
             )
+            self._seen_recoveries.add(key)
             self._last_action = payload
             self._last_result = payload
-            if item.get("state") == "VERIFIED":
+            if verification.verified:
                 self._last_successful_healing = payload
                 self._self_healing_evidenced = True
 
@@ -360,7 +369,6 @@ class MiningAutonomyBridge:
         key = self._event_key("optimisation", event)
         if key in self._seen_optimisation:
             return
-        self._seen_optimisation.add(key)
         payload = {
             "event_key": key,
             "event": event.get("event", "Unavailable"),
@@ -379,8 +387,13 @@ class MiningAutonomyBridge:
                     "Unavailable",
                 ),
             },
-            "accepted": event.get("accepted", "Unavailable"),
-            "rollback": bool(event.get("rollback", False)),
+            "accepted": "UNAVAILABLE",
+            "reported_accepted": event.get("accepted", "Unavailable"),
+            "rollback": "UNAVAILABLE",
+            "reported_rollback": event.get("rollback", "Unavailable"),
+            "claim_class": "OBSERVED",
+            "verification": "UNAVAILABLE",
+            "causal_attribution": "UNAVAILABLE",
             "reason": event.get("reason", "Unavailable"),
             "action_class": ActionClass.BOUNDED_EXPERIMENT.value,
             "current_configuration": copy.deepcopy(
@@ -400,12 +413,11 @@ class MiningAutonomyBridge:
             payload,
             at_ns=now_ns,
         )
+        self._seen_optimisation.add(key)
         self._last_optimisation = payload
         self._last_result = payload
-        if event.get("event") in {"ACCEPTED", "ROLLED_BACK"}:
-            self._self_optimising_evidenced = True
-        if event.get("event") == "ACCEPTED":
-            self._last_successful_optimisation = payload
+        # Trial acceptance is retained as an observation. It does not prove
+        # causal gain, authorised promotion, or independently verified rollback.
 
     def observe_mining_snapshot(
         self,
@@ -456,9 +468,8 @@ class MiningAutonomyBridge:
         )
         execution_health = None
         if completion is not None:
-            execution_health = (
-                "FAILED" if completion == "DEVICE_ERROR" else "HEALTHY"
-            )
+            # Non-error completion labels are not a device health contract.
+            execution_health = "FAILED" if completion == "DEVICE_ERROR" else None
         observations.append(
             self._observation(
                 dimension="execution",
@@ -569,6 +580,8 @@ class MiningAutonomyBridge:
             "evidence_head": self.ledger.head,
             "evidence_records": len(self.ledger.records),
             "observations": self._observations,
+            "qualification": unqualified_readiness(),
+            "evidence_custody": "LOCAL_MIRROR_NOT_CANONICAL_THESEUS",
             "classification": {
                 "PRESENT": True,
                 "WIRED": self._observations > 0,

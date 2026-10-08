@@ -1,0 +1,78 @@
+{
+  "schema": "salamander.local-evidence-mutations/v1",
+  "evidence_class": "LOCAL_CONTRACT_TEST",
+  "production_composition": "UNAVAILABLE",
+  "baseline": {
+    "exit_code": 0,
+    "duration_seconds": 0.12391378000000941,
+    "log_sha256": "c700d752368947d95b31acbc174d59c9c1149ddeefb848253a4a53ab205dce05",
+    "output": "..............................\n----------------------------------------------------------------------\nRan 30 tests in 0.010s\n\nOK\n"
+  },
+  "mutants": [
+    {
+      "exit_code": 1,
+      "duration_seconds": 0.12950447700001178,
+      "log_sha256": "27f29db9c6ab3a09ec5cf33f44274579fbddcf72cfeb7a13581c50143157adc7",
+      "output": "...................F..........\n======================================================================\nFAIL: test_authorisation_denied_expired_or_posthoc_fails (test_salamander_outcome_evidence.ProofTests.test_authorisation_denied_expired_or_posthoc_fails) (updates={'decision': 'DENY'})\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/tmp/salamander-mutation-kr9tbcs6/tests/test_salamander_outcome_evidence.py\", line 124, in test_authorisation_denied_expired_or_posthoc_fails\n    self.assertFalse(self.verdict().verified)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: True is not false\n\n----------------------------------------------------------------------\nRan 30 tests in 0.012s\n\nFAILED (failures=1)\n",
+      "name": "remove_authorization_decision",
+      "killed": true,
+      "mutated_source_sha256": "4985cd66c61f92ae8e6d61f364e0f6a77306e9b74cd45b5befc45fd6310e680a"
+    },
+    {
+      "exit_code": 1,
+      "duration_seconds": 0.13041015999999672,
+      "log_sha256": "e601de3cb896734e312d11afe05afa6a7a5b49e722aa2a56d46cf840a39ddb62",
+      "output": ".................F.......F....\n======================================================================\nFAIL: test_synthetic_derived_predicted_are_not_production (test_salamander_outcome_evidence.ObservationTests.test_synthetic_derived_predicted_are_not_production) (cls=<EvidenceClass.SIMULATED: 'SIMULATED'>)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/tmp/salamander-mutation-zgsu2ygt/tests/test_salamander_outcome_evidence.py\", line 71, in test_synthetic_derived_predicted_are_not_production\n    self.assertFalse(observation(evidence_class=cls).production_eligible(now_ns=350, max_age_ns=100))\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: True is not false\n\n======================================================================\nFAIL: test_missing_or_synthetic_stale_observations_fail (test_salamander_outcome_evidence.ProofTests.test_missing_or_synthetic_stale_observations_fail) (changes={'evidence_class': 'SIMULATED'})\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/tmp/salamander-mutation-zgsu2ygt/tests/test_salamander_outcome_evidence.py\", line 150, in test_missing_or_synthetic_stale_observations_fail\n    self.assertFalse(self.verdict().verified)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: True is not false\n\n----------------------------------------------------------------------\nRan 30 tests in 0.012s\n\nFAILED (failures=2)\n",
+      "name": "allow_synthetic_observation",
+      "killed": true,
+      "mutated_source_sha256": "6f8729bd1c93c22e5f33a649208864d30c8e3e9a1dccdecc12894778ae82f3ab"
+    },
+    {
+      "exit_code": 1,
+      "duration_seconds": 0.12184792900001185,
+      "log_sha256": "e95f3cfc0a6dbe9084b0b611e825e441afff66cb0961ccf8d95e67004c6b5e46",
+      "output": "..................F...........\n======================================================================\nFAIL: test_actuator_success_does_not_override_bad_observation (test_salamander_outcome_evidence.ProofTests.test_actuator_success_does_not_override_bad_observation)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/tmp/salamander-mutation-wsy144ko/tests/test_salamander_outcome_evidence.py\", line 136, in test_actuator_success_does_not_override_bad_observation\n    self.assertFalse(self.verdict().verified)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: True is not false\n\n----------------------------------------------------------------------\nRan 30 tests in 0.012s\n\nFAILED (failures=1)\n",
+      "name": "ignore_postcondition_contract",
+      "killed": true,
+      "mutated_source_sha256": "728b2e31da6b26986146b18f7fac178cca3ac36a938aefea735f52929b0b6fee"
+    },
+    {
+      "exit_code": 1,
+      "duration_seconds": 0.1239742590000219,
+      "log_sha256": "75780bfc1df8db86394a8bbedba04eba20997405e034a79d668ec5ec3727459b",
+      "output": "..........................F...\n======================================================================\nFAIL: test_missing_verifier_and_self_verifier_fail (test_salamander_outcome_evidence.ProofTests.test_missing_verifier_and_self_verifier_fail)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/tmp/salamander-mutation-ljworun4/tests/test_salamander_outcome_evidence.py\", line 141, in test_missing_verifier_and_self_verifier_fail\n    self.assertFalse(self.verdict().verified)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: True is not false\n\n----------------------------------------------------------------------\nRan 30 tests in 0.011s\n\nFAILED (failures=1)\n",
+      "name": "allow_self_verification",
+      "killed": true,
+      "mutated_source_sha256": "c870a9c2a55c1d4ed1eb195032b9470869fdfc7d889c429d5b79ce898c7bfd3e"
+    },
+    {
+      "exit_code": 1,
+      "duration_seconds": 0.1256583460000229,
+      "log_sha256": "f3e72c8347ac70a04a4a051c707cd25d31892b029e3916146034671f09ee6212",
+      "output": ".....................F........\n======================================================================\nFAIL: test_corrupted_or_disabled_persistence_cannot_certify (test_salamander_outcome_evidence.ProofTests.test_corrupted_or_disabled_persistence_cannot_certify)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/tmp/salamander-mutation-q8yvdjxf/tests/test_salamander_outcome_evidence.py\", line 157, in test_corrupted_or_disabled_persistence_cannot_certify\n    self.assertFalse(self.verdict().verified)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: True is not false\n\n----------------------------------------------------------------------\nRan 30 tests in 0.011s\n\nFAILED (failures=1)\n",
+      "name": "ignore_custody_corruption",
+      "killed": true,
+      "mutated_source_sha256": "6946ec411f86c3f051157e034ad896d842a8bf071a7dbef4ac06ce60f6c1128d"
+    },
+    {
+      "exit_code": 1,
+      "duration_seconds": 0.12460900700000366,
+      "log_sha256": "830c5c31e9a711c02252353c1613a78f459cf0df97ab598d152453c4612fc1fe",
+      "output": "........................FFF.....\n======================================================================\nFAIL: test_missing_al_haras_or_wrong_authority_fails (test_salamander_outcome_evidence.ProofTests.test_missing_al_haras_or_wrong_authority_fails) (ref='auth')\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/tmp/salamander-mutation-8kuprixw/tests/test_salamander_outcome_evidence.py\", line 115, in test_missing_al_haras_or_wrong_authority_fails\n    self.assertFalse(self.verdict().verified)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: True is not false\n\n======================================================================\nFAIL: test_missing_al_haras_or_wrong_authority_fails (test_salamander_outcome_evidence.ProofTests.test_missing_al_haras_or_wrong_authority_fails) (ref='exec')\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/tmp/salamander-mutation-8kuprixw/tests/test_salamander_outcome_evidence.py\", line 115, in test_missing_al_haras_or_wrong_authority_fails\n    self.assertFalse(self.verdict().verified)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: True is not false\n\n======================================================================\nFAIL: test_missing_al_haras_or_wrong_authority_fails (test_salamander_outcome_evidence.ProofTests.test_missing_al_haras_or_wrong_authority_fails) (ref='post')\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/tmp/salamander-mutation-8kuprixw/tests/test_salamander_outcome_evidence.py\", line 115, in test_missing_al_haras_or_wrong_authority_fails\n    self.assertFalse(self.verdict().verified)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: True is not false\n\n----------------------------------------------------------------------\nRan 30 tests in 0.012s\n\nFAILED (failures=3)\n",
+      "name": "shadow_domain_authority",
+      "killed": true,
+      "mutated_source_sha256": "2cec6568a192c9a726a4137055f0a908cb7c01c3c87bcc121f7206278b40d01a"
+    },
+    {
+      "exit_code": 0,
+      "duration_seconds": 0.14272038400002884,
+      "log_sha256": "357e30878e8917d5f13c52746d4c2cfc47fc7e683c375d8bd1c7a0122df5d2a7",
+      "output": "..............................\n----------------------------------------------------------------------\nRan 30 tests in 0.014s\n\nOK\n",
+      "name": "restore_false_green_health",
+      "killed": false,
+      "mutated_source_sha256": "81a4e8ab09cf2b30cbe984e459321fcbf2473260acc7392f8c41af34bcf00045"
+    }
+  ],
+  "killed": 6,
+  "survived": 1
+}

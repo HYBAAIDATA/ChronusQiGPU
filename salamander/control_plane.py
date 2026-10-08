@@ -82,14 +82,14 @@ class EvidenceLedger:
             "kind": kind,
             "at_ns": int(at_ns),
             "previous_sha256": self._head,
-            "payload": dict(payload),
+            "payload": copy.deepcopy(dict(payload)),
         }
         seal = digest("salamander.autonomic.evidence.v1", body)
         record = {**body, "evidence_sha256": seal}
-        self._records.append(record)
-        self._head = seal
         if self._sink is not None:
             self._sink(copy.deepcopy(record))
+        self._records.append(record)
+        self._head = seal
         return seal
 
     def verify(self) -> bool:
