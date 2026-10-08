@@ -47,7 +47,8 @@ class AdaptiveRuntime(unittest.TestCase):
             runtime.solve_task(spec, WorldExecutor(MechanismWorld(spec, truth)), seed=seed)
         episodes = runtime.adaptive.knowledge.episodes
         memories = sorted(runtime.adaptive.knowledge.memory.items)
-        self.assertTrue((self.root / "adaptive_knowledge.json").is_file())
+        self.assertTrue((self.root / "euclid_memory.sqlite3").is_file())
+        self.assertFalse((self.root / "adaptive_knowledge.json").exists())
         component = EuclidRuntime.ADAPTIVE_COMPONENTS[0]
         self.assertGreaterEqual(
             runtime.reachability.stage(component), ReachabilityStage.USED_IN_EPISODE
