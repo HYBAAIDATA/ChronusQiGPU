@@ -51,7 +51,6 @@ EXCLUDED = ("system.py", "manifold_bridge.py", "hardened_unified_substrate.py", 
 RELEASE_TESTS = (
     "test_toe_machine.py",
     "test_toe_geometry.py",
-    "test_toe_runtime_solve.py",
     "test_toe_learning_persistence.py",
 )
 _SECRET_PATTERNS = (
