@@ -11,9 +11,14 @@ and root container remain unchanged.
    state machine.
 3. Event-loop saturation removes the process from service.
 4. Distributed trace context follows W3C `traceparent`.
-5. WebSockets are unauthorized until a five-second, short-lived ticket
-   handshake succeeds.
-6. Database schemas remain compatible with application versions N and N-1
+5. HTTP `/api/*` requests and WebSockets are unauthorized until a valid,
+   short-lived HMAC ticket is verified; HTTP additionally requires an
+   `X-Tenant-Id` matching the signed ticket and scopes dependency paths under
+   that tenant.
+6. API request rates are bounded per signed tenant/subject identity. The
+   in-process limiter is safe for a single replica; multi-replica production
+   still requires the documented shared Redis ownership.
+7. Database schemas remain compatible with application versions N and N-1
    through the expand-and-contract sequence in `SCHEMA-MIGRATIONS.md`.
 
 ## State topology
@@ -39,7 +44,10 @@ healthy.
 - Atomic idempotency ownership with `pending`, `done`, and expiry states.
 - Event-loop p99 shedding at 500 ms on liveness and readiness.
 - Retry with capped exponential backoff and non-negative jitter.
-- Separate liveness/readiness endpoints and a 30-second graceful drain.
+- Separate liveness/readiness endpoints and a 30-second graceful drain;
+  readiness is false when the ticket secret is missing or too short.
+- Fail-closed HTTP bearer authentication, signed tenant binding, path scoping,
+  and per-identity rate limiting on `/api/*`.
 - WebSocket heartbeat, backpressure, stale-session termination, and jittered
   client reconnection after a fail-closed ticket handshake.
 - Structured logs, W3C trace propagation, and Prometheus text metrics.
@@ -77,9 +85,15 @@ npm run check
    must allow only the isolated shadow event sink and observability endpoints.
 7. Never make theoretical metrics billable. Only signed
    `OUTCOME_VERIFIED` events can create charges.
-8. Provision `WS_TICKET_SECRET` through the workload secret manager and rotate
-   it with an overlap window shorter than the ticket lifetime.
-9. Enforce the N/N-1 schema contract and expand-and-contract gates described in
+8. Provision `WS_TICKET_SECRET` (minimum 32 bytes) through the workload
+   secret manager and rotate it with an overlap window shorter than the ticket
+   lifetime. HTTP callers must send `Authorization: Bearer <ticket>` and an
+   `X-Tenant-Id` equal to the ticket's signed `tenantId`.
+9. Back the HTTP rate limiter with the same shared Redis failure domain used
+   for distributed idempotency before running more than one replica; the
+   bundled limiter is deliberately process-local and cannot establish a
+   cluster-wide quota.
+10. Enforce the N/N-1 schema contract and expand-and-contract gates described in
    `SCHEMA-MIGRATIONS.md`.
 
 ## CQRS journal schema
