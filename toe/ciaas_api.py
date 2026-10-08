@@ -154,7 +154,7 @@ class CIaaSService:
         self._metrics["auth_failures"] = 0
         self._metrics["rate_limited"] = 0
 
-        logger.info("[CIAAS] service initialised, auth=%s", "enabled" if self._api_key_hash else "disabled")
+        logger.info("[CIAAS] service initialised, auth=%s", "configured" if self._api_key_hash else "UNAVAILABLE")
 
     # -- tenant management ------------------------------------------------
 
@@ -164,7 +164,10 @@ class CIaaSService:
         mode: str = "standard",
         allowed_claims: frozenset[str] | None = None,
     ) -> TenantContext:
-        """Register a tenant context."""
+        """Register a tenant explicitly; request traffic never creates tenants."""
+        tenant_id = str(tenant_id).strip()
+        if not tenant_id:
+            raise ValueError("tenant_id is required")
         ctx = TenantContext(
             tenant_id=tenant_id,
             mode=mode,
@@ -174,23 +177,71 @@ class CIaaSService:
         return ctx
 
     def get_tenant(self, tenant_id: str) -> Optional[TenantContext]:
-        """Look up a registered tenant, or create a default one."""
-        if tenant_id in self._tenants:
-            return self._tenants[tenant_id]
-        # Auto-register in standard mode (fail-open for dev; production should
-        # pre-register tenants)
-        return self.register_tenant(tenant_id)
+        """Look up an explicitly registered tenant without side effects."""
+        return self._tenants.get(str(tenant_id).strip())
 
     # -- auth -------------------------------------------------------------
 
+    @property
+    def auth_configured(self) -> bool:
+        return self._api_key_hash is not None
+
     def verify_key(self, provided_key: str) -> bool:
-        """Timing-safe key comparison.  Fail-closed if no key configured."""
-        if self._api_key_hash is None:
-            return True  # auth disabled (dev/test mode)
-        if not provided_key:
+        """Timing-safe key comparison. Missing server auth always fails closed."""
+        if self._api_key_hash is None or not provided_key:
             return False
         provided_hash = hashlib.sha256(provided_key.encode("utf-8")).hexdigest()
         return hmac.compare_digest(provided_hash, self._api_key_hash)
+
+    def authenticate(
+        self,
+        tenant_id: str,
+        api_key: Optional[str],
+        *,
+        operation: str,
+    ) -> tuple[Optional[TenantContext], Optional[RuntimeResponse], int]:
+        """Authenticate one request and resolve an explicitly registered tenant."""
+        tenant_id = str(tenant_id or "").strip()
+        if self._api_key_hash is None:
+            self._metrics["auth_failures"] += 1
+            return (
+                None,
+                self._error_response(
+                    tenant_id,
+                    operation,
+                    "authentication_unavailable",
+                    "CIaaS authentication is not configured",
+                    503,
+                ),
+                503,
+            )
+        if not api_key or not self.verify_key(api_key):
+            self._metrics["auth_failures"] += 1
+            return (
+                None,
+                self._error_response(
+                    tenant_id,
+                    operation,
+                    "unauthorized",
+                    "Invalid or missing API key",
+                    401,
+                ),
+                401,
+            )
+        tenant = self.get_tenant(tenant_id)
+        if tenant is None:
+            return (
+                None,
+                self._error_response(
+                    tenant_id,
+                    operation,
+                    "unknown_tenant",
+                    "Tenant not registered",
+                    403,
+                ),
+                403,
+            )
+        return tenant, None, 200
 
     # -- request handling -------------------------------------------------
 
@@ -208,16 +259,16 @@ class CIaaSService:
         """
         self._metrics["requests_total"] += 1
 
-        # 1. Auth
-        if self._api_key_hash is not None:
-            if not api_key or not self.verify_key(api_key):
-                self._metrics["auth_failures"] += 1
-                return self._error_response(tenant_id, operation, "unauthorized", "Invalid or missing API key", 401), 401
-
-        # 2. Tenant
-        tenant = self.get_tenant(tenant_id)
-        if tenant is None:
-            return self._error_response(tenant_id, operation, "unknown_tenant", "Tenant not registered", 403), 403
+        # 1-2. Authentication and explicit tenant admission
+        tenant, denial, denial_status = self.authenticate(
+            tenant_id,
+            api_key,
+            operation=operation,
+        )
+        if denial is not None:
+            return denial, denial_status
+        if tenant is None:  # defensive invariant
+            raise RuntimeError("CIaaS authentication returned no tenant and no denial")
 
         # 3. Rate limit
         if not self.rate_limiter.check(tenant_id):
@@ -307,12 +358,16 @@ class CIaaSService:
         }
 
     def handle_ready(self) -> dict[str, Any]:
-        """Readiness check response."""
-        ready = self.runtime.ready()
+        """Readiness requires engine, authentication and at least one tenant."""
+        engine_ready = self.runtime.ready()
+        tenants_configured = bool(self._tenants)
+        ready = bool(engine_ready and self.auth_configured and tenants_configured)
         return {
             "ready": ready,
-            "engine_available": ready,
-            "production_ready": self.runtime.config.production_ready,
+            "engine_available": engine_ready,
+            "auth_configured": self.auth_configured,
+            "tenants_configured": tenants_configured,
+            "production_ready": bool(self.runtime.config.production_ready and ready),
             "timestamp": time.time(),
         }
 
@@ -404,15 +459,35 @@ class CIaaSHTTPHandler(BaseHTTPRequestHandler):
     def _send_error(self, status: int, code: str, message: str) -> None:
         self._send_json(status, {"ok": False, "error": {"code": code, "message": message}})
 
+    def _authorize_non_health(self, operation: str) -> bool:
+        headers = self._get_headers()
+        tenant_id = headers.get("x-ciaas-tenant", "").strip()
+        if not tenant_id:
+            self._send_error(401, "missing_tenant", "X-CIAAS-Tenant header required")
+            return False
+        _tenant, denial, status = self.service.authenticate(
+            tenant_id,
+            headers.get("x-ciaas-key"),
+            operation=operation,
+        )
+        if denial is not None:
+            self._send_json(status, denial.as_dict())
+            return False
+        return True
+
     def do_GET(self) -> None:
         path = urlparse(self.path).path
         if path == "/healthz":
             self._send_json(200, {"ok": True, **self.service.handle_health()})
         elif path == "/readyz":
+            if not self._authorize_non_health("readyz"):
+                return
             ready = self.service.handle_ready()
             status = 200 if ready["ready"] else 503
             self._send_json(status, {"ok": ready["ready"], **ready})
         elif path == "/metrics":
+            if not self._authorize_non_health("metrics"):
+                return
             body = self.service.handle_metrics()
             self.send_response(200)
             self.send_header("Content-Type", "text/plain")

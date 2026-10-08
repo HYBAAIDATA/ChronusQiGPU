@@ -51,9 +51,11 @@ point AL HARAS loads and verifies the complete local chain; when
 spool is renamed to `<file>.corrupt-<timestamp>`, a fresh chain is opened, and
 its first record is an `audit_quarantined` recovery event pointing at the
 quarantined file. With quarantine disabled the same corruption fails startup.
-On platforms without POSIX `flock` (for example a Windows dev host) the PYTHIA
-wiring falls back to an in-memory chain and `public_status` reports
-`audit_durable: false`; treat that mode as non-production evidence only.
+If durable audit cannot initialise on the host (including a platform locking
+failure), PYTHIA guardian construction fails closed. Privileged routes surface
+the guardian dependency as unavailable; they never substitute an in-memory
+authority chain. `audit_durable: false` is therefore not an admissible PYTHIA
+production mode.
 
 Each append verifies only the durable tail record under an exclusive
 cross-process lock — cost stays constant in ledger length and independent

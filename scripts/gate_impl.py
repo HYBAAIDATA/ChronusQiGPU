@@ -231,25 +231,41 @@ def conformance(root):
 
 
 def resilience(root):
-    # The resilience suite as it exists in this repository: supervisor crash
-    # recovery, custody replay, attestation policy, and adversarial
-    # hardware-root compound failure.
+    import subprocess
+    import xml.etree.ElementTree as ET
+
     names = (
         "test_b_salamander_recovery.py",
         "test_theseus_recovery_replay.py",
         "test_chronus_attestation_policy.py",
         "test_chronus_hardware_rooted_adversarial.py",
     )
-    found = [str(p) for n in names for p in root.rglob(n)]
-    return Outcome(
-        Status.PASS if len(found) == 4 else Status.SKIP,
-        (
-            "full resilience suite present"
-            if len(found) == 4
-            else f"resilience suite incomplete ({len(found)}/4)"
-        ),
-        tuple(found),
-    )
+    matches = {name: list(root.rglob(name)) for name in names}
+    if any(len(paths) != 1 for paths in matches.values()):
+        return Outcome(Status.FAIL, "resilience suite missing or ambiguous; not executed")
+    tests = [str(matches[name][0]) for name in names]
+    with tempfile.TemporaryDirectory() as directory:
+        junit = Path(directory) / "resilience.xml"
+        proc = subprocess.run(
+            [sys.executable, "-m", "pytest", *tests, "-q", f"--junitxml={junit}"],
+            cwd=root, capture_output=True, timeout=300,
+        )
+        if not junit.is_file():
+            return Outcome(Status.FAIL, "resilience execution produced no test report")
+        cases = list(ET.parse(junit).getroot().iter("testcase"))
+        skipped = sum(c.find("skipped") is not None for c in cases)
+        failed = sum(c.find("failure") is not None or c.find("error") is not None for c in cases)
+        passed = proc.returncode == 0 and bool(cases) and not skipped and not failed
+        artifact = root / "results" / "resilience-execution.json"
+        artifact.parent.mkdir(exist_ok=True)
+        artifact.write_text(json.dumps({
+            "returncode": proc.returncode, "tests": len(cases),
+            "skipped": skipped, "failed": failed,
+            "scope": "assurance_tests_not_production_composition",
+        }, sort_keys=True))
+    return Outcome(Status.PASS if passed else Status.FAIL,
+                   "resilience tests executed; skips and empty collection are failures",
+                   (str(artifact),))
 
 
 def privileged(root):
@@ -336,4 +352,4 @@ GATES = {
 def main(name, root="."):
     result = run(name, GATES[name], Path(root).resolve())
     print(json.dumps({"gate": result.gate, "status": result.status.value, "reason": result.reason}))
-    return 0 if result.status in {Status.PASS, Status.SKIP} else 1
+    return 0 if result.status == Status.PASS else 1
