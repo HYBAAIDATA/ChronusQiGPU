@@ -65,12 +65,17 @@ def run_tests() -> dict[str, Any]:
         raise RuntimeError(f"release test files missing: {missing}")
     EVIDENCE.mkdir(parents=True, exist_ok=True)
     junit = EVIDENCE / "tests-junit.xml"
+    junit.unlink(missing_ok=True)
+    test_files = sorted(set(TEST_FILES) | {
+        str(path.relative_to(REPO)) for pattern in ("tests/test_kellogg*.py", "kellogg/**/test*.py")
+        for path in REPO.glob(pattern)
+    })
     command = [
         sys.executable,
         "-m",
         "pytest",
         "-q",
-        *TEST_FILES,
+        *test_files,
         f"--junitxml={junit}",
     ]
     started = time.perf_counter()
@@ -92,17 +97,19 @@ def run_tests() -> dict[str, Any]:
     (EVIDENCE / "tests.json").write_text(
         json.dumps(evidence, indent=2, sort_keys=True), encoding="utf-8"
     )
-    if proc.returncode != 0 or counts["failed"] or counts["errors"]:
+    if (proc.returncode != 0 or counts["failed"] or counts["errors"]
+            or counts["skipped"] or counts["collected"] <= 0):
         raise RuntimeError(f"KELLOGG release tests failed: {evidence}")
     return evidence
 
 
 def run_benchmarks() -> dict[str, Any]:
     command = [sys.executable, "-m", "benchmarks.tensor.run_all"]
+    latest = BENCH_RESULTS / "latest.json"
+    latest.unlink(missing_ok=True)
     started = time.perf_counter()
     proc = subprocess.run(command, cwd=REPO)
     elapsed = time.perf_counter() - started
-    latest = BENCH_RESULTS / "latest.json"
     if not latest.exists():
         raise RuntimeError("benchmark suite did not write benchmarks/tensor/results/latest.json")
     summary = json.loads(latest.read_text(encoding="utf-8"))
@@ -115,7 +122,11 @@ def run_benchmarks() -> dict[str, Any]:
     missing = sorted(expected - observed)
     extra = sorted(observed - expected)
     metadata_problems = []
+    if len(artifacts) != len(observed):
+        metadata_problems.append({"error": "duplicate benchmark IDs"})
     for row in artifacts:
+        if row.get("commit") != git_sha():
+            metadata_problems.append({"error": "stale benchmark commit", "benchmark_id": row.get("benchmark_id")})
         required = (
             "benchmark_id",
             "commit",

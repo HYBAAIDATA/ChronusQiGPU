@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "euclid-engine"
-version = "17.0.0"
+version = "1.0.0"
 description = "EUCLID — governed, local-first integrated adaptive intelligence: Bayesian mechanism world model, causal discrimination, value-of-information metacognition, strategy meta-learning, structural analogy, hierarchical planning, primitive discovery and transfer, with a falsifiable research programme."
 readme = "README.md"
 license = "MIT"

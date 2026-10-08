@@ -1,3 +1,19 @@
+## Qualification status after integrated baseline review
+
+Baseline audited: `c63ff4d7e9d25135b8e2ca17f84da6714d23d5b7`. KELLOGG's recorded
+211-pass source result is from `a4df7dc...`, not this integrated head or the new
+RC. TURING's former TestPyPI metadata-existence gate is repaired, but registry
+execution/publication has not been observed for the repaired candidate. The
+release workflows must be rerun on the frozen RC; no current production status
+is awarded by these notes. Standalone package publication and whole-platform
+qualification remain separate. CHRONUS/iGPU is NOT_CERTIFIED; SALAMANDER
+production composition is UNAVAILABLE. See `docs/STANDALONE_RELEASE_RC_PLAN.md`.
+
+TOE's approved first-public identity is `hyba-toe==1.0.0`. EUCLID's first-public
+distribution candidate is `euclid-engine==1.0.0`, containing research/runtime
+17.0.0 and the unchanged `euclid-v17-research` CLI. Neither statement is registry
+publication evidence. Historical notes below are not a frozen-RC certificate.
+
 # Product release status
 
 Last updated 7 October 2026 for the canonical repository

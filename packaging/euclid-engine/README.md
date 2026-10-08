@@ -1,4 +1,11 @@
-# euclid-engine 17.0.0
+# euclid-engine 1.0.0 — first-public research package candidate
+
+Distribution identity is **`euclid-engine==1.0.0`** under the first-public
+version policy. The contained research generation and `euclid.__version__`
+remain **17.0.0**; `euclid-v17-research` is unchanged. Historical 17.0.0 build
+records are not evidence for the new 1.0.0 archives. Publication and fresh
+installed-package verification are pending. This is a **research release**, not
+whole-platform production certification.
 
 EUCLID's governed runtime plus the v17 **integrated adaptive intelligence**:
 one `GeneralIntelligenceCore` orchestrating a Bayesian mechanism world model,
