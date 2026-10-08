@@ -2601,11 +2601,12 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             submission_id=self._last_submission_id,
             correlation=self._pending_correlation,
         )
+        submission_coordinate = CausalCoordinate(
+            **(self._pending_correlation or {})
+        ).extend(submission_id=self._last_submission_id)
         self.causal.record(
-            "submission_sent",
-            CausalCoordinate(**(self._pending_correlation or {})).extend(
-                submission_id=self._last_submission_id
-            ),
+            "submission_intent",
+            submission_coordinate,
             job_id=job_id,
             block_hash=proof.digest[::-1].hex(),
         )
@@ -2630,6 +2631,13 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 job_id=job_id, extranonce2=extranonce2, ntime=ntime, nonce=nonce
             )
             wrote = True
+            self.causal.record(
+                "submission_sent",
+                submission_coordinate,
+                job_id=job_id,
+                block_hash=proof.digest[::-1].hex(),
+                wire_write_observed=True,
+            )
         except BaseException:
             if callable(wire_counter) and wire_before is not None:
                 wrote = wire_counter("mining.submit") > wire_before
@@ -2642,8 +2650,23 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 PoolOutcome.OUTCOME_UNKNOWN if wrote else PoolOutcome.NOT_SUBMITTED
             )
             if wrote:
+                self.causal.record(
+                    "submission_sent",
+                    submission_coordinate,
+                    job_id=job_id,
+                    block_hash=proof.digest[::-1].hex(),
+                    wire_write_observed=True,
+                    pool_outcome="OUTCOME_UNKNOWN",
+                )
                 self.session.submission_finished(None)
             else:
+                self.causal.record(
+                    "submission_not_written",
+                    submission_coordinate,
+                    job_id=job_id,
+                    block_hash=proof.digest[::-1].hex(),
+                    wire_write_observed=False,
+                )
                 self.session.submission_not_written()
             if cycle_reporting:
                 self.cycle.try_transition(
