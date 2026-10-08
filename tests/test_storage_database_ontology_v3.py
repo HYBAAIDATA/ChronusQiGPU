@@ -461,7 +461,7 @@ def test_production_gate_closes_database_storage_and_custody_together(tmp_path):
     )
     store.close()
 
-    report = evaluate(
+    blocked = evaluate(
         db_path=tmp_path / "ontology.db",
         storage_root=root,
         tenant_id=tenant_id,
@@ -469,8 +469,27 @@ def test_production_gate_closes_database_storage_and_custody_together(tmp_path):
         custody_root=tmp_path / "custody",
         custody_key=CUSTODY_KEY,
     )
+    assert blocked["passed"] is False
+    assert blocked["checks"]["producer_revalidation_complete"] is False
+    assert blocked["pending_producer_revalidation"]
+
+    report = evaluate(
+        db_path=tmp_path / "ontology.db",
+        storage_root=root,
+        tenant_id=tenant_id,
+        integrity_key=INTEGRITY_KEY,
+        custody_root=tmp_path / "custody",
+        custody_key=CUSTODY_KEY,
+        producer_revalidators={
+            "pythia": lambda _record: "PASS",
+            "theseus": lambda _record: "PASS",
+        },
+    )
     assert report["passed"] is True
     assert all(report["checks"].values())
+    assert report["pending_producer_revalidation"] == {}
+    assert report["producer_revalidation_errors"] == []
+    assert report["destructive_rebuild"]["passed"] is True
     assert report["claim_boundary"]["live_pool"] == "UNAVAILABLE"
     assert report["claim_boundary"]["accepted_share"] == "UNAVAILABLE"
 
