@@ -77,6 +77,7 @@ class FakePool:
         self.worker = worker  # when set, only this worker is authorized
         self.submit_policy = "accept"  # accept | reject | drop
         self.submit_delay_s = 0.0
+        self.submit_gate: asyncio.Event | None = None
         self.answer_extranonce_subscribe = True
         self.submits: list[list] = []
         self.methods: list[str] = []
@@ -123,6 +124,8 @@ class FakePool:
                 if self.submit_policy == "drop":
                     return
                 accepted = self.submit_policy == "accept"
+                if self.submit_gate is not None:
+                    await self.submit_gate.wait()
                 if self.submit_delay_s:
                     await asyncio.sleep(self.submit_delay_s)
                 writer.write(_line({"id": message["id"], "result": accepted, "error": None}))
