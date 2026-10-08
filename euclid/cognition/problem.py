@@ -85,6 +85,15 @@ class CognitionProblem:
         )
 
     def to_mapping(self) -> dict[str, Any]:
+        # Check at dispatch time too: frozen dataclasses can still contain a
+        # caller-owned mutable metadata dictionary.
+        reserved = {
+            "problem_id", "goal", "problem_class", "structure", "observations",
+            "declared_objectives", "measured_reward", "reward_authority",
+            "constraints", "problem_digest",
+        }
+        if reserved.intersection(self.metadata):
+            raise ValueError("metadata may not override validated problem fields")
         return {
             "problem_id": self.problem_id,
             "goal": self.goal,

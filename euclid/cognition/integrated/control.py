@@ -209,7 +209,17 @@ class ContextualStrategyLearner:
 
     PRIOR_WEIGHT = 2.0  # pseudo-observations imported from the global prior
 
-    def __init__(self, *, seed: int = 0) -> None:
+    def __init__(self, *, seed: int = 0, min_transfer_trials: int = 3,
+                 negative_transfer_probability: float = 0.95) -> None:
+        # Configurable versions of the existing 3-trial / 0.95 reporting
+        # policy. Beta fractional-utility / normal comparisons are MODELED
+        # evidence, never an exact causal or frequentist-confidence claim.
+        if min_transfer_trials < 1:
+            raise ValueError("min_transfer_trials must be positive")
+        if not 0.5 < negative_transfer_probability < 1.0:
+            raise ValueError("negative_transfer_probability must be in (0.5,1)")
+        self.min_transfer_trials = min_transfer_trials
+        self.negative_transfer_probability = negative_transfer_probability
         self.prior_weight = self.PRIOR_WEIGHT
         self.class_stats: dict[str, dict[str, list[float]]] = {}
         self.global_stats: dict[str, list[float]] = {}
@@ -233,8 +243,15 @@ class ContextualStrategyLearner:
     def select_strategy(self, problem_class: str, available: Sequence[str]) -> StrategyChoice:
         if not available:
             raise ValueError("at least one strategy is required")
+        suppressed = {
+            entry["imported"] for entry in self.negative_transfer
+            if entry["class"] == problem_class
+        }
+        eligible = tuple(s for s in available if s not in suppressed)
+        if not eligible:
+            raise ValueError("all available strategies rejected by negative-transfer guard")
         rows = []
-        for strategy in available:
+        for strategy in eligible:
             alpha, beta, n, used_prior = self._posterior(problem_class, strategy)
             mean = alpha / (alpha + beta)
             draw = mean if self.frozen else self._rng.betavariate(alpha, beta)
@@ -246,7 +263,14 @@ class ContextualStrategyLearner:
             f"{mode} {draw:.3f} (mean {mean:.3f}) from {n} class episode(s)"
             + (" + global prior" if used_prior else "")
         )
-        return StrategyChoice(chosen, tuple(s for s in available if s != chosen), basis)
+        if suppressed.intersection(available):
+            basis += "; negative-transfer guard suppressed " + ",".join(sorted(suppressed.intersection(available)))
+            self.events.append({"event": "abandon_negative_transfer", "class": problem_class,
+                                "suppressed": sorted(suppressed.intersection(available)),
+                                "chosen": chosen})
+            if len(self.events) > 500:
+                del self.events[:250]
+        return StrategyChoice(chosen, tuple(s for s in eligible if s != chosen), basis)
 
     def update(self, problem_class: str, strategy_id: str, success: bool,
                detail: str = "") -> None:
@@ -262,6 +286,8 @@ class ContextualStrategyLearner:
 
     def record_episode(self, problem_class: str, strategy: str, utility: float) -> dict[str, Any]:
         """Bank an episode utility; detect negative transfer of the global prior."""
+        if not math.isfinite(float(utility)):
+            raise ValueError("episode utility must be finite")
         utility = max(0.0, min(1.0, float(utility)))
         report: dict[str, Any] = {"class": problem_class, "strategy": strategy,
                                   "utility": utility}
@@ -274,10 +300,43 @@ class ContextualStrategyLearner:
         glob = self.global_stats.setdefault(strategy, [0.0, 0.0])
         glob[0] += utility
         glob[1] += 1.0
-        detected = self._detect_negative_transfer(problem_class)
+        detected = self._detect_imported_prior_conflict(problem_class, strategy)
+        if detected is None:
+            detected = self._detect_negative_transfer(problem_class)
         if detected:
             report["negative_transfer"] = detected
         return report
+
+    def _detect_imported_prior_conflict(self, problem_class: str, strategy: str) -> dict[str, Any] | None:
+        local = self.class_stats.get(problem_class, {}).get(strategy, [0.0, 0.0])
+        global_row = self.global_stats.get(strategy, [0.0, 0.0])
+        # Leave this context out: the source evidence and the target trials
+        # must not be counted twice in the modeled comparison.
+        source = [global_row[0] - local[0], global_row[1] - local[1]]
+        if local[1] < self.min_transfer_trials or source[1] < self.min_transfer_trials:
+            return None
+        if any(e["class"] == problem_class and e["imported"] == strategy
+               for e in self.negative_transfer):
+            return None
+        def posterior(row):
+            alpha, beta = 1.0 + row[0], 1.0 + row[1] - row[0]
+            if alpha <= 0 or beta <= 0:
+                raise ValueError("inconsistent strategy statistics")
+            return alpha / (alpha + beta), alpha * beta / ((alpha + beta) ** 2 * (alpha + beta + 1.0))
+        source_mean, source_var = posterior(source)
+        local_mean, local_var = posterior(local)
+        z = (source_mean - local_mean) / math.sqrt(source_var + local_var)
+        modeled_probability = 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
+        if modeled_probability < self.negative_transfer_probability:
+            return None
+        entry = {"class": problem_class, "imported": strategy, "better": None,
+                 "remediation": "suppress_imported_strategy_and_global_prior",
+                 "evidence_class": "MODELED", "comparison": "leave-context-out-beta-normal",
+                 "source_trials": int(source[1]), "target_trials": int(local[1]),
+                 "source_mean": source_mean, "class_mean_imported": local_mean,
+                 "probability_source_exceeds_target": modeled_probability}
+        self.negative_transfer.append(entry)
+        return entry
 
     def _detect_negative_transfer(self, problem_class: str) -> dict[str, Any] | None:
         """Globally preferred strategy is reliably worse inside this class."""
@@ -288,9 +347,9 @@ class ContextualStrategyLearner:
             key=lambda s: (self.global_stats[s][0] / max(1.0, self.global_stats[s][1]), s),
         )
         stats = self.class_stats.get(problem_class, {})
-        if global_best not in stats or stats[global_best][1] < 3:
+        if global_best not in stats or stats[global_best][1] < self.min_transfer_trials:
             return None
-        rivals = [(s, row) for s, row in stats.items() if s != global_best and row[1] >= 3]
+        rivals = [(s, row) for s, row in stats.items() if s != global_best and row[1] >= self.min_transfer_trials]
         if not rivals:
             return None
         best_rival, row = max(rivals, key=lambda kv: (kv[1][0] / kv[1][1], kv[0]))
@@ -305,7 +364,7 @@ class ContextualStrategyLearner:
         m0, v0 = beta(stats[global_best])
         z = (m1 - m0) / math.sqrt(v1 + v0)
         probability = 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
-        if probability < 0.95:
+        if probability < self.negative_transfer_probability:
             return None
         if any(entry["class"] == problem_class and entry["imported"] == global_best
                for entry in self.negative_transfer):
@@ -329,13 +388,18 @@ class ContextualStrategyLearner:
     def to_payload(self) -> dict[str, Any]:
         return {"schema": "euclid.contextual-strategy/1",
                 "class_stats": self.class_stats, "global_stats": self.global_stats,
-                "negative_transfer": self.negative_transfer}
+                "negative_transfer": self.negative_transfer,
+                "min_transfer_trials": self.min_transfer_trials,
+                "negative_transfer_probability": self.negative_transfer_probability,
+                "prior_weight": self.prior_weight}
 
     @classmethod
     def from_payload(cls, payload: Mapping[str, Any]) -> "ContextualStrategyLearner":
         if payload.get("schema") != "euclid.contextual-strategy/1":
             raise ValueError("unsupported strategy payload")
-        learner = cls()
+        learner = cls(min_transfer_trials=int(payload.get("min_transfer_trials", 3)),
+                      negative_transfer_probability=float(payload.get("negative_transfer_probability", 0.95)))
+        learner.prior_weight = float(payload.get("prior_weight", cls.PRIOR_WEIGHT))
         learner.class_stats = {k: {s: list(r) for s, r in v.items()}
                                for k, v in payload["class_stats"].items()}
         learner.global_stats = {k: list(v) for k, v in payload["global_stats"].items()}
