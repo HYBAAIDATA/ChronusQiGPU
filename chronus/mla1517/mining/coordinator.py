@@ -2204,15 +2204,26 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         extranonce2: str,
         ntime: str,
         nonce: int | str,
+        cycle_reporting: bool = True,
     ) -> bool:
-        """Serialize proof-checked submissions through the persisted lifecycle."""
+        """Serialize proof-checked submissions through the single network writer."""
         async with self._submission_lock:
             return await self._submit_candidate_locked(
-                job_id=job_id, extranonce2=extranonce2, ntime=ntime, nonce=nonce
+                job_id=job_id,
+                extranonce2=extranonce2,
+                ntime=ntime,
+                nonce=nonce,
+                cycle_reporting=cycle_reporting,
             )
 
     async def _submit_candidate_locked(
-        self, *, job_id: str, extranonce2: str, ntime: str, nonce: int | str
+        self,
+        *,
+        job_id: str,
+        extranonce2: str,
+        ntime: str,
+        nonce: int | str,
+        cycle_reporting: bool = True,
     ) -> bool:
         self._last_pool_outcome = PoolOutcome.NOT_SUBMITTED
         if not self.client:
@@ -2225,11 +2236,12 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         )
         if not self.submission_permitted():
             self._record_submission_gate("SUBMISSION_DISABLED", job_id)
-            self.cycle.try_transition(
-                MiningCycleState.EVALUATE,
-                event="refused",
-                reason="SUBMISSION_DISABLED",
-            )
+            if cycle_reporting:
+                self.cycle.try_transition(
+                    MiningCycleState.EVALUATE,
+                    event="refused",
+                    reason="SUBMISSION_DISABLED",
+                )
             return False  # shadow: a proof-checked share, never written
         if self.chain_observer is None:
             raise RuntimeError("live submission requires a Bitcoin chain observer")
@@ -2237,28 +2249,32 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         if proof.header[4:36][::-1].hex() != tip["block_hash"]:
             LOG.warning("candidate parent differs from verified chain tip")
             self._record_submission_gate("PARENT_MISMATCH", job_id)
-            self.cycle.try_transition(
-                MiningCycleState.EVALUATE, event="refused", reason="PARENT_MISMATCH"
-            )
+            if cycle_reporting:
+                self.cycle.try_transition(
+                    MiningCycleState.EVALUATE, event="refused", reason="PARENT_MISMATCH"
+                )
             return False
         if self.session.already_submitted(proof.digest[::-1].hex()):
             LOG.warning("share already submitted; refusing a duplicate mining.submit")
             self._record_submission_gate("DUPLICATE_SUBMISSION", job_id)
-            self.cycle.try_transition(
-                MiningCycleState.EVALUATE,
-                event="refused",
-                reason="DUPLICATE_SUBMISSION",
-            )
+            if cycle_reporting:
+                self.cycle.try_transition(
+                    MiningCycleState.EVALUATE,
+                    event="refused",
+                    reason="DUPLICATE_SUBMISSION",
+                )
             return False
         self._last_submission_id = f"submission:{uuid.uuid4()}"
+        block_candidate = int.from_bytes(proof.digest, "little") <= compact_target(
+            int.from_bytes(proof.header[72:76], "little")
+        )
         self.session.begin_submission(
             header=proof.header,
             target=proof.target,
             job_id=job_id,
             parent_hash=tip["block_hash"],
             parent_height=tip["height"],
-            block_candidate=int.from_bytes(proof.digest, "little")
-            <= compact_target(int.from_bytes(proof.header[72:76], "little")),
+            block_candidate=block_candidate,
             submission_id=self._last_submission_id,
             correlation=self._pending_correlation,
         )
@@ -2270,43 +2286,66 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             job_id=job_id,
             block_hash=proof.digest[::-1].hex(),
         )
-        if self._bridge is not None:
+        # Synchronous/direct mode preserves the historical stop-during-submit
+        # behavior. In the production async pipeline ordinary shares leave the
+        # compute plane running; a block candidate still freezes new work.
+        pause_bridge = self._bridge is not None and (
+            not self._asynchronous_submission or block_candidate
+        )
+        if pause_bridge:
             self._bridge.stop()
         runtime = getattr(self.client, "runtime_state", None)
         submitted_before = runtime.submitted if runtime is not None else None
+        wire_counter = getattr(self.client, "wire_writes_for", None)
+        wire_before = (
+            wire_counter("mining.submit") if callable(wire_counter) else None
+        )
         result = None
+        wrote = False
         try:
             result = await super().submit_candidate(
                 job_id=job_id, extranonce2=extranonce2, ntime=ntime, nonce=nonce
             )
+            wrote = True
         except BaseException:
-            # Unknown stays unknown: once mining.submit may have been written,
-            # neither acceptance nor rejection can be claimed.
-            wrote = runtime is None or runtime.submitted != submitted_before
+            if callable(wire_counter) and wire_before is not None:
+                wrote = wire_counter("mining.submit") > wire_before
+            else:
+                # Compatibility fallback for non-production clients. It is
+                # intentionally conservative because their transport does not
+                # expose a post-write receipt.
+                wrote = runtime is None or runtime.submitted != submitted_before
             self._last_pool_outcome = (
                 PoolOutcome.OUTCOME_UNKNOWN if wrote else PoolOutcome.NOT_SUBMITTED
             )
-            self.cycle.try_transition(
-                MiningCycleState.HEAL,
-                event="failure",
-                reason="submission write failed",
-                evidence={"outcome": self._last_pool_outcome.value},
-            )
+            if wrote:
+                self.session.submission_finished(None)
+            else:
+                self.session.submission_not_written()
+            if cycle_reporting:
+                self.cycle.try_transition(
+                    MiningCycleState.HEAL,
+                    event="failure",
+                    reason="submission transport failed",
+                    evidence={
+                        "outcome": self._last_pool_outcome.value,
+                        "wire_write_observed": wrote,
+                    },
+                )
             raise
-        finally:
+        else:
             self.session.submission_finished(result)
-            # A resolved share returns the lifecycle to SEARCHING directly; the
-            # base loop only restarts the bridge after a refused poll, so the
-            # device paused for this submission must be resumed here.
-            if self._bridge is not None and self.session.state == "SEARCHING":
+        finally:
+            if pause_bridge and self.session.state == "SEARCHING":
                 self._bridge.start()
         self._last_pool_outcome = PoolOutcome.ACCEPTED if result is True else PoolOutcome.REJECTED
-        self.cycle.try_transition(
-            MiningCycleState.ACKNOWLEDGE,
-            event="success",
-            reason=self._last_pool_outcome.value,
-            evidence={"result": result},
-        )
+        if cycle_reporting:
+            self.cycle.try_transition(
+                MiningCycleState.ACKNOWLEDGE,
+                event="success",
+                reason=self._last_pool_outcome.value,
+                evidence={"result": result, "wire_write_observed": wrote},
+            )
         return result
 
     async def search_current_job(self) -> bool:
