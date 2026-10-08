@@ -222,7 +222,21 @@ class M3PythiaProductionMiningCoordinator(PythiaProductionMiningCoordinator):
             "block_hash": proof.digest[::-1].hex(),
             "target": f"{proof.target:064x}",
         }
-        gate = dict(self._m3_gate.authorize_and_custody(context=context, proof=proof))
+        try:
+            gate = dict(
+                self._m3_gate.authorize_and_custody(context=context, proof=proof)
+            )
+        except M3StorageError as exc:
+            self._block_m3(f"THESEUS_CUSTODY_FAILURE:{exc}")
+            self._record_submission_gate("THESEUS_CUSTODY_FAILURE", job_id)
+            self._last_pool_outcome = PoolOutcome.NOT_SUBMITTED
+            if cycle_reporting:
+                self.cycle.try_transition(
+                    MiningCycleState.EVALUATE,
+                    event="refused",
+                    reason=f"THESEUS_CUSTODY_FAILURE:{exc}",
+                )
+            return False
         self._last_m3_gate = gate
         if gate.get("allowed") is not True:
             reason = str(gate.get("reason") or "AL_HARAS_DENIED")
