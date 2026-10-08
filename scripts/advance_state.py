@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.assert_gate_rollup import evaluate
 from al_haras.promotion_gates import PromotionState
 from al_haras.promotion_pipeline import Approval
 from al_haras.promotion_pipeline import build_receipt
@@ -37,6 +38,9 @@ for x in json.loads(Path("results/approvals/approvals.json").read_text()):
             x["source_url"],
         )
     )
+report = evaluate(Path("results"), expected_commit=a.commit)
+if not report["passed"]:
+    raise SystemExit("promotion blocked: incomplete or invalid gate evidence")
 required = []
 for pth in Path("results").glob("*.json"):
     x = json.loads(pth.read_text())

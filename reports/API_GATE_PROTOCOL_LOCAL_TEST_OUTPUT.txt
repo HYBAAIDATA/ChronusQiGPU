@@ -1,0 +1,44 @@
+test_manifest_make_and_implementation_have_same_gate_set (test_gate_evidence_integrity.ConsumerTests.test_manifest_make_and_implementation_have_same_gate_set) ... ok
+test_publisher_never_reports_success_for_empty_evidence (test_gate_evidence_integrity.ConsumerTests.test_publisher_never_reports_success_for_empty_evidence) ... ok
+test_resilience_gate_executes_instead_of_checking_only_files (test_gate_evidence_integrity.ConsumerTests.test_resilience_gate_executes_instead_of_checking_only_files) ... ok
+test_workflow_does_not_swallow_gate_failure (test_gate_evidence_integrity.ConsumerTests.test_workflow_does_not_swallow_gate_failure) ... ok
+test_actual_runner_and_valid_rollup (test_gate_evidence_integrity.EvidenceTests.test_actual_runner_and_valid_rollup) ... ok
+test_api_release_obligations_fail_without_producers (test_gate_evidence_integrity.EvidenceTests.test_api_release_obligations_fail_without_producers) ... ok
+test_artifact_coverage_fails (test_gate_evidence_integrity.EvidenceTests.test_artifact_coverage_fails) ... ok
+test_boolean_timestamp_fails (test_gate_evidence_integrity.EvidenceTests.test_boolean_timestamp_fails) ... ok
+test_commit_argument_cannot_override_checkout (test_gate_evidence_integrity.EvidenceTests.test_commit_argument_cannot_override_checkout) ... ok
+test_contradictory_result_fails (test_gate_evidence_integrity.EvidenceTests.test_contradictory_result_fails) ... ok
+test_corrupt_json_fails (test_gate_evidence_integrity.EvidenceTests.test_corrupt_json_fails) ... ok
+test_crashed_gate_fails (test_gate_evidence_integrity.EvidenceTests.test_crashed_gate_fails) ... ok
+test_deleted_artifact_fails (test_gate_evidence_integrity.EvidenceTests.test_deleted_artifact_fails) ... ok
+test_dirty_checkout_produces_error_not_pass (test_gate_evidence_integrity.EvidenceTests.test_dirty_checkout_produces_error_not_pass) ... ok
+test_duplicate_json_key_fails (test_gate_evidence_integrity.EvidenceTests.test_duplicate_json_key_fails) ... ok
+test_duplicate_manifest_gate_fails (test_gate_evidence_integrity.EvidenceTests.test_duplicate_manifest_gate_fails) ... ok
+test_duplicate_result_fails (test_gate_evidence_integrity.EvidenceTests.test_duplicate_result_fails) ... ok
+test_empty_directory_fails (test_gate_evidence_integrity.EvidenceTests.test_empty_directory_fails) ... ok
+test_empty_manifest_fails (test_gate_evidence_integrity.EvidenceTests.test_empty_manifest_fails) ... ok
+test_failed_mandatory_fails (test_gate_evidence_integrity.EvidenceTests.test_failed_mandatory_fails) ... ok
+test_file_evidence_readback (test_gate_evidence_integrity.EvidenceTests.test_file_evidence_readback) ... ok
+test_gate_name_cannot_escape_results (test_gate_evidence_integrity.EvidenceTests.test_gate_name_cannot_escape_results) ... ok
+test_invalid_timestamp_fails (test_gate_evidence_integrity.EvidenceTests.test_invalid_timestamp_fails) ... ok
+test_legacy_result_fails (test_gate_evidence_integrity.EvidenceTests.test_legacy_result_fails) ... ok
+test_missing_commit_fails (test_gate_evidence_integrity.EvidenceTests.test_missing_commit_fails) ... ok
+test_missing_digest_fails (test_gate_evidence_integrity.EvidenceTests.test_missing_digest_fails) ... ok
+test_missing_execution_fails (test_gate_evidence_integrity.EvidenceTests.test_missing_execution_fails) ... ok
+test_missing_manifest_fails (test_gate_evidence_integrity.EvidenceTests.test_missing_manifest_fails) ... ok
+test_missing_result_fails (test_gate_evidence_integrity.EvidenceTests.test_missing_result_fails) ... ok
+test_nonobject_fails (test_gate_evidence_integrity.EvidenceTests.test_nonobject_fails) ... ok
+test_path_escape_fails (test_gate_evidence_integrity.EvidenceTests.test_path_escape_fails) ... ok
+test_skipped_mandatory_fails (test_gate_evidence_integrity.EvidenceTests.test_skipped_mandatory_fails) ... ok
+test_stale_commit_fails (test_gate_evidence_integrity.EvidenceTests.test_stale_commit_fails) ... ok
+test_symlink_escape_fails (test_gate_evidence_integrity.EvidenceTests.test_symlink_escape_fails) ... ok
+test_tampered_artifact_fails (test_gate_evidence_integrity.EvidenceTests.test_tampered_artifact_fails) ... ok
+test_tampered_receipt_fails (test_gate_evidence_integrity.EvidenceTests.test_tampered_receipt_fails) ... ok
+test_undeclared_gate_fails (test_gate_evidence_integrity.EvidenceTests.test_undeclared_gate_fails) ... ok
+test_unknown_status_fails (test_gate_evidence_integrity.EvidenceTests.test_unknown_status_fails) ... ok
+test_wrong_outcome_type_produces_error (test_gate_evidence_integrity.EvidenceTests.test_wrong_outcome_type_produces_error) ... ok
+
+----------------------------------------------------------------------
+Ran 39 tests in 0.634s
+
+OK

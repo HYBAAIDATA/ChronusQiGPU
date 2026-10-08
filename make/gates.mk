@@ -1,8 +1,16 @@
 GATE_TARGETS := rule7-no-float abi-check refuted-claims import-audit claim-register envelope-verify conformance-vectors resilience-suite schema-freeze promotion-manifest privileged-path-audit
-.PHONY: gates release-gate $(GATE_TARGETS) publish-checks gate-rollup strict-hardware-gate
+.PHONY: gates release-gate $(GATE_TARGETS) publish-checks gate-rollup strict-hardware-gate gate-results-clean
 
-gates: $(GATE_TARGETS)
-release-gate: gates gate-rollup
+# Clear old results before dispatch, including under parallel make.
+gates: gate-results-clean
+	+$(MAKE) --no-print-directory -k $(GATE_TARGETS)
+
+gate-results-clean:
+	mkdir -p results
+	rm -f results/*.json
+
+release-gate: gates
+	python3 scripts/assert_gate_rollup.py
 rule7-no-float:
 	python3 scripts/rule7_no_float_gate.py
 abi-check:
