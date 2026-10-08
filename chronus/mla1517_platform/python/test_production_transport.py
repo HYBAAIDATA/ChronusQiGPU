@@ -205,6 +205,82 @@ class ProductionTransportTests(unittest.TestCase):
             server.close()
             await server.wait_closed()
 
+    def test_unavailable_sv2_security_provider_fails_over_without_downgrade(self) -> None:
+        asyncio.run(self._sv2_configuration_failover())
+
+    async def _sv2_configuration_failover(self) -> None:
+        pool = _HandshakePool()
+        server = await asyncio.start_server(pool.handle, "127.0.0.1", 0)
+        live_port = server.sockets[0].getsockname()[1]
+
+        coord = ProductionMiningCoordinator.__new__(ProductionMiningCoordinator)
+        coord.endpoints = (
+            PoolEndpoint(
+                "sv2.example.invalid",
+                34254,
+                "sv2-primary",
+                protocol="v2",
+            ),
+            PoolEndpoint("127.0.0.1", live_port, "v1-secondary"),
+        )
+        coord.username = "worker"
+        coord.password = "x"
+        coord.endpoint_index = 0
+        coord.client = None
+        coord.stratum_status_sink = None
+        coord.production_connect_timeout = 0.05
+        coord.production_request_timeout = 1.0
+        coord.production_write_timeout = 0.1
+        coord.production_outbound_queue_size = 8
+        coord.sv2_channel_factory = None
+        coord._refresh_work_identity = lambda: None
+        coord._precompute_wake = asyncio.Event()
+        coord.causal = CausalLedger()
+        coord.cycle = MiningCycleLedger(on_event=coord._mirror_cycle_event)
+
+        import os
+        previous = os.environ.pop("PYTHIA_SV2_CHANNEL_FACTORY", None)
+        try:
+            client = await coord.connect_with_failover()
+            self.assertEqual(client.endpoint.name, "v1-secondary")
+            self.assertEqual(client.endpoint.protocol, "v1")
+            self.assertEqual(coord.endpoint_index, 1)
+            self.assertEqual(pool.connections, 1)
+
+            refused = [
+                event
+                for event in coord.causal.events()
+                if event.kind == "pool_endpoint_refused"
+            ]
+            self.assertTrue(
+                any(
+                    event.detail.get("pool") == "sv2-primary"
+                    and event.detail.get("stage") == "sv2_configuration"
+                    and event.detail.get("protocol") == "v2"
+                    for event in refused
+                ),
+                "unavailable SV2 provider was not recorded as an SV2 refusal",
+            )
+            selected = [
+                event
+                for event in coord.causal.events()
+                if event.kind == "pool_endpoint_selected"
+            ]
+            self.assertTrue(
+                any(
+                    event.detail.get("pool") == "v1-secondary"
+                    and event.detail.get("protocol") == "v1"
+                    for event in selected
+                )
+            )
+        finally:
+            if previous is not None:
+                os.environ["PYTHIA_SV2_CHANNEL_FACTORY"] = previous
+            if coord.client is not None:
+                await coord.client.close()
+            server.close()
+            await server.wait_closed()
+
     def test_failover_records_refusal_and_selection_evidence(self) -> None:
         asyncio.run(self._failover_evidence())
 
