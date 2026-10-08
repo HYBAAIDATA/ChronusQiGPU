@@ -646,32 +646,96 @@ class EuclidRuntime:
         from .cognition.reachability import ReachabilityStage
 
         path = self.state_dir / "adaptive_knowledge.json"
+        restored = path.is_file()
         knowledge = (
-            AgentKnowledge.from_payload(load_json(path)) if path.is_file() else AgentKnowledge()
+            AgentKnowledge.from_payload(load_json(path)) if restored else AgentKnowledge()
         )
         self.adaptive = IntegratedAgent(
             knowledge=knowledge, config=config, ablations=ablations, evidence=self.evidence
         )
-        self._adaptive_organs = 0
-        restored = path.is_file()
+        # Recomposition must not reset the organ namespace while the registry
+        # still owns earlier task organs. Resetting this counter caused the
+        # next task to reuse task-world-1 and fail as a duplicate organ.
+        if not hasattr(self, "_adaptive_organs"):
+            self._adaptive_organs = 0
+        if restored:
+            self.evidence.append(
+                "adaptive-knowledge-restored",
+                {
+                    "path": str(path),
+                    "episodes": int(getattr(knowledge, "episodes", 0)),
+                    "restart_verified": False,
+                },
+            )
         for component in self.ADAPTIVE_COMPONENTS:
             current = self.reachability.stage(component)
-            stages = [
-                ReachabilityStage.PRESENT, ReachabilityStage.IMPORTABLE,
-                ReachabilityStage.ADAPTED, ReachabilityStage.REGISTERED,
+            for stage in (
+                ReachabilityStage.PRESENT,
+                ReachabilityStage.IMPORTABLE,
+                ReachabilityStage.ADAPTED,
+                ReachabilityStage.REGISTERED,
                 ReachabilityStage.REACHABLE,
-            ]
-            if restored and current is not None and current >= ReachabilityStage.PERSISTED:
-                stages.append(ReachabilityStage.RESTART_VERIFIED)
-            for stage in stages:
+            ):
                 if current is None or stage > current:
                     self.reachability.record(
-                        component, stage, episode_id="adaptive-startup",
+                        component,
+                        stage,
+                        episode_id="adaptive-startup",
                         evidence_ref=self.evidence.head or "genesis",
+                        detail={"restored": restored, "restart_verified": False},
                     )
                     current = stage
         self.reachability.save(self.state_dir / "cognition_reachability.json")
         return self.adaptive
+
+    def _record_adaptive_component_usage(self, result: Any) -> None:
+        """Advance adaptive reachability only from component-specific evidence.
+
+        A successful episode is not evidence that every specialist executed.
+        Ablated or absent mechanisms remain at REACHABLE. The mapping below is
+        intentionally conservative: a directly observed transition proves
+        USE_IN_EPISODE only. Stronger stages require their own effect,
+        feedback, persistence and restart proofs.
+        """
+        from .cognition.reachability import ReachabilityStage
+
+        state = result.state
+        transitions = list(state.transitions)
+        ablated = set(state.ablations)
+        component_evidence = {
+            "euclid.adaptive.world_model": ("world_model", {"imagine", "hypothesis-update"}),
+            "euclid.adaptive.causal_discrimination": ("causal_reasoning", {"discriminate"}),
+            "euclid.adaptive.metacognition": (None, {"metacontrol"}),
+            "euclid.adaptive.strategy_meta_learning": ("meta_learning", {"strategy"}),
+            "euclid.adaptive.planning": (None, {"plan", "replan"}),
+            "euclid.adaptive.representation": (
+                "representation_restructuring",
+                {"restructure"},
+            ),
+            "euclid.adaptive.analogy": ("analogy", {"analogy"}),
+            "euclid.adaptive.skills": ("skill_composition", {"compose"}),
+            "euclid.adaptive.consolidation": (None, {"consolidate"}),
+        }
+        episode = str(state.problem_id)
+        for component, (ablation_name, phases) in component_evidence.items():
+            if ablation_name is not None and ablation_name in ablated:
+                continue
+            evidence = [item for item in transitions if item.phase in phases]
+            if not evidence:
+                continue
+            current = self.reachability.stage(component)
+            if current is None or current < ReachabilityStage.USED_IN_EPISODE:
+                last = evidence[-1]
+                self.reachability.record(
+                    component,
+                    ReachabilityStage.USED_IN_EPISODE,
+                    episode_id=episode,
+                    evidence_ref=last.digest,
+                    detail={
+                        "derived_from_transition": last.phase,
+                        "sequence": last.sequence,
+                    },
+                )
 
     def solve_task(self, spec: Any, world_executor: Any, *, seed: int = 0) -> Any:
         """Solve an interactive task; every probe and submission is delegated.
@@ -700,24 +764,16 @@ class EuclidRuntime:
         )
         self.rights.grant(self.creator_id, organ_id, capability, "dispatch")
         executor = DelegatorExecutor(self.delegator, organ_id, capability)
-        result = self.adaptive.solve(spec, executor, seed=seed)
-        self.rights.revoke(self.creator_id, organ_id, capability, "dispatch")
+        try:
+            result = self.adaptive.solve(spec, executor, seed=seed)
+        finally:
+            # A solver error, BaseException or cancellation must never leave an
+            # episode-scoped execution right active.
+            self.rights.revoke(self.creator_id, organ_id, capability, "dispatch")
         atomic_write(
             self.state_dir / "adaptive_knowledge.json", self.adaptive.knowledge.to_payload()
         )
-        episode = str(spec.task_id)
-        head = self.evidence.head or "genesis"
-        for component in self.ADAPTIVE_COMPONENTS:
-            current = self.reachability.stage(component)
-            for stage in (
-                ReachabilityStage.USED_IN_EPISODE, ReachabilityStage.EXECUTED,
-                ReachabilityStage.OUTCOME_OBSERVED, ReachabilityStage.FEEDBACK_CLOSED,
-                ReachabilityStage.PERSISTED,
-            ):
-                if current is None or stage > current:
-                    self.reachability.record(component, stage, episode_id=episode,
-                                             evidence_ref=head)
-                    current = stage
+        self._record_adaptive_component_usage(result)
         self.reachability.save(self.state_dir / "cognition_reachability.json")
         return result
 
