@@ -50,9 +50,10 @@ dev = [
 Homepage = "https://github.com/QuantumPhiRedux/PhiMiner"
 
 [tool.setuptools]
-# chronus is an implicit namespace package (no __init__ at its root in the
-# published wheel is intentional: the monorepo's chronus/__init__.py is empty);
-# chronos-core ships the v33 Chronos maths subtree only.
+# The wheel ships chronus/__init__.py (PEP 562 lazy exports) plus the v33
+# Chronos maths subtree only; every product-plane attribute the __init__
+# re-exports resolves to a module outside this boundary and fails honestly
+# with ModuleNotFoundError on access.
 include-package-data = false
 
 [tool.setuptools.packages.find]
