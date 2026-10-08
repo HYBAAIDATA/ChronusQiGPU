@@ -30,6 +30,7 @@ from .models import (
 from .file_registry import FILE_REGISTRY_SCHEMA
 from .theseus_registry import TheseusFileRegistry
 from .knowledge import KNOWLEDGE_SCHEMA, KnowledgeProjection
+from .ovid_index import OvidDataIndex
 
 
 class NodeKind(StrEnum):
@@ -225,6 +226,48 @@ class OntologyStore:
     """Six-layer attested store. Callers must carry an explicit tenant id."""
 
     SCALE = 1_000_000_000
+    SCHEMA_VERSION = 3
+    MIN_MIGRATABLE_SCHEMA_VERSION = 2
+
+    @classmethod
+    def _preflight_schema(cls, db: sqlite3.Connection) -> int | None:
+        """Reject unknown/future stores before any schema mutation occurs."""
+        tables = {
+            str(row[0])
+            for row in db.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name NOT LIKE 'sqlite_%'"
+            ).fetchall()
+        }
+        if not tables:
+            return None
+        if "metadata" not in tables:
+            raise InvalidRecord(
+                "existing database has no schema_version marker; "
+                "refusing an unversioned in-place migration"
+            )
+        row = db.execute(
+            "SELECT value FROM metadata WHERE key='schema_version'"
+        ).fetchone()
+        if row is None:
+            raise InvalidRecord(
+                "existing database has no schema_version value; refusing migration"
+            )
+        try:
+            version = int(row[0])
+        except (TypeError, ValueError) as exc:
+            raise InvalidRecord("database schema_version is not an integer") from exc
+        if version > cls.SCHEMA_VERSION:
+            raise InvalidRecord(
+                f"database schema {version} is newer than supported "
+                f"{cls.SCHEMA_VERSION}; refusing downgrade"
+            )
+        if version < cls.MIN_MIGRATABLE_SCHEMA_VERSION:
+            raise InvalidRecord(
+                f"database schema {version} is older than the supported migration "
+                f"floor {cls.MIN_MIGRATABLE_SCHEMA_VERSION}"
+            )
+        return version
 
     def __init__(self, path: str | Path, integrity_key: bytes, *, custody: Any | None = None):
         if len(integrity_key) < 32:
@@ -233,16 +276,24 @@ class OntologyStore:
         self._lock = threading.RLock()
         self._db = sqlite3.connect(str(path), isolation_level=None, check_same_thread=False)
         self._db.row_factory = sqlite3.Row
-        self._db.execute("PRAGMA foreign_keys=ON")
-        self._db.execute("PRAGMA journal_mode=WAL")
-        self._db.execute("PRAGMA synchronous=FULL")
-        self._db.executescript(_SCHEMA)
-        # The schema marker is promoted only after the v3 migration/projection
-        # constructors complete. A failed legacy provenance migration therefore
-        # cannot advertise a schema version the database did not finish.
-        self.files = TheseusFileRegistry(self, custody=custody)
-        self.knowledge = KnowledgeProjection(self, custody=custody)
-        self._db.execute("INSERT OR REPLACE INTO metadata VALUES('schema_version','3')")
+        try:
+            self._preflight_schema(self._db)
+            self._db.execute("PRAGMA foreign_keys=ON")
+            self._db.execute("PRAGMA journal_mode=WAL")
+            self._db.execute("PRAGMA synchronous=FULL")
+            self._db.executescript(_SCHEMA)
+            # Promote only after every migration/projection constructor succeeds.
+            self.files = TheseusFileRegistry(self, custody=custody)
+            self.knowledge = KnowledgeProjection(self, custody=custody)
+            self.ovid = OvidDataIndex(self)
+            self._ensure_tenant_manifests()
+            self._db.execute(
+                "INSERT OR REPLACE INTO metadata VALUES('schema_version',?)",
+                (str(self.SCHEMA_VERSION),),
+            )
+        except Exception:
+            self._db.close()
+            raise
 
     def close(self) -> None:
         custody_close = getattr(self.files.custody, "close", None)
@@ -269,6 +320,83 @@ class OntologyStore:
         if not row: raise AccessDenied("unknown or inaccessible tenant")
         return row
 
+    @staticmethod
+    def _tenant_manifest_body(
+        tenant_id: str,
+        namespace: str,
+        max_records: int,
+        max_blob_bytes: int,
+        created_at: str,
+    ) -> dict[str, Any]:
+        return {
+            "schema": "hyba.tenant-projection-manifest/v1",
+            "tenant": {
+                "tenant_id": str(tenant_id),
+                "namespace": str(namespace),
+                "max_records": int(max_records),
+                "max_blob_bytes": int(max_blob_bytes),
+                "created_at": str(created_at),
+            },
+        }
+
+    def _put_tenant_manifest(self, tenant_id: str, body: Mapping[str, Any]) -> str:
+        custody = self.files.custody
+        if custody is None:
+            raise InvalidRecord("THESEUS custody required for durable tenant identity")
+        from aethel.enterprise.records import OperationalRecord
+
+        payload = _json(dict(body)).encode("utf-8")
+        record_id = f"tenant_projection.{tenant_id}"
+        if custody.verify(tenant_id, record_id):
+            existing = custody.open_tenant(tenant_id).get_record(record_id)
+            if (
+                existing.kind != "tenant_projection_manifest"
+                or existing.producer != "theseus"
+                or bytes(existing.payload) != payload
+            ):
+                raise IntegrityFailure(
+                    f"tenant custody manifest conflicts with projection: {tenant_id}"
+                )
+            return record_id
+        record = OperationalRecord(
+            record_id=record_id,
+            producer="theseus",
+            producer_version="hyba-db-projection/1",
+            schema_version=1,
+            kind="tenant_projection_manifest",
+            payload=payload,
+            evidence_state="MEASURED",
+            correlation_ids={"tenant_id": tenant_id},
+        )
+        cid = str(custody.put_record(tenant_id, record))
+        if cid != record_id or not custody.verify(tenant_id, cid):
+            raise IntegrityFailure("THESEUS failed durable tenant-manifest readback")
+        return cid
+
+    def seal_tenant_manifest(self, tenant_id: str) -> str:
+        row = self._tenant(tenant_id)
+        self.verify_attestation(tenant_id, str(row["root_attestation_id"]))
+        body = self._tenant_manifest_body(
+            tenant_id,
+            str(row["namespace"]),
+            int(row["max_records"]),
+            int(row["max_blob_bytes"]),
+            str(row["created_at"]),
+        )
+        return self._put_tenant_manifest(tenant_id, body)
+
+    def _ensure_tenant_manifests(self) -> None:
+        if self.files.custody is None:
+            return
+        tenant_ids = [
+            str(row[0])
+            for row in self._db.execute(
+                "SELECT tenant_id FROM tenants ORDER BY tenant_id"
+            ).fetchall()
+        ]
+        for tenant_id in tenant_ids:
+            self.seal_tenant_manifest(tenant_id)
+
     def _reserve(self, db: sqlite3.Connection, tenant_id: str, records: int, blob_bytes: int, subject: str) -> None:
         row = db.execute("SELECT * FROM tenants WHERE tenant_id=?", (tenant_id,)).fetchone()
         if not row: raise AccessDenied("unknown or inaccessible tenant")
@@ -290,6 +418,17 @@ class OntologyStore:
             node_id = _ident("node",node_material)
             db.execute("INSERT INTO nodes VALUES(?,?,?,?,?,?,?,?)", (tenant_id,node_id,NodeKind.GUARDIAN.value,_json(root_payload),_json(root_betti),None,root.id,created))
             db.execute("UPDATE tenants SET root_attestation_id=?,root_node_id=? WHERE tenant_id=?", (root.id,node_id,tenant_id))
+            if self.files.custody is not None:
+                self._put_tenant_manifest(
+                    tenant_id,
+                    self._tenant_manifest_body(
+                        tenant_id,
+                        namespace,
+                        quota.max_records,
+                        quota.max_blob_bytes,
+                        created,
+                    ),
+                )
         return Client(tenant_id, namespace, quota, root.id, node_id, created)
 
     def get_client(self, tenant_id: str) -> Client:
@@ -660,6 +799,18 @@ class OntologyStore:
         knowledge_ok = bool(knowledge_report.get("passed"))
         if not knowledge_ok:
             errors.extend(str(item) for item in knowledge_report.get("errors", ()))
+        ovid_tenants = tenants
+        for tid in ovid_tenants:
+            try:
+                ovid_report = self.ovid.verify(tid)
+            except Exception as exc:
+                errors.append(f"{tid} OVID index verification: {exc}")
+                continue
+            if not ovid_report.get("passed"):
+                errors.extend(
+                    f"{tid} OVID index: {item}"
+                    for item in ovid_report.get("errors", ())
+                )
         # reconciliation_ok is computed, never assumed: True only when a
         # reconciliation ran against declared storage roots and reported zero
         # unresolved violations. Absent roots mean unreconciled, not healthy.

@@ -247,6 +247,12 @@ CREATE TABLE IF NOT EXISTS mining_lifecycle(
  PRIMARY KEY(tenant_id,record_id)
 );
 CREATE INDEX IF NOT EXISTS idx_file_versions_sha ON file_versions(tenant_id,content_sha256);
+CREATE INDEX IF NOT EXISTS idx_file_objects_owner_domain
+ ON file_objects(tenant_id,semantic_owner,domain);
+CREATE INDEX IF NOT EXISTS idx_file_versions_status
+ ON file_versions(tenant_id,status);
+CREATE INDEX IF NOT EXISTS idx_mining_kind_state
+ ON mining_lifecycle(tenant_id,kind,evidence_state);
 CREATE INDEX IF NOT EXISTS idx_file_links_domain ON file_links(tenant_id,domain_type,domain_id);
 CREATE INDEX IF NOT EXISTS idx_file_events_version ON file_events(tenant_id,file_version_id,sequence);
 CREATE INDEX IF NOT EXISTS idx_mining_kind ON mining_lifecycle(tenant_id,kind);
@@ -1992,6 +1998,13 @@ class FileRegistry:
         schema_version: int = 1,
         provenance: Mapping[str, Any] | None = None,
         links: Sequence[tuple[str, str, str]] = (),
+        ovid_lineage_id: str | None = None,
+        transform_contract: str | None = None,
+        transform_version: int | None = None,
+        exactness: str | None = None,
+        encryption_key_ref: str | None = None,
+        compression: str | None = None,
+        content_encoding: str = "identity",
     ) -> tuple[str, str]:
         """Write through canonical THESEUS placement, then project into SQLite.
 
@@ -2059,6 +2072,13 @@ class FileRegistry:
                 schema_version=schema_version,
                 evidence_state=evidence_state,
                 custody_record_id=custody_record_id,
+                ovid_lineage_id=ovid_lineage_id,
+                transform_contract=transform_contract,
+                transform_version=transform_version,
+                exactness=exactness,
+                encryption_key_ref=encryption_key_ref,
+                compression=compression,
+                content_encoding=content_encoding,
                 provenance=provenance,
             )
             self.bind_storage_address(

@@ -53,6 +53,7 @@ class EuclidRuntime:
         # operation name -> set at register_specialist; the router only ever
         # selects organs that declared the requested operation.
         self._organ_operations: dict[str, frozenset[str]] = {}
+        self._toe: Any | None = None
 
     @classmethod
     def production(
@@ -590,6 +591,19 @@ class EuclidRuntime:
         return {"verified": probe.get("verified", True) is not False,
                 "evidence_ref": self.evidence.head,
                 "observations": {"health": response.get("health")}}
+
+    @property
+    def toe(self) -> Any:
+        """EUCLID's handle on the full TOE capability surface.
+
+        Built on first use; every TOE answer EUCLID consumes is recorded on
+        EUCLID's evidence chain. EUCLID decides when to ask; TOE only answers.
+        """
+        if self._toe is None:
+            from .cognition.toe_capabilities import TOECapabilityAdapter
+
+            self._toe = TOECapabilityAdapter(evidence=self.evidence)
+        return self._toe
 
     def _compose_cognition(self) -> None:
         """Wire canonical implementations once; no parallel state histories."""
