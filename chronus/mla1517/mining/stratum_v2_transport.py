@@ -47,6 +47,15 @@ from .stratum_state import StratumRuntimeState
 SecureChannelFactory = Callable[..., Any]
 
 
+class Sv2NotWritten(Sv2TransportError):
+    """Secure-channel proof that no submit bytes crossed its write boundary.
+
+    Generic transport exceptions are deliberately *not* equivalent to this:
+    once a submit has been handed to an authenticated channel, failure is
+    ambiguous unless the provider can prove a zero-write outcome.
+    """
+
+
 def _positive_float_env(name: str, default: float) -> float:
     raw = os.getenv(name, "").strip()
     if not raw:
@@ -452,8 +461,14 @@ class ProductionStratumV2Client:
         future: asyncio.Future[bool] = loop.create_future()
         self._pending_submissions[sequence] = future
         started = time.monotonic()
-        wrote = False
+        channel_handoff_started = False
+        wire_write_observed = False
         try:
+            # From this call onward delivery is conservative/ambiguous unless
+            # the provider raises Sv2NotWritten. SecureChannel.send owns the
+            # encrypted socket and is therefore the only layer that can prove
+            # a pre-write failure.
+            channel_handoff_started = True
             await self._core.submit_extended(
                 job_id=job_id,
                 nonce=nonce,
@@ -461,17 +476,18 @@ class ProductionStratumV2Client:
                 version=raw.version,
                 extranonce=extranonce,
             )
-            wrote = True
+            wire_write_observed = True
             self._wire_writes += 1
             result = await asyncio.wait_for(future, timeout=self.request_timeout)
         except BaseException as exc:
             self._pending_submissions.pop(sequence, None)
-            if isinstance(exc, asyncio.CancelledError):
-                raise
-            if wrote:
-                self.runtime_state.submission_unknown(str(exc))
-            else:
+            definitely_unwritten = isinstance(exc, Sv2NotWritten)
+            if definitely_unwritten or not channel_handoff_started:
                 self.runtime_state.submission_not_written(str(exc))
+            else:
+                # Includes cancellation and generic channel exceptions: a
+                # partial encrypted frame may already have reached the peer.
+                self.runtime_state.submission_unknown(str(exc))
             self._publish_status()
             raise
         self.runtime_state.submission_finished(result)
@@ -567,6 +583,7 @@ class ProductionStratumV2Client:
 __all__ = [
     "ProductionStratumV2Client",
     "SecureChannelFactory",
+    "Sv2NotWritten",
     "load_secure_channel_factory",
     "normalize_extended_job",
 ]
