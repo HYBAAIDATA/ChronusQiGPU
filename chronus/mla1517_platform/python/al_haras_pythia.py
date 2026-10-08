@@ -20,9 +20,7 @@ for _path in (str(_REPO_ROOT), str(_PY_DIR), str(_TUQC_DIR)):
     if _path not in sys.path:
         sys.path.append(_path)
 
-from al_haras.audit import HashChainAudit
-from al_haras.entitlements import SubscriptionAuthority
-from al_haras.guardian import ALHaras, DEFAULT_ALLOWED_OPERATIONS, GuardianPolicy
+from al_haras.guardian import DEFAULT_ALLOWED_OPERATIONS
 from al_haras.runtime import GuardianAPI, build_guardian
 from al_haras.settings import ALHarasSettings
 
@@ -86,30 +84,19 @@ def _toe_evidence(observation: Mapping[str, Any]) -> Mapping[str, Any]:
 
 @lru_cache(maxsize=1)
 def pythia_guardian_api() -> GuardianAPI:
-    """Build the guardian, degrading to an in-memory audit chain when the
-    platform cannot provide POSIX file locking (e.g. Windows dev hosts).
+    """Build the canonical guardian and require durable audit initialization.
 
-    The degraded mode is explicit in ``public_status`` (``audit_durable``)
-    so operators can see the ledger is volatile rather than durable. Real
-    corruption still fails closed: a malformed existing chain without
-    quarantine enabled raises, and the caller turns it into a 503.
+    Privileged API traffic must never become less governed because durable
+    audit cannot start. Platform, locking or configuration failures propagate
+    to the caller and are surfaced as dependency-unavailable.
     """
     settings = ALHarasSettings.from_env(service="pythia")
-    try:
-        guardian = build_guardian(settings, allowed_operations=_PYTHIA_ALLOWED_OPERATIONS)
-    except RuntimeError:
-        guardian = ALHaras(
-            authority=SubscriptionAuthority(settings.keyring, settings.issuer),
-            policy=GuardianPolicy(
-                version=settings.policy_version,
-                capability=settings.capability,
-                allowed_operations=_PYTHIA_ALLOWED_OPERATIONS,
-                max_payload_bytes=settings.max_payload_bytes,
-                require_intelligence_evidence=settings.require_intelligence_evidence,
-            ),
-            audit=HashChainAudit(),
-            boundary_audit=HashChainAudit(),
-        )
+    guardian = build_guardian(
+        settings,
+        allowed_operations=_PYTHIA_ALLOWED_OPERATIONS,
+    )
+    if guardian.audit.path is None:
+        raise RuntimeError("PYTHIA AL HARAS durable audit is unavailable")
     return GuardianAPI(
         guardian,
         settings,
