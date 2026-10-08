@@ -1,0 +1,84 @@
+{
+  "schema": "salamander.pr134-absorption/v1",
+  "upstream_pr": 134,
+  "upstream_head": "e8da78053c35098884965a7a4c76183042237e4e",
+  "canonical_lane": 143,
+  "previous_canonical_head": "f757db537f51a2e8f0253f207f1fbd62d1fdf3cb",
+  "files": [
+    {
+      "path": "salamander/control_plane.py",
+      "upstream_blob_sha": "a2d892ad64e09fdee17eb3e3d6477c5cd7ec3fe8",
+      "upstream_source_commit": "e8da78053c35098884965a7a4c76183042237e4e"
+    },
+    {
+      "path": "salamander/authority.py",
+      "upstream_blob_sha": "280deabfa1f8ee2c9e2317cd043059a7c056b012",
+      "upstream_source_commit": "e8da78053c35098884965a7a4c76183042237e4e"
+    },
+    {
+      "path": "salamander/models.py",
+      "upstream_blob_sha": "917a2580b8e86fec068445ae99479fdb12414697",
+      "upstream_source_commit": "e8da78053c35098884965a7a4c76183042237e4e"
+    },
+    {
+      "path": "salamander/__init__.py",
+      "upstream_blob_sha": "083a9784e027a7100d5c057b624b19ebd85da25c",
+      "upstream_source_commit": "e8da78053c35098884965a7a4c76183042237e4e"
+    },
+    {
+      "path": "l_hras/config.example.toml",
+      "upstream_blob_sha": "59a8460b11a92f30814bf8e037401f8e501659a6",
+      "upstream_source_commit": "e8da78053c35098884965a7a4c76183042237e4e"
+    },
+    {
+      "path": "l_hras/integration.py",
+      "upstream_blob_sha": "bf8a2b5d72b05aa9b30bfeb017db8b50b9732c81",
+      "upstream_source_commit": "e8da78053c35098884965a7a4c76183042237e4e"
+    },
+    {
+      "path": "l_hras/types.py",
+      "upstream_blob_sha": "d9aec75fdb66b0bc85260af17dd1d65a1e409b63",
+      "upstream_source_commit": "e8da78053c35098884965a7a4c76183042237e4e"
+    },
+    {
+      "path": "l_hras/config.py",
+      "upstream_blob_sha": "a075f911b6d6f7b249b0f6cbc59837e7d03b35ed",
+      "upstream_source_commit": "e8da78053c35098884965a7a4c76183042237e4e"
+    },
+    {
+      "path": "asi/api.py",
+      "upstream_blob_sha": "7e2402e5268dd7b1af70feb6f2d8349fbc0c9f8b",
+      "upstream_source_commit": "e8da78053c35098884965a7a4c76183042237e4e"
+    },
+    {
+      "path": "asi/self_healing.py",
+      "upstream_blob_sha": "42d0932b28adf5dd85e2fc9ef15ff3ed12307b2a",
+      "upstream_source_commit": "e8da78053c35098884965a7a4c76183042237e4e"
+    },
+    {
+      "path": "asi/asi_core.py",
+      "upstream_blob_sha": "3846c540b81649d55efcdae4dd47263b38b68305",
+      "upstream_source_commit": "e8da78053c35098884965a7a4c76183042237e4e"
+    },
+    {
+      "path": "asi/system_optimizer.py",
+      "upstream_blob_sha": "ed21a9cbcf11138a5095bbcf88a9cda1df04e4da",
+      "upstream_source_commit": "e8da78053c35098884965a7a4c76183042237e4e"
+    },
+    {
+      "path": "asi/web_learner.py",
+      "upstream_blob_sha": "dafcc99501bc90058c3cd8c4d22e7cfa130e5796",
+      "upstream_source_commit": "e8da78053c35098884965a7a4c76183042237e4e"
+    },
+    {
+      "path": "salamander/tests/test_agent_f_closure.py",
+      "upstream_blob_sha": "7b79036024f91c106e7c7d50dc8a4d9024c49cfa",
+      "upstream_source_commit": "e8da78053c35098884965a7a4c76183042237e4e"
+    }
+  ],
+  "integration_adjustments": [
+    "Preserve #143 deep-copy and sink-before-memory EvidenceLedger ordering"
+  ],
+  "qualification": "NOT_YET_QUALIFIED",
+  "claim": "Absorption preserves upstream work; it is not a completion verdict."
+}

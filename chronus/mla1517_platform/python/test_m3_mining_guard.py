@@ -85,3 +85,69 @@ def test_guardian_api_failure_is_a_fail_closed_verdict():
     assert verdict["allowed"] is False
     assert verdict["reason"] == "AL_HARAS_UNAVAILABLE:RuntimeError"
     assert verdict["http_status"] == 503
+
+
+
+class _RecoveryRecorder:
+    def __init__(self) -> None:
+        self.persisted = []
+
+    def health(self, *, reconcile):
+        return {"healthy": True}
+
+    def persist_authorization(self, verdict, *, context):
+        self.persisted.append((dict(verdict), dict(context)))
+        return "fv-recovery-1"
+
+
+def test_recovery_authorization_is_guarded_and_custodied_before_dispatch():
+    api = _GuardianAPI()
+    gate = _gate(api)
+    gate.recorder = _RecoveryRecorder()
+    record = SimpleNamespace(
+        recovery_id="recovery:1",
+        origin="self_healing_agent",
+        commands=("RESTART_LANE",),
+        reason="device error",
+    )
+
+    verdict = gate.authorize_recovery(
+        record,
+        "RESTART_LANE",
+        "pythia.mining.runtime",
+    )
+
+    assert verdict["allowed"] is True
+    assert verdict["authorization_evidence_id"] == "guardian-evidence-1"
+    assert verdict["authorization_version_id"] == "fv-recovery-1"
+    assert len(api.calls) == 1
+    call = api.calls[0]
+    assert call["body"]["operation"] == "mining.escalate"
+    assert call["body"]["resource"] == "pythia.mining.runtime"
+    assert call["body"]["payload"]["recovery_id"] == "recovery:1"
+    assert call["body"]["payload"]["command"] == "RESTART_LANE"
+    assert gate.recorder.persisted[0][1]["authority"] == "SALAMANDER"
+
+
+def test_recovery_authorization_refuses_unhealthy_custody_without_guardian_call():
+    api = _GuardianAPI()
+    gate = _gate(api)
+    gate.recorder = SimpleNamespace(
+        health=lambda reconcile: {"healthy": False, "reason": "corrupt"}
+    )
+    record = SimpleNamespace(
+        recovery_id="recovery:2",
+        origin="self_healing_agent",
+        commands=("RESTART_LANE",),
+        reason="device error",
+    )
+
+    verdict = gate.authorize_recovery(
+        record,
+        "RESTART_LANE",
+        "pythia.mining.runtime",
+    )
+
+    assert verdict["allowed"] is False
+    assert verdict["reason"] == "THESEUS_STORAGE_UNHEALTHY"
+    assert api.calls == []

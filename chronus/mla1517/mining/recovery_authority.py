@@ -23,7 +23,7 @@ import uuid
 from collections import deque
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Any, Callable, Deque, Iterable
+from typing import Any, Callable, Deque, Iterable, Mapping
 
 FREEZING_MODES = frozenset({"FREEZE_SPECULATION", "RECOVERING", "PAUSED", "FAULTED"})
 SALAMANDER_MODES = FREEZING_MODES | {"NORMAL", "DE_RATE"}
@@ -58,6 +58,8 @@ class RecoveryRecord:
     unhealthy_observations: int = 0
     closed_at: float | None = None
     failure: str | None = None
+    target: str = "pythia.mining.runtime"
+    authorizations: list[dict[str, Any]] = field(default_factory=list)
 
     @property
     def open(self) -> bool:
@@ -69,6 +71,7 @@ class RecoveryRecord:
             "origin": self.origin,
             "commands": list(self.commands),
             "reason": self.reason,
+            "target": self.target,
             "state": self.state.value,
             "proposed_at": self.proposed_at,
             "dispatched": list(self.dispatched),
@@ -77,6 +80,7 @@ class RecoveryRecord:
             "unhealthy_observations": self.unhealthy_observations,
             "closed_at": self.closed_at,
             "failure": self.failure,
+            "authorizations": [dict(item) for item in self.authorizations],
         }
 
 
@@ -89,13 +93,25 @@ class RecoveryGovernor:
         history: int = 64,
         clock: Callable[[], float] = time.monotonic,
         on_event: Callable[[str, RecoveryRecord], None] | None = None,
+        recovery_authorizer: Callable[
+            [RecoveryRecord, str, str], Mapping[str, Any]
+        ] | None = None,
+        require_authorization: bool = False,
+        recovery_target: str = "pythia.mining.runtime",
     ) -> None:
         if fail_after <= 0 or salamander_ttl_s <= 0:
             raise ValueError("governor bounds must be positive")
+        if require_authorization and not callable(recovery_authorizer):
+            raise ValueError("required recovery authorization has no authorizer")
+        if not str(recovery_target).strip():
+            raise ValueError("recovery target is required")
         self._fail_after = fail_after
         self._ttl = salamander_ttl_s
         self._clock = clock
         self._on_event = on_event
+        self._recovery_authorizer = recovery_authorizer
+        self._require_authorization = bool(require_authorization)
+        self._recovery_target = str(recovery_target).strip()
         self._records: dict[str, RecoveryRecord] = {}
         self._closed: Deque[RecoveryRecord] = deque(maxlen=history)
         self._external_mode = "NORMAL"
@@ -117,7 +133,13 @@ class RecoveryGovernor:
         if mode in FREEZING_MODES and recovery_id:
             record = self._records.get(recovery_id)
             if record is None:
-                record = RecoveryRecord(recovery_id, "salamander", (mode,), "supervisor report")
+                record = RecoveryRecord(
+                    recovery_id,
+                    "salamander",
+                    (mode,),
+                    "supervisor report",
+                    target=self._recovery_target,
+                )
                 record.state = RecoveryState.DISPATCHED
                 self._records[recovery_id] = record
                 self._emit("recovery_external", record)
@@ -155,7 +177,11 @@ class RecoveryGovernor:
         if not actionable:
             return None
         record = RecoveryRecord(
-            f"recovery:{uuid.uuid4()}", "self_healing_agent", actionable, reason
+            f"recovery:{uuid.uuid4()}",
+            "self_healing_agent",
+            actionable,
+            reason,
+            target=self._recovery_target,
         )
         self._records[record.recovery_id] = record
         self._emit("recovery_proposed", record)
@@ -164,6 +190,41 @@ class RecoveryGovernor:
     def defers(self, command: str) -> bool:
         """Lane-mask writes belong to Salamander while it is alive."""
         return command in LANE_MASK_COMMANDS and self.salamander_alive()
+
+    def _authorize_dispatch(self, record: RecoveryRecord, command: str) -> None:
+        """Require a bound AL HARAS decision before a real recovery side effect."""
+        if self._recovery_authorizer is None:
+            if self._require_authorization:
+                raise PermissionError("AL HARAS recovery authorization unavailable")
+            return
+        try:
+            verdict = dict(
+                self._recovery_authorizer(record, str(command), str(record.target))
+            )
+        except Exception as exc:
+            raise PermissionError(
+                f"AL HARAS recovery authorization unavailable:{type(exc).__name__}"
+            ) from exc
+        evidence_id = (
+            verdict.get("authorization_evidence_id")
+            or verdict.get("evidence_id")
+        )
+        record.authorizations.append(
+            {
+                "command": str(command),
+                "target": str(record.target),
+                "allowed": verdict.get("allowed") is True,
+                "reason": verdict.get("reason"),
+                "evidence_id": evidence_id,
+                "version_id": verdict.get("authorization_version_id"),
+                "policy_version": verdict.get("policy_version"),
+            }
+        )
+        if verdict.get("allowed") is not True:
+            reason = str(verdict.get("reason") or "AL_HARAS_DENIED")
+            raise PermissionError(f"AL HARAS recovery authorization denied:{reason}")
+        if self._require_authorization and not evidence_id:
+            raise PermissionError("AL HARAS recovery authorization has no evidence identity")
 
     def dispatch(
         self,
@@ -180,6 +241,7 @@ class RecoveryGovernor:
                 record.deferred.append(command)
                 continue
             try:
+                self._authorize_dispatch(record, command)
                 routed = action()
             except Exception as exc:
                 record.failure = f"{command}: {exc}"

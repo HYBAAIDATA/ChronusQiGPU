@@ -310,6 +310,13 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self.backend_registry = kwargs.pop("backend_registry", None)
         causal_log_path = kwargs.pop("causal_log_path", None)
         production_integration = kwargs.pop("production_integration", None)
+        recovery_authorizer = kwargs.pop("recovery_authorizer", None)
+        require_recovery_authorization = bool(
+            kwargs.pop("require_recovery_authorization", False)
+        )
+        recovery_target = kwargs.pop(
+            "recovery_target", "pythia.mining.runtime"
+        )
         super().__init__(*args, **kwargs)
         # A started worker hashes; whether it may submit is a separate,
         # live question (submission_permitted). Unapproved, it mines in
@@ -436,7 +443,12 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         # Durable decision evidence: the full field contract from the run
         # spec, mirrored into the same causal trail.
         self.decisions = DecisionJournal(on_record=self._mirror_decision)
-        self.recovery = RecoveryGovernor(on_event=self._on_recovery_event)
+        self.recovery = RecoveryGovernor(
+            on_event=self._on_recovery_event,
+            recovery_authorizer=recovery_authorizer,
+            require_authorization=require_recovery_authorization,
+            recovery_target=recovery_target,
+        )
         self.production_integration = (
             production_integration
             if production_integration is not None

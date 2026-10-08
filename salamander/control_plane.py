@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import copy
 import time
+import threading
 from collections import defaultdict, deque
 from dataclasses import asdict, dataclass
 from typing import Any, Callable, Iterable, Mapping
@@ -82,14 +83,14 @@ class EvidenceLedger:
             "kind": kind,
             "at_ns": int(at_ns),
             "previous_sha256": self._head,
-            "payload": dict(payload),
+            "payload": copy.deepcopy(dict(payload)),
         }
         seal = digest("salamander.autonomic.evidence.v1", body)
         record = {**body, "evidence_sha256": seal}
-        self._records.append(record)
-        self._head = seal
         if self._sink is not None:
             self._sink(copy.deepcopy(record))
+        self._records.append(record)
+        self._head = seal
         return seal
 
     def verify(self) -> bool:
@@ -130,7 +131,8 @@ class EvidenceLedger:
         ledger = cls(sink=sink)
         ledger._records = copy.deepcopy(list(body["records"] or ()))
         ledger._head = str(body["head"])
-        ledger.verify()
+        if not ledger.verify():
+            raise FailClosed("autonomic evidence checkpoint head mismatch")
         return ledger
 
 
@@ -232,6 +234,7 @@ class ActionRegistry:
     """Bounded actuators paired with independent postcondition verifiers."""
 
     def __init__(self) -> None:
+        self._authorizer = None
         self._handlers: dict[
             str,
             tuple[
@@ -260,7 +263,21 @@ class ActionRegistry:
             raise ValueError("handler must have explicit action kinds")
         self._handlers[name] = (allowed, handler, verifier_id, verifier)
 
-    def execute(self, request: ActionRequest) -> Mapping[str, Any]:
+    def bind_authorizer(self, authorizer: Any) -> None:
+        from .authority import ALHarasActionAuthorizer
+        if not isinstance(authorizer, ALHarasActionAuthorizer):
+            raise FailClosed("registry requires canonical AL HARAS authorizer")
+        if self._authorizer is not None and self._authorizer is not authorizer:
+            raise FailClosed("registry already belongs to another authorisation boundary")
+        self._authorizer = authorizer
+
+    def execute(
+        self, request: ActionRequest, *, authorization: Mapping[str, Any] | None = None,
+    ) -> Mapping[str, Any]:
+        if self._authorizer is None or authorization is None:
+            raise FailClosed("registry actuation requires bound AL HARAS authorization")
+        if not self._authorizer.consume_decision(request, authorization):
+            raise FailClosed("registry authorization is expired, forged or unbound")
         registered = self._handlers.get(request.handler)
         if registered is None:
             raise FailClosed("unregistered action handler")
@@ -355,13 +372,18 @@ class AutonomicControlPlane:
         self.registry = registry
         self.ledger = ledger or EvidenceLedger()
         self.clock_ns = clock_ns
+        if type(max_recoveries_per_target) is not int or max_recoveries_per_target <= 0:
+            raise ValueError("positive recovery budget required")
         self.max_recoveries_per_target = max_recoveries_per_target
         self.health = HealthEnvelope()
         self.capabilities: dict[CapabilityIdentity, CapabilityState] = {}
         self.circuits: dict[str, CircuitBreaker] = {}
         self.events: deque[AutonomicEvent] = deque(maxlen=2048)
-        self._recoveries: dict[str, int] = defaultdict(int)
-        self._idempotency: dict[str, ActionResult] = {}
+        self._recoveries: dict[tuple[str, str], int] = defaultdict(int)
+        self._idempotency: dict[tuple[str, str, str], ActionResult] = {}
+        self._request_fingerprints: dict[tuple[str, str, str], str] = {}
+        self._in_doubt: set[tuple[str, str, str]] = set()
+        self._execution_lock = threading.RLock()
         self._tenant_capacity: dict[str, int] = {}
         self._tenant_inflight: dict[str, int] = defaultdict(int)
         self._policies: dict[str, PolicyVersion] = {}
@@ -526,10 +548,22 @@ class AutonomicControlPlane:
 
     # ------------------------------------------------------------ actuation
     def execute(self, request: ActionRequest) -> ActionResult:
-        if not request.idempotency_key:
-            raise FailClosed("action idempotency key required")
-        if request.idempotency_key in self._idempotency:
-            return self._idempotency[request.idempotency_key]
+        # Serialize admission, durable reservation, actuator and verifier. A
+        # second thread cannot race past an idempotency/circuit budget gate.
+        with self._execution_lock:
+            return self._execute_locked(copy.deepcopy(request))
+
+    def _execute_locked(self, request: ActionRequest) -> ActionResult:
+        if not request.idempotency_key or not request.action_id:
+            raise FailClosed("action identity and idempotency key required")
+        key = self._action_key(request)
+        fingerprint = digest("salamander.action-request.v1", asdict(request))
+        if key in self._request_fingerprints and self._request_fingerprints[key] != fingerprint:
+            raise FailClosed("idempotency key reused for different request")
+        if key in self._in_doubt:
+            raise FailClosed("prior action outcome is uncertain; owner reconciliation required")
+        if key in self._idempotency:
+            return self._idempotency[key]
         now = self.clock_ns()
         authorization = self._authorize(request)
         authorization_ref = self.ledger.append(
@@ -565,7 +599,7 @@ class AutonomicControlPlane:
             at_ns=now,
         )
         try:
-            response = self.registry.execute(request)
+            response = self.registry.execute(request, authorization=authorization)
             execution_ref = self.ledger.append(
                 "action-result-payload", response, at_ns=self.clock_ns()
             )
@@ -591,11 +625,13 @@ class AutonomicControlPlane:
                 verification.error,
             )
             circuit.record(verified, self.clock_ns())
+            self._record_circuit(circuit_key, circuit)
         except FailClosed as exc:
             # A structural contract violation (unregistered handler, wrong
             # action kind) is not an execution outcome: it must propagate
             # fail-closed rather than degrade into a FAILED result record.
             circuit.record(False, self.clock_ns())
+            self._record_circuit(circuit_key, circuit)
             self.ledger.append(
                 "action-rejected",
                 {"action_id": request.action_id, "reason": str(exc)},
@@ -604,12 +640,16 @@ class AutonomicControlPlane:
             raise
         except Exception as exc:
             circuit.record(False, self.clock_ns())
+            self._record_circuit(circuit_key, circuit)
             result = ActionResult(
                 request.action_id, "FAILED", now, self.clock_ns(), request.handler,
                 before, None, False, f"{type(exc).__name__}: {exc}",
             )
-        self._idempotency[request.idempotency_key] = result
-        self.ledger.append("action-result", asdict(result), at_ns=result.completed_at_ns)
+        self.ledger.append("action-result", {
+            "result": asdict(result), "request_key": list(key),
+        }, at_ns=result.completed_at_ns)
+        self._idempotency[key] = result
+        self._in_doubt.discard(key)
         return result
 
     def recover(self, plan: RecoveryPlan) -> tuple[ActionResult, ...]:
@@ -624,7 +664,12 @@ class AutonomicControlPlane:
         """
         if self.clock_ns() > plan.deadline_ns:
             raise FailClosed("recovery deadline elapsed")
-        if self._recoveries[plan.target] >= self.max_recoveries_per_target:
+        key = (plan.tenant_id, plan.target)
+        if self._recoveries[key] >= self.max_recoveries_per_target:
+            self.ledger.append("recovery-escalated", {
+                "tenant_id": plan.tenant_id, "target": plan.target,
+                "recovery_id": plan.recovery_id, "reason": "recovery budget exhausted",
+            }, at_ns=self.clock_ns())
             raise FailClosed("recovery budget exhausted")
         ordered = plan.ordered()
         self._recoveries[plan.target] += 1
