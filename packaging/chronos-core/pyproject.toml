@@ -22,7 +22,7 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
+
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -47,7 +47,7 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/QuantumPhi2/PhiMiner"
+Homepage = "https://github.com/QuantumPhiRedux/PhiMiner"
 
 [tool.setuptools]
 # chronus is an implicit namespace package (no __init__ at its root in the
