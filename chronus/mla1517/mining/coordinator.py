@@ -638,7 +638,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         submission_phase = getattr(runtime, "submission_phase", None)
         mining_active = bool(
             self.mining_enabled
-            and self.session.state == "SEARCHING"
+            and self._search_lifecycle_open()
             and not self.work_throttled
             and self.recovery.mode in ("NORMAL",)
             and identity is not None
@@ -1050,6 +1050,12 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     "span_s": hashing["span_s"],
                     "shares_accepted": hashing["shares_accepted"],
                     "executions_total": hashing["executions_total"],
+                    "submission_queue_depth": self._submission_queue.qsize(),
+                    "submission_queue_capacity": self._submission_queue.maxsize,
+                    "submission_in_flight": int(self._submission_in_flight),
+                    "submission_stale_dropped": self._submission_queue_stale,
+                    "submission_unknown": self._submission_queue_unknown,
+                    "submission_resolved": self._submission_queue_resolved,
                     "backend": str(getattr(self.execution_hasher, "backend", "unknown")),
                 }
             )
@@ -1110,7 +1116,10 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 "share_log_tail": self.session.share_log[-8:],
             },
             "causal_tail": self.causal.snapshot(24),
-            "submission": "live" if self.submission_permitted() else "shadow",
+            "submission": {
+                "mode": "live" if self.submission_permitted() else "shadow",
+                "pipeline": self.submission_pipeline_snapshot(),
+            },
             "intelligence": self.intelligence_snapshot(),
             "dispatch_algebra": (
                 {**self.last_dispatch_algebra, "counts": dict(self._dispatch_counts)}
@@ -1155,9 +1164,18 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 "device_error_streak": self._device_error_streak,
             },
             "submitter": {
-                "concurrency": "after_executor_recheck",
+                "concurrency": (
+                    "independent_asyncio_task"
+                    if self._asynchronous_submission
+                    else "inline_after_executor_recheck"
+                ),
+                "running": bool(
+                    self._submission_task is not None
+                    and not self._submission_task.done()
+                ),
                 "mode": "live" if self.submission_permitted() else "shadow",
                 "session_state": self.session.state,
+                **self.submission_pipeline_snapshot(),
             },
             "salamander": {
                 "concurrency": "external_supervisor_and_in_process_governor",
