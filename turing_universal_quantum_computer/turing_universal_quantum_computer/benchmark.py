@@ -168,14 +168,26 @@ def bench_certificates(quick: bool) -> Dict[str, Any]:
 
 
 def bench_pipeline_custody_replay(quick: bool) -> Dict[str, Any]:
+    from .custody import theseus_available
     from .pipeline import VQCPipeline, VQCRequest
 
+    available = theseus_available()
     rows = []
     for label, program in (("bell_t_dense", _ghz(2, ("t", 0))), ("ghz_t_200_mps", _ghz(200, ("t", 0)))):
         pipeline = VQCPipeline()
         request = VQCRequest(program=program, marginal_of=(0, program.n_qubits - 1), custody=True, replay=True)
         report = pipeline.run(request)
         stages = {s.stage: s.state for s in report.stages}
+        if not available:
+            # Custody is honestly degraded on this host: the run must never
+            # report PASS custody evidence it did not produce. Record the
+            # observed degradation and skip the tamper-injection leg, which
+            # needs a live THESEUS adapter.
+            rows.append({"program": label, "verdict": report.verdict,
+                         "backend": report.result.get("backend"),
+                         "custody": stages.get("custody"), "replay": stages.get("replay"),
+                         "substituted_payload_rejected": None})
+            continue
         tampered = dict(report.result)
         payload = dict(tampered["payload"])
         payload["substituted_after_execution"] = True
@@ -186,6 +198,11 @@ def bench_pipeline_custody_replay(quick: bool) -> Dict[str, Any]:
         rows.append({"program": label, "verdict": report.verdict, "backend": report.result.get("backend"),
                      "custody": stages.get("custody"), "replay": stages.get("replay"),
                      "substituted_payload_rejected": state == "FAIL"})
+    if not available:
+        honest = all(r["verdict"] != "PASS" and r["custody"] != "PASS" for r in rows)
+        return {"passed": None if honest else False,
+                "result": {"rows": rows,
+                           "reason": "theseus custody unavailable on this host; degradation honesty verified"}}
     ok = all(r["verdict"] == "PASS" and r["replay"] == "PASS" and r["substituted_payload_rejected"] for r in rows)
     return {"passed": ok, "result": {"rows": rows}}
 
@@ -350,6 +367,7 @@ def bench_dense_throughput(quick: bool) -> Dict[str, Any]:
 
 
 def bench_ten_thousand_qubit_vqc_voyage(quick: bool) -> Dict[str, Any]:
+    from .custody import theseus_available
     from .pipeline import VQCPipeline, VQCRequest
 
     n = 1000 if quick else 10_000
@@ -360,11 +378,22 @@ def bench_ten_thousand_qubit_vqc_voyage(quick: bool) -> Dict[str, Any]:
     stages = {s.stage: s.state for s in report.stages}
     payload = (report.result or {}).get("payload", {})
     marginal = payload.get("marginal", {}).get("probabilities")
-    passed = (report.verdict == "PASS" and stages.get("replay") == "PASS"
-              and marginal == {"00": "1/2", "11": "1/2"} and payload.get("max_bond") == 2)
+    computation_ok = (marginal == {"00": "1/2", "11": "1/2"} and payload.get("max_bond") == 2
+                      and stages.get("execution") == "PASS" and stages.get("verification") == "PASS")
+    if theseus_available():
+        passed = (report.verdict == "PASS" and stages.get("replay") == "PASS"
+                  and computation_ok)
+        custody_reason = None
+    else:
+        # THESEUS custody is unavailable on this host: the voyage still proves
+        # execution, measurement and verification, but the durability leg is
+        # incomplete rather than failed.
+        passed = None if computation_ok else False
+        custody_reason = "theseus custody unavailable; durability leg not exercised"
     return {
         "passed": passed,
         "result": {"qubits": n, "gates": len(program.operations), "verdict": report.verdict,
+                   "custody_leg": custody_reason,
                    "backend": (report.result or {}).get("backend"), "stages": stages,
                    "marginal": marginal, "max_bond": payload.get("max_bond"),
                    "norm_squared": payload.get("norm_squared"), "elapsed_ns": elapsed,
