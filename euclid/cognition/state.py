@@ -81,6 +81,8 @@ class AnalogyStatus(str, Enum):
     CANDIDATE = "candidate"
     ADOPTED = "adopted"
     REJECTED = "rejected"
+    #: adopted, then contradicted by observed evidence and withdrawn
+    ABANDONED = "abandoned"
 
 
 class MemoryKind(str, Enum):
@@ -213,6 +215,16 @@ class CandidateAction:
     scores: Mapping[str, float] = field(default_factory=dict)
     total: float | None = None
     weights_used: Mapping[str, float] = field(default_factory=dict)
+    #: executable content handed to the governed executor (e.g. a program)
+    payload: Mapping[str, Any] = field(default_factory=dict)
+
+
+def _candidate_body(candidate: CandidateAction) -> dict[str, Any]:
+    body = asdict(candidate)
+    if not body.get("payload"):
+        # legacy candidates serialise exactly as before
+        body.pop("payload", None)
+    return body
 
 
 @dataclass(frozen=True)
@@ -256,6 +268,18 @@ class CognitiveState:
         self.learning_updates: list[Mapping[str, Any]] = []
         self.control_decisions: list[Mapping[str, Any]] = []
         self.ablations: list[str] = []
+        #: per execution: what the system predicted before acting
+        self.expected_outcomes: list[Mapping[str, Any]] = []
+        #: per execution: what the governed executor reported
+        self.actual_outcomes: list[Mapping[str, Any]] = []
+        #: assumptions the causal model is currently relying on
+        self.causal_assumptions: list[Mapping[str, Any]] = []
+        #: measured uncertainty after each evidence event
+        self.uncertainty_trace: list[Mapping[str, Any]] = []
+        #: every strategy selection or change with its basis
+        self.strategy_history: list[Mapping[str, Any]] = []
+        #: skills/primitives that contributed to executed candidates
+        self.selected_skills: list[Mapping[str, Any]] = []
         self.outcome: Outcome | None = None
         self.outcome_detail: str = ""
         self._transitions: list[TransitionRecord] = []
@@ -335,12 +359,18 @@ class CognitiveState:
             "alternative_strategies": list(self.alternative_strategies),
             "predictions": [asdict(p) for p in self.predictions],
             "plan": [asdict(n) for n in self.plan],
-            "candidates": [asdict(c) for c in self.candidates],
+            "candidates": [_candidate_body(c) for c in self.candidates],
             "prediction_errors": list(self.prediction_errors),
             "replanning_events": [dict(e) for e in self.replanning_events],
             "learning_updates": [dict(u) for u in self.learning_updates],
             "control_decisions": [dict(d) for d in self.control_decisions],
             "ablations": list(self.ablations),
+            "expected_outcomes": [dict(e) for e in self.expected_outcomes],
+            "actual_outcomes": [dict(e) for e in self.actual_outcomes],
+            "causal_assumptions": [dict(e) for e in self.causal_assumptions],
+            "uncertainty_trace": [dict(e) for e in self.uncertainty_trace],
+            "strategy_history": [dict(e) for e in self.strategy_history],
+            "selected_skills": [dict(e) for e in self.selected_skills],
             "outcome": self.outcome.value if self.outcome else None,
             "outcome_detail": self.outcome_detail,
             "transitions": [asdict(t) for t in self._transitions],
@@ -390,6 +420,11 @@ class CognitiveState:
         state.learning_updates = list(body["learning_updates"] or [])
         state.control_decisions = list(body["control_decisions"] or [])
         state.ablations = list(body["ablations"] or [])
+        for name in (
+            "expected_outcomes", "actual_outcomes", "causal_assumptions",
+            "uncertainty_trace", "strategy_history", "selected_skills",
+        ):
+            setattr(state, name, list(body.get(name) or []))
         state.outcome = Outcome(body["outcome"]) if body["outcome"] else None
         state.outcome_detail = str(body["outcome_detail"] or "")
         state._transitions = [TransitionRecord(**t) for t in body["transitions"] or []]

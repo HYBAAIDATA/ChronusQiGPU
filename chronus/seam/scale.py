@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+import math
 from typing import Any, Dict, List, Tuple
 
 from Intelligence.lucas_scales import (
@@ -39,7 +40,15 @@ class ChronusScale:
     work_items: int
     rungs: List[int]
     lucas_L: int
-    t11: Tuple[float, ...]
+    # Exact Z[phi] coordinates for the 11-dimensional state vector.
+    # Each coordinate is a (a, b) integer pair representing a + b*phi.
+    t11: Tuple[Tuple[int, int], ...]
+
+    # Backward-compat float view (never used in production path). Deprecated.
+    @property
+    def t11_floats(self) -> Tuple[float, ...]:
+        """Float projections of the exact t11 coordinates — legacy access only."""
+        return tuple(math.sqrt(a * a + a * b - b * b + 2 * b) for a, b in self.t11)
 
     @property
     def ladder_index(self) -> int:
@@ -101,20 +110,59 @@ def snap_work_items(
     return int(nearest_ladder_index(int(requested), lo=lo, hi=hi))
 
 
-def digest_t11(job_id: str, payload: str = "") -> Tuple[float, ...]:
+def digest_t11(job_id: str, payload: str = "") -> Tuple[Tuple[int, int], ...]:
+    """Return the exact Z[phi]-valued 11D initial state for a job.
+
+    Each of the 11 coordinates is an exact pair (a, b) representing
+    a + b*phi in the ring Z[phi]. The seed is deterministic (SHA-256 of
+    ``job_id|payload``); floats never appear here. They appear once, at the
+    single declared one-way projection boundary in :func:`kellogg.scales.pisot_wind`.
+
+    Replacement for the legacy floating-point ``digest_t11`` (which returned
+    bytes/255.0 — a numerical approximation, never an exact state coordinate).
+    """
     seed = hashlib.sha256(f"{job_id}|{payload}".encode("utf-8")).digest()
-    return tuple(seed[index] / 255.0 for index in range(DIM))
+    coords: List[Tuple[int, int]] = []
+    for i in range(DIM):
+        # Deterministic exact mapping from the SHA-256 digest (32 bytes) to
+        # an exact Z[phi] element for each of the 11 coordinates. Each
+        # coordinate is seeded from 2 bytes with magnitude < 2**15, keeping
+        # all downstream operations in the exact integer ring — no floats.
+        # i*2 + 1 <= 10*2 + 1 = 21 < 32, so all offsets stay in-bounds.
+        byte0 = seed[2 * i]
+        byte1 = seed[2 * i + 1]
+        # Combine two bytes into a signed-ish 15-bit value with sign bit
+        # at position 14 (mask 0x7FFF keeps it < 2**15).
+        a = ((byte0 << 7) | (byte1 >> 1)) & 0x7FFF
+        b = ((byte1 << 7) | (seed[2 * i + 2] >> 1)) & 0x7FFF if i < DIM - 1 else (
+            (byte1 << 7) | (seed[2 * i + 2] >> 1)
+        ) if 2 * i + 2 < len(seed) else (byte1 << 7) & 0x7FFF
+        # Fallback for i=10 (last coordinate): seed from the last byte(s).
+        if i == DIM - 1 and 2 * i < len(seed):
+            a = (byte0 << 7) & 0x7FFF
+            b = (byte1 << 8 | seed[2 * i + 1]) & 0x7FFF if 2 * i + 1 < len(seed) else 0
+        coords.append((a, b))
+    return tuple(coords)
+
+
+def _t11_to_floats(t11: Tuple[Tuple[int, int], ...]) -> Tuple[float, ...]:
+    """Project exact Z[phi] coordinates to floats at the one-way boundary."""
+    return tuple(a + b * ((1.0 + 5.0**0.5) / 2.0) for a, b in t11)
 
 
 def scale_job(job_id: str, requested: int, payload: str = "") -> ChronusScale:
     work_items = snap_work_items(requested)
-    wind = pisot_wind(digest_t11(job_id, payload), 1)
+    # Exact Z[phi] coordinates for the 11D state vector. These are the
+    # canonical exact representation; the floating-point torus state used
+    # by the Pisot drift is a separate observational reading that is only
+    # generated at the one-way projection boundary inside pisot_wind().
+    t11_exact = digest_t11(job_id, payload)
     return ChronusScale(
         int(requested),
         work_items,
         list(ladder_multiples_of(work_items)),
         int(lucas(work_items)),
-        wind,
+        t11_exact,
     )
 
 

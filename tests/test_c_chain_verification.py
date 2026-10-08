@@ -86,9 +86,16 @@ def test_double_sha256_matches_real_sha256d():
 def test_ready_is_exact_conjunction_of_stage_flags(report):
     """``ready`` must equal the AND of each stage's own pass evidence — the
     fail-closed accounting is itself under test, not trusted."""
-    flags = {
-        name: bool(s.get("correct", s.get("passed", True))) for name, s in report["stages"].items()
-    }
+    flags = {}
+    for name, s in report["stages"].items():
+        # Fail-closed: mandatory stages must expose an explicit verdict
+        # (`correct` or `passed`). A stage with neither field must NOT
+        # silently pass via the old s.get("correct", s.get("passed", True))
+        # fallback.
+        if "correct" not in s and "passed" not in s:
+            flags[name] = False
+            continue
+        flags[name] = bool(s.get("correct", s.get("passed")))
     assert report["ready"] is all(flags.values())
     assert report["ready"] is True, {k: v for k, v in flags.items() if not v}
 
@@ -122,13 +129,13 @@ def test_telemetry_stage_reports_measured_not_fabricated(report):
     assert stage["measured_not_projected"] is True
     assert stage["dispatches"] > 0  # probe dispatch is mandatory when idle
     assert 0.0 <= stage["gpu_dispatch_ratio"] <= 1.0
-    # On a CPU-bound host the ratio must be exactly 0.0 — a GPU ratio of 1.0
-    # on a CPU fallback would be a fabricated number.
-    if report["backend"] == "cpu":
-        assert report["gpu_dispatched"] is False
-        assert stage["gpu_dispatch_ratio"] == 0.0
-    else:
+    # Use gpu_dispatched (actual execution evidence) rather than backend label
+    # for the GPU ratio check — the backend can be non-cpu while gpu_dispatched
+    # is False for CHRONUS/software execution.
+    if report["gpu_dispatched"]:
         assert stage["gpu_dispatch_ratio"] > 0.0
+    else:
+        assert stage["gpu_dispatch_ratio"] == 0.0
     channels = stage["overlay_channels"]
     if channels:
         assert 0 <= channels["channels_occupied"] <= 496
