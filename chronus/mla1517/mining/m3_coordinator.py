@@ -40,6 +40,16 @@ class M3PythiaProductionMiningCoordinator(PythiaProductionMiningCoordinator):
         self._last_m3_gate: dict[str, Any] | None = None
         self._last_m3_lease_gate: dict[str, Any] | None = None
         self._m3_authorized_identity_key: Any | None = None
+        if self._m3_required:
+            if self._m3_gate is None:
+                kwargs["require_recovery_authorization"] = True
+            else:
+                kwargs.setdefault(
+                    "recovery_authorizer",
+                    self._m3_gate.authorize_recovery,
+                )
+                kwargs.setdefault("require_recovery_authorization", True)
+                kwargs.setdefault("recovery_target", "pythia.mining.runtime")
         super().__init__(*args, **kwargs)
 
     def m3_status(self) -> dict[str, Any]:
