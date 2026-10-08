@@ -1,0 +1,48 @@
+name: EUCLID v17 production integration
+
+on:
+  pull_request:
+    paths:
+      - "euclid/**"
+      - "Intelligence/**"
+      - "aethel/**"
+      - "tests/test_euclid_v17_*.py"
+      - "config/euclid-v17-integration-gates.json"
+      - "scripts/euclid_v17_integration_gate.py"
+      - "docs/EUCLID_V17_*.md"
+      - ".github/workflows/euclid-v17-integration.yml"
+  push:
+    branches: [main]
+    paths:
+      - "euclid/**"
+      - "Intelligence/**"
+      - "aethel/**"
+      - "tests/test_euclid_v17_*.py"
+      - "config/euclid-v17-integration-gates.json"
+      - "scripts/euclid_v17_integration_gate.py"
+      - "docs/EUCLID_V17_*.md"
+      - ".github/workflows/euclid-v17-integration.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  integration-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install canonical runtime
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ./turing_universal_quantum_computer
+          python -m pip install -e ".[dev]"
+      - name: Source and claim-boundary gate
+        run: python scripts/euclid_v17_integration_gate.py
+      - name: Production integration tests
+        run: python -m pytest -q tests/test_euclid_v17_production_integration.py
