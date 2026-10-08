@@ -9,7 +9,10 @@ import logging
 from dataclasses import dataclass
 
 import numpy as np
-from scipy.optimize import minimize
+
+from agi.quantum_decision import grover_amplify
+from kellogg.quantum_tensor import Complex
+from kellogg.quantum_tensor import QuantumState as _SubstrateState
 
 logger = logging.getLogger(__name__)
 
@@ -108,17 +111,32 @@ class QuantumMathematics:
         amplitude = self.calculate_probability_amplitude(state, basis_state)
         return abs(amplitude) ** 2
 
-    def measure_state(self, state: QuantumState) -> tuple[int, float]:
-        """Perform quantum measurement and return basis state and probability"""
+    def measure_state(
+        self, state: QuantumState, random_seed: float | None = None
+    ) -> tuple[int, float]:
+        """PVM collapse onto the maximum Born-probability basis state.
+
+        Deterministic: without ``random_seed`` the outcome is
+        argmax_i |α_i|² — the maximum-likelihood measurement. With
+        ``random_seed`` it is an explicit CDF threshold in [0, 1)
+        reproducing a Born-rule draw (mirroring the substrate's
+        ``QuantumState.measure_pvm`` semantics); out-of-range seeds fail
+        closed rather than silently pinning a boundary outcome. No
+        pseudo-random draws are made.
+        """
         if not state.is_normalized:
             state.normalize()
 
         probabilities = [self.calculate_probability(state, i) for i in range(state.dimension)]
-        cumulative_probs = np.cumsum(probabilities)
 
-        # Random measurement based on quantum probabilities
-        random_val = np.random.random()
-        measured_state = np.searchsorted(cumulative_probs, random_val)
+        if random_seed is None:
+            measured_state = int(np.argmax(probabilities))
+        else:
+            r = float(random_seed)
+            if not 0.0 <= r < 1.0:
+                raise ValueError("random_seed must be a CDF threshold in [0, 1)")
+            cumulative_probs = np.cumsum(probabilities)
+            measured_state = int(np.searchsorted(cumulative_probs, r))
 
         return measured_state, probabilities[measured_state]
 
@@ -370,22 +388,43 @@ class QuantumDecisionTheory:
         constraints: list[callable],
         initial_state: QuantumState,
     ) -> QuantumState:
-        """Perform quantum optimization using real quantum mathematics"""
+        """Grover amplitude amplification of the optimal basis state.
 
-        # Convert to optimization problem
-        def cost_function(params):
-            # Map parameters to quantum state
-            state = self._params_to_state(params, initial_state.dimension)
-            # Calculate expectation value
-            observable = self._function_to_observable(objective_function, state.dimension)
-            return np.real(self.quantum_math.calculate_expectation_value(state, observable))
+        The objective defines the oracle: basis states are evaluated, the
+        feasible argmax is marked by the phase oracle, and the diffusion
+        operator D = 2|s⟩⟨s| − I amplifies it for the Grover-optimal
+        π/4·√(N/M) iterations — real unitary evolution on the kellogg
+        substrate (``agi.quantum_decision.grover_amplify``), not a
+        classical parameter optimizer.
+        """
+        dim = initial_state.dimension
 
-        # Use classical optimization on quantum parameters
-        result = minimize(cost_function, initial_state.amplitudes.real, method="BFGS")
+        def feasible(i: int) -> bool:
+            for constraint in constraints or []:
+                if not constraint(i):
+                    return False
+            return True
 
-        # Convert back to quantum state
-        optimized_amplitudes = result.x.astype(complex)
-        return QuantumState(optimized_amplitudes, initial_state.dimension)
+        values = np.array(
+            [objective_function(i) if feasible(i) else -np.inf for i in range(dim)],
+            dtype=float,
+        )
+        marked = int(np.argmax(values))
+        if not np.isfinite(values[marked]):
+            raise RuntimeError(
+                "quantum_optimization unavailable: no feasible basis state "
+                "satisfies the supplied constraints"
+            )
+
+        amps = np.asarray(initial_state.amplitudes, dtype=complex)
+        qs = _SubstrateState(
+            dim,
+            [Complex(float(a.real), float(a.imag)) for a in amps],
+            normalize=True,
+        )
+        evolved, _iterations = grover_amplify(qs, [marked])
+        out = np.array([complex(a.re, a.im) for a in evolved.amplitudes])
+        return QuantumState(out, dim)
 
     def _params_to_state(self, params: np.ndarray, dimension: int) -> QuantumState:
         """Convert parameters to quantum state"""

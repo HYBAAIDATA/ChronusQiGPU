@@ -29,9 +29,12 @@ The repo can **fold data** (symplectic golden folding in
 encoding in ``turing_core`` — Fibonacci/Lucas numbers are the prime-
 generating sequence via the golden ratio). PYTHIA's learning uses both:
 
-- **Synaptic plasticity** → connection weights are Pisot-decayed by
-  repeated activation: ``w_{ij} *= (1 + α * φ^(-|i-j|))`` on each co-
-  activation, so frequently co-active units strengthen.
+- **Synaptic plasticity** → each connection weight is the Born readout
+  of a qubit, ``w_{ij} = <sigma_z>``, rotated unitarily on co-activation
+  by the measured angle ``φ^(-|i-j|) · π/2`` toward the |0> pole
+  (``R_y`` on the Bloch sphere), so frequently co-active units
+  strengthen and every weight stays in [-1, 1] — no learning-rate
+  constant anywhere.
 - **Consolidation (sleep)** → during a "sleep" cycle, short-term patterns
   are folded via the golden symplectic transform and encoded into
   Zeckendorf representations (stored in the Fibonacci/primes substrate).
@@ -78,11 +81,15 @@ try:
 except ImportError:  # pragma: no cover
     _turing = None  # type: ignore[assignment]
 
+from Intelligence._born import born_evidence, encode_state
+
 logger = logging.getLogger("Intelligence.pythia")
 
 PHI = (1 + math.sqrt(5)) / 2
 PSI = (1 - math.sqrt(5)) / 2
 _MIN_ACTIVATIONS = 3
+# Significance level of the exact one-sided binomial fate test
+# (declared statistical threshold, not a learned constant).
 _ALPHA = 0.01
 
 
@@ -166,19 +173,27 @@ class PythiaLearning:
     def _strengthen_connections(self, active_units: np.ndarray) -> None:
         """Strengthen connections between co-active units (Hebbian).
 
-        ``w_{ij} *= (1 + α * φ^(-|i-j|))`` for co-active units i, j.
-        The Pisot decay ``φ^(-|i-j|)`` means nearby units strengthen more
-        than distant ones, creating locality-structured connectivity
-        (like cortical columns).
+        Each weight ``w_{ij}`` is the Born z-component of a qubit
+        (``w = |a0|^2 - |a1|^2``). A co-activation applies the unitary
+        ``R_y(theta)`` to that qubit where the measured rotation angle is
+        ``theta = phi^(-|i-j|) * pi/2`` — the Pisot decay is the measured
+        structural attenuation, and a full-strength co-activation is the
+        quarter-turn, not an invented learning rate. The Born rule keeps
+        every weight in [-1, 1] (before this repair, weights grew without
+        bound). Nearby units still strengthen more than distant ones,
+        creating locality-structured connectivity (like cortical columns).
         """
-        alpha = 0.01  # learning rate
+        from Intelligence._born import QUARTER_TURN, rotate_weight
+
         active_mask = active_units > 0.5
         for i in range(self.n):
             if not active_mask[i]:
                 continue
             for j in range(self.n):
                 if active_mask[j] and i != j:
-                    self.weights[i, j] *= 1.0 + alpha * PHI ** (-abs(i - j))
+                    w = min(1.0, max(-1.0, float(self.weights[i, j])))
+                    # angle negative -> rotate toward |0> (weight rises).
+                    self.weights[i, j] = rotate_weight(w, -QUARTER_TURN * PHI ** (-abs(i - j)))
         # Track activation for consolidation decisions.
         self._activation_history += active_mask.astype(float)
 
@@ -336,8 +351,13 @@ class PythiaLearning:
             # Determine cell fate (McLaren: the signal must be real).
             fate = self._determine_cell_fate(pattern_id)
 
-            # Confidence: based on activation count and Pisot convergence.
-            confidence = min(1.0, 1.0 - abs(PSI) ** activation_count)
+            # Confidence: the Born probability of the success outcome for
+            # this pattern's *measured* evidence state
+            # sqrt(k+1)|0> + sqrt((n-k)+1)|1> — a real quantum readout of
+            # the observed success/failure counts (Laplace-encoded prior),
+            # not an invented convergence formula.
+            n_act, n_suc = self._evidence.get(pattern_id, (0, 0))
+            confidence = born_evidence(n_suc, n_act - n_suc)
 
             memory = LearnedPattern(
                 pattern_id=pattern_id,
@@ -408,13 +428,12 @@ class PythiaLearning:
                 w = PHI ** (-(i % 5))
                 if w > 0:
                     unfolded[i] = folded[i] / w
-            # Similarity score (cosine similarity).
-            norm_q = np.linalg.norm(q)
-            norm_u = np.linalg.norm(unfolded)
-            if norm_q > 0 and norm_u > 0:
-                score = float(np.dot(q, unfolded) / (norm_q * norm_u))
-            else:
-                score = 0.0
+            # Similarity score: Born-rule fidelity |<q|u>|^2 between the
+            # query state and the unfolded memory state — the quantum
+            # overlap, replacing the classical cosine dot-product.
+            q_state = encode_state(q)
+            u_state = encode_state(unfolded)
+            score = q_state.fidelity(u_state)
             if score > best_score:
                 best_score = score
                 best = memory

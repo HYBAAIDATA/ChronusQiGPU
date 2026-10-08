@@ -314,6 +314,25 @@ def privileged(root):
     return Outcome(Status.FAIL if violations or not key else Status.PASS, reason, (str(artifact),))
 
 
+def repo_ownership(root):
+    from scripts.repo_closure import current_sha
+    from scripts.repo_closure import ownership_document
+    from scripts.repo_closure import tracked_files
+    from scripts.repo_closure import write_json
+
+    doc = ownership_document(tracked_files(root), sha=current_sha(root))
+    artifact = root / "reports" / "REPO_FILE_OWNERSHIP.json"
+    write_json(artifact, doc)
+    unowned = len(doc["unowned_files"])
+    multi = len(doc["multi_owned_files"])
+    status = Status.PASS if not unowned and not multi else Status.FAIL
+    return Outcome(
+        status,
+        f"{doc['tracked_file_count']} tracked files; {unowned} unowned; {multi} multi-owned",
+        (str(artifact),),
+    )
+
+
 GATES = {
     "promotion-manifest": promotion,
     "schema-freeze": schema,
@@ -326,6 +345,7 @@ GATES = {
     "conformance-vectors": conformance,
     "resilience-suite": resilience,
     "privileged-path-audit": privileged,
+    "repo-ownership": repo_ownership,
 }
 
 

@@ -1,16 +1,20 @@
-GATE_TARGETS := rule7-no-float abi-check refuted-claims import-audit claim-register envelope-verify conformance-vectors resilience-suite schema-freeze promotion-manifest privileged-path-audit
-.PHONY: gates release-gate $(GATE_TARGETS) publish-checks gate-rollup strict-hardware-gate gate-results-clean
+GATE_TARGETS := rule7-no-float abi-check refuted-claims import-audit claim-register envelope-verify conformance-vectors resilience-suite schema-freeze promotion-manifest privileged-path-audit repo-ownership
+.PHONY: gates release-gate gate-results-clean $(GATE_TARGETS) publish-checks gate-rollup strict-hardware-gate defect-register
 
-# Clear old results before dispatch, including under parallel make.
+# Always clear file-backed gate evidence before a new run. This prevents a
+# stale PASS artifact from satisfying the rollup after a gate is removed,
+# skipped, renamed, or fails before writing evidence.
 gates: gate-results-clean
-	+$(MAKE) --no-print-directory -k $(GATE_TARGETS)
+	+$(MAKE) --no-print-directory $(GATE_TARGETS)
 
 gate-results-clean:
 	mkdir -p results
 	rm -f results/*.json
 
 release-gate: gates
-	python3 scripts/assert_gate_rollup.py
+	python3 scripts/repo_closure.py defects --output reports/DEFECT_REGISTER.json --require-closed
+	python3 scripts/assert_gate_rollup.py --require-no-skip
+
 rule7-no-float:
 	python3 scripts/rule7_no_float_gate.py
 abi-check:
@@ -33,6 +37,12 @@ promotion-manifest:
 	python3 scripts/promotion_manifest.py
 privileged-path-audit:
 	python3 scripts/privileged_path_audit.py
+repo-ownership:
+	python3 scripts/repo_ownership_gate.py
+
+defect-register:
+	python3 scripts/repo_closure.py defects --output reports/DEFECT_REGISTER.json
+
 publish-checks:
 	python3 scripts/publish_check_runs.py
 gate-rollup:

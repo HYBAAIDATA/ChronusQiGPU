@@ -1,0 +1,8 @@
+{
+  "installed_version": "3.6.0",
+  "wheel_smoke": "PASS",
+  "resource_checks": "PASS",
+  "paradigm": "PASS",
+  "persistent_objects": "PASS",
+  "abi": "PASS"
+}

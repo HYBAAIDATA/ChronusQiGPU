@@ -20,6 +20,7 @@ Lucas pool:
 
 from __future__ import annotations
 
+from chronos_one_igpu.reference_contract import require_reference, reference_only, require_production_context
 import math
 import struct
 from typing import Any, Dict, List, Optional
@@ -82,10 +83,14 @@ class GroverStyleSearch:
     against the consensus target — amplitude math orders the search, it
     never replaces the consensus check.
 
-    ``scale_index`` selects a Lucas ladder rung (10/12/15/18/20): the
-    search's effective space becomes ``N_eff = len(schedule) * L_n`` and
-    k* is taken over the scaled space — the same N -> N * L_n hardware
-    scaling the GPU engine applies.
+    ``scale_index`` selects a Lucas ladder rung (10/12/15/18/20). Its only
+    effect is on the visitation stride: k* is computed over
+    ``len(schedule) * L_n`` and used purely as the step between probed
+    candidates. It does NOT enlarge the candidate space, reduce the work,
+    or change which nonces are probed — at most ``len(schedule)`` real
+    double-SHA256 evaluations ever run, over exactly the given schedule.
+    It is retained for schedule-shape compatibility with the GPU engine's
+    N -> N * L_n hardware scaling; here it is stride shaping only.
     """
 
     def __init__(self) -> None:
@@ -94,6 +99,7 @@ class GroverStyleSearch:
     @staticmethod
     def optimal_iterations(n_candidates: int) -> int:
         """Exact Grover iteration count k* for N candidates."""
+        require_reference('mining.GroverStyleSearch')
         return max(1, int(math.floor(math.pi / 4.0 * math.sqrt(max(n_candidates, 1)))))
 
     def kernel_check(self, n: int = 10) -> Dict[str, Any]:
@@ -111,6 +117,7 @@ class GroverStyleSearch:
         scale_index: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Probe the schedule in Grover order; return the winner if any."""
+        require_reference('mining.GroverStyleSearch')
         self._searches += 1
         size = len(schedule)
         if size == 0:
@@ -165,6 +172,11 @@ class GroverStyleSearch:
             "scale_index": scale_index,
             "lucas_value": lucas_value,
             "scaled_space": scaled_size,
+            # Truthful identity: the scaled space only sizes the stride k*.
+            # The probe set is exactly `schedule` — scaled_size is not a
+            # space the search actually walks, and it reduces no work.
+            "scale_effect": "stride_shaping_only",
+            "work_reduction": False,
         }
 
     def status(self) -> Dict[str, Any]:

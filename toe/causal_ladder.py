@@ -61,8 +61,8 @@ Evidence classes refer to ``reports/toe_elevation_benchmark.json``.
   structure. NOT ESTABLISHED.
 - phi: the float path uses ``(1 + sqrt(5)) / 2`` and is NUMERICALLY VERIFIED
   against ``StructuralCausalModel.evaluate_exact``, which runs the same
-  equations in Q(phi) through ``lucas.algebra.ZPhi`` with Fraction
-  coefficients. The exact path is EXACT; the float path is not.
+  equations in Q(phi) through KELLOGG's ``kellogg.substrate.QPhi`` with
+  Fraction coefficients. The exact path is EXACT; the float path is not.
 """
 
 # LUCAS WIRING: draws from lucas/ (pool) OR implements its Lucas kernel
@@ -105,10 +105,15 @@ except ImportError:
         Observables,
     )
 
-from lucas.algebra import ONE as _ZPHI_ONE  # noqa: E402
-from lucas.algebra import PHI as _ZPHI_PHI  # noqa: E402
-from lucas.algebra import ZERO as _ZPHI_ZERO  # noqa: E402
-from lucas.algebra import ZPhi  # noqa: E402
+# Exact Q(phi) is KELLOGG's field (``kellogg.substrate.QPhi``: a + b*phi with
+# Fraction coefficients, exact sign/inverse). TOE consumes it; it does not
+# keep a private golden-field implementation. ``ZPhi`` remains the local
+# name so the public ``zphi_*`` helpers keep their signatures.
+from kellogg.substrate import QPhi as ZPhi  # noqa: E402
+
+_ZPHI_ZERO = ZPhi(0, 0)
+_ZPHI_ONE = ZPhi(1, 0)
+_ZPHI_PHI = ZPhi(0, 1)
 
 logger = logging.getLogger("toe.causal_ladder")
 
@@ -148,11 +153,24 @@ def _exact_number(value: Any) -> Fraction:
     raise TypeError(f"unsupported structural value type: {type(value).__name__}")
 
 
+def _is_golden_element(value: Any) -> bool:
+    """A Q(phi) element: KELLOGG ``QPhi`` or any ``a + b*phi`` ring element
+    of the same shape (e.g. the monorepo's integer ``lucas.algebra.ZPhi``)."""
+    if isinstance(value, ZPhi):
+        return True
+    return type(value).__name__ in ("ZPhi", "Zphi") and hasattr(value, "a") and hasattr(value, "b")
+
+
 def _to_zphi(value: Any) -> ZPhi:
     """Embed a number in Q(phi) as ``a + b*phi`` with Fraction coefficients."""
-    if isinstance(value, ZPhi):
+    if _is_golden_element(value):
         return ZPhi(Fraction(value.a), Fraction(value.b))
     return ZPhi(_exact_number(value), Fraction(0))
+
+
+def zphi_sign(value: Any) -> int:
+    """Exact sign of a Q(phi) element — decided in the field, never via float."""
+    return _to_zphi(value).sign()
 
 
 def zphi_to_float(value: ZPhi) -> float:
@@ -437,7 +455,7 @@ class StructuralCausalModel:
         """The same structural equations evaluated in Q(phi) with no rounding.
 
         ``f_i = sum(w_ij * parent_j) + phi * u_i`` where phi is the exact
-        ring generator ``lucas.algebra.PHI`` and every weight, noise term and
+        field generator ``QPhi(0, 1)`` and every weight, noise term and
         intervention value is taken at its exact rational value (a float
         contributes its exact binary value). Returns ``ZPhi`` elements.
         """
@@ -989,7 +1007,7 @@ class _Arithmetic:
     def of(self, value: Any) -> Any:
         if self.exact:
             return _to_zphi(value)
-        if isinstance(value, ZPhi):
+        if _is_golden_element(value):
             return zphi_to_float(value)
         return float(value)
 
@@ -1045,7 +1063,7 @@ def _finite_evidence(observed: Mapping[str, Any], node: str) -> bool:
         return False
     if isinstance(value, float):
         return math.isfinite(value)
-    return isinstance(value, (int, Fraction, ZPhi))
+    return isinstance(value, (int, Fraction)) or _is_golden_element(value)
 
 
 def counterfactual_state(

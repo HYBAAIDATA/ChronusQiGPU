@@ -64,6 +64,16 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from lucas.ladder import FULL_LADDER
 
+from kellogg.quantum_tensor import QuantumState
+
+from Intelligence._born import (
+    QUARTER_TURN,
+    adjust_probability,
+    encode_state,
+    evidence_angle,
+    rotate_state_in_plane,
+)
+
 logger = logging.getLogger("Intelligence.meta_evolution")
 
 PHI = (1 + math.sqrt(5)) / 2
@@ -220,43 +230,60 @@ class SurrogateSample:
 
 
 class SurrogateModel:
-    """Lightweight linear surrogate predicting mining-gain from features.
+    """Quantum-state surrogate predicting mining-gain from features.
 
-    Mirrors PYTHAGORAS's surrogate that predicted φ-gain from structural
-    features. A linear model is chosen deliberately: it is interpretable,
-    cheap, and its RMSE is an honest trust indicator. When the RMSE is
-    high the surrogate is not trustworthy and the controller falls back
-    to uniform operator sampling.
+    The model is a ``QuantumState`` ray over the feature Hilbert space.
+    ``predict`` is the Born expectation of the diagonal feature
+    observable: ``pred = Σ |a_i|² f_i`` — the expectation value of the
+    feature operator on the model state, no weight vector, no gradient
+    descent. Each measured (features, gain) sample rotates the model
+    state inside the plane spanned by the model ray and the encoded
+    feature state: the rotation angle is the *measured* prediction
+    error scaled by the declared φ⁻¹ gain — a full-strength error is a
+    quarter-turn scaled by φ⁻¹.
+
+    RMSE over the recent window remains the honest trust indicator;
+    when it is high the controller falls back to uniform sampling.
     """
 
     def __init__(self, n_features: int = 4) -> None:
         self.n = n_features
-        # Pisot-decayed initial weights (φ^(-k)).
-        self.weights = [INV_PHI**k for k in range(n_features)]
-        self.bias = 0.0
+        self._model = QuantumState.uniform_superposition(n_features)
+        self.weights = [INV_PHI**k for k in range(n_features)]  # kept as a
+        # read-out mirror of the model ray's amplitudes (API compat)
+        self._sync_weights()
+        self.bias = 0.0  # quantum model carries no bias term
         self._samples: List[SurrogateSample] = []
         self.rmse = 1.0  # honest: start untrusted
+
+    def _sync_weights(self) -> None:
+        self.weights = [a.abs() for a in self._model.amplitudes]
+
+    def _expect(self, features: List[float]) -> float:
+        """Born expectation ⟨model| diag(f) |model⟩ = Σ |a_i|² f_i."""
+        probs = self._model.probabilities()
+        return sum(probs[i] * features[i] for i in range(self.n))
 
     def predict(self, features: List[float]) -> float:
         """Predict mining-gain for a feature vector."""
         if len(features) < self.n:
             features = features + [0.0] * (self.n - len(features))
-        return self.bias + sum(w * f for w, f in zip(self.weights, features[: self.n]))
+        return self._expect(features[: self.n])
 
     def update(self, features: List[float], observed_gain: float) -> None:
-        """Add a sample and refit the linear weights (online Pisot step)."""
+        """Add a sample and rotate the model state by the measured error."""
         if len(features) < self.n:
             features = features + [0.0] * (self.n - len(features))
         self._samples.append(SurrogateSample(features[: self.n], observed_gain))
         if len(self._samples) > 200:
             self._samples = self._samples[-200:]
-        # Online gradient step with Pisot-decayed learning rate.
-        lr = INV_PHI
-        pred = self.predict(features)
-        err = pred - observed_gain
-        for i in range(self.n):
-            self.weights[i] -= lr * err * features[i]
-        self.bias -= lr * err * 0.5
+        pred = self._expect(features)
+        # err < 0 (under-prediction of a positive gain) rotates the model
+        # toward the evidence state; over-prediction rotates away.
+        err = observed_gain - pred
+        angle = QUARTER_TURN * INV_PHI * max(-1.0, min(1.0, err))
+        self._model = rotate_state_in_plane(self._model, encode_state(features[: self.n]), angle)
+        self._sync_weights()
         # Recompute RMSE over the recent window.
         if len(self._samples) >= 5:
             sq = 0.0
@@ -540,6 +567,8 @@ class MetaEvolutionController:
         self.discovery = AutoPrimitiveDiscovery()
         self.mutation_rate = 0.5
         self.step = 0
+        self._explore_count = 0
+        self._exploit_count = 0
         self._coherence_history: List[float] = []
 
     def _features(self, schedule: List[int]) -> List[float]:
@@ -661,17 +690,39 @@ class MetaEvolutionController:
         if prim is not None:
             prim.n_uses += 1
             prim.avg_gain = (prim.avg_gain * (prim.n_uses - 1) + gain) / prim.n_uses
-            # Weight adapts toward the gain signal (Pisot-bounded).
-            prim.weight = max(0.05, min(1.0, prim.weight + INV_PHI * gain))
+            # Weight adapts by a real unitary rotation of the weight
+            # qubit; the measured gain sets angle and direction
+            # (φ⁻¹ attenuates a full-strength gain to a quarter-turn/φ).
+            prim.weight = max(
+                0.05,
+                min(
+                    1.0,
+                    adjust_probability(
+                        prim.weight,
+                        gain >= 0.0,
+                        abs(gain) * QUARTER_TURN * INV_PHI,
+                    ),
+                ),
+            )
 
         # 4. Tag any phase transition.
         pt = self.tagger.tag(self.step, coh_before, coh_after, prim_name)
 
-        # 5. Adapt the mutation rate (explore/exploit).
+        # 5. Adapt the mutation rate (explore/exploit). Each flat step is
+        # one measured unit of explore evidence; each gainful step one
+        # unit of exploit evidence. The rotation angle is the measured
+        # Bloch displacement of one evidence unit at the current count —
+        # no invented step size.
         if gain < 0.01:
-            self.mutation_rate = min(1.0, self.mutation_rate + INV_PHI * 0.1)
+            self.mutation_rate = adjust_probability(
+                self.mutation_rate, True, evidence_angle(self._explore_count)
+            )
+            self._explore_count += 1
         else:
-            self.mutation_rate = max(0.1, self.mutation_rate - INV_PHI * 0.05)
+            self.mutation_rate = adjust_probability(
+                self.mutation_rate, False, evidence_angle(self._exploit_count)
+            )
+            self._exploit_count += 1
 
         # 6. Adapt the geometry from the coherence gradient.
         gradient = 0.0

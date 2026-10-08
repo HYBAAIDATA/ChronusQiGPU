@@ -12,7 +12,6 @@ import csv
 import hashlib
 import json
 import math
-import random
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from types import SimpleNamespace
@@ -23,7 +22,7 @@ import numpy as np
 from python_backend.phi_grover_v4 import cheap_resonance, phi_resonance
 
 PHI = (1.0 + math.sqrt(5.0)) / 2.0
-PHI15 = PHI ** 15
+PHI15 = PHI**15
 UINT32_MAX = (1 << 32) - 1
 DEFAULT_HOLDOUT_FRACTION = 0.20
 DEFAULT_NULL_SEED = 0x9E3779B9
@@ -103,16 +102,12 @@ def load_nonce_corpus(
             f"corpus digest mismatch: measured={digest} manifest={manifest.get('csv_sha256')}"
         )
     if manifest.get("source_type") != "real":
-        raise CorpusIntegrityError(
-            "PYTHIA structural seed training accepts real observations only"
-        )
+        raise CorpusIntegrityError("PYTHIA structural seed training accepts real observations only")
     if manifest.get("synthetic_excluded") is not True:
         raise CorpusIntegrityError("manifest must assert synthetic_excluded=true")
     verification = str(manifest.get("verification_level", ""))
     if verification not in _ALLOWED_REAL_VERIFICATION:
-        raise CorpusIntegrityError(
-            f"unaccepted verification_level={verification!r}"
-        )
+        raise CorpusIntegrityError(f"unaccepted verification_level={verification!r}")
 
     rows: List[NonceObservation] = []
     with csv_path.open("r", encoding="utf-8", newline="") as fh:
@@ -127,9 +122,7 @@ def load_nonce_corpus(
             if height < 0:
                 raise CorpusIntegrityError(f"negative block height {height}")
             if not 0 <= nonce <= UINT32_MAX:
-                raise CorpusIntegrityError(
-                    f"nonce outside uint32 at height {height}: {nonce}"
-                )
+                raise CorpusIntegrityError(f"nonce outside uint32 at height {height}: {nonce}")
             rows.append(NonceObservation(height=height, nonce=nonce))
 
     expected_n = int(manifest.get("row_count", -1))
@@ -178,7 +171,7 @@ def structural_vector(
     ]
     out.extend(((n >> shift) & 0xFF) / 255.0 for shift in (0, 8, 16, 24))
     for k in range(1, 20):
-        phase = (n * (PHI ** k)) % 1.0
+        phase = (n * (PHI**k)) % 1.0
         out.append(0.5 + 0.5 * math.cos(2.0 * math.pi * phase))
 
     vec = np.asarray(out, dtype=float)
@@ -214,9 +207,7 @@ def split_by_height(
 
 
 def _pattern_id(corpus_id: str, row: NonceObservation) -> int:
-    digest = hashlib.sha256(
-        f"{corpus_id}:{row.height}:{row.nonce}".encode("ascii")
-    ).digest()
+    digest = hashlib.sha256(f"{corpus_id}:{row.height}:{row.nonce}".encode("ascii")).digest()
     return int.from_bytes(digest[:8], "big", signed=False)
 
 
@@ -291,12 +282,23 @@ def _uniform_control_vectors(
     reference_rows: Sequence[NonceObservation],
     seed: int = DEFAULT_NULL_SEED,
 ) -> List[np.ndarray]:
-    rng = random.Random(seed)
+    """Null-control nonces from a deterministic SHA-256 counter chain.
+
+    A hash-derived 32-bit value per index is uniform over the nonce space
+    for the purposes of a null control while remaining reproducible —
+    no PRNG state reaches results.
+    """
     if not reference_rows:
         return []
     min_height = min(r.height for r in reference_rows)
     controls = [
-        NonceObservation(height=min_height + i, nonce=rng.getrandbits(32))
+        NonceObservation(
+            height=min_height + i,
+            nonce=int.from_bytes(
+                hashlib.sha256(f"null-control:{seed}:{i}".encode()).digest()[:4],
+                "big",
+            ),
+        )
         for i in range(n)
     ]
     return build_vectors(controls)
@@ -330,27 +332,19 @@ def train_pythia_structure(
     control_vectors = _uniform_control_vectors(len(holdout_rows), holdout_rows)
 
     pythia = orchestrator.pythia
-    before_evidence = {
-        key: list(value)
-        for key, value in getattr(pythia, "_evidence", {}).items()
-    }
+    before_evidence = {key: list(value) for key, value in getattr(pythia, "_evidence", {}).items()}
     before_totals = tuple(getattr(pythia, "_totals", ()))
 
     corpus_id = str(manifest["corpus_id"])
     ordered_train = sorted(train_rows, key=lambda r: r.height)
-    training_ids = {
-        _pattern_id(corpus_id, row)
-        for row in ordered_train
-    }
+    training_ids = {_pattern_id(corpus_id, row) for row in ordered_train}
 
     # Consolidation in PythiaLearning is intentionally global over its current
     # short-term buffer. Isolate this corpus so bootstrapping cannot move an
     # unrelated live memory across the short-/long-term boundary.
     prior_short_term = list(getattr(pythia, "_short_term", []))
     unrelated_short_term = [
-        entry
-        for entry in prior_short_term
-        if entry.get("pattern_id") not in training_ids
+        entry for entry in prior_short_term if entry.get("pattern_id") not in training_ids
     ]
     pythia._short_term = []
 
@@ -376,18 +370,12 @@ def train_pythia_structure(
         remaining_structural = list(getattr(pythia, "_short_term", []))
         pythia._short_term = unrelated_short_term + remaining_structural
 
-    after_evidence = {
-        key: list(value)
-        for key, value in getattr(pythia, "_evidence", {}).items()
-    }
-    evidence_unchanged = (
-        before_evidence == after_evidence
-        and before_totals == tuple(getattr(pythia, "_totals", ()))
+    after_evidence = {key: list(value) for key, value in getattr(pythia, "_evidence", {}).items()}
+    evidence_unchanged = before_evidence == after_evidence and before_totals == tuple(
+        getattr(pythia, "_totals", ())
     )
     if not evidence_unchanged:
-        raise RuntimeError(
-            "structure-only training contaminated mining outcome evidence"
-        )
+        raise RuntimeError("structure-only training contaminated mining outcome evidence")
 
     holdout_similarity = _mean_max_cosine(holdout_vectors, train_vectors)
     control_similarity = _mean_max_cosine(control_vectors, train_vectors)
@@ -435,9 +423,7 @@ def bootstrap_default_structure_training(pythia: Any, store: Any) -> StructureTr
     It is idempotent because each training observation has a stable pattern id.
     """
     if not DEFAULT_CORPUS_CSV.is_file() or not DEFAULT_CORPUS_MANIFEST.is_file():
-        raise CorpusIntegrityError(
-            "canonical PYTHIA structural corpus or manifest is missing"
-        )
+        raise CorpusIntegrityError("canonical PYTHIA structural corpus or manifest is missing")
     report = train_pythia_structure(
         SimpleNamespace(pythia=pythia, store=store),
         DEFAULT_CORPUS_CSV,

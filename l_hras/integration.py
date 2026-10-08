@@ -144,9 +144,12 @@ class PolicyEngine:
         if denies:
             return False
         allows = [r for r in self.bundle.rules if r.effect == "allow" and r.matches(request)]
-        if self.bundle.rules and not allows and not self.bundle.default_allow:
-            return False
-        return True
+        if allows:
+            return True
+        # No matching allow is a denial unless the signed policy bundle
+        # explicitly opts into default-allow.  In particular, an empty rule
+        # set must never become an accidental allow-all policy.
+        return bool(self.bundle.default_allow)
 
     def throttle_mode_for(self, reason: str, scope: str) -> Optional[dict[str, Any]]:
         modes = self.bundle.throttle_modes

@@ -89,6 +89,21 @@ jobs:
         run: python scripts/check_pulvini_data_boundary.py
       - name: Canonical PYTHIA structured-search doctrine
         run: python scripts/check_canonical_mining_search.py
+      - name: Repository lane ownership — exactly one owner per tracked file
+        run: python scripts/repo_ownership_gate.py
+      - name: Repo-wide defect discovery inventory
+        run: python scripts/repo_closure.py defects --output reports/DEFECT_REGISTER.json
+      - name: Retain Agent H closure inventories
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-h-closure-inventories
+          path: |
+            reports/REPO_FILE_OWNERSHIP.json
+            reports/DEFECT_REGISTER.json
+            results/repo-ownership.json
+          if-no-files-found: error
+          retention-days: 30
       - name: API governance — service constitution and dependency graph
         run: >-
           python governance/render_service_constitution.py --check &&

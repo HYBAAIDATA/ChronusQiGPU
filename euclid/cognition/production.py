@@ -10,8 +10,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
+from collections import Counter
 from dataclasses import replace
 from typing import Any, Mapping, Sequence
+
+from kellogg.quantum_tensor import QuantumState
 
 from euclid.contracts import Experience, RewardAuthority, domain_hash
 from euclid.memory_database import MemoryDatabase, MemoryScope
@@ -23,6 +27,24 @@ from toe.world_model import OnlineAdapter, WorldModel as TOEWorldModel
 from .baselines import SignalMetaController
 from .interfaces import ControlAssessment, MemoryItem, ModelHealth
 from .state import CandidateAction, CognitiveState, MemoryKind, PlanNode, PredictionRecord
+
+
+# Declared symmetric pseudo-count mass for the outcome state used to measure
+# prediction confidence.
+OUTCOME_PRIOR_MASS = 1.0
+
+# Declared normalisation reference for measured evaluation counts in the
+# candidate-cost feature.
+SEARCH_COST_REFERENCE = 100.0
+
+# Declared ignorant-prior feature vector for unproven base operators.
+PRIMITIVE_PRIOR_FEATURES = {
+    "correctness_estimate": 0.5,
+    "cost": 0.2,
+    "uncertainty": 0.5,
+    "novelty": 0.2,
+    "transfer_value": 0.2,
+}
 
 
 def _number(value: Any) -> float:
@@ -104,9 +126,27 @@ class TOEWorldModelAdapter:
             context,
             action,
             format(float(future["outcome"]), ".12g"),
-            0.5 if len(self.model.outcomes) < 3 else 0.8,
+            self._outcome_confidence(),
             imagined,
         )
+
+    def _outcome_confidence(self) -> float:
+        """Born-rule confidence over the measured outcome record.
+
+        Prepares the outcome state  |psi> ~ sum_o sqrt(n_o)|o> + sqrt(prior)|?>
+        from the model's observed transitions; confidence is the largest Born
+        probability (modal-outcome mass under the declared symmetric prior).
+        With no observations the honest answer is 0.0 — no evidence.
+        """
+        counts = Counter(
+            str(record.get("outcome")) for record in self.model.outcomes
+        )
+        if not counts:
+            return 0.0
+        amplitudes = [math.sqrt(c) for c in counts.values()]
+        amplitudes.append(math.sqrt(OUTCOME_PRIOR_MASS))
+        state = QuantumState.from_real_vector(amplitudes)
+        return float(max(state.probabilities()))
 
     def predict(self, context: str, action: str) -> PredictionRecord:
         return self._prediction(context, action, False)
@@ -228,6 +268,9 @@ class TOECognitivePlanner:
     """Planner using TOE's bounded operator search and declared costs."""
 
     def plan(self, goal: str, state: CognitiveState) -> list[PlanNode]:
+        # Declared default operator spec (policy definition of the planning
+        # problem when the state carries none); levels/costs are declared, not
+        # measured.
         specs = state.representation.get("operators") or [
             {"name": "inspect", "node": "progress", "levels": (0.4,), "cost": 0.2},
             {"name": "test", "node": "progress", "levels": (0.8,), "cost": 0.4},
@@ -355,13 +398,9 @@ class V16SkillSearchAdapter:
                 f"primitive:{name}",
                 f"apply verified AST primitive {name}",
                 origin="euclid-v16:ASTPrimitives",
-                features={
-                    "correctness_estimate": 0.5,
-                    "cost": 0.2,
-                    "uncertainty": 0.5,
-                    "novelty": 0.2,
-                    "transfer_value": 0.2,
-                },
+                # declared ignorant-prior features (not measured): the base
+                # operator vocabulary carries no per-operator evidence here
+                features=dict(PRIMITIVE_PRIOR_FEATURES),
             )
             for name, _ in self.primitives.get_all_operators()
         ]
@@ -369,14 +408,19 @@ class V16SkillSearchAdapter:
     @staticmethod
     def _candidate(kind: str, result: Mapping[str, Any]) -> CandidateAction:
         delta = float(result.get("total_delta_phi", 0.0))
+        attempted = float(result.get("total_evals_attempted", 0))
+        valid = float(result.get("total_evals_valid", 0))
         return CandidateAction(
             f"search:{kind}",
             f"{kind} produced measured candidate",
             origin=f"euclid-v16:{kind}",
             features={
-                "correctness_estimate": 1.0 if result.get("total_evals_valid") else 0.0,
-                "cost": min(1.0, float(result.get("total_evals_attempted", 0)) / 100.0),
-                "uncertainty": 0.5 if not result.get("accepted_steps_count") else 0.2,
+                "correctness_estimate": 1.0 if valid else 0.0,
+                # measured evaluation count, declared normalisation scale
+                "cost": min(1.0, attempted / SEARCH_COST_REFERENCE),
+                # measured uncertainty: fraction of attempted evaluations that
+                # failed the sandbox (0.0 = every evaluation valid)
+                "uncertainty": 1.0 - (valid / attempted) if attempted else 1.0,
                 "novelty": max(0.0, delta),
                 "transfer_value": min(1.0, max(0.0, delta)),
             },

@@ -67,7 +67,7 @@ secret = "replace-me-root-secret"
 
 [policy_bundle]
 version = "1.0.0"
-default_allow = true
+default_allow = false
 # Signed with the trust root: `bundle.sign_with(trust_root)` or accept
 # `signatures_verified = true` only after verification at load.
 signature = ""

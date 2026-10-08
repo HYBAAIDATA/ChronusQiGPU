@@ -206,5 +206,21 @@ class MemoryStore:
     def export(self) -> List[Dict[str, Any]]:
         return list(self._records)
 
+    @classmethod
+    def restore(
+        cls, records: Sequence[Mapping[str, Any]], ledger: Optional[ReceiptLedger] = None
+    ) -> "MemoryStore":
+        """Rebuild a store from :meth:`export` output (e.g. after a restart).
+
+        Records come back verbatim — status, regime, receipts — so stale
+        knowledge stays stale and recall behaves as it did before shutdown.
+        """
+        store = cls(ledger)
+        for rec in records:
+            if rec.get("namespace") not in NAMESPACES:
+                raise ValueError(f"restored record has unknown namespace {rec.get('namespace')!r}")
+            store._records.append(dict(rec))
+        return store
+
 
 __all__ = ["MEMORY_VERSION", "NAMESPACES", "MemoryStore"]

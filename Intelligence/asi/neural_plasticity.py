@@ -27,6 +27,8 @@ Mechanisms implemented (all activity-driven, none hard-coded):
 
 from dataclasses import dataclass
 
+from Intelligence._born import QUARTER_TURN, adjust_probability
+
 
 @dataclass
 class PlasticSynapse:
@@ -90,14 +92,20 @@ class NeuralPlasticity:
     def deliver_reward(self, reward: float):
         """Neuromodulatory signal: convert open traces into weight change.
 
-        w += η · level · reward · trace · (1 - w)   — bounded potentiation.
-        Negative reward depresses. Traces then decay (forgetting window).
+        The three-factor product η·level·reward·trace sets the rotation
+        angle of the synapse's weight qubit; reward's sign sets the
+        direction (potentiate toward |0> or depress toward |1>). The
+        unitary self-bounds — no (1-w) damping factor is needed, and no
+        linear step reaches outside [0, 1]. Traces then decay (forgetting
+        window).
         """
         self.reward_history.append(reward)
         for syn in self.synapses.values():
             if syn.trace > 0 and not syn.crystallized:
-                delta = self.learning_rate * self.plasticity_level * reward * syn.trace
-                syn.weight = min(1.0, max(0.0, syn.weight + delta * (1.0 - syn.weight)))
+                drive = self.learning_rate * self.plasticity_level * abs(reward) * syn.trace
+                syn.weight = adjust_probability(
+                    syn.weight, reward >= 0, min(1.0, drive) * QUARTER_TURN
+                )
             syn.trace *= self.trace_decay
         self._homeostatic_scale()
 
@@ -106,11 +114,13 @@ class NeuralPlasticity:
     # ------------------------------------------------------------------
 
     def decay(self):
-        """Idle synapses weaken. Crystallised ones resist — LTP persistence."""
+        """Idle synapses weaken — a unitary rotation toward the |1> pole
+        by the declared decay fraction of a quarter-turn. Crystallised
+        synapses resist — LTP persistence."""
         self._tick += 1
         for syn in self.synapses.values():
             if not syn.crystallized:
-                syn.weight *= 1.0 - self.weight_decay
+                syn.weight = adjust_probability(syn.weight, False, self.weight_decay * QUARTER_TURN)
 
     def _homeostatic_scale(self, target_total: float = 4.0):
         """Synaptic scaling: if total weight exceeds target, scale all down

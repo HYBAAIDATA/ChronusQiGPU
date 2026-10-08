@@ -9,12 +9,12 @@ evidence for the status (test file, benchmark section, or honest gap).
              ┌────────── STATE ──────────┐
              │ representation            │ IMPLEMENTED
              │ tensor state              │ IMPLEMENTED
-             │ geometry                  │ PARTIAL
+             │ geometry                  │ IMPLEMENTED
              │ topology                  │ IMPLEMENTED
              └────────────────────────────┘
                           ↓
              ┌────── UNDERSTANDING ──────┐
-             │ relationships             │ PARTIAL
+             │ relationships             │ IMPLEMENTED
              │ causal effects            │ IMPLEMENTED
              │ structural models         │ IMPLEMENTED
              │ explanation               │ IMPLEMENTED
@@ -53,14 +53,14 @@ evidence for the status (test file, benchmark section, or honest gap).
 |---|---|---|---|
 | representation | IMPLEMENTED | `toe/operator_compilers.py` → `kellogg.quantum_tensor` / `kellogg.exact_tensor` | deterministic typed-operator compile → 32-dim Hilbert state + exact `Q(ζ8)` path; `toe_elevation_benchmark.json` state roundtrip 20/20 max_err 0.0 |
 | tensor state | IMPLEMENTED | `kellogg/{quantum_tensor,exact_tensor,exact_field}` | Born rule, QFI, Clifford+T exact fractions; tests `test_a_*` |
-| geometry | PARTIAL | `toe/poincare_golden_11d.py`, `toe/phi_klein.py`, `toe/geometric_contract.py`; `millennium/yang_mills_data.SpectralGeometry` wired as the `geometric` lens | operational discrete-geometry answers via `toe/topology.py` (§32); continuous manifold reasoning still PARTIAL |
+| geometry | IMPLEMENTED | `toe/geometry.py` (`PoincareBall` on the φ-weighted 11D metric, exp/log maps, geodesics, Fréchet mean, Sarkar tree embedding, greedy routing, `SpectralGeometry`) + `toe/poincare_golden_11d.py` | metric axioms/geodesics/isometry tests (`tests/test_toe_geometry.py`); walled-grid delivery 1.00 vs 0.61 Euclidean, open-grid negative case recorded; wired into the machine's navigation stage. Boundary: declared operations in float64 within `MAX_EMBED_RADIUS`; embeddings are constructed, not learned from data |
 | topology | IMPLEMENTED | `toe/topology.py` `StateTopology` + `reachability_task`; `ToplogicalAnalytics` VR-Betti lens | components/reachability/boundary/articulation measured vs Euclidean baseline which fails the dead-end trap (§32) |
 
 ### UNDERSTANDING
 
 | Box | Status | Provider | Evidence / gap |
 |---|---|---|---|
-| relationships | PARTIAL | `causal_ladder.infer_causal_graph` (heuristic, labelled), `association_query` | supplied-graph relations only; no structural model abstraction |
+| relationships | IMPLEMENTED | `toe/relationships.py` `relationship_ladder` | ASSOCIATION / STRUCTURE_DISCOVERED (equivalence class) / STRUCTURE_SUPPLIED (assumption) / STRUCTURE_CONTRADICTED (local-Markov implication test) / EFFECT_IDENTIFIED / EFFECT_NOT_IDENTIFIED (refusal). Boundary: Markov-equivalent wrong graphs pass every implication test |
 | causal effects | IMPLEMENTED | `causal_ladder`: `identify_backdoor`, `identify_frontdoor`, `is_backdoor_admissible`, `estimate_causal_effect` | benchmark: adjusted effect within 4 SE of truth on synthetic SCMs; latent confounder correctly refused |
 | structural models | IMPLEMENTED | `StructuralCausalModel` + `causal_stack.discover_structures` | bounded discovery returns admissible equivalence class with sepsets/v-structures/Meek rules (§8) |
 | explanation | IMPLEMENTED | `toe/explanation.py` + `toe/decision_explanation.py` | exact interventional Shapley + contrastive (why-A-not-B with decisive factor) + falsification faithfulness metric (§13-15) |
@@ -138,3 +138,14 @@ Recorded negative results (kept, not laundered): memory views are
 digests — larger than pickle, not compression; a supplied WRONG causal
 graph is not mechanically detectable (estimates stay assumption-bound);
 planning over linear SCMs adds nothing without interaction or budgets.
+
+## Composition (2026-10-07)
+
+| Concern | Status | Note |
+|---|---|---|
+| reasoning core | IMPLEMENTED | `toe/machine.py` `TOEMachine` runs one problem through every box above; composed by `toe/runtime.py` (`solve`/`learn`) |
+| domain-neutral problem | IMPLEMENTED | `toe/problem.py`; adapters in `toe/adapters/`; 8 classes measured through one machine |
+| durable learning | IMPLEMENTED | `toe/custody.py` via THESEUS; fresh-process restart + tamper tests |
+| mining as first workload | IMPLEMENTED | `chronus/mla1517/mining/toe_problem.py` + `scripts/toe_mining_voyage.py`; validity stays `check_pow` |
+| EUCLID access | IMPLEMENTED | `euclid/cognition/toe_capabilities.py`; `EuclidRuntime.toe` |
+| ablations | MEASURED | `reports/toe_ablation_heldout.json` (held-out seeds, negative controls) |

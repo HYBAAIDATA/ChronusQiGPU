@@ -38,6 +38,45 @@ from .causal_stack import (
 
 UNCERTAINTY_VERSION = "toe.uncertainty/v1"
 
+_PHI = (1.0 + math.sqrt(5.0)) / 2.0
+
+
+def _normal_quantile(p: float) -> float:
+    """Inverse standard-normal CDF by bisection on ``math.erf``.
+
+    Deterministic to float64; used to place calibration worlds on an
+    exact Gaussian quantile grid instead of sampling ``random.gauss``.
+    """
+    p = min(max(p, 1e-12), 1.0 - 1e-12)
+    lo, hi = -10.0, 10.0
+    for _ in range(80):
+        mid = 0.5 * (lo + hi)
+        if 0.5 * (1.0 + math.erf(mid / math.sqrt(2.0))) < p:
+            lo = mid
+        else:
+            hi = mid
+    return 0.5 * (lo + hi)
+
+
+def _deterministic_noise(order: Sequence[str], w: int, seed: int, sd_map):
+    """Deterministic exogenous-noise world: a golden-ratio low-discrepancy
+    Gaussian quantile grid, one distinct Weyl sequence per node.
+
+    For node index k the grid point is
+        u = frac((w + 1) * frac((k + 1) * phi) + frac(seed * phi))
+    which equidistributes over (0, 1) as w runs; the ``seed`` parameter
+    rotates the grid deterministically (same seed -> same worlds). No
+    random draws reach the result.
+    """
+    rot = (seed * _PHI) % 1.0
+    noise = {}
+    for k, n in enumerate(order):
+        alpha = ((k + 1) * _PHI) % 1.0
+        u = ((w + 1) * alpha + rot) % 1.0 or 1e-12
+        noise[n] = sd_map[n] * _normal_quantile(u)
+    return noise
+
+
 EVIDENCE_MEASURED = "MEASURED"
 EVIDENCE_PROPAGATED = "PROPAGATED"
 EVIDENCE_ASSUMPTION_BOUND = "ASSUMPTION_BOUND"
@@ -102,8 +141,12 @@ def uncertainty_report(
     # Measured axis: backdoor-adjusted estimate + SE when samples exist.
     if samples is not None:
         est = estimate_causal_effect(
-            samples, scm.graph, treatment, outcome,
-            observed=observed, do_values=do_values,
+            samples,
+            scm.graph,
+            treatment,
+            outcome,
+            observed=observed,
+            do_values=do_values,
         )
         if est.available:
             out["estimate"] = {
@@ -132,23 +175,23 @@ def uncertainty_report(
     # Model/structural axes: spread across the admissible-DAG class when
     # observational samples are present.
     if samples is not None:
-        disc = discover_structures(
-            {k: [float(v) for v in vals] for k, vals in samples.items()}
-        )
+        disc = discover_structures({k: [float(v) for v in vals] for k, vals in samples.items()})
         if disc["available"] and disc["admissible_dags"]:
             effects: List[float] = []
             unidentified = 0
             for dag_edges in disc["admissible_dags"]:
                 g = CausalGraph.from_edges(dag_edges)
-                member = identifiability(
-                    g, treatment, outcome, observed=observed
-                )
+                member = identifiability(g, treatment, outcome, observed=observed)
                 if member["verdict"] != IDENTIFIED:
                     unidentified += 1
                     continue
                 est_m = estimate_causal_effect(
-                    samples, g, treatment, outcome,
-                    observed=observed, do_values=do_values,
+                    samples,
+                    g,
+                    treatment,
+                    outcome,
+                    observed=observed,
+                    do_values=do_values,
                 )
                 if est_m.available and est_m.adjusted_effect is not None:
                     effects.append(est_m.adjusted_effect)
@@ -196,9 +239,7 @@ def calibrate_effects(
     refused = 0
     for i in range(k_experiments):
         samples = scm.sample(n_samples, seed=seed + i, noise_sd=noise_sd)
-        est = estimate_causal_effect(
-            samples, scm.graph, treatment, outcome, do_values=do_values
-        )
+        est = estimate_causal_effect(samples, scm.graph, treatment, outcome, do_values=do_values)
         if not est.available or est.standard_error is None or est.standard_error <= 0:
             refused += 1
             continue
@@ -214,8 +255,7 @@ def calibrate_effects(
     coverage = {k: (covered[k] / usable if usable else None) for k in levels}
     nominal = {"90%": 0.90, "95%": 0.95, "99%": 0.99}
     calib_err = {
-        k: abs(coverage[k] - nominal[k]) if coverage[k] is not None else None
-        for k in levels
+        k: abs(coverage[k] - nominal[k]) if coverage[k] is not None else None for k in levels
     }
     return {
         "version": UNCERTAINTY_VERSION,
@@ -246,15 +286,14 @@ def calibrate_futures(
 ) -> Dict[str, Any]:
     """Empirical coverage of the propagated p05-p95 bands.
 
-    Each world draws one realised exogenous-noise vector, propagates the
-    SCM under the action, and checks whether the realised outcome falls
-    inside the exact 90% band. Band semantics are Gaussian under the
-    linear model, so coverage should sit near 0.90; the gap is the
-    calibration error.
+    Each world evaluates one realised exogenous-noise vector drawn from
+    a deterministic Gaussian quantile grid (see ``_deterministic_noise``),
+    propagates the SCM under the action, and checks whether the realised
+    outcome falls inside the exact 90% band. Band semantics are Gaussian
+    under the linear model, so coverage should sit near 0.90; the gap is
+    the calibration error. ``seed`` rotates the grid deterministically —
+    identical inputs always produce identical coverage.
     """
-    import random
-
-    rng = random.Random(seed)
     order = scm.graph.topological_order()
     sd_map = {n: float((noise_sd or {}).get(n, 1.0)) for n in order}
     rows: List[Dict[str, Any]] = []
@@ -266,7 +305,7 @@ def calibrate_futures(
         stats = _propagate_moments(mutilated, ivs, noise_sd)
         hits = {o: 0 for o in outcomes}
         for w in range(worlds):
-            noise = {n: rng.gauss(0.0, sd_map[n]) for n in order}
+            noise = _deterministic_noise(order, w, seed, sd_map)
             realised = mutilated.evaluate_all(ivs, noise)
             for o in outcomes:
                 lo, hi = stats[o]["p05"], stats[o]["p95"]

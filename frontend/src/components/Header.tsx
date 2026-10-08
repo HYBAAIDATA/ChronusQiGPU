@@ -6,6 +6,7 @@ interface HeaderProps {
   status: MlaStatus | null;
   ready: ReadyToMine | null;
   offline: boolean;
+  miningAuthorized?: boolean;
 }
 
 const Chip: React.FC<{
@@ -20,7 +21,12 @@ const Chip: React.FC<{
   </span>
 );
 
-export const Header: React.FC<HeaderProps> = ({ status, ready, offline }) => {
+export const Header: React.FC<HeaderProps> = ({
+  status,
+  ready,
+  offline,
+  miningAuthorized = true,
+}) => {
   const readyToMine = ready?.ready === true;
   const openclDeviceCount = status?.gpu?.opencl_device_count ?? 0;
   const logicalSubstrateAvailable = Boolean(status?.gpu?.logical_substrate?.available);
@@ -65,7 +71,13 @@ export const Header: React.FC<HeaderProps> = ({ status, ready, offline }) => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {offline ? (
+            {!miningAuthorized ? (
+              <Chip
+                tone="dim"
+                label="mining restricted"
+                icon={<ShieldCheck className="w-3 h-3" />}
+              />
+            ) : offline ? (
               <Chip tone="red" label="API offline" icon={<WifiOff className="w-3 h-3" />} />
             ) : (
               <>

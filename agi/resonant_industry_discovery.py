@@ -40,8 +40,14 @@ class ResonantIndustryDiscovery:
         self.phi_threshold = 0.618  # Golden ratio threshold for resonance
 
     def calculate_phi_resonance(self, data_coherence: float, causal_density: float) -> float:
-        """Calculate phi-resonance score for an industry."""
-        return abs(PHI - abs(data_coherence / causal_density)) if causal_density > 0 else 0.0
+        """Measured phi-resonance of the declared coherence/density pair via
+        ``PhiResonanceScorer`` (quantised to milli-units so the integer
+        scorer sees the real inputs)."""
+        from agi.resonance import PhiResonanceScorer
+
+        return PhiResonanceScorer().score(
+            [int(round(data_coherence * 1000)), int(round(causal_density * 1000))]
+        )
 
     async def scan_industries(self) -> List[IndustryCandidate]:
         """
@@ -49,7 +55,7 @@ class ResonantIndustryDiscovery:
         """
         logger.info("🔍 Scanning industries for phi-resonance patterns...")
 
-        # Industry candidates with estimated parameters
+        # Industry candidates — declared domain estimates, not measurements.
         raw_candidates = [
             {
                 "name": "Quantum Materials Discovery",
@@ -98,7 +104,9 @@ class ResonantIndustryDiscovery:
                 candidate["data_coherence"], candidate["causal_density"]
             )
 
-            # Integration score: phi-resonance × causal density × data coherence
+            # Integration score: declared multiplicative index of measured
+            # phi-resonance and declared coherence/density estimates — a
+            # policy index, not a measurement.
             integration = phi_res * candidate["causal_density"] * candidate["data_coherence"]
 
             industry = IndustryCandidate(
@@ -112,7 +120,6 @@ class ResonantIndustryDiscovery:
             )
 
             self.candidates.append(industry)
-            await asyncio.sleep(0.01)  # Simulated analysis cycle
 
         # Sort by integration score (highest first)
         self.candidates.sort(key=lambda x: x.integration_score, reverse=True)

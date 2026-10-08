@@ -8,7 +8,6 @@ process isolation validation, and dynamic macro-primitive discovery.
 
 import time
 import math
-import random
 import logging
 from typing import Dict, List, Tuple, Any, Optional, Callable
 
@@ -69,25 +68,31 @@ class MCTSSearchEngine:
         c_puct: float = 1.5
     ):
         self.seed = seed
-        random.seed(seed)
         self.c_puct = c_puct
         self.calculator = PhiResonanceCalculator(target_phi)
         self.base_operators = ASTPrimitives.get_all_operators()
         self.evaluator = IsolatedProcessEvaluator(timeout_sec=2.0)
-        self.surrogate = AdaptiveOperatorSurrogate(learning_rate=0.05)
+        self.surrogate = AdaptiveOperatorSurrogate()
         self.discovery_engine = ASTDeltaDiscoveryEngine()
         self.repository = repository or PersistentPrimitiveRepository()
 
     def _compute_policy_priors(self, code_str: str, active_ops: List[Tuple[str, Callable]]) -> Dict[str, float]:
         """Calculates policy prior distribution pi(a|s) using AdaptiveOperatorSurrogate."""
         features = self.calculator.extract_features(code_str)
+        # Anti-primitive suppression is measured (recorded failure counts), so
+        # suppressed operators receive zero prior mass rather than an invented
+        # penalty logit.
         raw_priors = {}
         for op_name, _ in active_ops:
-            if self.surrogate.is_anti_primitive(op_name):
-                raw_priors[op_name] = -2.0
-            else:
+            if not self.surrogate.is_anti_primitive(op_name):
                 raw_priors[op_name] = self.surrogate.predict_gain(features, op_name)
-        
+        if not raw_priors:
+            # Every operator is suppressed by measured evidence; fall back to
+            # Born-expectation priors over the full vocabulary rather than an
+            # empty distribution.
+            for op_name, _ in active_ops:
+                raw_priors[op_name] = self.surrogate.predict_gain(features, op_name)
+
         # Softmax normalization to policy probability distribution
         max_val = max(raw_priors.values()) if raw_priors else 0.0
         exp_vals = {op: math.exp(val - max_val) for op, val in raw_priors.items()}
@@ -111,7 +116,9 @@ class MCTSSearchEngine:
         
         # Initial Sandbox Verification
         p_v, c_v, r_v, _ = self.evaluator.evaluate_validity(current_code, external_test_runner, external_test_code)
-        current_score = self.calculator.compute_phi(current_code) if (p_v and r_v) else 0.1000
+        # phi is a computable structural metric: report it unconditionally rather
+        # than substituting a placeholder when sandbox validity fails.
+        current_score = self.calculator.compute_phi(current_code)
         initial_score = current_score
         initial_node_count = self.calculator.extract_features(current_code).get("node_count", 50)
 
@@ -185,14 +192,21 @@ class MCTSSearchEngine:
                     actual_delta = round(cand_fitness - current_score, 6)
                     value = actual_delta
                 else:
-                    cand_fitness = 0.1000
-                    actual_delta = -0.5000
-                    value = -0.1000
+                    # Invalid rollouts carry no measured fitness or delta; the
+                    # failure is recorded as evidence and the backpropagated
+                    # value is the honest "no measured gain" (0.0).
+                    cand_fitness = None
+                    actual_delta = None
+                    value = 0.0
 
                 # 3. Sandbox Candidate Trial Record
                 if best_action in self.discovery_engine.sandbox_pool:
                     cand = self.discovery_engine.sandbox_pool[best_action]
-                    cand.record_trial(actual_delta, parse_v, test_v)
+                    cand.record_trial(
+                        actual_delta if actual_delta is not None else 0.0,
+                        parse_v,
+                        test_v,
+                    )
                     if cand.check_promotion_eligibility():
                         self.discovery_engine.promoted_vocabulary[best_action] = cand.op_func
                         self.repository.register_primitive(

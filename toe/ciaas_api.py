@@ -13,6 +13,8 @@ Endpoints
     POST /api/v1/ciaas/forecast         — trajectory prediction
     POST /api/v1/ciaas/causal           — causal ladder (do-calculus)
     POST /api/v1/ciaas/feedback         — record outcome
+    POST /api/v1/ciaas/solve            — domain-neutral problem → reasoning episode
+    POST /api/v1/ciaas/learn            — observed outcome → model revision
     GET  /metrics                      — Prometheus-style metrics
 
 Auth
@@ -44,7 +46,7 @@ import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Any, Callable, Mapping, Optional
+from typing import Any, Mapping, Optional
 from urllib.parse import urlparse
 
 from toe.runtime import (
@@ -303,6 +305,12 @@ class CIaaSService:
             decision_id = (metadata or {}).get("decision_id", "")
             outcome = payload
             response = self.runtime.record_outcome(decision_id, outcome, tenant, metadata=metadata)
+        elif operation == "solve":
+            domain = (metadata or {}).get("domain")
+            response = self.runtime.solve(payload, tenant, domain=domain)
+        elif operation == "learn":
+            episode_sha256 = (metadata or {}).get("episode_sha256", "")
+            response = self.runtime.learn(episode_sha256, payload, tenant)
         else:
             return self._error_response(tenant_id, operation, "unknown_operation", f"Unknown operation: {operation}", 400), 400
 
@@ -316,6 +324,8 @@ class CIaaSService:
                 status = 401
             elif code in ("payload_invalid", "payload_too_large", "unknown_operation"):
                 status = 400
+            elif code == "unknown_episode":
+                status = 404
             elif code == "engine_unavailable":
                 status = 503
             elif code == "consensus_boundary_violation":
@@ -324,15 +334,27 @@ class CIaaSService:
         return response, status
 
     def handle_health(self) -> dict[str, Any]:
-        """Liveness is public; security configuration is reported, never bypassed."""
+        """Health check response — mirrors ``TOEIntelligenceRuntime.health()``.
+
+        ``health()`` is invoked (not just ``runtime.degraded`` read) so
+        learned-state degradation — underperforming modules discovered by
+        the outcome loop — reaches the HTTP surface without waiting for
+        ``/metrics`` to compute it first.
+        """
+        health = self.runtime.health()
+        healthy = health["engine_available"] and not health["degraded"]
         return {
-            "status": "ok" if self.runtime.ready() else "degraded",
-            "engine_available": self.runtime.ready(),
-            "auth_configured": self.auth_configured,
-            "registered_tenants": len(self._tenants),
-            "degraded": self.runtime.degraded,
-            "degradation_reasons": self.runtime.degradation_reasons,
-            "timestamp": time.time(),
+            "status": "ok" if healthy else "degraded",
+            "engine_available": health["engine_available"],
+            "engine_status": health["engine_status"],
+            "degraded": health["degraded"],
+            "degradation_reasons": health["degradation_reasons"],
+            "feedback_available": health["feedback_available"],
+            "learned_module_performance": health["learned_module_performance"],
+            "underperforming_modules": health["underperforming_modules"],
+            "feedback_state": health["feedback_state"],
+            "production_ready": health["production_ready"],
+            "timestamp": health["timestamp"],
         }
 
     def handle_ready(self) -> dict[str, Any]:
@@ -486,6 +508,8 @@ class CIaaSHTTPHandler(BaseHTTPRequestHandler):
             "/api/v1/ciaas/forecast": "forecast",
             "/api/v1/ciaas/causal": "causal",
             "/api/v1/ciaas/feedback": "feedback",
+            "/api/v1/ciaas/solve": "solve",
+            "/api/v1/ciaas/learn": "learn",
         }
 
         if path not in routes:
