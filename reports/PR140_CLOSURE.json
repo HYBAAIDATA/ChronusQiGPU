@@ -18,14 +18,20 @@
   },
   "counter_status": "UNVERIFIED_AT_EXACT_HEAD",
   "mandatory_gates": {
-    "exact_head_verification": "UNVERIFIED",
-    "mechanical_public_api_isolation": "UNVERIFIED",
-    "platform_suite": "FAIL_REPORTED_7_OF_8",
-    "import_audit": "FAIL_REPORTED",
+    "focused-installed-native": "PASS",
+    "focused-installed-portable": "PASS",
+    "restart-execute-native": "PASS",
+    "restart-replay-native": "PASS",
+    "restart-execute-portable": "PASS",
+    "restart-replay-portable": "PASS",
+    "packaging": "PASS",
+    "exact_head_full_checkout": "UNAVAILABLE",
+    "platform_product_gate": "UNAVAILABLE",
+    "import_audit_product_gate": "UNAVAILABLE",
+    "known_platform_defect": "OPEN_UNFIXED",
+    "known_import_defects": "OPEN_UNFIXED",
     "ci": "UNAVAILABLE",
-    "installed_native": "UNVERIFIED_AT_EXACT_HEAD",
-    "installed_portable": "UNVERIFIED_AT_EXACT_HEAD",
-    "restart_replay": "UNVERIFIED_AT_EXACT_HEAD"
+    "exhaustive_public_api_and_caller_audit": "UNVERIFIED"
   },
   "evidence_classification": {
     "scripted_pool": "LOCAL_PROTOCOL_INTEGRATION_ONLY",
@@ -35,5 +41,31 @@
   },
   "historical_evidence": "Older evidence retains its actual source binding; no old result is promoted by changing SHA fields.",
   "baseline_defects": "Remain blockers when inside the product contract; provenance is not exemption.",
-  "handoff_instruction": "Bounded remediation only; final verification then STOP. Unresolved canonical-lane work handed off; no architecture expansion."
+  "handoff_instruction": "Bounded remediation only; final verification then STOP. Unresolved canonical-lane work handed off; no architecture expansion.",
+  "remediation_source_commit": "3795d1be98ba7496384acca821e839ac3e5fcd7c",
+  "tested_whole_product_head": null,
+  "verification_manifest": "docs/evidence/pr140-final/evidence-manifest.json",
+  "closure_lane_state": "STOPPED_HANDOFF",
+  "handoffs": [
+    {
+      "lane": "PYTHIA canonical execution/platform",
+      "item": "Reproduce and fix stale-work platform test on complete checkout; mandatory product gate remains blocked."
+    },
+    {
+      "lane": "Product import/packaging",
+      "item": "Repair benchmark namespace/import findings and execute full product import gate; not exempted as baseline."
+    },
+    {
+      "lane": "Exact public solver and consumer migration",
+      "item": "Replace interval-certified FP64 representatives with exact required contract; migrate consumers. All existing public backends remain available only under reference approval."
+    },
+    {
+      "lane": "Remaining numerical/reference API owners",
+      "item": "Complete direct state/operator/QX/UCI/tensor/other engine boundaries and caller audit; no exhaustive reachability closure claimed."
+    },
+    {
+      "lane": "CI/release owner",
+      "item": "Provide complete exact-head checkout and actually executed CI qualification; publish no readiness until mandatory gates pass."
+    }
+  ]
 }
