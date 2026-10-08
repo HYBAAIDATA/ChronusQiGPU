@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any, ClassVar, Mapping
 
-from .contracts import Authority, domain_hash
+from .contracts import Authority, RewardAuthority, domain_hash
 from .evidence import EvidenceChain, atomic_write, load_json
 from .governance import Delegator, Organ, OrganRegistry
 from .kairos_runtime import KairosRuntime, World
 from .learning_service import LearningService
-from .memory_database import MemoryDatabase
+from .memory_database import MemoryDatabase, MemoryScope
 from .rights import RightsLedger
 
 
@@ -29,16 +30,24 @@ class EuclidRuntime:
     ) -> None:
         self.creator_id = creator_id
         self.state_dir = Path(state_dir)
+        self.state_dir.mkdir(parents=True, exist_ok=True)
         self.evidence = EvidenceChain()
         self.registry = OrganRegistry()
         self.rights = RightsLedger(creator_id, self.evidence)
         self.delegator = Delegator(self.registry, self.evidence, self.rights)
+        database = memory_database or MemoryDatabase(
+            self.state_dir / "euclid_memory.sqlite3"
+        )
+        self._adaptive_data_port: Any | None = None
+        self._adaptive_tenant_id = str(creator_id)
+        self._adaptive_last_binding_id: str | None = None
+        self._adaptive_last_seal: str | None = None
         self.learning = LearningService(
             pythia=pythia,
             memory=memory,
             store=store,
             experience_learner=experience_learner,
-            memory_database=memory_database,
+            memory_database=database,
             evidence=self.evidence,
             replay_journal_path=self.state_dir / "replay_journal.json",
         )
@@ -630,41 +639,168 @@ class EuclidRuntime:
         "euclid.adaptive.consolidation",
     )
 
+    ADAPTIVE_KNOWLEDGE_KIND: ClassVar[str] = "euclid_adaptive_knowledge"
+
+    def bind_adaptive_data_port(self, port: Any) -> None:
+        """Bind v17 adaptive state to the canonical shared EUCLID data port."""
+        if getattr(port, "system", None) != "euclid":
+            raise ValueError("adaptive data port must be the canonical EUCLID port")
+        self._adaptive_data_port = port
+        tenant = getattr(getattr(port.fabric, "custody", None), "tenant", None)
+        if tenant:
+            self._adaptive_tenant_id = str(tenant)
+
+    def _adaptive_scope(self) -> MemoryScope:
+        return MemoryScope(
+            self._adaptive_tenant_id,
+            "euclid-v17-adaptive",
+            "cognition",
+        )
+
+    def _validate_adaptive_record(self, record: Mapping[str, Any]) -> Mapping[str, Any]:
+        if record.get("schema") != "euclid.adaptive-knowledge-record/1":
+            raise ValueError("unsupported adaptive knowledge record")
+        if str(record.get("creator_id")) != self.creator_id:
+            raise ValueError("adaptive knowledge creator mismatch")
+        if str(record.get("tenant_id")) != self._adaptive_tenant_id:
+            raise ValueError("adaptive knowledge tenant mismatch")
+        knowledge = record.get("knowledge")
+        if not isinstance(knowledge, Mapping):
+            raise ValueError("adaptive knowledge payload missing")
+        return knowledge
+
+    def _load_adaptive_knowledge(self) -> tuple[Any, bool, str]:
+        from .cognition.integrated import AgentKnowledge
+
+        port = self._adaptive_data_port
+        if port is not None:
+            binding = port.latest(self.ADAPTIVE_KNOWLEDGE_KIND)
+            if binding is not None:
+                payload = json.loads(port.read(binding.binding_id).decode("utf-8"))
+                knowledge_payload = self._validate_adaptive_record(payload)
+                knowledge = AgentKnowledge.from_payload(knowledge_payload)
+                self._adaptive_last_binding_id = binding.binding_id
+                self._adaptive_last_seal = str(knowledge_payload.get("seal") or "")
+                return knowledge, True, "ovid-theseus"
+
+        database = self.learning.memory_database
+        if database is not None:
+            rows = database.query(scope=self._adaptive_scope(), tier="semantic", limit=1)
+            if rows:
+                payload = dict(rows[0].content)
+                knowledge_payload = self._validate_adaptive_record(payload)
+                knowledge = AgentKnowledge.from_payload(knowledge_payload)
+                self._adaptive_last_seal = str(knowledge_payload.get("seal") or "")
+                return knowledge, True, "memory-database"
+        return AgentKnowledge(), False, "new"
+
+    def _persist_adaptive_knowledge(self, *, episode_id: str) -> None:
+        if self.adaptive is None:
+            raise RuntimeError("adaptive intelligence is not composed")
+        knowledge_payload = self.adaptive.knowledge.to_payload()
+        seal = str(knowledge_payload.get("seal") or "")
+        if not seal:
+            raise ValueError("adaptive knowledge payload is unsealed")
+        if seal == self._adaptive_last_seal:
+            return
+        record = {
+            "schema": "euclid.adaptive-knowledge-record/1",
+            "creator_id": self.creator_id,
+            "tenant_id": self._adaptive_tenant_id,
+            "episode_id": str(episode_id),
+            "knowledge": knowledge_payload,
+        }
+
+        # In production the shared OVID/THESEUS binding is authoritative.
+        # The local MemoryDatabase remains a query/cache surface and the
+        # standalone authority when no shared composition exists.
+        port = self._adaptive_data_port
+        if port is not None:
+            parents = (
+                (self._adaptive_last_binding_id,)
+                if self._adaptive_last_binding_id
+                else ()
+            )
+            binding = port.put(
+                self.ADAPTIVE_KNOWLEDGE_KIND,
+                record,
+                evidence_state="MEASURED",
+                parents=parents,
+                correlation_ids={
+                    "creator_id": self.creator_id,
+                    "episode_id": str(episode_id),
+                },
+                meta={
+                    "semantic_owner": "euclid",
+                    "custody_owner": "theseus",
+                    "transform_lineage_owner": "ovid",
+                    "tenant_id": self._adaptive_tenant_id,
+                },
+            )
+            verdict = port.fabric.verify(binding.binding_id)
+            if not verdict.get("passed"):
+                raise RuntimeError("adaptive knowledge failed shared custody verification")
+            self._adaptive_last_binding_id = binding.binding_id
+
+        database = self.learning.memory_database
+        if database is None:
+            raise RuntimeError("EUCLID adaptive MemoryDatabase is unavailable")
+        replay_id = domain_hash(
+            "euclid.adaptive-knowledge.replay.v1",
+            {
+                "tenant_id": self._adaptive_tenant_id,
+                "creator_id": self.creator_id,
+                "episode_id": str(episode_id),
+                "seal": seal,
+                "evidence_head": self.evidence.head,
+            },
+        )
+        database.put(
+            scope=self._adaptive_scope(),
+            tier="semantic",
+            content=record,
+            provenance="euclid-v17-adaptive",
+            reward_authority=RewardAuthority.NONE,
+            uncertainty=0.0,
+            replay_id=replay_id,
+        )
+        self._adaptive_last_seal = seal
+        self.evidence.append(
+            "adaptive-knowledge-persisted",
+            {
+                "episode_id": str(episode_id),
+                "tenant_id": self._adaptive_tenant_id,
+                "creator_id": self.creator_id,
+                "seal": seal,
+                "shared_custody": port is not None,
+                "binding_id": self._adaptive_last_binding_id,
+            },
+        )
+
     def compose_adaptive_intelligence(
         self,
         *,
         config: Any | None = None,
         ablations: Any | None = None,
     ) -> Any:
-        """Compose the v17 integrated agent inside this runtime.
-
-        The agent shares this runtime's evidence chain, executes only through
-        the governed Delegator (see :meth:`solve_task`), and persists sealed
-        long-term knowledge under ``state_dir`` so a restart resumes it.
-        """
-        from .cognition.integrated import AgentKnowledge, IntegratedAgent
+        """Compose v17 over canonical database and optional shared custody."""
+        from .cognition.integrated import IntegratedAgent
         from .cognition.reachability import ReachabilityStage
 
-        path = self.state_dir / "adaptive_knowledge.json"
-        restored = path.is_file()
-        knowledge = (
-            AgentKnowledge.from_payload(load_json(path)) if restored else AgentKnowledge()
-        )
+        knowledge, restored, source = self._load_adaptive_knowledge()
         self.adaptive = IntegratedAgent(
             knowledge=knowledge, config=config, ablations=ablations, evidence=self.evidence
         )
-        # Recomposition must not reset the organ namespace while the registry
-        # still owns earlier task organs. Resetting this counter caused the
-        # next task to reuse task-world-1 and fail as a duplicate organ.
         if not hasattr(self, "_adaptive_organs"):
             self._adaptive_organs = 0
         if restored:
             self.evidence.append(
                 "adaptive-knowledge-restored",
                 {
-                    "path": str(path),
+                    "source": source,
                     "episodes": int(getattr(knowledge, "episodes", 0)),
                     "restart_verified": False,
+                    "binding_id": self._adaptive_last_binding_id,
                 },
             )
         for component in self.ADAPTIVE_COMPONENTS:
@@ -682,7 +818,11 @@ class EuclidRuntime:
                         stage,
                         episode_id="adaptive-startup",
                         evidence_ref=self.evidence.head or "genesis",
-                        detail={"restored": restored, "restart_verified": False},
+                        detail={
+                            "restored": restored,
+                            "restore_source": source,
+                            "restart_verified": False,
+                        },
                     )
                     current = stage
         self.reachability.save(self.state_dir / "cognition_reachability.json")
@@ -770,9 +910,7 @@ class EuclidRuntime:
             # A solver error, BaseException or cancellation must never leave an
             # episode-scoped execution right active.
             self.rights.revoke(self.creator_id, organ_id, capability, "dispatch")
-        atomic_write(
-            self.state_dir / "adaptive_knowledge.json", self.adaptive.knowledge.to_payload()
-        )
+        self._persist_adaptive_knowledge(episode_id=str(spec.task_id))
         self._record_adaptive_component_usage(result)
         self.reachability.save(self.state_dir / "cognition_reachability.json")
         return result
