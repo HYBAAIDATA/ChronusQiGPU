@@ -165,6 +165,9 @@ def verify_full_chain(backend: Optional[Any] = None) -> Dict[str, Any]:
         bound.backend.value,
         detail=bound.detail,
         gpu_bound=bound.gpu_bound,
+        failed=bound.failed,
+        successful=not bound.failed,
+        correct=not bound.failed,
         fail_explicit=True,
     )
 
