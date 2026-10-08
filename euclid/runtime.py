@@ -44,6 +44,9 @@ class EuclidRuntime:
         )
         self.kairos = KairosRuntime(creator_id, self.evidence)
         self.cognition = cognition
+        #: v17 integrated adaptive intelligence (see compose_adaptive_intelligence)
+        self.adaptive: Any | None = None
+        self._adaptive_organs = 0
         from .cognition.reachability import ReachabilityMatrix
 
         matrix_path = self.state_dir / "cognition_reachability.json"
@@ -613,6 +616,110 @@ class EuclidRuntime:
         self._organ_operations[organ_id] = frozenset(
             str(operation) for operation in (operations or ())
         )
+
+    # -- v17 integrated adaptive intelligence -----------------------------------------
+    ADAPTIVE_COMPONENTS: ClassVar[tuple[str, ...]] = (
+        "euclid.adaptive.world_model",
+        "euclid.adaptive.causal_discrimination",
+        "euclid.adaptive.metacognition",
+        "euclid.adaptive.strategy_meta_learning",
+        "euclid.adaptive.planning",
+        "euclid.adaptive.representation",
+        "euclid.adaptive.analogy",
+        "euclid.adaptive.skills",
+        "euclid.adaptive.consolidation",
+    )
+
+    def compose_adaptive_intelligence(
+        self,
+        *,
+        config: Any | None = None,
+        ablations: Any | None = None,
+    ) -> Any:
+        """Compose the v17 integrated agent inside this runtime.
+
+        The agent shares this runtime's evidence chain, executes only through
+        the governed Delegator (see :meth:`solve_task`), and persists sealed
+        long-term knowledge under ``state_dir`` so a restart resumes it.
+        """
+        from .cognition.integrated import AgentKnowledge, IntegratedAgent
+        from .cognition.reachability import ReachabilityStage
+
+        path = self.state_dir / "adaptive_knowledge.json"
+        knowledge = (
+            AgentKnowledge.from_payload(load_json(path)) if path.is_file() else AgentKnowledge()
+        )
+        self.adaptive = IntegratedAgent(
+            knowledge=knowledge, config=config, ablations=ablations, evidence=self.evidence
+        )
+        self._adaptive_organs = 0
+        restored = path.is_file()
+        for component in self.ADAPTIVE_COMPONENTS:
+            current = self.reachability.stage(component)
+            stages = [
+                ReachabilityStage.PRESENT, ReachabilityStage.IMPORTABLE,
+                ReachabilityStage.ADAPTED, ReachabilityStage.REGISTERED,
+                ReachabilityStage.REACHABLE,
+            ]
+            if restored and current is not None and current >= ReachabilityStage.PERSISTED:
+                stages.append(ReachabilityStage.RESTART_VERIFIED)
+            for stage in stages:
+                if current is None or stage > current:
+                    self.reachability.record(
+                        component, stage, episode_id="adaptive-startup",
+                        evidence_ref=self.evidence.head or "genesis",
+                    )
+                    current = stage
+        self.reachability.save(self.state_dir / "cognition_reachability.json")
+        return self.adaptive
+
+    def solve_task(self, spec: Any, world_executor: Any, *, seed: int = 0) -> Any:
+        """Solve an interactive task; every probe and submission is delegated.
+
+        ``world_executor`` is registered as a dedicated PROPOSE-authority organ
+        with a creator-granted dispatch right, so execution passes the same
+        capable/healthy/permitted/confident/safe gates as every other organ.
+        """
+        if getattr(self, "adaptive", None) is None:
+            raise RuntimeError("adaptive intelligence is not composed")
+        from .cognition.baselines import DelegatorExecutor
+        from .cognition.reachability import ReachabilityStage
+
+        self._adaptive_organs += 1
+        organ_id = f"task-world-{self._adaptive_organs}"
+        capability = f"{organ_id}.execute"
+        self.register_organ(
+            Organ(
+                organ_id,
+                frozenset({capability}),
+                Authority.PROPOSE,
+                lambda request, _executor=world_executor: _executor.execute(
+                    request["action"], request["payload"]
+                ),
+            )
+        )
+        self.rights.grant(self.creator_id, organ_id, capability, "dispatch")
+        executor = DelegatorExecutor(self.delegator, organ_id, capability)
+        result = self.adaptive.solve(spec, executor, seed=seed)
+        self.rights.revoke(self.creator_id, organ_id, capability, "dispatch")
+        atomic_write(
+            self.state_dir / "adaptive_knowledge.json", self.adaptive.knowledge.to_payload()
+        )
+        episode = str(spec.task_id)
+        head = self.evidence.head or "genesis"
+        for component in self.ADAPTIVE_COMPONENTS:
+            current = self.reachability.stage(component)
+            for stage in (
+                ReachabilityStage.USED_IN_EPISODE, ReachabilityStage.EXECUTED,
+                ReachabilityStage.OUTCOME_OBSERVED, ReachabilityStage.FEEDBACK_CLOSED,
+                ReachabilityStage.PERSISTED,
+            ):
+                if current is None or stage > current:
+                    self.reachability.record(component, stage, episode_id=episode,
+                                             evidence_ref=head)
+                    current = stage
+        self.reachability.save(self.state_dir / "cognition_reachability.json")
+        return result
 
     def solve_repository_problem(
         self, problem: Mapping[str, Any], *, goal: str | None = None

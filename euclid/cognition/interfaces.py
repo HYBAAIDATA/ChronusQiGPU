@@ -42,6 +42,8 @@ class Intervention:
     action: str
     expected_divergence: float
     rationale: str
+    #: executable content for the governed executor (e.g. a probe program)
+    payload: Mapping[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -57,7 +59,8 @@ class ControlAssessment:
 
     action: str  # continue | change_strategy | change_representation |
     # seek_evidence | new_hypothesis | adjust_plan_depth | reuse_skill |
-    # synthesise_skill | abandon_transfer | replan | halt_stalled
+    # synthesise_skill | abandon_transfer | repair_model | replan |
+    # halt_stalled | act
     rationale: str
     signals: Mapping[str, float] = field(default_factory=dict)
 
@@ -176,8 +179,75 @@ class Executor(Protocol):
     def execute(self, action: str, payload: Mapping[str, Any]) -> Mapping[str, Any]: ...
 
 
+# -- optional extensions -------------------------------------------------------
+# The core detects these by duck typing.  A specialist that lacks them gets the
+# original single-step behaviour, so every pre-existing composition is
+# unchanged.  Each hook's output is recorded as its own transition.
+
+
+@runtime_checkable
+class EvidencePolicy(Protocol):
+    """MetaController extension: decide *before* acting whether to probe."""
+
+    def pre_action(self, state: CognitiveState) -> ControlAssessment: ...
+
+
+@runtime_checkable
+class PosteriorDiscriminator(Protocol):
+    """CausalDiscriminator extension: likelihood-based hypothesis update."""
+
+    def posterior_update(
+        self,
+        state: CognitiveState,
+        intervention: Intervention,
+        observed: Mapping[str, Any],
+    ) -> tuple[list[Hypothesis], Mapping[str, Any]]: ...
+
+
+@runtime_checkable
+class ObservingWorldModel(Protocol):
+    """WorldModel extension: learn from whole execution results; self-repair."""
+
+    def observe_result(
+        self, context: str, action: str, result: Mapping[str, Any]
+    ) -> float: ...
+
+    def repair(self, state: CognitiveState) -> Mapping[str, Any]: ...
+
+
+@runtime_checkable
+class Restructurer(Protocol):
+    """Representation-controller extension: adapt the search representation."""
+
+    def restructure(
+        self, state: CognitiveState, *, exclude: Sequence[str] = ()
+    ) -> Mapping[str, Any]: ...
+
+
+@runtime_checkable
+class AnalogyRefresher(Protocol):
+    """AnalogyEngine extension: re-match as evidence reshapes the problem."""
+
+    def refresh(self, state: CognitiveState) -> list[AnalogyMapping]: ...
+
+    def abandon(self, state: CognitiveState) -> list[str]: ...
+
+
+@runtime_checkable
+class EpisodeConsolidator(Protocol):
+    """Episode-learner extension: abstract and transfer after termination."""
+
+    def consolidate(self, state: CognitiveState) -> Mapping[str, Any]: ...
+
+
 __all__ = [
     "Abducer",
+    "AnalogyRefresher",
+    "EpisodeConsolidator",
+    "EvidencePolicy",
+    "ObservingWorldModel",
+    "PosteriorDiscriminator",
+    "Restructurer",
     "AnalogyEngine",
     "CausalDiscriminator",
     "ControlAssessment",
