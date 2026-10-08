@@ -60,3 +60,38 @@ are internal measured results only.
 ```bash
 python scripts/check_intelligence_elevation.py
 ```
+
+## v17: integrated adaptive intelligence
+
+`euclid.cognition.integrated` supplies specialists that make the same
+`GeneralIntelligenceCore` operate as one adaptive system over interactive
+hidden-mechanism worlds (`euclid.cognition.worlds`):
+
+```python
+from euclid.cognition.worlds import generate_task, MechanismWorld, WorldExecutor
+from euclid.cognition.integrated import IntegratedAgent
+
+spec, truth = generate_task("causal-circuit", seed=7, partition="evaluation")
+agent = IntegratedAgent.for_system("integrated")        # or "v16.4-reference", "minus-…"
+result = agent.solve(spec, WorldExecutor(MechanismWorld(spec, truth)))
+```
+
+Inside a governed runtime use `EuclidRuntime.compose_adaptive_intelligence()`
+and `runtime.solve_task(spec, executor)`: every probe and submission is a
+Delegator dispatch with a creator-granted, then revoked, right; knowledge is
+sealed and persisted; restart is verified in the reachability matrix.
+
+Loop additions (each its own transition): strategy-first selection,
+VOI-governed evidence gathering with sequential expected-information-gain
+probes, likelihood-based hypothesis updates, analogy refresh against the
+evolving representation, measured representation restructuring, plan repair,
+metacognitive control (`repair_model`, `abandon_transfer`, `change_strategy`,
+`change_representation`, `adjust_plan_depth`), proxy-objective auditing, and
+end-of-episode consolidation (semantic priors, causal/procedural/episodic/
+strategy memory, skill discovery, transfer ledger).
+
+Discipline: hidden truth is reachable only through the executor; imagined
+rollouts are labelled predictions; held-out evaluation runs on frozen
+knowledge whose digest is checked before and after; φ machinery is ablated
+at its source with neutral twins.  The research programme is
+`scripts/run_euclid_v17_research.py`; results are in `reports/euclid_v17/`.
