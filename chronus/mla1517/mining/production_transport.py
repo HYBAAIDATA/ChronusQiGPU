@@ -690,6 +690,8 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
                 with contextlib.suppress(asyncio.CancelledError):
                     await self._precompute_task
                 self._precompute_task = None
+            if self._asynchronous_submission:
+                await self._stop_submission_task()
             if self._agentic_state_path:
                 self.agentic.save_state(self._agentic_state_path)
             if self.client is not None:
