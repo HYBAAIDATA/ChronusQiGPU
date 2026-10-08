@@ -3,6 +3,12 @@
 Committed alongside docs/IMPLICATIONS.md so downstream tooling (grant apps,
 investor decks, policy briefs) can render the taxonomy from a single source
 of truth.
+
+Claims discipline: this substrate executes quantum-mathematical algorithms as
+software on classical hardware. Every statement below describes mathematical
+capability (the algorithm runs, the state is represented) — none of it is a
+measured quantum speedup or a hardware-backed result. Wall-clock advantage
+over classical computation is not claimed anywhere in this manifest.
 """
 
 from __future__ import annotations
@@ -41,27 +47,27 @@ _COMPUTATIONAL = ImplicationCategory(
             key="quantum_democratization",
             title="Quantum Democratization",
             bullets=(
-                "Hardware Independence: Quantum algorithms run on any substrate (GPU, CPU, FPGA, ASIC, cloud, edge).",
+                "Hardware Independence: Quantum-mathematical algorithms run as software on any substrate (GPU, CPU, FPGA, ASIC, cloud, edge).",
                 "Immediate Deployment: No waiting for physical quantum computers to mature.",
                 "Universal Access: Same quantum-mathematical operations on a $50 Raspberry Pi or $100M supercomputer.",
-                "Moore's Law Continuation: Classical hardware advances directly benefit quantum computation.",
+                "Moore's Law Continuation: Classical hardware advances directly benefit quantum-mathematical computation.",
             ),
         ),
         Implication(
             key="memory_revolution",
             title="Memory Revolution",
             bullets=(
-                "Exponential Compression: phi-fold reduces 2^4096 -> 4096*128^2*2 (~54M x compression factor).",
-                "Quantum State Storage: Previously intractable quantum states become tractable.",
-                "Scalability Barrier Broken: Memory no longer the bottleneck for quantum representation.",
-                "New Complexity Class: Efficient quantum representation becomes polynomial rather than exponential.",
+                "Phi-Fold Compression: phi-fold maps a 2^4096-dim state space to 4096*128^2*2 parameters (~54M x) for the phi-structured state family it targets; arbitrary quantum states are not compressible this way.",
+                "Quantum State Storage: Phi-structured states that were intractable to store directly become tractable in compressed form.",
+                "Scalability Relief: Memory is no longer the bottleneck within the compressible state family.",
+                "Reduced Complexity Footprint: Representation cost for the target state family becomes polynomial rather than exponential; general quantum simulation complexity is unchanged.",
             ),
         ),
         Implication(
             key="algorithm_renaissance",
             title="Algorithm Renaissance",
             bullets=(
-                "Quantum Speedup Today: Grover sqrt(N), Shor exponential, quantum ML advantages available now.",
+                "Algorithm-Level Speedups Formalized: Grover O(sqrt(N)) and Shor polynomial-time factoring are demonstrated as mathematics; on classical substrates they execute as simulation that reproduces the algorithm, not its speedup.",
                 "Hybrid Algorithms: Seamless quantum-classical integration without hardware constraints.",
                 "Algorithm Portability: Quantum algorithms become substrate-independent software.",
                 "Rapid Innovation: No hardware deployment cycle for algorithmic advances.",
@@ -78,9 +84,9 @@ _SOCIETAL = ImplicationCategory(
             key="scientific_acceleration",
             title="Scientific Acceleration",
             bullets=(
-                "Drug Discovery: Quantum chemistry VQE on classical hardware accelerates molecular simulation.",
-                "Climate Modeling: Exascale quantum-enhanced climate models on existing supercomputers.",
-                "Materials Science: Quantum simulation for battery, semiconductor, superconductor design.",
+                "Drug Discovery: VQE runs on classical hardware as simulation, reproducing the variational procedure at classical cost.",
+                "Climate Modeling: Quantum-mathematical kernels can run inside existing HPC workflows; exascale deployment is a target, not a demonstrated result.",
+                "Materials Science: Classical quantum-system simulation for battery, semiconductor, superconductor design.",
                 "Fundamental Physics: LHC data analysis with quantum pattern recognition.",
             ),
         ),
@@ -109,7 +115,7 @@ _SOCIETAL = ImplicationCategory(
             title="Ethical Considerations",
             bullets=(
                 "Cryptography Impact: Post-quantum cryptography urgency remains (Shor's algorithm works).",
-                "AI Safety: Quantum ML advantages accelerate AI development, requiring enhanced safety measures.",
+                "AI Safety: Quantum-mathematical ML techniques may accelerate AI development; any advantage claim requires benchmark evidence.",
                 "Resource Allocation: Compute resources become the constraint vs specialized quantum hardware.",
                 "Transparency: Mathematical quantum is more auditable than black-box quantum hardware.",
             ),
@@ -125,9 +131,9 @@ _ENTERPRISE = ImplicationCategory(
             key="immediate_roi",
             title="Immediate ROI",
             bullets=(
-                "No CapEx Investment: Quantum advantages without $10M+ quantum computer purchases.",
-                "Existing Infrastructure: Quantum algorithms run on current GPU/CPU clusters.",
-                "Rapid Deployment: Quantum advantages in weeks, not years.",
+                "No CapEx Investment: Quantum-mathematical capability on classical hardware without $10M+ quantum computer purchases.",
+                "Existing Infrastructure: Quantum-mathematical algorithms run on current GPU/CPU clusters.",
+                "Rapid Deployment: Quantum-mathematical workloads deploy in weeks, not years.",
                 "Risk Reduction: No quantum hardware obsolescence risk.",
             ),
         ),
@@ -135,10 +141,10 @@ _ENTERPRISE = ImplicationCategory(
             key="competitive_advantages",
             title="Competitive Advantages",
             bullets=(
-                "Financial Services: Quantum portfolio optimization, Monte Carlo acceleration, fraud detection.",
-                "Pharmaceuticals: Quantum molecular simulation for drug discovery on existing HPC.",
-                "Logistics: Quantum optimization for routing, scheduling, supply chain.",
-                "Energy: Quantum-enhanced grid optimization, battery materials discovery.",
+                "Financial Services: Quantum-mathematical portfolio optimization and Monte Carlo formulations, fraud detection.",
+                "Pharmaceuticals: Quantum-system simulation for drug discovery on existing HPC at classical simulation cost.",
+                "Logistics: Quantum-mathematical optimization formulations for routing, scheduling, supply chain.",
+                "Energy: Quantum-mathematical grid optimization formulations; battery materials simulation.",
             ),
         ),
         Implication(
@@ -173,9 +179,9 @@ _STRATEGIC = ImplicationCategory(
             title="Redefinition of Quantum Computing",
             bullets=(
                 "From Physical to Mathematical: Quantum becomes a computational paradigm, not a hardware category.",
-                "From Niche to Mainstream: Quantum advantages available to all computing workloads.",
-                "From Future to Present: Quantum computing is now, not decades away.",
-                "From Laboratory to Production: Quantum algorithms move from research to deployment.",
+                "From Niche to Mainstream: Quantum-mathematical methods become available to all computing workloads.",
+                "From Future to Present: Quantum-mathematical computing runs today; hardware-backed quantum advantage remains ahead.",
+                "From Laboratory to Production: Quantum-mathematical algorithms move from research to deployment.",
             ),
         ),
         Implication(
@@ -217,9 +223,9 @@ PARADIGM_ANALOGS: Tuple[Tuple[str, str], ...] = (
 PARADIGM_SHIFT_STATEMENT = (
     "Quantum computing is redefined from 'requires exotic hardware' to "
     "'requires mathematical operations'. The phi-fold memory compression "
-    "turns quantum's exponential memory requirement into a manageable "
-    "compression problem. This is a categorical redefinition of what "
-    "quantum computing means and who can access it."
+    "turns the exponential memory requirement for phi-structured states "
+    "into a manageable compression problem. This is a categorical "
+    "redefinition of what quantum computing means and who can access it."
 )
 
 

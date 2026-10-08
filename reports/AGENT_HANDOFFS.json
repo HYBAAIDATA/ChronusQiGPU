@@ -1,51 +1,16 @@
 [
   {
-    "request_id": "B-to-A-euclid-init-syntax",
-    "requesting_agent": "B",
-    "owning_agent": "A",
-    "required_interface": "importable euclid package for chronus.mla1517.mining.euclid_support and downstream consumers",
-    "reason": "euclid/__init__.py at frozen base 306001b0 contains literal '\\n' escape sequences in the source (line 48 inside the __all__ list), producing SyntaxError: unexpected character after line continuation character. Any 'import euclid' fails, which blocks chronus.mla1517.mining.euclid_support (and therefore mining_runtime / M3PythiaProductionMiningCoordinator) plus tests/test_remote_hasher.py::test_execution_device_accepts_remote and ::test_execution_hasher_binds_remote. Verified present in HEAD:euclid/__init__.py on repair/B-mining.",
-    "affected_files": ["euclid/__init__.py"],
-    "blocking": true,
-    "status": "OPEN"
-  },
-  {
-    "request_id": "B-to-H-lane-tests-placement",
-    "requesting_agent": "B",
-    "owning_agent": "H",
-    "required_interface": "ownership exception: Agent B regression tests are colocated in-lane at mining/tests/ because tests/ is H-owned",
-    "reason": "Agent B's closure requires positive + negative tests added for its defect classes. tests/ belongs to Agent H, so B added mining/tests/test_agent_b_regressions.py (12 tests: m32 fleet epoch slicing + coverage union, malformed pool-input drop semantics, handshake fail-closed, pending-RPC bound, mine_job proof-failure/no-arm-switch fallback). Run: python -m pytest mining/tests/ -x -q. H may hoist or mirror these into tests/ when integrating the repo-wide suite.",
-    "affected_files": ["mining/tests/__init__.py", "mining/tests/test_agent_b_regressions.py"],
-    "blocking": false,
-    "status": "OPEN"
-  },
-  {
-    "request_id": "B-to-C-remote-hasher-m32-contract",
-    "requesting_agent": "B",
-    "owning_agent": "C",
-    "required_interface": "RemoteFleetHasher.grind_target_m32 now enforces count % 32 == 0 (same contract as local m32 hashers); fleet slices are whole-epoch aligned",
-    "reason": "RemoteFleetHasher._slice previously split m32 windows by raw step counts; members receiving a take that was not a whole 32-step epoch ran partial epochs at non-epoch boundaries — coverage gaps, duplicate probes and out-of-window nonces on the exact-winner path. Fixed in mining/remote_hasher.py: slices split whole epochs and a misaligned window raises ValueError at the public boundary. C-side callers of the fleet remote hasher must pass windows that are multiples of 32, identical to the local hasher contract.",
-    "affected_files": ["mining/remote_hasher.py", "chronus/ (callers of mining.remote_hasher.hasher_for_env returning RemoteFleetHasher)"],
-    "blocking": false,
-    "status": "OPEN"
-  },
-  {
-    "request_id": "B-to-H-legacy-listener-claim-race",
-    "requesting_agent": "B",
-    "owning_agent": "H",
-    "required_interface": "listener-claim discipline at create_task(listen_forever()) call sites outside mining/stratum_bridge.py",
-    "reason": "Fixed in-lane at _amain (bridge._listening claimed synchronously before create_task): between create_task() and the listener coroutine's first scheduling, _listening is False and wait_for_job takes its inline readline() path, suspending concurrently with the listener on the shared StreamReader -> RuntimeError kills one coroutine (zombie miner). The same create_task-then-wait_for_job pattern exists at legacy/scripts/live_braiins_soak.py:160 and tests/test_stratum_live_session.py:178,248 — outside B's lane; apply the same claim before create_task if those harnesses exercise delayed-notify timing.",
-    "affected_files": ["legacy/scripts/live_braiins_soak.py", "tests/test_stratum_live_session.py"],
-    "blocking": false,
-    "status": "OPEN"
-  },
-  {
-    "request_id": "B-to-C-stratum-bridge-malformed-drop",
-    "requesting_agent": "B",
-    "owning_agent": "C",
-    "required_interface": "StratumBridge fail-closed pool-input contract: malformed mining.notify / mining.set_difficulty are dropped and counted in bridge.malformed_messages; handshake raises RuntimeError on malformed mining.subscribe fields; last_job / difficulty retain previous valid state",
-    "reason": "The bridge previously trusted pool fields by shape: a non-hex notify field crashed mine_job via bytes.fromhex (killing the whole mining loop), a non-numeric set_difficulty killed listen_forever (zombie miner grinding stale jobs), and malformed subscribe fields propagated into every coinbase build. Fields are now wire-validated at ingestion. Consumers (chronus.mla1517.mining stratum_adapter/coordinator) should be aware observable behavior changed: malformed traffic is counted and dropped, never applied.",
-    "affected_files": ["mining/stratum_bridge.py", "chronus/mla1517/mining/ (stratum_adapter, coordinator consumers)"],
+    "request_id": "D-007",
+    "requesting_agent": "D",
+    "owning_agent": "B",
+    "required_interface": "the mining production adapter's recorded labels must reflect that the route executes a deterministic classical schedule + exhaustive SHA256d enumeration — never quantum execution; TURING now emits the receipt fields needed to propagate this honestly",
+    "reason": "QC block on PR #139: algorithm identity trace shows execute() plans a Hendrix coprime-stride permutation and executes ordinary SHA256d enumeration via stack.chronus.mine — which is correct and intended (four_layer_stack.py documents 'ordering cannot beat consensus'). The defect is in the adapter's metadata surface: metadata[\"execution_path\"] = \"aethel_exact_tensor_hendrix_lucas_pisot_chronus\" and toe.record_decision calls filed under domain \"quantum\" read as quantum execution. Required changes (B's files): (1) relabel execution_path/TOE domain to structured-classical, OR gate the quantum label on an admitted backend (which fails closed absent hardware — the 'production claim remains unavailable' option QC accepts); (2) propagate the new receipt fields — HendrixSchedule.manifest() now returns implementation_module, execution_mode, schedule_digest; HendrixStructuredSearch.search() returns execution_mode + execution_receipt{receipt_version, implementation_module, execution_mode, fallback_used, evaluated, schedule_digest} — into ScaledExecutionResult.metadata; (3) mining/search.py GroverStyleSearch is honestly labelled, but its scale_index multiplies the search space by L_n purely to inflate the k* stride — cosmetic; consider documenting that it reduces no work. See reports/AGENT_D_ALGORITHM_DISPOSITION.md.",
+    "affected_files": [
+      "mining/scaled_execution.py",
+      "mining/search.py",
+      "turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py",
+      "turing_universal_quantum_computer/turing_universal_quantum_computer/hendrix.py"
+    ],
     "blocking": false,
     "status": "OPEN"
   },
@@ -55,7 +20,11 @@
     "owning_agent": "D",
     "required_interface": "closure of D-007 (execution-identity truthfulness) inside the B lane; D's receipt-field APIs (HendrixSchedule.execution_receipt et al.) exist only on repair/D-turing-math so B emitted the equivalent receipt in-lane — no cherry-pick needed",
     "reason": "D-007 flagged mining/scaled_execution.py labelling classical structured scheduling + SHA256d enumeration as quantum execution: metadata['execution_path']='aethel_exact_tensor_hendrix_lucas_pisot_chronus' and toe.record_decision calls filed under intelligence 'quantum'. Fixed: execution_path='structured_classical'; a full execution_receipt is emitted on the result metadata AND embedded in every execution provenance event (job_received/execution_failed/execution_complete) carrying requested_algorithm='lucas_scaled_aethel_execution', planned_algorithm='hendrix_coprime_stride_permutation', executed_algorithm='sha256d_window_enumeration', implementation_module='mining.four_layer_stack:FourLayerMiningStack.mine', implementation_digest + schedule_digest (sha256 of canonical manifests), execution_mode='structured_classical', substrate=result['hasher_backend'], fallback_used/fallback_reason, and independent_sha256d_verification {performed, method, winner_bit_exact}. TOE provenance now files execution events under 'geometric', never 'quantum'. search.py GroverStyleSearch: documented scale_index as stride-shaping only (it does not enlarge the space or reduce work) and added scale_effect='stride_shaping_only' + work_reduction=False to its return dict. Verified: 20 tests pass (mining/tests/ + tests/test_mining_scaled_execution.py), flake8 clean.",
-    "affected_files": ["mining/scaled_execution.py", "mining/search.py", "mining/tests/test_agent_b_regressions.py"],
+    "affected_files": [
+      "mining/scaled_execution.py",
+      "mining/search.py",
+      "mining/tests/test_agent_b_regressions.py"
+    ],
     "blocking": false,
     "status": "CLOSED"
   }
