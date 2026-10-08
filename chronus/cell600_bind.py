@@ -1,4 +1,11 @@
-"""Bind the H4 600-cell frame to a Chronus SKU, pathfinder and nonce partition."""
+"""Bind the H4 600-cell frame to a Chronus SKU, pathfinder and nonce partition.
+NON-PRODUCTION FP64 REFERENCE.
+
+Retained for tests, research lineage, and FP64 consumers only. It is NOT on
+the canonical production route: production geometry, planning and execution
+run through chronus/exact_geometry.py + chronus/mla1517/mining/resident_search.py, which computes in exact Q(phi) rational arithmetic.
+Nothing here produces certificates, evidence, or mining decisions.
+"""
 
 from __future__ import annotations
 

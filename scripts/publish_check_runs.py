@@ -5,6 +5,20 @@ import os
 import urllib.request
 from pathlib import Path
 
+try:
+    from scripts.gate_runner import canonical_digest
+except ModuleNotFoundError as exc:
+    if exc.name != "scripts":
+        raise
+    from gate_runner import canonical_digest
+
+try:
+    from scripts.assert_gate_rollup import evaluate, read_json
+except ModuleNotFoundError as exc:
+    if exc.name != "scripts":
+        raise
+    from assert_gate_rollup import evaluate, read_json
+
 
 def post(url, token, body):
     req = urllib.request.Request(
@@ -26,24 +40,24 @@ def main():
     env = {k: os.environ.get(k) for k in required}
     if not all(env.values()):
         raise SystemExit("missing GitHub publication environment")
+    report = evaluate(Path("results"), expected_commit=env["GITHUB_SHA"])
     results = []
-    for path in Path("results").rglob("*.json"):
+    for gate in report["observed"]:
         try:
-            r = json.loads(path.read_text())
-        except Exception:
-            continue
-        if not isinstance(r, dict):
-            continue
-        if {"gate", "status", "reason"} <= r.keys():
-            results.append(r)
-    if not results:
-        raise SystemExit("no gate results")
+            result = read_json(Path("results") / f"{gate}.json")
+            if canonical_digest(result) != report["evidence_digests"][gate]:
+                raise ValueError("evidence changed after validation")
+            results.append(result)
+        except (OSError, ValueError, TypeError):
+            report["passed"] = False
     api = env["GITHUB_API_URL"].rstrip("/")
     repo = env["GITHUB_REPOSITORY"]
     sha = env["GITHUB_SHA"]
     token = env["GITHUB_TOKEN"]
     conclusions = {"PASS": "success", "FAIL": "failure", "SKIP": "skipped", "ERROR": "failure"}
     for r in results:
+        if r["gate"] not in report["observed"]:
+            continue
         post(
             f"{api}/repos/{repo}/check-runs",
             token,
@@ -51,7 +65,7 @@ def main():
                 "name": r["gate"],
                 "head_sha": sha,
                 "status": "completed",
-                "conclusion": conclusions[r["status"]],
+                "conclusion": conclusions[r["status"]] if report["passed"] else "failure",
                 "output": {
                     "title": r["gate"],
                     "summary": r["reason"],
@@ -59,18 +73,18 @@ def main():
                 },
             },
         )
-    failures = sum(r["status"] in {"FAIL", "ERROR"} for r in results)
-    state = "failure" if failures else "success"
+    state = "success" if report["passed"] else "failure"
     post(
         f"{api}/repos/{repo}/statuses/{sha}",
         token,
         {
             "state": state,
-            "description": f"{len(results)-failures}/{len(results)} gates non-failing"[:140],
+            "description": "Complete commit-bound assurance gates passed" if report["passed"]
+            else "Incomplete or invalid mandatory assurance evidence",
             "context": "chronus/mla1517/gates",
         },
     )
-    return 0
+    return 0 if report["passed"] else 1
 
 
 if __name__ == "__main__":

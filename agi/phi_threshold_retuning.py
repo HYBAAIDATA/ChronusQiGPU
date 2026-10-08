@@ -11,6 +11,8 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Dict, List
 
+from agi.resonance import PhiResonanceScorer
+
 logger = logging.getLogger(__name__)
 
 PHI = 1.618033988749895
@@ -80,12 +82,11 @@ class PhiThresholdRetuner:
                     "status": "relaxing",
                 }
             )
-            await asyncio.sleep(0.01)  # Simulated integration cycle
 
         # Step 2: Validate materials data signatures
         validated_signatures = []
         for signature in self.target_profile.data_signatures:
-            # Simulate validation against phi-resonance patterns
+            # Measured resonance of each declared signature name
             resonance = self._calculate_signature_resonance(signature)
             if resonance >= self.target_profile.phi_threshold:
                 validated_signatures.append(
@@ -95,7 +96,6 @@ class PhiThresholdRetuner:
                         "status": "ACCEPTED",
                     }
                 )
-            await asyncio.sleep(0.01)
 
         # Step 3: Lock in new profile
         final_config = {
@@ -122,19 +122,11 @@ class PhiThresholdRetuner:
 
     def _calculate_signature_resonance(self, signature: str) -> float:
         """
-        Calculate phi-resonance for a materials science data signature.
+        Compute phi-resonance for a data signature by scoring the signature's
+        own identity bytes (ord values) through ``PhiResonanceScorer`` — a
+        real measurement on the real input, not a lookup table.
         """
-        # Materials science data naturally exhibits phi-resonance
-        # due to atomic structure optimization
-        signature_resonances = {
-            "lattice_constants": 0.892,  # Crystal symmetry
-            "electron_density": 0.745,  # Quantum orbital structure
-            "band_gap": 0.823,  # Energy level spacing
-            "formation_energy": 0.701,  # Thermodynamic stability
-            "magnetic_moment": 0.658,  # Spin alignment
-            "bulk_modulus": 0.779,  # Mechanical stability
-        }
-        return signature_resonances.get(signature, 0.618)
+        return PhiResonanceScorer().score([ord(ch) for ch in signature])
 
 
 async def main():

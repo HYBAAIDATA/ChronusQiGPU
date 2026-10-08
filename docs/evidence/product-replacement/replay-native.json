@@ -1,0 +1,10 @@
+{
+  "variant": "native",
+  "independent_fresh_process_replay": true,
+  "custody": "local_PRIME_DB_NOT_THESEUS",
+  "plan_digest": "71242560d6909ea9a443e219965b5fc29280fdbdd45fbd418aebd44263b3c6a7",
+  "receipt_digest": "9bfdec7bc1c072810feac8d7c4b2445a8774e0b78c2f3b43365d3fa115b9c542",
+  "sha256d_evaluations": 1,
+  "candidate_nonce": 2083236893,
+  "physical_device_executed": false
+}

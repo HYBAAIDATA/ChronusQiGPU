@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import hashlib
+import math
 import time
 from typing import Any, Dict, List, Optional, Set
 import numpy as np
@@ -72,6 +73,10 @@ class GeometricIntelligence:
         self.current_face_idx = 0
         self.allocation_history: List[GeometricAllocation] = []
         self.plasticity = 0.05
+        # Deterministic search cursor: successive allocations continue
+        # the Lucas stride from where the previous batch ended. The
+        # wall clock must never seed mining search positions.
+        self._local_cursor = 0
 
     @classmethod
     def verify_cassini_parity_integer(cls, n: int) -> bool:
@@ -109,9 +114,12 @@ class GeometricIntelligence:
         nonces: List[int] = []
         step = 1
 
-        # Use Lucas sequence to stride within the 27-bit subspace
+        # Use Lucas sequence to stride within the 27-bit subspace.
+        # The starting offset comes from a persistent deterministic
+        # cursor (continuing the previous batch's stride), never from
+        # the wall clock — identical state yields identical allocations.
         stride_anchor = self.LUCAS_TABLE[self.current_face_idx % len(self.LUCAS_TABLE)]
-        candidate_local = (int(time.time() * 1000) ^ (stride_anchor << 4)) & 0x07FFFFFF
+        candidate_local = self._local_cursor & 0x07FFFFFF
 
         while len(nonces) < batch_size:
             nonce = (base_face_shift | candidate_local) & 0xFFFFFFFF
@@ -120,6 +128,7 @@ class GeometricIntelligence:
                 nonces.append(nonce)
             candidate_local = (candidate_local + stride_anchor + step) & 0x07FFFFFF
             step += 1
+        self._local_cursor = candidate_local
 
         self.current_face_idx = (self.current_face_idx + 1) % self.num_faces
         cassini_ok = self.verify_cassini_parity_integer(self.current_face_idx + 1)
@@ -149,13 +158,34 @@ class GeometricIntelligence:
         return len(candidate_nonces) != len(set(candidate_nonces))
 
     def navigate_11d_geodesic(self, origin: np.ndarray, steps: int = 11) -> np.ndarray:
-        """Evaluate continuous geodesic steps on the 11D Poincaré ball."""
-        point = np.copy(origin) if origin is not None else np.zeros(11, dtype=np.float64)
-        phi = (1.0 + np.sqrt(5.0)) / 2.0
-        for i in range(min(11, len(point))):
-            weight = phi ** (-(i + 1))
-            point[i] = np.tanh(point[i] + weight * 0.1)
-        return point
+        """Geodesic displacement on the 11D Poincaré ball.
+
+        Real hyperbolic geometry (IEEE-754 realisation): returns the
+        endpoint of the geodesic ray of length
+        ``D = sum(0.1 * phi^-(i+1) for i < steps)`` leaving ``origin`` in
+        the golden direction ``v_i ∝ phi^-(i+1)``, computed as the Möbius
+        left-translate ``p ⊕ tanh(D/2)·v̂``. Since Möbius translation is
+        a ball isometry with ``d(p, p ⊕ tanh(D/2)·v̂) = D``, the result
+        lies exactly distance D along the ray — no tanh-squash
+        placeholder. ``steps`` is a declared schedule knob.
+        """
+        x = (
+            np.asarray(origin, dtype=np.float64).reshape(11)
+            if origin is not None
+            else np.zeros(11, dtype=np.float64)
+        )
+        n2 = float(np.dot(x, x))
+        if n2 >= 1.0 - 1e-12:
+            x = x * ((1.0 - 1e-9) / math.sqrt(n2))
+        phi = (1.0 + math.sqrt(5.0)) / 2.0
+        v = np.array([phi ** -(i + 1) for i in range(11)], dtype=np.float64)
+        v = v / math.sqrt(float(np.dot(v, v)))
+        D = sum(0.1 * phi ** -(i + 1) for i in range(max(0, int(steps))))
+        b = math.tanh(D / 2.0) * v
+        ab = float(np.dot(x, b))
+        a2 = float(np.dot(x, x))
+        b2 = float(np.dot(b, b))
+        return ((1.0 + 2.0 * ab + b2) * x + (1.0 - a2) * b) / (1.0 + 2.0 * ab + a2 * b2)
 
     def learn(self, face_id: int, shares_found: int) -> None:
         """Plasticity reinforcement: increase face weight on discovery, decay on starvation."""

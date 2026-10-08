@@ -1,0 +1,18 @@
+{
+  "classification": "THEORETICAL",
+  "network_io": "DISABLED",
+  "response": {
+    "accepted": true,
+    "certificate_digest": "f87690ce9265c62f245b925317f84491ed3ec4eec8fe95679b153580e54f08be",
+    "error": null,
+    "response_id": "fixture-response"
+  },
+  "submission": {
+    "certificate_digest": "f87690ce9265c62f245b925317f84491ed3ec4eec8fe95679b153580e54f08be",
+    "extranonce2": "00000012",
+    "job_id": "fixture-job",
+    "nonce": 10,
+    "ntime": "1234",
+    "worker": "fixture-worker"
+  }
+}

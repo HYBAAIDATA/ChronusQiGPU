@@ -71,7 +71,7 @@ class IntelligenceBus:
         signal: LearningSignal,
     ) -> None:
         """Relay a signal to an endpoint in a form it can use."""
-        endpoint._update_phi_profile(signal.phi_resonance * 0.5)
+        endpoint._update_phi_profile(signal.phi_resonance)
         if hasattr(endpoint, "receive_peer_signal"):
             endpoint.receive_peer_signal(sender_id, signal)
         logger.debug(

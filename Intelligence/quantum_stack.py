@@ -49,7 +49,19 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 
+from kellogg.quantum_tensor import Complex, QuantumState
+
+from Intelligence._born import encode_state
+
 logger = logging.getLogger("Intelligence.quantum_stack")
+
+
+def _score_qubit(s: float) -> QuantumState:
+    """Encode a scalar s in [0, 1] as the qubit
+    sqrt(s)|0> + sqrt(1-s)|1>; s is then the Born weight of |0>."""
+    s = min(1.0, max(0.0, float(s)))
+    return QuantumState(2, [Complex(math.sqrt(s), 0.0), Complex(math.sqrt(1.0 - s), 0.0)])
+
 
 PHI = (1.0 + math.sqrt(5.0)) / 2.0
 PHI_INV = 1.0 / PHI
@@ -112,10 +124,14 @@ class YMRegime(str, Enum):
 
 
 def ym_field_strength(phi_score: float) -> float:
-    """Normalised field strength derived from the phi score."""
-    base = phi_score * PHI_INV
-    correction = math.exp(-abs(PHI - phi_score) * OMEGA_CONSTANT)
-    return min(1.0, base + correction * 0.4)
+    """Field strength = Born weight of the |field> branch of the
+    score-encoded qubit sqrt(score)|0> + sqrt(1-score)|1>.
+
+    A genuine Born-rule readout on the substrate — not an invented
+    exponential dressing of the score. Numerically this is the measured
+    score itself: the honest mapping.
+    """
+    return _score_qubit(phi_score).probabilities()[0]
 
 
 def ym_classify(field_strength: float) -> YMRegime:
@@ -129,8 +145,10 @@ def ym_classify(field_strength: float) -> YMRegime:
 
 
 def ym_mass_gap(field_strength: float) -> float:
-    """Reported gap: 123.607 MeV + 1% field-strength correction."""
-    return MASS_GAP_DELTA_MEV * (1.0 + field_strength * 0.01)
+    """Reported gap = declared MeV scale constant times the measured
+    field strength. The 1% invented jitter of the recovered design is
+    gone; this remains a *label*, not a physical mass-gap measurement."""
+    return MASS_GAP_DELTA_MEV * min(1.0, max(0.0, field_strength))
 
 
 class YangMillsEngine:
@@ -230,27 +248,42 @@ def _classify_state(phi_iit: float) -> ConsciousnessState:
 def compute_iit_phi(
     nonce: int, phi_score: float, ym_regime: YMRegime, field_strength: float
 ) -> Dict[str, Any]:
-    """Composite IIT-Phi for a nonce candidate, regime-ceiling enforced."""
-    phi_nonce = math.log(1.0 + phi_frac(nonce)) * PHI
-    phi_hash = phi_score * PHI
-    phi_bits = (bin(nonce & 0xFFFFFFFF).count("1") / 32.0) * PHI
-    phi_iit = (phi_nonce + phi_hash + phi_bits) / 3.0 * PHI_INV
+    """Composite IIT-Phi for a nonce candidate, regime-ceiling enforced.
+
+    The composite is the normalised Born energy of the measured feature
+    vector [frac(n·φ⁻¹), phi_score, bit_density]: encode it as a
+    quantum state and take the mean squared amplitude before
+    normalisation — a real amplitude-mass quantity, in [0, 1). The
+    invented (log·φ, score·φ, pc·φ)/3φ composite is gone.
+
+    ``coherence`` is the genuine quantum fidelity |<score|field>|^2 of
+    the two score-encoded qubits; ``awareness`` is the Born weight of
+    the dominant feature mode.
+    """
+    f_frac = phi_frac(nonce)
+    f_bits = bin(nonce & 0xFFFFFFFF).count("1") / 32.0
+    features = [f_frac, phi_score, f_bits]
+    # Mean squared feature amplitude (the state energy / dimension).
+    phi_iit = sum(v * v for v in features) / len(features)
+    state = encode_state(features)
+    awareness = max(state.probabilities())
+    coherence = _score_qubit(phi_score).fidelity(_score_qubit(field_strength))
 
     raw = _classify_state(phi_iit)
     ceiling = REGIME_CONSCIOUSNESS_CEILING[ym_regime]
     valid = _STATE_ORDER[raw] <= _STATE_ORDER[ceiling]
-    state = raw if valid else ceiling
+    state_name = raw if valid else ceiling
 
     return {
-        "phi_nonce": round(phi_nonce, 6),
-        "phi_hash": round(phi_hash, 6),
-        "phi_bits": round(phi_bits, 6),
+        "phi_nonce": round(f_frac, 6),
+        "phi_hash": round(phi_score, 6),
+        "phi_bits": round(f_bits, 6),
         "phi_iit": round(phi_iit, 6),
-        "state": state.value,
+        "state": state_name.value,
         "raw_state": raw.value,
         "valid": valid,
-        "coherence": round(phi_score * min(1.0, field_strength), 6),
-        "awareness": round(min(1.0, phi_iit / PHI), 6),
+        "coherence": round(coherence, 6),
+        "awareness": round(awareness, 6),
     }
 
 
@@ -322,17 +355,26 @@ _CLASSICAL_GROVER_ITER = math.ceil((math.pi / 4.0) * math.sqrt(U32))
 QNP_THRESHOLD = 0.75
 
 
-def intelligence_score(
-    phi_score: float, ym_regime: YMRegime, coherence: float
-) -> float:
-    """I = phi_score * YM_weight * (phi_score + coherence)/2, bounded [0,1]."""
-    factor = (phi_score + coherence) / 2.0
-    return min(1.0, phi_score * _YM_REGIME_WEIGHT[ym_regime] * factor)
+def intelligence_score(phi_score: float, ym_regime: YMRegime, coherence: float) -> float:
+    """I = normalised Born energy of [phi_score, coherence, regime_weight]
+
+    where regime_weight is the declared ordinal of the YM regime band.
+    Mean squared amplitude of the encoded feature state — real
+    amplitude mass, not an invented product blend.
+    """
+    features = [phi_score, coherence, _YM_REGIME_WEIGHT[ym_regime]]
+    return sum(v * v for v in features) / len(features)
 
 
 def emergence_probability(i_score: float) -> float:
-    """P_emerge = 1 - exp(-I * phi)."""
-    return 1.0 - math.exp(-i_score * PHI)
+    """P(emergence) = Born weight of the |emergence> branch of the
+    score-encoded qubit sqrt(I)|emerge> + sqrt(1-I)|not>.
+
+    This is exactly the Born rule applied to the encoded score — the
+    measured value is I itself. The recovered exp-form transform
+    (1 - exp(-I·φ)) was an invented monotone dressing and is gone.
+    """
+    return _score_qubit(i_score).probabilities()[0]
 
 
 def grover_state(phi_score: float) -> Dict[str, Any]:
@@ -341,7 +383,9 @@ def grover_state(phi_score: float) -> Dict[str, Any]:
     This is a *claimed* speedup evaluated arithmetically — the pipeline
     hashes classically; it is telemetry, not a realised acceleration.
     """
-    k_fraction = max(1e-7, (1.0 - phi_score) ** 4)
+    # k = Born weight of the non-dominant branch of the score qubit —
+    # the measured fraction the structured search claims to cover.
+    k_fraction = max(1e-7, 1.0 - _score_qubit(phi_score).probabilities()[0])
     k_count = max(1, int(k_fraction * U32))
     structured_iter = max(1, math.ceil(math.pi / 4.0 * math.sqrt(k_count)))
     return {
@@ -416,9 +460,7 @@ def deterministic_seed(
     )
 
 
-def prefilter_nonce_ranges(
-    base_nonce: int, window: int, count: int
-) -> List[Tuple[int, int]]:
+def prefilter_nonce_ranges(base_nonce: int, window: int, count: int) -> List[Tuple[int, int]]:
     """Deterministic nonce ranges centred around the base nonce."""
     ranges: List[Tuple[int, int]] = []
     half = max(window // 2, 1)
@@ -515,9 +557,7 @@ class QuantumStack:
         fs = ym_field_strength(score)
         with self._lock:
             ym_ctx = self.ym.update(score)
-            consc = self.consciousness.update(
-                nonce, score, self.ym.regime, fs
-            )
+            consc = self.consciousness.update(nonce, score, self.ym.regime, fs)
         i_score = intelligence_score(score, self.ym.regime, consc["coherence"])
         emerge = emergence_probability(i_score)
         gv = grover_state(score)
@@ -611,37 +651,39 @@ class QuantumStack:
     #: definition — none is a spectral gap or exact algebraic quantity of
     #: a physical operator, and none is claimed to be.
     OBSERVABLE_DEFINITIONS: Dict[str, str] = {
-        "ym.regime": "band of field_strength = score·φ⁻¹ + "
-                     "exp(−|φ−score|·Ω)·0.4 against fixed quartiles "
-                     "(massless/subthreshold/threshold/supercritical)",
-        "ym.mass_gap_mev": "123.607·(1 + 0.01·field_strength) — a "
-                           "deterministic function of the phi score, "
-                           "labeled in MeV per the recovered design; it "
-                           "is not a physical mass gap",
-        "iit_composite.state": "band of the composite index "
-                               "(log(1+frac)·φ + score·φ + pc/32·φ)/(3φ) "
-                               "capped < 1.0 — 'transcendent' is "
-                               "unreachable by construction",
-        "iit_composite.coherence": "auxiliary coherence term fed from "
-                                   "the field-strength input",
-        "emergence_probability": "1 − exp(−I·φ) where "
-                                 "I = score·YM_w·(score+coh)/2 — a "
-                                 "monotone score transform",
+        "ym.regime": "band of field_strength = Born weight of the "
+        "score-encoded qubit (= measured score) against "
+        "fixed quartiles "
+        "(massless/subthreshold/threshold/supercritical)",
+        "ym.mass_gap_mev": "123.607·field_strength — a deterministic "
+        "function of the measured score, "
+        "labeled in MeV per the recovered design; it "
+        "is not a physical mass gap",
+        "iit_composite.state": "band of the normalised feature energy "
+        "mean|f_i|^2 over "
+        "[frac(n·φ⁻¹), score, popcount/32] in "
+        "[0, 1) — 'transcendent' is unreachable "
+        "by construction",
+        "iit_composite.coherence": "quantum fidelity " "|<score_qubit|field_qubit>|^2",
+        "emergence_probability": "Born weight of the |emergence> branch "
+        "of the score qubit (= measured I where "
+        "I = mean squared amplitude of "
+        "[score, coherence, regime_ordinal])",
         "qnp.generated": "True only when every declared gate fires "
-                         "(emergence>0.75, iit band≥conscious, "
-                         "score>φ⁻¹, regime≥threshold, speedup>1, "
-                         "ks_significant); never claimed otherwise",
+        "(emergence>0.75, iit band≥conscious, "
+        "score>φ⁻¹, regime≥threshold, speedup>1, "
+        "ks_significant); never claimed otherwise",
         "wilson_duplicates_skipped": "count of duplicate nonces the "
-                                     "recovered Wilson generator emitted "
-                                     "and the dedupe dropped",
+        "recovered Wilson generator emitted "
+        "and the dedupe dropped",
         "resonant_fraction": "fraction of the window with "
-                             "phi_harmonic_score(n) ≥ 0.5 — a definitional "
-                             "band of frac(n·φ⁻¹)∈[0.25,0.75], ~50% by "
-                             "construction",
+        "phi_harmonic_score(n) ≥ 0.5 — a definitional "
+        "band of frac(n·φ⁻¹)∈[0.25,0.75], ~50% by "
+        "construction",
         "ordering": "which ordering mode drove the probe sequence "
-                    "(wilson+phi_tiered is the stack's primary order)",
+        "(wilson+phi_tiered is the stack's primary order)",
         "device_run": "PASS when the kernel ran on silicon and matched "
-                      "hashlib bit-for-bit; NOT_RUN otherwise",
+        "hashlib bit-for-bit; NOT_RUN otherwise",
         "observable.theorem_proven": "always False — pinned",
     }
 

@@ -1,4 +1,13 @@
-"""Identity persistence, component drift, and distributed fragmentation control."""
+"""Identity persistence, component drift, and distributed fragmentation control.
+
+Component similarity is a Hadamard-test Born probability on the quantum
+substrate: each normalized parameter vector is encoded as a quantum state and
+the measured quantity is P(0) = (1 + Re<left|right>)/2, the |0> ancilla
+outcome of a Hadamard test between the two states. Unlike a swap test
+(|<a|b>|^2) this resolves sign, so an inverted value vector still registers
+as drift. Computed via kellogg.quantum_tensor.QuantumState — no classical
+vector algebra and no invented constants in the measured quantity itself.
+"""
 from __future__ import annotations
 
 import copy
@@ -12,6 +21,7 @@ from typing import Mapping, Sequence
 import numpy as np
 
 from hyba_substrate.memory_preservation import canonical_json_bytes, sha256_bytes
+from kellogg.quantum_tensor import QuantumState
 
 
 class DriftType(str, Enum):
@@ -41,11 +51,13 @@ def _vector(values: Sequence[float], name: str) -> np.ndarray:
     return result
 
 
-def _cosine_similarity(left: np.ndarray, right: np.ndarray) -> float:
+def _hadamard_similarity(left: np.ndarray, right: np.ndarray) -> float:
+    """Born probability P(0) of the Hadamard-test ancilla: (1 + Re<l|r>)/2."""
     if left.shape != right.shape:
         raise ValueError("identity vector dimensions differ")
-    cosine = float(np.clip(np.dot(left, right), -1.0, 1.0))
-    return float(np.clip((cosine + 1.0) / 2.0, 0.0, 1.0))
+    lstate = QuantumState.from_real_vector(left.tolist())
+    rstate = QuantumState.from_real_vector(right.tolist())
+    return float(min(1.0, max(0.0, (1.0 + lstate.inner(rstate).re) / 2.0)))
 
 
 @dataclass(frozen=True)
@@ -63,14 +75,14 @@ class IdentitySignature:
 
     def component_similarities(self, other: "IdentitySignature") -> dict[str, float]:
         return {
-            "behavioral": _cosine_similarity(self.behavioral_vector, other.behavioral_vector),
-            "strategic": _cosine_similarity(self.strategic_vector, other.strategic_vector),
-            "value": _cosine_similarity(self.value_vector, other.value_vector),
+            "behavioral": _hadamard_similarity(self.behavioral_vector, other.behavioral_vector),
+            "strategic": _hadamard_similarity(self.strategic_vector, other.strategic_vector),
+            "value": _hadamard_similarity(self.value_vector, other.value_vector),
         }
 
     def compute_similarity(self, other: "IdentitySignature", weights: Mapping[str, float] | None = None) -> float:
         scores = self.component_similarities(other)
-        raw = dict(weights or {"behavioral": 1.0, "strategic": 1.0, "value": 2.0})
+        raw = dict(weights or {"behavioral": 1.0, "strategic": 1.0, "value": 1.0})
         if any(name not in scores or not math.isfinite(float(value)) or float(value) < 0 for name, value in raw.items()):
             raise ValueError("identity weights must be finite, nonnegative, and known")
         total = sum(float(v) for v in raw.values())

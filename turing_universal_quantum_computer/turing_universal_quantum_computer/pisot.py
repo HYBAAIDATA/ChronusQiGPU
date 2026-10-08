@@ -167,7 +167,7 @@ class HendrixSchedule:
             self.nonce_count > 0
             and 1 <= self.workers <= self.nonce_count
             and gcd(self.stride, self.nonce_count) == 1
-            and sum(1 for _ in self.worker_positions(0)) >= 1
+            and next(self.worker_positions(0), None) == 0
         )
 
     def manifest(self) -> dict:

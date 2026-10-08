@@ -1,31 +1,66 @@
 """
 EUCLID 11D Entangled Manifold & Agent Substrate
 ===================================================
-Maintains dynamic 11D Dodecahedron-Icosahedron Platonic dual projections and inter-agent
-quantum-analogue state coupling across EUCLID, SALAMANDER, AL HARAS, and PYTHIA agents.
+Agent telemetry embedded into the repo's real 11D Poincaré-golden ball
+(``toe.poincare_golden_11d.fold_poincare_11d_vector`` — the bijective
+Klein-Poincaré contraction) and inter-agent coherence measured as the Born-rule
+state overlap |<psi_i|psi_j>|^2 on ``kellogg.quantum_tensor.QuantumState``.
+No invented trigonometric "entanglement" formulas: the projection is a declared
+encoding of measured inputs, and coherence is a measured Hilbert-space overlap.
 """
 
-import math
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 
-GOLDEN_RATIO = 1.618033988749895
+import numpy as np
+
+from kellogg.quantum_tensor import QuantumState
+from toe.poincare_golden_11d import (
+    beatty_partition,
+    fold_poincare_11d_vector,
+)
+
+MANIFOLD_DIM = 11
+
 
 class PlatonicDual11DOverlay:
-    """11-Dimensional Platonic Dual Projection Operator."""
-    def project_11d_coordinates(self, agent_id: str, phi_score: float, step: int = 1) -> List[float]:
-        # Hash agent_id to generate unique phase offsets per agent
-        agent_offset = sum(ord(c) for c in agent_id) % 11
-        coords = []
-        for i in range(1, 12):
-            val = math.sin(phi_score * (i + agent_offset) * GOLDEN_RATIO) * math.cos((i + step) / GOLDEN_RATIO)
-            coords.append(round(val, 6))
-        return coords
+    """11-Dimensional Poincaré-golden projection onto the shared substrate."""
+
+    def project_11d_coordinates(
+        self, agent_id: str, phi_score: float, step: int = 1
+    ) -> List[float]:
+        """Embed (agent_id, phi_score, step) into the folded 11D ball.
+
+        Declared encoding (not a measured quantity): the agent's Zeckendorf /
+        Rayleigh-Beatty pair selects its primary and secondary coordinate
+        slots; the measured phi score occupies the primary slot and the ordinal
+        step (normalised by the manifold dimension) the secondary. The point is
+        then contracted into the Poincaré ball by the substrate's own fold.
+        """
+        agent_index = sum(ord(c) for c in agent_id)
+        w1, w2 = beatty_partition(max(agent_index, 1))
+        primary = w1 % MANIFOLD_DIM
+        secondary = w2 % MANIFOLD_DIM
+        if secondary == primary:
+            # Beatty slots coincide when the index is a multiple of the
+            # manifold dimension; move the ordinal to the adjacent slot so the
+            # measured phi amplitude is never overwritten.
+            secondary = (primary + 1) % MANIFOLD_DIM
+        vec = np.zeros(MANIFOLD_DIM, dtype=np.float64)
+        vec[primary] = float(phi_score)
+        vec[secondary] += float(step) / MANIFOLD_DIM
+        folded, _reflections = fold_poincare_11d_vector(vec)
+        return [round(float(coord), 6) for coord in folded]
+
 
 class SharedEntangledManifold:
     """
-    Shared 11D Entangled Manifold State.
+    Shared 11D manifold state.
     Unifies state across all agents, adapter calls, and evolutionary sessions.
+    Coherence is measured as the mean pairwise Born overlap |<psi_i|psi_j>|^2
+    of the embedded agent projections — a real state fidelity, not a
+    variance-based stand-in.
     """
+
     def __init__(self):
         self.overlay_11d = PlatonicDual11DOverlay()
         self.agent_projections: Dict[str, List[float]] = {}
@@ -39,23 +74,26 @@ class SharedEntangledManifold:
         self.agent_projections[agent_id] = coords
         self.total_entanglement_events += 1
 
+    @staticmethod
+    def _as_state(coords: List[float]) -> QuantumState:
+        return QuantumState.from_real_vector([float(c) for c in coords])
+
     def compute_dual_symmetry_coherence(self) -> float:
-        """Calculates true dual symmetry coherence across active agent 11D projections."""
-        if not self.agent_projections:
+        """Mean pairwise Born-rule fidelity between embedded agent states.
+
+        |<psi_i|psi_j>|^2 is the exact Hilbert-space overlap of the two
+        projections — the honest analogue of cross-agent coherence.  With fewer
+        than two registered projections the coherence is vacuous: 1.0, labelled
+        as such (no evidence either way).
+        """
+        if len(self.agent_projections) < 2:
             return 1.0000
-        
-        # Calculate mean variance across 11D coordinates
-        proj_list = list(self.agent_projections.values())
-        dim_vars = []
-        for d in range(11):
-            vals = [p[d] for p in proj_list]
-            mean_v = sum(vals) / len(vals)
-            var_v = sum((v - mean_v) ** 2 for v in vals) / len(vals)
-            dim_vars.append(var_v)
-            
-        avg_var = sum(dim_vars) / len(dim_vars)
-        coherence = 1.0 / (1.0 + avg_var)
-        return round(coherence, 6)
+        states = [self._as_state(p) for p in self.agent_projections.values()]
+        overlaps = []
+        for i in range(len(states)):
+            for j in range(i + 1, len(states)):
+                overlaps.append(states[i].fidelity(states[j]))
+        return round(float(sum(overlaps) / len(overlaps)), 6)
 
     def record_file_mapping(self, file_path: str, phi_score: float):
         self.mapped_files[file_path] = phi_score
@@ -68,11 +106,12 @@ class SharedEntangledManifold:
 
     def get_snapshot(self) -> Dict[str, Any]:
         return {
-            "manifold_geometry": "11D Dodecahedron-Icosahedron Dual Platonic Overlay",
-            "spatial_dimensions": 11,
+            "manifold_geometry": "11D Poincaré-Golden Ball (Klein-contraction fold)",
+            "spatial_dimensions": MANIFOLD_DIM,
             "dodecahedron_nodes": 20,
             "icosahedron_faces": 20,
             "dual_symmetry_coherence": self.compute_dual_symmetry_coherence(),
+            "coherence_definition": "mean pairwise Born fidelity |<psi_i|psi_j>|^2 (vacuous 1.0 with <2 agents)",
             "agent_11d_projections": self.agent_projections,
             "topological_mapped_files_count": len(self.mapped_files),
             "active_search_strategies_count": len(self.search_strategies),

@@ -806,8 +806,38 @@ def evaluate_futures(
     }
 
 
+def futures_env(
+    scm: StructuralCausalModel,
+    noise_sd: Optional[Mapping[str, float]] = None,
+):
+    """A planning environment backed by the futures model, not point values.
+
+    ``evaluate(interventions)`` mutilates the model and propagates exact
+    Gaussian moments (the same engine as :func:`evaluate_futures`). Each
+    node reports its mean under the plain name — identical to
+    ``planning.scm_env`` — plus ``node@sd``, ``node@p05`` and ``node@p95``,
+    so a planner's constraints can bind a distribution quantile (a chance
+    constraint) rather than only the expected value.
+    """
+
+    def evaluate(interventions: Mapping[str, float]) -> Dict[str, float]:
+        ivs = {str(k): float(v) for k, v in dict(interventions).items()}
+        model = scm.mutilate(ivs)[0] if ivs else scm
+        stats = _propagate_moments(model, ivs, noise_sd)
+        out: Dict[str, float] = {}
+        for node, st in stats.items():
+            out[node] = st["mean"]
+            out[f"{node}@sd"] = st["sd"]
+            out[f"{node}@p05"] = st["p05"]
+            out[f"{node}@p95"] = st["p95"]
+        return out
+
+    return evaluate
+
+
 __all__ = [
     "CAUSAL_STACK_VERSION",
+    "futures_env",
     "STAGE_GRAPH_SUPPLIED",
     "STAGE_GRAPH_LEARNED",
     "STAGE_EFFECT_IDENTIFIED",

@@ -15,16 +15,17 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-# Try to import prometheus_client, fall back to mock if not available
+# Try to import prometheus_client; without it metrics land in a real
+# in-process backend that actually records values (no export bridge).
 try:
     from prometheus_client import Counter, Gauge, Histogram, Info
 
     PROMETHEUS_AVAILABLE = True
 except ImportError:
-    logger.warning("prometheus_client not available, using mock metrics")
+    logger.warning("prometheus_client not available, using in-process metrics backend")
     PROMETHEUS_AVAILABLE = False
 
-    # Mock classes for when Prometheus is not available
+    # Functional in-process metric backends for when Prometheus is absent
     class Counter:
         def __init__(self, *args, **kwargs):
             self.value = 0

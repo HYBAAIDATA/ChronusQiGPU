@@ -47,11 +47,29 @@ CONTEXT_FILES = (
 
 ROUTE_KEYWORDS: dict[str, set[str]] = {
     "repository_map": {
-        "repo", "repository", "codebase", "architecture", "runtime", "structure", "optimize", "optimization", "refine", "improve", "review"
+        "repo",
+        "repository",
+        "codebase",
+        "architecture",
+        "runtime",
+        "structure",
+        "optimize",
+        "optimization",
+        "refine",
+        "improve",
+        "review",
     },
     "import_audit": {"import", "wiring", "module", "broken", "dependency", "integration"},
     "skill_lookup": {"skill", "skills", "training", "learning", "memory", "capability"},
-    "focused_tests": {"test", "tests", "failing", "failure", "regression", "verify", "verification"},
+    "focused_tests": {
+        "test",
+        "tests",
+        "failing",
+        "failure",
+        "regression",
+        "verify",
+        "verification",
+    },
 }
 NATIVE_CAPABILITIES = tuple(ROUTE_KEYWORDS)
 
@@ -175,8 +193,14 @@ class RepoEngineer:
         for route, keywords in ROUTE_KEYWORDS.items():
             lexical_score = len(tokens & keywords)
             if lexical_score:
-                learned_rate = float(feedback.get(route, {}).get("rate", 0.5))
-                ranked.append((lexical_score + (learned_rate - 0.5) * 0.25, route))
+                fb = feedback.get(route, {})
+                learned_rate = float(fb.get("rate", 0.5))
+                total = float(fb.get("total", 0))
+                # Measured nudge = deviation from the flat prior, damped
+                # by the measured evidence mass fraction — not an
+                # invented 0.25 influence cap.
+                nudge = (learned_rate - 0.5) * (total / (total + 2.0))
+                ranked.append((lexical_score + nudge, route))
         if not ranked:
             return ["repository_map", "import_audit"]
         ranked.sort(key=lambda item: (-item[0], item[1]))
@@ -193,7 +217,9 @@ class RepoEngineer:
                 timeout=5,
                 check=False,
             )
-            result["working_tree"] = status.stdout.splitlines()[:80] if status.returncode == 0 else []
+            result["working_tree"] = (
+                status.stdout.splitlines()[:80] if status.returncode == 0 else []
+            )
         except (OSError, subprocess.TimeoutExpired):
             result["working_tree"] = []
         return result
@@ -209,8 +235,7 @@ class RepoEngineer:
         now = time.monotonic()
         cached = getattr(self, "_audit_cache", None)
         if cached is not None and now - cached["at"] < IMPORT_AUDIT_CACHE_TTL_S:
-            return {**cached["result"], "cached": True,
-                    "age_s": round(now - cached["at"], 3)}
+            return {**cached["result"], "cached": True, "age_s": round(now - cached["at"], 3)}
 
         started = time.monotonic()
         try:
@@ -280,7 +305,10 @@ class RepoEngineer:
         if route == "focused_tests":
             targets = re.findall(r"[\w./\\-]*test_[\w./\\-]+\.py", prompt)
             if not targets:
-                return {"available": False, "reason": "include one approved test_*.py path to run a focused test"}
+                return {
+                    "available": False,
+                    "reason": "include one approved test_*.py path to run a focused test",
+                }
             return self._run_tests(targets[0].replace("\\", "/"))
         return {"error": "route_not_allowed"}
 
@@ -309,7 +337,9 @@ class RepoEngineer:
         if "returncode" in tests:
             lines.append(f"Focused test exit code: {tests['returncode']}.")
         if not audit.get("finding_count") and not skills.get("matches") and not tests:
-            lines.append("No specific defect is asserted without a measured finding; use the repo map to choose a target.")
+            lines.append(
+                "No specific defect is asserted without a measured finding; use the repo map to choose a target."
+            )
         lines.append("No source files were modified. Review evidence before choosing a change.")
         return "\n".join(lines)
 
@@ -333,13 +363,16 @@ class RepoEngineer:
             reward=reward,
             error_state=error_state,
         )
-        self.store.record_run("repo_engineer_task", {
-            "task_id": task_id,
-            "prompt": prompt,
-            "routes": routes,
-            "tool_calls": tool_calls,
-            "outcome": outcome,
-        })
+        self.store.record_run(
+            "repo_engineer_task",
+            {
+                "task_id": task_id,
+                "prompt": prompt,
+                "routes": routes,
+                "tool_calls": tool_calls,
+                "outcome": outcome,
+            },
+        )
         self.store.save()
 
     def ask(self, prompt: str) -> dict[str, Any]:
@@ -376,7 +409,11 @@ class RepoEngineer:
     def feedback(self, task_id: str, helpful: bool) -> dict[str, Any]:
         tasks = self.store.journal.entries(limit=500, kind="repo_engineer_task")
         task = next(
-            (entry.get("payload", {}) for entry in reversed(tasks) if entry.get("payload", {}).get("task_id") == task_id),
+            (
+                entry.get("payload", {})
+                for entry in reversed(tasks)
+                if entry.get("payload", {}).get("task_id") == task_id
+            ),
             None,
         )
         if task is None:

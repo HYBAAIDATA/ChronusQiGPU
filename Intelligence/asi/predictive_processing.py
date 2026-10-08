@@ -8,6 +8,8 @@ import numpy as np
 from . import manifold_bridge as mb
 from .manifold_bridge import PHI_POWERS
 
+PHI_INV = 0.5 * (5**0.5 - 1.0)
+
 
 @dataclass
 class BeliefState:
@@ -78,6 +80,7 @@ class PredictiveProcessingEngine:
         self.surrogate = surrogate_model
         self.beliefs = BeliefState(0.5, 0.0, 0.1, 10.0, 0.0)
         self.belief_history: list[BeliefState] = []
+        self._error_history: list[float] = []
         self.learning_rate = 0.1
         self._manifold_belief: Optional[np.ndarray] = None
         self.manifold_belief_history: list[ManifoldBelief] = []
@@ -122,7 +125,9 @@ class PredictiveProcessingEngine:
                 0.5 * (pred - self.beliefs.predicted_phi) ** 2 * self.beliefs.precision
             )
             info_gain = abs(pred - self.beliefs.predicted_delta)  # novelty component
-            efe = expected_surprise - 0.1 * info_gain  # curiosity reduces EFE
+            # Curiosity credit = info_gain attenuated one golden step
+            # (the declared φ⁻¹ idiom — not an invented 0.1).
+            efe = expected_surprise - info_gain * PHI_INV
             expected_fes.append(efe)
 
         # Choose action with minimum expected free energy
@@ -140,15 +145,16 @@ class PredictiveProcessingEngine:
     def update_precision(self, observed_error: float):
         """Meta-learning: adjust precision (confidence) based on prediction accuracy.
 
-        If predictions are consistently wrong, reduce precision (increase uncertainty).
-        If predictions are accurate, increase precision.
+        Precision is the measured quantity it claims to be: the inverse
+        of the observed squared-error mean over the recent window — no
+        invented multiplicative steps.
         """
-        if observed_error > 0.1:  # large error
-            self.beliefs.precision *= 0.9  # reduce confidence
-            self.beliefs.uncertainty *= 1.1  # increase uncertainty
-        else:
-            self.beliefs.precision *= 1.05
-            self.beliefs.uncertainty *= 0.95
+        self._error_history.append(float(observed_error))
+        if len(self._error_history) > 50:
+            self._error_history = self._error_history[-50:]
+        mse = sum(e * e for e in self._error_history) / len(self._error_history)
+        self.beliefs.uncertainty = mse + 1e-9
+        self.beliefs.precision = 1.0 / self.beliefs.uncertainty
 
     def get_free_energy_trajectory(self) -> list[float]:
         return [b.free_energy for b in self.belief_history]

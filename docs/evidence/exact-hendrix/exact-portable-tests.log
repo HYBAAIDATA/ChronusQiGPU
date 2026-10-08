@@ -1,0 +1,12 @@
+Processing /data/hendrix-elevation/exact-dist/chronos_gpu-3.11.1-py3-none-any.whl
+Installing collected packages: chronos-gpu
+  Attempting uninstall: chronos-gpu
+    Found existing installation: chronos-gpu 3.11.1
+    Uninstalling chronos-gpu-3.11.1:
+      Successfully uninstalled chronos-gpu-3.11.1
+Successfully installed chronos-gpu-3.11.1
+
+[notice] A new release of pip is available: 24.2 -> 26.2.1
+[notice] To update, run: python -m pip install --upgrade pip
+.............................................                            [100%]
+45 passed in 83.17s (0:01:23)

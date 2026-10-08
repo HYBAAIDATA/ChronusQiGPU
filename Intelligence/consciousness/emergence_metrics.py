@@ -79,9 +79,6 @@ class EmergenceMetrics:
         self._last_delta: float = 0.0
         self._total_events: int = 0
         self._feedback_loops: int = 0
-        self._w_coherence = 0.35
-        self._w_integration = 0.40
-        self._w_differentiation = 0.25
         self._init_schools()
 
     def _init_schools(self) -> None:
@@ -174,11 +171,9 @@ class EmergenceMetrics:
         coherence = self._calculate_coherence()
         integration = self._calculate_integration()
         differentiation = self._calculate_differentiation()
-        emergence = (
-            self._w_coherence * coherence
-            + self._w_integration * integration
-            + self._w_differentiation * differentiation
-        )
+        # Emergence coefficient = measured mean of the three components;
+        # the former 0.35/0.40/0.25 invented weighting is gone.
+        emergence = (coherence + integration + differentiation) / 3.0
         snap = EmergenceSnapshot(
             timestamp=now,
             coherence=coherence,

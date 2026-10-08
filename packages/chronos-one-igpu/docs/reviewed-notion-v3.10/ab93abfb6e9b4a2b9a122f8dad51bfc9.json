@@ -1,0 +1,42 @@
+{
+  "url": "https://app.notion.com/p/ab93abfb6e9b4a2b9a122f8dad51bfc9",
+  "parent": {
+    "type": "dataSource",
+    "url": "collection://eff9356f-3520-4dea-a334-c21ccdc8d24a"
+  },
+  "properties": {
+    "GitHub URL": "https://github.com/QuantumPhiEnterprise/PYTHIPhiMiner/pull/1",
+    "Repository": "QuantumPhiEnterprise/PYTHIPhiMiner",
+    "Head Branch": "devin/1790560205-gpu-audit",
+    "PR Number": 1,
+    "date:Updated At:start": "2026-09-29T12:59:00.000Z",
+    "date:Updated At:is_datetime": 1,
+    "State": "Merged",
+    "Base Branch": "main",
+    "date:Created At:start": "2026-09-28T02:00:00.000Z",
+    "date:Created At:is_datetime": 1,
+    "date:Closed At:start": "2026-09-29T02:50:00.000Z",
+    "date:Closed At:is_datetime": 1,
+    "Author (GitHub)": "devin-ai-integration\\[bot\\]",
+    "Description": "\\## Summary<br />Preserve PYTHIA’s substrate-agnostic GPU ontology while making every host execution and release claim explicit and fail closed.<br /><br />- expose \\`hyba-super-gpu\\` as the logical substrate when its selected host is \\`cpu\\`, \\`opencl:cpu\\`, or \\`opencl:gpu\\`, while reporting physical GPU availability/count separately;<br />- allow the exact OpenCL ladder to execute on an identified OpenCL CPU or GPU device and attest the actual \\`execution\\_backend\\`, device name, and vendor;<br />- accept measured \\`opencl:\\*\\` identities but reject a plain software CPU substitution when a physical OpenCL binding was requested;<br />- invalidate stale Stratum work on clean-job notifications and keep the listener responsive during grinding;<br />- distinguish capability detection from active execution, and prevent CPU-reference availability from impersonating a bound production mining device;<br />- require complete release evidence, create evidence directories, load the canonical behavior policy, and repair canonical dependency/import and container readiness checks.<br /><br />The operator no-device flow was exercised without connecting to a pool or arming live submission:<br /><br />!\\[Fail-closed operator console\\](https://app.devin.ai/api/presigned\\_proxy?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJvcmdfaWQiOiJvcmctM2VhYTY1YWUxODg4NGM3ZThmMjcxNjY5YjQ3M2M2ZTIiLCJ1c2VyX2lkIjpudWxsLCJidWNrZXRfbmFtZSI6ImRldmluYXR0YWNobWVudHMiLCJidWNrZXRfa2V5IjoiYXR0YWNobWVudHNfcHJpdmF0ZS9vcmctM2VhYTY1YWUxODg4NGM3ZThmMjcxNjY5YjQ3M2M2ZTIvNzk0ZWZhMzUtZDk2ZC00NzYzLWE0NmYtZjQyYjhhMGFjZjUyIiwiaWF0IjoxNzkwNTYyMTIwLCJleHAiOjE3OTExNjY5MjAsImZpbGVuYW1lIjoic3NfNmExM2VlZjgucG5nIn0.8ad4PVRNP4ZQhxRJq8f0Y97Asu6Qeoov07Mb8q2vLVc)<br /><br />The canonical coordinator’s CPU-reference solver is now treated as a valid logical-substrate host, not physical OpenCL evidence. Physical GPU execution, live pool acceptance, and hashrate remain unmeasured.<br /><br />Link to Devin session: https://app.devin.ai/sessions/820689c8b8f64bd7beb42e8f04af2cb4<br />Open in Devin Desktop: https://app.devin.ai/desktop/session/820689c8b8f64bd7beb42e8f04af2cb4?variant=devin<br />Requested by: @bollingertm",
+    "date:Merged At:start": "2026-09-29T02:50:00.000Z",
+    "date:Merged At:is_datetime": 1,
+    "Title": "Separate the logical GPU substrate from host execution evidence",
+    "url": "https://app.notion.com/p/ab93abfb6e9b4a2b9a122f8dad51bfc9"
+  },
+  "createdBy": "user://00000000-0000-0000-0000-000000000000",
+  "lastEditedBy": "user://00000000-0000-0000-0000-000000000000",
+  "content": "",
+  "cover": null,
+  "iconMetadata": {
+    "type": "external",
+    "external": {
+      "url": "https://www.notion.so/images/eds/github/github-pull-merged-icon.png"
+    }
+  },
+  "icon": "https://www.notion.so/images/eds/github/github-pull-merged-icon.png",
+  "accessMetadata": {
+    "bucket": "private"
+  },
+  "title": "Separate the logical GPU substrate from host execution evidence"
+}

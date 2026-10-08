@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "scope": "assurance_only_not_api_production_certification",
+  "mandatory_gates": [
+    "rule7-no-float",
+    "abi-check",
+    "refuted-claims",
+    "import-audit",
+    "claim-register",
+    "envelope-verify",
+    "conformance-vectors",
+    "resilience-suite",
+    "schema-freeze",
+    "promotion-manifest",
+    "privileged-path-audit"
+  ]
+}

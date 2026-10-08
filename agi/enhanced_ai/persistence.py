@@ -11,12 +11,32 @@ Provides database persistence for conversations, enabling:
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timezone
 import logging
-from motor.motor_asyncio import AsyncIOMotorDatabase
-from pymongo import ASCENDING, DESCENDING
+
+try:
+    from motor.motor_asyncio import AsyncIOMotorDatabase
+    from pymongo import ASCENDING, DESCENDING
+
+    _PERSISTENCE_IMPORT_ERROR = None
+except ImportError as exc:  # optional backend — fail closed at use time
+    AsyncIOMotorDatabase = Any
+    ASCENDING = DESCENDING = None
+    _PERSISTENCE_IMPORT_ERROR = exc
 
 from .conversational_interface import ConversationSession
 
 logger = logging.getLogger(__name__)
+
+
+class PersistenceUnavailable(RuntimeError):
+    """Raised when MongoDB persistence is exercised without the driver."""
+
+
+def _require_motor() -> None:
+    if _PERSISTENCE_IMPORT_ERROR is not None:
+        raise PersistenceUnavailable(
+            "MongoDB persistence unavailable: 'motor'/'pymongo' are not "
+            f"installed ({_PERSISTENCE_IMPORT_ERROR})"
+        )
 
 
 class ConversationPersistence:
@@ -43,6 +63,7 @@ class ConversationPersistence:
 
     async def initialize(self, db: AsyncIOMotorDatabase):
         """Initialize with database connection"""
+        _require_motor()
         self.db = db
         await self._ensure_indexes()
         self._initialized = True
@@ -311,5 +332,6 @@ def get_persistence() -> ConversationPersistence:
 
 async def initialize_persistence(db: AsyncIOMotorDatabase):
     """Initialize global persistence with database"""
+    _require_motor()
     persistence = get_persistence()
     await persistence.initialize(db)

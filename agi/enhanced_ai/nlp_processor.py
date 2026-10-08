@@ -363,12 +363,12 @@ class EnhancedNLPProcessor:
         entity_count: int,
         emotional_state: Dict[str, float],
     ) -> float:
-        """Calculate overall confidence score"""
-        entity_confidence = min(entity_count * 0.1, 0.5)
-        emotion_confidence = max(emotional_state.values()) * 0.3
+        """Overall confidence is the measured intent-match confidence.
 
-        total_confidence = intent_confidence + entity_confidence + emotion_confidence
-        return min(total_confidence, 1.0)
+        Entity-count and emotion terms were dropped: arbitrary additive
+        bonuses are not a validated confidence model.
+        """
+        return min(intent_confidence, 1.0)
 
     async def _update_knowledge_gaps(self, utterance: NLPUtterance, context: ConversationContext):
         """Update knowledge gaps based on conversation"""

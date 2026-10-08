@@ -1,0 +1,20 @@
+{
+  "version": "3.11.0",
+  "distributions": [
+    {
+      "filename": "chronos_gpu-3.11.0-cp313-cp313-linux_x86_64.whl",
+      "sha256": "ca51b2bbc09bc4290eeb5386eeffde1d461e3e07432ea33de0dc462d4ee0219a",
+      "bytes": 334536
+    },
+    {
+      "filename": "chronos_gpu-3.11.0-py3-none-any.whl",
+      "sha256": "8f87fc9fc63d6a320af4c63f47caca6dfb7e9235a909f717d4d303e1ff531bc2",
+      "bytes": 288011
+    },
+    {
+      "filename": "chronos_gpu-3.11.0.tar.gz",
+      "sha256": "d755449138824fae374af9539ad68fbbe9cfcc077bae8c28c0f2fd443c031ff8",
+      "bytes": 1060627
+    }
+  ]
+}

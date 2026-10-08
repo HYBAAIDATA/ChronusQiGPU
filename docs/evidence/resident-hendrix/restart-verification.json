@@ -1,0 +1,11 @@
+{
+  "schema": "chronos.local_restart_verification/1",
+  "passed": true,
+  "fresh_process": true,
+  "receipt_object_id": "2277d4902d5f5d975d1dd33714048457420aacc82a92ab9a6f76a476f72c33d9",
+  "plan_object_id": "b189d44bba63f393628e7d20e5cca1e8cf78c5ad04748c72cd3ea60f7c4736c7",
+  "geometry_digest": "b6a7d0a4b31e9a305c5e863e8f7d0f1bae275ed87381e20c4978dd1453101946",
+  "resident_execution_digest": "d3eb57b87368a55507b29609a0e12fd38beaa4f2857f1fec77fe39b43dcabd6d",
+  "verified_nonce": 2083236893,
+  "custody_scope": "local PRIME-DB; not a THESEUS or pool acceptance claim"
+}

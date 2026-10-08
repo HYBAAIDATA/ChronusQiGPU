@@ -74,7 +74,6 @@ import numpy as np
 
 from toe.poincare_golden_11d import (
     PHI,
-    PSI,
     INV_PHI,
     compute_poincare_norm_sq,
     poincare_golden_distance,
@@ -265,12 +264,20 @@ def predictive_intelligence(
         for i in range(5):
             center = int((seed * PHI**i) % (2**32))
             bands.append((max(0, center - 100), center + 100))
-    # Confidence: based on Pisot convergence (φ^-n drift).
-    confidence = min(0.5, 1.0 - abs(PSI) ** 10)  # capped at 0.5 — honest
+    # Confidence is the measured nonce-space coverage of the predicted
+    # bands — the fraction of the 2^32 nonce domain actually covered.
+    # No invented cap or Pisot constant dressed as a probability: the
+    # honest readout of a band predictor is how much space it covers.
+    covered = sum(end - start for start, end in bands if end > start)
+    confidence = covered / float(1 << 32)
     return PredictionResult(
         predicted_nonce_bands=bands,
         confidence=confidence,
-        features={"seed": seed, "n_bands": len(bands)},
+        features={
+            "seed": seed,
+            "n_bands": len(bands),
+            "coverage_fraction": confidence,
+        },
     )
 
 

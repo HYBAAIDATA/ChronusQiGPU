@@ -158,11 +158,24 @@ DEFAULT_RULE_PACKS = {
 class KairosRuntime:
     """Single-operator control plane with hash-linked chronicle and replay."""
 
-    def __init__(self, rule_packs: Mapping[str, DomainRulePack] | None = None, boundary: RuntimeBoundary | None = None) -> None:
+    def __init__(
+        self,
+        rule_packs: Mapping[str, DomainRulePack] | None = None,
+        boundary: RuntimeBoundary | None = None,
+        *,
+        fold_volatility_delta: float = 0.05,
+        transform_volatility_delta: float = 0.1,
+        coherence_volatility_coefficient: float = 0.2,
+    ) -> None:
         self.boundary = boundary or RuntimeBoundary()
         self.rule_packs = dict(rule_packs or DEFAULT_RULE_PACKS)
         if not self.rule_packs:
             raise ValueError("at least one domain rule pack required")
+        # Declared world-dynamics rule: how much volatility a fold adds and how
+        # much coherence volatility subtracts.  World rules, not measurements.
+        self.fold_volatility_delta = float(fold_volatility_delta)
+        self.transform_volatility_delta = float(transform_volatility_delta)
+        self.coherence_volatility_coefficient = float(coherence_volatility_coefficient)
         self.worlds: dict[str, KairosWorld] = {}
         self.sessions: dict[str, OperatorSession] = {}
 
@@ -279,8 +292,13 @@ class KairosRuntime:
         domains = dict(world.state.get("domains", {}))
         domains[event.domain_from] = {"last_action": event.intent, "payload_hash": _hash(event.payload)}
         domains[event.domain_to] = {"resonance_from": event.domain_from, "resonance_hash": _hash({"from": event.domain_from, "provenance": event.provenance})}
-        volatility = min(1.0, float(world.state.get("volatility", 0.0)) + 0.05 + (0.1 if event.intent == "transform" else 0.0))
-        coherence = max(0.0, 1.0 - volatility * 0.2)
+        volatility = min(
+            1.0,
+            float(world.state.get("volatility", 0.0))
+            + self.fold_volatility_delta
+            + (self.transform_volatility_delta if event.intent == "transform" else 0.0),
+        )
+        coherence = max(0.0, 1.0 - volatility * self.coherence_volatility_coefficient)
         world.state = {**world.state, "domains": domains, "coherence": coherence, "volatility": volatility}
         record = self._chronicle(world, "fold", FoldOutcome.ACCEPTED.value, {"event": event, "state_hash": world.state_hash, "coherence": coherence, "volatility": volatility})
         self.sessions[session_id] = OperatorSession(session.session_id, session.operator_id, session.role, session.state, session.opened_at, session.command_count + 1)

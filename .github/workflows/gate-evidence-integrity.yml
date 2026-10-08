@@ -1,0 +1,35 @@
+name: Gate evidence integrity (not API production certification)
+on:
+  pull_request:
+    paths:
+      - 'scripts/gate_runner.py'
+      - 'scripts/assert_gate_rollup.py'
+      - 'scripts/gate_impl.py'
+      - 'scripts/publish_check_runs.py'
+      - 'scripts/advance_state.py'
+      - 'tests/test_gate_evidence_integrity.py'
+      - 'config/assurance-gates.json'
+      - 'config/api-release-gates.json'
+      - 'make/gates.mk'
+      - '.github/workflows/promotion.yml'
+      - '.github/workflows/gate-evidence-integrity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - 'tests/test_gate_evidence_integrity.py'
+      - 'config/*gates.json'
+      - 'make/gates.mk'
+      - '.github/workflows/*'
+permissions:
+  contents: read
+jobs:
+  protocol:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Execute hermetic evidence and consumer tests
+        run: python -m unittest discover -s tests -p 'test_gate_evidence_integrity.py' -v

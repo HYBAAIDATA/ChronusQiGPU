@@ -218,26 +218,12 @@ class ContextualStrategyLearner:
         self.frozen = False
         self._rng = random.Random(seed)
 
-    def _negative_transfer_entry(
-        self, problem_class: str, strategy: str
-    ) -> dict[str, Any] | None:
-        return next(
-            (
-                entry
-                for entry in reversed(self.negative_transfer)
-                if entry.get("class") == problem_class
-                and entry.get("imported") == strategy
-            ),
-            None,
-        )
-
     def _posterior(self, problem_class: str, strategy: str) -> tuple[float, float, int, bool]:
         klass = self.class_stats.get(problem_class, {}).get(strategy, [0.0, 0.0])
         glob = self.global_stats.get(strategy, [0.0, 0.0])
         alpha, beta = 1.0 + klass[0], 1.0 + klass[1] - klass[0]
         used_prior = False
-        blocked_prior = self._negative_transfer_entry(problem_class, strategy) is not None
-        if klass[1] < 2 and glob[1] > 0 and not blocked_prior:
+        if klass[1] < 2 and glob[1] > 0:
             mean = glob[0] / glob[1]
             alpha += self.prior_weight * mean
             beta += self.prior_weight * (1.0 - mean)
@@ -247,14 +233,6 @@ class ContextualStrategyLearner:
     def select_strategy(self, problem_class: str, available: Sequence[str]) -> StrategyChoice:
         if not available:
             raise ValueError("at least one strategy is required")
-        original = tuple(available)
-        suppressed = tuple(
-            strategy for strategy in original
-            if self._negative_transfer_entry(problem_class, strategy) is not None
-        )
-        eligible = tuple(strategy for strategy in original if strategy not in suppressed)
-        if eligible:
-            available = eligible
         rows = []
         for strategy in available:
             alpha, beta, n, used_prior = self._posterior(problem_class, strategy)
@@ -268,15 +246,7 @@ class ContextualStrategyLearner:
             f"{mode} {draw:.3f} (mean {mean:.3f}) from {n} class episode(s)"
             + (" + global prior" if used_prior else "")
         )
-        if suppressed and eligible:
-            basis += " | negative-transfer guard suppressed " + ",".join(sorted(suppressed))
-            self.events.append({
-                "class": problem_class,
-                "event": "abandon_negative_transfer",
-                "suppressed": list(sorted(suppressed)),
-                "selected": chosen,
-            })
-        return StrategyChoice(chosen, tuple(s for s in original if s != chosen), basis)
+        return StrategyChoice(chosen, tuple(s for s in available if s != chosen), basis)
 
     def update(self, problem_class: str, strategy_id: str, success: bool,
                detail: str = "") -> None:
@@ -310,7 +280,7 @@ class ContextualStrategyLearner:
         return report
 
     def _detect_negative_transfer(self, problem_class: str) -> dict[str, Any] | None:
-        """Detect when an imported global preference is harmful in this class."""
+        """Globally preferred strategy is reliably worse inside this class."""
         if not self.global_stats:
             return None
         global_best = max(
@@ -318,11 +288,12 @@ class ContextualStrategyLearner:
             key=lambda s: (self.global_stats[s][0] / max(1.0, self.global_stats[s][1]), s),
         )
         stats = self.class_stats.get(problem_class, {})
-        imported = stats.get(global_best)
-        if imported is None or imported[1] < 3:
+        if global_best not in stats or stats[global_best][1] < 3:
             return None
-        if self._negative_transfer_entry(problem_class, global_best) is not None:
+        rivals = [(s, row) for s, row in stats.items() if s != global_best and row[1] >= 3]
+        if not rivals:
             return None
+        best_rival, row = max(rivals, key=lambda kv: (kv[1][0] / kv[1][1], kv[0]))
 
         def beta(row: Sequence[float]) -> tuple[float, float]:
             a, b = 1.0 + row[0], 1.0 + row[1] - row[0]
@@ -330,48 +301,19 @@ class ContextualStrategyLearner:
             var = a * b / ((a + b) ** 2 * (a + b + 1.0))
             return mean, var
 
-        imported_mean, imported_var = beta(imported)
-        rivals = [(s, row) for s, row in stats.items() if s != global_best and row[1] >= 3]
-        best_rival = None
-        rival_probability = 0.0
-        rival_mean = None
-        if rivals:
-            best_rival, rival_row = max(
-                rivals, key=lambda kv: (kv[1][0] / kv[1][1], kv[0])
-            )
-            rival_mean, rival_var = beta(rival_row)
-            z = (rival_mean - imported_mean) / math.sqrt(rival_var + imported_var)
-            rival_probability = 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
-
-        global_row = self.global_stats[global_best]
-        source_row = [
-            max(0.0, global_row[0] - imported[0]),
-            max(0.0, global_row[1] - imported[1]),
-        ]
-        source_probability = 0.0
-        source_mean = None
-        if source_row[1] >= 3:
-            source_mean, source_var = beta(source_row)
-            z = (source_mean - imported_mean) / math.sqrt(source_var + imported_var)
-            source_probability = 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
-
-        probability = max(rival_probability, source_probability)
+        m1, v1 = beta(row)
+        m0, v0 = beta(stats[global_best])
+        z = (m1 - m0) / math.sqrt(v1 + v0)
+        probability = 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
         if probability < 0.95:
             return None
-        entry = {
-            "class": problem_class,
-            "imported": global_best,
-            "better": best_rival,
-            "remediation": "suppress_imported_strategy_and_global_prior",
-            "probability_harmful": round(probability, 4),
-            "probability_rival_better": round(rival_probability, 4),
-            "probability_source_better": round(source_probability, 4),
-            "class_mean_imported": round(imported_mean, 4),
-            "class_mean_better": round(rival_mean, 4) if rival_mean is not None else None,
-            "source_mean_imported": round(source_mean, 4) if source_mean is not None else None,
-        }
+        if any(entry["class"] == problem_class and entry["imported"] == global_best
+               for entry in self.negative_transfer):
+            return None
+        entry = {"class": problem_class, "imported": global_best, "better": best_rival,
+                 "probability_better": round(probability, 4),
+                 "class_mean_imported": round(m0, 4), "class_mean_better": round(m1, 4)}
         self.negative_transfer.append(entry)
-        self.events.append({"event": "negative_transfer_detected", **entry})
         return entry
 
     def summary(self) -> dict[str, Any]:

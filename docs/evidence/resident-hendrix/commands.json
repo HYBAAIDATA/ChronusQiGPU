@@ -1,0 +1,11 @@
+{
+  "native_and_portable_build": "python -m build --no-isolation; CHRONOS_DISABLE_NATIVE=1 python -m build --no-isolation --wheel (clean build directory per mode)",
+  "installed_integrations": "PYTHONPATH=<snapshot bootstrap>:<canonical source>:<Turing source> python -m pytest tests/test_resident_hendrix.py -q",
+  "preserved_source_regressions": "PYTHONPATH=src python -m pytest tests -q (standalone product)",
+  "distribution_metadata": "python -m twine check dist/*",
+  "doctor": "chronos-igpu doctor",
+  "restart": "separate Python process; PrimeDB.get -> MLAObject.validate -> ResidentHendrix.from_dict -> receipt seal comparison",
+  "full_repository": "not run locally; PR workflow configured",
+  "hardware": "not executed",
+  "live_pool": "not submitted"
+}

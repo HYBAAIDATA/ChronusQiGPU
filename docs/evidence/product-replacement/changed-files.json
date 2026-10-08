@@ -1,0 +1,102 @@
+[
+  {
+    "path": "chronus/resident_hendrix.py",
+    "sha256": "ee1b5fb3b108a731de12758b273c5ba7e2fe53e9ef4d4d38b81ed103e5a2e20a"
+  },
+  {
+    "path": "chronus/one_igpu_mining.py",
+    "sha256": "978b57f2f25ce3215f02eafae1bb83d84be95231ce6f4ae1fa3cee5f82a06748"
+  },
+  {
+    "path": "chronus/mla1517/mining/resident_search.py",
+    "sha256": "5cca1139afa46b58913d6deb28678ae345329c3bc983801aa914bb9167cdf2f0"
+  },
+  {
+    "path": "chronus/mla1517/mining/geodesic_support.py",
+    "sha256": "e05a6bc75fb8a3e56c7ccd525a70ef56c2436b6370a25235b1ad4b5b12268dce"
+  },
+  {
+    "path": "chronus/mla1517/mining/resident_router.py",
+    "sha256": "1ca919f58a61e4816f1964cb47a2cc237204590b4a4b71e2c3ee1da6149cb9d6"
+  },
+  {
+    "path": "chronus/mla1517/mining/search_plan.py",
+    "sha256": "d947f011963d76fe5e416c2aceea030e86f9ba94465e875e987f6a0ba1bc099e"
+  },
+  {
+    "path": "tests/test_production_replacement_attacks.py",
+    "sha256": "8f29e9963eac8e055ceaef357a3c1da04a4d95c5abb5598db53c591627687993"
+  },
+  {
+    "path": "docs/PRODUCT_REPLACEMENT_WORK.md",
+    "sha256": "92d2b339e144a61ff3e9f9f15ecad00216890db1e7d79d782e95c1eff3d4cad1"
+  },
+  {
+    "path": "docs/evidence/product-replacement/replacement-ledger.json",
+    "sha256": "8ade664e677a26f49d1ca8ab555762284e564f571dc0b73ec7d47db5fe1e2ade"
+  },
+  {
+    "path": "packages/chronos-one-igpu/src/chronos/igpu/facade.py",
+    "sha256": "ca1fb53094f8e32438ad71a8b41bd3aa19d73767a24c9e499c33d89fd94b05b6"
+  },
+  {
+    "path": "packages/chronos-one-igpu/src/chronos/igpu/golden_runtime.py",
+    "sha256": "f5bba1c11aa71d413b8c1471b3b441281b34e8a81a922c96a11e42f935b5c048"
+  },
+  {
+    "path": "packages/chronos-one-igpu/src/chronos/igpu/virtual_abi.py",
+    "sha256": "3dc98ab252fa421be45b2ce846dcb1d44266b9bcbb4b52fe10ee9935f1774cd3"
+  },
+  {
+    "path": "packages/chronos-one-igpu/src/chronos/igpu/resident_hendrix.py",
+    "sha256": "d905c80b54dd603523ceac90ca4bebd52c6000bf570b4646d8a1920da3afe5d8"
+  },
+  {
+    "path": "packages/chronos-one-igpu/src/chronos/igpu/hendrix_execution.py",
+    "sha256": "80c5967a55067be8a708c4b55bf0d8a037b460ecabb4cf71f912fb3642482683"
+  },
+  {
+    "path": "packages/chronos-one-igpu/src/chronos/igpu/execution_identity.py",
+    "sha256": "3dccf69ddb06b8520380977f360690b796e39909c2fe4a0eea4dcb2be9dc94aa"
+  },
+  {
+    "path": "packages/chronos-one-igpu/src/chronos/igpu/exact_quantum.py",
+    "sha256": "5ea67faf6057e0224ceed1195e937aa1666173ad507443f87209db427f8986fd"
+  },
+  {
+    "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/facade.py",
+    "sha256": "ca1fb53094f8e32438ad71a8b41bd3aa19d73767a24c9e499c33d89fd94b05b6"
+  },
+  {
+    "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/golden_runtime.py",
+    "sha256": "f5bba1c11aa71d413b8c1471b3b441281b34e8a81a922c96a11e42f935b5c048"
+  },
+  {
+    "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/virtual_abi.py",
+    "sha256": "3dc98ab252fa421be45b2ce846dcb1d44266b9bcbb4b52fe10ee9935f1774cd3"
+  },
+  {
+    "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/resident_hendrix.py",
+    "sha256": "d905c80b54dd603523ceac90ca4bebd52c6000bf570b4646d8a1920da3afe5d8"
+  },
+  {
+    "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/hendrix_execution.py",
+    "sha256": "80c5967a55067be8a708c4b55bf0d8a037b460ecabb4cf71f912fb3642482683"
+  },
+  {
+    "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/execution_identity.py",
+    "sha256": "3dccf69ddb06b8520380977f360690b796e39909c2fe4a0eea4dcb2be9dc94aa"
+  },
+  {
+    "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/exact_quantum.py",
+    "sha256": "5ea67faf6057e0224ceed1195e937aa1666173ad507443f87209db427f8986fd"
+  },
+  {
+    "path": "packages/chronos-one-igpu/pyproject.toml",
+    "sha256": "784ca9378b6a511b986c4ab03ec2a3402e362c8c0832ff11928946fabd4fc036"
+  },
+  {
+    "path": "packages/chronos-one-igpu/tests/test_exact_evolution_replacement.py",
+    "sha256": "89b3d2dc61fb13ea1c75e00e97135288f8a0aac01c563e93af7ad7ff62410c7d"
+  }
+]

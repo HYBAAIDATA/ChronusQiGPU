@@ -12,10 +12,15 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
-from hyba_platform.platform.phi.resonance import PhiResonanceScorer
+from agi.resonance import PhiResonanceScorer
+from agi.quantum_decision import (
+    normal_quantile_grid,
+    quantile_grid,
+    substrate_state_from_belief,
+)
 
 # Import quantum processing capabilities
-from hyba_platform.quantum_core.processor import (
+from agi.quantum_processor import (
     ProblemDomain,
     UniversalQuantumProcessor,
 )
@@ -175,7 +180,7 @@ class MultiCriteriaDecisionAnalysis:
 
         return {
             "convergence": np.std(topsis_scores),
-            "confidence": 0.85,
+            "confidence": "not_assessable_deterministic_method",
             "rankings": rankings.tolist(),
             "scores": topsis_scores.tolist(),
             "best_alternative": int(rankings[0]),
@@ -216,7 +221,7 @@ class MultiCriteriaDecisionAnalysis:
 
         return {
             "convergence": consistency_index,
-            "confidence": 0.82,
+            "confidence": "not_assessable_deterministic_method",
             "rankings": rankings.tolist(),
             "scores": final_scores.tolist(),
             "best_alternative": int(rankings[0]),
@@ -261,7 +266,7 @@ class MultiCriteriaDecisionAnalysis:
 
         return {
             "convergence": np.std(net_scores),
-            "confidence": 0.78,
+            "confidence": "not_assessable_deterministic_method",
             "rankings": rankings.tolist(),
             "scores": net_scores.tolist(),
             "best_alternative": int(rankings[0]),
@@ -302,7 +307,7 @@ class MultiCriteriaDecisionAnalysis:
 
         return {
             "convergence": np.std(net_flows),
-            "confidence": 0.80,
+            "confidence": "not_assessable_deterministic_method",
             "rankings": rankings.tolist(),
             "scores": net_flows.tolist(),
             "best_alternative": int(rankings[0]),
@@ -338,22 +343,25 @@ class MultiCriteriaDecisionAnalysis:
                 iterations=min(iterations // 10, 100),
             )
 
+            solution = quantum_result.get("solution", {})
             return {
-                "quantum_speedup": quantum_result.get("quantum_speedup", 1.0),
-                "quantum_rankings": quantum_result.get(
-                    "solution", classical_result.get("rankings", [])
-                ),
-                "phi_resonance_score": quantum_result.get("phi_resonance_score", 0.5),
-                "quantum_confidence": quantum_result.get("success_probability", 0.5),
+                "quantum_speedup": float(quantum_result.get("quantum_speedup", 1.0)),
+                "quantum_status": quantum_result.get("status", "unknown"),
+                "quantum_top_indices": solution.get("top_indices"),
+                "quantum_top_probability_mass": solution.get("top_probability_mass"),
+                "quantum_final_entropy_nats": solution.get("final_entropy_nats"),
+                "evidence_class": "quantum_substrate_measured",
             }
 
         except Exception as e:
             logger.warning(f"Quantum optimization failed: {e}")
             return {
                 "quantum_speedup": 1.0,
-                "quantum_rankings": classical_result.get("rankings", []),
-                "phi_resonance_score": 0.5,
-                "quantum_confidence": 0.5,
+                "quantum_status": "unavailable",
+                "quantum_top_indices": None,
+                "quantum_top_probability_mass": None,
+                "quantum_final_entropy_nats": None,
+                "evidence_class": "unavailable",
             }
 
 
@@ -443,35 +451,21 @@ class MonteCarloSimulation:
     def _generate_samples(
         self, variables: Dict[str, Any], distributions: Dict[str, str], iterations: int
     ) -> Dict[str, np.ndarray]:
-        """Generate random samples for simulation"""
+        """Evaluate each declared distribution on a deterministic quantile grid.
+
+        No pseudo-random draws: each variable is realised as the exact
+        inverse-CDF evaluated at equally-spaced quantile midpoints
+        (``agi.quantum_decision.quantile_grid``), so downstream statistics
+        converge exactly and reproducibly for a given ``iterations``.
+        """
 
         samples = {}
 
         for var_name, var_params in variables.items():
             dist_type = distributions.get(var_name, "normal")
-
-            if dist_type == "normal":
-                mean = var_params.get("mean", 0.0)
-                std = var_params.get("std", 1.0)
-                samples[var_name] = np.random.normal(mean, std, iterations)
-
-            elif dist_type == "uniform":
-                low = var_params.get("low", 0.0)
-                high = var_params.get("high", 1.0)
-                samples[var_name] = np.random.uniform(low, high, iterations)
-
-            elif dist_type == "exponential":
-                scale = var_params.get("scale", 1.0)
-                samples[var_name] = np.random.exponential(scale, iterations)
-
-            elif dist_type == "lognormal":
-                mean = var_params.get("mean", 0.0)
-                std = var_params.get("std", 1.0)
-                samples[var_name] = np.random.lognormal(mean, std, iterations)
-
-            else:
-                # Default to normal distribution
-                samples[var_name] = np.random.normal(0, 1, iterations)
+            if dist_type not in {"normal", "uniform", "exponential", "lognormal"}:
+                dist_type = "normal"
+            samples[var_name] = quantile_grid(dist_type, var_params, iterations)
 
         return samples
 
@@ -509,7 +503,7 @@ class MonteCarloSimulation:
 
         return {
             "convergence": (std_return / np.abs(mean_return) if mean_return != 0 else 1.0),
-            "confidence": 0.92,
+            "confidence": "not_assessable_deterministic_quadrature",
             "mean_return": mean_return,
             "volatility": std_return,
             "sharpe_ratio": sharpe_ratio,
@@ -553,7 +547,7 @@ class MonteCarloSimulation:
 
         return {
             "convergence": std_risk / np.abs(mean_risk) if mean_risk != 0 else 1.0,
-            "confidence": 0.88,
+            "confidence": "not_assessable_deterministic_quadrature",
             "mean_risk": mean_risk,
             "risk_volatility": std_risk,
             "exceedance_probabilities": exceedance_probs,
@@ -583,16 +577,15 @@ class MonteCarloSimulation:
         if "stock_return" in samples:
             stock_prices = S0 * np.exp(samples["stock_return"])
         else:
-            # Generate geometric Brownian motion
-            dt = T / 252  # Daily steps
-            n_steps = int(T / dt)
-            stock_prices = S0 * np.ones(len(next(iter(samples.values()))))
-
-            for _ in range(n_steps):
-                returns = np.random.normal(
-                    (r - 0.5 * 0.2**2) * dt, 0.2 * np.sqrt(dt), len(stock_prices)
-                )
-                stock_prices *= np.exp(returns)
+            # Terminal lognormal quadrature: under GBM the terminal price is
+            # S_T = S0 * exp((r - sigma^2/2) * T + sigma * sqrt(T) * z) with
+            # z ~ N(0, 1). Evaluating z on an inverse-CDF quantile grid is the
+            # exact distribution the simulated path ensemble converges to —
+            # no random path construction required.
+            sigma = float(model.get("volatility", 0.2))
+            n_points = len(next(iter(samples.values()))) if samples else 512
+            z = normal_quantile_grid(0.0, 1.0, n_points)
+            stock_prices = S0 * np.exp((r - 0.5 * sigma**2) * T + sigma * np.sqrt(T) * z)
 
         # Calculate option payoffs
         option_type = model.get("option_type", "call")
@@ -606,11 +599,12 @@ class MonteCarloSimulation:
 
         # Calculate option price and Greeks
         option_price = np.mean(discounted_payoffs)
-        std_error = np.std(discounted_payoffs) / np.sqrt(len(discounted_payoffs))
+        # Deterministic quadrature: zero sampling error by construction.
+        std_error = 0.0
 
         return {
             "convergence": std_error / option_price if option_price > 0 else 1.0,
-            "confidence": 0.95,
+            "confidence": "not_assessable_deterministic_quadrature",
             "option_price": option_price,
             "standard_error": std_error,
             "payoff_mean": np.mean(payoffs),
@@ -654,7 +648,7 @@ class MonteCarloSimulation:
 
         return {
             "convergence": (std_result / np.abs(mean_result) if mean_result != 0 else 1.0),
-            "confidence": 0.85,
+            "confidence": "not_assessable_deterministic_quadrature",
             "mean": mean_result,
             "std": std_result,
             "min": np.min(results),
@@ -697,18 +691,25 @@ class MonteCarloSimulation:
                 iterations=min(iterations // 100, 50),
             )
 
+            solution = quantum_result.get("solution", {})
             return {
-                "quantum_speedup": quantum_result.get("quantum_speedup", 1.0),
-                "enhanced_confidence": quantum_result.get("success_probability", 0.9),
-                "phi_optimization": quantum_result.get("phi_resonance_score", 0.5),
+                "quantum_speedup": float(quantum_result.get("quantum_speedup", 1.0)),
+                "quantum_status": quantum_result.get("status", "unknown"),
+                "quantum_top_indices": solution.get("top_indices"),
+                "quantum_top_probability_mass": solution.get("top_probability_mass"),
+                "quantum_final_entropy_nats": solution.get("final_entropy_nats"),
+                "evidence_class": "quantum_substrate_measured",
             }
 
         except Exception as e:
             logger.warning(f"Quantum enhancement failed: {e}")
             return {
                 "quantum_speedup": 1.0,
-                "enhanced_confidence": classical_result.get("confidence", 0.85),
-                "phi_optimization": 0.5,
+                "quantum_status": "unavailable",
+                "quantum_top_indices": None,
+                "quantum_top_probability_mass": None,
+                "quantum_final_entropy_nats": None,
+                "evidence_class": "unavailable",
             }
 
 
@@ -796,8 +797,8 @@ class NashEquilibriumSolver:
 
         return {
             "iterations": 1,
-            "convergence": 0.1,
-            "confidence": 0.90,
+            "convergence": 1.0 if pure_equilibria else "mixed_strategy_search",
+            "confidence": "not_assessable_deterministic_method",
             "pure_strategy_equilibria": pure_equilibria,
             "mixed_strategy_equilibrium": mixed_equilibrium,
             "game_value": game_value,
@@ -829,7 +830,7 @@ class NashEquilibriumSolver:
         return {
             "iterations": iterations,
             "convergence": convergence,
-            "confidence": 0.75 if equilibrium_reached else 0.60,
+            "confidence": "converged" if equilibrium_reached else "iteration_limit_reached",
             "equilibrium_strategies": strategies,
             "equilibrium_reached": equilibrium_reached,
             "equilibrium_type": "mixed",
@@ -866,34 +867,52 @@ class NashEquilibriumSolver:
 
         return equilibria
 
-    def _find_mixed_strategy_equilibrium(self, payoff_array: np.ndarray) -> Dict[str, Any]:
-        """Find mixed strategy equilibrium using linear programming"""
+    def _find_mixed_strategy_equilibrium(
+        self, payoff_array: np.ndarray, iterations: int = 1000
+    ) -> Dict[str, Any]:
+        """Find the mixed-strategy equilibrium by deterministic fictitious play.
+
+        Each player iteratively plays the best response to the opponent's
+        empirical action frequency. Zero-sum convention: row maximises ``A``,
+        column minimises. No sampling — the empirical frequencies ARE the
+        converged mixed strategies.
+        """
 
         try:
             rows, cols = payoff_array.shape
 
-            # Solve for row player's mixed strategy
-            # This is a simplified version - real implementation would use linear programming
-            row_strategy = np.ones(rows) / rows  # Uniform distribution as fallback
+            row_counts = np.zeros(rows)
+            col_counts = np.zeros(cols)
+            row_counts[int(np.argmax(payoff_array.sum(axis=1)))] = 1.0
+            col_counts[int(np.argmin(payoff_array.sum(axis=0)))] = 1.0
 
-            # Solve for column player's mixed strategy
-            col_strategy = np.ones(cols) / cols  # Uniform distribution as fallback
+            for _ in range(iterations):
+                row_emp = row_counts / row_counts.sum()
+                col_emp = col_counts / col_counts.sum()
 
-            # Calculate expected payoffs
-            expected_payoff = np.dot(row_strategy, np.dot(payoff_array, col_strategy))
+                row_counts[int(np.argmax(payoff_array @ col_emp))] += 1.0
+                col_counts[int(np.argmin(row_emp @ payoff_array))] += 1.0
+
+            row_strategy = row_counts / row_counts.sum()
+            col_strategy = col_counts / col_counts.sum()
+
+            expected_payoff = float(np.dot(row_strategy, np.dot(payoff_array, col_strategy)))
 
             return {
                 "row_strategy": row_strategy.tolist(),
                 "column_strategy": col_strategy.tolist(),
-                "expected_payoff": float(expected_payoff),
+                "expected_payoff": expected_payoff,
+                "solver": "deterministic_fictitious_play",
             }
 
         except Exception as e:
             logger.warning(f"Mixed strategy calculation failed: {e}")
             return {
-                "row_strategy": [0.5, 0.5],
-                "column_strategy": [0.5, 0.5],
-                "expected_payoff": 0.0,
+                "row_strategy": "unavailable",
+                "column_strategy": "unavailable",
+                "expected_payoff": "unavailable",
+                "solver": "failed",
+                "reason": str(e),
             }
 
     def _calculate_game_value(
@@ -939,38 +958,46 @@ class NashEquilibriumSolver:
     def _initialize_strategies(
         self, payoff_array: np.ndarray, players: int
     ) -> Dict[str, np.ndarray]:
-        """Initialize strategies for n-player game"""
+        """Initialise empirical action frequencies for n-player fictitious play.
+
+        Uniform (maximum-entropy) starting distribution over the shared action
+        space — deterministic, not a random draw.
+        """
         strategies = {}
-
-        # Simple initialization - uniform random strategies
+        rows = int(payoff_array.shape[0])
         for player in range(players):
-            # Determine strategy space size for this player
-            strategy_size = int(payoff_array.size ** (1 / players))
-            strategies[f"player_{player}"] = np.ones(strategy_size) / strategy_size
-
+            strategies[f"player_{player}"] = np.ones(rows) / rows
         return strategies
 
     def _best_response_update(
         self, strategies: Dict[str, np.ndarray], payoff_array: np.ndarray, players: int
     ) -> Dict[str, np.ndarray]:
-        """Update strategies using best response dynamics"""
+        """Deterministic fictitious-play update on a shared-payoff n-player game.
 
-        new_strategies = strategies.copy()
+        Each player's expected payoff for action ``a`` is ``A[a]`` contracted
+        with the uniform empirical mixture of the other players' columns; each
+        player mass-shifts onto the argmax best response. No noise draws.
+        """
+        rows = int(payoff_array.shape[0])
+        new_strategies = dict(strategies)
 
-        # Simplified best response update
         for player in range(players):
             player_key = f"player_{player}"
+            others = [strategies[f"player_{p}"] for p in range(players) if p != player]
+            if others:
+                others_mix = np.mean(others, axis=0)
+            else:
+                others_mix = np.ones(rows) / rows
+            # Expected payoff of each own action against the opponents'
+            # empirical mixture, evaluated column-wise to keep the product
+            # well-defined for rectangular matrices.
+            cols = int(payoff_array.shape[1])
+            mix_cols = np.resize(others_mix, cols)
+            expected = payoff_array @ mix_cols
+            best = int(np.argmax(expected))
 
-            # In a real implementation, this would calculate actual best responses
-            # For now, add small random perturbation
-            current_strategy = strategies[player_key]
-            noise = np.random.normal(0, 0.01, len(current_strategy))
-            new_strategy = current_strategy + noise
-
-            # Normalize to ensure it's a valid probability distribution
-            new_strategy = np.maximum(new_strategy, 0)
-            new_strategy = new_strategy / np.sum(new_strategy)
-
+            new_strategy = np.zeros(rows)
+            new_strategy[best % rows] = 1.0
             new_strategies[player_key] = new_strategy
 
         return new_strategies
@@ -1011,20 +1038,25 @@ class NashEquilibriumSolver:
                 problem_id, algorithm="phi_resonance", iterations=50
             )
 
+            solution = quantum_result.get("solution", {})
             return {
-                "quantum_speedup": quantum_result.get("quantum_speedup", 1.0),
-                "quantum_equilibrium": quantum_result.get("solution", {}),
-                "quantum_game_value": quantum_result.get("objective_value", 0.0),
-                "phi_resonance_score": quantum_result.get("phi_resonance_score", 0.5),
+                "quantum_speedup": float(quantum_result.get("quantum_speedup", 1.0)),
+                "quantum_status": quantum_result.get("status", "unknown"),
+                "quantum_top_indices": solution.get("top_indices"),
+                "quantum_top_probability_mass": solution.get("top_probability_mass"),
+                "quantum_final_entropy_nats": solution.get("final_entropy_nats"),
+                "evidence_class": "quantum_substrate_measured",
             }
 
         except Exception as e:
             logger.warning(f"Quantum game analysis failed: {e}")
             return {
                 "quantum_speedup": 1.0,
-                "quantum_equilibrium": classical_result.get("mixed_strategy_equilibrium", {}),
-                "quantum_game_value": classical_result.get("game_value", 0.0),
-                "phi_resonance_score": 0.5,
+                "quantum_status": "unavailable",
+                "quantum_top_indices": None,
+                "quantum_top_probability_mass": None,
+                "quantum_final_entropy_nats": None,
+                "evidence_class": "unavailable",
             }
 
 
@@ -1063,15 +1095,10 @@ class BayesianMCMC:
             # Determine inference method
             method = model.get("method", "metropolis_hastings")
 
-            # Run MCMC based on method
-            if method == "metropolis_hastings":
-                result = await self._metropolis_hastings(data_array, model, iterations)
-            elif method == "gibbs":
-                result = await self._gibbs_sampling(data_array, model, iterations)
-            elif method == "hmc":
-                result = await self._hamiltonian_monte_carlo(data_array, model, iterations)
-            else:
-                result = await self._metropolis_hastings(data_array, model, iterations)
+            # All samplers route to the same exact evaluation: the declared
+            # sampler name is recorded for provenance, but inference is
+            # deterministic posterior quadrature, not a Markov chain.
+            result = await self._exact_grid_posterior(data_array, model, iterations, method)
 
             # Apply quantum enhancement for large iterations
             quantum_speedup = 1.0
@@ -1106,242 +1133,98 @@ class BayesianMCMC:
                 "computation_time": 0.0,
             }
 
+    async def _exact_grid_posterior(
+        self,
+        data: np.ndarray,
+        model: Dict[str, Any],
+        iterations: int,
+        method_label: str,
+    ) -> Dict[str, Any]:
+        """Exact posterior evaluation on a deterministic parameter grid.
+
+        The posterior is evaluated exactly at every point of a tensor grid
+        over the prior support, normalised into a discrete posterior, embedded
+        as a substrate quantum state (Born probabilities == posterior mass),
+        and the MAP estimate read off by deterministic Born-rule measurement.
+        No pseudo-random draws anywhere — results are deterministic and
+        converge to the true posterior as the grid refines.
+        """
+
+        params = model.get("parameters", {"mean": 0.0, "std": 1.0})
+        param_names = list(params.keys())
+        priors = model.get(
+            "priors",
+            {"mean": {"mu": 0, "sigma": 10}, "std": {"mu": 1, "sigma": 5}},
+        )
+
+        grid_size = max(8, min(256, int(iterations)))
+        grids = []
+        for name in param_names:
+            prior = priors.get(name, {})
+            mu = float(prior.get("mu", params[name]))
+            sigma = float(prior.get("sigma", max(abs(params[name]), 1.0)))
+            if sigma <= 0:
+                sigma = 1.0
+            grids.append(np.linspace(mu - 4.0 * sigma, mu + 4.0 * sigma, grid_size))
+
+        mesh = np.meshgrid(*grids, indexing="ij")
+        flat = np.stack([m.ravel() for m in mesh], axis=1)
+
+        logw = np.array([self._log_posterior(data, row, param_names, priors) for row in flat])
+        logw = np.where(np.isfinite(logw), logw, -np.inf)
+        w = np.exp(logw - np.max(logw))
+        total = float(w.sum())
+        if total <= 0.0:
+            raise RuntimeError("posterior is identically zero on the prior support grid")
+        w /= total
+
+        # The discrete posterior IS a Born-probability distribution: embed it
+        # as a substrate state and measure deterministically (argmax) to read
+        # the MAP estimate.
+        posterior_state = substrate_state_from_belief(w, dim=int(w.size))
+        map_index, _map_prob, _collapsed = posterior_state.measure_pvm()
+        map_index = int(map_index)
+
+        posterior_means = (flat * w[:, None]).sum(axis=0)
+        posterior_vars = (flat**2 * w[:, None]).sum(axis=0) - posterior_means**2
+        posterior_stds = np.sqrt(np.maximum(posterior_vars, 0.0))
+
+        top_k = min(1000, flat.shape[0])
+        top_idx = np.argsort(w)[::-1][:top_k]
+
+        return {
+            "convergence": "exact_grid_no_sampling",
+            "confidence": "not_assessable_exact_quadrature",
+            "acceptance_rate": "not_applicable_deterministic",
+            "posterior_means": dict(zip(param_names, posterior_means.tolist())),
+            "posterior_stds": dict(zip(param_names, posterior_stds.tolist())),
+            "posterior_map": dict(zip(param_names, flat[map_index].tolist())),
+            "posterior_samples": flat[top_idx].tolist(),
+            "posterior_support_weights": w[top_idx].tolist(),
+            "burn_in": 0,
+            "effective_sample_size": int(flat.shape[0]),
+            "sampler": f"deterministic_posterior_grid[{method_label}]",
+            "grid_size_per_parameter": int(grid_size),
+            "evidence_class": "classical_deterministic",
+        }
+
     async def _metropolis_hastings(
         self, data: np.ndarray, model: Dict[str, Any], iterations: int
     ) -> Dict[str, Any]:
-        """Metropolis-Hastings MCMC algorithm"""
-
-        # Initialize parameters
-        params = model.get("parameters", {"mean": 0.0, "std": 1.0})
-        param_names = list(params.keys())
-        n_params = len(param_names)
-
-        # Initialize chain
-        current_params = np.array([params[name] for name in param_names])
-        chain = np.zeros((iterations, n_params))
-
-        # Priors (assuming normal priors)
-        priors = model.get("priors", {"mean": {"mu": 0, "sigma": 10}, "std": {"mu": 1, "sigma": 5}})
-
-        # Proposal distribution parameters
-        proposal_std = model.get("proposal_std", 0.1)
-
-        # Run MCMC
-        accepted = 0
-
-        for i in range(iterations):
-            # Propose new parameters
-            proposal = current_params + np.random.normal(0, proposal_std, n_params)
-
-            # Ensure std is positive
-            if "std" in param_names:
-                std_idx = param_names.index("std")
-                proposal[std_idx] = abs(proposal[std_idx])
-
-            # Calculate log posterior probabilities
-            log_posterior_current = self._log_posterior(data, current_params, param_names, priors)
-            log_posterior_proposal = self._log_posterior(data, proposal, param_names, priors)
-
-            # Acceptance probability
-            log_alpha = log_posterior_proposal - log_posterior_current
-            alpha = min(1.0, np.exp(log_alpha))
-
-            # Accept or reject
-            if np.random.random() < alpha:
-                current_params = proposal
-                accepted += 1
-
-            chain[i, :] = current_params
-
-        # Calculate statistics
-        acceptance_rate = accepted / iterations
-        burn_in = iterations // 4
-        posterior_samples = chain[burn_in:, :]
-
-        # Calculate posterior summaries
-        posterior_means = np.mean(posterior_samples, axis=0)
-        posterior_stds = np.std(posterior_samples, axis=0)
-
-        # Calculate convergence diagnostics
-        convergence = self._calculate_convergence_diagnostic(posterior_samples)
-
-        return {
-            "convergence": convergence,
-            "confidence": 0.88,
-            "acceptance_rate": acceptance_rate,
-            "posterior_means": dict(zip(param_names, posterior_means.tolist())),
-            "posterior_stds": dict(zip(param_names, posterior_stds.tolist())),
-            "posterior_samples": posterior_samples[
-                :: max(1, len(posterior_samples) // 1000)
-            ].tolist(),  # Subsample
-            "burn_in": burn_in,
-            "effective_sample_size": self._calculate_ess(posterior_samples),
-        }
+        """Metropolis-Hastings entry point — routed to exact grid posterior."""
+        return await self._exact_grid_posterior(data, model, iterations, "metropolis_hastings")
 
     async def _gibbs_sampling(
         self, data: np.ndarray, model: Dict[str, Any], iterations: int
     ) -> Dict[str, Any]:
-        """Gibbs sampling MCMC algorithm"""
-
-        # For Gibbs sampling, we need conditional distributions
-        # This is a simplified implementation
-        params = model.get("parameters", {"mean": 0.0, "std": 1.0})
-        param_names = list(params.keys())
-        n_params = len(param_names)
-
-        # Initialize chain
-        current_params = np.array([params[name] for name in param_names])
-        chain = np.zeros((iterations, n_params))
-
-        # Run Gibbs sampling
-        for i in range(iterations):
-            # Sample each parameter conditionally
-            for j, param_name in enumerate(param_names):
-                # Simplified conditional sampling
-                if param_name == "mean":
-                    # Sample mean conditional on std
-                    std = current_params[param_names.index("std")] if "std" in param_names else 1.0
-                    prior_mean = 0.0
-                    prior_std = 10.0
-
-                    # Posterior parameters for normal-normal model
-                    n = len(data)
-                    data_mean = np.mean(data)
-
-                    posterior_precision = 1 / prior_std**2 + n / std**2
-                    posterior_mean = (
-                        prior_mean / prior_std**2 + n * data_mean / std**2
-                    ) / posterior_precision
-                    posterior_std = np.sqrt(1 / posterior_precision)
-
-                    current_params[j] = np.random.normal(posterior_mean, posterior_std)
-
-                elif param_name == "std":
-                    # Sample std conditional on mean
-                    mean = (
-                        current_params[param_names.index("mean")] if "mean" in param_names else 0.0
-                    )
-
-                    # Posterior parameters for normal model with unknown variance
-                    n = len(data)
-                    residuals = data - mean
-                    sum_squares = np.sum(residuals**2)
-
-                    # Inverse-gamma posterior
-                    alpha_post = n / 2 + 1
-                    beta_post = sum_squares / 2 + 1
-
-                    # Sample from inverse-gamma
-                    sample = 1.0 / np.random.gamma(alpha_post, 1.0 / beta_post)
-                    current_params[j] = np.sqrt(sample)
-
-            chain[i, :] = current_params
-
-        # Calculate statistics
-        burn_in = iterations // 4
-        posterior_samples = chain[burn_in:, :]
-
-        posterior_means = np.mean(posterior_samples, axis=0)
-        posterior_stds = np.std(posterior_samples, axis=0)
-
-        convergence = self._calculate_convergence_diagnostic(posterior_samples)
-
-        return {
-            "convergence": convergence,
-            "confidence": 0.90,
-            "posterior_means": dict(zip(param_names, posterior_means.tolist())),
-            "posterior_stds": dict(zip(param_names, posterior_stds.tolist())),
-            "posterior_samples": posterior_samples[
-                :: max(1, len(posterior_samples) // 1000)
-            ].tolist(),
-            "burn_in": burn_in,
-            "effective_sample_size": self._calculate_ess(posterior_samples),
-        }
+        """Gibbs entry point — routed to exact grid posterior."""
+        return await self._exact_grid_posterior(data, model, iterations, "gibbs")
 
     async def _hamiltonian_monte_carlo(
         self, data: np.ndarray, model: Dict[str, Any], iterations: int
     ) -> Dict[str, Any]:
-        """Hamiltonian Monte Carlo algorithm"""
-
-        # HMC parameters
-        step_size = model.get("step_size", 0.1)
-        leapfrog_steps = model.get("leapfrog_steps", 10)
-
-        params = model.get("parameters", {"mean": 0.0, "std": 1.0})
-        param_names = list(params.keys())
-        n_params = len(param_names)
-
-        # Initialize chain
-        current_params = np.array([params[name] for name in param_names])
-        chain = np.zeros((iterations, n_params))
-
-        # Priors
-        priors = model.get("priors", {"mean": {"mu": 0, "sigma": 10}, "std": {"mu": 1, "sigma": 5}})
-
-        accepted = 0
-
-        for i in range(iterations):
-            # Sample momentum
-            momentum = np.random.normal(0, 1, n_params)
-
-            # Leapfrog integration
-            params_copy = current_params.copy()
-            momentum_copy = momentum.copy()
-
-            # Half step for momentum
-            grad = self._gradient_log_posterior(data, params_copy, param_names, priors)
-            momentum_copy += 0.5 * step_size * grad
-
-            # Full steps for position and momentum
-            for _ in range(leapfrog_steps):
-                params_copy += step_size * momentum_copy
-
-                if _ < leapfrog_steps - 1:  # Don't compute gradient on last step
-                    grad = self._gradient_log_posterior(data, params_copy, param_names, priors)
-                    momentum_copy += step_size * grad
-
-            # Half step for momentum
-            grad = self._gradient_log_posterior(data, params_copy, param_names, priors)
-            momentum_copy -= 0.5 * step_size * grad
-
-            # Calculate Hamiltonian
-            current_h = self._hamiltonian(data, current_params, momentum, param_names, priors)
-            proposed_h = self._hamiltonian(data, params_copy, -momentum_copy, param_names, priors)
-
-            # Acceptance probability
-            alpha = min(1.0, np.exp(current_h - proposed_h))
-
-            # Accept or reject
-            if np.random.random() < alpha:
-                current_params = params_copy
-                accepted += 1
-
-            chain[i, :] = current_params
-
-        # Calculate statistics
-        acceptance_rate = accepted / iterations
-        burn_in = iterations // 4
-        posterior_samples = chain[burn_in:, :]
-
-        posterior_means = np.mean(posterior_samples, axis=0)
-        posterior_stds = np.std(posterior_samples, axis=0)
-
-        convergence = self._calculate_convergence_diagnostic(posterior_samples)
-
-        return {
-            "convergence": convergence,
-            "confidence": 0.92,
-            "acceptance_rate": acceptance_rate,
-            "posterior_means": dict(zip(param_names, posterior_means.tolist())),
-            "posterior_stds": dict(zip(param_names, posterior_stds.tolist())),
-            "posterior_samples": posterior_samples[
-                :: max(1, len(posterior_samples) // 1000)
-            ].tolist(),
-            "burn_in": burn_in,
-            "effective_sample_size": self._calculate_ess(posterior_samples),
-            "step_size": step_size,
-            "leapfrog_steps": leapfrog_steps,
-        }
+        """HMC entry point — routed to exact grid posterior."""
+        return await self._exact_grid_posterior(data, model, iterations, "hmc")
 
     def _log_posterior(
         self,
@@ -1382,116 +1265,6 @@ class BayesianMCMC:
 
         return log_likelihood + log_prior
 
-    def _gradient_log_posterior(
-        self,
-        data: np.ndarray,
-        params: np.ndarray,
-        param_names: List[str],
-        priors: Dict[str, Any],
-    ) -> np.ndarray:
-        """Calculate gradient of log posterior"""
-
-        grad = np.zeros_like(params)
-
-        if "mean" in param_names and "std" in param_names:
-            mean_idx = param_names.index("mean")
-            std_idx = param_names.index("std")
-
-            mean = params[mean_idx]
-            std = params[std_idx]
-
-            if std > 0:
-                # Gradient for mean
-                grad[mean_idx] = np.sum(data - mean) / std**2
-
-                # Gradient for std
-                grad[std_idx] = len(data) / std - np.sum((data - mean) ** 2) / std**3
-
-        # Add gradient from priors
-        for i, name in enumerate(param_names):
-            if name in priors:
-                prior_mean = priors[name].get("mu", 0.0)
-                prior_std = priors[name].get("sigma", 1.0)
-
-                grad[i] -= (params[i] - prior_mean) / prior_std**2
-
-        return grad
-
-    def _hamiltonian(
-        self,
-        data: np.ndarray,
-        params: np.ndarray,
-        momentum: np.ndarray,
-        param_names: List[str],
-        priors: Dict[str, Any],
-    ) -> float:
-        """Calculate Hamiltonian"""
-
-        # Kinetic energy
-        kinetic = 0.5 * np.sum(momentum**2)
-
-        # Potential energy (negative log posterior)
-        potential = -self._log_posterior(data, params, param_names, priors)
-
-        return kinetic + potential
-
-    def _calculate_convergence_diagnostic(self, samples: np.ndarray) -> float:
-        """Calculate convergence diagnostic (simplified Gelman-Rubin)"""
-
-        # This is a simplified version
-        # Real implementation would use multiple chains
-        if len(samples) < 100:
-            return 1.0
-
-        # Split into two halves
-        mid = len(samples) // 2
-        first_half = samples[:mid, :]
-        second_half = samples[mid:, :]
-
-        # Calculate within-chain variance
-        var_within = (np.var(first_half, axis=0) + np.var(second_half, axis=0)) / 2
-
-        # Calculate between-chain variance
-        mean_first = np.mean(first_half, axis=0)
-        mean_second = np.mean(second_half, axis=0)
-        var_between = (mean_first - mean_second) ** 2
-
-        # R-hat statistic with safe division
-        with np.errstate(divide="ignore", invalid="ignore"):
-            denominator = var_within
-            r_hat = np.divide(
-                var_within + var_between,
-                denominator,
-                out=np.ones_like(var_within),
-                where=denominator != 0,
-            )
-            r_hat = np.sqrt(r_hat)
-            r_hat = np.nan_to_num(r_hat, nan=1.0, posinf=1.0, neginf=1.0)
-
-        return float(np.mean(r_hat))
-
-    def _calculate_ess(self, samples: np.ndarray) -> int:
-        """Calculate effective sample size"""
-
-        # Simplified ESS calculation
-        n_samples, n_params = samples.shape
-
-        # Calculate autocorrelation for each parameter
-        ess_per_param = []
-        for i in range(n_params):
-            # Simple autocorrelation at lag 1
-            series = samples[:, i]
-            autocorr = np.corrcoef(series[:-1], series[1:])[0, 1] if len(series) > 1 else 0
-
-            if abs(autocorr) < 0.99:
-                ess = n_samples * (1 - autocorr) / (1 + autocorr)
-            else:
-                ess = n_samples
-
-            ess_per_param.append(int(ess))
-
-        return min(ess_per_param)
-
     async def _quantum_enhance_mcmc(
         self, classical_result: Dict[str, Any], iterations: int
     ) -> Dict[str, Any]:
@@ -1515,18 +1288,23 @@ class BayesianMCMC:
                 iterations=min(iterations // 200, 30),
             )
 
+            solution = quantum_result.get("solution", {})
             return {
-                "quantum_speedup": quantum_result.get("quantum_speedup", 1.0),
-                "enhanced_confidence": quantum_result.get("success_probability", 0.9),
-                "quantum_posterior": quantum_result.get("solution", {}),
-                "phi_resonance_score": quantum_result.get("phi_resonance_score", 0.5),
+                "quantum_speedup": float(quantum_result.get("quantum_speedup", 1.0)),
+                "quantum_status": quantum_result.get("status", "unknown"),
+                "quantum_top_indices": solution.get("top_indices"),
+                "quantum_top_probability_mass": solution.get("top_probability_mass"),
+                "quantum_final_entropy_nats": solution.get("final_entropy_nats"),
+                "evidence_class": "quantum_substrate_measured",
             }
 
         except Exception as e:
             logger.warning(f"Quantum MCMC enhancement failed: {e}")
             return {
                 "quantum_speedup": 1.0,
-                "enhanced_confidence": classical_result.get("confidence", 0.88),
-                "quantum_posterior": classical_result.get("posterior_means", {}),
-                "phi_resonance_score": 0.5,
+                "quantum_status": "unavailable",
+                "quantum_top_indices": None,
+                "quantum_top_probability_mass": None,
+                "quantum_final_entropy_nats": None,
+                "evidence_class": "unavailable",
             }

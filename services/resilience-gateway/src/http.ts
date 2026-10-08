@@ -1,4 +1,11 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
+import {
+  bearerToken,
+  type FixedWindowRateLimiter,
+  type GatewayIdentity,
+  type GatewayTicketVerifier,
+  scopeTenantPath,
+} from "./auth.js";
 import type { Dependencies } from "./dependencies.js";
 import {
   currentTraceparent,
@@ -12,6 +19,12 @@ import {
 export interface Readiness {
   acceptingTraffic: boolean;
   shuttingDown: boolean;
+  securityConfigured?: boolean;
+}
+
+export interface HttpSecurity {
+  verifier: GatewayTicketVerifier;
+  rateLimiter: FixedWindowRateLimiter;
 }
 
 export interface CachedResponse {
@@ -106,6 +119,7 @@ export function createRouter(
   dependencies: Dependencies,
   readiness: Readiness,
   idempotency: IdempotencyStore = new MemoryIdempotencyStore(),
+  security?: HttpSecurity,
 ) {
   return async (request: IncomingMessage, response: ServerResponse) => {
     const started = Date.now();
@@ -124,6 +138,7 @@ export function createRouter(
               dependencies,
               readiness,
               idempotency,
+              security,
             ),
             10_000,
           );
@@ -159,6 +174,7 @@ async function dispatch(
   dependencies: Dependencies,
   readiness: Readiness,
   idempotency: IdempotencyStore,
+  security?: HttpSecurity,
 ): Promise<void> {
   if (route === "GET /healthz") {
     const loop = eventLoopHealth();
@@ -175,10 +191,12 @@ async function dispatch(
       readiness.acceptingTraffic &&
       !readiness.shuttingDown &&
       dependencies.isReady() &&
+      readiness.securityConfigured !== false &&
       !loop.drowning;
     sendJson(response, ready ? 200 : 503, {
       status: ready ? "ready" : "not_ready",
       eventLoopP99LagMs: loop.p99LagNs / 1_000_000,
+      securityConfigured: readiness.securityConfigured !== false,
     });
     return;
   }
@@ -187,9 +205,39 @@ async function dispatch(
     response.end(renderMetrics());
     return;
   }
+
+  const requestPath = (request.url ?? "/").split("?")[0];
+  let identity: GatewayIdentity | null = null;
+  if (requestPath.startsWith("/api/")) {
+    if (!security) {
+      increment("http_auth_denied_total", 'reason="security_unconfigured"');
+      sendJson(response, 503, {
+        error: {
+          code: "security_unconfigured",
+          message: "API security is not configured",
+        },
+      });
+      return;
+    }
+    identity = await authenticateApiRequest(request, response, security);
+    if (!identity) return;
+  }
+
   if (route === "GET /api/v1/dependencies/firestore") {
     const url = new URL(request.url ?? "/", "http://localhost");
-    const result = await dependencies.firestore.read(url.searchParams.get("path") ?? "/");
+    let tenantPath: string;
+    try {
+      tenantPath = scopeTenantPath(
+        identity!.tenantId,
+        url.searchParams.get("path") ?? "/",
+      );
+    } catch {
+      sendJson(response, 400, {
+        error: { code: "invalid_path", message: "Invalid dependency path" },
+      });
+      return;
+    }
+    const result = await dependencies.firestore.read(tenantPath);
     sendJson(response, result.degraded ? 206 : 200, result);
     return;
   }
@@ -220,6 +268,59 @@ async function dispatch(
   sendJson(response, 404, {
     error: { code: "not_found", message: "Route not found" },
   });
+}
+
+async function authenticateApiRequest(
+  request: IncomingMessage,
+  response: ServerResponse,
+  security: HttpSecurity,
+): Promise<GatewayIdentity | null> {
+  const token = bearerToken(request.headers.authorization);
+  if (!token) {
+    increment("http_auth_denied_total", 'reason="missing_bearer"');
+    response.setHeader("WWW-Authenticate", "Bearer");
+    sendJson(response, 401, {
+      error: { code: "unauthorized", message: "Bearer ticket required" },
+    });
+    return null;
+  }
+
+  const identity = await security.verifier.verify(token);
+  if (!identity) {
+    increment("http_auth_denied_total", 'reason="invalid_ticket"');
+    response.setHeader("WWW-Authenticate", "Bearer");
+    sendJson(response, 401, {
+      error: { code: "unauthorized", message: "Invalid or expired bearer ticket" },
+    });
+    return null;
+  }
+
+  const tenantHeader = request.headers["x-tenant-id"];
+  if (typeof tenantHeader !== "string" || tenantHeader !== identity.tenantId) {
+    increment("http_auth_denied_total", 'reason="tenant_mismatch"');
+    sendJson(response, 403, {
+      error: { code: "tenant_mismatch", message: "Tenant boundary mismatch" },
+    });
+    return null;
+  }
+
+  const limit = security.rateLimiter.consume(
+    `${identity.tenantId}:${identity.subject}`,
+  );
+  response.setHeader("X-RateLimit-Limit", String(security.rateLimiter.limit));
+  response.setHeader("X-RateLimit-Remaining", String(limit.remaining));
+  if (!limit.allowed) {
+    increment("http_rate_limited_total");
+    response.setHeader("Retry-After", String(limit.retryAfterSeconds));
+    sendJson(response, 429, {
+      error: {
+        code: "rate_limited",
+        message: "Request rate exceeded",
+      },
+    });
+    return null;
+  }
+  return identity;
 }
 
 export function sendJson(

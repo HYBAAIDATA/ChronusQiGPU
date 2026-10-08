@@ -122,13 +122,13 @@ def structural_signature(data: Any, *, graph: Any = None) -> Dict[str, Any]:
     }
     # Recurrence structure: Pisot-family lag-template fit on the longest series.
     if longest[0] is not None and len(longest[1]) >= 5:
-        try:
-            import turing_core
+        from toe.intelligence_state import family_detector
 
-            detector = getattr(turing_core, "detect_family_signature", None)
-            sig = detector(longest[1]) if detector else None
-        except Exception:
+        try:
+            sig = family_detector()(longest[1])
+        except (ArithmeticError, TypeError, ValueError) as exc:
             sig = None
+            signature["recurrence_error"] = f"{type(exc).__name__}: {exc}"
         if sig:
             residuals = {k: float(v) for k, v in (sig.get("residuals") or {}).items()}
             best, runner = sig.get("family"), sig.get("runner_up")

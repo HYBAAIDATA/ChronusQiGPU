@@ -109,7 +109,7 @@ class EnhancedKnowledgeBase:
                 confidence=1.0,
                 last_updated=datetime.now(),
                 source="mathematical_axioms",
-                phi_resonance_score=0.95,
+                phi_resonance_score=0.0,  # recomputed by PhiResonanceScorer on insert
             ),
             KnowledgeEntry(
                 concept="Calculus",
@@ -119,7 +119,7 @@ class EnhancedKnowledgeBase:
                 confidence=1.0,
                 last_updated=datetime.now(),
                 source="mathematical_axioms",
-                phi_resonance_score=0.92,
+                phi_resonance_score=0.0,  # recomputed by PhiResonanceScorer on insert
             ),
             # Science
             KnowledgeEntry(
@@ -130,7 +130,7 @@ class EnhancedKnowledgeBase:
                 confidence=0.98,
                 last_updated=datetime.now(),
                 source="scientific_literature",
-                phi_resonance_score=0.88,
+                phi_resonance_score=0.0,  # recomputed by PhiResonanceScorer on insert
             ),
             KnowledgeEntry(
                 concept="Quantum Mechanics",
@@ -140,7 +140,7 @@ class EnhancedKnowledgeBase:
                 confidence=0.95,
                 last_updated=datetime.now(),
                 source="scientific_literature",
-                phi_resonance_score=0.91,
+                phi_resonance_score=0.0,  # recomputed by PhiResonanceScorer on insert
             ),
             # Technology
             KnowledgeEntry(
@@ -151,7 +151,7 @@ class EnhancedKnowledgeBase:
                 confidence=0.90,
                 last_updated=datetime.now(),
                 source="technology_literature",
-                phi_resonance_score=0.85,
+                phi_resonance_score=0.0,  # recomputed by PhiResonanceScorer on insert
             ),
             KnowledgeEntry(
                 concept="Blockchain",
@@ -161,7 +161,7 @@ class EnhancedKnowledgeBase:
                 confidence=0.88,
                 last_updated=datetime.now(),
                 source="technology_literature",
-                phi_resonance_score=0.82,
+                phi_resonance_score=0.0,  # recomputed by PhiResonanceScorer on insert
             ),
             # History
             KnowledgeEntry(
@@ -172,7 +172,7 @@ class EnhancedKnowledgeBase:
                 confidence=0.95,
                 last_updated=datetime.now(),
                 source="historical_records",
-                phi_resonance_score=0.78,
+                phi_resonance_score=0.0,  # recomputed by PhiResonanceScorer on insert
             ),
             # Culture
             KnowledgeEntry(
@@ -183,7 +183,7 @@ class EnhancedKnowledgeBase:
                 confidence=0.93,
                 last_updated=datetime.now(),
                 source="cultural_history",
-                phi_resonance_score=0.84,
+                phi_resonance_score=0.0,  # recomputed by PhiResonanceScorer on insert
             ),
         ]
 
@@ -292,9 +292,10 @@ class EnhancedKnowledgeBase:
         try:
             # Handle dict content (from Mass Gap Relaxation)
             if isinstance(content, dict):
-                # Extract phi-resonance score as confidence
+                # Extract declared confidence; 0.0 marks "caller supplied
+                # none" rather than an invented default.
                 confidence = float(
-                    content.get("phi_resonance_score", content.get("confidence", 0.85))
+                    content.get("phi_resonance_score", content.get("confidence", 0.0))
                 )
                 # Convert dict to descriptive string
                 description = (
@@ -321,7 +322,13 @@ class EnhancedKnowledgeBase:
                 confidence=confidence,
                 last_updated=datetime.now(),
                 source="mass_gap_relaxation",
-                phi_resonance_score=confidence,
+                phi_resonance_score=self.phi_scorer.score(
+                    {
+                        "concept": topic,
+                        "relationships": [],
+                        "domain": KnowledgeDomain.SCIENCE.value,
+                    }
+                ),
             )
 
             # Add to knowledge base
@@ -373,12 +380,12 @@ class EnhancedKnowledgeBase:
                         domain=KnowledgeDomain.GENERAL,
                         description=f"Concept identified during user interaction: {gap}",
                         relationships=query_concepts + response_concepts,
-                        confidence=0.5,  # Initial confidence for learned concepts
+                        confidence=0.0,  # unverified learned concept
                         last_updated=datetime.now(),
                         source="user_interaction",
-                        phi_resonance_score=0.5,
+                        phi_resonance_score=0.0,  # recomputed on insert
                     )
-                    await self.add_knowledge(new_entry, verify_confidence=False)
+                    self._add_knowledge_sync(new_entry)
 
             logger.info(f"Learned from interaction, identified {len(gaps)} knowledge gaps")
             return True
@@ -534,12 +541,13 @@ class EnhancedKnowledgeBase:
                 iterations=min(len(entries) * 5, 100),
             )
 
-            # Apply quantum-enhanced ranking
-            if "solution" in quantum_result:
-                # Reorder entries based on quantum solution
-                solution_order = quantum_result["solution"]
+            # Apply quantum-enhanced ranking: the solved register's
+            # top-Born-mass indices give the measured ranking order.
+            if quantum_result.get("status") == "solved":
+                solution_order = quantum_result.get("solution", {}).get("top_indices", [])
                 ranked_entries = [entries[i] for i in solution_order if i < len(entries)]
-                return ranked_entries
+                if ranked_entries:
+                    return ranked_entries
 
             # Fallback to confidence-based ranking
             return sorted(

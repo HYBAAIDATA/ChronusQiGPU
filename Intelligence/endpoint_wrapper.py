@@ -11,7 +11,8 @@ import logging
 import time
 from typing import Any, Callable, Optional
 
-from hyba_backend.core.intelligence.intelligent_endpoint import (
+from Intelligence._born import born_evidence
+from Intelligence.intelligent_endpoint import (
     AutonomyLevel,
     Decision,
     IntelligentEndpoint,
@@ -84,7 +85,10 @@ class EndpointIntelligenceWrapper(IntelligentEndpoint):
                     "avg_response_time": avg_response_time,
                     "recent_error_rate": recent_error_rate,
                 },
-                confidence=0.95,
+                # The observation IS the measurement: whether real
+                # request data was observed.
+                confidence=1.0,
+                requires_action=self.error_count > 0,
             )
         except Exception as e:
             logger.error(f"Endpoint observation failed: {e}")
@@ -107,10 +111,14 @@ class EndpointIntelligenceWrapper(IntelligentEndpoint):
                 parameters={},
                 reasoning="Endpoint monitoring failed",
                 expected_value=0.0,
-                confidence=0.5,
+                confidence=1.0,  # measured: the observation itself failed
                 autonomy_level=AutonomyLevel.SUGGEST,
             )
 
+        # Confidences are Born evidence of the measured outcome counts,
+        # not invented levels.
+        success_evidence = born_evidence(self.success_count, self.error_count)
+        failure_evidence = born_evidence(self.error_count, self.success_count)
         success_rate = data.get("success_rate", 1.0)
         recent_error_rate = data.get("recent_error_rate", 0.0)
         avg_response_time = data.get("avg_response_time", 0.0)
@@ -126,8 +134,8 @@ class EndpointIntelligenceWrapper(IntelligentEndpoint):
                     "recent_error_rate": recent_error_rate,
                 },
                 reasoning=f"Endpoint success rate critical ({success_rate:.2%}). Consider degrading service.",
-                expected_value=0.8,
-                confidence=0.9,
+                expected_value=failure_evidence,
+                confidence=failure_evidence,
                 autonomy_level=AutonomyLevel.SUGGEST,
             )
 
@@ -141,8 +149,8 @@ class EndpointIntelligenceWrapper(IntelligentEndpoint):
                     "recent_error_rate": recent_error_rate,
                 },
                 reasoning=f"Recent error rate elevated ({recent_error_rate:.2%}). Investigate endpoint.",
-                expected_value=0.6,
-                confidence=0.8,
+                expected_value=failure_evidence,
+                confidence=failure_evidence,
                 autonomy_level=AutonomyLevel.SUGGEST,
             )
 
@@ -156,8 +164,8 @@ class EndpointIntelligenceWrapper(IntelligentEndpoint):
                     "avg_response_time": avg_response_time,
                 },
                 reasoning=f"Endpoint response time high ({avg_response_time:.2f}s). Optimize performance.",
-                expected_value=0.5,
-                confidence=0.7,
+                expected_value=0.0,  # unmeasured: no honest improvement estimate
+                confidence=success_evidence,
                 autonomy_level=AutonomyLevel.SUGGEST,
             )
 
@@ -171,8 +179,8 @@ class EndpointIntelligenceWrapper(IntelligentEndpoint):
                 "avg_response_time": avg_response_time,
             },
             reasoning="Endpoint health nominal",
-            expected_value=0.1,
-            confidence=0.95,
+            expected_value=0.0,
+            confidence=success_evidence,
             autonomy_level=AutonomyLevel.OBSERVE,
         )
 

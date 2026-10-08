@@ -54,12 +54,18 @@ class ComputationalSubstrate:
         n = max(2, int(n_nodes))
         self.n_nodes = n
         self.seed = int(seed)
-        rng = np.random.default_rng(self.seed)
         idx = np.arange(n)
         # Pisot-decayed kernel, modulated by a seeded lognormal perturbation so
         # the topology is reproducible for a given seed yet genuinely differs
-        # between seeds.
-        perturbation = rng.lognormal(mean=0.0, sigma=0.15, size=n)
+        # between seeds. The perturbation is the deterministic lognormal
+        # quantile set, permuted by a seed-keyed Weyl sequence — the same
+        # marginal distribution as a seeded lognormal draw, but with no
+        # pseudo-random generator involved.
+        from agi.quantum_decision import normal_quantile_grid, weyl_unit_sequence
+
+        order = np.argsort(weyl_unit_sequence(self.seed, n))
+        perturbation = np.empty(n, dtype=np.float64)
+        perturbation[order] = np.exp(normal_quantile_grid(0.0, 0.15, n))
         weights = (PHI ** (-np.abs(idx[:, None] - idx[None, :]))) * np.sqrt(
             np.outer(perturbation, perturbation)
         )
@@ -441,11 +447,12 @@ class McKinseyDecisionEngine:
         iterations: int = 10_000,
         confidence: float = 0.95,
     ) -> Dict[str, Any]:
-        """Sample each alternative's payoff distribution and report risk.
+        """Evaluate each alternative's payoff distribution and report risk.
 
-        An alternative supplying ``samples`` is used empirically; otherwise a
-        normal distribution is built from its ``mean``/``std`` through
-        ``numpy.random.default_rng(context.seed)`` for reproducibility.
+        An alternative supplying ``samples`` is used empirically; otherwise
+        its ``mean``/``std`` normal distribution is evaluated deterministically
+        on an equally-spaced inverse-CDF quantile grid — exact quantile
+        quadrature, not a pseudo-random draw. Reproducible for a fixed seed.
         """
         if not context.is_valid():
             return {
@@ -454,7 +461,6 @@ class McKinseyDecisionEngine:
                 "distributions": {},
             }
 
-        rng = np.random.default_rng(context.seed)
         n = max(1, int(iterations))
         results: Dict[str, Any] = {}
         for name in sorted(context.alternatives):
@@ -466,7 +472,13 @@ class McKinseyDecisionEngine:
             else:
                 mean = float(spec.get("mean", 0.0))
                 std = float(spec.get("std", 1.0))
-                draws = rng.normal(mean, abs(std) if std else 1e-9, size=n)
+                # Deterministic inverse-CDF quantile grid: the exact
+                # distribution evaluated at equally-spaced quantiles — the
+                # limit a seeded normal draw converges to, with zero
+                # sampling error and byte-identical reproducibility.
+                from agi.quantum_decision import normal_quantile_grid
+
+                draws = normal_quantile_grid(mean, abs(std) if std else 1e-9, n)
                 method = "normal"
             results[name] = {
                 "iterations": int(draws.size),

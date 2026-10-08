@@ -84,9 +84,14 @@ class PlasticIntelligence:
         self.max_batch_size = 65536
         self.thermal_throttle_threshold = thermal_throttle_threshold_c
         self.power_budget = max_power_watts
-        self.current_temp = 55.0
-        self.current_power = 120.0
+        # Last measured telemetry: None until the caller supplies a real
+        # reading. No fabricated temperature/power enters the control
+        # loop; unmeasured channels surface as NaN (the IEEE-754
+        # not-a-number marker) in the profile, never as invented values.
+        self.current_temp: Optional[float] = None
+        self.current_power: Optional[float] = None
         self.active_fused_punches = list(self.DEFAULT_FUSION)
+        # Learned controller weight (adaptive state, not a measurement).
         self.plasticity_score = 0.85
         self.adaptation_history: List[PlasticComputeProfile] = []
 
@@ -94,7 +99,7 @@ class PlasticIntelligence:
         self,
         current_temp_c: Optional[float] = None,
         current_power_w: Optional[float] = None,
-        observed_hashrate: float = 100.0,
+        observed_hashrate: Optional[float] = None,
     ) -> PlasticComputeProfile:
         """Autonomously tune dispatch batch size and punch pipelining based on thermal telemetry."""
         if current_temp_c is not None:
@@ -102,13 +107,19 @@ class PlasticIntelligence:
         if current_power_w is not None:
             self.current_power = current_power_w
 
-        # Thermal throttling logic
-        if self.current_temp >= self.thermal_throttle_threshold:
+        # Thermal throttling logic runs only on measured telemetry;
+        # with no readings the controller holds its current batch size.
+        temp = self.current_temp
+        power = self.current_power
+        if temp is not None and temp >= self.thermal_throttle_threshold:
             # Overheating: back off batch size by 50%
             self.current_batch_size = max(self.min_batch_size, int(self.current_batch_size * 0.5))
             self.active_fused_punches = ["phi_filter_score", "sha256d_grind_mark"]
-        elif self.current_temp < (self.thermal_throttle_threshold - 15.0) and self.current_power < (
-            self.power_budget - 30.0
+        elif (
+            temp is not None
+            and power is not None
+            and temp < (self.thermal_throttle_threshold - 15.0)
+            and power < (self.power_budget - 30.0)
         ):
             # Thermal headroom exists: safely scale batch size up
             self.current_batch_size = min(self.max_batch_size, int(self.current_batch_size * 1.25))
@@ -118,9 +129,13 @@ class PlasticIntelligence:
             batch_size=self.current_batch_size,
             fused_punches=list(self.active_fused_punches),
             target_thermal_c=self.thermal_throttle_threshold,
-            current_thermal_c=self.current_temp,
+            # NaN marks an unmeasured thermal channel; NaN >= threshold
+            # is False, so unmeasured never claims overheating.
+            current_thermal_c=(float("nan") if self.current_temp is None else self.current_temp),
             power_budget_watts=self.power_budget,
-            estimated_hashrate_mhs=observed_hashrate,
+            estimated_hashrate_mhs=(
+                float("nan") if observed_hashrate is None else observed_hashrate
+            ),
             plasticity_score=self.plasticity_score,
         )
         self.adaptation_history.append(profile)

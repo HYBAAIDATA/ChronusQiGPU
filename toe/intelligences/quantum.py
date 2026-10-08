@@ -115,7 +115,17 @@ class QuantumIntelligence:
         network_fee_sat_vb: float,
         payout_address: str,
     ) -> QuantumVerificationResult:
-        """Autonomously determine fee-optimal payout timing and withdrawal dispatch."""
+        """Classical payout-advisory decision on caller-asserted balance/fee.
+
+        The payout rule (balance >= threshold, fee <= 1% of payout) is
+        declared treasury policy on the caller's numbers — nothing is
+        measured here. The Born fields report the normalization and
+        margin of a two-level decision state this function constructs
+        from the balance ratio; that state's Born validity is
+        guaranteed by construction, so ``born_rule_satisfied`` is an
+        internal consistency check, not an independent verification
+        (callers with real amplitudes use ``verify_born_rule``).
+        """
         self.wallet_balance_btc = current_balance_btc
         # Estimated standard 1-in 2-out segwit tx = ~140 vbytes
         est_fee_sat = int(140 * max(self.min_fee_rate, network_fee_sat_vb))
@@ -127,8 +137,9 @@ class QuantumIntelligence:
 
         payout_ok = threshold_met and economically_viable
 
-        # Born rule validation of the decision amplitude
-        # Let alpha = sqrt(p), beta = sqrt(1-p) where p = current_balance / threshold
+        # Two-level decision state built from the caller-asserted
+        # balance ratio: alpha = sqrt(p), beta = sqrt(1-p). max_prob is
+        # the decision margin; born_ok is a self-consistency check.
         p_ratio = min(1.0, current_balance_btc / max(1e-8, self.payout_threshold))
         amplitudes = np.array(
             [np.sqrt(p_ratio), np.sqrt(max(0.0, 1.0 - p_ratio))], dtype=np.complex128

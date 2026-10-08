@@ -1,0 +1,45 @@
+{
+  "scope": "precommit_local_gate_protocol_validation_not_production_evidence",
+  "source_commit": null,
+  "inspected_baseline_commit": "585d7b11d9cc8e183ff4d5cda44996a9ac30dc4e",
+  "python": "3.13.14",
+  "unit_tests": {
+    "executed": 39,
+    "passed": 39,
+    "production_composition": false
+  },
+  "python_compile": "PASS",
+  "workflow_yaml_syntax": "PASS",
+  "full_repository_suite": "NOT_EXECUTED",
+  "production_readiness": "NOT_ESTABLISHED",
+  "black": "NOT_INSTALLED_NOT_EXECUTED",
+  "file_sha256": {
+    ".github/workflows/gate-evidence-integrity.yml": "32988535f163a552f11355045b98ae02681c7724a4a3dbe31b2bd2a87cbe301a",
+    ".github/workflows/promotion.yml": "86377e62a4d3f1a14776185c6d64b06e61d31299cfbadd4c3ba2b4a5d92e057d",
+    "config/api-release-gates.json": "aeb0d295dec20c93ba8db328ea5ea5e1589aa4a1f346f49d96477284251af4e5",
+    "config/assurance-gates.json": "f978556165fb69677cc972a52bdcfcde7fdc9f71be3f34f673b0e3c46a31517b",
+    "docs/production/api-governed-release-increment.md": "3a54eb06db53229138aea797f958d582dfabd1ac7544ad5f5e68d08eb8d6fa9d",
+    "make/gates.mk": "e640f6e1e7698f76d57b03b1d70205c267d01fa55666fee5c3b16bb5f674a20b",
+    "scripts/advance_state.py": "7305fa9d1570ed19a0e3f919fc197257163a3f374da411cde7f56a7e3b025982",
+    "scripts/assert_gate_rollup.py": "008e6e957078ae6f3403e51742920e58ce1ef8b09ef3d8e59f46e82b498880d1",
+    "scripts/gate_impl.py": "85d356630809928101bb0823ef53c8179f785adbbbc8a11404e6a8f66454c6f4",
+    "scripts/gate_runner.py": "41acbfe41446107eed290b11ee52aa5ac810dec1ff2e36b60ddf9767a4afa39a",
+    "scripts/publish_check_runs.py": "8ac4286ea7b0887cf40b6762ec6dffd76910dff3099e461b6655de8a500f8ea2",
+    "tests/test_gate_evidence_integrity.py": "877c466cef12b2da1ee3d949a333047eb9f6d8751c92c1745131f6391e6754c6"
+  },
+  "test_output_sha256": "cdc6e6a90e2a561afaf89660de20a89779f837e514deed9a52648a7e7378dd93",
+  "requested_counters": {
+    "UNAUTHENTICATED_PRIVILEGED_PATHS": null,
+    "FAIL_OPEN_AUTH_PATHS": null,
+    "FAIL_OPEN_TENANT_PATHS": null,
+    "CROSS_TENANT_VIOLATIONS": null,
+    "SHADOW_AUTHORITY_IMPLEMENTATIONS": null,
+    "FABRICATED_API_METRICS": null,
+    "UNVERIFIED_PRODUCTION_ROUTES": null,
+    "PRODUCTION_MOCK_SUBSTITUTIONS": null,
+    "MISSING_MANDATORY_GATE_RESULTS": null,
+    "FALSE_GREEN_READINESS_PATHS": null,
+    "UNREVIEWED_PRODUCTION_ENDPOINTS": null,
+    "OPEN_MATERIAL_API_DEFECTS": null
+  }
+}

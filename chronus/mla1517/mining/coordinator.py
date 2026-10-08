@@ -353,17 +353,6 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         recovery_target = kwargs.pop(
             "recovery_target", "pythia.mining.runtime"
         )
-        asynchronous_submission = bool(
-            kwargs.pop("asynchronous_submission", False)
-        )
-        submission_queue_size = kwargs.pop("submission_queue_size", None)
-        if submission_queue_size is None:
-            submission_queue_size = _positive_int_env(
-                "PYTHIA_SUBMISSION_QUEUE", 64
-            )
-        submission_queue_size = int(submission_queue_size)
-        if submission_queue_size <= 0:
-            raise ValueError("submission_queue_size must be positive")
         super().__init__(*args, **kwargs)
         # A started worker hashes; whether it may submit is a separate,
         # live question (submission_permitted). Unapproved, it mines in
@@ -1540,6 +1529,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     plan_id=plan.plan_id,
                     lease_id=plan.plan_id,
                 ),
+                resident_hendrix=dict(plan.evidence_refs.get("resident_hendrix") or {}),
                 route=plan.executor_route,
                 nonce_start=plan.base_step,
                 window=plan.window,
@@ -2646,19 +2636,22 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             result = await super().submit_candidate(
                 job_id=job_id, extranonce2=extranonce2, ntime=ntime, nonce=nonce
             )
-            wire_write_observed = (
-                wire_counter("mining.submit") > wire_before
-                if callable(wire_counter) and wire_before is not None
-                else True
+        except RuntimeError as exc:
+            if "not the active generation" not in str(exc):
+                raise
+            # A clean-jobs rotation landed between hashing and submit. The
+            # share is stale and was never written to the wire (the
+            # generation check fires inside submission_started before any
+            # socket write). Record the stale outcome instead of crashing
+            # the execution loop.
+            self._last_pool_outcome = PoolOutcome.STALE
+            self.cycle.try_transition(
+                MiningCycleState.HEAL,
+                event="stale",
+                reason="job generation rotated before submission",
+                evidence={"outcome": PoolOutcome.STALE.value},
             )
-            delivery_may_have_occurred = True
-            self.causal.record(
-                "submission_sent",
-                submission_coordinate,
-                job_id=job_id,
-                block_hash=proof.digest[::-1].hex(),
-                wire_write_observed=wire_write_observed,
-            )
+            return False
         except BaseException:
             if callable(wire_counter) and wire_before is not None:
                 wire_write_observed = wire_counter("mining.submit") > wire_before
@@ -2845,6 +2838,9 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             self.causal.record(
                 "execution_started",
                 coordinate,
+                resident_execution_digest=(plan.evidence_refs.get("resident_hendrix") or {}).get("digest"),
+                plan_digest=(plan.evidence_refs.get("resident_hendrix") or {}).get("plan_digest"),
+                geometry_digest=((plan.evidence_refs.get("resident_hendrix") or {}).get("geometry") or {}).get("digest"),
                 source=plan.source.value,
                 requested_route=plan.executor_route,
                 extranonce2=lease.extranonce2,
@@ -3228,12 +3224,32 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self.causal.record(
             "execution_finished",
             coordinate,
+            plan_digest=final.plan_digest,
+            resident_execution_digest=final.resident_execution_digest,
+            geometry_digest=final.geometry_digest,
             completion=final.completion_state.value,
             requested_route=final.requested_route,
             executed_route=final.executed_route,
             evidence_class=final.evidence_class.value,
             hashes=final.hash_count,
             pool_outcome=outcome.value,
+            # Receipt spec: algorithm identity, implementation identity and
+            # fallback disclosure are bound on every emitted completion
+            # event, not only on the in-memory record.
+            requested_algorithm=final.requested_algorithm,
+            planned_algorithm=final.planned_algorithm,
+            executed_algorithm=final.executed_algorithm,
+            requested_nonce_order=final.requested_nonce_order,
+            planned_nonce_order=final.planned_nonce_order,
+            executed_nonce_order=final.executed_nonce_order,
+            nonce_order_fallback_reason=final.nonce_order_fallback_reason,
+            route_fallback_reason=final.fallback_reason,
+            fallback_used=final.fallback_used,
+            implementation_module=final.implementation_module,
+            implementation_digest=final.implementation_digest,
+            execution_mode=final.execution_mode,
+            substrate=final.substrate,
+            execution_receipt_digest=final.execution_receipt_digest,
         )
         new_job = self._last_executed_key is not None and self._last_executed_key != identity.key
         self._last_executed_key = identity.key
@@ -3274,6 +3290,9 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             **coordinate.as_dict(),
             "plan_source": final.plan_source.value,
             "plan_id": final.plan_id,
+            "plan_digest": final.plan_digest,
+            "resident_execution_digest": final.resident_execution_digest,
+            "geometry_digest": final.geometry_digest,
             "search_plan_id": final.search_plan_id,
             "plan_fallback_reason": final.plan_fallback_reason,
             "extranonce2": lease.extranonce2,
