@@ -196,6 +196,13 @@ UNRESOLVED DEFECTS: none inside lane. Foreign-lane blockers D-001 (euclid
   syntax) and D-004 (kellogg-tensor packaging) gate the integrated voyage
   and fresh-clone install respectively; both have precise fixes recorded.
 
+LANE STATUS: FROZEN (per owner directive). Algorithm-identity/receipt work
+  retained; D->B mining-label handoff D-007 is the final open item for Agent B;
+  Grover/Lucas machinery preserved as-is. The repo owner has taken over the
+  Hendrix/Lucas/Grover implementation surface (resident-Hendrix work, PR #140);
+  the deterministic classical ordering delivered here is not asserted as the
+  final answer — it is the honest record of what the current route executes.
+
 PRODUCTION-READY: YES — for the lane's own contract surface, with evidence:
   every owned file classified, all in-lane defects fixed, 1,750 lane tests
   green, exact-math reproduction artifacts byte-stable, custody/attestation
