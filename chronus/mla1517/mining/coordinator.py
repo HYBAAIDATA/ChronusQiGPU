@@ -3400,9 +3400,10 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
     async def submit_record(self, record: VaultRecord) -> bool:
         if not self.client:
             raise ConnectionError("no active Stratum client")
-        job = self.client.latest_job()
+        adapter = getattr(self.client, "proof_adapter", None)
+        job = getattr(adapter, "current_job", None)
         if job is None:
-            LOG.warning("dropping node %d record: no Stratum job", record.node_id)
+            LOG.warning("dropping node %d record: no normalized Stratum job", record.node_id)
             return False
 
         self._records_observed += 1
@@ -3428,7 +3429,24 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         try:
             context = (
                 TOEContextBuilder()
-                .with_job({"job_id": job.job_id, "params": tuple(job.params)})
+                .with_job(
+                    {
+                        "job_id": job.job_id,
+                        "prevhash": job.prevhash,
+                        "version": job.version,
+                        "nbits": job.nbits,
+                        "ntime": job.ntime,
+                        "clean_jobs": job.clean_jobs,
+                        "target": (
+                            f"{job.target:064x}" if job.target is not None else None
+                        ),
+                        "protocol": getattr(
+                            getattr(self.client, "endpoint", None),
+                            "protocol",
+                            "v1",
+                        ),
+                    }
+                )
                 .with_hardware_state(record.state)
                 .with_coordinates(
                     lane_id=record.node_id % LANES,
