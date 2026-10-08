@@ -6,11 +6,12 @@ import hashlib
 import json
 import time
 import uuid
+from fractions import Fraction
 from dataclasses import dataclass, replace
 from enum import Enum
 from typing import Any
 
-from .stratum_adapter import StratumJob, SubscriptionState
+from .stratum_adapter import DIFF1_TARGET, StratumJob, SubscriptionState
 
 
 class StratumPhase(str, Enum):
@@ -199,7 +200,18 @@ class StratumRuntimeState:
         self.target = target
         self.target_generation += 1
         self.difficulty_source = source
-        self.difficulty = value if source == "mining.set_difficulty" else None
+        # Difficulty is telemetry, never a proof predicate. Preserve the
+        # pool-declared V1 value when it is an exact positive rational;
+        # target-based protocols (V1 set_target / SV2 SetTarget) derive the
+        # equivalent difficulty from the authoritative uint256 target.
+        try:
+            if source == "mining.set_difficulty":
+                declared = Fraction(str(value))
+                self.difficulty = float(declared) if declared > 0 else None
+            else:
+                self.difficulty = float(Fraction(DIFF1_TARGET, target))
+        except (TypeError, ValueError, ZeroDivisionError, OverflowError):
+            self.difficulty = None
         self.difficulty_received_at = time.time()
         if self.current_job is not None:
             updated = replace(
