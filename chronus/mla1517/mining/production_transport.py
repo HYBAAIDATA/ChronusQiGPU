@@ -81,6 +81,12 @@ class ProductionStratumClient(StratumClient):
         # call our overridden _publish_status/status_snapshot immediately.
         self._submit_rtt_ms: deque[float] = deque(maxlen=2048)
         self._stale_dropped = 0
+        # Transport truth: incremented when writer.write() has accepted the
+        # request bytes. A response timeout after this point is UNKNOWN and
+        # must never be retried automatically. A failure before this point is
+        # provably unwritten and may be reconsidered only after freshness.
+        self._wire_writes = 0
+        self._wire_writes_by_method: dict[str, int] = {}
         super().__init__(
             *args,
             connect_timeout=(
@@ -114,9 +120,9 @@ class ProductionStratumClient(StratumClient):
             raise ValueError("Stratum transport timeouts must be positive")
         if queue_size <= 0:
             raise ValueError("outbound_queue_size must be positive")
-        self._outbound: asyncio.Queue[tuple[bytes, asyncio.Future[None]]] = asyncio.Queue(
-            maxsize=queue_size
-        )
+        self._outbound: asyncio.Queue[
+            tuple[bytes, str, asyncio.Future[None]]
+        ] = asyncio.Queue(maxsize=queue_size)
         self._writer_task: asyncio.Task[None] | None = None
         self._writer_error: BaseException | None = None
 
@@ -154,6 +160,8 @@ class ProductionStratumClient(StratumClient):
         mean = (sum(samples) / len(samples)) if samples else None
 
         submission = snapshot.setdefault("submission", {})
+        submission["wire_writes"] = self._wire_writes
+        submission["wire_writes_by_method"] = dict(self._wire_writes_by_method)
         submission["rtt_ms"] = {
             "last": round(last, 3) if last is not None else None,
             "mean": round(mean, 3) if mean is not None else None,
@@ -194,11 +202,18 @@ class ProductionStratumClient(StratumClient):
     async def _writer_loop(self) -> None:
         try:
             while not self._closed:
-                payload, ack = await self._outbound.get()
+                payload, method, ack = await self._outbound.get()
                 try:
                     if self.writer is None:
                         raise ConnectionError("Stratum writer disappeared")
                     self.writer.write(payload)
+                    # writer.write accepted the bytes into asyncio's transport.
+                    # From here onward delivery is ambiguous on failure and the
+                    # request must not be automatically replayed.
+                    self._wire_writes += 1
+                    self._wire_writes_by_method[method] = (
+                        self._wire_writes_by_method.get(method, 0) + 1
+                    )
                     await asyncio.wait_for(self.writer.drain(), timeout=self.write_timeout)
                     if not ack.done():
                         ack.set_result(None)
@@ -218,12 +233,15 @@ class ProductionStratumClient(StratumClient):
         except asyncio.CancelledError:
             raise
 
-    async def _send_payload(self, payload: bytes) -> None:
+    async def _send_payload(self, payload: bytes, *, method: str) -> None:
         self._ensure_writer_task()
         loop = asyncio.get_running_loop()
         ack: asyncio.Future[None] = loop.create_future()
         try:
-            await asyncio.wait_for(self._outbound.put((payload, ack)), timeout=self.enqueue_timeout)
+            await asyncio.wait_for(
+                self._outbound.put((payload, method, ack)),
+                timeout=self.enqueue_timeout,
+            )
         except asyncio.TimeoutError as exc:
             raise TimeoutError(
                 f"Stratum outbound queue remained full for {self.enqueue_timeout:.3f}s"
@@ -257,7 +275,7 @@ class ProductionStratumClient(StratumClient):
             + b"\n"
         )
         try:
-            await self._send_payload(payload)
+            await self._send_payload(payload, method=method)
         except BaseException:
             self._pending.pop(request_id, None)
             if not future.done():
@@ -270,6 +288,10 @@ class ProductionStratumClient(StratumClient):
         except asyncio.TimeoutError as exc:
             self._pending.pop(request_id, None)
             raise TimeoutError(f"Stratum request {method!r} timed out after {limit:.1f}s") from exc
+
+    def wire_writes_for(self, method: str) -> int:
+        """Completed writer.write attempts for one exact Stratum method."""
+        return int(self._wire_writes_by_method.get(str(method), 0))
 
     async def submit(self, params: list[Any]) -> Any:
         result = await super().submit(params)
@@ -290,7 +312,7 @@ class ProductionStratumClient(StratumClient):
             self._writer_task = None
         while not self._outbound.empty():
             try:
-                _payload, ack = self._outbound.get_nowait()
+                _payload, _method, ack = self._outbound.get_nowait()
             except asyncio.QueueEmpty:
                 break
             if not ack.done():
