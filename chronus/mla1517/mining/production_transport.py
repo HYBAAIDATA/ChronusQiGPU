@@ -476,7 +476,7 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
             endpoint = self.endpoints[index]
             if getattr(endpoint, "protocol", "v1") == "v2":
                 try:
-                    factory = self.sv2_channel_factory or load_secure_channel_factory()
+                    factory = getattr(self, "sv2_channel_factory", None) or load_secure_channel_factory()
                     client: Any = ProductionStratumV2Client(
                         endpoint,
                         username=endpoint.username or self.username,
