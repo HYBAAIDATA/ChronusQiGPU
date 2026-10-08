@@ -27,6 +27,10 @@ from .coordinator import IntelligentPoolCoordinator, MMIOControlSink
 from .cycle_fsm import MiningCycleLedger, MiningCycleState
 from .pool_chain import bip34_height
 from .software_revision import software_revision
+from .stratum_v2_transport import (
+    ProductionStratumV2Client,
+    load_secure_channel_factory,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -347,6 +351,7 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
         request_timeout: float | None = None,
         write_timeout: float | None = None,
         outbound_queue_size: int | None = None,
+        sv2_channel_factory: Any | None = None,
         **kwargs: Any,
     ) -> None:
         kwargs.setdefault("reconnect_delay", _positive_env("PYTHIA_RECONNECT_INITIAL_S", 0.25))
@@ -371,6 +376,7 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
             if outbound_queue_size is None
             else outbound_queue_size
         )
+        self.sv2_channel_factory = sv2_channel_factory
         self._stale_candidates_dropped = 0
         self._stale_execution_ids: set[str] = set()
 
@@ -424,8 +430,10 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
         client = self.client
         session_id = execution.get("pool_session_id")
         if (
-            isinstance(client, ProductionStratumClient)
-            and client.runtime_state.session_id == session_id
+            client is not None
+            and hasattr(client, "record_stale_candidate")
+            and getattr(getattr(client, "runtime_state", None), "session_id", None)
+            == session_id
         ):
             client.record_stale_candidate()
         self._causal_ledger().record(
@@ -461,22 +469,39 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
 
         super().set_metrics_sink(wrapped)
 
-    async def connect_with_failover(self) -> ProductionStratumClient:
+    async def connect_with_failover(self) -> Any:
         errors: list[str] = []
         authorization_failures = 0
         for offset in range(len(self.endpoints)):
             index = (self.endpoint_index + offset) % len(self.endpoints)
             endpoint = self.endpoints[index]
-            client = ProductionStratumClient(
-                endpoint,
-                username=endpoint.username or self.username,
-                password=endpoint.password or self.password,
-                connect_timeout=self.production_connect_timeout,
-                request_timeout=self.production_request_timeout,
-                write_timeout=self.production_write_timeout,
-                outbound_queue_size=self.production_outbound_queue_size,
-                status_sink=self.stratum_status_sink,
-            )
+            if getattr(endpoint, "protocol", "v1") == "v2":
+                try:
+                    factory = self.sv2_channel_factory or load_secure_channel_factory()
+                    client: Any = ProductionStratumV2Client(
+                        endpoint,
+                        username=endpoint.username or self.username,
+                        password=endpoint.password or self.password,
+                        channel_factory=factory,
+                        request_timeout=self.production_request_timeout,
+                        status_sink=self.stratum_status_sink,
+                    )
+                except Exception as exc:
+                    errors.append(f"{endpoint.name}: {exc}")
+                    self._pool_attempt_record()
+                    self._pool_endpoint_refused(endpoint, str(exc), "sv2_configuration")
+                    continue
+            else:
+                client = ProductionStratumClient(
+                    endpoint,
+                    username=endpoint.username or self.username,
+                    password=endpoint.password or self.password,
+                    connect_timeout=self.production_connect_timeout,
+                    request_timeout=self.production_request_timeout,
+                    write_timeout=self.production_write_timeout,
+                    outbound_queue_size=self.production_outbound_queue_size,
+                    status_sink=self.stratum_status_sink,
+                )
             self._pool_attempt_record()
             try:
                 await client.connect()
