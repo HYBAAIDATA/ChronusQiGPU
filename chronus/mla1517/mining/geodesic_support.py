@@ -359,9 +359,9 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
             pythia_precompute=self.pythia_search_precompute,
         )
 
-    def _record_execution(self, identity, plan, lease, record, outcome, coordinate):
+    def _record_execution(self, identity, plan, lease, record, outcome, coordinate, defer_pool_outcome=False):
         """Persist canonical execution first, then feed only measured outcome back to PYTHIA."""
-        super()._record_execution(identity, plan, lease, record, outcome, coordinate)
+        super()._record_execution(identity, plan, lease, record, outcome, coordinate, defer_pool_outcome=defer_pool_outcome)
         self._chronus_fabric_state = chronus_fabric_execution_state_for(
             self.execution_hasher
         )

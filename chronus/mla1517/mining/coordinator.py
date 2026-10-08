@@ -353,6 +353,17 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         recovery_target = kwargs.pop(
             "recovery_target", "pythia.mining.runtime"
         )
+        asynchronous_submission = bool(
+            kwargs.pop("asynchronous_submission", False)
+        )
+        submission_queue_size = kwargs.pop("submission_queue_size", None)
+        if submission_queue_size is None:
+            submission_queue_size = _positive_int_env(
+                "PYTHIA_SUBMISSION_QUEUE", 64
+            )
+        submission_queue_size = int(submission_queue_size)
+        if submission_queue_size <= 0:
+            raise ValueError("submission_queue_size must be positive")
         super().__init__(*args, **kwargs)
         # A started worker hashes; whether it may submit is a separate,
         # live question (submission_permitted). Unapproved, it mines in
