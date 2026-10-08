@@ -1,7 +1,7 @@
 # Chronos ONE iGPU — M5-integrated release candidate
 
-**Distribution:** `hyba-chronos-one-igpu` · **Import:** `chronos_one_igpu` ·
-**Candidate:** `3.11.2rc3` · **Owner:** HYBA Software Limited · **License:** MIT.
+**Distribution:** `chronos-one-igpu` · **Import:** `chronos_one_igpu` ·
+**Candidate:** `3.11.3rc1` · **Owner:** HYBA Software Limited · **License:** MIT.
 
 **Status: release candidate; not yet authorised for production publication.**
 PR #140 has merged, but merging does not close its QC hold. No current-head
@@ -188,6 +188,80 @@ weights. It reports the full-runtime observations separately. Any ratio is a
 CPU kernel-control measurement—not M5 hardware, trained AI, mining, whole-product
 or competitor performance. Native/portable package validation preserves the raw
 samples and artifact/source digests. No historical ratios are compounded.
+
+## M5_ULTRA bounded contract increment (3.11.3rc1)
+
+This is a separate, deeper contract over the original bounded pad-state API.
+It does not expand its span or remove the broader RC3 feature runtime. The
+bounded contract has **one logical qubit per pad, `PAD_MAX=10`**, with no physical
+entanglement claim. New operator chains have `DEPTH_MAX=55`, derived from the
+prior maximum ten-pad full-mesh preparation (10 H + 45 CZ). The prior API had
+no separately named D_max; this is an explicit admission ceiling, not a claim
+that a pre-existing declared constant was unchanged.
+
+- H/X/Z/S/S†/T/T†/CX/CZ/SWAP, GHZ and topology-linked cluster preparation,
+  composition, inverse and adjoint within the sealed pad/depth domain.
+- Four reduced rational coefficients encode each amplitude in Q(sqrt(2),i).
+  Canonical JSON byte equality defines parity **in the contract**, not tolerance
+  in tests. The production field kernel and independent symbolic basis-column
+  implementation must agree; disagreement fails, with no chosen winner.
+- Exact normalisation after every gate, independently recomputed Born values,
+  local symbolic unitarity and exhaustive finite-basis adjoint proofs (bounded
+  to three pads for the exhaustive audit). Tensor embedding and gatewise
+  unitarity apply to larger admitted chains; no claim of an executed 10-pad
+  exhaustive matrix proof or Lean certification is made.
+- Receipts bind revision, algorithm, implementation, topology, pad permutation,
+  operator chain, device contract, result and exact work counts. Receipts contain
+  no timing/rate/speedup/hardware figures. Raw coefficient buffer shapes and
+  canonical byte counts are stated; they are not a whole-process RAM model.
+- CPU_REFERENCE and IGPU here are two **host-CPU exact software paths**, not
+  evidence of two physical devices. GPU is unavailable for this algebra. A GPU
+  request fails unless CPU_REFERENCE fallback is explicitly authorised; the
+  receipt never reports that fallback as GPU parity.
+- PRIME-DB restart/replay and caller-owned Ed25519 signed custody are exposed.
+  Hashes alone are content identity, not authentication; replay pins a device
+  contract and signed custody additionally pins the trusted public-key digest.
+  No production signing key is bundled or invented.
+
+```python
+from chronos_one_igpu import OneIGPU
+from chronos_one_igpu.igpu.m5_ultra_contract import preparation, device_contract
+
+# rc_sha must be the externally sealed source revision, not a guessed value.
+with OneIGPU(db_path="ultra.db") as gpu:
+    bounded = gpu.m5_resident().ultra_contract(rc_sha)
+    chain = preparation(bounded.model, "exact_m5_ghz")
+    receipt = bounded.execute(chain.then(chain.adjoint()))
+    assert bounded.replay(receipt, device_contract("IGPU"))
+    object_id = bounded.checkpoint(receipt)
+```
+
+Installed command: `chronos-igpu m5-ultra-run CHAIN.json --rc-sha REVISION`.
+An exact-normalised input may be supplied; zero/non-unit norm, floating input,
+invalid pad identity, over-depth and unrecognised gates fail admission.
+
+Contract validation deliberately runs **without new benchmarks**:
+
+```bash
+python scripts/verify_m5_package.py --variant portable --skip-benchmark --contract-rc-sha REVISION
+python scripts/verify_m5_package.py --variant native --skip-benchmark --contract-rc-sha REVISION
+```
+
+`audit_m5_ultra_contract.py` records differential, symbolic, determinism,
+mutation and fallback evidence, including unavailable GPU parity rather than a
+false pass. `verify_internal_m5_ultra.py` downloads hash-pinned wheel artifacts
+from a supplied HTTPS internal origin and installs fully offline in a clean
+venv. It neither publishes nor contacts PyPI/TestPyPI; all dependency wheels
+must be in the authorised internal manifest. Existing generic verification may
+still run its historical benchmark outside this contract, but this increment
+and its workflow skip it. Registry policy is **INTERNAL_INDEX only**.
+
+Required gates remain fail-closed. Without an actual internal-index endpoint,
+trusted production signing key, exact GPU parity, complete-checkout CI results
+and the requested post-merge main baseline, the record must not return
+`ELEVATION_COMPLETE`. The implementation is **INCREMENTAL_EVIDENCE_ONLY**;
+whole-product composition, full-register semantics, iGPU-qualified VQC beyond
+these bounded operators and any public-publication decision remain unresolved.
 
 ## Mining ownership and reference boundaries
 

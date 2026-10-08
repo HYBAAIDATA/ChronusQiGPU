@@ -1,0 +1,54 @@
+{
+  "schema": "chronos.m5_ultra_scope_contract/1",
+  "version": "3.11.3rc1",
+  "increment_base": "eb174c8cd9cb4695a4f1ed1360ca843d0191d203",
+  "scope": "CONTRACT_LAYER_INCREMENTAL_EVIDENCE_ONLY",
+  "registry": "INTERNAL_INDEX",
+  "certified": false,
+  "elevation_complete": false,
+  "baseline_status": "PR151 still open; post-merge main baseline not available",
+  "inflation_ledger": {
+    "allowed": [
+      "operator_depth",
+      "composition_closure",
+      "backend_parity",
+      "differential_verification",
+      "mutation_campaigns",
+      "determinism_proofs",
+      "replay_strictness",
+      "cost_model_exactness"
+    ],
+    "forbidden": [
+      "register_span_growth",
+      "physical_entanglement_claims",
+      "throughput_claims",
+      "hardware_claims",
+      "whole_product_certification",
+      "production_qualification"
+    ]
+  },
+  "pad_max": 10,
+  "register_span": "one logical qubit per pad; bounded statevector; independent of RC3 full-register Clifford feature",
+  "depth_max": 55,
+  "depth_limit_origin": "10 H + 45 CZ prior ten-pad full-mesh maximum preparation; newly explicit chain limit, no previous named D_max falsely asserted",
+  "canonical_form": "q_sqrt2_i_four_reduced_rationals/1; canonical JSON byte equality",
+  "available_backends": {
+    "CPU_REFERENCE": "independent symbolic basis-column host execution",
+    "IGPU": "resident exact field host execution",
+    "GPU": "UNAVAILABLE; named reference fallback is not parity"
+  },
+  "replacement_policy": "additive; original bounded M5 APIs and broader RC3 feature runtime retained",
+  "external_required": [
+    "post-merge main baseline",
+    "exact GPU backend execution/parity",
+    "internal index URL and hash-pinned artifact/dependency manifest",
+    "caller-owned production Ed25519 signing identity",
+    "verified current-head CI"
+  ],
+  "unresolved": [
+    "whole_product_composition",
+    "full_register_semantics",
+    "iGPU_qualified_VQC_beyond_M5_ULTRA",
+    "public_publication_decision"
+  ]
+}

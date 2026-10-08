@@ -8,8 +8,8 @@ build-backend = "setuptools.build_meta"
 # Distribution renamed 2026-10-08 (owner decision): `chronos-gpu` is occupied
 # on PyPI by an unrelated project; `hyba-chronos-one-igpu` matches the import
 # package chronos_one_igpu and the packaging directory.
-name = "hyba-chronos-one-igpu"
-version = "3.11.2rc3"
+name = "chronos-one-igpu"
+version = "3.11.3rc1"
 description = "Standalone Chronos ONE iGPU — Golden Quantum and Lucas-scaled compute fabric"
 readme = "README.md"
 license = "MIT"

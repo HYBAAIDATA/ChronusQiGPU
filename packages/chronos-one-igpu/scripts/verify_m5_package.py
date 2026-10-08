@@ -22,7 +22,7 @@ import zipfile
 
 PACKAGE = Path(__file__).resolve().parents[1]
 REPO = PACKAGE.parents[1]
-TESTS = ("test_m5_model.py", "test_m5_resident.py", "test_m5_quantum.py", "test_execution_binding.py", "test_generic_m5_features.py")
+TESTS = ("test_m5_model.py", "test_m5_resident.py", "test_m5_quantum.py", "test_execution_binding.py", "test_generic_m5_features.py", "test_m5_ultra_contract.py")
 
 
 def digest(path):
@@ -36,6 +36,8 @@ def python_in(path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--variant", choices=("native", "portable"), required=True)
+    parser.add_argument("--skip-benchmark", action="store_true", help="bounded contract pass: no new rate measurement")
+    parser.add_argument("--contract-rc-sha", help="revision binding for installed bounded evidence campaign")
     args = parser.parse_args()
     out = PACKAGE / "dist" / ("m5-" + args.variant)
     out.mkdir(parents=True, exist_ok=True)
@@ -122,9 +124,15 @@ def main():
                 report[label + "_tests"] = {"junit_sha256": digest(junit),
                     "results": [{k: suite.get(k) for k in ("tests", "failures", "errors", "skipped")}
                                 for suite in ET.parse(junit).getroot().iter("testsuite")]}
-                benchmark_file=out/(label+"-feature-benchmark.json")
-                run([py,"-I",PACKAGE/"scripts/benchmark_generic_features.py","--output",benchmark_file],work)
-                report[label+"_feature_benchmark"]={"sha256":digest(benchmark_file),"scope":"equal-work exact kernel control; not physical M5 or mining"}
+                if not args.skip_benchmark:
+                    benchmark_file=out/(label+"-feature-benchmark.json")
+                    run([py,"-I",PACKAGE/"scripts/benchmark_generic_features.py","--output",benchmark_file],work)
+                    report[label+"_feature_benchmark"]={"sha256":digest(benchmark_file),"scope":"equal-work exact kernel control; not physical M5 or mining"}
+                else:report[label+"_feature_benchmark"]={"status":"NOT_RUN", "reason":"contract increment forbids new throughput/speedup claims"}
+                if args.contract_rc_sha:
+                    contract_file=out/(label+"-ultra-contract.json")
+                    run([py,"-I",PACKAGE/"scripts/audit_m5_ultra_contract.py","--rc-sha",args.contract_rc_sha,"--output",contract_file],work)
+                    report[label+"_ultra_contract"]={"sha256":digest(contract_file),"scope":"bounded contract incremental evidence only", "rc_sha_binding":args.contract_rc_sha}
             report["package_checks_passed"] = True
             report["publication_blockers"] = [
                 "current-head whole-product certification and unresolved QC/import/platform closure",
