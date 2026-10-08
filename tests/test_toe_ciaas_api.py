@@ -76,13 +76,23 @@ def make_runtime() -> TOEIntelligenceRuntime:
     )
 
 
-def make_service(api_key: str | None = None) -> CIaaSService:
-    """Create a CIaaS service with optional auth."""
-    return CIaaSService(
+TEST_KEY = "x" * 32
+
+
+def make_service(
+    api_key: str | None = TEST_KEY,
+    *,
+    register_default_tenant: bool = True,
+) -> CIaaSService:
+    """Create a CIaaS service with explicit auth and tenant admission."""
+    service = CIaaSService(
         runtime=make_runtime(),
         api_key=api_key,
         rate_limiter=RateLimiter(max_requests=10, window_seconds=60),
     )
+    if register_default_tenant:
+        service.register_tenant("tenant-a")
+    return service
 
 
 class TestRateLimiter(unittest.TestCase):
@@ -116,14 +126,15 @@ class TestRateLimiter(unittest.TestCase):
 class TestCIaaSServiceAuth(unittest.TestCase):
     """Tests for auth and tenant validation."""
 
-    def test_no_key_required_when_auth_disabled(self) -> None:
-        """When no API key is configured, auth is disabled (dev mode)."""
-        service = make_service()
+    def test_no_configured_key_fails_closed(self) -> None:
+        """No configured server key means execution is unavailable, not open."""
+        service = make_service(api_key=None)
         response, status = service.handle_request(
-            "predict", {"a": [1.0]}, "tenant-a"
+            "predict", {"a": [1.0]}, "tenant-a", api_key=TEST_KEY
         )
-        self.assertEqual(status, 200)
-        self.assertTrue(response.ok)
+        self.assertEqual(status, 503)
+        self.assertFalse(response.ok)
+        self.assertEqual(response.error.code, "authentication_unavailable")
 
     def test_short_key_rejected_at_init(self) -> None:
         """API key shorter than 32 chars should be rejected."""
@@ -132,7 +143,7 @@ class TestCIaaSServiceAuth(unittest.TestCase):
 
     def test_valid_key_accepted(self) -> None:
         """Valid API key should pass auth."""
-        key = "x" * 32
+        key = TEST_KEY
         service = make_service(key)
         response, status = service.handle_request(
             "predict", {"a": [1.0]}, "tenant-a", api_key=key
@@ -142,7 +153,7 @@ class TestCIaaSServiceAuth(unittest.TestCase):
 
     def test_missing_key_when_auth_enabled(self) -> None:
         """Missing key should fail-closed when auth is enabled."""
-        key = "x" * 32
+        key = TEST_KEY
         service = make_service(key)
         response, status = service.handle_request(
             "predict", {"a": [1.0]}, "tenant-a", api_key=None
@@ -153,7 +164,7 @@ class TestCIaaSServiceAuth(unittest.TestCase):
 
     def test_wrong_key_rejected(self) -> None:
         """Wrong key should fail-closed."""
-        key = "x" * 32
+        key = TEST_KEY
         wrong = "y" * 32
         service = make_service(key)
         response, status = service.handle_request(
@@ -170,7 +181,7 @@ class TestCIaaSServiceOperations(unittest.TestCase):
 
     def test_predict_operation(self) -> None:
         response, status = self.service.handle_request(
-            "predict", {"a": [1.0, 2.0]}, "tenant-a"
+            "predict", {"a": [1.0, 2.0]}, "tenant-a", api_key=TEST_KEY
         )
         self.assertEqual(status, 200)
         self.assertTrue(response.ok)
@@ -179,21 +190,21 @@ class TestCIaaSServiceOperations(unittest.TestCase):
 
     def test_explain_operation(self) -> None:
         response, status = self.service.handle_request(
-            "explain", {"a": [1.0]}, "tenant-a"
+            "explain", {"a": [1.0]}, "tenant-a", api_key=TEST_KEY
         )
         self.assertEqual(status, 200)
         self.assertTrue(response.ok)
 
     def test_forecast_operation(self) -> None:
         response, status = self.service.handle_request(
-            "forecast", {"a": [1.0]}, "tenant-a"
+            "forecast", {"a": [1.0]}, "tenant-a", api_key=TEST_KEY
         )
         self.assertEqual(status, 200)
         self.assertTrue(response.ok)
 
     def test_causal_operation(self) -> None:
         response, status = self.service.handle_request(
-            "causal", {"a": [1.0]}, "tenant-a",
+            "causal", {"a": [1.0]}, "tenant-a", api_key=TEST_KEY,
             metadata={"intervention_node": "x"}
         )
         self.assertEqual(status, 200)
@@ -202,7 +213,7 @@ class TestCIaaSServiceOperations(unittest.TestCase):
     def test_feedback_operation(self) -> None:
         """Feedback operation should handle missing decision gracefully."""
         response, status = self.service.handle_request(
-            "feedback", True, "tenant-a",
+            "feedback", True, "tenant-a", api_key=TEST_KEY,
             metadata={"decision_id": "nonexistent"}
         )
         # Should fail gracefully since feedback is disabled
@@ -211,7 +222,7 @@ class TestCIaaSServiceOperations(unittest.TestCase):
 
     def test_unknown_operation(self) -> None:
         response, status = self.service.handle_request(
-            "unknown", {"a": [1.0]}, "tenant-a"
+            "unknown", {"a": [1.0]}, "tenant-a", api_key=TEST_KEY
         )
         self.assertEqual(status, 400)
 
@@ -234,7 +245,7 @@ class TestCIaaSHealth(unittest.TestCase):
 
     def test_metrics(self) -> None:
         service = make_service()
-        service.handle_request("predict", {"a": [1.0]}, "tenant-a")
+        service.handle_request("predict", {"a": [1.0]}, "tenant-a", api_key=TEST_KEY)
         metrics = service.handle_metrics()
         self.assertIn("ciaas_requests_total", metrics)
         self.assertIn("ciaas_engine_available", metrics)
@@ -245,13 +256,13 @@ class TestCIaaSMetrics(unittest.TestCase):
 
     def test_request_counted(self) -> None:
         service = make_service()
-        service.handle_request("predict", {"a": [1.0]}, "tenant-a")
+        service.handle_request("predict", {"a": [1.0]}, "tenant-a", api_key=TEST_KEY)
         metrics = service.handle_metrics()
         self.assertIn("1", metrics)
 
     def test_error_counted(self) -> None:
         service = make_service()
-        service.handle_request("unknown_op", {}, "tenant-a")
+        service.handle_request("unknown_op", {}, "tenant-a", api_key=TEST_KEY)
         metrics = service.handle_metrics()
         self.assertIn("ciaas_errors_total", metrics)
 
@@ -265,11 +276,27 @@ class TestCIaaSTenantManagement(unittest.TestCase):
         self.assertEqual(ctx.tenant_id, "acme")
         self.assertEqual(ctx.mode, "mining")
 
-    def test_auto_register_tenant(self) -> None:
+    def test_unknown_tenant_is_not_auto_registered(self) -> None:
         service = make_service()
-        ctx = service.get_tenant("new-tenant")
-        self.assertEqual(ctx.tenant_id, "new-tenant")
-        self.assertEqual(ctx.mode, "standard")
+        self.assertIsNone(service.get_tenant("new-tenant"))
+        response, status = service.handle_request(
+            "predict",
+            {"a": [1.0]},
+            "new-tenant",
+            api_key=TEST_KEY,
+        )
+        self.assertEqual(status, 403)
+        self.assertFalse(response.ok)
+        self.assertEqual(response.error.code, "unknown_tenant")
+        self.assertIsNone(service.get_tenant("new-tenant"))
+
+    def test_readiness_requires_auth_and_tenant_configuration(self) -> None:
+        no_auth = make_service(api_key=None)
+        self.assertFalse(no_auth.handle_ready()["ready"])
+        no_tenant = make_service(register_default_tenant=False)
+        self.assertFalse(no_tenant.handle_ready()["ready"])
+        configured = make_service()
+        self.assertTrue(configured.handle_ready()["ready"])
 
 
 if __name__ == "__main__":
