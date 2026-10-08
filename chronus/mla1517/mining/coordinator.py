@@ -693,6 +693,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     "index": index,
                     "name": endpoint.name,
                     "endpoint": f"{endpoint.host}:{endpoint.port}",
+                    "protocol": getattr(endpoint, "protocol", "v1"),
                     "tls": endpoint.tls,
                     "extranonce_subscribe": endpoint.extranonce_subscribe,
                     "worker": (
@@ -728,6 +729,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 "event": "refused",
                 "pool": endpoint.name,
                 "endpoint": f"{endpoint.host}:{endpoint.port}",
+                "protocol": getattr(endpoint, "protocol", "v1"),
                 "stage": stage,
                 "error": trimmed,
             }
@@ -743,6 +745,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             "event": "selected",
             "pool": endpoint.name,
             "endpoint": f"{endpoint.host}:{endpoint.port}",
+            "protocol": getattr(endpoint, "protocol", "v1"),
             "index": index,
             "attempt": attempt,
             "previous_failures": list(previous_failures),
