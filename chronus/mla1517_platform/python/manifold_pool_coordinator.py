@@ -61,6 +61,7 @@ class PoolEndpoint:
     password: str | None = field(default=None, repr=False)
     # Pools such as NiceHash deliver extranonce changes only to subscribers.
     extranonce_subscribe: bool = False
+    protocol: str = "v1"
 
 
 @dataclass(frozen=True)
@@ -72,6 +73,7 @@ class StratumJob:
 
 _TLS_SCHEMES = {"stratum+ssl", "stratum+tls", "ssl", "tls"}
 _TCP_SCHEMES = {"stratum+tcp", "stratum", "tcp"}
+_SV2_SCHEMES = {"sv2", "stratum2", "stratum2+noise", "stratum+v2"}
 
 
 def parse_endpoint(value: str, name: str, *, tls: bool = False) -> PoolEndpoint:
@@ -80,10 +82,14 @@ def parse_endpoint(value: str, name: str, *, tls: bool = False) -> PoolEndpoint:
     # PORT.  ssl/tls schemes force TLS; tcp schemes force plaintext; a bare
     # endpoint keeps the caller's default.
     text = value.strip()
+    protocol = "v1"
     if "://" in text:
         scheme, _, text = text.partition("://")
         scheme = scheme.strip().lower()
-        if scheme in _TLS_SCHEMES:
+        if scheme in _SV2_SCHEMES:
+            protocol = "v2"
+            tls = False
+        elif scheme in _TLS_SCHEMES:
             tls = True
         elif scheme in _TCP_SCHEMES:
             tls = False
@@ -108,7 +114,7 @@ def parse_endpoint(value: str, name: str, *, tls: bool = False) -> PoolEndpoint:
         raise ValueError(f"invalid port in endpoint {value!r}") from exc
     if not 1 <= port <= 65535:
         raise ValueError(f"invalid port in endpoint {value!r}")
-    return PoolEndpoint(host, port, name, tls)
+    return PoolEndpoint(host, port, name, tls, protocol=protocol)
 
 
 LEGACY_12D_FORMAT = "<IffIIfIIfiII"
