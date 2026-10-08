@@ -1,0 +1,32 @@
+name: Chronos M5 installed package checks
+on:
+  pull_request:
+    paths:
+      - 'chronus/m5_ultra.py'
+      - 'packages/chronos-one-igpu/**'
+      - '.github/workflows/chronos-m5-package.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  installed-package:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.10', '3.13']
+        variant: [native, portable]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install 'build>=1.2,<2' 'twine>=6,<7'
+      - run: python packages/chronos-one-igpu/scripts/verify_m5_package.py --variant ${{ matrix.variant }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chronos-m5-${{ matrix.python }}-${{ matrix.variant }}-${{ github.sha }}
+          path: packages/chronos-one-igpu/dist/m5-${{ matrix.variant }}/
+# No registry credentials or publication step. These are scoped package checks,
+# not the whole-product production-certification gate.

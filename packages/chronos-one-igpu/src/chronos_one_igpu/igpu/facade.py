@@ -262,3 +262,8 @@ class OneIGPU:
         from .hendrix_execution import execute_nonce_batch
         with self._hendrix_lock:
             return execute_nonce_batch(self, header, target_be, nonces)
+
+    def m5_resident(self, config=None, model=None):
+        """Combine canonical M5 algebra with the actual resident executor."""
+        from .m5 import M5ResidentRuntime
+        return M5ResidentRuntime(self, config, model)

@@ -17,14 +17,15 @@ def doctor():
     from .igpu.structured_solver import StructuredHamiltonian
     import numpy as np
     native_receipt=compute_receipt(b'chronos-doctor');checks['native_protocol']=verify_receipt(native_receipt,b'chronos-doctor')
-    operator=StructuredHamiltonian([.5]*4,1.618);checks['structured_operator']=bool(operator.matvec_deviation_ok(operator.matvec(np.ones(4)),np.ones(4)))
+    operator=StructuredHamiltonian([.5]*4,1.618);checks['structured_operator_exact']=operator.matvec_exact([1]*4)==[(sum(row),0)for row in operator.dense_exact()]
     for name in('lucas256.cl','sha256d.cl','structured_matvec.cl','hendrix600.cl'):checks[name]=bool(files('chronos_one_igpu').joinpath('igpu/kernels/'+name).read_bytes())
-    return {'schema':'chronos_release_doctor_v1','python':platform.python_version(),'version':metadata.version('chronos-gpu'),'checks':checks,'inventory':inventory,'mining_backend':mining.capability(),'passed':all(checks.values())}
+    return {'schema':'chronos_release_doctor_v1','python':platform.python_version(),'version':metadata.version('chronos-one-igpu'),'checks':checks,'inventory':inventory,'mining_backend':mining.capability(),'passed':all(checks.values()),'scope':'installed-package diagnostics, not production certification'}
 
 def main():
     parser=argparse.ArgumentParser(prog='chronos-igpu',description='Chronos standalone core and mathematical extensions')
     sub=parser.add_subparsers(dest='command',required=True)
     sub.add_parser('doctor');sub.add_parser('version')
+    m5=sub.add_parser('m5-info');m5.add_argument('--virtual-units',type=int,default=800);m5.add_argument('--bind',choices=['native','auto','metal','opencl'],default='native')
     target=sub.add_parser('qualify-target');target.add_argument('--device-selector');target.add_argument('--runs',type=int,default=3);target.add_argument('--nonce-budget',type=int,default=4096);target.add_argument('--output',default='target-qualification.json')
     native=sub.add_parser('native-compute');native.add_argument('header_hex');native.add_argument('--chain-id',default='local-pythi-v1');native.add_argument('--epoch',type=int,default=1)
     sub.add_parser('native-security-gate')
@@ -35,7 +36,11 @@ def main():
     verify=sub.add_parser('verify-family');verify.add_argument('certificate')
     args=parser.parse_args()
     if args.command=='doctor':result=doctor()
-    elif args.command=='version':result={'version':metadata.version('chronos-gpu')}
+    elif args.command=='m5-info':
+        from . import OneIGPU
+        from .igpu.resident import ResidentConfig
+        with OneIGPU()as gpu:result=gpu.m5_resident(ResidentConfig(host_binding=args.bind,virtual_units=args.virtual_units)).manifest()
+    elif args.command=='version':result={'version':metadata.version('chronos-one-igpu')}
     elif args.command=='qualify-target':
         from .qualification import qualify_target
         result=qualify_target(args.device_selector,args.runs,args.nonce_budget);Path(args.output).write_text(json.dumps(result,indent=2)+'\n')

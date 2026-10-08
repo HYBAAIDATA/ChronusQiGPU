@@ -1,0 +1,47 @@
+{
+  "schema": "chronos_m5_integration_audit/1",
+  "reviewed_base_revision": "c63ff4d7e9d25135b8e2ca17f84da6714d23d5b7",
+  "candidate": "3.11.2rc1",
+  "distribution": "chronos-one-igpu",
+  "namespace": "chronos_one_igpu",
+  "canonical_model_source": "chronus/m5_ultra.py",
+  "canonical_model_sha256": "fcbd06487dc62eb9ca0ff886c80da181a77e41cf7f515144b0188659712bfa44",
+  "packaged_model": "src/chronos_one_igpu/m5_ultra.py",
+  "integration": "OneIGPU.m5_resident -> M5ResidentRuntime -> ResidentRuntime -> bound execution -> independent verification",
+  "preserved": [
+    "canonical M5 descriptor APIs",
+    "uniform and asymmetric multi-pad elevation",
+    "consortium algebra descriptors",
+    "existing independent resident execution",
+    "optional MLX/Metal and CoreML bindings",
+    "PYTHIA sealed Hendrix authority and SHA-256d boundary"
+  ],
+  "corrections": [
+    "standalone wheel lacked canonical M5 descriptor",
+    "README version and namespace were stale",
+    "CLI distribution lookup used occupied chronos-gpu name",
+    "doctor used reference-only float projection",
+    "dense_exact missed local _exact_params import"
+  ],
+  "not_merged_as_runtime_hardware": {
+    "quantum_compute_substrate/apple_advances.py": "Retained separate comparative/roadmap catalog. Its M5 Ultra GPU count of 160 differs from chronus/m5_ultra.py model count of 80. Neither is detected hardware; no summed or substituted core-count claim.",
+    "packaging/chronos-core": "Preserved v33-only distribution boundary. It is not the resident iGPU product; no namespace overwrite.",
+    "chronus/consortium_push.py": "Retained source governance/proposal ledger, not a physical executor. A proposal-field digest is not device measurement or external peer attestation. It is not used as package production-readiness evidence."
+  },
+  "evidence_rules": {
+    "model_is_execution_evidence": false,
+    "logical_units_are_physical_cores": false,
+    "projected_throughput_is_measured": false,
+    "core_readiness_requires_physical_gpu": false
+  },
+  "production_certified": false,
+  "published": false,
+  "publication_status": "HOLD_PENDING_CURRENT_HEAD_WHOLE_PRODUCT_EVIDENCE_AND_OWNER_PROMOTION",
+  "external_evidence_not_available": [
+    "Apple M5/Metal physical execution qualification",
+    "CoreML ANE dispatch proof",
+    "registry publication",
+    "external accepted pool shares"
+  ],
+  "source_boundary": "Changes based on MCP-read main files; local package checks use retained source material plus these pinned live files, not a verified complete main checkout. Commit-bound CI must rebuild from the complete checkout."
+}
