@@ -110,6 +110,7 @@ _EXECUTION_DEVICES = (
     "asic",
     "super_asic",
     "chronus",
+    "one_igpu",
 )
 _LOCK_HELD = False
 _LOCK_GUARD = threading.Lock()
