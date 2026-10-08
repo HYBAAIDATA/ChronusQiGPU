@@ -59,6 +59,7 @@ ABSENT_MODULES = (
     "chronus.mla1517",
     "chronus.virtual_igpu",
     "chronus.m5_ultra",
+    "chronus.consortium_push",
     "chronos",
 )
 REQUIRED_FILES = (
