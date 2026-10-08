@@ -776,6 +776,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             self.agentic.load_state(self._agentic_state_path)
         self.cycle.ensure(MiningCycleState.SCAN, reason="hardware loop entered")
         self._precompute_task = asyncio.create_task(self._precompute_loop())
+        self._ensure_submission_task()
         try:
             await super().run_hardware_loop(
                 bridge,
@@ -788,6 +789,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             with contextlib.suppress(asyncio.CancelledError):
                 await self._precompute_task
             self._precompute_task = None
+            if self._asynchronous_submission:
+                await self._stop_submission_task()
             if self._agentic_state_path:
                 self.agentic.save_state(self._agentic_state_path)
             if self.client is not None:
@@ -828,6 +831,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             LOG.warning("coordinator control channel unavailable: %s", exc)
         self._hash_meter_started = time.monotonic()
         self._precompute_task = asyncio.create_task(self._precompute_loop())
+        self._ensure_submission_task()
         delay = self.reconnect_delay
         try:
             while True:
@@ -902,6 +906,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             with contextlib.suppress(asyncio.CancelledError):
                 await self._precompute_task
             self._precompute_task = None
+            if self._asynchronous_submission:
+                await self._stop_submission_task()
             if self._agentic_state_path:
                 self.agentic.save_state(self._agentic_state_path)
             if self.client is not None:
