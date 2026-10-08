@@ -1,0 +1,370 @@
+* Getting build dependencies for wheel...
+running egg_info
+creating src/chronos_gpu.egg-info
+writing src/chronos_gpu.egg-info/PKG-INFO
+writing dependency_links to src/chronos_gpu.egg-info/dependency_links.txt
+writing entry points to src/chronos_gpu.egg-info/entry_points.txt
+writing requirements to src/chronos_gpu.egg-info/requires.txt
+writing top-level names to src/chronos_gpu.egg-info/top_level.txt
+writing manifest file 'src/chronos_gpu.egg-info/SOURCES.txt'
+reading manifest file 'src/chronos_gpu.egg-info/SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file 'src/chronos_gpu.egg-info/SOURCES.txt'
+* Building wheel...
+running bdist_wheel
+running build
+running build_py
+creating build/lib/chronos
+copying src/chronos/engine.py -> build/lib/chronos
+copying src/chronos/__init__.py -> build/lib/chronos
+copying src/chronos/hamiltonian.py -> build/lib/chronos
+copying src/chronos/phi_scaling.py -> build/lib/chronos
+copying src/chronos/qsdl_parser.py -> build/lib/chronos
+copying src/chronos/lucas_engine.py -> build/lib/chronos
+copying src/chronos/lucas_runtime.py -> build/lib/chronos
+copying src/chronos/lucas_scaling.py -> build/lib/chronos
+copying src/chronos/lucas_datapath.py -> build/lib/chronos
+copying src/chronos/sparse.py -> build/lib/chronos
+copying src/chronos/certificate.py -> build/lib/chronos
+copying src/chronos/pool.py -> build/lib/chronos
+copying src/chronos/evidence.py -> build/lib/chronos
+copying src/chronos/core_hash.py -> build/lib/chronos
+copying src/chronos/qsdl_compiler.py -> build/lib/chronos
+copying src/chronos/manifold.py -> build/lib/chronos
+copying src/chronos/evolution_engine.py -> build/lib/chronos
+copying src/chronos/test_harness.py -> build/lib/chronos
+copying src/chronos/reconstruction.py -> build/lib/chronos
+copying src/chronos/family_algebra.py -> build/lib/chronos
+copying src/chronos/release_cli.py -> build/lib/chronos
+creating build/lib/chronos/academic
+copying src/chronos/academic/cern.py -> build/lib/chronos/academic
+copying src/chronos/academic/__init__.py -> build/lib/chronos/academic
+copying src/chronos/academic/mit.py -> build/lib/chronos/academic
+copying src/chronos/academic/caltech.py -> build/lib/chronos/academic
+copying src/chronos/academic/tokyotech.py -> build/lib/chronos/academic
+copying src/chronos/academic/nist.py -> build/lib/chronos/academic
+copying src/chronos/academic/cambridge.py -> build/lib/chronos/academic
+copying src/chronos/academic/report.py -> build/lib/chronos/academic
+copying src/chronos/academic/tensor_compression.py -> build/lib/chronos/academic
+creating build/lib/chronos/igpu
+copying src/chronos/igpu/core.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/objects.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/store.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/host.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/facade.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/__init__.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/extended_algebra.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/golden_runtime.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/tensor_runtime.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/scaled_plan.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/exact_fold.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/overlay.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/witness_cache.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/fabric.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/control.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/geometry11d.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/qx.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/virtual_abi.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/contracts.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/service.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/remote.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/scaling_validation.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/apple.py -> build/lib/chronos/igpu
+copying src/chronos/igpu/asic_mining.py -> build/lib/chronos/igpu
+creating build/lib/chronos/theory
+copying src/chronos/theory/__init__.py -> build/lib/chronos/theory
+copying src/chronos/theory/cryogenics.py -> build/lib/chronos/theory
+copying src/chronos/theory/oscillator_array.py -> build/lib/chronos/theory
+copying src/chronos/theory/superconductivity.py -> build/lib/chronos/theory
+copying src/chronos/theory/photonics.py -> build/lib/chronos/theory
+copying src/chronos/theory/anyons.py -> build/lib/chronos/theory
+copying src/chronos/theory/metrology.py -> build/lib/chronos/theory
+copying src/chronos/theory/qcd.py -> build/lib/chronos/theory
+copying src/chronos/theory/control.py -> build/lib/chronos/theory
+copying src/chronos/theory/error_correction.py -> build/lib/chronos/theory
+copying src/chronos/theory/chemistry.py -> build/lib/chronos/theory
+copying src/chronos/theory/report.py -> build/lib/chronos/theory
+creating build/lib/chronos/adapters
+copying src/chronos/adapters/base.py -> build/lib/chronos/adapters
+copying src/chronos/adapters/cpu.py -> build/lib/chronos/adapters
+copying src/chronos/adapters/opencl.py -> build/lib/chronos/adapters
+copying src/chronos/adapters/registry.py -> build/lib/chronos/adapters
+copying src/chronos/adapters/__init__.py -> build/lib/chronos/adapters
+creating build/lib/chronos/paradigm
+copying src/chronos/paradigm/__init__.py -> build/lib/chronos/paradigm
+copying src/chronos/paradigm/__main__.py -> build/lib/chronos/paradigm
+creating build/lib/chronos/golden_quantum
+copying src/chronos/golden_quantum/constants.py -> build/lib/chronos/golden_quantum
+copying src/chronos/golden_quantum/quantum_state.py -> build/lib/chronos/golden_quantum
+copying src/chronos/golden_quantum/oracles.py -> build/lib/chronos/golden_quantum
+copying src/chronos/golden_quantum/data_folding.py -> build/lib/chronos/golden_quantum
+copying src/chronos/golden_quantum/memory.py -> build/lib/chronos/golden_quantum
+copying src/chronos/golden_quantum/mandelbrot.py -> build/lib/chronos/golden_quantum
+copying src/chronos/golden_quantum/coherence.py -> build/lib/chronos/golden_quantum
+copying src/chronos/golden_quantum/infinity_fold.py -> build/lib/chronos/golden_quantum
+copying src/chronos/golden_quantum/search.py -> build/lib/chronos/golden_quantum
+copying src/chronos/golden_quantum/uci.py -> build/lib/chronos/golden_quantum
+copying src/chronos/golden_quantum/infinity_gpu.py -> build/lib/chronos/golden_quantum
+copying src/chronos/golden_quantum/mining.py -> build/lib/chronos/golden_quantum
+copying src/chronos/golden_quantum/__init__.py -> build/lib/chronos/golden_quantum
+running egg_info
+writing src/chronos_gpu.egg-info/PKG-INFO
+writing dependency_links to src/chronos_gpu.egg-info/dependency_links.txt
+writing entry points to src/chronos_gpu.egg-info/entry_points.txt
+writing requirements to src/chronos_gpu.egg-info/requires.txt
+writing top-level names to src/chronos_gpu.egg-info/top_level.txt
+reading manifest file 'src/chronos_gpu.egg-info/SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file 'src/chronos_gpu.egg-info/SOURCES.txt'
+creating build/lib/chronos/igpu/spec
+copying src/chronos/igpu/spec/PUBLIC_TECHNIQUES.json -> build/lib/chronos/igpu/spec
+copying src/chronos/igpu/spec/notion_sources_v1.json -> build/lib/chronos/igpu/spec
+copying src/chronos/igpu/spec/completion_contract_v1.json -> build/lib/chronos/igpu/spec
+copying src/chronos/igpu/spec/integration_plan_v1.md -> build/lib/chronos/igpu/spec
+copying src/chronos/igpu/spec/FAMILY_COMPOSITION.md -> build/lib/chronos/igpu/spec
+copying src/chronos/igpu/spec/APPLE_NEURAL_INTEGRATION.md -> build/lib/chronos/igpu/spec
+copying src/chronos/igpu/spec/PUBLICATION.md -> build/lib/chronos/igpu/spec
+copying src/chronos/igpu/spec/ASIC_MINING.md -> build/lib/chronos/igpu/spec
+creating build/lib/chronos/igpu/kernels
+copying src/chronos/igpu/kernels/lucas256.cl -> build/lib/chronos/igpu/kernels
+copying src/chronos/igpu/kernels/sha256d.cl -> build/lib/chronos/igpu/kernels
+creating build/lib/chronos/igpu/spec/source_notes
+copying src/chronos/igpu/spec/source_notes/architecture.txt -> build/lib/chronos/igpu/spec/source_notes
+copying src/chronos/igpu/spec/source_notes/paradigm_spine.txt -> build/lib/chronos/igpu/spec/source_notes
+copying src/chronos/igpu/spec/source_notes/phase4_core_directive.txt -> build/lib/chronos/igpu/spec/source_notes
+copying src/chronos/igpu/spec/source_notes/scaling_review.txt -> build/lib/chronos/igpu/spec/source_notes
+copying src/chronos/igpu/spec/source_notes/MANIFEST.json -> build/lib/chronos/igpu/spec/source_notes
+creating build/lib/chronos/igpu/native
+copying src/chronos/igpu/native/sha256d_native.c -> build/lib/chronos/igpu/native
+installing to build/bdist.linux-x86_64/wheel
+running install
+running install_lib
+creating build/bdist.linux-x86_64/wheel
+creating build/bdist.linux-x86_64/wheel/chronos
+copying build/lib/chronos/engine.py -> build/bdist.linux-x86_64/wheel/./chronos
+copying build/lib/chronos/__init__.py -> build/bdist.linux-x86_64/wheel/./chronos
+copying build/lib/chronos/hamiltonian.py -> build/bdist.linux-x86_64/wheel/./chronos
+copying build/lib/chronos/phi_scaling.py -> build/bdist.linux-x86_64/wheel/./chronos
+copying build/lib/chronos/qsdl_parser.py -> build/bdist.linux-x86_64/wheel/./chronos
+copying build/lib/chronos/lucas_engine.py -> build/bdist.linux-x86_64/wheel/./chronos
+copying build/lib/chronos/lucas_runtime.py -> build/bdist.linux-x86_64/wheel/./chronos
+copying build/lib/chronos/lucas_scaling.py -> build/bdist.linux-x86_64/wheel/./chronos
+copying build/lib/chronos/lucas_datapath.py -> build/bdist.linux-x86_64/wheel/./chronos
+copying build/lib/chronos/sparse.py -> build/bdist.linux-x86_64/wheel/./chronos
+copying build/lib/chronos/certificate.py -> build/bdist.linux-x86_64/wheel/./chronos
+copying build/lib/chronos/pool.py -> build/bdist.linux-x86_64/wheel/./chronos
+copying build/lib/chronos/evidence.py -> build/bdist.linux-x86_64/wheel/./chronos
+copying build/lib/chronos/core_hash.py -> build/bdist.linux-x86_64/wheel/./chronos
+copying build/lib/chronos/qsdl_compiler.py -> build/bdist.linux-x86_64/wheel/./chronos
+copying build/lib/chronos/manifold.py -> build/bdist.linux-x86_64/wheel/./chronos
+copying build/lib/chronos/evolution_engine.py -> build/bdist.linux-x86_64/wheel/./chronos
+copying build/lib/chronos/test_harness.py -> build/bdist.linux-x86_64/wheel/./chronos
+copying build/lib/chronos/reconstruction.py -> build/bdist.linux-x86_64/wheel/./chronos
+copying build/lib/chronos/family_algebra.py -> build/bdist.linux-x86_64/wheel/./chronos
+copying build/lib/chronos/release_cli.py -> build/bdist.linux-x86_64/wheel/./chronos
+creating build/bdist.linux-x86_64/wheel/chronos/academic
+copying build/lib/chronos/academic/cern.py -> build/bdist.linux-x86_64/wheel/./chronos/academic
+copying build/lib/chronos/academic/__init__.py -> build/bdist.linux-x86_64/wheel/./chronos/academic
+copying build/lib/chronos/academic/mit.py -> build/bdist.linux-x86_64/wheel/./chronos/academic
+copying build/lib/chronos/academic/caltech.py -> build/bdist.linux-x86_64/wheel/./chronos/academic
+copying build/lib/chronos/academic/tokyotech.py -> build/bdist.linux-x86_64/wheel/./chronos/academic
+copying build/lib/chronos/academic/nist.py -> build/bdist.linux-x86_64/wheel/./chronos/academic
+copying build/lib/chronos/academic/cambridge.py -> build/bdist.linux-x86_64/wheel/./chronos/academic
+copying build/lib/chronos/academic/report.py -> build/bdist.linux-x86_64/wheel/./chronos/academic
+copying build/lib/chronos/academic/tensor_compression.py -> build/bdist.linux-x86_64/wheel/./chronos/academic
+creating build/bdist.linux-x86_64/wheel/chronos/igpu
+copying build/lib/chronos/igpu/core.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/objects.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/store.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/host.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/facade.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/__init__.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/extended_algebra.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/golden_runtime.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/tensor_runtime.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/scaled_plan.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/exact_fold.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/overlay.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/witness_cache.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/fabric.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/control.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/geometry11d.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/qx.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/virtual_abi.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/contracts.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/service.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/remote.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/scaling_validation.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/apple.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+copying build/lib/chronos/igpu/asic_mining.py -> build/bdist.linux-x86_64/wheel/./chronos/igpu
+creating build/bdist.linux-x86_64/wheel/chronos/igpu/spec
+copying build/lib/chronos/igpu/spec/PUBLIC_TECHNIQUES.json -> build/bdist.linux-x86_64/wheel/./chronos/igpu/spec
+copying build/lib/chronos/igpu/spec/notion_sources_v1.json -> build/bdist.linux-x86_64/wheel/./chronos/igpu/spec
+copying build/lib/chronos/igpu/spec/completion_contract_v1.json -> build/bdist.linux-x86_64/wheel/./chronos/igpu/spec
+copying build/lib/chronos/igpu/spec/integration_plan_v1.md -> build/bdist.linux-x86_64/wheel/./chronos/igpu/spec
+copying build/lib/chronos/igpu/spec/FAMILY_COMPOSITION.md -> build/bdist.linux-x86_64/wheel/./chronos/igpu/spec
+copying build/lib/chronos/igpu/spec/APPLE_NEURAL_INTEGRATION.md -> build/bdist.linux-x86_64/wheel/./chronos/igpu/spec
+copying build/lib/chronos/igpu/spec/PUBLICATION.md -> build/bdist.linux-x86_64/wheel/./chronos/igpu/spec
+copying build/lib/chronos/igpu/spec/ASIC_MINING.md -> build/bdist.linux-x86_64/wheel/./chronos/igpu/spec
+creating build/bdist.linux-x86_64/wheel/chronos/igpu/spec/source_notes
+copying build/lib/chronos/igpu/spec/source_notes/architecture.txt -> build/bdist.linux-x86_64/wheel/./chronos/igpu/spec/source_notes
+copying build/lib/chronos/igpu/spec/source_notes/paradigm_spine.txt -> build/bdist.linux-x86_64/wheel/./chronos/igpu/spec/source_notes
+copying build/lib/chronos/igpu/spec/source_notes/phase4_core_directive.txt -> build/bdist.linux-x86_64/wheel/./chronos/igpu/spec/source_notes
+copying build/lib/chronos/igpu/spec/source_notes/scaling_review.txt -> build/bdist.linux-x86_64/wheel/./chronos/igpu/spec/source_notes
+copying build/lib/chronos/igpu/spec/source_notes/MANIFEST.json -> build/bdist.linux-x86_64/wheel/./chronos/igpu/spec/source_notes
+creating build/bdist.linux-x86_64/wheel/chronos/igpu/kernels
+copying build/lib/chronos/igpu/kernels/lucas256.cl -> build/bdist.linux-x86_64/wheel/./chronos/igpu/kernels
+copying build/lib/chronos/igpu/kernels/sha256d.cl -> build/bdist.linux-x86_64/wheel/./chronos/igpu/kernels
+creating build/bdist.linux-x86_64/wheel/chronos/igpu/native
+copying build/lib/chronos/igpu/native/sha256d_native.c -> build/bdist.linux-x86_64/wheel/./chronos/igpu/native
+creating build/bdist.linux-x86_64/wheel/chronos/theory
+copying build/lib/chronos/theory/__init__.py -> build/bdist.linux-x86_64/wheel/./chronos/theory
+copying build/lib/chronos/theory/cryogenics.py -> build/bdist.linux-x86_64/wheel/./chronos/theory
+copying build/lib/chronos/theory/oscillator_array.py -> build/bdist.linux-x86_64/wheel/./chronos/theory
+copying build/lib/chronos/theory/superconductivity.py -> build/bdist.linux-x86_64/wheel/./chronos/theory
+copying build/lib/chronos/theory/photonics.py -> build/bdist.linux-x86_64/wheel/./chronos/theory
+copying build/lib/chronos/theory/anyons.py -> build/bdist.linux-x86_64/wheel/./chronos/theory
+copying build/lib/chronos/theory/metrology.py -> build/bdist.linux-x86_64/wheel/./chronos/theory
+copying build/lib/chronos/theory/qcd.py -> build/bdist.linux-x86_64/wheel/./chronos/theory
+copying build/lib/chronos/theory/control.py -> build/bdist.linux-x86_64/wheel/./chronos/theory
+copying build/lib/chronos/theory/error_correction.py -> build/bdist.linux-x86_64/wheel/./chronos/theory
+copying build/lib/chronos/theory/chemistry.py -> build/bdist.linux-x86_64/wheel/./chronos/theory
+copying build/lib/chronos/theory/report.py -> build/bdist.linux-x86_64/wheel/./chronos/theory
+creating build/bdist.linux-x86_64/wheel/chronos/adapters
+copying build/lib/chronos/adapters/base.py -> build/bdist.linux-x86_64/wheel/./chronos/adapters
+copying build/lib/chronos/adapters/cpu.py -> build/bdist.linux-x86_64/wheel/./chronos/adapters
+copying build/lib/chronos/adapters/opencl.py -> build/bdist.linux-x86_64/wheel/./chronos/adapters
+copying build/lib/chronos/adapters/registry.py -> build/bdist.linux-x86_64/wheel/./chronos/adapters
+copying build/lib/chronos/adapters/__init__.py -> build/bdist.linux-x86_64/wheel/./chronos/adapters
+creating build/bdist.linux-x86_64/wheel/chronos/paradigm
+copying build/lib/chronos/paradigm/__init__.py -> build/bdist.linux-x86_64/wheel/./chronos/paradigm
+copying build/lib/chronos/paradigm/__main__.py -> build/bdist.linux-x86_64/wheel/./chronos/paradigm
+creating build/bdist.linux-x86_64/wheel/chronos/golden_quantum
+copying build/lib/chronos/golden_quantum/constants.py -> build/bdist.linux-x86_64/wheel/./chronos/golden_quantum
+copying build/lib/chronos/golden_quantum/quantum_state.py -> build/bdist.linux-x86_64/wheel/./chronos/golden_quantum
+copying build/lib/chronos/golden_quantum/oracles.py -> build/bdist.linux-x86_64/wheel/./chronos/golden_quantum
+copying build/lib/chronos/golden_quantum/data_folding.py -> build/bdist.linux-x86_64/wheel/./chronos/golden_quantum
+copying build/lib/chronos/golden_quantum/memory.py -> build/bdist.linux-x86_64/wheel/./chronos/golden_quantum
+copying build/lib/chronos/golden_quantum/mandelbrot.py -> build/bdist.linux-x86_64/wheel/./chronos/golden_quantum
+copying build/lib/chronos/golden_quantum/coherence.py -> build/bdist.linux-x86_64/wheel/./chronos/golden_quantum
+copying build/lib/chronos/golden_quantum/infinity_fold.py -> build/bdist.linux-x86_64/wheel/./chronos/golden_quantum
+copying build/lib/chronos/golden_quantum/search.py -> build/bdist.linux-x86_64/wheel/./chronos/golden_quantum
+copying build/lib/chronos/golden_quantum/uci.py -> build/bdist.linux-x86_64/wheel/./chronos/golden_quantum
+copying build/lib/chronos/golden_quantum/infinity_gpu.py -> build/bdist.linux-x86_64/wheel/./chronos/golden_quantum
+copying build/lib/chronos/golden_quantum/mining.py -> build/bdist.linux-x86_64/wheel/./chronos/golden_quantum
+copying build/lib/chronos/golden_quantum/__init__.py -> build/bdist.linux-x86_64/wheel/./chronos/golden_quantum
+running install_egg_info
+Copying src/chronos_gpu.egg-info to build/bdist.linux-x86_64/wheel/./chronos_gpu-3.8.0-py3.13.egg-info
+running install_scripts
+creating build/bdist.linux-x86_64/wheel/chronos_gpu-3.8.0.dist-info/WHEEL
+creating '/data/asic-pure-dist/.tmp-6e_slib6/chronos_gpu-3.8.0-py3-none-any.whl' and adding 'build/bdist.linux-x86_64/wheel' to it
+adding 'chronos/__init__.py'
+adding 'chronos/certificate.py'
+adding 'chronos/core_hash.py'
+adding 'chronos/engine.py'
+adding 'chronos/evidence.py'
+adding 'chronos/evolution_engine.py'
+adding 'chronos/family_algebra.py'
+adding 'chronos/hamiltonian.py'
+adding 'chronos/lucas_datapath.py'
+adding 'chronos/lucas_engine.py'
+adding 'chronos/lucas_runtime.py'
+adding 'chronos/lucas_scaling.py'
+adding 'chronos/manifold.py'
+adding 'chronos/phi_scaling.py'
+adding 'chronos/pool.py'
+adding 'chronos/qsdl_compiler.py'
+adding 'chronos/qsdl_parser.py'
+adding 'chronos/reconstruction.py'
+adding 'chronos/release_cli.py'
+adding 'chronos/sparse.py'
+adding 'chronos/test_harness.py'
+adding 'chronos/academic/__init__.py'
+adding 'chronos/academic/caltech.py'
+adding 'chronos/academic/cambridge.py'
+adding 'chronos/academic/cern.py'
+adding 'chronos/academic/mit.py'
+adding 'chronos/academic/nist.py'
+adding 'chronos/academic/report.py'
+adding 'chronos/academic/tensor_compression.py'
+adding 'chronos/academic/tokyotech.py'
+adding 'chronos/adapters/__init__.py'
+adding 'chronos/adapters/base.py'
+adding 'chronos/adapters/cpu.py'
+adding 'chronos/adapters/opencl.py'
+adding 'chronos/adapters/registry.py'
+adding 'chronos/golden_quantum/__init__.py'
+adding 'chronos/golden_quantum/coherence.py'
+adding 'chronos/golden_quantum/constants.py'
+adding 'chronos/golden_quantum/data_folding.py'
+adding 'chronos/golden_quantum/infinity_fold.py'
+adding 'chronos/golden_quantum/infinity_gpu.py'
+adding 'chronos/golden_quantum/mandelbrot.py'
+adding 'chronos/golden_quantum/memory.py'
+adding 'chronos/golden_quantum/mining.py'
+adding 'chronos/golden_quantum/oracles.py'
+adding 'chronos/golden_quantum/quantum_state.py'
+adding 'chronos/golden_quantum/search.py'
+adding 'chronos/golden_quantum/uci.py'
+adding 'chronos/igpu/__init__.py'
+adding 'chronos/igpu/apple.py'
+adding 'chronos/igpu/asic_mining.py'
+adding 'chronos/igpu/contracts.py'
+adding 'chronos/igpu/control.py'
+adding 'chronos/igpu/core.py'
+adding 'chronos/igpu/exact_fold.py'
+adding 'chronos/igpu/extended_algebra.py'
+adding 'chronos/igpu/fabric.py'
+adding 'chronos/igpu/facade.py'
+adding 'chronos/igpu/geometry11d.py'
+adding 'chronos/igpu/golden_runtime.py'
+adding 'chronos/igpu/host.py'
+adding 'chronos/igpu/objects.py'
+adding 'chronos/igpu/overlay.py'
+adding 'chronos/igpu/qx.py'
+adding 'chronos/igpu/remote.py'
+adding 'chronos/igpu/scaled_plan.py'
+adding 'chronos/igpu/scaling_validation.py'
+adding 'chronos/igpu/service.py'
+adding 'chronos/igpu/store.py'
+adding 'chronos/igpu/tensor_runtime.py'
+adding 'chronos/igpu/virtual_abi.py'
+adding 'chronos/igpu/witness_cache.py'
+adding 'chronos/igpu/kernels/lucas256.cl'
+adding 'chronos/igpu/kernels/sha256d.cl'
+adding 'chronos/igpu/native/sha256d_native.c'
+adding 'chronos/igpu/spec/APPLE_NEURAL_INTEGRATION.md'
+adding 'chronos/igpu/spec/ASIC_MINING.md'
+adding 'chronos/igpu/spec/FAMILY_COMPOSITION.md'
+adding 'chronos/igpu/spec/PUBLICATION.md'
+adding 'chronos/igpu/spec/PUBLIC_TECHNIQUES.json'
+adding 'chronos/igpu/spec/completion_contract_v1.json'
+adding 'chronos/igpu/spec/integration_plan_v1.md'
+adding 'chronos/igpu/spec/notion_sources_v1.json'
+adding 'chronos/igpu/spec/source_notes/MANIFEST.json'
+adding 'chronos/igpu/spec/source_notes/architecture.txt'
+adding 'chronos/igpu/spec/source_notes/paradigm_spine.txt'
+adding 'chronos/igpu/spec/source_notes/phase4_core_directive.txt'
+adding 'chronos/igpu/spec/source_notes/scaling_review.txt'
+adding 'chronos/paradigm/__init__.py'
+adding 'chronos/paradigm/__main__.py'
+adding 'chronos/theory/__init__.py'
+adding 'chronos/theory/anyons.py'
+adding 'chronos/theory/chemistry.py'
+adding 'chronos/theory/control.py'
+adding 'chronos/theory/cryogenics.py'
+adding 'chronos/theory/error_correction.py'
+adding 'chronos/theory/metrology.py'
+adding 'chronos/theory/oscillator_array.py'
+adding 'chronos/theory/photonics.py'
+adding 'chronos/theory/qcd.py'
+adding 'chronos/theory/report.py'
+adding 'chronos/theory/superconductivity.py'
+adding 'chronos_gpu-3.8.0.dist-info/licenses/LICENSE'
+adding 'chronos_gpu-3.8.0.dist-info/METADATA'
+adding 'chronos_gpu-3.8.0.dist-info/WHEEL'
+adding 'chronos_gpu-3.8.0.dist-info/entry_points.txt'
+adding 'chronos_gpu-3.8.0.dist-info/top_level.txt'
+adding 'chronos_gpu-3.8.0.dist-info/RECORD'
+removing build/bdist.linux-x86_64/wheel
+Successfully built chronos_gpu-3.8.0-py3-none-any.whl

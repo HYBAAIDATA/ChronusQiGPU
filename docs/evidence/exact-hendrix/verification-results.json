@@ -1,0 +1,46 @@
+{
+  "schema": "chronus.exact_verification/1",
+  "release": "3.11.1",
+  "installed_native": {
+    "tests": 45,
+    "passed": 45,
+    "exit_code": 0,
+    "seconds": 86.07,
+    "command": "PYTHONPATH=<real Turing snapshot export bootstrap>:<canonical snapshot>:<Turing source> installed-venv/bin/python -m pytest tests/test_exact_geometry.py tests/test_resident_hendrix.py -q -x --junitxml=exact-installed-tests.xml",
+    "standalone_namespace": "installed chronos_one_igpu; no standalone source override"
+  },
+  "preserved_standalone": {
+    "tests": 371,
+    "passed": 371,
+    "exit_code": 0,
+    "seconds": 76.99,
+    "command": "PYTHONPATH=src installed-venv/bin/python -m pytest tests -q"
+  },
+  "build": {
+    "native_wheel": true,
+    "portable_wheel": true,
+    "sdist": true,
+    "twine_check": "passed for all three"
+  },
+  "environment": {
+    "python": "3.13.14",
+    "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+    "gpu_device_present": false,
+    "scope": "CPU software execution, not physical GPU evidence"
+  },
+  "full_repository_ci": "not certified; check-runs API previously denied access",
+  "whole_product_production_ready": false,
+  "fresh_process_persistence": {
+    "passed": true,
+    "scope": "actual exact-plan/receipt restoration through local PRIME-DB, not THESEUS or pool acknowledgement",
+    "initial_capture_script_error": "incorrect receipt field name hash_count; corrected to sha256d_evaluations and rerun successfully; failure log retained"
+  },
+  "installed_portable": {
+    "tests": 45,
+    "passed": 45,
+    "exit_code": 0,
+    "seconds": 83.17,
+    "native_extensions": "not present in portable wheel",
+    "command": "same exact tests against force-installed chronos_gpu-3.11.1-py3-none-any.whl"
+  }
+}

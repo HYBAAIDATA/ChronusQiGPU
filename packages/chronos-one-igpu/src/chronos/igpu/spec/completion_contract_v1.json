@@ -1,0 +1,201 @@
+{
+  "schema": "chronos_standalone_completion_v2",
+  "version": "3.8.0",
+  "directive": "Use the attached standalone baseline and Notion designs. Implemented mathematical mechanisms are enabled by default, not excluded by a research/experimental label. Record any remaining execution/interface gap explicitly.",
+  "scope": "Standalone implementation; no repository access requirement. Not an assertion of complete repository parity.",
+  "components": [
+    {
+      "component": "Single independent iGPU and physical host composition",
+      "code": "src/chronos/igpu/{facade,fabric,overlay,remote}.py",
+      "status": "IMPLEMENTED",
+      "detail": "Native contract exists with no physical GPU; OpenCL actual kernels and authenticated remote agents are bound when configured."
+    },
+    {
+      "component": "Exact Lucas/Pisot/Zeckendorf/Cassini/Binet datapath",
+      "code": "src/chronos/lucas*; src/chronos/igpu/kernels/lucas256.cl",
+      "status": "IMPLEMENTED",
+      "detail": "Original exact host math retained; multi-limb GPU kernel compared on native C++ conformance path."
+    },
+    {
+      "component": "Lucas ladder and scaled workload windows",
+      "code": "src/chronos/igpu/scaled_plan.py",
+      "status": "IMPLEMENTED",
+      "detail": "L10,12,15,18,20,31,50,76,110; stream and clamp domain."
+    },
+    {
+      "component": "Golden Quantum Hamiltonian/state/oracles/search",
+      "code": "src/chronos/golden_quantum/{quantum_state,oracles,search}.py",
+      "status": "IMPLEMENTED",
+      "detail": "Complex128 Hermitian evolution, predicate oracle masks, Grover and phi feedback with explicit oracle counts."
+    },
+    {
+      "component": "S1\u2013S6 solve-first and F1\u2013F3 fallback",
+      "code": "src/chronos/igpu/golden_runtime.py",
+      "status": "IMPLEMENTED",
+      "detail": "Actual fold/checkpoint/coherence/Mandelbrot/interleave/eigensolve; actual predicate/hash fallback, not only stage labels."
+    },
+    {
+      "component": "Exact pair fold, selective unfold and native scale",
+      "code": "src/chronos/igpu/exact_fold.py",
+      "status": "IMPLEMENTED",
+      "detail": "Explicit standalone sum/left rational encoding; full inverse and independent leaf restoration. Not an assertion of bitwise original PULVINI equivalence."
+    },
+    {
+      "component": "1\u20133D phase transforms and byte folding",
+      "code": "src/chronos/golden_quantum/data_folding.py",
+      "status": "IMPLEMENTED",
+      "detail": "Unitary phase transforms and bounded lossless byte encoding are separate from exact algebra."
+    },
+    {
+      "component": "Prime-gap persistence, Infinity Fold, large logical addresses",
+      "code": "src/chronos/golden_quantum/{memory,infinity_fold}.py; src/chronos/igpu/store.py",
+      "status": "IMPLEMENTED",
+      "detail": "Finite durable payloads; symbolic 2^100+ addresses carry index and address expressions without allocating represented states."
+    },
+    {
+      "component": "Mandelbrot stabilization and coherence",
+      "code": "src/chronos/golden_quantum/{mandelbrot,coherence}.py",
+      "status": "IMPLEMENTED",
+      "detail": "Finite boundary bisection, escape score, normalization/finiteness checks."
+    },
+    {
+      "component": "UCI parameters and Hamiltonian binding",
+      "code": "src/chronos/golden_quantum/uci.py",
+      "status": "IMPLEMENTED",
+      "detail": "CODATA registry and validated kernel-variable overrides; h changes normalized evolution time."
+    },
+    {
+      "component": "Tensor, MPS, original graphics/theory/academic math",
+      "code": "src/chronos/igpu/tensor_runtime.py; src/chronos/{engine,academic,theory}",
+      "status": "IMPLEMENTED",
+      "detail": "Bounded matmul/add/Hadamard/scale/Kronecker; shipped MPS gate execution with lossy rollback; original source retained."
+    },
+    {
+      "component": "11D phi geometry and exact transport certificates",
+      "code": "src/chronos/igpu/geometry11d.py",
+      "status": "IMPLEMENTED",
+      "detail": "Weighted norm, Poincare fold/inverse and IEEE64 Zeckendorf certificates; finite numeric view."
+    },
+    {
+      "component": "QX command buffer, weak measurement and barrier/descriptor execution",
+      "code": "src/chronos/igpu/qx.py",
+      "status": "IMPLEMENTED",
+      "detail": "Sealed commands, state allocation/evolution/correction/expectations, computational Kraus weak measurement."
+    },
+    {
+      "component": "Certified MLA ingestion and five retrieval views",
+      "code": "src/chronos/igpu/contracts.py",
+      "status": "IMPLEMENTED",
+      "detail": "Rational complex exact state, folded state, Lucas/Binet/residual, prime/Zeckendorf/Cassini, M32 frame and lineage validate together."
+    },
+    {
+      "component": "virtual_igpu_v1, tenants, admission, daemon/client",
+      "code": "src/chronos/igpu/{virtual_abi,service,remote}.py",
+      "status": "IMPLEMENTED",
+      "detail": "Strict workload schema, quotas, request/result digests, tenant/global backpressure, auth and TLS remote binding."
+    },
+    {
+      "component": "GPU SHA256d, unchanged target and host candidate verification",
+      "code": "src/chronos/igpu/kernels/sha256d.cl; src/chronos/igpu/fabric.py",
+      "status": "IMPLEMENTED",
+      "detail": "Actual two-pass kernel, exact prefix/nonce encoding; compile/source conformance passed. Physical execution requires GPU driver/device."
+    },
+    {
+      "component": "Swarm partition, vertical bounds, temporal pipeline",
+      "code": "src/chronos/igpu/control.py; src/chronos/igpu/overlay.py",
+      "status": "IMPLEMENTED",
+      "detail": "Disjoint weighted nonce leases, bounded workers/inflight dispatch, device/kernel limits. Swarm local execution is CPU; remote/physical overlay is a separate bound fabric executor."
+    },
+    {
+      "component": "Guardian, genetic optimization and floor evaluator",
+      "code": "src/chronos/igpu/{control,scaling_validation}.py",
+      "status": "IMPLEMENTED",
+      "detail": "Epoch/deadline/ownership checks, observed rate promotion, bounded seeded evolution, SCALE1\u2013SCALE10 report."
+    },
+    {
+      "component": "100GB witness cache, attestation and replay",
+      "code": "src/chronos/igpu/witness_cache.py",
+      "status": "IMPLEMENTED",
+      "detail": "Packed shards+index, actual allocated-byte budget, circuit trace content addressing and replay; no per-witness Docker layer."
+    },
+    {
+      "component": "Hash-chain custody and optional HMAC evidence",
+      "code": "src/chronos/igpu/golden_runtime.py",
+      "status": "IMPLEMENTED",
+      "detail": "Work/backend/rung/partition/time evidence; trusted-head and signing-key validation; no hardware-root claim."
+    },
+    {
+      "component": "Paradigm thesis, schedule conformance and chaos",
+      "code": "src/chronos/paradigm",
+      "status": "IMPLEMENTED",
+      "detail": "User thesis retained; bijection/system/measurement/honesty gates all execute."
+    },
+    {
+      "component": "Baseline and folded-witness benchmark",
+      "code": "benchmarks/run_standalone_elevation.py",
+      "status": "IMPLEMENTED",
+      "detail": "Real genesis block header, equal hash budgets, shuffled runs, independent hash crosscheck, negative outcomes retained."
+    },
+    {
+      "component": "Production packaging and shutdown",
+      "code": "Dockerfile; compose.yaml; src/chronos/igpu/service.py",
+      "status": "IMPLEMENTED_TARGET_VALIDATION_PENDING",
+      "detail": "Non-root, read-only container, TLS, private token, graceful signals, persistent volume; image build not executed on this host."
+    },
+    {
+      "component": "Native vendor/ASIC/MMIO/RTL execution and real sensor stack",
+      "code": "src/chronos/igpu/fabric.py",
+      "status": "UNBOUND_TARGET_INTERFACES",
+      "detail": "Inventory explicitly lists unbound direct CUDA/ROCm/Metal/ASIC/MMIO/RTL interfaces. Portable GPU binding uses OpenCL; these other executable drivers are not implemented in this standalone release."
+    },
+    {
+      "component": "Repository-specific Chronus-1 binary ISA, H4/600-cell fabric and TT/MPO extensions",
+      "code": "docs/SOURCE_MANIFEST.json",
+      "status": "NOT_IMPLEMENTED_IN_THIS_RELEASE",
+      "detail": "Source references retained for traceability. virtual_igpu_v1 is not a replacement binary ISA; M32/11D is not a 600-cell model; pair folds/MPS are not general TT/MPO. No repository prerequisite is imposed."
+    },
+    {
+      "component": "Pool network job/acknowledgement transport",
+      "code": "src/chronos/golden_quantum/mining.py",
+      "status": "NOT_IMPLEMENTED_IN_THIS_RELEASE",
+      "detail": "Offline header/target/lease execution only; no pool credentials, no network submission or acceptance claim."
+    },
+    {
+      "component": "Exact paired/three-way family composition",
+      "code": "src/chronos/family_algebra.py",
+      "status": "IMPLEMENTED",
+      "detail": "Exact Q(phi), orbit-pair multiplication, trace/norm/Pell-Cassini checks, Zeckendorf/Binet certificate and triple-index identities."
+    },
+    {
+      "component": "Apple MLX/Core ML integration",
+      "code": "src/chronos/igpu/apple.py",
+      "status": "IMPLEMENTED_TARGET_VALIDATION_PENDING",
+      "detail": "Optional public framework bindings, actual CPU dense/ReLU ranker, exact candidate permutation checks; Apple hardware dispatch not executed on Linux."
+    },
+    {
+      "component": "Registry-ready packaging and operator tools",
+      "code": "pyproject.toml; src/chronos/release_cli.py; .github/workflows/package.yml",
+      "status": "IMPLEMENTED",
+      "detail": "Wheel/sdist metadata, CLI/doctor, platform-marked extras and 12-environment CI definition. Registry upload and multi-OS CI not executed."
+    },
+    {
+      "component": "ASIC-like prepared mining, fused scans and lanes",
+      "code": "igpu/asic_mining.py; igpu/native/sha256d_native.c; fabric.py",
+      "status": "IMPLEMENTED",
+      "detail": "Actual native portable-C/OpenSSL and explicit hashlib-copy paths; same exact digest/target; live epoch cancellation; bounded lanes, receipts and persistent progress."
+    },
+    {
+      "component": "Configured ASIC full-digest driver bridge",
+      "code": "igpu/asic_mining.py ASICDriverBridge",
+      "status": "INTERFACE_IMPLEMENTED_HARDWARE_UNBOUND",
+      "detail": "Executed fake-driver conformance/tamper tests; no physical ASIC attached or measured."
+    },
+    {
+      "component": "Idempotent mining ABI/service calls",
+      "code": "igpu/virtual_abi.py execute_once",
+      "status": "IMPLEMENTED",
+      "detail": "Session bounded, tenant/request identity sealed, duplicate coalescing and no automatic replay of partial failure."
+    }
+  ],
+  "core_policy": "Elevate the completed supplied core; do not rebuild or replace its exact sequence authority."
+}

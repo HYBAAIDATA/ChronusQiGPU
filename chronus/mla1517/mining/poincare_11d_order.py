@@ -10,6 +10,7 @@ with M32, sequential, or another traversal.
 
 from __future__ import annotations
 
+from chronos_one_igpu.reference_contract import require_reference, reference_only, require_production_context
 from functools import lru_cache
 from typing import Any, List, Optional, Tuple
 
@@ -27,9 +28,11 @@ def _import() -> Any:
     return PoincareCassiniSearchEngine
 
 
+@reference_only('poincare_11d_order')
 @lru_cache(maxsize=1)
 def load_poincare_11d() -> Tuple[Optional[Any], Optional[str]]:
     """Return the canonical engine class, or its exact import failure."""
+    require_reference('poincare_11d_order')
     try:
         return _import(), None
     except Exception as exc:
@@ -49,6 +52,7 @@ def poincare_11d_nonces(
     golden-weighted ``direction_11d`` affinity.  Each face shard then uses the
     canonical Cassini-certified affine permutation.
     """
+    require_reference('poincare_11d_order')
     if len(header) != 80:
         raise ValueError("header must be 80 bytes")
     if type(base) is not int or not 0 <= base <= 0xFFFFFFFF:

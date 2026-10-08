@@ -1,0 +1,49 @@
+{
+  "schema": "chronus.exact_contract_audit/1",
+  "release": "3.11.1",
+  "whole_product_production_ready": false,
+  "exact_profile": {
+    "geometry": "Q(phi) rational coefficients + positive symbolic radicals",
+    "M32": "12 dual-dodecahedral face directions + 20 actual icosahedral face-centroid directions",
+    "H4": "120 exact unit icosians, 600 tetrahedra, 600 unique dual normals",
+    "projection": "certified exact 11D phi-weighted fold with exact restoration",
+    "quantum": "actual Turing Hadamard coined C600 walk; independent integer complex-amplitude replay; unit Born mass at every step",
+    "ordering": "exact header-bound geometry, Cassini integer permutations, Hendrix coprime stride",
+    "excluded_inputs": [
+      "binary64 mathematical geometry",
+      "learned/advisory face rankings",
+      "VQC checkpoint outputs",
+      "advisory nonce proposals"
+    ],
+    "intelligence_owner": "PYTHIA",
+    "execution_owner": "Chronus",
+    "mining_truth": "actual SHA256d and independent hashlib verification"
+  },
+  "uncertified_surfaces": [
+    {
+      "path": "src/chronos_one_igpu/igpu/structured_solver.py",
+      "reason": "preserved numerical S6 ground-state API contains FP64, tolerance pivots and numerical eigensolver operations; excluded from strict geometry/search profile"
+    },
+    {
+      "path": "src/chronos_one_igpu/golden_quantum/",
+      "reason": "preserved numerical state/solver APIs are not certified by exact geometry changes"
+    },
+    {
+      "path": "chronus/mla1517/mining/geodesic_support.py",
+      "reason": "mathematical planning calls PYTHIA.plan_exact; inherited operational planning/admission machinery remains outside the exact-math proof scope"
+    }
+  ],
+  "external_evidence_not_claimed": [
+    "physical GPU compilation/execution",
+    "whole repository CI success",
+    "live pool acceptance",
+    "complete THESEUS/OVID deployment"
+  ],
+  "not_claimed": [
+    "ASIC or competitor superiority",
+    "physical QPU execution",
+    "physical core multiplication",
+    "10 EH/s",
+    "unmeasured speed gains"
+  ]
+}

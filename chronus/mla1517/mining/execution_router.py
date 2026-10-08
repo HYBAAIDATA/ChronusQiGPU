@@ -39,6 +39,8 @@ Salamander governor is created here.
 
 from __future__ import annotations
 
+import hashlib
+import importlib.util
 import time
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
@@ -361,6 +363,42 @@ class ExecutionRouter:
 
     # -- execution ----------------------------------------------------------
 
+    def _implementation_identity(self, decision: RouteDecision) -> tuple:
+        """(module, digest, execution_mode, substrate) for the executing code.
+
+        The implementation bound to a record is the hasher class that ran the
+        window: its defining module and the SHA-256 of that module's source.
+        For a REFUSED execution (executed_route is None) no implementation ran,
+        so all four are None -- there is nothing to bind.
+        """
+        if decision.executed_route is None:
+            return None, None, None, None
+        module_name = type(self._hasher).__module__
+        digest = None
+        try:
+            spec = importlib.util.find_spec(module_name)
+            if spec and spec.origin and spec.origin not in ("built-in", "frozen"):
+                with open(spec.origin, "rb") as fh:
+                    digest = hashlib.sha256(fh.read()).hexdigest()
+        except Exception:
+            digest = None
+        if decision.executed_route in (
+            ExecutionRoute.opencl_m32,
+            ExecutionRoute.opencl_gold,
+            ExecutionRoute.opencl_range,
+        ):
+            execution_mode = "device_kernel"
+        else:
+            execution_mode = "host_sha256d"
+        backend = (decision.device_backend or "cpu_reference").split(":", 1)[0]
+        substrate = {
+            "cpu_reference": "host_cpu",
+            "remote_opencl": "remote_opencl_device",
+            "asic": "asic",
+            "super_asic": "asic",
+        }.get(backend, "opencl_device" if backend.startswith("opencl") else "host_cpu")
+        return module_name, digest, execution_mode, substrate
+
     def _refused_record(
         self,
         plan: SearchPlan,
@@ -414,9 +452,15 @@ class ExecutionRouter:
             completed_work_items=completed_items,
             requested_nonce_order=self._nonce_order(plan),
             executed_nonce_order=None,
+            planned_nonce_order=plan.nonce_order,
+            nonce_order_fallback_reason=None,
             planned_lane_order=plan.lane_order,
             planned_window_start=plan.base_step,
             chunk_count=0,
+            implementation_module=None,
+            implementation_digest=None,
+            execution_mode=None,
+            substrate=None,
         )
 
     def execute_plan(
@@ -533,6 +577,13 @@ class ExecutionRouter:
         # With Hendrix the chunks tile the permutation positions [0, window)
         # offset by base_step; each chunk visits base + nonce_at(position).
         cap = decision.launch_cap or max(1, int(getattr(self._hasher, "grind_batch", 1) or 1))
+        if decision.executed_route is ExecutionRoute.cpu_reference:
+            # is_still_fresh is only re-evaluated between chunks: a single
+            # window-sized host chunk would hash stale work to completion
+            # before the invalidation could fire. Bound the host chunk so a
+            # stale window abandons at most 65536 hashes of work — the same
+            # bound the resident positional batch enforces.
+            cap = min(cap, 65536)
         chunks = partition_window(plan.base_step, plan.window, cap)
         # Coverage is proved, not assumed.
         assert chunks_cover_exactly(chunks, plan.base_step, plan.window)
@@ -663,11 +714,23 @@ class ExecutionRouter:
                 None,
             )
 
+        executed_order = {
+            ExecutionRoute.opencl_range: NONCE_ORDER_SEQUENTIAL,
+            ExecutionRoute.opencl_gold: NONCE_ORDER_GOLDEN,
+        }.get(decision.executed_route, requested_order)
+        if (
+            requested_order == NONCE_ORDER_HENDRIX
+            and decision.executed_route is ExecutionRoute.opencl_m32
+            and not getattr(self._hasher, "hendrix_on_device", False)
+        ):
+            executed_order = NONCE_ORDER_M32
+        order_fell_back = executed_order != requested_order
+
         if invalidated_midway:
             state = CompletionState.INVALIDATED
         elif winner_nonce is not None:
             state = CompletionState.EARLY_WINNER
-        elif decision.fell_back:
+        elif decision.fell_back or order_fell_back:
             state = CompletionState.FALLBACK_COMPLETE
         else:
             state = CompletionState.COMPLETE
@@ -802,6 +865,25 @@ class ExecutionRouter:
             and not getattr(self._hasher, "hendrix_on_device", False)
         ):
             executed_order = NONCE_ORDER_M32
+        # The nonce traversal order IS the algorithm: any executed-order
+        # deviation from the requested order is a named fallback on the
+        # record, never a silent substitution. Refused/invalidated work
+        # reports executed_nonce_order=None and carries no order reason.
+        order_fallback_reason: Optional[str] = None
+        if (
+            executed_order != requested_order
+            and state not in (CompletionState.INVALIDATED, CompletionState.REFUSED)
+        ):
+            if fell_back and decision.fallback_reason is not None:
+                order_fallback_reason = decision.fallback_reason.value
+            elif (
+                requested_order == NONCE_ORDER_HENDRIX
+                and decision.executed_route is ExecutionRoute.opencl_m32
+            ):
+                order_fallback_reason = "hendrix_kernel_unavailable_on_device"
+            else:
+                order_fallback_reason = "nonce_order_substituted_by_executed_route"
+        impl_module, impl_digest, exec_mode, substrate = self._implementation_identity(decision)
         record = ExecutionRecord(
             plan_id=plan.plan_id if plan_source is PlanSource.AGENTIC_PRECOMPUTED else None,
             job_fingerprint=plan.job_fingerprint,
@@ -850,10 +932,27 @@ class ExecutionRouter:
                 if state in (CompletionState.INVALIDATED, CompletionState.REFUSED)
                 else executed_order
             ),
+            planned_nonce_order=plan.nonce_order,
+            nonce_order_fallback_reason=order_fallback_reason,
             planned_lane_order=plan.lane_order,
             planned_window_start=plan.base_step,
             chunk_count=chunk_count,
             device_error=device_error,
+            implementation_module=impl_module,
+            implementation_digest=impl_digest,
+            execution_mode=exec_mode,
+            substrate=substrate,
+            requested_algorithm=requested_order,
+            planned_algorithm=plan.nonce_order,
+            executed_algorithm=(
+                None
+                if state in (CompletionState.INVALIDATED, CompletionState.REFUSED)
+                else executed_order
+            ),
+            fallback_used=(
+                decision.requested_route is not decision.executed_route
+                or order_fallback_reason is not None
+            ),
         )
         # hit_sample is telemetry on the returned record, kept out of the
         # evidence fields: it is NOT window-completion evidence.

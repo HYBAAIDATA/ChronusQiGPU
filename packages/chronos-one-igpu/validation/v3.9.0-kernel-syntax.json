@@ -1,0 +1,8 @@
+{
+  "scope": "C++ syntax only, not OpenCL device compilation/execution",
+  "source_sha256": "d149b33bb44145b951d4e22ecfe73539ac20fb04b3be5ced2020d0c51fddae9f",
+  "compiler": "g++ (GCC) 11.5.0 20240719 (Red Hat 11.5.0-5)",
+  "exit_code": 0,
+  "status": "PASS",
+  "stderr": ""
+}

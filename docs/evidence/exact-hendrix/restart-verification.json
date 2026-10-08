@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "fresh_process": true,
+  "plan_digest": "659951eba23ea78a9319e779e578c3e27e3fd6b09abe6043b28f9f2466902705",
+  "geometry_digest": "82b57edd7287784fa3510d459b5492d3ea2049a950c40464993facd8a72f28e1",
+  "receipt_object_id": "531c52122c20fefa6cc53cac27942b227e3d65e12635f06851e430aec6927606",
+  "custody_scope": "local PRIME-DB, not THESEUS or pool acknowledgement"
+}
