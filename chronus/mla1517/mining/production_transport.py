@@ -294,14 +294,29 @@ class ProductionStratumClient(StratumClient):
         return int(self._wire_writes_by_method.get(str(method), 0))
 
     async def submit(self, params: list[Any]) -> Any:
-        result = await super().submit(params)
+        if len(params) < 2:
+            raise ValueError("mining.submit parameters have no job id")
+        wire_before = self.wire_writes_for("mining.submit")
+        self.runtime_state.submission_started(str(params[1]))
+        self._publish_status()
+        try:
+            result = await self.request("mining.submit", params)
+        except Exception as exc:
+            wrote = self.wire_writes_for("mining.submit") > wire_before
+            if wrote:
+                self.runtime_state.submission_unknown(str(exc))
+            else:
+                self.runtime_state.submission_not_written(str(exc))
+            self._publish_status()
+            raise
+        self.runtime_state.submission_finished(result)
         started = self.runtime_state.last_submit_at
         finished = self.runtime_state.last_response_at
         if started is not None and finished is not None and finished >= started:
             self._submit_rtt_ms.append((finished - started) * 1000.0)
-            # Publish once more so this same accepted/rejected share carries its
-            # measured RTT rather than waiting for the next protocol event.
-            self._publish_status()
+        # Publish once more so the same verdict carries measured RTT and exact
+        # post-write counters.
+        self._publish_status()
         return result
 
     async def close(self) -> None:
