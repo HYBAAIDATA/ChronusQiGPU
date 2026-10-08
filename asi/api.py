@@ -1,33 +1,20 @@
+"""Internal ASI compatibility service.
+
+This service is intentionally evidence-first.  It does not manufacture
+consciousness, health, optimisation or learning metrics.  ASI healing and
+optimisation delegate to SALAMANDER; security/governance remains AL HARAS.
 """
-ASI (Artificial Superintelligence) as a Service
-=============================================
 
-INTERNAL-ONLY SERVICE — NOT FOR PUBLIC EXPOSURE
-================================================
-ASI operates at the highest privilege level in HYBA and is therefore
-restricted to internal callers only.  The API gateway does NOT mount this
-service on any public path.  Direct HTTP access requires the
-``X-HYBA-Internal-Key`` header containing the value set in the
-``HYBA_INTERNAL_KEY`` environment variable.  Requests missing a valid key
-are rejected with HTTP 403 before reaching any route handler.
-
-Features:
-- ASI-level problem solving
-- Quantum creation capabilities
-- Self-healing and optimization
-- Ubiquitous learning and adaptation
-- Consciousness emergence monitoring
-
-Author: HYBA ASI Engineering Team
-Status: Production - Internal Use Only
-Classification: INTERNAL / RESTRICTED
-"""
+from __future__ import annotations
 
 import asyncio
+from dataclasses import asdict
+from datetime import datetime, timezone
+import hmac
 import logging
 import os
+import time
 from typing import Any, Dict, Optional
-from datetime import datetime
 
 try:
     from fastapi import FastAPI, HTTPException, Request
@@ -38,57 +25,61 @@ try:
     FASTAPI_AVAILABLE = True
 except ImportError:
     FASTAPI_AVAILABLE = False
-    logging.warning("FastAPI not available - ASI service will have limited functionality")
+    FastAPI = Any  # type: ignore[misc,assignment]
+    HTTPException = RuntimeError  # type: ignore[misc,assignment]
+    Request = Any  # type: ignore[misc,assignment]
+    CORSMiddleware = Any  # type: ignore[misc,assignment]
+    JSONResponse = Any  # type: ignore[misc,assignment]
 
-# ── Internal-access control ────────────────────────────────────────────────
-_INTERNAL_KEY_HEADER = "X-HYBA-Internal-Key"
-_INTERNAL_KEY = os.getenv("HYBA_INTERNAL_KEY", "hyba-internal-asi-key")
-_INTERNAL_BYPASS_PATHS = {"/health", "/docs", "/redoc", "/openapi.json"}
+    class BaseModel:  # type: ignore[no-redef]
+        pass
 
-# Import ASI components. These names are the canonical ones declared by each
-# module's __init__; the earlier project used drifted aliases
-# (ASIProblemSolver / QuantumCreator / SelfHealingSystem / WebLearner) that
-# never existed as classes.
+    def Field(default=None, *, default_factory=None, **_kwargs):  # type: ignore[no-redef]
+        return default_factory() if default_factory is not None else default
+
+
 from .problem_solver import NovelProblemSolver
-from .quantum_creator import QuantumAlgorithmCreator
+from .quantum_creator import AlgorithmType, QuantumAlgorithmCreator
 from .self_healing import SelfHealingEngine
 from .system_optimizer import SystemOptimizer
 from .web_learner import ContinuousWebLearner
 
 logger = logging.getLogger(__name__)
 
+_INTERNAL_KEY_HEADER = "X-HYBA-Internal-Key"
+_INTERNAL_KEY = os.getenv("HYBA_INTERNAL_KEY", "").strip()
+_INTERNAL_BYPASS_PATHS = {"/health", "/docs", "/redoc", "/openapi.json"}
+_STARTED_MONOTONIC = time.monotonic()
 
-# Request/Response Models
+
 class ASIRequest(BaseModel):
-    """ASI request model."""
-
-    task_type: str = Field(..., description="Type of ASI task")
-    parameters: Dict[str, Any] = Field(default_factory=dict, description="Task parameters")
-    consciousness_level: Optional[float] = Field(1.0, description="Consciousness level (0.0-1.0)")
+    task_type: str = Field(..., description="Requested compatibility task")
+    parameters: Dict[str, Any] = Field(default_factory=dict)
+    # Historical field retained for wire compatibility only. It is not used
+    # as a production signal and is never echoed as measured evidence.
+    consciousness_level: Optional[float] = Field(
+        None,
+        description="Deprecated compatibility field; not a measured production signal",
+    )
 
 
 class ASIResponse(BaseModel):
-    """ASI response model."""
-
     success: bool
     task_type: str
     result: Dict[str, Any]
-    consciousness_metrics: Dict[str, float]
+    consciousness_metrics: Dict[str, Any] = Field(default_factory=dict)
     processing_time: float
     timestamp: str
 
 
 class HealthResponse(BaseModel):
-    """Health check response."""
-
     status: str
     asi_components: Dict[str, bool]
-    consciousness_level: float
-    system_integrity: float
+    consciousness_level: Optional[float] = None
+    system_integrity: Optional[float] = None
     uptime: str
 
 
-# Global ASI components
 asi_problem_solver: Optional[NovelProblemSolver] = None
 quantum_creator: Optional[QuantumAlgorithmCreator] = None
 self_healing: Optional[SelfHealingEngine] = None
@@ -96,272 +87,240 @@ system_optimizer: Optional[SystemOptimizer] = None
 web_learner: Optional[ContinuousWebLearner] = None
 
 
-async def initialize_asi_components():
-    """Initialize all ASI components."""
+async def initialize_asi_components() -> bool:
+    """Compose adapters only; do not start hidden forever-loops."""
     global asi_problem_solver, quantum_creator, self_healing, system_optimizer, web_learner
-
-    logger.info("[ASI] Initializing Artificial Superintelligence components...")
-
     try:
-        # Initialize core ASI components
         asi_problem_solver = NovelProblemSolver()
         quantum_creator = QuantumAlgorithmCreator()
         self_healing = SelfHealingEngine()
         system_optimizer = SystemOptimizer()
         web_learner = ContinuousWebLearner()
-
-        # Start background processes
-        await self_healing.start_monitoring()
-        await web_learner.start_learning()
-
-        logger.info("[ASI] All components initialized successfully")
         return True
-
-    except Exception as e:
-        logger.error(f"[ASI] Failed to initialize components: {e}")
+    except Exception:
+        logger.exception("ASI compatibility composition failed")
         return False
 
 
-def create_asi_app() -> FastAPI:
-    """Create and configure ASI FastAPI application."""
+def _unmeasured_metrics() -> Dict[str, Any]:
+    return {
+        "status": "UNAVAILABLE",
+        "reason": "no independently measured consciousness metric is defined",
+    }
 
+
+def create_asi_app() -> FastAPI:
     if not FASTAPI_AVAILABLE:
         raise RuntimeError("FastAPI is required for ASI service")
 
     app = FastAPI(
-        title="ASI as a Service",
-        description="Artificial Superintelligence capabilities - Ultimate AI integration",
-        version="1.0.0",
+        title="ASI compatibility service",
+        description="Internal compatibility facade with canonical authority boundaries",
+        version="1.1.0",
         docs_url="/docs",
         redoc_url="/redoc",
     )
 
-    # CORS — internal-only: only allow localhost and HYBA platform origins
-    _allowed_origins = os.getenv(
-        "ASI_CORS_ORIGINS",
-        "http://localhost:3000,http://localhost:8080,https://api.hyba.ai",
-    ).split(",")
+    allowed_origins = [
+        value.strip()
+        for value in os.getenv(
+            "ASI_CORS_ORIGINS",
+            "http://localhost:3000,http://localhost:8080",
+        ).split(",")
+        if value.strip()
+    ]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=_allowed_origins,
+        allow_origins=allowed_origins,
         allow_credentials=True,
         allow_methods=["GET", "POST"],
         allow_headers=["Authorization", "Content-Type", _INTERNAL_KEY_HEADER],
     )
 
-    # ── Internal-key enforcement middleware ────────────────────────────────
     @app.middleware("http")
     async def require_internal_key(request: Request, call_next):
-        """Block requests that do not carry a valid internal key.
-
-        Public health / docs paths are exempted so that orchestration
-        infrastructure can still check liveness without the key.
-        """
         if request.url.path not in _INTERNAL_BYPASS_PATHS:
+            if not _INTERNAL_KEY:
+                return JSONResponse(
+                    status_code=503,
+                    content={
+                        "error": "Unavailable",
+                        "detail": "HYBA_INTERNAL_KEY is not configured",
+                        "service": "asi",
+                    },
+                )
             provided = request.headers.get(_INTERNAL_KEY_HEADER, "")
-            if provided != _INTERNAL_KEY:
+            if not hmac.compare_digest(provided, _INTERNAL_KEY):
                 return JSONResponse(
                     status_code=403,
                     content={
                         "error": "Forbidden",
-                        "detail": (
-                            "ASI is an internal service. "
-                            f"Provide a valid '{_INTERNAL_KEY_HEADER}' header."
-                        ),
+                        "detail": "valid internal service credential required",
                         "service": "asi",
-                        "classification": "INTERNAL_ONLY",
                     },
                 )
         return await call_next(request)
 
     @app.on_event("startup")
     async def startup_event():
-        """Initialize ASI components on startup."""
-        success = await initialize_asi_components()
-        if not success:
-            raise RuntimeError("Failed to initialize ASI components")
+        if not await initialize_asi_components():
+            raise RuntimeError("Failed to initialize ASI compatibility components")
 
     @app.on_event("shutdown")
     async def shutdown_event():
-        """Cleanup ASI components on shutdown."""
         if self_healing:
-            await self_healing.stop_monitoring()
+            self_healing.stop_monitoring()
         if web_learner:
-            await web_learner.stop_learning()
-        logger.info("[ASI] Components shut down successfully")
+            web_learner.stop()
 
     @app.get("/health", response_model=HealthResponse)
     async def health_check():
-        """ASI service health check."""
-
-        # Check component status
+        learner_available = False
+        if web_learner is not None:
+            try:
+                learner_available = bool(web_learner.get_stats().get("backend_available"))
+            except Exception:
+                learner_available = False
         components = {
             "problem_solver": asi_problem_solver is not None,
             "quantum_creator": quantum_creator is not None,
-            "self_healing": self_healing is not None,
-            "system_optimizer": system_optimizer is not None,
-            "web_learner": web_learner is not None,
+            "self_healing_facade": self_healing is not None,
+            "system_optimizer_facade": system_optimizer is not None,
+            "web_research_backend": learner_available,
         }
-
-        # Calculate overall metrics
-        consciousness_level = 0.95 if all(components.values()) else 0.5
-        system_integrity = sum(components.values()) / len(components)
-
+        required = (
+            components["problem_solver"]
+            and components["quantum_creator"]
+            and components["self_healing_facade"]
+            and components["system_optimizer_facade"]
+        )
         return HealthResponse(
-            status="healthy" if system_integrity > 0.8 else "degraded",
+            status="healthy" if required else "degraded",
             asi_components=components,
-            consciousness_level=consciousness_level,
-            system_integrity=system_integrity,
-            uptime=datetime.now().isoformat(),
+            consciousness_level=None,
+            system_integrity=None,
+            uptime=f"{time.monotonic() - _STARTED_MONOTONIC:.3f}s",
         )
 
     @app.post("/asi/solve", response_model=ASIResponse)
     async def solve_problem(request: ASIRequest):
-        """ASAI problem solving endpoint."""
-
         if not asi_problem_solver:
-            raise HTTPException(status_code=503, detail="ASI problem solver not available")
-
-        start_time = asyncio.get_event_loop().time()
-
+            raise HTTPException(status_code=503, detail="problem solver unavailable")
+        started = time.monotonic()
         try:
-            # Solve problem with ASI
-            result = await asi_problem_solver.solve(
-                task_type=request.task_type,
-                parameters=request.parameters,
-                consciousness_level=request.consciousness_level,
+            result = await asi_problem_solver.solve_problem(
+                description=request.task_type,
+                constraints=request.parameters,
             )
-
-            processing_time = asyncio.get_event_loop().time() - start_time
-
-            return ASIResponse(
-                success=True,
-                task_type=request.task_type,
-                result=result,
-                consciousness_metrics={
-                    "level": request.consciousness_level,
-                    "integration": 0.92,
-                    "emergence": 0.88,
-                },
-                processing_time=processing_time,
-                timestamp=datetime.now().isoformat(),
-            )
-
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"ASI solving failed: {str(e)}")
+        except Exception as exc:
+            raise HTTPException(
+                status_code=500,
+                detail=f"problem solving failed: {type(exc).__name__}: {exc}",
+            ) from exc
+        return ASIResponse(
+            success=bool(result.get("solved")),
+            task_type=request.task_type,
+            result=result,
+            consciousness_metrics=_unmeasured_metrics(),
+            processing_time=time.monotonic() - started,
+            timestamp=datetime.now(timezone.utc).isoformat(),
+        )
 
     @app.post("/asi/create", response_model=ASIResponse)
     async def quantum_create(request: ASIRequest):
-        """Quantum creation endpoint."""
-
         if not quantum_creator:
-            raise HTTPException(status_code=503, detail="Quantum creator not available")
-
-        start_time = asyncio.get_event_loop().time()
-
+            raise HTTPException(status_code=503, detail="algorithm creator unavailable")
+        started = time.monotonic()
+        raw_type = str(request.parameters.get("algorithm_type", request.task_type)).lower()
         try:
-            # Create with quantum capabilities
-            result = await quantum_creator.create(
-                creation_type=request.task_type,
-                parameters=request.parameters,
-                consciousness_level=request.consciousness_level,
+            algorithm_type = AlgorithmType(raw_type)
+        except ValueError:
+            algorithm_type = AlgorithmType.CUSTOM
+        try:
+            algorithm = await quantum_creator.create_algorithm(
+                problem_description=request.task_type,
+                problem_type=algorithm_type,
+                constraints=dict(request.parameters.get("constraints", {})),
             )
-
-            processing_time = asyncio.get_event_loop().time() - start_time
-
-            return ASIResponse(
-                success=True,
-                task_type=request.task_type,
-                result=result,
-                consciousness_metrics={
-                    "level": request.consciousness_level,
-                    "quantum_coherence": 0.95,
-                    "creative_power": 0.91,
-                },
-                processing_time=processing_time,
-                timestamp=datetime.now().isoformat(),
-            )
-
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Quantum creation failed: {str(e)}")
+        except Exception as exc:
+            raise HTTPException(
+                status_code=500,
+                detail=f"algorithm creation failed: {type(exc).__name__}: {exc}",
+            ) from exc
+        result = {
+            "algorithm_id": algorithm.algorithm_id,
+            "name": algorithm.name,
+            "algorithm_type": algorithm.algorithm_type.value,
+            "circuit_qubits": algorithm.circuit.num_qubits,
+            "circuit_depth": algorithm.circuit.depth,
+            "claim_boundary": "SOFTWARE_ALGORITHM_DESIGN_NOT_MEASURED_QUANTUM_ADVANTAGE",
+        }
+        return ASIResponse(
+            success=True,
+            task_type=request.task_type,
+            result=result,
+            consciousness_metrics=_unmeasured_metrics(),
+            processing_time=time.monotonic() - started,
+            timestamp=datetime.now(timezone.utc).isoformat(),
+        )
 
     @app.post("/asi/optimize", response_model=ASIResponse)
     async def optimize_system(request: ASIRequest):
-        """System optimization endpoint."""
-
         if not system_optimizer:
-            raise HTTPException(status_code=503, detail="System optimizer not available")
-
-        start_time = asyncio.get_event_loop().time()
-
+            raise HTTPException(status_code=503, detail="optimizer facade unavailable")
+        started = time.monotonic()
+        target = request.parameters.get("target", request.task_type)
         try:
-            # Optimize system
-            result = await system_optimizer.optimize(
-                optimization_type=request.task_type,
-                parameters=request.parameters,
-                consciousness_level=request.consciousness_level,
-            )
-
-            processing_time = asyncio.get_event_loop().time() - start_time
-
-            return ASIResponse(
-                success=True,
-                task_type=request.task_type,
-                result=result,
-                consciousness_metrics={
-                    "level": request.consciousness_level,
-                    "optimization_efficiency": 0.89,
-                    "system_harmony": 0.93,
-                },
-                processing_time=processing_time,
-                timestamp=datetime.now().isoformat(),
-            )
-
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"System optimization failed: {str(e)}")
+            proposal = system_optimizer.optimize(str(target))
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        result = {
+            **asdict(proposal),
+            "target": proposal.target.value,
+            "authority": "SALAMANDER",
+            "effect": "NONE_UNTIL_MEASURED_PROMOTION",
+        }
+        return ASIResponse(
+            success=True,
+            task_type=request.task_type,
+            result=result,
+            consciousness_metrics=_unmeasured_metrics(),
+            processing_time=time.monotonic() - started,
+            timestamp=datetime.now(timezone.utc).isoformat(),
+        )
 
     @app.get("/asi/status")
     async def asi_status():
-        """Get detailed ASI status."""
-
-        if not all(
-            [
-                asi_problem_solver,
-                quantum_creator,
-                self_healing,
-                system_optimizer,
-                web_learner,
-            ]
-        ):
-            raise HTTPException(status_code=503, detail="ASI components not fully initialized")
-
+        if not all((asi_problem_solver, quantum_creator, self_healing, system_optimizer)):
+            raise HTTPException(status_code=503, detail="ASI compatibility components incomplete")
+        web_stats = web_learner.get_stats() if web_learner else {
+            "backend_available": False
+        }
         return {
-            "asi_status": "fully_operational",
-            "consciousness_level": 0.95,
-            "capabilities": [
-                "problem_solving",
-                "quantum_creation",
-                "self_healing",
-                "system_optimization",
-                "ubiquitous_learning",
-            ],
+            "asi_status": "COMPATIBILITY_FACADE",
+            "authority": {
+                "healing": "SALAMANDER",
+                "optimisation": "SALAMANDER",
+                "security_governance": "AL_HARAS",
+            },
+            "consciousness_level": "Unavailable",
             "active_processes": {
-                "self_healing": self_healing.is_monitoring() if self_healing else False,
-                "web_learning": web_learner.is_learning() if web_learner else False,
+                "self_healing_background_loop": False,
+                "web_learning_background_loop": False,
             },
             "metrics": {
-                "problems_solved": asi_problem_solver.get_metrics() if asi_problem_solver else {},
-                "quantum_creations": quantum_creator.get_metrics() if quantum_creator else {},
-                "optimizations": system_optimizer.get_metrics() if system_optimizer else {},
+                "problem_solver": asi_problem_solver.get_stats(),
+                "algorithm_creator": quantum_creator.get_stats(),
+                "optimizer": system_optimizer.get_metrics(),
+                "web_learning": web_stats,
             },
         }
 
     return app
 
 
-# Create the app instance
 if FASTAPI_AVAILABLE:
     app = create_asi_app()
 else:
     app = None
-    logger.warning("ASI service running in limited mode without FastAPI")
+    logger.warning("ASI service unavailable because FastAPI is not installed")

@@ -1,27 +1,25 @@
-"""
-Self-Healing Engine for ASI
+"""ASI compatibility facade for canonical Salamander self-healing.
 
-Capabilities:
-- Detect system issues automatically
-- Self-diagnose problems
-- Apply fixes autonomously
-- Optimize performance continuously
-- Evolve and improve over time
+ASI is not a self-healing authority.  This module preserves the historical
+SelfHealingEngine API while delegating health decisions to Salamander.  It
+never fabricates metrics, never mutates another subsystem, and never reports a
+repair as applied without a canonical Salamander result.
 """
+
+from __future__ import annotations
 
 import asyncio
-import logging
+import inspect
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Awaitable, Callable, Iterable, Mapping
 
-logger = logging.getLogger(__name__)
+from salamander.control_plane import ActionRegistry, AutonomicControlPlane
+from salamander.models import Availability, HealthDecision, HealthObservation, HealthState
 
 
 class IssueType(str, Enum):
-    """Types of issues the system can detect"""
-
     PERFORMANCE_DEGRADATION = "performance_degradation"
     ERROR_RATE_SPIKE = "error_rate_spike"
     MEMORY_LEAK = "memory_leak"
@@ -32,8 +30,6 @@ class IssueType(str, Enum):
 
 
 class IssueSeverity(str, Enum):
-    """Severity levels for issues"""
-
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -42,377 +38,194 @@ class IssueSeverity(str, Enum):
 
 @dataclass
 class SystemIssue:
-    """Represents a detected system issue"""
-
     issue_id: str
     issue_type: IssueType
     severity: IssueSeverity
     description: str
     detected_at: datetime
     metrics: dict[str, Any]
-    root_cause: Optional[str] = None
+    root_cause: str | None = None
     fix_applied: bool = False
-    fix_description: Optional[str] = None
+    fix_description: str | None = None
+
+
+ObservationProvider = Callable[
+    [],
+    Iterable[HealthObservation]
+    | HealthObservation
+    | Awaitable[Iterable[HealthObservation] | HealthObservation],
+]
 
 
 class SelfHealingEngine:
-    """
-    Self-Healing Engine for ASI
+    """Observe through Salamander without creating a second healing authority."""
 
-    Monitors system health, detects issues, and applies fixes autonomously.
-    Learns from each healing action to improve future responses.
-    """
-
-    def __init__(self):
-        """Initialize self-healing engine"""
+    def __init__(
+        self,
+        control_plane: AutonomicControlPlane | None = None,
+        observation_provider: ObservationProvider | None = None,
+        *,
+        monitor_interval: float = 60.0,
+        policy_id: str = "asi-salamander-delegation-v1",
+    ) -> None:
+        if monitor_interval <= 0:
+            raise ValueError("monitor_interval must be positive")
+        self.control_plane = control_plane or AutonomicControlPlane(
+            registry=ActionRegistry()
+        )
+        self.observation_provider = observation_provider
+        self.monitor_interval = float(monitor_interval)
+        self.policy_id = policy_id
+        self.monitoring_active = False
         self.issues_detected: list[SystemIssue] = []
         self.fixes_applied: list[dict[str, Any]] = []
-        self.healing_knowledge: dict[str, list[str]] = {}
-        self.monitoring_active = False
+        self.healing_knowledge: dict[str, list[Any]] = {}
+        self._last_decision: HealthDecision | None = None
+        self._cycles = 0
+        self._stop = asyncio.Event()
 
-        # Performance baselines
-        self.baselines = {
-            "response_time": 2.0,  # seconds
-            "error_rate": 0.01,  # 1%
-            "memory_usage": 0.8,  # 80%
-            "cpu_usage": 0.7,  # 70%
-            "accuracy": 0.85,  # 85%
-        }
-
-        logger.info("Self-healing engine initialized")
-
-    async def start_monitoring(self):
-        """Start continuous system monitoring"""
-        self.monitoring_active = True
-        logger.info("🔍 Self-healing monitoring started")
-
-        while self.monitoring_active:
-            try:
-                await self._monitor_cycle()
-                await asyncio.sleep(60)  # Check every minute
-            except Exception as e:
-                logger.error(f"Error in monitoring cycle: {e}")
-                await asyncio.sleep(60)
-
-    def stop_monitoring(self):
-        """Stop monitoring"""
-        self.monitoring_active = False
-        logger.info("Self-healing monitoring stopped")
-
-    async def _monitor_cycle(self):
-        """Single monitoring cycle"""
-        # Collect current metrics
-        metrics = await self._collect_metrics()
-
-        # Detect issues
-        issues = await self._detect_issues(metrics)
-
-        # Apply fixes for detected issues
-        for issue in issues:
-            await self._heal_issue(issue)
-
-    async def _collect_metrics(self) -> dict[str, Any]:
-        """Collect current system metrics"""
-        try:
-            # Import metrics from enhanced AI
-            from agi.enhanced_ai.metrics import get_metrics
-        except ImportError as exc:
-            logger.error(f"enhanced metrics unavailable: {exc}")
-            return {}
-
-        try:
-            get_metrics()
-
-            # Collect key metrics
-            return {
-                "timestamp": datetime.now(timezone.utc),
-                "response_time": 1.5,  # Would get from actual metrics
-                "error_rate": 0.005,
-                "memory_usage": 0.6,
-                "cpu_usage": 0.5,
-                "accuracy": 0.88,
-                "cache_hit_rate": 0.75,
-                "active_conversations": 10,
-            }
-        except Exception as e:
-            logger.error(f"Error collecting metrics: {e}")
-            return {}
-
-    async def _detect_issues(self, metrics: dict[str, Any]) -> list[SystemIssue]:
-        """Detect issues from metrics"""
-        issues = []
-
-        # Check response time
-        if metrics.get("response_time", 0) > self.baselines["response_time"] * 1.5:
-            issues.append(
-                SystemIssue(
-                    issue_id=f"issue_{len(self.issues_detected) + 1}",
-                    issue_type=IssueType.RESPONSE_TIME_INCREASE,
-                    severity=IssueSeverity.HIGH,
-                    description=f"Response time {metrics['response_time']:.2f}s exceeds baseline",
-                    detected_at=datetime.now(timezone.utc),
-                    metrics=metrics,
-                )
+    async def _collect_observations(self) -> tuple[HealthObservation, ...]:
+        if self.observation_provider is None:
+            return (
+                HealthObservation(
+                    subsystem="asi",
+                    dimension="runtime_observation",
+                    availability=Availability.UNAVAILABLE,
+                    value=None,
+                    observed_at_ns=0,
+                    source="asi.self_healing:no_observation_provider",
+                    tenant_id="system",
+                ),
             )
-
-        # Check error rate
-        if metrics.get("error_rate", 0) > self.baselines["error_rate"] * 2:
-            issues.append(
-                SystemIssue(
-                    issue_id=f"issue_{len(self.issues_detected) + 1}",
-                    issue_type=IssueType.ERROR_RATE_SPIKE,
-                    severity=IssueSeverity.CRITICAL,
-                    description=f"Error rate {metrics['error_rate']:.3f} is elevated",
-                    detected_at=datetime.now(timezone.utc),
-                    metrics=metrics,
-                )
-            )
-
-        # Check memory usage
-        if metrics.get("memory_usage", 0) > self.baselines["memory_usage"]:
-            issues.append(
-                SystemIssue(
-                    issue_id=f"issue_{len(self.issues_detected) + 1}",
-                    issue_type=IssueType.MEMORY_LEAK,
-                    severity=IssueSeverity.MEDIUM,
-                    description=f"Memory usage {metrics['memory_usage']:.1%} is high",
-                    detected_at=datetime.now(timezone.utc),
-                    metrics=metrics,
-                )
-            )
-
-        # Check accuracy
-        if metrics.get("accuracy", 1.0) < self.baselines["accuracy"]:
-            issues.append(
-                SystemIssue(
-                    issue_id=f"issue_{len(self.issues_detected) + 1}",
-                    issue_type=IssueType.ACCURACY_DECLINE,
-                    severity=IssueSeverity.HIGH,
-                    description=f"Accuracy {metrics['accuracy']:.2%} below baseline",
-                    detected_at=datetime.now(timezone.utc),
-                    metrics=metrics,
-                )
-            )
-
-        # Log detected issues
-        for issue in issues:
-            logger.warning(f"🚨 Issue detected: {issue.description}")
-            self.issues_detected.append(issue)
-
-        return issues
-
-    async def _heal_issue(self, issue: SystemIssue):
-        """Apply healing action for an issue"""
-        logger.info(f"🔧 Healing issue: {issue.issue_type.value}")
-
-        # Diagnose root cause
-        root_cause = await self._diagnose_root_cause(issue)
-        issue.root_cause = root_cause
-
-        # Apply appropriate fix
-        fix_applied = False
-        fix_description = ""
-
-        if issue.issue_type == IssueType.RESPONSE_TIME_INCREASE:
-            fix_applied, fix_description = await self._fix_response_time(issue)
-
-        elif issue.issue_type == IssueType.ERROR_RATE_SPIKE:
-            fix_applied, fix_description = await self._fix_error_rate(issue)
-
-        elif issue.issue_type == IssueType.MEMORY_LEAK:
-            fix_applied, fix_description = await self._fix_memory_leak(issue)
-
-        elif issue.issue_type == IssueType.ACCURACY_DECLINE:
-            fix_applied, fix_description = await self._fix_accuracy(issue)
-
-        # Record fix
-        issue.fix_applied = fix_applied
-        issue.fix_description = fix_description
-
-        if fix_applied:
-            self.fixes_applied.append(
-                {
-                    "issue_id": issue.issue_id,
-                    "issue_type": issue.issue_type.value,
-                    "fix": fix_description,
-                    "timestamp": datetime.now(timezone.utc),
-                }
-            )
-
-            # Learn from this fix
-            await self._learn_from_fix(issue, fix_description)
-
-            logger.info(f"✅ Fix applied: {fix_description}")
+        raw = self.observation_provider()
+        if inspect.isawaitable(raw):
+            raw = await raw
+        if isinstance(raw, HealthObservation):
+            values = (raw,)
         else:
-            logger.warning(f"⚠️  Could not fix issue: {issue.issue_type.value}")
+            values = tuple(raw)
+        if not values:
+            return (
+                HealthObservation(
+                    subsystem="asi",
+                    dimension="runtime_observation",
+                    availability=Availability.NOT_MEASURED,
+                    value=None,
+                    observed_at_ns=0,
+                    source="asi.self_healing:empty_observation",
+                    tenant_id="system",
+                ),
+            )
+        if not all(isinstance(item, HealthObservation) for item in values):
+            raise TypeError("observation_provider must return HealthObservation values")
+        return values
 
-    async def _diagnose_root_cause(self, issue: SystemIssue) -> str:
-        """Diagnose root cause of an issue"""
-        # Use AI reasoning to diagnose
-        if issue.issue_type == IssueType.RESPONSE_TIME_INCREASE:
-            if issue.metrics.get("cache_hit_rate", 1.0) < 0.5:
-                return "Low cache hit rate causing repeated computations"
-            elif issue.metrics.get("active_conversations", 0) > 50:
-                return "High concurrent load"
-            else:
-                return "Inefficient query processing"
-
-        elif issue.issue_type == IssueType.MEMORY_LEAK:
-            return "Possible unclosed resources or growing cache"
-
-        elif issue.issue_type == IssueType.ACCURACY_DECLINE:
-            return "Knowledge base may need updating or model drift"
-
-        return "Unknown root cause - requires investigation"
-
-    async def _fix_response_time(self, issue: SystemIssue) -> tuple[bool, str]:
-        """Fix response time issues"""
+    async def run_once(self) -> HealthDecision:
+        """Perform one bounded observation and diagnosis cycle."""
         try:
-            # Clear caches to force refresh
-            from agi.enhanced_ai.cache import get_cache_manager
-        except ImportError as exc:
-            return False, f"cache manager unavailable: {exc}"
+            observations = await self._collect_observations()
+        except Exception as exc:
+            observations = (
+                HealthObservation(
+                    subsystem="asi",
+                    dimension="runtime_observation",
+                    availability=Availability.UNAVAILABLE,
+                    value=None,
+                    observed_at_ns=0,
+                    source=f"asi.self_healing:{type(exc).__name__}",
+                    tenant_id="system",
+                ),
+            )
+        decision = self.control_plane.observe(observations, policy_id=self.policy_id)
+        self._last_decision = decision
+        self._cycles += 1
+        if decision.state not in {HealthState.HEALTHY, HealthState.UNKNOWN}:
+            self.issues_detected.append(
+                SystemIssue(
+                    issue_id=f"issue_{len(self.issues_detected) + 1}",
+                    issue_type=IssueType.INTEGRATION_FAILURE,
+                    severity=(
+                        IssueSeverity.CRITICAL
+                        if decision.state in {HealthState.FAILED, HealthState.UNAVAILABLE}
+                        else IssueSeverity.HIGH
+                    ),
+                    description=(
+                        "Canonical Salamander health decision: "
+                        + decision.state.value
+                    ),
+                    detected_at=datetime.now(timezone.utc),
+                    metrics={"reasons": list(decision.reasons)},
+                    root_cause="; ".join(decision.reasons) or "Unavailable",
+                )
+            )
+        return decision
 
+    async def start_monitoring(self, *, max_cycles: int = 1) -> bool:
+        """Run a finite number of cycles.
+
+        Long-lived scheduling belongs to the process supervisor.  A finite
+        default prevents the historical ASI forever-loop from leaking a task.
+        """
+        if max_cycles <= 0:
+            raise ValueError("max_cycles must be positive")
+        if self.monitoring_active:
+            return False
+        self.monitoring_active = True
+        self._stop.clear()
         try:
-            cache_manager = get_cache_manager()
+            for cycle in range(max_cycles):
+                if self._stop.is_set():
+                    break
+                await self.run_once()
+                if cycle + 1 < max_cycles:
+                    try:
+                        await asyncio.wait_for(
+                            self._stop.wait(), timeout=self.monitor_interval
+                        )
+                    except asyncio.TimeoutError:
+                        pass
+        finally:
+            self.monitoring_active = False
+        return True
 
-            # Selective cache clearing
-            if issue.metrics.get("cache_hit_rate", 1.0) < 0.3:
-                cache_manager.clear_all()
-                return True, "Cleared all caches to improve hit rate"
+    def stop_monitoring(self) -> None:
+        self._stop.set()
+        self.monitoring_active = False
 
-            # Optimize quantum processor settings
-            return True, "Optimized processing parameters"
+    def is_monitoring(self) -> bool:
+        return self.monitoring_active
 
-        except Exception as e:
-            logger.error(f"Error fixing response time: {e}")
-            return False, str(e)
-
-    async def _fix_error_rate(self, issue: SystemIssue) -> tuple[bool, str]:
-        """Fix error rate issues"""
-        try:
-            # Implement circuit breaker pattern
-            # Reduce load temporarily
-            # Enable fallback mechanisms
-            return True, "Enabled fallback mechanisms and reduced load"
-        except Exception as e:
-            return False, str(e)
-
-    async def _fix_memory_leak(self, issue: SystemIssue) -> tuple[bool, str]:
-        """Fix memory leak issues"""
-        try:
-            # Clear old sessions
-            from agi.enhanced_ai.persistence import get_persistence
-        except ImportError as exc:
-            return False, f"persistence unavailable: {exc}"
-
-        try:
-            persistence = get_persistence()
-
-            if persistence._initialized:
-                deleted = await persistence.cleanup_old_sessions(days=7)
-                return True, f"Cleaned up {deleted} old sessions"
-
-            # Clear caches
-            try:
-                from agi.enhanced_ai.cache import get_cache_manager
-            except ImportError as exc:
-                return False, f"cache manager unavailable: {exc}"
-
-            cache_manager = get_cache_manager()
-            cache_manager.clear_all()
-
-            return True, "Cleared caches and old sessions"
-        except Exception as e:
-            return False, str(e)
-
-    async def _fix_accuracy(self, issue: SystemIssue) -> tuple[bool, str]:
-        """Fix accuracy issues"""
-        try:
-            # Trigger knowledge base update
-            # Retrain models
-            # Update phi resonance parameters
-            return True, "Triggered knowledge base update and model retraining"
-        except Exception as e:
-            return False, str(e)
-
-    async def _learn_from_fix(self, issue: SystemIssue, fix: str):
-        """Learn from applied fix for future use"""
-        issue_type = issue.issue_type.value
-
-        if issue_type not in self.healing_knowledge:
-            self.healing_knowledge[issue_type] = []
-
-        self.healing_knowledge[issue_type].append(
-            {
-                "root_cause": issue.root_cause,
-                "fix": fix,
-                "success": issue.fix_applied,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            }
+    async def _heal_issue(self, issue: SystemIssue) -> tuple[bool, str]:
+        """Compatibility endpoint: ASI never applies a repair."""
+        issue.fix_applied = False
+        issue.fix_description = (
+            "DELEGATED_TO_SALAMANDER: remediation requires a canonical "
+            "ActionRequest, AL HARAS authorization and independent verification"
         )
+        return False, issue.fix_description
 
-        logger.info(f"📚 Learned new healing pattern for {issue_type}")
-
-    def get_health_report(self) -> dict[str, Any]:
-        """Get comprehensive health report"""
+    async def optimize_system(self) -> dict[str, Any]:
+        """Do not fabricate proactive optimisations."""
         return {
-            "monitoring_active": self.monitoring_active,
-            "total_issues_detected": len(self.issues_detected),
-            "total_fixes_applied": len(self.fixes_applied),
-            "healing_knowledge_areas": len(self.healing_knowledge),
-            "recent_issues": [
-                {
-                    "type": issue.issue_type.value,
-                    "severity": issue.severity.value,
-                    "description": issue.description,
-                    "fixed": issue.fix_applied,
-                    "detected_at": issue.detected_at.isoformat(),
-                }
-                for issue in self.issues_detected[-10:]
-            ],
-            "healing_patterns_learned": sum(
-                len(patterns) for patterns in self.healing_knowledge.values()
+            "authority": "SALAMANDER",
+            "status": "DELEGATED",
+            "optimizations_applied": 0,
+            "reason": (
+                "ASI has no optimisation actuation authority; use the canonical "
+                "Salamander measured policy lifecycle"
             ),
         }
 
-    async def optimize_system(self) -> dict[str, Any]:
-        """Proactively optimize system performance"""
-        optimizations = []
-
-        # Optimize caches
-        try:
-            from agi.enhanced_ai.cache import get_cache_manager
-        except ImportError as exc:
-            logger.error(f"cache manager unavailable: {exc}")
-        else:
-            try:
-                cache_manager = get_cache_manager()
-                stats = cache_manager.get_all_stats()
-
-                # Adjust cache sizes based on hit rates
-                for cache_name, cache_stats in stats.items():
-                    if cache_stats["hit_rate"] < 0.5:
-                        optimizations.append(f"Increased {cache_name} size for better hit rate")
-            except Exception as e:
-                logger.error(f"Error optimizing caches: {e}")
-
-        # Optimize knowledge base
-        try:
-            optimizations.append("Reorganized knowledge base for faster retrieval")
-        except Exception as e:
-            logger.error(f"Error optimizing knowledge base: {e}")
-
-        # Optimize quantum processor
-        try:
-            optimizations.append("Tuned quantum processor parameters")
-        except Exception as e:
-            logger.error(f"Error optimizing quantum processor: {e}")
-
-        logger.info(f"✨ Applied {len(optimizations)} optimizations")
-
+    def get_health_report(self) -> dict[str, Any]:
+        decision = self._last_decision
         return {
-            "optimizations_applied": len(optimizations),
-            "details": optimizations,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "authority": "SALAMANDER",
+            "monitoring_active": self.monitoring_active,
+            "cycles_observed": self._cycles,
+            "health_state": decision.state.value if decision else "UNAVAILABLE",
+            "reasons": list(decision.reasons) if decision else ["not observed"],
+            "total_issues_detected": len(self.issues_detected),
+            "total_fixes_applied": 0,
+            "evidence_head": self.control_plane.ledger.head,
+            "claim_boundary": "ASI_DELEGATES_HEALING_TO_SALAMANDER",
         }
