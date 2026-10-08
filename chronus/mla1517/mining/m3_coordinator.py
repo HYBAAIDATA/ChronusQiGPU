@@ -150,6 +150,7 @@ class M3PythiaProductionMiningCoordinator(PythiaProductionMiningCoordinator):
         extranonce2: str,
         ntime: str,
         nonce: int | str,
+        cycle_reporting: bool = True,
     ) -> bool:
         """Require AL HARAS + THESEUS before a live M3 pool write.
 
@@ -164,6 +165,7 @@ class M3PythiaProductionMiningCoordinator(PythiaProductionMiningCoordinator):
                 extranonce2=extranonce2,
                 ntime=ntime,
                 nonce=nonce,
+                cycle_reporting=cycle_reporting,
             )
 
         if self._m3_blocked_reason is not None:
@@ -227,15 +229,16 @@ class M3PythiaProductionMiningCoordinator(PythiaProductionMiningCoordinator):
             self._block_m3(reason)
             self._record_submission_gate(reason, job_id)
             self._last_pool_outcome = PoolOutcome.NOT_SUBMITTED
-            self.cycle.try_transition(
-                MiningCycleState.EVALUATE,
-                event="refused",
-                reason=reason,
-                evidence={
-                    "authorization_evidence_id": gate.get("authorization_evidence_id"),
-                    "authorization_version_id": gate.get("authorization_version_id"),
-                },
-            )
+            if cycle_reporting:
+                self.cycle.try_transition(
+                    MiningCycleState.EVALUATE,
+                    event="refused",
+                    reason=reason,
+                    evidence={
+                        "authorization_evidence_id": gate.get("authorization_evidence_id"),
+                        "authorization_version_id": gate.get("authorization_version_id"),
+                    },
+                )
             return False
 
         coordinate = CausalCoordinate(**correlation)
@@ -253,6 +256,7 @@ class M3PythiaProductionMiningCoordinator(PythiaProductionMiningCoordinator):
             extranonce2=extranonce2,
             ntime=ntime,
             nonce=nonce,
+            cycle_reporting=cycle_reporting,
         )
 
     async def search_current_job(self) -> bool:
