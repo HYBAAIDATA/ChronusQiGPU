@@ -21,3 +21,5 @@ __all__ = [
     "HealthEnvelope",
     "RecoveryPlan",
 ]
+
+__version__ = "1.0.0"

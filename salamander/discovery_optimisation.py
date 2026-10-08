@@ -22,10 +22,16 @@ from salamander.models import (
     PolicyVersion,
     digest,
 )
-from toe.intelligences.authority_boundary import (
-    EUCLID_FORBIDDEN_DOMAINS,
-    PYTHIA_FINAL_AUTHORITY,
-)
+try:
+    from toe.intelligences.authority_boundary import (
+        EUCLID_FORBIDDEN_DOMAINS,
+        PYTHIA_FINAL_AUTHORITY,
+    )
+except ImportError:
+    # toe.intelligences is outside the standalone wheel boundary; the authority
+    # constants stay unset and every candidate is refused fail-closed below.
+    EUCLID_FORBIDDEN_DOMAINS = None
+    PYTHIA_FINAL_AUTHORITY = None
 
 
 class DiscoveryRefused(ValueError):
@@ -61,6 +67,11 @@ def _normalise_metric(name: str) -> str:
 
 
 def _forbidden_metric(name: str) -> bool:
+    if EUCLID_FORBIDDEN_DOMAINS is None or PYTHIA_FINAL_AUTHORITY is None:
+        raise DiscoveryRefused(
+            "authority boundary constants are unavailable in the standalone "
+            "distribution (toe.intelligences is outside the wheel boundary)"
+        )
     metric = _normalise_metric(name)
     forbidden = EUCLID_FORBIDDEN_DOMAINS | PYTHIA_FINAL_AUTHORITY
     return any(

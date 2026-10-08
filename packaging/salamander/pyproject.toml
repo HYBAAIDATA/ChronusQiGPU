@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hyba-salamander"
+version = "1.0.0"
+description = "SALAMANDER — the canonical fail-closed autonomic control plane: AL HARAS-gated bounded actuation, tamper-evident evidence ledgers, circuit breakers, recovery plans and health envelopes."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [{ name = "HYBA Software Limited" }]
+keywords = [
+    "control-plane",
+    "fail-closed",
+    "guardian",
+    "evidence-ledger",
+    "autonomic",
+    "recovery",
+    "quantum-from-maths",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries",
+    "Typing :: Typed",
+]
+dependencies = [
+    # AL HARAS parses the claims/pairings policy files with PyYAML.
+    "PyYAML>=6.0,<7",
+]
+
+[project.urls]
+Homepage = "https://github.com/QuantumPhiRedux/PhiMiner"
+Repository = "https://github.com/QuantumPhiRedux/PhiMiner"
+Issues = "https://github.com/QuantumPhiRedux/PhiMiner/issues"
+
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.packages.find]
+# SALAMANDER ships the canonical control plane plus the bundled AL HARAS
+# guardian substrate (an internal package, not a separate product).
+include = ["salamander*", "al_haras*"]
