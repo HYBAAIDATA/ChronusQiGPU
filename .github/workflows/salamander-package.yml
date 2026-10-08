@@ -19,13 +19,13 @@ jobs:
       fail-fast: false
       matrix:
         python: ['3.11', '3.12', '3.13']
-    env:
-      OUT: ${{ runner.temp }}/salamander-${{ github.sha }}-${{ matrix.python }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+      - name: Allocate fresh output outside the checkout
+        run: echo "OUT=$RUNNER_TEMP/salamander-$GITHUB_SHA-${{ matrix.python }}" >> "$GITHUB_ENV"
       - name: Unit and packaging-regression tests (not production qualification)
         run: |
           python -m pip install pytest==9.1.1
