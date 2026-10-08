@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import time
 import uuid
 from fractions import Fraction
@@ -119,8 +120,11 @@ class StratumRuntimeState:
         self.pending_generation: int | None = None
         self.pending_fingerprint: str | None = None
         self.pending_job_id: str | None = None
+        self.pending_difficulty: float | None = None
         self.submitted = 0
         self.accepted = 0
+        self.accepted_difficulty_work = 0.0
+        self.accepted_without_difficulty = 0
         self.rejected = 0
         self.unknown = 0
         self.jobs_received = 0
@@ -278,6 +282,13 @@ class StratumRuntimeState:
         self.pending_generation = self.current_job.generation_id
         self.pending_fingerprint = self.current_job.fingerprint
         self.pending_job_id = job_id
+        try:
+            difficulty = float(self.current_job.difficulty)
+            self.pending_difficulty = (
+                difficulty if math.isfinite(difficulty) and difficulty > 0 else None
+            )
+        except (TypeError, ValueError, OverflowError):
+            self.pending_difficulty = None
         self.submitted += 1
 
     def submission_not_written(self, reason: str) -> None:
@@ -303,6 +314,7 @@ class StratumRuntimeState:
         self.pending_generation = None
         self.pending_fingerprint = None
         self.pending_job_id = None
+        self.pending_difficulty = None
 
     def submission_finished(self, result: Any) -> None:
         if self.submission_phase != SubmissionPhase.SUBMITTING:
@@ -312,6 +324,10 @@ class StratumRuntimeState:
             self.submission_phase = SubmissionPhase.ACCEPTED
             self.last_result = "ACCEPTED"
             self.accepted += 1
+            if self.pending_difficulty is None:
+                self.accepted_without_difficulty += 1
+            else:
+                self.accepted_difficulty_work += self.pending_difficulty
         elif result is False:
             self.submission_phase = SubmissionPhase.REJECTED
             self.last_result = "REJECTED"
@@ -390,8 +406,8 @@ class StratumRuntimeState:
                 "received_at": job.received_at if job else None,
                 "age_ms": age_ms,
                 "clean_jobs": job.clean_jobs if job else None,
-                "difficulty": self.difficulty,
-                "difficulty_source": self.difficulty_source,
+                "difficulty": job.difficulty if job else None,
+                "difficulty_source": job.difficulty_source if job else None,
                 "difficulty_received_at": self.difficulty_received_at,
                 "share_target": f"{target:064x}" if target is not None else None,
                 "target_generation": self.target_generation,
@@ -417,6 +433,11 @@ class StratumRuntimeState:
                 "generation": self.pending_generation,
                 "job_id": self.pending_job_id,
                 "job_fingerprint": self.pending_fingerprint,
+                "difficulty": self.pending_difficulty,
+            },
+            "share_work": {
+                "accepted_difficulty_work": self.accepted_difficulty_work,
+                "accepted_without_difficulty": self.accepted_without_difficulty,
             },
             "counters": {
                 "jobs_received": self.jobs_received,
