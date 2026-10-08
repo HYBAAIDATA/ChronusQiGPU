@@ -1,13 +1,14 @@
 [build-system]
-requires = ["setuptools>=68.0", "wheel"]
+requires = ["setuptools>=77.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "hyba-salamander"
 version = "1.0.0"
-description = "SALAMANDER — the canonical fail-closed autonomic control plane: AL HARAS-gated bounded actuation, tamper-evident evidence ledgers, circuit breakers, recovery plans and health envelopes."
+description = "SALAMANDER autonomic control-plane library with AL HARAS authorization, evidence contracts and bounded recovery primitives; production qualification pending."
 readme = "README.md"
 license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 authors = [{ name = "HYBA Software Limited" }]
 keywords = [
@@ -20,14 +21,13 @@ keywords = [
     "quantum-from-maths",
 ]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Libraries",
     "Typing :: Typed",
 ]
@@ -48,3 +48,12 @@ include-package-data = false
 # SALAMANDER ships the canonical control plane plus the bundled AL HARAS
 # guardian substrate (an internal package, not a separate product).
 include = ["salamander*", "al_haras*"]
+exclude = ["salamander.tests*", "al_haras.tests*"]
+
+[project.optional-dependencies]
+api = ["fastapi>=0.110,<1"]
+dev = ["pytest>=9.1,<10", "build>=1.2,<2", "twine>=6,<7"]
+
+[tool.setuptools.package-data]
+salamander = ["py.typed", "_build_provenance.json"]
+al_haras = ["py.typed"]
