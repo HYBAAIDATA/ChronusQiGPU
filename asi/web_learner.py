@@ -72,7 +72,7 @@ class KnowledgeItem:
     source_url: str
     source_title: str
     learned_at: datetime
-    confidence: float
+    confidence: Optional[float]
     tags: list[str]
 
 
@@ -156,23 +156,40 @@ class ContinuousWebLearner:
                 )
             )
 
-    async def start(self):
-        """Start continuous learning loop"""
-        self.is_running = True
-        logger.info("🌐 Continuous Web Learning STARTED")
+    async def start(self, *, max_cycles: int = 1) -> bool:
+        """Run bounded research cycles against a real backend only.
 
-        while self.is_running:
-            try:
+        Recurrence belongs to the process scheduler. This method deliberately
+        has a finite default so importing ASI cannot create a forever-loop.
+        """
+        if max_cycles <= 0:
+            raise ValueError("max_cycles must be positive")
+        if not RESEARCH_BACKEND_AVAILABLE or self.research_engine is None:
+            logger.warning("Continuous web learning unavailable: no research backend")
+            self.is_running = False
+            return False
+        if self.is_running:
+            return False
+
+        self.is_running = True
+        try:
+            for cycle in range(max_cycles):
+                if not self.is_running:
+                    break
                 await self._learning_cycle()
-                await asyncio.sleep(self.learning_interval)
-            except Exception as e:
-                logger.error(f"Error in learning cycle: {e}")
-                await asyncio.sleep(60)
+                if self.is_running and cycle + 1 < max_cycles:
+                    await asyncio.sleep(self.learning_interval)
+        finally:
+            self.is_running = False
+        return True
 
     def stop(self):
-        """Stop continuous learning"""
+        """Stop a currently scheduled bounded learning run."""
         self.is_running = False
-        logger.info("🌐 Continuous Web Learning STOPPED")
+        logger.info("Continuous Web Learning STOPPED")
+
+    def is_learning(self) -> bool:
+        return self.is_running
 
     async def _learning_cycle(self):
         """Execute one learning cycle"""
@@ -262,7 +279,7 @@ class ContinuousWebLearner:
                 source_url=finding.get("source", ""),
                 source_title=finding.get("source", ""),
                 learned_at=datetime.now(timezone.utc),
-                confidence=0.8,
+                confidence=self._reported_confidence(finding),
                 tags=self._extract_tags(finding.get("finding", "")),
             )
             self.knowledge_base.append(knowledge_item)
@@ -276,13 +293,21 @@ class ContinuousWebLearner:
                 source_url=content.get("url", ""),
                 source_title=content.get("title", ""),
                 learned_at=datetime.now(timezone.utc),
-                confidence=0.9,
+                confidence=self._reported_confidence(content),
                 tags=self._extract_tags(content.get("preview", "")),
             )
             self.knowledge_base.append(knowledge_item)
             knowledge_count += 1
 
         return knowledge_count
+
+    @staticmethod
+    def _reported_confidence(item: dict[str, Any]) -> Optional[float]:
+        """Use source-supplied confidence only; never invent one."""
+        value = item.get("confidence")
+        if isinstance(value, (int, float)) and 0.0 <= float(value) <= 1.0:
+            return float(value)
+        return None
 
     def _extract_tags(self, text: str) -> list[str]:
         """Extract relevant tags from text"""
@@ -397,6 +422,10 @@ class ContinuousWebLearner:
         """Get learner statistics"""
         return {
             "is_running": self.is_running,
+            "backend_available": bool(
+                RESEARCH_BACKEND_AVAILABLE and self.research_engine is not None
+            ),
+            "claim_boundary": "NO_WEB_LEARNING_WITHOUT_A_REAL_RESEARCH_BACKEND",
             "total_topics": len(self.learning_topics),
             "completed_topics": sum(1 for t in self.learning_topics if t.completed),
             "knowledge_items": len(self.knowledge_base),

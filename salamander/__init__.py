@@ -8,10 +8,13 @@ from .control_plane import (
     HealthEnvelope,
     RecoveryPlan,
 )
+from .authority import ALHarasActionAuthorizer, build_authorized_control_plane
 from .models import *
 
 __all__ = [
     "ActionRegistry",
+    "ALHarasActionAuthorizer",
+    "build_authorized_control_plane",
     "AutonomicControlPlane",
     "CircuitBreaker",
     "EvidenceLedger",
