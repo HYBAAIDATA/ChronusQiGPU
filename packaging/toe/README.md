@@ -104,9 +104,14 @@ store.
 
 ## Install
 
+Approved first-public distribution: **`hyba-toe==1.0.0`**, per `OWNER_DECISIONS.md`.
+The commands below are the approved publication target, not evidence that the
+registry release exists or has passed clean-install execution. Registry
+prerequisites and publication verification remain open until evidenced.
+
 ```bash
-pip install hyba-toe          # provisional name, pending owner approval
-pip install "hyba-toe[legacy-hr]"   # + pandas for the original HR engine
+pip install hyba-toe==1.0.0
+pip install "hyba-toe[legacy-hr]==1.0.0"   # + pandas for the original HR engine
 ```
 
 Requires Python ≥ 3.11, numpy and `kellogg-tensor` ≥ 1.0.

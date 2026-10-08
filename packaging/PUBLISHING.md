@@ -1,3 +1,22 @@
+## Frozen-RC standalone publication sequence
+
+For KELLOGG and TURING, the canonical workflow now performs both registries in
+one `publish=pypi` dispatch: TestPyPI upload, clean installed/import/CLI/smoke and
+replay matrix, then OIDC promotion of the **same** verified archives to PyPI,
+clean PyPI execution, and an evidence-linked product GitHub release. Supply the
+full frozen `rc_sha`; TURING also requires the completed same-RC
+`kellogg_release_run_id` and reuses its exact KELLOGG archive. Registry version
+existence is not TestPyPI verification. `publish=none` only qualifies locally in
+CI; `publish=testpypi` stops before production. A different source commit requires
+fresh qualification, never copied historical results.
+
+See `docs/STANDALONE_RELEASE_RC_PLAN.md` for the pinned evidence audit, explicit
+scope, executable dispatch sequence, required custody records and outstanding
+actions. This tooling repair is not itself package publication or whole-platform
+production qualification. The sections below retain prior packaging guidance;
+where old separate-registry dispatch instructions differ, the frozen-RC workflow
+sequence above governs KELLOGG and TURING.
+
 # Publishing HYBA Software Limited packages to PyPI
 
 This repository uses PyPI **trusted publishing**. GitHub Actions proves its
