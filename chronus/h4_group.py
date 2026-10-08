@@ -4,6 +4,13 @@ Vertices of generate_600cell_vertices() are the unit icosians 2I.
 A rotation is x |-> p x conj(q) with (p,q)~(-p,-q).
 That permutes vertices and tetrahedral cells; it is an isometry of S^3,
 not of the full 11D phi-metric.
+
+NON-PRODUCTION FP64 REFERENCE.
+
+Retained for tests, research lineage, and FP64 consumers only. It is NOT on
+the canonical production route: production geometry, planning and execution
+run through chronus/exact_geometry.py, which computes in exact Q(phi) rational arithmetic.
+Nothing here produces certificates, evidence, or mining decisions.
 """
 
 from __future__ import annotations

@@ -1,0 +1,49 @@
+......................F                                                  [100%]
+=================================== FAILURES ===================================
+______ test_grover_style_reference_is_not_available_as_quantum_production ______
+
+approval = (PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-0/test_grover_style_reference_is0/approved.json'), {'schema': 'chrono...d_by': 'local-test-operator', 'purpose': 'boundary verification, not production evidence', 'mode': 'reference', ...}}})
+
+    def test_grover_style_reference_is_not_available_as_quantum_production(approval):
+>       from mining.search import GroverStyleSearch
+
+pr140-bounded/build-tree/tests/test_reference_boundary.py:80: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """Mining search — Grover-style search, Merkle verifier, preimage work.
+    
+    Three search primitives, all deterministic and all routed through the
+    Lucas pool:
+    
+    - ``GroverStyleSearch`` — walk-based search over the nonce graph. The
+      Grover iteration count k* = floor(pi/4 * sqrt(N)) is exact algebraic
+      work; candidate probing uses real double-SHA256 against the target.
+      Route: ``path_kernel``.
+    - ``MerklePathVerifier`` — folds a coinbase hash up its branch path
+      with double-SHA256 and compares against the block's Merkle root.
+      Route: ``path_kernel``.
+    - ``PreimageSearch`` — scans an ordered nonce schedule for a hash under
+      target (the preimage core of proof-of-work). Route: ``mining_kernel``.
+    """
+    
+    # LUCAS WIRING: draws from lucas/ (pool) and the canonical turing_core
+    # substrate. MUST NOT import from any sibling algorithm.
+    # Substrate routes: path (search walk, merkle), mining (preimage).
+    
+    from __future__ import annotations
+    
+    from chronos_one_igpu.reference_contract import require_reference, reference_only, require_production_context
+    import math
+    import struct
+    from typing import Any, Dict, List, Optional
+    
+    import numpy as np
+    
+    import turing_core
+>   from lucas.ladder import FULL_LADDER
+E   ModuleNotFoundError: No module named 'lucas.ladder'
+
+pr140-bounded/canonical-snapshot/mining/search.py:31: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED pr140-bounded/build-tree/tests/test_reference_boundary.py::test_grover_style_reference_is_not_available_as_quantum_production
+1 failed, 22 passed in 1.00s

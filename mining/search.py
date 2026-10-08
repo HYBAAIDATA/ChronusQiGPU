@@ -20,6 +20,7 @@ Lucas pool:
 
 from __future__ import annotations
 
+from chronos_one_igpu.reference_contract import require_reference, reference_only, require_production_context
 import math
 import struct
 from typing import Any, Dict, List, Optional
@@ -98,6 +99,7 @@ class GroverStyleSearch:
     @staticmethod
     def optimal_iterations(n_candidates: int) -> int:
         """Exact Grover iteration count k* for N candidates."""
+        require_reference('mining.GroverStyleSearch')
         return max(1, int(math.floor(math.pi / 4.0 * math.sqrt(max(n_candidates, 1)))))
 
     def kernel_check(self, n: int = 10) -> Dict[str, Any]:
@@ -115,6 +117,7 @@ class GroverStyleSearch:
         scale_index: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Probe the schedule in Grover order; return the winner if any."""
+        require_reference('mining.GroverStyleSearch')
         self._searches += 1
         size = len(schedule)
         if size == 0:

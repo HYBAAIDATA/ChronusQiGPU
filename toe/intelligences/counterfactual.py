@@ -148,7 +148,10 @@ class CounterfactualIntelligence:
                     "alt_nonce": alt_nonce,
                     "alt_hash_hex": alt_hash.hex(),
                     "alt_would_meet_target": alt_int <= target_int,
-                    "entropy_delta": float(abs(alt_int - hash_int) % 10000) / 10000.0,
+                    # Real measured distance: fraction of differing bits
+                    # between the alternative and candidate digests
+                    # (normalized Hamming distance over 256 bits).
+                    "hash_bit_distance": float(bin(alt_int ^ hash_int).count("1")) / 256.0,
                 }
             )
 

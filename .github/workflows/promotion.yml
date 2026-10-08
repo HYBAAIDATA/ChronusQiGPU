@@ -45,11 +45,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: {ref: '${{ inputs.commit_sha }}'}
-      - run: make -k gates || true
+      - name: Run all gates without swallowing failures
+        run: make -k gates
         env: {MEDIATION_MANIFEST_KEY: '${{ secrets.MEDIATION_MANIFEST_KEY }}'}
       - uses: actions/upload-artifact@v4
+        if: always()
         with: {name: promotion-gate-results, path: results/}
-      - run: make gate-rollup
+      - name: Require complete gate evidence
+        if: always()
+        run: make gate-rollup
   approvals-verified:
     if: inputs.target_state == 'VERIFIED'
     needs: gates

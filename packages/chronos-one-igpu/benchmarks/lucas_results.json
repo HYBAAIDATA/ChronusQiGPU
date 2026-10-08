@@ -1,0 +1,37 @@
+{
+  "classification": "MEASURED",
+  "backend": "python-exact-reference",
+  "hardware_accelerated": false,
+  "commit_sha": "UNVERSIONED-WORKTREE",
+  "lucas_sanity": {
+    "L_0": 2,
+    "L_10": 123,
+    "L_100": 792070839848372253127
+  },
+  "batches": [
+    {
+      "batch_size": 8,
+      "records": 13696,
+      "seconds": 0.3500547029999552,
+      "records_per_second": 39125.31350850542
+    },
+    {
+      "batch_size": 32,
+      "records": 5536,
+      "seconds": 0.35103813300008824,
+      "records_per_second": 15770.366463288501
+    },
+    {
+      "batch_size": 64,
+      "records": 2816,
+      "seconds": 0.35187508799992884,
+      "records_per_second": 8002.839916875757
+    }
+  ],
+  "limitations": [
+    "This is a scalar exact reference benchmark, not GPU throughput.",
+    "Records include Cassini, Zeckendorf, Pisot, Binet-fold, and prime-address verification.",
+    "Do not convert records/sec into FLOPS or EH/s."
+  ],
+  "artifact_sha256": "d1d7f16d4b93be5fff78ed5fb5a47451db6cfc71d5c4676878fb4cb29ff4d0fc"
+}

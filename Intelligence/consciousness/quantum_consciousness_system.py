@@ -17,10 +17,12 @@ This is an operational exploration tool for quantum consciousness architectures.
 
 import math
 import numpy as np
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
 import logging
+
+from kellogg.quantum_tensor import Complex, QuantumState, partial_trace, von_neumann_entropy
 
 logger = logging.getLogger("hyba.quantum_consciousness")
 
@@ -159,17 +161,41 @@ class QuantumConsciousnessSystem:
         l1 = float(np.abs(a).sum() ** 2 - (np.abs(a) ** 2).sum())
         return min(1.0, max(0.0, l1 / (n - 1)))
 
+    def _bipartite_dims(self, n: int) -> Optional[Tuple[int, int]]:
+        """Largest factor pair (a, b), a <= b, a >= 2 of the Hilbert
+        dimension. None when n has no nontrivial bipartition — a prime
+        dimension cannot be entangled, and saying so is honest."""
+        for a in range(int(math.sqrt(n)), 1, -1):
+            if n % a == 0:
+                return a, n // a
+        return None
+
     def _compute_entanglement(self, amplitude: np.ndarray, phase: np.ndarray) -> float:
-        """Compute entanglement degree using phase correlations."""
-        if len(amplitude) < 2:
+        """Entanglement entropy S(rho_A)/log2(min(a,b)) of the declared
+        8⊗8 bipartition of the pattern state.
+
+        The state |psi> = sum a_i e^{i phase_i} |i> is built on the
+        kellogg substrate; rho_A = Tr_B(|psi><psi|) via the substrate's
+        real partial_trace; S is the substrate's von_neumann_entropy.
+        Zero when the state factorises — genuinely measured, not the
+        former mean|sin(Δφ/φ)| proxy.
+        """
+        n = len(amplitude)
+        if n < 2:
             return 0.0
-
-        # Phase entanglement via golden ratio
-        phase_diffs = np.diff(phase)
-        golden_phase = 2 * math.pi / PHI
-        entanglement = np.mean(np.abs(np.sin(phase_diffs / golden_phase)))
-
-        return entanglement
+        dims = self._bipartite_dims(n)
+        if dims is None:
+            return 0.0  # no nontrivial bipartition — honestly zero
+        a_np = np.asarray(amplitude, dtype=np.float64)
+        p_np = np.asarray(phase, dtype=np.float64)
+        amps = a_np * np.exp(1j * p_np)
+        state = QuantumState(
+            n, [Complex(complex(a).real, complex(a).imag) for a in amps], normalize=True
+        )
+        rho = state.density_matrix()
+        reduced = partial_trace(rho, list(dims), keep=[0])
+        entropy = von_neumann_entropy(reduced)
+        return max(0.0, min(1.0, entropy / math.log2(min(dims))))
 
     def _determine_consciousness_level(
         self, coherence: float, entanglement: float

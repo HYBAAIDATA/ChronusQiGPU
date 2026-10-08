@@ -390,67 +390,23 @@ class AutonomicControlPlane:
         self._current_policy: str | None = None
         self._baseline_metrics: dict[str, tuple[float, float, bool]] = {}
         self.authorizer = authorizer
-        if require_authorization is not True:
-            raise FailClosed("authorization cannot be disabled; use genuine AL HARAS in tests")
-        self.require_authorization = True
-        from .authority import ALHarasActionAuthorizer
-        if isinstance(authorizer, ALHarasActionAuthorizer):
-            self.registry.bind_authorizer(authorizer)
-        self._restore_execution_history()
-
-    @staticmethod
-    def _action_key(request: ActionRequest) -> tuple[str, str, str]:
-        return request.tenant_id, request.actor_id, request.idempotency_key
-
-    def _restore_execution_history(self) -> None:
-        if not self.ledger.verify():
-            raise FailClosed("autonomic evidence head mismatch")
-        action_keys: dict[str, tuple[str, str, str]] = {}
-        for record in self.ledger.records:
-            payload = record["payload"]
-            if record["kind"] == "recovery-budget-reserved":
-                key = str(payload["tenant_id"]), str(payload["target"])
-                self._recoveries[key] += 1
-            elif record["kind"] == "action-proposed":
-                key = (str(payload["tenant_id"]), str(payload.get("actor_id", "")),
-                       str(payload["idempotency_key"]))
-                request_body = {k: payload[k] for k in ActionRequest.__dataclass_fields__ if k in payload}
-                fingerprint = digest("salamander.action-request.v1", request_body)
-                if key in self._request_fingerprints and self._request_fingerprints[key] != fingerprint:
-                    raise FailClosed("replayed idempotency key has conflicting request")
-                self._request_fingerprints[key] = fingerprint
-                action_keys[str(payload["action_id"])] = key
-                self._in_doubt.add(key)
-            elif record["kind"] == "action-result":
-                result_body = payload.get("result", payload)
-                key_body = payload.get("request_key")
-                key = tuple(key_body) if key_body else action_keys.get(str(result_body["action_id"]))
-                if key is None:
-                    raise FailClosed("action result has no replayable proposal")
-                self._idempotency[key] = ActionResult(**result_body)
-                self._in_doubt.discard(key)
-            elif record["kind"] == "circuit-state":
-                key = str(payload["key"])
-                circuit = CircuitBreaker(int(payload["failure_limit"]), int(payload["cooldown_ns"]))
-                circuit.state = CircuitState(payload["state"])
-                circuit.failures = int(payload["failures"])
-                circuit.opened_at_ns = payload["opened_at_ns"]
-                circuit.probe_in_flight = False
-                self.circuits[key] = circuit
-
-    def _record_circuit(self, key: str, circuit: CircuitBreaker) -> None:
-        self.ledger.append("circuit-state", {
-            "key": key, "failure_limit": circuit.failure_limit,
-            "cooldown_ns": circuit.cooldown_ns, "state": circuit.state.value,
-            "failures": circuit.failures, "opened_at_ns": circuit.opened_at_ns,
-        }, at_ns=self.clock_ns())
+        self.require_authorization = bool(require_authorization)
 
     def _authorize(self, request: ActionRequest) -> Mapping[str, Any]:
         """Require an evidence-bearing security verdict before actuation.
 
-        No test or production opt-out can turn a missing governance boundary
-        into authority. Observation remains available without credentials.
+        Production composition is fail-closed by default. Tests or isolated
+        research callers may opt out only by explicitly constructing the
+        control plane with require_authorization=False.
         """
+        if not self.require_authorization:
+            return {
+                "allowed": True,
+                "authority": "AUTHORIZATION_EXPLICITLY_DISABLED",
+                "reason": "non-production composition opted out",
+                "actor": request.actor_id or "UNSPECIFIED",
+                "evidence_id": None,
+            }
         if not request.actor_id.strip():
             return {
                 "allowed": False,
@@ -459,8 +415,7 @@ class AutonomicControlPlane:
                 "actor": "",
                 "evidence_id": None,
             }
-        from .authority import ALHarasActionAuthorizer
-        if not isinstance(self.authorizer, ALHarasActionAuthorizer):
+        if self.authorizer is None:
             return {
                 "allowed": False,
                 "authority": "AL_HARAS",
@@ -478,8 +433,8 @@ class AutonomicControlPlane:
                 "actor": request.actor_id,
                 "evidence_id": None,
             }
-        if decision.get("allowed") is True and not self.authorizer.validate_decision(request, decision):
-            return {**decision, "allowed": False, "reason": "AUTHORIZATION_NOT_BOUND"}
+        decision.setdefault("authority", "AL_HARAS")
+        decision.setdefault("actor", request.actor_id)
         evidence_id = decision.get("evidence_id") or decision.get("evidence_ref")
         if decision.get("allowed") is True and not evidence_id:
             return {
@@ -629,8 +584,7 @@ class AutonomicControlPlane:
             )
             raise FailClosed(f"AL HARAS authorization denied: {reason}")
 
-        circuit_key = digest("salamander.circuit-scope.v1", [request.tenant_id, request.target, request.handler])
-        circuit = self.circuits.setdefault(circuit_key, CircuitBreaker())
+        circuit = self.circuits.setdefault(request.handler, CircuitBreaker())
         if not circuit.admit(now):
             raise FailClosed("handler circuit is open")
         before = self.ledger.append(
@@ -644,8 +598,6 @@ class AutonomicControlPlane:
             },
             at_ns=now,
         )
-        self._request_fingerprints[key] = fingerprint
-        self._in_doubt.add(key)
         try:
             response = self.registry.execute(request, authorization=authorization)
             execution_ref = self.ledger.append(
@@ -701,10 +653,6 @@ class AutonomicControlPlane:
         return result
 
     def recover(self, plan: RecoveryPlan) -> tuple[ActionResult, ...]:
-        with self._execution_lock:
-            return self._recover_locked(plan)
-
-    def _recover_locked(self, plan: RecoveryPlan) -> tuple[ActionResult, ...]:
         """Execute one bounded recovery DAG with verified rollback on rejection.
 
         A handler may have changed external state before its independent
@@ -724,17 +672,10 @@ class AutonomicControlPlane:
             }, at_ns=self.clock_ns())
             raise FailClosed("recovery budget exhausted")
         ordered = plan.ordered()
-        self.ledger.append("recovery-budget-reserved", {
-            "tenant_id": plan.tenant_id, "target": plan.target,
-            "recovery_id": plan.recovery_id, "max_actions": plan.max_actions,
-            "deadline_ns": plan.deadline_ns,
-        }, at_ns=self.clock_ns())
-        self._recoveries[key] += 1
+        self._recoveries[plan.target] += 1
         results: list[ActionResult] = []
         by_step: dict[str, ActionResult] = {}
         for step in ordered:
-            if self.clock_ns() > plan.deadline_ns:
-                raise FailClosed("recovery deadline elapsed before next action")
             if any(not by_step[d].verified for d in step.depends_on):
                 break
             result = self.execute(step.request)

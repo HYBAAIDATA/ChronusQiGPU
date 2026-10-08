@@ -18,8 +18,8 @@ env PYTHIA_BOOT_LOCK='C:/app/data/pythia-test2.lock' PYTHIA_BOOT_AUDIT='C:/app/d
 `kill_shell` may not terminate the underlying Windows `python.exe` — if a reboot exits 1 with "canonical control plane already running", find the listener via `netstat -ano | grep :PORT` and `taskkill //PID <pid> //F` before retrying.
 
 ## Guardian availability matrix (Windows devinbox)
-- Default env (no `AL_HARAS_*`): `build_guardian` raises RuntimeError inside `pythia_guardian_api`, caught → guardian runs on IN-MEMORY `HashChainAudit`.
-- `AL_HARAS_SUBSCRIPTION_KEYS` = malformed JSON (or a non-dict): `ALHarasSettings.from_env` raises BEFORE the in-memory fallback → every privileged request answers **503**. `pythia_guardian_api` is `lru_cache`d but exceptions are NOT cached, so every request re-fails consistently. The rest of the API (`/api/v1/mla1517/status`, statics) stays 200 — fail-closure is targeted, not a dead API.
+- Default env (no valid durable AL HARAS configuration): `pythia_guardian_api` fails closed; there is **no in-memory audit fallback**. Privileged routes surface the guardian dependency as unavailable rather than weakening the authority boundary.
+- `AL_HARAS_SUBSCRIPTION_KEYS` malformed JSON/non-dict, or durable audit initialisation failure, leaves every privileged request unavailable/denied. `pythia_guardian_api` is `lru_cache`d but exceptions are NOT cached, so corrected configuration can be retried without process-global stale success. The rest of the API may remain live; fail-closure is targeted, not a dead API.
 - `AL_HARAS_ENABLE_LHRAS=1` without `AL_HARAS_LHRAS_CONFIG` also 503s — do not enable unless a config is provisioned.
 - To exercise the POST privileged path (POST_TABLE routes like `/api/v1/mining/start`) through `_guardian_preflight`, the broken instance ALSO needs `EUCLID_ADMIN_API_KEY` set — the operator-key gate (401 `operator key required` with key configured, 403 `... is not configured` without) runs BEFORE the guardian preflight. Send `Authorization: Bearer <key>` and expect the 503, not a mining action.
 

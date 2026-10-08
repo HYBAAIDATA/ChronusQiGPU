@@ -399,8 +399,8 @@ Adjacency: `ADJ[i][j] = dot(M32[i], M32[j]) ≥ cos(2π/5)` — the pentagonal a
 | File | Function | Role |
 |------|----------|------|
 | `millennium/hyba_golden_mass_gap.py` | M₃₂ graph Laplacian | Characteristic polynomial: `x(x−15)(x−14)⁶(x−11)³(x²−26x+164)²(x²−23x+128)q(x)³`; gap is root of q(x) in (5,6), algebraic integer of degree 5, NOT in Q(√5) |
-| `millennium/yang_mills_data.py` | `SpectralGeometry` | Spectral gap, Ricci curvature, spectral clustering on adjacency matrices |
-| `millennium/yang_mills_data.py` | `TopologicalAnalytics` | Vietoris-Rips persistent homology, Betti numbers, Euler characteristic via GF(2) rank |
+| `toe/geometry.py` (re-exported by `millennium/yang_mills_data.py`) | `SpectralGeometry` | Spectral gap, Ricci curvature, spectral clustering on adjacency matrices |
+| `toe/topology.py` (re-exported by `millennium/yang_mills_data.py`) | `TopologicalAnalytics` | Vietoris-Rips homology (Betti numbers, Euler characteristic) via exact GF(2) bitset rank |
 
 ### 8.5 Tests
 
@@ -499,7 +499,11 @@ The complete chain from φ to the mass gap, every stage computed.
 ### 10.3 The Mass Gap
 
 ```
-Δ = λ₁ − λ₀ = 1 − φ/2 = 1/(2φ²) = (3−√5)/4 ≈ 0.381966
+Δ = λ₁ − λ₀ = 1 − φ/2 = 1/(2φ²) = (3−√5)/4 ≈ 0.190983
+
+(Corrected 2026-10-07: the value printed here was 0.381966 = 1/φ², twice the gap. The computed
+gap in `millennium/hyba_poincare_yangmills.py:cached_report()['gap']` is 0.19098300562505205,
+matching every exact form above — see `reports/toe_universal_principle_evidence.json`.)
 ```
 
 The exact form is recognized algebraically: chi/d = φ/2. The same φ that satisfies Cassini (L_n² − 5F_n² = 4(−1)ⁿ) is the real part of the order-10 edge class in the 600-cell.
@@ -747,11 +751,11 @@ The single backend (`compile_operator` → `IntelligenceState` → `TOEBridge`) 
 | Database/SQL | Natural language → SQL queries | `UnifiedAnalyticsPlatform.ask()` → `compile_operator` | `toe/unified/platform.py` | Same 32-dim state encoding |
 | Streaming | Real-time event ingestion | `DataLayer.ingest` → `compile_operator(events)` | `toe/unified/data_layer.py` | Zeckendorf compression; digest chain |
 | IoT/Sensors | Telemetry, OPC-UA channels | `compile_operator(events)` → `sensor_batch` → `trend` | `toe/unified/industries.py:sensor_batch` | Cassini operator digest |
-| Graph analysis | Adjacency, spectral clustering | `compile_operator(edges)` → `directed_adjacency` → `SpectralGeometry` | `millennium/yang_mills_data.py` | Ricci curvature; spectral gap |
+| Graph analysis | Adjacency, spectral clustering | `compile_operator(edges)` → `directed_adjacency` → `SpectralGeometry` | `toe/geometry.py` | Ricci curvature; spectral gap |
 | Time series | Forecasting, trajectory prediction | `compile_operator(series)` → `recurrence_observable` → `predict_trajectory` | `toe/bridge.py:predict_trajectory` | Schrödinger propagation; Pisot detection |
 | Counterfactual | What-if analysis, alternative worlds | `counterfactual_query` → `double_sha256` oracle | `toe/intelligences/counterfactual.py` | Yang-Mills spectral gap as side condition |
 | Causal discovery | DAG inference, identifiability | `infer_causal_graph` → backdoor/frontdoor | `toe/causal_ladder.py` | Pearl's ladder Rungs 1-3 |
-| Topological data | Persistent homology, Betti numbers | `compile_operator` → `point_cloud` → VR complex | `millennium/yang_mills_data.py:TopologicalAnalytics` | φ-weighted distance; Euler characteristic |
+| Topological data | Persistent homology, Betti numbers | `compile_operator` → `point_cloud` → VR complex | `toe/topology.py:TopologicalAnalytics` | φ-weighted distance; Euler characteristic |
 | Algebraic detection | Pisot family recognition | `structural_signature` → `detect_family_signature` | `toe/representation.py` | Golden/plastic/supergolden/tribonacci |
 | Enterprise BI | 1,063 connectors, dashboards | `UnifiedAnalyticsPlatform` → `catalog` → `connectors` | `toe/unified/catalog.py`, `toe/unified/connectors.py` | Same compile_operator; same tensor backend |
 | Scholarship | Impact, value recognition | `platform.recognize_value` → `impact.split` | `toe/unified/impact.py` | φ-proportioned three-way split |
@@ -951,7 +955,7 @@ The threshold φ − 1 = 1/φ ≈ 0.618 (61.8%) appears as:
 | `millennium/mathematical_discovery.py` | Mathematical frontier explorer: Kolmogorov, optimization, quantum-classical boundary, emergence, phase transitions |
 | `millennium/quantum_algorithms.py` | Quantum algorithms (QFT, Grover, QPE, quantum walk, VQE) |
 | `millennium/grover_exact_scale.py` | Exact folded Grover iterate |
-| `millennium/yang_mills_data.py` | SpectralGeometry, TopologicalAnalytics |
+| `millennium/yang_mills_data.py` | LieAlgebra, GoldenTransform; re-exports SpectralGeometry / TopologicalAnalytics from TOE |
 | `millennium/poincare_cassini_search.py` | Poincaré-Cassini search |
 | `millennium/poincare_golden_11d.py` | Poincaré-golden 11D |
 | `millennium/nobel_fields_intelligence.py` | Nobel fields intelligence |
@@ -1007,6 +1011,10 @@ The threshold φ − 1 = 1/φ ≈ 0.618 (61.8%) appears as:
 | `euclid/cognition/credit.py` | Credit assignment |
 | `euclid/kairos_runtime.py` | Kairos runtime |
 | `euclid/memory_database.py` | Memory database |
+| `euclid/cognition/worlds/` | v17 interactive task worlds: hidden mechanisms, governed budgeted executor, seeded families and partitions |
+| `euclid/cognition/integrated/` | v17 integrated adaptive intelligence: Bayesian mechanism world model, EIG discrimination, VOI metacognition, strategy meta-learning, structural analogy, planning, skills, consolidation |
+| `euclid/cognition/integrated/phi_mechanisms.py` | Discrete Fibonacci search (Kiefer 1953), golden Weyl coverage, Fibonacci deepening schedule — each with a neutral twin |
+| `euclid/cognition/research/` | v17 pre-registered research programme, statistics and report |
 
 ---
 
@@ -1229,6 +1237,44 @@ The `AblationConfig` in `euclid/cognition/core.py` defines 8 surgical removal fl
 | `mathematical_structure` | True | No mathematical structure detection |
 
 Every ablation is recorded on the state and in the evidence chain so an ablated run can never masquerade as a full-system run.
+
+### 17.4a EUCLID v17 — the integrated adaptive loop (2026-10-08)
+
+`euclid/cognition/core.py:GeneralIntelligenceCore` remains the orchestrator; v17
+adds optional, typed extension hooks (`euclid/cognition/interfaces.py`:
+`EvidencePolicy`, `PosteriorDiscriminator`, `ObservingWorldModel`,
+`Restructurer`, `AnalogyRefresher`, `EpisodeConsolidator`). Specialists without
+them keep the original single-step behaviour.
+
+```
+represent → retrieve → analogy → strategy → [abduce → deduce →
+evidence-decision (VOI) → discriminate (EIG probe) → posterior update →
+analogy refresh]* → plan (causal subgoals) → counterfactual → restructure
+(measured) → compose (plans, repairs, transfers, skills) → imagine → rank
+(validity-weighted) → execute (governed) → compare (prediction error) →
+metacontrol (replan | repair_model | abandon_transfer | change_strategy |
+change_representation | adjust_plan_depth | halt) → objectives (proxy audit)
+→ learn → credit → consolidate (abstract, discover skills, ledger transfer)
+```
+
+| Mechanism | File | φ / Lucas role | Evidence class |
+|---|---|---|---|
+| Mechanism posterior with competing noise models, breakdown and selective rebuild | `euclid/cognition/integrated/world_model.py` | — | MEASURED: ablation −0.526 utility\* |
+| Sequential expected-information-gain probe design | `euclid/cognition/integrated/context.py` | — | MEASURED: causal-intervention ablation −0.438 utility\* |
+| Value-of-information evidence policy, strategy meta-learning, metacognitive control | `euclid/cognition/integrated/control.py` | — | MEASURED: meta-learning ablation −0.296 utility\* (+0.071 success); replanning −0.219\* |
+| Structural analogy by variable bijection, Bayes-factor adoption | `euclid/cognition/integrated/analogy.py` | — | MEASURED: no significant net effect; slightly harmful on the analogy slice |
+| Evidence-gated primitive discovery and skill hierarchy | `euclid/cognition/integrated/skills.py` | — | MEASURED: lifecycle functions; no outcome benefit |
+| Response optimisation by discrete Fibonacci search | `euclid/cognition/integrated/phi_mechanisms.py` | Fibonacci numbers, φ-interval reduction | known theorem operationalised; post-hoc in-loop gain on response families (incl. held-out dose-response), to be pre-registered |
+| Golden Weyl coverage; Fibonacci iterative-deepening schedule | `euclid/cognition/integrated/phi_mechanisms.py` | φ Kronecker sequence; Fibonacci bounds | exploratory: smallest largest-gap measured; deepening a trade-off, no dominance |
+| Self-improvement proposals by Fibonacci line search | `euclid/cognition/integrated/self_improvement.py` | Fibonacci search | exploratory: no proposal accepted on development data |
+
+The ablation flag `AblationConfig.mathematical_structure=False` replaces every
+φ mechanism with its neutral twin at the source (ternary search, grid
+coverage, unit deepening). `learned_primitives` was added beside the existing
+flags. Integration matched a conventional identify→plan pipeline's success at under
+half its interaction cost (+0.307 utility\*) and exceeded v16.4 (+0.898 success\*);
+it was not superadditive. Measured results, intervals and negative findings are in
+`docs/EUCLID_V17_RESEARCH_RELEASE.md` and `reports/euclid_v17/`.
 
 ### 17.5 Lucas Scaling for Intelligence
 
@@ -1657,3 +1703,57 @@ Synthetic data             Data augmentation            quantum ground-state sam
 The code beneath the code is the quantum substrate. Every enterprise intelligence function — from ETL to causal AI — is a measurement of one object |ψ⟩ in a different basis. The backend never changes. Only the semantic disguise layer (the frontend vocabulary) changes.
 
 This is why TOE is sector-agnostic and data-agnostic: the engine source contains zero domain vocabulary (proven structurally by check T11). Any dict/list/bytes/scalar/None encodes into |ψ⟩. The engine does not know or care whether it is processing Islamic finance compliance data, Arabic NLP embeddings, cybersecurity SIEM telemetry, or supply chain KPIs — it measures |ψ⟩ and produces 18+ intelligence outputs from a single call.
+
+---
+
+## Section 19 — Layer 15: The TOE Reasoning Core, Domain Adapters and Evidence Classes (2026-10-07)
+
+This section records the TOE elevation. It measures the chain above; it does not restate it.
+Every number below is produced by a script in this repository and recorded in a report.
+
+### 19.1 One backend, many problem forms
+
+| Layer | File | Role |
+|-------|------|------|
+| Composition root | `toe/runtime.py` (`TOEIntelligenceRuntime`) | tenancy, receipts, evidence chain, feedback/ASI loops, consensus boundary; `solve` / `learn` |
+| Reasoning core | `toe/machine.py` (`TOEMachine`) | represent → understand → futures → meta (VOI, precision) → decide/plan → arbitrate → explain → govern; outcome → revise → THESEUS persist |
+| Problem contract | `toe/problem.py` (`Problem`, `Structure`) | domain-neutral input; the `domain` label is provenance and a learning namespace only |
+| Domain adapters | `toe/adapters/` | tabular, causal system, graph, temporal, code (AST), scientific (recurrence, linear system), legacy HR — translation only |
+| PYTHIA adapter | `chronus/mla1517/mining/toe_problem.py` | mining telemetry → `Problem`; PYTHIA authorizes; `pow.check_pow` alone decides validity |
+| EUCLID handle | `euclid/cognition/toe_capabilities.py` | EUCLID invokes TOE capabilities; each answer is recorded on EUCLID's evidence chain |
+| Durable state | `toe/custody.py` | hash-chained `producer="toe"` snapshots in THESEUS custody; restart recovers, tampering fails closed |
+
+Measured (`toe.voyage.cross_domain_voyage`, `tests/test_toe_cross_domain.py`): 8 problem classes run
+through ONE machine; adapter code appears in no backend trace; the reasoning core imports no adapter.
+This supports the narrow claim *"multiple substantially different problem classes are handled by the
+same backend with only representation/domain adaptation changing"*. It does not support "every
+possible problem" or the "10,000 frontend problem forms" phrasing in §0/§12, which remains UNSUPPORTED
+as stated.
+
+### 19.2 Evidence classes for the chain (from `reports/toe_universal_principle_evidence.json`)
+
+| Link | Class | Measured / executed |
+|------|-------|---------------------|
+| Lucas, Binet, Cassini | PROVED + COMPUTATIONALLY_VERIFIED | identities checked exactly for n ≤ 2000 |
+| Zeckendorf | PROVED + COMPUTATIONALLY_VERIFIED; NEGATIVE for compression | ~1.4× more digits than binary, sparser, never adjacent ones |
+| Pisot | PROVED + COMPUTATIONALLY_VERIFIED; MEASURED coverage; NEGATIVE for SHA256d | golden ordering ≈20× lower star discrepancy than random; no change in double-SHA256 hit rate |
+| Lucas ladder vs doubling | MEASURED trade-off | lower overshoot, more probes — no general advantage |
+| 11D Poincaré-golden | PROVED (isometry) + COMPUTATIONALLY_VERIFIED | equals `poincare_golden_distance` to 2e-15; geodesics verified |
+| M₃₂ frame | MEASURED | covers S² better than random 32 directions, worse than a 32-point Fibonacci sphere |
+| 2I / 600-cell / finite gap | COMPUTATIONALLY_VERIFIED (finite volume) | |2I|=120, 600-cell counts, Σd²=120, gap (3−√5)/4 |
+| Continuum Yang–Mills | OPEN | no continuum, infinite-volume or Clay obligation established |
+| Golden Quantum | COMPUTATIONALLY_VERIFIED as software | physical-QPU execution and quantum advantage: UNSUPPORTED |
+| "same φ ⇒ same phenomenon" | UNSUPPORTED | structural unity only |
+| "rungs 15/18/20 optimal for intelligence" | UNSUPPORTED | no TOE capability has a rung parameter; no comparative measurement |
+
+### 19.3 Where structure matters (from `reports/toe_ablation_heldout.json`, held-out seeds)
+
+Each family holds the capability's precondition; each negative control removes it and shows parity.
+Causal structure, counterfactual abduction, value-of-information, multi-representation navigation,
+world-model revision and futures-backed planning each change outcomes when relevant. Adaptive
+precision is interpreter-dependent (`reports/toe_precision_cross_interpreter.json`): on CPython 3.11
+exact escalation decides 60/60 near-ties correctly vs 28/60 for float-only; on CPython 3.12 both
+reach 60/60 because float `sum()` became compensated. Exact escalation is what makes the decision
+interpreter-invariant.
+
+Claim register: `docs/toe/CLAIM_REGISTER.md` (machine-readable `toe/CLAIM_REGISTER.json`).

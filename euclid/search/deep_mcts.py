@@ -24,7 +24,6 @@ from __future__ import annotations
 import ast
 import hashlib
 import math
-import random
 import time
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
@@ -103,20 +102,23 @@ class DeepMCTSEngine:
         evaluator: Optional[IsolatedProcessEvaluator] = None,
         world_model: Any = None,
         world_model_prior_weight: float = 0.5,
+        trajectory_prior_scale: float = 0.05,
     ) -> None:
         self.seed = seed
-        self._rng = random.Random(seed)
         self.c_puct = c_puct
         self.calculator = PhiResonanceCalculator(target_phi)
         self.base_operators = ASTPrimitives.get_all_operators()
         self.evaluator = evaluator or IsolatedProcessEvaluator(timeout_sec=2.0)
-        self.surrogate = AdaptiveOperatorSurrogate(learning_rate=0.05)
+        self.surrogate = AdaptiveOperatorSurrogate()
         self.repository = repository or PersistentPrimitiveRepository()
         # Optional learned transition model; blended into priors only.
         self.world_model = world_model
         if not 0.0 <= world_model_prior_weight <= 1.0:
             raise ValueError("world_model_prior_weight must be in [0,1]")
         self.world_model_prior_weight = world_model_prior_weight
+        # Declared scale at which replayed trajectory counts enter the prior
+        # (soft-prior mass per observed trajectory occurrence).
+        self.trajectory_prior_scale = float(trajectory_prior_scale)
         self._trajectory_priors: Dict[str, float] = {}
 
     # -- priors ---------------------------------------------------------------
@@ -135,7 +137,9 @@ class DeepMCTSEngine:
         raw: Dict[str, float] = {}
         for op_name in ops:
             prior = self.surrogate.predict_gain(features, op_name)
-            prior += 0.05 * self._trajectory_priors.get(f"{depth}:{op_name}", 0.0)
+            prior += self.trajectory_prior_scale * self._trajectory_priors.get(
+                f"{depth}:{op_name}", 0.0
+            )
             if self.world_model is not None and signature is not None:
                 try:
                     predicted = self.world_model.expected_gain(signature, op_name)

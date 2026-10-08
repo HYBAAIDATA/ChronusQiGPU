@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
-HYBA DFT Validation Oracle - Quantum ASIC Materials Validation
-Simulates pressure-dependent stability of YBa2Cu3O7 for next-generation quantum processors
+HYBA Materials Validation Oracle - Quantum ASIC Materials Model
+
+Phenomenological parameterised model of YBa2Cu3O7 — this is NOT a DFT
+calculation and runs no ab-initio solver. Every reported score is a
+declared closed-form estimate on literature constants and is labelled
+``phenomenological_model_estimate``.
 """
 
 import asyncio
@@ -11,10 +15,10 @@ from typing import Any, Dict, List
 
 import numpy as np
 
-from hyba_backend.platform.resonance import PhiResonanceScorer
+from agi.resonance import PhiResonanceScorer
 
 # Import HYBA components
-from hyba_backend.services.agi.enhanced_ai.knowledge_base import EnhancedKnowledgeBase
+from agi.enhanced_ai.knowledge_base import EnhancedKnowledgeBase
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("DFT_Validation_Oracle")
@@ -97,7 +101,8 @@ class DFTValidationOracle:
         validation_results = {
             "timestamp": datetime.now().isoformat(),
             "material": self.ybco_structure["formula"],
-            "validation_type": "DFT_Quantum_ASIC",
+            "validation_type": "phenomenological_model_Quantum_ASIC",
+            "evidence_class": "phenomenological_model_estimate",
             "structural_stability": stability_results,
             "electronic_structure": electronic_results,
             "superconducting_properties": superconducting_results,
@@ -164,8 +169,9 @@ class DFTValidationOracle:
             "pressure_stability": stability_data,
             "optimal_pressure": optimal_data["pressure_gpa"],
             "max_stability_score": optimal_data["stability_score"],
-            "phase_transition_pressure": 30,  # GPa
+            "phase_transition_pressure": 30,  # GPa (declared bound)
             "structural_integrity": optimal_data["stability_score"] > 0.8,
+            "evidence_class": "phenomenological_model_estimate",
         }
 
     async def _analyze_electronic_structure(self) -> Dict[str, Any]:
@@ -222,6 +228,7 @@ class DFTValidationOracle:
             "max_quantum_coherence": optimal_temp_data["quantum_coherence_score"],
             "room_temp_resistivity": resistivity,  # At 300K
             "metallic_behavior": True,
+            "evidence_class": "phenomenological_model_estimate",
         }
 
     async def _calculate_superconducting_properties(self) -> Dict[str, Any]:
@@ -264,6 +271,7 @@ class DFTValidationOracle:
             "penetration_depth_nm": penetration_depth * 1e9,
             "kappa_parameter": penetration_depth / coherence_length,  # Type II superconductor
             "quantum_suitable": tc_doping > 77 and h_c2_tesla > 100,
+            "evidence_class": "phenomenological_model_estimate",
         }
 
     async def _evaluate_asic_compatibility(self) -> Dict[str, Any]:
@@ -314,6 +322,7 @@ class DFTValidationOracle:
             "asic_ready": overall_score > 0.7,
             "recommended_applications": self._recommend_asic_applications(metrics),
             "integration_challenges": self._identify_integration_challenges(metrics),
+            "evidence_class": "declared_engineering_estimates_composite",
         }
 
     async def _validate_quantum_resonance(self) -> Dict[str, Any]:
@@ -321,13 +330,20 @@ class DFTValidationOracle:
 
         logger.info("🎯 Validating quantum resonance with HYBA substrate...")
 
-        # Calculate phi-resonance score for YBCO
-        lattice_constant = self.ybco_structure["lattice_parameters"]["a"]
-        phi_score = self.phi_scorer.score(lattice_constant)
+        # Phi-resonance of the real lattice parameters, quantised to
+        # picometers so the integer scorer sees the actual structure —
+        # not the degenerate int() truncation of a float.
+        lp = self.ybco_structure["lattice_parameters"]
+        lattice_picometers = [
+            int(round(lp["a"] * 1000)),
+            int(round(lp["b"] * 1000)),
+            int(round(lp["c"] * 1000)),
+        ]
+        phi_score = self.phi_scorer.score(lattice_picometers)
 
-        # Calculate lattice harmonic alignment
+        # Lattice harmonic alignment against a declared target constant.
         harmonic_target = 0.892
-        harmonic_alignment = abs(lattice_constant / 4.0 - harmonic_target)
+        harmonic_alignment = abs(lp["a"] / 4.0 - harmonic_target)
 
         # Quantum coherence resonance (based on electronic structure)
         electronic_resonance = self._calculate_electronic_resonance()
@@ -351,6 +367,7 @@ class DFTValidationOracle:
             "overall_quantum_resonance": quantum_resonance_score,
             "hyba_compatible": quantum_resonance_score > 0.7,
             "resonance_classification": self._classify_resonance(quantum_resonance_score),
+            "evidence_class": "phenomenological_model_estimate",
         }
 
     def _calculate_electronic_resonance(self) -> float:

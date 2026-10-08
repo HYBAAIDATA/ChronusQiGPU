@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+import al_haras_pythia
 from al_haras_pythia import pythia_guardian_api
 
 
@@ -16,6 +18,7 @@ def test_pythia_guardian_uses_repository_local_toe(monkeypatch, tmp_path):
     assert api.evidence_provider is not None
     assert api.evidence_provider.__module__ == "al_haras_pythia"
     assert api.public_status()["configured"] is True
+    assert api.public_status()["audit_durable"] is True
 
 
 def test_every_privileged_route_operation_is_allowlisted():
@@ -60,3 +63,16 @@ def test_tensor_execute_preflight_synthesizes_observation():
     other = {"operation": "x"}
     _synthesize_preflight_observation("/api/v1/mining/start", other)
     assert "observation" not in other
+
+
+
+def test_pythia_guardian_never_falls_back_to_in_memory_audit(monkeypatch):
+    pythia_guardian_api.cache_clear()
+
+    def unavailable(*args, **kwargs):
+        raise RuntimeError("durable audit unavailable")
+
+    monkeypatch.setattr(al_haras_pythia, "build_guardian", unavailable)
+    with pytest.raises(RuntimeError, match="durable audit unavailable"):
+        pythia_guardian_api()
+    pythia_guardian_api.cache_clear()

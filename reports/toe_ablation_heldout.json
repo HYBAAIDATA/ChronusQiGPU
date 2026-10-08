@@ -1,0 +1,293 @@
+{
+  "elapsed_s": 203.43298411369324,
+  "results": {
+    "adaptive_precision": {
+      "capability_relevant": {
+        "ablated_ci95": [
+          0.9398260695220669,
+          0.9999999999999999
+        ],
+        "ablated_rate": 1.0,
+        "benefit": false,
+        "benefit_rule": "full CI lower bound above ablated CI upper bound",
+        "family": "cancellation near-ties",
+        "full_ci95": [
+          0.9398260695220669,
+          0.9999999999999999
+        ],
+        "full_rate": 1.0,
+        "metric": "correct-decision rate against ground truth",
+        "removed": "adaptive precision (exact Q(phi) escalation)",
+        "tasks": 60
+      },
+      "negative_control": {
+        "ablated_ci95": [
+          0.9398260695220669,
+          0.9999999999999999
+        ],
+        "ablated_rate": 1.0,
+        "benefit": false,
+        "benefit_rule": "full CI lower bound above ablated CI upper bound",
+        "family": "cancellation near-ties",
+        "full_ci95": [
+          0.9398260695220669,
+          0.9999999999999999
+        ],
+        "full_rate": 1.0,
+        "metric": "correct-decision rate against ground truth",
+        "removed": "adaptive precision (exact Q(phi) escalation)",
+        "tasks": 60
+      }
+    },
+    "causal_structure": {
+      "capability_relevant": {
+        "ablated_ci95": [
+          0.44103214654694856,
+          0.6842779960559936
+        ],
+        "ablated_rate": 0.5666666666666667,
+        "benefit": true,
+        "benefit_rule": "full CI lower bound above ablated CI upper bound",
+        "family": "confounded choice",
+        "full_ci95": [
+          0.9398260695220669,
+          0.9999999999999999
+        ],
+        "full_rate": 1.0,
+        "metric": "correct-decision rate against ground truth",
+        "removed": "causal structure",
+        "tasks": 60
+      },
+      "negative_control": {
+        "ablated_ci95": [
+          0.9114466177322051,
+          0.9970519161391262
+        ],
+        "ablated_rate": 0.9833333333333333,
+        "benefit": false,
+        "benefit_rule": "full CI lower bound above ablated CI upper bound",
+        "family": "confounded choice",
+        "full_ci95": [
+          0.9398260695220669,
+          0.9999999999999999
+        ],
+        "full_rate": 1.0,
+        "metric": "correct-decision rate against ground truth",
+        "removed": "causal structure",
+        "tasks": 60
+      }
+    },
+    "counterfactuals": {
+      "capability_relevant": {
+        "ablated_ci95": [
+          0.6099104639810865,
+          0.8286750351292115
+        ],
+        "ablated_rate": 0.7333333333333333,
+        "benefit": true,
+        "benefit_rule": "full CI lower bound above ablated CI upper bound",
+        "family": "unit-level choice",
+        "full_ci95": [
+          0.9398260695220669,
+          0.9999999999999999
+        ],
+        "full_rate": 1.0,
+        "metric": "correct-decision rate against ground truth",
+        "removed": "counterfactual futures (abduction)",
+        "tasks": 60
+      },
+      "negative_control": {
+        "ablated_ci95": [
+          0.9398260695220669,
+          0.9999999999999999
+        ],
+        "ablated_rate": 1.0,
+        "benefit": false,
+        "benefit_rule": "full CI lower bound above ablated CI upper bound",
+        "family": "unit-level choice",
+        "full_ci95": [
+          0.9398260695220669,
+          0.9999999999999999
+        ],
+        "full_rate": 1.0,
+        "metric": "correct-decision rate against ground truth",
+        "removed": "counterfactual futures (abduction)",
+        "tasks": 60
+      }
+    },
+    "meta_reasoning_voi": {
+      "capability_relevant": {
+        "ablated_ci95": [
+          0.37734812427246284,
+          0.6226518757275372
+        ],
+        "ablated_rate": 0.5,
+        "benefit": true,
+        "benefit_rule": "full CI lower bound above ablated CI upper bound",
+        "cost_note": "the full arm pays one 6-observation experiment per request; act-now pays none",
+        "evidence_requests": 60,
+        "family": "uncertain lever strength",
+        "full_ci95": [
+          0.8863601247107462,
+          0.9908108735098498
+        ],
+        "full_rate": 0.9666666666666667,
+        "metric": "correct-decision rate against ground truth",
+        "removed": "value-of-information gate",
+        "requests_where_prior_choice_was_wrong": 30,
+        "tasks": 60
+      },
+      "negative_control": {
+        "ablated_ci95": [
+          0.9398260695220669,
+          0.9999999999999999
+        ],
+        "ablated_rate": 1.0,
+        "benefit": false,
+        "benefit_rule": "full CI lower bound above ablated CI upper bound",
+        "cost_note": "the full arm pays one 6-observation experiment per request; act-now pays none",
+        "evidence_requests": 0,
+        "family": "uncertain lever strength",
+        "full_ci95": [
+          0.9398260695220669,
+          0.9999999999999999
+        ],
+        "full_rate": 1.0,
+        "metric": "correct-decision rate against ground truth",
+        "removed": "value-of-information gate",
+        "requests_where_prior_choice_was_wrong": 0,
+        "tasks": 60
+      }
+    },
+    "multi_representation": {
+      "capability_relevant": {
+        "ablated_mean": 0.6060185185185186,
+        "benefit": true,
+        "family": "navigation through walled grids",
+        "full_mean": 1.0,
+        "full_mean_stretch": 1.0486355091910649,
+        "metric": "all-pairs greedy delivery rate",
+        "note": "topological BFS also always delivers (global knowledge); the comparison is local greedy routing",
+        "removed": "multi-representation (geometry/topology beyond coordinates)",
+        "tasks": 60
+      },
+      "negative_control": {
+        "ablated_mean": 1.0,
+        "benefit": false,
+        "family": "navigation through walled grids",
+        "full_mean": 1.0,
+        "full_mean_stretch": 1.1664277615808227,
+        "metric": "all-pairs greedy delivery rate",
+        "note": "topological BFS also always delivers (global knowledge); the comparison is local greedy routing",
+        "removed": "multi-representation (geometry/topology beyond coordinates)",
+        "tasks": 60
+      }
+    },
+    "planning": {
+      "capability_relevant": {
+        "ablated_mean": 3.5714129911597974,
+        "benefit": true,
+        "family": "budgeted multi-step improvement",
+        "full_mean": 4.733135845486427,
+        "mean_gain": 1.16172285432663,
+        "metric": "expected objective reached",
+        "removed": "multi-step planning over the futures model (greedy one-step instead)",
+        "tasks": 60,
+        "tasks_where_plan_better": 60
+      },
+      "negative_control": {
+        "ablated_mean": 3.5714129911597974,
+        "benefit": false,
+        "family": "budgeted multi-step improvement",
+        "full_mean": 3.5714129911597974,
+        "mean_gain": 0.0,
+        "metric": "expected objective reached",
+        "removed": "multi-step planning over the futures model (greedy one-step instead)",
+        "tasks": 60,
+        "tasks_where_plan_better": 0
+      }
+    },
+    "world_model_revision": {
+      "capability_relevant": {
+        "ablated_ci95": [
+          0.0,
+          0.06017393047793289
+        ],
+        "ablated_rate": 0.0,
+        "benefit": true,
+        "benefit_rule": "full CI lower bound above ablated CI upper bound",
+        "family": "misspecified prior",
+        "full_ci95": [
+          0.9398260695220669,
+          0.9999999999999999
+        ],
+        "full_rate": 1.0,
+        "metric": "correct-decision rate against ground truth",
+        "removed": "world-model revision + memory",
+        "tasks": 60
+      },
+      "negative_control": {
+        "ablated_ci95": [
+          0.9398260695220669,
+          0.9999999999999999
+        ],
+        "ablated_rate": 1.0,
+        "benefit": false,
+        "benefit_rule": "full CI lower bound above ablated CI upper bound",
+        "family": "misspecified prior",
+        "full_ci95": [
+          0.9398260695220669,
+          0.9999999999999999
+        ],
+        "full_rate": 1.0,
+        "metric": "correct-decision rate against ground truth",
+        "removed": "world-model revision + memory",
+        "tasks": 60
+      }
+    }
+  },
+  "schema": "toe.ablation_study/v1",
+  "scope": "each relevant family is constructed so the capability's precondition holds; the negative control removes it. The study shows whether a capability changes outcomes when relevant \u2014 not how often such situations occur in practice.",
+  "seeds": {
+    "development": [
+      0,
+      19
+    ],
+    "held_out": [
+      1000,
+      1059
+    ]
+  },
+  "source_sha": "c1b0e3003ca8d095c37523c537b54441e88402c7",
+  "summary": {
+    "adaptive_precision": {
+      "benefit_in_negative_control": false,
+      "benefit_when_relevant": false
+    },
+    "causal_structure": {
+      "benefit_in_negative_control": false,
+      "benefit_when_relevant": true
+    },
+    "counterfactuals": {
+      "benefit_in_negative_control": false,
+      "benefit_when_relevant": true
+    },
+    "meta_reasoning_voi": {
+      "benefit_in_negative_control": false,
+      "benefit_when_relevant": true
+    },
+    "multi_representation": {
+      "benefit_in_negative_control": false,
+      "benefit_when_relevant": true
+    },
+    "planning": {
+      "benefit_in_negative_control": false,
+      "benefit_when_relevant": true
+    },
+    "world_model_revision": {
+      "benefit_in_negative_control": false,
+      "benefit_when_relevant": true
+    }
+  },
+  "tuning": "none \u2014 every TOE threshold is a declared constant"
+}

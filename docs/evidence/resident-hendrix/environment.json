@@ -1,0 +1,9 @@
+{
+  "python": "3.13.14",
+  "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+  "cpu_count": 2,
+  "device_dri_present": false,
+  "scope": "local CPU host; no physical GPU qualification",
+  "canonical_test_snapshot": "MCP-retrieved dependency-scoped files, real Turing export bootstrap",
+  "bootstrapping_file": "test-support/sitecustomize.py"
+}

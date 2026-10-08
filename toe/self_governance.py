@@ -264,9 +264,224 @@ def promotion_decision(
     }
 
 
+def machine_battery() -> Dict[str, Any]:
+    """Adversarial battery against the composed machine (not the parts).
+
+    Each probe drives the real ``TOEMachine`` / representation / receipt
+    path and records the outcome it actually observed: ``refused``,
+    ``detected``, ``degraded`` (safe but weaker) or ``vulnerable``.
+    """
+    import random
+
+    from .causal_ladder import CausalCapabilityUnavailable, CausalGraph, StructuralCausalModel
+    from .causal_ladder import counterfactual_state
+    from .intelligence_state import DivergenceError, IntelligenceState, LensView
+    from .machine import REFUSED, TOEMachine
+    from .memory import MemoryStore
+    from .planning import OperatorSpec
+    from .policy import Constraint, Objective
+    from .problem import Problem, Structure
+    from .receipts import ReceiptLedger
+    from .relationships import STRUCTURE_CONTRADICTED, relationship_ladder
+
+    probes: List[Dict[str, Any]] = []
+
+    def rec(name: str, ok: bool, good: str, detail: str) -> None:
+        probes.append({"attack": name, "outcome": good if ok else "vulnerable", "detail": detail})
+
+    machine = TOEMachine()
+
+    # foreign observation digest
+    st = IntelligenceState({"a": [1.0, 2.0]})
+    try:
+        st.bind(LensView("statistical", True, "0" * 64, "forged"))
+        rec("foreign observation digest", False, "refused", "foreign view was bound")
+    except DivergenceError as exc:
+        rec("foreign observation digest", True, "refused", str(exc)[:80])
+
+    # missing evidence: a counterfactual without the factual unit
+    g = CausalGraph.from_edges([("x", "y")])
+    g.edge_weights[("x", "y")] = 1.0
+    try:
+        counterfactual_state(StructuralCausalModel(graph=g), {"x": 1.0}, {}, ["y"])
+        rec("missing evidence", False, "refused", "counterfactual manufactured without evidence")
+    except CausalCapabilityUnavailable as exc:
+        rec("missing evidence", True, "refused", exc.reason[:80])
+
+    # false causal identification: latent confounder
+    latent = Problem(
+        domain="battery",
+        structure=Structure.of([("u", "x", 1.0), ("u", "y", 1.0), ("x", "y", 1.0)], latent=["u"]),
+        query=("x", "y"),
+    )
+    v = machine.identify(latent)
+    rec("false causal identification", v["verdict"] != "IDENTIFIED", "refused", f"verdict={v['verdict']}")
+
+    # counterfactual without an SCM: no structure → no rung 3, no number
+    ep = machine.run(Problem(domain="battery", observation={"x": [1.0, 2.0, 3.0, 4.0]}))
+    rec(
+        "counterfactual without SCM",
+        "causal_ladder" not in ep.get("understanding", {}) and "decision" not in ep,
+        "refused",
+        f"status={ep['status']}",
+    )
+
+    # tampered receipt
+    ledger = ReceiptLedger(run_id="battery")
+    ledger.issue("x", inputs={"a": 1}, config={}, output={"b": 2})
+    ledger.issue("y", inputs={"a": 2}, config={}, output={"b": 3})
+    object.__setattr__(ledger.records[0], "output", {"b": 999})  # forge past the frozen API
+    rec("tampered receipt", not ledger.verify()["ok"], "detected", "chain verification failed after tamper")
+
+    # representation divergence: two different observations, one identity?
+    a = IntelligenceState({"v": [1.0, 2.0]}).observation_sha256
+    b = IntelligenceState({"v": [1.0, 2.5]}).observation_sha256
+    rec("representation divergence", a != b, "detected", "distinct observations carry distinct identities")
+
+    # unbounded precision error: decision inside float error → exact
+    tie = Problem(
+        domain="battery",
+        structure=Structure.of(
+            [("a", "b", 1.0), ("a", "c", 1.0), ("a", "y", 1e16), ("b", "y", 1.0), ("c", "y", -1e16)]
+        ),
+        operators=(OperatorSpec("do_a", "a", (0.0, 1.0)),),
+        objective=Objective("y"),
+    )
+    tep = machine.run(tie)
+    prec = (tep.get("decision") or {}).get("precision") or {}
+    rec(
+        "unbounded precision error",
+        prec.get("regime") == "exact-required" and tep["decision"]["selected_action"] == "do_a=1.0",
+        "detected",
+        f"regime={prec.get('regime')} selected={tep['decision']['selected_action']}",
+    )
+
+    # unsupported transform: an unknown lens is reported unavailable
+    us = IntelligenceState.observe({"v": [1.0, 2.0]}, lenses=["no_such_lens"], bridge=object())
+    rec(
+        "unsupported transform",
+        not us.views["no_such_lens"].available,
+        "refused",
+        us.views["no_such_lens"].reason or "",
+    )
+
+    # conflicting evaluators: association vs causal must not be averaged
+    rng = random.Random(4)
+    rows = []
+    for _ in range(600):
+        s = rng.gauss(0, 1)
+        p = 2 * s + rng.gauss(0, 0.3)
+        rows.append((s, p, -0.5 * p + 3 * s + rng.gauss(0, 0.3)))
+    conflict = Problem(
+        domain="battery",
+        state={"s": 0.0, "p": 1.0, "q": 0.0},
+        structure=Structure.of([("s", "p"), ("s", "q"), ("p", "q")]),
+        samples={"s": [r[0] for r in rows], "p": [r[1] for r in rows], "q": [r[2] for r in rows]},
+        operators=(OperatorSpec("set_p", "p", (0.0, 2.0)),),
+        objective=Objective("q"),
+        query=("p", "q"),
+    )
+    arb = machine.run(conflict).get("arbitration") or {}
+    rec(
+        "conflicting evaluator outputs",
+        arb.get("status") == "DISAGREEMENT"
+        and (arb.get("resolution") or {}).get("surface") == "causal_interventional",
+        "detected",
+        f"status={arb.get('status')} resolution={(arb.get('resolution') or {}).get('surface')}",
+    )
+
+    # stale model: knowledge from a superseded revision stops applying
+    mem = MemoryStore()
+    mem.remember("world_model", {"w": 2.0}, causal_tags=["ns"], regime="ns@rev0")
+    mem.invalidate("ns@rev0", "ns@rev1")
+    rec(
+        "stale model",
+        not mem.recall(causal_tags=["ns"], namespace="world_model"),
+        "detected",
+        "rev0 knowledge staled after revision",
+    )
+
+    # cross-domain negative transfer
+    m2 = TOEMachine()
+    pa = Problem(
+        domain="battery.a",
+        state={"x": 0.0},
+        structure=Structure.of([("x", "y", 2.0)]),
+        operators=(OperatorSpec("set_x", "x", (1.0,)),),
+        objective=Objective("y"),
+    )
+    m2.learn(m2.run(pa), [{"x": 1.0, "y": -5.0}] * 4, persist=False)
+    from dataclasses import replace
+
+    epb = m2.run(replace(pa, domain="battery.b"))
+    rec(
+        "cross-domain negative transfer",
+        epb["identity"]["model_revision"] == 0 and epb["identity"]["model_weights"] == {"x->y": 2.0},
+        "refused",
+        f"domain b revision={epb['identity']['model_revision']}",
+    )
+
+    # invalid action: an operator on a node the model does not have
+    bad = Problem(
+        domain="battery",
+        structure=Structure.of([("x", "y", 1.0)]),
+        operators=(OperatorSpec("set_q", "q", (1.0,)),),
+        objective=Objective("y"),
+    )
+    rec("invalid action", machine.run(bad)["status"] == REFUSED, "refused", "operator on unknown node refused")
+
+    # constraint violation: the violating action is excluded
+    cv = Problem(
+        domain="battery",
+        structure=Structure.of([("x", "y", 1.0)]),
+        operators=(OperatorSpec("set_x", "x", (1.0, 99.0)),),
+        objective=Objective("y"),
+        constraints=(Constraint("cap", "y", "<=", 10.0),),
+    )
+    cvep = machine.run(cv)
+    rec(
+        "constraint violation",
+        cvep["decision"]["selected_action"] == "set_x=1.0",
+        "refused",
+        f"selected={cvep['decision']['selected_action']}",
+    )
+
+    # supplied wrong graph whose testable implications the data contradicts
+    chain = []
+    for _ in range(800):
+        a0 = rng.gauss(0, 1)
+        b0 = a0 + rng.gauss(0, 0.5)
+        chain.append((a0, b0, b0 + rng.gauss(0, 0.5)))
+    wrong = relationship_ladder(
+        {"A": [r[0] for r in chain], "B": [r[1] for r in chain], "C": [r[2] for r in chain]},
+        treatment="A",
+        outcome="C",
+        graph=Structure.of([("A", "C"), ("B", "C")]).graph(),
+    )
+    rec(
+        "false causal graph (testable)",
+        STRUCTURE_CONTRADICTED in wrong["reached"] and not wrong["effect_released"],
+        "detected",
+        f"contradicted={wrong['levels'].get(STRUCTURE_CONTRADICTED, {}).get('contradicted')}",
+    )
+
+    counts = {
+        o: sum(1 for p in probes if p["outcome"] == o)
+        for o in ("refused", "detected", "degraded", "vulnerable")
+    }
+    return {
+        "version": SELF_GOVERNANCE_VERSION,
+        "probes": probes,
+        "vulnerable": [p["attack"] for p in probes if p["outcome"] == "vulnerable"],
+        "counts": counts,
+        "boundary": "a wrong graph inside the TRUE graph's Markov-equivalence class passes every implication test",
+    }
+
+
 __all__ = [
     "SELF_GOVERNANCE_VERSION",
     "adversarial_battery",
+    "machine_battery",
     "self_check",
     "promotion_decision",
 ]

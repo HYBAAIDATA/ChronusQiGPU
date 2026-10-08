@@ -575,7 +575,7 @@ if __name__ == "__main__":
 
     gateway = HighCapacityAPIGateway(max_workers=100)
 
-    # Simulate requests from different tiers
+    # Send real requests through the gateway from different tiers
     print("\nProcessing test requests...")
 
     for i in range(10):

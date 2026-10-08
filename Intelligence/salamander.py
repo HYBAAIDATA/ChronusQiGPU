@@ -44,7 +44,6 @@ from __future__ import annotations
 
 import functools
 import logging
-import math
 import time
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
@@ -986,33 +985,40 @@ class SalamanderEngine:
                 self._cycle_count += 1
 
                 # 1. Run the full intelligence pipeline
+                cycle_start = time.perf_counter()
                 try:
                     pred = bridge.predict(sample)
-                    pci = pred.get("confidence", 0.5)
+                    pci = pred.get("confidence", 0.0)
                 except Exception:
-                    pci = 0.3
+                    pci = 0.0  # measured failure — no confidence, not a guess
                     self.heal("prediction_failure", {"epoch": epoch})
                     repair_count += 1
 
-                # 2. Check homeostasis
+                # 2. Check homeostasis — measured metrics only.
+                #    error_rate is the measured repair rate of this run;
+                #    throughput is measured wall-clock samples/sec.
+                #    vram_utilization is NOT measurable on this host, so
+                #    it is omitted (unmeasured) — never scripted again.
+                elapsed = max(time.perf_counter() - cycle_start, 1e-9)
                 metrics = {
-                    "vram_utilization": 0.5 + 0.3 * math.sin(epoch * 0.1),
-                    "error_rate": 0.02 + 0.01 * math.cos(epoch * 0.05),
-                    "throughput": 1.0 - 0.1 * math.sin(epoch * 0.1),
+                    "error_rate": repair_count / max(1, self._cycle_count),
+                    "throughput": 1.0 / elapsed,
                 }
                 report = self.check_homeostasis(metrics)
                 if not report.healthy:
                     self.heal(report.action, {"epoch": epoch, "metrics": metrics})
                     repair_count += 1
 
-                # 3. Scale intelligence with Lucas
+                # 3. Scale intelligence with Lucas. All three bases reuse
+                #    the one measured confidence — no invented
+                #    attenuation factors.
                 lucas_idx = self.scaler.SCALE_INDICES[
                     min(epoch // 2, len(self.scaler.SCALE_INDICES) - 1)
                 ]
                 scaled = self.scale_intelligence(
                     pci_base=pci,
-                    emergence_base=pci * 0.8,
-                    consciousness_base=pci * 0.6,
+                    emergence_base=pci,
+                    consciousness_base=pci,
                     lucas_index=lucas_idx,
                 )
 

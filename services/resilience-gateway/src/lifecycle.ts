@@ -1,5 +1,6 @@
 import { createServer, type Server } from "node:http";
 import { WebSocketServer } from "ws";
+import { FixedWindowRateLimiter, HmacGatewayTicketVerifier } from "./auth.js";
 import { initializeDependencies, type Dependencies } from "./dependencies.js";
 import { initializeFeatureFlags } from "./feature-flags.js";
 import { createRouter, type Readiness } from "./http.js";
@@ -21,12 +22,36 @@ export async function boot(port = Number(process.env.PORT ?? 3000)): Promise<Run
   const started = Date.now();
   initializeFeatureFlags();
   const dependencies = await initializeDependencies();
+  const ticketVerifier = new HmacGatewayTicketVerifier(
+    process.env.WS_TICKET_SECRET ?? "",
+  );
+  const configuredRate = Number(
+    process.env.GATEWAY_HTTP_REQUESTS_PER_MINUTE ?? "120",
+  );
+  const requestsPerMinute =
+    Number.isInteger(configuredRate) && configuredRate > 0
+      ? configuredRate
+      : 120;
   const readiness: Readiness = {
     acceptingTraffic: false,
     shuttingDown: false,
+    securityConfigured: ticketVerifier.configured,
   };
+  if (!ticketVerifier.configured) {
+    logEvent("security_unconfigured", {
+      reason: "WS_TICKET_SECRET must be at least 32 bytes",
+    });
+  }
   let activeRequests = 0;
-  const router = createRouter(dependencies, readiness);
+  const router = createRouter(
+    dependencies,
+    readiness,
+    undefined,
+    {
+      verifier: ticketVerifier,
+      rateLimiter: new FixedWindowRateLimiter(requestsPerMinute),
+    },
+  );
   const server = createServer((request, response) => {
     activeRequests++;
     response.once("finish", () => activeRequests--);

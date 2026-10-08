@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass
 
+from Intelligence._born import born_evidence
+
 
 @dataclass
 class AgentModel:
@@ -83,21 +85,25 @@ class TheoryOfMindEngine:
             will_accept = proposed_change.get("improves_readability", False)
             return {
                 "prediction": "accept" if will_accept else "request_changes",
-                "confidence": 0.7,
+                # One measured evidence bit (the readability flag)
+                "confidence": born_evidence(1, 0),
                 "reasoning": f"Agent values {model.desires}",
             }
         elif "behavioural" in model.perspective:
             will_accept = proposed_change.get("preserves_behaviour", True)
             return {
                 "prediction": "pass" if will_accept else "fail",
-                "confidence": 0.9,
+                "confidence": born_evidence(1, 0),
                 "reasoning": f"Agent expects {model.beliefs}",
             }
         elif "rule_compliance" in model.perspective:
             will_accept = proposed_change.get("rule_violations", 0) == 0
-            return {"prediction": "clean" if will_accept else "issues_found", "confidence": 0.85}
+            return {
+                "prediction": "clean" if will_accept else "issues_found",
+                "confidence": born_evidence(1, 0),
+            }
 
-        return {"prediction": "unknown", "confidence": 0.3}
+        return {"prediction": "unknown", "confidence": born_evidence(0, 0)}
 
     def false_belief_test(self, agent_id: str, actual_state: dict, believed_state: dict) -> bool:
         """Classic false-belief test: can the system distinguish what an agent

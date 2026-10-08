@@ -16,7 +16,13 @@ import json
 import math
 from typing import Any, Dict, Mapping, Optional, Sequence
 
-from lucas.ladder import SCALE_RUNGS
+try:
+    # The declared scale ladder is the monorepo's single source (lucas/);
+    # a standalone TOE install has no ladder and the scale program — like
+    # the MLA1517 controller below — is then unavailable, not restated.
+    from lucas.ladder import SCALE_RUNGS
+except ImportError:  # pragma: no cover - standalone TOE distribution
+    SCALE_RUNGS = ()
 
 try:
     from .poincare_golden_11d import compute_zeckendorf_certificate
@@ -114,6 +120,8 @@ class TOEExpansionEngine:
     def _scale_program(self) -> list[Mapping[str, Any]]:
         if ScaleController is None:
             raise RuntimeError("MLA1517 scale controller is unavailable")
+        if not self.policy.scale_indices:
+            raise RuntimeError("no declared scale ladder (lucas.ladder) is installed")
         budget = ScaleBudget(
             max_index=self.policy.max_index,
             max_steps=self.policy.max_steps,

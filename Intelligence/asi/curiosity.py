@@ -40,8 +40,9 @@ class CuriosityDrivenExplorer:
             desc = self.novelty.compute_novelty(behaviour_vector)
             novelty_bonus = desc.novelty_score if desc.is_novel else 0.0
 
-        # Intrinsic reward = prediction error + info gain + novelty
-        intrinsic_reward = 0.5 * prediction_error + 0.3 * info_gain + 0.2 * novelty_bonus
+        # Intrinsic reward = equal blend of the three measured signals —
+        # the invented 0.5/0.3/0.2 weighting is gone.
+        intrinsic_reward = (prediction_error + info_gain + novelty_bonus) / 3.0
 
         return CuriositySignal(prediction_error, info_gain, novelty_bonus, intrinsic_reward)
 
@@ -54,10 +55,13 @@ class CuriosityDrivenExplorer:
         errors = [abs(a - p) for p, a in recent]
         if len(errors) < 2:
             return 0.0
-        mean_err = sum(errors) / len(errors)
-        variance = sum((e - mean_err) ** 2 for e in errors) / len(errors)
-        # Lower variance = more learned = higher info gain
-        return 1.0 / (1.0 + variance)
+        # Information gain = measured reduction in prediction error
+        # between the first and second half of the window — not the
+        # invented 1/(1+variance) transform.
+        half = max(1, len(errors) // 2)
+        early = sum(errors[:-half]) / max(len(errors[:-half]), 1)
+        late = sum(errors[-half:]) / half
+        return max(0.0, early - late)
 
     def suggest_curious_mutation(
         self, candidate_mutations: list, surrogate_predictions: list

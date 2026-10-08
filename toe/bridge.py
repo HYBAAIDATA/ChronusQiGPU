@@ -247,10 +247,15 @@ class TOEStateTomography:
     - entropy: von Neumann entropy of the density matrix
     - coherence: density matrix purity Tr(ρ²)
     - fisher_info: quantum Fisher information (confidence bound)
+
+    ``confidence`` reports the measured density-matrix purity
+    Tr(rho^2) of the encoded state — a real substrate quantity, not an
+    invented blend. The remaining measured quantities (entropy, Fisher
+    information, fidelity) are exposed on their own named fields.
     """
 
     available: bool
-    confidence: float
+    confidence: Optional[float]
     energy: float = 0.0
     momentum: float = 0.0
     volatility: float = 0.0
@@ -291,7 +296,7 @@ class TOETrajectoryPrediction:
     """
 
     available: bool
-    confidence: float
+    confidence: Optional[float]
     current_state: float = 0.0
     forecast_3_step: float = 0.0
     forecast_6_step: float = 0.0
@@ -328,7 +333,7 @@ class TOECausalAnalysis:
     """
 
     available: bool
-    confidence: float
+    confidence: Optional[float]
     key_factors: List[Tuple[str, float]] = field(default_factory=list)
     factor_weights: Dict[str, float] = field(default_factory=dict)
     recommendations: Dict[str, List[str]] = field(default_factory=dict)
@@ -376,8 +381,10 @@ class TOEBridge:
     3. Propagates the state forward via the exact Schrödinger equation
        (matrix exponential of the Hamiltonian).
     4. Ranks causal factors by quantum expectation value magnitude.
-    5. Reports honest confidence derived from quantum Fisher information
-       and density matrix purity.
+    5. Reports ``confidence`` as a measured substrate quantity per
+       section (declared in each section's diagnostics: purity,
+       survival fidelity, Born-distribution concentration, rung
+       coverage) — never a blend with invented weights.
 
     The bridge is **sector-agnostic and data-agnostic** — it does not
     assume any particular domain. The caller provides data as a dict of
@@ -678,18 +685,10 @@ class TOEBridge:
             probs = state.probabilities()
             factor_weights = {f"basis_{i}": float(p) for i, p in enumerate(probs[:10])}
 
-            # Confidence: combination of purity and Fisher information
-            confidence = float(
-                0.4 * tomo["purity"]
-                + 0.3 * min(tomo["fisher_information"] / 4.0, 1.0)
-                + 0.3
-                * (
-                    1.0 - tomo["measurement_entropy"] / math.log2(self._dim)
-                    if self._dim > 1
-                    else 0.5
-                )
-            )
-            confidence = max(0.0, min(1.0, confidence))
+            # Confidence reports a measured substrate quantity — the
+            # encoded state's density-matrix purity Tr(rho^2) — not an
+            # invented blend of unrelated quantities.
+            confidence = float(tomo["purity"])
 
             return TOEStateTomography(
                 available=True,
@@ -709,6 +708,7 @@ class TOEBridge:
                     "number": float(tomo["number"]),
                     "effective_dimension": float(tomo["effective_dimension"]),
                     "norm": float(tomo["norm"]),
+                    "confidence_measure": "measured density-matrix purity Tr(rho^2)",
                     "engine": "quantum_tensor (exact Complex/ComplexMatrix/QuantumState)",
                 },
             )
@@ -765,23 +765,28 @@ class TOEBridge:
             else:
                 trend = "stable"
 
-            # Intervention points: times of maximum Fisher information
+            # Intervention points: times of maximum Fisher information.
+            # F_Q upper-bounds parameter-estimation precision (quantum
+            # Cramér-Rao), so the optimal measurement time is the argmax
+            # of the measured Fisher information — not an invented cutoff.
             x = Observables.position(self._dim)
+            fishers_by_time: List[float] = [
+                float(quantum_fisher_information(s, x)) for s in future_states
+            ]
+            max_fisher = max(fishers_by_time) if fishers_by_time else 0.0
             intervention_points: List[Dict[str, Any]] = []
-            for i, (t, s) in enumerate(zip(times, future_states)):
-                fisher = quantum_fisher_information(s, x)
+            for i, (t, f) in enumerate(zip(times, fishers_by_time)):
                 intervention_points.append(
                     {
                         "time": float(t),
-                        "fisher_info": float(fisher),
+                        "fisher_info": float(f),
                         "energy": float(energies[i]),
-                        "is_optimal": fisher > 1.0,
+                        "is_optimal": bool(f == max_fisher),
                     }
                 )
 
             # Time sensitivity from Fisher information variance
-            fishers = [ip["fisher_info"] for ip in intervention_points]
-            fisher_var = float(np_var(fishers)) if fishers else 0.0
+            fisher_var = float(np_var(fishers_by_time)) if fishers_by_time else 0.0
             if fisher_var > 0.5:
                 time_sensitivity = "high"
             elif fisher_var > 0.1:
@@ -789,9 +794,11 @@ class TOEBridge:
             else:
                 time_sensitivity = "low"
 
-            # Confidence from trajectory coherence
-            confidence = float(0.5 + 0.3 * min(abs(trend_rate), 1.0) - 0.2 * fisher_var)
-            confidence = max(0.0, min(1.0, confidence))
+            # Confidence reports a measured Born-rule quantity: the
+            # survival probability |<psi(0)|psi(T)>|^2 between the
+            # current state and the furthest forecast — how much of the
+            # initial state the trajectory retains. No invented weights.
+            confidence = float(state.fidelity(future_states[-1])) if future_states else None
 
             return TOETrajectoryPrediction(
                 available=True,
@@ -810,6 +817,7 @@ class TOEBridge:
                     "times": times,
                     "energies": energies,
                     "fisher_variance": fisher_var,
+                    "confidence_measure": ("measured survival probability |<psi(0)|psi(T)>|^2"),
                     "engine": "quantum_tensor (exact Schrödinger propagation)",
                 },
             )
@@ -880,19 +888,19 @@ class TOEBridge:
                 else None
             )
 
-            # Data quality from the Born-distribution spread (low = peaked)
+            # Data quality from the Born-distribution spread (low = peaked).
+            # A degenerate single-outcome distribution has zero entropy —
+            # concentration 1.0, not an invented midpoint.
             entropy = state.measurement_entropy()
             max_entropy = math.log2(self._dim) if self._dim > 1 else 1.0
-            data_quality = float(1.0 - entropy / max_entropy) if max_entropy > 0 else 0.5
+            data_quality = (
+                float(1.0 - entropy / max_entropy) if max_entropy > 0 else float(entropy <= 0.0)
+            )
 
-            # Confidence: an unavailable agreement drops out of the blend
-            # instead of contributing a manufactured value.
-            spread_term = 1.0 - np_std(list(factor_weights.values())) if factor_weights else 0.5
-            terms = [(0.3, data_quality), (0.4, spread_term)]
-            if agreement is not None:
-                terms.append((0.3, agreement))
-            confidence = float(sum(w * v for w, v in terms) / sum(w for w, _ in terms))
-            confidence = max(0.0, min(1.0, confidence))
+            # Confidence reports a measured quantity: the Born
+            # distribution's concentration (data_quality, the same
+            # measured value exposed below) — not an invented blend.
+            confidence = float(data_quality)
 
             return TOECausalAnalysis(
                 available=True,
@@ -908,6 +916,7 @@ class TOEBridge:
                     "num_recommendations": sum(len(v) for v in recommendations.values()),
                     "factor_names": list(factor_weights.keys()),
                     "entropy": float(entropy),
+                    "confidence_measure": ("measured Born-distribution concentration 1 - H/H_max"),
                     "engine": "quantum_tensor (exact quantum measurement theory)",
                     "ranking_basis": "expectation_magnitude",
                     "causal_explanation": (
@@ -939,9 +948,10 @@ class TOEBridge:
     ) -> "CausalLadderResult":
         """Run the full Pearl causal ladder: association → intervention → counterfactual.
 
-        This is the fourth intelligence capability, implementing Judea
-        Pearl's three-rung causal ladder on the project's own quantum
-        tensor:
+        This is the fourth intelligence capability. Pearl's ladder is
+        classical causal inference — it is never a quantum computation;
+        the project's quantum tensor carries only the state/observable
+        encoding underneath it:
 
         - **Rung 1 (Association)**: P(Y|X) — Born rule probabilities on the
           encoded quantum state. Already partially covered by
@@ -971,7 +981,9 @@ class TOEBridge:
             highest |⟨A⟩| is chosen as the treatment.
         intervention_value : float, optional
             The value to set the intervention variable to. If None, the
-            mean of the factor's values is used.
+            factor's numeric mean is used when the data supplies one;
+            otherwise the measured expectation <A> of that factor's
+            observable. If neither resolves, Rung 2 is skipped.
         observed : dict, optional
             Observed evidence for the counterfactual query (Rung 3).
             If None, Rung 3 is skipped.
@@ -1006,20 +1018,24 @@ class TOEBridge:
                 if expectations:
                     intervention_node = max(expectations, key=expectations.get)
 
-            # Choose intervention value if not specified
+            # Choose intervention value if not specified: the measured
+            # expectation <A> of that factor's own observable on the
+            # encoded state. A non-numeric or unresolvable value leaves
+            # intervention_value None and Rung 2 is skipped — no
+            # fabricated do() point.
             if intervention_value is None and intervention_node:
+                resolved: Optional[float] = None
                 if isinstance(data, dict):
-                    val = data.get(intervention_node, 0.0)
+                    val = data.get(intervention_node)
                     if isinstance(val, (list, tuple)) and val:
-                        intervention_value = sum(
-                            float(v) for v in val if isinstance(v, (int, float))
-                        ) / len(val)
+                        numerics = [float(v) for v in val if isinstance(v, (int, float))]
+                        if numerics:
+                            resolved = sum(numerics) / len(numerics)
                     elif isinstance(val, (int, float)):
-                        intervention_value = float(val)
-                    else:
-                        intervention_value = 0.5
-                else:
-                    intervention_value = 0.5
+                        resolved = float(val)
+                if resolved is None and intervention_node in factor_obs:
+                    resolved = float(state.expectation(factor_obs[intervention_node]))
+                intervention_value = resolved
 
             # Rung 1: Association P(Y|X)
             outcome_obs = list(factor_obs.values())[-1] if factor_obs else Observables.position(dim)
@@ -1076,15 +1092,14 @@ class TOEBridge:
                         "missing_evidence": exc.missing,
                     }
 
-            # Confidence from graph quality
-            confidence = 0.5
-            if graph.is_dag():
-                confidence += 0.2
-            if identifiable:
-                confidence += 0.2
-            if counterfactual_val is not None:
-                confidence += 0.1
-            confidence = max(0.0, min(1.0, confidence))
+            # Confidence reports a measured completeness fraction: the
+            # share of ladder rungs that produced output (association,
+            # intervention, counterfactual) — a real computed quantity,
+            # not a sum of invented increments.
+            confidence = float(
+                (bool(association) + bool(intervention_dist) + (counterfactual_val is not None))
+                / 3.0
+            )
 
             return CausalLadderResult(
                 available=True,
@@ -1103,7 +1118,13 @@ class TOEBridge:
                     "intervention_node": intervention_node,
                     "intervention_value": intervention_value,
                     "num_factors": len(factor_obs),
-                    "engine": "causal_ladder (Pearl do-calculus on quantum tensor)",
+                    "engine": (
+                        "causal_ladder (Pearl do-calculus — classical causal "
+                        "inference; states/observables on quantum_tensor)"
+                    ),
+                    "confidence_measure": (
+                        "measured fraction of ladder rungs that produced output"
+                    ),
                     "graph_source": (
                         "infer_causal_graph: correlation-magnitude heuristic, NOT causal "
                         "discovery; supply a graph to TOEBridge.reason for causal claims"
@@ -1141,7 +1162,10 @@ class TOEBridge:
             "exact_tensor": exact,
         }
 
-        # Combined confidence: geometric mean of the four capabilities
+        # Combined confidence: geometric mean over sections that
+        # actually reported one. Sections report a measured scalar (or
+        # None) — never an invented blend, so the combination is None
+        # whenever no measured confidence exists.
         confidences = [
             c
             for c in [
@@ -1150,10 +1174,10 @@ class TOEBridge:
                 causal.confidence,
                 ladder.confidence,
             ]
-            if c > 0
+            if c is not None and c > 0
         ]
-        combined_conf = (
-            float(math.prod(confidences) ** (1.0 / len(confidences))) if confidences else 0.0
+        combined_conf: Optional[float] = (
+            float(math.prod(confidences) ** (1.0 / len(confidences))) if confidences else None
         )
 
         return {
@@ -1800,7 +1824,7 @@ if __name__ == "__main__":
     print("\n[2] State Tomography:")
     tomo = bridge.state_tomography(data)
     t = tomo.as_dict()
-    print(f"  available: {t['available']}, confidence: {t['confidence']:.4f}")
+    print(f"  available: {t['available']}, confidence: {t['confidence']}")
     print(f"  energy: {t['energy']:.4f}, momentum: {t['momentum']:.4f}")
     print(f"  entropy: {t['entropy']:.4f}, coherence: {t['coherence']:.6f}")
     print(f"  fisher_info: {t['fisher_info']:.4f}")
@@ -1809,7 +1833,7 @@ if __name__ == "__main__":
     print("\n[3] Trajectory Prediction:")
     traj = bridge.predict_trajectory(data)
     tr = traj.as_dict()
-    print(f"  available: {tr['available']}, confidence: {tr['confidence']:.4f}")
+    print(f"  available: {tr['available']}, confidence: {tr['confidence']}")
     print(f"  current_state: {tr['current_state']:.4f}")
     print(f"  forecast_3_step: {tr['forecast_3_step']:.4f}")
     print(f"  forecast_6_step: {tr['forecast_6_step']:.4f}")
@@ -1826,14 +1850,14 @@ if __name__ == "__main__":
     print("\n[4] Causal Analysis:")
     causal = bridge.explain_causality(data)
     c = causal.as_dict()
-    print(f"  available: {c['available']}, confidence: {c['confidence']:.4f}")
+    print(f"  available: {c['available']}, confidence: {c['confidence']}")
     print("  key_factors (ranked by |<A|>):")
     for name, weight in c["key_factors"]:
         print(f"    {name}: {weight:.4f}")
 
     print("\n[5] Full Prediction Pipeline:")
     result = bridge.predict(data)
-    print(f"  combined_confidence: {result['confidence']:.4f}")
+    print(f"  combined_confidence: {result['confidence']}")
     print(f"  source: {result['source']}")
 
     print("\n" + "=" * 70)

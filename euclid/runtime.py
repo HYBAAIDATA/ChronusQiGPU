@@ -44,6 +44,9 @@ class EuclidRuntime:
         )
         self.kairos = KairosRuntime(creator_id, self.evidence)
         self.cognition = cognition
+        #: v17 integrated adaptive intelligence (see compose_adaptive_intelligence)
+        self.adaptive: Any | None = None
+        self._adaptive_organs = 0
         from .cognition.reachability import ReachabilityMatrix
 
         matrix_path = self.state_dir / "cognition_reachability.json"
@@ -53,6 +56,7 @@ class EuclidRuntime:
         # operation name -> set at register_specialist; the router only ever
         # selects organs that declared the requested operation.
         self._organ_operations: dict[str, frozenset[str]] = {}
+        self._toe: Any | None = None
 
     @classmethod
     def production(
@@ -67,6 +71,7 @@ class EuclidRuntime:
         specialists: Mapping[str, Any] | None = None,
         organism: bool = True,
         guardian: Any | None = None,
+        subscription_token_provider: Any | None = None,
     ) -> "EuclidRuntime":
         root = Path(state_dir)
         root.mkdir(parents=True, exist_ok=True)
@@ -97,7 +102,10 @@ class EuclidRuntime:
         )
         runtime._compose_cognition()
         if organism:
-            runtime.compose_organism(guardian=guardian)
+            runtime.compose_organism(
+                guardian=guardian,
+                subscription_token_provider=subscription_token_provider,
+            )
         for organ_id, implementation in dict(specialists or {}).items():
             runtime.register_specialist(organ_id, implementation)
         return runtime
@@ -123,6 +131,7 @@ class EuclidRuntime:
         *,
         guardian: Any | None = None,
         implementations: Mapping[str, Any] | None = None,
+        subscription_token_provider: Any | None = None,
     ) -> None:
         """Register TURING/CHRONUS/Triad specialists, the AL HARAS boundary and
         the Salamander bounded-recovery plane on this composition root.
@@ -130,11 +139,7 @@ class EuclidRuntime:
         Authority stays with each owner; EUCLID only gains governed dispatch.
         An organ whose owner cannot be constructed is recorded unavailable
         with its reason instead of being registered."""
-        from salamander.control_plane import (
-            ActionRegistry,
-            AutonomicControlPlane,
-        )
-        from salamander.control_plane import EvidenceLedger as AutonomicLedger
+        from salamander.control_plane import ActionRegistry
         from salamander.models import ActionKind
 
         from .cognition.reachability import ReachabilityStage
@@ -170,10 +175,10 @@ class EuclidRuntime:
             verifier_id="euclid.delegator-redispatch",
             verifier=self._verify_requalified,
         )
-        self.autonomic = AutonomicControlPlane(
-            registry=actions,
-            ledger=AutonomicLedger(
-                sink=lambda record: self.evidence.append("salamander-action", dict(record))
+        self.autonomic = self._compose_actuation_plane(
+            actions, guardian, subscription_token_provider,
+            ledger_sink=lambda record: self.evidence.append(
+                "salamander-action", dict(record)
             ),
         )
         self._advance("salamander.control_plane", ReachabilityStage.REACHABLE, "organism-startup")
@@ -187,6 +192,78 @@ class EuclidRuntime:
         self.discovery_optimisation = DiscoveryOptimisationBridge(self.autonomic)
         self._advance("euclid.discovery", ReachabilityStage.REACHABLE, "organism-startup")
         self.reachability.save(self.state_dir / "cognition_reachability.json")
+
+    def _compose_actuation_plane(
+        self,
+        actions: Any,
+        guardian: Any | None,
+        token_provider: Any | None,
+        *,
+        ledger_sink: Any,
+    ) -> Any:
+        """Compose the Salamander plane; actuation only via the authorized path.
+
+        Bounded recovery is a privileged transition: per the F-side contract
+        the production plane is built through
+        ``salamander.authority.build_authorized_control_plane`` which binds
+        actuation to an evidence-bearing AL HARAS verdict.  When no Guardian
+        or no subscription-token provider is configured — or the authorized
+        constructor is unavailable/refuses — the base plane is still composed
+        for observe/discovery duties, but ``_actuation_ready`` stays False and
+        ``heal_organ`` refuses before any handler runs.  No dev bypass: an
+        unauthorized organism reports exactly why actuation is closed.
+        """
+        from salamander.control_plane import (
+            AutonomicControlPlane,
+            EvidenceLedger as AutonomicLedger,
+        )
+
+        ledger = AutonomicLedger(sink=ledger_sink)
+        self._actuation_ready = False
+        self._subscription_token_provider = token_provider
+        if guardian is None:
+            self._actuation_reason = "no AL HARAS guardian configured"
+        elif token_provider is None:
+            self._actuation_reason = "no subscription-token provider configured"
+        else:
+            try:
+                import inspect
+
+                from salamander.authority import build_authorized_control_plane
+
+                # F owns the constructor signature; bind only what it declares.
+                # A **kwargs parameter accepts the full candidate set.
+                candidates = {
+                    "registry": actions,
+                    "ledger": ledger,
+                    "guardian": guardian,
+                    "authorizer": guardian,
+                    "subscription_token_provider": token_provider,
+                    "token_provider": token_provider,
+                }
+                signature = inspect.signature(build_authorized_control_plane)
+                if any(
+                    p.kind is inspect.Parameter.VAR_KEYWORD
+                    for p in signature.parameters.values()
+                ):
+                    kwargs = dict(candidates)
+                else:
+                    declared = set(signature.parameters)
+                    kwargs = {k: v for k, v in candidates.items() if k in declared}
+                plane = build_authorized_control_plane(**kwargs)
+                self._actuation_ready = True
+                self._actuation_reason = None
+                return plane
+            except Exception as exc:  # noqa: BLE001 - refusal is evidence
+                self._actuation_reason = (
+                    f"authorized control plane unavailable: "
+                    f"{type(exc).__name__}: {exc}"
+                )
+        self.evidence.append(
+            "salamander-actuation-unavailable",
+            {"reason": self._actuation_reason},
+        )
+        return AutonomicControlPlane(registry=actions, ledger=ledger)
 
     def record_held_out_generalisation(self, trials: Any) -> Mapping[str, Any]:
         """Seal multi-family held-out transfer evidence for status/readiness."""
@@ -432,15 +509,33 @@ class EuclidRuntime:
         result["routing"] = selection
         return result
 
-    def heal_organ(self, organ_id: str, *, reason: str) -> Any:
-        """Salamander-bounded requalification of one degraded specialist."""
+    def heal_organ(
+        self, organ_id: str, *, reason: str, actor: str | None = None
+    ) -> Any:
+        """Salamander-bounded requalification of one degraded specialist.
+
+        Privileged transition: requires a non-empty actor identity and a
+        previously authorized actuation plane (Guardian verdict + subscription
+        token provider at composition time).  Refuses before any handler is
+        invoked; the subscription token is fetched out-of-band and never
+        enters the request payload or evidence chain."""
+        import dataclasses
+        import inspect
         import uuid
 
+        from salamander.control_plane import FailClosed
         from salamander.models import ActionKind, ActionRequest
 
         from .cognition.reachability import ReachabilityStage
 
-        request = ActionRequest(
+        if not actor or not str(actor).strip():
+            raise FailClosed("heal_organ requires a non-empty actor identity")
+        if not getattr(self, "_actuation_ready", False):
+            raise FailClosed(
+                "Salamander actuation unavailable: "
+                + (self._actuation_reason or "organism not composed")
+            )
+        request_kwargs: dict[str, Any] = dict(
             action_id=f"requalify:{organ_id}:{uuid.uuid4().hex[:12]}",
             kind=ActionKind.REQUALIFY,
             handler="requalify-organ",
@@ -450,7 +545,23 @@ class EuclidRuntime:
             bounds={"max_attempts": 1},
             idempotency_key=f"requalify:{organ_id}:{self.evidence.head}",
         )
-        result = self.autonomic.execute(request)
+        request_fields = {f.name for f in dataclasses.fields(ActionRequest)}
+        if "actor_id" in request_fields:
+            request_kwargs["actor_id"] = actor
+        request = ActionRequest(**request_kwargs)
+        self.evidence.append(
+            "heal-attempt",
+            {"actor": actor, "organ": organ_id, "action_id": request.action_id},
+        )
+        token = (
+            self._subscription_token_provider(self.creator_id, actor)
+            if self._subscription_token_provider is not None
+            else None
+        )
+        if "subscription_token" in inspect.signature(self.autonomic.execute).parameters:
+            result = self.autonomic.execute(request, subscription_token=token or "")
+        else:
+            result = self.autonomic.execute(request)
         if result.verified:
             self._advance("salamander.control_plane", ReachabilityStage.FEEDBACK_CLOSED,
                           f"heal:{organ_id}", {"action_id": result.action_id})
@@ -483,6 +594,19 @@ class EuclidRuntime:
         return {"verified": probe.get("verified", True) is not False,
                 "evidence_ref": self.evidence.head,
                 "observations": {"health": response.get("health")}}
+
+    @property
+    def toe(self) -> Any:
+        """EUCLID's handle on the full TOE capability surface.
+
+        Built on first use; every TOE answer EUCLID consumes is recorded on
+        EUCLID's evidence chain. EUCLID decides when to ask; TOE only answers.
+        """
+        if self._toe is None:
+            from .cognition.toe_capabilities import TOECapabilityAdapter
+
+            self._toe = TOECapabilityAdapter(evidence=self.evidence)
+        return self._toe
 
     def _compose_cognition(self) -> None:
         """Wire canonical implementations once; no parallel state histories."""
@@ -613,6 +737,110 @@ class EuclidRuntime:
         self._organ_operations[organ_id] = frozenset(
             str(operation) for operation in (operations or ())
         )
+
+    # -- v17 integrated adaptive intelligence -----------------------------------------
+    ADAPTIVE_COMPONENTS: ClassVar[tuple[str, ...]] = (
+        "euclid.adaptive.world_model",
+        "euclid.adaptive.causal_discrimination",
+        "euclid.adaptive.metacognition",
+        "euclid.adaptive.strategy_meta_learning",
+        "euclid.adaptive.planning",
+        "euclid.adaptive.representation",
+        "euclid.adaptive.analogy",
+        "euclid.adaptive.skills",
+        "euclid.adaptive.consolidation",
+    )
+
+    def compose_adaptive_intelligence(
+        self,
+        *,
+        config: Any | None = None,
+        ablations: Any | None = None,
+    ) -> Any:
+        """Compose the v17 integrated agent inside this runtime.
+
+        The agent shares this runtime's evidence chain, executes only through
+        the governed Delegator (see :meth:`solve_task`), and persists sealed
+        long-term knowledge under ``state_dir`` so a restart resumes it.
+        """
+        from .cognition.integrated import AgentKnowledge, IntegratedAgent
+        from .cognition.reachability import ReachabilityStage
+
+        path = self.state_dir / "adaptive_knowledge.json"
+        knowledge = (
+            AgentKnowledge.from_payload(load_json(path)) if path.is_file() else AgentKnowledge()
+        )
+        self.adaptive = IntegratedAgent(
+            knowledge=knowledge, config=config, ablations=ablations, evidence=self.evidence
+        )
+        self._adaptive_organs = 0
+        restored = path.is_file()
+        for component in self.ADAPTIVE_COMPONENTS:
+            current = self.reachability.stage(component)
+            stages = [
+                ReachabilityStage.PRESENT, ReachabilityStage.IMPORTABLE,
+                ReachabilityStage.ADAPTED, ReachabilityStage.REGISTERED,
+                ReachabilityStage.REACHABLE,
+            ]
+            if restored and current is not None and current >= ReachabilityStage.PERSISTED:
+                stages.append(ReachabilityStage.RESTART_VERIFIED)
+            for stage in stages:
+                if current is None or stage > current:
+                    self.reachability.record(
+                        component, stage, episode_id="adaptive-startup",
+                        evidence_ref=self.evidence.head or "genesis",
+                    )
+                    current = stage
+        self.reachability.save(self.state_dir / "cognition_reachability.json")
+        return self.adaptive
+
+    def solve_task(self, spec: Any, world_executor: Any, *, seed: int = 0) -> Any:
+        """Solve an interactive task; every probe and submission is delegated.
+
+        ``world_executor`` is registered as a dedicated PROPOSE-authority organ
+        with a creator-granted dispatch right, so execution passes the same
+        capable/healthy/permitted/confident/safe gates as every other organ.
+        """
+        if getattr(self, "adaptive", None) is None:
+            raise RuntimeError("adaptive intelligence is not composed")
+        from .cognition.baselines import DelegatorExecutor
+        from .cognition.reachability import ReachabilityStage
+
+        self._adaptive_organs += 1
+        organ_id = f"task-world-{self._adaptive_organs}"
+        capability = f"{organ_id}.execute"
+        self.register_organ(
+            Organ(
+                organ_id,
+                frozenset({capability}),
+                Authority.PROPOSE,
+                lambda request, _executor=world_executor: _executor.execute(
+                    request["action"], request["payload"]
+                ),
+            )
+        )
+        self.rights.grant(self.creator_id, organ_id, capability, "dispatch")
+        executor = DelegatorExecutor(self.delegator, organ_id, capability)
+        result = self.adaptive.solve(spec, executor, seed=seed)
+        self.rights.revoke(self.creator_id, organ_id, capability, "dispatch")
+        atomic_write(
+            self.state_dir / "adaptive_knowledge.json", self.adaptive.knowledge.to_payload()
+        )
+        episode = str(spec.task_id)
+        head = self.evidence.head or "genesis"
+        for component in self.ADAPTIVE_COMPONENTS:
+            current = self.reachability.stage(component)
+            for stage in (
+                ReachabilityStage.USED_IN_EPISODE, ReachabilityStage.EXECUTED,
+                ReachabilityStage.OUTCOME_OBSERVED, ReachabilityStage.FEEDBACK_CLOSED,
+                ReachabilityStage.PERSISTED,
+            ):
+                if current is None or stage > current:
+                    self.reachability.record(component, stage, episode_id=episode,
+                                             evidence_ref=head)
+                    current = stage
+        self.reachability.save(self.state_dir / "cognition_reachability.json")
+        return result
 
     def solve_repository_problem(
         self, problem: Mapping[str, Any], *, goal: str | None = None

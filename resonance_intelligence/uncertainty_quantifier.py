@@ -1,4 +1,7 @@
-"""Validated Bayesian uncertainty estimation without self-certifying claims."""
+"""Validated Bayesian uncertainty estimation without self-certifying claims.
+
+BOUNDARY: this module is not wired into the production intelligence path (verified: no importer outside this package and tests). Its algorithms are named classical machinery (e.g. epsilon-greedy/Bayesian statistics) — they are not presented as quantum computation and produce no production intelligence output.
+"""
 from __future__ import annotations
 import math
 from dataclasses import dataclass,field

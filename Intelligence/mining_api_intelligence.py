@@ -9,7 +9,8 @@ import logging
 import time
 from typing import Any
 
-from hyba_backend.core.intelligence.intelligent_endpoint import (
+from Intelligence._born import born_evidence
+from Intelligence.intelligent_endpoint import (
     AutonomyLevel,
     Decision,
     IntelligenceState,
@@ -78,7 +79,7 @@ class MiningAPIIntelligence(IntelligentEndpoint):
                     "share_submission_rate": self.share_submission_rate,
                     "uptime": api_status.get("uptime", 0),
                 },
-                confidence=0.9,
+                confidence=born_evidence(self.successful_connections, self.failed_connections),
             )
         except Exception as e:
             logger.error(f"Mining API observation failed: {e}")
@@ -100,7 +101,7 @@ class MiningAPIIntelligence(IntelligentEndpoint):
                 endpoint_id=self.endpoint_id,
                 action="alert",
                 reasoning="Mining API provider unavailable",
-                confidence=0.5,
+                confidence=born_evidence(0, 0),  # flat prior — unmeasured
                 autonomy_level=AutonomyLevel.SUGGEST,
             )
 
@@ -115,7 +116,7 @@ class MiningAPIIntelligence(IntelligentEndpoint):
                 endpoint_id=self.endpoint_id,
                 action="reconnect",
                 reasoning="Mining API not connected. Initiating reconnection.",
-                confidence=0.95,
+                confidence=born_evidence(self.failed_connections + 1, self.successful_connections),
                 autonomy_level=AutonomyLevel.OPERATE,
             )
 
@@ -126,7 +127,7 @@ class MiningAPIIntelligence(IntelligentEndpoint):
                 endpoint_id=self.endpoint_id,
                 action="reauthorize",
                 reasoning="Connected but not authorized. Reauthorizing.",
-                confidence=0.9,
+                confidence=born_evidence(self.successful_connections, self.failed_connections),
                 autonomy_level=AutonomyLevel.SUGGEST,
             )
 
@@ -137,7 +138,7 @@ class MiningAPIIntelligence(IntelligentEndpoint):
                 endpoint_id=self.endpoint_id,
                 action="stabilize_connection",
                 reasoning=f"Connection unstable (stability: {stability:.2f}). Optimizing connection.",
-                confidence=0.8,
+                confidence=1.0 - stability,  # measured instability
                 autonomy_level=AutonomyLevel.OPTIMISE,
             )
 
@@ -146,7 +147,7 @@ class MiningAPIIntelligence(IntelligentEndpoint):
             endpoint_id=self.endpoint_id,
             action="monitor",
             reasoning="Mining API connection nominal",
-            confidence=0.95,
+            confidence=born_evidence(self.successful_connections, self.failed_connections),
             autonomy_level=AutonomyLevel.OBSERVE,
         )
 
@@ -258,7 +259,7 @@ class ShareSubmissionIntelligence(IntelligentEndpoint):
                     "acceptance_rate": self.acceptance_rate,
                     "submission_rate": share_stats.get("submission_rate", 0),
                 },
-                confidence=0.9,
+                confidence=born_evidence(self.accepted_shares, self.rejected_shares),
             )
         except Exception as e:
             logger.error(f"Share submission observation failed: {e}")
@@ -280,7 +281,7 @@ class ShareSubmissionIntelligence(IntelligentEndpoint):
                 endpoint_id=self.endpoint_id,
                 action="alert",
                 reasoning="Share provider unavailable",
-                confidence=0.5,
+                confidence=born_evidence(0, 0),  # flat prior — unmeasured
                 autonomy_level=AutonomyLevel.SUGGEST,
             )
 
@@ -294,7 +295,7 @@ class ShareSubmissionIntelligence(IntelligentEndpoint):
                 endpoint_id=self.endpoint_id,
                 action="optimize_submission",
                 reasoning=f"Low acceptance rate ({acceptance_rate:.2%}). Optimizing submission strategy.",
-                confidence=0.85,
+                confidence=1.0 - acceptance_rate,  # measured rejection evidence
                 autonomy_level=AutonomyLevel.OPTIMISE,
             )
 
@@ -305,7 +306,7 @@ class ShareSubmissionIntelligence(IntelligentEndpoint):
                 endpoint_id=self.endpoint_id,
                 action="reduce_stale_shares",
                 reasoning=f"High stale share rate ({stale_shares}). Reducing submission latency.",
-                confidence=0.8,
+                confidence=stale_shares / max(1, data.get("total_shares", 0)),
                 autonomy_level=AutonomyLevel.OPTIMISE,
             )
 
@@ -314,7 +315,7 @@ class ShareSubmissionIntelligence(IntelligentEndpoint):
             endpoint_id=self.endpoint_id,
             action="monitor",
             reasoning="Share submission nominal",
-            confidence=0.95,
+            confidence=born_evidence(self.accepted_shares, self.rejected_shares),
             autonomy_level=AutonomyLevel.OBSERVE,
         )
 

@@ -1,0 +1,34 @@
+{
+  "schema": "chronos_family_certificate_v1",
+  "indices": [
+    10,
+    12,
+    15
+  ],
+  "combined_index": 37,
+  "fibonacci_pair": [
+    24157817,
+    39088169
+  ],
+  "lucas": 54018521,
+  "phi_power": {
+    "encoding": "q_phi_v1",
+    "a": [
+      14930352,
+      1
+    ],
+    "b": [
+      24157817,
+      1
+    ]
+  },
+  "norm": -1,
+  "pell_cassini_residual": -4,
+  "zeckendorf": {
+    "fibonacci": 34359738368,
+    "lucas": 85899345920
+  },
+  "authority": "supplied_exact_lucas_engine",
+  "proof_kind": "exact_identity_replay",
+  "digest": "c91470b0efbf81d0d38c951e3ec2878515e823a7f7d87068c0a33b7b28208647"
+}

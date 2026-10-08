@@ -466,7 +466,11 @@ def generate_icosahedron_vertices() -> List[List[float]]:
 
 
 def generate_dodecahedron_vertices() -> List[List[float]]:
-    """Generates the 20 normalized dual vertices of a regular dodecahedron."""
+    """The 20 face-centroid directions dual to this exact icosahedron.
+
+    Reconciled with Turing turing_core.core: the cyclic family is
+    (0, +/-phi, +/-1/phi), not its differently oriented mirror.
+    """
     vertices = []
     for s1 in [-1.0, 1.0]:
         for s2 in [-1.0, 1.0]:
@@ -474,9 +478,9 @@ def generate_dodecahedron_vertices() -> List[List[float]]:
                 vertices.append(_normalize_vec([s1, s2, s3]))
     for s1 in [-1.0, 1.0]:
         for s2 in [-1.0, 1.0]:
-            vertices.append(_normalize_vec([0.0, s1 * INV_PHI, s2 * PHI]))
-            vertices.append(_normalize_vec([s1 * INV_PHI, s2 * PHI, 0.0]))
-            vertices.append(_normalize_vec([s1 * PHI, 0.0, s2 * INV_PHI]))
+            vertices.append(_normalize_vec([0.0, s1 * PHI, s2 * INV_PHI]))
+            vertices.append(_normalize_vec([s1 * PHI, s2 * INV_PHI, 0.0]))
+            vertices.append(_normalize_vec([s1 * INV_PHI, 0.0, s2 * PHI]))
     return vertices
 
 

@@ -207,15 +207,31 @@ class UnlimitedQuantumStore:
         return self.superposition_store.get(key)
 
     def measure(self, key: int, shots: int = 1024) -> Dict[str, int]:
+        """Sample Born-rule outcomes through the substrate's sanctioned
+        path (``QuantumState.measure_born`` with a caller-seeded PRNG).
+        The seed is derived deterministically from the key so results
+        are reproducible — no uncontrolled ``np.random`` draws."""
         amplitudes = self.superposition_store.get(key)
         if amplitudes is None:
             return {}
-        probs = np.abs(amplitudes) ** 2
-        probs = probs / probs.sum()
-        outcomes = np.random.choice(self.dim, size=shots, p=probs)
+        import random as _random
+
+        from kellogg.quantum_tensor import Complex, QuantumState
+
+        state = QuantumState(
+            self.dim,
+            [Complex(a.real, a.imag) for a in np.asarray(amplitudes, dtype=np.complex128)],
+            normalize=True,
+        )
+        seed = int.from_bytes(
+            hashlib.sha256(f"pvsnp-measure:{key}:{shots}".encode()).digest()[:8],
+            "big",
+        )
+        rng = _random.Random(seed)
         counts: Dict[str, int] = {}
-        for o in outcomes:
-            bitstring = format(o, f"0{self.n_qubits}b")
+        for _ in range(shots):
+            outcome, _, _ = state.measure_born(rng)
+            bitstring = format(outcome, f"0{self.n_qubits}b")
             counts[bitstring] = counts.get(bitstring, 0) + 1
         return counts
 
@@ -381,12 +397,33 @@ class PVsNPGPU:
         return {"valid": abs(phi - approx) >= bound - 1e-15, "p": p, "q": q}
 
     def _kernel_grover(self, block: LucasMemoryBlock, args: Dict) -> Dict:
-        target = args.get("target", 0)
+        """Real amplitude amplification (Grover) on the state vector.
+
+        Uniform superposition over N = 2^n amplitudes, then
+        floor(pi/4 * sqrt(N)) Grover iterates: oracle phase-flip on the
+        marked basis state followed by inversion about the mean
+        (a_i -> 2< a > - a_i). The numpy array IS the state vector —
+        IEEE-754 finite precision realising the exact unitaries.
+        ``found`` is the outcome the Born rule then favours
+        (argmax |a_i|^2) with its measured probability reported.
+        """
+        target = int(args.get("target", 0))
         n_qubits = self.memory.n_qubits
         N = 2**n_qubits
+        if not 0 <= target < N:
+            return {"error": "target out of range", "target": target}
         iterations = int(np.pi / 4 * np.sqrt(N))
-        found = (target + iterations) % N
-        return {"found": found, "target": target, "iterations": iterations}
+        amps = np.full(N, 1.0 / np.sqrt(N), dtype=np.float64)
+        for _ in range(iterations):
+            amps[target] = -amps[target]  # oracle
+            amps = 2.0 * amps.mean() - amps  # diffusion (inversion about mean)
+        found = int(np.argmax(np.abs(amps)))
+        return {
+            "found": found,
+            "target": target,
+            "iterations": iterations,
+            "success_probability": float(amps[found] ** 2),
+        }
 
     def _kernel_pvsnp(self, block: LucasMemoryBlock, args: Dict) -> Dict:
         instance_data = args.get("instance_data")
@@ -463,8 +500,14 @@ if __name__ == "__main__":
     print("=" * 78)
 
     gpu = QuantumGPU()
-    for _ in range(100):
-        gpu.solve_pvsnp(np.random.randn(2048))
+    for i in range(100):
+        # Deterministic instance data (SHA-256 counter chain) — no
+        # unseeded random draws drive results.
+        instance = np.frombuffer(
+            hashlib.sha256(f"pvsnp-demo:{i}".encode()).digest() * (2048 // 32 + 1),
+            dtype=np.uint8,
+        )[:2048].astype(np.float64)
+        gpu.solve_pvsnp(instance)
 
     tel = gpu.telemetry()
     print(f"\nKernels launched: {tel['kernels_launched']}")

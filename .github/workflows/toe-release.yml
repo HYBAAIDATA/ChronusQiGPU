@@ -1,0 +1,286 @@
+name: toe-release
+
+# TOE release: verify → build once → clean installed verification on every
+# supported interpreter → mining integration against the INSTALLED wheel →
+# release verdict → (manual, reviewer-gated) OIDC trusted publishing of the
+# exact verified artefacts → TestPyPI registry smoke.
+#
+# Publication is refused while packaging/toe/OWNER_DECISIONS.md leaves the
+# distribution name or the release version unapproved.
+
+on:
+  pull_request:
+    paths:
+      - "toe/**"
+      - "kellogg/**"
+      - "packaging/toe/**"
+      - "tests/test_toe*.py"
+      - "tests/test_euclid_toe_capabilities.py"
+      - "chronus/mla1517/mining/toe_problem.py"
+      - "scripts/toe_*.py"
+      - ".github/workflows/toe-release.yml"
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish the exact verified release artefacts"
+        type: choice
+        options: [none, testpypi, pypi]
+        default: none
+
+permissions:
+  contents: read
+
+jobs:
+  verify-wheel:
+    name: Build + installed verification / Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Build TOE (+ exact KELLOGG 1.0.0) and verify from clean installs
+        run: python packaging/toe/build_and_verify.py
+      - name: Retain interpreter evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: toe-evidence-${{ matrix.python }}
+          path: |
+            packaging/toe/dist/artifact-verdict.json
+            packaging/toe/dist/wheel-manifest.json
+          if-no-files-found: error
+      - name: Retain the canonical release archives (built once, on 3.12)
+        if: matrix.python == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: toe-dist
+          path: |
+            packaging/toe/dist/*.whl
+            packaging/toe/dist/*.tar.gz
+            packaging/toe/dist/artifact-verdict.json
+            packaging/toe/dist/wheel-manifest.json
+          if-no-files-found: error
+
+  source-gate:
+    name: TOE source tests (monorepo integrations)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependencies
+        run: python -m pip install --disable-pip-version-check "numpy>=1.26,<3" "pytest>=7.4,<10" "sympy"
+      - name: TOE + EUCLID integration suites
+        env:
+          PYTHONPATH: .
+        run: >
+          python -m pytest -q -p no:cacheprovider
+          tests/test_toe_machine.py tests/test_toe_cross_domain.py tests/test_toe_geometry.py
+          tests/test_toe_learning_persistence.py tests/test_toe_runtime_solve.py tests/test_toe_runtime.py
+          tests/test_toe_ciaas_api.py tests/test_euclid_toe_capabilities.py
+
+  mining-integration:
+    name: PYTHIA mining voyage against the INSTALLED TOE wheel
+    needs: verify-wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: toe-dist
+          path: verified-dist
+      - name: Install verified wheels; run the voyage with the checkout only for PYTHIA/THESEUS
+        run: |
+          python -m venv /tmp/toe-mining
+          . /tmp/toe-mining/bin/activate
+          python -m pip install --disable-pip-version-check verified-dist/kellogg_tensor-1.0.0-py3-none-any.whl verified-dist/*toe*-py3-none-any.whl
+          python scripts/toe_mining_voyage.py --report mining-voyage.json
+          python - <<'PY'
+          import json
+          r = json.load(open("mining-voyage.json"))
+          assert "site-packages" in r["toe_file"], r["toe_file"]
+          assert r["toe"]["ok"] and r["pythia_authority"]["authority"] == "PYTHIA"
+          assert r["execution"]["candidates_found_by_check_pow"] == r["execution"]["candidates_rechecked_valid"]
+          print(json.dumps(r["decision_effect"], indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: toe-mining-voyage
+          path: mining-voyage.json
+          if-no-files-found: error
+
+  release-verdict:
+    name: Compose release verdict
+    needs: [verify-wheel, source-gate, mining-integration]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: toe-evidence-*
+          path: evidence
+      - uses: actions/download-artifact@v4
+        with:
+          name: toe-dist
+          path: verified-dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: toe-mining-voyage
+          path: mining
+      - name: Verify cross-version fixtures, PyPI name state and owner decisions
+        shell: python
+        run: |
+          import hashlib, json, subprocess, urllib.error, urllib.request
+          from pathlib import Path
+
+          records = [json.loads(p.read_text()) for p in sorted(Path("evidence").glob("**/artifact-verdict.json"))]
+          digests = {r["fixture_digest"] for r in records}
+          pythons = sorted({p for r in records for p in r["pythons_verified"]})
+          if len(records) != 3 or len(digests) != 1:
+              raise SystemExit(f"cross-version fixture mismatch: {digests} from {len(records)} records")
+          artifact = json.loads(Path("verified-dist/artifact-verdict.json").read_text())
+          for key in ("wheel", "sdist"):
+              f = Path("verified-dist") / artifact[key]["file"]
+              if hashlib.sha256(f.read_bytes()).hexdigest() != artifact[key]["sha256"]:
+                  raise SystemExit(f"{key} digest changed after verification")
+          name, version = artifact["distribution"], artifact["version"]
+          try:
+              with urllib.request.urlopen(f"https://pypi.org/pypi/{name}/json", timeout=20) as resp:
+                  state = {"registered": True, "versions": sorted(json.load(resp).get("releases", {}))}
+          except urllib.error.HTTPError as exc:
+              if exc.code != 404:
+                  raise
+              state = {"registered": False, "versions": []}
+          if version in state["versions"]:
+              raise SystemExit(f"{name} {version} already exists on PyPI")
+          mining = json.loads(next(Path("mining").glob("**/mining-voyage.json")).read_text())
+          verdict = {
+              "product": "TOE",
+              "import_name": "toe",
+              "distribution": name,
+              "distribution_name_status": artifact["distribution_name_status"],
+              "version": version,
+              "repository": "QuantumPhiRedux/PhiMiner",
+              "git_sha": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+              "wheel": artifact["wheel"],
+              "sdist": artifact["sdist"],
+              "kellogg_wheel": artifact["kellogg_wheel"],
+              "cross_version_verified": True,
+              "tested_python_versions": pythons,
+              "fixture_digest": digests.pop(),
+              "mining_e2e_verified": True,
+              "mining_decision_effect": mining["decision_effect"],
+              "pypi_name_state": state,
+              "publication_blockers": artifact["publication_blockers"],
+              "publishable": artifact["publishable"],
+              "published": False,
+          }
+          Path("verified-dist/release-verdict.json").write_text(json.dumps(verdict, indent=2, sort_keys=True))
+          print(json.dumps(verdict, indent=2, sort_keys=True))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: toe-verified-release
+          path: verified-dist/*
+          if-no-files-found: error
+
+  publish:
+    name: Publish exact verified artefacts to ${{ inputs.publish }}
+    needs: release-verdict
+    if: github.event_name == 'workflow_dispatch' && inputs.publish != 'none'
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.publish }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: toe-verified-release
+          path: release
+      - name: Refuse anything unverified, unapproved, or out of order
+        shell: python
+        env:
+          PUBLISH: ${{ inputs.publish }}
+        run: |
+          import hashlib, json, os, urllib.error, urllib.request
+          from pathlib import Path
+
+          root = Path("release")
+          v = json.loads((root / "release-verdict.json").read_text())
+          if not v.get("publishable") or v.get("published"):
+              raise SystemExit(f"release verdict does not permit publication: {v.get('publication_blockers')}")
+          for key in ("wheel", "sdist"):
+              f = root / v[key]["file"]
+              if hashlib.sha256(f.read_bytes()).hexdigest() != v[key]["sha256"]:
+                  raise SystemExit(f"verified artefact digest mismatch: {f}")
+
+          def on(index, name, version):
+              try:
+                  with urllib.request.urlopen(f"{index}/pypi/{name}/json", timeout=20) as r:
+                      return version in json.load(r).get("releases", {})
+              except urllib.error.HTTPError:
+                  return False
+
+          if os.environ["PUBLISH"] == "pypi":
+              if not on("https://pypi.org", "kellogg-tensor", "1.0.0"):
+                  raise SystemExit("kellogg-tensor 1.0.0 must be live on PyPI before TOE")
+              if not on("https://test.pypi.org", v["distribution"], v["version"]):
+                  raise SystemExit("TOE must pass TestPyPI first")
+      - name: Stage only the verified distribution archives
+        shell: bash
+        run: |
+          mkdir upload
+          python - <<'PY'
+          import json, shutil
+          v = json.load(open("release/release-verdict.json"))
+          for key in ("wheel", "sdist"):
+              shutil.copy(f"release/{v[key]['file']}", "upload/")
+          PY
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: upload/
+          repository-url: ${{ inputs.publish == 'testpypi' && 'https://test.pypi.org/legacy/' || 'https://upload.pypi.org/legacy/' }}
+
+  testpypi-smoke:
+    name: Install TOE from TestPyPI into an empty environment and run the voyages
+    needs: publish
+    if: github.event_name == 'workflow_dispatch' && inputs.publish == 'testpypi'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: toe-verified-release
+          path: release
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Registry install (no checkout) + canonical and cross-domain voyages
+        run: |
+          python -m venv /tmp/toe-registry
+          . /tmp/toe-registry/bin/activate
+          NAME=$(python -c "import json; print(json.load(open('release/release-verdict.json'))['distribution'])")
+          VER=$(python -c "import json; print(json.load(open('release/release-verdict.json'))['version'])")
+          python -m pip install --disable-pip-version-check release/kellogg_tensor-1.0.0-py3-none-any.whl numpy
+          for i in 1 2 3 4 5; do
+            python -m pip install --no-deps --index-url https://test.pypi.org/simple/ "$NAME==$VER" && break
+            sleep 30
+          done
+          cd /tmp
+          python - <<'PY'
+          import toe
+          from toe.voyage import canonical_voyage, cross_domain_voyage
+          assert "site-packages" in toe.__file__
+          xd = cross_domain_voyage()
+          assert xd["reuse"]["adapter_code_in_any_backend_trace"] == []
+          cv = canonical_voyage(None)
+          assert cv["decision_changed"] and cv["replay_episode_1"]["identical"]
+          print("TestPyPI TOE", toe.__version__, "voyages OK")
+          PY
