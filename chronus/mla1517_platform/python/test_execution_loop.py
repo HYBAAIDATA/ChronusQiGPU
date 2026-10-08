@@ -79,7 +79,14 @@ async def _mines_reports_and_reconnects(tmp_path):
     coord.set_metrics_sink(metrics.append)
     task = asyncio.create_task(coord.run_execution_loop(idle_s=0.01))
     try:
-        await until(lambda: coord._executions_total >= 2, timeout=60, what="two executions")
+        # Under suite load a job-identity rotation can invalidate a window
+        # mid-flight; that counts an execution with zero hashes. Waiting for
+        # real hashes keeps the metric assertion honest instead of racing it.
+        await until(
+            lambda: coord._executions_total >= 2 and coord._hashes_total > 0,
+            timeout=60,
+            what="two executions with real hashes",
+        )
         assert snapshots[-1]["primary"]["authorized"] is True
         assert snapshots[-1]["job"]["job_id"] == "job-x"
         assert metrics[-1]["hashrate_hs"] > 0

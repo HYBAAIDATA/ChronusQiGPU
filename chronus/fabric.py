@@ -83,22 +83,24 @@ class ChronusFabric:
         return out
 
     def _best_gpu(self, *, required: Optional[str] = None) -> Optional[DeviceInfo]:
-        pool = [
-            d
-            for d in self.devices
-            if d.type in ("gpu", "chronus") and d.backend != "rtl"
-        ]
+        pool = [d for d in self.devices if d.type in ("gpu", "chronus") and d.backend != "rtl"]
         if required is not None:
             pool = [d for d in pool if d.capability(required) not in (None, False, 0)]
         if not pool:
             return None
         return max(pool, key=lambda d: d.compute_units or 0)
 
-    def _cpu(self) -> Optional[DeviceInfo]:
+    def _cpu(self) -> DeviceInfo:
+        """The inventory's CPU member; the fabric cannot route without one.
+
+        Every route falls back to CPU reference execution, so a census with
+        no CPU is a broken inventory — fail loudly instead of letting a
+        stripped ``assert`` (``python -O``) turn it into a silent ``None``.
+        """
         for device in self.devices:
             if device.backend == "cpu":
                 return device
-        return None
+        raise RuntimeError("ClusterInventory contains no CPU device; Chronus fabric cannot route")
 
     def _lucas_dispatch(
         self,
@@ -143,9 +145,7 @@ class ChronusFabric:
             if discipline == "serial":
                 lucas = {}
             else:
-                lucas = self._lucas_dispatch(
-                    device, work_items=items, chunk_cap=cap_chunk
-                )
+                lucas = self._lucas_dispatch(device, work_items=items, chunk_cap=cap_chunk)
                 if discipline == "epoch32":
                     epochs = nearest_ladder_index(
                         max(1, items // _M32_LANES),
@@ -155,11 +155,7 @@ class ChronusFabric:
                     lucas["chunk_size"] = _M32_LANES * epochs
                     lucas["on_ladder"] = is_ladder_index(epochs)
                     lucas["lucas_rung"] = next(
-                        (
-                            r
-                            for r in sorted(CHRONUS_SCALE_RUNGS, reverse=True)
-                            if epochs % r == 0
-                        ),
+                        (r for r in sorted(CHRONUS_SCALE_RUNGS, reverse=True) if epochs % r == 0),
                         None,
                     )
             return RouteDecision(
@@ -185,17 +181,13 @@ class ChronusFabric:
             device = self._best_gpu()
             if device is not None:
                 return decide(device, "sha256d_grind", "best measured GPU")
-            cpu = self._cpu()
-            assert cpu is not None
-            return decide(cpu, "hashlib_sha256d", "cpu fallback (no measured GPU)")
+            return decide(self._cpu(), "hashlib_sha256d", "cpu fallback (no measured GPU)")
 
         if op == "m32_grind":
             device = self._best_gpu(required="m32_lane_kernel")
             if device is not None:
                 return decide(device, "m32_lane_kernel", "m32 lane kernel present")
-            cpu = self._cpu()
-            assert cpu is not None
-            return decide(cpu, "hashlib_sha256d", "cpu fallback — serial m32 order")
+            return decide(self._cpu(), "hashlib_sha256d", "cpu fallback — serial m32 order")
 
         punch_family = False
         try:
@@ -207,9 +199,7 @@ class ChronusFabric:
             if device is not None:
                 capability = "fp64" if device.capability("fp64") else "float"
                 return decide(device, capability, "best float-capable device")
-            cpu = self._cpu()
-            assert cpu is not None
-            return decide(cpu, "numpy", "cpu fallback")
+            return decide(self._cpu(), "numpy", "cpu fallback")
 
         if op == "unified_resident_state":
             for key in ("host_unified_memory", "opencl2_svm", "unified_memory"):
@@ -217,17 +207,13 @@ class ChronusFabric:
                 if candidates:
                     device = max(candidates, key=lambda d: d.compute_units or 0)
                     return decide(device, key, f"resident state needs {key}")
-            cpu = self._cpu()
-            assert cpu is not None
-            return decide(cpu, "host_memory", "cpu fallback — host buffer resident")
+            return decide(self._cpu(), "host_memory", "cpu fallback — host buffer resident")
 
         if op == "lucas_pisot_scale":
             device = self._best_gpu(required="lucas_ladder_kernel")
             if device is not None:
                 return decide(device, "lucas_ladder_kernel", "ladder executor device")
-            cpu = self._cpu()
-            assert cpu is not None
-            return decide(cpu, "exact_math", "exact CPU ladder (Q[sqrt5] substrate)")
+            return decide(self._cpu(), "exact_math", "exact CPU ladder (Q[sqrt5] substrate)")
 
         if op in ("grover_search", "search", "grover_iterate"):
             marked = int(work.get("marked") or 1)
@@ -248,7 +234,6 @@ class ChronusFabric:
                 int(math.floor(math.pi / 4.0 * math.sqrt(space / max(marked, 1)))),
             )
             device = self._best_gpu() or self._cpu()
-            assert device is not None
             decision = decide(device, "search", "largest compute for the sweep")
             decision.lucas_dispatch["grover_depth"] = depth
             if scale_index is not None:
@@ -257,9 +242,7 @@ class ChronusFabric:
                 decision.lucas_dispatch["scaled_space"] = space
             return decision
 
-        cpu = self._cpu()
-        assert cpu is not None
-        return decide(cpu, None, f"unrouted op {op!r} — cpu default")
+        return decide(self._cpu(), None, f"unrouted op {op!r} — cpu default")
 
     def execute(
         self,
@@ -275,15 +258,12 @@ class ChronusFabric:
             (d for d in self.devices if d.name == decision.device_name),
             self._cpu(),
         )
-        assert device is not None
         executor = IRExecutor(device, op).compile()
         dispatch = dict(workload or {})
         dispatch["lucas_dispatch"] = dict(decision.lucas_dispatch)
         dispatch["capability_used"] = decision.capability
         result = executor.run(dict(inputs or {}), dispatch)
-        if decision.reason.startswith("unrouted") or not decision.lucas_dispatch.get(
-            "on_ladder"
-        ):
+        if decision.reason.startswith("unrouted") or not decision.lucas_dispatch.get("on_ladder"):
             result.truth_class = "unconfigured"
 
         from hyba.attestation import attest_dispatch
