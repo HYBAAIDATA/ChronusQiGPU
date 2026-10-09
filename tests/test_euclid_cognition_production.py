@@ -161,6 +161,20 @@ class ProductionRuntimeCase(unittest.TestCase):
 
 
 class TestProductionEntryPoint(ProductionRuntimeCase):
+    def test_euclid_production_constructs_with_declared_custody_dependency(self) -> None:
+        """Regression: undefined custody in production() blocked PYTHIA control cognition."""
+        runtime = EuclidRuntime.production(
+            creator_id="euclid-mining-smoke",
+            state_dir=self.state_dir / "declared-custody",
+            organism=False,
+        )
+        try:
+            self.assertIsNotNone(runtime.cognition)
+            self.assertIsNone(runtime.adaptive_custody)
+            self.assertFalse(runtime.startup_report().get("closed", False))
+        finally:
+            runtime.close()
+
     def test_entry_point_executes_the_real_loop(self) -> None:
         # No executor injected: this exercises the real default repository
         # organ.  Its observation refutes every competing hypothesis, so the
