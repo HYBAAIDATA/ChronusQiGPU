@@ -255,7 +255,11 @@ class MiningStorageRecorder:
         """
         verification = self.files.verify_database(self.tenant_id)
         reconciliation = self.files.reconcile_files(self.tenant_id, self.root)
-        if not verification.get("passed") or not reconciliation.passed:
+        if (
+            not verification.get("passed")
+            or not self.files.verify_mining(self.tenant_id)
+            or not reconciliation.passed
+        ):
             raise M3StorageError(
                 "THESEUS mining recovery failed integrity/reconciliation: "
                 + str(verification.get("errors") or reconciliation.unresolved)
@@ -695,6 +699,7 @@ class MiningStorageRecorder:
             )
             healthy = bool(
                 verification.get("passed")
+                and self.files.verify_mining(self.tenant_id)
                 and reconciliation_ok
                 and self.errors == 0
             )
