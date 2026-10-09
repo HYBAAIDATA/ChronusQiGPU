@@ -335,3 +335,126 @@ def test_from_env_rejects_empty_sanitized_tenant(tmp_path, monkeypatch):
     monkeypatch.setenv("PYTHIA_STORAGE_TENANT", "!!!")
     with pytest.raises(RuntimeError, match="sanitizes to empty"):
         MiningStorageRecorder.from_env()
+
+
+def test_restart_recovers_event_identity_and_requires_fresh_stratum(tmp_path):
+    """No duplicate replay; old proof parents cannot authorise a new pool write."""
+    from types import SimpleNamespace
+    from chronus.mla1517.mining.storage_recorder import M3StorageError
+
+    store, custody, tenant_id = _plane(tmp_path)
+    root = _short_root()
+    ledger = CausalLedger()
+    recorder = MiningStorageRecorder(store.files, tenant_id, root, strict=True)
+    ledger.set_observer(recorder.observe, fail_closed=True)
+    coord = CausalCoordinate(
+        pool_session_id="real-session-1",
+        generation=1,
+        job_fingerprint="fingerprint-1",
+        job_id="job-1",
+        plan_id="plan-1",
+        lease_id="lease-1",
+        execution_id="exec-1",
+    )
+    job_event = ledger.record("identity_bound", coord, job_id="job-1", clean_jobs=True)
+    ledger.record("plan_created", coord, window=32)
+    ledger.record("execution_started", coord, extranonce2="00")
+    ledger.record("candidate_found", coord, nonce=42)
+    rows_before = store._db.execute(
+        "SELECT COUNT(*) FROM mining_lifecycle WHERE tenant_id=?", (tenant_id,),
+    ).fetchone()[0]
+    store.close()
+    custody.close()
+
+    custody2 = TheseusFileCustody(tmp_path / "custody", hmac_key=CUSTODY_KEY)
+    store2 = OntologyStore(tmp_path / "store.db", INTEGRITY_KEY, custody=custody2)
+    try:
+        recovered = MiningStorageRecorder(store2.files, tenant_id, root, strict=True)
+        report = recovered.recover()
+        assert report["records"] == rows_before
+        assert report["replayable_events"] >= 4
+        # Reprocessing the *exact* mirrored event must not add a new row.
+        recovered.observe(job_event)
+        assert store2._db.execute(
+            "SELECT COUNT(*) FROM mining_lifecycle WHERE tenant_id=?", (tenant_id,),
+        ).fetchone()[0] == rows_before
+        with pytest.raises(M3StorageError, match="fresh Stratum identity"):
+            recovered.persist_verified_proof(
+                context={"job_id": "job-1", "generation": 1},
+                proof=SimpleNamespace(
+                    nonce=42, digest=b"\x11" * 32, target=(1 << 256) - 1,
+                ),
+                authorization_evidence_id="old-authorisation",
+                authorization_version_id="fv-old",
+                policy_version="old-policy",
+            )
+        # A new session never inherits the previous session's candidate/proof.
+        fresh = CausalCoordinate(pool_session_id="real-session-2", generation=2, job_id="job-2")
+        recovered.observe(
+            CausalEvent(1, 1000.0, "identity_bound", fresh, {"job_id": "job-2"}),
+        )
+        assert set(recovered.snapshot()["heads"]) == {"job"}
+        assert recovered.health(reconcile=True)["healthy"] is True
+    finally:
+        store2.close()
+        custody2.close()
+
+
+def test_from_env_exact_ovid_wires_transform_and_provenance(tmp_path, monkeypatch):
+    """OVID may be explicitly composed; every raw source remains in THESEUS."""
+    monkeypatch.setenv("PYTHIA_STORAGE_DB", str(tmp_path / "store.db"))
+    monkeypatch.setenv("PYTHIA_STORAGE_ROOT", str(tmp_path / "objects"))
+    monkeypatch.setenv("PYTHIA_STORAGE_CUSTODY_ROOT", str(tmp_path / "custody"))
+    monkeypatch.setenv("PYTHIA_STORAGE_INTEGRITY_KEY_HEX", "ab" * 32)
+    monkeypatch.setenv("PYTHIA_STORAGE_CUSTODY_KEY_HEX", "cd" * 32)
+    monkeypatch.setenv("PYTHIA_STORAGE_TENANT", "ovid-recovery-test")
+    monkeypatch.setenv("PYTHIA_STORAGE_OVID_EXACT", "true")
+    rec = MiningStorageRecorder.from_env(worker="ovid-worker")
+    assert rec is not None and rec.transform_plane is not None
+    try:
+        rec.observe(
+            CausalEvent(
+                1, 1.0, "identity_bound",
+                CausalCoordinate(pool_session_id="session", generation=1, job_id="job"),
+                {"job_id": "job"},
+                software_revision="test-revision",
+            ),
+        )
+        transform_rows = rec._store._db.execute(
+            "SELECT fv.exactness,fv.transform_contract FROM file_versions fv "
+            "JOIN file_objects fo ON fo.tenant_id=fv.tenant_id "
+            "AND fo.file_object_id=fv.file_object_id "
+            "WHERE fv.tenant_id=? AND fo.file_class='transform'",
+            (rec.tenant_id,),
+        ).fetchall()
+        assert transform_rows and all(row["exactness"] == "EXACT" for row in transform_rows)
+        receipt_row = rec._store._db.execute(
+            "SELECT fv.producer_version,fp.provenance_json FROM file_versions fv "
+            "JOIN file_objects fo ON fo.tenant_id=fv.tenant_id "
+            "AND fo.file_object_id=fv.file_object_id "
+            "JOIN file_provenance fp ON fp.tenant_id=fv.tenant_id "
+            "AND fp.file_version_id=fv.file_version_id "
+            "WHERE fv.tenant_id=? AND fo.logical_name LIKE 'receipt-%'",
+            (rec.tenant_id,),
+        ).fetchone()
+        assert receipt_row["producer_version"] == "test-revision"
+        provenance = json.loads(receipt_row["provenance_json"])
+        assert provenance["correlation_ids"]["pool_session_id"] == "session"
+        assert provenance["source_ids"]
+        assert rec.health(reconcile=True)["healthy"] is True
+    finally:
+        rec._store.close()
+
+
+def test_strict_from_env_rejects_unknown_tenant(tmp_path, monkeypatch):
+    """Strict mode must not silently register a new tenant with huge quotas."""
+    from chronus.mla1517.mining.storage_recorder import M3StorageError
+
+    monkeypatch.setenv("PYTHIA_STORAGE_DB", str(tmp_path / "store.db"))
+    monkeypatch.setenv("PYTHIA_STORAGE_ROOT", str(tmp_path / "objects"))
+    monkeypatch.setenv("PYTHIA_STORAGE_CUSTODY_ROOT", str(tmp_path / "custody"))
+    monkeypatch.setenv("PYTHIA_STORAGE_INTEGRITY_KEY_HEX", "ab" * 32)
+    monkeypatch.setenv("PYTHIA_STORAGE_CUSTODY_KEY_HEX", "cd" * 32)
+    monkeypatch.setenv("PYTHIA_STORAGE_TENANT", "unapproved")
+    with pytest.raises(M3StorageError, match="unknown tenant"):
+        MiningStorageRecorder.from_env(strict=True)
