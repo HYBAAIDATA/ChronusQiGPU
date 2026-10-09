@@ -43,6 +43,8 @@ Attach in ``mining_runtime`` after the coordinator is built:
 
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
 import os
 import re
@@ -141,6 +143,9 @@ class MiningStorageRecorder:
         self.errors: int = 0
         self.last_error: str | None = None
         self._last_health: dict[str, Any] | None = None
+        self._restored = False
+        # Recovered proof/lease state is never an authority to submit after restart.
+        self._fresh_job_observed = False
 
     # -- construction ----------------------------------------------------- #
 
@@ -198,13 +203,122 @@ class MiningStorageRecorder:
         if existing:
             tenant_id = existing[0]
         else:
+            if strict:
+                store.close()
+                custody.close()
+                raise M3StorageError(
+                    "strict M3 refuses unknown tenant; provision the storage tenant "
+                    "through the authorised admission path before starting the miner"
+                )
             client = store.provision_client(
                 namespace, Quota(max_records=10**9, max_blob_bytes=10**12)
             )
             tenant_id = client.tenant_id
-        recorder = cls(store.files, tenant_id, root, strict=strict)
+        # OVID exact transformation is explicitly enabled, not a silent rewrite
+        # of the owner's representation/retention policy.
+        transform_plane = None
+        if os.getenv("PYTHIA_STORAGE_OVID_EXACT", "").strip().lower() in {
+            "1", "true", "yes", "on",
+        }:
+            from hyba_db.ovid_transform import OvidTransformPlane
+
+            transform_plane = OvidTransformPlane(store.files)
+        recorder = cls(
+            store.files, tenant_id, root, strict=strict, transform_plane=transform_plane,
+        )
         recorder._store = store  # keep the connection reachable via the recorder
+        try:
+            recorder.recover()
+        except Exception:
+            store.close()
+            custody.close()
+            raise
         return recorder
+
+    # -- durable restart / exact event replay ----------------------------- #
+
+    @staticmethod
+    def _event_key(event: Any) -> str:
+        """Hash the *event identity*, not just its kind/detail.
+
+        Repeated observations can be legitimate; reprocessing the very same
+        mirrored event after an interrupted run must instead be idempotent.
+        """
+        return hashlib.sha256(_stable_json(event.as_dict()).encode()).hexdigest()
+
+    def recover(self) -> dict[str, int]:
+        """Revalidate THESEUS/SQLite/CAS and restore replay bookkeeping.
+
+        This restores recorded history, not a live pool lease, AL HARAS
+        authorisation or a right to submit. A fresh identity_bound event is
+        mandatory before strict mining transitions after restart.
+        """
+        verification = self.files.verify_database(self.tenant_id)
+        reconciliation = self.files.reconcile_files(self.tenant_id, self.root)
+        if not verification.get("passed") or not reconciliation.passed:
+            raise M3StorageError(
+                "THESEUS mining recovery failed integrity/reconciliation: "
+                + str(verification.get("errors") or reconciliation.unresolved)
+            )
+        db = self.files.store._db
+        rows = db.execute(
+            "SELECT record_id,kind,payload_json,content_sha256,parent_ids_json,"
+            "custody_record_id FROM mining_lifecycle WHERE tenant_id=? ORDER BY rowid",
+            (self.tenant_id,),
+        ).fetchall()
+        heads: dict[str, str] = {}
+        records: dict[str, str] = {}
+        for row in rows:
+            rid = str(row["record_id"])
+            if hashlib.sha256(row["payload_json"].encode()).hexdigest() != row["content_sha256"]:
+                raise M3StorageError(f"mining recovery digest mismatch: {rid}")
+            if not self.files.custody.verify(self.tenant_id, row["custody_record_id"]):
+                raise M3StorageError(f"mining recovery custody invalid: {rid}")
+            parents = json.loads(row["parent_ids_json"])
+            if any(parent not in records for parent in parents):
+                raise M3StorageError(f"mining recovery parent missing or out of order: {rid}")
+            kind = str(row["kind"])
+            # Heads belong to the *last* bound job; never cross a job boundary.
+            if kind == "job":
+                heads.clear()
+            heads[kind] = rid
+            records[rid] = kind
+
+        seen: set[str] = set()
+        receipts = db.execute(
+            "SELECT fv.storage_uri,fv.content_sha256 FROM file_versions fv "
+            "JOIN file_objects fo ON fo.tenant_id=fv.tenant_id "
+            "AND fo.file_object_id=fv.file_object_id "
+            "WHERE fv.tenant_id=? AND fo.logical_name LIKE 'receipt-%' "
+            "ORDER BY fv.rowid",
+            (self.tenant_id,),
+        ).fetchall()
+        for receipt in receipts:
+            uri = str(receipt["storage_uri"])
+            if not uri.startswith("file://"):
+                raise M3StorageError("mining recovery receipt is not a local verified blob")
+            data = Path(uri[7:]).read_bytes()
+            if hashlib.sha256(data).hexdigest() != receipt["content_sha256"]:
+                raise M3StorageError("mining recovery receipt digest mismatch")
+            doc = json.loads(data)
+            if not isinstance(doc, dict) or any(
+                field not in doc for field in ("kind", "seq", "at", "coordinate", "detail")
+            ):
+                raise M3StorageError("mining recovery receipt schema incomplete")
+            identity = {
+                k: doc[k] for k in ("kind", "seq", "at", "coordinate", "detail")
+            }
+            if doc.get("software_revision") is not None:
+                identity["software_revision"] = doc["software_revision"]
+            seen.add(hashlib.sha256(_stable_json(identity).encode()).hexdigest())
+
+        with self._lock:
+            self._heads = heads
+            self.records = records
+            self._seen = seen
+            self._restored = bool(rows)
+            self._fresh_job_observed = False
+        return {"records": len(records), "replayable_events": len(seen)}
 
     # -- observer entry ---------------------------------------------------- #
 
@@ -227,12 +341,26 @@ class MiningStorageRecorder:
                 raise M3StorageError(self.last_error) from exc
 
     def _handle(self, event: Any) -> None:
-        key = (
-            f"{event.kind}:{_stable_json(event.coordinate.as_dict())}:{_stable_json(event.detail)}"
-        )
+        key = self._event_key(event)
         with self._lock:
             if key in self._seen:
                 return
+            if event.kind == "identity_bound":
+                # Never attach a new job to the previous job's proof/lease.
+                self._heads.clear()
+                self._fresh_job_observed = True
+            elif (
+                self.strict
+                and not self._fresh_job_observed
+                and event.kind in _CHAIN_EVENTS
+                and event.kind not in {
+                    "salamander_mode", "chronus107_mining_recovery",
+                    "execution_backend_rerouted",
+                }
+            ):
+                raise M3StorageError(
+                    "fresh Stratum identity required after restart before mining transition"
+                )
             coordinate = event.coordinate.as_dict()
             detail = dict(event.detail)
             emitted = []
@@ -425,6 +553,18 @@ class MiningStorageRecorder:
             content=body,
             producer="chronus",
             evidence_state="MEASURED",
+            producer_version=str(event.software_revision or "UNAVAILABLE"),
+            schema_version=1,
+            provenance={
+                "source_ids": [
+                    self._heads[kind] for kind in emitted if kind in self._heads
+                ],
+                "correlation_ids": event.coordinate.as_dict(),
+                "code_ref": str(event.software_revision or "UNAVAILABLE"),
+                "recovery_class": "theseus-canonical",
+                "backend": str(event.detail.get("executed_route") or "UNAVAILABLE"),
+                "device_identity": str(event.detail.get("device_identity") or "UNAVAILABLE"),
+            },
             links=links,
         )
         for kind in emitted:
@@ -484,6 +624,10 @@ class MiningStorageRecorder:
             if candidate is None:
                 raise M3StorageError(
                     "verified proof refused: candidate_verification is not durably custodied"
+                )
+            if self.strict and not self._fresh_job_observed:
+                raise M3StorageError(
+                    "verified proof refused: fresh Stratum identity required after restart"
                 )
             payload = {
                 "target_met": True,
