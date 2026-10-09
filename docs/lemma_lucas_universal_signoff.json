@@ -3,12 +3,12 @@
   "lemmas": [
     "lucas_universal_scaling"
   ],
-  "lines": 103,
-  "sha": "f39a90bb2dd0669b73a36d0b56e3cfd51b26c2652812e3d3e35db358e26692de",
+  "lines": 113,
+  "sha": "8354cc031de174a0483b3a4b7f13ea501225e0d25b5f02eb2181e77eed5fdb3d",
   "signoff": {
     "attestations": {
       "mathematician": {
-        "check": "ladder stops = multiples of rung indices; identity at n=10",
+        "check": "ladder stops = multiples of rung indices; identity at n=10; algebraic rung 7 excluded from execution ladder",
         "result": true
       },
       "systems": {
@@ -40,6 +40,11 @@
     },
     {
       "mode": "out-of-scope pins: partition_window exact coverage, MIN_SAMPLES, LANE_ALIGN, quorum floor",
+      "theorem_proven": false,
+      "verdict": "HOLDS"
+    },
+    {
+      "mode": "attribution: scaling primitive is L_n alone; Pisot = convergence witness (phi^n ~= L_n)",
       "theorem_proven": false,
       "verdict": "HOLDS"
     }

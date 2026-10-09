@@ -1,9 +1,26 @@
 # Lucas scaling audit — Chronus quantity surfaces
 
 Audit of every quantity-bearing surface under `chronus/`. Purpose: state
-precisely where the Lucas/Pisot scale contract reaches, classify each
+precisely where the Lucas scale contract reaches, classify each
 quantity into exactly one contract class, and name the surfaces that fall
 outside the claim instead of pretending they do not exist.
+
+Attribution note: **Lucas scales; Pisot does not scale.** The scaling
+primitive is the Lucas ladder `L_n` alone — the scale index `n` is a
+power dial, and raising `n` raises the envelope by the ratio `L_n/L_ref`.
+Pisot is the convergence witness: because φ is a Pisot number, the
+conjugate powers vanish and `L_n ≈ φ^n` holds exactly — that is why the
+ladder is stable, not a second scaling factor.
+
+Two ladders exist by design (see
+`turing_universal_quantum_computer/pisot.py`):
+
+- **Algebraic ladder** `SUPPORTED_SCALE_INDICES = (7,10,12,15,18,20,31,50,76)`
+  — includes rung 7 (`L_7 = 29`), the algebraic normalization base used by
+  `LucasPisotScale.budget(base) = base * L_n / L_7`.
+- **Execution ladder** `LUCAS_EXECUTION_SCALE_INDICES = (10,12,15,18,20,31,50,76)`
+  — identical to `CHRONUS_SCALE_RUNGS`; index 7 is algebraic-only and
+  hardware dispatch may not admit it (`require_lucas_execution_scale`).
 
 The canonical contract machinery already exists:
 

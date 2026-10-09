@@ -8,6 +8,16 @@ named with its reason.
 
 ## The three classes
 
+Attribution: **Lucas scales by power; Pisot does not scale.** The scale
+index `n` is a power dial — raising `n` raises the envelope by the exact
+ratio `L_n/L_ref`. Pisot names the convergence witness (`phi^n ≈ L_n`
+because the conjugate `|(1-sqrt5)/2|^n` vanishes), not a scaling factor.
+Two ladders: the algebraic ladder `(7,10,12,15,18,20,31,50,76)` includes
+index 7 (`L_7 = 29`, the algebraic base in `LucasPisotScale.budget`); the
+execution ladder `CHRONUS_SCALE_RUNGS = (10,...,76)` excludes it —
+physical dispatch may not admit index 7 (`require_lucas_execution_scale`
+in `turing_universal_quantum_computer.pisot`).
+
 1. **LUCAS_BOUNDED** — the quantity is bounded by an exact Lucas value
    `L_n`, computed by fast doubling over the Q[sqrt5] recurrence
    (`lucas.core.lucas`, `L_0=2`, `L_1=1`, `L_n=L_{n-1}+L_{n-2}`). Example:
