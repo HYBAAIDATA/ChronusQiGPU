@@ -1972,6 +1972,13 @@ def _config_merge_sections(body: dict[str, Any]) -> dict[str, Any]:
                 "live submission requires PYTHIA_M3_REQUIRED=1 "
                 "(AL HARAS + THESEUS fail-closed admission)"
             )
+        if enabled:
+            m3_ready, m3_reason = _m3_dependency_reason()
+            if not m3_ready:
+                raise ValueError(
+                    "live submission refused: M3 worker evidence not ready: "
+                    + str(m3_reason)
+                )
         approval = req.get("approval_id", "")
         if not isinstance(approval, str):
             raise ValueError("live_submit.approval_id must be a string")
