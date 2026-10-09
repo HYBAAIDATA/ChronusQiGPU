@@ -72,8 +72,14 @@ def test_shadow_until_the_approval_names_this_pool_and_worker(tmp_path, monkeypa
 def test_control_api_refuses_non_strict_and_malformed_live_approvals(tmp_path, monkeypatch):
     """Approval is a typed, M3-gated operational action, not a truthy value."""
     from http import HTTPStatus
+    from types import SimpleNamespace
     import control_api
 
+    # No supervisor restart or persistent boot audit is part of an API merge test.
+    monkeypatch.setattr(control_api, "_apply_runtime_config",
+                        lambda cfg: {"restarted": False})
+    monkeypatch.setattr(control_api, "_audit",
+                        lambda: SimpleNamespace(append=lambda *args, **kwargs: None))
     monkeypatch.setenv("PYTHIA_RUNTIME_CONFIG", str(tmp_path / "runtime_config.json"))
     monkeypatch.delenv("PYTHIA_M3_REQUIRED", raising=False)
     runtime_config.save({
