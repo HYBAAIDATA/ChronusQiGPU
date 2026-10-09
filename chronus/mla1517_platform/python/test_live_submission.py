@@ -67,3 +67,52 @@ def test_shadow_until_the_approval_names_this_pool_and_worker(tmp_path, monkeypa
             server.close()
 
     asyncio.run(mine())
+
+
+def test_control_api_refuses_non_strict_and_malformed_live_approvals(tmp_path, monkeypatch):
+    """Approval is a typed, M3-gated operational action, not a truthy value."""
+    from http import HTTPStatus
+    import control_api
+
+    monkeypatch.setenv("PYTHIA_RUNTIME_CONFIG", str(tmp_path / "runtime_config.json"))
+    monkeypatch.delenv("PYTHIA_M3_REQUIRED", raising=False)
+    runtime_config.save({
+        "pools": [{
+            "endpoint": "btc.viabtc.io:3333",
+            "worker": "account.realworker",
+            "password": "x", "enabled": True,
+        }]
+    })
+    status, response = control_api._config_put({"live_submit": {"enabled": True}})
+    assert status == HTTPStatus.BAD_REQUEST
+    assert "PYTHIA_M3_REQUIRED" in response["error"]
+    assert runtime_config.load()["live_submit"]["enabled"] is False
+    for malformed in ("false", "true", 1, None, [], {}):
+        status, _ = control_api._config_put(
+            {"live_submit": {"enabled": malformed}}
+        )
+        assert status == HTTPStatus.BAD_REQUEST
+    monkeypatch.setenv("PYTHIA_M3_REQUIRED", "1")
+    status, response = control_api._config_put({"live_submit": {"enabled": True}})
+    assert status == HTTPStatus.OK, response
+    approved = runtime_config.load()
+    assert approved["live_submit"]["enabled"] is True
+    assert approved["live_submit"]["approval_id"] == runtime_config.identity_commit(
+        "btc.viabtc.io:3333", "account.realworker"
+    )
+    status, _ = control_api._config_put({"live_submit": {"enabled": False}})
+    assert status == HTTPStatus.OK
+    assert runtime_config.load()["live_submit"]["enabled"] is False
+
+
+def test_command_line_live_submit_requires_m3_before_network(monkeypatch):
+    """Direct miner invocation fails at startup without strict custody."""
+    import argparse
+    import mining_runtime
+    import pytest
+
+    monkeypatch.setenv("PYTHIA_EXECUTION_DEVICE", "cpu")
+    monkeypatch.delenv("PYTHIA_M3_REQUIRED", raising=False)
+    args = argparse.Namespace(device=None, submit=True)
+    with pytest.raises(SystemExit, match="PYTHIA_M3_REQUIRED"):
+        asyncio.run(mining_runtime._main_async(args))
