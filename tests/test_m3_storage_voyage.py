@@ -458,3 +458,57 @@ def test_strict_from_env_rejects_unknown_tenant(tmp_path, monkeypatch):
     monkeypatch.setenv("PYTHIA_STORAGE_TENANT", "unapproved")
     with pytest.raises(M3StorageError, match="unknown tenant"):
         MiningStorageRecorder.from_env(strict=True)
+
+
+def test_retry_after_partial_custody_write_is_idempotent(tmp_path, monkeypatch):
+    """A crash after chain commit but before receipt must not duplicate a job."""
+    from chronus.mla1517.mining.storage_recorder import M3StorageError
+
+    store, custody, tenant_id = _plane(tmp_path)
+    recorder = MiningStorageRecorder(store.files, tenant_id, _short_root(), strict=True)
+    event = CausalEvent(
+        1, 100.0, "identity_bound",
+        CausalCoordinate(pool_session_id="pool", generation=1, job_id="job"),
+        {"job_id": "job"},
+    )
+    original = recorder._receipt
+
+    def failed_receipt(*args, **kwargs):
+        raise RuntimeError("injected after mining custody commit")
+
+    monkeypatch.setattr(recorder, "_receipt", failed_receipt)
+    with pytest.raises(M3StorageError, match="injected"):
+        recorder.observe(event)
+    count = store._db.execute(
+        "SELECT COUNT(*) FROM mining_lifecycle WHERE tenant_id=?", (tenant_id,),
+    ).fetchone()[0]
+    assert count == 1
+    monkeypatch.setattr(recorder, "_receipt", original)
+    recorder.observe(event)
+    assert store._db.execute(
+        "SELECT COUNT(*) FROM mining_lifecycle WHERE tenant_id=?", (tenant_id,),
+    ).fetchone()[0] == count
+    assert recorder.receipts
+    store.close()
+    custody.close()
+
+
+def test_mining_idempotency_conflict_refuses_divergent_payload(tmp_path):
+    """One causal identity must not be used to rewrite different mining truth."""
+    from hyba_db.models import IntegrityFailure
+
+    store, custody, tenant_id = _plane(tmp_path)
+    try:
+        first = store.files.record_mining(
+            tenant_id, "job", {"job_id": "job-a"}, idempotency_key="causal-key"
+        )
+        assert store.files.record_mining(
+            tenant_id, "job", {"job_id": "job-a"}, idempotency_key="causal-key"
+        ) == first
+        with pytest.raises(IntegrityFailure, match="idempotency"):
+            store.files.record_mining(
+                tenant_id, "job", {"job_id": "job-b"}, idempotency_key="causal-key"
+            )
+    finally:
+        store.close()
+        custody.close()
