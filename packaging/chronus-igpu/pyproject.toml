@@ -1,0 +1,84 @@
+# hyba-chronus-igpu — the Chronus execution plane.
+#
+# Boundary (owner-approved consolidation):
+#   SHIPS   chronus/ product + execution surface (virtual_igpu, measurement,
+#           seam, paradigm, detect/device/engine/opencl_host, fabric,
+#           resident_hendrix, h4_600, exact_geometry, one_igpu_mining,
+#           readiness, production, gpu_capabilities, tensor_compute, ...)
+#           and the lucas ladder substrate.
+#   EXCLUDES chronus/__init__.py and chronus/v33/ (owned by
+#           hyba-chronos-mathematics — the maths plane this builds on) and
+#           chronus/mla1517/ (the PYTHIA mining plane — owned by
+#           hyba-pythia-mining).
+#   Modules that need umbrella-only packages (hyba.*, aethel.*, toe.*,
+#   Intelligence.*, mining.*, chronus.mla1517.*) ship in the boundary and fail
+#   honestly with ModuleNotFoundError until hyba-pythia-mining is installed —
+#   the same fail-open-on-file / fail-closed-on-import convention as
+#   hyba-chronos-mathematics.
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hyba-chronus-igpu"
+version = "1.0.0"
+description = "Chronus iGPU execution plane — virtual iGPU, measurement, seam contract, resident Hendrix mining execution and Lucas scale substrate."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+authors = [{ name = "HYBA Software Limited" }]
+keywords = [
+    "chronus",
+    "igpu",
+    "mining",
+    "hendrix",
+    "measurement",
+    "virtual-device",
+    "quantum-from-maths",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "numpy>=1.26,<3",
+    # chronus/__init__.py + chronus/v33 (maths plane) — provides the package
+    # facade this distribution extends; ships no overlapping paths.
+    "hyba-chronos-mathematics>=3.3.0",
+    # KELLOGG tensor substrate (seam.scale -> kellogg.scales).
+    "hyba-kellogg-tensor>=1.0",
+    # The resident execution contract (reference_contract, family_algebra,
+    # igpu resident_hendrix/hendrix_execution) used by chronus.h4_600,
+    # chronus.exact_geometry and the sealed mining route.
+    "chronos-one-igpu>=3.11.3rc2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4,<10",
+]
+
+[project.urls]
+Homepage = "https://github.com/QuantumPhiRedux/PhiMiner"
+
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.packages.find]
+# The staged tree ships only the declared boundary; namespaces so that
+# ``chronus`` (facade owned by hyba-chronos-mathematics) is not re-shipped —
+# this wheel contributes the execution-plane paths under it.
+where = ["."]
+include = ["chronus", "chronus.*", "lucas", "lucas.*"]
+namespaces = true
+
+[tool.setuptools.package-data]
+chronus = ["py.typed", "README.md", "GPU_CAPABILITY_MANIFEST.json", "CONVERGENCE_MANIFEST.json", "kernels/*.cl", "deploy/*.yml", "spec/*.json", "*.md"]
+"chronus.seam" = ["*.md"]
+"chronus.virtual_igpu" = ["*.md"]
+lucas = ["*.md", "py.typed"]
