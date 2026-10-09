@@ -590,3 +590,69 @@ def test_explicit_m3_tenant_admission_and_no_implicit_quota_changes(
     finally:
         rec._store.close()
         rec.files.custody.close()
+
+
+def test_euclid_pythia_salamander_feedback_is_theseus_custodied(tmp_path):
+    """The real Salamander observer produces evidence, not invented healing.
+
+    The canonical mining causal recorder persists the changed observation in
+    THESEUS and a repeated feedback snapshot creates no duplicate receipt.
+    """
+    from types import SimpleNamespace
+    from mining_runtime import record_salamander_feedback
+    from salamander.runtime import MiningAutonomyBridge
+
+    store, custody, tenant_id = _plane(tmp_path)
+    recorder = MiningStorageRecorder(store.files, tenant_id, _short_root(), strict=True)
+    ledger = CausalLedger(observer=recorder.observe)
+    coordinator = SimpleNamespace(causal=ledger, _pending_correlation={})
+    try:
+        salamander = MiningAutonomyBridge(tmp_path / "salamander-local.jsonl")
+        report = salamander.observe_mining_snapshot({
+            "schema": "pythia.mining_evidence/1",
+            "lifecycle": {
+                "transport_connected": True,
+                "subscribed": True,
+                "authorized": True,
+                "job_available": True,
+                "target_available": True,
+            },
+            "recovery": {"faulted": False},
+            "optimization": {},
+            "last_execution": {},
+        })
+        assert report["classification"]["WIRED"] is True
+        assert report["evidence_custody"] == "LOCAL_MIRROR_NOT_CANONICAL_THESEUS"
+        digest, recorded = record_salamander_feedback(
+            coordinator, recorder, report, None,
+        )
+        assert recorded and digest
+        rows = store._db.execute(
+            "SELECT fo.logical_name, fv.content_sha256 FROM file_objects fo "
+            "JOIN file_versions fv ON fv.tenant_id=fo.tenant_id "
+            "AND fv.file_object_id=fo.file_object_id "
+            "WHERE fo.tenant_id=? AND fo.logical_name LIKE 'receipt-salamander_runtime_observed-%'",
+            (tenant_id,),
+        ).fetchall()
+        assert len(rows) == 1
+        assert recorder.health(reconcile=True)["healthy"] is True
+        again, recorded = record_salamander_feedback(
+            coordinator, recorder, report, digest,
+        )
+        assert again == digest and recorded is False
+        rows_after = store._db.execute(
+            "SELECT COUNT(*) FROM file_versions fv "
+            "JOIN file_objects fo ON fo.tenant_id=fv.tenant_id "
+            "AND fo.file_object_id=fv.file_object_id "
+            "WHERE fo.tenant_id=? AND fo.logical_name LIKE 'receipt-salamander_runtime_observed-%'",
+            (tenant_id,),
+        ).fetchone()[0]
+        assert rows_after == 1
+        # A bare 'HEALTHY' claim without the real observer schema is ignored.
+        failed, recorded = record_salamander_feedback(
+            coordinator, recorder, {"health": "HEALTHY"}, digest,
+        )
+        assert failed == digest and recorded is False
+    finally:
+        store.close()
+        custody.close()
