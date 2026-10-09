@@ -137,5 +137,91 @@ class EuclidMiningSupportTests(unittest.TestCase):
         self.assertEqual(len(learner.observations), 2)
 
 
+    def test_real_salamander_observation_feeds_bounded_euclid_and_pythia(self):
+        """One real owner observer, one EUCLID advisory, one PYTHIA correlation.
+
+        A heartbeat is never relabelled completed healing or canonical custody.
+        """
+        from pathlib import Path
+        from types import SimpleNamespace
+        from chronus.mla1517.mining.geodesic_support import (
+            PythiaProductionMiningCoordinator,
+        )
+        from salamander.runtime import MiningAutonomyBridge
+
+        with tempfile.TemporaryDirectory() as folder:
+            bridge = MiningAutonomyBridge(Path(folder) / "salamander.jsonl")
+            outcome = bridge.observe_mining_snapshot({
+                "schema": "pythia.mining_evidence/1",
+                "lifecycle": {
+                    "transport_connected": True,
+                    "subscribed": True,
+                    "authorized": True,
+                    "job_available": True,
+                    "target_available": True,
+                },
+                "recovery": {"faulted": False},
+                "optimization": {},
+                "last_execution": {},
+            })
+            self.assertTrue(outcome["classification"]["WIRED"])
+            self.assertEqual(
+                outcome["evidence_custody"], "LOCAL_MIRROR_NOT_CANONICAL_THESEUS",
+            )
+            learner = _Learner("hold")
+            support = EuclidMiningSupport(
+                32, state_path=str(Path(folder) / "policy.json"), learner=learner,
+            )
+            root = PythiaProductionMiningCoordinator.__new__(
+                PythiaProductionMiningCoordinator
+            )
+            root.euclid_support = support
+            root.pythia_authority = SimpleNamespace(
+                last_agentic_cycle={"stages": {"SEARCH": {"state": "COMPLETE"}}},
+            )
+            root.last_execution = {"executed": True}
+            root.record_salamander_autonomy(outcome)
+            advice = support.advise(
+                {"ready": True, "outcomes": {}},
+                recovery_mode="NORMAL", hashrate_hs=123_000,
+            )
+            self.assertEqual(advice.state, "ACTIVE")
+            self.assertIn("salamander_health", advice.evidence["state"])
+            self.assertEqual(
+                advice.evidence["state"]["salamander_health"], outcome["health"],
+            )
+            self.assertEqual(
+                root.pythia_authority.last_agentic_cycle["stages"]["HEAL_OPTIMISE"]["state"],
+                "OBSERVED",
+            )
+            self.assertFalse(
+                root.pythia_authority.last_agentic_cycle["stages"]["HEAL_OPTIMISE"]["healing_proved"],
+            )
+            self.assertEqual(root.last_execution["salamander_evidence_head"], outcome["evidence_head"])
+            self.assertTrue(1 <= advice.dispatch_breadth <= 32)
+            self.assertIsNone(support.reward({}))
+
+    def test_unverified_salamander_is_not_promoted_into_euclid_state(self):
+        with tempfile.TemporaryDirectory() as folder:
+            support = EuclidMiningSupport(
+                32, state_path=str(__import__("pathlib").Path(folder) / "policy.json"),
+                learner=_Learner("hold"),
+            )
+            self.assertFalse(support.observe_salamander({
+                "schema": "other",
+                "health": "HEALTHY",
+                "evidence_head": "forged",
+                "classification": {"WIRED": True, "SELF_HEALING": True},
+            }))
+            advice = support.advise(
+                {"ready": True, "outcomes": {}},
+                recovery_mode="NORMAL", hashrate_hs=100_000,
+            )
+            self.assertEqual(
+                advice.evidence["state"]["salamander_health"], "UNAVAILABLE",
+            )
+            self.assertFalse(support.snapshot()["salamander_observation"]["available"])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
