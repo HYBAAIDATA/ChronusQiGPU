@@ -219,10 +219,14 @@ class M5UltraContract:
         except BackendAbsent:
             if backend not in('GPU','IGPU')or authorised_fallback!='CPU_REFERENCE':raise
             backend='CPU_REFERENCE';contract=device_contract(backend);reason='exact_requested_executor_unavailable'
+        if backend=='GPU'and accelerator_state is None:raise ArithmeticError('GPU executor returned no exact result')
+        return self._verified_receipt(chain,inputs,backend,requested,authorised_fallback,reason,contract,accelerator_state)
+    def _verified_receipt(self,chain,inputs,backend,requested,authorised_fallback,reason,contract,accelerator_state=None):
+        # Pure exact reconstruction. No executor discovery/dispatch/lifecycle work.
         fast,counts=fast_apply(chain,inputs);reference,ref_counts=reference_apply(chain,inputs,with_counts=True)
         if canonical([encode(a)for a in fast])!=canonical([encode(a)for a in reference]):raise ArithmeticError('differential disagreement: no winner selected')
         if accelerator_state is not None and accelerator_state!=reference:raise ArithmeticError('exact GPU differential disagreement')
-        state=accelerator_state if backend=='GPU'else reference if backend=='CPU_REFERENCE'else fast
+        state=accelerator_state if accelerator_state is not None else reference if backend=='CPU_REFERENCE'else fast
         output=[encode(a)for a in state];probabilities=born_fast(state)
         if canonical(probabilities)!=canonical(born_reference(reference)):raise ArithmeticError("independent exact Born disagreement")
         counts={**counts,"production_born_field_products":len(state),"independent_reference_counts":ref_counts,"count_scope":"named mathematical operations, not CPU instructions or elapsed rates"}
@@ -252,13 +256,10 @@ class M5UltraContract:
         elif expected_device_contract!=device_contract(backend):raise ValueError('host replay device contract mismatch')
         used=requested!=backend
         if used and(backend!='CPU_REFERENCE'or fallback!='CPU_REFERENCE'or requested not in('GPU','IGPU')):raise ValueError('unauthorised historical fallback')
-        expected=self.execute(chain,receipt['initial'],'IGPU')
-        expected.update({'device_contract_identity':expected_device_contract,'requested_backend':requested,'executed_backend':backend,'authorised_fallback':fallback,'fallback_used':used,'fallback_reason':'exact_requested_executor_unavailable'if used else None})
-        expected['execution_work']['executed_backend']=backend
-        if backend=='GPU':
-            from .m5_exact_opencl import integer_kernel_counts
-            expected['execution_work']['device_integer_kernel_counts']=integer_kernel_counts(chain)
-        expected.pop('replay_binding');expected['replay_binding']=digest(expected)
+        if chain.pads!=self.model.n_pads:raise ValueError('bound replay operator domain')
+        inputs=initial_state(chain.pads,receipt['initial'])
+        if len(canonical([encode(a)for a in inputs]))>512*1024:raise ValueError('exact replay input quota')
+        expected=self._verified_receipt(chain,inputs,backend,requested,fallback,'exact_requested_executor_unavailable'if used else None,expected_device_contract)
         if canonical(receipt)!=canonical(expected):raise ValueError('strict replay/identity/result/cost rejection')
         return True
     def checkpoint(self,receipt):
