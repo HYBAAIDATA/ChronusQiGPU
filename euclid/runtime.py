@@ -92,6 +92,7 @@ class EuclidRuntime:
         memory: Any | None = None,
         store: Any | None = None,
         experience_learner: Any | None = None,
+        custody: Any | None = None,
         specialists: Mapping[str, Any] | None = None,
         organism: bool = True,
         guardian: Any | None = None,
