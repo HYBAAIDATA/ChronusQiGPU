@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import importlib
+import hashlib
 import json
 import os
 import sys
@@ -26,10 +27,15 @@ LIVE_REQUIRED_ENV = (
     "MLA1517_STRATUM_USER",
     "MLA1517_STRATUM_PASSWORD",
 )
-LIVE_GATES = (
-    "HYBA_ENABLE_LIVE_SHARE_SUBMIT",
-    "HYBA_LIVE_SHARE_APPROVAL_ID",
-    "HYBA_AUTONOMOUS_EXTERNAL_ACTIONS",
+LIVE_STORAGE_ENV = (
+    "PYTHIA_STORAGE_DB",
+    "PYTHIA_STORAGE_ROOT",
+    "PYTHIA_STORAGE_CUSTODY_ROOT",
+    "PYTHIA_STORAGE_TENANT",
+    "PYTHIA_STORAGE_INTEGRITY_KEY_HEX",
+    "PYTHIA_STORAGE_CUSTODY_KEY_HEX",
+    "PYTHIA_M3_ACTOR",
+    "PYTHIA_M3_AL_HARAS_TOKEN",
 )
 TRUE_VALUES = {"1", "true", "yes", "on"}
 
@@ -113,9 +119,48 @@ def _live_checks(env: Mapping[str, str]) -> list[Check]:
         checks.append(Check(f"env:{name}", "PASS" if env.get(name) else "BLOCKED", "configured" if env.get(name) else "missing"))
     endpoint = env.get("MLA1517_BRAIINS_ENDPOINT") or env.get("MLA1517_STRATUM_ENDPOINT")
     checks.append(Check("pool_endpoint", "PASS" if endpoint else "BLOCKED", "configured" if endpoint else "missing"))
-    for name in LIVE_GATES:
-        present = bool(env.get(name)) if name.endswith("APPROVAL_ID") else _truthy(env.get(name))
-        checks.append(Check(f"gate:{name}", "PASS" if present else "BLOCKED", "armed" if present else "not armed"))
+    strict = _truthy(env.get("PYTHIA_M3_REQUIRED"))
+    checks.append(Check(
+        "strict_m3",
+        "PASS" if strict else "BLOCKED",
+        "required for canonical AL HARAS + THESEUS submission",
+    ))
+    for name in LIVE_STORAGE_ENV:
+        configured = bool(env.get(name))
+        if name.endswith("_KEY_HEX") and configured:
+            try:
+                configured = len(bytes.fromhex(env[name])) >= 32
+            except ValueError:
+                configured = False
+        checks.append(Check(
+            f"m3:{name}", "PASS" if configured else "BLOCKED",
+            "configured" if configured else "missing or invalid",
+        ))
+    # The historical HYBA_ENABLE_* variables gate the legacy bridge ONLY.
+    # The canonical miner instead uses runtime_config's exact pool-identity
+    # approval plus the M3 coordinator. Never qualify canonical live through
+    # the bridge environment triple-gate.
+    path = Path(env.get("PYTHIA_RUNTIME_CONFIG", "data/runtime_config.json"))
+    try:
+        cfg = json.loads(path.read_text(encoding="utf-8"))
+        enabled = cfg.get("live_submit", {}).get("enabled") is True
+        approved = str(cfg.get("live_submit", {}).get("approval_id") or "")
+        active = next(
+            (p for p in cfg.get("pools", []) if p.get("enabled") is True),
+            None,
+        )
+        bound = bool(active) and approved == hashlib.sha256(
+            f"{active['endpoint']}|{active['worker']}".encode()
+        ).hexdigest()
+    except (OSError, ValueError, TypeError, KeyError, AttributeError):
+        enabled = False
+        bound = False
+    checks.append(Check(
+        "canonical_pool_identity_approval",
+        "PASS" if enabled and bound else "BLOCKED",
+        "bound to active endpoint + worker" if enabled and bound
+        else "runtime approval missing, malformed or not bound",
+    ))
     return checks
 
 
