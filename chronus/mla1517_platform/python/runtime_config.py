@@ -21,6 +21,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+from Intelligence.lucas_scales import ladder_capacity
+
 SCHEMA = "pythia.runtime_config/1"
 
 # --- bounds (the hard outer edges of the system) ---
@@ -31,8 +33,12 @@ WORKERS_MAX = 600  # virtual solver workers inside a scaled execution arm
 LANES_PER_ARM = 32  # M32 lane topology inside every arm (fixed)
 HASHRATE_CEILING_HS = 1e19  # governed engineering target ceiling: 10 EH/s
 WINDOW_MIN = 1
-WINDOW_MAX = 1 << 22  # 4,194,304 nonces per batch window
-CAMPAIGN_PHASES_MAX = 32  # ordered phases in one pool campaign
+# LUCAS_SCALED (lemma_lucas_universal): Chronus-declared bounds are ladder
+# stops. WINDOW_MAX floors to 4194300; ARMS_MAX/WORKERS_MAX (600) and the
+# window default (200000) are already stops; LANES_PER_ARM stays raw —
+# M32 lane topology, not an envelope.
+WINDOW_MAX = ladder_capacity(1 << 22)
+CAMPAIGN_PHASES_MAX = ladder_capacity(32)  # ordered phases in one pool campaign
 CAMPAIGN_DURATION_MIN_S = 10
 CAMPAIGN_DURATION_MAX_S = 86400  # one day per phase, hard stop
 

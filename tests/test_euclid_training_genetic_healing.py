@@ -1,6 +1,5 @@
 import tempfile
 import unittest
-from dataclasses import asdict
 from pathlib import Path
 
 from chronus.seam.genetic_mining import evolve_mining_config
@@ -46,8 +45,10 @@ class EvidenceTrainingGeneticHealingTests(unittest.TestCase):
         first = evolve_mining_config(64, scale, generations=5, population_size=8)
         second = evolve_mining_config(64, scale, generations=5, population_size=8)
         self.assertEqual(first, second)
-        self.assertEqual(first.generations_run, 5)
-        self.assertEqual(first.population_size, 8)
+        # LUCAS_SCALED (lemma_lucas_universal): search-effort envelopes snap
+        # to ladder stops inside the validated bounds — 5 -> 10, 8 -> 10.
+        self.assertEqual(first.generations_run, 10)
+        self.assertEqual(first.population_size, 10)
         self.assertGreater(first.batch, 0)
         self.assertGreaterEqual(first.fitness, 0.0)
         self.assertEqual(len(first.evidence_hash), 64)

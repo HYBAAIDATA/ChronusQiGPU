@@ -40,6 +40,7 @@ def main(argv: list[str] | None = None) -> int:
     pool = config.get("pool") or {}
     custody = config.get("custody") or {}
 
+    from .scale import snap_work_items
     from .workflow import run_workflow
 
     result = asyncio.run(
@@ -48,7 +49,8 @@ def main(argv: list[str] | None = None) -> int:
             int(pool.get("port", 3333)),
             str(pool.get("worker", "pythia")),
             str(pool.get("password", "x")),
-            window=int(config.get("window", pool.get("window", 4096))),
+            # LUCAS_SCALED: the resolved batch window is a ladder stop.
+            window=snap_work_items(int(config.get("window", pool.get("window", 4096)))),
             custody_dir=custody.get("dir") or os.getenv("PYTHIA_SEAM_CUSTODY_DIR") or None,
         )
     )

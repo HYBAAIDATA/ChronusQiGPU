@@ -9,15 +9,48 @@ each with its honest lucas pool route and theorem_proven=False status.
 from __future__ import annotations
 
 import hashlib
+import json
+import os
+import time
 
 import pytest
 
 import turing_core
+from chronos_one_igpu.reference_contract import reference_execution
 from mining.difficulty import MAX_ZERO_BITS, MIN_ZERO_BITS, DifficultyController
 from mining.nonce_scheduler import NonceScheduler
 from mining.search import GroverStyleSearch, MerklePathVerifier, PreimageSearch
 
 HEADER = bytes(range(76)) + b"\x00\x00\x00\x00"
+
+
+@pytest.fixture(scope="module", autouse=True)
+def reference_scope(tmp_path_factory):
+    record = {
+        "schema": "chronos.reference_approvals/1",
+        "approvals": {
+            "qc-local": {
+                "approved": True,
+                "approved_by": "local-test-operator",
+                "purpose": "mining-search boundary verification, not production evidence",
+                "mode": "reference",
+                "expires_unix": time.time() + 120,
+                "capabilities": ["mining.GroverStyleSearch"],
+            }
+        },
+    }
+    path = tmp_path_factory.mktemp("reference-approvals") / "approvals.json"
+    path.write_text(json.dumps(record))
+    previous = os.environ.get("CHRONOS_REFERENCE_APPROVALS_FILE")
+    os.environ["CHRONOS_REFERENCE_APPROVALS_FILE"] = str(path)
+    try:
+        with reference_execution("qc-local"):
+            yield
+    finally:
+        if previous is None:
+            os.environ.pop("CHRONOS_REFERENCE_APPROVALS_FILE", None)
+        else:
+            os.environ["CHRONOS_REFERENCE_APPROVALS_FILE"] = previous
 
 
 def _sha256d(blob: bytes) -> bytes:

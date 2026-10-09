@@ -47,7 +47,16 @@ def source_roots(root: Path = ROOT) -> tuple[Path, ...]:
     return (root, root / "chronus/mla1517_platform" / "python", *dists)
 
 
-EXCLUDE = ("legacy/", "Intelligence/skills/", "build/", "node_modules/", "PYTHIA-main/")
+EXCLUDE = (
+    "legacy/",
+    "Intelligence/skills/",
+    "build/",
+    "node_modules/",
+    "PYTHIA-main/",
+    # Preserved standalone package: carries its own src/chronos namespace and
+    # is not part of the consolidated import graph (same rule as PYTHIA-main/).
+    "packages/chronos-one-igpu/",
+)
 CATCH_ALL = {"Exception", "BaseException", "ImportError", "ModuleNotFoundError"}
 
 

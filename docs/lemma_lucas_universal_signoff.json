@@ -1,0 +1,52 @@
+{
+  "lemma": "docs/lemma_lucas_universal.md",
+  "lemmas": [
+    "lucas_universal_scaling"
+  ],
+  "lines": 113,
+  "sha": "8354cc031de174a0483b3a4b7f13ea501225e0d25b5f02eb2181e77eed5fdb3d",
+  "signoff": {
+    "attestations": {
+      "mathematician": {
+        "check": "ladder stops = multiples of rung indices; identity at n=10; algebraic rung 7 excluded from execution ladder",
+        "result": true
+      },
+      "systems": {
+        "check": "scaled envelopes retain physical anchors; no measured quantity multiplied",
+        "result": true
+      },
+      "qi_physicist": {
+        "check": "no quantum claim in scope",
+        "result": true
+      },
+      "security": {
+        "check": "quorum and consensus arithmetic untouched",
+        "result": true
+      }
+    },
+    "theorem_proven": false
+  },
+  "theorem_proven": false,
+  "verify": [
+    {
+      "mode": "is_ladder_index over all wired defaults",
+      "theorem_proven": false,
+      "verdict": "HOLDS"
+    },
+    {
+      "mode": "zero physical -> zero effective (compute_effective_capacity)",
+      "theorem_proven": false,
+      "verdict": "HOLDS"
+    },
+    {
+      "mode": "out-of-scope pins: partition_window exact coverage, MIN_SAMPLES, LANE_ALIGN, quorum floor",
+      "theorem_proven": false,
+      "verdict": "HOLDS"
+    },
+    {
+      "mode": "attribution: scaling primitive is L_n alone; Pisot = convergence witness (phi^n ~= L_n)",
+      "theorem_proven": false,
+      "verdict": "HOLDS"
+    }
+  ]
+}

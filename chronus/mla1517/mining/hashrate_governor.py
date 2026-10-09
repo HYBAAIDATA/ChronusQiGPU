@@ -31,6 +31,8 @@ import time
 from functools import lru_cache
 from typing import Any, Callable
 
+from Intelligence.lucas_scales import ladder_capacity
+
 from .pow import compact_target
 
 MAX_NETWORK_FRACTION = 0.01
@@ -64,7 +66,7 @@ def _solve(predicate: Callable[[float], bool], lo: float, hi: float) -> float:
     return (lo + hi) / 2.0
 
 
-@lru_cache(maxsize=4096)
+@lru_cache(maxsize=ladder_capacity(4096))
 def poisson_interval(n: int, alpha: float = 0.05) -> tuple[float, float]:
     """Exact (Garwood) interval for a Poisson mean given ``n`` events."""
     if n < 0:

@@ -262,3 +262,21 @@ def test_state_tomography_reports_unit_norm():
 def test_json_serializable_report_keys():
     # status() feeds an operator panel — it must be JSON-serializable.
     json.dumps(TOEBridge().status())
+
+
+def test_causal_ladder_tolerates_zero_valued_factors():
+    # Real mining lease payloads carry zero-valued numeric factors
+    # (clean_jobs=False, generation=0). Zero must encode to the uniform
+    # state like the canonical encoder — never crash the ladder.
+    bridge = TOEBridge()
+    ladder = bridge.causal_ladder(
+        {
+            "pool_endpoint": "btc.viabtc.io:3333",
+            "worker": "PYTHIA.001",
+            "generation": 2,
+            "job_id": "41f4",
+            "clean_jobs": False,
+            "search_algorithm": "hendrix_coprime_stride",
+        }
+    )
+    assert ladder.available is True

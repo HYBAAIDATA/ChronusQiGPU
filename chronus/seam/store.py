@@ -5,6 +5,8 @@ from __future__ import annotations
 import threading
 from typing import Any, Dict, List, Optional
 
+from .scale import snap_work_items
+
 _lock = threading.RLock()
 _capabilities: Dict[str, Any] = {}
 _buffers: Dict[str, Any] = {}
@@ -98,7 +100,9 @@ def queue_of(device_id: str) -> Dict[str, Any]:
                 "in_flight": [],
                 "completed": 0,
                 "failed": 0,
-                "threshold": 64,
+                # LUCAS_SCALED (lemma_lucas_universal): queue backpressure
+                # depth is a Chronus-owned capacity envelope — a ladder stop.
+                "threshold": snap_work_items(64),
                 "throughputs": [],
             }
             _queues[device_id] = q

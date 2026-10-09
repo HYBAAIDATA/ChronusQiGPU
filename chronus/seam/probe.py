@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
 
 from . import store
+from .scale import snap_work_items
 from .types import (
     DeviceClass,
     DeviceState,
@@ -142,6 +143,10 @@ def _default_kernels(klass: DeviceClass) -> Set[KernelName]:
 
 
 def _measure_host_hps(samples: int = 3, work: int = 1024) -> Distribution:
+    # LUCAS_SCALED (lemma_lucas_universal): per-sample workload depth is a
+    # work envelope -> ladder stop. `samples` stays raw — an evidence
+    # minimum, not a capacity envelope.
+    work = snap_work_items(work)
     rates: List[float] = []
     payload = b"\x00" * 80
     for _ in range(samples):

@@ -12,6 +12,7 @@
     "resilience-suite",
     "schema-freeze",
     "promotion-manifest",
-    "privileged-path-audit"
+    "privileged-path-audit",
+    "repo-ownership"
   ]
 }

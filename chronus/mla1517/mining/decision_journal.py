@@ -32,6 +32,8 @@ from dataclasses import asdict, dataclass, field, replace
 from enum import StrEnum
 from typing import Any, Callable
 
+from Intelligence.lucas_scales import ladder_capacity
+
 SCHEMA = "pythia.decision_journal/1"
 
 
@@ -89,7 +91,7 @@ class DecisionJournal:
     def __init__(
         self,
         *,
-        capacity: int = 512,
+        capacity: int = ladder_capacity(512),
         on_record: Callable[[DecisionRecord], None] | None = None,
     ) -> None:
         if capacity <= 0:

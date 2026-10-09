@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Sequence
 
 from .probe import Capability
+from .scale import snap_work_items
 from .types import KERNEL_CLASS, DeviceClass, KernelClass, KernelName
 
 
@@ -85,6 +86,10 @@ def partition(
     job_kernels: Sequence[KernelName],
     span: int = 1 << 20,
 ) -> Dict[KernelClass, List[Window]]:
+    # LUCAS_SCALED (lemma_lucas_universal): the partitioned work envelope is
+    # a ladder stop under the seam MAX_WORK_ITEMS ceiling. The partition
+    # itself still tiles the snapped span exactly.
+    span = snap_work_items(span)
     out: Dict[KernelClass, List[Window]] = {}
     cursor = 0
     width = max(1, int(span) // max(1, len(job_kernels)))

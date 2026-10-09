@@ -31,6 +31,8 @@ from dataclasses import dataclass, field
 from queue import Empty, Full, Queue
 from typing import Any, Callable, Deque
 
+from Intelligence.lucas_scales import ladder_capacity
+
 from .nonce_lease import LeaseConflict, LeaseRecord, NonceLeaseLedger
 from .scale_state import ScaleEvidence, ScaleState, ScaleStateClassifier
 from .quality import QualityLedger
@@ -38,20 +40,25 @@ from .search_plan import ExecutionRecord, LeaseState, PoolOutcome, SearchPlan, W
 
 LOG = logging.getLogger("chronus.mla1517.mining.agentic")
 
-_DEFAULT_QUEUE_DEPTH = 3
-_MAX_QUEUE_DEPTH = 8
+# LUCAS_SCALED (lemma_lucas_universal): Chronus-owned queue/retention
+# capacity envelopes are ladder stops. Adaptive control parameters
+# (_DEFAULT_LOOKAHEAD, _ADAPT_MIN_EVENTS, _STARVATION_EVENTS, waste ratios)
+# are policy-owned and stay raw.
+_DEFAULT_QUEUE_DEPTH = ladder_capacity(3)
+_MAX_QUEUE_DEPTH = ladder_capacity(8)
 _DEFAULT_LOOKAHEAD = 2
-_LEAD_HISTORY_WINDOW = 20
-_ADAPT_WINDOW = 32
+_LEAD_HISTORY_WINDOW = 20  # already a ladder stop
+_ADAPT_WINDOW = ladder_capacity(32)
 _ADAPT_MIN_EVENTS = 4
 _HIGH_WASTE = 0.5
 _LOW_WASTE = 0.2
 _STARVATION_EVENTS = 2
 
 STATE_SCHEMA_VERSION = 2
-MAX_STATE_BYTES = 64 * 1024
-_MAX_POLICIES = 32
-_MAX_POLICY_ID = 64
+MAX_STATE_BYTES = ladder_capacity(64 * 1024)
+_MAX_POLICIES = ladder_capacity(32)
+_MAX_POLICY_ID = ladder_capacity(64)
+_OUTCOME_HISTORY_LIMIT = ladder_capacity(256)
 
 
 @dataclass
@@ -115,7 +122,7 @@ class AgenticMiningController:
         self._historical_epoch = 0
         self._recent: Deque[str] = deque(maxlen=_ADAPT_WINDOW)
         self.telemetry = AgenticTelemetry()
-        self._outcome_history: Deque[ExecutionRecord] = deque(maxlen=256)
+        self._outcome_history: Deque[ExecutionRecord] = deque(maxlen=_OUTCOME_HISTORY_LIMIT)
         self._lead_history: dict[str, deque] = {}
         self.quality = QualityLedger()
 

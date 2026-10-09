@@ -14,7 +14,11 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import Any
 
-SPAN = 16
+from Intelligence.lucas_scales import ladder_capacity
+
+# LUCAS_SCALED (lemma_lucas_universal): the comparison span is a retention
+# envelope — a ladder stop. MIN_BEFORE stays raw (evidence minimum).
+SPAN = ladder_capacity(16)
 MIN_BEFORE = 4
 
 

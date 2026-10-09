@@ -24,7 +24,10 @@ from Intelligence.lucas_scales import (
 )
 from hyba.inventory import ClusterInventory, DeviceInfo
 
-_DEFAULT_WORK_ITEMS = 1 << 20
+# LUCAS_SCALED (lemma_lucas_universal): the default request envelope is a
+# ladder stop in the fabric domain (the dispatch chunk snaps separately in
+# ``_lucas_dispatch``).
+_DEFAULT_WORK_ITEMS = nearest_ladder_index(1 << 20, 1, 1 << 20)
 _M32_LANES = 32
 
 
