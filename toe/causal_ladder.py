@@ -567,6 +567,19 @@ class StructuralCausalModel:
 # ---------------------------------------------------------------------------
 
 
+def _factor_state(vec: List[float], dim: int) -> "QuantumState":
+    """Normalize a factor vector; all-zero data maps to the uniform state.
+
+    A zero-valued factor is real data, not a state direction — the canonical
+    ``encode_data_to_state`` encodes all-zero input as the uniform
+    superposition, and the factor's own observable stays the zero matrix, so
+    every measured expectation for that factor remains exactly zero.
+    """
+    if not any(vec):
+        return QuantumState.uniform_superposition(dim)
+    return QuantumState.from_real_vector(vec, normalize=True)
+
+
 def infer_causal_graph(
     data: Any,
     dim: int = 32,
@@ -608,9 +621,7 @@ def infer_causal_graph(
                 obs = ComplexMatrix.diagonal([Complex(float(val), 0.0)] * dim)
                 observables[key] = obs
                 factor_expectations[key] = float(val)
-                factor_states[key] = QuantumState.from_real_vector(
-                    [float(val)] * dim, normalize=True
-                )
+                factor_states[key] = _factor_state([float(val)] * dim, dim)
             elif isinstance(val, (list, tuple)):
                 vals = [float(v) for v in val if isinstance(v, (int, float))]
                 if vals:
@@ -621,7 +632,7 @@ def infer_causal_graph(
                     diag = [Complex(v / max_abs, 0.0) for v in vals]
                     obs = ComplexMatrix.diagonal(diag)
                     observables[key] = obs
-                    state = QuantumState.from_real_vector(vals, normalize=True)
+                    state = _factor_state(vals, dim)
                     factor_states[key] = state
                     factor_expectations[key] = abs(state.expectation(obs))
     elif isinstance(data, (list, tuple)):
@@ -631,9 +642,7 @@ def infer_causal_graph(
                 obs = ComplexMatrix.diagonal([Complex(float(val), 0.0)] * dim)
                 observables[name] = obs
                 factor_expectations[name] = float(val)
-                factor_states[name] = QuantumState.from_real_vector(
-                    [float(val)] * dim, normalize=True
-                )
+                factor_states[name] = _factor_state([float(val)] * dim, dim)
 
     # Add nodes
     for name in observables:

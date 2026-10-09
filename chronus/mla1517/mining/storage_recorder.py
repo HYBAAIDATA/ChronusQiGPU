@@ -33,6 +33,13 @@ recorder is inert without ``PYTHIA_STORAGE_DB`` + ``PYTHIA_STORAGE_ROOT``)::
     PYTHIA_STORAGE_INTEGRITY_KEY_HEX  hyba_db integrity key (32+ bytes)
     PYTHIA_STORAGE_CUSTODY_KEY_HEX    THESEUS HMAC key (32+ bytes)
     PYTHIA_STORAGE_TENANT        namespace slug (default: worker-derived)
+    PYTHIA_STORAGE_CUSTODY_MAX_PAYLOAD_BYTES   per-record custody cap
+    PYTHIA_STORAGE_CUSTODY_MAX_TENANT_BYTES    per-tenant custody cap
+    PYTHIA_STORAGE_CUSTODY_MAX_RECORDS         per-tenant record cap
+
+The ``*_CUSTODY_MAX_*`` overrides size the THESEUS custody quotas; unset they
+keep the underlying enterprise defaults, which are too small for real mining
+lifecycle payloads (a live ``search_plan`` record is multi-MiB).
 
 Attach in ``mining_runtime`` after the coordinator is built:
 
@@ -182,7 +189,26 @@ class MiningStorageRecorder:
         from hyba_db.theseus_custody import TheseusFileCustody
 
         custody_root = os.getenv("PYTHIA_STORAGE_CUSTODY_ROOT", db + ".custody")
-        custody = TheseusFileCustody(root=custody_root, hmac_key=bytes.fromhex(custody_hex))
+        quota_env = {
+            "max_payload": "PYTHIA_STORAGE_CUSTODY_MAX_PAYLOAD_BYTES",
+            "max_records": "PYTHIA_STORAGE_CUSTODY_MAX_RECORDS",
+            "max_tenant_bytes": "PYTHIA_STORAGE_CUSTODY_MAX_TENANT_BYTES",
+        }
+        quota_values = {
+            field: int(os.getenv(env, "").strip())
+            for field, env in quota_env.items()
+            if os.getenv(env, "").strip()
+        }
+        custody_kwargs: dict[str, Any] = {}
+        if quota_values:
+            from aethel.enterprise.governance import Quotas
+
+            custody_kwargs["quotas"] = Quotas(**quota_values)
+        custody = TheseusFileCustody(
+            root=custody_root,
+            hmac_key=bytes.fromhex(custody_hex),
+            **custody_kwargs,
+        )
         store = OntologyStore(db, bytes.fromhex(integrity_hex), custody=custody)
         explicit = os.getenv("PYTHIA_STORAGE_TENANT", "").strip()
         if explicit:
