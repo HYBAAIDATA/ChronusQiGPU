@@ -47,7 +47,7 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/QuantumPhi2/PhiMiner"
+Homepage = "https://github.com/QuantumPhiRedux/PhiMiner"
 
 [tool.setuptools]
 # chronus is an implicit namespace package (no __init__ at its root in the

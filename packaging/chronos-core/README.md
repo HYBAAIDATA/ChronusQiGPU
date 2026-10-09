@@ -10,7 +10,7 @@ Metal. The GPU substrate lane is opt-in (`pip install chronos-core[gpu]`)
 and fail-closed: an explicit backend request that cannot bind raises; it is
 never silently substituted with a CPU path.
 
-Source of truth: the [PhiMiner monorepo](https://github.com/QuantumPhi2/PhiMiner)
+Source of truth: the [PhiMiner monorepo](https://github.com/QuantumPhiRedux/PhiMiner)
 (`chronus/v33`). This scaffold is the packaging contract; the monorepo
 distribution `pythia-mla1517` stays canonical until the CI wheel-build
 verification protocol in `packaging/README.md` passes.

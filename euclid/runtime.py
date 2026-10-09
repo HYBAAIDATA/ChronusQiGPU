@@ -46,6 +46,10 @@ class EuclidRuntime:
         self.cognition = cognition
         #: v17 integrated adaptive intelligence (see compose_adaptive_intelligence)
         self.adaptive: Any | None = None
+        #: Canonical THESEUS/OVID custody for adaptive knowledge (F5).  When no
+        #: custody is attached the runtime fails closed: knowledge is kept
+        #: in-memory for the process and never written to a private JSON file.
+        self.adaptive_custody: Any | None = None
         self._adaptive_organs = 0
         from .cognition.reachability import ReachabilityMatrix
 
@@ -70,6 +74,7 @@ class EuclidRuntime:
         specialists: Mapping[str, Any] | None = None,
         organism: bool = True,
         guardian: Any | None = None,
+        custody: Any | None = None,
     ) -> "EuclidRuntime":
         root = Path(state_dir)
         root.mkdir(parents=True, exist_ok=True)
@@ -98,6 +103,7 @@ class EuclidRuntime:
             experience_learner=experience_learner,
             memory_database=database,
         )
+        runtime.adaptive_custody = custody
         runtime._compose_cognition()
         if organism:
             runtime.compose_organism(guardian=guardian)
@@ -635,25 +641,71 @@ class EuclidRuntime:
         *,
         config: Any | None = None,
         ablations: Any | None = None,
+        custody: Any | None = None,
     ) -> Any:
         """Compose the v17 integrated agent inside this runtime.
 
-        The agent shares this runtime's evidence chain, executes only through
-        the governed Delegator (see :meth:`solve_task`), and persists sealed
-        long-term knowledge under ``state_dir`` so a restart resumes it.
+        The agent shares this runtime's evidence chain and executes only
+        through the governed Delegator (see :meth:`solve_task`).  Long-term
+        knowledge is creator-bound state read from canonical THESEUS/OVID
+        custody (F5); with no custody attached the runtime fails closed to
+        in-memory knowledge and never falls back to a private JSON authority.
+        Recomposition preserves the per-episode organ-id counter so a live
+        ``task-world-*`` identity is never reissued (F4).
         """
+        import json
+
         from .cognition.integrated import AgentKnowledge, IntegratedAgent
         from .cognition.reachability import ReachabilityStage
 
-        path = self.state_dir / "adaptive_knowledge.json"
-        knowledge = (
-            AgentKnowledge.from_payload(load_json(path)) if path.is_file() else AgentKnowledge()
-        )
+        if custody is not None:
+            self.adaptive_custody = custody
+        record_id = self._adaptive_record_id()
+        knowledge = AgentKnowledge()
+        restored = False
+        if self.adaptive_custody is None:
+            self.evidence.append(
+                "adaptive-knowledge-custody-unavailable",
+                {"record_id": record_id, "creator_id": self.creator_id},
+            )
+        else:
+            try:
+                raw = self.adaptive_custody.get(record_id)
+            except KeyError:
+                self.evidence.append(
+                    "adaptive-knowledge-fresh",
+                    {"record_id": record_id, "creator_id": self.creator_id},
+                )
+            else:
+                body = json.loads(raw.decode("utf-8"))
+                if (
+                    body.get("schema") != "euclid.adaptive-knowledge/1"
+                    or body.get("creator_id") != self.creator_id
+                ):
+                    raise ValueError("adaptive knowledge creator binding mismatch")
+                knowledge = AgentKnowledge.from_payload(dict(body["knowledge"]))
+                restored = True
+                self.evidence.append(
+                    "adaptive-knowledge-restored",
+                    {
+                        "record_id": record_id,
+                        "creator_id": self.creator_id,
+                        "restored_evidence_head": self.evidence.head or "genesis",
+                    },
+                )
         self.adaptive = IntegratedAgent(
             knowledge=knowledge, config=config, ablations=ablations, evidence=self.evidence
         )
-        self._adaptive_organs = 0
-        restored = path.is_file()
+        live_ids = [
+            row["organ_id"]
+            for row in self.registry.report()
+            if row["organ_id"].startswith("task-world-")
+        ]
+        highest = max(
+            (int(oid.rsplit("-", 1)[-1]) for oid in live_ids if oid.rsplit("-", 1)[-1].isdigit()),
+            default=0,
+        )
+        self._adaptive_organs = max(self._adaptive_organs, highest)
         for component in self.ADAPTIVE_COMPONENTS:
             current = self.reachability.stage(component)
             stages = [
@@ -679,9 +731,16 @@ class EuclidRuntime:
         ``world_executor`` is registered as a dedicated PROPOSE-authority organ
         with a creator-granted dispatch right, so execution passes the same
         capable/healthy/permitted/confident/safe gates as every other organ.
+        The per-episode right is revoked in a ``finally`` path, so normal
+        return, solver exception and cancellation all end the episode revoked
+        (F1).  Knowledge is persisted only through canonical custody, and the
+        PERSISTED reachability stage advances only when that durable write
+        verifiably happened (F2/F5).
         """
         if getattr(self, "adaptive", None) is None:
             raise RuntimeError("adaptive intelligence is not composed")
+        import json
+
         from .cognition.baselines import DelegatorExecutor
         from .cognition.reachability import ReachabilityStage
 
@@ -700,26 +759,67 @@ class EuclidRuntime:
         )
         self.rights.grant(self.creator_id, organ_id, capability, "dispatch")
         executor = DelegatorExecutor(self.delegator, organ_id, capability)
-        result = self.adaptive.solve(spec, executor, seed=seed)
-        self.rights.revoke(self.creator_id, organ_id, capability, "dispatch")
-        atomic_write(
-            self.state_dir / "adaptive_knowledge.json", self.adaptive.knowledge.to_payload()
-        )
+        try:
+            result = self.adaptive.solve(spec, executor, seed=seed)
+        finally:
+            self.rights.revoke(self.creator_id, organ_id, capability, "dispatch")
+        record_id = self._adaptive_record_id()
+        persisted = False
+        if self.adaptive_custody is None:
+            self.evidence.append(
+                "adaptive-knowledge-not-persisted",
+                {"record_id": record_id, "creator_id": self.creator_id,
+                 "reason": "custody not attached"},
+            )
+        else:
+            payload = json.dumps(
+                {
+                    "schema": "euclid.adaptive-knowledge/1",
+                    "creator_id": self.creator_id,
+                    "knowledge": self.adaptive.knowledge.to_payload(),
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+            envelope = self.adaptive_custody.put(
+                payload,
+                record_id=record_id,
+                meta={
+                    "kind": "euclid.adaptive-knowledge",
+                    "creator_id": self.creator_id,
+                    "tenant": getattr(self.adaptive_custody, "tenant", None),
+                },
+            )
+            self.evidence.append(
+                "adaptive-knowledge-persisted",
+                {"record_id": record_id, "creator_id": self.creator_id,
+                 "content_digest": envelope.content_digest},
+            )
+            persisted = True
         episode = str(spec.task_id)
         head = self.evidence.head or "genesis"
+        stages = [
+            ReachabilityStage.USED_IN_EPISODE, ReachabilityStage.EXECUTED,
+            ReachabilityStage.OUTCOME_OBSERVED, ReachabilityStage.FEEDBACK_CLOSED,
+        ]
+        if persisted:
+            stages.append(ReachabilityStage.PERSISTED)
         for component in self.ADAPTIVE_COMPONENTS:
             current = self.reachability.stage(component)
-            for stage in (
-                ReachabilityStage.USED_IN_EPISODE, ReachabilityStage.EXECUTED,
-                ReachabilityStage.OUTCOME_OBSERVED, ReachabilityStage.FEEDBACK_CLOSED,
-                ReachabilityStage.PERSISTED,
-            ):
+            for stage in stages:
                 if current is None or stage > current:
                     self.reachability.record(component, stage, episode_id=episode,
                                              evidence_ref=head)
                     current = stage
         self.reachability.save(self.state_dir / "cognition_reachability.json")
         return result
+
+    def _adaptive_record_id(self) -> str:
+        """Creator-bound custody record id for this runtime's adaptive knowledge."""
+        import re
+
+        safe_creator = re.sub(r"[^A-Za-z0-9_.-]", "-", self.creator_id)
+        return f"euclid-adaptive-knowledge-{safe_creator}"
 
     def solve_repository_problem(
         self, problem: Mapping[str, Any], *, goal: str | None = None
